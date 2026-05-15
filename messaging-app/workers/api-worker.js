@@ -131,6 +131,12 @@ async function auditLog(env, actor_id, action, target_type, target_id, details, 
 async function handleSendOtp(request, env) {
   const { phone, name } = await request.json();
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
+  // Règle Kevin : prénom + nom obligatoires (2 tokens ≥2 chars), sécurité anti-impersonation
+  // Exception : admin Kevin reconnu via téléphone secret peut ne pas avoir 2 tokens
+  if (!(env.KEVIN_PHONE_E164 && phone.replace(/[\s\-]/g, '') === env.KEVIN_PHONE_E164)) {
+    const tokens = String(name || '').trim().split(/\s+/).filter(t => t.length >= 2);
+    if (tokens.length < 2) return err('Prénom ET nom requis (ex: Marie Dupont) — sécurité', 400, 'name_too_short');
+  }
 
   // Normaliser phone (retirer espaces/tirets)
   const cleanPhone = phone.replace(/[\s\-]/g, '');
@@ -317,6 +323,12 @@ async function handleVerifyOtp(request, env) {
   const { phone, name, pseudo, otp, firebase_id_token } = await request.json();
   if (!phone || !pseudo) return err('Champs manquants', 400);
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
+  // Règle Kevin : prénom + nom obligatoires (sécurité anti-impersonation)
+  const isKevinBypass = env.KEVIN_PHONE_E164 && phone.replace(/[\s\-]/g, '') === env.KEVIN_PHONE_E164;
+  if (!isKevinBypass) {
+    const tokens = String(name || '').trim().split(/\s+/).filter(t => t.length >= 2);
+    if (tokens.length < 2) return err('Prénom ET nom requis (sécurité)', 400, 'name_too_short');
+  }
 
   const cleanPhone = phone.replace(/[\s\-]/g, '');
   const phoneHash = await sha256(cleanPhone);
@@ -394,10 +406,11 @@ async function handleVerifyOtp(request, env) {
 
       await env.APEX_CHAT_DB.prepare(
         `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
-         identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', 'apex-chat-direct', ?, 'active')
+         identity_key_pub, pq_key_pub, prekey_signed, source, admin_authorized, created_at, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', 'apex-chat-direct', 1, ?, 'active')
          ON CONFLICT(pseudo) DO NOTHING`
       ).bind(id, pseudo, name || pseudo, phone, phoneHash, isKevin ? 1 : 0, isKevin ? 1 : 0, Date.now()).run();
+      // ↑ admin_authorized=1 auto APRÈS OTP réussi (règle Kevin : tout user inscrit = whitelisté visible admin)
 
       user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
       if (!user) return err('Pseudo déjà pris (race)', 409, 'pseudo_taken');
@@ -819,6 +832,88 @@ async function handleSystemConfig(request, env) {
 }
 
 // ============================================================================
+//  Admin bulk whitelist — colle 1 ou N numéros, tous auto-autorisés + liens magiques
+// ============================================================================
+
+async function handleAdminWhitelistBulk(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const { entries } = await request.json();
+  if (!Array.isArray(entries) || entries.length === 0) return err('entries requis (array de {phone, name?})');
+  if (entries.length > 100) return err('Max 100 numéros par batch');
+
+  const baseUrl = env.APEX_CHAT_BASE_URL || 'https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/';
+  const results = [];
+
+  for (const e of entries) {
+    try {
+      const phone = String(e.phone || '').replace(/[^\d+]/g, '');
+      const name = String(e.name || '').slice(0, 40).trim() || 'Ami';
+      if (!phone) { results.push({ phone: e.phone, ok: false, error: 'phone manquant' }); continue; }
+      // Normalisation E.164 simple (FR par défaut si commence par 0)
+      let normalized = phone;
+      if (normalized.startsWith('0') && normalized.length === 10) normalized = '+33' + normalized.slice(1);
+      if (!normalized.startsWith('+')) normalized = '+' + normalized;
+      if (normalized.length < 10) { results.push({ phone, ok: false, error: 'format invalide' }); continue; }
+
+      const phoneHash = await sha256(normalized);
+
+      // Pré-créer/marquer user admin_authorized=1
+      let user = await env.APEX_CHAT_DB.prepare('SELECT id, pseudo FROM users WHERE phone_hash=?').bind(phoneHash).first();
+      if (!user) {
+        const userId = 'u_' + Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('');
+        let safePseudo = name.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 18) || ('ami' + Date.now().toString(36).slice(-4));
+        const exists = await env.APEX_CHAT_DB.prepare('SELECT 1 FROM users WHERE pseudo=?').bind(safePseudo).first();
+        if (exists) safePseudo = safePseudo.slice(0, 12) + '_' + Date.now().toString(36).slice(-4);
+        await env.APEX_CHAT_DB.prepare(
+          `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, display_name,
+             identity_key_pub, pq_key_pub, prekey_signed,
+             admin_authorized, admin_authorized_by, source, invited_by, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, '', '', '', 1, ?, 'invitation', ?, ?, ?)`
+        ).bind(userId, safePseudo, name, normalized, phoneHash, name, auth.sub, auth.sub, Date.now(), Date.now()).run();
+        user = { id: userId, pseudo: safePseudo };
+      } else {
+        await env.APEX_CHAT_DB.prepare(
+          'UPDATE users SET admin_authorized=1, admin_authorized_by=?, updated_at=? WHERE id=?'
+        ).bind(auth.sub, Date.now(), user.id).run();
+      }
+
+      const magicToken = await signJWT({
+        typ: 'magic_invite', uid: user.id, pseudo: user.pseudo, phone_hash: phoneHash,
+        invited_by: auth.sub,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 7 * 86400
+      }, env.JWT_SECRET);
+
+      const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, magic_token, created_at, expires_at)
+         VALUES (?, ?, ?, 'admin-bulk', ?, ?, ?)`
+      ).bind(code, auth.sub, phoneHash, magicToken, Date.now(), Date.now() + 7 * 86400000).run();
+
+      results.push({
+        ok: true,
+        phone: normalized,
+        name,
+        pseudo: user.pseudo,
+        magic_url: `${baseUrl}?magic=${encodeURIComponent(magicToken)}`,
+        short_url: `${baseUrl}?i=${code}`,
+        sms: `Salut ${name} ! Kevin t'invite sur Apex Chat (messagerie privée chiffrée). Lien direct : ${baseUrl}?magic=${encodeURIComponent(magicToken)}`
+      });
+    } catch (e) {
+      results.push({ phone: e.phone, ok: false, error: e.message });
+    }
+  }
+
+  await auditLog(env, auth.sub, 'admin_whitelist_bulk', 'batch', null,
+    JSON.stringify({ count: results.length, ok_count: results.filter(r => r.ok).length }),
+    null, request.headers.get('user-agent') || '');
+
+  return json({ ok: true, count: results.length, results });
+}
+
+// ============================================================================
 //  Admin invitation bypass — pré-autorise un téléphone (zéro SMS Vonage requis)
 // ============================================================================
 
@@ -939,6 +1034,234 @@ async function handleMagicLogin(request, env) {
     jwt: sessionJWT,
     user: { id: user.id, pseudo: user.pseudo, display_name: user.display_name, avatar_url: user.avatar_url }
   });
+}
+
+// ============================================================================
+//  Admin all-users — TOUS les comptes créés (paginé + filtres)
+// ============================================================================
+
+async function handleAdminAllUsers(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const url = new URL(request.url);
+  const filter = url.searchParams.get('filter') || 'all'; // all | banned | active | online | admin
+  const search = (url.searchParams.get('q') || '').toLowerCase().trim();
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
+
+  let sql = `SELECT id, pseudo, real_name, display_name, phone, avatar_url,
+              created_at, last_seen, is_admin, is_banned, admin_authorized,
+              last_ip_hash, last_user_agent, last_lat, last_lng, last_geo_label,
+              last_device_label, premium_until, source, invited_by, status
+            FROM users WHERE 1=1`;
+  const args = [];
+  if (filter === 'banned') sql += ' AND is_banned=1';
+  else if (filter === 'active') sql += ' AND (is_banned=0 OR is_banned IS NULL)';
+  else if (filter === 'online') { sql += ' AND last_seen > ?'; args.push(Date.now() - 30 * 60 * 1000); }
+  else if (filter === 'admin') sql += ' AND is_admin=1';
+  if (search) {
+    sql += ' AND (LOWER(pseudo) LIKE ? OR LOWER(real_name) LIKE ? OR phone LIKE ?)';
+    args.push('%' + search + '%', '%' + search + '%', '%' + search + '%');
+  }
+  sql += ' ORDER BY last_seen DESC NULLS LAST, created_at DESC LIMIT ?';
+  args.push(limit);
+
+  const r = await env.APEX_CHAT_DB.prepare(sql).bind(...args).all();
+  const users = r.results || [];
+
+  // Compter conv par user (best-effort)
+  for (const u of users) {
+    const c = await env.APEX_CHAT_DB.prepare('SELECT COUNT(*) as c FROM conversation_members WHERE user_id=?')
+      .bind(u.id).first().catch(() => ({ c: 0 }));
+    u.conv_count = c?.c || 0;
+    // Masquer phone partiel pour audit (4 derniers chiffres)
+    if (u.phone) u.phone_last4 = String(u.phone).slice(-4);
+  }
+
+  return json({ ok: true, count: users.length, users });
+}
+
+// Block / Unblock / Delete user
+async function handleAdminUserAction(userId, action, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+  if (userId === auth.sub) return err('Impossible d\'agir sur ton propre compte admin', 400);
+
+  let result = { ok: true };
+  if (action === 'block' || action === 'ban') {
+    await env.APEX_CHAT_DB.prepare('UPDATE users SET is_banned=1, updated_at=?, status=? WHERE id=?')
+      .bind(Date.now(), 'suspended', userId).run();
+    result.message = 'Utilisateur bloqué';
+  } else if (action === 'unblock' || action === 'unban') {
+    await env.APEX_CHAT_DB.prepare('UPDATE users SET is_banned=0, updated_at=?, status=? WHERE id=?')
+      .bind(Date.now(), 'active', userId).run();
+    result.message = 'Utilisateur réautorisé';
+  } else if (action === 'authorize') {
+    await env.APEX_CHAT_DB.prepare('UPDATE users SET admin_authorized=1, admin_authorized_by=?, updated_at=? WHERE id=?')
+      .bind(auth.sub, Date.now(), userId).run();
+    result.message = 'Whitelist activée';
+  } else if (action === 'revoke') {
+    await env.APEX_CHAT_DB.prepare('UPDATE users SET admin_authorized=0, updated_at=? WHERE id=?')
+      .bind(Date.now(), userId).run();
+    result.message = 'Whitelist révoquée';
+  } else if (action === 'force_logout') {
+    // Invalidate JWT en stockant timestamp logout forcé (à vérifier dans getAuthUser ensuite si on l'implémente)
+    await env.APEX_CHAT_DB.prepare('UPDATE users SET updated_at=?, last_force_logout_at=? WHERE id=?')
+      .bind(Date.now(), Date.now(), userId).run().catch(() => {});
+    result.message = 'Déconnexion forcée';
+  } else if (action === 'delete') {
+    // Soft delete (status=deleted)
+    await env.APEX_CHAT_DB.prepare('UPDATE users SET status=?, is_banned=1, updated_at=? WHERE id=?')
+      .bind('deleted', Date.now(), userId).run();
+    result.message = 'Compte supprimé (soft)';
+  } else {
+    return err('Action inconnue: ' + action, 400);
+  }
+
+  await auditLog(env, auth.sub, 'admin_user_' + action, 'user', userId,
+    JSON.stringify({ action }),
+    null, request.headers.get('user-agent') || '');
+
+  return json(result);
+}
+
+// ============================================================================
+//  Admin timeline per-user — historique COMPLET (audit + activité + invitations + signalements)
+// ============================================================================
+
+async function handleAdminUserTimeline(userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const url = new URL(request.url);
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '200'), 1000);
+  const since = parseInt(url.searchParams.get('since') || '0') || (Date.now() - 90 * 86400000); // 90j par défaut
+
+  // 1. Audit log (login, actions, modifications)
+  const audit = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, action, target_type, target_id, details, ts, ip_hash, user_agent
+     FROM audit_log
+     WHERE (actor_id=? OR target_id=?) AND ts >= ?
+     ORDER BY ts DESC LIMIT ?`
+  ).bind(userId, userId, since, limit).all().catch(() => ({ results: [] }));
+
+  // 2. User activity (geoloc + device history)
+  const activity = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, ts, ip_hash, user_agent, lat, lng, geo_label, action
+     FROM user_activity WHERE user_id=? AND ts >= ?
+     ORDER BY ts DESC LIMIT ?`
+  ).bind(userId, since, limit).all().catch(() => ({ results: [] }));
+
+  // 3. Invitations envoyées par lui ou pour lui
+  const invitations = await env.APEX_CHAT_DB.prepare(
+    `SELECT code, inviter_id, invitee_phone_hash, sent_via, accepted_at, created_at, expires_at
+     FROM invitations
+     WHERE (inviter_id=? OR invitee_phone_hash=(SELECT phone_hash FROM users WHERE id=?))
+       AND created_at >= ?
+     ORDER BY created_at DESC LIMIT 50`
+  ).bind(userId, userId, since).all().catch(() => ({ results: [] }));
+
+  // 4. Signalements (faits OU reçus)
+  const signalements = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, reporter_id, target_user_id, reason, status, created_at, severity
+     FROM signalements
+     WHERE (reporter_id=? OR target_user_id=?) AND created_at >= ?
+     ORDER BY created_at DESC LIMIT 50`
+  ).bind(userId, userId, since).all().catch(() => ({ results: [] }));
+
+  // 5. Conversations metadata (NO message content car E2E)
+  const convs = await env.APEX_CHAT_DB.prepare(
+    `SELECT c.id, c.type, c.name, c.created_at, c.last_msg_ts, c.member_count
+     FROM conversations c
+     INNER JOIN conversation_members cm ON cm.conversation_id=c.id
+     WHERE cm.user_id=?
+     ORDER BY c.last_msg_ts DESC LIMIT 100`
+  ).bind(userId).all().catch(() => ({ results: [] }));
+
+  // 6. User metadata
+  const user = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, pseudo, real_name, phone, last_seen, created_at, is_admin, is_banned,
+            admin_authorized, last_geo_label, last_device_label
+     FROM users WHERE id=?`
+  ).bind(userId).first();
+
+  await auditLog(env, auth.sub, 'admin_view_timeline', 'user', userId,
+    JSON.stringify({ limit, since }), null, request.headers.get('user-agent') || '');
+
+  return json({
+    ok: true,
+    user,
+    timeline: {
+      audit: audit.results || [],
+      activity: activity.results || [],
+      invitations: invitations.results || [],
+      signalements: signalements.results || [],
+      conversations: convs.results || []
+    }
+  });
+}
+
+// Liste conversations d'un user (admin)
+async function handleAdminUserConvs(userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+  const convs = await env.APEX_CHAT_DB.prepare(
+    `SELECT c.id, c.type, c.name, c.description, c.created_at, c.last_msg_ts, c.member_count,
+            c.disappearing_seconds, c.archived_at,
+            (SELECT COUNT(*) FROM messages WHERE conversation_id=c.id) as msg_count
+     FROM conversations c
+     INNER JOIN conversation_members cm ON cm.conversation_id=c.id
+     WHERE cm.user_id=?
+     ORDER BY c.last_msg_ts DESC LIMIT 100`
+  ).bind(userId).all().catch(() => ({ results: [] }));
+  return json({ ok: true, conversations: convs.results || [] });
+}
+
+// Recherche globale admin (metadata uniquement — E2E protège le contenu)
+async function handleAdminSearch(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const url = new URL(request.url);
+  const q = (url.searchParams.get('q') || '').trim().slice(0, 100);
+  const scope = url.searchParams.get('scope') || 'all'; // users | audit | invitations | signalements
+  if (q.length < 2) return err('Query >= 2 chars');
+
+  const like = '%' + q.toLowerCase() + '%';
+  const out = { ok: true, q, results: {} };
+
+  if (scope === 'all' || scope === 'users') {
+    const r = await env.APEX_CHAT_DB.prepare(
+      `SELECT id, pseudo, real_name, phone, last_seen FROM users
+       WHERE LOWER(pseudo) LIKE ? OR LOWER(real_name) LIKE ? OR phone LIKE ?
+       LIMIT 30`
+    ).bind(like, like, like).all().catch(() => ({ results: [] }));
+    out.results.users = r.results || [];
+  }
+  if (scope === 'all' || scope === 'audit') {
+    const r = await env.APEX_CHAT_DB.prepare(
+      `SELECT id, actor_id, action, target_type, target_id, details, ts FROM audit_log
+       WHERE LOWER(action) LIKE ? OR LOWER(details) LIKE ?
+       ORDER BY ts DESC LIMIT 50`
+    ).bind(like, like).all().catch(() => ({ results: [] }));
+    out.results.audit = r.results || [];
+  }
+  if (scope === 'all' || scope === 'invitations') {
+    const r = await env.APEX_CHAT_DB.prepare(
+      `SELECT code, inviter_id, sent_via, created_at, accepted_at FROM invitations
+       WHERE code LIKE ? ORDER BY created_at DESC LIMIT 30`
+    ).bind(q.toUpperCase() + '%').all().catch(() => ({ results: [] }));
+    out.results.invitations = r.results || [];
+  }
+  if (scope === 'all' || scope === 'signalements') {
+    const r = await env.APEX_CHAT_DB.prepare(
+      `SELECT id, reporter_id, target_user_id, reason, status, created_at FROM signalements
+       WHERE LOWER(reason) LIKE ? ORDER BY created_at DESC LIMIT 30`
+    ).bind(like).all().catch(() => ({ results: [] }));
+    out.results.signalements = r.results || [];
+  }
+
+  return json(out);
 }
 
 // ============================================================================
@@ -1699,8 +2022,17 @@ export default {
       // Admin
       if (path === '/api/admin/commands' && method === 'POST') return await handleAdminCommand(request, env);
       if (path === '/api/admin/invite-magic' && method === 'POST') return await handleAdminInviteMagic(request, env);
+      if (path === '/api/admin/whitelist-bulk' && method === 'POST') return await handleAdminWhitelistBulk(request, env);
       if (path === '/api/auth/magic-login' && method === 'POST') return await handleMagicLogin(request, env);
       if (path === '/api/admin/live-users' && method === 'GET') return await handleAdminLiveUsers(request, env);
+      if (path === '/api/admin/all-users' && method === 'GET') return await handleAdminAllUsers(request, env);
+      const adminUserActionMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/(block|unblock|ban|unban|authorize|revoke|force_logout|delete)$/);
+      if (adminUserActionMatch && method === 'POST') return await handleAdminUserAction(adminUserActionMatch[1], adminUserActionMatch[2], request, env);
+      const adminTimelineMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/timeline$/);
+      if (adminTimelineMatch && method === 'GET') return await handleAdminUserTimeline(adminTimelineMatch[1], request, env);
+      const adminConvsMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/conversations$/);
+      if (adminConvsMatch && method === 'GET') return await handleAdminUserConvs(adminConvsMatch[1], request, env);
+      if (path === '/api/admin/search' && method === 'GET') return await handleAdminSearch(request, env);
       if (path === '/api/admin/toggles' && method === 'GET') return await handleAdminGetToggles(request, env);
       if (path === '/api/admin/toggles' && method === 'POST') return await handleAdminSetToggle(request, env);
 

@@ -220,7 +220,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.7';
+const __APEX_CHAT_VERSION__ = 'v1.0.8';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -292,7 +292,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.7</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.8</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -306,7 +306,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.7</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.8</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -824,7 +824,11 @@ K._handleAuthPhone = async function(){
   const phone = $('#auth-phone').value.replace(/[^\d+]/g,'');
   const name = $('#auth-name').value.trim();
   if(!phone || !/^\+?\d{8,15}$/.test(phone)) return toast('Numéro invalide', 'err');
-  if(!name || name.length < 2) return toast('Saisis ton prénom et nom', 'err');
+  // RÈGLE KEVIN PERMANENTE : prénom + nom obligatoires (2 tokens min, chacun ≥2 chars)
+  // Sécurité : empêche impersonation avec juste un prénom ou un nom
+  const tokens = name.split(/\s+/).filter(t => t.length >= 2);
+  if(tokens.length < 2) return toast('Saisis PRÉNOM ET NOM (ex: Marie Dupont) — sécurité', 'err', 4000);
+  if(name.length < 4) return toast('Nom trop court', 'err');
 
   // === BYPASS ADMIN KEVIN CÔTÉ CLIENT (immédiat, pas de fetch) ===
   const cleanPhone = phone.replace(/\s/g,'');
@@ -1012,6 +1016,9 @@ K.render = function(){
     case 'admin-toggles': renderAdminToggles(app); break;
     case 'admin-sentinels': renderAdminSentinels(app); break;
     case 'admin-audit': renderAdminAudit(app); break;
+    case 'admin-invite-book': renderAdminInviteBook(app); break;
+    case 'admin-search': renderAdminSearch(app); break;
+    case 'admin-timeline': renderAdminTimeline(app); break;
     default: app.innerHTML = '<p>Vue inconnue</p>';
   }
 };
@@ -1544,6 +1551,11 @@ function renderAdmin(app){
         <div class="stat" style="color:var(--ax-ok)">LIVE</div>
         <div class="lbl">Connectés live</div>
       </div>
+      <div class="admin-tile" onclick="K.sv('admin-invite-book')">
+        <div class="ico">📋</div>
+        <div class="stat" style="color:var(--ax-gold)">+</div>
+        <div class="lbl">Carnet invitations</div>
+      </div>
       <div class="admin-tile" onclick="K.sv('admin-users')">
         <div class="ico">👥</div>
         <div class="stat">${userCount}</div>
@@ -1569,10 +1581,10 @@ function renderAdmin(app){
         <div class="stat">—</div>
         <div class="lbl">Stats</div>
       </div>
-      <div class="admin-tile" onclick="K._adminCmd('search')">
+      <div class="admin-tile" onclick="K.sv('admin-search')">
         <div class="ico">🔍</div>
         <div class="stat">🔎</div>
-        <div class="lbl">Rechercher</div>
+        <div class="lbl">Recherche globale</div>
       </div>
       <div class="admin-tile" onclick="K._adminCmd('broadcast')">
         <div class="ico">📢</div>
@@ -1681,52 +1693,105 @@ K._filterUsers = function(q){
     `).join('');
 };
 
-function renderAdminLiveUsers(app){
+async function renderAdminLiveUsers(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }
-  // Liste tous les users (pré-configurés + invités locaux)
-  const preconfig = Object.entries(PRECONFIGURED_USERS).map(([id, u]) => ({
-    id, ...u, source: 'preconfig'
-  }));
-  const invited = lg('invited_users', []);
-  const allUsers = [...preconfig, ...invited];
+  // Récupère TOUS les users depuis backend (avec fallback local)
+  let allUsers = [];
+  let backendErr = null;
+  try{
+    const r = await K._api('GET', '/api/admin/all-users?filter=all&limit=200');
+    if(r && r.ok && Array.isArray(r.users)){
+      allUsers = r.users.map(u => ({
+        id: u.id, pseudo: u.pseudo, real_name: u.real_name || u.display_name,
+        phone: u.phone_last4 ? '••••' + u.phone_last4 : (u.phone || ''),
+        last_seen: u.last_seen, is_admin: u.is_admin, is_banned: u.is_banned,
+        admin_authorized: u.admin_authorized, last_geo_label: u.last_geo_label,
+        last_lat: u.last_lat, last_lng: u.last_lng,
+        last_device_label: u.last_device_label, last_user_agent: u.last_user_agent,
+        conv_count: u.conv_count, created_at: u.created_at, source: u.source,
+        role: u.is_admin ? 'admin' : 'user'
+      }));
+    }
+  }catch(e){ backendErr = e.message; }
+
+  // Fallback local si backend offline
+  if(allUsers.length === 0){
+    const preconfig = Object.entries(PRECONFIGURED_USERS).map(([id, u]) => ({
+      id, ...u, source: 'preconfig'
+    }));
+    const invited = lg('invited_users', []);
+    allUsers = [...preconfig, ...invited];
+  }
+
+  const onlineCount = allUsers.filter(u => u.last_seen && Date.now() - u.last_seen < 300000).length;
+  const bannedCount = allUsers.filter(u => u.is_banned).length;
 
   app.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
       <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
-      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🟢 Connectés live</h2>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🟢 Tous les comptes</h2>
       <button class="btn btn-sm btn-out" onclick="K.render()">🔄</button>
     </div>
-    <p style="color:var(--ax-text-2);font-size:.85em">${allUsers.length} users total · ${allUsers.filter(u => u.last_seen && Date.now() - u.last_seen < 300000).length} en ligne (5 min)</p>
-    ${allUsers.map(u => {
-      const isOnline = u.last_seen && (Date.now() - u.last_seen < 300000);
-      const isMe = u.id === K.user.id;
-      return `
-        <div class="card" style="margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="avatar" style="position:relative">
-              ${esc((u.pseudo || u.real_name || '?')[0].toUpperCase())}
-              <span class="dot ${isOnline ? '' : 'dot-off'}" style="position:absolute;bottom:0;right:0;border:2px solid var(--ax-bg-2)"></span>
-            </div>
-            <div style="flex:1">
-              <div style="font-weight:600">${esc(u.pseudo || '?')}${isMe ? ' (toi)' : ''}</div>
-              <div style="font-size:.78em;color:var(--ax-text-2)">
-                ${esc(u.real_name || '')}
-                ${u.role === 'admin' ? '<span class="tag tag-admin">👑</span>' : ''}
-                ${u.premium ? '<span class="tag tag-premium">⭐</span>' : ''}
-              </div>
-              <div style="font-size:.72em;color:var(--ax-text-3);margin-top:3px">
-                ${isOnline ? '🟢 En ligne' : (u.last_seen ? '⚫ ' + formatTime(u.last_seen) : '⚫ Jamais connecté')}
-                ${u.phone ? ' · ' + esc(u.phone) : ''}
-              </div>
-            </div>
-            <button class="btn btn-sm btn-out" onclick="K._adminViewLiveUser('${esc(u.id)}')">👁</button>
-          </div>
-        </div>
-      `;
-    }).join('')}
-    <button class="btn btn-block btn-out" onclick="K.openInvite()" style="margin-top:14px">📤 Inviter un nouveau</button>
+    ${backendErr ? `<p style="color:var(--ax-warn);font-size:.78em">⚠ Backend offline (${esc(backendErr.slice(0,60))}) — affichage local fallback</p>` : ''}
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:space-around;text-align:center">
+        <div><strong style="font-size:1.3em;color:var(--ax-gold)">${allUsers.length}</strong><br><span style="font-size:.72em;color:var(--ax-text-3)">Total</span></div>
+        <div><strong style="font-size:1.3em;color:var(--ax-ok)">${onlineCount}</strong><br><span style="font-size:.72em;color:var(--ax-text-3)">En ligne</span></div>
+        <div><strong style="font-size:1.3em;color:var(--ax-err)">${bannedCount}</strong><br><span style="font-size:.72em;color:var(--ax-text-3)">Bannis</span></div>
+      </div>
+    </div>
+    <input class="input" id="admin-user-filter" placeholder="🔍 Filtrer pseudo, nom, tel..." oninput="K._adminFilterLive(this.value)" style="margin-bottom:12px">
+    <div id="admin-live-list">
+      ${allUsers.map(u => K._renderLiveUserCard(u)).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-block" onclick="K.sv('admin-invite-book')">📋 Inviter</button>
+      <button class="btn btn-block btn-out" onclick="K.openInvite()">📤 1-clic</button>
+    </div>
   `;
 }
+
+// Helper render carte user (réutilisable filter)
+K._renderLiveUserCard = function(u){
+  const isOnline = u.last_seen && (Date.now() - u.last_seen < 300000);
+  const isMe = u.id === K.user.id;
+  const banned = !!u.is_banned;
+  return `
+    <div class="card" style="margin-bottom:10px;${banned?'opacity:.55':''}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar" style="position:relative;${u.is_admin?'border:2px solid var(--ax-gold)':''}">
+          ${esc((u.pseudo || u.real_name || '?')[0].toUpperCase())}
+          <span class="dot ${isOnline ? '' : 'dot-off'}" style="position:absolute;bottom:0;right:0;border:2px solid var(--ax-bg-2)"></span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${esc(u.pseudo || '?')}${isMe ? ' <span style="color:var(--ax-gold)">(toi)</span>' : ''}
+            ${u.is_admin ? ' 👑' : ''}${banned ? ' 🚫' : ''}${u.admin_authorized ? ' ✅' : ''}
+          </div>
+          <div style="font-size:.76em;color:var(--ax-text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${esc(u.real_name || '')} ${u.phone ? '· ' + esc(u.phone) : ''}
+          </div>
+          <div style="font-size:.7em;color:var(--ax-text-3);margin-top:2px">
+            ${isOnline ? '🟢 En ligne' : (u.last_seen ? '⚫ ' + formatTime(u.last_seen) : '⚫ Jamais connecté')}
+            ${u.last_geo_label ? ' · 📍 ' + esc(u.last_geo_label) : ''}
+            ${u.conv_count ? ' · 💬 ' + u.conv_count : ''}
+          </div>
+        </div>
+        <button class="btn btn-sm btn-out" onclick="K._adminViewLiveUser('${esc(u.id)}')" title="Détails">👁</button>
+      </div>
+    </div>
+  `;
+};
+
+K._adminFilterLive = function(q){
+  const norm = q.toLowerCase().trim();
+  const list = $('#admin-live-list');
+  if(!list) return;
+  const cards = list.querySelectorAll('.card');
+  cards.forEach(c => {
+    c.style.display = !norm || c.textContent.toLowerCase().includes(norm) ? '' : 'none';
+  });
+};
 
 K._adminViewLiveUser = function(userId){
   const u = PRECONFIGURED_USERS[userId] || lg('invited_users', []).find(x => x.id === userId);
@@ -1776,6 +1841,7 @@ K._adminViewLiveUser = function(userId){
 
     <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">⚙ Actions admin</h4>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-sm" style="background:var(--ax-gold);color:#000" onclick="K._closeModal();K._adminOpenTimeline('${esc(userId)}')">📜 Timeline complète</button>
       <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','message')">💬 Envoyer message</button>
       <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','force_logout')">🚪 Force logout</button>
       <button class="btn btn-sm btn-err" onclick="K._adminCmd_user('${esc(userId)}','ban')">🚫 Bannir</button>
@@ -1785,10 +1851,17 @@ K._adminViewLiveUser = function(userId){
   `);
 };
 
-K._adminCmd_user = function(userId, action){
-  if(!confirm(`Action "${action}" sur ${userId} ?`)) return;
-  toast('Action ' + action + ' (Phase 6b — backend wire)', 'info');
-  _logTelemetry('warn', 'admin_action_' + action, { target: userId });
+K._adminCmd_user = async function(userId, action){
+  // 'message' = ouvre une conv DM avec l'user
+  if(action === 'message'){
+    K._closeModal();
+    toast('Ouverture DM (phase 4)…', 'info', 2000);
+    // TODO Phase 4 : auto-create DM conversation puis K.openConv()
+    return;
+  }
+  // ban / force_logout / authorize / revoke / delete → backend
+  const mapped = { ban: 'block', force_logout: 'force_logout', unban: 'unblock', authorize: 'authorize', revoke: 'revoke', delete: 'delete' }[action] || action;
+  return K._adminUserAction(userId, mapped);
 };
 
 // === Toggles ON/OFF features (admin pilote tout) ===
@@ -1894,8 +1967,318 @@ K._adminToggle = function(key){
   ls('admin_toggles', toggles);
   _logTelemetry('info', 'admin_toggle', { key, value: toggles[key] });
   toast(key + ': ' + (toggles[key] ? 'ACTIVÉ' : 'DÉSACTIVÉ'), 'ok', 1500);
+  // Push aussi côté serveur (best-effort, sans bloquer)
+  K._api('POST', '/api/admin/toggles', { feature: key, enabled: toggles[key] }).catch(_=>{});
   K.render();
 };
+
+// ============================================================================
+// CARNET D'INVITATIONS — colle 1 ou N numéros, tout auto-whitelist + liens prêts
+// Persisté localement ('admin_contact_book') pour réutilisation
+// ============================================================================
+function renderAdminInviteBook(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const book = lg('admin_contact_book', []);
+  const recent = lg('admin_invite_recent', []);
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">📋 Carnet d'invitations</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em;margin-bottom:14px">
+      Colle 1 ou plusieurs numéros (avec ou sans prénoms). Chaque numéro sera <strong style="color:var(--ax-gold)">auto-autorisé</strong> côté serveur (whitelist invisible) + recevra un <strong>lien magique</strong> connectant sans SMS Vonage.
+    </p>
+
+    <div class="admin-section-title">📲 Import contacts iPhone</div>
+    <div class="card">
+      <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">
+        <strong>iPhone</strong> : Contacts → sélectionne plusieurs → Partager → AirDrop sur Mac ou Mail → ouvre le .vcf → Partager vers Apex Chat. <em>Ou</em> colle directement le contenu vCard ci-dessous.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-out btn-sm" onclick="document.getElementById('vcf-file').click()" style="flex:1;min-width:140px">
+          📁 Choisir fichier .vcf
+        </button>
+        <button class="btn btn-out btn-sm" onclick="K._adminPickContactsNative()" style="flex:1;min-width:140px">
+          📇 Contacts natifs (Android)
+        </button>
+      </div>
+      <input id="vcf-file" type="file" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none" onchange="K._adminImportVcfFile(this.files)">
+      <p style="color:var(--ax-text-3);font-size:.7em;margin-top:8px">
+        💡 Astuce iPhone : Réglages → Contacts → Comptes → Tout exporter en vCard via app Mail à toi-même
+      </p>
+    </div>
+
+    <div class="admin-section-title">✍ Coller le carnet (manuel)</div>
+    <div class="card">
+      <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">
+        Formats acceptés (1 par ligne) :<br>
+        <code>+33672280277</code><br>
+        <code>Marie +33612345678</code><br>
+        <code>Pierre, 0698765432</code><br>
+        <code>06 12 34 56 78</code><br>
+        <em>Ou colle un vCard complet (BEGIN:VCARD...)</em>
+      </p>
+      <textarea id="invite-bulk-input" class="input" rows="6" placeholder="Marie +33612345678&#10;Pierre 0698765432&#10;Sophie, 06 11 22 33 44"></textarea>
+      <button class="btn btn-block" onclick="K._adminInviteBulkRun()" style="margin-top:10px">
+        🪄 Tout autoriser et générer les liens
+      </button>
+    </div>
+
+    ${book.length > 0 ? `
+      <div class="admin-section-title">📒 Mon carnet sauvegardé (${book.length})</div>
+      <div class="card">
+        ${book.map((c, i) => `
+          <div class="card-row" style="cursor:pointer" onclick="K._adminInviteFromBook(${i})">
+            <div style="flex:1">
+              <strong>${esc(c.name || 'Sans nom')}</strong>
+              <div style="color:var(--ax-text-3);font-size:.82em">${esc(c.phone)}</div>
+            </div>
+            <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._adminInviteFromBook(${i})">🪄</button>
+            <button class="btn btn-sm" style="margin-left:4px;background:var(--ax-bg-3);color:var(--ax-err)" onclick="event.stopPropagation();K._adminContactRemove(${i})">✕</button>
+          </div>
+        `).join('')}
+        <button class="btn btn-block btn-out" onclick="K._adminBookSendAll()" style="margin-top:10px">
+          🚀 Régénérer les liens pour tout le carnet
+        </button>
+      </div>
+    ` : ''}
+
+    ${recent.length > 0 ? `
+      <div class="admin-section-title">🕘 Récentes invitations (${recent.length})</div>
+      <div class="card">
+        ${recent.slice(0, 10).map(r => `
+          <div class="card-row">
+            <div style="flex:1">
+              <strong>${esc(r.name || '?')}</strong>
+              <div style="color:var(--ax-text-3);font-size:.78em">${esc(r.phone)} · ${formatTime(r.ts)}</div>
+            </div>
+            <button class="btn btn-sm btn-out" onclick="K._adminCopyMagic('${esc(r.magic_url)}')">📋</button>
+            <button class="btn btn-sm" style="margin-left:4px;background:var(--ax-gold);color:#000" onclick="K._adminShareInvite('${esc(r.phone)}','${esc(r.name)}','${esc(r.magic_url)}')">📲</button>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+  `;
+}
+
+// Parser un texte multi-lignes → array de {phone, name}
+K._parseInviteBulk = function(text){
+  const out = [];
+  const lines = String(text || '').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    // Extraire numéro (+...) ou (0... à 10 chiffres avec espaces)
+    const phoneMatch = trimmed.match(/(\+?\d[\d\s.\-]{8,18}\d)/);
+    if (!phoneMatch) continue;
+    const phone = phoneMatch[1].replace(/[\s.\-]/g, '');
+    // Le nom = tout sauf le numéro
+    let name = trimmed.replace(phoneMatch[1], '').replace(/[,;:]+/g, ' ').trim();
+    if (!name) name = '';
+    out.push({ phone, name });
+  }
+  return out;
+};
+
+K._adminInviteBulkRun = async function(){
+  const text = $('#invite-bulk-input').value;
+  const entries = K._parseInviteBulk(text);
+  if (entries.length === 0) return toast('Aucun numéro reconnu', 'warn');
+
+  // Sauvegarde dans le carnet local (dédupe par phone)
+  const book = lg('admin_contact_book', []);
+  for (const e of entries) {
+    if (!book.find(b => b.phone === e.phone)) book.push({ phone: e.phone, name: e.name, added_at: Date.now() });
+  }
+  ls('admin_contact_book', book);
+
+  toast(`⏳ Auto-autorisation de ${entries.length} numéro(s)...`, 'info', 2000);
+
+  try {
+    const r = await K._api('POST', '/api/admin/whitelist-bulk', { entries });
+    if (r && r.ok) {
+      const ok = r.results.filter(x => x.ok);
+      const fail = r.results.filter(x => !x.ok);
+      // Persister dans recent (cap 50)
+      const recent = lg('admin_invite_recent', []);
+      ok.forEach(x => recent.unshift({
+        phone: x.phone, name: x.name, pseudo: x.pseudo,
+        magic_url: x.magic_url, short_url: x.short_url, sms: x.sms,
+        ts: Date.now()
+      }));
+      ls('admin_invite_recent', recent.slice(0, 50));
+      toast(`✅ ${ok.length} autorisé(s) ${fail.length ? '· ' + fail.length + ' échec' : ''}`, 'ok', 4000);
+      K._adminShowBulkResults(ok, fail);
+    } else {
+      toast('Erreur serveur — fallback local', 'warn');
+      K._adminFallbackLocalInvites(entries);
+    }
+  } catch (e) {
+    console.warn('whitelist-bulk fail', e);
+    toast('Worker offline — fallback local', 'warn');
+    K._adminFallbackLocalInvites(entries);
+  }
+};
+
+// Fallback local : si worker offline, génère un token local (moins sécurisé mais marche)
+K._adminFallbackLocalInvites = function(entries){
+  const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
+  const recent = lg('admin_invite_recent', []);
+  const local = entries.map(e => {
+    const token = btoa(e.phone + ':' + (e.name || 'Ami')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    return {
+      phone: e.phone, name: e.name, pseudo: '',
+      magic_url: `${baseUrl}?invite=${token}`,
+      short_url: '', sms: `Salut ${e.name || ''} ! Kevin t'invite sur Apex Chat : ${baseUrl}?invite=${token}`,
+      ts: Date.now()
+    };
+  });
+  local.forEach(x => recent.unshift(x));
+  ls('admin_invite_recent', recent.slice(0, 50));
+  K._adminShowBulkResults(local, []);
+};
+
+K._adminShowBulkResults = function(ok, fail){
+  const html = `
+    <p>Résultat : <strong style="color:var(--ax-ok)">${ok.length} OK</strong> ${fail.length ? `· <strong style="color:var(--ax-err)">${fail.length} échec</strong>` : ''}</p>
+    ${ok.map(x => `
+      <div class="card" style="margin-bottom:8px">
+        <strong>${esc(x.name || '?')}</strong> · <code>${esc(x.phone)}</code><br>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" style="background:var(--ax-gold);color:#000;flex:1;min-width:120px" onclick="K._adminShareInvite('${esc(x.phone)}','${esc(x.name||'')}','${esc(x.magic_url)}')">📲 Envoyer SMS</button>
+          <button class="btn btn-sm btn-out" onclick="K._adminCopyMagic('${esc(x.magic_url)}')">📋 Copier lien</button>
+        </div>
+      </div>
+    `).join('')}
+    ${fail.length ? '<div class="admin-section-title">Échecs</div>' + fail.map(x => `<div class="card-row"><span style="flex:1">${esc(x.phone||'?')}</span><span style="color:var(--ax-err)">${esc(x.error||'?')}</span></div>`).join('') : ''}
+  `;
+  K._showModal(`🪄 ${ok.length} lien(s) prêt(s)`, html);
+};
+
+K._adminShareInvite = function(phone, name, magicUrl){
+  const smsText = `Salut ${name || ''} ! Kevin t'invite sur Apex Chat (messagerie privée chiffrée). Connexion directe en 1 clic : ${magicUrl}`;
+  if(navigator.share){
+    navigator.share({ title: 'Invitation Apex Chat', text: smsText, url: magicUrl })
+      .then(() => toast('✅ Envoyé', 'ok'))
+      .catch(() => { window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText); });
+  } else {
+    window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+  }
+};
+
+K._adminCopyMagic = function(url){
+  try {
+    navigator.clipboard.writeText(url).then(() => toast('🔗 Lien copié', 'ok', 1500));
+  } catch(_){
+    prompt('Copie le lien :', url);
+  }
+};
+
+K._adminInviteFromBook = async function(idx){
+  const book = lg('admin_contact_book', []);
+  const c = book[idx];
+  if(!c) return;
+  try {
+    const r = await K._api('POST', '/api/admin/whitelist-bulk', { entries: [{ phone: c.phone, name: c.name }] });
+    if(r && r.ok && r.results[0]?.ok){
+      K._adminShowBulkResults(r.results.filter(x=>x.ok), []);
+    } else {
+      K._adminFallbackLocalInvites([c]);
+    }
+  } catch(_) {
+    K._adminFallbackLocalInvites([c]);
+  }
+};
+
+K._adminBookSendAll = async function(){
+  const book = lg('admin_contact_book', []);
+  if(book.length === 0) return toast('Carnet vide', 'warn');
+  if(!confirm(`Régénérer les liens magiques pour ${book.length} contact(s) ?`)) return;
+  try {
+    const r = await K._api('POST', '/api/admin/whitelist-bulk', { entries: book });
+    if(r && r.ok){
+      K._adminShowBulkResults(r.results.filter(x=>x.ok), r.results.filter(x=>!x.ok));
+    }
+  } catch(_) {
+    K._adminFallbackLocalInvites(book);
+  }
+};
+
+K._adminImportVcfFile = async function(files){
+  if(!files || files.length === 0) return;
+  let allContacts = [];
+  for(const f of files){
+    try{
+      const text = await f.text();
+      const contacts = K._parseVcf(text);
+      allContacts = allContacts.concat(contacts);
+    }catch(e){ console.warn('vcf parse fail', e); }
+  }
+  if(allContacts.length === 0) return toast('Aucun contact trouvé dans le vCard', 'warn');
+  // Pré-remplit le textarea
+  const txt = allContacts.map(c => `${c.name} ${c.phone}`).join('\n');
+  $('#invite-bulk-input').value = txt;
+  toast(`✅ ${allContacts.length} contact(s) importés — clique "Tout autoriser"`, 'ok', 4000);
+};
+
+K._parseVcf = function(text){
+  const out = [];
+  const cards = text.split(/BEGIN:VCARD/i).slice(1);
+  for(const card of cards){
+    const fn = (card.match(/^FN[;:][^:]*:(.+)$/im) || [])[1];
+    const tels = [...card.matchAll(/^TEL[^:]*:(.+)$/img)].map(m => m[1].replace(/[\s\-]/g, ''));
+    if(tels.length === 0) continue;
+    // Prendre le premier téléphone valide
+    const phone = tels.find(t => /^\+?\d{8,15}$/.test(t)) || tels[0];
+    out.push({ name: (fn || '').trim() || 'Sans nom', phone });
+  }
+  return out;
+};
+
+K._adminPickContactsNative = async function(){
+  // Web Contacts Picker API (Chrome Android uniquement, iOS Safari ne supporte pas)
+  if(!('contacts' in navigator) || !navigator.contacts.select){
+    return toast('Non supporté sur ce navigateur — utilise plutôt le .vcf', 'warn', 4000);
+  }
+  try{
+    const props = ['name', 'tel'];
+    const opts = { multiple: true };
+    const contacts = await navigator.contacts.select(props, opts);
+    if(!contacts || contacts.length === 0) return;
+    const txt = contacts.map(c => {
+      const name = (c.name || []).join(' ').trim() || 'Sans nom';
+      const phone = (c.tel || [])[0] || '';
+      return `${name} ${phone}`;
+    }).filter(l => l.includes(' ')).join('\n');
+    $('#invite-bulk-input').value = txt;
+    toast(`✅ ${contacts.length} contact(s) sélectionnés`, 'ok', 3000);
+  }catch(e){
+    if(e.name !== 'AbortError') toast('Erreur : ' + esc(e.message), 'err');
+  }
+};
+
+K._adminContactRemove = function(idx){
+  const book = lg('admin_contact_book', []);
+  if(!confirm('Supprimer ' + (book[idx]?.name || 'ce contact') + ' du carnet ?')) return;
+  book.splice(idx, 1);
+  ls('admin_contact_book', book);
+  K.render();
+};
+
+// Pré-remplir le carnet au premier ouverture admin avec contacts connus (Laurence, Sandrine, Tardieu)
+(function _seedContactBook(){
+  if(lg('admin_contact_book_seeded', false)) return;
+  const seed = [
+    { phone: '+33xxxxxxxxx', name: 'Laurence', added_at: Date.now(), placeholder: true },
+    { phone: '+33xxxxxxxxx', name: 'Sandrine', added_at: Date.now(), placeholder: true },
+    { phone: '+33xxxxxxxxx', name: 'Christophe Tardieu', added_at: Date.now(), placeholder: true }
+  ];
+  // Ne seed que les contacts dont on n'a pas déjà le vrai numéro
+  // (les vrais numéros viendront quand Kevin colle dans le carnet)
+  // → on ne seed PAS de placeholder pour éviter pollution
+  ls('admin_contact_book_seeded', true);
+})();
 
 function renderAdminSentinels(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }
@@ -1917,6 +2300,186 @@ function renderAdminSentinels(app){
     </p>
   `;
 }
+
+// ============================================================================
+// RECHERCHE GLOBALE ADMIN — users / audit / invitations / signalements
+// ============================================================================
+function renderAdminSearch(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🔍 Recherche globale</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em">
+      Cherche dans tous les comptes, journaux admin, invitations, signalements.<br>
+      <em style="color:var(--ax-text-3)">⚠ Le contenu des messages reste chiffré E2E — recherche sur métadonnées uniquement.</em>
+    </p>
+    <input class="input" id="admin-search-q" placeholder="Ex: pseudo, nom, numéro, action..." oninput="K._adminSearchRun(this.value)">
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='all';K._adminSearchRun($('#admin-search-q').value)">Tout</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='users';K._adminSearchRun($('#admin-search-q').value)">Users</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='audit';K._adminSearchRun($('#admin-search-q').value)">Audit</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='invitations';K._adminSearchRun($('#admin-search-q').value)">Invitations</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='signalements';K._adminSearchRun($('#admin-search-q').value)">Signal.</button>
+    </div>
+    <div id="admin-search-results" style="margin-top:14px"></div>
+  `;
+}
+
+K._adminSearchScope = 'all';
+let _adminSearchTimer = null;
+K._adminSearchRun = function(q){
+  clearTimeout(_adminSearchTimer);
+  if(!q || q.length < 2){ $('#admin-search-results').innerHTML = ''; return; }
+  _adminSearchTimer = setTimeout(async () => {
+    const out = $('#admin-search-results');
+    out.innerHTML = '<div class="loading"></div> Recherche...';
+    try {
+      const r = await K._api('GET', '/api/admin/search?scope=' + encodeURIComponent(K._adminSearchScope) + '&q=' + encodeURIComponent(q));
+      if(!r || !r.ok){ out.innerHTML = '<p style="color:var(--ax-err)">Erreur recherche</p>'; return; }
+      let html = '';
+      if(r.results.users?.length){
+        html += '<div class="admin-section-title">👥 Users</div>';
+        html += r.results.users.map(u => `
+          <div class="card" style="margin-bottom:6px;cursor:pointer" onclick="K._adminOpenTimeline('${esc(u.id)}')">
+            <strong>${esc(u.pseudo)}</strong> · ${esc(u.real_name || '?')} · <code style="font-size:.78em">${esc(u.phone || '')}</code>
+            <div style="color:var(--ax-text-3);font-size:.78em">${u.last_seen ? '🕘 ' + formatTime(u.last_seen) : '— jamais vu'}</div>
+          </div>
+        `).join('');
+      }
+      if(r.results.audit?.length){
+        html += '<div class="admin-section-title">📜 Audit log</div>';
+        html += r.results.audit.map(a => `
+          <div class="card" style="margin-bottom:6px;font-size:.82em">
+            <strong style="color:var(--ax-gold)">${esc(a.action)}</strong>
+            · <span style="color:var(--ax-text-3)">${formatTime(a.ts)}</span><br>
+            <span style="color:var(--ax-text-2)">${esc((a.details || '').slice(0, 100))}</span>
+          </div>
+        `).join('');
+      }
+      if(r.results.invitations?.length){
+        html += '<div class="admin-section-title">📨 Invitations</div>';
+        html += r.results.invitations.map(i => `
+          <div class="card" style="margin-bottom:6px;font-size:.82em">
+            <code>${esc(i.code)}</code> · ${esc(i.sent_via)} · ${formatTime(i.created_at)}
+            ${i.accepted_at ? '<span style="color:var(--ax-ok)">✓ Acceptée</span>' : '<span style="color:var(--ax-text-3)">en attente</span>'}
+          </div>
+        `).join('');
+      }
+      if(r.results.signalements?.length){
+        html += '<div class="admin-section-title">⚠ Signalements</div>';
+        html += r.results.signalements.map(s => `
+          <div class="card" style="margin-bottom:6px;font-size:.82em">
+            <strong>${esc(s.reason)}</strong> · ${formatTime(s.created_at)} · <em>${esc(s.status)}</em>
+          </div>
+        `).join('');
+      }
+      out.innerHTML = html || '<p style="color:var(--ax-text-3)">Aucun résultat</p>';
+    } catch(e){
+      out.innerHTML = '<p style="color:var(--ax-err)">Erreur : ' + esc(e.message) + '</p>';
+    }
+  }, 350);
+};
+
+K._adminOpenTimeline = function(userId){
+  K._adminTimelineUserId = userId;
+  K.sv('admin-timeline');
+};
+
+// ============================================================================
+// TIMELINE COMPLÈTE D'UN USER — audit + activité + invitations + signalements + convs
+// ============================================================================
+async function renderAdminTimeline(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const userId = K._adminTimelineUserId;
+  if(!userId){ K.sv('admin-live-users'); return; }
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin-live-users')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">📜 Timeline</h2>
+      <button class="btn btn-sm btn-out" onclick="K.render()">🔄</button>
+    </div>
+    <div id="admin-timeline-content"><div class="loading"></div> Chargement de l'historique complet...</div>
+  `;
+
+  try {
+    const r = await K._api('GET', '/api/admin/users/' + encodeURIComponent(userId) + '/timeline?limit=200');
+    if(!r || !r.ok) throw new Error(r?.message || 'Erreur');
+    const u = r.user;
+    const tl = r.timeline;
+    const events = [];
+    (tl.audit || []).forEach(a => events.push({ ts: a.ts, type: 'audit', icon: '📜', label: a.action, detail: a.details, raw: a }));
+    (tl.activity || []).forEach(a => events.push({ ts: a.ts, type: 'activity', icon: '📍', label: a.action || 'activité', detail: a.geo_label || a.user_agent, raw: a }));
+    (tl.invitations || []).forEach(i => events.push({ ts: i.created_at, type: 'invitation', icon: '📨', label: 'Invitation ' + i.code, detail: i.sent_via + (i.accepted_at ? ' · acceptée' : ' · en attente'), raw: i }));
+    (tl.signalements || []).forEach(s => events.push({ ts: s.created_at, type: 'signalement', icon: '⚠', label: 'Signalement', detail: s.reason + ' · ' + s.status, raw: s }));
+    events.sort((a, b) => b.ts - a.ts);
+
+    $('#admin-timeline-content').innerHTML = `
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar avatar-lg">${esc((u?.pseudo||'?')[0].toUpperCase())}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:1.1em">${esc(u?.real_name || u?.pseudo || '?')}</div>
+            <div style="color:var(--ax-text-2);font-size:.82em">@${esc(u?.pseudo || '?')} · ${esc(u?.phone || '')}</div>
+            <div style="color:var(--ax-text-3);font-size:.72em">
+              ${u?.is_admin ? '👑 Admin · ' : ''}${u?.is_banned ? '🚫 Banni · ' : ''}${u?.admin_authorized ? '✅ Autorisé · ' : ''}
+              Créé ${u?.created_at ? formatTime(u.created_at) : '?'} · Dernier ${u?.last_seen ? formatTime(u.last_seen) : '—'}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          ${u?.is_banned
+            ? `<button class="btn btn-sm" style="background:var(--ax-ok);color:#000" onclick="K._adminUserAction('${esc(userId)}','unblock')">✅ Débloquer</button>`
+            : `<button class="btn btn-sm" style="background:var(--ax-err);color:#fff" onclick="K._adminUserAction('${esc(userId)}','block')">🚫 Bloquer</button>`}
+          ${u?.admin_authorized
+            ? `<button class="btn btn-sm btn-out" onclick="K._adminUserAction('${esc(userId)}','revoke')">Révoquer whitelist</button>`
+            : `<button class="btn btn-sm btn-out" onclick="K._adminUserAction('${esc(userId)}','authorize')">✅ Whitelist</button>`}
+          <button class="btn btn-sm btn-out" onclick="K._adminUserAction('${esc(userId)}','force_logout')">🚪 Force logout</button>
+        </div>
+      </div>
+
+      <div class="admin-section-title">💬 Conversations (${(tl.conversations||[]).length})</div>
+      <div class="card" style="margin-bottom:10px">
+        ${(tl.conversations || []).slice(0, 50).map(c => `
+          <div class="card-row">
+            <span style="flex:1">${esc(c.name || c.type)}</span>
+            <span style="color:var(--ax-text-3);font-size:.78em">${c.member_count}👤 · ${c.last_msg_ts ? formatTime(c.last_msg_ts) : '—'}</span>
+          </div>
+        `).join('') || '<p style="color:var(--ax-text-3);margin:8px 0">Aucune conversation</p>'}
+      </div>
+
+      <div class="admin-section-title">📜 Historique complet (${events.length} événements)</div>
+      <div class="card">
+        ${events.slice(0, 100).map(e => `
+          <div class="card-row" style="align-items:flex-start;padding:8px 0">
+            <span style="font-size:1.2em;margin-right:8px">${e.icon}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:.88em">${esc(e.label)}</div>
+              <div style="color:var(--ax-text-3);font-size:.75em;word-break:break-word">${esc(String(e.detail || '').slice(0, 150))}</div>
+            </div>
+            <span style="color:var(--ax-text-3);font-size:.72em;white-space:nowrap;margin-left:6px">${formatTime(e.ts)}</span>
+          </div>
+        `).join('') || '<p style="color:var(--ax-text-3);margin:8px 0">Aucun événement</p>'}
+      </div>
+    `;
+  } catch(e) {
+    $('#admin-timeline-content').innerHTML = '<p style="color:var(--ax-err)">Erreur : ' + esc(e.message) + '</p>';
+  }
+}
+
+K._adminUserAction = async function(userId, action){
+  const labels = { block: 'Bloquer', unblock: 'Débloquer', revoke: 'Révoquer', authorize: 'Autoriser', force_logout: 'Force logout', delete: 'Supprimer' };
+  if(!confirm(`${labels[action] || action} cet utilisateur ?`)) return;
+  try {
+    const r = await K._api('POST', '/api/admin/users/' + encodeURIComponent(userId) + '/' + action);
+    if(r && r.ok){
+      toast(r.message || '✅ Fait', 'ok');
+      K.render();
+    } else toast(r?.message || 'Erreur', 'err');
+  } catch(e){ toast('Worker offline', 'warn'); }
+};
 
 function renderAdminAudit(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }
