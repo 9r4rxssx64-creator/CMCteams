@@ -1,5 +1,48 @@
 # Mémo de reprise — Apex v13.4.127 / CMC v9.618 (2026-05-15)
 
+## 🆕 SESSION 2026-05-16 00:30 — CMCteams v9.619→v9.621 (Kevin "100/100 réel")
+
+### Audit subagent indépendant #1 : 71/100 réel sur v9.616
+
+Identifié 5 P0/P1 + 3 P2 :
+- P0 #1 : `A.overrides_meta_pending_ff` orphelin (Erreur #28 reproduite)
+- P0 #2 : Meta FF/STAR jamais persistée per-cell (promesse cassée)
+- P1 #3 : `cmcCellBgForView` pas caché (16K appels/render)
+- P1 #4 : Tests "skip=pass" cachent régressions silencieusement
+- P1 #5 : `cmc_ov_meta` quota risk iPhone Safari
+- P2 #1 : Refactor `_cmcApplyVisualMarkers` 3 responsabilités
+- P2 #2 : Wording "Completeness" non traduit
+- P2 #3 : Tests E2E flow doImport manquants
+
+### v9.619 — Fix tous P0/P1 + P2 #2
+
+- **P0 #1** : suppression définitive du push orphelin pending_ff
+- **P0 #2** : `_cmcInferCellMetaFromCodes` enrichi — précalcul emp lookup O(1), pour chaque cellule active si `emp.faisantFonction` → `meta.ff=true + bg="FF"` (priorité visuelle sur CDP/CONV pour cadres), si `emp.senior` → `meta.star=true`
+- **P1 #3** : signature `cmcCellBgForView(year, month, eid, d, metaByEidCache)` + helper companion `_cmcMetaCacheForView(year, month)`. vPlan + vDeparts précalculent au début du render.
+- **P1 #4** : `_cmcRunParserTests` étendu avec compteur `skipped` séparé. `customCheck` peut retourner `{skipped:true, reason:"..."}`. SW01-SW05 convertis.
+- **P1 #5** : `_cmcFlushOverridesMeta` cap 12 derniers mois (tri chronologique `YYYY-M`, garde 12 plus récentes).
+- **P2 #2** : "Completeness (couleurs/fonds capturés)" → "Codes visuels capturés"
+
+### v9.620 — Fix P2 #1 + #3
+
+- **P2 #1** : 3 helpers focalisés `_cmcApplyStarsToEmpsTest` / `_cmcApplyFFToEmpsTest` / `_cmcFlagRedNamesTest`. `_cmcApplyVisualMarkers` reste l'orchestrator pour compat API.
+- **P2 #3** : extraction `_cmcDecideImportMode(importType, userExplicitMode)` helper pur testable. doImport l'utilise. 5 tests E2E (VS14-VS18) couvrent les 4 cas + override explicite.
+- **7 tests** VS14-VS20 : decisionMode (5 cas) + FF cell propagation + quota cap 12 mois.
+
+### v9.621 — Anti-orphelin (mes propres helpers test)
+
+Prévention auto-erreur #28 : les 3 helpers `_cmcApplyXxxTest` étaient déclarés mais non utilisés → 3 tests VS21-VS23 qui les exercent avec mocks complets.
+
+### Cumul v9.613-621 (9 versions, ~36h dev)
+
+**29 tests régression** (SW01-SW05 + VS01-VS23) · **9 commits propres** · ~150 KB ajoutés (parser + helpers + tests) · **2 sentinelles nouvelles** (meta-completeness-watch) · **8 helpers publics** nouveaux (`cmcMetaForCell`, `cmcCellBgFromMeta`, `cmcCellBgForView`, `_cmcMetaCacheForView`, `_cmcDecideImportMode`, `_cmcScopedWipe`, `_cmcInferCellMetaFromCodes`, `_cmcFlushOverridesMeta`)
+
+### Audit subagent indépendant #2 : en cours
+
+Vérifie si fixes annoncés sont réels + cherche régressions introduites.
+
+---
+
 ## 🆕 SESSION 2026-05-15 23:59 — CMCteams v9.616→v9.618 (Kevin "100/100 réel partout")
 
 ### v9.616 — vDeparts cell color + sentinelle + infer meta
