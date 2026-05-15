@@ -405,7 +405,12 @@ export function render(rootEl: HTMLElement): void {
           logger.info('cf-diag-manual', `Diagnostic result : token=${diag.token_valid} kv=${diag.kv_permission} workers=${diag.workers_permission}`);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur : ${msg.slice(0, 100)}</div>`;
+          /* v13.4.133 audit-grade : DOM API (msg pourrait contenir HTML user-controlled) */
+          resultsEl.textContent = '';
+          const errDiv = document.createElement('div');
+          errDiv.style.color = '#ff5b5b';
+          errDiv.textContent = `❌ Erreur : ${msg.slice(0, 100)}`;
+          resultsEl.append(errDiv);
         }
       })();
     });

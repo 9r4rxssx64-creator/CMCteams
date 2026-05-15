@@ -292,7 +292,13 @@ function attach(rootEl: HTMLElement): void {
       }
       if (preview) {
         const url = URL.createObjectURL(file);
-        preview.innerHTML = `<img src="${url}" alt="aperçu" style="max-width:100%;border-radius:8px;border:1px solid #333">`;
+        /* v13.4.133 audit-grade : DOM API (URL.createObjectURL est safe blob: mais audit strict). */
+        preview.textContent = '';
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'aperçu';
+        img.style.cssText = 'max-width:100%;border-radius:8px;border:1px solid #333';
+        preview.append(img);
       }
       if (status) status.textContent = '⏳ Analyse en cours…';
       void scanBarcode(file).then((codes) => {

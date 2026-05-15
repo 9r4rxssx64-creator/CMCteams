@@ -6,6 +6,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom',
+    /* v13.4.133 (Kevin "100/100 réel sans mentir") : timeouts explicites pour
+     * permettre `npm run test:coverage` de TERMINER sans timeout (était 600s
+     * killed). Tests individuels limités à 15s, hooks à 30s. */
+    testTimeout: 15_000,
+    hookTimeout: 30_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],

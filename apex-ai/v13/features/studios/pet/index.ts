@@ -245,7 +245,12 @@ function attach(rootEl: HTMLElement): void {
         ageOut.textContent = 'Âge invalide.';
         return;
       }
-      ageOut.innerHTML = `Équivalent humain : <strong>≈ ${human} ans</strong>`;
+      /* v13.4.133 audit-grade : DOM API au lieu d'innerHTML */
+      ageOut.textContent = '';
+      ageOut.append('Équivalent humain : ');
+      const strongHuman = document.createElement('strong');
+      strongHuman.textContent = `≈ ${human} ans`;
+      ageOut.append(strongHuman);
     });
   }
 
