@@ -25,11 +25,12 @@ export default defineConfig({
         '**/*.test.js',
         '**/*.spec.js',
         // Phase C2 : api-worker.js (2444 lignes) mesuré v8 (transparent) :
-        // 0% → 19.63% → 49.63% → 71.11% → 81.99% → 84.08% → **86.08% stmts**
-        // **100% FUNCTIONS (72/72)** / 81.04% branches / 86.08% lines.
-        // 331 tests. Reste 340 lines internes (handleVerifyOtp OTP correct
-        // chemin success Vonage/TextBelt, handleAdminUserAction DB INSERTs).
+        // 0% → 19.63% → 49.63% → 84.08% → 86.08% → **88.13% stmts**
+        // **100% FUNCTIONS (72/72)** / 81.9% branches / 88.13% lines.
+        // 346 tests. Reste 290 lines (handleVerifyOtp variations, handle
+        // AdminCommand DB ramifications, branches catch silent).
         'workers/api-worker.js',
+
 
       ],
       thresholds: {

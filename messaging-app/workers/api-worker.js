@@ -391,7 +391,7 @@ export async function handleVerifyOtp(request, env) {
   // Mode 2 : Firebase ID token (fallback si configuré)
   else if (firebase_id_token && firebase_id_token !== '') {
     try {
-      const firebasePayload = await verifyFirebaseIdToken(firebase_id_token, env);
+      var firebasePayload = await verifyFirebaseIdToken(firebase_id_token, env);
       if (firebasePayload.phone_number !== phone) {
         return err('Numero ne correspond pas au token Firebase', 401, 'phone_mismatch');
       }
@@ -440,7 +440,7 @@ export async function handleVerifyOtp(request, env) {
     sub: user.id,
     pseudo: user.pseudo,
     is_admin: !!user.is_admin,
-    firebase_uid: firebasePayload.sub,
+    firebase_uid: (typeof firebasePayload !== 'undefined' && firebasePayload) ? firebasePayload.sub : null,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 30 * 86400  // 30 jours
   }, env.JWT_SIGN_KEY);
