@@ -80,3 +80,45 @@ jobs:
           name: messaging-app-coverage
           path: messaging-app/coverage/
           retention-days: 7
+
+  e2e:
+    needs: tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: messaging-app
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [iphone-safari, iphone-se, chromium-desktop, pixel-android]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'messaging-app/package.json'
+
+      - name: Install deps
+        run: npm install
+
+      - name: Install Playwright browsers (${{ matrix.project }})
+        run: |
+          if [ "${{ matrix.project }}" = "iphone-safari" ] || [ "${{ matrix.project }}" = "iphone-se" ]; then
+            npx playwright install --with-deps webkit
+          elif [ "${{ matrix.project }}" = "chromium-desktop" ] || [ "${{ matrix.project }}" = "pixel-android" ]; then
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: Run Playwright E2E (${{ matrix.project }})
+        run: npx playwright test --project=${{ matrix.project }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: messaging-app/playwright-report/
+          retention-days: 7

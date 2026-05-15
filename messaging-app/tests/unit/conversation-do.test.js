@@ -530,6 +530,62 @@ describe('ConversationDO — handleMessage', () => {
     const e = ws.sent.map((m) => JSON.parse(m)).find((m) => (m.message || '').includes('Type inconnu'));
     expect(e).toBeDefined();
   });
+
+  // Visio WebRTC : relay signaling messages aux autres sessions
+  it('webrtc-offer → broadcast aux autres avec from + to + callType + offer', async () => {
+    const ws2 = new MockWebSocket();
+    _do.sessions.set(ws2, { userId: 'peer2', deviceId: 'd2' });
+    await _do.handleMessage(ws, {
+      type: 'webrtc-offer', to: 'peer2', callType: 'video',
+      offer: { type: 'offer', sdp: 'remote-sdp' },
+    });
+    const fwd = ws2.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'webrtc-offer');
+    expect(fwd).toBeDefined();
+    expect(fwd.from).toBe('kdmc');
+    expect(fwd.to).toBe('peer2');
+    expect(fwd.callType).toBe('video');
+    expect(fwd.offer.sdp).toBe('remote-sdp');
+  });
+
+  it('webrtc-answer → broadcast', async () => {
+    const ws2 = new MockWebSocket();
+    _do.sessions.set(ws2, { userId: 'peer2' });
+    await _do.handleMessage(ws, { type: 'webrtc-answer', to: 'peer2', answer: { type: 'answer', sdp: 'a' } });
+    const fwd = ws2.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'webrtc-answer');
+    expect(fwd).toBeDefined();
+    expect(fwd.answer.sdp).toBe('a');
+  });
+
+  it('webrtc-candidate → broadcast (ICE relay)', async () => {
+    const ws2 = new MockWebSocket();
+    _do.sessions.set(ws2, { userId: 'peer2' });
+    await _do.handleMessage(ws, { type: 'webrtc-candidate', to: 'peer2', candidate: { candidate: 'ice-foo' } });
+    const fwd = ws2.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'webrtc-candidate');
+    expect(fwd).toBeDefined();
+    expect(fwd.candidate.candidate).toBe('ice-foo');
+  });
+
+  it('call-end → broadcast', async () => {
+    const ws2 = new MockWebSocket();
+    _do.sessions.set(ws2, { userId: 'peer2' });
+    await _do.handleMessage(ws, { type: 'call-end' });
+    expect(ws2.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'call-end')).toBeDefined();
+  });
+
+  it('call-busy → broadcast', async () => {
+    const ws2 = new MockWebSocket();
+    _do.sessions.set(ws2, { userId: 'peer2' });
+    await _do.handleMessage(ws, { type: 'call-busy', to: 'peer2' });
+    expect(ws2.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'call-busy')).toBeDefined();
+  });
+
+  it('webrtc-offer sans to → to=null + broadcast all', async () => {
+    const ws2 = new MockWebSocket();
+    _do.sessions.set(ws2, { userId: 'peer2' });
+    await _do.handleMessage(ws, { type: 'webrtc-offer', offer: { type: 'offer', sdp: 'x' } });
+    const fwd = ws2.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'webrtc-offer');
+    expect(fwd.to).toBeNull();
+  });
 });
 
 // ----------------------------------------------------------------------------
