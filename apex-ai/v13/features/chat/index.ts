@@ -43,6 +43,10 @@ import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
+/* v13.4.165-166 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
+import { saveCodeSnippet, listCodeSnippets } from './chat-snippets.js';
+
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
  * Garde max 30 derniers messages user/assistant. Drop les plus anciens. */
 const MAX_CONTEXT_MESSAGES = 30;
@@ -170,9 +174,9 @@ async function tryFirebaseRestoreConversation(): Promise<void> {
 }
 
 /* v13.4.165 refactor : escapeHtml + renderMarkdownLight extraits vers chat-markdown.ts
- * Re-exportés ici pour compat tests existants (façade pattern, zéro régression). */
+ * Re-exportés ici pour compat tests existants (façade pattern, zéro régression).
+ * Imports déjà en haut du fichier (top imports group). */
 export { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
-import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 
 /**
  * Album image rendu : grille 2-3 cols mobile, 4 desktop, thumbnails visuels.
@@ -479,90 +483,10 @@ export function pushPasteCard(
  * Permet listing via UI vault future (préfix apex_v13_code_*).
  * Pour l'instant : stocké en clair (Kevin règle "codes = pas crypto" mais classés).
  */
-export async function saveCodeSnippet(code: string, lang?: string): Promise<{ ok: boolean; key?: string }> {
-  try {
-    const ts = Date.now();
-    const id = Math.random().toString(36).slice(2, 8);
-    const key = `apex_v13_code_${ts}_${id}`;
-    const entry = {
-      code,
-      lang: lang ?? 'unknown',
-      created: ts,
-      lines: code.split('\n').length,
-      size: code.length,
-    };
-    /* Stocke en JSON */
-    localStorage.setItem(key, JSON.stringify(entry));
-    /* Index pour listing rapide */
-    const indexKey = 'apex_v13_code_snippets_index';
-    let idx: string[] = [];
-    try {
-      const raw = localStorage.getItem(indexKey);
-      if (raw) idx = JSON.parse(raw) as string[];
-    } catch { idx = []; }
-    idx.unshift(key);
-    if (idx.length > 100) idx = idx.slice(0, 100); /* Cap 100 snippets */
-    localStorage.setItem(indexKey, JSON.stringify(idx));
-    return { ok: true, key };
-  } catch (err: unknown) {
-    logger.warn('chat', 'saveCodeSnippet failed', { err });
-    return { ok: false };
-  }
-}
-
-/**
- * v13.4.16 — Liste les snippets code sauvés dans le coffre (paste intelligent).
- *
- * Retourne les entries triées par date desc, max 100 (cap saveCodeSnippet).
- * XSS-safe : valeurs JSON parsées, jamais innerHTML.
- */
-export function listCodeSnippets(): Array<{
-  key: string;
-  code: string;
-  lang: string;
-  created: number;
-  lines: number;
-  size: number;
-}> {
-  try {
-    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
-    if (!idxRaw) return [];
-    const idx = JSON.parse(idxRaw) as string[];
-    const result: Array<{ key: string; code: string; lang: string; created: number; lines: number; size: number }> = [];
-    for (const key of idx) {
-      const raw = localStorage.getItem(key);
-      if (!raw) continue; /* Entry orpheline (cleanup quota) */
-      try {
-        const entry = JSON.parse(raw) as { code: string; lang: string; created: number; lines: number; size: number };
-        result.push({ key, ...entry });
-      } catch { /* Entry corrompue, skip */ }
-    }
-    return result;
-  } catch (err: unknown) {
-    logger.warn('chat', 'listCodeSnippets failed', { err });
-    return [];
-  }
-}
-
-/**
- * v13.4.16 — Supprime un snippet du coffre (Kevin clique 🗑 dans la liste).
- */
-export function deleteCodeSnippet(key: string): boolean {
-  try {
-    if (!key.startsWith('apex_v13_code_')) return false; /* Sécurité : pas d'arbitrary delete */
-    localStorage.removeItem(key);
-    /* Update index */
-    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
-    if (idxRaw) {
-      const idx = (JSON.parse(idxRaw) as string[]).filter((k) => k !== key);
-      localStorage.setItem('apex_v13_code_snippets_index', JSON.stringify(idx));
-    }
-    return true;
-  } catch (err: unknown) {
-    logger.warn('chat', 'deleteCodeSnippet failed', { err, key });
-    return false;
-  }
-}
+/* v13.4.166 refactor : saveCodeSnippet + listCodeSnippets + deleteCodeSnippet
+ * extraits vers chat-snippets.ts (façade backward-compat).
+ * Imports déjà en haut du fichier. */
+export { saveCodeSnippet, listCodeSnippets, deleteCodeSnippet } from './chat-snippets.js';
 
 /**
  * v13.4.13 — Helper exporté : transforme conversation DisplayMessage → ChatMessage
