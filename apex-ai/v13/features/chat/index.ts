@@ -40,8 +40,9 @@ import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
-/* v13.4.165-170 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+/* v13.4.165-171 refactor : modules extraits depuis chat/index.ts pour testabilité. */
 import { renderMessageActions } from './chat-actions-render.js';
+import { type AlbumImage, renderImageAlbum } from './chat-album.js';
 import { buildMessagesForApi } from './chat-api-format.js';
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
@@ -188,39 +189,9 @@ export { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
  * Kevin règle 2026-05-07 : "je veux avoir le visuel pas une liste d'écriture, album entier".
  * Exposé pour tests.
  */
-export interface AlbumImage {
-  url: string;
-  filename: string;
-}
-
-export function renderImageAlbum(images: AlbumImage[]): string {
-  if (!Array.isArray(images) || images.length === 0) return '';
-  const cols = images.length === 1 ? 1 : images.length <= 4 ? 2 : 3;
-  const items = images
-    .map((img, i) => {
-      const safeUrl = escapeHtml(img.url);
-      const safeName = escapeHtml(img.filename);
-      return (
-        `<div class="ax-album-item" data-img-idx="${i}" ` +
-        `style="aspect-ratio:1;background:#1a1a2e;border-radius:8px;overflow:hidden;` +
-        `position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent">` +
-        `<img src="${safeUrl}" alt="${safeName}" loading="lazy" ` +
-        `style="width:100%;height:100%;object-fit:cover;transition:transform 200ms cubic-bezier(0.16,1,0.3,1)">` +
-        `<div class="ax-album-overlay" ` +
-        `style="position:absolute;bottom:0;left:0;right:0;padding:8px;` +
-        `background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);` +
-        `color:#fff;font-size:11px;line-height:1.3;text-overflow:ellipsis;` +
-        `overflow:hidden;white-space:nowrap">${safeName}</div>` +
-        `</div>`
-      );
-    })
-    .join('');
-  return (
-    `<div class="ax-image-album" ` +
-    `style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;` +
-    `margin:12px 0;border-radius:12px">${items}</div>`
-  );
-}
+/* v13.4.171 refactor : AlbumImage + renderImageAlbum extraits vers chat-album.ts
+ * (façade backward-compat, import déjà en haut du fichier). */
+export { type AlbumImage, renderImageAlbum } from './chat-album.js';
 
 /**
  * Modal lightbox plein écran avec actions transformation (cartoon/anime/video/remove-bg/stylize).
