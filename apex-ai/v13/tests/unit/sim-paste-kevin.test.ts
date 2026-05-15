@@ -34,7 +34,10 @@ AA:BB:CC:DD:EE:FF
     // ✅ Chaque service unique attendu présent
     const keys = services.map((s) => s.key);
     expect(keys).toContain('ax_anthropic_key');
-    expect(keys).toContain('ax_openai_key'); /* sk-proj-* */
+    /* v13.4.6 : sk-proj-* est désormais OpenAI Project (storageKey ax_openai_key_proj),
+     * distinct du legacy sk-* (ax_openai_key). Le test pâte ne contient que sk-proj donc
+     * c'est ax_openai_key_proj qui doit être détecté. */
+    expect(keys).toContain('ax_openai_key_proj');
     expect(keys).toContain('ax_gemini_key'); /* renommé v13.4.6 */
     expect(keys).toContain('ax_github_pat_classic'); /* distinct v13.4.6 */
     expect(keys).toContain('ax_github_pat_finegrained'); /* distinct v13.4.6 */

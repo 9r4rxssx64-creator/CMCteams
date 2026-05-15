@@ -3,7 +3,7 @@
  * Tests "smoke" : render produit du HTML attendu, handlers attachent.
  * E2E complet via Playwright boot.spec.ts (CI).
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { store } from '../../core/store.js';
 
 describe('features/landing', () => {
@@ -74,12 +74,19 @@ describe('features/admin', () => {
 });
 
 describe('features/chat', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    /* v13.4.122 fix : resetModules pour forcer re-évaluation propre du module chat
+     * (sinon TDZ Cannot access 'conversation' before initialization en happy-dom
+     * quand admin/landing tests ont précédemment importé des services qui partagent
+     * des modules avec chat). */
+    vi.resetModules();
     localStorage.clear();
     document.body.innerHTML = '<div id="apex-root"></div>';
-    store.init({ appVer: 'v13.0.0' });
-    store.set('user', { id: 'kdmc_admin', name: 'Kevin (DK)' });
-    store.set('isAdmin', true);
+    /* Re-import store après resetModules pour avoir l'instance fraîche */
+    const { store: freshStore } = await import('../../core/store.js');
+    freshStore.init({ appVer: 'v13.0.0' });
+    freshStore.set('user', { id: 'kdmc_admin', name: 'Kevin (DK)' });
+    freshStore.set('isAdmin', true);
   });
 
   it('render affiche header APEX AI', async () => {

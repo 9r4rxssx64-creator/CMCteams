@@ -28,10 +28,15 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
   beforeEach(() => {
     vaultFirebaseBackup.resetThrottle();
     vi.restoreAllMocks();
+    /* v13.4.122 fix : clear localStorage pour que getUid() retourne 'anon'
+     * (sinon apex_v13_pin résiduel d'autres tests fait fallback ADMIN_KEVIN_UID
+     * → path queried devient vault_backup/kdmc_admin ≠ mock vault_backup/anon). */
+    localStorage.clear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   /* ============================================================
@@ -181,7 +186,7 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       /* listAll retourne 1 backup */
       vi.spyOn(firebase, 'read').mockImplementation(async (path) => {
         if (typeof path !== 'string') return null;
-        if (path === 'vault_backup/anon') {
+        if (typeof path === 'string' && path.match(/^vault_backup\/[^/]+$/)) {
           return {
             ax_anthropic_key: { v: 1, ts: Date.now(), k: 'ax_anthropic_key', enc },
           } as never;
@@ -206,7 +211,7 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       localStorage.setItem('ax_openai_key', enc);
       vi.spyOn(firebase, 'isConnected').mockReturnValue(true);
       vi.spyOn(firebase, 'read').mockImplementation(async (path) => {
-        if (path === 'vault_backup/anon') {
+        if (typeof path === 'string' && path.match(/^vault_backup\/[^/]+$/)) {
           return {
             ax_openai_key: { v: 1, ts: Date.now(), k: 'ax_openai_key', enc },
           } as never;
@@ -225,7 +230,7 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       const enc = await vault.encryptAuto('sk-deleted-by-kevin');
       vi.spyOn(firebase, 'isConnected').mockReturnValue(true);
       vi.spyOn(firebase, 'read').mockImplementation(async (path) => {
-        if (path === 'vault_backup/anon') {
+        if (typeof path === 'string' && path.match(/^vault_backup\/[^/]+$/)) {
           return {
             ax_groq_key: { v: 1, ts: Date.now(), k: 'ax_groq_key', enc },
           } as never;
@@ -250,7 +255,7 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       localStorage.setItem('ax_anthropic_key', enc);
       vi.spyOn(firebase, 'isConnected').mockReturnValue(true);
       vi.spyOn(firebase, 'read').mockImplementation(async (path) => {
-        if (path === 'vault_backup/anon') {
+        if (typeof path === 'string' && path.match(/^vault_backup\/[^/]+$/)) {
           return {
             ax_anthropic_key: { v: 1, ts: Date.now(), k: 'ax_anthropic_key', enc },
           } as never;
@@ -277,7 +282,7 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       const enc = await vault.encryptAuto('sk-only-fb');
       vi.spyOn(firebase, 'isConnected').mockReturnValue(true);
       vi.spyOn(firebase, 'read').mockImplementation(async (path) => {
-        if (path === 'vault_backup/anon') {
+        if (typeof path === 'string' && path.match(/^vault_backup\/[^/]+$/)) {
           return {
             ax_cohere_key: { v: 1, ts: Date.now(), k: 'ax_cohere_key', enc },
           } as never;
@@ -297,7 +302,7 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       const writeSpy = vi.spyOn(firebase, 'write').mockResolvedValue();
       let listAllCallCount = 0;
       vi.spyOn(firebase, 'read').mockImplementation(async (path) => {
-        if (path === 'vault_backup/anon') {
+        if (typeof path === 'string' && path.match(/^vault_backup\/[^/]+$/)) {
           listAllCallCount++;
           /* Avant syncDrift : seulement ax_huggingface_key dans FB */
           /* Après push : devrait contenir les 2 — mais on simule snapshot pre-sync */

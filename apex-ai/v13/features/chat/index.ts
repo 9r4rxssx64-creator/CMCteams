@@ -63,10 +63,17 @@ interface DisplayMessage {
   attachments?: Array<{ mime: string; base64: string; name: string }>;
 }
 
-/* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé). */
-let pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
+/* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé).
+ * v13.4.122 fix : utilise `var` (hoisting classique, pas de TDZ) au lieu de `let` pour
+ * éviter ReferenceError "Cannot access before initialization" dans vitest happy-dom quand
+ * render() est appelé pendant que le module est partiellement chargé. var réutilise la
+ * même sémantique au runtime que let pour les réassignations.
+ * eslint-disable-next-line no-var */
+// eslint-disable-next-line no-var
+var pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
 /* v13.4.12 — Promises FileReader en cours, pour await au submit (anti race condition). */
-let pendingAttachmentPromises: Array<Promise<void>> = [];
+// eslint-disable-next-line no-var
+var pendingAttachmentPromises: Array<Promise<void>> = [];
 
 /* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :
  * AVANT : conversation = array mémoire pure, perdu à chaque reload/MAJ.
