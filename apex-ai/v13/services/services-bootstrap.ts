@@ -969,6 +969,27 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
         }
       }
     }),
+
+    /* v13.4.123 (Kevin "On passe en native iOS sans s'arrêter") —
+       Sentinelle iOS native health : au boot, vérifie si Apex tourne dans
+       wrapper Capacitor natif. Si oui : audit plugins requis + roundtrip
+       Keychain test. Si KO → escalate Claude Code via ax_claude_todo.
+       Mode PWA : skip silencieux (pas d'attente plugin natif). */
+    safeInit('ios-native-watch', async () => {
+      const { iosNativeWatch } = await import('./apex-ios-native-watch.js');
+      /* Différé 7s pour laisser Capacitor + autres plugins charger */
+      setTimeout(() => {
+        void iosNativeWatch.check().then((r) => {
+          if (r.details.is_native) {
+            logger.info('ios-native-watch', `iOS natif détecté : plugins=${r.details.plugins_available.length} keychain_ok=${r.details.keychain_test_passed} device=${r.details.device_info?.model ?? '?'}`);
+          } else {
+            logger.debug('ios-native-watch', `mode PWA (platform=${r.details.platform}) — skip`);
+          }
+        }).catch((err: unknown) => {
+          logger.debug('ios-native-watch', 'boot check skipped', { err });
+        });
+      }, 7000);
+    }),
   ];
 
   const results = await Promise.all(tasks);
