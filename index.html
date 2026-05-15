@@ -24412,11 +24412,10 @@ function cmcCellBgFromMeta(meta){
   if(!meta||!meta.bg)return "";
   return CMC_META_BG_COLORS[meta.bg]||"";
 }
-// v9.617 — Helper unique factorisé pour vPlan/vDeparts : lookup + CSS en 1 appel.
-// v9.619 (fix audit P1 #3) — Promesse cache tenue : signature étendue avec
-// `metaByEidCache` optionnel (l'objet `A.overrides_meta[key]` précalculé au
-// début du render). Permet d'éviter 16K recomputations key+lookup nested par
-// re-render vPlan/vDeparts. Backward-compat : sans cache, fallback comportement v9.617.
+// v9.619 — Helper unique factorisé vPlan/vDeparts avec CACHE activé.
+// Signature : metaByEidCache optionnel (objet `A.overrides_meta[key]` précalculé
+// au début du render via _cmcMetaCacheForView). Évite 16K recomputations
+// key+lookup nested par re-render. Backward-compat : sans cache, lookup direct.
 function cmcCellBgForView(year, month, eid, d, metaByEidCache){
   try{
     var byEid;
