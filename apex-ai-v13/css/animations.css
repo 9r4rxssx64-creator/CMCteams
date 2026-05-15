@@ -725,3 +725,19 @@
     transition: none !important;
   }
 }
+
+/* v13.4.126 (Kevin "qualité pro App Store-ready" — Audit P1 a11y WCAG 2.3.3) :
+   Global reduced-motion guard — désactive TOUTES animations/transitions pour
+   users avec prefers-reduced-motion: reduce (option iOS Réglages > Accessibilité
+   > Réduire les animations). Couvre les 30+ animation refs détectées par audit
+   sans avoir à patcher chaque sélecteur individuellement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

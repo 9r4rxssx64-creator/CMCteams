@@ -151,17 +151,20 @@
   }
 }
 
-/* FIX zoom + chevauchement (Kevin v13.4.93 → v13.4.94 renforcé) :
-   Body padding-right pour libérer espace toolbar rescue.
-   Sans cela, le contenu est masqué à droite (cf. screenshots Kevin Centre Admin). */
-body {
-  padding-right: 42px;
+/* v13.4.112 (Kevin DAA "zoom permanent viewport entier toutes vues") :
+   CAUSE RACINE IDENTIFIEE : body { padding-right: 42px } global cause overflow
+   horizontal sur certaines vues → iPhone Safari fit-to-content zoom permanent.
+
+   FIX : retire le padding-right global. La toolbar rescue position:fixed
+   ne consomme PAS d'espace dans le flow, donc pas besoin de padding global.
+   Au cas où un contenu dépasserait, on garantit max-width:100vw + overflow-x:hidden
+   sur html/body pour empêcher tout débordement.
+
+   Erreur #56 documentée enfin résolue par diagnostic Kevin précis (DAA). */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
   box-sizing: border-box;
-}
-@media (max-width: 380px) {
-  body {
-    padding-right: 36px;
-  }
 }
 
 /* v13.4.94 — FIX iOS Safari auto-zoom triple stack (Kevin "Zoom tjs UX") :
