@@ -838,6 +838,24 @@ class Vault {
           logger.debug('vault', 'icloud-keychain save failed (non-bloquant)', { err });
         }
       })();
+      /* v13.4.114 (Kevin "Que je puisse télécharger le qr code") :
+       * Auto-trigger modal QR code backup pour PAT GitHub.
+       * Kevin peut télécharger PNG ou partager dans Photos iCloud (Web Share API).
+       * Photos iCloud survit reinstall PWA + sync cross-device. */
+      void (async () => {
+        try {
+          await new Promise((r) => setTimeout(r, 1500)); /* Laisse le toast "PAT stocké" s'afficher d'abord */
+          const { apexQrBackup } = await import('./apex-qr-backup.js');
+          await apexQrBackup.showQrBackupModal({
+            text: plaintext,
+            title: '🔐 Sauvegarde PAT GitHub dans Photos iCloud',
+            description: 'Apex génère un QR code de ton PAT GitHub. Sauvegarde-le dans Photos iCloud — au prochain reinstall PWA, Apex pourra le scanner pour tout restaurer en 1 clic. Photos iCloud survit reinstall + sync cross-device Apple ID.',
+            filename: 'apex-pat-github.png',
+          });
+        } catch (err: unknown) {
+          logger.debug('vault', 'QR backup modal failed (non-bloquant)', { err });
+        }
+      })();
     }
     return { ok: persisted.local || persisted.idb || persisted.firebase, persisted };
   }
