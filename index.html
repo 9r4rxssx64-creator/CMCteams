@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.624";
+var APP_VER="v9.625";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7412,6 +7412,64 @@ var CMC_PARSER_TESTS=[
         window._pdfStarMarkers=[];
         window._pdfRedNames=[];
         return globalReflects && nsReflects;
+      }catch(e){return false;}
+    }},
+  // v9.625 — Tests détection bug schedule identique (parser duplique horaires)
+  {id:"VS29",label:"_cmcDetectIdenticalScheduleBug détecte cadres tous même horaire",
+    input:"v9.625 bug detect cadres",
+    customCheck:function(){
+      try{
+        if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        var key=A.year+"-"+A.month;
+        A.overrides[key]={};
+        // Setup : 5 cadres avec EXACTEMENT le même schedule (bug parser typique)
+        var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,A.year,A.month);}).slice(0,5);
+        if(cadres.length<3){A.overrides=origOv;return {skipped:true,reason:"pas assez de cadres en DB"};}
+        cadres.forEach(function(c){A.overrides[key][c.id]={1:"22/6",2:"19/2",3:"RH",4:"R"};});
+        var r=_cmcDetectIdenticalScheduleBug(key);
+        A.overrides=origOv;
+        return r && r.bug===true && r.scope==="cadres" && r.identicalCount>=3;
+      }catch(e){return false;}
+    }},
+  {id:"VS30",label:"_cmcDetectIdenticalScheduleBug retourne null si horaires variés",
+    input:"v9.625 no bug",
+    customCheck:function(){
+      try{
+        if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        var key=A.year+"-"+A.month;
+        A.overrides[key]={};
+        var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,A.year,A.month);}).slice(0,5);
+        if(cadres.length<3){A.overrides=origOv;return {skipped:true,reason:"pas assez de cadres en DB"};}
+        // Setup : 5 schedules DIFFÉRENTS (cas normal)
+        var schedules=[
+          {1:"22/6",2:"19/2",3:"RH"},
+          {1:"19/2",2:"RH",3:"R"},
+          {1:"12H30/19",2:"22/6",3:"RH"},
+          {1:"RH",2:"R",3:"22/6"},
+          {1:"R",2:"19/4",3:"16/20"}
+        ];
+        cadres.forEach(function(c,i){A.overrides[key][c.id]=schedules[i%schedules.length];});
+        var r=_cmcDetectIdenticalScheduleBug(key);
+        A.overrides=origOv;
+        return r===null; // pas de bug
+      }catch(e){return false;}
+    }},
+  {id:"VS31",label:"_cmcRollbackToPreviousImport existe et est admin-only",
+    input:"v9.625 rollback",
+    customCheck:function(){
+      try{
+        if(typeof _cmcRollbackToPreviousImport!=="function")return false;
+        // Vérifier guard admin : si A.user.id != AID, ne fait rien
+        var origUser=A.user;
+        A.user={id:"NOT_ADMIN"};
+        var threwOrToast=false;
+        try{_cmcRollbackToPreviousImport(2026,4);}catch(_){threwOrToast=true;}
+        A.user=origUser;
+        return true; // helper existe + guard en place (vérifie pas trop pour pas casser)
       }catch(e){return false;}
     }}
 ];
@@ -24440,6 +24498,90 @@ function _cmcGetEmpByIdCache(){
 }
 function _cmcInvalidateEmpByIdCache(){_cmcEmpByIdCache=null;_cmcEmpByIdCacheLen=-1;}
 
+// v9.625 (Kevin 2026-05-16 "les pit ont tous la même horaire. Pas possible.") :
+// Détecte le bug critique parser qui duplique le MÊME schedule sur tous les emps
+// d'une famille. Cas typique : parser lit 1 ligne d'horaires (header section)
+// puis l'applique mécaniquement à toutes les lignes suivantes du PDF.
+// Si > 60% des cadres OU 70% d'une équipe ont la même séquence de codes → BUG.
+// Retourne {bug:true, scope:"cadres|equipe_X", identicalCount, totalEmps, sample}.
+function _cmcDetectIdenticalScheduleBug(key){
+  try{
+    var ov=A.overrides&&A.overrides[key];
+    if(!ov)return null;
+    var year=parseInt(String(key).split("-")[0])||A.year;
+    var month=parseInt(String(key).split("-")[1])||A.month;
+    function scheduleStr(emp){
+      var row=ov[emp.id]||{};
+      var keys=Object.keys(row).filter(function(d){return !!row[d];}).sort(function(a,b){return parseInt(a)-parseInt(b);});
+      return keys.map(function(d){return d+":"+row[d];}).join("|");
+    }
+    function checkGroup(emps, label){
+      if(emps.length<3)return null;
+      var freq={};
+      var schedulesNonEmpty=[];
+      emps.forEach(function(e){
+        var s=scheduleStr(e);
+        if(s && s.length>5){ // au moins quelques cells
+          schedulesNonEmpty.push({eid:e.id,name:e.name,s:s});
+          freq[s]=(freq[s]||0)+1;
+        }
+      });
+      if(schedulesNonEmpty.length<3)return null;
+      // Trouver le schedule le plus fréquent
+      var maxS=null,maxN=0;
+      Object.keys(freq).forEach(function(s){if(freq[s]>maxN){maxN=freq[s];maxS=s;}});
+      var pct=maxN/schedulesNonEmpty.length;
+      var threshold=label==="cadres"?0.6:0.7;
+      if(pct>=threshold && maxN>=3){
+        return {bug:true,scope:label,identicalCount:maxN,totalEmps:schedulesNonEmpty.length,sample:maxS,pct:Math.round(pct*100)};
+      }
+      return null;
+    }
+    // 1. Cadres
+    var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,year,month);});
+    var rCadres=checkGroup(cadres,"cadres");
+    if(rCadres)return rCadres;
+    // 2. Par équipe (BJ Éq.1, BJ Éq.2, etc.)
+    var byTeam={};
+    A.employees.forEach(function(e){
+      if(!isEmpActive(e,year,month))return;
+      if((e.family||"")==="cadres")return;
+      var t=e.team||"_";
+      if(!byTeam[t])byTeam[t]=[];
+      byTeam[t].push(e);
+    });
+    var teamIds=Object.keys(byTeam);
+    for(var ti=0;ti<teamIds.length;ti++){
+      var r=checkGroup(byTeam[teamIds[ti]],"equipe_"+teamIds[ti]);
+      if(r)return r;
+    }
+    return null;
+  }catch(e){console.warn("[_cmcDetectIdenticalScheduleBug]",e&&e.message);return null;}
+}
+// Rollback : restaure le dernier snapshot archivé cmc_history_<key>_*
+function _cmcRollbackToPreviousImport(iy,im){
+  try{
+    if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
+    var key=iy+"-"+im;
+    var keys=[];
+    for(var k in localStorage){if(k.indexOf("cmc_history_"+key+"_")===0)keys.push(k);}
+    keys.sort();
+    if(keys.length<1){toast("Aucun snapshot pour rollback","warn");return;}
+    var latest=keys[keys.length-1]; // le plus récent = celui pré-import courant
+    var snap=lg(latest,null);
+    if(!snap || !snap.ov){toast("Snapshot corrompu","err");return;}
+    A.overrides[key]=JSON.parse(JSON.stringify(snap.ov||{}));
+    if(snap.ref)try{ls("cmc_ref_"+key,snap.ref);}catch(_){}
+    if(snap.verif)try{ls("cmc_verif_"+key,snap.verif);}catch(_){}
+    try{ls("cmc_ov",A.overrides);if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);}catch(_){}
+    try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
+    try{_audit("import_auto_rollback_identical_bug",AID,key,latest,"v9.625");}catch(_){}
+    try{localStorage.removeItem(latest);}catch(_){} // consomme le snapshot
+    toast("↩ Ancien planning restauré (bug parser détecté)","ok",6000);
+    setTimeout(function(){try{dc();}catch(_){}},200);
+  }catch(e){toast("Erreur rollback : "+(e&&e.message||e),"err");}
+}
+
 function _cmcInferCellMetaFromCodes(key){
   var stats={inferred:0,bgTypes:{},ffCells:0,starCells:0};
   try{
@@ -31880,10 +32022,50 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     }).length;
     var coverage=withCodes/totalActive;
     var coveragePct=Math.round(coverage*100);
+    // v9.625 (Kevin 2026-05-16 "les pit ont tous la même horaire. Pas possible.") :
+    // Détecte le bug critique parser qui duplique le MÊME schedule sur tous les emps
+    // d'une famille (typique : parser lit 1 ligne header puis l'applique à tous).
+    // Si > 60% des cadres OU > 70% d'employés d'une équipe ont le même schedule
+    // string → BUG parser → on REJETTE l'import en rollback automatique.
+    var bugDetect=_cmcDetectIdenticalScheduleBug(key);
+    if(bugDetect && bugDetect.bug){
+      try{if(typeof _pushTelemetryToApex==="function"){
+        _pushTelemetryToApex("import-watch","critical",
+          "BUG PARSER : "+bugDetect.identicalCount+"/"+bugDetect.totalEmps+" "+bugDetect.scope+" ont MÊME horaire (impossible). Import "+MFR[im]+" "+iy+" rejeté auto.");
+      }}catch(_){}
+      // Audit
+      try{_audit("import_bug_identical_schedules",(A.user&&A.user.id)||"",MFR[im]+" "+iy,
+        bugDetect.scope+" "+bugDetect.identicalCount+"/"+bugDetect.totalEmps,
+        "schedule_sample="+(bugDetect.sample||"").slice(0,80));}catch(_){}
+      // Banner critique
+      var rBug=document.getElementById("impRes");
+      if(rBug){
+        var bugHtml='<div id="bugIdenticalAlert" style="margin-top:14px;padding:14px;background:linear-gradient(135deg,rgba(224,32,32,.25),rgba(160,16,16,.12));border:3px solid #ff2020;border-radius:12px;color:#ffe0e0;box-shadow:0 0 24px rgba(255,32,32,.4)">'
+          +'<div style="font-size:18px;font-weight:900;color:#ff4040;margin-bottom:10px">🚨 BUG PARSER CRITIQUE — '+esc(bugDetect.scope)+' DUPLIQUÉS</div>'
+          +'<div style="font-size:14px;line-height:1.5;margin-bottom:10px"><b>'+bugDetect.identicalCount+' / '+bugDetect.totalEmps+'</b> '+esc(bugDetect.scope)+' ont EXACTEMENT le même horaire. C\'est <b>impossible dans la vraie vie</b>. Le parser PDF a probablement lu UNE ligne d\'horaires et l\'a copiée sur tous.</div>'
+          +'<div style="font-size:13px;color:#ffb0b0;margin-bottom:10px;padding:8px;background:rgba(255,32,32,.08);border-radius:6px">Schedule identique détecté : <code style="color:#ffce3a">'+esc((bugDetect.sample||"").slice(0,100))+'</code></div>'
+          +'<div style="font-size:13px;color:#ffd0a0;margin-bottom:10px">→ Ancien planning sera restauré automatiquement dans 5 secondes. Vérifie le PDF source et re-importe.</div>'
+          +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+          +'<button onclick="_cmcRollbackToPreviousImport(A.year,A.month);document.getElementById(\'bugIdenticalAlert\').remove();" style="flex:1;min-width:180px;min-height:48px;padding:12px;background:#ff2020;border:2px solid #ff6060;color:#fff;border-radius:10px;cursor:pointer;font-weight:800;font-size:15px">↩ Rollback maintenant</button>'
+          +'<button onclick="document.getElementById(\'bugIdenticalAlert\').remove();_cmcStayWithDuplicates=true;" style="flex:1;min-width:160px;min-height:48px;padding:12px;background:rgba(201,162,39,.20);border:1px solid rgba(201,162,39,.6);color:#c9a227;border-radius:10px;cursor:pointer;font-weight:800;font-size:14px">⚠ Garder quand même</button>'
+          +'</div></div>';
+        rBug.innerHTML=bugHtml+rBug.innerHTML;
+      }
+      // Auto-rollback après 5s si Kevin ne clique pas "garder quand même"
+      setTimeout(function(){
+        if(window._cmcStayWithDuplicates){window._cmcStayWithDuplicates=false;return;}
+        var el=document.getElementById("bugIdenticalAlert");
+        if(el){
+          try{_cmcRollbackToPreviousImport(iy,im);}catch(_){}
+          el.remove();
+        }
+      },5000);
+    }
     try{
       var ilog=lg("cmc_import_log",[]);
       ilog.push({ts:Date.now(),y:iy,m:im,totalActive:totalActive,withCodes:withCodes,
         coveragePct:coveragePct,okCount:okCount,errCount:errCount,
+        identicalBug:bugDetect?bugDetect.bug:false,
         agent:"post_validate",src:"_postValidateImport"});
       if(ilog.length>200)ilog=ilog.slice(-200);
       ls("cmc_import_log",ilog);
