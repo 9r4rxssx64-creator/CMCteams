@@ -4863,7 +4863,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.616";
+var APP_VER="v9.617";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7166,6 +7166,67 @@ var CMC_PARSER_TESTS=[
     customCheck:function(){
       try{
         return Array.isArray(FB_FIX) && FB_FIX.indexOf("cmc_ov_meta")>=0;
+      }catch(e){return false;}
+    }},
+  // v9.617 — Tests supplémentaires pour atteindre 100/100 coverage critique
+  {id:"VS10",label:"cmcCellBgForView retourne CSS factorise vPlan+vDeparts",
+    input:"v9.617 unified helper",
+    customCheck:function(){
+      try{
+        if(typeof cmcCellBgForView!=="function")return false;
+        var origOv=A.overrides_meta;
+        A.overrides_meta={"TEST-VS10":{"E00001":{5:{bg:"FF",ff:true}}}};
+        var css=cmcCellBgForView(parseInt("TEST-VS10".split("-")[0])||2026,
+                                   parseInt("TEST-VS10".split("-")[1])||0,
+                                   "E00001",5);
+        // En fait le helper attend year, month numeriques. Pour test simple:
+        A.overrides_meta={"2026-0":{"E00001":{5:{bg:"FF",ff:true}}}};
+        var css2=cmcCellBgForView(2026,0,"E00001",5);
+        A.overrides_meta=origOv;
+        return css2 && css2.indexOf("74,160,255")>=0;
+      }catch(e){return false;}
+    }},
+  {id:"VS11",label:"cmcCellBgForView retourne string vide si no meta",
+    input:"v9.617 unified helper empty",
+    customCheck:function(){
+      try{
+        if(typeof cmcCellBgForView!=="function")return false;
+        var origOv=A.overrides_meta;
+        A.overrides_meta={};
+        var css=cmcCellBgForView(2026,0,"NONE",1);
+        A.overrides_meta=origOv;
+        return css==="";
+      }catch(e){return false;}
+    }},
+  {id:"VS12",label:"_cmcFlushOverridesMeta persiste localStorage cmc_ov_meta",
+    input:"v9.615 flush persistence",
+    customCheck:function(){
+      try{
+        if(typeof _cmcFlushOverridesMeta!=="function")return false;
+        var origMeta=A.overrides_meta;
+        A.overrides_meta={"FLUSH-VS12":{"E00001":{1:{bg:"FF",ff:true}}}};
+        _cmcFlushOverridesMeta();
+        var stored=null;
+        try{stored=JSON.parse(localStorage.getItem("cmc_ov_meta")||"null");}catch(_){}
+        A.overrides_meta=origMeta;
+        // Cleanup: remettre l'original
+        try{localStorage.setItem("cmc_ov_meta",JSON.stringify(origMeta||{}));}catch(_){}
+        return stored && stored["FLUSH-VS12"] && stored["FLUSH-VS12"]["E00001"]
+               && stored["FLUSH-VS12"]["E00001"]["1"]
+               && stored["FLUSH-VS12"]["E00001"]["1"].bg==="FF";
+      }catch(e){return false;}
+    }},
+  {id:"VS13",label:"_agentMetaCompletenessWatch existe et est registered",
+    input:"v9.616 sentinelle registered",
+    customCheck:function(){
+      try{
+        if(typeof _agentMetaCompletenessWatch!=="function")return false;
+        // Verifie que la sentinelle est bien dans le registry APP_AGENTS
+        var found=false;
+        if(typeof APP_AGENTS!=="undefined"&&Array.isArray(APP_AGENTS)){
+          found=APP_AGENTS.some(function(a){return a.id==="meta-completeness";});
+        }
+        return found;
       }catch(e){return false;}
     }}
 ];
@@ -22315,10 +22376,8 @@ function vPlan(){
         +(function(){var _todCode2=todayD?(pl[emp.id]||{})[todayD]||"":"";return isWork(_todCode2)?'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#5aaa70;margin-right:3px;vertical-align:middle"></span>':"";})()+(_onlineSet[emp.id]?'<span class="pres-dot" aria-hidden="true" title="En ligne actuellement"></span>':"")+( isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+(emp.role&&emp.family==="cadres"?'<span title="'+esc(getRoleLabel(emp.role))+'" style="margin-left:3px;font-size:11px">'+getRoleIcon(emp.role)+'</span>':"")+'</div></td>');
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
-        // v9.615 — Meta cell (bg/fg/star/ff) lue depuis A.overrides_meta. Stylise la cell selon
-        // le fond PDF original (CDP orange, FF bleu, AF vert, etc.) quand applicable.
-        var _meta=null;try{_meta=cmcMetaForCell(A.year+"-"+A.month,emp.id,d);}catch(_){}
-        var _metaBg=_meta?cmcCellBgFromMeta(_meta):"";
+        // v9.617 — Meta cell via helper unique factorisé (lookup + CSS en 1 appel)
+        var _metaBg="";try{_metaBg=cmcCellBgForView(A.year,A.month,emp.id,d);}catch(_){}
         // v9.153 dbl-clic=brosse ; v9.155 Shift+clic=multi-sel ; v9.156 drag&drop ; v9.158 long-press mobile
         var click="";
         if(isAdm){
@@ -22821,9 +22880,8 @@ function vDeparts(){
           var col=DCOL[pos-1]||"#888";
           var ci=CODES[code]||{c:"#6b7280"};
           var borderStyle=code?"1.5px solid "+col+"45":"1px dashed "+col+"35";
-          // v9.616 — Meta cell PDF (FF bleu, CDP orange, etc.) prioritaire sur cellBg défaut
-          var _depMeta=null;try{_depMeta=cmcMetaForCell(A.year+"-"+A.month,emp.id,d);}catch(_){}
-          var _depMetaBg=_depMeta?cmcCellBgFromMeta(_depMeta):"";
+          // v9.617 — Meta cell via helper unique (factorise lookup + CSS)
+          var _depMetaBg="";try{_depMetaBg=cmcCellBgForView(A.year,A.month,emp.id,d);}catch(_){}
           var cellBg=_depMetaBg||(isHigh?'rgba(201,162,39,.1)':col+'07');
           var _dLen=(code||"").length;
           var _dFS=_dLen>=7?"8.5px":_dLen>=6?"9.5px":_dLen>=5?"10.5px":"12px";
@@ -22835,9 +22893,8 @@ function vDeparts(){
             +'</div></td>';
         } else {
           var ci2=CODES[code]||{c:"#1e2e1e"};
-          // v9.616 \u2014 Meta cell prioritaire aussi sur lignes non-rotation
-          var _depMeta2=null;try{_depMeta2=cmcMetaForCell(A.year+"-"+A.month,emp.id,d);}catch(_){}
-          var _depMetaBg2=_depMeta2?cmcCellBgFromMeta(_depMeta2):"";
+          // v9.617 \u2014 Meta cell via helper unique (factorise)
+          var _depMetaBg2="";try{_depMetaBg2=cmcCellBgForView(A.year,A.month,emp.id,d);}catch(_){}
           var cellBg2=_depMetaBg2||(isHigh?'rgba(201,162,39,.05)':'#060e07');
           h+='<td style="text-align:center;background:'+cellBg2+';padding:2px 1px'+colOvl+'"><span style="font-size:13px;color:'+ci2.c+'">'+(code||'\u00b7')+'</span></td>';
         }
@@ -24191,6 +24248,16 @@ var CMC_META_BG_COLORS={
 function cmcCellBgFromMeta(meta){
   if(!meta||!meta.bg)return "";
   return CMC_META_BG_COLORS[meta.bg]||"";
+}
+// v9.617 — Helper unique factorisé pour vPlan/vDeparts : lookup + CSS en 1 appel.
+// Réduit la duplication et permet d'ajouter cache si perf le justifie.
+function cmcCellBgForView(year, month, eid, d){
+  try{
+    var key=year+"-"+month;
+    var meta=cmcMetaForCell(key,eid,d);
+    if(!meta)return "";
+    return cmcCellBgFromMeta(meta);
+  }catch(_){return "";}
 }
 function _cmcApplyVisualMarkers(key, sourceText){
   // Lit window._pdfStarMarkers + window._pdfFaisantFonctionCells + window._pdfRedNames
