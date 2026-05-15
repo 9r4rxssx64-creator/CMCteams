@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.627";
+var APP_VER="v9.628";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -33612,75 +33612,135 @@ function _statBox(label,value,color){
  */
 function _parseEncadresStatuts(txt, key, year, month){
   if(!txt||typeof txt!=="string")return {filled:0,unassigned:[]};
-  var pl=A.overrides[key]||{};
   var days=getDays(year,month);
-  // v9.593 (Kevin "se referer aux dossiers + ne pas inventer + reproduire identique au PDF")
-  // Format encadres SBM (NOTES_USER ligne 86-112) :
-  //   Nom employe + code competences (.BRT, .BRTP, etc.)
-  //   Code etat plein periode : CP, AF, M / MAL, SS, ABI, AT, PAT, CFL
-  //   Periode "du X au Y" (ex: "1 au 31" = plein mois)
-  // -> on CHERCHE les codes courts officiels SBM dans le contexte autour du nom,
-  //    PAS les mots francais longs. Et on detecte la periode pour appliquer
-  //    UNIQUEMENT aux jours indiques (pas tout le mois automatiquement).
-  var SBM_STATUS_CODES=["CP","AF","M","MAL","SS","ABI","AT","PAT","CFL","CRH","CDP"];
-  var txtUpper=txt.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-  var filled=0,unassigned=[];
-  var emptyEmps=A.employees.filter(function(emp){
-    if(!isEmpActive(emp,year,month))return false;
-    var row=pl[emp.id]||{};
-    return Object.keys(row).filter(function(d){return !!row[d];}).length===0;
+  // v9.628 (Kevin 2026-05-16 — texte PDF source mai 2026 V1 analysé) :
+  //
+  // FORMAT SBM RÉEL des encadrés statuts (vérifié texte source) :
+  //   "7 M du au"          ← header section : N + CODE + "du au"
+  //   "BRTE LORENZI Y * 1 31"
+  //   "BRE SANNA O 1 31"
+  //   ...                  ← liste de N noms (avec code poste optionnel devant)
+  //
+  //   "10 CP du au"        ← prochaine section
+  //   "BRTP+E SANGIORGIO G * 1 31"
+  //   ...
+  //
+  // BUG ANCIEN : le parser cherchait le code APRÈS le nom (contexte 150 chars).
+  // Mais dans le PDF SBM, le code est dans le HEADER AVANT la liste des noms.
+  // → PASSERON G était dans "10 CP" mais code "CP" pas trouvé après son nom.
+  //
+  // BUG ANCIEN 2 : ne traitait QUE les emps sans horaire (emptyEmps).
+  // Si le parser principal avait MAL attribué un horaire (parce que PASSERON G
+  // n'est PAS dans le tableau positionnel mais le parser pensait que si),
+  // l'encadré ne le corrigeait pas.
+  //
+  // FIX v9.628 : approche section-first.
+  //   1. Détecte chaque header "N CODE du au"
+  //   2. Pour chaque section, extrait noms du bloc jusqu'à la prochaine section
+  //   3. FORCE OVERRIDE chaque emp avec le code section (efface l'erreur du parser principal)
+  //
+  // Sections détectées : M, MAL, CP, AF, FORMATION, SS, ABI, AT, PAT, CFL, CRH, CDP, EDC.
+  //
+  // Garantit : si PDF SBM dit "PASSERON G est dans 10 CP", l'app affiche CP tout
+  // le mois pour PASSERON G — peu importe ce que le tableau positionnel disait.
+  var SBM_CODE_MAP={
+    "M":"M","MAL":"MAL","MALADIE":"M",
+    "CP":"CP","CONGE":"CP","CONGES":"CP","VACANCES":"CP",
+    "AF":"AF","FORMATION":"AF",
+    "SS":"SS","ABI":"ABI","AT":"AT","PAT":"PAT",
+    "CFL":"CFL","CRH":"CRH","CDP":"CDP","EDC":"EDC"
+  };
+  // Regex section header tolérant : N (1-3 chiffres) + espace(s) + CODE + espace(s) + "du" + espace(s) + "au"
+  var sectionRe=/(\d{1,3})\s+(M|MAL|MALADIE|CP|CONGE|CONGES|VACANCES|AF|FORMATION|SS|ABI|AT|PAT|CFL|CRH|CDP|EDC)\s+du\s+au\b/gi;
+  var sections=[];
+  var m;
+  while((m=sectionRe.exec(txt))!==null){
+    var rawCode=m[2].toUpperCase();
+    sections.push({
+      idx:m.index,
+      headerEnd:m.index+m[0].length,
+      expectedCount:parseInt(m[1])||0,
+      code:SBM_CODE_MAP[rawCode]||rawCode
+    });
+  }
+  if(!sections.length){return {filled:0,unassigned:[],sections:0};}
+  // Build emp lookup (normalize: surname + initiale)
+  function _norm(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();}
+  var empsByKey={};
+  A.employees.forEach(function(e){
+    if(!e||!e.name||!isEmpActive(e,year,month))return;
+    var nm=_norm(e.name);
+    empsByKey[nm]=e;
+    // Aussi indexer par surname seul (1er token) pour fallback
+    var parts=nm.split(/\s+/);
+    if(parts.length>=1){
+      var sn=parts[0];
+      if(!empsByKey["_sn_"+sn])empsByKey["_sn_"+sn]=[];
+      if(Array.isArray(empsByKey["_sn_"+sn]))empsByKey["_sn_"+sn].push(e);
+    }
   });
-  emptyEmps.forEach(function(emp){
-    var nm=(emp.name||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-    if(!nm){unassigned.push({id:emp.id,name:emp.name,reason:"name_empty"});return;}
-    var toks=nm.split(/\s+/).filter(function(t){return t.length>=3;});
-    if(!toks.length){unassigned.push({id:emp.id,name:emp.name,reason:"name_too_short"});return;}
-    // Pour reduire faux match : chercher TOUS les tokens (NOM + initiale) consecutifs
-    var nmEsc=nm.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-    var nmRe=new RegExp("\\b"+nmEsc+"\\b");
-    var nmM=nmRe.exec(txtUpper);
-    if(!nmM){
-      // fallback : nom de famille seul
-      var snEsc=toks[0].replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-      nmM=(new RegExp("\\b"+snEsc+"\\b")).exec(txtUpper);
-      if(!nmM){unassigned.push({id:emp.id,name:emp.name,reason:"name_not_in_pdf"});return;}
-    }
-    var idx=nmM.index;
-    // Contexte 100 chars apres le nom (le code statut suit le nom typiquement)
-    var ctx=txtUpper.slice(idx,Math.min(txtUpper.length,idx+150));
-    // Chercher un code officiel SBM apres le nom
-    var detectedCode=null;
-    for(var ci=0;ci<SBM_STATUS_CODES.length;ci++){
-      var codeRe=new RegExp("\\b"+SBM_STATUS_CODES[ci]+"\\b");
-      if(codeRe.test(ctx)){detectedCode=SBM_STATUS_CODES[ci];break;}
-    }
-    if(!detectedCode){
-      unassigned.push({id:emp.id,name:emp.name,reason:"no_sbm_code_near"});
-      return;
-    }
-    // Detecter periode "DU X AU Y" ou "X AU Y" ou "1 31"
-    // Si trouve : appliquer aux jours X..Y. Sinon : appliquer tout le mois.
-    var periodMatch=ctx.match(/\b(?:DU\s+)?(\d{1,2})\s+(?:AU\s+)?(\d{1,2})\b/);
-    var fromDay=1,toDay=days;
-    if(periodMatch){
-      var pf=parseInt(periodMatch[1]),pt=parseInt(periodMatch[2]);
-      if(pf>=1&&pf<=31&&pt>=1&&pt<=31&&pf<=pt){
-        fromDay=pf;toDay=Math.min(pt,days);
+  var filled=0,unassigned=[],totalForced=0;
+  // Regex pour extraire noms d'un bloc : optionnel code poste + NOM + INITIALE(S) + optionnel "*" + "1 31"
+  // code poste : .BRTP+KE  ou BRTP+E.  ou BRE  ou BTP+K  etc (lettres + . + + optionnels)
+  // nom : 1+ tokens UPPERCASE 2+ chars (gère noms composés "PEREIRA MACENA", "LANTERI MINET", "DE REGIBUS")
+  // initiale : 1-3 lettres
+  var nameRe=/(?:[\.\w+]{2,12}\s+)?([A-Z][A-Z][A-Z\s\-']{0,30}[A-Z])\s+([A-Z]{1,3})\s*\*?\s+(\d{1,2})\s+(\d{1,2})/g;
+  sections.forEach(function(section,sidx){
+    var blockEnd=(sidx+1<sections.length)?sections[sidx+1].idx:Math.min(txt.length,section.headerEnd+8000);
+    var block=txt.substring(section.headerEnd,blockEnd);
+    nameRe.lastIndex=0;
+    var nm,sectionFilled=0;
+    var matched={};
+    while((nm=nameRe.exec(block))!==null){
+      var rawSurname=nm[1].trim();
+      var rawInit=nm[2].trim();
+      var fromDay=parseInt(nm[3])||1;
+      var toDay=parseInt(nm[4])||days;
+      if(fromDay<1||fromDay>31||toDay<1||toDay>31||fromDay>toDay)continue;
+      var fullName=_norm(rawSurname+" "+rawInit);
+      if(matched[fullName])continue; // dédup intra-section
+      matched[fullName]=true;
+      // Match exact d'abord, sinon surname-only fallback
+      var emp=empsByKey[fullName];
+      if(!emp){
+        var surname=fullName.split(/\s+/)[0];
+        var candidates=empsByKey["_sn_"+surname];
+        if(Array.isArray(candidates)&&candidates.length===1)emp=candidates[0];
+        else if(Array.isArray(candidates)&&candidates.length>1){
+          // Plusieurs homonymes : prendre celui dont l'initiale matche
+          var initMatch=candidates.find(function(c){
+            var cInit=_norm(c.name).split(/\s+/).slice(1).join(" ").replace(/\s+/g,"");
+            return cInit===rawInit||cInit.indexOf(rawInit)===0;
+          });
+          if(initMatch)emp=initMatch;
+        }
       }
+      if(!emp){
+        unassigned.push({name:fullName,reason:"name_not_in_db",section:section.code});
+        continue;
+      }
+      // FORCE override : on EFFACE le tableau positionnel mal classé pour cet emp
+      if(!A.overrides[key])A.overrides[key]={};
+      A.overrides[key][emp.id]={};
+      for(var d=fromDay;d<=Math.min(toDay,days);d++){
+        A.overrides[key][emp.id][d]=section.code;
+      }
+      // Code apprentissage
+      if(!CODES[section.code]&&typeof learnNewCode==="function"){
+        try{learnNewCode(section.code);}catch(_){}
+      }
+      sectionFilled++;
+      totalForced++;
+      console.info("[encadres v9.628] section="+section.code+" "+emp.name+" -> "+section.code+" jours "+fromDay+"-"+toDay);
     }
-    // Verifier le code dans CODES (apprendre si manquant)
-    if(!CODES[detectedCode]&&typeof learnNewCode==="function"){
-      try{learnNewCode(detectedCode);}catch(_){}
+    if(sectionFilled<section.expectedCount){
+      console.warn("[encadres v9.628] section="+section.code+" attendu "+section.expectedCount+" emps, trouvé "+sectionFilled);
     }
-    if(!A.overrides[key])A.overrides[key]={};
-    if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
-    for(var d=fromDay;d<=toDay;d++){
-      A.overrides[key][emp.id][d]=detectedCode;
-    }
-    filled++;
-    console.info("[encadres v9.593] "+emp.name+" -> "+detectedCode+" jours "+fromDay+"-"+toDay);
+    filled+=sectionFilled;
   });
-  return {filled:filled,unassigned:unassigned};
+  try{if(typeof _audit==="function")_audit("encadres_force_override",AID,key,"v9.628",
+    "sections:"+sections.length+" forced:"+totalForced+" unassigned:"+unassigned.length);}catch(_){}
+  return {filled:filled,unassigned:unassigned,sections:sections.length,forced:totalForced};
 }
 
 function parseLegendsFromPdf(txt){
