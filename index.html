@@ -24908,6 +24908,35 @@ function cmcExportPitBossDiag(){
   }catch(e){toast("Erreur diag : "+(e&&e.message||e),"err");}
 }
 
+// v9.636 (Kevin 2026-05-15 "Pit Boss tous mêmes horaires (stale V1)") :
+// Bouton manuel admin pour wipe les cadres d'un mois sans toucher employés.
+// Utile quand Kevin a importé V1 seul et les Pit Boss conservent des données
+// V1 anciennes (avant scoped wipe). Permet re-import V2 propre.
+function cmcWipeCadresForMonth(){
+  try{
+    if(!A.user||A.user.id!==AID){toast("⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month;
+    var key=iy+"-"+im;
+    var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres"&&isEmpActive(e,iy,im);});
+    var ov=A.overrides[key]||{};
+    var cadresWithData=cadres.filter(function(e){var r=ov[e.id]||{};return Object.keys(r).filter(function(d){return !!r[d];}).length>0;});
+    if(cadresWithData.length===0){toast("Aucun cadre n'a de données pour "+MFR[im]+" "+iy,"info");return;}
+    var names=cadresWithData.slice(0,5).map(function(e){return e.name;}).join(", ")+(cadresWithData.length>5?" +"+(cadresWithData.length-5):"");
+    if(!confirm("⚠ Effacer les horaires de "+cadresWithData.length+" cadres pour "+MFR[im]+" "+iy+" ?\n\n"+names+"\n\nLes employés/chefs ne sont PAS touchés. Tu pourras re-importer le PDF V2 (Pit Boss) après.\n\nUn snapshot pré-effacement est sauvegardé pour rollback.")) return;
+    // Snapshot avant wipe pour rollback éventuel
+    try{
+      var snapKey="cmc_history_"+key+"_"+Date.now()+"_pre_wipe_cadres";
+      ls(snapKey,{ov:JSON.parse(JSON.stringify(A.overrides[key]||{})),ts:Date.now(),reason:"manual_wipe_cadres"});
+    }catch(_){}
+    var stats=_cmcScopedWipe(key,"cadres");
+    try{ls("cmc_ov",A.overrides);if(typeof fbWrite==="function")fbWrite("cmc_ov",A.overrides);}catch(_){}
+    try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
+    try{_audit("manual_wipe_cadres",AID,key,"",stats.wipedEmps+" cadres, "+stats.wipedCells+" cells");}catch(_){}
+    toast("✅ "+stats.wipedEmps+" cadres effacés. Re-importe le V2 (Pit Boss) maintenant.","ok",6000);
+    setTimeout(function(){if(typeof dc==="function")dc();},500);
+  }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
+}
+
 // v9.625 (Kevin 2026-05-16 "les pit ont tous la même horaire. Pas possible.") :
 // Détecte le bug critique parser qui duplique le MÊME schedule sur tous les emps
 // d'une famille. Cas typique : parser lit 1 ligne d'horaires (header section)
@@ -33018,6 +33047,9 @@ function vImport(){
         </button>
         <button class="btn" onclick="cmcExportPitBossDiag()" title="Diagnostic Pit Boss : export horaires r\u00e9els par cadre pour comparaison PDF" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">
           \ud83d\udd0d Diag Pit Boss horaires
+        </button>
+        <button class="btn" onclick="cmcWipeCadresForMonth()" title="Efface les horaires des cadres (Pit Boss + Superviseurs) pour ce mois \u2014 snapshot rollback gard\u00e9. Utile avant re-import V2 propre." style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,64,64,.12);border:1px solid rgba(224,64,64,.45);color:#e06060;font-weight:700">
+          \ud83d\uddd1\ufe0f Effacer cadres (ce mois)
         </button>
       </div>
     </details>
