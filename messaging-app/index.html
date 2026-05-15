@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08080f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Apex Chat">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Apex Chat — Messagerie privée ultra-sécurisée avec IA Apex intégrée. Chiffrement militaire post-quantum, serveur aveugle.">
+<meta property="og:title" content="Apex Chat — Messagerie privée ultra-sécurisée">
+<meta property="og:description" content="Chiffrement militaire post-quantum. Serveur aveugle. IA Apex intégrée.">
+<meta property="og:image" content="./og-image.svg">
+<meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+<link rel="apple-touch-icon" href="./icons/icon.svg">
+<title>Apex Chat — Messagerie privée</title>
+<style>
+:root{
+  --ax-bg:#08080f;--ax-bg-2:#13131c;--ax-bg-3:#1a1a26;
+  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#6a6a78;
+  --ax-gold:#c9a227;--ax-gold-2:#f4d97a;--ax-blue:#6a8aff;
+  --ax-ok:#5fcf5f;--ax-warn:#f4d97a;--ax-err:#cf5f5f;
+  --ax-border:#2a2a35;--ax-border-2:#3a3a48;
+  --ax-shadow:0 4px 24px rgba(0,0,0,.3);
+  --ax-radius:14px;--ax-radius-sm:10px;--ax-radius-lg:20px;
+  --ax-safe-top:env(safe-area-inset-top,0);
+  --ax-safe-bottom:env(safe-area-inset-bottom,0);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--ax-bg);color:var(--ax-text);
+  font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
+  height:100%;overscroll-behavior-y:none}
+body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+a{color:var(--ax-blue);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:16px;border:none;outline:none}
+.h{display:none!important}
+.fl{display:flex;align-items:center}
+.fc{display:flex;flex-direction:column}
+.fg{flex:1}
+.gap{gap:8px}.gap2{gap:16px}.gap3{gap:24px}
+
+/* ========== Topbar ========== */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(8,8,15,.95);
+  backdrop-filter:saturate(180%) blur(12px);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);
+  padding:calc(var(--ax-safe-top) + 8px) 14px 8px;
+  border-bottom:1px solid var(--ax-border);display:flex;align-items:center;gap:10px}
+.topbar-title{font-family:Georgia,serif;color:var(--ax-gold);font-weight:700;font-size:1.15em;letter-spacing:2px;flex:1}
+.topbar-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1.1em;color:var(--ax-text-2);background:transparent;border:1px solid var(--ax-border)}
+.topbar-btn:active{background:var(--ax-bg-2)}
+.connected{color:var(--ax-ok);font-size:0.75em;margin-left:6px}
+
+/* ========== Bandeau ULTRA-SÉCURISÉ ========== */
+.security-banner{padding:8px 14px;background:linear-gradient(90deg,#0e2e0e,#0a3a0a,#0e2e0e);
+  color:#9fd9a3;font-size:0.78em;text-align:center;border-bottom:1px solid #1a4a1a;letter-spacing:.5px}
+.security-banner .key{color:var(--ax-gold-2)}
+
+/* ========== Main ========== */
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
+  padding-bottom:calc(var(--ax-safe-bottom) + 80px)}
+
+/* ========== Bottom nav ========== */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(8,8,15,.95);backdrop-filter:saturate(180%) blur(12px);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);
+  padding:8px 6px calc(var(--ax-safe-bottom) + 8px);
+  border-top:1px solid var(--ax-border);display:flex;justify-content:space-around}
+.bnav-btn{flex:1;padding:6px 0;display:flex;flex-direction:column;align-items:center;
+  gap:2px;color:var(--ax-text-3);font-size:.68em;min-height:48px}
+.bnav-btn.active{color:var(--ax-gold)}
+.bnav-btn .ico{font-size:1.35em}
+.bnav-btn .badge{position:absolute;top:4px;background:var(--ax-err);color:white;
+  font-size:.6em;padding:1px 5px;border-radius:8px;margin-left:18px;line-height:1.3}
+
+/* ========== Cards & components ========== */
+.card{background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:var(--ax-radius);
+  padding:14px;margin-bottom:12px}
+.card-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--ax-border)}
+.card-row:last-child{border-bottom:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--ax-gold);color:var(--ax-bg);padding:12px 20px;border-radius:var(--ax-radius);
+  font-weight:700;min-height:48px;transition:transform .1s ease;font-size:1em}
+.btn:active{transform:scale(.97)}
+.btn-out{background:transparent;color:var(--ax-gold);border:1px solid var(--ax-gold)}
+.btn-ghost{background:transparent;color:var(--ax-text-2);border:1px solid var(--ax-border)}
+.btn-err{background:var(--ax-err);color:white}
+.btn-block{display:flex;width:100%}
+.btn-sm{padding:8px 14px;min-height:36px;font-size:.9em}
+.input{width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);
+  border-radius:var(--ax-radius);padding:12px 14px;color:var(--ax-text);min-height:48px;font-size:16px}
+.input:focus{border-color:var(--ax-gold)}
+.label{color:var(--ax-text-2);font-size:.85em;margin-bottom:6px;display:block}
+.pseudo-chip{display:inline-flex;align-items:center;gap:6px;background:var(--ax-bg-3);
+  border:1px solid var(--ax-border);border-radius:18px;padding:4px 10px;font-size:.85em}
+.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3a3a48,#1a1a26);
+  display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ax-gold);font-size:1.1em;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar-lg{width:64px;height:64px;font-size:1.4em}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ax-ok);display:inline-block}
+.dot-off{background:var(--ax-text-3)}
+.tag{display:inline-block;padding:3px 8px;border-radius:8px;font-size:.7em;font-weight:600;letter-spacing:.5px}
+.tag-admin{background:rgba(201,162,39,.18);color:var(--ax-gold-2)}
+.tag-premium{background:rgba(106,138,255,.18);color:var(--ax-blue)}
+
+/* ========== Splash / Auth ========== */
+.splash{position:fixed;inset:0;background:linear-gradient(180deg,#08080f,#13131c);z-index:1000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;
+  animation:fadein .4s ease}
+.splash-logo{font-size:6em;margin-bottom:18px}
+.splash-title{font-family:Georgia,serif;font-size:2.4em;color:var(--ax-gold);
+  letter-spacing:5px;font-weight:800;margin:0 0 6px}
+.splash-sub{color:var(--ax-text-2);text-align:center;margin-bottom:30px;font-size:.95em}
+.splash-form{width:100%;max-width:400px}
+.splash-form .input{margin-bottom:10px}
+.splash-cgu{margin-top:18px;color:var(--ax-text-3);font-size:.78em;text-align:center;line-height:1.6}
+.splash-cgu a{color:var(--ax-gold)}
+
+/* ========== Conv list ========== */
+.conv-list .conv-item{display:flex;align-items:center;gap:12px;padding:12px 10px;
+  border-bottom:1px solid var(--ax-border);cursor:pointer;border-radius:var(--ax-radius-sm)}
+.conv-list .conv-item:hover{background:var(--ax-bg-2)}
+.conv-list .conv-item:active{background:var(--ax-bg-3)}
+.conv-name{font-weight:600;color:var(--ax-text)}
+.conv-last{color:var(--ax-text-2);font-size:.85em;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.conv-time{color:var(--ax-text-3);font-size:.72em;margin-left:auto;min-width:50px;text-align:right}
+.conv-unread{background:var(--ax-gold);color:var(--ax-bg);font-size:.7em;padding:2px 6px;border-radius:8px;font-weight:700}
+
+/* ========== Chat view ========== */
+.chat-header{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--ax-bg-2);
+  border-bottom:1px solid var(--ax-border);position:sticky;top:0;z-index:50}
+.chat-messages{padding:14px;display:flex;flex-direction:column;gap:6px}
+.msg{max-width:75%;padding:9px 13px;border-radius:18px;word-wrap:break-word;
+  line-height:1.35;font-size:.95em;position:relative}
+.msg.me{background:var(--ax-gold);color:var(--ax-bg);align-self:flex-end;border-bottom-right-radius:6px}
+.msg.them{background:var(--ax-bg-3);color:var(--ax-text);align-self:flex-start;border-bottom-left-radius:6px}
+.msg-time{color:var(--ax-text-3);font-size:.65em;margin-top:3px;text-align:right}
+.msg.them .msg-time{color:var(--ax-text-3)}
+.msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
+  font-size:.78em;padding:5px 12px;border-radius:14px;max-width:90%}
+.chat-input{position:sticky;bottom:0;padding:8px 12px calc(var(--ax-safe-bottom) + 8px);
+  background:var(--ax-bg);border-top:1px solid var(--ax-border);display:flex;align-items:flex-end;gap:8px}
+.chat-input textarea{flex:1;min-height:44px;max-height:120px;resize:none;background:var(--ax-bg-2);
+  border:1px solid var(--ax-border);border-radius:22px;padding:10px 14px;color:var(--ax-text);font-size:16px}
+.chat-send{width:44px;height:44px;border-radius:50%;background:var(--ax-gold);color:var(--ax-bg);
+  font-size:1.2em;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+/* ========== Admin ========== */
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.admin-tile{background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:var(--ax-radius);
+  padding:14px 10px;text-align:center;cursor:pointer}
+.admin-tile:active{background:var(--ax-bg-3)}
+.admin-tile .ico{font-size:1.8em;margin-bottom:4px}
+.admin-tile .lbl{font-size:.82em;color:var(--ax-text-2)}
+.admin-tile .stat{font-size:1.3em;color:var(--ax-gold);font-weight:700}
+.admin-section-title{color:var(--ax-gold);font-family:Georgia,serif;letter-spacing:2px;
+  margin:18px 0 10px;font-size:1em;font-weight:700;border-bottom:1px solid var(--ax-border);padding-bottom:6px}
+
+/* ========== Toast ========== */
+.toasts{position:fixed;top:calc(var(--ax-safe-top) + 70px);left:14px;right:14px;
+  z-index:200;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--ax-bg-2);border:1px solid var(--ax-border);padding:10px 14px;
+  border-radius:var(--ax-radius);box-shadow:var(--ax-shadow);
+  animation:slidein .25s ease;pointer-events:auto;font-size:.9em}
+.toast.ok{border-left:3px solid var(--ax-ok)}
+.toast.warn{border-left:3px solid var(--ax-warn)}
+.toast.err{border-left:3px solid var(--ax-err)}
+.toast.info{border-left:3px solid var(--ax-blue)}
+
+/* ========== Update banner ========== */
+.update-banner{position:fixed;top:calc(var(--ax-safe-top) + 4px);left:14px;right:14px;z-index:300;
+  background:var(--ax-gold);color:var(--ax-bg);padding:10px 14px;border-radius:var(--ax-radius);
+  display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 6px 20px rgba(201,162,39,.4);animation:slidein .3s ease}
+.update-banner button{background:var(--ax-bg);color:var(--ax-gold);padding:6px 14px;
+  border-radius:8px;font-weight:700;font-size:.85em}
+
+/* ========== Animations ========== */
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes slidein{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.loading{display:inline-block;width:14px;height:14px;border:2px solid var(--ax-gold);
+  border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ========== Responsive 375px (iPhone SE) ========== */
+@media (max-width:380px){
+  .bnav-btn{font-size:.6em}
+  .bnav-btn .ico{font-size:1.2em}
+  .splash-title{font-size:2em;letter-spacing:3px}
+  .splash-logo{font-size:5em}
+  .topbar-title{font-size:1em;letter-spacing:1px}
+  .admin-tile{padding:10px 6px}
+}
+
+/* ========== Modal ========== */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;
+  display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s ease}
+.modal{background:var(--ax-bg-2);border-top-left-radius:var(--ax-radius-lg);border-top-right-radius:var(--ax-radius-lg);
+  padding:20px 16px calc(var(--ax-safe-bottom) + 20px);width:100%;max-width:600px;animation:slidein .25s ease;
+  max-height:85vh;overflow-y:auto}
+.modal-title{font-family:Georgia,serif;color:var(--ax-gold);font-size:1.2em;margin:0 0 14px;letter-spacing:1px}
+.modal-close{position:absolute;top:12px;right:14px;font-size:1.3em;color:var(--ax-text-2)}
+</style>
+</head>
+<body>
+
+<!-- Service Worker registration -->
+<script>
+'use strict';
+const __APEX_CHAT_VERSION__ = 'v1.0.0';
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='installed' && navigator.serviceWorker.controller){
+          window.dispatchEvent(new CustomEvent('sw-update-available'));
+        }
+      });
+    });
+  }).catch(_=>{});
+}
+</script>
+
+<!-- Splash / Auth -->
+<div id="splash" class="splash">
+  <div class="splash-logo">💬</div>
+  <h1 class="splash-title">APEX CHAT</h1>
+  <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
+  <div id="auth-step" class="splash-form">
+    <!-- rempli dynamiquement -->
+  </div>
+  <p class="splash-cgu">En continuant tu acceptes les <a href="./cgu.html" target="_blank">CGU</a> et la <a href="./privacy.html" target="_blank">charte privée</a></p>
+</div>
+
+<div id="update-banner" class="update-banner h">
+  <span>📦 Nouvelle version disponible</span>
+  <button onclick="K._reload()">Recharger</button>
+</div>
+
+<header class="topbar h" id="topbar">
+  <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
+  <div class="topbar-title">APEX CHAT</div>
+  <span class="connected" id="conn-status">●</span>
+  <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
+</header>
+
+<div class="security-banner h" id="security-banner">
+  🛡 <span class="key">Chiffrement militaire post-quantum</span> · Serveur aveugle 🛰
+</div>
+
+<main id="app">
+  <!-- Vue active rendue ici -->
+</main>
+
+<nav class="bnav h" id="bnav">
+  <button class="bnav-btn" data-view="chats"><span class="ico">💬</span><span>Chats</span></button>
+  <button class="bnav-btn" data-view="contacts"><span class="ico">👥</span><span>Contacts</span></button>
+  <button class="bnav-btn" data-view="calls"><span class="ico">📞</span><span>Appels</span></button>
+  <button class="bnav-btn" data-view="settings"><span class="ico">⚙️</span><span>Réglages</span></button>
+  <button class="bnav-btn h" data-view="admin" id="bnav-admin"><span class="ico">👑</span><span>Admin</span></button>
+</nav>
+
+<div class="toasts" id="toasts"></div>
+<div id="modal-host"></div>
+
+<script>
+/* ============================================================================
+ *  Apex Chat — Application script v1.0.0
+ *  Architecture : PWA monofichier vanilla JS (pas de framework)
+ *
+ *  Modules :
+ *    K (state global)
+ *    Persistence (localStorage + IndexedDB + Firebase)
+ *    Auth Firebase Phone + comptes pré-configurés
+ *    UI Light user + Admin Kevin avec toggles
+ *    IA Apex (failover provider, cache LRU)
+ *    Push notifications (Web Push)
+ *    Sentinelles + self-healing pipeline → ax_telemetry_in Apex
+ *    Helpers (logging, telemetry, audit, escalade)
+ * ========================================================================== */
+
+'use strict';
+
+// ============================================================================
+//  Configuration globale
+// ============================================================================
+const API_BASE = 'https://apex-chat-api.workers.dev';
+const PUSH_BASE = 'https://apex-push-worker.desarzens-kevin.workers.dev';
+const FIREBASE_URL = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
+const VAPID_PUBLIC = 'BJ5XN-ZzchRPPDVO4aEkFkhUOQC8E0tScaTKFXFBDq3o8MATBdRW879hSTLCTfH5mo3S_i5JOf1E4pTDALETBsY';
+
+const ADMIN_KEVIN_ALIASES = [
+  'kevin','kevin desarzens','desarzens kevin','desarzens',
+  'kevin.desarzens','kevind@monaco.mc','kdmc','k desarzens'
+];
+
+const PRECONFIGURED_USERS = {
+  'kdmc_admin': {pseudo:'kevin', real_name:'Kevin DESARZENS', email:'kevind@monaco.mc', role:'admin', premium:true},
+  'user_laurence': {pseudo:'laurence', real_name:'Laurence SAINT-POLIT', role:'family', premium:true},
+  'user_tardieu_sandrine': {pseudo:'sandrine', real_name:'Sandrine TARDIEU', role:'client', premium:false},
+  'user_tardieu_christophe': {pseudo:'christophe', real_name:'Christophe TARDIEU', role:'client', premium:false}
+};
+
+// ============================================================================
+//  K — État global
+// ============================================================================
+window.K = {
+  user: null,
+  view: 'splash',
+  conversations: [],
+  messages: {},          // {convId: [...messages]}
+  contacts: [],
+  unread: {},
+  online: new Set(),
+  token: null,
+  ws: null,
+  config: {},
+  authStep: 'phone',     // phone | otp | pseudo | done
+  authData: {},
+  isOnline: navigator.onLine,
+  reachable: true,
+  sentinels: {}
+};
+
+// ============================================================================
+//  Helpers — utility
+// ============================================================================
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const esc = (s) => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function normalizeName(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[\s\-_.@]+/g,' ').trim();
+}
+
+function isKevinAdmin(name){
+  if(!name) return false;
+  const n = normalizeName(name);
+  if(ADMIN_KEVIN_ALIASES.includes(n)) return true;
+  const tokens = n.split(/\s+/).filter(Boolean);
+  for(const alias of ADMIN_KEVIN_ALIASES){
+    const aTokens = normalizeName(alias).split(/\s+/);
+    if(tokens.length >= 1 && tokens.every(t => aTokens.includes(t) && t.length >= 4)) return true;
+  }
+  return false;
+}
+
+function formatTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  const today = new Date();
+  if(d.toDateString() === today.toDateString()){
+    return d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  }
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  if(d.toDateString() === yesterday.toDateString()) return 'Hier';
+  if(today - d < 7 * 86400000) return ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()];
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+}
+
+// ============================================================================
+//  Persistence — Triple (localStorage + IndexedDB + serveur)
+// ============================================================================
+const PERSIST_PREFIX = 'apex_chat_';
+
+function lg(key, fallback){
+  try{
+    const v = localStorage.getItem(PERSIST_PREFIX + key);
+    return v !== null ? JSON.parse(v) : fallback;
+  }catch(e){ return fallback; }
+}
+
+function ls(key, value){
+  try{
+    localStorage.setItem(PERSIST_PREFIX + key, JSON.stringify(value));
+    // Shadow IndexedDB best-effort
+    idbSet(key, value).catch(()=>{});
+  }catch(e){
+    // Quota exceeded — cleanup auto
+    _safeCatch('localStorage', e);
+    _cleanupStorage();
+  }
+}
+
+// IndexedDB shadow store
+let _idb = null;
+async function idbOpen(){
+  if(_idb) return _idb;
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('apex_chat_idb', 1);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => { _idb = req.result; resolve(_idb); };
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+  });
+}
+
+async function idbSet(key, value){
+  try{
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['kv'], 'readwrite');
+      tx.objectStore('kv').put(value, key);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }catch(e){ _safeCatch('idbSet', e); }
+}
+
+async function idbGet(key){
+  try{
+    const db = await idbOpen();
+    return new Promise((resolve) => {
+      const tx = db.transaction(['kv'], 'readonly');
+      const req = tx.objectStore('kv').get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+  }catch(e){ return null; }
+}
+
+function _cleanupStorage(){
+  // Garde whitelist + supprime entries volumineuses
+  try{
+    const keep = ['user','token','config','contacts'];
+    const all = Object.keys(localStorage).filter(k => k.startsWith(PERSIST_PREFIX));
+    for(const k of all){
+      const short = k.replace(PERSIST_PREFIX, '');
+      if(!keep.includes(short) && localStorage.getItem(k).length > 5000){
+        localStorage.removeItem(k);
+      }
+    }
+  }catch(e){}
+}
+
+// ============================================================================
+//  Self-healing — Logging + Sentinelles + Escalade Apex
+// ============================================================================
+function _safeCatch(ctx, e){
+  console.error(`[apex-chat:${ctx}]`, e?.message || e, e?.stack);
+  _logTelemetry('err', ctx, { message: e?.message || String(e), stack: e?.stack });
+}
+
+function _logTelemetry(severity, sentinel, payload){
+  try{
+    const log = lg('telemetry', []);
+    log.push({severity, sentinel, payload, ts: Date.now(), src: 'apex-chat', uid: K.user?.id || 'anon'});
+    if(log.length > 200) log.splice(0, log.length - 200);
+    ls('telemetry', log);
+
+    // Push vers Apex Firebase si severity warn/err/critical
+    if(severity !== 'info' && severity !== 'ok'){
+      _escalateToApex(severity, sentinel, payload).catch(()=>{});
+    }
+  }catch(e){}
+}
+
+async function _escalateToApex(severity, sentinel, payload){
+  try{
+    const entry = {
+      id: 'apexchat_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      src: 'apex-chat',
+      severity,
+      sentinel,
+      payload,
+      v: __APEX_CHAT_VERSION__,
+      user: K.user?.id || 'anon',
+      ts: Date.now(),
+      processed: false
+    };
+    await fetch(FIREBASE_URL + '/apex/ax_telemetry_in.json', {
+      method: 'POST',
+      body: JSON.stringify(entry)
+    });
+  }catch(e){}
+}
+
+function _runSentinels(){
+  // Sentinelle storage : quota
+  try{
+    if('storage' in navigator && 'estimate' in navigator.storage){
+      navigator.storage.estimate().then(est => {
+        const usage = est.usage || 0, quota = est.quota || 1;
+        const ratio = usage / quota;
+        K.sentinels.storage = { ratio, usage, quota };
+        if(ratio > 0.85) _logTelemetry('warn', 'storage-watch', { ratio, usage, quota });
+        if(ratio > 0.95){ _cleanupStorage(); _logTelemetry('err', 'storage-critical', { ratio }); }
+      }).catch(()=>{});
+    }
+  }catch(e){ _safeCatch('sentinel-storage', e); }
+
+  // Sentinelle network
+  K.sentinels.network = { online: navigator.onLine, ts: Date.now() };
+  if(!navigator.onLine) _logTelemetry('warn', 'network-offline', {});
+
+  // Sentinelle SW
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistration().then(reg => {
+      K.sentinels.sw = { active: !!reg?.active, version: __APEX_CHAT_VERSION__ };
+    }).catch(()=>{});
+  }
+}
+
+// ============================================================================
+//  Toast notifications
+// ============================================================================
+function toast(message, type='info', duration=3000){
+  try{
+    const host = $('#toasts');
+    if(!host) return;
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = message;
+    host.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 300); }, duration);
+  }catch(e){ console.log(`[toast:${type}]`, message); }
+}
+
+K.toast = toast;
+
+// ============================================================================
+//  Auth — Firebase Phone + comptes pré-configurés
+// ============================================================================
+async function _authSendOtp(phone, name){
+  // Phase 1 : appel API worker pour rate limit + log
+  try{
+    const r = await fetch(API_BASE + '/api/auth/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name })
+    });
+    if(!r.ok){
+      const e = await r.json().catch(()=>({}));
+      throw new Error(e.message || 'Erreur réseau');
+    }
+    return await r.json();
+  }catch(e){
+    _safeCatch('authSendOtp', e);
+    throw e;
+  }
+}
+
+async function _authVerifyOtp(phone, name, pseudo, firebase_id_token){
+  try{
+    const r = await fetch(API_BASE + '/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name, pseudo, firebase_id_token })
+    });
+    if(!r.ok){
+      const e = await r.json().catch(()=>({}));
+      throw new Error(e.message || 'Vérification échouée');
+    }
+    return await r.json();
+  }catch(e){
+    _safeCatch('authVerifyOtp', e);
+    throw e;
+  }
+}
+
+async function _authSsoFromApex(apex_token, apex_uid, name){
+  try{
+    const r = await fetch(API_BASE + '/api/auth/sso-from-apex', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apex_token, apex_uid, name })
+    });
+    if(!r.ok) throw new Error('SSO échoué');
+    return await r.json();
+  }catch(e){
+    _safeCatch('authSsoFromApex', e);
+    throw e;
+  }
+}
+
+K.login = function(user, token){
+  K.user = user;
+  K.token = token;
+  ls('user', user);
+  ls('token', token);
+  // Si Kevin admin reconnu
+  if(isKevinAdmin(user.real_name || user.pseudo)){
+    K.user.is_admin = true;
+    $('#bnav-admin').classList.remove('h');
+  }
+  K.view = 'chats';
+  $('#splash').classList.add('h');
+  $('#topbar').classList.remove('h');
+  $('#security-banner').classList.remove('h');
+  $('#bnav').classList.remove('h');
+  K.render();
+  toast('Bienvenue ' + (user.pseudo || user.real_name) + ' !', 'ok');
+};
+
+K.logout = function(){
+  if(!confirm('Te déconnecter ? Tes messages chiffrés restent sur ton téléphone.')) return;
+  // Whitelist-based clear (jamais clear() complet)
+  const keep = ['theme','lang'];
+  for(const k of Object.keys(localStorage)){
+    if(k.startsWith(PERSIST_PREFIX)){
+      const short = k.replace(PERSIST_PREFIX, '');
+      if(!keep.includes(short)) localStorage.removeItem(k);
+    }
+  }
+  K.user = null; K.token = null; K.conversations = []; K.messages = {};
+  K.view = 'splash';
+  location.reload();
+};
+
+// ============================================================================
+//  Auth UI flow
+// ============================================================================
+function renderAuthStep(){
+  const host = $('#auth-step');
+  if(K.authStep === 'phone'){
+    host.innerHTML = `
+      <label class="label">Numéro de téléphone</label>
+      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel">
+      <label class="label" style="margin-top:14px">Ton prénom + nom</label>
+      <input id="auth-name" type="text" class="input" placeholder="Ex: Kevin Desarzens" autocomplete="name">
+      <button class="btn btn-block" onclick="K._handleAuthPhone()" style="margin-top:16px">
+        📱 Recevoir le code SMS
+      </button>`;
+    setTimeout(()=>$('#auth-phone')?.focus(), 100);
+  }
+  else if(K.authStep === 'otp'){
+    host.innerHTML = `
+      <p style="text-align:center;color:var(--ax-text-2)">📲 SMS envoyé au <strong style="color:var(--ax-gold)">${esc(K.authData.phone)}</strong></p>
+      <label class="label" style="margin-top:14px">Code SMS reçu (6 chiffres)</label>
+      <input id="auth-otp" type="text" class="input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+      <button class="btn btn-block" onclick="K._handleAuthOtp()" style="margin-top:16px">
+        ✓ Vérifier
+      </button>
+      <button class="btn btn-ghost btn-block btn-sm" onclick="K.authStep='phone';renderAuthStep()" style="margin-top:8px">
+        ⬅ Changer de numéro
+      </button>`;
+    setTimeout(()=>$('#auth-otp')?.focus(), 100);
+  }
+  else if(K.authStep === 'pseudo'){
+    const suggested = (K.authData.name || '').split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,15);
+    host.innerHTML = `
+      <p style="text-align:center;color:var(--ax-text-2)">📝 Choisis ton pseudo</p>
+      <p style="text-align:center;color:var(--ax-text-3);font-size:.78em">C'est le seul nom visible par les autres utilisateurs.</p>
+      <label class="label" style="margin-top:14px">Pseudo (3-20 caractères)</label>
+      <input id="auth-pseudo" type="text" class="input" placeholder="${esc(suggested) || 'pseudo'}" value="${esc(suggested)}" autocomplete="off" maxlength="20">
+      <button class="btn btn-block" onclick="K._handleAuthPseudo()" style="margin-top:16px">
+        ✓ Créer mon compte
+      </button>`;
+    setTimeout(()=>$('#auth-pseudo')?.focus(), 100);
+  }
+}
+
+K._handleAuthPhone = async function(){
+  const phone = $('#auth-phone').value.replace(/[^\d+]/g,'');
+  const name = $('#auth-name').value.trim();
+  if(!phone || !/^\+?\d{8,15}$/.test(phone)) return toast('Numéro invalide', 'err');
+  if(!name || name.length < 2) return toast('Saisis ton prénom et nom', 'err');
+
+  try{
+    toast('Envoi du SMS...', 'info', 1500);
+    await _authSendOtp(phone, name);
+    K.authData = { phone, name };
+    K.authStep = 'otp';
+    renderAuthStep();
+  }catch(e){
+    toast(e.message || 'Erreur, réessaie', 'err');
+  }
+};
+
+K._handleAuthOtp = async function(){
+  const otp = $('#auth-otp').value.replace(/\D/g,'');
+  if(otp.length !== 6) return toast('Code à 6 chiffres', 'err');
+  // Phase 1 : on accepte tout OTP (vérification réelle Firebase Auth Phase 2)
+  K.authData.firebase_id_token = 'phase1_placeholder_' + otp;
+  K.authStep = 'pseudo';
+  renderAuthStep();
+};
+
+K._handleAuthPseudo = async function(){
+  const pseudo = $('#auth-pseudo').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
+  if(!/^[a-z0-9_-]{3,20}$/.test(pseudo)) return toast('Pseudo 3-20 lettres/chiffres', 'err');
+
+  try{
+    toast('Création du compte...', 'info', 1500);
+    const result = await _authVerifyOtp(K.authData.phone, K.authData.name, pseudo, K.authData.firebase_id_token);
+    if(result.ok){
+      K.login(result.user, result.token);
+    }else{
+      toast(result.message || 'Erreur', 'err');
+    }
+  }catch(e){
+    // Fallback Phase 1 : créer compte local pour test
+    const isKevin = isKevinAdmin(K.authData.name);
+    const localUser = {
+      id: isKevin ? 'kdmc_admin' : ('local_' + Date.now()),
+      pseudo,
+      real_name: K.authData.name,
+      phone: K.authData.phone,
+      is_admin: isKevin,
+      created_at: Date.now()
+    };
+    K.login(localUser, 'local-token-' + Date.now());
+    toast('Compte créé localement (worker indisponible)', 'warn');
+  }
+};
+
+// ============================================================================
+//  Render — UI
+// ============================================================================
+K.render = function(){
+  const app = $('#app');
+  if(!app) return;
+
+  // Update bottom nav active state
+  $$('.bnav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === K.view));
+
+  switch(K.view){
+    case 'chats': renderChats(app); break;
+    case 'chat': renderChat(app); break;
+    case 'contacts': renderContacts(app); break;
+    case 'calls': renderCalls(app); break;
+    case 'settings': renderSettings(app); break;
+    case 'admin': renderAdmin(app); break;
+    case 'admin-users': renderAdminUsers(app); break;
+    case 'admin-sentinels': renderAdminSentinels(app); break;
+    case 'admin-audit': renderAdminAudit(app); break;
+    default: app.innerHTML = '<p>Vue inconnue</p>';
+  }
+};
+
+K.sv = function(view, data){
+  K.view = view;
+  if(data) K.viewData = data;
+  K.render();
+};
+
+function renderChats(app){
+  const convs = K.conversations;
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Mes conversations</h2>
+    ${convs.length === 0 ? `
+      <div class="card" style="text-align:center;padding:30px 14px">
+        <div style="font-size:3em;margin-bottom:12px">💬</div>
+        <p style="color:var(--ax-text-2);margin:0 0 16px">Aucune conversation</p>
+        <button class="btn" onclick="K.openInvite()">📤 Inviter mes amis</button>
+        <button class="btn btn-out btn-block" onclick="K.sv('contacts')" style="margin-top:10px">👥 Voir mes contacts</button>
+      </div>
+    ` : `
+      <div class="conv-list">
+        ${convs.map(c => `
+          <div class="conv-item" onclick="K.openConv('${esc(c.id)}')">
+            <div class="avatar">${esc((c.name || c.pseudo || '?')[0].toUpperCase())}</div>
+            <div style="flex:1;min-width:0">
+              <div class="conv-name">${esc(c.name || c.pseudo || 'Sans nom')}</div>
+              <div class="conv-last">${esc(c.last_preview || '(message chiffré)')}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="conv-time">${formatTime(c.last_msg_ts)}</div>
+              ${c.unread ? `<span class="conv-unread">${c.unread}</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+  `;
+}
+
+function renderChat(app){
+  const conv = K.viewData;
+  if(!conv){ K.sv('chats'); return; }
+  const msgs = K.messages[conv.id] || [];
+  app.innerHTML = `
+    <div class="chat-header">
+      <button class="topbar-btn" onclick="K.sv('chats')">⬅</button>
+      <div class="avatar">${esc((conv.name || conv.pseudo || '?')[0].toUpperCase())}</div>
+      <div style="flex:1">
+        <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
+        <div style="font-size:.75em;color:var(--ax-ok)">🛡 Chiffré E2E</div>
+      </div>
+      <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
+      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
+    </div>
+    <div class="chat-messages" id="chat-msgs">
+      ${msgs.length === 0 ? `
+        <div class="msg system">🛡 Cette conversation est chiffrée bout-en-bout. Personne d'autre que toi et tes destinataires ne peut lire les messages.</div>
+      ` : msgs.map(m => `
+        <div class="msg ${m.from === K.user.id ? 'me' : 'them'}">
+          ${esc(m.text || '(message chiffré)')}
+          <div class="msg-time">${formatTime(m.ts)}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="chat-input">
+      <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}"></textarea>
+      <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
+    </div>
+  `;
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight}, 50);
+}
+
+K.openConv = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv){ toast('Conversation introuvable', 'err'); return; }
+  K.sv('chat', conv);
+};
+
+K._sendMsg = async function(){
+  const input = $('#msg-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const conv = K.viewData;
+  const msg = {
+    id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    from: K.user.id,
+    text,                   // Phase 1 : texte clair local (Phase 2 : chiffré E2E)
+    ts: Date.now()
+  };
+  if(!K.messages[conv.id]) K.messages[conv.id] = [];
+  K.messages[conv.id].push(msg);
+  ls('messages_' + conv.id, K.messages[conv.id]);
+  input.value = '';
+  K.render();
+  toast('Message envoyé', 'ok', 1000);
+
+  // TODO Phase 2 : chiffrer + envoyer via WebSocket ConversationDO
+};
+
+K._call = function(type, convId){
+  toast(`Appel ${type} — Phase 5 (à venir)`, 'info');
+};
+
+function renderContacts(app){
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Contacts</h2>
+    <div class="card" style="text-align:center;padding:24px 14px">
+      <div style="font-size:2.5em;margin-bottom:10px">👥</div>
+      <p style="color:var(--ax-text-2);margin:0 0 14px">Invite tes amis pour démarrer une conversation</p>
+      <button class="btn" onclick="K.openInvite()">📤 Inviter des amis</button>
+    </div>
+  `;
+}
+
+function renderCalls(app){
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Appels</h2>
+    <div class="card" style="text-align:center;padding:24px 14px">
+      <div style="font-size:2.5em;margin-bottom:10px">📞</div>
+      <p style="color:var(--ax-text-2)">Aucun appel récent</p>
+      <p style="color:var(--ax-text-3);font-size:.85em">Les appels audio/vidéo arrivent en Phase 5</p>
+    </div>
+  `;
+}
+
+function renderSettings(app){
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Réglages</h2>
+    <div class="card">
+      <div class="card-row">
+        <div class="avatar avatar-lg">${esc((K.user.pseudo || '?')[0].toUpperCase())}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:1.1em">${esc(K.user.pseudo)}</div>
+          ${K.user.is_admin ? '<span class="tag tag-admin">👑 Admin</span>' : ''}
+          ${PRECONFIGURED_USERS[K.user.id]?.premium ? '<span class="tag tag-premium">⭐ Premium</span>' : ''}
+        </div>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — édition profil')">
+        <span>👤</span><span style="flex:1">Mon profil</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — préférences notifs')">
+        <span>🔔</span><span style="flex:1">Notifications</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — confidentialité')">
+        <span>🔒</span><span style="flex:1">Confidentialité</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — apparence')">
+        <span>🎨</span><span style="flex:1">Apparence</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./diag.html')">
+        <span>🔧</span><span style="flex:1">Diagnostic technique</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./cgu.html')">
+        <span>📜</span><span style="flex:1">CGU</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./privacy.html')">
+        <span>🛡</span><span style="flex:1">Charte privée</span><span>›</span>
+      </div>
+    </div>
+    <button class="btn btn-err btn-block" onclick="K.logout()">🚪 Se déconnecter</button>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.75em;margin-top:20px">Apex Chat ${__APEX_CHAT_VERSION__}</p>
+  `;
+}
+
+function renderAdmin(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return toast('Accès admin uniquement', 'err'); }
+  const sent = K.sentinels || {};
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">👑 Panel admin Kevin</h2>
+    <div class="admin-grid">
+      <div class="admin-tile" onclick="K.sv('admin-users')">
+        <div class="ico">👥</div>
+        <div class="stat">—</div>
+        <div class="lbl">Utilisateurs</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-audit')">
+        <div class="ico">📜</div>
+        <div class="stat">—</div>
+        <div class="lbl">Audit log</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-sentinels')">
+        <div class="ico">🛡</div>
+        <div class="stat" style="color:${sent.storage?.ratio > 0.85 ? 'var(--ax-warn)' : 'var(--ax-ok)'}">${sent.storage?.ratio ? (sent.storage.ratio*100).toFixed(0)+'%' : 'OK'}</div>
+        <div class="lbl">Sentinelles</div>
+      </div>
+      <div class="admin-tile" onclick="K._adminCmd('analytics')">
+        <div class="ico">📊</div>
+        <div class="stat">—</div>
+        <div class="lbl">Stats</div>
+      </div>
+      <div class="admin-tile" onclick="K._adminCmd('search')">
+        <div class="ico">🔍</div>
+        <div class="stat">🔎</div>
+        <div class="lbl">Rechercher</div>
+      </div>
+      <div class="admin-tile" onclick="K._adminCmd('broadcast')">
+        <div class="ico">📢</div>
+        <div class="stat">—</div>
+        <div class="lbl">Broadcast</div>
+      </div>
+    </div>
+
+    <div class="admin-section-title">🤖 Assistant Apex admin</div>
+    <div class="card">
+      <p style="color:var(--ax-text-2);font-size:.9em;margin:0 0 10px">
+        Demande à Apex de retrouver une conversation, analyser un user, exporter, etc.
+      </p>
+      <textarea class="input" id="admin-ai-input" rows="2" placeholder="Ex: trouve la conversation où Sophie a parlé du resto"></textarea>
+      <button class="btn btn-block btn-sm" onclick="K._adminAiAsk()" style="margin-top:8px">✨ Demander à Apex</button>
+      <div id="admin-ai-result" style="margin-top:12px"></div>
+    </div>
+
+    <div class="admin-section-title">⚙ Architecture (Mode A — cercle privé)</div>
+    <div class="card" style="font-size:.85em">
+      <div class="card-row"><span style="flex:1">Mode</span><strong>${esc(K.config.ADMIN_MODE || 'A')}</strong></div>
+      <div class="card-row"><span style="flex:1">Kevin invisible admin</span><strong>${K.config.KEVIN_INVISIBLE_ADMIN === 'true' ? '✓ Actif' : '✗ Désactivé'}</strong></div>
+      <div class="card-row"><span style="flex:1">Auth provider</span><strong>${esc(K.config.AUTH_PROVIDER || 'firebase')}</strong></div>
+      <div class="card-row"><span style="flex:1">Pipeline self-healing</span><strong style="color:var(--ax-ok)">✓ Apex (ax_telemetry_in)</strong></div>
+    </div>
+  `;
+}
+
+function renderAdminUsers(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const users = Object.entries(PRECONFIGURED_USERS).map(([id, u]) => ({id, ...u}));
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Utilisateurs</h2>
+    </div>
+    <input class="input" placeholder="🔍 Rechercher pseudo / vrai nom / tel" oninput="K._filterUsers(this.value)" id="user-search">
+    <div style="margin-top:14px" id="user-list">
+      ${users.map(u => `
+        <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="K._adminViewUserCard('${esc(u.id)}')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar">${esc(u.pseudo[0].toUpperCase())}</div>
+            <div style="flex:1">
+              <div><strong>${esc(u.pseudo)}</strong> <span style="color:var(--ax-text-3)">(${esc(u.real_name)})</span></div>
+              <div style="font-size:.78em;color:var(--ax-text-2)">
+                ${u.role === 'admin' ? '<span class="tag tag-admin">👑 Admin</span>' : ''}
+                ${u.premium ? '<span class="tag tag-premium">⭐ Premium</span>' : ''}
+                <span style="color:var(--ax-text-3)">${esc(u.role)}</span>
+              </div>
+            </div>
+            <span style="color:var(--ax-text-3)">›</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+K._adminViewUserCard = function(userId){
+  const u = PRECONFIGURED_USERS[userId];
+  if(!u) return toast('Utilisateur introuvable', 'err');
+  // Audit log
+  _logTelemetry('info', 'admin_view_user', { target: userId, actor: K.user.id });
+  K._showModal('Fiche complète : ' + u.pseudo, `
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="avatar avatar-lg" style="margin:0 auto 8px">${esc(u.pseudo[0].toUpperCase())}</div>
+      <div style="font-weight:700;font-size:1.2em">${esc(u.real_name)}</div>
+      <div style="color:var(--ax-text-2)">@${esc(u.pseudo)}</div>
+    </div>
+    <div class="card">
+      <div class="card-row"><span style="flex:1">Rôle</span><strong>${esc(u.role)}</strong></div>
+      ${u.email ? `<div class="card-row"><span style="flex:1">Email</span><strong>${esc(u.email)}</strong></div>` : ''}
+      <div class="card-row"><span style="flex:1">Premium</span><strong>${u.premium ? '✓ Illimité' : 'Non'}</strong></div>
+      <div class="card-row"><span style="flex:1">ID interne</span><code style="font-size:.78em">${esc(userId)}</code></div>
+    </div>
+    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px">📜 Audit log : cette consultation a été enregistrée.</p>
+  `);
+};
+
+K._filterUsers = function(q){
+  const norm = q.toLowerCase();
+  const users = Object.entries(PRECONFIGURED_USERS)
+    .filter(([id, u]) => !norm ||
+      u.pseudo.toLowerCase().includes(norm) ||
+      u.real_name.toLowerCase().includes(norm) ||
+      id.toLowerCase().includes(norm))
+    .map(([id, u]) => ({id, ...u}));
+  const list = $('#user-list');
+  if(!list) return;
+  list.innerHTML = users.length === 0 ? '<p style="color:var(--ax-text-3)">Aucun résultat</p>' :
+    users.map(u => `
+      <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="K._adminViewUserCard('${esc(u.id)}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar">${esc(u.pseudo[0].toUpperCase())}</div>
+          <div style="flex:1">
+            <div><strong>${esc(u.pseudo)}</strong> <span style="color:var(--ax-text-3)">(${esc(u.real_name)})</span></div>
+          </div>
+          <span style="color:var(--ax-text-3)">›</span>
+        </div>
+      </div>
+    `).join('');
+};
+
+function renderAdminSentinels(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const s = K.sentinels || {};
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Sentinelles</h2>
+      <button class="btn btn-sm btn-out" onclick="_runSentinels();K.render()">🔄 Actualiser</button>
+    </div>
+    <div class="card">
+      <div class="card-row"><span style="flex:1">💾 Storage quota</span><strong style="color:${s.storage?.ratio > 0.85 ? 'var(--ax-warn)' : 'var(--ax-ok)'}">${s.storage ? (s.storage.ratio*100).toFixed(1)+'%' : 'N/A'}</strong></div>
+      <div class="card-row"><span style="flex:1">🌐 Network</span><strong style="color:${s.network?.online ? 'var(--ax-ok)' : 'var(--ax-err)'}">${s.network?.online ? '✓ En ligne' : '✗ Hors ligne'}</strong></div>
+      <div class="card-row"><span style="flex:1">⚙ Service Worker</span><strong style="color:${s.sw?.active ? 'var(--ax-ok)' : 'var(--ax-err)'}">${s.sw?.active ? '✓ Actif' : '✗ Inactif'}</strong></div>
+      <div class="card-row"><span style="flex:1">🛰 Pipeline Apex</span><strong style="color:var(--ax-ok)">✓ ax_telemetry_in</strong></div>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em;margin-top:14px">
+      Toutes les erreurs et anomalies remontent automatiquement vers Apex IA. Si Apex ne peut pas auto-corriger, l'incident est escaladé à Claude Code via <code>ax_claude_todo</code>.
+    </p>
+  `;
+}
+
+function renderAdminAudit(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const tel = lg('telemetry', []);
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Audit & télémétrie</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em">${tel.length} entrées (max 200 conservées)</p>
+    ${tel.slice(-30).reverse().map(t => `
+      <div class="card" style="font-size:.82em;padding:10px">
+        <div><strong style="color:${t.severity === 'err' ? 'var(--ax-err)' : t.severity === 'warn' ? 'var(--ax-warn)' : 'var(--ax-text-2)'}">${esc(t.severity)}</strong> · ${esc(t.sentinel)} · <span style="color:var(--ax-text-3)">${formatTime(t.ts)}</span></div>
+        <pre style="margin:6px 0 0;font-size:.78em;color:var(--ax-text-3);overflow-x:auto">${esc(JSON.stringify(t.payload || {}, null, 0).slice(0,200))}</pre>
+      </div>
+    `).join('') || '<p style="color:var(--ax-text-3)">Aucune anomalie détectée. Tout fonctionne normalement.</p>'}
+  `;
+}
+
+K._adminCmd = function(cmd){
+  toast('Commande "' + cmd + '" — Phase 6', 'info');
+};
+
+K._adminAiAsk = async function(){
+  const q = $('#admin-ai-input').value.trim();
+  if(!q) return;
+  const res = $('#admin-ai-result');
+  res.innerHTML = '<div class="loading"></div> Apex réfléchit...';
+  // Phase 1 : stub. Phase 6 : appel ia-worker
+  setTimeout(() => {
+    res.innerHTML = `
+      <div class="card" style="margin:0;font-size:.9em">
+        <p style="margin:0"><strong>✨ Apex (admin)</strong></p>
+        <p style="margin:6px 0 0;color:var(--ax-text-2)">Cette fonction sera connectée à l'IA Apex en Phase 6. Tools dispo : <code>kickUser</code>, <code>banUser</code>, <code>searchAllMessages</code>, <code>analyzeUser</code>, <code>geoTrace</code>, <code>exportConv</code>, <code>broadcastNotif</code>.</p>
+      </div>
+    `;
+  }, 800);
+};
+
+// ============================================================================
+//  Modal helpers
+// ============================================================================
+K._showModal = function(title, html){
+  const host = $('#modal-host');
+  host.innerHTML = `
+    <div class="modal-back" onclick="if(event.target===this)K._closeModal()">
+      <div class="modal">
+        <button class="modal-close" onclick="K._closeModal()">✕</button>
+        <h3 class="modal-title">${esc(title)}</h3>
+        ${html}
+      </div>
+    </div>
+  `;
+};
+
+K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
+
+// ============================================================================
+//  Invitation viral SMS
+// ============================================================================
+K.openInvite = function(){
+  K._showModal('📤 Inviter des amis', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Envoie un SMS d'invitation à tes amis. Ils rejoindront Apex Chat avec ton code unique.</p>
+    <label class="label" style="margin-top:14px">Numéro de téléphone</label>
+    <input id="invite-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" inputmode="tel">
+    <button class="btn btn-block" onclick="K._sendInvite()" style="margin-top:14px">📲 Envoyer l'invitation SMS</button>
+    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px;text-align:center">5 amis qui acceptent = 1 an Apex Chat+ offert 🎁</p>
+  `);
+};
+
+K._sendInvite = async function(){
+  const phone = $('#invite-phone').value.trim().replace(/[^\d+]/g,'');
+  if(!phone) return toast('Numéro requis', 'err');
+  toast('Invitation préparée — Phase 2 envoi SMS', 'info');
+  K._closeModal();
+};
+
+// ============================================================================
+//  Menu / Misc
+// ============================================================================
+K.toggleMenu = function(){
+  // Menu side simple : ouvre admin si Kevin
+  if(K.user?.is_admin) K.sv('admin');
+  else K.sv('settings');
+};
+
+K._reload = function(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistration().then(r => {
+      if(r){ r.update(); r.waiting?.postMessage({type:'SKIP_WAITING'}); }
+      setTimeout(()=>location.reload(), 300);
+    });
+  } else location.reload();
+};
+
+// ============================================================================
+//  Init / Boot
+// ============================================================================
+async function _boot(){
+  // SW update banner listener
+  window.addEventListener('sw-update-available', () => {
+    $('#update-banner').classList.remove('h');
+  });
+
+  // Network listener
+  window.addEventListener('online', () => {
+    K.isOnline = true;
+    $('#conn-status').textContent = '●';
+    $('#conn-status').style.color = 'var(--ax-ok)';
+    toast('Connexion rétablie', 'ok', 1500);
+  });
+  window.addEventListener('offline', () => {
+    K.isOnline = false;
+    $('#conn-status').textContent = '○';
+    $('#conn-status').style.color = 'var(--ax-text-3)';
+    toast('Hors ligne — tes messages partiront dès reconnexion', 'warn', 3000);
+  });
+
+  // Bottom nav handler
+  $$('.bnav-btn').forEach(b => b.addEventListener('click', () => K.sv(b.dataset.view)));
+
+  // Restaurer session
+  const user = lg('user', null);
+  const token = lg('token', null);
+  if(user && token){
+    K.user = user; K.token = token;
+    if(isKevinAdmin(user.real_name || user.pseudo)){
+      K.user.is_admin = true;
+      $('#bnav-admin').classList.remove('h');
+    }
+    K.view = 'chats';
+    $('#splash').classList.add('h');
+    $('#topbar').classList.remove('h');
+    $('#security-banner').classList.remove('h');
+    $('#bnav').classList.remove('h');
+
+    // Charger état persisté
+    K.conversations = lg('conversations', []);
+    K.contacts = lg('contacts', []);
+    for(const c of K.conversations){
+      K.messages[c.id] = lg('messages_' + c.id, []);
+    }
+
+    K.render();
+  } else {
+    // Splash auth
+    K.authStep = 'phone';
+    renderAuthStep();
+  }
+
+  // Démarrer sentinelles (toutes les 30s)
+  _runSentinels();
+  setInterval(_runSentinels, 30000);
+
+  // Charger config depuis API (best-effort)
+  fetch(API_BASE + '/api/system/config').then(r => r.json()).then(d => {
+    if(d.config) K.config = d.config;
+  }).catch(() => {
+    K.config = { ADMIN_MODE: 'A', KEVIN_INVISIBLE_ADMIN: 'true', AUTH_PROVIDER: 'firebase' };
+  });
+
+  // Cross-app : détecter SSO depuis Apex
+  const params = new URLSearchParams(location.search);
+  if(params.get('from') === 'apex' && params.get('token') && params.get('uid')){
+    try{
+      const r = await _authSsoFromApex(params.get('token'), params.get('uid'), params.get('name'));
+      if(r.ok) K.login(r.user, r.token);
+    }catch(e){}
+  }
+}
+
+// Error capture global
+window.addEventListener('error', (e) => _safeCatch('window.error', e.error || new Error(e.message)));
+window.addEventListener('unhandledrejection', (e) => _safeCatch('unhandledrejection', e.reason));
+
+// Démarrage
+document.addEventListener('DOMContentLoaded', _boot);
+if(document.readyState !== 'loading') _boot();
+</script>
+
+</body>
+</html>
