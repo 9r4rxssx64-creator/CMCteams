@@ -113,12 +113,51 @@ function fbSafeKeyId(storageKey: string): string {
  * Fallback 'anon' si pas de session active (cas premier paste avant auth).
  * Backup quand même → permet re-binding à l'uid réel après login.
  */
+/* v13.4.98 (Kevin "Coffre tjs perd memoire apres reinstall PWA") :
+ * Si force-update OU reinstall PWA, localStorage 'apex_v13_uid' est wipe → 'anon'.
+ * Fix : si admin Kevin reconnu (par dernier nom connu Firebase ou pin admin OK),
+ * retourner ADMIN_KEVIN_UID hardcode pour que Firebase backup soit toujours
+ * lisible/écrivable au même path. Pour les autres users, fallback 'anon'.
+ *
+ * Le path kdmc_admin EST le path stable de Kevin DESARZENS depuis v13.0.
+ */
+const ADMIN_KEVIN_UID = 'kdmc_admin';
+
 function getUid(): string {
   try {
-    return localStorage.getItem('apex_v13_uid') ?? 'anon';
+    const stored = localStorage.getItem('apex_v13_uid');
+    if (stored && stored !== 'anon') return stored;
+    /* Fallback : last_known_uid (preserve survit force-update banner) */
+    const lastKnown = localStorage.getItem('apex_v13_last_known_uid');
+    if (lastKnown && lastKnown !== 'anon') return lastKnown;
+    /* Fallback admin : si pin admin a déjà été setup OU last_known_name = Kevin */
+    const lastKnownName = (localStorage.getItem('apex_v13_last_known_name') ?? '').toLowerCase();
+    if (lastKnownName.includes('kevin') || lastKnownName.includes('desarzens')) {
+      return ADMIN_KEVIN_UID;
+    }
+    /* Fallback ultime : si pin admin global existe, c'est probablement Kevin */
+    if (localStorage.getItem('apex_v13_pin')) {
+      return ADMIN_KEVIN_UID;
+    }
+    return 'anon';
   } catch {
     return 'anon';
   }
+}
+
+/** v13.4.98 — getAllKnownUids : pour restore exhaustif (scan tous paths). */
+function getAllKnownUids(): string[] {
+  const set = new Set<string>();
+  try {
+    const cur = localStorage.getItem('apex_v13_uid');
+    if (cur && cur !== 'anon') set.add(cur);
+    const lk = localStorage.getItem('apex_v13_last_known_uid');
+    if (lk && lk !== 'anon') set.add(lk);
+    if (localStorage.getItem('apex_v13_pin')) set.add(ADMIN_KEVIN_UID);
+  } catch { /* ignore */ }
+  /* Toujours tenter kdmc_admin (path stable Kevin) */
+  set.add(ADMIN_KEVIN_UID);
+  return Array.from(set);
 }
 
 /* ============================================================
@@ -194,28 +233,32 @@ class VaultFirebaseBackup {
   async fetch(storageKey: string): Promise<string | null> {
     if (!storageKey) return null;
     if (!firebase.isConnected()) return null;
-    const uid = getUid();
+    /* v13.4.98 : scan TOUS les uids connus (current + last_known + admin_kevin)
+     * pour retrouver la clé même après reinstall PWA (uid='anon'). Premier hit. */
     const safeKey = fbSafeKeyId(storageKey);
-    const path = `${FB_BACKUP_PATH}/${uid}/${safeKey}`;
-    try {
-      const env = await firebase.read<VaultBackupEnvelope>(path);
-      if (!env || typeof env !== 'object') return null;
-      if (env.v !== 1 || typeof env.enc !== 'string') return null;
-      if (!env.enc.startsWith(ENC_PREFIX)) return null;
-      /* Vérif hash si présent */
-      if (env.hash) {
-        const expected = await sha256Short(env.enc);
-        if (expected && expected !== env.hash) {
-          logger.warn('vault-fb-backup', `hash mismatch for ${storageKey} — corruption suspect`);
-          return null;
+    const allUids = getAllKnownUids();
+    for (const uid of allUids) {
+      const path = `${FB_BACKUP_PATH}/${uid}/${safeKey}`;
+      try {
+        const env = await firebase.read<VaultBackupEnvelope>(path);
+        if (!env || typeof env !== 'object') continue;
+        if (env.v !== 1 || typeof env.enc !== 'string') continue;
+        if (!env.enc.startsWith(ENC_PREFIX)) continue;
+        /* Vérif hash si présent */
+        if (env.hash) {
+          const expected = await sha256Short(env.enc);
+          if (expected && expected !== env.hash) {
+            logger.warn('vault-fb-backup', `hash mismatch ${storageKey} uid=${uid} — skip`);
+            continue;
+          }
         }
+        logger.debug('vault-fb-backup', `fetched ${storageKey} from uid=${uid}`, { ts: env.ts });
+        return env.enc;
+      } catch (err: unknown) {
+        logger.debug('vault-fb-backup', `fetch ${storageKey} uid=${uid} failed (try next)`, { err });
       }
-      logger.debug('vault-fb-backup', `fetched ${storageKey}`, { ts: env.ts });
-      return env.enc;
-    } catch (err: unknown) {
-      logger.warn('vault-fb-backup', `fetch failed ${storageKey}`, { err });
-      return null;
     }
+    return null;
   }
 
   /**
@@ -224,27 +267,34 @@ class VaultFirebaseBackup {
    */
   async listAll(): Promise<Array<{ key: string; ts: number; hash?: string }>> {
     if (!firebase.isConnected()) return [];
-    const uid = getUid();
-    try {
-      const all = await firebase.read<Record<string, VaultBackupEnvelope>>(
-        `${FB_BACKUP_PATH}/${uid}`,
-      );
-      if (!all || typeof all !== 'object') return [];
-      const out: Array<{ key: string; ts: number; hash?: string }> = [];
-      for (const env of Object.values(all)) {
-        if (env && env.v === 1 && typeof env.k === 'string') {
-          out.push({
-            key: env.k,
-            ts: env.ts,
-            ...(env.hash && { hash: env.hash }),
-          });
+    /* v13.4.98 (Kevin "Coffre tjs perd memoire") :
+     * Scan TOUS les uids connus (current + last_known + admin_kevin) au lieu
+     * d'un seul uid. Si Kevin réinstall PWA → apex_v13_uid='anon', mais
+     * kdmc_admin path Firebase a toujours ses clés.
+     * Dedupe par key (priorité au plus récent ts). */
+    const allUids = getAllKnownUids();
+    const seenByKey = new Map<string, { key: string; ts: number; hash?: string }>();
+    for (const uid of allUids) {
+      try {
+        const fbData = await firebase.read<Record<string, VaultBackupEnvelope>>(
+          `${FB_BACKUP_PATH}/${uid}`,
+        );
+        if (!fbData || typeof fbData !== 'object') continue;
+        for (const env of Object.values(fbData)) {
+          if (env && env.v === 1 && typeof env.k === 'string') {
+            const existing = seenByKey.get(env.k);
+            if (!existing || env.ts > existing.ts) {
+              const entry: { key: string; ts: number; hash?: string } = { key: env.k, ts: env.ts };
+              if (env.hash) entry.hash = env.hash;
+              seenByKey.set(env.k, entry);
+            }
+          }
         }
+      } catch (err: unknown) {
+        logger.debug('vault-fb-backup', `listAll uid=${uid} failed (skipping)`, { err });
       }
-      return out.sort((a, b) => b.ts - a.ts);
-    } catch (err: unknown) {
-      logger.warn('vault-fb-backup', 'listAll failed', { err });
-      return [];
     }
+    return Array.from(seenByKey.values()).sort((a, b) => b.ts - a.ts);
   }
 
   /**
