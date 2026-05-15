@@ -169,10 +169,10 @@ async function tryFirebaseRestoreConversation(): Promise<void> {
   }
 }
 
-/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent) */
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
+/* v13.4.165 refactor : escapeHtml + renderMarkdownLight extraits vers chat-markdown.ts
+ * Re-exportés ici pour compat tests existants (façade pattern, zéro régression). */
+export { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
+import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 
 /**
  * Album image rendu : grille 2-3 cols mobile, 4 desktop, thumbnails visuels.
@@ -719,19 +719,8 @@ export function renderMessageActions(msg: DisplayMessage): string {
   );
 }
 
-/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent)
- * v13.3.48 — Pendant streaming : version "light" (rapide, paragraphes simples)
- * Hors streaming : delegate vers renderMarkdownEnriched (tables, code+copy, headings) */
-export function renderMarkdownLight(text: string): string {
-  /* Markdown ultra-léger pour streaming progressif (gras, italique, code inline, code block) */
-  let html = escapeHtml(text);
-  html = html.replace(/```([\s\S]*?)```/g, (_, code: string) => `<pre class="ax-code"><code>${code}</code></pre>`);
-  html = html.replace(/`([^`\n]+)`/g, '<code class="ax-code-inline">$1</code>');
-  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-  html = html.replace(/\n/g, '<br>');
-  return html;
-}
+/* v13.4.165 refactor : renderMarkdownLight extrait vers chat-markdown.ts
+ * (re-export façade ligne ~172). Aucun wrapper inutile pour rester lint-clean. */
 
 /**
  * v13.3.51 — Auto-analyse device sur upload image (Kevin 2026-05-07).
