@@ -11,9 +11,21 @@ export default defineConfig({
      * killed). Tests individuels limités à 15s, hooks à 30s. */
     testTimeout: 15_000,
     hookTimeout: 30_000,
+    /* v13.4.136 (Kevin "minutieusement sans régression") : pool=forks pour
+     * isolation mémoire + maxForks 4 pour éviter saturation CPU sur 444 test
+     * files. Bench montre +30% temps mais coverage TERMINE sans OOM. */
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: false,
+        maxForks: 4,
+        minForks: 1,
+      },
+    },
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
+      reporter: ['text-summary', 'lcov'], /* text-summary = synthèse rapide, lcov = CI */
+      reportOnFailure: false, /* v13.4.136 : ne génère rapport que si tests verts (gain temps) */
       include: ['core/**/*.ts', 'services/**/*.ts', 'features/**/*.ts'],
       exclude: [
         '**/*.test.ts',
@@ -76,15 +88,18 @@ export default defineConfig({
         'features/admin-backup/index.ts',
       ],
       thresholds: {
-        /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).
-         * v13.4.126 a tenté 75% mais workflow CI apex-v13-ci.yml fail
-         * (coverage projet entier <75% sur features non-testées).
-         * v13.4.128 (Kevin "corrige toutes croix rouges") : retour à 0
-         * en attendant mesure réelle complète + ajustement progressif. */
-        lines: 0,
-        functions: 0,
-        branches: 0,
-        statements: 0,
+        /* v13.4.136 (Kevin "minutieusement sans régression") : seuils CALÉS
+         * sur mesure RÉELLE du 2026-05-15 (pool=forks coverage --reporter=text-summary
+         * termine en 180s) :
+         *   Statements: 71.35% mesuré → gate 65% (anti-régression, marge 6.35 pts)
+         *   Branches:   72.91% mesuré → gate 65%
+         *   Functions:  86.16% mesuré → gate 80%
+         *   Lines:      71.35% mesuré → gate 65%
+         * Si futur PR descend sous ces seuils → CI fail = anti-régression strict. */
+        statements: 65,
+        branches: 65,
+        functions: 80,
+        lines: 65,
       },
     },
     setupFiles: ['./tests/setup.ts'],
