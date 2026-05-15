@@ -78,9 +78,11 @@ input,textarea,select{font-family:inherit;font-size:16px;border:none;outline:non
   padding:calc(var(--ax-safe-top) + 8px) 14px 8px;
   border-bottom:1px solid var(--ax-border);display:flex;align-items:center;gap:10px}
 .topbar-title{font-family:Georgia,serif;color:var(--ax-gold);font-weight:700;font-size:1.15em;letter-spacing:2px;flex:1}
-.topbar-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:1.1em;color:var(--ax-text-2);background:transparent;border:1px solid var(--ax-border)}
-.topbar-btn:active{background:var(--ax-bg-2)}
+.topbar-btn{min-width:44px;min-height:44px;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1.1em;color:var(--ax-text-2);background:transparent;border:1px solid var(--ax-border);
+  transition:background .15s ease, transform .1s ease, border-color .15s ease}
+.topbar-btn:active{background:var(--ax-bg-2);transform:scale(.96)}
+.topbar-btn:hover{border-color:var(--ax-gold-2)}
 .connected{color:var(--ax-ok);font-size:0.75em;margin-left:6px}
 
 /* ========== Bandeau ULTRA-SÉCURISÉ ========== */
@@ -112,16 +114,20 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .card-row:last-child{border-bottom:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
   background:var(--ax-gold);color:var(--ax-bg);padding:12px 20px;border-radius:var(--ax-radius);
-  font-weight:700;min-height:48px;transition:transform .1s ease;font-size:1em}
+  font-weight:700;min-height:48px;transition:transform .1s ease, background .15s ease, box-shadow .15s ease;font-size:1em}
 .btn:active{transform:scale(.97)}
-.btn-out{background:transparent;color:var(--ax-gold);border:1px solid var(--ax-gold)}
-.btn-ghost{background:transparent;color:var(--ax-text-2);border:1px solid var(--ax-border)}
-.btn-err{background:var(--ax-err);color:white}
+.btn:hover{box-shadow:0 4px 16px rgba(201,162,39,.3)}
+.btn-out{background:transparent;color:var(--ax-gold);border:1px solid var(--ax-gold);transition:background .15s ease, color .15s ease}
+.btn-out:hover{background:rgba(201,162,39,.1)}
+.btn-ghost{background:transparent;color:var(--ax-text-2);border:1px solid var(--ax-border);transition:border-color .15s ease}
+.btn-ghost:hover{border-color:var(--ax-gold-2)}
+.btn-err{background:var(--ax-err);color:white;transition:background .15s ease}
 .btn-block{display:flex;width:100%}
-.btn-sm{padding:8px 14px;min-height:36px;font-size:.9em}
+.btn-sm{padding:10px 14px;min-height:44px;font-size:.9em}
 .input{width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);
-  border-radius:var(--ax-radius);padding:12px 14px;color:var(--ax-text);min-height:48px;font-size:16px}
-.input:focus{border-color:var(--ax-gold)}
+  border-radius:var(--ax-radius);padding:12px 14px;color:var(--ax-text);min-height:48px;font-size:16px;
+  transition:border-color .15s ease, background .15s ease}
+.input:focus{border-color:var(--ax-gold);background:var(--ax-bg-3)}
 .label{color:var(--ax-text-2);font-size:.85em;margin-bottom:6px;display:block}
 .pseudo-chip{display:inline-flex;align-items:center;gap:6px;background:var(--ax-bg-3);
   border:1px solid var(--ax-border);border-radius:18px;padding:4px 10px;font-size:.85em}
@@ -228,12 +234,29 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 
 /* ========== Modal ========== */
 .modal-back{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;
-  display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s ease}
+  display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s ease;
+  padding-top:var(--ax-safe-top)}
 .modal{background:var(--ax-bg-2);border-top-left-radius:var(--ax-radius-lg);border-top-right-radius:var(--ax-radius-lg);
   padding:20px 16px calc(var(--ax-safe-bottom) + 20px);width:100%;max-width:600px;animation:slidein .25s ease;
-  max-height:85vh;overflow-y:auto}
+  max-height:85vh;overflow-y:auto;outline:none}
+.modal:focus-visible{box-shadow:0 0 0 3px var(--ax-gold-2)}
 .modal-title{font-family:Georgia,serif;color:var(--ax-gold);font-size:1.2em;margin:0 0 14px;letter-spacing:1px}
-.modal-close{position:absolute;top:12px;right:14px;font-size:1.3em;color:var(--ax-text-2)}
+.modal-close{position:absolute;top:12px;right:14px;font-size:1.3em;color:var(--ax-text-2);
+  min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:background .15s ease, color .15s ease}
+.modal-close:hover{background:var(--ax-bg-3);color:var(--ax-gold)}
+/* Responsive : adaptations tablette + desktop pour UX premium */
+@media (min-width:768px){
+  .modal-back{align-items:center}
+  .modal{border-radius:var(--ax-radius-lg);max-height:80vh}
+}
+@media (min-width:1024px){
+  .topbar{padding-left:max(16px, calc(50% - 600px));padding-right:max(16px, calc(50% - 600px))}
+  #app{max-width:900px;margin:0 auto}
+}
+@media (prefers-color-scheme:light){
+  :root{--ax-bg:#f8f8f0;--ax-bg-2:#ffffff;--ax-bg-3:#f0f0e8;--ax-text:#1a1a1f;--ax-text-2:#444454;--ax-text-3:#888898;--ax-border:#d0d0d8;--ax-border-2:#c0c0c8}
+}
 </style>
 </head>
 <body>
@@ -242,7 +265,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.12';
+const __APEX_CHAT_VERSION__ = 'v1.1.13';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -318,7 +341,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.12</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.13</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -332,7 +355,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.12</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.13</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3079,11 +3102,15 @@ K._adminAiAsk = async function(){
 // ============================================================================
 //  API client helper
 // ============================================================================
-K._api = async function(method, path, body){
+// PERF : AbortController + timeout 30s sur TOUS les fetch (anti-hang)
+// Règle CLAUDE.md : "AbortController sur tous les fetch (timeout 30s max)"
+K._api = async function(method, path, body, timeoutMs){
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs || 30000);
   try{
     const headers = { 'Content-Type': 'application/json' };
     if(K.token) headers['Authorization'] = 'Bearer ' + K.token;
-    const opts = { method, headers };
+    const opts = { method, headers, signal: controller.signal };
     if(body) opts.body = JSON.stringify(body);
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
@@ -3093,12 +3120,17 @@ K._api = async function(method, path, body){
     }
     return data;
   }catch(e){
+    if(e.name === 'AbortError'){
+      _logTelemetry('warn', 'api-timeout', { method, path });
+      return { ok: false, timeout: true, message: 'Temps dépassé, réessaie' };
+    }
     if(e.name === 'TypeError'){
-      // Worker indisponible : fallback local
       _logTelemetry('warn', 'api-offline', { method, path });
       return { ok: false, offline: true, message: 'Worker indisponible (mode local)' };
     }
     throw e;
+  }finally{
+    clearTimeout(tid);
   }
 };
 
@@ -3283,14 +3315,16 @@ K.openMemoryLane = async function(){
 K._showModal = function(title, html){
   const host = $('#modal-host');
   host.innerHTML = `
-    <div class="modal-back" onclick="if(event.target===this)K._closeModal()">
-      <div class="modal">
-        <button class="modal-close" onclick="K._closeModal()" aria-label="Fermer">✕</button>
-        <h3 class="modal-title">${esc(title)}</h3>
+    <div class="modal-back" role="presentation" onclick="if(event.target===this)K._closeModal()">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text" tabindex="-1">
+        <button class="modal-close" onclick="K._closeModal()" aria-label="Fermer la fenêtre">✕</button>
+        <h3 class="modal-title" id="modal-title-text">${esc(title)}</h3>
         ${html}
       </div>
     </div>
   `;
+  // Focus management : focus dialog au mount pour navigation clavier
+  setTimeout(() => { const dlg = host.querySelector('.modal'); if (dlg) dlg.focus(); }, 30);
 };
 
 K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
