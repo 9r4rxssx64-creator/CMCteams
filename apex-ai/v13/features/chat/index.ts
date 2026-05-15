@@ -26,15 +26,12 @@ import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 import {
   parseSlashCommand,
-  filterCommands,
   helpText,
   SLASH_COMMANDS,
-  type SlashCommand,
 } from '../../services/slash-commands.js';
 import {
   generateFollowUps,
   isFollowUpsEnabled,
-  type FollowUpSuggestion,
 } from '../../services/suggestions.js';
 import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
@@ -43,9 +40,14 @@ import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
-/* v13.4.165-167 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+/* v13.4.165-168 refactor : modules extraits depuis chat/index.ts pour testabilité. */
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
+import {
+  getTransformEmoji,
+  renderFollowUps,
+  renderSlashAutocomplete,
+} from './chat-renderers.js';
 import { saveCodeSnippet, listCodeSnippets } from './chat-snippets.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
@@ -520,16 +522,7 @@ export function pushTransformResult(
   });
 }
 
-function getTransformEmoji(type: string): string {
-  const map: Record<string, string> = {
-    cartoon: '🎨',
-    anime: '🤖',
-    video: '🎬',
-    'remove-bg': '✂️',
-    stylize: '🎭',
-  };
-  return map[type] ?? '🖼️';
-}
+/* v13.4.168 refactor : getTransformEmoji extrait vers chat-renderers.ts (import top) */
 
 /**
  * Génère le HTML des boutons d'action sur un message assistant non-streaming.
@@ -731,58 +724,9 @@ async function proposeSmartTVSetup(
  * v13.3.48 — Demande Kevin "chat niveau Claude.ai/ChatGPT".
  * Exposé pour tests.
  */
-export function renderFollowUps(suggestions: FollowUpSuggestion[]): string {
-  if (!suggestions || suggestions.length === 0) return '';
-  const chipStyle =
-    'display:inline-flex;align-items:center;gap:6px;padding:8px 12px;' +
-    'background:rgba(232,184,48,0.08);border:1px solid rgba(232,184,48,0.25);' +
-    'border-radius:18px;font-size:12.5px;color:rgba(255,255,255,0.85);' +
-    'cursor:pointer;transition:all 160ms cubic-bezier(0.16,1,0.3,1);' +
-    '-webkit-tap-highlight-color:transparent;min-height:36px;line-height:1.2;';
-  const chips = suggestions
-    .map(
-      (s) =>
-        `<button class="ax-followup-chip" data-followup-prompt="${escapeHtml(s.prompt)}" ` +
-        `style="${chipStyle}" aria-label="Suggestion : ${escapeHtml(s.label)}">` +
-        `<span aria-hidden="true">${escapeHtml(s.emoji)}</span>` +
-        `<span>${escapeHtml(s.label)}</span></button>`,
-    )
-    .join('');
-  return (
-    `<div class="ax-followups" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;` +
-    `padding-top:8px;border-top:1px dashed rgba(232,184,48,0.15)">` +
-    `<span style="font-size:11px;color:rgba(255,255,255,0.45);width:100%;margin-bottom:2px">` +
-    `💡 Pour aller plus loin :</span>${chips}</div>`
-  );
-}
-
-/**
- * Render le panneau d'autocomplete pour slash commands.
- * Exposé pour tests.
- */
-export function renderSlashAutocomplete(prefix: string): string {
-  const cmds = filterCommands(prefix);
-  if (cmds.length === 0) return '';
-  const items = cmds
-    .map(
-      (c: SlashCommand) =>
-        `<button class="ax-slash-item" data-slash-name="${escapeHtml(c.name)}" ` +
-        `style="display:flex;width:100%;text-align:left;padding:8px 12px;background:transparent;` +
-        `border:none;color:#fff;cursor:pointer;align-items:center;gap:10px;` +
-        `font-size:13px;border-radius:6px;-webkit-tap-highlight-color:transparent">` +
-        `<span style="width:22px;text-align:center" aria-hidden="true">${escapeHtml(c.emoji)}</span>` +
-        `<span style="font-weight:600;color:#e8b830">/${escapeHtml(c.name)}</span>` +
-        `<span style="color:rgba(255,255,255,0.5);font-size:11.5px;flex:1">${escapeHtml(c.description)}</span>` +
-        `</button>`,
-    )
-    .join('');
-  return (
-    `<div class="ax-slash-autocomplete" style="position:absolute;bottom:100%;left:0;right:0;` +
-    `background:rgba(20,20,35,0.97);backdrop-filter:blur(16px);border:1px solid rgba(232,184,48,0.2);` +
-    `border-radius:10px;padding:6px;margin-bottom:6px;max-height:240px;overflow-y:auto;` +
-    `box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100">${items}</div>`
-  );
-}
+/* v13.4.168 refactor : renderFollowUps + renderSlashAutocomplete extraits vers
+ * chat-renderers.ts (façade backward-compat, imports déjà en haut du fichier). */
+export { renderFollowUps, renderSlashAutocomplete } from './chat-renderers.js';
 
 function buildSystemPrompt(): string {
   const user = store.get('user');
