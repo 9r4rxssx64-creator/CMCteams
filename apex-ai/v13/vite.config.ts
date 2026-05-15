@@ -77,7 +77,15 @@ export default defineConfig({
         manualChunks: (id: string): string | undefined => {
           /* Audit Kevin v13.1.0 : split par domaine pour cap chaque chunk < 30 KB gzip */
           /* v13.3.57 PUSH-100 : fine-grain split + isolation chunks lazy */
-          if (id.includes('apex-tools-dispatch')) return 'apex-tools-dispatch';
+          /* v13.4.127 (Kevin "qualité pro 18/20" — audit Perf gap 1) :
+           * apex-tools-dispatch était monolithique 118 KB. Split par sous-modules :
+           * skills-dispatch (PDF/DOCX/XLSX generators), utils-finance (calculs),
+           * utils-data (JSON/CSV), utils-misc (autres). Réduit chunk principal <50KB. */
+          if (id.includes('apex-tools-dispatch/skills-dispatch')) return 'apex-tools-dispatch-skills';
+          if (id.includes('apex-tools-dispatch/utils-finance')) return 'apex-tools-dispatch-finance';
+          if (id.includes('apex-tools-dispatch/utils-data')) return 'apex-tools-dispatch-data';
+          if (id.includes('apex-tools-dispatch/utils-misc')) return 'apex-tools-dispatch-misc';
+          if (id.includes('apex-tools-dispatch')) return 'apex-tools-dispatch-core';
           if (id.includes('apex-tools') && !id.includes('apex-tools-dispatch')) return 'apex-tools-registry';
           if (id.includes('credential-patterns')) return 'credential-patterns';
           if (id.includes('voices-registry') || id.includes('services/voice')) return 'voice';
