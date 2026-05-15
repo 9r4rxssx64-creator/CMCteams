@@ -7,11 +7,15 @@ import { defineConfig } from 'vitest/config';
  * Cloudflare Workers backend (workers/*). Les fichiers loaders/shims à la
  * racine (`crypto.js`, `sw.js`) délèguent leur logique à `lib/` — testés
  * indirectement.
+ *
+ * Les tests E2E Playwright sont dans tests/e2e/ et exclus de vitest.
  */
 export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    // Exclure tests/e2e/ qui sont gérés par Playwright (npm run test:e2e)
+    exclude: ['tests/e2e/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],
@@ -24,14 +28,7 @@ export default defineConfig({
         // Phase C2 en cours : api-worker.js (2444 lignes).
         // Progression mesurée v8 (transparente, CLAUDE.md règle "réel toujours") :
         // 0% → 19.63% → 25.9% → 49.63% → 54.99% → 57.48% → 71.11% → 74.87% → **79%**
-        // statements / 76.67% branches / 95.83% functions (69/72) / 79% lines.
-        // 231 tests api-worker (routing+otp+handlers+admin-deep+scheduled+
-        // admin-routes+utils-exports+queue). 513 lines restantes :
-        // handleSendOtp/handleVerifyOtp success paths internes, handleSsoFromApex,
-        // handleAdminInviteMagic DB INSERT, handlePrekeys, _callGeminiIA, _callDeepSeekIA,
-        // handleListStories DB, handleViewStory success, handleListLetters DB.
-        // Honnêteté CLAUDE.md : on ne ment pas en disant 100% global tant
-        // que api-worker n'y est pas. Coverage global = lib/ + autres workers.
+        // 231 tests api-worker. Reste handleSendOtp/handleVerifyOtp success paths.
         'workers/api-worker.js',
       ],
       thresholds: {

@@ -26,6 +26,7 @@
 <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
 <link rel="apple-touch-icon" href="./icons/icon.svg">
 <script type="module" src="./lib/crypto-core.js"></script>
+<script type="module" src="./lib/visio-mesh.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
 <title>Apex Chat — Messagerie privée</title>
@@ -265,7 +266,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.16';
+const __APEX_CHAT_VERSION__ = 'v1.1.17';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -341,7 +342,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.16</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.17</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -355,7 +356,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.16</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.17</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1516,6 +1517,27 @@ async function _handleWsMessage(data, convId){
     case 'error':
       _logTelemetry('warn', 'ws-server-error', data);
       break;
+    // Visio : signaling WebRTC relayé par ConversationDO
+    case 'webrtc-offer':
+      // Quelqu'un nous appelle → modal incoming
+      if(typeof K._onIncomingCall === 'function') K._onIncomingCall(data);
+      break;
+    case 'webrtc-answer':
+      // Le receiver a répondu à notre offer
+      if(typeof K._onAnswer === 'function') await K._onAnswer(data);
+      break;
+    case 'webrtc-candidate':
+      // ICE candidate à ajouter
+      if(typeof K._onIceCandidate === 'function') await K._onIceCandidate(data);
+      break;
+    case 'call-end':
+    case 'call-busy':
+      // Peer a raccroché / busy → cleanup local
+      if(K._activeCall){
+        toast(data.type === 'call-busy' ? 'Occupé' : 'Appel terminé', 'info', 2000);
+        K._endCall();
+      }
+      break;
   }
 }
 
@@ -1616,12 +1638,207 @@ K._endCall = function(){
   if(K._activeCall){
     try{ K._activeCall.peerConn?.close(); }catch(_){}
     try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_){}
+    try{ K._activeCall.screenStream?.getTracks().forEach(t => t.stop()); }catch(_){}
     if(K.ws?.readyState === WebSocket.OPEN){
-      try{ K.ws.send(JSON.stringify({ type: 'webrtc-hangup', convId: K._activeCall.convId })); }catch(_){}
+      try{ K.ws.send(JSON.stringify({ type: 'call-end', convId: K._activeCall.convId })); }catch(_){}
     }
     K._activeCall = null;
   }
   K._closeModal();
+};
+
+// ============================================================================
+//  Phase 5 — Visio receiver + signaling + contrôles (mute/screen-share)
+// ============================================================================
+// Toggle micro (mute/unmute)
+K._toggleMute = function(){
+  if(!K._activeCall?.localStream) return;
+  const tracks = K._activeCall.localStream.getAudioTracks();
+  tracks.forEach(t => { t.enabled = !t.enabled; });
+  K._activeCall.muted = !K._activeCall.muted;
+  const btn = $('#call-btn-mute');
+  if(btn) btn.textContent = K._activeCall.muted ? '🔇' : '🎤';
+};
+
+// Toggle vidéo (cam off / on)
+K._toggleVideo = function(){
+  if(!K._activeCall?.localStream) return;
+  const tracks = K._activeCall.localStream.getVideoTracks();
+  tracks.forEach(t => { t.enabled = !t.enabled; });
+  K._activeCall.videoOff = !K._activeCall.videoOff;
+  const btn = $('#call-btn-video');
+  if(btn) btn.textContent = K._activeCall.videoOff ? '📵' : '📹';
+};
+
+// Switch caméra (front/back)
+K._switchCamera = async function(){
+  if(!K._activeCall?.localStream) return;
+  const current = K._activeCall.facingMode || 'user';
+  const next = current === 'user' ? 'environment' : 'user';
+  try{
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      audio: true, video: { facingMode: { exact: next } },
+    });
+    // Remplace tracks dans peer connection
+    const sender = K._activeCall.peerConn.getSenders().find(s => s.track?.kind === 'video');
+    if(sender) await sender.replaceTrack(newStream.getVideoTracks()[0]);
+    // Stop ancien stream
+    K._activeCall.localStream.getTracks().forEach(t => t.stop());
+    K._activeCall.localStream = newStream;
+    K._activeCall.facingMode = next;
+    const lv = $('#local-video');
+    if(lv) lv.srcObject = newStream;
+  }catch(e){
+    toast('Caméra non disponible', 'err');
+  }
+};
+
+// Screen share (replace video track avec écran)
+K._toggleScreenShare = async function(){
+  if(!K._activeCall) return;
+  if(K._activeCall.screenStream){
+    // Stop screen share, retour caméra
+    K._activeCall.screenStream.getTracks().forEach(t => t.stop());
+    K._activeCall.screenStream = null;
+    const sender = K._activeCall.peerConn.getSenders().find(s => s.track?.kind === 'video');
+    if(sender && K._activeCall.localStream){
+      const vidTrack = K._activeCall.localStream.getVideoTracks()[0];
+      if(vidTrack) await sender.replaceTrack(vidTrack);
+    }
+    const btn = $('#call-btn-screen');
+    if(btn) btn.textContent = '🖥';
+    return;
+  }
+  try{
+    const screen = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    K._activeCall.screenStream = screen;
+    const sender = K._activeCall.peerConn.getSenders().find(s => s.track?.kind === 'video');
+    if(sender) await sender.replaceTrack(screen.getVideoTracks()[0]);
+    // Auto-stop si user arrête screen share via UI navigateur
+    screen.getVideoTracks()[0].onended = () => K._toggleScreenShare();
+    const btn = $('#call-btn-screen');
+    if(btn) btn.textContent = '✕';
+  }catch(e){
+    toast('Partage écran refusé', 'warn');
+  }
+};
+
+// Receiver : appel entrant (modal incoming)
+K._onIncomingCall = function(msg){
+  if(K._activeCall) {
+    // Déjà en appel → reject busy
+    if(K.ws?.readyState === WebSocket.OPEN){
+      K.ws.send(JSON.stringify({ type: 'call-busy', to: msg.from, convId: msg.convId }));
+    }
+    return;
+  }
+  const isVideo = msg.callType === 'video';
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-incoming-title" style="background:rgba(0,0,0,.85)">
+      <div class="modal" role="document" style="text-align:center;padding:32px 20px">
+        <div style="font-size:4em;animation:pulse 1s ease-in-out infinite">${isVideo ? '📹' : '📞'}</div>
+        <h3 id="call-incoming-title" style="color:var(--ax-gold);margin:14px 0 6px">Appel ${isVideo ? 'vidéo' : 'audio'} entrant</h3>
+        <p style="color:var(--ax-text-2)">de <strong>${esc(msg.from || 'inconnu')}</strong></p>
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:24px">
+          <button class="btn btn-err" onclick="K._rejectCall('${esc(msg.from)}','${esc(msg.convId)}')" aria-label="Refuser" style="border-radius:50%;width:64px;height:64px;font-size:1.8em">📴</button>
+          <button class="btn" onclick='K._answerCall(${JSON.stringify(msg).replace(/'/g,"&#39;")})' aria-label="Répondre" style="background:var(--ax-ok);border-radius:50%;width:64px;height:64px;font-size:1.8em">${isVideo ? '📹' : '📞'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Receiver : répond à l'appel entrant
+K._answerCall = async function(incoming){
+  if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
+  const type = incoming.callType || 'audio';
+  K._activeCall = { type, convId: incoming.convId, peerConn: null, localStream: null, remoteFrom: incoming.from, startedAt: Date.now() };
+  K._renderCallUI(type, incoming.from);
+  try{
+    const constraints = { audio: true, video: type === 'video' };
+    K._activeCall.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    if(type === 'video'){
+      const lv = $('#local-video'); if(lv) lv.srcObject = K._activeCall.localStream;
+    }
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:stun.l.google.com:19302' },
+      ],
+    });
+    K._activeCall.peerConn = pc;
+    K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
+    pc.ontrack = (e) => {
+      K._activeCall.remoteStream = e.streams[0];
+      if(type === 'video'){
+        const rv = $('#remote-video'); if(rv) rv.srcObject = e.streams[0];
+      }
+      $('#call-status').textContent = '🟢 En cours';
+    };
+    pc.onicecandidate = (e) => {
+      if(e.candidate && K.ws?.readyState === WebSocket.OPEN){
+        K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, to: incoming.from, convId: incoming.convId }));
+      }
+    };
+    pc.onconnectionstatechange = () => {
+      $('#call-status').textContent = '📶 ' + pc.connectionState;
+      if(pc.connectionState === 'failed' || pc.connectionState === 'disconnected'){ K._endCall(); }
+    };
+    // Set remote offer
+    await pc.setRemoteDescription(incoming.offer);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    if(K.ws?.readyState === WebSocket.OPEN){
+      K.ws.send(JSON.stringify({ type: 'webrtc-answer', answer, to: incoming.from, convId: incoming.convId }));
+    }
+  }catch(e){
+    toast('Impossible de répondre : ' + e.message, 'err');
+    K._endCall();
+  }
+};
+
+K._rejectCall = function(from, convId){
+  if(K.ws?.readyState === WebSocket.OPEN){
+    K.ws.send(JSON.stringify({ type: 'call-end', to: from, convId, reason: 'rejected' }));
+  }
+  K._closeModal();
+};
+
+// Render UI commune appel (caller + receiver)
+K._renderCallUI = function(type, peerName){
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-active-title" style="background:#000">
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;color:white">
+        <div style="padding:20px;text-align:center">
+          <div style="font-size:3em">${type === 'video' ? '📹' : '📞'}</div>
+          <div id="call-active-title" style="font-size:1.5em;margin-top:10px">${esc(peerName || 'Appel')}</div>
+          <div style="color:var(--ax-text-3);margin-top:6px" id="call-status">🛜 Connexion...</div>
+        </div>
+        <div style="flex:1;position:relative">
+          ${type === 'video' ? '<video id="remote-video" style="width:100%;height:100%;object-fit:cover" autoplay playsinline></video><video id="local-video" style="position:absolute;top:14px;right:14px;width:30%;border-radius:14px" autoplay playsinline muted></video>' : ''}
+        </div>
+        <div style="padding:20px calc(var(--ax-safe-bottom) + 20px);display:flex;justify-content:center;gap:14px;flex-wrap:wrap">
+          <button id="call-btn-mute" class="btn btn-ghost" onclick="K._toggleMute()" aria-label="Micro" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🎤</button>
+          ${type === 'video' ? '<button id="call-btn-video" class="btn btn-ghost" onclick="K._toggleVideo()" aria-label="Caméra" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">📹</button>' : ''}
+          ${type === 'video' ? '<button id="call-btn-cam-switch" class="btn btn-ghost" onclick="K._switchCamera()" aria-label="Switch caméra" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🔄</button>' : ''}
+          ${type === 'video' ? '<button id="call-btn-screen" class="btn btn-ghost" onclick="K._toggleScreenShare()" aria-label="Partage écran" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🖥</button>' : ''}
+          <button class="btn btn-err" onclick="K._endCall()" aria-label="Raccrocher" style="border-radius:50%;width:64px;height:64px;font-size:1.5em">📴</button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Handler ICE candidate reçu via WS (à wirer dans WS message handler)
+K._onIceCandidate = async function(msg){
+  if(!K._activeCall?.peerConn) return;
+  try{ await K._activeCall.peerConn.addIceCandidate(msg.candidate); }catch(_){}
+};
+
+// Handler answer reçu via WS (caller reçoit la réponse du receiver)
+K._onAnswer = async function(msg){
+  if(!K._activeCall?.peerConn) return;
+  try{ await K._activeCall.peerConn.setRemoteDescription(msg.answer); }catch(_){}
 };
 
 // ============================================================================

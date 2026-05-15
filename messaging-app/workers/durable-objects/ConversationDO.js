@@ -305,6 +305,28 @@ export class ConversationDO {
         ws.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
         break;
 
+      // Visio / appels WebRTC — relay signaling SDP + ICE candidates entre peers
+      // Pas de stockage : le serveur ne voit jamais les médias (E2E P2P).
+      case 'webrtc-offer':
+      case 'webrtc-answer':
+      case 'webrtc-candidate':
+      case 'call-end':
+      case 'call-busy':
+        // Forward au(x) destinataire(s) — broadcast aux autres sessions
+        this.broadcast({
+          type: msg.type,
+          from: session.userId,
+          fromDevice: session.deviceId,
+          to: msg.to || null,
+          callType: msg.callType || null,
+          offer: msg.offer,
+          answer: msg.answer,
+          candidate: msg.candidate,
+          convId: session.convId,
+          ts: Date.now(),
+        }, ws);
+        break;
+
       default:
         ws.send(JSON.stringify({ type: 'error', message: 'Type inconnu: ' + msg.type }));
     }
