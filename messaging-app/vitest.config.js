@@ -14,7 +14,6 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    // Exclure tests/e2e/ qui sont gérés par Playwright (npm run test:e2e)
     exclude: ['tests/e2e/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',
@@ -25,11 +24,11 @@ export default defineConfig({
         'node_modules/**',
         '**/*.test.js',
         '**/*.spec.js',
-        // Phase C2 en cours : api-worker.js (2444 lignes).
-        // Progression mesurée v8 (transparente, CLAUDE.md "réel toujours") :
-        // 0% → 19.63% → 25.9% → 49.63% → 57.48% → 71.11% → 79% → **81.99%**
-        // **100% FUNCTIONS (72/72)** / 78.84% branches / 81.99% lines.
-        // 268 tests api-worker. Reste data paths success handlers DB.
+        // Phase C2 : api-worker.js (2444 lignes) mesuré v8 (transparent) :
+        // 0% → 19.63% → 49.63% → 71.11% → 81.99% → **84.08% stmts**
+        // **100% FUNCTIONS (72/72)** / 81.02% branches / 84.08% lines.
+        // 308 tests. Reste 389 lines (verifyFirebaseIdToken signature RSA,
+        // handleMagicLogin user create DB, handleWsConversation, handlePrekeys).
         'workers/api-worker.js',
       ],
       thresholds: {
