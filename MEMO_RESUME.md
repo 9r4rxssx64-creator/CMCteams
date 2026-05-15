@@ -1,4 +1,44 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.604 (2026-05-15)
+# Mémo de reprise — Apex v13.4.127 / CMC v9.613 (2026-05-15)
+
+## 🆕 SESSION 2026-05-15 23:06 — CMCteams v9.613 SCOPED-WIPE V1↔V2 (Kevin)
+
+**Demande Kevin (avec 4 photos planning V1 employés + V2 cadres pit/sup/insp)** :
+> "V1 et V2 doivent s'ADDITIONNER. Nouvel import V1 écrase ancien V1 uniquement (préserve cadres). Nouvel import V2 écrase ancien V2 uniquement (préserve employés). Jamais conflit. Trop d'options inutiles à nettoyer."
+
+### Cause racine identifiée
+
+Le code v9.598-604 détectait `_importType` (employees/cadres/complete) à doImport ligne 32554-32586 — MAIS la décision REPLACE/MERGE (lignes 32652-32702) **ignorait ce type**. Si Kevin importait V2 (cadres) après V1 (employés) et acceptait `confirm("REPLACE recommandé")`, `A.overrides[key]={}` effaçait toute la population dont les employés V1 que V2 n'allait jamais réécrire.
+
+### Fix v9.613
+
+1. **Helper `_cmcScopedWipe(key, scope)`** (~ligne 23927) — scope=`cadres`/`employees`/`complete`, retourne `{wipedEmps, preservedEmps, wipedCells, preservedCells}` + audit log
+2. **Décision automatique** (ligne 32652+) — fin du `confirm()` intrusif iPhone : V1→`scoped-employees`, V2→`scoped-cadres`, complet→`replace-all`, inconnu→`merge`. Override manuel toujours possible via `cmc_import_mode_explicit`
+3. **Banner post-import enrichi** (ligne 34636+) — type détecté V1/V2 + mode appliqué + grid 🔄 Écrasé vs 🛡 Préservé
+4. **vImport épuré** : 9 boutons → 3 primaires (🔍 Analyser · ✅ Appliquer · 📚 Historique V1/V2/V3) + repli `<details>` "Outils avancés" (Tests parser · Re-tenter cadres · OCR+Vision · Parser IA). Supprimés : "Lancer 55+ tests" + "Apprentissage parser" (doublons)
+5. **5 tests régression SW01-SW05** dans `CMC_PARSER_TESTS` : scoped-wipe préserve/efface correctement, scénario V1→V2 cohabitation
+
+### Validation
+
+- `node --check` JS combiné sans séparateur (méthode CLAUDE.md erreur #32) : ✅ OK
+- File size : 2 756 341 octets (+2 KB)
+- 33 occurrences `_cmcScopedWipe|scoped-cadres|scoped-employees|v9.613`
+- Zéro marqueur de conflit
+
+### Test mental end-to-end (règle CLAUDE.md absolue)
+
+> *Si Kevin importe JUIN 2026 V1 (employés) puis MAI 2026 V2 :*
+> 1. V1 mai → `_importType="employees"` → scoped-wipe employees → écrit employés mai
+> 2. V2 mai → `_importType="cadres"` → scoped-wipe cadres → écrit cadres mai, **employés V1 restent**
+> 3. Banner affiche "🎯 V2 — CADRES" + "Mode : Wipe CADRES seuls" + "🛡 Préservé : N employés"
+> ✅ V1 + V2 cohabitent dans `A.overrides["2026-4"]`.
+
+### Reste à faire (prochaine session)
+
+- Test sur device iPhone Safari PWA réel (Kevin avec ses 2 PDFs V1+V2)
+- Vérifier `vImportVersions` affiche snapshots scoped-wipe correctement
+- Si patterns PDF inconnus : enrichir détection `_importType` (header regex)
+
+---
 
 ## 🎯 SESSION 2026-05-15 — Qualité pro App Store-ready (Kevin "sans gros coûts")
 
