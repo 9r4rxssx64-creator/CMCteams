@@ -794,6 +794,23 @@ class Vault {
         }));
       }
     } catch { /* silent */ }
+
+    /* v13.4.104 (Kevin "GitHub plus secu, autonome") :
+     * Push backup GitHub Gist automatique en arrière-plan. Throttle 30s.
+     * Garantie : à chaque ajout de clé, le Gist est mis à jour avec vault complet.
+     * Au prochain reinstall, Apex retrouve toutes les clés. */
+    if (storageKey !== 'ax_github_token' || persisted.local) {
+      /* Skip push si on est en train de stocker le PAT GitHub lui-même
+       * (sinon recursion), sauf si PAT vient d'être stocké → on peut maintenant pusher */
+      void (async () => {
+        try {
+          const { apexGithubGistBackup } = await import('./apex-github-gist-backup.js');
+          await apexGithubGistBackup.pushBackup();
+        } catch (err: unknown) {
+          logger.debug('vault', 'gist push setKey background failed (throttle?)', { err });
+        }
+      })();
+    }
     return { ok: persisted.local || persisted.idb || persisted.firebase, persisted };
   }
 
