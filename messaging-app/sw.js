@@ -9,7 +9,7 @@
  * Sentinelle GitHub Action `sw-cache-sync.yml` rattrape automatiquement
  * le drift entre APP_VER (index.html) et CACHE_VERSION (ce fichier).
  */
-const CACHE_VERSION = 'apex-chat-v1.1.0';
+const CACHE_VERSION = 'apex-chat-v1.1.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;

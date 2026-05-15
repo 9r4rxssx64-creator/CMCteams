@@ -570,6 +570,38 @@ async function handleUserHeartbeat(request, env) {
   return json({ ok: true });
 }
 
+// PATCH /api/users/me — update profil safe (avatar, bio, language, timezone, display_name)
+async function handleUpdateMe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const body = await request.json().catch(() => ({}));
+  const ALLOWED = ['avatar_url', 'bio', 'display_name', 'language', 'timezone', 'email'];
+  const updates = [];
+  const args = [];
+  for (const k of ALLOWED) {
+    if (body[k] !== undefined) {
+      const v = String(body[k] || '').slice(0, 500);
+      updates.push(`${k}=?`);
+      args.push(v);
+    }
+  }
+  if (updates.length === 0) return err('Aucun champ à mettre à jour');
+  updates.push('updated_at=?');
+  args.push(Date.now());
+  args.push(auth.sub);
+
+  await env.APEX_CHAT_DB.prepare(
+    `UPDATE users SET ${updates.join(', ')} WHERE id=?`
+  ).bind(...args).run();
+
+  await auditLog(env, auth.sub, 'profile_update', 'user', auth.sub,
+    JSON.stringify(Object.keys(body)), null, request.headers.get('user-agent') || '');
+
+  const user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind(auth.sub).first();
+  return json({ ok: true, user });
+}
+
 async function handleGetPublicUser(pseudo, env) {
   const user = await env.APEX_CHAT_DB.prepare(
     'SELECT id, pseudo, avatar_url, bio, last_seen FROM users WHERE pseudo=? COLLATE NOCASE AND status=?'
@@ -2060,6 +2092,7 @@ export default {
 
       // Users
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
+      if (path === '/api/users/me' && method === 'PATCH') return await handleUpdateMe(request, env);
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
