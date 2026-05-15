@@ -4863,7 +4863,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.620";
+var APP_VER="v9.621";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7295,6 +7295,47 @@ var CMC_PARSER_TESTS=[
         A.overrides_meta=origMeta;
         try{localStorage.setItem("cmc_ov_meta",JSON.stringify(origMeta||{}));}catch(_){}
         return nbAfter===12;
+      }catch(e){return false;}
+    }},
+  // v9.621 — Tests exercent les 3 helpers _cmcApplyXxxTest (anti-orphelin)
+  {id:"VS21",label:"_cmcApplyStarsToEmpsTest mock starMarkers active emp.senior",
+    input:"v9.620 stars helper",
+    customCheck:function(){
+      try{
+        if(typeof _cmcApplyStarsToEmpsTest!=="function")return false;
+        var origEmps=A.employees;
+        A.employees=[{id:"STAR_TEST",name:"DUPONT J",senior:false}];
+        var mockMarkers=[{contextLine:"DUPONT J ★ Pit Boss"}];
+        var n=_cmcApplyStarsToEmpsTest(mockMarkers);
+        var senior=A.employees[0].senior;
+        A.employees=origEmps;
+        return n===1 && senior===true;
+      }catch(e){return false;}
+    }},
+  {id:"VS22",label:"_cmcApplyFFToEmpsTest detecte tag {{FF}} et flag emp",
+    input:"v9.620 FF helper",
+    customCheck:function(){
+      try{
+        if(typeof _cmcApplyFFToEmpsTest!=="function")return false;
+        var origEmps=A.employees;
+        A.employees=[{id:"FF_TEST",name:"BOUVIER JF",faisantFonction:false}];
+        var src="BOUVIER JF{{FF}} 22/6 RH";
+        var n=_cmcApplyFFToEmpsTest(src);
+        var ff=A.employees[0].faisantFonction;
+        A.employees=origEmps;
+        return n===1 && ff===true;
+      }catch(e){return false;}
+    }},
+  {id:"VS23",label:"_cmcFlagRedNamesTest dédupe noms et compte",
+    input:"v9.620 red names helper",
+    customCheck:function(){
+      try{
+        if(typeof _cmcFlagRedNamesTest!=="function")return false;
+        var mock=[{t:"INCONNU A"},{t:"INCONNU A"},{t:"AUTRE B"}];
+        var r=_cmcFlagRedNamesTest(mock);
+        return r.flagged===2 && r.unknownNames.length===2
+            && r.unknownNames.indexOf("INCONNU A")>=0
+            && r.unknownNames.indexOf("AUTRE B")>=0;
       }catch(e){return false;}
     }}
 ];
