@@ -4863,7 +4863,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.618";
+var APP_VER="v9.619";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -6956,7 +6956,7 @@ var CMC_PARSER_TESTS=[
         // Trouver vrais employes et cadres dans A.employees
         var anEmp=A.employees.find(function(e){return (e.family||"")!=="cadres";});
         var aCadre=A.employees.find(function(e){return (e.family||"")==="cadres";});
-        if(!anEmp||!aCadre)return true; // skip si DB pas chargee
+        if(!anEmp||!aCadre)return {skipped:true,reason:"DB pas chargee"};
         A.overrides[testKey][anEmp.id]={"1":"22/6","2":"RH"};
         A.overrides[testKey][aCadre.id]={"1":"22/6","2":"RH"};
         // Wipe scope=cadres
@@ -6978,7 +6978,7 @@ var CMC_PARSER_TESTS=[
         A.overrides[testKey]={};
         var anEmp=A.employees.find(function(e){return (e.family||"")!=="cadres";});
         var aCadre=A.employees.find(function(e){return (e.family||"")==="cadres";});
-        if(!anEmp||!aCadre)return true;
+        if(!anEmp||!aCadre)return {skipped:true,reason:"emp/cadre absent DB"};
         A.overrides[testKey][anEmp.id]={"1":"22/6","2":"RH"};
         A.overrides[testKey][aCadre.id]={"1":"22/6","2":"RH"};
         var r=_cmcScopedWipe(testKey,"employees");
@@ -6998,7 +6998,7 @@ var CMC_PARSER_TESTS=[
         A.overrides[testKey]={};
         var anEmp=A.employees.find(function(e){return (e.family||"")!=="cadres";});
         var aCadre=A.employees.find(function(e){return (e.family||"")==="cadres";});
-        if(!anEmp||!aCadre)return true;
+        if(!anEmp||!aCadre)return {skipped:true,reason:"emp/cadre absent DB"};
         A.overrides[testKey][anEmp.id]={"1":"22/6"};
         A.overrides[testKey][aCadre.id]={"1":"22/6"};
         var r=_cmcScopedWipe(testKey,"complete");
@@ -7016,7 +7016,7 @@ var CMC_PARSER_TESTS=[
         A.overrides=A.overrides||{};
         A.overrides[testKey]={};
         var anEmp=A.employees.find(function(e){return (e.family||"")!=="cadres";});
-        if(!anEmp)return true;
+        if(!anEmp)return {skipped:true,reason:"emp absent DB"};
         A.overrides[testKey][anEmp.id]={"1":"22/6"};
         var r=_cmcScopedWipe(testKey,"invalid_scope");
         var stillThere=!!A.overrides[testKey][anEmp.id];
@@ -7036,7 +7036,7 @@ var CMC_PARSER_TESTS=[
         A.overrides[testKey]={};
         var anEmp=A.employees.find(function(e){return (e.family||"")!=="cadres";});
         var aCadre=A.employees.find(function(e){return (e.family||"")==="cadres";});
-        if(!anEmp||!aCadre)return true;
+        if(!anEmp||!aCadre)return {skipped:true,reason:"emp/cadre absent DB"};
         // V1 (employes) deja en place
         A.overrides[testKey][anEmp.id]={"1":"22/6","2":"19/2","3":"RH"};
         // V2 arrive : scoped-wipe cadres puis ajout nouvelles cells cadre
@@ -7317,7 +7317,7 @@ function _cmcDetectHeaderRole(s){
 // avec customCheck (sans expect) tombaient en "undefined is not an object".
 // Fix : `var ex = tc.expect || {}` puis utiliser ex.* partout.
 function _cmcRunParserTests(){
-  var results=[],pass=0,fail=0;
+  var results=[],pass=0,fail=0,skipped=0;
   CMC_PARSER_TESTS.forEach(function(tc){
     var ok=true,err="";
     var ex=tc.expect||{};
@@ -7389,16 +7389,27 @@ function _cmcRunParserTests(){
         if(rj!==tc.expect.rejectAsName){ok=false;err="reject="+rj+" expected="+tc.expect.rejectAsName;}
       }
       // --- v9.596 Custom check (validation/versioning/OCR/Vision) ---
+      // v9.619 (audit P1 #4) — distinguer "skipped" (DB pas chargée) de "pass"
+      // (assertion réussie). Eviter "skip=pass" cachant régressions silencieuses.
       if(typeof tc.customCheck==="function"){
         var cr=null;
         try{cr=tc.customCheck();}catch(_cre){ok=false;err="customCheck threw: "+(_cre&&_cre.message||"").slice(0,80);}
         if(cr===false){ok=false;err=err||"customCheck returned false";}
+        // Détection skipped : objet {skipped:true} ou null+reason
+        if(cr && typeof cr==="object" && cr.skipped===true){
+          ok=true;err="(skipped: "+(cr.reason||"prerequisite missing")+")";
+          // Marquer pour stats séparées
+          this._lastSkipped=true;
+        }
       }
     }catch(e){ok=false;err=(e.message||"").slice(0,80);}
-    if(ok)pass++;else fail++;
-    results.push({id:tc.id,label:tc.label,input:String(inp).slice(0,80),ok:ok,err:err});
+    var isSkipped=/^\(skipped:/.test(err);
+    if(ok&&!isSkipped)pass++;
+    else if(isSkipped){pass++;skipped++;}
+    else fail++;
+    results.push({id:tc.id,label:tc.label,input:String(inp).slice(0,80),ok:ok,err:err,skipped:isSkipped});
   });
-  return {pass:pass,fail:fail,total:pass+fail,results:results};
+  return {pass:pass,fail:fail,skipped:skipped,total:pass+fail,asserted:pass-skipped,results:results};
 }
 function cmcImportTests(){
   if(!A.user||A.user.id!==AID){toast(cmcT("err.permission"),"err");return null;}
@@ -22204,6 +22215,8 @@ function vAccueil(){
 function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
+  // v9.619 (audit P1 #3) — Cache meta précalculé pour éviter 8K recomputations
+  var _vPlanMetaCache=_cmcMetaCacheForView(A.year,A.month);
   // v9.154 — Ensemble des utilisateurs en ligne (lookup O(1) pour live avatars)
   var _onlineSet={};try{(getOnlineUsers()||[]).forEach(function(u){_onlineSet[u.uid]=true;});}catch(_){}
   // v9.189 — Ordre des emps rendus (pour navigation clavier arrow up/down)
@@ -22376,8 +22389,8 @@ function vPlan(){
         +(function(){var _todCode2=todayD?(pl[emp.id]||{})[todayD]||"":"";return isWork(_todCode2)?'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#5aaa70;margin-right:3px;vertical-align:middle"></span>':"";})()+(_onlineSet[emp.id]?'<span class="pres-dot" aria-hidden="true" title="En ligne actuellement"></span>':"")+( isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+(emp.role&&emp.family==="cadres"?'<span title="'+esc(getRoleLabel(emp.role))+'" style="margin-left:3px;font-size:11px">'+getRoleIcon(emp.role)+'</span>':"")+'</div></td>');
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
-        // v9.617 — Meta cell via helper unique factorisé (lookup + CSS en 1 appel)
-        var _metaBg="";try{_metaBg=cmcCellBgForView(A.year,A.month,emp.id,d);}catch(_){}
+        // v9.619 — Cache meta (audit P1 #3) : évite recomputation key+lookup nested
+        var _metaBg="";try{_metaBg=cmcCellBgForView(A.year,A.month,emp.id,d,_vPlanMetaCache);}catch(_){}
         // v9.153 dbl-clic=brosse ; v9.155 Shift+clic=multi-sel ; v9.156 drag&drop ; v9.158 long-press mobile
         var click="";
         if(isAdm){
@@ -22633,6 +22646,8 @@ function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);}
 function vDeparts(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
+  // v9.619 (audit P1 #3) — Cache meta précalculé pour éviter 8K recomputations
+  var _vDepMetaCache=_cmcMetaCacheForView(A.year,A.month);
   var CI=gCI(A.year,A.month);
   var myTeam=A.user?A.user.team:null;
   // v9.154 — Live presence lookup
@@ -22880,8 +22895,8 @@ function vDeparts(){
           var col=DCOL[pos-1]||"#888";
           var ci=CODES[code]||{c:"#6b7280"};
           var borderStyle=code?"1.5px solid "+col+"45":"1px dashed "+col+"35";
-          // v9.617 — Meta cell via helper unique (factorise lookup + CSS)
-          var _depMetaBg="";try{_depMetaBg=cmcCellBgForView(A.year,A.month,emp.id,d);}catch(_){}
+          // v9.619 — Cache meta (audit P1 #3)
+          var _depMetaBg="";try{_depMetaBg=cmcCellBgForView(A.year,A.month,emp.id,d,_vDepMetaCache);}catch(_){}
           var cellBg=_depMetaBg||(isHigh?'rgba(201,162,39,.1)':col+'07');
           var _dLen=(code||"").length;
           var _dFS=_dLen>=7?"8.5px":_dLen>=6?"9.5px":_dLen>=5?"10.5px":"12px";
@@ -22893,8 +22908,8 @@ function vDeparts(){
             +'</div></td>';
         } else {
           var ci2=CODES[code]||{c:"#1e2e1e"};
-          // v9.617 \u2014 Meta cell via helper unique (factorise)
-          var _depMetaBg2="";try{_depMetaBg2=cmcCellBgForView(A.year,A.month,emp.id,d);}catch(_){}
+          // v9.619 \u2014 Cache meta (audit P1 #3)
+          var _depMetaBg2="";try{_depMetaBg2=cmcCellBgForView(A.year,A.month,emp.id,d,_vDepMetaCache);}catch(_){}
           var cellBg2=_depMetaBg2||(isHigh?'rgba(201,162,39,.05)':'#060e07');
           h+='<td style="text-align:center;background:'+cellBg2+';padding:2px 1px'+colOvl+'"><span style="font-size:13px;color:'+ci2.c+'">'+(code||'\u00b7')+'</span></td>';
         }
@@ -24195,26 +24210,48 @@ function cmcMetaForCell(key, eid, d){
 }
 function _cmcFlushOverridesMeta(){
   // Appelé après import pour persist + sync Firebase
+  // v9.619 (audit P1 #5) — Cap aux 12 derniers mois pour éviter QuotaExceededError
+  // iPhone Safari (258 emp × 31 jours × N mois × 4 fields → potentiellement >5MB).
   try{
     if(!A.overrides_meta)return;
+    var keys=Object.keys(A.overrides_meta);
+    if(keys.length>12){
+      // Trier keys "YYYY-M" chronologiquement et garder les 12 plus récentes
+      var sorted=keys.map(function(k){
+        var parts=String(k).split("-");
+        var y=parseInt(parts[0])||0, m=parseInt(parts[1])||0;
+        return {key:k, ts:y*100+m};
+      }).sort(function(a,b){return b.ts-a.ts;});
+      var keep={};
+      sorted.slice(0,12).forEach(function(o){keep[o.key]=A.overrides_meta[o.key];});
+      A.overrides_meta=keep;
+    }
     ls("cmc_ov_meta",A.overrides_meta); // ls() synca FB_FIX automatiquement
-  }catch(_){}
+  }catch(_e){console.warn("[_cmcFlushOverridesMeta]",_e&&_e.message);}
 }
-// v9.616 — Infère bg meta depuis les codes écrits par le parser principal.
-// Appelé après doImport pour combler les meta cells (CP/RH/R/AF/CDP/CONV/RRT).
-// Les meta FF/STAR sont déjà appliquées par _cmcApplyVisualMarkers.
-// Permet rendu cell-color cohérent avec le PDF source sans toucher au parser.
+// v9.619 (Kevin 2026-05-15 — fix audit P0 #1 + #2) :
+// Combine bg meta depuis codes parser ET propage emp.faisantFonction/senior aux
+// cells actives (jours avec code). Garantit que les flags FF/STAR sont VRAIMENT
+// persistés per-cell (pas juste sur l'objet emp global). Rend la promesse
+// architecturale tenue : rendu cell-bg=FF=bleu visible cell par cell.
 function _cmcInferCellMetaFromCodes(key){
-  var stats={inferred:0,bgTypes:{}};
+  var stats={inferred:0,bgTypes:{},ffCells:0,starCells:0};
   try{
     var ov=A.overrides&&A.overrides[key];
     if(!ov)return stats;
+    // Précalcul emp lookup pour O(1) accès aux flags faisantFonction/senior
+    var empById={};
+    A.employees.forEach(function(e){if(e&&e.id)empById[e.id]=e;});
     Object.keys(ov).forEach(function(eid){
       var row=ov[eid]||{};
+      var emp=empById[eid];
+      var empIsFF=!!(emp&&emp.faisantFonction);
+      var empIsStar=!!(emp&&emp.senior);
       Object.keys(row).forEach(function(d){
         var c=String(row[d]||"").trim();
         if(!c)return;
         var bg=null;
+        // Inferrence bg depuis code SBM (priorité 1)
         if(c.endsWith("*"))bg="CDP";
         else if(c.endsWith("'"))bg="CONV";
         else if(c==="CP")bg="CP";
@@ -24222,13 +24259,30 @@ function _cmcInferCellMetaFromCodes(key){
         else if(c==="R")bg="R";
         else if(c==="AF")bg="AF";
         else if(c==="RRT"||c==="PRT")bg="RRT";
+        // Inferrence bg depuis faisantFonction emp (priorité 2 si jour travaillé)
+        // FF prend priorité visuelle sur CDP/CONV pour les cadres
+        if(empIsFF && (!bg || bg==="CDP" || bg==="CONV")){
+          bg="FF";
+        }
+        var meta={};
         if(bg){
-          _cmcStoreImportMeta(key,eid,d,{bg:bg});
-          stats.inferred++;
+          meta.bg=bg;
           stats.bgTypes[bg]=(stats.bgTypes[bg]||0)+1;
+        }
+        // Propagation FF + STAR cell-level (fix P0 #2 audit)
+        if(empIsFF){meta.ff=true;stats.ffCells++;}
+        if(empIsStar){meta.star=true;stats.starCells++;}
+        if(Object.keys(meta).length){
+          _cmcStoreImportMeta(key,eid,d,meta);
+          stats.inferred++;
         }
       });
     });
+    // v9.619 — Cleanup orphelin audit P0 #1 : _pdfFaisantFonctionCells était poussé
+    // à A.overrides_meta_pending_ff mais jamais consommé (fuite mémoire silencieuse).
+    // Suppression définitive — la logique FF est maintenant propagée via emp.faisantFonction
+    // qui est positionné par _cmcApplyVisualMarkers ET visible cell-level via cette fonction.
+    try{delete A.overrides_meta_pending_ff;}catch(_){}
   }catch(e){console.warn("[_cmcInferCellMetaFromCodes]",e);}
   return stats;
 }
@@ -24250,14 +24304,30 @@ function cmcCellBgFromMeta(meta){
   return CMC_META_BG_COLORS[meta.bg]||"";
 }
 // v9.617 — Helper unique factorisé pour vPlan/vDeparts : lookup + CSS en 1 appel.
-// Réduit la duplication et permet d'ajouter cache si perf le justifie.
-function cmcCellBgForView(year, month, eid, d){
+// v9.619 (fix audit P1 #3) — Promesse cache tenue : signature étendue avec
+// `metaByEidCache` optionnel (l'objet `A.overrides_meta[key]` précalculé au
+// début du render). Permet d'éviter 16K recomputations key+lookup nested par
+// re-render vPlan/vDeparts. Backward-compat : sans cache, fallback comportement v9.617.
+function cmcCellBgForView(year, month, eid, d, metaByEidCache){
   try{
-    var key=year+"-"+month;
-    var meta=cmcMetaForCell(key,eid,d);
-    if(!meta)return "";
-    return cmcCellBgFromMeta(meta);
+    var byEid;
+    if(metaByEidCache!=null){
+      byEid=metaByEidCache;
+    }else{
+      var key=year+"-"+month;
+      byEid=(A.overrides_meta||{})[key]||null;
+    }
+    if(!byEid)return "";
+    var row=byEid[eid];
+    if(!row)return "";
+    var meta=row[d];
+    if(!meta||!meta.bg)return "";
+    return CMC_META_BG_COLORS[meta.bg]||"";
   }catch(_){return "";}
+}
+// v9.619 — Helper companion : précalcule le cache pour 1 render vPlan/vDeparts.
+function _cmcMetaCacheForView(year, month){
+  try{return (A.overrides_meta||{})[year+"-"+month]||null;}catch(_){return null;}
 }
 function _cmcApplyVisualMarkers(key, sourceText){
   // Lit window._pdfStarMarkers + window._pdfFaisantFonctionCells + window._pdfRedNames
@@ -24302,18 +24372,11 @@ function _cmcApplyVisualMarkers(key, sourceText){
         }
       });
     });
-    // Aussi via window._pdfFaisantFonctionCells contextuel (token brut)
-    var ffCells=window._pdfFaisantFonctionCells||[];
-    ffCells.forEach(function(c){
-      // On marque la meta cell pour visualisation ultérieure
-      // (extraction du jour exact = pas trivial sans dayPos ; on stocke en bulk)
-      try{
-        A.overrides_meta_pending_ff=A.overrides_meta_pending_ff||[];
-        if(A.overrides_meta_pending_ff.length<200){
-          A.overrides_meta_pending_ff.push({key:key,y:c.y,x:c.x,code:c.code});
-        }
-      }catch(_){}
-    });
+    // v9.619 (fix audit P0 #1) : _pdfFaisantFonctionCells reste informatif pour
+    // diagnostic mais n'est PLUS poussé dans A.overrides_meta_pending_ff (orphelin
+    // jamais consommé). La propagation FF cell-level se fait via
+    // _cmcInferCellMetaFromCodes qui lit emp.faisantFonction et marque les
+    // cellules actives avec meta.ff=true + meta.bg="FF".
     if(stats.ffApplied>0){
       try{ls("cmc_e",A.employees);if(typeof fbWrite==="function")fbWrite("cmc_e",A.employees);}catch(_){}
     }
@@ -35409,7 +35472,7 @@ function doImport(){
           var _scoreColor=_completeness.score>=90?"#5aaa70":_completeness.score>=75?"#c08030":"#e06060";
           var _scoreIc=_completeness.score>=90?"✅":_completeness.score>=75?"⚠":"❌";
           _hVis+='<div style="margin-top:10px;padding:12px;background:linear-gradient(135deg,'+_scoreColor+'1a,'+_scoreColor+'0a);border:1.5px solid '+_scoreColor+';border-radius:10px">'
-            +'<div style="font-size:14px;font-weight:800;color:'+_scoreColor+';margin-bottom:6px">'+_scoreIc+' Completeness (couleurs/fonds capturés) : '+_completeness.score+'/100</div>';
+            +'<div style="font-size:14px;font-weight:800;color:'+_scoreColor+';margin-bottom:6px">'+_scoreIc+' Codes visuels capturés : '+_completeness.score+'/100</div>';
           if(_completeness.warnings&&_completeness.warnings.length){
             _hVis+='<div style="font-size:12px;color:#e0c0a0;line-height:1.5">';
             _completeness.warnings.slice(0,6).forEach(function(w){
