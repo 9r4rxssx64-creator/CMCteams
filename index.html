@@ -4863,7 +4863,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.619";
+var APP_VER="v9.620";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7227,6 +7227,74 @@ var CMC_PARSER_TESTS=[
           found=APP_AGENTS.some(function(a){return a.id==="meta-completeness";});
         }
         return found;
+      }catch(e){return false;}
+    }},
+  // v9.620 — Tests E2E + refactor (fix audit P2)
+  {id:"VS14",label:"_cmcDecideImportMode V1→scoped-employees",
+    input:"v9.620 E2E decision V1",
+    customCheck:function(){
+      if(typeof _cmcDecideImportMode!=="function")return false;
+      return _cmcDecideImportMode("employees",null)==="scoped-employees";
+    }},
+  {id:"VS15",label:"_cmcDecideImportMode V2→scoped-cadres",
+    input:"v9.620 E2E decision V2",
+    customCheck:function(){
+      if(typeof _cmcDecideImportMode!=="function")return false;
+      return _cmcDecideImportMode("cadres",null)==="scoped-cadres";
+    }},
+  {id:"VS16",label:"_cmcDecideImportMode complete→replace-all",
+    input:"v9.620 E2E decision complete",
+    customCheck:function(){
+      if(typeof _cmcDecideImportMode!=="function")return false;
+      return _cmcDecideImportMode("complete",null)==="replace-all";
+    }},
+  {id:"VS17",label:"_cmcDecideImportMode unknown→merge (sécurité)",
+    input:"v9.620 E2E decision unknown",
+    customCheck:function(){
+      if(typeof _cmcDecideImportMode!=="function")return false;
+      return _cmcDecideImportMode("unknown",null)==="merge";
+    }},
+  {id:"VS18",label:"_cmcDecideImportMode override explicit replace prioritaire",
+    input:"v9.620 E2E override",
+    customCheck:function(){
+      if(typeof _cmcDecideImportMode!=="function")return false;
+      return _cmcDecideImportMode("cadres","replace")==="replace-all"
+          && _cmcDecideImportMode("employees","merge")==="merge";
+    }},
+  {id:"VS19",label:"_cmcInferCellMetaFromCodes propage FF cell-level si emp.faisantFonction",
+    input:"v9.619 FF cell propagation",
+    customCheck:function(){
+      try{
+        if(typeof _cmcInferCellMetaFromCodes!=="function")return false;
+        var origEmps=A.employees,origOv=A.overrides,origMeta=A.overrides_meta;
+        // Setup : un emp avec faisantFonction=true + un code travaillé
+        A.employees=[{id:"FF_TEST",name:"TEST FF",faisantFonction:true,family:"cadres"}];
+        A.overrides={"FF-KEY":{"FF_TEST":{1:"22/6",2:"RH"}}};
+        A.overrides_meta={};
+        _cmcInferCellMetaFromCodes("FF-KEY");
+        var meta=A.overrides_meta["FF-KEY"]["FF_TEST"];
+        var ok=meta[1]&&meta[1].ff===true&&meta[1].bg==="FF"
+            && meta[2]&&meta[2].ff===true;
+        A.employees=origEmps;A.overrides=origOv;A.overrides_meta=origMeta;
+        return ok;
+      }catch(e){return false;}
+    }},
+  {id:"VS20",label:"_cmcFlushOverridesMeta cap 12 derniers mois",
+    input:"v9.619 quota cap",
+    customCheck:function(){
+      try{
+        if(typeof _cmcFlushOverridesMeta!=="function")return false;
+        var origMeta=A.overrides_meta;
+        A.overrides_meta={};
+        // 15 mois fictifs
+        for(var y=2024;y<=2026;y++){for(var m=0;m<=11&&Object.keys(A.overrides_meta).length<15;m++){
+          A.overrides_meta[y+"-"+m]={"E0001":{1:{bg:"CP"}}};
+        }}
+        _cmcFlushOverridesMeta();
+        var nbAfter=Object.keys(A.overrides_meta).length;
+        A.overrides_meta=origMeta;
+        try{localStorage.setItem("cmc_ov_meta",JSON.stringify(origMeta||{}));}catch(_){}
+        return nbAfter===12;
       }catch(e){return false;}
     }}
 ];
@@ -24329,6 +24397,54 @@ function cmcCellBgForView(year, month, eid, d, metaByEidCache){
 function _cmcMetaCacheForView(year, month){
   try{return (A.overrides_meta||{})[year+"-"+month]||null;}catch(_){return null;}
 }
+// v9.620 (audit P2 #1) — 3 helpers focalisés mono-responsabilité, exposés pour tests unitaires.
+// Permet de tester chaque axe (étoiles / FF / red names) séparément.
+// _cmcApplyVisualMarkers (ci-dessous) reste l'orchestrator qui les combine pour compat.
+function _cmcApplyStarsToEmpsTest(starMarkersOverride){
+  var applied=0;
+  var starMarkers=starMarkersOverride||window._pdfStarMarkers||[];
+  starMarkers.forEach(function(m){
+    var ctx=(m.contextLine||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    A.employees.forEach(function(emp){
+      if(!emp||!emp.name)return;
+      var nm=emp.name.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+      var surname=nm.split(/\s+/)[0];
+      if(surname&&surname.length>=3&&ctx.indexOf(surname)>=0){
+        if(!emp.senior){emp.senior=true;applied++;}
+      }
+    });
+  });
+  return applied;
+}
+function _cmcApplyFFToEmpsTest(sourceText){
+  var applied=0;
+  if(!sourceText)return applied;
+  var ffMatches=sourceText.match(/[A-Z][A-Z\s\.\-]{2,30}[A-Z]\s*\{\{FF\}\}/g)||[];
+  ffMatches.forEach(function(rawMatch){
+    var nm=rawMatch.replace(/\{\{FF\}\}/g,"").trim().toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    A.employees.forEach(function(emp){
+      if(!emp||!emp.name)return;
+      var enm=emp.name.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+      var surname=enm.split(/\s+/)[0];
+      if(surname&&surname.length>=3&&nm.indexOf(surname)>=0){
+        if(!emp.faisantFonction){emp.faisantFonction=true;applied++;}
+      }
+    });
+  });
+  return applied;
+}
+function _cmcFlagRedNamesTest(redNamesOverride){
+  var redNames=redNamesOverride||window._pdfRedNames||[];
+  var seen={},flagged=0,unknownNames=[];
+  redNames.forEach(function(r){
+    var t=(r.t||"").trim();
+    if(!t||seen[t])return;
+    seen[t]=true;
+    unknownNames.push(t);
+    flagged++;
+  });
+  return {flagged:flagged,unknownNames:unknownNames};
+}
 function _cmcApplyVisualMarkers(key, sourceText){
   // Lit window._pdfStarMarkers + window._pdfFaisantFonctionCells + window._pdfRedNames
   // et applique à A.employees + A.overrides_meta. Idempotent.
@@ -24452,6 +24568,19 @@ function _cmcImportCompletenessCheck(key, sourceText){
     try{if(typeof _audit==="function")_audit("import_completeness",AID,key,String(rep.score),JSON.stringify(rep.warnings).slice(0,200));}catch(_){}
   }catch(e){console.warn("[_cmcImportCompletenessCheck]",e);}
   return rep;
+}
+
+// v9.620 (audit P2 #3) — Décision import mode extraite en helper testable.
+// Décide quel mode appliquer selon _importType détecté + override manuel admin.
+// Permet test E2E du flow V1→V2 sans appeler doImport() complet (mockable).
+function _cmcDecideImportMode(importType, userExplicitMode){
+  if(userExplicitMode==="merge"||userExplicitMode==="replace"){
+    return userExplicitMode==="replace"?"replace-all":"merge";
+  }
+  if(importType==="cadres")return "scoped-cadres";       // V2 (pit/sup/insp)
+  if(importType==="employees")return "scoped-employees"; // V1 (employés+chefs)
+  if(importType==="complete")return "replace-all";        // PDF complet
+  return "merge"; // unknown : sécurité (pas d'effacement)
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -33389,25 +33518,10 @@ function doImport(){
   // Override manuel possible via cmc_import_mode_explicit (replace/merge) pour cas extrêmes.
   // ────────────────────────────────────────────────────────────────────────
   var _userExplicitMode=lg("cmc_import_mode_explicit",null);
-  var _importMode;
   var _existingHasData=A.overrides[key]&&Object.keys(A.overrides[key]).length>0;
-  if(_userExplicitMode==="merge"||_userExplicitMode==="replace"){
-    // Override manuel admin : respecter (pour rétro-compat + cas extrêmes)
-    _importMode=_userExplicitMode==="replace"?"replace-all":"merge";
-  }else if(_importType==="cadres"){
-    // V2 (pit/sup/insp) : wipe UNIQUEMENT les cadres, préserve employés/chefs
-    _importMode="scoped-cadres";
-  }else if(_importType==="employees"){
-    // V1 (employés+chefs) : wipe UNIQUEMENT employés/chefs, préserve cadres
-    _importMode="scoped-employees";
-  }else if(_importType==="complete"){
-    // PDF contient les 2 populations : wipe total
-    _importMode="replace-all";
-  }else{
-    // Type inconnu : sécurité = merge (parser superposera, rien d'effacé)
-    _importMode="merge";
-  }
-  console.log("[v9.613 doImport] decision: type="+_importType+" mode="+_importMode+" existing="+(_existingHasData?"yes":"no"));
+  // v9.620 (audit P2 #3) — Décision extraite en helper testable _cmcDecideImportMode
+  var _importMode=_cmcDecideImportMode(_importType,_userExplicitMode);
+  console.log("[v9.620 doImport] decision: type="+_importType+" mode="+_importMode+" existing="+(_existingHasData?"yes":"no"));
   if(_existingHasData){
     _preWipeHadData=true;
     try{
