@@ -1,0 +1,38 @@
+name: Gitleaks (secrets en clair dans commits)
+
+# Demande Kevin 2026-05-15 "qualité pro sans gros coûts" :
+# Gitleaks détecte tokens API/secrets en clair pushés par accident.
+# Bloquant sur PR. Évite leak gros préjudice (rotate tous les secrets en panic).
+#
+# Gratuit illimité (Gitleaks open source).
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  scan:
+    name: Gitleaks secrets scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history pour scan profond)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+        with:
+          # Échoue le job si secret trouvé
+          args: detect --redact --verbose --exit-code 1
