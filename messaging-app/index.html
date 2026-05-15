@@ -796,13 +796,16 @@ K.sv = function(view, data){
 function renderChats(app){
   const convs = K.conversations;
   app.innerHTML = `
-    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Mes conversations</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 16px">
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Mes conversations</h2>
+      <button class="btn btn-sm" onclick="K._showNewMenu()">＋ Nouveau</button>
+    </div>
     ${convs.length === 0 ? `
       <div class="card" style="text-align:center;padding:30px 14px">
         <div style="font-size:3em;margin-bottom:12px">💬</div>
         <p style="color:var(--ax-text-2);margin:0 0 16px">Aucune conversation</p>
         <button class="btn" onclick="K.openInvite()">📤 Inviter mes amis</button>
-        <button class="btn btn-out btn-block" onclick="K.sv('contacts')" style="margin-top:10px">👥 Voir mes contacts</button>
+        <button class="btn btn-out btn-block" onclick="K.openCreateGroup()" style="margin-top:10px">👥 Créer un groupe</button>
       </div>
     ` : `
       <div class="conv-list">
@@ -1084,6 +1087,15 @@ function renderSettings(app){
       <div class="card-row" onclick="alert('Phase 2 — apparence')">
         <span>🎨</span><span style="flex:1">Apparence</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K.openTimeCapsule()">
+        <span>⏰</span><span style="flex:1">Capsule temporelle</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openLetters()">
+        <span>💌</span><span style="flex:1">Lettre différée 24h</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openMemoryLane()">
+        <span>🕰</span><span style="flex:1">Memory Lane (il y a 1 an)</span><span>›</span>
+      </div>
       <div class="card-row" onclick="window.open('./diag.html')">
         <span>🔧</span><span style="flex:1">Diagnostic technique</span><span>›</span>
       </div>
@@ -1292,6 +1304,207 @@ K._adminAiAsk = async function(){
 };
 
 // ============================================================================
+//  API client helper
+// ============================================================================
+K._api = async function(method, path, body){
+  try{
+    const headers = { 'Content-Type': 'application/json' };
+    if(K.token) headers['Authorization'] = 'Bearer ' + K.token;
+    const opts = { method, headers };
+    if(body) opts.body = JSON.stringify(body);
+    const r = await fetch(API_BASE + path, opts);
+    const data = await r.json().catch(() => ({}));
+    if(!r.ok){
+      _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message });
+      throw new Error(data.message || ('Erreur ' + r.status));
+    }
+    return data;
+  }catch(e){
+    if(e.name === 'TypeError'){
+      // Worker indisponible : fallback local
+      _logTelemetry('warn', 'api-offline', { method, path });
+      return { ok: false, offline: true, message: 'Worker indisponible (mode local)' };
+    }
+    throw e;
+  }
+};
+
+// ============================================================================
+//  Phase 4 — Création groupe
+// ============================================================================
+K.openCreateGroup = function(){
+  K._showModal('👥 Nouveau groupe', `
+    <label class="label">Nom du groupe</label>
+    <input id="group-name" class="input" placeholder="Famille, Amis, Équipe..." maxlength="50">
+    <label class="label" style="margin-top:14px">Description (optionnel)</label>
+    <input id="group-desc" class="input" placeholder="À quoi sert ce groupe ?" maxlength="200">
+    <p style="color:var(--ax-text-3);font-size:.78em;margin-top:14px">
+      Tu pourras inviter des membres après création (max ${K.config.MAX_GROUP_SIZE || 1024} personnes).
+    </p>
+    <button class="btn btn-block" onclick="K._createGroup()" style="margin-top:14px">✓ Créer le groupe</button>
+  `);
+};
+
+K._createGroup = async function(){
+  const name = $('#group-name').value.trim();
+  const description = $('#group-desc').value.trim();
+  if(!name) return toast('Nom requis', 'err');
+  try{
+    const r = await K._api('POST', '/api/conversations', { type: 'group', name, members: [] });
+    if(r.ok && r.conversation){
+      K.conversations.unshift({
+        id: r.conversation.id, type: 'group', name, member_count: 1,
+        last_msg_ts: Date.now(), description
+      });
+      ls('conversations', K.conversations);
+      K._closeModal();
+      K.sv('chats');
+      toast('Groupe "' + name + '" créé', 'ok');
+    } else {
+      toast(r.message || 'Erreur création groupe', 'err');
+    }
+  }catch(e){
+    // Fallback local
+    const id = 'group_local_' + Date.now();
+    K.conversations.unshift({ id, type: 'group', name, member_count: 1, last_msg_ts: Date.now(), description });
+    ls('conversations', K.conversations);
+    K._closeModal();
+    K.sv('chats');
+    toast('Groupe créé (local)', 'warn');
+  }
+};
+
+// ============================================================================
+//  Phase 7 — Time Capsule
+// ============================================================================
+K.openTimeCapsule = function(){
+  // Date par défaut : dans 1 an
+  const nextYear = new Date(Date.now() + 365 * 86400 * 1000).toISOString().slice(0, 10);
+  K._showModal('⏰ Capsule temporelle', `
+    <p style="color:var(--ax-text-2);font-size:.9em">
+      Écris un message qui sera <strong style="color:var(--ax-gold)">scellé</strong> jusqu'à la date choisie.
+      Personne (pas même toi) ne pourra le lire avant.
+    </p>
+    <label class="label" style="margin-top:14px">Destinataire (pseudo)</label>
+    <input id="tc-recipient" class="input" placeholder="laurence">
+    <label class="label" style="margin-top:14px">Date d'ouverture</label>
+    <input id="tc-date" class="input" type="date" min="${new Date(Date.now() + 86400000).toISOString().slice(0,10)}" value="${nextYear}">
+    <label class="label" style="margin-top:14px">Ton message</label>
+    <textarea id="tc-msg" class="input" rows="4" placeholder="Cher Toi, dans 1 an..."></textarea>
+    <label class="label" style="margin-top:14px">Aperçu (visible avant ouverture)</label>
+    <input id="tc-preview" class="input" placeholder="Ex: Une surprise pour ton anniversaire" maxlength="100">
+    <button class="btn btn-block" onclick="K._createTimeCapsule()" style="margin-top:14px">🔒 Sceller la capsule</button>
+  `);
+};
+
+K._createTimeCapsule = async function(){
+  const recipient = $('#tc-recipient').value.trim().toLowerCase();
+  const date = $('#tc-date').value;
+  const msg = $('#tc-msg').value.trim();
+  const preview = $('#tc-preview').value.trim();
+  if(!recipient || !date || !msg) return toast('Tous les champs requis', 'err');
+
+  const openAt = new Date(date).getTime();
+  if(openAt < Date.now() + 86400000) return toast('Date d\'ouverture minimum dans 24h', 'err');
+
+  // Phase 2 : chiffrer avec clé recipient (si on a la pubkey). Phase 1 : texte brut.
+  const ciphertext = btoa(unescape(encodeURIComponent(msg)));
+
+  try{
+    const r = await K._api('POST', '/api/time-capsules', {
+      recipient_id: 'user_' + recipient,  // Phase 2 : lookup vraie ID
+      ciphertext,
+      mime: 'text/plain',
+      open_at: openAt,
+      preview
+    });
+    if(r.ok){
+      K._closeModal();
+      toast('Capsule scellée jusqu\'au ' + new Date(openAt).toLocaleDateString('fr-FR'), 'ok', 4000);
+    } else {
+      toast(r.message || 'Erreur', 'err');
+    }
+  }catch(e){
+    // Fallback local
+    const tcs = lg('time_capsules', []);
+    tcs.push({ id: 'tc_' + Date.now(), recipient, ciphertext, open_at: openAt, preview, created_at: Date.now() });
+    ls('time_capsules', tcs);
+    K._closeModal();
+    toast('Capsule sauvegardée (local)', 'warn');
+  }
+};
+
+// ============================================================================
+//  Phase 7 — Letters mode 24h
+// ============================================================================
+K.openLetters = function(){
+  K._showModal('💌 Lettre différée', `
+    <p style="color:var(--ax-text-2);font-size:.9em">
+      Écris une lettre qui sera <strong style="color:var(--ax-gold)">livrée dans 24h</strong>.
+      Tu peux toujours l'annuler avant l'envoi (anti-impulsion).
+    </p>
+    <label class="label" style="margin-top:14px">Conversation destinataire</label>
+    <select id="ltr-conv" class="input">
+      ${K.conversations.map(c => `<option value="${esc(c.id)}">${esc(c.name || c.pseudo || c.id)}</option>`).join('')}
+    </select>
+    <label class="label" style="margin-top:14px">Ta lettre</label>
+    <textarea id="ltr-msg" class="input" rows="6" placeholder="Prends ton temps. Tu as 24h pour réfléchir, puis elle part."></textarea>
+    <label class="label" style="margin-top:14px">Délai (heures, 1-168)</label>
+    <input id="ltr-delay" class="input" type="number" min="1" max="168" value="24">
+    <button class="btn btn-block" onclick="K._createLetter()" style="margin-top:14px">⏳ Envoyer dans X heures</button>
+  `);
+};
+
+K._createLetter = async function(){
+  const conv_id = $('#ltr-conv').value;
+  const msg = $('#ltr-msg').value.trim();
+  const delay = parseInt($('#ltr-delay').value) || 24;
+  if(!conv_id || !msg) return toast('Conversation + message requis', 'err');
+
+  const ciphertext = btoa(unescape(encodeURIComponent(msg)));
+  try{
+    const r = await K._api('POST', '/api/letters', { conv_id, ciphertext, delay_hours: delay });
+    if(r.ok){
+      K._closeModal();
+      toast(`Lettre programmée pour ${delay}h (annulable avant)`, 'ok', 4000);
+    } else {
+      toast(r.message || 'Erreur', 'err');
+    }
+  }catch(e){
+    K._closeModal();
+    toast('Erreur réseau, réessaie', 'err');
+  }
+};
+
+// ============================================================================
+//  Phase 7 — Memory Lane
+// ============================================================================
+K.openMemoryLane = async function(){
+  K._showModal('🕰 Memory Lane — Il y a 1 an', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Recherche de tes échanges du <strong>${new Date(Date.now() - 365 * 86400 * 1000).toLocaleDateString('fr-FR')}</strong>...</p>
+    <div id="ml-content" style="margin-top:14px"><div class="loading"></div></div>
+  `);
+  try{
+    const r = await K._api('GET', '/api/memory-lane');
+    const c = $('#ml-content');
+    if(r.ok && r.memory){
+      if(r.memory.count === 0 || (r.memory.msg_ids || []).length === 0){
+        c.innerHTML = '<p style="color:var(--ax-text-3)">Aucun souvenir trouvé — tu n\'avais pas encore Apex Chat il y a 1 an. Reviens dans quelques mois 🌸</p>';
+      } else {
+        c.innerHTML = `
+          <p style="color:var(--ax-text)">📬 <strong>${r.memory.count}</strong> messages ce jour-là.</p>
+          <button class="btn btn-out btn-block" onclick="K._closeModal()" style="margin-top:14px">✨ Plus tard (Phase 7b — résumé IA)</button>
+        `;
+      }
+    } else {
+      c.innerHTML = '<p style="color:var(--ax-text-3)">Memory Lane indisponible (worker offline)</p>';
+    }
+  }catch(e){
+    $('#ml-content').innerHTML = '<p style="color:var(--ax-err)">Erreur : ' + esc(e.message) + '</p>';
+  }
+};
+
+// ============================================================================
 //  Modal helpers
 // ============================================================================
 K._showModal = function(title, html){
@@ -1336,6 +1549,45 @@ K.toggleMenu = function(){
   // Menu side simple : ouvre admin si Kevin
   if(K.user?.is_admin) K.sv('admin');
   else K.sv('settings');
+};
+
+K._showNewMenu = function(){
+  K._showModal('＋ Nouveau', `
+    <div class="card" style="margin:0">
+      <div class="card-row" onclick="K._closeModal();K.openInvite()" style="cursor:pointer">
+        <span style="font-size:1.5em">📤</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Inviter un ami</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">SMS avec lien d'invitation</div>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="card-row" onclick="K._closeModal();K.openCreateGroup()" style="cursor:pointer">
+        <span style="font-size:1.5em">👥</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Nouveau groupe</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Jusqu'à ${K.config.MAX_GROUP_SIZE || 1024} membres</div>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="card-row" onclick="K._closeModal();K.openTimeCapsule()" style="cursor:pointer">
+        <span style="font-size:1.5em">⏰</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Capsule temporelle</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Message scellé jusqu'à une date future</div>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="card-row" onclick="K._closeModal();K.openLetters()" style="cursor:pointer">
+        <span style="font-size:1.5em">💌</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Lettre différée 24h</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Anti-impulsion — annulable</div>
+        </div>
+        <span>›</span>
+      </div>
+    </div>
+  `);
 };
 
 K._reload = function(){
