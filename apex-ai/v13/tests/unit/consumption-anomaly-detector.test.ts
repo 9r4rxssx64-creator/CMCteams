@@ -93,7 +93,10 @@ describe('services/consumption-anomaly-detector', () => {
     expect(reports.every((r) => r.severity !== 'normal')).toBe(true);
   });
 
-  it('scanAllVerbose retourne tous services', () => {
+  it('scanAllVerbose retourne services AVEC clé en vault (filtre v13.4.102)', () => {
+    /* v13.4.102 : scanAllVerbose filtre par hasKeyInVault() (min 10 chars) → pré-populer. */
+    localStorage.setItem('ax_anthropic_key', 'sk-ant-test-long-value-12345');
+    localStorage.setItem('ax_openai_key', 'sk-test-long-value-12345');
     const reports = consumptionAnomalyDetector.scanAllVerbose();
     expect(reports.length).toBeGreaterThanOrEqual(2);
   });

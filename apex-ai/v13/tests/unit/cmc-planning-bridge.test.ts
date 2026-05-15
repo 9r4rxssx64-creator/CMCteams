@@ -14,10 +14,15 @@ import {
   _internals,
 } from '../../services/cmc-planning-bridge.js';
 import { firebase } from '../../services/firebase.js';
+import { auth } from '../../services/auth.js';
 
 describe('cmc-planning-bridge', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    /* v13.4.83 added auth.isAdminSync() guard in pushPlanningToCmc.
+     * Default-mock to true (admin) so tests can verify bridge logic.
+     * Tests that need to verify the guard itself override with mockReturnValueOnce(false). */
+    vi.spyOn(auth, 'isAdminSync').mockReturnValue(true);
   });
 
   describe('detectSbmPlanning()', () => {
@@ -210,7 +215,7 @@ describe('cmc-planning-bridge', () => {
       expect(_internals.MIN_TEXT_LENGTH).toBe(200);
       expect(_internals.MIN_PUSH_LENGTH).toBe(1000);
       expect(_internals.MAX_RAW_TEXT).toBe(50_000);
-      expect(_internals.SBM_PATTERNS.length).toBe(4);
+      expect(_internals.SBM_PATTERNS.length).toBe(7);
     });
   });
 });

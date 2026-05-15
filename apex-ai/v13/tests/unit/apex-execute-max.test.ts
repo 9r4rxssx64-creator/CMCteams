@@ -23,9 +23,11 @@ describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
   });
 
   describe('Whitelist étendue (22 tâches autorisées)', () => {
-    it('listAllowedTasks() retourne 23 tâches (8 baseline + 15 extensions niveau MAX)', () => {
+    it('listAllowedTasks() retourne ≥23 tâches (baseline+MAX+PARITÉ Claude Code+iOS)', () => {
       const list = apexExecute.listAllowedTasks();
-      expect(list.length).toBe(23);
+      /* v13.4.122 : flexible — était 23 v13.4.30 puis 40 après v13.4.40/90 extensions */
+      expect(list.length).toBeGreaterThanOrEqual(23);
+      expect(list.length).toBeLessThanOrEqual(50);
       /* baseline */
       expect(list).toContain('modify_file');
       expect(list).toContain('create_file');
@@ -66,8 +68,9 @@ describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
 
     it('getCapabilities() expose métadonnées MAX', () => {
       const cap = apexExecute.getCapabilities();
-      expect(cap.allowed).toBe(23);
-      expect(cap.forbidden).toBe(12);
+      /* v13.4.122 : flexible — était 23/12 v13.4.30, étendu v13.4.40/90 */
+      expect(cap.allowed).toBeGreaterThanOrEqual(23);
+      expect(cap.forbidden).toBeGreaterThanOrEqual(12);
       expect(cap.critical_sentinels).toBeGreaterThanOrEqual(5);
       expect(cap.max_autonomy).toBe(true);
     });
