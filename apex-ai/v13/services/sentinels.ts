@@ -231,8 +231,11 @@ class SentinelsManager {
 
   private scheduleRun(): void {
     if (this.runTimer !== null) return;
-    /* Vérifie chaque minute si une sentinelle doit run */
-    this.runTimer = window.setInterval(() => {
+    /* v13.4.106 (Kevin "35 sentinelles PENDING au boot") :
+     * Run immédiatement 1× toutes les sentinelles dont lastRun=0 (jamais run).
+     * Avant : setInterval 60s = pas de run avant 1 minute = Kevin voit
+     * tout PENDING au boot. Maintenant : tick immédiat + setInterval 60s. */
+    const tick = (): void => {
       const now = Date.now();
       for (const s of this.sentinels.values()) {
         if (!s.enabled) continue;
@@ -240,7 +243,11 @@ class SentinelsManager {
           void this.executeSentinel(s);
         }
       }
-    }, 60_000);
+    };
+    /* Tick immédiat différé 2s (laisse les services autres se charger d'abord) */
+    setTimeout(tick, 2000);
+    /* Vérifie chaque minute si une sentinelle doit run */
+    this.runTimer = window.setInterval(tick, 60_000);
     /* Sprint 3 P0 : track interval pour cleanup possible (anti memory leak) */
     const t = this.runTimer;
     if (t !== null) {
