@@ -1,0 +1,82 @@
+name: Apex Chat — Tests + Coverage 100%
+
+# CRITIQUE (CLAUDE.md règle 100/100 réel) :
+# Sentinelle anti-régression — chaque push qui touche messaging-app DOIT garder
+# 100% coverage v8 sur lib/ + workers/ (sauf api-worker.js Phase C en cours).
+# Si la coverage descend, le check fail et bloque l'auto-merge.
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+      - 'main'
+    paths:
+      - 'messaging-app/**'
+      - '.github/workflows/messaging-app-tests.yml'
+  pull_request:
+    paths:
+      - 'messaging-app/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: messaging-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'messaging-app/package.json'
+
+      - name: Install deps
+        run: npm install
+
+      - name: Syntax check (node --check)
+        run: |
+          node --check sw.js
+          node --check crypto.js
+          node --check lib/crypto-core.js
+          node --check lib/sw-handlers.js
+          node --check workers/api-worker.js
+          node --check workers/ia-worker.js
+          node --check workers/push-worker.js
+          node --check workers/sms-worker.js
+          node --check workers/durable-objects/ConversationDO.js
+
+      - name: Tests + Coverage 100%
+        run: npx vitest run --coverage
+
+      - name: Verify 100% threshold (fail if <100%)
+        run: |
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "❌ coverage-summary.json missing"
+            exit 1
+          fi
+          node -e "
+            const s = require('./coverage/coverage-summary.json').total;
+            const fail = ['lines','statements','branches','functions'].filter(k => s[k].pct < 100);
+            if (fail.length) {
+              console.error('❌ Coverage <100% sur:', fail.map(k => k+'='+s[k].pct+'%').join(', '));
+              process.exit(1);
+            }
+            console.log('✅ Coverage 100% sur lines/statements/branches/functions');
+          "
+
+      - name: Upload coverage HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: messaging-app-coverage
+          path: messaging-app/coverage/
+          retention-days: 7
