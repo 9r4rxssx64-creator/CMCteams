@@ -1,6 +1,53 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.634 (2026-05-16)
+# Mémo de reprise — Apex v13.4.127 / CMC v9.638 (2026-05-15)
 
-## 🎯 SESSION 2026-05-16 IMPORT PARSER RÉEL — CMC v9.625→v9.634 (Kevin)
+## 🎯 SESSION 2026-05-15 UX + chefs équipe + diag — CMC v9.635→v9.638 (Kevin)
+
+### Suite session v9.625→v9.634
+
+Après le verdict 112/120, Kevin a signalé :
+1. "ne marche pas non plus pour les inspecteurs" (Pit Boss tous mêmes horaires sur screenshot)
+2. "chefs gardent ancienne équipe quand j'avais collé des mois précédents"
+3. "Quand je fais exporter PDF, il me l'envoie directement dans le chat CMC"
+
+### Fixes v9.635→v9.638 (4 versions, 5 commits)
+
+| Version | Problème Kevin | Fix |
+|---|---|---|
+| **v9.635** | Export PDF push directement dans chat (execCommand("copy") silencieux) | Refactor `cmcExportPdfSourceForDiag` : `navigator.clipboard.writeText()` (iOS 13.4+) + modal toujours visible + 3 boutons (Copier/.txt/Fermer). Plus AUCUN side-effect chat. |
+| **v9.636** | Pas d'outil pour vérifier runtime si Pit Boss vraiment identiques ou juste rotation décalée | + Bouton "🔍 Diag Pit Boss horaires" : export RÉEL des 31 jours par cadre + détection doublons exacts + métadonnées emp. Bouton "🗑️ Effacer cadres (ce mois)" pour reset stale + snapshot rollback. |
+| **v9.637** | "chefs gardent ancienne équipe" (CLAUDE.md erreur #50 ne touche pas emp.team DEF_EMP — c'est la VUE qui doit changer) | vEmps + showEmpQuickProfile + _empGroupKey + sort filt utilisent `teamForMonth(emp,A.year,A.month)` au lieu de `emp.team` frozen. teamHistory[key] écrit par import maintenant respecté visuellement. |
+| **v9.638** | Cohérence : vDeparts (groupe absence) + vAccueil (avatars présents) figés sur emp.team | Propagation teamForMonth aux 2 vues restantes. Cohérence cross-app totale : import V1 déplace ROSSI D r1→r3 → affichage immédiat partout. |
+
+### Tests runtime v9.638 (4 suites cumulatives)
+
+| Suite | Tests | Verdict |
+|---|---|---|
+| `runtime-audit.mjs` (régression + E2E V1↔V2 + perf + sentinelle) | 160+ assertions | ✅ PASS 0 erreur |
+| `runtime-audit-encadres.mjs` (PASSERON G, NOVARETTI B, etc.) | 15 | ✅ PASS 0 fail |
+| `runtime-audit-pitboss.mjs` (JANEL JM, GARELLI C, etc.) | 5 + 20/20 schedules distincts | ✅ PASS 0 fail |
+| `runtime-audit-teamhistory.mjs` ⭐ NEW v9.637 | 5 | ✅ PASS 0 fail |
+| **Total** | **185 assertions runtime** | ✅ **0 régression** |
+
+### Outils diagnostic disponibles pour Kevin
+
+Dans `vImport > Outils avancés (tests parser, re-tenter cadres, OCR Vision)` :
+
+1. 🧪 **Tests parser** — 55+ cas régression v9.509+
+2. 🔧 **Re-tenter cadres** — 5 stratégies parser sur PDF source sauvegardé
+3. 🤖 **OCR + Vision** — Tesseract + Claude Vision en cascade
+4. 🧠 **Parser IA** — voir ce que l'app a appris
+5. 🔍 **Diag Pit Boss horaires** ⭐ NEW v9.636 — export horaires RÉELS A.overrides
+6. 🗑️ **Effacer cadres (ce mois)** ⭐ NEW v9.636 — reset stale + snapshot rollback
+
+Bouton primaire (visible direct) : 📋 **Exporter PDF source diag** v9.635 réécrit (clipboard.writeText)
+
+### Statut deploy
+
+- Branche : `claude/fix-cms-teams-import-bgkHk`
+- Auto-merge bot : ✅ v9.637 mergé sur main (commit bd1d9409)
+- v9.638 en attente auto-merge (push 997e7c3d)
+- GitHub Pages : déploiement automatique ~2-3 min après merge
+- Service Worker : CACHE_VERSION='cmcteams-v9.638' sync OK
 
 ### Verdict audit final #8 indépendant : **112/120 (93.3%)**
 
