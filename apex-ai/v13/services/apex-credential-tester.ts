@@ -99,6 +99,27 @@ const SERVICE_TESTS: Record<string, ServiceTestConfig> = {
       Accept: 'application/vnd.github+json',
     }),
   },
+  /* v13.4.106 (Kevin "no test endpoint configured" pour GitHub PAT classic) :
+   * Le pattern v13.4.49 a renommé storageKey en ax_github_pat_classic /
+   * ax_github_pat_finegrained. On ajoute les 2 variants ici comme alias. */
+  github_pat_classic: {
+    storageKey: 'ax_github_pat_classic',
+    testUrl: 'https://api.github.com/user',
+    method: 'GET',
+    authHeader: (t: string) => ({
+      Authorization: `Bearer ${t}`,
+      Accept: 'application/vnd.github+json',
+    }),
+  },
+  github_pat_finegrained: {
+    storageKey: 'ax_github_pat_finegrained',
+    testUrl: 'https://api.github.com/user',
+    method: 'GET',
+    authHeader: (t: string) => ({
+      Authorization: `Bearer ${t}`,
+      Accept: 'application/vnd.github+json',
+    }),
+  },
   xai: {
     storageKey: 'ax_xai_key',
     testUrl: 'https://api.x.ai/v1/models',
