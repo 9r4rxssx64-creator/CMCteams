@@ -183,6 +183,48 @@ const SERVICE_TESTS: Record<string, ServiceTestConfig> = {
     method: 'GET',
     authHeader: (t: string) => ({ 'xi-api-key': t }),
   },
+  /* v13.4.108 (Kevin context drop 2026-05-15) — ajout services Kevin stack */
+  together: {
+    storageKey: 'ax_together_key',
+    testUrl: 'https://api.together.xyz/v1/models',
+    method: 'GET',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
+  },
+  tavily: {
+    storageKey: 'ax_tavily_key',
+    /* Tavily POST search avec query minimal */
+    testUrl: 'https://api.tavily.com/search',
+    method: 'POST',
+    authHeader: (t: string) => ({ 'content-type': 'application/json', 'authorization': `Bearer ${t}` }),
+    body: () => JSON.stringify({ query: 'ping', max_results: 1 }),
+  },
+  finnhub: {
+    storageKey: 'ax_finnhub_key',
+    /* Finnhub : token dans URL query, ping quote AAPL */
+    testUrl: 'https://finnhub.io/api/v1/quote?symbol=AAPL',
+    method: 'GET',
+    authHeader: (t: string) => ({ 'X-Finnhub-Token': t }),
+  },
+  cloudflare: {
+    storageKey: 'ax_cloudflare_token',
+    testUrl: 'https://api.cloudflare.com/client/v4/user/tokens/verify',
+    method: 'GET',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
+  },
+  vercel: {
+    storageKey: 'ax_vercel_token',
+    testUrl: 'https://api.vercel.com/v2/user',
+    method: 'GET',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
+  },
+  railway: {
+    storageKey: 'ax_railway_token',
+    /* Railway GraphQL me query */
+    testUrl: 'https://backboard.railway.com/graphql/v2',
+    method: 'POST',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}`, 'content-type': 'application/json' }),
+    body: () => JSON.stringify({ query: '{ me { id email } }' }),
+  },
 };
 
 async function testRuntime(service: string): Promise<TestResult> {
