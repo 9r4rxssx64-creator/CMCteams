@@ -153,6 +153,94 @@ const PING_CONFIGS: Record<string, PingConfig> = {
     method: 'GET',
     buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
   },
+  /* v13.4.113 (Kevin "no test endpoint configured" persiste pour github_pat_classic) :
+   * Multi-key-vault.testKey utilise PING_CONFIGS, pas apex-credential-tester.
+   * Mon fix v13.4.106 était dans le mauvais fichier. Ajout direct ici. */
+  github: {
+    url: 'https://api.github.com/user',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({
+      authorization: `Bearer ${apiKey}`,
+      accept: 'application/vnd.github+json',
+    }),
+  },
+  github_pat_classic: {
+    url: 'https://api.github.com/user',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({
+      authorization: `Bearer ${apiKey}`,
+      accept: 'application/vnd.github+json',
+    }),
+  },
+  github_pat_finegrained: {
+    url: 'https://api.github.com/user',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({
+      authorization: `Bearer ${apiKey}`,
+      accept: 'application/vnd.github+json',
+    }),
+  },
+  xai: {
+    url: 'https://api.x.ai/v1/models',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
+  },
+  pinecone: {
+    url: 'https://api.pinecone.io/indexes',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ 'Api-Key': apiKey }),
+  },
+  tavily: {
+    url: 'https://api.tavily.com/search',
+    method: 'POST',
+    body: JSON.stringify({ query: 'ping', max_results: 1 }),
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' }),
+  },
+  together: {
+    url: 'https://api.together.xyz/v1/models',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
+  },
+  finnhub: {
+    url: 'https://finnhub.io/api/v1/quote?symbol=AAPL',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ 'X-Finnhub-Token': apiKey }),
+  },
+  cloudflare: {
+    url: 'https://api.cloudflare.com/client/v4/user/tokens/verify',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
+  },
+  vercel: {
+    url: 'https://api.vercel.com/v2/user',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
+  },
+  stripe: {
+    url: 'https://api.stripe.com/v1/balance',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
+  },
+  resend: {
+    url: 'https://api.resend.com/domains',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
+  },
+  brevo: {
+    url: 'https://api.brevo.com/v3/account',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ 'api-key': apiKey }),
+  },
+  elevenlabs: {
+    url: 'https://api.elevenlabs.io/v1/user',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ 'xi-api-key': apiKey }),
+  },
+  notion: {
+    url: 'https://api.notion.com/v1/users/me',
+    method: 'GET',
+    buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}`, 'Notion-Version': '2022-06-28' }),
+  },
 };
 
 /**
