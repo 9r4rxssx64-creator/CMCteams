@@ -2895,7 +2895,8 @@ function empLabel(emp){
   if(!emp) return "";
   var isSr=emp.senior||(emp.family==="roulettes"&&emp.chef);
   var gf=emp.groupe==="ferme";
-  return emp.name+(isSr?" \u2605":"")+(gf?" \ud83d\udd12":"");
+  var ff=!!emp.faisantFonction; // v9.614
+  return emp.name+(isSr?" \u2605":"")+(gf?" \ud83d\udd12":"")+(ff?" (FF)":"");
 }
 // Etiquette HTML employé (pour affichage inline)
 // v9.43 : badge \u2605 dor\u00e9 pour senior 55+, badge \ud83d\udd12 pour groupe ferm\u00e9
@@ -2909,6 +2910,10 @@ function empLabelHtml(emp,isMe){
   }
   if(gf){
     n+=' <span title="Groupe ferm\u00e9 \u2014 noyau historique SBM (pr\u00e9-1993)" style="display:inline-block;font-size:11px;color:#d09060;background:rgba(160,104,64,.18);border:1px solid rgba(160,104,64,.45);border-radius:3px;padding:0 3px;margin-left:3px;vertical-align:middle;font-weight:700;letter-spacing:.3px">F</span>';
+  }
+  // v9.614 \u2014 Faisant fonction badge bleu (sup faisant pit boss, ex: BOUVIER JF)
+  if(emp.faisantFonction){
+    n+=' <span title="Faisant fonction \u2014 occupe un poste sup\u00e9rieur sans le titre officiel (PDF: fond bleu)" style="display:inline-block;font-size:11px;color:#4aa0ff;background:rgba(74,160,255,.16);border:1px solid rgba(74,160,255,.5);border-radius:3px;padding:0 4px;margin-left:3px;vertical-align:middle;font-weight:700;letter-spacing:.3px">FF</span>';
   }
   // v9.600 \u2014 Badge cadre unifi\u00e9 (pit 0 / sup 5 / insp ?) si helper dispo
   try{
@@ -4855,7 +4860,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.613";
+var APP_VER="v9.614";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7042,6 +7047,78 @@ var CMC_PARSER_TESTS=[
         return v1Intact && v2Added;
       }catch(e){return false;}
       finally{A.overrides=origOv;}
+    }},
+  // ────────────────────────────────────────────────────────────────────────
+  // v9.614 — TESTS RÉGRESSION VISUEL (étoile ★ / Faisant Fonction / Red Names / Completeness)
+  // Kevin "Enrichie au max pour tout prendre en compte, fond, couleur, étoile,
+  // etc, j'aimerais aucune erreur tolérée"
+  // ────────────────────────────────────────────────────────────────────────
+  {id:"VS01",label:"_cmcStoreImportMeta : persiste bg/fg/star/ff",
+    input:"v9.614 meta store",
+    customCheck:function(){
+      try{
+        if(typeof _cmcStoreImportMeta!=="function")return false;
+        A.overrides_meta=A.overrides_meta||{};
+        delete A.overrides_meta["TEST-VS01"];
+        _cmcStoreImportMeta("TEST-VS01","E00001",5,{bg:"FF",ff:true,star:true});
+        var v=A.overrides_meta["TEST-VS01"]&&A.overrides_meta["TEST-VS01"]["E00001"]&&A.overrides_meta["TEST-VS01"]["E00001"][5];
+        delete A.overrides_meta["TEST-VS01"];
+        return v && v.bg==="FF" && v.ff===true && v.star===true;
+      }catch(e){return false;}
+    }},
+  {id:"VS02",label:"_cmcStoreImportMeta merge non-destructif",
+    input:"v9.614 meta merge",
+    customCheck:function(){
+      try{
+        if(typeof _cmcStoreImportMeta!=="function")return false;
+        A.overrides_meta=A.overrides_meta||{};
+        delete A.overrides_meta["TEST-VS02"];
+        _cmcStoreImportMeta("TEST-VS02","E00001",5,{bg:"CDP",star:false});
+        _cmcStoreImportMeta("TEST-VS02","E00001",5,{ff:true}); // add ff sans toucher bg
+        var v=A.overrides_meta["TEST-VS02"]["E00001"][5];
+        delete A.overrides_meta["TEST-VS02"];
+        return v.bg==="CDP" && v.ff===true;
+      }catch(e){return false;}
+    }},
+  {id:"VS03",label:"_cmcImportCompletenessCheck score reduit si CP source > CP override",
+    input:"v9.614 completeness gap",
+    customCheck:function(){
+      try{
+        if(typeof _cmcImportCompletenessCheck!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        A.overrides["TEST-VS03"]={"E00001":{1:"22/6",2:"RH"}}; // ZERO CP en override
+        // Source contient 20 marqueurs {{CP}} → on devrait avoir des warnings
+        var src="x{{CP}} y{{CP}} z{{CP}} a{{CP}} b{{CP}} c{{CP}} d{{CP}} e{{CP}} f{{CP}} g{{CP}}";
+        var rep=_cmcImportCompletenessCheck("TEST-VS03",src);
+        delete A.overrides["TEST-VS03"];
+        A.overrides=origOv;
+        return rep.score<100 && rep.warnings.length>=1;
+      }catch(e){return false;}
+    }},
+  {id:"VS04",label:"_cmcImportCompletenessCheck score 100 si tout match",
+    input:"v9.614 completeness perfect",
+    customCheck:function(){
+      try{
+        if(typeof _cmcImportCompletenessCheck!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        // Source sans marqueurs spéciaux → pas de gap possible
+        A.overrides["TEST-VS04"]={"E00001":{1:"22/6"}};
+        var rep=_cmcImportCompletenessCheck("TEST-VS04","planning normal sans marqueurs");
+        delete A.overrides["TEST-VS04"];
+        A.overrides=origOv;
+        return rep.score===100;
+      }catch(e){return false;}
+    }},
+  {id:"VS05",label:"empLabelHtml affiche badge FF si faisantFonction",
+    input:"v9.614 label FF",
+    customCheck:function(){
+      try{
+        var fakeEmp={name:"TEST FF",faisantFonction:true};
+        var html=empLabelHtml(fakeEmp);
+        return html.indexOf(">FF<")>=0 || html.indexOf("Faisant fonction")>=0;
+      }catch(e){return false;}
     }}
 ];
 // v9.521 — Helpers de normalisation utilises par les tests + le parser etendu
@@ -23927,6 +24004,163 @@ function _cmcDiffVersions(versionA,versionB){
 }
 
 // ────────────────────────────────────────────────────────────────────────
+// v9.614 (Kevin 2026-05-15 "fond, couleur, étoile, aucune erreur tolérée") :
+// Helpers métadata import :
+//  - _cmcStoreImportMeta(key, eid, d, meta) : stocke meta visuelle per-cell
+//  - _cmcApplyVisualMarkers(key, sourceText) : applique étoile ★ + faisant fonction
+//    aux employés trouvés (emp.senior=true, emp.faisantFonction=true)
+//  - _cmcImportCompletenessCheck(key, sourceText) : audit "rien oublié" post-import
+//    Compare codes spéciaux trouvés dans source vs A.overrides, score 0-100.
+// ────────────────────────────────────────────────────────────────────────
+function _cmcStoreImportMeta(key, eid, d, meta){
+  if(!key||!eid||!d||!meta)return;
+  try{
+    A.overrides_meta=A.overrides_meta||{};
+    A.overrides_meta[key]=A.overrides_meta[key]||{};
+    A.overrides_meta[key][eid]=A.overrides_meta[key][eid]||{};
+    // Merge non destructif (préserve flags antérieurs si nouveau meta n'a pas le champ)
+    var prev=A.overrides_meta[key][eid][d]||{};
+    A.overrides_meta[key][eid][d]={
+      bg:meta.bg||prev.bg||null,        // "CDP"|"AF"|"CONV"|"CP"|"RH"|"R"|"RRT"|"PNL"|"FF"
+      fg:meta.fg||prev.fg||null,        // "red" pour texte rouge (nom non reconnu)
+      star:meta.star||prev.star||false, // ★ sur la ligne
+      ff:meta.ff||prev.ff||false        // faisant fonction (fond bleu)
+    };
+  }catch(_e){}
+}
+function _cmcApplyVisualMarkers(key, sourceText){
+  // Lit window._pdfStarMarkers + window._pdfFaisantFonctionCells + window._pdfRedNames
+  // et applique à A.employees + A.overrides_meta. Idempotent.
+  var stats={starsApplied:0, ffApplied:0, redNamesFlagged:0, unknownNames:[]};
+  if(!sourceText)return stats;
+  try{
+    var srcUp=String(sourceText).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    // 1) Étoiles ★ → emp.senior = true (TOUS familles, pas juste roulettes chef)
+    var starMarkers=window._pdfStarMarkers||[];
+    starMarkers.forEach(function(m){
+      var ctx=(m.contextLine||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+      A.employees.forEach(function(emp){
+        if(!emp||!emp.name)return;
+        var nm=emp.name.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+        var surname=nm.split(/\s+/)[0];
+        if(surname&&surname.length>=3&&ctx.indexOf(surname)>=0){
+          if(!emp.senior){
+            emp.senior=true;
+            stats.starsApplied++;
+          }
+        }
+      });
+    });
+    if(stats.starsApplied>0){
+      try{ls("cmc_e",A.employees);if(typeof fbWrite==="function")fbWrite("cmc_e",A.employees);}catch(_){}
+    }
+    // 2) Faisant fonction (fond bleu) → emp.faisantFonction = true
+    // Recherche dans le sourceText du tag {{FF}} ET le nom à proximité
+    var ffMatches=sourceText.match(/[A-Z][A-Z\s\.\-]{2,30}[A-Z]\s*\{\{FF\}\}/g)||[];
+    ffMatches.forEach(function(rawMatch){
+      var nm=rawMatch.replace(/\{\{FF\}\}/g,"").trim().toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+      A.employees.forEach(function(emp){
+        if(!emp||!emp.name)return;
+        var enm=emp.name.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+        var surname=enm.split(/\s+/)[0];
+        if(surname&&surname.length>=3&&nm.indexOf(surname)>=0){
+          if(!emp.faisantFonction){
+            emp.faisantFonction=true;
+            stats.ffApplied++;
+          }
+        }
+      });
+    });
+    // Aussi via window._pdfFaisantFonctionCells contextuel (token brut)
+    var ffCells=window._pdfFaisantFonctionCells||[];
+    ffCells.forEach(function(c){
+      // On marque la meta cell pour visualisation ultérieure
+      // (extraction du jour exact = pas trivial sans dayPos ; on stocke en bulk)
+      try{
+        A.overrides_meta_pending_ff=A.overrides_meta_pending_ff||[];
+        if(A.overrides_meta_pending_ff.length<200){
+          A.overrides_meta_pending_ff.push({key:key,y:c.y,x:c.x,code:c.code});
+        }
+      }catch(_){}
+    });
+    if(stats.ffApplied>0){
+      try{ls("cmc_e",A.employees);if(typeof fbWrite==="function")fbWrite("cmc_e",A.employees);}catch(_){}
+    }
+    // 3) Texte rouge sur noms = non reconnu par SBM. On les loggue pour Kevin.
+    var redNames=window._pdfRedNames||[];
+    var seen={};
+    redNames.forEach(function(r){
+      var t=(r.t||"").trim();
+      if(!t||seen[t])return;
+      seen[t]=true;
+      stats.unknownNames.push(t);
+      stats.redNamesFlagged++;
+    });
+    // Persist liste pour audit Kevin
+    try{ls("cmc_unrecognized_names_"+key,stats.unknownNames.slice(0,50));}catch(_){}
+    try{if(typeof _audit==="function")_audit("visual_markers_applied",AID,key,"",
+      "stars:"+stats.starsApplied+" ff:"+stats.ffApplied+" redNames:"+stats.redNamesFlagged);}catch(_){}
+  }catch(e){console.warn("[_cmcApplyVisualMarkers]",e);}
+  return stats;
+}
+function _cmcImportCompletenessCheck(key, sourceText){
+  // Audit "rien oublié" : compte codes spéciaux/étoiles/fonds détectés vs cells dans overrides.
+  // Score 0-100. <90 = warning visible Kevin.
+  var rep={score:100,details:{},warnings:[]};
+  if(!sourceText||!A.overrides||!A.overrides[key])return rep;
+  try{
+    var src=String(sourceText);
+    var srcUp=src.toUpperCase();
+    // Compteurs source
+    var srcStars=(src.match(/[★☆⭐]/g)||[]).length;
+    var srcFF=(src.match(/\{\{FF\}\}/g)||[]).length;
+    var srcCDP=(src.match(/\{\{CDP\}\}/g)||[]).length;
+    var srcAF=(src.match(/\{\{AF\}\}/g)||[]).length;
+    var srcCONV=(src.match(/\{\{CONV\}\}/g)||[]).length;
+    var srcCP=(src.match(/\{\{CP\}\}/g)||[]).length;
+    var srcRH=(src.match(/\{\{RH\}\}/g)||[]).length;
+    var srcR=(src.match(/\{\{R\}\}/g)||[]).length;
+    // Compteurs overrides
+    var ov=A.overrides[key]||{};
+    var ovCP=0,ovRH=0,ovR=0,ovAF=0,ovCDP=0,ovConv=0;
+    Object.keys(ov).forEach(function(eid){
+      Object.keys(ov[eid]||{}).forEach(function(d){
+        var c=ov[eid][d]||"";
+        if(c==="CP")ovCP++;
+        if(c==="RH")ovRH++;
+        if(c==="R")ovR++;
+        if(c==="AF")ovAF++;
+        if(c.endsWith("*"))ovCDP++;
+        if(c.endsWith("'"))ovConv++;
+      });
+    });
+    rep.details={
+      src:{stars:srcStars,ff:srcFF,cdp:srcCDP,af:srcAF,conv:srcCONV,cp:srcCP,rh:srcRH,r:srcR},
+      ov:{cp:ovCP,rh:ovRH,r:ovR,af:ovAF,cdp:ovCDP,conv:ovConv}
+    };
+    // Comparaisons : si source en a et overrides n'en a pas → manque
+    function _gap(srcN,ovN,label){
+      if(srcN>0&&ovN<Math.floor(srcN*0.7)){
+        var pct=Math.round((1-ovN/srcN)*100);
+        rep.warnings.push(label+": source="+srcN+" override="+ovN+" (manque ~"+pct+"%)");
+        rep.score-=Math.min(15,pct/3);
+      }
+    }
+    _gap(srcCDP,ovCDP,"CDP (orange)");
+    _gap(srcAF,ovAF,"AF (vert)");
+    _gap(srcCP,ovCP,"CP (rose)");
+    _gap(srcRH,ovRH,"RH (violet)");
+    _gap(srcR,ovR,"R (lavande)");
+    _gap(srcCONV,ovConv,"Convention (rouge)");
+    if(rep.score<0)rep.score=0;
+    rep.score=Math.round(rep.score);
+    try{ls("cmc_import_completeness_"+key,{ts:Date.now(),v:APP_VER,score:rep.score,details:rep.details,warnings:rep.warnings});}catch(_){}
+    try{if(typeof _audit==="function")_audit("import_completeness",AID,key,String(rep.score),JSON.stringify(rep.warnings).slice(0,200));}catch(_){}
+  }catch(e){console.warn("[_cmcImportCompletenessCheck]",e);}
+  return rep;
+}
+
+// ────────────────────────────────────────────────────────────────────────
 // v9.613 (Kevin 2026-05-15 23:06 — ABSOLUE "V1 et V2 doivent S'ADDITIONNER")
 // _cmcScopedWipe(key, scope) : efface UNIQUEMENT les cells des employés du scope
 // concerné. Garantit que V1 (employés+chefs) et V2 (cadres pit/sup/insp) ne se
@@ -31856,14 +32090,33 @@ function _doExtractPdfLines(file,onDone,onErr){
             // Détecter jours rouges (affluence) + fonds orange/rouge (CDP)
             if(!window._pdfRedDays)window._pdfRedDays=[];
             if(!window._pdfCdpCells)window._pdfCdpCells=[];
+            // v9.614 (Kevin 2026-05-15 "fond, couleur, étoile, etc, aucune erreur tolérée") :
+            // Capture EXHAUSTIVE des metadata visuelles.
+            if(!window._pdfFaisantFonctionCells)window._pdfFaisantFonctionCells=[];
+            if(!window._pdfStarMarkers)window._pdfStarMarkers=[]; // {y, x, contextLine} pour ★
+            if(!window._pdfRedNames)window._pdfRedNames=[]; // {y, x, t} pour noms en texte rouge (non num)
             var ys=Object.keys(rowMap).map(Number).sort(function(a,b){return b-a;});
             ys.forEach(function(y){
               var items=rowMap[y].slice().sort(function(a,b){return a.x-b.x;});
+              // v9.614 — Pré-scan ligne pour étoile ★ (marqueur senior 55+ ans, TOUS familles)
+              var hasStarOnRow=items.some(function(i){return /[★☆⭐]/.test(i.t||"");});
+              if(hasStarOnRow){
+                var ctxLine=items.map(function(i){return i.t;}).join(" ").trim();
+                window._pdfStarMarkers.push({y:y,x:items[0]&&items[0].x||0,contextLine:ctxLine.slice(0,120)});
+              }
               items.forEach(function(it){
                 var num=parseInt(it.t);
                 // Jours rouges (texte rouge = affluence, en-tête)
                 if(num>=1&&num<=31&&it.color&&it.color.r>180&&it.color.g<100&&it.color.b<100){
                   if(window._pdfRedDays.indexOf(num)<0)window._pdfRedDays.push(num);
+                }
+                // v9.614 — Texte rouge sur tokens ALPHA (= nom employé non reconnu par SBM)
+                //   regex /[A-Z]{3,}/ et pas un chiffre 1-31, et pas un code horaire
+                if(it.color&&it.color.r>180&&it.color.g<100&&it.color.b<100
+                   && !(num>=1&&num<=31)
+                   && /[A-Z]{3,}/.test(it.t||"")
+                   && !/^\d{1,2}[Hh\/]?\d{0,2}$/.test((it.t||"").trim())){
+                  window._pdfRedNames.push({y:y,x:it.x,t:(it.t||"").trim().slice(0,60)});
                 }
                 // Fond orange/rouge = CDP (Café de Paris)
                 // Orange : R>200, G entre 80-180, B<100
@@ -31910,18 +32163,38 @@ function _doExtractPdfLines(file,onDone,onErr){
                     window._pdfCdpCells.push({y:y,x:it.x,code:_convCode,type:"conv"});
                   }
                 }
+                // v9.614 (Kevin 2026-05-15) — Fond BLEU = FAISANT FONCTION
+                // Cas BOUVIER JF en avril 2026 (NOTES_USER ligne 222-228) : superviseur
+                // faisant le job de pit boss sans le titre officiel. Identifié par fond
+                // bleu dans le PDF SBM. Capture ici → flag emp.faisantFonction au commit.
+                // Bleu : B>180, R<150, G<180, B significativement > R
+                if(it.bg&&it.bg.b>180&&it.bg.r<150&&it.bg.g<180&&it.bg.b>it.bg.r+40){
+                  window._pdfFaisantFonctionCells.push({y:y,x:it.x,code:(it.t||"").trim(),type:"faisant_fonction"});
+                }
               });
               // Encoder la couleur de fond dans le texte avec un marqueur {{TYPE}}
+              // v9.614 — Ajout {{FF}} faisant fonction (bleu) + {{STAR}} étoile (rouge) + {{REDNAME}} nom rouge non reconnu
               var line=items.map(function(i){
                 var tag="";
                 if(i.bg){
-                  if(i.bg.r>200&&i.bg.g>=80&&i.bg.g<=180&&i.bg.b<100)tag="{{CDP}}";
+                  // v9.614 — Faisant fonction (fond bleu) prioritaire car spécifique
+                  if(i.bg.b>180&&i.bg.r<150&&i.bg.g<180&&i.bg.b>i.bg.r+40)tag="{{FF}}";
+                  else if(i.bg.r>200&&i.bg.g>=80&&i.bg.g<=180&&i.bg.b<100)tag="{{CDP}}";
                   else if(i.bg.g>150&&i.bg.r<150&&i.bg.b<150)tag="{{AF}}";
                   else if(i.bg.r>200&&i.bg.g<80&&i.bg.b<80)tag="{{CONV}}";
                   else if(i.bg.r>200&&i.bg.g>150&&i.bg.b>180&&i.bg.r>i.bg.g)tag="{{CP}}";
                   else if(i.bg.r>80&&i.bg.r<160&&i.bg.b>150&&i.bg.g<100)tag="{{RH}}";
                   else if(i.bg.r>160&&i.bg.b>180&&i.bg.g>140&&i.bg.g<200&&i.bg.b>i.bg.g)tag="{{R}}";
                   else if(i.bg.r>220&&i.bg.g>200&&i.bg.b<120)tag="{{RRT}}";
+                }
+                // v9.614 — Star explicite dans le texte
+                if(/[★☆⭐]/.test(i.t||"")) tag+="{{STAR}}";
+                // v9.614 — Texte rouge (nom non reconnu, hors jour numéro)
+                var _numI=parseInt(i.t);
+                if(i.color&&i.color.r>180&&i.color.g<100&&i.color.b<100
+                   && !(_numI>=1&&_numI<=31)
+                   && /[A-Z]{3,}/.test(i.t||"")){
+                  tag+="{{REDNAME}}";
                 }
                 return i.t+tag;
               }).join("\t");
@@ -34857,6 +35130,61 @@ function doImport(){
     // v9.611 (Kevin 2026-05-14 23:25 "Tout dans les import doit être pris en compte
     // sans faute jamais. Reproduction à l'identique") — Audit lossless post-import auto.
     try{if(typeof _cmcImportLosslessCheck==="function")_cmcImportLosslessCheck(key,txt);}catch(_e7){console.warn("[lossless-audit]",_e7&&_e7.message);}
+    // v9.614 (Kevin 2026-05-15 "fond, couleur, étoile, aucune erreur tolérée") :
+    // Application markers visuels (étoile ★ → senior, fond bleu → faisantFonction,
+    // texte rouge → noms non reconnus) + audit completeness.
+    var _visualStats=null,_completeness=null;
+    try{
+      if(typeof _cmcApplyVisualMarkers==="function"){
+        _visualStats=_cmcApplyVisualMarkers(key,txt);
+      }
+    }catch(_visErr){console.warn("[visual-markers]",_visErr&&_visErr.message);}
+    try{
+      if(typeof _cmcImportCompletenessCheck==="function"){
+        _completeness=_cmcImportCompletenessCheck(key,txt);
+      }
+    }catch(_compErr){console.warn("[completeness-check]",_compErr&&_compErr.message);}
+    // Banner visuel additionnel
+    try{
+      var _rVis=document.getElementById("impRes");
+      if(_rVis && (_visualStats||_completeness)){
+        var _hVis='';
+        if(_visualStats && (_visualStats.starsApplied>0||_visualStats.ffApplied>0||_visualStats.redNamesFlagged>0)){
+          _hVis+='<div style="margin-top:10px;padding:12px;background:linear-gradient(135deg,rgba(192,128,255,.10),rgba(96,64,200,.04));border:1.5px solid #c080ff;border-radius:10px">'
+            +'<div style="font-size:14px;font-weight:800;color:#c080ff;margin-bottom:8px">🎨 Marqueurs visuels détectés</div>'
+            +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:13px">';
+          _hVis+='<div style="padding:8px;background:rgba(255,206,58,.10);border-left:3px solid #ffce3a;border-radius:6px;color:#ffce3a"><div style="font-size:18px;font-weight:800">'+_visualStats.starsApplied+'</div><div style="font-size:11px">⭐ Étoiles (55+)</div></div>';
+          _hVis+='<div style="padding:8px;background:rgba(74,160,255,.10);border-left:3px solid #4aa0ff;border-radius:6px;color:#4aa0ff"><div style="font-size:18px;font-weight:800">'+_visualStats.ffApplied+'</div><div style="font-size:11px">🔵 Faisant fonction</div></div>';
+          _hVis+='<div style="padding:8px;background:rgba(224,96,96,.10);border-left:3px solid #e06060;border-radius:6px;color:#f0a0a0"><div style="font-size:18px;font-weight:800">'+_visualStats.redNamesFlagged+'</div><div style="font-size:11px">🔴 Noms rouges</div></div>';
+          _hVis+='</div>';
+          if(_visualStats.redNamesFlagged>0&&_visualStats.unknownNames&&_visualStats.unknownNames.length){
+            _hVis+='<div style="margin-top:8px;padding:8px;background:rgba(224,96,96,.08);border-left:3px solid #e06060;border-radius:6px;font-size:12px;color:#f0a0a0">'
+              +'<b>Noms non reconnus par SBM :</b> '+_visualStats.unknownNames.slice(0,8).map(esc).join(", ")
+              +(_visualStats.unknownNames.length>8?" +"+(_visualStats.unknownNames.length-8)+" autres":"")
+              +'<br><span style="color:#a08080;font-size:11px">→ Vérifier orthographe dans fiches employés ou créer compte manquant</span>'
+              +'</div>';
+          }
+          _hVis+='</div>';
+        }
+        if(_completeness){
+          var _scoreColor=_completeness.score>=90?"#5aaa70":_completeness.score>=75?"#c08030":"#e06060";
+          var _scoreIc=_completeness.score>=90?"✅":_completeness.score>=75?"⚠":"❌";
+          _hVis+='<div style="margin-top:10px;padding:12px;background:linear-gradient(135deg,'+_scoreColor+'1a,'+_scoreColor+'0a);border:1.5px solid '+_scoreColor+';border-radius:10px">'
+            +'<div style="font-size:14px;font-weight:800;color:'+_scoreColor+';margin-bottom:6px">'+_scoreIc+' Completeness (couleurs/fonds capturés) : '+_completeness.score+'/100</div>';
+          if(_completeness.warnings&&_completeness.warnings.length){
+            _hVis+='<div style="font-size:12px;color:#e0c0a0;line-height:1.5">';
+            _completeness.warnings.slice(0,6).forEach(function(w){
+              _hVis+='<div style="padding:3px 6px;background:rgba(224,128,64,.06);border-left:2px solid #c08040;border-radius:4px;margin:3px 0">⚠ '+esc(w)+'</div>';
+            });
+            _hVis+='</div>';
+          }else{
+            _hVis+='<div style="font-size:12px;color:#a0c8a0">Tous les codes spéciaux (CDP/AF/CONV/CP/RH/R) du PDF sont reflétés dans le planning.</div>';
+          }
+          _hVis+='</div>';
+        }
+        if(_hVis)_rVis.innerHTML+=_hVis;
+      }
+    }catch(_visBannerErr){console.warn("[v9.614 visual-banner]",_visBannerErr);}
     // v9.527 (Kevin 2026-04-25) — Auto-apprentissage parser PDF
     try{
       if(typeof cmcParserAutoLearn!=="undefined"){

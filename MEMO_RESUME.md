@@ -1,4 +1,61 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.613 (2026-05-15)
+# Mémo de reprise — Apex v13.4.127 / CMC v9.614 (2026-05-15)
+
+## 🆕 SESSION 2026-05-15 23:30 — CMCteams v9.614 ENRICHISSEMENT VISUEL MAX (Kevin)
+
+**Demande Kevin** : "Enrichie au max pour tout prendre en compte, fond, couleur, étoile, etc. J'aimais aucune erreur tolérée."
+
+### Ajouts v9.614
+
+1. **Capture visuelle exhaustive** (parser PDF.js, ligne 31820+) :
+   - `window._pdfFaisantFonctionCells` — fond bleu = faisant fonction (BOUVIER JF, etc.)
+   - `window._pdfStarMarkers` — étoile ★/☆/⭐ sur ligne employé = senior 55+ (TOUS familles)
+   - `window._pdfRedNames` — texte rouge sur tokens alpha = nom non reconnu par SBM
+   - Tags `{{FF}}`, `{{STAR}}`, `{{REDNAME}}` ajoutés à l'encodage texte (en plus de CDP/AF/CP/RH/R/RRT/CONV)
+
+2. **Helpers post-import** (ligne ~23929) :
+   - `_cmcStoreImportMeta(key, eid, d, meta)` — stocke `{bg, fg, star, ff}` dans `A.overrides_meta` (merge non-destructif)
+   - `_cmcApplyVisualMarkers(key, sourceText)` — applique `emp.senior=true` (étoiles) et `emp.faisantFonction=true` (FF) ; flag `cmc_unrecognized_names_<key>`
+   - `_cmcImportCompletenessCheck(key, sourceText)` — audit "rien oublié" : score 0-100, compare CDP/AF/CP/RH/R/CONV source vs override, warnings si gap > 30%
+
+3. **Wired dans doImport** (ligne ~35057) : call après `_cmcImportLosslessCheck`, banner enrichi avec :
+   - Grid 3 cols : ⭐ Étoiles · 🔵 Faisant fonction · 🔴 Noms rouges
+   - Score completeness 0-100 avec couleur (vert ≥90 / orange ≥75 / rouge sinon)
+   - Liste détaillée noms non reconnus (max 8) + warnings completeness
+
+4. **UI étiquette employé** (`empLabel` + `empLabelHtml`, ligne 2893+) :
+   - Texte : ajout ` (FF)` après `★` et `🔒`
+   - HTML : badge bleu "FF" avec tooltip "Faisant fonction — occupe un poste supérieur sans le titre officiel (PDF: fond bleu)"
+
+5. **5 tests régression VS01-VS05** dans `CMC_PARSER_TESTS` :
+   - VS01 `_cmcStoreImportMeta` persiste bg/fg/star/ff
+   - VS02 merge non-destructif (ajouter ff sans toucher bg)
+   - VS03 score completeness réduit si CP source > CP override
+   - VS04 score 100 si pas de marqueurs source (rien à manquer)
+   - VS05 `empLabelHtml` affiche badge FF si `emp.faisantFonction=true`
+
+### Validation
+
+- `node --check` JS combiné sans séparateur (méthode CLAUDE.md erreur #32) : ✅ OK
+- File size : 2 775 387 octets (+19 KB)
+- 65 occurrences nouveaux helpers/flags v9.614
+- Zéro marqueur de conflit
+- sw.js CACHE_VERSION sync v9.613 → v9.614
+
+### Test mental end-to-end (règle CLAUDE.md absolue)
+
+> *Si Kevin importe le PDF "7 PLANNING PIT BOSS — Avril 2026" :*
+> - BOUVIER JF apparaît sur fond bleu → `_pdfFaisantFonctionCells` capture → `_cmcApplyVisualMarkers` fait `emp.faisantFonction=true` → vEmps/vPlan affichent badge "FF"
+> - ETTORI M./FOUQUE V. avec ★ → `_pdfStarMarkers` capture → `emp.senior=true`
+> - Noms en rouge non reconnus → `_pdfRedNames` capture → `cmc_unrecognized_names_2026-3` persisté + banner "🔴 Noms non reconnus par SBM : ..."
+> - Banner final : 3 stats + score completeness + warnings si gap ≥30%
+
+### Reste à faire (prochaine session)
+
+- Toggle `faisantFonction` ajoutable manuellement dans fiche employé vEmps (admin override)
+- Visualisation cell-level dans vPlan/vDeparts en lisant `A.overrides_meta[key]` (couleur fond cellule selon bg)
+- Sync `A.overrides_meta` via Firebase (FB_FIX) pour partage cross-device
+
+---
 
 ## 🆕 SESSION 2026-05-15 23:06 — CMCteams v9.613 SCOPED-WIPE V1↔V2 (Kevin)
 
