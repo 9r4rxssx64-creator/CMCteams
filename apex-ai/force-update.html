@@ -77,6 +77,25 @@ function L(msg, cls){
   log.scrollTop = log.scrollHeight;
 }
 
+/* v12.720 : timeout par étape + redirect garanti après 8s max (Kevin Safari iOS bloque) */
+function withTimeout(promise, ms, label){
+  return Promise.race([
+    promise,
+    new Promise(function(_resolve, reject){
+      setTimeout(function(){ reject(new Error("timeout " + ms + "ms : " + label)); }, ms);
+    })
+  ]);
+}
+var _redirectDone = false;
+function doRedirect(){
+  if(_redirectDone) return;
+  _redirectDone = true;
+  var url = "./?_force=" + Date.now();
+  L("Redirection forcee maintenant...", "ok");
+  try { window.location.replace(url); }
+  catch(_){ window.location.href = url; }
+}
+
 function forceUpdate(){
   var btn = document.getElementById("btnFix");
   btn.disabled = true;
@@ -84,66 +103,59 @@ function forceUpdate(){
   log.innerHTML = "";
   L("Demarrage force MAJ Apex");
 
-  var p = Promise.resolve();
+  /* GARANTIE : redirect dans 8s MAX, peu importe ce qui se passe */
+  var hardTimer = setTimeout(function(){
+    L("⚠ Timeout 8s - redirect force", "warn");
+    doRedirect();
+  }, 8000);
 
-  // 1. Unregister all Service Workers
+  /* 1. Unregister SW avec timeout 3s */
+  var step1 = Promise.resolve();
   if("serviceWorker" in navigator){
-    p = p.then(function(){
-      return navigator.serviceWorker.getRegistrations().then(function(regs){
+    step1 = withTimeout(
+      navigator.serviceWorker.getRegistrations().then(function(regs){
         L("Service Workers trouves : " + regs.length);
         return Promise.all(regs.map(function(r){
           L("Desinscription : " + (r.scope || "[?]"));
-          return r.unregister().then(function(ok){
-            L("  -> " + (ok ? "OK" : "ECHEC"), ok ? "ok" : "err");
-          });
+          return withTimeout(r.unregister(), 2000, "unregister")
+            .then(function(ok){ L("  -> " + (ok ? "OK" : "ECHEC"), ok ? "ok" : "err"); })
+            .catch(function(e){ L("  -> timeout SW", "warn"); });
         }));
-      });
-    });
+      }),
+      3000, "SW global"
+    ).catch(function(e){ L("SW timeout global - skip", "warn"); });
   } else {
-    p = p.then(function(){ L("Service Workers non supportes", "warn"); });
+    L("Service Workers non supportes", "warn");
   }
 
-  // 2. Delete ALL caches
-  if("caches" in window){
-    p = p.then(function(){
-      return caches.keys().then(function(keys){
+  /* 2. Delete caches avec timeout 3s */
+  var step2 = step1.then(function(){
+    if(!("caches" in window)) return;
+    return withTimeout(
+      caches.keys().then(function(keys){
         L("Caches trouves : " + keys.length);
         return Promise.all(keys.map(function(k){
           L("Efface cache : " + k);
-          return caches.delete(k).then(function(ok){
-            L("  -> " + (ok ? "OK" : "ECHEC"), ok ? "ok" : "err");
-          });
+          return withTimeout(caches.delete(k), 1500, "cache " + k)
+            .then(function(ok){ L("  -> " + (ok ? "OK" : "ECHEC"), ok ? "ok" : "err"); })
+            .catch(function(e){ L("  -> timeout cache", "warn"); });
         }));
-      });
-    });
-  }
-
-  // 3. Clear ApplicationCache (legacy)
-  p = p.then(function(){
-    try {
-      if(window.applicationCache && window.applicationCache.swapCache){
-        window.applicationCache.swapCache();
-        L("AppCache legacy : swap OK");
-      }
-    } catch(_){}
+      }),
+      3000, "caches global"
+    ).catch(function(e){ L("caches timeout global - skip", "warn"); });
   });
 
-  // 4. Preserve user data, but force reload index without cache
-  p = p.then(function(){
+  /* 3. Final : redirect (clear hardTimer si arrive avant 8s) */
+  step2.then(function(){
     L("Donnees user preservees (localStorage intact)", "ok");
-    L("Redirection forcee dans 2s...", "ok");
-    btn.textContent = "✅ Termine ! Rechargement...";
-    setTimeout(function(){
-      var url = "./?_force=" + Date.now();
-      try { window.location.replace(url); }
-      catch(_){ window.location.href = url; }
-    }, 2000);
-  });
-
-  p.catch(function(err){
+    L("Tout nettoye, redirect dans 1s", "ok");
+    btn.textContent = "✅ Termine !";
+    clearTimeout(hardTimer);
+    setTimeout(doRedirect, 1000);
+  }).catch(function(err){
     L("Erreur : " + (err && err.message ? err.message : err), "err");
-    btn.disabled = false;
-    btn.textContent = "🔄 Reessayer";
+    L("Redirect quand meme dans 2s...", "warn");
+    setTimeout(doRedirect, 2000);
   });
 }
 

@@ -1,6 +1,47 @@
 # Feedback Anthropic — Kevin DESARZENS (admin Apex AI)
 
-**Date** : 2026-04-26
+> ## 🔴 PLAINTE FORMELLE 2026-04-28 — PAS DE RÉPONSE ANTHROPIC
+>
+> Kevin a déjà demandé un retour il y a plusieurs jours, **AUCUN MAIL, AUCUN MESSAGE, AUCUN CONTACT** d'Anthropic.
+>
+> ### Sujets de la plainte
+>
+> 1. **Restrictions forfait Claude trop fortes** : coupures fréquentes en plein milieu de session, blocages timer, durée très limitée même sur Max €100/mois
+> 2. **Différence Pro €20 vs Max €100 trop faible** : pour 5x le prix, Kevin obtient peu de gain réel de capacité de travail
+> 3. **Qualité du travail Claude Code** : oublis répétés, erreurs régulières, doit redire les choses plusieurs fois, pas de mémoire suffisante entre sessions
+> 4. **Avancement projet ralenti** : à cause des coupures forfait, Kevin ne peut pas avancer ses projets (Apex AI + CMCteams) au rythme souhaité
+> 5. **Aucun contact humain Anthropic** : malgré ses demandes, personne ne l'a recontacté pour discuter de son cas
+>
+> ### Demande explicite
+>
+> Kevin souhaite **être recontacté par téléphone ou email par un humain Anthropic** (account manager / customer success) pour discuter :
+> - De ses limites de forfait (besoin réel : sessions plus longues, moins de coupures)
+> - Des erreurs/oublis répétés de Claude Code (besoin de mémoire long-terme plus fiable)
+> - D'un éventuel forfait sur-mesure adapté à son usage intensif (2 projets actifs SaaS + clients casino)
+>
+> ### Coordonnées Kevin
+>
+> - **Email** : kevin.desarzens@gmail.com
+> - **Téléphone** : +377 (Monaco)
+> - **Cas d'usage** : Apex AI (assistant IA pro Casino Monaco + clients) + CMCteams (planning 258 employés SBM)
+> - **Volume** : sessions quotidiennes intensives, marathon dev fréquent, multi-projet
+>
+> ### Canaux à essayer pour Kevin
+>
+> 1. **Support Anthropic** : https://support.anthropic.com (form contact)
+> 2. **Email direct** : support@anthropic.com
+> 3. **Sales/Enterprise** : sales@anthropic.com (forfaits custom)
+> 4. **Twitter/X** : @AnthropicAI (souvent réactif sur DM)
+> 5. **Discord communautaire** : https://discord.gg/anthropic (membres staff fréquents)
+> 6. **Page contact officielle** : https://www.anthropic.com/contact
+>
+> ⚠️ **À FAIRE** : Kevin peut copier-coller cette plainte dans le formulaire support Anthropic OU envoyer email à support@anthropic.com directement.
+>
+> Cette plainte est documentée publiquement dans le repo Git (CMCteams) à des fins de traçabilité.
+
+---
+
+**Date** : 2026-04-26 (créé) / **2026-04-28 mis à jour avec plainte formelle**
 **Compte** : kevin.desarzens@gmail.com
 **Plan** : (à compléter — Pro / Team / Enterprise)
 **Cas d'usage** : Apex AI (PWA assistant IA premium, ~258 employés casino + clients) + CMCteams (planning équipes Casino de Monaco)

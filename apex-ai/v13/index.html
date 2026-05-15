@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.129">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#08080f">
+
+  <!-- v13.4.98 Anti-zoom INLINE Safari iOS — agit AVANT le bundle JS, indépendant.
+       Kevin "X zoom tjs UX" : le rescue.js peut arriver tard si le SW transition.
+       Cet inline garantit l'anti-zoom dès le 1er paint. -->
+  <script nonce="APEX_BOOT_NONCE">
+    (function(){
+      try {
+        ['gesturestart','gesturechange','gestureend'].forEach(function(evt){
+          document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+        });
+        var lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e){
+          var now = Date.now();
+          if (now - lastTouchEnd <= 300) e.preventDefault();
+          lastTouchEnd = now;
+        }, { passive:false });
+      } catch(_) {}
+    })();
+  </script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="APEX">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="APEX AI v13 — Assistant IA personnel niveau entreprise commercialisable. Multi-providers, voice, studios créatifs, modules pro, vault chiffré.">
+
+  <!-- CSP Jet 2 : nonce dynamique (regen à chaque build via vite-csp-nonce-plugin) -->
+  <!-- 'strict-dynamic' permet aux scripts trustés (avec nonce) d'en charger d'autres -->
+  <!-- v13.3.71 (audit Apex 2026-05-08) : whitelist exhaustive endpoints legit pour
+       réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             script-src 'self' 'nonce-APEX_BOOT_NONCE' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-APEX_BOOT_NONCE';
+             style-src-attr 'unsafe-inline';
+             img-src 'self' data: blob: https:;
+             font-src 'self' data:;
+             connect-src 'self'
+                          https://*.firebaseio.com
+                          https://*.firebasedatabase.app
+                          https://api.anthropic.com
+                          https://api.openai.com
+                          https://api.groq.com
+                          https://generativelanguage.googleapis.com
+                          https://openrouter.ai
+                          https://api.cohere.com
+                          https://api.cohere.ai
+                          https://api.mistral.ai
+                          https://api.deepseek.com
+                          https://api.perplexity.ai
+                          https://api.x.ai
+                          https://api.together.xyz
+                          https://api.fireworks.ai
+                          https://api.huggingface.co
+                          https://api-inference.huggingface.co
+                          https://api.scaleway.ai
+                          https://api.runpod.io
+                          https://api.openai.azure.com
+                          https://*.openai.azure.com
+                          https://*.workers.dev
+                          https://api.elevenlabs.io
+                          https://api.replicate.com
+                          https://api.bfl.ai
+                          https://api.ideogram.ai
+                          https://api.runwayml.com
+                          https://api.lumalabs.ai
+                          https://api.klingai.com
+                          https://api.pika.art
+                          https://api.suno.ai
+                          https://api.udio.com
+                          https://api.heygen.com
+                          https://api.d-id.com
+                          https://api.topazlabs.com
+                          https://api.midjourney.com
+                          https://*.ingest.sentry.io
+                          https://browser.sentry-cdn.com
+                          https://api.github.com
+                          https://raw.githubusercontent.com
+                          https://api.cloudflare.com
+                          https://*.r2.cloudflarestorage.com
+                          https://api.stripe.com
+                          https://api.brevo.com
+                          https://api.resend.com
+                          https://api.telegram.org
+                          https://discord.com
+                          https://discordapp.com
+                          https://api.notion.com
+                          https://api.airtable.com
+                          https://hooks.slack.com
+                          https://slack.com
+                          https://api.slack.com
+                          https://api.deepl.com
+                          https://api-free.deepl.com
+                          https://www.googleapis.com
+                          https://accounts.google.com
+                          https://oauth2.googleapis.com
+                          https://api.dropboxapi.com
+                          https://content.dropboxapi.com
+                          https://web.archive.org
+                          https://r.jina.ai
+                          https://api.duckduckgo.com
+                          https://api.search.brave.com
+                          https://api.tavily.com
+                          https://api.pinecone.io
+                          https://*.pinecone.io
+                          https://api.qdrant.io
+                          https://*.qdrant.io
+                          https://api.weaviate.io
+                          https://*.weaviate.io
+                          https://api.open-meteo.com
+                          https://api.exchangerate.host
+                          https://api.coingecko.com
+                          https://api.qrserver.com
+                          https://api.stackexchange.com
+                          https://api.spotify.com
+                          https://accounts.spotify.com
+                          https://api.meethue.com
+                          https://api.sonos.com
+                          https://api.ws.sonos.com
+                          https://api.ibroadlink.com
+                          https://api.pushcut.io
+                          https://as-apia.coolkit.cc
+                          https://cn-apia.coolkit.cc
+                          https://cdn.jsdelivr.net
+                          https://1.1.1.1
+                          https://www.cloudflare.com
+                          https://api.openclaw.io
+                          https://api.linkedin.com
+                          https://api.twitter.com
+                          https://api.instagram.com;
+             worker-src 'self' blob:;
+             frame-src 'self' https://web.archive.org https://www.google.com https://www.youtube.com https://accounts.google.com https://checkout.stripe.com;
+             media-src 'self' blob: data: https:;
+             object-src 'none';
+             base-uri 'self';
+             form-action 'self';
+             upgrade-insecure-requests;">
+
+  <title>APEX AI v13</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/apex-logo.svg">
+  <link rel="apple-touch-icon" href="./assets/icons/apex-logo-192.png">
+
+  <link rel="preload" href="./assets/css/tokens.css" as="style">
+  <link rel="preload" href="./assets/css/base.css" as="style">
+  <link rel="preload" href="./assets/css/components.css" as="style">
+  <link rel="preload" href="./assets/css/animations.css" as="style">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/base.css">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <link rel="stylesheet" href="./assets/css/animations.css">
+  <link rel="stylesheet" href="./assets/css/rescue.css">
+  <link rel="stylesheet" href="./assets/css/financial-bilan.css">
+  <link rel="stylesheet" href="./assets/css/laurence.css">
+  <link rel="stylesheet" href="./assets/css/ux-premium.css">
+
+  <!-- Preconnect critical providers -->
+  <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
+  <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+</head>
+<body>
+  <!-- Splash minimal (visible <1s avant boot bundle) -->
+  <div id="apex-splash" aria-hidden="true">
+    <div class="apex-splash-logo">◆</div>
+    <div class="apex-splash-name">APEX</div>
+    <div class="apex-splash-bar"><div class="apex-splash-bar-fill"></div></div>
+  </div>
+
+  <!-- Skip-link a11y (visible focus, hidden otherwise) — v13.3.74 a11y fix.
+       Note : on évite href="#apex-root" qui collisionne avec hash router.
+       Le skip-link met le focus programmatique sur #apex-root via JS rescue handler. -->
+  <a href="#main-content" class="ax-skip-link" data-ax-skip-target="apex-root">Aller au contenu principal</a>
+
+  <!-- Root mount point -->
+  <div id="apex-root" role="main" aria-label="APEX AI" tabindex="-1"></div>
+
+  <!-- Fallback statique si bundle JS crash (ne JAMAIS reproduire l'erreur "écran blanc") -->
+  <noscript>
+    <div class="apex-noscript-fallback">
+      <h1>APEX AI</h1>
+      <p>JavaScript est requis pour utiliser APEX. Active-le dans ton navigateur.</p>
+    </div>
+  </noscript>
+
+  <!-- Bouton SOS rescue permanent (HTML pur, indépendant framework) -->
+  <!-- Préservé v12.771-779 — règle Kevin : "qu'au minimum 1 bouton fonctionne TOUJOURS" -->
+  <!-- v13.0.13 : onclick + style externalisés vers rescue.js + rescue.css (CSP strict) -->
+  <button id="apex-rescue-btn" type="button"
+    title="Reset Apex (preserve donnees)" aria-label="Reset Apex">SOS</button>
+
+  <!-- v13.4.80 (Kevin 2026-05-14 "pas de bouton etc / tjs pas de coffre") :
+       Toolbar rescue permanente HTML pur. Accès direct Coffre/Admin/Login/Chat
+       même si le framework Apex est cassé ou si la nav n'est pas rendue.
+       Indépendant React/Vue/Apex bundle — addEventListener depuis rescue.js. -->
+  <div id="apex-rescue-toolbar" aria-label="Accès rapide Apex">
+    <button id="apex-rescue-coffre" type="button" title="Ouvrir le Coffre" aria-label="Coffre">🔐</button>
+    <button id="apex-rescue-dashboard" type="button" title="Dashboard personnel" aria-label="Dashboard">📊</button>
+    <button id="apex-rescue-admin" type="button" title="Ouvrir Admin (login si besoin)" aria-label="Admin">⚙️</button>
+    <button id="apex-rescue-chat" type="button" title="Retour Chat" aria-label="Chat">💬</button>
+    <button id="apex-rescue-login" type="button" title="Login admin / utilisateur" aria-label="Login">🔑</button>
+  </div>
+
+  <!-- Boot loader minimal — charge le bundle ES module Vite -->
+  <script type="module" nonce="APEX_BOOT_NONCE" src="./core/bootstrap.js"></script>
+
+  <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
+  <script nonce="APEX_BOOT_NONCE" src="./assets/js/rescue.js"></script>
+</body>
+</html>

@@ -39,7 +39,8 @@ jobs:
 
           for url in \
             "https://9r4rxssx64-creator.github.io/CMCteams/" \
-            "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/"; do
+            "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/" \
+            "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/"; do
             START=$(date +%s%3N)
             CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$url")
             END=$(date +%s%3N)

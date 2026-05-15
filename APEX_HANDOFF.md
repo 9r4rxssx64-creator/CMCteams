@@ -2,7 +2,193 @@
 
 > **Mission** : Apex AI doit pouvoir remplacer Claude Code en autonomie totale.
 > **Date transfert** : 2026-04-21
-> **État projet** : CMCteams v9.453 / Apex v12.12 déployés en production
+> **État projet** : CMCteams v9.604 / Apex v13.4.42 déployés sur main
+> **Dernière update** : 2026-05-14
+
+---
+
+## 🔥 MISE À JOUR 2026-05-14 — Apex v13.4.42 (Skills 2026 + Runtime Tester + Admin integration)
+
+**Déployé sur `main`** via auto-merge bot (workflow `auto-deploy-apex-v13-build.yml`).
+
+URL prod : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/`
+
+**Chaîne complète v13.4.10 → v13.4.42** :
+- Skills 2026 (16 tools auto-utilisés)
+- 20 fichiers `.claude/skills/apex-*.md` auto-syncés
+- 3 vues admin (`?view=skills-2026`, `?view=mcp-servers`, `?view=runtime-tests`)
+- 4 Studios UI (`?view=studio-docx/pptx/xlsx/pdf`)
+- 3 boutons admin panel principal (gradients bleu/violet/vert)
+- Infrastructure MCP (BOFiP, Almanac, Legal Hunter)
+- Sentinelles skills-watch (1h) + mcp-health-watch (30min)
+- Runtime Tester : Apex teste lui-même tout en runtime browser (17 tests live)
+- System prompt enrichi avec mapping tools auto (v13.4.42)
+
+### Apex IA conscient = utilise SYSTÉMATIQUEMENT
+
+System prompt (`buildSystemPromptDeep` dans `core/memory.ts`) injecte :
+- Section "Skills 2026 ACTIFS" mapping intent → tool
+- Liste tools registrés (renderRecentCapabilitiesForPrompt)
+- Skills .claude/skills/*.md auto-syncés
+
+Kevin teste en runtime via `?view=runtime-tests` ou boutons admin panel.
+
+
+
+**4 commits cette session** (101ab0d → 4ad301f → 6ce1d36 → v13.4.13)
+
+### Apex IA est CONSCIENT et UTILISE systématiquement
+
+System prompt `buildSystemPromptDeep` (memory.ts) injecte section "Skills 2026 ACTIFS" qui mappe chaque intent user vers le bon tool :
+
+- "lettre/contrat/CV/rapport" → `generate_docx` (jamais markdown brut)
+- "présentation/slides/pitch" → `generate_pptx`
+- "tableau Excel/comptabilité" → `generate_xlsx`
+- "PDF/facture/devis" → `generate_pdf`
+- Question fiscale FR → `mcp_bofip_search` AVANT de répondre (citation BOI-*)
+- Recherche juridique → `mcp_legal_search` (18M docs 110 pays)
+- "deep research" → `mcp_almanac_research`
+- "design/palette" → `generate_design_system`
+- "headline/landing/copy" → `generate_marketing_copy`
+- Admin "audit" → `security_review` + `code_review`
+
+### Apex teste lui-même en runtime browser
+
+Vue `?view=runtime-tests` permet à Kevin (admin) de cliquer "🧪 Lancer TOUS les tests réels"
+qui exécute 17 tests live : 4 generators + 3 MCP health + 5 futuristic + 2 sentinelles + security + hyperframes.
+Rapport persisté avec preuves (filename, sizeBytes, latencyMs).
+
+### Fichiers critiques v13.4.10 → v13.4.13
+
+```
+.claude/skills/apex-*.md             (20 fichiers, auto-syncés)
+apex-ai/v13/services/skills/         (5 services TS : docx/pptx/xlsx/pdf/video/futuristic)
+apex-ai/v13/services/mcp-client.ts   (JSON-RPC + cache LRU + rate-limit)
+apex-ai/v13/services/mcp-registry.ts (3 servers default + auto-discovery)
+apex-ai/v13/services/skills-watch.ts (sentinelles skills + mcp-health)
+apex-ai/v13/services/apex-runtime-tester.ts (orchestrateur tests live)
+apex-ai/v13/services/apex-tools-registry/skills-tools.ts (16 tools)
+apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts (15 cases)
+apex-ai/v13/features/admin/{mcp-servers,skills-2026,runtime-tests}/ (3 vues admin)
+apex-ai/v13/features/studios/{docx,pptx,xlsx,pdf}/ (4 Studios UI)
+apex-ai/v13/tests/unit/skills-{generators,extra}.test.ts + mcp-client-registry.test.ts (35 tests ✅)
+```
+
+### Fix v13.4.13 critique
+
+`renderMetaSection('skills')` dans `core/memory.ts` lit maintenant AUSSI
+`ax_apex_skills_registry` (localStorage) — donc les skills créés via
+`skill_factory_create` sont injectés dans le system prompt au prochain build.
+
+---
+
+## 🔥 MISE À JOUR 2026-05-10 — Apex v13.4.5 (Mode Autonome session-driven)
+
+### Nouvelles capacités
+
+**Mode Autonome** (`services/apex-autonomous-mode.ts`) :
+- `start(objective, opts?)` → crée session running, lance tick auto via sentinelle 30s
+- `stop()` / `pause()` / `resume()` — kill switch + pause/reprise
+- `getActiveSession()` / `getHistory()` — introspection
+- `tick()` — appelée par sentinelle, gère 1 itération (next task → IA → parse réponse → done|subtasks|terminé)
+
+**Sentinelle autonomous-watch** (`services/autonomous-watch.ts`) :
+- setInterval 30s dédié (séparé des 60s des sentinelles standard)
+- `start()` idempotent, `forceTick()` debug, `getStats()` (tickCount, lastTickAt)
+
+**Telegram notifier** (`services/telegram-notifier.ts`) :
+- `notify({title, body, ctaUrl, priority})` — cascade : browser push → Telegram worker → Telegram direct → log local
+- Dedup 6h hash(title), priority='critical' bypass
+- `testConfig()` admin UI
+
+**Slash command `/autonomous`** (features/chat/index.ts) :
+- `/autonomous <objectif>` → start
+- `/autonomous status|list` → état live
+- `/autonomous stop|kill` → kill switch
+- `/autonomous pause|resume` → suspendre/reprendre
+- Aliases : `/auto`, `/autonome`
+
+**Vue admin `admin-autonomous`** (features/admin/autonomous/) :
+- Progress bars itérations/tokens vs limits
+- Logs live (15 dernières lignes)
+- Queue + faites collapsable
+- Auto-refresh 5s tant que session active
+
+**Workflow GitHub Action** (`.github/workflows/apex-autonomous-watcher.yml`) :
+- Cron 5min, poll Firebase REST `apex/autonomous_sessions`
+- Détecte sessions running stale >5min (>30min ouvre issue)
+- Read-only : ne fait pas d'appel IA distant (sécu+coût). L'app reprend quand revient online.
+
+### Garde-fous
+
+- maxIterations 50 (cap dur 200)
+- quotaLimit 50000 tokens cumulés par session
+- Timeout 5min/task (puis failed)
+- 3 fails consécutifs → session failed
+- Cooldown 3s entre ticks
+- Stop manuel = AbortController abort fetch en cours
+- Orphaned (lastActivityAt >30min au boot) → archive automatique avec endReason='orphaned-on-boot'
+
+### Triple persistence
+
+1. localStorage `apex_v13_autonomous_active` (session courante) + `apex_v13_autonomous_history` (cap 20)
+2. firebase-queue → Firebase `apex/autonomous_sessions/<uid>/<sessionId>` cross-device
+3. Auto-restore au boot si status='running' et lastActivityAt <30min
+
+### Anti-patterns évités
+
+- ❌ Erreur #28 Declaration ≠ Deployment : sentinelle wired effectivement (bootstrap.ts safeInit + autonomousWatch.start())
+- ❌ Erreur #50 régression : 0 modif des services existants critiques (sentinels.ts, ai-router.ts, store.ts)
+- ❌ Erreur #54 GAP source/build : triple cohérence v13.4.5 vérifiée (source + sw.js + apex-ai-v13/)
+- ❌ Erreur #55 crypto exotique : pas de XOR-obf, persistence simple JSON
+
+---
+
+## 🔥 MISE À JOUR 2026-05-04 — Apex v13.0.77 (Parité Claude Code 100%)
+
+### Apex peut maintenant agir comme Claude Code
+
+**services/apex-claude-code-parity.ts** (29 méthodes, 97 tests) :
+- `Read(path)` / `Edit(path, oldStr, newStr)` / `Write(path, content)`
+- `Bash(cmd, opts)` (whitelist commands)
+- `Grep(pattern, opts)` / `Glob(pattern)`
+- `WebFetch(url)` / `WebSearch(query)`
+- `SpawnSubagent(task, prompt)`
+- `MCPCall(tool, params)` (GitHub MCP : create_pr, comment_pr, merge_pr, etc.)
+- `SelfAudit()` / `SelfFix()` / `SelfRelease()`
+
+### Apex peut auto-modifier son code (autonomie totale)
+
+**services/apex-execute.ts** (23 tasks whitelist, 12 forbidden, 138 tests) :
+- Whitelist : modify_file, create_file, delete_file_safe, read_file, list_files, grep_code, glob_pattern, bash_safe, web_fetch, web_search, spawn_subagent, create_skill, modify_skill, create_hook, modify_hook, modify_workflow, register_sentinel, modify_script, append_to_memory, append_to_top_rules, create_pr, comment_on_pr, merge_pr_safe
+- Forbidden : delete_file (sans confirm), force_push, modify_credentials_external, modify_admin_kevin, disable_sentinel_security, modify_csp_meta, execute_shell_arbitrary, modify_top_rules_replace
+
+### Preflight check (Apex vérifie avant présenter)
+
+**services/preflight.ts** (94.51% coverage) :
+- `preflightCheck(toolName)` retourne `{ok, ready, missingDeps?, error?, autoFixAvailable?}`
+- Cache 5min par tool
+- UI feedback : 🟢 prêt / 🟡 partiel / 🔴 indispo + auto-fix 1-clic
+
+### ON/OFF toggles (kill switch)
+
+**services/feature-toggles.ts** (98.23% coverage) :
+- 109 features wired
+- `isFeatureEnabled(featureId, userId?)` resolution priority : per-user > global > default(true)
+- Vue admin `vAdminToggles` : liste + search + désactiver tout / activer tout
+
+### Liens recharge MAX
+
+**services/links-registry.ts** (51 services) :
+- 7+ champs/service : dashboard, billing, docs, support, status, api_keys, usage
+- Auto-create au paste credential
+- Sentinelle `link-validation-watch` HEAD daily
+
+### Stats v13.0.77
+- 4463+ tests verts (0 fail)
+- TS strict 0 errors / ESLint 0 warnings
+- 15 skills experts dans `.claude/skills/` (4712 lignes)
+- Parité v12 ~85%
 
 ---
 
@@ -396,3 +582,64 @@ if (related.length) {
 
 **Clone parfait. Rien à ajouter.**
 
+
+---
+
+## 🆕 Apex v13.4.x — Nouvelles capacités (2026-05-09)
+
+Apex IA DOIT savoir et utiliser ces nouvelles capacités quand pertinent. À injecter automatiquement dans `_buildSystemPrompt` via `core/memory.ts`.
+
+### Services internes (lazy-load via `import`)
+
+**Auto-test exhaustif**
+- `services/auto-test-everything.ts` → `runFullHealthCheck()`, `retryFailedItems()`, `findAlternativeLink()`
+- Use case : Apex peut s'auto-tester complètement avant d'affirmer "tout fonctionne"
+
+**Vue santé live**
+- Route `admin-health-dashboard` accessible Admin → onglet État → bouton "Dashboard santé live"
+- Aussi accessible via long-press 3s sur logo APEX header (admin only)
+- Score global %, 5 cards (codes/liens/sentinelles/connecteurs/vault), filter chips, retry par item
+
+**5 Yury Plugins (équivalents applicatifs)**
+- `services/security-review.ts` → `runFullScan() → ScanReport` (state runtime, vault drift, CSP violations, secrets clair)
+- `services/code-review-multi-agent.ts` → `review(diff) → ReviewReport` (5 agents IA parallèles via crew-experts)
+- `services/frontend-design.ts` → `generate(spec) → { html, css, js }` (anti-slop, bannit Inter/Roboto)
+- `services/superpowers-methodology.ts` → `start(task) / advance(sessionId, step, output) / getState(sessionId)` (7-step methodology)
+- `services/gstack-roles.ts` → `spawnRole(role, task) / runFullPipeline(task)` (7 rôles CEO→Reflector)
+
+**5 Shubham Sharma skills (v13.4.3)**
+- `services/hyperframes.ts` → `compose(prompt) → { html, frames, duration }` (vidéo HTML/CSS/JS)
+- `services/agent-browser.ts` → `analyze(url, goal) → { actions, summary }` (DOM analysis pour piloter browser)
+- `services/marketing-psy.ts` → `generate({ product, audience, trigger }) → { copy, trigger, rationale }` (Cialdini)
+- `services/impeccable-design.ts` → `applyCommand(cmd, design) → { revisedDesign, changes }` (23 commandes)
+- `services/ios-simulator.ts` → `previewURL(url)` / `openPreview(html)` (iframe iPhone wrapper)
+
+**3 IA IRL (commandes slash chat)**
+- `/loop <task>` → `services/autonomous-loop.ts` add task to queue + sentinelle 60s pop+execute
+- `/loop list/pause/resume/clear` → contrôle queue
+- `/plan <objectif>` → `services/plan-mode.ts` génère plan JSON structuré + modal preview
+- `/rules` ou `/rules <keyword>` → `services/rules-engine.ts` affiche top 10 règles CLAUDE.md filtrées
+
+**UX final v13.4.3**
+- Chat input compact (38px icônes via `.ax-icon-compact`)
+- Greeting conditionnel (caché si messages.length > 0)
+- Suggestion chips à l'état vide (4 prompts cliquables)
+- Footer minimaliste (green-dot 4px, version en title)
+- SOS conditionnel (caché par défaut, auto-show si offline/critique)
+
+### Pattern d'auto-correction renforcé
+
+Avant d'affirmer "tout fonctionne" à Kevin, Apex DOIT :
+1. Appeler `autoTestEverything.runFullHealthCheck()` → score global %
+2. Si <100%, appeler `retryFailedItems()` (3× exp backoff)
+3. Si toujours échec → `findAlternativeLink(item)` ou escalade `ax_claude_todo`
+4. Reporter HONNETEMENT le score réel à Kevin (pas d'invention)
+5. Si admin Kevin présent → proposer modal Dashboard santé live (1 clic)
+
+### Mise à jour automatique
+
+Apex IA DOIT lire `apex-ai/v13/data/apex-recent-capabilities.ts` (à créer) au boot pour connaître TOUTES ses capacités à jour. Si un nouveau service est ajouté → entry dans ce fichier obligatoire.
+
+---
+
+**Mise à jour 2026-05-09** — Apex v13.4.3 — 18 nouveaux services + 1 vue admin + UX finalisé.

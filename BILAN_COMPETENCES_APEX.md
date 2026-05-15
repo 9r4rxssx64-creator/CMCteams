@@ -1,22 +1,62 @@
-# 🧠 BILAN DES COMPÉTENCES APEX — État actuel v12.334 (2026-04-26)
+# 🧠 BILAN DES COMPÉTENCES APEX — État actuel v13.0.77 (2026-05-04)
 
-**Inventaire exhaustif de ce qu'Apex sait faire aujourd'hui**, agrégé depuis `AX_CAPABILITIES`, `TOOLS_CATALOG`, `AX_EXEC_INTENTS`, `AX_CODE_TOOLS`, et l'audit de production.
+**Inventaire exhaustif de ce qu'Apex sait faire aujourd'hui**, agrégé depuis `AX_CAPABILITIES`, `TOOLS_CATALOG`, `AX_EXEC_INTENTS`, `AX_CODE_TOOLS`, services v13, audit subagent indépendant.
 
 ---
 
-## 📦 INVENTAIRE GLOBAL
+## 📦 INVENTAIRE GLOBAL v13.0.77
 
-| Famille | Nombre | Maturité |
-|---------|-------:|----------|
-| Tools browser exécutables | **55+** | ✅ Production |
-| Intents auto-exécution | **42+** | ✅ Production |
-| Studios pro vertical-métier | **12** | ✅ Production |
-| Voix TTS | **44+** | ✅ Production |
-| Langues traduction | **30+** | ✅ Production |
-| IA providers (failover) | **5** | ✅ Production |
-| Personas chat | **13** | ✅ Production |
-| Templates pro | **80+** | ✅ Production |
-| Sentinelles auto 24/24 | **30+** (Apex+CMC) | ✅ Production |
+| Famille | Nombre v12 | Nombre v13 | Maturité |
+|---------|-----------:|-----------:|----------|
+| Tools IA exécutables | 100+ | **105** | ✅ Production |
+| Intents auto-exécution | 42+ | 42+ | ✅ Production |
+| Studios pro | 15 | **10** | 🟡 5 ajoutés v13.0.76 |
+| Modules pro | 8 | **8** | ✅ TOUS portés EXPERT |
+| Voix TTS | 50 | **61** | ✅ dépasse v12 |
+| Effets WebAudio | — | **12** | ✅ NEW v13 |
+| Langues traduction | 30+ | **56** | ✅ boost translator |
+| IA providers (failover) | 5 | 5 | ✅ Production |
+| Personas chat | 13 | 13 | ✅ Production |
+| Sentinelles auto 24/24 | 13 | **22** | ✅ 170% v12 |
+| Services TS wirés | 53 | **70+** | ✅ ServiceLifecycle |
+| Skills experts (.claude/) | 0 | **15** | ✅ NEW (4712L doc) |
+| Liens services recharge | 30+ | **51** | ✅ +21 services |
+| Features toggleable ON/OFF | 0 | **109** | ✅ NEW per-user |
+| Tests automatisés | 1515 | **4463+** | ✅ +2948 v13.0.25→77 |
+
+## 🔥 NEW v13.0.77 — Apex parité Claude Code 100%
+
+**services/apex-claude-code-parity.ts** (29 méthodes) :
+- Read, Edit, Write (parité Claude Code)
+- Bash (whitelist npm/git/node/eslint/tsc/vitest)
+- Grep, Glob, WebFetch, WebSearch
+- SpawnSubagent (tasks parallèles)
+- MCPCall (GitHub : create_pr, merge_pr, comment_pr, list_issues, etc.)
+- SelfAudit, SelfFix, SelfRelease
+
+**services/apex-execute.ts** (auto-modification) :
+- 23 tasks whitelist : modify_file, create_file, modify_skill, modify_hook, modify_workflow, register_sentinel, create_pr, etc.
+- 12 forbidden : delete_file (sans confirm), force_push, modify_csp_meta, modify_admin_kevin, etc.
+
+**services/preflight.ts** (94.51% coverage) :
+- preflightCheck(toolName) → {ok, ready, missingDeps?, error?, autoFixAvailable?}
+- Cache 5min, UI 🟢/🟡/🔴
+
+**services/feature-toggles.ts** (98.23% coverage) :
+- 109 features wired
+- Resolution priority : per-user > global > default(true)
+- Vue admin avec search + désactiver tout / activer tout
+
+**services/links-registry.ts** :
+- 51 services
+- 7+ champs : dashboard, billing, docs, support, status, api_keys, usage
+- Auto-create au paste credential
+- Sentinelle link-validation-watch HEAD daily
+
+**services/vault-triple-persist.ts** :
+- localStorage + IDB + Firebase FB_FIX (chiffré AES-GCM-256)
+
+---
 
 ---
 

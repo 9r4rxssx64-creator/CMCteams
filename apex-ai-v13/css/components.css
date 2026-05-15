@@ -1,0 +1,1095 @@
+/* APEX v13 — Components
+ * Chat, admin, landing, forms, buttons, badges, modals
+ * Repensé pour dépasser Claude.ai/ChatGPT en mobile-first iPhone PWA
+ */
+
+/* ───────── Buttons ───────── */
+.ax-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ax-s-2);
+  padding: var(--ax-s-3) var(--ax-s-5);
+  background: var(--ax-bg-flat);
+  color: var(--ax-text);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r);
+  font-weight: 600;
+  font-size: var(--ax-text-sm);
+  transition: background var(--ax-d-fast) var(--ax-ease), transform var(--ax-d-fast) var(--ax-ease);
+  min-height: var(--ax-touch-min);
+}
+
+.ax-btn:hover {
+  background: var(--ax-bg-card);
+}
+
+.ax-btn:active {
+  transform: scale(0.97);
+}
+
+.ax-btn-primary {
+  background: linear-gradient(135deg, var(--ax-gold) 0%, var(--ax-gold-bright) 100%);
+  color: #08080f;
+  border: none;
+  box-shadow: var(--ax-shadow-md);
+}
+
+.ax-btn-primary:hover {
+  background: linear-gradient(135deg, var(--ax-gold-bright) 0%, var(--ax-gold) 100%);
+  box-shadow: var(--ax-shadow-lg);
+}
+
+.ax-btn-block {
+  width: 100%;
+}
+
+.ax-btn-ghost {
+  background: transparent;
+  color: var(--ax-text-dim);
+  border-color: var(--ax-border);
+}
+
+.ax-btn-ghost:hover {
+  background: var(--ax-bg-flat);
+  color: var(--ax-text);
+}
+
+.ax-btn-danger {
+  background: linear-gradient(135deg, #cc3030 0%, #aa2020 100%);
+  color: #fff;
+  border: none;
+  box-shadow: var(--ax-shadow-md);
+}
+
+.ax-btn-danger:hover {
+  background: linear-gradient(135deg, #dd4040 0%, #cc3030 100%);
+  box-shadow: var(--ax-shadow-lg);
+}
+
+.ax-btn-sm {
+  padding: var(--ax-s-2) var(--ax-s-3);
+  font-size: var(--ax-text-xs);
+  /* v13.3.74 a11y fix : Apple HIG min 44px touch target */
+  min-height: var(--ax-touch-min);
+  min-width: var(--ax-touch-min);
+}
+
+.ax-btn-icon {
+  width: var(--ax-touch-min);
+  height: var(--ax-touch-min);
+  padding: 0;
+  border-radius: var(--ax-r-full);
+}
+
+/* ───────── Forms ───────── */
+.ax-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ax-s-4);
+}
+
+.ax-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ax-s-2);
+  font-size: var(--ax-text-sm);
+  color: var(--ax-text-dim);
+  font-weight: 500;
+}
+
+.ax-form input,
+.ax-form select,
+.ax-form textarea {
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: var(--ax-bg-input);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r);
+  color: var(--ax-text);
+  font-size: max(16px, var(--ax-text-base));
+  transition: border-color var(--ax-d-fast) var(--ax-ease);
+}
+
+.ax-form input:focus,
+.ax-form select:focus,
+.ax-form textarea:focus {
+  border-color: var(--ax-gold);
+  outline: none;
+}
+
+/* ───────── Landing ───────── */
+.ax-landing {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ax-s-6);
+  background: radial-gradient(ellipse at top, rgba(201, 162, 39, 0.08) 0%, transparent 60%), var(--ax-bg);
+}
+
+.ax-landing-card {
+  background: var(--ax-bg-glass);
+  backdrop-filter: var(--ax-blur);
+  -webkit-backdrop-filter: var(--ax-blur);
+  border: 1px solid var(--ax-border-strong);
+  border-radius: var(--ax-r-xl);
+  padding: var(--ax-s-10) var(--ax-s-8);
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--ax-shadow-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.ax-landing-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 184, 48, 0.06) 0%,
+    transparent 40%
+  );
+  pointer-events: none;
+}
+
+.ax-landing-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ax-s-1);
+  margin-bottom: var(--ax-s-2);
+  position: relative;
+}
+
+.ax-landing-logo {
+  font-family: var(--ax-font-serif);
+  font-size: clamp(40px, 12vw, 56px);
+  font-weight: 900;
+  letter-spacing: 8px;
+  text-align: center;
+  background: linear-gradient(90deg, var(--ax-gold-deep), var(--ax-gold-bright), var(--ax-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  text-shadow: 0 0 60px rgba(232, 184, 48, 0.3);
+}
+
+.ax-landing-version {
+  font-size: var(--ax-text-xs);
+  color: var(--ax-gold);
+  font-family: var(--ax-font-mono);
+  letter-spacing: 2px;
+  opacity: 0.8;
+}
+
+.ax-landing-tagline {
+  text-align: center;
+  color: var(--ax-text-dim);
+  margin-bottom: var(--ax-s-8);
+  font-size: var(--ax-text-base);
+  line-height: var(--ax-lh-snug);
+}
+
+.ax-landing-footer {
+  text-align: center;
+  margin-top: var(--ax-s-6);
+  font-size: var(--ax-text-xs);
+  letter-spacing: 0.5px;
+}
+
+.ax-form-label {
+  display: block;
+  font-size: var(--ax-text-sm);
+  color: var(--ax-text-dim);
+  margin-bottom: var(--ax-s-2);
+  font-weight: 600;
+}
+
+.ax-btn[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ax-btn .ax-spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* ───────── Chat ───────── */
+.ax-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 800px;
+  margin: 0 auto;
+  /* v13.3.22 iOS PWA Kevin "on voit plus le bas" : scroll restreint au .ax-chat-scroll
+   * pour que header/input/nav/footer ne disparaissent jamais (safe-areas respectées). */
+  overflow: hidden;
+}
+
+.ax-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ax-s-1) var(--ax-s-3);
+  border-bottom: 1px solid var(--ax-border);
+  background: var(--ax-bg-glass);
+  backdrop-filter: var(--ax-blur);
+  flex-shrink: 0;
+  /* iOS notch/dynamic-island */
+  padding-top: max(var(--ax-s-1), env(safe-area-inset-top, 0px));
+  /* v13.3.78 Kevin: bandeau haut MINIMAL pour max visibilité chat */
+  min-height: 32px;
+}
+
+.ax-chat-header h1 {
+  font-family: var(--ax-font-serif);
+  font-size: var(--ax-text-base);
+  letter-spacing: 1.5px;
+  color: var(--ax-gold);
+  margin: 0;
+  /* v13.3.78 ultra-compact */
+  line-height: 1;
+}
+
+.ax-chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--ax-s-1) var(--ax-s-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ax-s-1);
+  font-size: 12.5px;
+  line-height: 1.35;
+  scroll-behavior: smooth;
+  /* v13.3.80 Kevin 19:55 "écrire un peu plus petit aussi pour en voir encore plus" */
+}
+
+.ax-chat-greeting {
+  /* v13.3.99 Kevin "greeting prend trop de place" — ultra-discret */
+  text-align: center;
+  color: var(--ax-text-dim);
+  font-size: 10px;
+  padding: 2px 8px 1px;
+  font-family: var(--ax-font);
+  line-height: 1.15;
+  opacity: 0.45;
+}
+
+.ax-msg {
+  max-width: 95%;
+  padding: 6px 10px;
+  border-radius: var(--ax-r-md);
+  word-wrap: break-word;
+  line-height: 1.35;
+  font-size: 12.5px;
+  animation: ax-msg-in var(--ax-d-fast) var(--ax-ease-out);
+}
+
+@keyframes ax-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ax-msg-user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--ax-gold-soft), rgba(201, 162, 39, 0.05));
+  border: 1px solid var(--ax-border-gold);
+  color: var(--ax-text);
+}
+
+.ax-msg-assistant {
+  align-self: flex-start;
+  background: var(--ax-bg-card);
+  border: 1px solid var(--ax-border);
+  color: var(--ax-text);
+}
+
+.ax-msg-tool {
+  align-self: stretch;
+  margin: var(--ax-s-2) var(--ax-s-3);
+}
+
+.ax-tool-card {
+  display: flex;
+  align-items: center;
+  gap: var(--ax-s-3);
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: linear-gradient(135deg, var(--ax-gold-soft), rgba(232, 184, 48, 0.05));
+  border: 1px solid var(--ax-border-gold);
+  border-radius: var(--ax-r-md);
+  box-shadow: var(--ax-shadow-md);
+}
+
+.ax-tool-icon {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ax-tool-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ax-tool-info strong {
+  color: var(--ax-gold-bright);
+  font-size: var(--ax-text-base);
+}
+
+.ax-tool-card .ax-btn {
+  flex-shrink: 0;
+}
+
+.ax-cursor {
+  display: inline-block;
+  color: var(--ax-gold);
+  animation: ax-cursor-blink 1s steps(2) infinite;
+}
+
+@keyframes ax-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.ax-code {
+  background: var(--ax-bg);
+  padding: var(--ax-s-3);
+  border-radius: var(--ax-r-sm);
+  overflow-x: auto;
+  font-family: var(--ax-font-mono);
+  font-size: var(--ax-text-sm);
+  border: 1px solid var(--ax-border);
+}
+
+.ax-code-inline {
+  background: var(--ax-bg-input);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--ax-font-mono);
+  font-size: 0.9em;
+}
+
+.ax-chat-input {
+  display: flex;
+  gap: var(--ax-s-2);
+  /* v13.4.44 fix Kevin "bouton envoyer jaune inaccessible" iPhone PWA :
+   * safe-area-inset-bottom empêche le bouton d'être caché derrière home indicator iOS. */
+  padding: var(--ax-s-2) var(--ax-s-3) max(var(--ax-s-2), env(safe-area-inset-bottom, 0px)) var(--ax-s-3);
+  border-top: 1px solid var(--ax-border);
+  background: var(--ax-bg-glass);
+  backdrop-filter: var(--ax-blur);
+  align-items: flex-end;
+  flex-shrink: 0;
+  /* v13.3.85 Kevin "tu trouves ton affichage réussi ?" → revert v13.3.84
+   * align-items:center qui cassait le flex layout iOS Safari PWA. */
+}
+
+/* v13.4.44 fix Kevin "bouton envoyer jaune inaccessible" :
+ * Force touch target ≥ 44px (Apple HIG) + z-index assure click-through. */
+.ax-chat-send {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  position: relative;
+  z-index: 10;
+}
+
+.ax-chat-input textarea {
+  flex: 1;
+  resize: none;
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: var(--ax-bg-input);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r-md);
+  color: var(--ax-text);
+  font-size: max(16px, var(--ax-text-base));
+  font-family: var(--ax-font);
+  max-height: 200px;
+  min-height: 44px;
+  line-height: var(--ax-lh-normal);
+}
+
+/* v13.4.3 Kevin 2026-05-09 — UX final compact (TikTok 2 vidéos) :
+ * boutons icônes petits 38px + send rond doré "↑". */
+.ax-icon-compact {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  font-size: 16px;
+}
+
+.ax-chat-send {
+  background: linear-gradient(135deg, #c9a227, #e8b830);
+  color: #000;
+  font-weight: 800;
+  min-width: 38px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 18px;
+  border: none;
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease;
+}
+
+.ax-chat-send:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(232, 184, 48, 0.35);
+}
+
+.ax-chat-send:active {
+  transform: scale(0.95);
+}
+
+/* Suggestion chips state vide */
+.ax-chat-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 12px 16px;
+}
+
+.ax-chat-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--ax-border);
+  border-radius: 999px;
+  background: rgba(201, 162, 39, 0.08);
+  color: var(--ax-text);
+  font-size: 13px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 180ms ease, transform 120ms ease;
+}
+
+.ax-chat-chip:hover {
+  background: rgba(201, 162, 39, 0.18);
+}
+
+.ax-chat-chip:active {
+  transform: scale(0.97);
+}
+
+/* ───────── Admin ───────── */
+.ax-admin {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--ax-s-4);
+}
+
+.ax-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--ax-s-6);
+}
+
+.ax-tabs {
+  display: flex;
+  gap: var(--ax-s-2);
+  margin-bottom: var(--ax-s-6);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--ax-border);
+  padding-bottom: var(--ax-s-2);
+  scroll-snap-type: x proximity;
+}
+
+.ax-tab {
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: transparent;
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r);
+  color: var(--ax-text-dim);
+  font-weight: 500;
+  white-space: nowrap;
+  min-height: var(--ax-touch-min);
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition:
+    background var(--ax-d-fast) var(--ax-ease),
+    color var(--ax-d-fast) var(--ax-ease),
+    border-color var(--ax-d-fast) var(--ax-ease),
+    transform var(--ax-d-fast) var(--ax-ease);
+}
+
+.ax-tab:active {
+  transform: scale(0.96);
+}
+
+.ax-tab-active {
+  background: var(--ax-gold-soft);
+  color: var(--ax-gold-bright);
+  border-color: var(--ax-border-gold);
+  box-shadow: 0 0 0 1px var(--ax-border-gold), 0 4px 12px rgba(232, 184, 48, 0.1);
+}
+
+.ax-admin-section {
+  background: var(--ax-bg-card);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r-md);
+  padding: var(--ax-s-6);
+}
+
+.ax-admin-section h2 {
+  margin: 0 0 var(--ax-s-4);
+  color: var(--ax-gold);
+}
+
+.ax-admin-section h3 {
+  margin: var(--ax-s-4) 0 var(--ax-s-2);
+  font-size: var(--ax-text-base);
+  color: var(--ax-text);
+}
+
+/* ───────── Toggle switch ───────── */
+.ax-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ax-s-3);
+  cursor: pointer;
+}
+
+.ax-toggle input {
+  display: none;
+}
+
+.ax-toggle-slider {
+  width: 56px;
+  height: 32px;
+  background: var(--ax-bg-input);
+  border-radius: var(--ax-r-full);
+  position: relative;
+  transition: background var(--ax-d-fast) var(--ax-ease);
+  border: 1px solid var(--ax-border);
+}
+
+.ax-toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: var(--ax-text);
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform var(--ax-d-fast) var(--ax-ease-spring);
+}
+
+.ax-toggle input:checked + .ax-toggle-slider {
+  background: var(--ax-gold);
+}
+
+.ax-toggle input:checked + .ax-toggle-slider::after {
+  transform: translateX(24px);
+  background: #08080f;
+}
+
+.ax-toggle-row {
+  margin: var(--ax-s-4) 0;
+}
+
+.ax-toggle-label {
+  font-size: var(--ax-text-base);
+  color: var(--ax-text);
+}
+
+/* ───────── Lists & Badges ───────── */
+.ax-user-list,
+.ax-pending-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--ax-s-3) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ax-s-2);
+}
+
+.ax-user-row,
+.ax-pending-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ax-s-3);
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: var(--ax-bg-flat);
+  border-radius: var(--ax-r);
+  flex-wrap: wrap;
+}
+
+.ax-tier-badge,
+.ax-badge {
+  padding: 2px 8px;
+  border-radius: var(--ax-r-full);
+  font-size: var(--ax-text-xs);
+  font-weight: 600;
+}
+
+.ax-tier-family {
+  background: var(--ax-purple-soft);
+  color: var(--ax-purple);
+}
+.ax-tier-client_pro {
+  background: var(--ax-gold-soft);
+  color: var(--ax-gold-bright);
+}
+.ax-tier-client_free {
+  background: var(--ax-bg-input);
+  color: var(--ax-text-muted);
+}
+
+.ax-badge-ok {
+  background: var(--ax-green-soft);
+  color: var(--ax-green);
+}
+.ax-badge-pending {
+  background: var(--ax-orange-soft);
+  color: var(--ax-orange);
+}
+
+.ax-otp {
+  background: var(--ax-bg);
+  color: var(--ax-gold);
+  padding: 4px 8px;
+  border-radius: var(--ax-r-sm);
+  font-size: var(--ax-text-base);
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+/* ───────── Feedback messages ───────── */
+.ax-info,
+.ax-error,
+.ax-success {
+  padding: var(--ax-s-3) var(--ax-s-4);
+  border-radius: var(--ax-r);
+  margin: var(--ax-s-3) 0;
+  font-size: var(--ax-text-sm);
+}
+
+.ax-info {
+  background: var(--ax-blue-soft);
+  color: var(--ax-blue);
+  border: 1px solid var(--ax-blue);
+}
+
+.ax-error {
+  background: var(--ax-red-soft);
+  color: var(--ax-red);
+  border: 1px solid var(--ax-red);
+}
+
+.ax-success {
+  background: var(--ax-green-soft);
+  color: var(--ax-green);
+  border: 1px solid var(--ax-green);
+}
+
+.ax-info-card {
+  background: var(--ax-bg-flat);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r);
+  padding: var(--ax-s-4);
+  margin: var(--ax-s-4) 0;
+}
+
+.ax-info-card ul {
+  margin: var(--ax-s-2) 0 0;
+  padding-left: var(--ax-s-5);
+  color: var(--ax-text-dim);
+}
+
+.ax-muted {
+  color: var(--ax-text-muted);
+  font-size: var(--ax-text-sm);
+}
+
+.ax-empty {
+  text-align: center;
+  padding: var(--ax-s-12) var(--ax-s-4);
+  color: var(--ax-text-dim);
+}
+
+.ax-select-sm {
+  padding: var(--ax-s-1) var(--ax-s-2);
+  background: var(--ax-bg-input);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r-sm);
+  color: var(--ax-text);
+  font-size: var(--ax-text-sm);
+}
+
+/* ───────── PREMIUM v13 (Kevin redesign UX) ─────────
+ * Glassmorphism buttons + elevated cards + premium inputs
+ * Inspiration : Claude.ai, Anthropic Console, Linear, Vercel, Apple Watch UI
+ */
+
+/* Premium glass button */
+.ax-btn-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ax-s-2);
+  padding: var(--ax-s-3) var(--ax-s-5);
+  background: var(--ax-glass);
+  backdrop-filter: var(--ax-glass-blur);
+  -webkit-backdrop-filter: var(--ax-glass-blur);
+  color: var(--ax-text);
+  border: var(--ax-glass-border);
+  border-radius: var(--ax-r);
+  font-weight: 600;
+  font-size: var(--ax-text-sm);
+  font-family: var(--ax-font);
+  min-height: var(--ax-touch-min);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--ax-d-fast) var(--ax-ease),
+    background var(--ax-d-fast) var(--ax-ease),
+    border-color var(--ax-d-fast) var(--ax-ease),
+    box-shadow var(--ax-d-fast) var(--ax-ease);
+  will-change: transform;
+}
+
+.ax-btn-glass:hover {
+  background: var(--ax-glass-strong);
+  border-color: var(--ax-border-gold);
+  box-shadow: var(--ax-shadow-md);
+  transform: translateY(-1px);
+}
+
+.ax-btn-glass:active {
+  transform: scale(0.97);
+}
+
+.ax-btn-glass:focus-visible {
+  outline: 2px solid var(--ax-gold);
+  outline-offset: 2px;
+}
+
+.ax-btn-glass-gold {
+  background: var(--ax-gold-gradient);
+  color: #08080f;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(201, 162, 39, 0.35);
+}
+
+.ax-btn-glass-gold:hover {
+  background: var(--ax-gold-gradient-rev);
+  box-shadow: 0 6px 20px rgba(232, 184, 48, 0.5), var(--ax-gold-glow);
+  transform: translateY(-2px);
+}
+
+/* Elevated card with hover lift */
+.ax-card-elevated {
+  background: var(--ax-bg-card);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r-md);
+  padding: var(--ax-s-5);
+  box-shadow: var(--ax-shadow-md);
+  transition:
+    transform var(--ax-d-normal) var(--ax-ease-out),
+    box-shadow var(--ax-d-normal) var(--ax-ease-out),
+    border-color var(--ax-d-normal) var(--ax-ease-out);
+  will-change: transform;
+}
+
+.ax-card-elevated:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--ax-shadow-lg);
+  border-color: var(--ax-border-strong);
+}
+
+.ax-card-elevated-gold:hover {
+  border-color: var(--ax-border-gold);
+  box-shadow: var(--ax-shadow-lg), 0 0 32px rgba(201, 162, 39, 0.15);
+}
+
+.ax-card-glass {
+  background: var(--ax-glass-soft);
+  backdrop-filter: var(--ax-glass-blur);
+  -webkit-backdrop-filter: var(--ax-glass-blur);
+  border: var(--ax-glass-border);
+  border-radius: var(--ax-r-md);
+  padding: var(--ax-s-5);
+  box-shadow: var(--ax-shadow-md);
+}
+
+/* Premium input with focus ring gold */
+.ax-input-premium {
+  display: block;
+  width: 100%;
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: var(--ax-bg-input);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-r);
+  color: var(--ax-text);
+  font-family: var(--ax-font);
+  /* iOS Safari : éviter zoom auto si < 16px */
+  font-size: max(16px, var(--ax-text-base));
+  line-height: var(--ax-lh-normal);
+  transition:
+    border-color var(--ax-d-fast) var(--ax-ease),
+    box-shadow var(--ax-d-fast) var(--ax-ease),
+    background var(--ax-d-fast) var(--ax-ease);
+}
+
+.ax-input-premium::placeholder {
+  color: var(--ax-text-muted);
+}
+
+.ax-input-premium:hover {
+  border-color: var(--ax-border-strong);
+}
+
+.ax-input-premium:focus {
+  outline: none;
+  border-color: var(--ax-gold);
+  background: var(--ax-bg-flat);
+  box-shadow: 0 0 0 3px rgba(232, 184, 48, 0.18);
+}
+
+.ax-input-premium:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Shimmer skeleton (loading state) */
+.ax-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--ax-bg-flat);
+  border-radius: var(--ax-r-sm);
+}
+
+.ax-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: ax-shimmer-loading 1.4s linear infinite;
+}
+
+@keyframes ax-shimmer-loading {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Confetti burst (success) */
+.ax-confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--ax-z-toast);
+  overflow: hidden;
+}
+
+.ax-confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  top: -20px;
+  border-radius: 1px;
+  animation: ax-confetti-fall 1.4s var(--ax-ease-out) forwards;
+}
+
+@keyframes ax-confetti-fall {
+  0% {
+    transform: translateY(-20px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Premium toast (colored borders) */
+.ax-toast-premium {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ax-s-3);
+  padding: var(--ax-s-3) var(--ax-s-4);
+  background: var(--ax-glass-strong);
+  backdrop-filter: var(--ax-glass-blur);
+  -webkit-backdrop-filter: var(--ax-glass-blur);
+  border-radius: var(--ax-r-md);
+  border-left: 4px solid var(--ax-border);
+  box-shadow: var(--ax-shadow-lg);
+  color: var(--ax-text);
+  font-size: var(--ax-text-sm);
+}
+
+.ax-toast-premium.ax-toast-info {
+  border-left-color: var(--ax-blue);
+}
+.ax-toast-premium.ax-toast-success {
+  border-left-color: var(--ax-success);
+}
+.ax-toast-premium.ax-toast-warn {
+  border-left-color: var(--ax-warning);
+}
+.ax-toast-premium.ax-toast-error {
+  border-left-color: var(--ax-error);
+}
+
+/* Logo glow pulse (login screen) */
+.ax-logo-pulse {
+  animation: ax-logo-pulse 3.6s var(--ax-ease) infinite;
+}
+
+@keyframes ax-logo-pulse {
+  0%, 100% {
+    text-shadow: 0 0 60px rgba(232, 184, 48, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 0 0 80px rgba(232, 184, 48, 0.6), 0 0 120px rgba(201, 162, 39, 0.3);
+    transform: scale(1.02);
+  }
+}
+
+/* Status dot pulse (connected indicator) */
+.ax-dot-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ax-success);
+  position: relative;
+}
+
+.ax-dot-pulse::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ax-success);
+  animation: ax-dot-ping 2s ease-out infinite;
+}
+
+@keyframes ax-dot-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  80%, 100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Spinner premium */
+.ax-spinner-premium {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg, transparent 0%, var(--ax-gold) 100%);
+  -webkit-mask: radial-gradient(circle, transparent 8px, #000 9px);
+  mask: radial-gradient(circle, transparent 8px, #000 9px);
+  animation: ax-spin 0.9s linear infinite;
+}
+
+.ax-spinner-premium-sm {
+  width: 18px;
+  height: 18px;
+  -webkit-mask: radial-gradient(circle, transparent 5px, #000 6px);
+  mask: radial-gradient(circle, transparent 5px, #000 6px);
+}
+
+.ax-spinner-premium-lg {
+  width: 48px;
+  height: 48px;
+  -webkit-mask: radial-gradient(circle, transparent 14px, #000 15px);
+  mask: radial-gradient(circle, transparent 14px, #000 15px);
+}
+
+/* Apex thinking 3 dots */
+.ax-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--ax-s-2) var(--ax-s-4);
+  background: var(--ax-bg-card);
+  border-radius: var(--ax-r-full);
+  border: 1px solid var(--ax-border);
+  font-size: var(--ax-text-sm);
+  color: var(--ax-text-dim);
+}
+
+.ax-thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.ax-thinking-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ax-gold);
+  animation: ax-thinking-bounce 1.4s ease-in-out infinite;
+}
+
+.ax-thinking-dot:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.ax-thinking-dot:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes ax-thinking-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .ax-shimmer::before,
+  .ax-confetti-piece,
+  .ax-logo-pulse,
+  .ax-dot-pulse::before,
+  .ax-spinner-premium,
+  .ax-thinking-dot {
+    animation: none !important;
+  }
+  .ax-card-elevated:hover,
+  .ax-btn-glass:hover,
+  .ax-btn-glass-gold:hover {
+    transform: none !important;
+  }
+}

@@ -36,3 +36,22 @@ messaging-app/.env.local
 messaging-app/workers/.env
 messaging-app/workers/.dev.vars
 *.local.env
+
+# 🔐 SÉCU CRITIQUE Kevin v13.0.78 — fichiers contenant clés API
+.vault-import.json
+*.vault.json
+*.vault-import*.json
+.env
+.env.*
+!.env.example
+*.secret
+*.secrets
+secrets.json
+api-keys.json
+credentials.json
+*.pem
+*.key
+*.crt
+*.cert
+ax_*_key.txt
+ax_*_token.txt

@@ -75,5 +75,16 @@ if [ -f index.html ]; then
   fi
 fi
 
+# Tests Phase 1 modules extraits (CLAUDE.md regle Code Quality)
+if [ -f tests/apex-modules-extracted.test.js ]; then
+  if ! node tests/apex-modules-extracted.test.js > /tmp/precommit_modules_out 2>&1; then
+    echo "[pre-commit] FAIL: Modules extraits tests"
+    tail -20 /tmp/precommit_modules_out
+    exit 1
+  fi
+  PASS=$(grep -E "^Total:" /tmp/precommit_modules_out || echo "Tests OK")
+  echo "[pre-commit] OK: Modules extraits ($PASS)"
+fi
+
 echo "[pre-commit] All checks passed"
 exit 0

@@ -1,0 +1,80 @@
+name: Lighthouse CI Mobile (Apex v13)
+
+# Audit Kevin v13.1.0 production-grade : Lighthouse mobile sur chaque push/PR
+# Budgets cibles : Performance ≥ 90, A11y ≥ 95, BP ≥ 95, SEO ≥ 90, PWA ≥ 90
+
+on:
+  push:
+    branches: [main, claude/test-699LQ]
+    paths:
+      - 'apex-ai/v13/**'
+      - '.github/workflows/lighthouse-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apex-ai/v13/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  lighthouse:
+    name: Lighthouse mobile audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apex-ai/v13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apex-ai/v13/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Wait for Pages deployment refresh
+        run: sleep 30
+
+      - name: Lighthouse mobile audit (production deployment)
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/
+          configPath: ./apex-ai/v13/lighthouse.config.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+        continue-on-error: true
+        id: lighthouse
+
+      - name: Comment PR with Lighthouse results
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            🏎 **Lighthouse mobile scores published**
+
+            Budgets cible :
+            - Performance ≥ 90
+            - Accessibility ≥ 95
+            - Best Practices ≥ 95
+            - SEO ≥ 90
+            - PWA ≥ 90
+
+            Voir artifacts ci-dessus pour rapport HTML complet (storage temporaire 7j).
