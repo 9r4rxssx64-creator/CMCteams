@@ -9,7 +9,7 @@
  * Sentinelle GitHub Action `sw-cache-sync.yml` rattrape automatiquement
  * le drift entre APP_VER (index.html) et CACHE_VERSION (ce fichier).
  */
-const CACHE_VERSION = 'apex-chat-v1.0.9';
+const CACHE_VERSION = 'apex-chat-v1.1.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
@@ -204,5 +204,26 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (event.data?.type === 'GET_VERSION') {
     event.ports[0]?.postMessage({ version: CACHE_VERSION });
+  }
+});
+
+// ===== PERIODIC SYNC (Chrome only) — réveille periodiquement pour heartbeat =====
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'apex-chat-heartbeat') {
+    event.waitUntil((async () => {
+      // Notifier les clients (s'ils sont ouverts) pour qu'ils envoient un heartbeat
+      const clients = await self.clients.matchAll({ type: 'window' });
+      for (const c of clients) c.postMessage({ type: 'PERIODIC_HEARTBEAT' });
+    })());
+  }
+});
+
+// ===== BACKGROUND SYNC fallback =====
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'apex-chat-heartbeat') {
+    event.waitUntil((async () => {
+      const clients = await self.clients.matchAll({ type: 'window' });
+      for (const c of clients) c.postMessage({ type: 'PERIODIC_HEARTBEAT' });
+    })());
   }
 });
