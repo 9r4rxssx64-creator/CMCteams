@@ -12,8 +12,9 @@
  * INTERDIT : prétendre qu'un credential fonctionne sans avoir lancé ce test.
  */
 
-import { vault } from './vault.js';
 import { logger } from '../core/logger.js';
+
+import { vault } from './vault.js';
 
 export interface TestResult {
   service: string;

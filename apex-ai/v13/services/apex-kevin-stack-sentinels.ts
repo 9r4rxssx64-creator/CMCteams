@@ -12,8 +12,9 @@
  *   3. pinecone-index-status : describe index toutes 30min
  */
 
-import { sentinels } from './sentinels.js';
 import { logger } from '../core/logger.js';
+
+import { sentinels } from './sentinels.js';
 
 type SentinelResult = { ok: boolean; msg: string; ts: number };
 

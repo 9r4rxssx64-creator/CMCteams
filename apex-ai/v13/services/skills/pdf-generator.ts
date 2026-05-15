@@ -114,7 +114,7 @@ export const pdfGenerator = {
       if (logoBase64) {
         try {
           d['addImage']?.(logoBase64, 'PNG', 10, 10, 30, 15);
-        } catch (_) {
+        } catch {
           /* ignore */
         }
       }

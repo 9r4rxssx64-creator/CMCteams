@@ -203,67 +203,79 @@ export async function showQrBackupModal(opts: {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)';
     const card = document.createElement('div');
     card.style.cssText = 'background:#0a0a14;border:1px solid #c9a227;border-radius:14px;padding:20px;max-width:380px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.6)';
-    card.innerHTML = `
-      <h3 style="margin:0 0 8px;color:#c9a227;font-size:16px;font-weight:700">${opts.title ?? '🔐 Sauvegarde Apex QR'}</h3>
-      <p style="margin:0 0 14px;color:rgba(255,255,255,0.78);font-size:13px;line-height:1.5">${opts.description ?? 'Sauvegarde ce QR dans Photos iCloud. Au prochain reinstall PWA, Apex pourra le scanner pour tout restaurer en 1 clic.'}</p>
-      <div id="apex-qr-canvas-container" style="display:flex;justify-content:center;margin:14px 0;padding:12px;background:#fff;border-radius:10px"></div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <button id="apex-qr-share-btn" style="padding:14px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;min-height:48px">📤 Partager dans Photos iCloud</button>
-        <button id="apex-qr-download-btn" style="padding:14px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;min-height:48px">📥 Télécharger PNG</button>
-        <button id="apex-qr-close-btn" style="padding:14px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-weight:500;cursor:pointer;font-size:13px;min-height:44px">Plus tard</button>
-      </div>
-      <div id="apex-qr-status" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.6);text-align:center"></div>
-    `;
+    /* v13.4.125 fix audit (Kevin "qualité pro") : remplacement innerHTML
+     * template-literal par construction DOM API. Évite tout risque XSS si
+     * opts.title/description venait à contenir du HTML user-controlled. */
+    const h3 = document.createElement('h3');
+    h3.style.cssText = 'margin:0 0 8px;color:#c9a227;font-size:16px;font-weight:700';
+    h3.textContent = opts.title ?? '🔐 Sauvegarde Apex QR';
+    const p = document.createElement('p');
+    p.style.cssText = 'margin:0 0 14px;color:rgba(255,255,255,0.78);font-size:13px;line-height:1.5';
+    p.textContent = opts.description ?? 'Sauvegarde ce QR dans Photos iCloud. Au prochain reinstall PWA, Apex pourra le scanner pour tout restaurer en 1 clic.';
+    const canvasContainerEl = document.createElement('div');
+    canvasContainerEl.id = 'apex-qr-canvas-container';
+    canvasContainerEl.style.cssText = 'display:flex;justify-content:center;margin:14px 0;padding:12px;background:#fff;border-radius:10px';
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    const shareBtn = document.createElement('button');
+    shareBtn.id = 'apex-qr-share-btn';
+    shareBtn.type = 'button';
+    shareBtn.style.cssText = 'padding:14px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;min-height:48px';
+    shareBtn.textContent = '📤 Partager dans Photos iCloud';
+    const downloadBtn = document.createElement('button');
+    downloadBtn.id = 'apex-qr-download-btn';
+    downloadBtn.type = 'button';
+    downloadBtn.style.cssText = 'padding:14px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;min-height:48px';
+    downloadBtn.textContent = '📥 Télécharger PNG';
+    const closeBtn = document.createElement('button');
+    closeBtn.id = 'apex-qr-close-btn';
+    closeBtn.type = 'button';
+    closeBtn.style.cssText = 'padding:14px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-weight:500;cursor:pointer;font-size:13px;min-height:44px';
+    closeBtn.textContent = 'Plus tard';
+    btnRow.append(shareBtn, downloadBtn, closeBtn);
+    const statusElLocal = document.createElement('div');
+    statusElLocal.id = 'apex-qr-status';
+    statusElLocal.style.cssText = 'margin-top:10px;font-size:12px;color:rgba(255,255,255,0.6);text-align:center';
+    card.append(h3, p, canvasContainerEl, btnRow, statusElLocal);
     overlay.appendChild(card);
-    const canvasContainer = card.querySelector('#apex-qr-canvas-container');
-    if (canvasContainer) canvasContainer.appendChild(canvas);
+    canvasContainerEl.appendChild(canvas);
     document.body.appendChild(overlay);
 
-    const statusEl = card.querySelector<HTMLDivElement>('#apex-qr-status');
     const setStatus = (msg: string, color = 'rgba(255,255,255,0.6)'): void => {
-      if (statusEl) {
-        statusEl.textContent = msg;
-        statusEl.style.color = color;
-      }
+      statusElLocal.textContent = msg;
+      statusElLocal.style.color = color;
     };
 
     const close = (): void => {
       try { document.body.removeChild(overlay); } catch { /* ignore */ }
     };
 
-    const shareBtn = card.querySelector<HTMLButtonElement>('#apex-qr-share-btn');
-    if (shareBtn) {
-      shareBtn.addEventListener('click', async () => {
-        setStatus('📤 Ouverture du partage iOS...');
-        const r = await shareQrToPhotos(canvas, opts.title ?? 'Apex Vault QR');
-        if (r.ok) {
-          setStatus('✅ Partagé ! Sauvegarde dans Photos iCloud terminée.', '#22cc77');
-          setTimeout(close, 2500);
-        } else if (r.reason === 'user_cancelled') {
-          setStatus('Annulé. Utilise "Télécharger PNG" si tu veux.', 'rgba(255,255,255,0.5)');
-        } else {
-          setStatus(`⚠️ Partage non supporté (${r.reason}). Utilise "Télécharger PNG".`, '#ff8844');
-        }
-      });
-    }
+    shareBtn.addEventListener('click', async () => {
+      setStatus('📤 Ouverture du partage iOS...');
+      const r = await shareQrToPhotos(canvas, opts.title ?? 'Apex Vault QR');
+      if (r.ok) {
+        setStatus('✅ Partagé ! Sauvegarde dans Photos iCloud terminée.', '#22cc77');
+        setTimeout(close, 2500);
+      } else if (r.reason === 'user_cancelled') {
+        setStatus('Annulé. Utilise "Télécharger PNG" si tu veux.', 'rgba(255,255,255,0.5)');
+      } else {
+        setStatus(`⚠️ Partage non supporté (${r.reason}). Utilise "Télécharger PNG".`, '#ff8844');
+      }
+    });
 
-    const dlBtn = card.querySelector<HTMLButtonElement>('#apex-qr-download-btn');
-    if (dlBtn) {
-      dlBtn.addEventListener('click', async () => {
-        setStatus('📥 Téléchargement...');
-        try {
-          await downloadQr(canvas, opts.filename ?? 'apex-vault-qr.png');
-          setStatus('✅ Téléchargé ! Sauvegarde dans Photos iCloud manuellement.', '#22cc77');
-          setTimeout(close, 3000);
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          setStatus(`❌ Download échoué : ${msg.slice(0, 60)}`, '#ff5b5b');
-        }
-      });
-    }
+    downloadBtn.addEventListener('click', async () => {
+      setStatus('📥 Téléchargement...');
+      try {
+        await downloadQr(canvas, opts.filename ?? 'apex-vault-qr.png');
+        setStatus('✅ Téléchargé ! Sauvegarde dans Photos iCloud manuellement.', '#22cc77');
+        setTimeout(close, 3000);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setStatus(`❌ Download échoué : ${msg.slice(0, 60)}`, '#ff5b5b');
+      }
+    });
 
-    const closeBtn = card.querySelector<HTMLButtonElement>('#apex-qr-close-btn');
-    if (closeBtn) closeBtn.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
 
     logger.info('qr-backup', `✅ Modal QR affiché (${opts.text.length} chars encoded)`);
   } catch (err: unknown) {

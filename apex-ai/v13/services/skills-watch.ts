@@ -13,9 +13,10 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
-import { mcpRegistry } from './mcp-registry.js';
 import { mcpClient } from './mcp-client.js';
+import { mcpRegistry } from './mcp-registry.js';
 
 export type SkillsWatchSeverity = 'ok' | 'warn' | 'err' | 'critical';
 

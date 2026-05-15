@@ -26,9 +26,10 @@
  * "apex-vault-backup-v1-kdmc_admin" (ou autre uid). filename : "vault.enc".
  */
 
+import { logger } from '../core/logger.js';
+
 import { auth } from './auth.js';
 import { vault } from './vault.js';
-import { logger } from '../core/logger.js';
 
 const GIST_DESCRIPTION_PREFIX = 'apex-vault-backup-v1';
 const GIST_FILENAME = 'vault.enc';

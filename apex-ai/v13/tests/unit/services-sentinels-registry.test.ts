@@ -223,7 +223,9 @@ describe('services/sentinels-registry — Boost MAX 18+', () => {
       expect(r.message).toMatch(/sentinelles/i);
     });
 
-    it('runAll execute toutes les enabled', async () => {
+    it('runAll execute toutes les enabled', { timeout: 30_000 }, async () => {
+      /* v13.4.125 : timeout 30s (au lieu de 5s default) car 35+ sentinels enabled
+       * avec checks réseau Firebase/GitHub raw → 5s pas suffisant en CI. */
       sentinelsRegistry.startAll();
       const results = await sentinelsRegistry.runAll();
       expect(results.length).toBeGreaterThanOrEqual(15);

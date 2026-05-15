@@ -116,7 +116,7 @@ describe('v13.4.22 events crash isolation', () => {
 describe('v13.4.22 events custom (string template) avec préfixe custom:', () => {
   it("supporte custom:foo type via EventMap template literal", () => {
     const fn = vi.fn();
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const off = (events.on as any)('custom:my_feature', fn);
     (events.emit as any)('custom:my_feature', { foo: 'bar' });
     expect(fn).toHaveBeenCalledWith({ foo: 'bar' });

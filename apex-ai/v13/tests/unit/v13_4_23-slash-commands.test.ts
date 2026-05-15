@@ -23,7 +23,7 @@ describe('v13.4.23 parseSlashCommand — détection & parsing', () => {
   it("texte vide ou null → isSlash false", () => {
     expect(parseSlashCommand('').isSlash).toBe(false);
     expect(parseSlashCommand('   ').isSlash).toBe(false);
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     expect((parseSlashCommand as any)(null).isSlash).toBe(false);
     expect((parseSlashCommand as any)(undefined).isSlash).toBe(false);
   });

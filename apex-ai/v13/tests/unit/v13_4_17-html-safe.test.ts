@@ -1,3 +1,5 @@
+/* eslint-disable no-script-url -- Test fixtures intentionnels (vérifient sanitization XSS) */
+
 /**
  * Test régression v13.4.17 — core/html-safe.ts (P1 sécurité audit, 0% coverage).
  *

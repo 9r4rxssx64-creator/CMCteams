@@ -63,7 +63,7 @@ ${'a'.repeat(_internals.MIN_TEXT_LENGTH)}
   });
 
   it("null/undefined → no crash", () => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     expect((detectSbmPlanning as any)(null).detected).toBe(false);
     expect((detectSbmPlanning as any)(undefined).detected).toBe(false);
   });

@@ -13,8 +13,9 @@
  * d'attente plugin natif).
  */
 
-import { apexIosNative } from './apex-ios-native.js';
 import { logger } from '../core/logger.js';
+
+import { apexIosNative } from './apex-ios-native.js';
 
 const REQUIRED_PLUGINS = [
   'Preferences', /* Keychain App Group */

@@ -21,6 +21,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { vault } from './vault.js';
 
 interface VaultExportEntry {
