@@ -223,7 +223,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.1';
+const __APEX_CHAT_VERSION__ = 'v1.1.2';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -299,7 +299,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.1</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.2</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -313,7 +313,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.1</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.2</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -774,30 +774,24 @@ K._renderTypingIndicator = function(convId){
   el.textContent = active.length === 1 ? `${names} écrit…` : `${names} écrivent…`;
 };
 
+K._sendReadReceipt = function(convId, lastMsgId){
+  if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
+  try{
+    K.ws.send(JSON.stringify({ type: 'read', message_id: lastMsgId }));
+  }catch(_){}
+};
+
 K._sendTyping = function(convId){
   if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
-  // Debounce 1.5s entre 2 typing events
   if(K._typingSentAt && Date.now() - K._typingSentAt < 1500) return;
   K._typingSentAt = Date.now();
-  try{
-    K.ws.send(JSON.stringify({ type: 'typing', conv_id: convId, from: K.user.id, from_pseudo: K.user.pseudo }));
-  }catch(_){}
+  try{ K.ws.send(JSON.stringify({ type: 'typing' })); }catch(_){}
 };
 
 K._sendReaction = function(convId, msgId, emoji, action){
   if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
   try{
-    K.ws.send(JSON.stringify({
-      type: 'reaction', conv_id: convId, msg_id: msgId, emoji,
-      action: action || 'add', from: K.user.id
-    }));
-  }catch(_){}
-};
-
-K._sendReadReceipt = function(convId, lastMsgId){
-  if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
-  try{
-    K.ws.send(JSON.stringify({ type: 'read', conv_id: convId, last_read_msg_id: lastMsgId, from: K.user.id }));
+    K.ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji, action: action || 'add' }));
   }catch(_){}
 };
 
@@ -901,16 +895,19 @@ function renderAuthStep(){
       <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
     setTimeout(()=>{
       $('#auth-phone')?.focus();
-      // CGU implicite : tout remplissage de champ login = acceptation des CGU (RGPD light)
+      // CGU implicite : tout remplissage de champ login = acceptation des CGU (RGPD)
       const acceptCgu = () => {
         try{
           if(!localStorage.getItem('apex_chat_cgu_v1')){
-            localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({
-              accepted_at: Date.now(),
-              version: 'v1.0.7',
-              implicit: true,
-              ua: navigator.userAgent.slice(0, 200)
-            }));
+            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, implicit: true, ua: navigator.userAgent.slice(0, 200) };
+            localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(accept));
+            // Push backend (RGPD trace immutable) — best-effort
+            const phone = (document.getElementById('auth-phone')?.value || '').replace(/[^\d+]/g, '');
+            fetch((window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.workers.dev') + '/api/cgu/accept', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...accept, phone })
+            }).catch(_=>{});
           }
         }catch(_){}
       };
@@ -1420,47 +1417,54 @@ async function _handleWsMessage(data, convId){
       // Server ack
       break;
     case 'typing':
-      // Phase 3 wire : afficher "X est en train d'écrire..."
+      // Phase 3 wire — DO envoie `userId`, client legacy `from`
       K._typingState = K._typingState || {};
       K._typingState[convId] = K._typingState[convId] || {};
-      if(data.from && data.from !== K.user.id){
-        K._typingState[convId][data.from] = { ts: Date.now(), pseudo: data.from_pseudo || data.from };
+      const tFrom = data.userId || data.from;
+      if(tFrom && tFrom !== K.user.id){
+        K._typingState[convId][tFrom] = { ts: Date.now(), pseudo: data.from_pseudo || tFrom };
         setTimeout(() => {
-          if(K._typingState[convId]?.[data.from] && Date.now() - K._typingState[convId][data.from].ts > 4000){
-            delete K._typingState[convId][data.from];
+          if(K._typingState[convId]?.[tFrom] && Date.now() - K._typingState[convId][tFrom].ts > 4000){
+            delete K._typingState[convId][tFrom];
             if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
           }
         }, 4500);
         if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
       }
       break;
-    case 'read':
-      // Read receipts : marquer messages comme lus côté UI
+    case 'read': {
+      // Read receipts — DO envoie userId + message_id
       K._readState = K._readState || {};
       K._readState[convId] = K._readState[convId] || {};
-      if(data.from && data.last_read_msg_id){
-        K._readState[convId][data.from] = data.last_read_msg_id;
+      const rFrom = data.userId || data.from;
+      const rMsg = data.message_id || data.last_read_msg_id;
+      if(rFrom && rMsg){
+        K._readState[convId][rFrom] = rMsg;
         if(K.view === 'chat' && K.viewData?.id === convId) K.render();
       }
       break;
-    case 'reaction':
-      // Reactions : ajouter/retirer emoji sur un message
-      if(data.msg_id && data.emoji && K.messages[convId]){
-        const m = K.messages[convId].find(x => x.id === data.msg_id);
+    }
+    case 'reaction': {
+      // Reactions — DO envoie userId + message_id + emoji + action
+      const xFrom = data.userId || data.from;
+      const xMsg = data.message_id || data.msg_id;
+      if(xMsg && data.emoji && K.messages[convId]){
+        const m = K.messages[convId].find(x => x.id === xMsg);
         if(m){
           m.reactions = m.reactions || {};
           m.reactions[data.emoji] = m.reactions[data.emoji] || [];
           if(data.action === 'remove'){
-            m.reactions[data.emoji] = m.reactions[data.emoji].filter(u => u !== data.from);
+            m.reactions[data.emoji] = m.reactions[data.emoji].filter(u => u !== xFrom);
             if(m.reactions[data.emoji].length === 0) delete m.reactions[data.emoji];
           } else {
-            if(!m.reactions[data.emoji].includes(data.from)) m.reactions[data.emoji].push(data.from);
+            if(!m.reactions[data.emoji].includes(xFrom)) m.reactions[data.emoji].push(xFrom);
           }
           ls('messages_' + convId, K.messages[convId]);
           if(K.view === 'chat' && K.viewData?.id === convId) K.render();
         }
       }
       break;
+    }
     case 'presence':
       // Joined / left
       break;
@@ -2971,8 +2975,17 @@ K._adminLoadSignalements = async function(){
 };
 
 K._adminResolveSignal = async function(id, action){
-  toast('Phase 6b — résolution signalement', 'info');
-  K._closeModal();
+  try{
+    const r = await K._api('POST', '/api/admin/commands', {
+      command: 'resolveSignalement',
+      params: { id, action } // action: ban | dismiss | warn
+    });
+    if(r && r.ok){
+      toast('✅ Signalement traité (' + action + ')', 'ok');
+      K._closeModal();
+      K._adminLoadSignalements();
+    } else toast(r?.message || 'Erreur', 'err');
+  }catch(e){ toast('Worker offline', 'warn'); }
 };
 
 K._adminAiAsk = async function(){

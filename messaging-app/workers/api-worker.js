@@ -524,6 +524,22 @@ async function handleGetMe(request, env) {
   return json({ ok: true, user });
 }
 
+// Acceptation CGU (RGPD trace immutable)
+async function handleCguAccept(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const ipHash = await sha256(request.headers.get('CF-Connecting-IP') || 'unknown');
+  const ua = (request.headers.get('user-agent') || '').slice(0, 240);
+  const phone = String(body.phone || '').replace(/[^\d+]/g, '');
+  const phoneHash = phone ? await sha256(phone) : null;
+  const auth = await getAuthUser(request, env);
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO cgu_acceptances (user_id, phone_hash, version, accepted_at, implicit, user_agent, ip_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(auth?.sub || null, phoneHash, String(body.version || 'v1.1.2'), Date.now(),
+         body.implicit === false ? 0 : 1, ua, ipHash).run().catch(() => {});
+  return json({ ok: true });
+}
+
 // Heartbeat user — last_seen + geoloc/device si consenti par toggle
 async function handleUserHeartbeat(request, env) {
   const auth = await getAuthUser(request, env);
@@ -1223,23 +1239,24 @@ async function handleAdminUserTimeline(userId, request, env) {
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
   const url = new URL(request.url);
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '200'), 1000);
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
+  const offset = parseInt(url.searchParams.get('offset') || '0');
   const since = parseInt(url.searchParams.get('since') || '0') || (Date.now() - 90 * 86400000); // 90j par défaut
 
-  // 1. Audit log (login, actions, modifications)
+  // 1. Audit log (login, actions, modifications) — paginé
   const audit = await env.APEX_CHAT_DB.prepare(
     `SELECT id, action, target_type, target_id, details, ts, ip_hash, user_agent
      FROM audit_log
      WHERE (actor_id=? OR target_id=?) AND ts >= ?
-     ORDER BY ts DESC LIMIT ?`
-  ).bind(userId, userId, since, limit).all().catch(() => ({ results: [] }));
+     ORDER BY ts DESC LIMIT ? OFFSET ?`
+  ).bind(userId, userId, since, limit, offset).all().catch(() => ({ results: [] }));
 
-  // 2. User activity (geoloc + device history)
+  // 2. User activity (geoloc + device history) — paginé
   const activity = await env.APEX_CHAT_DB.prepare(
     `SELECT id, ts, ip_hash, user_agent, lat, lng, geo_label, action
      FROM user_activity WHERE user_id=? AND ts >= ?
-     ORDER BY ts DESC LIMIT ?`
-  ).bind(userId, since, limit).all().catch(() => ({ results: [] }));
+     ORDER BY ts DESC LIMIT ? OFFSET ?`
+  ).bind(userId, since, limit, offset).all().catch(() => ({ results: [] }));
 
   // 3. Invitations envoyées par lui ou pour lui
   const invitations = await env.APEX_CHAT_DB.prepare(
@@ -2094,6 +2111,7 @@ export default {
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
       if (path === '/api/users/me' && method === 'PATCH') return await handleUpdateMe(request, env);
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
+      if (path === '/api/cgu/accept' && method === 'POST') return await handleCguAccept(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
