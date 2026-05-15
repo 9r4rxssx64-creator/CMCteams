@@ -1,4 +1,56 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.614 (2026-05-15)
+# Mémo de reprise — Apex v13.4.127 / CMC v9.615 (2026-05-15)
+
+## 🆕 SESSION 2026-05-15 23:55 — CMCteams v9.615 META CELLS SYNC + RENDU COULEUR (Kevin "Go")
+
+**Demande Kevin "Go"** : finir le reste à faire annoncé en v9.614 (toggle FF, cell color rendering, sync Firebase).
+
+### Livraisons v9.615
+
+1. **Toggle Faisant Fonction dans vEmps** (~ligne 29154) :
+   - Checkbox "FF Faisant fonction" à côté de "★ 55+ ans"
+   - Style cohérent (bordure bleue active / grise inactive)
+   - Tooltip explicatif (poste supérieur sans titre officiel, fond bleu PDF)
+   - Admin peut activer/désactiver manuellement quand le parser n'a pas détecté
+
+2. **Sync Firebase `cmc_ov_meta`** :
+   - Ajouté `cmc_ov_meta` à `FB_FIX` (ligne 3720) — sync cross-device automatique
+   - `fbApplyData` handle `cmc_ov_meta` (ligne 4000) → `A.overrides_meta=vc`
+   - Au boot : `overrides_meta:lg("cmc_ov_meta",{})` chargé depuis localStorage (ligne 4782)
+   - `_cmcFlushOverridesMeta()` appelé après `_cmcApplyVisualMarkers` dans doImport → `ls("cmc_ov_meta", ...)` synca via FB_FIX
+
+3. **Helpers publics rendu cell-color** (~ligne 24050) :
+   - `cmcMetaForCell(key, eid, d)` — retourne `{bg, fg, star, ff}` ou `null`
+   - `cmcCellBgFromMeta(meta)` — CSS background string selon `CMC_META_BG_COLORS`
+   - Mapping 10 couleurs : CDP orange / AF vert / CP rose / RH violet / R lavande / RRT jaune / PNL jaune vif / CONV rouge / **FF bleu** / AMENAGE gris
+
+4. **Rendu cell dans vPlan** (~ligne 22232) :
+   - Avant la boucle days : `var _meta=cmcMetaForCell(key, emp.id, d)` + `_metaBg=cmcCellBgFromMeta(_meta)`
+   - `cellBg = isTodCell ? (code ? (_metaBg||ci.bg) : ...) : (_metaBg||ci.bg)` — meta du PDF prioritaire sur défaut code
+   - Si Kevin avait BOUVIER JF en fond bleu PDF → cell rendue en bleu translucide dans vPlan
+
+### Validation
+
+- `node --check` JS combiné sans séparateur (CLAUDE.md erreur #32) : ✅ OK
+- File size : 2 778 332 octets (+3 KB depuis v9.614)
+- 49 occurrences nouveaux helpers/flags v9.615
+- Zéro marqueur de conflit
+- sw.js CACHE_VERSION sync v9.614 → v9.615
+
+### Test mental end-to-end
+
+> 1. Kevin importe PDF "PIT BOSS Avril 2026" → BOUVIER JF fond bleu détecté → `emp.faisantFonction=true` + `A.overrides_meta["2026-3"]["BOUVIER_JF"][d] = {bg:"FF", ff:true}` persisté `cmc_ov_meta` synca Firebase
+> 2. Kevin ouvre vPlan → cell BOUVIER JF affichée avec fond bleu translucide (CSS `rgba(74,160,255,.30)`)
+> 3. Kevin ouvre vEmps → fiche BOUVIER JF → checkbox "FF Faisant fonction" cochée
+> 4. Kevin se reconnecte sur iPad : Firebase SSE charge `cmc_ov_meta` → A.overrides_meta restauré → fond bleu visible aussi
+> 5. Si parser rate FF : Kevin coche manuellement dans vEmps → `updEmp(id, "faisantFonction", true)` → propage cross-device via cmc_e
+
+### Reste à faire (futures sessions)
+
+- Cell color rendering aussi dans vDeparts (actuellement vPlan seulement)
+- `_cmcStoreImportMeta` appelé pendant le parser principal pour stocker bg=CDP/AF/CP/etc. per-cell (actuellement seulement FF/star via visual markers)
+- Sentinelle `meta-completeness-watch` 1×/jour audit que A.overrides_meta cohérent avec A.overrides
+
+---
 
 ## 🆕 SESSION 2026-05-15 23:30 — CMCteams v9.614 ENRICHISSEMENT VISUEL MAX (Kevin)
 
