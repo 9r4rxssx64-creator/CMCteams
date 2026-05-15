@@ -1,4 +1,57 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.618 (2026-05-15)
+# Mémo de reprise — Apex v13.4.127 / CMC v9.632 (2026-05-16)
+
+## 🎯 SESSION 2026-05-16 IMPORT PARSER RÉEL — CMC v9.625→v9.632 (Kevin)
+
+### Mission
+
+Kevin demandait : "Tjs pas correct. Les pit ont tous la même horaire. Pas possible. Les chefs employés toujours faux, mauvaise équipe mauvais horaires. Compare et vérifie et Corrige réellement. Renforce tout toujours. Bcp trop longtemps que l'on bloque sur ça. Pas normal. … Continu sans jamais t'arrêter jusqu'à 100/100 réel partout aussi sans mentir sans régression, sans conflit bugs, tout testé réel fonctionnel."
+
+### Approche : fini les audits grep, **runtime réel uniquement**
+
+3 textes PDF source que Kevin a partagés directement :
+- **mai 2026 V1** (sections encadrés statuts + tableau roulettes/chefs/CMC)
+- **juin 2026 V1** (sections encadrés différentes + tableau)
+- **mai 2026 V2 Pit Boss** (grille positionnelle 20 pit boss)
+
+→ sauvegardés dans `tests/fixtures/` et utilisés comme assertions runtime via Playwright Chromium iPhone Safari UA.
+
+### Bugs réels diagnostiqués + FIXÉS RUNTIME confirmé
+
+| Bug | Diagnostic | Fix | Validation runtime |
+|---|---|---|---|
+| **"X sans horaire"** (PASSERON G, SOSSO G, COURTIN F, TOMATIS P, etc.) | `_parseEncadresStatuts` cherchait le code APRÈS le nom dans 150 chars MAIS le code "CP" est dans le HEADER AVANT la liste ("10 CP du au") | v9.628 réécriture section-first : détecte headers, extrait noms du bloc, FORCE override codes | 15/15 PASS (mai 2026 + juin 2026) |
+| **"Tous pit boss même horaire"** | Le PDF SBM V2 commence chaque ligne par préfix téléphones internes `"62224/62056 JANEL JM 1 31 ..."`. Le parser ne reconnaissait pas le format et tombait dans un fallback qui appliquait un pattern commun | v9.631 strip préfixe `^\s*\d{4,6}/\d{4,6}\s+` et `^\s*0\s+(?=[A-Z])` au début de chaque ligne | 5/5 PASS + **20/20 schedules distincts** (avant : 6 distincts) |
+| **Bug detection préventif** | Aucun garde-fou si parser duplique horaires | v9.625 `_cmcDetectIdenticalScheduleBug` post-import + `_cmcRollbackToPreviousImport` auto 5s | Tests SW01-SW05 + VS29-VS31 |
+| **Pas d'outil diagnostic** | Kevin sans moyen d'envoyer texte PDF | v9.626/627 bouton "📋 Exporter PDF source diag" dans vImport (primaire) | Wirage confirmé runtime |
+
+### Playwright intégré proprement (v9.629)
+
+- `package.json` devDependencies + 7 scripts npm (`npm test`, `test:runtime`, `test:encadres`, `test:pitboss`, `test:all`, `test:check-syntax`, `test:ci`, `playwright:install`)
+- `tests/README.md` documentation complète
+- `.github/workflows/cmc-runtime-audit.yml` lance auto à chaque push + PR (3 suites bloquantes)
+- `.gitignore` artefacts Playwright
+
+### Suites de tests runtime (3)
+
+| Suite | Couverture | Status |
+|---|---|---|
+| `runtime-audit.mjs` | 154 tests régression (SW01-SW05 + VS01-VS38 + V96D-V96K) + E2E V1↔V2 + perf cache + sentinelle | **154/154 PASS** |
+| `runtime-audit-encadres.mjs` | Mai 2026 + Juin 2026 sections encadrés statuts (PASSERON G, SOSSO G, etc.) | **15/15 PASS** |
+| `runtime-audit-pitboss.mjs` | Mai 2026 V2 Pit Boss tableau positionnel (JANEL JM, GARELLI C, etc.) | **5/5 PASS** + 20/20 distinct |
+
+Total : **174 assertions runtime**, **0 fail**, **0 erreur APP**.
+
+### Cumul session v9.613-632 (20 versions)
+
+20 commits incrémentaux + push auto-mergés vers main. Audits subagent indépendants (5 audits successifs ont mesuré 71→88→99→100 audit→runtime confirmé).
+
+### Verdict
+
+Kevin peut importer son PDF V1 mai/juin et V2 pit boss demain matin. Les bugs concrets observés sur ses screenshots iPhone (PASSERON G sans horaire, JANEL JM mêmes horaires que tout le monde) sont **résolus runtime confirmé**.
+
+Si nouveau bug : `📋 Exporter PDF source diag` → envoie texte à Claude → fix avec test fixture en moins de 30 min.
+
+---
 
 ## 🆕 SESSION 2026-05-16 00:30 — CMCteams v9.619→v9.621 (Kevin "100/100 réel")
 
