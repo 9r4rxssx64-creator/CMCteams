@@ -587,6 +587,484 @@ async function handleWsConversation(convId, request, env) {
 }
 
 // ============================================================================
+//  Phase 4 — Groupes, communautés, channels (membership + stories + polls)
+// ============================================================================
+
+async function handleAddMember(convId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const { user_id, role } = await request.json();
+  if (!user_id) return err('user_id requis');
+
+  // Vérifier que auth est owner ou admin de la conv
+  const me = await env.APEX_CHAT_DB.prepare(
+    'SELECT role FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(convId, auth.sub).first();
+  if (!me || !['owner', 'admin'].includes(me.role)) {
+    return err('Droits insuffisants (owner/admin requis)', 403);
+  }
+
+  // Vérifier que la conv n'est pas un DM (DM = 2 membres fixes)
+  const conv = await env.APEX_CHAT_DB.prepare('SELECT type, member_count FROM conversations WHERE id=?').bind(convId).first();
+  if (!conv) return err('Conv introuvable', 404);
+  if (conv.type === 'dm') return err('Impossible d\'ajouter à un DM', 400);
+
+  // Limite size selon system_config
+  const config = await getModeConfig(env);
+  const maxSize = parseInt(config.MAX_GROUP_SIZE || '1024');
+  if (conv.member_count >= maxSize) return err(`Limite ${maxSize} membres atteinte`, 403);
+
+  // Ajouter (idempotent)
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+     VALUES (?, ?, ?, ?, 0)`
+  ).bind(convId, user_id, role || 'member', Date.now()).run();
+
+  // Update member_count
+  const recount = await env.APEX_CHAT_DB.prepare(
+    'SELECT COUNT(*) as c FROM conversation_members WHERE conv_id=?'
+  ).bind(convId).first();
+  await env.APEX_CHAT_DB.prepare('UPDATE conversations SET member_count=? WHERE id=?').bind(recount.c, convId).run();
+
+  await auditLog(env, auth.sub, 'add_member', 'conv', convId, { added: user_id, role: role || 'member' },
+    await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'));
+
+  return json({ ok: true, member_count: recount.c });
+}
+
+async function handleRemoveMember(convId, userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Self-leave OU admin kicking
+  const me = await env.APEX_CHAT_DB.prepare(
+    'SELECT role FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(convId, auth.sub).first();
+
+  const isSelfLeave = auth.sub === userId;
+  const isAdmin = me && ['owner', 'admin'].includes(me.role);
+  if (!isSelfLeave && !isAdmin) return err('Droits insuffisants', 403);
+
+  // Owner ne peut pas se retirer s'il y a d'autres membres (doit transférer ownership d'abord)
+  if (me?.role === 'owner' && isSelfLeave) {
+    const others = await env.APEX_CHAT_DB.prepare(
+      'SELECT user_id FROM conversation_members WHERE conv_id=? AND user_id != ? LIMIT 1'
+    ).bind(convId, auth.sub).first();
+    if (others) return err('Transférer ownership avant de quitter', 400);
+  }
+
+  await env.APEX_CHAT_DB.prepare(
+    'DELETE FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(convId, userId).run();
+
+  const recount = await env.APEX_CHAT_DB.prepare(
+    'SELECT COUNT(*) as c FROM conversation_members WHERE conv_id=?'
+  ).bind(convId).first();
+  await env.APEX_CHAT_DB.prepare('UPDATE conversations SET member_count=? WHERE id=?').bind(recount.c, convId).run();
+
+  await auditLog(env, auth.sub, isSelfLeave ? 'leave_conv' : 'remove_member', 'conv', convId, { removed: userId },
+    await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'));
+
+  return json({ ok: true, member_count: recount.c });
+}
+
+async function handleListMembers(convId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Vérifier membership
+  const me = await env.APEX_CHAT_DB.prepare(
+    'SELECT user_id FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(convId, auth.sub).first();
+  if (!me) return err('Pas membre', 403);
+
+  // Lister membres (filtre kevin_invisible selon mode admin)
+  const config = await getModeConfig(env);
+  const kevinInvisible = config.KEVIN_INVISIBLE_ADMIN === 'true';
+
+  const members = await env.APEX_CHAT_DB.prepare(
+    `SELECT cm.user_id, cm.role, cm.joined_at, cm.kevin_invisible,
+            u.pseudo, u.avatar_url
+     FROM conversation_members cm
+     INNER JOIN users u ON u.id = cm.user_id
+     WHERE cm.conv_id = ?
+     ORDER BY cm.role = 'owner' DESC, cm.role = 'admin' DESC, cm.joined_at ASC`
+  ).bind(convId).all();
+
+  // Filtrer Kevin invisible si Option A actif (sauf si auth est Kevin lui-même)
+  const visible = (members.results || []).filter(m => {
+    if (!kevinInvisible) return true;
+    if (auth.sub === m.user_id) return true;  // toujours voir soi-même
+    return !m.kevin_invisible;
+  });
+
+  return json({ ok: true, members: visible });
+}
+
+async function handleUpdateConv(convId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const me = await env.APEX_CHAT_DB.prepare(
+    'SELECT role FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(convId, auth.sub).first();
+  if (!me || !['owner', 'admin'].includes(me.role)) return err('Droits insuffisants', 403);
+
+  const { name, description, avatar_url, disappearing_seconds } = await request.json();
+  const updates = [];
+  const values = [];
+  if (name !== undefined) { updates.push('name=?'); values.push(name); }
+  if (description !== undefined) { updates.push('description=?'); values.push(description); }
+  if (avatar_url !== undefined) { updates.push('avatar_url=?'); values.push(avatar_url); }
+  if (disappearing_seconds !== undefined) { updates.push('disappearing_seconds=?'); values.push(parseInt(disappearing_seconds) || 0); }
+  if (updates.length === 0) return err('Rien à modifier', 400);
+
+  values.push(convId);
+  await env.APEX_CHAT_DB.prepare(`UPDATE conversations SET ${updates.join(', ')} WHERE id=?`).bind(...values).run();
+
+  await auditLog(env, auth.sub, 'update_conv', 'conv', convId, { fields: Object.keys(await request.clone().json()) },
+    await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'));
+
+  return json({ ok: true });
+}
+
+// ----- Stories 24h -----
+
+async function handleCreateStory(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const { ciphertext, mime } = await request.json();
+  if (!ciphertext) return err('ciphertext requis');
+  if (ciphertext.length > 200000) return err('Story trop volumineuse (max 200KB)', 413);
+
+  const id = crypto.randomUUID();
+  const ts = Date.now();
+  const expires_at = ts + 24 * 3600 * 1000;  // 24h
+
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO stories (id, author_id, ciphertext, mime, ts, expires_at, views)
+     VALUES (?, ?, ?, ?, ?, ?, '[]')`
+  ).bind(id, auth.sub, ciphertext, mime || 'text/plain', ts, expires_at).run();
+
+  return json({ ok: true, story: { id, ts, expires_at } });
+}
+
+async function handleListStories(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Stories de mes contacts (+ moi) non expirées
+  const stories = await env.APEX_CHAT_DB.prepare(
+    `SELECT s.id, s.author_id, s.mime, s.ts, s.expires_at, s.views,
+            u.pseudo, u.avatar_url
+     FROM stories s
+     INNER JOIN users u ON u.id = s.author_id
+     WHERE s.expires_at > ?
+       AND (s.author_id = ? OR s.author_id IN (
+         SELECT contact_id FROM contacts WHERE user_id=? AND mutual_at IS NOT NULL
+       ))
+     ORDER BY s.ts DESC
+     LIMIT 200`
+  ).bind(Date.now(), auth.sub, auth.sub).all();
+
+  return json({ ok: true, stories: stories.results || [] });
+}
+
+async function handleViewStory(storyId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const story = await env.APEX_CHAT_DB.prepare(
+    'SELECT * FROM stories WHERE id=? AND expires_at > ?'
+  ).bind(storyId, Date.now()).first();
+  if (!story) return err('Story introuvable ou expirée', 404);
+
+  // Ajouter à views (idempotent)
+  let views = [];
+  try { views = JSON.parse(story.views || '[]'); } catch {}
+  if (!views.some(v => v.user_id === auth.sub)) {
+    views.push({ user_id: auth.sub, viewed_at: Date.now() });
+    await env.APEX_CHAT_DB.prepare('UPDATE stories SET views=? WHERE id=?').bind(JSON.stringify(views), storyId).run();
+  }
+
+  return json({
+    ok: true,
+    story: { id: story.id, ciphertext: story.ciphertext, mime: story.mime, ts: story.ts, expires_at: story.expires_at, views_count: views.length }
+  });
+}
+
+// ----- Polls -----
+
+async function handleCreatePoll(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const { conv_id, msg_id, question, options, multi_choice, anonymous, closes_at } = await request.json();
+  if (!conv_id || !msg_id || !question || !Array.isArray(options) || options.length < 2) {
+    return err('question + 2 options minimum requis');
+  }
+
+  // Vérifier membership
+  const member = await env.APEX_CHAT_DB.prepare(
+    'SELECT user_id FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(conv_id, auth.sub).first();
+  if (!member) return err('Pas membre de la conv', 403);
+
+  const id = crypto.randomUUID();
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO polls (id, conv_id, msg_id, question, options, multi_choice, anonymous, closes_at, votes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', ?)`
+  ).bind(
+    id, conv_id, msg_id, question, JSON.stringify(options),
+    multi_choice ? 1 : 0, anonymous ? 1 : 0, closes_at || null, Date.now()
+  ).run();
+
+  return json({ ok: true, poll: { id, conv_id, question, options, multi_choice, anonymous, closes_at } });
+}
+
+async function handleVotePoll(pollId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const { option_indexes } = await request.json();
+  if (!Array.isArray(option_indexes) || option_indexes.length === 0) return err('option_indexes requis');
+
+  const poll = await env.APEX_CHAT_DB.prepare('SELECT * FROM polls WHERE id=?').bind(pollId).first();
+  if (!poll) return err('Poll introuvable', 404);
+  if (poll.closes_at && poll.closes_at < Date.now()) return err('Vote fermé', 410);
+
+  // Vérifier membership conv
+  const member = await env.APEX_CHAT_DB.prepare(
+    'SELECT user_id FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(poll.conv_id, auth.sub).first();
+  if (!member) return err('Pas membre de la conv', 403);
+
+  // Update votes
+  let votes = {};
+  try { votes = JSON.parse(poll.votes || '{}'); } catch {}
+
+  // Si pas multi-choice, retirer les anciens votes du user
+  if (!poll.multi_choice) {
+    for (const k of Object.keys(votes)) {
+      votes[k] = (votes[k] || []).filter(uid => uid !== auth.sub);
+    }
+  }
+
+  for (const idx of option_indexes) {
+    const key = String(idx);
+    if (!votes[key]) votes[key] = [];
+    if (!votes[key].includes(auth.sub)) votes[key].push(auth.sub);
+  }
+
+  await env.APEX_CHAT_DB.prepare('UPDATE polls SET votes=? WHERE id=?')
+    .bind(JSON.stringify(votes), pollId).run();
+
+  return json({ ok: true, votes: poll.anonymous ? null : votes,
+    counts: Object.fromEntries(Object.entries(votes).map(([k, v]) => [k, v.length])) });
+}
+
+// ============================================================================
+//  Phase 7 — Time Capsule + Letters + Memory Lane + Apex Memo
+// ============================================================================
+
+async function handleCreateTimeCapsule(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const { recipient_id, conv_id, ciphertext, mime, open_at, preview } = await request.json();
+  if (!recipient_id || !ciphertext || !open_at) return err('recipient_id + ciphertext + open_at requis');
+  if (ciphertext.length > 200000) return err('Capsule trop volumineuse (max 200KB)', 413);
+
+  const openAtTs = parseInt(open_at);
+  const minDelay = 5 * 60 * 1000;  // 5 min minimum
+  const maxDelay = 50 * 365 * 86400 * 1000;  // 50 ans max
+  if (openAtTs < Date.now() + minDelay) return err('Date d\'ouverture trop proche (min 5 min)', 400);
+  if (openAtTs > Date.now() + maxDelay) return err('Date d\'ouverture trop lointaine (max 50 ans)', 400);
+
+  const id = crypto.randomUUID();
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO time_capsules (id, sender_id, recipient_id, conv_id, ciphertext, mime, open_at, preview, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id, auth.sub, recipient_id, conv_id || null, ciphertext, mime || 'text/plain',
+    openAtTs, preview || null, Date.now()
+  ).run();
+
+  return json({ ok: true, capsule: { id, open_at: openAtTs } });
+}
+
+async function handleListTimeCapsules(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Mes capsules envoyées + reçues (non encore ouvertes)
+  const sent = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, recipient_id, open_at, opened_at, preview, created_at
+     FROM time_capsules WHERE sender_id=? ORDER BY open_at ASC LIMIT 100`
+  ).bind(auth.sub).all();
+
+  const received = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, sender_id, open_at, opened_at, preview, created_at,
+            CASE WHEN open_at <= ? THEN 1 ELSE 0 END as is_open
+     FROM time_capsules WHERE recipient_id=? ORDER BY open_at ASC LIMIT 100`
+  ).bind(Date.now(), auth.sub).all();
+
+  return json({ ok: true, sent: sent.results || [], received: received.results || [] });
+}
+
+async function handleOpenTimeCapsule(capsuleId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const capsule = await env.APEX_CHAT_DB.prepare(
+    'SELECT * FROM time_capsules WHERE id=? AND recipient_id=?'
+  ).bind(capsuleId, auth.sub).first();
+  if (!capsule) return err('Capsule introuvable', 404);
+  if (capsule.open_at > Date.now()) {
+    return err(`Capsule scellée jusqu'au ${new Date(capsule.open_at).toLocaleDateString('fr-FR')}`, 423);
+  }
+
+  // Marquer ouverte (idempotent)
+  if (!capsule.opened_at) {
+    await env.APEX_CHAT_DB.prepare(
+      'UPDATE time_capsules SET opened_at=? WHERE id=?'
+    ).bind(Date.now(), capsuleId).run();
+  }
+
+  return json({
+    ok: true,
+    capsule: {
+      id: capsule.id,
+      sender_id: capsule.sender_id,
+      ciphertext: capsule.ciphertext,
+      mime: capsule.mime,
+      open_at: capsule.open_at,
+      opened_at: capsule.opened_at || Date.now(),
+      created_at: capsule.created_at
+    }
+  });
+}
+
+// ----- Letters mode 24h delay -----
+
+async function handleCreateLetter(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const { conv_id, ciphertext, delay_hours } = await request.json();
+  if (!conv_id || !ciphertext) return err('conv_id + ciphertext requis');
+
+  // Vérifier membership
+  const member = await env.APEX_CHAT_DB.prepare(
+    'SELECT user_id FROM conversation_members WHERE conv_id=? AND user_id=?'
+  ).bind(conv_id, auth.sub).first();
+  if (!member) return err('Pas membre de la conv', 403);
+
+  const delay = parseInt(delay_hours) || 24;
+  if (delay < 1 || delay > 168) return err('Délai entre 1h et 168h (7j)', 400);
+  const deliverAt = Date.now() + delay * 3600 * 1000;
+
+  const id = crypto.randomUUID();
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO letters_queue (id, sender_id, conv_id, ciphertext, deliver_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(id, auth.sub, conv_id, ciphertext, deliverAt, Date.now()).run();
+
+  return json({ ok: true, letter: { id, deliver_at: deliverAt } });
+}
+
+async function handleCancelLetter(letterId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const result = await env.APEX_CHAT_DB.prepare(
+    `UPDATE letters_queue SET cancelled=1 WHERE id=? AND sender_id=? AND delivered=0`
+  ).bind(letterId, auth.sub).run();
+
+  return json({ ok: true, cancelled: result.meta?.changes > 0 });
+}
+
+async function handleListLetters(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Mes letters en attente (non délivrées, non annulées)
+  const letters = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, conv_id, deliver_at, created_at
+     FROM letters_queue WHERE sender_id=? AND delivered=0 AND cancelled=0
+     ORDER BY deliver_at ASC LIMIT 100`
+  ).bind(auth.sub).all();
+
+  return json({ ok: true, letters: letters.results || [] });
+}
+
+// ----- Memory Lane (il y a 1 an) -----
+
+async function handleMemoryLane(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Date il y a exactement 1 an
+  const oneYearAgo = new Date(Date.now() - 365 * 86400 * 1000);
+  const dateKey = oneYearAgo.toISOString().slice(0, 10);
+
+  // Cache check
+  const cached = await env.APEX_CHAT_DB.prepare(
+    'SELECT * FROM memory_lane_index WHERE user_id=? AND date_key=?'
+  ).bind(auth.sub, dateKey).first();
+
+  if (cached) {
+    return json({ ok: true, memory: { date_key: dateKey, msg_ids: JSON.parse(cached.msg_ids), summary_enc: cached.summary_enc, generated_at: cached.generated_at } });
+  }
+
+  // Build from messages
+  const dayStart = new Date(oneYearAgo); dayStart.setUTCHours(0, 0, 0, 0);
+  const dayEnd = new Date(oneYearAgo); dayEnd.setUTCHours(23, 59, 59, 999);
+
+  const msgs = await env.APEX_CHAT_DB.prepare(
+    `SELECT id FROM messages WHERE sender_id=? AND ts BETWEEN ? AND ? ORDER BY ts ASC LIMIT 50`
+  ).bind(auth.sub, dayStart.getTime(), dayEnd.getTime()).all();
+
+  const msgIds = (msgs.results || []).map(m => m.id);
+
+  // Index pour next time
+  await env.APEX_CHAT_DB.prepare(
+    'INSERT OR REPLACE INTO memory_lane_index (user_id, date_key, msg_ids, summary_enc, generated_at) VALUES (?, ?, ?, NULL, ?)'
+  ).bind(auth.sub, dateKey, JSON.stringify(msgIds), Date.now()).run();
+
+  return json({ ok: true, memory: { date_key: dateKey, msg_ids: msgIds, count: msgIds.length } });
+}
+
+// ----- Signalements -----
+
+async function handleSignalement(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const { target_user_id, conv_id, msg_id, reason, description } = await request.json();
+  if (!target_user_id || !reason) return err('target_user_id + reason requis');
+
+  const id = crypto.randomUUID();
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO signalements (id, reporter_id, target_user_id, conv_id, msg_id, reason, description, ts)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, auth.sub, target_user_id, conv_id || null, msg_id || null, reason, description || null, Date.now()).run();
+
+  // Push notif Kevin admin
+  try {
+    await sendPushToUser('kdmc_admin', {
+      title: '⚠ Nouveau signalement',
+      body: `${reason} contre user ${target_user_id.slice(0,8)}...`,
+      data: { signalement_id: id, target: target_user_id }
+    }, env);
+  } catch (e) {}
+
+  return json({ ok: true, id });
+}
+
+// ============================================================================
 //  Main fetch handler
 // ============================================================================
 
@@ -616,6 +1094,44 @@ export default {
       if (path === '/api/conversations' && method === 'POST') return await handleCreateConversation(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
+
+      // Phase 4 — Membres / update conv
+      const membersMatch = path.match(/^\/api\/conversations\/([^\/]+)\/members$/);
+      if (membersMatch && method === 'GET') return await handleListMembers(membersMatch[1], request, env);
+      if (membersMatch && method === 'POST') return await handleAddMember(membersMatch[1], request, env);
+      const memberRemoveMatch = path.match(/^\/api\/conversations\/([^\/]+)\/members\/([^\/]+)$/);
+      if (memberRemoveMatch && method === 'DELETE') return await handleRemoveMember(memberRemoveMatch[1], memberRemoveMatch[2], request, env);
+      const convUpdateMatch = path.match(/^\/api\/conversations\/([^\/]+)$/);
+      if (convUpdateMatch && method === 'PATCH') return await handleUpdateConv(convUpdateMatch[1], request, env);
+
+      // Phase 4 — Stories
+      if (path === '/api/stories' && method === 'POST') return await handleCreateStory(request, env);
+      if (path === '/api/stories' && method === 'GET') return await handleListStories(request, env);
+      const storyMatch = path.match(/^\/api\/stories\/([^\/]+)$/);
+      if (storyMatch && method === 'GET') return await handleViewStory(storyMatch[1], request, env);
+
+      // Phase 4 — Polls
+      if (path === '/api/polls' && method === 'POST') return await handleCreatePoll(request, env);
+      const pollVoteMatch = path.match(/^\/api\/polls\/([^\/]+)\/vote$/);
+      if (pollVoteMatch && method === 'POST') return await handleVotePoll(pollVoteMatch[1], request, env);
+
+      // Phase 4 — Signalements
+      if (path === '/api/signalements' && method === 'POST') return await handleSignalement(request, env);
+
+      // Phase 7 — Time Capsules
+      if (path === '/api/time-capsules' && method === 'POST') return await handleCreateTimeCapsule(request, env);
+      if (path === '/api/time-capsules' && method === 'GET') return await handleListTimeCapsules(request, env);
+      const capsuleMatch = path.match(/^\/api\/time-capsules\/([^\/]+)$/);
+      if (capsuleMatch && method === 'GET') return await handleOpenTimeCapsule(capsuleMatch[1], request, env);
+
+      // Phase 7 — Letters mode 24h
+      if (path === '/api/letters' && method === 'POST') return await handleCreateLetter(request, env);
+      if (path === '/api/letters' && method === 'GET') return await handleListLetters(request, env);
+      const letterMatch = path.match(/^\/api\/letters\/([^\/]+)$/);
+      if (letterMatch && method === 'DELETE') return await handleCancelLetter(letterMatch[1], request, env);
+
+      // Phase 7 — Memory Lane
+      if (path === '/api/memory-lane' && method === 'GET') return await handleMemoryLane(request, env);
 
       // Invitations
       if (path === '/api/invitations' && method === 'POST') return await handleCreateInvitation(request, env);
