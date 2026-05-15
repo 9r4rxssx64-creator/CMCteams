@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.639";
+var APP_VER="v9.640";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34326,6 +34326,40 @@ function doImport(){
   })();
   var hasTabs=lines.some(function(l){return l.indexOf("\t")>=0;});
   var sep=hasTabs?"\t":",";
+  // ────────────────────────────────────────────────────────────────────────
+  // v9.640 (Kevin "intelligent vérifier nouveau mois pour ne pas écraser") —
+  // DÉTECTION AUTO DU MOIS DANS LE PDF SOURCE + AUTO-SWITCH si mismatch.
+  //
+  // Le PDF SBM commence toujours par "Roulements du mois de: mai 2026" ou
+  // contient "mai 2026", "juin 2026", etc. en header. Si Kevin a sélectionné
+  // mai dans l'UI mais colle un PDF juin → on bascule auto vers juin pour
+  // éviter d'écraser les données du mauvais mois.
+  // ────────────────────────────────────────────────────────────────────────
+  try{
+    var _mnames=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+    var _scanForMonth=(txt||"").slice(0,2000).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    var _mnamesAscii=["janvier","fevrier","mars","avril","mai","juin","juillet","aout","septembre","octobre","novembre","decembre"];
+    var _detectedMonth=-1,_detectedYear=-1;
+    for(var _mi=0;_mi<12;_mi++){
+      var _re=new RegExp("\\b"+_mnamesAscii[_mi]+"\\s+(20\\d{2})\\b","i");
+      var _mm=_scanForMonth.match(_re);
+      if(_mm){_detectedMonth=_mi;_detectedYear=parseInt(_mm[1]);break;}
+    }
+    if(_detectedMonth>=0 && _detectedYear>=2020 && (_detectedMonth!==im || _detectedYear!==iy)){
+      console.warn("[v9.640 month-auto-detect] PDF mentionne "+_mnames[_detectedMonth]+" "+_detectedYear+
+        " mais UI sélectionne "+MFR[im]+" "+iy+" → AUTO-SWITCH vers PDF source");
+      try{_audit("import_month_auto_switch",AID,iy+"-"+im,_detectedYear+"-"+_detectedMonth,"PDF wins UI selection");}catch(_){}
+      iy=_detectedYear;
+      im=_detectedMonth;
+      A.year=iy;A.month=im;
+      // Sync UI dropdowns si présents
+      try{
+        var _impY=document.getElementById("impY");if(_impY)_impY.value=String(iy);
+        var _impM=document.getElementById("impM");if(_impM)_impM.value=String(im);
+      }catch(_){}
+      try{if(typeof toast==="function")toast("📅 Mois auto-switché : PDF dit "+MFR[im]+" "+iy+" (UI ignorée)","info",5000);}catch(_){}
+    }
+  }catch(_meErr){console.warn("[v9.640 month-detect]",_meErr&&_meErr.message);}
   var key=""+iy+"-"+im;
   var days=getDays(iy,im);
   // ────────────────────────────────────────────────────────────────────────
@@ -35976,7 +36010,21 @@ function doImport(){
   // Avant flush : ré-applique chaque édit manuel Kevin par-dessus ce que le
   // parser a écrit. Garantit "Kevin manuel > nouveau import" (priorité humaine).
   // ────────────────────────────────────────────────────────────────────────
+  // v9.640 (Kevin 2026-05-15 "écrase l'ancien quand nouvelle version, intelligent
+  //   pas tout écraser sachant qu'il y a inspecteurs/pits/chefs/employés"):
+  //
+  // RÈGLE FINALE :
+  //   - Si le PDF parser a écrit une valeur pour cette cellule → PDF gagne (nouvelle vérité)
+  //   - Si le PDF parser n'a PAS touché cette cellule (employé absent du nouveau PDF, ou
+  //     cellule vide dans le PDF) → manuel reste (préserve édition humaine sur cells non
+  //     couvertes par le nouvel import)
+  //
+  // Avantage : ré-importer un PDF corrigé écrase les anciennes valeurs corrigées
+  // manuellement à la main. Mais les emps absents du nouveau PDF (ex: import V1 ne touche
+  // pas les cadres) gardent leurs manual edits.
+  // ────────────────────────────────────────────────────────────────────────
   var _manualRestoredCount=0;
+  var _manualOverwrittenByPdfCount=0;
   var _manualOverwrittenSamples=[];
   try{
     if(_manualOv && _manualOvCount>0 && A.overrides[key]){
@@ -35987,23 +36035,30 @@ function doImport(){
           if(!manual || !manual.code)return;
           if(!A.overrides[key][eid])A.overrides[key][eid]={};
           var parserVal=A.overrides[key][eid][d]||"";
-          if(parserVal!==manual.code){
-            // Note : on garde l'édit manuel Kevin (priorité humaine)
+          if(parserVal && parserVal!==manual.code){
+            // v9.640 : PDF a écrit une valeur DIFFÉRENTE → PDF gagne (nouvelle vérité)
+            // (au lieu de v9.600 qui écrasait PDF avec manual)
+            _manualOverwrittenByPdfCount++;
             if(_manualOverwrittenSamples.length<5){
-              _manualOverwrittenSamples.push({eid:eid,d:d,parser:parserVal,manual:manual.code});
+              _manualOverwrittenSamples.push({eid:eid,d:d,oldManual:manual.code,newPdf:parserVal});
             }
+            // NE PAS réécrire — laisser parserVal
+          } else if(!parserVal){
+            // v9.640 : PDF n'a pas touché cette cell → restaurer le manuel (préserve édition humaine)
+            A.overrides[key][eid][d]=manual.code;
+            _manualRestoredCount++;
           }
-          A.overrides[key][eid][d]=manual.code;
-          _manualRestoredCount++;
+          // Si parserVal===manual.code : déjà en accord, rien à faire
         });
       });
-      if(_manualRestoredCount>0){
+      if(_manualRestoredCount>0 || _manualOverwrittenByPdfCount>0){
         try{ls("cmc_ov",A.overrides);}catch(_){}
-        try{if(typeof _audit==="function")_audit("manual_overrides_preserved",AID,key,String(_manualOvCount),_manualRestoredCount+" cellules manuelles préservées sur import");}catch(_){}
-        console.log("[v9.600 doImport] manual overrides restored:",_manualRestoredCount);
+        try{if(typeof _audit==="function")_audit("manual_overrides_v9640",AID,key,String(_manualOvCount),
+          "restored="+_manualRestoredCount+" (PDF vide), overwrittenByPdf="+_manualOverwrittenByPdfCount+" (PDF nouvelle valeur)");}catch(_){}
+        console.log("[v9.640 doImport] manual: restored="+_manualRestoredCount+" overwrittenByPdf="+_manualOverwrittenByPdfCount);
       }
     }
-  }catch(_morErr){console.warn("[v9.600 manual-overrides restore]",_morErr);}
+  }catch(_morErr){console.warn("[v9.640 manual-overrides apply]",_morErr);}
   // v9.58 — Fin d'import OK : flush toutes les écritures Firebase bufferisées en une fois
   _importInProgress=false;
   _flushImportPending();
