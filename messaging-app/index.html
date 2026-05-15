@@ -220,32 +220,70 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.6';
+const __APEX_CHAT_VERSION__ = 'v1.0.7';
+// === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
+// Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
-    // Force update check immédiat
     reg.update().catch(_=>{});
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       nw.addEventListener('statechange',()=>{
         if(nw.state==='installed' && navigator.serviceWorker.controller){
-          window.dispatchEvent(new CustomEvent('sw-update-available'));
+          // AUTO-RELOAD immédiat (pas de clic user)
+          console.log('[App] Nouvelle version SW détectée — reload auto');
+          setTimeout(() => location.reload(), 800);
         }
       });
     });
-    // Écoute messages du SW (notification SW_UPDATED)
     navigator.serviceWorker.addEventListener('message', (e) => {
-      if(e.data?.type === 'SW_UPDATED'){
-        console.log('[App] SW mis à jour vers', e.data.version);
-        // Auto-reload si version SW != version app
-        if(e.data.version && !e.data.version.includes(__APEX_CHAT_VERSION__)){
-          location.reload();
-        }
+      if(e.data?.type === 'SW_UPDATED' && e.data.version && !e.data.version.includes(__APEX_CHAT_VERSION__)){
+        console.log('[App] SW mis à jour vers', e.data.version, '— reload auto');
+        location.reload();
       }
     });
-    // Vérif version périodique (toutes les 60s en background)
+    // Heartbeat SW (toutes les 60s)
     setInterval(() => reg.update().catch(_=>{}), 60000);
   }).catch(_=>{});
+
+  // === Sentinelle remote version (compare APP_VER local vs remote) ===
+  // Fetch index.html serveur toutes les 30s → si version differe → reload force
+  let _versionCheckRunning = false;
+  async function _checkRemoteVersion(){
+    if(_versionCheckRunning) return;
+    _versionCheckRunning = true;
+    try{
+      const r = await fetch(location.pathname + '?_v=' + Date.now(), {
+        cache: 'no-store',
+        headers: {'Cache-Control':'no-cache,no-store,must-revalidate'}
+      });
+      const html = await r.text();
+      const m = html.match(/__APEX_CHAT_VERSION__\s*=\s*['"]([^'"]+)['"]/);
+      if(m && m[1] && m[1] !== __APEX_CHAT_VERSION__){
+        console.log('[App] Version remote', m[1], '!=', __APEX_CHAT_VERSION__, '— reload force auto');
+        // Clear caches + unregister SW + reload (force-update style Apex)
+        try{
+          if('caches' in window){
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }catch(_){}
+        location.replace(location.pathname + '?_forceupd=' + Date.now());
+      }
+    }catch(_){}finally{
+      _versionCheckRunning = false;
+    }
+  }
+  // 1ere verif 8s apres boot (laisse app init), puis toutes 30s
+  setTimeout(_checkRemoteVersion, 8000);
+  setInterval(_checkRemoteVersion, 30000);
+  // Verif aussi sur retour foreground (visibilitychange / focus)
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) _checkRemoteVersion();
+  });
+  window.addEventListener('focus', _checkRemoteVersion);
 }
 </script>
 
@@ -254,11 +292,11 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.6</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.7</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
-  <p class="splash-cgu">En continuant tu acceptes les <a href="./cgu.html" target="_blank">CGU</a> et la <a href="./privacy.html" target="_blank">charte privée</a></p>
+  <p class="splash-cgu">🔒 Messagerie ultra-sécurisée — Tes données restent chiffrées de bout en bout.<br>En remplissant les champs, tu acceptes nos <a href="./cgu.html" target="_blank">conditions</a>.</p>
 </div>
 
 <div id="update-banner" class="update-banner h">
@@ -268,7 +306,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.6</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.7</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -707,12 +745,30 @@ function renderAuthStep(){
       <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
     setTimeout(()=>{
       $('#auth-phone')?.focus();
+      // CGU implicite : tout remplissage de champ login = acceptation des CGU (RGPD light)
+      const acceptCgu = () => {
+        try{
+          if(!localStorage.getItem('apex_chat_cgu_v1')){
+            localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({
+              accepted_at: Date.now(),
+              version: 'v1.0.7',
+              implicit: true,
+              ua: navigator.userAgent.slice(0, 200)
+            }));
+          }
+        }catch(_){}
+      };
+      ['auth-phone','auth-name'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('input', acceptCgu, { once: true });
+      });
       // Listener direct (ne dépend pas du onclick attribute)
       const btn = $('#btn-auth-phone');
       if(btn){
         btn.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
+          acceptCgu();
           $('#auth-debug').textContent = '⏳ Envoi en cours...';
           try{
             await K._handleAuthPhone();
@@ -952,6 +1008,8 @@ K.render = function(){
     case 'settings': renderSettings(app); break;
     case 'admin': renderAdmin(app); break;
     case 'admin-users': renderAdminUsers(app); break;
+    case 'admin-live-users': renderAdminLiveUsers(app); break;
+    case 'admin-toggles': renderAdminToggles(app); break;
     case 'admin-sentinels': renderAdminSentinels(app); break;
     case 'admin-audit': renderAdminAudit(app); break;
     default: app.innerHTML = '<p>Vue inconnue</p>';
@@ -1477,17 +1535,28 @@ function renderSettings(app){
 function renderAdmin(app){
   if(!K.user?.is_admin){ K.sv('chats'); return toast('Accès admin uniquement', 'err'); }
   const sent = K.sentinels || {};
+  const userCount = Object.keys(PRECONFIGURED_USERS).length + (lg('invited_users', []).length || 0);
   app.innerHTML = `
     <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">👑 Panel admin Kevin</h2>
     <div class="admin-grid">
+      <div class="admin-tile" onclick="K.sv('admin-live-users')">
+        <div class="ico">🟢</div>
+        <div class="stat" style="color:var(--ax-ok)">LIVE</div>
+        <div class="lbl">Connectés live</div>
+      </div>
       <div class="admin-tile" onclick="K.sv('admin-users')">
         <div class="ico">👥</div>
-        <div class="stat">—</div>
+        <div class="stat">${userCount}</div>
         <div class="lbl">Utilisateurs</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-toggles')">
+        <div class="ico">🎛</div>
+        <div class="stat">ON/OFF</div>
+        <div class="lbl">Toggles</div>
       </div>
       <div class="admin-tile" onclick="K.sv('admin-audit')">
         <div class="ico">📜</div>
-        <div class="stat">—</div>
+        <div class="stat">${lg('telemetry',[]).length}</div>
         <div class="lbl">Audit log</div>
       </div>
       <div class="admin-tile" onclick="K.sv('admin-sentinels')">
@@ -1509,6 +1578,11 @@ function renderAdmin(app){
         <div class="ico">📢</div>
         <div class="stat">—</div>
         <div class="lbl">Broadcast</div>
+      </div>
+      <div class="admin-tile" onclick="K._adminLoadSignalements()">
+        <div class="ico">⚠</div>
+        <div class="stat">${lg('signalements',[]).length}</div>
+        <div class="lbl">Signalements</div>
       </div>
     </div>
 
@@ -1605,6 +1679,222 @@ K._filterUsers = function(q){
         </div>
       </div>
     `).join('');
+};
+
+function renderAdminLiveUsers(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  // Liste tous les users (pré-configurés + invités locaux)
+  const preconfig = Object.entries(PRECONFIGURED_USERS).map(([id, u]) => ({
+    id, ...u, source: 'preconfig'
+  }));
+  const invited = lg('invited_users', []);
+  const allUsers = [...preconfig, ...invited];
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🟢 Connectés live</h2>
+      <button class="btn btn-sm btn-out" onclick="K.render()">🔄</button>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em">${allUsers.length} users total · ${allUsers.filter(u => u.last_seen && Date.now() - u.last_seen < 300000).length} en ligne (5 min)</p>
+    ${allUsers.map(u => {
+      const isOnline = u.last_seen && (Date.now() - u.last_seen < 300000);
+      const isMe = u.id === K.user.id;
+      return `
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="position:relative">
+              ${esc((u.pseudo || u.real_name || '?')[0].toUpperCase())}
+              <span class="dot ${isOnline ? '' : 'dot-off'}" style="position:absolute;bottom:0;right:0;border:2px solid var(--ax-bg-2)"></span>
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:600">${esc(u.pseudo || '?')}${isMe ? ' (toi)' : ''}</div>
+              <div style="font-size:.78em;color:var(--ax-text-2)">
+                ${esc(u.real_name || '')}
+                ${u.role === 'admin' ? '<span class="tag tag-admin">👑</span>' : ''}
+                ${u.premium ? '<span class="tag tag-premium">⭐</span>' : ''}
+              </div>
+              <div style="font-size:.72em;color:var(--ax-text-3);margin-top:3px">
+                ${isOnline ? '🟢 En ligne' : (u.last_seen ? '⚫ ' + formatTime(u.last_seen) : '⚫ Jamais connecté')}
+                ${u.phone ? ' · ' + esc(u.phone) : ''}
+              </div>
+            </div>
+            <button class="btn btn-sm btn-out" onclick="K._adminViewLiveUser('${esc(u.id)}')">👁</button>
+          </div>
+        </div>
+      `;
+    }).join('')}
+    <button class="btn btn-block btn-out" onclick="K.openInvite()" style="margin-top:14px">📤 Inviter un nouveau</button>
+  `;
+}
+
+K._adminViewLiveUser = function(userId){
+  const u = PRECONFIGURED_USERS[userId] || lg('invited_users', []).find(x => x.id === userId);
+  if(!u) return toast('User introuvable', 'err');
+  _logTelemetry('info', 'admin_view_live_user', { target: userId });
+
+  const stored = lg('user_stats_' + userId, {});
+  const lastLoc = stored.last_location || null;
+  const devices = stored.devices || [];
+
+  K._showModal('👤 ' + (u.pseudo || u.real_name), `
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="avatar avatar-lg" style="margin:0 auto 8px">${esc((u.pseudo||'?')[0].toUpperCase())}</div>
+      <div style="font-weight:700;font-size:1.2em">${esc(u.real_name || u.pseudo)}</div>
+      <div style="color:var(--ax-text-2)">@${esc(u.pseudo)} · ${esc(u.phone || u.id)}</div>
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">📊 Activité</h4>
+    <div class="card" style="margin:0 0 12px">
+      <div class="card-row"><span style="flex:1">Status</span><strong style="color:${stored.last_seen && Date.now()-stored.last_seen<300000 ? 'var(--ax-ok)' : 'var(--ax-text-3)'}">${stored.last_seen && Date.now()-stored.last_seen<300000 ? '🟢 En ligne' : '⚫ Hors ligne'}</strong></div>
+      <div class="card-row"><span style="flex:1">Dernière activité</span><strong>${stored.last_seen ? formatTime(stored.last_seen) : '—'}</strong></div>
+      <div class="card-row"><span style="flex:1">Messages envoyés</span><strong>${stored.msg_count || 0}</strong></div>
+      <div class="card-row"><span style="flex:1">Conversations</span><strong>${stored.conv_count || 0}</strong></div>
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">📍 Géolocalisation</h4>
+    <div class="card" style="margin:0 0 12px">
+      ${lastLoc ? `
+        <div class="card-row"><span style="flex:1">Position</span><strong style="font-family:monospace;font-size:.85em">${lastLoc.lat?.toFixed(4)}, ${lastLoc.lng?.toFixed(4)}</strong></div>
+        <div class="card-row"><span style="flex:1">Précision</span><strong>±${lastLoc.accuracy || '?'}m</strong></div>
+        <div class="card-row"><span style="flex:1">Dernière maj</span><strong>${lastLoc.ts ? formatTime(lastLoc.ts) : '—'}</strong></div>
+        <button class="btn btn-sm btn-out btn-block" onclick="window.open('https://maps.google.com/?q=${lastLoc.lat},${lastLoc.lng}','_blank')" style="margin-top:8px">🗺 Voir sur Google Maps</button>
+      ` : '<p style="color:var(--ax-text-3);padding:10px;margin:0;text-align:center;font-size:.85em">Aucune géoloc partagée (user a refusé ou pas activé)</p>'}
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">📱 Devices (${devices.length})</h4>
+    <div class="card" style="margin:0 0 12px">
+      ${devices.length === 0 ? '<p style="color:var(--ax-text-3);padding:10px;margin:0;font-size:.85em">Aucun device enregistré</p>' :
+        devices.map(d => `
+          <div class="card-row">
+            <span style="flex:1">${esc(d.user_agent?.slice(0,40) || '?')}</span>
+            <span style="color:var(--ax-text-3);font-size:.78em">${d.last_seen ? formatTime(d.last_seen) : '?'}</span>
+          </div>
+        `).join('')
+      }
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">⚙ Actions admin</h4>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','message')">💬 Envoyer message</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','force_logout')">🚪 Force logout</button>
+      <button class="btn btn-sm btn-err" onclick="K._adminCmd_user('${esc(userId)}','ban')">🚫 Bannir</button>
+    </div>
+
+    <p style="color:var(--ax-text-3);font-size:.72em;margin-top:14px">📜 Consultation tracée dans audit log.</p>
+  `);
+};
+
+K._adminCmd_user = function(userId, action){
+  if(!confirm(`Action "${action}" sur ${userId} ?`)) return;
+  toast('Action ' + action + ' (Phase 6b — backend wire)', 'info');
+  _logTelemetry('warn', 'admin_action_' + action, { target: userId });
+};
+
+// === Toggles ON/OFF features (admin pilote tout) ===
+function renderAdminToggles(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const toggles = lg('admin_toggles', {
+    sms_real: false,           // utiliser Vonage SMS (off = lien magique seulement)
+    voice_messages: true,
+    video_calls: true,
+    audio_calls: true,
+    file_sharing: true,
+    location_sharing: true,
+    stories: true,
+    polls: true,
+    time_capsule: true,
+    letters_24h: true,
+    memory_lane: true,
+    ai_assistant: true,
+    anti_scam: true,
+    auto_translate: false,
+    mini_apps: true,
+    payment_qr: true,
+    e2e_strict: true,           // chiffrement bout-en-bout strict
+    kevin_invisible: true,      // admin Kevin invisible dans convs (Option A)
+    public_signup: false,       // false = invitation only
+    track_geoloc: true,
+    track_devices: true,
+    push_notifs: true
+  });
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🎛 Toggles features</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em">Active/désactive chaque feature globalement. Per-user dans la fiche utilisateur.</p>
+
+    ${renderToggleSection('💬 Messagerie', toggles, [
+      ['voice_messages', 'Notes vocales'],
+      ['file_sharing', 'Partage fichiers'],
+      ['location_sharing', 'Partage localisation'],
+      ['stories', 'Stories 24h'],
+      ['polls', 'Sondages']
+    ])}
+
+    ${renderToggleSection('📞 Appels', toggles, [
+      ['audio_calls', 'Appels audio'],
+      ['video_calls', 'Appels vidéo']
+    ])}
+
+    ${renderToggleSection('✨ Innovations', toggles, [
+      ['time_capsule', 'Capsules temporelles'],
+      ['letters_24h', 'Lettres 24h différées'],
+      ['memory_lane', 'Memory Lane (il y a 1 an)']
+    ])}
+
+    ${renderToggleSection('🤖 IA Apex', toggles, [
+      ['ai_assistant', 'Assistant IA (résumé, smart reply)'],
+      ['anti_scam', 'Anti-scam IA'],
+      ['auto_translate', 'Traduction live (béta)']
+    ])}
+
+    ${renderToggleSection('🎨 Mini-apps', toggles, [
+      ['mini_apps', 'Studios Apex embedded'],
+      ['payment_qr', 'Paiement QR']
+    ])}
+
+    ${renderToggleSection('🔒 Sécurité (recommandé ON)', toggles, [
+      ['e2e_strict', 'Chiffrement E2E strict'],
+      ['kevin_invisible', 'Admin Kevin invisible (Option A)'],
+      ['public_signup', 'Inscription publique (sans invitation)']
+    ])}
+
+    ${renderToggleSection('👁 Tracking admin', toggles, [
+      ['track_geoloc', 'Géoloc users'],
+      ['track_devices', 'Devices users'],
+      ['push_notifs', 'Notifications push']
+    ])}
+
+    ${renderToggleSection('📲 SMS', toggles, [
+      ['sms_real', 'SMS Vonage réel (si OFF = lien magique seulement)']
+    ])}
+  `;
+}
+
+function renderToggleSection(title, toggles, items){
+  return `
+    <div class="admin-section-title">${title}</div>
+    <div class="card">
+      ${items.map(([key, label]) => `
+        <div class="card-row" style="cursor:pointer" onclick="K._adminToggle('${key}')">
+          <span style="flex:1">${esc(label)}</span>
+          <span style="font-size:1.3em;color:${toggles[key] ? 'var(--ax-ok)' : 'var(--ax-text-3)'}">${toggles[key] ? '✓' : '✗'}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+K._adminToggle = function(key){
+  const toggles = lg('admin_toggles', {});
+  toggles[key] = !toggles[key];
+  ls('admin_toggles', toggles);
+  _logTelemetry('info', 'admin_toggle', { key, value: toggles[key] });
+  toast(key + ': ' + (toggles[key] ? 'ACTIVÉ' : 'DÉSACTIVÉ'), 'ok', 1500);
+  K.render();
 };
 
 function renderAdminSentinels(app){
@@ -2027,14 +2317,46 @@ K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
 // ============================================================================
 K.openInvite = function(){
   K._showModal('📤 Inviter un ami', `
-    <p style="color:var(--ax-text-2);font-size:.9em">Ton ami reçoit un lien magique. Il clique → entre direct, <strong>sans SMS</strong>.</p>
+    <p style="color:var(--ax-text-2);font-size:.9em">Saisis prénom + numéro, l'app ouvre Messages iPhone tout prêt. Tu appuies juste <strong>Envoyer</strong>.</p>
     <label class="label" style="margin-top:14px">Prénom de l'ami</label>
     <input id="invite-name" type="text" class="input" placeholder="Ex: Marc" autocapitalize="words">
     <label class="label" style="margin-top:14px">Numéro de téléphone</label>
-    <input id="invite-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" inputmode="tel">
-    <button class="btn btn-block" onclick="K._sendInvite()" style="margin-top:14px">🪄 Générer le lien magique</button>
-    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px;text-align:center">Le lien contient le bypass SMS — ton ami entre direct, peu importe son numéro.</p>
+    <input id="invite-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" inputmode="tel" autocomplete="tel">
+    <button class="btn btn-block" onclick="K._sendInvite1Click()" style="margin-top:14px">📲 Envoyer maintenant</button>
+    <button class="btn btn-out btn-block btn-sm" onclick="K._sendInvite()" style="margin-top:8px">🔗 Voir le lien (sans envoyer)</button>
+    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px;text-align:center">Lien magique = pas besoin de SMS Vonage, pas besoin de whitelist. Le destinataire entre direct sur son iPhone/Android.</p>
   `);
+};
+
+// 1-clic : ouvre Messages iPhone direct avec tout pré-rempli
+K._sendInvite1Click = function(){
+  const phone = $('#invite-phone').value.trim().replace(/[^\d+]/g,'');
+  const name = ($('#invite-name')?.value || 'Ami').trim();
+  if(!phone) return toast('Numéro requis', 'err');
+  if(!name) return toast('Prénom requis', 'err');
+
+  const token = btoa(phone + ':' + name).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
+  const inviteUrl = `${baseUrl}?invite=${token}`;
+  const smsText = `Salut ${name} ! Kevin t'invite sur Apex Chat (messagerie privee chiffree). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
+
+  K._closeModal();
+
+  // Tentative 1 : Web Share API natif iPhone/Android
+  if(navigator.share){
+    navigator.share({ title: 'Invitation Apex Chat', text: smsText, url: inviteUrl })
+      .then(()=>{ toast('✅ Invitation envoyée à ' + name, 'ok', 3000); })
+      .catch((err)=>{
+        if(err.name !== 'AbortError'){
+          // Fallback sms: URL
+          window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+        }
+      });
+  } else {
+    // Fallback direct sms: URL (iPhone Safari sans Web Share)
+    window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+    setTimeout(()=>toast('📱 Messages iPhone ouvert avec invitation pré-remplie', 'info', 4000), 500);
+  }
 };
 
 K._sendInvite = async function(){
@@ -2399,6 +2721,44 @@ async function _boot(){
         }, 500);
       }
     }catch(e){}
+  }
+
+  // === Magic link signé admin (zero SMS, auth direct) ===
+  // Format: ?magic=<JWT_TOKEN>
+  const magicToken = params.get('magic');
+  if(magicToken){
+    try{
+      // CGU implicite accepté (cliqué le lien admin)
+      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:'v1.0.7',implicit:true,via:'magic_link'})); }catch(_){}
+      const apiUrl = (window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.workers.dev') + '/api/auth/magic-login';
+      const r = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ magic_token: magicToken })
+      }).then(x => x.json()).catch(e => ({ error: e.message }));
+      if(r && r.ok && r.user && r.jwt){
+        K.login(r.user, r.jwt);
+        toast('✨ Connexion automatique réussie', 'ok', 3000);
+        history.replaceState({}, '', location.pathname);
+      } else {
+        toast('Lien expiré ou invalide — utilise ton numéro à la place', 'err', 5000);
+      }
+    }catch(e){
+      console.warn('magic login fail', e);
+    }
+  }
+
+  // === Code court ?i=ABC123 (shortlink invitation) ===
+  const shortCode = params.get('i');
+  if(shortCode && !magicToken){
+    try{
+      const apiUrl = (window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.workers.dev') + '/api/invitations/' + encodeURIComponent(shortCode);
+      const r = await fetch(apiUrl).then(x => x.json()).catch(() => null);
+      if(r && r.ok && r.invitation && r.invitation.magic_token){
+        // Rediriger avec magic token
+        location.replace(location.pathname + '?magic=' + encodeURIComponent(r.invitation.magic_token));
+      }
+    }catch(_){}
   }
 }
 

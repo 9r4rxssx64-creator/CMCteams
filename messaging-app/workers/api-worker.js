@@ -819,6 +819,217 @@ async function handleSystemConfig(request, env) {
 }
 
 // ============================================================================
+//  Admin invitation bypass — pré-autorise un téléphone (zéro SMS Vonage requis)
+// ============================================================================
+
+// Crée une invitation magic link signée par l'admin Kevin.
+// L'invitee se connecte via /api/auth/magic-login (pas d'OTP/SMS).
+// Pré-créé son user record + ajoute son phone à la whitelist DB pour OTP futur.
+async function handleAdminInviteMagic(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const { phone, name, pseudo } = await request.json();
+  if (!phone) return err('Numéro requis');
+  const normalizedPhone = String(phone).replace(/[^\d+]/g, '');
+  if (!normalizedPhone.startsWith('+') || normalizedPhone.length < 10) {
+    return err('Format E.164 attendu (+33...)');
+  }
+
+  const phoneHash = await sha256(normalizedPhone);
+
+  // Pré-créer user si pas déjà existant (bypass OTP futur — admin a autorisé)
+  let user = await env.APEX_CHAT_DB.prepare(
+    'SELECT id, pseudo FROM users WHERE phone_hash=?'
+  ).bind(phoneHash).first();
+
+  if (!user) {
+    const userId = 'u_' + Array.from(crypto.getRandomValues(new Uint8Array(8)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    let safePseudo = (pseudo || name || 'ami').toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '').slice(0, 20) || ('ami' + Date.now().toString(36).slice(-4));
+    // Garantir unicité du pseudo (collisions = suffixe random)
+    let pseudoExists = await env.APEX_CHAT_DB.prepare('SELECT 1 FROM users WHERE pseudo=?').bind(safePseudo).first();
+    if (pseudoExists) safePseudo = safePseudo.slice(0, 14) + '_' + Date.now().toString(36).slice(-4);
+    await env.APEX_CHAT_DB.prepare(
+      `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, display_name,
+         identity_key_pub, pq_key_pub, prekey_signed,
+         admin_authorized, admin_authorized_by, source, invited_by,
+         created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, '', '', '', 1, ?, 'invitation', ?, ?, ?)`
+    ).bind(userId, safePseudo, name || safePseudo, normalizedPhone, phoneHash, name || safePseudo,
+           auth.sub, auth.sub, Date.now(), Date.now()).run();
+    user = { id: userId, pseudo: safePseudo };
+  } else {
+    // User existant : marquer admin_authorized=1 (whitelist OTP)
+    await env.APEX_CHAT_DB.prepare(
+      'UPDATE users SET admin_authorized=1, admin_authorized_by=?, updated_at=? WHERE id=?'
+    ).bind(auth.sub, Date.now(), user.id).run();
+  }
+
+  // Magic token signé (JWT court 7j)
+  const magicToken = await signJWT({
+    typ: 'magic_invite',
+    uid: user.id,
+    pseudo: user.pseudo,
+    phone_hash: phoneHash,
+    invited_by: auth.sub,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 7 * 86400
+  }, env.JWT_SECRET);
+
+  // Code court pour SMS (utilisable aussi)
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+    .map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, magic_token, created_at, expires_at)
+     VALUES (?, ?, ?, 'admin-bypass', ?, ?, ?)`
+  ).bind(code, auth.sub, phoneHash, magicToken, Date.now(), Date.now() + 7 * 86400000).run();
+
+  await auditLog(env, auth.sub, 'admin_invite_magic', 'user', user.id,
+    JSON.stringify({ phone_last4: normalizedPhone.slice(-4), pseudo: user.pseudo }),
+    null, request.headers.get('user-agent') || '');
+
+  const baseUrl = env.APEX_CHAT_BASE_URL || 'https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/';
+  return json({
+    ok: true,
+    code,
+    user_id: user.id,
+    pseudo: user.pseudo,
+    magic_url: `${baseUrl}?magic=${encodeURIComponent(magicToken)}`,
+    short_url: `${baseUrl}?i=${code}`,
+    expires_at: Date.now() + 7 * 86400000,
+    sms_template: `Salut ${name || ''} ! Kevin t'invite sur Apex Chat (messagerie privée). Lien direct : ${baseUrl}?magic=${encodeURIComponent(magicToken)}`
+  });
+}
+
+// Auth via magic link (pas d'OTP requis — admin a pré-autorisé)
+async function handleMagicLogin(request, env) {
+  const { magic_token } = await request.json();
+  if (!magic_token) return err('Token requis');
+
+  const payload = await verifyJWT(magic_token, env.JWT_SECRET);
+  if (!payload || payload.typ !== 'magic_invite') return err('Token invalide', 401);
+
+  const user = await env.APEX_CHAT_DB.prepare(
+    'SELECT id, pseudo, display_name, avatar_url, admin_authorized FROM users WHERE id=?'
+  ).bind(payload.uid).first();
+  if (!user || !user.admin_authorized) return err('User non autorisé', 403);
+
+  // Marquer invitation acceptée
+  await env.APEX_CHAT_DB.prepare(
+    'UPDATE invitations SET accepted_at=? WHERE magic_token=? AND accepted_at IS NULL'
+  ).bind(Date.now(), magic_token).run().catch(() => {});
+
+  // Émettre session JWT 30j
+  const sessionJWT = await signJWT({
+    sub: user.id,
+    pseudo: user.pseudo,
+    is_admin: false,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 30 * 86400
+  }, env.JWT_SECRET);
+
+  await auditLog(env, user.id, 'magic_login_success', 'user', user.id,
+    JSON.stringify({ invited_by: payload.invited_by }),
+    null, request.headers.get('user-agent') || '');
+
+  return json({
+    ok: true,
+    jwt: sessionJWT,
+    user: { id: user.id, pseudo: user.pseudo, display_name: user.display_name, avatar_url: user.avatar_url }
+  });
+}
+
+// ============================================================================
+//  Admin live users — liste users connectés + geoloc + devices
+// ============================================================================
+
+async function handleAdminLiveUsers(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const since = Date.now() - 30 * 60 * 1000; // 30 min = "live"
+  const users = await env.APEX_CHAT_DB.prepare(
+    `SELECT u.id, u.pseudo, u.display_name, u.avatar_url, u.last_seen, u.last_ip_hash,
+            u.last_user_agent, u.last_lat, u.last_lng, u.last_geo_label, u.created_at,
+            u.admin_authorized, u.is_banned
+     FROM users u
+     WHERE u.last_seen > ?
+     ORDER BY u.last_seen DESC
+     LIMIT 200`
+  ).bind(since).all();
+
+  // Compter conversations actives par user
+  const list = users.results || [];
+  for (const u of list) {
+    const conv = await env.APEX_CHAT_DB.prepare(
+      'SELECT COUNT(*) as c FROM conversation_members WHERE user_id=?'
+    ).bind(u.id).first().catch(() => ({ c: 0 }));
+    u.conv_count = conv.c || 0;
+  }
+
+  return json({ ok: true, count: list.length, users: list });
+}
+
+// ============================================================================
+//  Admin toggles — features ON/OFF (general + per-user)
+// ============================================================================
+
+async function handleAdminGetToggles(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const config = await getModeConfig(env);
+  // Tous les flags features sont stockés dans system_config (key/value)
+  const FEATURE_KEYS = [
+    'voice_messages', 'video_calls', 'time_capsule', 'letters_24h', 'memory_lane',
+    'stories', 'polls', 'reactions', 'mini_apps', 'e2e_strict', 'kevin_invisible',
+    'track_geoloc', 'track_devices', 'admin_audit_log', 'auto_invitations',
+    'magic_links', 'sms_otp', 'sso_apex', 'payment_qr', 'push_notifications',
+    'signalements', 'ia_chat'
+  ];
+
+  const toggles = {};
+  for (const key of FEATURE_KEYS) {
+    const v = config['FEATURE_' + key.toUpperCase()];
+    toggles[key] = v === undefined ? true : (v === 'true' || v === '1' || v === true);
+  }
+  return json({ ok: true, toggles });
+}
+
+async function handleAdminSetToggle(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const { feature, enabled, user_id } = await request.json();
+  if (!feature) return err('feature requis');
+
+  if (user_id) {
+    // Per-user toggle
+    await env.APEX_CHAT_DB.prepare(
+      `INSERT INTO user_feature_overrides (user_id, feature, enabled, updated_at, updated_by)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id, feature) DO UPDATE SET enabled=excluded.enabled, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+    ).bind(user_id, feature, enabled ? 1 : 0, Date.now(), auth.sub).run();
+  } else {
+    // Global toggle
+    const key = 'FEATURE_' + feature.toUpperCase();
+    await env.APEX_CHAT_DB.prepare(
+      `INSERT INTO system_config (key, value, updated_at, updated_by)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+    ).bind(key, String(enabled), Date.now(), auth.sub).run();
+  }
+
+  await auditLog(env, auth.sub, 'admin_toggle_set', user_id ? 'user' : 'global', user_id || feature,
+    JSON.stringify({ feature, enabled, user_id }),
+    null, request.headers.get('user-agent') || '');
+
+  return json({ ok: true });
+}
+
+// ============================================================================
 //  WebSocket → ConversationDO
 // ============================================================================
 
@@ -1487,6 +1698,11 @@ export default {
 
       // Admin
       if (path === '/api/admin/commands' && method === 'POST') return await handleAdminCommand(request, env);
+      if (path === '/api/admin/invite-magic' && method === 'POST') return await handleAdminInviteMagic(request, env);
+      if (path === '/api/auth/magic-login' && method === 'POST') return await handleMagicLogin(request, env);
+      if (path === '/api/admin/live-users' && method === 'GET') return await handleAdminLiveUsers(request, env);
+      if (path === '/api/admin/toggles' && method === 'GET') return await handleAdminGetToggles(request, env);
+      if (path === '/api/admin/toggles' && method === 'POST') return await handleAdminSetToggle(request, env);
 
       // System
       if (path === '/api/system/config' && method === 'GET') return await handleSystemConfig(request, env);
