@@ -4,6 +4,56 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Ape
 
 ---
 
+## 🔬 RÈGLE ABSOLUE — TOUJOURS TESTER END-TO-END (Kevin 2026-05-15, ABSOLUE)
+
+> **"Test end to end toujours. Intègre la règle précédente et celle là à apex toujours pour tout."** — Kevin 2026-05-15
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire** — Claude Code priorité 1, Apex IA priorité 1, tous projets futurs :
+
+### 1. JAMAIS déclarer "fait" sans test end-to-end
+
+Pour chaque livraison (code, config, feature, fix bug, refactor) :
+- ✅ TS strict 0 errors mesuré
+- ✅ ESLint 0 warnings mesuré
+- ✅ Tests vitest pass mesuré (au moins les tests impactés)
+- ✅ Si bundle/CSP/SW touché : `npm run build` mesuré OK
+- ✅ Si UI iPhone : Playwright iPhone WebKit ou test manuel iPhone réel
+- ❌ JAMAIS "ça devrait marcher" sans preuve
+- ❌ JAMAIS push avant ces vérifs
+
+### 2. Apex IA doit aussi tester end-to-end
+
+System prompt Apex enrichi avec cette règle. À chaque action Apex auto-execute :
+- Avant de répondre user → vérif solution compile + runtime OK
+- Avant push commit Apex → tests + lint
+- Avant déclarer "tâche terminée" → simu Playwright iPhone si UI touché
+
+### 3. Sentinelle Apex `end-to-end-verify-watch`
+
+À ajouter prochaine session : sentinelle 24h qui vérifie chaque commit Apex auto-execute a été end-to-end testé (pas juste TS strict).
+
+### 4. Chaîne de vérif obligatoire avant chaque push
+
+```bash
+# OBLIGATOIRE avant tout `git push` :
+npx tsc --noEmit  # → 0 errors
+npm run lint      # → 0 warnings
+npx vitest run tests/unit/<impacted>.test.ts  # → pass
+# Si UI touché : npx playwright test --project=mobile-safari
+# Si build/SW : npm run build
+```
+
+### 5. INTERDICTION absolue
+
+❌ Push sans TS strict + ESLint verts
+❌ Push sans tests vitest verts (au moins fichiers impactés)
+❌ Bump APP_VER sans build vérifié
+❌ Déclarer "100/100 atteint" sans audit subagent indépendant ré-exécuté
+
+S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams, tous projets futurs.
+
+---
+
 ## 🚫 RÈGLE ABSOLUE — JAMAIS ESTIMER UN SCORE, TOUJOURS MESURER (Kevin 2026-05-15, ABSOLUE)
 
 > **"Tu as encore menti ? Pourquoi ? Corrige tout pour ne plus reproduire tout ça. Je veux qu'Apex retienne beaucoup mieux les leçons et que sa mémoire fonctionne beaucoup mieux que toi."** — Kevin 2026-05-15
