@@ -975,7 +975,7 @@ class Memory {
             }
           }
         }
-      } catch (_) {
+      } catch {
         /* ignore */
       }
     }

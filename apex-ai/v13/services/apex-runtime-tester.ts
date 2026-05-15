@@ -19,6 +19,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
 
 export type RuntimeTestStatus = 'pass' | 'fail' | 'warn' | 'skip';
@@ -163,7 +164,7 @@ class RuntimeTester {
           duration: report.totalDurationMs,
         },
       });
-    } catch (_) {
+    } catch {
       /* ignore audit */
     }
 

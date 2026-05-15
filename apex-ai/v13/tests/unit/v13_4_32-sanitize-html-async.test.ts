@@ -1,3 +1,5 @@
+/* eslint-disable no-script-url -- Test fixtures intentionnels (vérifient sanitization XSS) */
+
 /**
  * Test régression v13.4.32 — core/html-safe.ts sanitizeHtml() async (DOMPurify lazy).
  *

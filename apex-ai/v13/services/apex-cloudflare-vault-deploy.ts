@@ -25,6 +25,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { vault } from './vault.js';
 
 const KV_NAMESPACE_TITLE = 'apex-vault-kevin';

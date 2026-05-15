@@ -24,8 +24,9 @@
  * Admin only pour write (per règle Kevin tier-aware).
  */
 
-import { auth } from './auth.js';
 import { logger } from '../core/logger.js';
+
+import { auth } from './auth.js';
 
 export type ExtractedType =
   | 'url'

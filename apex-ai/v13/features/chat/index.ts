@@ -69,10 +69,10 @@ interface DisplayMessage {
  * render() est appelé pendant que le module est partiellement chargé. var réutilise la
  * même sémantique au runtime que let pour les réassignations.
  * eslint-disable-next-line no-var */
-// eslint-disable-next-line no-var
+ 
 var pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
 /* v13.4.12 — Promises FileReader en cours, pour await au submit (anti race condition). */
-// eslint-disable-next-line no-var
+ 
 var pendingAttachmentPromises: Array<Promise<void>> = [];
 
 /* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :

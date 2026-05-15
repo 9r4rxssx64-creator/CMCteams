@@ -48,7 +48,7 @@ describe('v13.4.46 antiZoomIOS.install — listeners + reset', () => {
   it("touchstart multi-doigts → preventDefault", () => {
     antiZoomIOS.install();
     const preventDefault = vi.fn();
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const evt = new Event('touchstart') as any;
     evt.touches = [{}, {}]; /* 2 doigts = pinch */
     evt.preventDefault = preventDefault;
@@ -59,7 +59,7 @@ describe('v13.4.46 antiZoomIOS.install — listeners + reset', () => {
   it("touchstart 1 doigt → preventDefault PAS appelé (scroll normal)", () => {
     antiZoomIOS.install();
     const preventDefault = vi.fn();
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const evt = new Event('touchstart') as any;
     evt.touches = [{}]; /* 1 doigt = tap normal */
     evt.preventDefault = preventDefault;
@@ -69,7 +69,7 @@ describe('v13.4.46 antiZoomIOS.install — listeners + reset', () => {
 
   it("double-tap rapproché < 350ms → preventDefault (anti double-tap-zoom)", () => {
     antiZoomIOS.install();
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const evt1 = new Event('touchend') as any;
     document.dispatchEvent(evt1);
     /* Touch 2 dans la fenêtre 350ms */
@@ -101,7 +101,7 @@ describe('v13.4.46 antiZoomIOS.checkAndResetZoom — detection + reset', () => {
       document.head.appendChild(meta);
     }
     /* Force scale > 1 via mock visualViewport */
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const win = window as any;
     const originalVV = win.visualViewport;
     win.visualViewport = { scale: 1.5 };

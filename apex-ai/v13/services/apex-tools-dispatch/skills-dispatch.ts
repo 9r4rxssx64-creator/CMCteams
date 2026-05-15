@@ -6,11 +6,11 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { mcpClient } from '../mcp-client.js';
 import { docxGenerator, type DocxGenerateInput } from '../skills/docx-generator.js';
 import { pdfGenerator, type PdfGenerateInput } from '../skills/pdf-generator.js';
 import { pptxGenerator, type PptxGenerateInput } from '../skills/pptx-generator.js';
 import { xlsxGenerator, type XlsxGenerateInput } from '../skills/xlsx-generator.js';
-import { mcpClient } from '../mcp-client.js';
 
 /* Helper : récupère une valeur typée d'un Record<string, unknown>. */
 function p<T = unknown>(params: Record<string, unknown>, key: string): T | undefined {
@@ -224,7 +224,7 @@ ${
       await auditLog.record('skill.factory.created', {
         details: { name, description, when_to_use: whenToUse },
       });
-    } catch (_) {
+    } catch {
       /* audit-log import safe — ignore */
     }
 

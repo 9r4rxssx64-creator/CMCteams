@@ -57,32 +57,32 @@ describe('v13.4.48 apex-execute guards — Forbidden tasks', () => {
 
 describe('v13.4.48 apex-execute.execute — Forbidden task REJECTED', () => {
   it("execute(force_push) → ok:false reason mentionne 'interdite'", async () => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const r = await apexExecute.requestExecution('force_push' as any, {}, { skipDispatch: true });
     expect(r.ok).toBe(false);
     expect(r.reason?.toLowerCase()).toMatch(/interdite|forbidden|inconnue/);
   });
 
   it("execute(delete_file) → REJECTED", async () => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const r = await apexExecute.requestExecution('delete_file' as any, { path: 'some/file.ts' }, { skipDispatch: true });
     expect(r.ok).toBe(false);
   });
 
   it("execute(execute_shell_arbitrary) → REJECTED (anti rm-rf)", async () => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const r = await apexExecute.requestExecution('execute_shell_arbitrary' as any, { command: 'rm -rf /' }, { skipDispatch: true });
     expect(r.ok).toBe(false);
   });
 
   it("execute(modify_admin_kevin) → REJECTED", async () => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const r = await apexExecute.requestExecution('modify_admin_kevin' as any, {}, { skipDispatch: true });
     expect(r.ok).toBe(false);
   });
 
   it("execute(unknown_task_xyz) → REJECTED (pas dans AllowedTask)", async () => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const r = await apexExecute.requestExecution('totally_unknown_task' as any, {}, { skipDispatch: true });
     expect(r.ok).toBe(false);
   });
@@ -156,7 +156,7 @@ describe('v13.4.48 apex-execute.execute — Params validation', () => {
   });
 
   it("deploy_canary avec env='prod' (non whitelist) → REJECTED", async () => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const r = await apexExecute.requestExecution('deploy_canary', { env: 'prod' as any }, { skipDispatch: true });
     expect(r.ok).toBe(false);
   });

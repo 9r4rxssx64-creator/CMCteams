@@ -14,6 +14,23 @@
 import { logger } from '../core/logger.js';
 
 import {
+  dispatchCodeReview,
+  dispatchFuturisticModuleInvoke,
+  dispatchGenerateDesignSystem,
+  dispatchGenerateDocx,
+  dispatchGenerateMarketingCopy,
+  dispatchGeneratePdf,
+  dispatchGeneratePptx,
+  dispatchGenerateXlsx,
+  dispatchMcpAlmanacResearch,
+  dispatchMcpBofipSearch,
+  dispatchMcpLegalSearch,
+  dispatchSecurityReview,
+  dispatchSkillFactoryCreate,
+  dispatchVideoComposeHyperframes,
+  dispatchVideoEdit,
+} from './apex-tools-dispatch/skills-dispatch.js';
+import {
   base64EncodeDecode,
   createTask,
   csvParse,
@@ -72,23 +89,6 @@ import {
   wikipediaLookup,
   youtubeSearch,
 } from './apex-tools-dispatch/utils-misc.js';
-import {
-  dispatchCodeReview,
-  dispatchFuturisticModuleInvoke,
-  dispatchGenerateDesignSystem,
-  dispatchGenerateDocx,
-  dispatchGenerateMarketingCopy,
-  dispatchGeneratePdf,
-  dispatchGeneratePptx,
-  dispatchGenerateXlsx,
-  dispatchMcpAlmanacResearch,
-  dispatchMcpBofipSearch,
-  dispatchMcpLegalSearch,
-  dispatchSecurityReview,
-  dispatchSkillFactoryCreate,
-  dispatchVideoComposeHyperframes,
-  dispatchVideoEdit,
-} from './apex-tools-dispatch/skills-dispatch.js';
 import { apexTools, type ApexTool } from './apex-tools.js';
 import { auditLog } from './audit-log.js';
 import { guardToolEnabled } from './feature-guard.js';

@@ -155,7 +155,7 @@ describe('v13.4.50 aiRouter.hasAnyKey + getApiKey', () => {
   it("getApiKey provider inconnu THROW (TypeScript-safe seul, runtime accède PROVIDERS[provider])", () => {
     /* getApiKey est typed Provider — runtime PROVIDERS[unknown] = undefined → throw.
      * C'est OK : caller doit utiliser un Provider valide. Test documente comportement. */
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     expect(() => aiRouter.getApiKey('xyz_provider_inconnu' as any)).toThrow();
   });
 });

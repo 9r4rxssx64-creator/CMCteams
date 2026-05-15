@@ -12,8 +12,8 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
-import { mcpRegistry } from '../../../services/mcp-registry.js';
 import { mcpClient } from '../../../services/mcp-client.js';
+import { mcpRegistry } from '../../../services/mcp-registry.js';
 import { skillsWatch } from '../../../services/skills-watch.js';
 import { toast } from '../../../ui/toast.js';
 

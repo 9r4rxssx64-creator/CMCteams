@@ -158,7 +158,7 @@ describe('v13.4.33 memory.getFacts/getLessons/getProjects — accesseurs readonl
   it("modifier l'array retourné NE modifie PAS le store interne", () => {
     const before = memory.getFacts().length;
     const facts = memory.getFacts() as Fact[];
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     try {
       (facts as any).push({ id: 'fake', category: 'evil', text: 'injected', ts: 0, weight: 1 });
     } catch { /* readonly array peut throw */ }

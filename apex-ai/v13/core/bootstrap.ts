@@ -20,23 +20,25 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.124';
+export const APP_VER = 'v13.4.125';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
  * import { di } gardé pour rétrocompat __APEX__ window debug, mais c'est un alias service-locator. */
-import { di } from './service-locator.js';
+import { logRedaction } from '../services/log-redaction-wrapper.js';
+
 import { errors } from './errors.js';
 import { events } from './events.js';
 import { logger } from './logger.js';
 import { memory } from './memory.js';
 import { router } from './router.js';
+import { di } from './service-locator.js';
 import { store } from './store.js';
+
 /* v13.3.74 P0 sécu (audit OWASP ASVS L2 V7.1.1) — log redaction GLOBAL.
  * Importé dès le module load (avant tout autre service) pour patcher console
  * AVANT que la moindre lib ou service n'ait l'occasion d'écrire un secret.
  * installGlobal() est idempotent. */
-import { logRedaction } from '../services/log-redaction-wrapper.js';
 
 /* Boot-time install (avant function bootstrap()) : tout console.log au boot
  * est déjà redacté. Évite leak via libs vendor / Vite HMR / SDK tiers. */

@@ -13,6 +13,7 @@
  */
 
 import { logger } from '../core/logger.js';
+
 import { auditLog } from './audit-log.js';
 import { mcpClient, type McpServer } from './mcp-client.js';
 

@@ -16,8 +16,9 @@
  * Test systématique au add via `axTestCredentialReal`.
  */
 
-import { auth } from './auth.js';
 import { logger } from '../core/logger.js';
+
+import { auth } from './auth.js';
 
 export interface CredentialAssociation {
   /** Service ID (ex: 'anthropic', 'github', 'stripe') */

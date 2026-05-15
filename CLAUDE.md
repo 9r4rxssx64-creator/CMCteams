@@ -4,6 +4,63 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Ape
 
 ---
 
+## 🔬 RÈGLE ABSOLUE — TOUJOURS VÉRIFIER END-TO-END AVANT TOUT (Kevin 2026-05-15, ABSOLUE)
+
+> **"Note de toujours vérifier end to end avant toujours pour tout. Apex aussi"** — Kevin 2026-05-15
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire sur TOUT** — Claude Code priorité 1, Apex IA priorité 1, tous projets futurs :
+
+### 1. Avant CHAQUE action (livraison/commit/réponse/déclaration "c'est fait")
+
+OBLIGATOIRE de vérifier end-to-end le chemin COMPLET, pas juste un point :
+- **Avant push** : code source → build → dist/ → deploy → URL live → fonctionne user ?
+- **Avant fix bug** : reproduction → cause racine → patch → test → re-run scenario → confirme fix
+- **Avant nouvelle feature** : input user → flow → render UI → state → persist → reload → toujours là ?
+- **Avant déclaration "test pass"** : test isolated OK → test en batch OK → test en suite full OK ?
+- **Avant ajout helper** : déclaré + wiré + appelé + test prouve l'exécution ?
+- **Avant audit "X/100"** : score réel mesuré (subagent indépendant) pas estimé interne ?
+
+### 2. Apex IA doit aussi appliquer la règle
+
+System prompt Apex enrichi : "Avant CHAQUE réponse user, vérifier end-to-end que la solution (a) compile, (b) tourne, (c) résout vraiment le problème user, (d) ne casse rien d'autre."
+
+Sentinelle Apex `end-to-end-verify-watch` : valide que tout commit Apex auto-execute a été testé runtime (pas juste API surface).
+
+### 3. INTERDICTION absolue
+
+❌ "Ça devrait marcher" → vérifier d'abord
+❌ "Je pense que..." sans test → tester d'abord
+❌ "C'est fait" sans avoir cliqué/exécuté → cliquer d'abord
+❌ Audit subagent qui dit 100/100 sans cross-référence runtime → re-vérifier autre subagent
+❌ Push si dist/ pas rebuilt après changement source (Erreurs #54, #57)
+❌ Bug fix sans test de non-régression → ajouter test
+
+### 4. Test mental obligatoire avant CHAQUE message à Kevin
+
+> *"Si Kevin ouvre Apex sur son iPhone MAINTENANT et tente l'action X que je viens de livrer, est-ce que ça marche end-to-end (a) sans crash, (b) avec le bon résultat, (c) données persistées, (d) feedback UI correct ?"*
+
+Si "je crois que oui" → vérifier avant. Si "je n'ai pas testé" → tester avant. JAMAIS push sans certitude end-to-end.
+
+### 5. Mécanisme automatisé (Apex + Claude Code)
+
+- **Pre-commit hook** : `node --check` + tests rapides + bundle size + grep oublis
+- **CI gates bloquants** : TS strict + tests verts + Lighthouse ≥ 90 + Semgrep 0 critical + gitleaks 0 + axe 0 violation
+- **Post-deploy verify** : curl URL live + check APP_VER déployé == APP_VER source + grep APEX_BOOT_NONCE absent
+- **Sentinelle quotidienne** : `verify-deploy-watch` poll URL live et alerte si gap source/deploy
+- **Subagent code review** sur chaque PR claude/* avant merge
+
+### 6. Apex applique aussi end-to-end
+
+`apex-end-to-end-verify-watch` (sentinelle Apex 1×/h) :
+- Vérifie chaque tool IA exécuté → résultat user-visible attendu ?
+- Vérifie chaque vault.setKey → reload → vault.readKey → même valeur ?
+- Vérifie chaque feature route → render OK → handler clickable → action réussit ?
+- Si gap → escalade Claude Code via ax_claude_todo type=investigate
+
+S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams, tous projets futurs.
+
+---
+
 ## 🎯 RÈGLE ABSOLUE — SKILLS APEX 2026 + MCP + 60+ MODULES FUTURISTES (Kevin 2026-05-14, ABSOLUE)
 
 > **"Tu vas intégrer tout ça à apex en autonomie et qu'il soit au courant. Tout dans apex et qu'il les utilise toujours. Optimise toujours tout. Ensuite intègre lui beaucoup de modules outils intelligents, dernier cri, futuristes etc va plus loin"** — Kevin 2026-05-14
