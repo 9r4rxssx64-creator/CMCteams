@@ -1,131 +1,116 @@
-# 📌 MEMO KEVIN — Reste à faire Apex Chat
+# 📋 Apex Chat — État Complet + Reste à Faire
 
-> **Statut : Déploiement initial Apex Chat lancé avec les secrets disponibles.**
-> Ce mémo liste ce qui reste à compléter plus tard, sans urgence.
-
----
-
-## ✅ Secrets DÉJÀ configurés (déploiement OK)
-
-- `CLOUDFLARE_API_TOKEN` — déploiement workers
-- `CLOUDFLARE_ACCOUNT_ID`
-- `ANTHROPIC_API_KEY` — IA Claude principale
-- `GROQ_API_KEY` — IA failover gratuit
-- `GEMINI_API_KEY` — IA failover Google
-- `DEEPSEEK_API_KEY` — IA failover éco
-- `VAPID_PRIVATE_KEY` — Web Push
-- `TELEGRAM_API_KEY` — Bot Telegram
-- `EMAILJS_PRIVATE_KEY` — Emails
-- `VONAGE_API_KEY` — SMS (mais sans secret = inactif pour l'instant)
-- `JWT_SECRET` — Auth (sera écrasé par auto-gen)
-- `TAVILY_API_KEY` — Web search IA
-- `PINECONE_API_KEY` — Vector DB
-- `PERPLEXITI_API_KEY` — Perplexity (typo dans le nom)
-- `RAILWAY_TOKEN` — Backend alternatif
-- `AGENT_SECRET` + `AGENT_SECRET_VE...` — Apex agents
-- `API_OPEN_LEGO` — ?
+> Dernière mise à jour : v1.0.7 (2026-05-15)
+> Branche : `claude/private-messaging-app-jpLl1` → auto-merge vers `main` → GitHub Pages
 
 ---
 
-## 🕐 À FAIRE PLUS TARD (sans urgence)
+## ✅ CE QUI EST FAIT (v1.0.7)
 
-### 🚧 Vonage — récupérer le secret (5 min quand t'auras envie)
+### 🔥 Nouveautés v1.0.7
 
-**Pourquoi attendre** : actuellement les invitations SMS Apex Chat passent par `sms:` URL natif iPhone gratuit. Vonage payant pas indispensable pour démarrer.
+| Fonctionnalité | Description |
+|---|---|
+| **🪄 Invitation magic-link admin bypass** | Quand Kevin invite quelqu'un, son numéro est PRÉ-AUTORISÉ côté serveur. Plus besoin de whitelist Vonage. Le lien magique connecte la personne en 1 clic sans SMS. |
+| **🎛 Toggles ON/OFF général + individuel** | 22 features pilotables depuis `Admin → Toggles` : voice_messages, video_calls, time_capsule, e2e_strict, kevin_invisible, track_geoloc, etc. Global et per-user. |
+| **🟢 Vue Live Users admin** | Liste users actifs (30 dernières min) avec géoloc, devices, last_seen, IP hash, conv count, actions (force_logout, ban, message). |
+| **🔒 CGU implicite** | Au premier remplissage d'un champ login (numéro, nom), CGU acceptés automatiquement. Texte CGU vague sur permissions, fort sur sécurité. |
+| **🔄 Mise à jour forcée 100% auto** | Triple stratégie : SW updatefound auto-reload, heartbeat 60s, **sentinelle remote version 30s** qui compare APP_VER local vs serveur et force reload + clear cache. Zéro action user. |
+| **📲 Invitation 1-clic native iPhone** | Bouton "Envoyer maintenant" → ouvre directement Messages iPhone via Web Share API ou sms: URL avec SMS pré-rempli. Pas de modal intermédiaire. |
+| **🆔 Affichage version permanent** | Version affichée splash + topbar + carte profil. Tu sais toujours quelle version tourne. |
 
-**Comment récupérer** :
-1. Va sur **[dashboard.vonage.com](https://dashboard.vonage.com)** (page d'accueil, PAS API Settings)
-2. Active mode bureau Safari : touche **"aA"** dans la barre URL → "Demander la version pour ordinateur"
-3. En haut de la page → bandeau "API key + API secret"
-4. Touche **[Copy]** à côté de **API secret** (sans révéler)
-5. GitHub Secrets → New → `VONAGE_API_SECRET` → Coller
+### 🏗 Architecture déployée
 
-OU **Méthode alternative** : "Generate new secret" / "Roll secret" pour en créer un nouveau.
+| Couche | Statut |
+|---|---|
+| PWA frontend (`messaging-app/index.html`) | ✅ GitHub Pages |
+| API Worker Cloudflare (`workers/api-worker.js`) | ✅ `apex-chat-api.workers.dev` |
+| Durable Objects (`ConversationDO`) | ✅ 1 instance par conversation |
+| D1 SQL (21 tables + colonnes v1.0.7) | ✅ Migration 0001 + 0002 |
+| R2 médias | ✅ Bucket `apex-chat-media` |
+| KV cache | ✅ |
+| Queues (telemetry, push) | ✅ |
+| Service Worker (3-cache + auto-purge agressive) | ✅ v1.0.7 |
+| Auto-merge GitHub Actions | ✅ `claude/*` → `main` → Pages |
 
-### 🔧 Petite correction `PERPLEXITI_API_KEY` → `PERPLEXITY_API_KEY`
+### 🔐 Sécurité
 
-Tu as une typo (I au lieu de Y). Soit :
-- **Option A** : supprime l'ancien + recrée avec `PERPLEXITY_API_KEY`
-- **Option B** : laisse, je m'adapte dans le code workflow (mais c'est moche)
+- ✅ E2E PQXDH (ECDH P-256 + AES-GCM 256 + PBKDF2 100k)
+- ✅ JWT HS256 (session 30j)
+- ✅ Magic token JWT signé admin (invitation 7j)
+- ✅ Audit log immutable (admin_invite_magic, magic_login_success, toggles)
+- ✅ Phone hashé SHA-256 côté serveur
+- ✅ CSP strict + sandbox iframe
+- ✅ Rate limit OTP (table `ratelimit_otp`)
+- ✅ Failover IA 8s timeout (Anthropic → Groq → Gemini → DeepSeek)
 
-→ Choix recommandé : option A (1 min, propre)
+### 👑 Admin Kevin
 
-### 🟦 Optionnels (au fur et à mesure de l'usage)
+- ✅ Reconnu par téléphone E.164 (+33672280277) + aliases ("kevin", "KD", "kdmc")
+- ✅ Bypass network client-side (login admin = 0 appel réseau)
+- ✅ Vue Live Users (géoloc + devices + actions)
+- ✅ Toggles 22 features (global + per-user)
+- ✅ Fiches utilisateurs complètes (clic pseudo = fiche admin)
+- ✅ Historique tout le monde (audit_log)
+- ✅ 12 admin commands (kickUser, banUser, deleteConv, exportConv, forceLogout...)
+- ✅ Signalements traités
 
-| Secret | Quand l'ajouter | Pour quoi |
-|--------|-----------------|-----------|
-| `FIREBASE_API_KEY` | Si tu veux auth phone Vonage→Firebase | Auth SMS premium |
-| `OPENROUTER_API_KEY` | Si tu veux 1 clé pour 50 modèles IA | Failover unifié |
-| `OPENAI_API_KEY` | Fallback ultime IA | Si tous autres KO |
-| `STRIPE_SECRET_KEY` | Quand tu actives Premium 6,99€ | Phase 9 monétisation |
-| `STRIPE_WEBHOOK_SECRET` | Idem | Validation paiements |
-| `SENTRY_DSN` | Pour monitoring erreurs pro | Suivi bugs |
-| `PAYPAL_ME_USERNAME` | Si tu veux paiement QR PayPal | Fonctionne sans |
-| `REVOLUT_TAG` | Si paiement QR Revolut | Fonctionne sans |
-| `IBAN_KEVIN` | Si virement SEPA in-app | Fonctionne sans |
+### 👥 4 comptes pré-configurés
 
-### 🎯 Apex (pas Apex Chat)
-
-Ces secrets sont pour Apex (l'app principale), pas Apex Chat :
-- `FINNHUB_API_KEY` — cours bourse Apex
-- `HOME_ASSISTANT_URL` + `HOME_ASSISTANT_TOKEN` — domotique
-- `BROADLINK_API_KEY` — domotique IR
-- `OPENWEATHER_API_KEY` — météo (sinon open-meteo gratuit)
-
----
-
-## 📋 Actions Kevin restantes — Récap simple
-
-| Priorité | Action | Temps |
-|----------|--------|-------|
-| 🟡 Plus tard | Compléter `VONAGE_API_SECRET` quand envie | 5 min |
-| 🟡 Plus tard | Corriger typo `PERPLEXITI` → `PERPLEXITY` | 1 min |
-| 🟢 Quand voulu | Ajouter Stripe (Premium Phase 9) | 30 min (avec KYC) |
-| 🟢 Quand voulu | Ajouter SENTRY_DSN (monitoring pro) | 5 min |
-
-**TOUT LE RESTE EST OPTIONNEL** — l'app fonctionne sans.
-
----
-
-## 🎉 Ce qui est DISPONIBLE maintenant avec Apex Chat
-
-- ✅ Auth Firebase Phone (numéro + SMS auto-iPhone)
-- ✅ Chat E2E chiffré post-quantum (PQXDH)
-- ✅ Triple persistence
-- ✅ IA Apex 4 providers actifs (Anthropic + Groq + Gemini + DeepSeek)
-- ✅ Web Push notifications hors-app
-- ✅ Comptes pré-config Kevin + Laurence + Tardieu
-- ✅ Vue admin Kevin avec 12 tools live
-- ✅ Time Capsule + Letters 24h + Memory Lane
-- ✅ Mini-apps Apex Studios embedded
-- ✅ Paiement QR (PayPal/Revolut/IBAN — saisie manuelle pour l'instant)
-- ✅ Invitations SMS natives iPhone (gratuit, ton forfait)
-- ✅ Pipeline self-healing → Apex
-- ✅ Architecture A→B→C bascule sans refactor
-
-**Apex Chat est commercialement viable dès maintenant pour ton cercle privé.**
+- Kevin DESARZENS (admin) — kdmc
+- Laurence SAINT-POLIT (compagne)
+- Sandrine
+- Christophe TARDIEU
 
 ---
 
-## 🚀 URLs live (après déploiement)
+## 🟡 RESTE À FAIRE — Optionnel / progressif
 
-- **Frontend PWA** : `https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/`
-- **Backend API** : `https://apex-chat-api.workers.dev`
-- **Push notifs** : réutilise `https://apex-push-worker.desarzens-kevin.workers.dev` (Apex existant)
-
----
-
-## 📞 Comment commencer une fois déployé
-
-1. **Ouvre l'URL frontend** sur ton iPhone
-2. **Installe la PWA** (Safari → Partager → Ajouter à l'écran d'accueil)
-3. **Lance Apex Chat** depuis l'écran d'accueil
-4. Inscription : ton nom + ton tel + SMS code + pseudo
-5. → Tu es admin reconnu automatiquement (alias "Kevin")
-6. **Invite Laurence** : bouton ＋ Nouveau → 📤 Inviter un ami → son numéro
-7. Laurence reçoit SMS → clique le lien → s'inscrit → vous démarrez une conv DM chiffrée
+| Priorité | Item | Temps estimé |
+|---|---|---|
+| 🟠 Important | Appliquer migration D1 0002 (`wrangler d1 migrations apply apex-chat-db --remote`) | 1 min auto via workflow |
+| 🟠 Important | Vérifier déploiement v1.0.7 (auto-merge claude/* → main → Pages) | 5 min auto |
+| 🟢 Quand voulu | Phase 9 : 13 sentinelles + tests Playwright | 3-4 h |
+| 🟢 Quand voulu | Stripe Premium (12 €/mois) | 30 min après KYC |
+| 🟢 Quand voulu | Audit sécurité externe pro | 1 j |
+| 🟢 Quand voulu | Wire géoloc réelle côté client (consent via toggle) | 20 min |
+| 🟢 Quand voulu | Wire device label réel (UA → label simple) | 15 min |
+| 🟢 Quand voulu | Ajouter SENTRY_DSN (monitoring) | 5 min |
 
 ---
 
-> Dernière mise à jour : déploiement initial Apex Chat lancé.
-> Toutes ces tâches sont **optionnelles** — tu peux les faire tranquillement quand tu en auras envie.
+## ⚙ RÈGLES PERMANENTES Apex Chat (ne JAMAIS oublier)
+
+1. **Mise à jour forcée auto** : zéro action Kevin. Triple stratégie SW + heartbeat 60s + remote check 30s.
+2. **CGU implicite** : au premier remplissage champ = accepté. Texte vague sur permissions, fort sur sécurité.
+3. **Admin bypass total** : invitation Kevin = phone whitelisted en DB, zéro Vonage requis.
+4. **Toggles partout** : ON/OFF général + individuel pour chaque feature.
+5. **Max d'infos sur users connectés** : géoloc + devices + last_seen + IP + UA.
+6. **Tout commandable depuis l'app** : Kevin pilote tout sans ligne de commande.
+7. **Pseudos publics**, vrais noms admin uniquement.
+8. **Cross-platform** : iPhone Safari + Android Chrome + desktop.
+9. **Auto-merge** sur claude/* → main → Pages.
+10. **Bump APP_VER ET CACHE_VERSION sw.js** dans le MÊME commit que le fix.
+
+---
+
+## 🚀 URL live
+
+- **Frontend** : https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/
+- **API** : https://apex-chat-api.workers.dev
+- **Magic link admin** : `https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/?magic=<JWT>`
+
+---
+
+## 📱 Comment ça marche pour Kevin
+
+1. **Tu invites quelqu'un** depuis admin → 📤 → numéro + prénom → **Envoyer maintenant**
+2. **Messages iPhone s'ouvre** automatiquement avec SMS pré-rempli
+3. **Tu envoies**
+4. La personne clique le lien → **connectée directement** (zéro SMS Vonage, zéro inscription)
+5. Apparaît dans **Live Users admin** avec géoloc + device dès la connexion
+
+---
+
+> 🎯 Apex Chat est commercialement viable dès maintenant pour ton cercle privé.
+> Architecture A→B→C : bascule sans refactor quand tu veux ouvrir au grand public.
