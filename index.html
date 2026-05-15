@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.635";
+var APP_VER="v9.636";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24807,6 +24807,107 @@ function cmcExportPdfSourceForDiag(){
   }catch(e){toast("Erreur export : "+(e&&e.message||e),"err");}
 }
 
+// v9.636 (Kevin 2026-05-15 "ne marche pas non plus pour les inspecteurs") :
+// Diagnostic Pit Boss / Superviseurs : exporte les horaires RÉELS stockés en
+// A.overrides[key] pour CHAQUE cadre, séparés par rôle. Permet de confirmer
+// runtime si tous ont vraiment le même horaire OU si c'est juste un effet
+// d'affichage (rotation décalée jour par jour).
+function cmcExportPitBossDiag(){
+  try{
+    if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month;
+    var key=iy+"-"+im;
+    var ov=A.overrides&&A.overrides[key]||{};
+    var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres"&&isEmpActive(e,iy,im);});
+    if(cadres.length===0){toast("Aucun cadre actif pour "+MFR[im]+" "+iy,"warn");return;}
+    // Trier : Pit Boss en premier (role pit OU team pit15), Superviseurs/Inspecteurs ensuite
+    var pits=cadres.filter(function(e){return e.role==="pit"||e.team==="pit15"||cmcIsPitBoss(e);});
+    var sups=cadres.filter(function(e){return pits.indexOf(e)<0;});
+    function rowFmt(e){
+      var r=ov[e.id]||{};
+      var days=[];
+      for(var d=1;d<=31;d++){days.push((r[d]||"_"));}
+      var nonEmpty=Object.keys(r).filter(function(d){return !!r[d];}).length;
+      return e.name.padEnd(22)+" ["+(e.role||"?")+"/"+(e.team||"?")+"]  "+days.join(" ")+"  ("+nonEmpty+"/31)";
+    }
+    // Détecter doublons exact
+    function dupGroups(emps){
+      var map={};
+      emps.forEach(function(e){
+        var r=ov[e.id]||{};
+        var sig=[];for(var d=1;d<=31;d++)sig.push(r[d]||"");
+        var sigKey=sig.join("|");
+        if(!map[sigKey])map[sigKey]=[];
+        map[sigKey].push(e.name);
+      });
+      return Object.keys(map).filter(function(k){return map[k].length>=2;}).map(function(k){return map[k];});
+    }
+    var pitDups=dupGroups(pits);
+    var supDups=dupGroups(sups);
+    var bug=null;try{bug=_cmcDetectIdenticalScheduleBug(key);}catch(_){}
+    var report="=== CMCteams DIAGNOSTIC CADRES "+APP_VER+" ===\n"
+      +"Date: "+new Date().toISOString()+"\n"
+      +"Mois: "+MFR[im]+" "+iy+"  (key="+key+")\n"
+      +"\n=== PIT BOSS ("+pits.length+") ===\n"
+      +pits.map(rowFmt).join("\n")
+      +"\n\n=== SUPERVISEURS / INSPECTEURS ("+sups.length+") ===\n"
+      +sups.map(rowFmt).join("\n")
+      +"\n\n=== DOUBLONS EXACTS DÉTECTÉS ===\n"
+      +"Pit Boss avec horaire identique : "+(pitDups.length?pitDups.map(function(g){return g.join(" + ");}).join("\n  "):"AUCUN ✓")+"\n"
+      +"Superviseurs avec horaire identique : "+(supDups.length?supDups.map(function(g){return g.join(" + ");}).join("\n  "):"AUCUN ✓")+"\n"
+      +"\n=== _cmcDetectIdenticalScheduleBug ===\n"
+      +(bug?JSON.stringify(bug,null,2):"non détecté ✓")
+      +"\n\n=== EMP META (sample 3 cadres) ===\n"
+      +cadres.slice(0,3).map(function(e){
+        return e.name+": family="+e.family+" team="+e.team+" role="+(e.role||"")+" senior="+!!e.senior+" ff="+!!e.faisantFonction;
+      }).join("\n");
+    // Modal réutilisant le pattern v9.635 (clipboard.writeText, pas de side effect)
+    var reportEsc=esc(report);
+    var modalId="diagPitBossModal_"+Date.now();
+    var modal='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px">'
+      +'<div style="background:#0f1a14;border:2px solid #ff8080;border-radius:14px;max-width:900px;width:100%;max-height:95vh;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="color:#ff8080;margin:0;font-size:18px">🔍 Diagnostic Pit Boss '+esc(MFR[im])+' '+iy+'</h2>'
+      +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+      +'<p style="color:#ffb0b0;font-size:13px;margin:0">Si "DOUBLONS EXACTS" listés ➜ vrai bug parser. Si "AUCUN ✓" ➜ horaires variés (rotation décalée jour/jour, c\'est normal).</p>'
+      +'<textarea id="'+modalId+'_ta" readonly style="width:100%;height:50vh;background:#0a0f0c;color:#ffd0d0;border:1px solid #ff808055;border-radius:8px;padding:10px;font-family:monospace;font-size:11px;resize:none">'+reportEsc+'</textarea>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button id="'+modalId+'_copy" style="flex:2;min-width:160px;min-height:52px;padding:14px;background:linear-gradient(135deg,#5aaa70,#3a8a50);border:none;color:#fff;font-weight:800;border-radius:10px;cursor:pointer;font-size:15px">📋 Copier</button>'
+      +'<button id="'+modalId+'_dl" style="flex:1;min-width:140px;min-height:52px;padding:14px;background:rgba(74,160,255,.18);border:1px solid #4aa0ff;color:#4aa0ff;font-weight:700;border-radius:10px;cursor:pointer;font-size:14px">💾 .txt</button>'
+      +'</div>'
+      +'<div id="'+modalId+'_status" style="font-size:12px;color:#ffb0b0;min-height:18px;text-align:center"></div>'
+      +'</div></div>';
+    document.body.insertAdjacentHTML("beforeend",modal);
+    var btnCopy=document.getElementById(modalId+"_copy");
+    var btnDl=document.getElementById(modalId+"_dl");
+    var status=document.getElementById(modalId+"_status");
+    var ta=document.getElementById(modalId+"_ta");
+    if(btnCopy){
+      btnCopy.addEventListener("click",function(){
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          navigator.clipboard.writeText(report).then(function(){
+            status.style.color="#5aaa70";status.textContent="✅ Copié ! Colle dans chat Claude Code.";
+            btnCopy.textContent="✅ Copié !";
+          },function(){ta.focus();ta.select();status.textContent="⚠ Sélectionne manuellement.";});
+        }else{ta.focus();ta.select();try{document.execCommand("copy");status.textContent="✅ Sélectionné";}catch(_){status.textContent="⚠ Copie manuelle";}}
+      });
+    }
+    if(btnDl){
+      btnDl.addEventListener("click",function(){
+        try{
+          var blob=new Blob([report],{type:"text/plain;charset=utf-8"});
+          var url=URL.createObjectURL(blob);
+          var a=document.createElement("a");
+          a.href=url;a.download="cmcteams-pitboss-diag-"+key+"-"+APP_VER+".txt";
+          document.body.appendChild(a);a.click();
+          setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+          status.style.color="#4aa0ff";status.textContent="✅ Téléchargé.";
+        }catch(e){status.style.color="#e06060";status.textContent="⚠ "+e.message;}
+      });
+    }
+    try{_audit("export_pitboss_diag",AID,key,"","pits:"+pits.length+" sups:"+sups.length+" dups:"+(pitDups.length+supDups.length));}catch(_){}
+  }catch(e){toast("Erreur diag : "+(e&&e.message||e),"err");}
+}
+
 // v9.625 (Kevin 2026-05-16 "les pit ont tous la même horaire. Pas possible.") :
 // Détecte le bug critique parser qui duplique le MÊME schedule sur tous les emps
 // d'une famille. Cas typique : parser lit 1 ligne d'horaires (header section)
@@ -32915,8 +33016,8 @@ function vImport(){
         <button class="btn" onclick="sv('parserintel')" title="Voir ce que l'app a appris sur les formats PDF" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(74,200,160,.12);border:1px solid rgba(74,200,160,.4);color:#7adcb0;font-weight:700">
           \ud83e\udde0 Parser IA
         </button>
-        <button class="btn" onclick="cmcExportPdfSourceForDiag()" title="Copie le texte PDF source dans le presse-papier pour diagnostic offline (envoyer \u00e0 Claude Code pour analyse)" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,160,72,.15);border:1px solid rgba(224,160,72,.5);color:#e0a848;font-weight:800">
-          \ud83d\udccb Exporter PDF source diag
+        <button class="btn" onclick="cmcExportPitBossDiag()" title="Diagnostic Pit Boss : export horaires r\u00e9els par cadre pour comparaison PDF" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">
+          \ud83d\udd0d Diag Pit Boss horaires
         </button>
       </div>
     </details>
