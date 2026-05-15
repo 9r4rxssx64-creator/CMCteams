@@ -24306,8 +24306,8 @@ function _cmcStoreImportMeta(key, eid, d, meta){
       star:meta.star||prev.star||false, // ★ sur la ligne
       ff:meta.ff||prev.ff||false        // faisant fonction (fond bleu)
     };
-    // v9.615 — Persist + sync Firebase via ls() (cmc_ov_meta dans FB_FIX)
-    // Throttled : on flush en batch après doImport (pas chaque cell)
+    // v9.615/v9.619 — Persist + sync Firebase via _cmcFlushOverridesMeta()
+    // appelé en batch après doImport (pas chaque cell). cmc_ov_meta dans FB_FIX.
   }catch(_e){}
 }
 // v9.615 — Helper public + flush manuel persistence
