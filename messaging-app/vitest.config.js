@@ -23,9 +23,6 @@ export default defineConfig({
         '**/*.spec.js',
         'workers/durable-objects/**', // Phase B (à venir)
         'workers/api-worker.js',       // Phase C (gros refactor à venir)
-        'workers/ia-worker.js',        // Phase B
-        'workers/push-worker.js',      // Phase B
-        'workers/sms-worker.js',       // Phase B
       ],
       thresholds: {
         lines: 100,
