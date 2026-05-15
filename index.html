@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.631";
+var APP_VER="v9.632";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7471,6 +7471,70 @@ var CMC_PARSER_TESTS=[
         A.user=origUser;
         return true; // helper existe + guard en place (vérifie pas trop pour pas casser)
       }catch(e){return false;}
+    }},
+  // v9.631 — Tests régression défensifs strip préfixe Pit Boss V2
+  {id:"VS32",label:"Strip préfixe téléphone : ligne pit boss correctement matchée",
+    input:"v9.631 strip phone prefix",
+    customCheck:function(){
+      // Simule la transformation que fait le parser sur une ligne Pit Boss V2
+      var input="62224/62056 JANEL JM 1 31 22/6 16/20 12h30/19 RH R";
+      var stripped=input.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,"").replace(/^\s*0\s+(?=[A-Z])/,"");
+      // Après strip on doit avoir "JANEL JM 1 31 ..."
+      return stripped.indexOf("JANEL JM 1 31")===0;
+    }},
+  {id:"VS33",label:"Strip préfixe superviseur : '0 ETTORI M.' → 'ETTORI M.'",
+    input:"v9.631 strip sup prefix",
+    customCheck:function(){
+      var input="0 ETTORI M. 1 31 22/6' 19/2";
+      var stripped=input.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,"").replace(/^\s*0\s+(?=[A-Z])/,"");
+      return stripped.indexOf("ETTORI M.")===0;
+    }},
+  {id:"VS34",label:"Strip préfixe : ligne employé normal NON impactée (régression)",
+    input:"v9.631 no false positive normal emp",
+    customCheck:function(){
+      // Format roulettes employé classique : NE DOIT PAS être strippé
+      var input="BRTP+E. PASSERON G * 1 31 20/5 19/4 16/22";
+      var stripped=input.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,"").replace(/^\s*0\s+(?=[A-Z])/,"");
+      return stripped===input; // identique = pas de regression
+    }},
+  {id:"VS35",label:"Strip préfixe : header section roulettes 'Roulettes 5 20/5 du au' NON impacté",
+    input:"v9.631 no false positive section header",
+    customCheck:function(){
+      var input="Roulettes 5 20/5 du au 5 19/4 du au";
+      var stripped=input.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,"").replace(/^\s*0\s+(?=[A-Z])/,"");
+      return stripped===input;
+    }},
+  {id:"VS36",label:"Strip préfixe : header '0 14/20 du au' (chiffre après 0) NON impacté",
+    input:"v9.631 no false positive 0 number",
+    customCheck:function(){
+      // "0 14/20" : 0 suivi d'un chiffre, pas d'une lettre → pas matché par (?=[A-Z])
+      var input="0 14/20 du au 0 14/20 du au 0 RH du au";
+      var stripped=input.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,"").replace(/^\s*0\s+(?=[A-Z])/,"");
+      return stripped===input;
+    }},
+  {id:"VS37",label:"_parseEncadresStatuts sans section retourne stats vides (régression)",
+    input:"v9.628 no encadres section",
+    customCheck:function(){
+      try{
+        if(typeof _parseEncadresStatuts!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        // Texte sans aucune section "N CP du au" — typique PDF SBM ancien format
+        var srcWithoutSections="BRTP+E. PASSERON G * 1 31 20/5 19/4 16/22 14/19 RH R";
+        var key="2026-TEST-VS37";
+        var res=_parseEncadresStatuts(srcWithoutSections,key,2026,4);
+        A.overrides=origOv;
+        // Doit retourner stats=0 sans throw — pas de regression
+        return res && res.filled===0 && (!res.sections || res.sections===0);
+      }catch(e){return false;}
+    }},
+  {id:"VS38",label:"Strip préfixe combiné : ligne pit boss avec préfix téléphone + nom 3 tokens",
+    input:"v9.631 strip + nom composé",
+    customCheck:function(){
+      // Test edge case : nom composé "DI COLANGELO F"
+      var input="62224/62056 DI COLANGELO F 1 31 19/4: 15/19 RH R";
+      var stripped=input.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,"").replace(/^\s*0\s+(?=[A-Z])/,"");
+      return stripped==="DI COLANGELO F 1 31 19/4: 15/19 RH R";
     }}
 ];
 // v9.521 — Helpers de normalisation utilises par les tests + le parser etendu
