@@ -587,7 +587,7 @@ async function handleUserHeartbeat(request, env) {
 }
 
 // PATCH /api/users/me — update profil safe (avatar, bio, language, timezone, display_name)
-async function handleUpdateMe(request, env) {
+export async function handleUpdateMe(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -661,7 +661,7 @@ async function handleListConversations(request, env) {
   return json({ ok: true, conversations: convs.results || [] });
 }
 
-async function handleCreateConversation(request, env) {
+export async function handleCreateConversation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1324,7 +1324,7 @@ async function handleAdminUserConvs(userId, request, env) {
 }
 
 // Recherche globale admin (metadata uniquement — E2E protège le contenu)
-async function handleAdminSearch(request, env) {
+export async function handleAdminSearch(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -1468,7 +1468,7 @@ async function handleAdminGetToggles(request, env) {
   return json({ ok: true, toggles });
 }
 
-async function handleAdminSetToggle(request, env) {
+export async function handleAdminSetToggle(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -1527,7 +1527,7 @@ async function handleWsConversation(convId, request, env) {
 //  Phase 4 — Groupes, communautés, channels (membership + stories + polls)
 // ============================================================================
 
-async function handleAddMember(convId, request, env) {
+export async function handleAddMember(convId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1570,7 +1570,7 @@ async function handleAddMember(convId, request, env) {
   return json({ ok: true, member_count: recount.c });
 }
 
-async function handleRemoveMember(convId, userId, request, env) {
+export async function handleRemoveMember(convId, userId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1606,7 +1606,7 @@ async function handleRemoveMember(convId, userId, request, env) {
   return json({ ok: true, member_count: recount.c });
 }
 
-async function handleListMembers(convId, request, env) {
+export async function handleListMembers(convId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1668,7 +1668,7 @@ async function handleUpdateConv(convId, request, env) {
 
 // ----- Stories 24h -----
 
-async function handleCreateStory(request, env) {
+export async function handleCreateStory(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1734,7 +1734,7 @@ export async function handleViewStory(storyId, request, env) {
 
 // ----- Polls -----
 
-async function handleCreatePoll(request, env) {
+export async function handleCreatePoll(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1761,7 +1761,7 @@ async function handleCreatePoll(request, env) {
   return json({ ok: true, poll: { id, conv_id, question, options, multi_choice, anonymous, closes_at } });
 }
 
-async function handleVotePoll(pollId, request, env) {
+export async function handleVotePoll(pollId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1806,7 +1806,7 @@ async function handleVotePoll(pollId, request, env) {
 //  Phase 7 — Time Capsule + Letters + Memory Lane + Apex Memo
 // ============================================================================
 
-async function handleCreateTimeCapsule(request, env) {
+export async function handleCreateTimeCapsule(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1912,7 +1912,7 @@ async function handleCreateLetter(request, env) {
   return json({ ok: true, letter: { id, deliver_at: deliverAt } });
 }
 
-async function handleCancelLetter(letterId, request, env) {
+export async function handleCancelLetter(letterId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1939,7 +1939,7 @@ async function handleListLetters(request, env) {
 
 // ----- Memory Lane (il y a 1 an) -----
 
-async function handleMemoryLane(request, env) {
+export async function handleMemoryLane(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -2064,7 +2064,7 @@ Francais, tutoiement, concis (max 200 mots), pas d'erreur technique brute.`;
 
 // ----- Signalements -----
 
-async function handleSignalement(request, env) {
+export async function handleSignalement(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
