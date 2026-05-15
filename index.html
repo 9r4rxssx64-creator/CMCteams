@@ -4863,7 +4863,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.617";
+var APP_VER="v9.618";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35391,7 +35391,7 @@ function doImport(){
         if(_visualStats && (_visualStats.starsApplied>0||_visualStats.ffApplied>0||_visualStats.redNamesFlagged>0)){
           _hVis+='<div style="margin-top:10px;padding:12px;background:linear-gradient(135deg,rgba(192,128,255,.10),rgba(96,64,200,.04));border:1.5px solid #c080ff;border-radius:10px">'
             +'<div style="font-size:14px;font-weight:800;color:#c080ff;margin-bottom:8px">🎨 Marqueurs visuels détectés</div>'
-            +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:13px">';
+            +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;font-size:13px">';
           _hVis+='<div style="padding:8px;background:rgba(255,206,58,.10);border-left:3px solid #ffce3a;border-radius:6px;color:#ffce3a"><div style="font-size:18px;font-weight:800">'+_visualStats.starsApplied+'</div><div style="font-size:11px">⭐ Étoiles (55+)</div></div>';
           _hVis+='<div style="padding:8px;background:rgba(74,160,255,.10);border-left:3px solid #4aa0ff;border-radius:6px;color:#4aa0ff"><div style="font-size:18px;font-weight:800">'+_visualStats.ffApplied+'</div><div style="font-size:11px">🔵 Faisant fonction</div></div>';
           _hVis+='<div style="padding:8px;background:rgba(224,96,96,.10);border-left:3px solid #e06060;border-radius:6px;color:#f0a0a0"><div style="font-size:18px;font-weight:800">'+_visualStats.redNamesFlagged+'</div><div style="font-size:11px">🔴 Noms rouges</div></div>';
