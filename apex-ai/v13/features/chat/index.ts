@@ -2505,6 +2505,30 @@ export function render(rootEl: HTMLElement): void {
           }
         } catch { /* non-bloquant */ }
       })();
+      /* v13.4.96 — Paste Extractor universel (Kevin "TP réseaux sites n'apparaissent pas").
+       * Complète detectAllCredentials + multi-source-analyze :
+       * extrait URLs+social_handle+email+IBAN+phone+SIRET+VAT+BTC+ETH. */
+      void (async () => {
+        try {
+          const { apexPasteExtractor } = await import('../../services/apex-paste-extractor.js');
+          const r = apexPasteExtractor.extract(pasted);
+          if (r.ok && r.total > 0) {
+            /* Catégoriser pour affichage toast */
+            const byType: Record<string, number> = {};
+            for (const item of r.items) {
+              byType[item.type] = (byType[item.type] ?? 0) + 1;
+            }
+            const summary = Object.entries(byType)
+              .map(([t, n]) => `${n} ${t}`)
+              .join(', ');
+            if (r.stored) {
+              toast.success(`🗂 ${r.total} éléments extraits : ${summary}`, { duration: 6000 });
+            } else {
+              toast.info(`🗂 ${r.total} éléments détectés (login admin pour stocker) : ${summary}`, { duration: 5000 });
+            }
+          }
+        } catch { /* non-bloquant */ }
+      })();
       void (async () => {
         const { detectAllCredentials } = await import('../../services/credential-patterns.js');
         const detected = detectAllCredentials(pasted);
