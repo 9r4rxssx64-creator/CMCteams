@@ -479,6 +479,34 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       void autoRestoreCredentials.boot();
     }),
 
+    /* v13.4.118 (Kevin "J'ai api Cloudfare tout autonome") —
+       Cloudflare KV vault backup auto-init + push à chaque setKey.
+       Au boot, si token Cloudflare présent → init namespace + push backup. */
+    safeInit('cf-vault-deploy', async () => {
+      const { apexCloudflareVaultDeploy } = await import('./apex-cloudflare-vault-deploy.js');
+      /* Différé 8s : laisse vault unlock + auto-restore + gist-backup tourner d'abord */
+      setTimeout(() => {
+        void (async () => {
+          try {
+            const init = await apexCloudflareVaultDeploy.initInfra();
+            if (init.ok) {
+              logger.info('cf-vault-deploy', `✅ Cloudflare KV init OK : account=${init.account_id} namespace=${init.namespace_id}`);
+              /* Auto-push backup si vault non-vide */
+              const push = await apexCloudflareVaultDeploy.pushBackup();
+              if (push.ok) {
+                const { toast } = await import('../ui/toast.js');
+                toast.success(`☁️ Backup Cloudflare KV : ${push.bytes ?? 0} bytes pushés`, { duration: 6000 });
+              }
+            } else {
+              logger.debug('cf-vault-deploy', `init skipped : ${init.error}`);
+            }
+          } catch (err: unknown) {
+            logger.warn('cf-vault-deploy', 'boot run failed (non-blocking)', { err });
+          }
+        })();
+      }, 8000);
+    }),
+
     /* v13.4.105 (Kevin "zero manip autonome") —
        iCloud Keychain Apple : restore PAT GitHub silencieusement au boot.
        PAT stocké via Credentials Management API → survit reinstall PWA.
