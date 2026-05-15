@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.626";
+var APP_VER="v9.627";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -32617,6 +32617,11 @@ function vImport(){
         \ud83d\udcda Historique V1/V2/V3
       </button>
     </div>
+    <!-- v9.627 \u2014 Bouton diagnostic EXPORT mis EN PRIMAIRE (visible direct, pas dans repli)
+         car Kevin a besoin du texte PDF source pour fix parser "tous m\u00eame horaire" -->
+    <button class="btn" onclick="cmcExportPdfSourceForDiag()" title="Copie le texte PDF source dans le presse-papier \u2014 envoie \u00e0 Claude Code pour fix parser" style="display:block;width:100%;margin-top:10px;min-height:52px;padding:14px;font-size:15px;border-radius:10px;background:linear-gradient(135deg,rgba(224,160,72,.25),rgba(192,128,40,.15));border:2px solid #e0a848;color:#ffd078;font-weight:800;cursor:pointer">
+      \ud83d\udccb Exporter PDF source pour diagnostic parser
+    </button>
     <details style="margin-top:10px;padding:0;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:8px">
       <summary style="cursor:pointer;padding:10px 12px;font-size:13px;color:#a0b0c0;font-weight:700;list-style:none">
         \ud83d\udd27 Outils avanc\u00e9s (tests parser, re-tenter cadres, OCR Vision)
