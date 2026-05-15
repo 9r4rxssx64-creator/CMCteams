@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.623";
+var APP_VER="v9.624";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7536,42 +7536,42 @@ function _cmcRunParserTests(){
       // --- Normalisation nom ---
       if(typeof ex.normalize!=="undefined"){
         var nz=_cmcNormalizeName(inp);
-        if(nz!==tc.expect.normalize){ok=false;err="norm='"+nz+"' expected='"+tc.expect.normalize+"'";}
+        if(nz!==ex.normalize){ok=false;err="norm='"+nz+"' expected='"+ex.normalize+"'";}
       }
       // --- Extraction liste codes ---
-      if(typeof tc.expect.extractCodeList!=="undefined"){
+      if(typeof ex.extractCodeList!=="undefined"){
         var codes=_cmcExtractCodes(inp);
-        var want=tc.expect.extractCodeList;
+        var want=ex.extractCodeList;
         var allFound=want.every(function(w){return codes.indexOf(w)>=0;});
         if(!allFound){ok=false;err="codes="+codes.join(",")+" expected="+want.join(",");}
       }
       // --- Extraction periode ---
-      if(typeof tc.expect.extractPeriod!=="undefined"){
+      if(typeof ex.extractPeriod!=="undefined"){
         var per=_cmcExtractPeriod(inp);
-        var w=tc.expect.extractPeriod;
+        var w=ex.extractPeriod;
         if(!per||per.code!==w.code||per.from!==w.from||per.to!==w.to){
           ok=false;err="period="+(per?JSON.stringify(per):"null")+" expected="+JSON.stringify(w);
         }
       }
       // --- Line break dans nom ---
-      if(typeof tc.expect.lineBreakName!=="undefined"){
+      if(typeof ex.lineBreakName!=="undefined"){
         var nb=_cmcNormalizeName(inp);
-        if(nb!==tc.expect.lineBreakName){ok=false;err="lineBreak='"+nb+"' expected='"+tc.expect.lineBreakName+"'";}
+        if(nb!==ex.lineBreakName){ok=false;err="lineBreak='"+nb+"' expected='"+ex.lineBreakName+"'";}
       }
       // --- Note en marge ---
-      if(typeof tc.expect.hasNoteMargin!=="undefined"){
+      if(typeof ex.hasNoteMargin!=="undefined"){
         var hn=_cmcHasMarginNote(inp);
-        if(hn!==tc.expect.hasNoteMargin){ok=false;err="hasNote="+hn+" expected="+tc.expect.hasNoteMargin;}
+        if(hn!==ex.hasNoteMargin){ok=false;err="hasNote="+hn+" expected="+ex.hasNoteMargin;}
       }
       // --- Multi-horaires ---
-      if(typeof tc.expect.multiSchedule!=="undefined"){
+      if(typeof ex.multiSchedule!=="undefined"){
         var ms=_cmcHasMultiSchedule(inp);
-        if(ms!==tc.expect.multiSchedule){ok=false;err="multiSched="+ms+" expected="+tc.expect.multiSchedule;}
+        if(ms!==ex.multiSchedule){ok=false;err="multiSched="+ms+" expected="+ex.multiSchedule;}
       }
       // --- Rejet comme nom ---
-      if(typeof tc.expect.rejectAsName!=="undefined"){
+      if(typeof ex.rejectAsName!=="undefined"){
         var rj=_cmcShouldRejectAsName(inp);
-        if(rj!==tc.expect.rejectAsName){ok=false;err="reject="+rj+" expected="+tc.expect.rejectAsName;}
+        if(rj!==ex.rejectAsName){ok=false;err="reject="+rj+" expected="+ex.rejectAsName;}
       }
       // --- v9.596 Custom check (validation/versioning/OCR/Vision) ---
       // v9.619 (audit P1 #4) — distinguer "skipped" (DB pas chargée) de "pass".
