@@ -51,12 +51,12 @@ function err(message, status = 400, code = 'error') {
   return json({ error: code, message }, status);
 }
 
-function normalizeName(s) {
+export function normalizeName(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[\s\-_.@]+/g, ' ').trim();
 }
 
-function isKevinAdmin(name, phone) {
+export function isKevinAdmin(name, phone) {
   if (!name) return false;
   const n = normalizeName(name);
   if (ADMIN_KEVIN_ALIASES.includes(n)) return true;
@@ -70,13 +70,13 @@ function isKevinAdmin(name, phone) {
   return false;
 }
 
-async function sha256(input) {
+export async function sha256(input) {
   const buf = new TextEncoder().encode(input);
   const hash = await crypto.subtle.digest('SHA-256', buf);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function signJWT(payload, secret) {
+export async function signJWT(payload, secret) {
   const header = { alg: 'HS256', typ: 'JWT' };
   const enc = (o) => btoa(JSON.stringify(o)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   const data = `${enc(header)}.${enc(payload)}`;
@@ -88,7 +88,7 @@ async function signJWT(payload, secret) {
   return `${data}.${sigB64}`;
 }
 
-async function verifyJWT(token, secret) {
+export async function verifyJWT(token, secret) {
   if (!token) return null;
   const [h, p, s] = token.split('.');
   if (!h || !p || !s) return null;
@@ -273,7 +273,7 @@ async function handleSendOtp(request, env) {
 //  Vérification réelle via Firebase JWKS public keys
 // ============================================================================
 
-async function fetchFirebasePublicKeys(env) {
+export async function fetchFirebasePublicKeys(env) {
   // Cache 1h dans KV
   const cached = await env.APEX_CHAT_CACHE?.get('firebase:public_keys', 'json');
   if (cached && cached.expires_at > Date.now()) return cached.keys;
@@ -289,7 +289,7 @@ async function fetchFirebasePublicKeys(env) {
   return keys;
 }
 
-async function verifyFirebaseIdToken(idToken, env) {
+export async function verifyFirebaseIdToken(idToken, env) {
   if (!env.FIREBASE_PROJECT_ID) throw new Error('FIREBASE_PROJECT_ID non configuré');
 
   const [headerB64, payloadB64, sigB64] = idToken.split('.');
@@ -2369,7 +2369,7 @@ export default {
 //  Helpers Queue consumer
 // ============================================================================
 
-async function pushToApexTelemetry(payload, env) {
+export async function pushToApexTelemetry(payload, env) {
   if (!env.APEX_HANDOFF_FIREBASE_URL || !env.APEX_HANDOFF_TOKEN) return;
   try {
     await fetch(`${env.APEX_HANDOFF_FIREBASE_URL}/apex/ax_telemetry_in.json?auth=${env.APEX_HANDOFF_TOKEN}`, {
@@ -2385,7 +2385,7 @@ async function pushToApexTelemetry(payload, env) {
   }
 }
 
-async function runAutoFix(body, env) {
+export async function runAutoFix(body, env) {
   // Whitelist auto-fix : restart DO / rotate keys / requeue push
   const whitelist = ['restart-do', 'rotate-keys', 'requeue-push', 'fb-reconnect', 'reset-streaming'];
   if (!whitelist.includes(body.action)) return;
@@ -2393,7 +2393,7 @@ async function runAutoFix(body, env) {
   console.log('Auto-fix attempt', body.action);
 }
 
-async function sendPushToUser(userId, payload, env) {
+export async function sendPushToUser(userId, payload, env) {
   const subs = await env.APEX_CHAT_DB.prepare(
     'SELECT endpoint, vapid_p256dh, vapid_auth, fcm_token, apns_token FROM push_subscriptions WHERE user_id=? AND last_seen > ?'
   ).bind(userId, Date.now() - 30 * 86400000).all();
@@ -2416,7 +2416,7 @@ async function sendPushToUser(userId, payload, env) {
   }
 }
 
-async function performDailyBackup(env) {
+export async function performDailyBackup(env) {
   // Backup D1 vers R2 (logique simplifiée — production utiliserait wrangler d1 export)
   try {
     const tables = ['users', 'conversations', 'conversation_members', 'messages', 'audit_log'];
