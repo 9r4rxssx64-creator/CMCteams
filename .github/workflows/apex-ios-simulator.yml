@@ -15,6 +15,17 @@ name: Apex v13 iOS Simulator (Playwright WebKit iPhone 14 Pro)
 # Cloud iOS Simulator natif macOS = trop coûteux, WebKit suffit (même moteur).
 
 on:
+  # v13.4.95 (Kevin "Pourquoi les tests réels ne te montrent pas ces problèmes") :
+  # Lance sur CHAQUE push qui touche le code Apex pour détecter régression UX iPhone.
+  # Avant : workflow existait mais jamais déclenché auto → bugs iPhone échappaient.
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'apex-ai/v13/**'
+      - 'apex-ai-v13/**'
+      - '.github/workflows/apex-ios-simulator.yml'
   repository_dispatch:
     types: [apex_e2e_request]
   workflow_dispatch:

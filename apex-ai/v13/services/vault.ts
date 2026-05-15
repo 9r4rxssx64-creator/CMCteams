@@ -736,12 +736,19 @@ class Vault {
     } catch (err: unknown) {
       logger.warn('vault', 'setKey Firebase failed (offline OK)', { err, storageKey });
     }
-    /* 4. v13.3.74+ — Vault Firebase backup dédié (path indépendant FB_FIX). */
-    void import('./vault-firebase-backup.js')
-      .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.push(storageKey, encrypted))
-      .catch((err: unknown) => {
-        logger.debug('vault', 'setKey vault-fb-backup async skipped', { err, storageKey });
-      });
+    /* 4. v13.4.95 (Kevin "Coffre ne garde toujours pas mémoire") :
+     * Vault Firebase backup AWAITED avec timeout 3s (au lieu de void async non-bloquant).
+     * Avant : si Kevin fermait l'app avant que la promise async résolve, push perdu.
+     * Maintenant : on attend OU on timeout 3s (au lieu de attendre indéfiniment).
+     * Garantie que Firebase a au moins TENTÉ le push avant que setKey return. */
+    try {
+      const fbBackupPromise = import('./vault-firebase-backup.js')
+        .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.push(storageKey, encrypted));
+      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+      await Promise.race([fbBackupPromise, timeoutPromise]);
+    } catch (err: unknown) {
+      logger.debug('vault', 'setKey vault-fb-backup race finished', { err, storageKey });
+    }
     /* 5. v13.4.6 (Kevin "ne JAMAIS perdre une clé") : si AUCUNE couche n'a réussi,
      * push emergency path Firebase (encrypté) en dernier recours pour ne jamais perdre. */
     if (!persisted.local && !persisted.idb && !persisted.firebase) {
