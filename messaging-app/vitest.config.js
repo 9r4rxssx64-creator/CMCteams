@@ -25,11 +25,12 @@ export default defineConfig({
         '**/*.test.js',
         '**/*.spec.js',
         // Phase C2 : api-worker.js (2444 lignes) mesuré v8 (transparent) :
-        // 0% → 19.63% → 49.63% → 71.11% → 81.99% → **84.08% stmts**
-        // **100% FUNCTIONS (72/72)** / 81.02% branches / 84.08% lines.
-        // 308 tests. Reste 389 lines (verifyFirebaseIdToken signature RSA,
-        // handleMagicLogin user create DB, handleWsConversation, handlePrekeys).
+        // 0% → 19.63% → 49.63% → 71.11% → 81.99% → 84.08% → **86.08% stmts**
+        // **100% FUNCTIONS (72/72)** / 81.04% branches / 86.08% lines.
+        // 331 tests. Reste 340 lines internes (handleVerifyOtp OTP correct
+        // chemin success Vonage/TextBelt, handleAdminUserAction DB INSERTs).
         'workers/api-worker.js',
+
       ],
       thresholds: {
         lines: 100,
