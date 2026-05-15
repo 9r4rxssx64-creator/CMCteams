@@ -140,7 +140,7 @@ async function auditLog(env, actor_id, action, target_type, target_id, details, 
 //  Routes Auth
 // ============================================================================
 
-async function handleSendOtp(request, env) {
+export async function handleSendOtp(request, env) {
   const { phone, name } = await request.json();
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
   // Règle Kevin : prénom + nom obligatoires (2 tokens ≥2 chars), sécurité anti-impersonation
@@ -330,7 +330,7 @@ export async function verifyFirebaseIdToken(idToken, env) {
   return payload;  // { sub, phone_number, aud, iss, iat, exp, ... }
 }
 
-async function handleVerifyOtp(request, env) {
+export async function handleVerifyOtp(request, env) {
   const { phone, name, pseudo, otp, firebase_id_token } = await request.json();
   if (!phone || !pseudo) return err('Champs manquants', 400);
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
@@ -452,7 +452,7 @@ async function handleVerifyOtp(request, env) {
   }});
 }
 
-async function handleSsoFromApex(request, env) {
+export async function handleSsoFromApex(request, env) {
   // P0 FIX (audit) : SSO avec vérification réelle JWT Apex
   // Kevin doit signer avec APEX_SSO_SIGN_KEY (HMAC HS256 partagée Apex ↔ Apex Chat)
   const { apex_token, apex_uid, name, phone } = await request.json();
@@ -940,7 +940,7 @@ async function handleSystemConfig(request, env) {
 //  Admin bulk whitelist — colle 1 ou N numéros, tous auto-autorisés + liens magiques
 // ============================================================================
 
-async function handleAdminWhitelistBulk(request, env) {
+export async function handleAdminWhitelistBulk(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -1025,7 +1025,7 @@ async function handleAdminWhitelistBulk(request, env) {
 // Crée une invitation magic link signée par l'admin Kevin.
 // L'invitee se connecte via /api/auth/magic-login (pas d'OTP/SMS).
 // Pré-créé son user record + ajoute son phone à la whitelist DB pour OTP futur.
-async function handleAdminInviteMagic(request, env) {
+export async function handleAdminInviteMagic(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -1104,7 +1104,7 @@ async function handleAdminInviteMagic(request, env) {
 }
 
 // Auth via magic link (pas d'OTP requis — admin a pré-autorisé)
-async function handleMagicLogin(request, env) {
+export async function handleMagicLogin(request, env) {
   const { magic_token } = await request.json();
   if (!magic_token) return err('Token requis');
 
@@ -1709,7 +1709,7 @@ async function handleListStories(request, env) {
   return json({ ok: true, stories: stories.results || [] });
 }
 
-async function handleViewStory(storyId, request, env) {
+export async function handleViewStory(storyId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1978,7 +1978,7 @@ async function handleMemoryLane(request, env) {
 //  IA endpoints (fusion ia-worker dans api-worker pour eviter worker separe)
 // ============================================================================
 
-async function _callAnthropicIA(messages, systemPrompt, env, signal) {
+export async function _callAnthropicIA(messages, systemPrompt, env, signal) {
   if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST', signal,
@@ -1990,7 +1990,7 @@ async function _callAnthropicIA(messages, systemPrompt, env, signal) {
   return d.content?.[0]?.text || '';
 }
 
-async function _callGroqIA(messages, systemPrompt, env, signal) {
+export async function _callGroqIA(messages, systemPrompt, env, signal) {
   if (!env.GROQ_API_KEY) throw new Error('GROQ missing');
   const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -2003,7 +2003,7 @@ async function _callGroqIA(messages, systemPrompt, env, signal) {
   return d.choices?.[0]?.message?.content || '';
 }
 
-async function _callGeminiIA(messages, systemPrompt, env, signal) {
+export async function _callGeminiIA(messages, systemPrompt, env, signal) {
   if (!env.GEMINI_API_KEY) throw new Error('Gemini missing');
   const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
@@ -2016,7 +2016,7 @@ async function _callGeminiIA(messages, systemPrompt, env, signal) {
   return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
-async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
+export async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
   if (!env.DEEPSEEK_API_KEY) throw new Error('DeepSeek missing');
   const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
   const r = await fetch('https://api.deepseek.com/v1/chat/completions', {
