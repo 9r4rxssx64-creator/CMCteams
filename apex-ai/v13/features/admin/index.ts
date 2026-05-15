@@ -563,7 +563,12 @@ function attachHandlers(rootEl: HTMLElement): void {
        * Le label update donne le feedback visuel <50ms avant le render. */
       const labelEl = rootEl.querySelector<HTMLSpanElement>('.ax-toggle-label');
       if (labelEl) {
-        labelEl.innerHTML = `Commercialisation ${newState ? '<strong>ACTIVÉE</strong>' : '<strong>désactivée</strong>'}`;
+        /* v13.4.133 audit-grade : DOM API au lieu d'innerHTML pour éviter XSS interpolation */
+        labelEl.textContent = '';
+        labelEl.append('Commercialisation ');
+        const strong = document.createElement('strong');
+        strong.textContent = newState ? 'ACTIVÉE' : 'désactivée';
+        labelEl.append(strong);
       }
       commerce.setEnabled(newState);
       toast.success(`Commercialisation ${newState ? 'activée' : 'désactivée'}`);
@@ -716,20 +721,29 @@ function attachHandlers(rootEl: HTMLElement): void {
           resultsEl.innerHTML = '<p class="ax-muted">Aucun résultat (configure ax_github_token pour augmenter la limite).</p>';
           return;
         }
-        const itemsHtml = results
-          .slice(0, 20)
-          .map(
-            (r) => `
-            <li class="ax-kb-result">
-              <a href="${escapeHtml(r.htmlUrl)}" target="_blank" rel="noopener">
-                <code>${escapeHtml(r.path)}</code>
-              </a>
-              <span class="ax-muted">${escapeHtml(r.repo)} · score ${r.score.toFixed(2)}</span>
-            </li>
-          `,
-          )
-          .join('');
-        resultsEl.innerHTML = `<ul class="ax-kb-results-list">${itemsHtml}</ul>`;
+        /* v13.4.133 audit-grade : construction DOM API au lieu d'innerHTML.
+         * Évite false-positive audit XSS sur ${} interpolation (variables
+         * déjà escapées + URLs API GitHub trusted). */
+        resultsEl.textContent = '';
+        const ul = document.createElement('ul');
+        ul.className = 'ax-kb-results-list';
+        results.slice(0, 20).forEach((r) => {
+          const li = document.createElement('li');
+          li.className = 'ax-kb-result';
+          const a = document.createElement('a');
+          a.href = r.htmlUrl;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          const code = document.createElement('code');
+          code.textContent = r.path;
+          a.append(code);
+          const span = document.createElement('span');
+          span.className = 'ax-muted';
+          span.textContent = `${r.repo} · score ${r.score.toFixed(2)}`;
+          li.append(a, ' ', span);
+          ul.append(li);
+        });
+        resultsEl.append(ul);
       });
     });
   }

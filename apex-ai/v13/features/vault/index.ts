@@ -797,7 +797,12 @@ function attachHandlers(rootEl: HTMLElement): void {
         const { vaultFirebaseBackup } = await import('../../services/vault-firebase-backup.js');
         const r = await vaultFirebaseBackup.restoreAllFromFirebaseBackup();
         if (result) {
-          result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px">🔓 ${r.restored} clés restaurées · ${r.failed} échouées · ${r.skipped} ignorées</div>`;
+          /* v13.4.133 audit-grade : DOM API, valeurs numériques mais audit XSS strict */
+          result.textContent = '';
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px';
+          div.textContent = `🔓 ${r.restored} clés restaurées · ${r.failed} échouées · ${r.skipped} ignorées`;
+          result.append(div);
         }
         if (r.restored > 0) {
           toast.success(`🔓 ${r.restored} clés restaurées depuis Firebase backup`);
@@ -825,7 +830,11 @@ function attachHandlers(rootEl: HTMLElement): void {
         const { autoRestoreCredentials } = await import('../../services/auto-restore-credentials.js');
         const r = await autoRestoreCredentials.restoreAutomatically();
         if (result) {
-          result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px">🔓 ${r.restored} restaurées · ${r.failed} échouées</div>`;
+          result.textContent = '';
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px';
+          div.textContent = `🔓 ${r.restored} restaurées · ${r.failed} échouées`;
+          result.append(div);
         }
         if (r.restored > 0) {
           toast.success(`🔓 ${r.restored} clés restaurées (4 sources)`);
@@ -887,7 +896,11 @@ function attachHandlers(rootEl: HTMLElement): void {
           } catch { /* skip */ }
         }
         if (result) {
-          result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px">🗑 ${deleted} clé(s) illisibles supprimées. Recolle tes clés via "Détecter & stocker" ci-dessous.</div>`;
+          result.textContent = '';
+          const divDel = document.createElement('div');
+          divDel.style.cssText = 'padding:8px;background:rgba(34,204,119,.1);color:#22cc77;border-radius:8px';
+          divDel.textContent = `🗑 ${deleted} clé(s) illisibles supprimées. Recolle tes clés via "Détecter & stocker" ci-dessous.`;
+          result.append(divDel);
         }
         toast.success(`🗑 ${deleted} clés illisibles supprimées`);
         haptic.success();

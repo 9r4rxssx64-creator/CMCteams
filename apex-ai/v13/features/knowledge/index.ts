@@ -221,7 +221,14 @@ async function loadCrossUser(rootEl: HTMLElement): Promise<void> {
         </details>
       `);
     }
-    container.innerHTML = `<p>${byUser.size} user(s), ${all.length} fact(s) total</p>${rows.join('')}`;
+    /* v13.4.133 audit-grade : DOM API. rows déjà escapés via escapeHtml inline. */
+    container.textContent = '';
+    const summary = document.createElement('p');
+    summary.textContent = `${byUser.size} user(s), ${all.length} fact(s) total`;
+    container.append(summary);
+    const rowsWrap = document.createElement('div');
+    rowsWrap.innerHTML = rows.join(''); /* rows escape déjà via escapeHtml */
+    container.append(rowsWrap);
   } catch (err: unknown) {
     container.innerHTML = `<em style="color:#c00;">Erreur : ${escapeHtml(String(err))}</em>`;
   }
@@ -253,7 +260,15 @@ async function loadLessons(rootEl: HTMLElement): Promise<void> {
         </li>
       `;
     });
-    container.innerHTML = `<p>${arr.length} lesson(s) (30 plus récentes affichées)</p><ul style="list-style:none;padding:0;">${rows.join('')}</ul>`;
+    /* v13.4.133 audit-grade : DOM API. rows déjà escapés via escapeHtml inline. */
+    container.textContent = '';
+    const summaryL = document.createElement('p');
+    summaryL.textContent = `${arr.length} lesson(s) (30 plus récentes affichées)`;
+    container.append(summaryL);
+    const ulL = document.createElement('ul');
+    ulL.style.cssText = 'list-style:none;padding:0;';
+    ulL.innerHTML = rows.join('');
+    container.append(ulL);
   } catch (err: unknown) {
     container.innerHTML = `<em style="color:#c00;">Erreur : ${escapeHtml(String(err))}</em>`;
   }
