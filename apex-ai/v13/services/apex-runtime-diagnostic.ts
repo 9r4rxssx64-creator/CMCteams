@@ -43,6 +43,12 @@ class ApexRuntimeDiagnostic {
     /* 1. Anti-zoom inline */
     checks.push(this.checkAntiZoom());
 
+    /* 1-bis. Viewport zoom actif (v13.4.102 Kevin "zoom tjs") */
+    checks.push(this.checkViewportZoom());
+
+    /* 1-ter. Toolbar rescue chevauche-t-elle le contenu ? */
+    checks.push(this.checkToolbarOverlap());
+
     /* 2. Vault Firebase path */
     checks.push(this.checkVaultUid());
 
@@ -60,6 +66,9 @@ class ApexRuntimeDiagnostic {
 
     /* 7. Auto-restore credentials : a tourné ? */
     checks.push(this.checkAutoRestore());
+
+    /* 8. Sentinelles : combien run / pending */
+    checks.push(await this.checkSentinels());
 
     const okCount = checks.filter((c) => c.ok).length;
     const failCount = checks.length - okCount;
@@ -93,6 +102,77 @@ class ApexRuntimeDiagnostic {
       };
     } catch (err) {
       return { id: 'anti-zoom', label: 'Anti-zoom inline Safari iOS', ok: false, detail: `error: ${String(err)}` };
+    }
+  }
+
+  /** v13.4.102 (Kevin "zoom tjs") — Détecte zoom actif via VisualViewport API. */
+  private checkViewportZoom(): DiagnosticCheck {
+    try {
+      const scale = (typeof window !== 'undefined' && 'visualViewport' in window && window.visualViewport)
+        ? window.visualViewport.scale
+        : 1;
+      const widthRatio = (typeof window !== 'undefined' && window.innerWidth && document.documentElement.clientWidth)
+        ? window.innerWidth / document.documentElement.clientWidth
+        : 1;
+      const ok = Math.abs(scale - 1) < 0.05 && Math.abs(widthRatio - 1) < 0.05;
+      return {
+        id: 'viewport-zoom',
+        label: 'Viewport zoom Safari iOS',
+        ok,
+        detail: `scale=${scale.toFixed(2)} · widthRatio=${widthRatio.toFixed(2)} (1.0 = pas de zoom)`,
+      };
+    } catch (err) {
+      return { id: 'viewport-zoom', label: 'Viewport zoom Safari iOS', ok: false, detail: `error: ${String(err)}` };
+    }
+  }
+
+  /** v13.4.102 (Kevin "boutons superposes") — Détecte si rescue toolbar overlap contenu. */
+  private checkToolbarOverlap(): DiagnosticCheck {
+    try {
+      const toolbar = document.getElementById('apex-rescue-toolbar');
+      const root = document.getElementById('apex-root');
+      if (!toolbar || !root) {
+        return {
+          id: 'toolbar-overlap',
+          label: 'Toolbar rescue overlap',
+          ok: true,
+          detail: 'pas de toolbar/root (skip)',
+        };
+      }
+      const toolbarRect = toolbar.getBoundingClientRect();
+      const rootRect = root.getBoundingClientRect();
+      const rootRightEdge = rootRect.right;
+      const toolbarLeftEdge = toolbarRect.left;
+      const overlap = toolbarLeftEdge < rootRightEdge - 50; /* tolérance 50px */
+      return {
+        id: 'toolbar-overlap',
+        label: 'Toolbar rescue overlap',
+        ok: !overlap,
+        detail: overlap
+          ? `OVERLAP : toolbar left=${Math.round(toolbarLeftEdge)} < root right-50=${Math.round(rootRightEdge - 50)}`
+          : `OK : toolbar left=${Math.round(toolbarLeftEdge)} ≥ root right-50=${Math.round(rootRightEdge - 50)}`,
+      };
+    } catch (err) {
+      return { id: 'toolbar-overlap', label: 'Toolbar rescue overlap', ok: false, detail: `error: ${String(err)}` };
+    }
+  }
+
+  /** v13.4.102 (Kevin "sentinelles ne tournent pas") — Count run vs pending. */
+  private async checkSentinels(): Promise<DiagnosticCheck> {
+    try {
+      const mod = await import('./sentinels.js').catch(() => null);
+      if (!mod) return { id: 'sentinels', label: 'Sentinelles 24/7', ok: false, detail: 'module non chargé' };
+      const stats = (mod as { sentinels?: { getStats?: () => { total: number; running: number; ok: number; pending: number } } }).sentinels?.getStats?.();
+      if (!stats) return { id: 'sentinels', label: 'Sentinelles 24/7', ok: false, detail: 'getStats indisponible' };
+      const ok = stats.pending < stats.total / 2; /* moins de moitié pending */
+      return {
+        id: 'sentinels',
+        label: 'Sentinelles 24/7',
+        ok,
+        detail: `${stats.ok} OK · ${stats.pending} pending · ${stats.running} running / ${stats.total} total`,
+      };
+    } catch (err) {
+      return { id: 'sentinels', label: 'Sentinelles 24/7', ok: false, detail: `error: ${String(err)}` };
     }
   }
 
