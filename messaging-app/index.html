@@ -220,7 +220,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.5';
+const __APEX_CHAT_VERSION__ = 'v1.0.6';
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
     // Force update check immédiat
@@ -254,7 +254,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.5</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.6</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -268,7 +268,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.5</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.6</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -771,13 +771,22 @@ K._handleAuthPhone = async function(){
   if(!name || name.length < 2) return toast('Saisis ton prénom et nom', 'err');
 
   // === BYPASS ADMIN KEVIN CÔTÉ CLIENT (immédiat, pas de fetch) ===
-  // Si Kevin reconnu via nom OU numéro → admin direct sans worker
   const cleanPhone = phone.replace(/\s/g,'');
   const isKevinByPhone = cleanPhone === '+33672280277';
   const isKevinByName = isKevinAdmin(name);
   if(isKevinByPhone || isKevinByName){
     K.authData = { phone: cleanPhone, name, _admin_bypass: true, otp: '000000' };
     toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
+    K.authStep = 'pseudo';
+    renderAuthStep();
+    return;
+  }
+
+  // === BYPASS INVITATION (lien magique envoyé par Kevin) ===
+  // Pas besoin de SMS pour les amis invités par lien
+  if(K.authData?._invite_bypass){
+    K.authData = { ...K.authData, phone: cleanPhone, name, _invited: true, otp: '111111' };
+    toast('📨 Bienvenue ami de Kevin — connexion sans SMS', 'ok', 2500);
     K.authStep = 'pseudo';
     renderAuthStep();
     return;
@@ -860,6 +869,22 @@ K._handleAuthPseudo = async function(){
     };
     K.login(localUser, 'local-admin-' + Date.now());
     toast('👑 Bienvenue Kevin admin', 'ok', 2500);
+    return;
+  }
+
+  // === Bypass invitation : login local user (pas admin) ===
+  if(K.authData._invited){
+    const localUser = {
+      id: 'invited_' + Date.now().toString(36),
+      pseudo,
+      real_name: K.authData.name,
+      phone: K.authData.phone,
+      is_admin: false,
+      invited_by_kevin: true,
+      created_at: Date.now()
+    };
+    K.login(localUser, 'invited-' + Date.now());
+    toast('🎉 Bienvenue ' + pseudo + ' !', 'ok', 2500);
     return;
   }
 
@@ -2001,29 +2026,115 @@ K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
 //  Invitation viral SMS
 // ============================================================================
 K.openInvite = function(){
-  K._showModal('📤 Inviter des amis', `
-    <p style="color:var(--ax-text-2);font-size:.9em">Envoie un SMS d'invitation à tes amis. Ils rejoindront Apex Chat avec ton code unique.</p>
+  K._showModal('📤 Inviter un ami', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Ton ami reçoit un lien magique. Il clique → entre direct, <strong>sans SMS</strong>.</p>
+    <label class="label" style="margin-top:14px">Prénom de l'ami</label>
+    <input id="invite-name" type="text" class="input" placeholder="Ex: Marc" autocapitalize="words">
     <label class="label" style="margin-top:14px">Numéro de téléphone</label>
     <input id="invite-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" inputmode="tel">
-    <button class="btn btn-block" onclick="K._sendInvite()" style="margin-top:14px">📲 Envoyer l'invitation SMS</button>
-    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px;text-align:center">5 amis qui acceptent = 1 an Apex Chat+ offert 🎁</p>
+    <button class="btn btn-block" onclick="K._sendInvite()" style="margin-top:14px">🪄 Générer le lien magique</button>
+    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px;text-align:center">Le lien contient le bypass SMS — ton ami entre direct, peu importe son numéro.</p>
   `);
 };
 
 K._sendInvite = async function(){
   const phone = $('#invite-phone').value.trim().replace(/[^\d+]/g,'');
+  const name = ($('#invite-name')?.value || 'Ami').trim();
   if(!phone) return toast('Numéro requis', 'err');
-  toast('Invitation préparée — Phase 2 envoi SMS', 'info');
-  K._closeModal();
+
+  // Génère lien magique (base64 de phone:name)
+  const token = btoa(phone + ':' + name).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
+  const inviteUrl = `${baseUrl}?invite=${token}`;
+
+  const smsText = `Salut ${name} ! Kevin t'invite sur Apex Chat (messagerie privée chiffrée). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
+
+  // Affiche le lien + bouton pour partager/copier
+  K._showModal('📨 Invitation prête', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Lien magique pour <strong>${esc(name)}</strong> (${esc(phone)}).
+    Pas besoin de SMS — il clique le lien et entre direct.</p>
+    <div style="background:var(--ax-bg-3);padding:12px;border-radius:10px;margin-top:14px;font-family:ui-monospace,monospace;font-size:.78em;word-break:break-all;color:var(--ax-gold)">
+      ${esc(inviteUrl)}
+    </div>
+    <p style="color:var(--ax-text-3);font-size:.78em;margin-top:8px">Message SMS à envoyer :</p>
+    <div style="background:var(--ax-bg-3);padding:12px;border-radius:10px;font-size:.85em;color:var(--ax-text-2)">
+      ${esc(smsText)}
+    </div>
+    <button class="btn btn-block" onclick="K._shareInvite('${esc(inviteUrl)}','${esc(smsText)}','${esc(phone)}')" style="margin-top:14px">
+      📤 Partager via SMS / WhatsApp
+    </button>
+    <button class="btn btn-out btn-block btn-sm" onclick="navigator.clipboard.writeText('${esc(smsText)}').then(()=>K.toast('Copié','ok'))" style="margin-top:8px">
+      📋 Copier le message
+    </button>
+  `);
+};
+
+K._shareInvite = function(url, smsText, phone){
+  // Méthode 1 : Web Share API (natif iPhone)
+  if(navigator.share){
+    navigator.share({
+      title: 'Invitation Apex Chat',
+      text: smsText,
+      url
+    }).then(()=>{
+      K.toast('Invitation partagée', 'ok');
+      K._closeModal();
+    }).catch(()=>{});
+    return;
+  }
+  // Méthode 2 : SMS natif iPhone (URL sms:)
+  const smsLink = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+  window.location.href = smsLink;
 };
 
 // ============================================================================
 //  Menu / Misc
 // ============================================================================
 K.toggleMenu = function(){
-  // Menu side simple : ouvre admin si Kevin
-  if(K.user?.is_admin) K.sv('admin');
-  else K.sv('settings');
+  // Drawer latéral (différent de la bottom nav)
+  K._showModal('☰ Menu rapide', `
+    <div class="card" style="margin:0">
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.sv('chats')">
+        <span style="font-size:1.5em">💬</span>
+        <div style="flex:1"><strong>Mes conversations</strong></div>
+      </div>
+      ${K.user?.is_admin ? `
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.sv('admin')">
+        <span style="font-size:1.5em">👑</span>
+        <div style="flex:1"><strong>Panel admin Kevin</strong><div style="font-size:.78em;color:var(--ax-text-2)">Tools + IA + audit + signalements</div></div>
+        <span>›</span>
+      </div>
+      ` : ''}
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K._showNewMenu()">
+        <span style="font-size:1.5em">➕</span>
+        <div style="flex:1"><strong>Nouveau</strong><div style="font-size:.78em;color:var(--ax-text-2)">Inviter / groupe / capsule / lettre</div></div>
+        <span>›</span>
+      </div>
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.openInvite()">
+        <span style="font-size:1.5em">🪄</span>
+        <div style="flex:1"><strong>Inviter un ami</strong><div style="font-size:.78em;color:var(--ax-text-2)">Lien magique sans SMS</div></div>
+        <span>›</span>
+      </div>
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.sv('settings')">
+        <span style="font-size:1.5em">⚙️</span>
+        <div style="flex:1"><strong>Réglages</strong></div>
+        <span>›</span>
+      </div>
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();window.open('./diag.html?v=' + Date.now())">
+        <span style="font-size:1.5em">🔧</span>
+        <div style="flex:1"><strong>Diagnostic technique</strong><div style="font-size:.78em;color:var(--ax-text-2)">Version, SW, permissions</div></div>
+        <span>›</span>
+      </div>
+    </div>
+    <div style="margin-top:14px;text-align:center;color:var(--ax-text-3);font-size:.78em">
+      <strong>${esc(K.user?.real_name || K.user?.pseudo || 'Anonyme')}</strong> · @${esc(K.user?.pseudo || '?')}<br>
+      Apex Chat ${esc(__APEX_CHAT_VERSION__)}<br>
+      ${K.user?.is_admin ? '<span class="tag tag-admin">👑 Admin</span>' : ''}
+    </div>
+    <button class="btn btn-err btn-block" onclick="K._closeModal();K.logout()" style="margin-top:14px">
+      🚪 Se déconnecter
+    </button>
+  `);
 };
 
 K._showNewMenu = function(){
@@ -2268,6 +2379,25 @@ async function _boot(){
     try{
       const r = await _authSsoFromApex(params.get('token'), params.get('uid'), params.get('name'));
       if(r.ok) K.login(r.user, r.token);
+    }catch(e){}
+  }
+
+  // === Lien d'invitation magique (bypass SMS pour amis Kevin) ===
+  // Format: ?invite=<base64(phone:name)>&kevin=1
+  const inviteToken = params.get('invite');
+  if(inviteToken){
+    try{
+      const decoded = atob(inviteToken.replace(/-/g,'+').replace(/_/g,'/'));
+      const [phone, name] = decoded.split(':');
+      if(phone && name){
+        // Pré-remplir le formulaire
+        K.authData = { phone, name, _invite_bypass: true };
+        setTimeout(() => {
+          const ph = $('#auth-phone'); if(ph) ph.value = phone;
+          const nm = $('#auth-name'); if(nm) nm.value = name;
+          toast('📨 Invitation reconnue — touche le bouton pour entrer', 'ok', 4000);
+        }, 500);
+      }
     }catch(e){}
   }
 }
