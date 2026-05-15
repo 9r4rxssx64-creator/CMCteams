@@ -4,6 +4,48 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Ape
 
 ---
 
+## 🔐 RÈGLE ABSOLUE — LOGIN TOUJOURS PRÉNOM + NOM (Kevin 2026-05-15, ABSOLUE NON-NÉGOCIABLE)
+
+> **"Pour les connexions, c'est toujours pour sécuriser, c'est toujours le nom, le prénom ou inversement, mais c'est tout. Pas juste prénom, pas juste nom ou quoi que ce soit."** — Kevin 2026-05-15
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire** — Apex, CMCteams, tous projets futurs avec auth multi-user :
+
+### Comportement obligatoire
+
+À chaque login (peu importe le user : admin Kevin, Laurence, clients, employés) :
+- ✅ Accepter "Prénom Nom" (ex: "Kevin Desarzens" / "Laurence Saint-Polit")
+- ✅ Accepter "Nom Prénom" (ordre inverse — ex: "Desarzens Kevin" / "Saint-Polit Laurence")
+- ✅ Accepter avec/sans accents, casse libre, tirets optionnels
+- ❌ REFUSER "Kevin" seul (juste prénom)
+- ❌ REFUSER "Desarzens" seul (juste nom)
+- ❌ REFUSER "KDMC" seul (alias court)
+- ❌ REFUSER tokens < 2 caractères
+
+### Implementation Apex (déjà en place v13.3.65, vérifié 2026-05-15)
+
+`services/auth.ts` :
+- `auth.login()` → `if (tokens.length < 2) return { ok: false, reason: 'Tape ton prénom ET ton nom' }`
+- `isKevinAdmin()` → `if (tokens.length < 2) return false`
+- Whitelist matching → `userTokens.length >= 3 && tokens.length >= 2`
+
+Tests régression `tests/unit/auth.test.ts` :
+- 'Kevin' / 'Desarzens' / 'KDMC' / 'Kev' tous → refusés
+- 'Kevin Desarzens' / 'Desarzens Kevin' → admin OK
+- 'Laurence Saint-Polit' / 'Saint-Polit Laurence' → user OK
+
+### Anti-régression
+
+JAMAIS modifier ce comportement sans :
+1. Test régression dédié dans auth.test.ts
+2. Validation explicite Kevin
+3. Justification dans commit message
+
+Tout subagent qui propose de "simplifier" le login en acceptant un seul token DOIT être refusé.
+
+S'applique : Apex (priorité absolue), CMCteams admin/employés, tous projets futurs.
+
+---
+
 ## 🔬 RÈGLE ABSOLUE — TOUJOURS VÉRIFIER END-TO-END AVANT TOUT (Kevin 2026-05-15, ABSOLUE)
 
 > **"Note de toujours vérifier end to end avant toujours pour tout. Apex aussi"** — Kevin 2026-05-15
