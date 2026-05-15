@@ -236,6 +236,7 @@ export function render(rootEl: HTMLElement): void {
         </p>
         <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
         <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
+        <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:#c9a227;border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
@@ -348,6 +349,22 @@ export function render(rootEl: HTMLElement): void {
       }
     })();
   });
+
+  /* v13.4.111 — Zoom Inspector live (Kevin "UX zoom encore" 8e fois). */
+  const zoomBtn = rootEl.querySelector<HTMLButtonElement>('#ax-zoom-inspector-btn');
+  if (zoomBtn && activeSettingsScope) {
+    activeSettingsScope.bind(zoomBtn, 'click', () => {
+      void (async () => {
+        const { apexZoomInspector } = await import('../../services/apex-zoom-inspector.js');
+        if (apexZoomInspector.isVisible()) {
+          apexZoomInspector.hide();
+        } else {
+          apexZoomInspector.show();
+        }
+      })();
+    });
+  }
+
   /* Wire new data-nav-route buttons (CSP strict, no inline onclick) */
   rootEl.querySelectorAll<HTMLElement>('[data-nav-route]').forEach((el) => {
     activeSettingsScope!.bind(el, 'click', () => {
