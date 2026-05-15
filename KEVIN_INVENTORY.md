@@ -1203,3 +1203,32 @@ grep -rln "from.*services/X\.js'\|import('.*X\.js')" .
 - workflow iPhone E2E : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/apex-v13-e2e.yml
 - workflow Lighthouse : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/lighthouse-apex-v13.yml
 - tests iPhone : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/e2e/iphone-critical-flows.spec.ts
+
+## v13.4.127 — Code split + flaky fix (Kevin 2026-05-15 "Continu jusqu'à la fin")
+
+### Fichiers modifiés
+- `apex-ai/v13/vite.config.ts` — split apex-tools-dispatch en 5 sub-chunks
+  • skills-dispatch / utils-finance / utils-data / utils-misc / core
+  • Résultat : chunk principal **118 KB → 60 KB** (-49%, gzip 12.74 KB)
+- `apex-ai/v13/tests/unit/sentinels-tests-100-final.test.ts` — 2 timeouts 5s → 30s
+
+### Mesures concrètes
+- vault.ts coverage MESURÉ : 76.75% statements (audit estimait 30%, faux)
+- Build dist/ OK 5.23s avec nouveau split
+- 441/441 tests files pass
+- TS strict 0 errors / ESLint 0 warnings
+
+### Score qualité estimé
+- v13.4.124 : 13.3/20 (66%)
+- v13.4.125 : 15/20 (75%)
+- v13.4.126 : 16.2/20 (81%)
+- **v13.4.127 : 16.7/20 (83%)** — code split + tests stable
+
+### Restant pour 18/20 (90% commercialisable)
+- Tests E2E réels iPhone via Playwright iPhone WebKit (déjà CI)
+- LCP mesuré <2.5s (Lighthouse CI gate déjà actif)
+- Pre-audit interne 2 LLM avant audit externe Cure53/Calibre (payants quand commercial public)
+
+### Liens GitHub v13.4.127
+- vite.config split : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/vite.config.ts
+- v13.4.127 commit : https://github.com/9r4rxssx64-creator/cmcteams/commit/e2840989
