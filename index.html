@@ -4863,7 +4863,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.615";
+var APP_VER="v9.616";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7121,6 +7121,51 @@ var CMC_PARSER_TESTS=[
         var fakeEmp={name:"TEST FF",faisantFonction:true};
         var html=empLabelHtml(fakeEmp);
         return html.indexOf(">FF<")>=0 || html.indexOf("Faisant fonction")>=0;
+      }catch(e){return false;}
+    }},
+  // v9.616 — Tests inferrence meta + sync + sentinelle
+  {id:"VS06",label:"_cmcInferCellMetaFromCodes infere bg=CP pour code CP",
+    input:"v9.616 infer meta",
+    customCheck:function(){
+      try{
+        if(typeof _cmcInferCellMetaFromCodes!=="function")return false;
+        var origOv=A.overrides,origMeta=A.overrides_meta;
+        A.overrides={};A.overrides_meta={};
+        A.overrides["TEST-VS06"]={"E00001":{1:"CP",2:"RH",3:"AF",4:"22/6*",5:"19/4'"}};
+        var st=_cmcInferCellMetaFromCodes("TEST-VS06");
+        var meta=A.overrides_meta["TEST-VS06"]["E00001"];
+        var ok=meta[1]&&meta[1].bg==="CP"
+            && meta[2]&&meta[2].bg==="RH"
+            && meta[3]&&meta[3].bg==="AF"
+            && meta[4]&&meta[4].bg==="CDP"
+            && meta[5]&&meta[5].bg==="CONV"
+            && st.inferred===5;
+        A.overrides=origOv;A.overrides_meta=origMeta;
+        return ok;
+      }catch(e){return false;}
+    }},
+  {id:"VS07",label:"cmcCellBgFromMeta retourne CSS bleu pour FF",
+    input:"v9.615 cell bg",
+    customCheck:function(){
+      try{
+        if(typeof cmcCellBgFromMeta!=="function")return false;
+        var bg=cmcCellBgFromMeta({bg:"FF",ff:true});
+        return bg && bg.indexOf("74,160,255")>=0; // rgba bleu
+      }catch(e){return false;}
+    }},
+  {id:"VS08",label:"cmcMetaForCell retourne null si pas de meta",
+    input:"v9.615 meta lookup",
+    customCheck:function(){
+      try{
+        if(typeof cmcMetaForCell!=="function")return false;
+        return cmcMetaForCell("NONEXISTENT","E0000",1)===null;
+      }catch(e){return false;}
+    }},
+  {id:"VS09",label:"FB_FIX contient cmc_ov_meta",
+    input:"v9.615 sync FB",
+    customCheck:function(){
+      try{
+        return Array.isArray(FB_FIX) && FB_FIX.indexOf("cmc_ov_meta")>=0;
       }catch(e){return false;}
     }}
 ];
@@ -11936,6 +11981,45 @@ function cmcShowCadresDiagPopup(){
   document.body.appendChild(m);
 }
 function _agentCadresWatch(){try{var y=A.year,m=A.month;var pl=gpl(y,m)||{};var days=getDays(y,m);var missing=[];A.employees.forEach(function(e){if((e.family||"")!=="cadres")return;if(!isEmpActive(e,y,m))return;var row=pl[e.id]||{};var filled=0;for(var d=1;d<=days;d++)if(row[d])filled++;if(filled===0)missing.push(e.name);});if(missing.length){agentAppendReport("cadres-watch","warn",missing.length+" cadres sans horaires: "+missing.slice(0,5).join(", "));var diag=lg("cmc_cadres_fallback_diag",null);if(diag&&diag.ts&&Date.now()-diag.ts<3600000)_cmcEscalate({missing:missing,diag:diag},"Cadres sans horaires apres fallback v9.447");}else{agentAppendReport("cadres-watch","ok","Tous cadres OK "+MFR[m]+" "+y);}}catch(e){agentAppendReport("cadres-watch","err",(e.message||"").slice(0,100));}}
+// v9.616 — Sentinelle meta-completeness-watch (1×/jour) :
+// Audit cohérence A.overrides_meta vs A.overrides + completeness score persisté.
+// Escalade si score < 75 ou si meta présente pour emp absent de overrides.
+function _agentMetaCompletenessWatch(){
+  try{
+    var y=A.year,m=A.month;
+    var key=y+"-"+m;
+    var meta=(A.overrides_meta||{})[key]||{};
+    var ov=(A.overrides||{})[key]||{};
+    var metaEmps=Object.keys(meta);
+    var ovEmps=Object.keys(ov);
+    // 1. Detecte emp orphelin : meta sans override correspondant
+    var orphans=metaEmps.filter(function(eid){return !ov[eid]||Object.keys(ov[eid]).length===0;});
+    // 2. Lit score completeness persisté
+    var rep=lg("cmc_import_completeness_"+key,null);
+    var score=rep&&rep.score!=null?rep.score:null;
+    // 3. Stats globales
+    var totalMetaCells=0,ffCount=0,starCount=0;
+    metaEmps.forEach(function(eid){
+      Object.keys(meta[eid]||{}).forEach(function(d){
+        totalMetaCells++;
+        var c=meta[eid][d]||{};
+        if(c.ff)ffCount++;
+        if(c.star)starCount++;
+      });
+    });
+    var msg="meta:"+totalMetaCells+" cells, FF:"+ffCount+", star:"+starCount;
+    if(score!=null)msg+=", score:"+score+"/100";
+    if(orphans.length)msg+=", orphans:"+orphans.length;
+    if(orphans.length>5||(score!=null&&score<75)){
+      agentAppendReport("meta-completeness","warn",msg+" — investigation requise");
+      try{_cmcEscalate({orphans:orphans,score:score,key:key},"meta-completeness "+key+" score="+score);}catch(_){}
+    }else if(totalMetaCells===0&&ovEmps.length>0){
+      agentAppendReport("meta-completeness","info","Aucune meta pour "+key+" — re-import recommande si PDF colore");
+    }else{
+      agentAppendReport("meta-completeness","ok",msg);
+    }
+  }catch(e){agentAppendReport("meta-completeness","err",(e.message||"").slice(0,100));}
+}
 /* v9.530 — Sentinelle admin-pin-watch : valide format hash cmc_admin_pin (>=20 chars + $ separators) */
 function _agentAdminPinWatch(){try{var raw=localStorage.getItem("cmc_admin_pin");if(!raw||raw==="null"){agentAppendReport("cmc-admin-pin-watch","ok","Aucun PIN admin defini");return;}var pin;try{pin=JSON.parse(raw);}catch(_){pin=raw;}var pinStr=String(pin||"");var hasSep=(pinStr.indexOf("$")>=0);var lenOk=(pinStr.length>=20);if(!lenOk||!hasSep){agentAppendReport("cmc-admin-pin-watch","err","PIN admin format suspect (len="+pinStr.length+", sep="+hasSep+")");try{cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+hasSep);}catch(_){}try{_cmcEscalate({len:pinStr.length,sep:hasSep},"PIN admin hash format invalide");}catch(_){}}else{agentAppendReport("cmc-admin-pin-watch","ok","Hash PIN admin format OK ("+pinStr.length+" chars)");}}catch(e){agentAppendReport("cmc-admin-pin-watch","err",(e.message||"").slice(0,100));}}
 /* v9.605 (Kevin REGLE PERMANENTE 2026-05-07 ANTI-REGRESSION) : Sentinelle regression-watch
@@ -13672,6 +13756,7 @@ var APP_AGENTS=[
   {id:"learn-sentinel",label:"\ud83e\udde0 Learner-Sentinel",icon:"\ud83e\udde0",interval:30*60*1000,run:_sentinelLearner,desc:"Patterns r\u00e9currents \u22653\u00d7/7j \u2192 auto-add lessons_learned cross-admins"},
   // v9.450 (Kevin 2026-04-21) — 8 agents specialises dedies bugs recurrents
   {id:"cadres-watch",label:"\ud83d\udc41 Cadres-Watch",icon:"\ud83d\udc41",interval:15*60*1000,run:_agentCadresWatch,desc:"Detecte cadres sans horaires apres import, log diag"},
+  {id:"meta-completeness",label:"\ud83c\udfa8 Meta-Completeness",icon:"\ud83c\udfa8",interval:24*60*60*1000,run:_agentMetaCompletenessWatch,desc:"Audit coh\u00e9rence A.overrides_meta vs A.overrides (couleurs/\u00e9toiles/FF), escalade si score<75"},
   {id:"parser-quality",label:"\ud83d\udcca Parser-Quality",icon:"\ud83d\udcca",interval:30*60*1000,run:_agentParserQuality,desc:"Qualite dernier import (couverture, codes inconnus)"},
   {id:"error-pattern",label:"\u26a0 Error-Pattern",icon:"\u26a0",interval:10*60*1000,run:_agentErrorPattern,desc:"Patterns recurrents cmc_err_log, escalade >5/h"},
   {id:"planning-integrity",label:"\ud83c\udf9f Planning-Integrity",icon:"\ud83c\udf9f",interval:20*60*1000,run:_agentPlanningIntegrity,desc:"Coherence planning (dates, codes, continuite)"},
@@ -22736,7 +22821,10 @@ function vDeparts(){
           var col=DCOL[pos-1]||"#888";
           var ci=CODES[code]||{c:"#6b7280"};
           var borderStyle=code?"1.5px solid "+col+"45":"1px dashed "+col+"35";
-          var cellBg=isHigh?'rgba(201,162,39,.1)':col+'07';
+          // v9.616 — Meta cell PDF (FF bleu, CDP orange, etc.) prioritaire sur cellBg défaut
+          var _depMeta=null;try{_depMeta=cmcMetaForCell(A.year+"-"+A.month,emp.id,d);}catch(_){}
+          var _depMetaBg=_depMeta?cmcCellBgFromMeta(_depMeta):"";
+          var cellBg=_depMetaBg||(isHigh?'rgba(201,162,39,.1)':col+'07');
           var _dLen=(code||"").length;
           var _dFS=_dLen>=7?"8.5px":_dLen>=6?"9.5px":_dLen>=5?"10.5px":"12px";
           var _dLS=_dLen>=6?"-0.6px":"0";
@@ -22747,7 +22835,10 @@ function vDeparts(){
             +'</div></td>';
         } else {
           var ci2=CODES[code]||{c:"#1e2e1e"};
-          var cellBg2=isHigh?'rgba(201,162,39,.05)':'#060e07';
+          // v9.616 \u2014 Meta cell prioritaire aussi sur lignes non-rotation
+          var _depMeta2=null;try{_depMeta2=cmcMetaForCell(A.year+"-"+A.month,emp.id,d);}catch(_){}
+          var _depMetaBg2=_depMeta2?cmcCellBgFromMeta(_depMeta2):"";
+          var cellBg2=_depMetaBg2||(isHigh?'rgba(201,162,39,.05)':'#060e07');
           h+='<td style="text-align:center;background:'+cellBg2+';padding:2px 1px'+colOvl+'"><span style="font-size:13px;color:'+ci2.c+'">'+(code||'\u00b7')+'</span></td>';
         }
       });
@@ -24051,6 +24142,38 @@ function _cmcFlushOverridesMeta(){
     if(!A.overrides_meta)return;
     ls("cmc_ov_meta",A.overrides_meta); // ls() synca FB_FIX automatiquement
   }catch(_){}
+}
+// v9.616 — Infère bg meta depuis les codes écrits par le parser principal.
+// Appelé après doImport pour combler les meta cells (CP/RH/R/AF/CDP/CONV/RRT).
+// Les meta FF/STAR sont déjà appliquées par _cmcApplyVisualMarkers.
+// Permet rendu cell-color cohérent avec le PDF source sans toucher au parser.
+function _cmcInferCellMetaFromCodes(key){
+  var stats={inferred:0,bgTypes:{}};
+  try{
+    var ov=A.overrides&&A.overrides[key];
+    if(!ov)return stats;
+    Object.keys(ov).forEach(function(eid){
+      var row=ov[eid]||{};
+      Object.keys(row).forEach(function(d){
+        var c=String(row[d]||"").trim();
+        if(!c)return;
+        var bg=null;
+        if(c.endsWith("*"))bg="CDP";
+        else if(c.endsWith("'"))bg="CONV";
+        else if(c==="CP")bg="CP";
+        else if(c==="RH")bg="RH";
+        else if(c==="R")bg="R";
+        else if(c==="AF")bg="AF";
+        else if(c==="RRT"||c==="PRT")bg="RRT";
+        if(bg){
+          _cmcStoreImportMeta(key,eid,d,{bg:bg});
+          stats.inferred++;
+          stats.bgTypes[bg]=(stats.bgTypes[bg]||0)+1;
+        }
+      });
+    });
+  }catch(e){console.warn("[_cmcInferCellMetaFromCodes]",e);}
+  return stats;
 }
 // v9.615 — Couleurs de fond standardisées pour rendu cells (CSS background)
 var CMC_META_BG_COLORS={
@@ -35184,6 +35307,8 @@ function doImport(){
         _visualStats=_cmcApplyVisualMarkers(key,txt);
       }
     }catch(_visErr){console.warn("[visual-markers]",_visErr&&_visErr.message);}
+    // v9.616 — Infère meta bg per-cell depuis codes parser (CP/RH/R/AF/CDP/CONV/RRT)
+    try{if(typeof _cmcInferCellMetaFromCodes==="function")_cmcInferCellMetaFromCodes(key);}catch(_inferErr){console.warn("[infer-meta]",_inferErr&&_inferErr.message);}
     // v9.615 — Flush A.overrides_meta cross-device via Firebase
     try{if(typeof _cmcFlushOverridesMeta==="function")_cmcFlushOverridesMeta();}catch(_fmErr){console.warn("[flush-meta]",_fmErr&&_fmErr.message);}
     try{
