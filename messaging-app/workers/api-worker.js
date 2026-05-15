@@ -1293,6 +1293,94 @@ async function handleMemoryLane(request, env) {
   return json({ ok: true, memory: { date_key: dateKey, msg_ids: msgIds, count: msgIds.length } });
 }
 
+// ============================================================================
+//  IA endpoints (fusion ia-worker dans api-worker pour eviter worker separe)
+// ============================================================================
+
+async function _callAnthropicIA(messages, systemPrompt, env, signal) {
+  if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', signal,
+    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1024, system: systemPrompt || '', messages })
+  });
+  if (!r.ok) throw new Error('Anthropic ' + r.status);
+  const d = await r.json();
+  return d.content?.[0]?.text || '';
+}
+
+async function _callGroqIA(messages, systemPrompt, env, signal) {
+  if (!env.GROQ_API_KEY) throw new Error('GROQ missing');
+  const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', signal,
+    headers: { 'Authorization': 'Bearer ' + env.GROQ_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: full, max_tokens: 1024 })
+  });
+  if (!r.ok) throw new Error('Groq ' + r.status);
+  const d = await r.json();
+  return d.choices?.[0]?.message?.content || '';
+}
+
+async function _callGeminiIA(messages, systemPrompt, env, signal) {
+  if (!env.GEMINI_API_KEY) throw new Error('Gemini missing');
+  const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
+    method: 'POST', signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined, contents })
+  });
+  if (!r.ok) throw new Error('Gemini ' + r.status);
+  const d = await r.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
+  if (!env.DEEPSEEK_API_KEY) throw new Error('DeepSeek missing');
+  const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
+  const r = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST', signal,
+    headers: { 'Authorization': 'Bearer ' + env.DEEPSEEK_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'deepseek-chat', messages: full, max_tokens: 1024 })
+  });
+  if (!r.ok) throw new Error('DeepSeek ' + r.status);
+  const d = await r.json();
+  return d.choices?.[0]?.message?.content || '';
+}
+
+async function handleIAChat(request, env) {
+  const { messages, systemPrompt, context } = await request.json();
+  if (!Array.isArray(messages) || messages.length === 0) return err('messages required');
+
+  const sysPrompt = systemPrompt || `Tu es Apex, l'assistant IA d'Apex Chat (messagerie privee).
+${context?.is_admin ? 'Tu parles a Kevin admin.' : 'Tu parles a ' + (context?.user_pseudo || 'un user')}.
+Francais, tutoiement, concis (max 200 mots), pas d'erreur technique brute.`;
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIA, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
+    { name: 'deepseek', fn: _callDeepSeekIA, key: !!env.DEEPSEEK_API_KEY }
+  ];
+  const available = providers.filter(p => p.key);
+  if (available.length === 0) return err('Aucun provider IA configure', 503);
+
+  const promises = available.map(({ name, fn }) => {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 8000);
+    return fn(messages, sysPrompt, env, ctrl.signal)
+      .then(r => { clearTimeout(to); if (!r) throw new Error('Empty'); return { provider: name, content: r }; })
+      .catch(e => { clearTimeout(to); throw e; });
+  });
+
+  try {
+    const winner = await Promise.any(promises);
+    return json({ ok: true, content: winner.content, provider: winner.provider });
+  } catch (e) {
+    return err('Tous providers IA indisponibles. Reessaie dans 1 min.', 503);
+  }
+}
+
 // ----- Signalements -----
 
 async function handleSignalement(request, env) {
@@ -1388,6 +1476,9 @@ export default {
 
       // Phase 7 — Memory Lane
       if (path === '/api/memory-lane' && method === 'GET') return await handleMemoryLane(request, env);
+
+      // Phase 6 — IA chat (fusion ia-worker)
+      if ((path === '/api/ia/chat' || path === '/ia/chat') && method === 'POST') return await handleIAChat(request, env);
 
       // Invitations
       if (path === '/api/invitations' && method === 'POST') return await handleCreateInvitation(request, env);

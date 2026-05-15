@@ -220,7 +220,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.4';
+const __APEX_CHAT_VERSION__ = 'v1.0.5';
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
     // Force update check immédiat
@@ -254,7 +254,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.4</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.5</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -268,7 +268,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.4</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.5</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1742,15 +1742,19 @@ K._adminAiAsk = async function(){
   res.innerHTML = '<div class="loading"></div> Apex réfléchit...';
 
   try{
-    // Phase 6 : appel ia-worker via API
-    const r = await fetch(API_BASE.replace('apex-chat-api', 'apex-chat-ia') + '/ia/chat', {
+    // Phase 6 : IA fusionnée dans api-worker (plus de worker séparé)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    const r = await fetch(API_BASE + '/api/ia/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (K.token || '') },
+      signal: controller.signal,
       body: JSON.stringify({
         messages: [{ role: 'user', content: q }],
         context: { user_pseudo: K.user.pseudo, is_admin: true, lang: 'fr' }
       })
     });
+    clearTimeout(timeout);
     const data = await r.json().catch(() => ({}));
     if(data.ok){
       res.innerHTML = `
