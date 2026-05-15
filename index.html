@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.625";
+var APP_VER="v9.626";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24498,6 +24498,66 @@ function _cmcGetEmpByIdCache(){
 }
 function _cmcInvalidateEmpByIdCache(){_cmcEmpByIdCache=null;_cmcEmpByIdCacheLen=-1;}
 
+// v9.625 — Export texte PDF source pour diagnostic offline.
+// Kevin clique → copie cmc_import_src_<key>.txt + métadonnées dans presse-papier
+// → envoie à Claude Code pour analyse parser sans reproduire le PDF original.
+function cmcExportPdfSourceForDiag(){
+  try{
+    if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month;
+    var key=iy+"-"+im;
+    var src=lg("cmc_import_src_"+key,null);
+    if(!src||!src.txt){toast("Aucun texte PDF source pour "+MFR[im]+" "+iy+". Importe d'abord un PDF.","err",6000);return;}
+    // Construire le rapport diagnostic
+    var ov=A.overrides[key]||{};
+    var totalEmps=A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length;
+    var withCodes=Object.keys(ov).filter(function(eid){return Object.keys(ov[eid]||{}).length>0;}).length;
+    var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,iy,im);});
+    var cadresKo=cadres.filter(function(e){var r=ov[e.id]||{};return Object.keys(r).filter(function(d){return !!r[d];}).length===0;});
+    var bug=null;try{bug=_cmcDetectIdenticalScheduleBug(key);}catch(_){}
+    var report="=== CMCteams DIAGNOSTIC EXPORT v9.625 ===\n"
+      +"Date export: "+new Date().toISOString()+"\n"
+      +"Mois: "+MFR[im]+" "+iy+" (key="+key+")\n"
+      +"APP_VER: "+APP_VER+"\n"
+      +"\n=== STATS RUNTIME ===\n"
+      +"Employés actifs: "+totalEmps+"\n"
+      +"Employés avec codes: "+withCodes+" ("+Math.round(withCodes/totalEmps*100)+"%)\n"
+      +"Cadres total: "+cadres.length+", sans horaire: "+cadresKo.length+"\n"
+      +"Cadres KO: "+cadresKo.map(function(e){return e.name;}).join(", ")+"\n"
+      +"Bug schedule identique: "+(bug?JSON.stringify(bug):"non détecté")+"\n"
+      +"\n=== SAMPLE A.overrides[key] (3 premiers cadres) ===\n"
+      +cadres.slice(0,3).map(function(c){
+        var r=ov[c.id]||{};
+        return c.name+": "+Object.keys(r).filter(function(d){return !!r[d];}).sort(function(a,b){return parseInt(a)-parseInt(b);}).map(function(d){return d+":"+r[d];}).join(" | ");
+      }).join("\n")
+      +"\n\n=== PDF SOURCE TEXT (taille "+src.txt.length+" chars) ===\n"
+      +src.txt;
+    // Copy to clipboard
+    var ta=document.createElement("textarea");
+    ta.value=report;
+    ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok=false;
+    try{ok=document.execCommand("copy");}catch(_){}
+    document.body.removeChild(ta);
+    // Fallback : afficher dans textarea modale
+    if(!ok){
+      var modal='<div id="diagExportModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
+        +'<div style="background:#0f1a14;border:2px solid #c9a227;border-radius:14px;max-width:800px;width:100%;max-height:90vh;overflow:auto;padding:16px">'
+        +'<h2 style="color:#c9a227;margin-top:0">📋 Diagnostic PDF '+MFR[im]+' '+iy+'</h2>'
+        +'<p style="color:#a0cca0;font-size:14px">Copy-colle ce texte dans ton chat Claude Code pour diagnostic parser :</p>'
+        +'<textarea readonly onclick="this.select()" style="width:100%;height:50vh;background:#0a0f0c;color:#a0cca0;border:1px solid #c9a22755;border-radius:8px;padding:10px;font-family:monospace;font-size:11px">'+esc(report)+'</textarea>'
+        +'<button onclick="document.getElementById(\'diagExportModal\').remove()" style="margin-top:10px;width:100%;padding:12px;background:#c9a227;border:none;color:#040c04;font-weight:800;border-radius:10px;cursor:pointer;font-size:15px">Fermer</button>'
+        +'</div></div>';
+      document.body.insertAdjacentHTML("beforeend",modal);
+    } else {
+      toast("✅ Diagnostic PDF "+MFR[im]+" "+iy+" copié ("+Math.round(report.length/1024)+" KB) — colle dans chat Claude","ok",8000);
+    }
+    try{_audit("export_pdf_diag",AID,key,"",report.length+" chars");}catch(_){}
+  }catch(e){toast("Erreur export : "+(e&&e.message||e),"err");}
+}
+
 // v9.625 (Kevin 2026-05-16 "les pit ont tous la même horaire. Pas possible.") :
 // Détecte le bug critique parser qui duplique le MÊME schedule sur tous les emps
 // d'une famille. Cas typique : parser lit 1 ligne d'horaires (header section)
@@ -32573,6 +32633,9 @@ function vImport(){
         </button>
         <button class="btn" onclick="sv('parserintel')" title="Voir ce que l'app a appris sur les formats PDF" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(74,200,160,.12);border:1px solid rgba(74,200,160,.4);color:#7adcb0;font-weight:700">
           \ud83e\udde0 Parser IA
+        </button>
+        <button class="btn" onclick="cmcExportPdfSourceForDiag()" title="Copie le texte PDF source dans le presse-papier pour diagnostic offline (envoyer \u00e0 Claude Code pour analyse)" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,160,72,.15);border:1px solid rgba(224,160,72,.5);color:#e0a848;font-weight:800">
+          \ud83d\udccb Exporter PDF source diag
         </button>
       </div>
     </details>
