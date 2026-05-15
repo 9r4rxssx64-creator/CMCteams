@@ -67,8 +67,11 @@ describe('v13.4.47 dashboard-personnel render', () => {
     const root = document.getElementById('apex-root')!;
     render(root);
     expect(root.innerHTML).toContain('Admin actions rapides');
-    expect(root.querySelector('[data-route="all-secrets"]')).not.toBeNull();
-    expect(root.querySelector('[data-route="device-capabilities"]')).not.toBeNull();
+    /* v13.4.110 (régression test v13.4.82) : routes renommées en v13.4.82
+     * all-secrets → admin-all-secrets, device-capabilities → device.
+     * Test mis à jour pour matcher les nouvelles routes. */
+    expect(root.querySelector('[data-route="admin-all-secrets"]')).not.toBeNull();
+    expect(root.querySelector('[data-route="device"]')).not.toBeNull();
   });
 
   it("section admin CACHÉE si non-admin", () => {

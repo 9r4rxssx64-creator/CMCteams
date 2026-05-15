@@ -64,6 +64,17 @@ class Store {
       ...initial,
       ...persisted,
     };
+    /* v13.4.110 (régression test v13.4.35) : force persist des PERSISTED_KEYS
+     * au boot si pas déjà en localStorage. Sinon set(key, default) skip car
+     * prev === value → test "set(commerceEnabled, false) persiste" échoue
+     * quand default === value. Persist explicit pour garantir state stable. */
+    for (const k of this.PERSISTED_KEYS) {
+      try {
+        if (localStorage.getItem(`apex_v13_${k}`) === null) {
+          localStorage.setItem(`apex_v13_${k}`, JSON.stringify(this.state[k as keyof AppState]));
+        }
+      } catch { /* quota ignored */ }
+    }
   }
 
   get<K extends keyof AppState>(key: K): AppState[K];
@@ -76,7 +87,15 @@ class Store {
   set(key: string, value: unknown): void;
   set(key: string, value: unknown): void {
     const prev = this.state[key];
-    if (prev === value) return;
+    if (prev === value) {
+      /* v13.4.110 (régression test v13.4.35) : si valeur identique MAIS clé
+       * PERSISTED, garantir que localStorage reflète quand même la valeur
+       * (utile si localStorage a été clear manuellement). */
+      if (this.PERSISTED_KEYS.has(key)) {
+        this.persistKey(key, value);
+      }
+      return;
+    }
     /* v13.3.89 P2.14 — middleware chain : peut transform ou abort */
     let finalValue = value;
     for (const mw of this.middlewares) {
