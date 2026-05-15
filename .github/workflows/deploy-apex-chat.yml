@@ -173,6 +173,11 @@ jobs:
 
           # === Auth/Infra ===
           push_if_set "FIREBASE_API_KEY" "${{ secrets.FIREBASE_API_KEY }}"
+          push_if_set "FIREBASE_PROJECT_ID" "cmcteams-c16ab"
+          push_if_set "FIREBASE_AUTH_DOMAIN" "cmcteams-c16ab.firebaseapp.com"
+
+          # === Reconnaissance Kevin admin via numéro téléphone E.164 ===
+          push_if_set "KEVIN_PHONE_E164" "+33672280277"
 
           echo "::notice::Secrets configurés (skip silencieux si vide)"
 

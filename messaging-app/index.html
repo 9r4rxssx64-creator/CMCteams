@@ -729,8 +729,7 @@ K._handleAuthPhone = async function(){
 K._handleAuthOtp = async function(){
   const otp = $('#auth-otp').value.replace(/\D/g,'');
   if(otp.length !== 6) return toast('Code à 6 chiffres', 'err');
-  // Phase 1 : on accepte tout OTP (vérification réelle Firebase Auth Phase 2)
-  K.authData.firebase_id_token = 'phase1_placeholder_' + otp;
+  K.authData.otp = otp;  // OTP Vonage stocké pour verify-otp ensuite
   K.authStep = 'pseudo';
   renderAuthStep();
 };
@@ -741,14 +740,26 @@ K._handleAuthPseudo = async function(){
 
   try{
     toast('Création du compte...', 'info', 1500);
-    const result = await _authVerifyOtp(K.authData.phone, K.authData.name, pseudo, K.authData.firebase_id_token);
-    if(result.ok){
+    // Envoie OTP Vonage (priorité) OU firebase_id_token (fallback)
+    const r = await fetch(API_BASE + '/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: K.authData.phone,
+        name: K.authData.name,
+        pseudo,
+        otp: K.authData.otp,
+        firebase_id_token: K.authData.firebase_id_token
+      })
+    });
+    const result = await r.json().catch(() => ({}));
+    if(r.ok && result.ok){
       K.login(result.user, result.token);
-    }else{
-      toast(result.message || 'Erreur', 'err');
+    } else {
+      toast(result.message || 'Erreur (' + r.status + ')', 'err');
     }
   }catch(e){
-    // Fallback Phase 1 : créer compte local pour test
+    // Fallback : créer compte local pour test si worker indispo
     const isKevin = isKevinAdmin(K.authData.name);
     const localUser = {
       id: isKevin ? 'kdmc_admin' : ('local_' + Date.now()),
@@ -759,7 +770,7 @@ K._handleAuthPseudo = async function(){
       created_at: Date.now()
     };
     K.login(localUser, 'local-token-' + Date.now());
-    toast('Compte créé localement (worker indisponible)', 'warn');
+    toast('Compte local (worker indispo) - ' + e.message, 'warn');
   }
 };
 

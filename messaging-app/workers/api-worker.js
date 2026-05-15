@@ -145,10 +145,66 @@ async function handleSendOtp(request, env) {
     'INSERT OR REPLACE INTO ratelimit_otp (ip_hash, hour_key, count) VALUES (?, ?, COALESCE((SELECT count FROM ratelimit_otp WHERE ip_hash=? AND hour_key=?),0)+1)'
   ).bind(ipHash, hourKey, ipHash, hourKey).run();
 
-  // Délégué à Firebase Auth Phone côté client (web SDK)
-  // Le worker confirme juste que le numéro est OK (pas blacklisté)
+  // Génère OTP 6 chiffres
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
   const phoneHash = await sha256(phone);
-  return json({ ok: true, sessionId: phoneHash, provider: 'firebase' });
+  const otpHash = await sha256(otp + ':' + phone);
+
+  // Stocke OTP hashé en D1 (TTL 5 min)
+  await env.APEX_CHAT_DB.prepare(
+    `CREATE TABLE IF NOT EXISTS otp_pending (
+       phone_hash TEXT PRIMARY KEY,
+       otp_hash TEXT NOT NULL,
+       attempts INTEGER DEFAULT 0,
+       created_at INTEGER NOT NULL,
+       expires_at INTEGER NOT NULL
+     )`
+  ).run();
+  await env.APEX_CHAT_DB.prepare(
+    'INSERT OR REPLACE INTO otp_pending (phone_hash, otp_hash, attempts, created_at, expires_at) VALUES (?, ?, 0, ?, ?)'
+  ).bind(phoneHash, otpHash, Date.now(), Date.now() + 300000).run();
+
+  // Envoie via Vonage si configuré
+  let smsProvider = 'none';
+  if (env.VONAGE_API_KEY && env.VONAGE_API_SECRET) {
+    try {
+      const smsResponse = await fetch('https://rest.nexmo.com/sms/json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          api_key: env.VONAGE_API_KEY,
+          api_secret: env.VONAGE_API_SECRET,
+          from: 'ApexChat',
+          to: phone.replace(/^\+/, ''),
+          text: `Apex Chat : ton code de verification est ${otp}. Valide 5 min. Ne le partage avec personne.`
+        })
+      });
+      const smsData = await smsResponse.json();
+      const msg = smsData.messages?.[0];
+      if (msg?.status === '0') {
+        smsProvider = 'vonage';
+        console.log('SMS Vonage envoyé:', msg['message-id']);
+      } else {
+        console.error('Vonage error:', msg);
+        return err('Erreur envoi SMS : ' + (msg?.['error-text'] || 'unknown') + '. Verifie ton numero.', 500);
+      }
+    } catch (e) {
+      console.error('Vonage exception:', e.message);
+      return err('Service SMS temporairement indisponible. Reessaie dans 1 min.', 503);
+    }
+  } else {
+    // Mode dev/test : retourne le code dans la réponse (visible dans console)
+    console.log('OTP DEV (no Vonage):', otp);
+    return json({
+      ok: true,
+      sessionId: phoneHash,
+      provider: 'dev',
+      _dev_otp: otp,  // Phase 1 sans SMS : code visible pour test
+      _dev_note: 'Vonage non configure. Code OTP affiche pour test : ' + otp
+    });
+  }
+
+  return json({ ok: true, sessionId: phoneHash, provider: smsProvider });
 }
 
 // ============================================================================
@@ -214,24 +270,48 @@ async function verifyFirebaseIdToken(idToken, env) {
 }
 
 async function handleVerifyOtp(request, env) {
-  const { phone, name, pseudo, firebase_id_token } = await request.json();
-  if (!phone || !pseudo || !firebase_id_token) return err('Champs manquants', 400);
+  const { phone, name, pseudo, otp, firebase_id_token } = await request.json();
+  if (!phone || !pseudo) return err('Champs manquants', 400);
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
 
-  // P0 FIX (audit) : vérification Firebase ID token RÉELLE
-  let firebasePayload;
-  try {
-    firebasePayload = await verifyFirebaseIdToken(firebase_id_token, env);
-  } catch (e) {
-    return err('Token Firebase invalide : ' + e.message, 401, 'invalid_token');
-  }
-
-  // P0 FIX : phone du body DOIT correspondre au phone_number du token Firebase
-  if (firebasePayload.phone_number !== phone) {
-    return err('Numéro téléphone ne correspond pas au token Firebase', 401, 'phone_mismatch');
-  }
-
   const phoneHash = await sha256(phone);
+
+  // Mode 1 : OTP Vonage (priorité)
+  if (otp) {
+    const otpHash = await sha256(otp + ':' + phone);
+    const pending = await env.APEX_CHAT_DB.prepare(
+      'SELECT * FROM otp_pending WHERE phone_hash=?'
+    ).bind(phoneHash).first();
+
+    if (!pending) return err('Aucun code en attente. Recommence l\'inscription.', 400, 'no_otp');
+    if (pending.expires_at < Date.now()) {
+      await env.APEX_CHAT_DB.prepare('DELETE FROM otp_pending WHERE phone_hash=?').bind(phoneHash).run();
+      return err('Code expiré. Recommence l\'inscription.', 410, 'otp_expired');
+    }
+    if (pending.attempts >= 5) {
+      return err('Trop de tentatives. Reessaie dans 5 min.', 429, 'otp_max_attempts');
+    }
+    if (pending.otp_hash !== otpHash) {
+      await env.APEX_CHAT_DB.prepare('UPDATE otp_pending SET attempts=attempts+1 WHERE phone_hash=?').bind(phoneHash).run();
+      return err('Code incorrect. Verifie tes 6 chiffres.', 401, 'otp_wrong');
+    }
+    // OK : supprime l'OTP utilisé
+    await env.APEX_CHAT_DB.prepare('DELETE FROM otp_pending WHERE phone_hash=?').bind(phoneHash).run();
+  }
+  // Mode 2 : Firebase ID token (fallback si configuré)
+  else if (firebase_id_token && firebase_id_token !== '') {
+    try {
+      const firebasePayload = await verifyFirebaseIdToken(firebase_id_token, env);
+      if (firebasePayload.phone_number !== phone) {
+        return err('Numero ne correspond pas au token Firebase', 401, 'phone_mismatch');
+      }
+    } catch (e) {
+      return err('Token Firebase invalide : ' + e.message, 401, 'invalid_token');
+    }
+  }
+  else {
+    return err('OTP ou Firebase token requis', 400, 'no_auth_method');
+  }
 
   // User existe-t-il déjà ?
   let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
