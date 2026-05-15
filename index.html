@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.637";
+var APP_VER="v9.638";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22161,11 +22161,13 @@ function vAccueil(){
     others.forEach(function(o){
       var emp=empById(o.uid);
       if(!emp)return;
-      var tcc2=tc(emp.team);
+      // v9.637 — équipe du mois courant
+      var _tIdNow=(typeof teamForMonth==="function"?teamForMonth(emp,A.year,A.month):emp.team)||emp.team;
+      var tcc2=tc(_tIdNow);
       // v9.164 — Sécurité : JSON.stringify pour échapper proprement emp.id/name dans onclick
       // v9.178 — Clic = ouvre quick profile modal (tous users) au lieu de viewAs direct
       var _safeId=JSON.stringify(String(emp.id||"")).replace(/"/g,"&quot;");
-      h+='<div title="'+esc(emp.name)+' \u2014 '+esc(gt(emp.team)?gt(emp.team).name:emp.team)+' (clic pour voir)" style="cursor:pointer" onclick="showEmpQuickProfile("+_safeId+")">'+empAvatarHtml(emp,28,tcc2)+'</div>';
+      h+='<div title="'+esc(emp.name)+' \u2014 '+esc(gt(_tIdNow)?gt(_tIdNow).name:_tIdNow)+' (clic pour voir)" style="cursor:pointer" onclick="showEmpQuickProfile("+_safeId+")">'+empAvatarHtml(emp,28,tcc2)+'</div>';
     });
     h+='</div></div>';
   })();
@@ -23412,7 +23414,9 @@ function vDeparts(){
       h+='<div style="margin-top:10px"><div style="font-size:14px;color:'+col+';font-weight:700;margin-bottom:6px">'+(codeLabels[code]||code)+' ('+grps[code].length+')</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:5px">';
       grps[code].forEach(function(emp){
-        var team=A.teams.find(function(t){return t.id===emp.team;});
+        // v9.637 \u2014 \u00e9quipe du mois courant via teamForMonth, pas emp.team frozen
+        var _teamIdM=(typeof teamForMonth==="function"?teamForMonth(emp,A.year,A.month):emp.team)||emp.team;
+        var team=A.teams.find(function(t){return t.id===_teamIdM;});
         var tname=team?(' \u00b7 '+team.name):'';
         h+='<div style="background:rgba(168,70,70,.06);border:1px solid rgba(168,70,70,.18);border-radius:7px;padding:4px 9px;font-size:14px;color:#8a7878">'+esc(empLabel(emp))+'<span style="font-size:13px;color:#6a6060">'+esc(tname)+'</span></div>';
       });
