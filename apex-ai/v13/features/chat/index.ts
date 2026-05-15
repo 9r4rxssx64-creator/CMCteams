@@ -1129,13 +1129,14 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
 
   const user = store.get('user');
   /* v13.4.131 (Kevin "Apex IA chat réservée admin") :
-   * Si user n'est pas admin Kevin (kdmc_admin) → bloque appel AI
-   * + affiche message clair. Le chat reste accessible (lecture, historique
-   * Kevin partagé via Firebase si activé) mais l'envoi à l'IA est admin-only. */
-  if (user?.id !== 'kdmc_admin') {
+   * v13.4.132 (Kevin "Active le chat IA pour Laurence") :
+   * Whitelist : admin Kevin + Laurence ont accès IA chat.
+   * Autres users (clients pro/free, famille) → bloqués (coût tokens API). */
+  const AI_CHAT_WHITELIST = new Set(['kdmc_admin', 'laurence_sp']);
+  if (!user?.id || !AI_CHAT_WHITELIST.has(user.id)) {
     pushAssistantMessage(
       rootEl,
-      "🔒 L'assistant IA est réservé à l'admin. Tu peux lire l'historique mais pas envoyer de message à l'IA.",
+      "🔒 L'assistant IA est réservé à Kevin et Laurence. Tu peux lire l'historique mais pas envoyer de message à l'IA.",
     );
     queue.length = 0; /* purge messages non-admin pour éviter accumulation */
     isProcessing = false;
