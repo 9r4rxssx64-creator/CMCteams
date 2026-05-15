@@ -217,7 +217,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.0';
+const __APEX_CHAT_VERSION__ = 'v1.0.2';
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(reg=>{
     reg.addEventListener('updatefound',()=>{
@@ -680,13 +680,34 @@ function renderAuthStep(){
   if(K.authStep === 'phone'){
     host.innerHTML = `
       <label class="label">Numéro de téléphone</label>
-      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel">
+      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel" value="+33672280277">
       <label class="label" style="margin-top:14px">Ton prénom + nom</label>
-      <input id="auth-name" type="text" class="input" placeholder="Ex: Kevin Desarzens" autocomplete="name">
-      <button class="btn btn-block" onclick="K._handleAuthPhone()" style="margin-top:16px">
+      <input id="auth-name" type="text" class="input" placeholder="Ex: Kevin Desarzens" autocomplete="name" value="Kevin Desarzens">
+      <button id="btn-auth-phone" type="button" class="btn btn-block" style="margin-top:16px">
         📱 Recevoir le code SMS
-      </button>`;
-    setTimeout(()=>$('#auth-phone')?.focus(), 100);
+      </button>
+      <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
+    setTimeout(()=>{
+      $('#auth-phone')?.focus();
+      // Listener direct (ne dépend pas du onclick attribute)
+      const btn = $('#btn-auth-phone');
+      if(btn){
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          $('#auth-debug').textContent = '⏳ Envoi en cours...';
+          try{
+            await K._handleAuthPhone();
+          }catch(err){
+            $('#auth-debug').textContent = '❌ ' + (err.message || 'Erreur inconnue');
+          }
+        });
+        $('#auth-debug').textContent = '✅ Bouton activé (v' + __APEX_CHAT_VERSION__ + ')';
+      } else {
+        // Fallback ultime : le bouton n'existe pas, recharge
+        location.reload();
+      }
+    }, 100);
   }
   else if(K.authStep === 'otp'){
     const showCode = K.authData._dev_show && K.authData._dev_otp;
