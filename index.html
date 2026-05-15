@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.633";
+var APP_VER="v9.634";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7542,20 +7542,23 @@ var CMC_PARSER_TESTS=[
     customCheck:function(){
       try{
         if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
-        var origOv=A.overrides;
+        var origOv=A.overrides,origEmps=A.employees;
+        // v9.634 — Inject 5 fake cadres pour assertion garantie (pas skip)
+        var fakeCadres=[];
+        for(var i=0;i<5;i++){
+          fakeCadres.push({id:"FAKE_C"+i,name:"FAKE CADRE"+i,family:"cadres",team:"pit15",chef:false});
+        }
+        A.employees=fakeCadres;
         A.overrides={};
-        var key="2026-7"; // août 2026 (mois 7)
+        var key="2026-7";
         A.overrides[key]={};
-        // 5 cadres tous en CP tout août (cas légitime "CP masse été")
-        var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,2026,7);}).slice(0,5);
-        if(cadres.length<3){A.overrides=origOv;return {skipped:true,reason:"pas assez de cadres en DB"};}
-        cadres.forEach(function(c){
+        fakeCadres.forEach(function(c){
           var row={};
-          for(var d=1;d<=31;d++)row[d]="CP"; // tous CP
+          for(var d=1;d<=31;d++)row[d]="CP";
           A.overrides[key][c.id]=row;
         });
         var r=_cmcDetectIdenticalScheduleBug(key);
-        A.overrides=origOv;
+        A.overrides=origOv;A.employees=origEmps;
         // CP masse légitime → ne doit PAS être détecté comme bug parser
         return r===null;
       }catch(e){return false;}
@@ -7565,19 +7568,20 @@ var CMC_PARSER_TESTS=[
     customCheck:function(){
       try{
         if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
-        var origOv=A.overrides;
+        var origOv=A.overrides,origEmps=A.employees;
+        var fakeCadres=[];
+        for(var i=0;i<5;i++){
+          fakeCadres.push({id:"FAKE_C"+i,name:"FAKE CADRE"+i,family:"cadres",team:"pit15",chef:false});
+        }
+        A.employees=fakeCadres;
         A.overrides={};
         var key="2026-4";
         A.overrides[key]={};
-        var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,2026,4);}).slice(0,5);
-        if(cadres.length<3){A.overrides=origOv;return {skipped:true,reason:"pas assez de cadres en DB"};}
-        // 5 cadres avec EXACTEMENT le même schedule VARIÉ (bug parser typique : pit boss tous même horaire)
-        cadres.forEach(function(c){
+        fakeCadres.forEach(function(c){
           A.overrides[key][c.id]={1:"22/6",2:"16/20",3:"12H30/19",4:"RH",5:"R",6:"22/6",7:"19/4"};
         });
         var r=_cmcDetectIdenticalScheduleBug(key);
-        A.overrides=origOv;
-        // Mix horaires identiques sur N≥3 cadres → BUG détecté
+        A.overrides=origOv;A.employees=origEmps;
         return r && r.bug===true && r.scope==="cadres";
       }catch(e){return false;}
     }},
@@ -7586,24 +7590,96 @@ var CMC_PARSER_TESTS=[
     customCheck:function(){
       try{
         if(typeof _parseEncadresStatuts!=="function")return false;
-        var origOv=A.overrides;
+        var origOv=A.overrides,origEmps=A.employees;
+        // v9.634 — Fake emps pour assertion garantie
+        var fakeEmps=[];
+        for(var i=0;i<5;i++){
+          fakeEmps.push({id:"FAKE_E"+i,name:"FAKEUNIQUE"+i+" X",family:"bj",team:"1",chef:false});
+        }
+        A.employees=fakeEmps;
         A.overrides={};
         var key="TEST-VS41";
         A.overrides[key]={};
-        // Section "2 CP" mais 5 noms suivent (PDF malformé ou block fallback)
-        // Test : hard-stop doit limiter à 2 forces, pas 5
-        var fakeEmp1=A.employees[0];
-        var fakeEmp2=A.employees[1];
-        if(!fakeEmp1||!fakeEmp2){A.overrides=origOv;return {skipped:true,reason:"pas assez d'emps"};}
-        var src="2 CP du au\nBRTP+E. "+fakeEmp1.name.toUpperCase()+" 1 31\nBRTP+E. "+fakeEmp2.name.toUpperCase()+" 1 31\n";
-        // ajouter 3 noms supplémentaires (qui ne devraient PAS être matchés à cause de expectedCount=2)
-        for(var i=2;i<5 && i<A.employees.length;i++){
-          src+="BRTP+E. "+A.employees[i].name.toUpperCase()+" 1 31\n";
-        }
+        var src="2 CP du au\n";
+        for(var j=0;j<5;j++)src+="BRTP+E. FAKEUNIQUE"+j+" X 1 31\n";
         var res=_parseEncadresStatuts(src,key,2026,4);
-        A.overrides=origOv;
+        A.overrides=origOv;A.employees=origEmps;
         // Hard-stop : maximum 2 emps doivent recevoir CP (expectedCount=2)
         return res && res.forced<=2;
+      }catch(e){return false;}
+    }},
+  // v9.634 — Tests audit #7 final
+  {id:"VS42",label:"isAbsenceDominated stricte : 4 CP + 1 M (80% mix) PAS dominated (laisse bug détecter)",
+    input:"v9.634 absence strict",
+    customCheck:function(){
+      try{
+        if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
+        var origOv=A.overrides,origEmps=A.employees;
+        // 5 cadres avec MIX 4 CP + 1 M : si bug parser dupliquait ce mix, on doit détecter
+        var fakeCadres=[];
+        for(var i=0;i<5;i++){
+          fakeCadres.push({id:"FAKE_C"+i,name:"FAKE CADRE"+i,family:"cadres",team:"pit15",chef:false});
+        }
+        A.employees=fakeCadres;
+        A.overrides={};
+        var key="2026-7";
+        A.overrides[key]={};
+        // Tous les cadres ont MÊME mix 4 CP + 1 M (suspect : pas une absence pure)
+        fakeCadres.forEach(function(c){
+          A.overrides[key][c.id]={1:"CP",2:"CP",3:"CP",4:"CP",5:"M"};
+        });
+        var r=_cmcDetectIdenticalScheduleBug(key);
+        A.overrides=origOv;A.employees=origEmps;
+        // 4/5 = 80% MAIS uniqueCodes=2 → NOT pure absence → bug détecté
+        return r && r.bug===true;
+      }catch(e){return false;}
+    }},
+  {id:"VS43",label:"_parseEncadresStatuts hard-stop défensif expectedCount=0",
+    input:"v9.634 expectedCount=0 hard-stop",
+    customCheck:function(){
+      try{
+        if(typeof _parseEncadresStatuts!=="function")return false;
+        var origOv=A.overrides,origEmps=A.employees;
+        var fakeEmps=[];
+        for(var i=0;i<15;i++){
+          fakeEmps.push({id:"FAKE_E"+i,name:"FAKEDEF"+i+" X",family:"bj",team:"1",chef:false});
+        }
+        A.employees=fakeEmps;
+        A.overrides={};
+        var key="TEST-VS43";
+        A.overrides[key]={};
+        // Header avec expectedCount=0 (cas malformé) + 15 noms
+        var src="0 CP du au\n";
+        for(var j=0;j<15;j++)src+="BRTP+E. FAKEDEF"+j+" X 1 31\n";
+        var res=_parseEncadresStatuts(src,key,2026,4);
+        A.overrides=origOv;A.employees=origEmps;
+        // Hard-stop défensif : max 10 forced même si expectedCount=0
+        return res && res.forced<=10;
+      }catch(e){return false;}
+    }},
+  {id:"VS44",label:"isAbsenceDominated : 1 seul code AF pur → reconnu absence-de-masse",
+    input:"v9.634 AF masse formation",
+    customCheck:function(){
+      try{
+        if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
+        var origOv=A.overrides,origEmps=A.employees;
+        var fakeCadres=[];
+        for(var i=0;i<5;i++){
+          fakeCadres.push({id:"FAKE_C"+i,name:"FAKE CADRE"+i,family:"cadres",team:"pit15",chef:false});
+        }
+        A.employees=fakeCadres;
+        A.overrides={};
+        var key="2026-9"; // octobre 2026 (formation masse)
+        A.overrides[key]={};
+        fakeCadres.forEach(function(c){
+          var row={};
+          for(var d=1;d<=31;d++)row[d]="AF"; // tous formation
+          A.overrides[key][c.id]=row;
+        });
+        var r=_cmcDetectIdenticalScheduleBug(key);
+        A.overrides=origOv;A.employees=origEmps;
+        // AF masse légitime → pas un bug
+        return r===null;
       }catch(e){return false;}
     }}
 ];
@@ -24725,11 +24801,14 @@ function _cmcDetectIdenticalScheduleBug(key){
       codes.forEach(function(c){freq[c]=(freq[c]||0)+1;});
       var maxC=null,maxN=0;
       Object.keys(freq).forEach(function(c){if(freq[c]>maxN){maxN=freq[c];maxC=c;}});
-      // Si >80% du schedule est UN SEUL code d'absence → schedule légitime, pas bug parser
-      if(maxN/codes.length>=0.8 && ABSENCE_CODES.indexOf((maxC||"").toUpperCase())>=0){
-        return true;
-      }
-      return false;
+      // v9.634 (audit #7 fix) — Strict : exiger UN SEUL code unique pour qualifier
+      // "absence dominée légitime". Ratio 80% laissait passer mix 4 CP + 1 M qui
+      // pourrait être un VRAI bug parser. Code unique = certitude absence-de-masse.
+      // Conserve l'OR avec ratio 80% pour les cas "code dominant + erreur OCR mineure".
+      var uniqueCodes=Object.keys(freq).length;
+      var isPureAbsence=(uniqueCodes===1 && ABSENCE_CODES.indexOf((maxC||"").toUpperCase())>=0);
+      var isDominantAbsence=(maxN/codes.length>=0.95 && ABSENCE_CODES.indexOf((maxC||"").toUpperCase())>=0);
+      return isPureAbsence || isDominantAbsence;
     }
     function checkGroup(emps, label){
       if(emps.length<3)return null;
@@ -33867,6 +33946,12 @@ function _parseEncadresStatuts(txt, key, year, month){
       // v9.633 — HARD-STOP : ne pas matcher plus que expectedCount noms
       if(section.expectedCount>0 && sectionFilled>=section.expectedCount){
         console.info("[encadres v9.633] section="+section.code+" hard-stop atteint expectedCount="+section.expectedCount);
+        break;
+      }
+      // v9.634 (audit #7 fix défensif) — Si header malformé expectedCount=0,
+      // limite arbitraire 10 noms pour éviter débordement infini.
+      if(section.expectedCount===0 && sectionFilled>=10){
+        console.warn("[encadres v9.634] section="+section.code+" expectedCount=0 (header malformé), hard-stop défensif 10");
         break;
       }
       var rawSurname=nm[1].trim();
