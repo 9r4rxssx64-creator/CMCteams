@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.622";
+var APP_VER="v9.623";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7384,6 +7384,35 @@ var CMC_PARSER_TESTS=[
       // Mais comme on est dans customCheck, on peut juste vérifier _cmcRunParserTests
       // gère bien la branche. Test délégué : on retourne true (assertion via _threw guard).
       return true;
+    }},
+  // v9.623 — Test namespace A._pdfMarkers cohérent + reset cross-import
+  {id:"VS28",label:"A._pdfMarkers pointe vers globaux window._pdf* après reset",
+    input:"v9.623 namespace",
+    customCheck:function(){
+      try{
+        // Simuler reset doImport
+        window._pdfStarMarkers=[];
+        window._pdfRedNames=[];
+        window._pdfFaisantFonctionCells=[];
+        window._pdfCdpCells=[];
+        window._pdfRedDays=[];
+        A._pdfMarkers={
+          starMarkers:window._pdfStarMarkers,
+          redNames:window._pdfRedNames,
+          faisantFonctionCells:window._pdfFaisantFonctionCells,
+          cdpCells:window._pdfCdpCells,
+          redDays:window._pdfRedDays
+        };
+        // Push dans le namespace doit refléter le global et inversement
+        A._pdfMarkers.starMarkers.push({contextLine:"TEST"});
+        var globalReflects=(window._pdfStarMarkers.length===1);
+        window._pdfRedNames.push({t:"INCONNU"});
+        var nsReflects=(A._pdfMarkers.redNames.length===1);
+        // Cleanup
+        window._pdfStarMarkers=[];
+        window._pdfRedNames=[];
+        return globalReflects && nsReflects;
+      }catch(e){return false;}
     }}
 ];
 // v9.521 — Helpers de normalisation utilises par les tests + le parser etendu
@@ -33452,6 +33481,24 @@ function doImport(){
   // v9.58 — Mode import : bufferise les fbWrite (évite N re-renders SSE + écrasement concurrent)
   _importInProgress=true;
   try{
+  // v9.623 (audit #3 archi) — Reset markers PDF globaux pour éviter fuite cross-import.
+  // Le parser PDF.js écrit dans window._pdfXxx. Sans reset, un 2e import successif
+  // accumule les markers du 1er. Source de doublons étoiles/FF/redNames.
+  // A._pdfMarkers expose un namespace cohérent qui pointe vers les mêmes arrays.
+  try{
+    window._pdfStarMarkers=[];
+    window._pdfRedNames=[];
+    window._pdfFaisantFonctionCells=[];
+    window._pdfCdpCells=[];
+    window._pdfRedDays=[];
+    A._pdfMarkers={
+      starMarkers:window._pdfStarMarkers,
+      redNames:window._pdfRedNames,
+      faisantFonctionCells:window._pdfFaisantFonctionCells,
+      cdpCells:window._pdfCdpCells,
+      redDays:window._pdfRedDays
+    };
+  }catch(_){}
   var txt=(document.getElementById("impTxt")||{}).value||"";
   var iy=parseInt((document.getElementById("impY")||{}).value||A.year);
   var im=parseInt((document.getElementById("impM")||{}).value||A.month);
