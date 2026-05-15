@@ -479,6 +479,35 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       void autoRestoreCredentials.boot();
     }),
 
+    /* v13.4.104 (Kevin "GitHub plus secu, jamais perdre PAT") —
+       Backup Vault GitHub Gist privé chiffré au boot.
+       Si Coffre vide ET PAT GitHub présent → pull Gist privé → restore tout.
+       Survit reinstall PWA car PAT recollé + Gist toujours accessible. */
+    safeInit('gist-backup-boot', async () => {
+      const { apexGithubGistBackup } = await import('./apex-github-gist-backup.js');
+      /* Différé 5s : laisse vault unlock + auto-restore Firebase tenter d'abord */
+      setTimeout(() => {
+        void (async () => {
+          try {
+            /* Si Coffre déjà non-vide → pas besoin de pull. Skip. */
+            const multi = localStorage.getItem('apex_v13_multi_keys');
+            const hasLocalKeys = multi && JSON.parse(multi as string).length > 0;
+            if (hasLocalKeys) {
+              logger.debug('gist-backup-boot', 'Coffre non-vide, skip pull');
+              return;
+            }
+            const result = await apexGithubGistBackup.pullBackup();
+            if (result.ok && result.restored && result.restored > 0) {
+              const { toast } = await import('../ui/toast.js');
+              toast.success(`🔓 ${result.restored} clés restaurées depuis GitHub Gist privé chiffré`, { duration: 8000 });
+            }
+          } catch (err: unknown) {
+            logger.warn('gist-backup-boot', 'pull failed (non-blocking)', { err });
+          }
+        })();
+      }, 5000);
+    }),
+
     /* v13.3.96 (Kevin 2026-05-09 P0 — règle "RIEN PERDRE TEMPS RÉEL") —
        Vault Deep Recovery : scan exhaustif tous storages + reclassement clés
        mal classées + auto-wire WhatsApp depuis profil Kevin.
