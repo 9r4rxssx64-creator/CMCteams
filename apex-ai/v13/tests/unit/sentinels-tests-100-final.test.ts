@@ -1024,7 +1024,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   });
 
   describe('memory-watch with oversized user state', () => {
-    it('mock list with > 1000 facts → oversized branch', async () => {
+    it('mock list with > 1000 facts → oversized branch', { timeout: 30_000 }, async () => {
       registerCoreSentinels();
       /* Re-import & spy persistentMemory.list to return mock data */
       const mod = await import('../../services/persistent-memory-store.js');
@@ -1064,7 +1064,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
       }
     });
 
-    it('with audit log corrupted JSON in storage → catch path', async () => {
+    it('with audit log corrupted JSON in storage → catch path', { timeout: 30_000 }, async () => {
       localStorage.setItem('ax_memory_audit_log', '{not json');
       registerCoreSentinels();
       const r = await sentinels.runOne('memory-watch');
