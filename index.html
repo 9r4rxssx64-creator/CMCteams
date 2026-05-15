@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.638";
+var APP_VER="v9.639";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -25014,6 +25014,12 @@ function _cmcDetectIdenticalScheduleBug(key){
     var rCadres=checkGroup(cadres,"cadres");
     if(rCadres)return rCadres;
     // 2. Par équipe (BJ Éq.1, BJ Éq.2, etc.)
+    // v9.639 (Kevin diag 2026-05-15 23:03 — false positive equipe_2 5/6 chefs) :
+    // Les CHEFS d'une même équipe partagent légitimement le même schedule (rotation
+    // hebdo des "responsables de table" — Convention SBM article 11). C'est BY DESIGN
+    // casino, pas un bug parser. Si un groupe d'équipe = uniquement chefs, ils peuvent
+    // tous avoir la même rotation : skip detection. Si emp NON-chef partage avec chefs
+    // → on ne flag QUE s'il y a >=3 employés NON-chefs identiques.
     var byTeam={};
     A.employees.forEach(function(e){
       if(!isEmpActive(e,year,month))return;
@@ -25024,7 +25030,10 @@ function _cmcDetectIdenticalScheduleBug(key){
     });
     var teamIds=Object.keys(byTeam);
     for(var ti=0;ti<teamIds.length;ti++){
-      var r=checkGroup(byTeam[teamIds[ti]],"equipe_"+teamIds[ti]);
+      // v9.639 — filtrer chefs avant detection : seuls les employés non-chefs déclenchent
+      var nonChefs=byTeam[teamIds[ti]].filter(function(e){return !e.chef;});
+      if(nonChefs.length<3)continue; // pas assez d'employés non-chef pour qu'un bug soit suspect
+      var r=checkGroup(nonChefs,"equipe_"+teamIds[ti]);
       if(r)return r;
     }
     return null;
@@ -35162,6 +35171,28 @@ function doImport(){
        parts[1]&&/ /.test(parts[1].trim())&&/^[A-Z\u2605\u2606\u2b50*]/.test(parts[1].trim())&&
        parts[2]&&/^\*?\d{1,2}$/.test(parts[2].trim())){
       nameIdx=1; codesStart=4; // sauter post, nom, du, au
+    }
+    // v9.639 (Kevin diag juin 2026 V1 \u2014 12/16 cadres horaires corrompus) :
+    // NOUVEAU FORMAT SBM juin 2026+ : `POST<TAB>TEAM<TAB>NAME<TAB>DU<TAB>AU<TAB>codes`
+    // Ex: `BRTP+K	5	FAUTRIER M	1	30	20/5c	19/4c	...`
+    // L'ancien parser pre-v9.639 traitait parts[0]=POST mais parts[1]="5" (digit team)
+    // au lieu du nom \u2192 le parser tombait dans le fallback et l'employ\u00e9/chef devenait
+    // introuvable \u2192 les codes \u00e9taient appliqu\u00e9s \u00e0 un AUTRE emp via fuzzy match.
+    // D\u00e9tection : parts[0]=post token, parts[1]=1-2 digits SEUL, parts[2]=nom avec espace+majuscule,
+    // parts[3]=digit (du), parts[4]=digit (au).
+    else if(p0raw&&_isRoleCode(p0raw)&&
+            parts[1]&&/^\d{1,2}$/.test(parts[1].trim())&&parseInt(parts[1].trim())>=1&&parseInt(parts[1].trim())<=20&&
+            parts[2]&&/ /.test(parts[2].trim())&&/^[A-Z\u2605\u2606\u2b50*]/.test(parts[2].trim())&&
+            parts[3]&&/^\*?\d{1,2}$/.test(parts[3].trim())&&
+            parts[4]&&/^\d{1,2}$/.test(parts[4].trim())){
+      nameIdx=2; codesStart=5; // sauter post, team, nom, du, au
+      // v9.639 \u2014 utiliser le team explicite du PDF pour cette ligne
+      var _explicitTeamN=parts[1].trim();
+      var _explicitTeamId=importFamily==="roulettes"&&!/^r/.test(_explicitTeamN)?"r"+_explicitTeamN:
+                          importFamily==="cmc"&&!/^c/.test(_explicitTeamN)?"c"+_explicitTeamN:
+                          _explicitTeamN;
+      var _explicitTeamObj=A.teams.find(function(t){return t.id===_explicitTeamId;});
+      if(_explicitTeamObj)_contextTeam=_explicitTeamObj.id;
     }
     // v8.54 : fromDay TOUJOURS 1 — les colonnes FROM/TO du PDF ("27 30", "1 15"…) sont
     // des métadonnées visuelles. Le copier-coller inclut TOUJOURS les 30 colonnes-jours
