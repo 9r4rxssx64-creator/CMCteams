@@ -22,12 +22,14 @@ export default defineConfig({
         '**/*.test.js',
         '**/*.spec.js',
         // Phase C2 en cours : api-worker.js (2444 lignes).
-        // Progression mesurée v8 (transparente) :
-        // 0% → 19.63% → 25.9% → 49.63% → 54.99% → 57.48% → 71.11% → **74.87%**
-        // statements / 76.12% branches / 94.44% functions (68/72) / 74.87% lines.
-        // 211 tests api-worker (routing+otp+handlers+admin-deep+scheduled+
-        // admin-routes+utils-exports). Reste handleViewStory, _callGeminiIA,
-        // _callDeepSeekIA, queue consumer, success paths features deep.
+        // Progression mesurée v8 (transparente, CLAUDE.md règle "réel toujours") :
+        // 0% → 19.63% → 25.9% → 49.63% → 54.99% → 57.48% → 71.11% → 74.87% → **79%**
+        // statements / 76.67% branches / 95.83% functions (69/72) / 79% lines.
+        // 231 tests api-worker (routing+otp+handlers+admin-deep+scheduled+
+        // admin-routes+utils-exports+queue). 513 lines restantes :
+        // handleSendOtp/handleVerifyOtp success paths internes, handleSsoFromApex,
+        // handleAdminInviteMagic DB INSERT, handlePrekeys, _callGeminiIA, _callDeepSeekIA,
+        // handleListStories DB, handleViewStory success, handleListLetters DB.
         // Honnêteté CLAUDE.md : on ne ment pas en disant 100% global tant
         // que api-worker n'y est pas. Coverage global = lib/ + autres workers.
         'workers/api-worker.js',
