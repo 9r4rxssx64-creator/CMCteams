@@ -21,11 +21,12 @@ export default defineConfig({
         'node_modules/**',
         '**/*.test.js',
         '**/*.spec.js',
-        // Phase C2 en cours : api-worker.js (2444 lignes) — actuellement
-        // 49.63% statements mesuré via api-worker-routing+otp+handlers.test.js
-        // (111 tests). Progression : 19.63% → 25.9% → 49.63%. Cible 100%
-        // continuée par api-worker-deep.test.js (admin commands success paths,
-        // features avec full DB mocks, edge cases handlers).
+        // Phase C2 en cours : api-worker.js (2444 lignes).
+        // Progression mesurée : 19.63% → 25.9% → 49.63% → **54.99% statements**
+        // 70.8% branches / 81.42% functions / 54.99% lines.
+        // 131 tests api-worker (routing+otp+handlers+admin-deep).
+        // Pour atteindre 100% : encore ~50 tests restants pour features,
+        // verifyFirebaseIdToken, prekeys handlers, chat history endpoints.
         // Honnêteté : on ne ment pas en disant 100% global tant que
         // api-worker n'y est pas. Coverage global = lib/ + autres workers.
         'workers/api-worker.js',
