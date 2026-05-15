@@ -3717,7 +3717,7 @@ var FB_URL=localStorage.getItem("cmc_fb_url")||"https://cmcteams-c16ab-default-r
 var FB_PATH="/cmcteams";
 var _fbEs=null,_fbConnected=false,_lastSyncTs=0,_fbInitialLoad=false;
 // Clés fixes partagées entre tous les appareils
-var FB_FIX=["cmc_ov","ax_admin_profile","ax_admin_kevin","cmc_admin_profile","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled","cmc_likes","cmc_emp_requests","cmc_motd",
+var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admin_profile","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled","cmc_likes","cmc_emp_requests","cmc_motd",
 // v9.204 — Ajout sync pour toutes les données admin partagées (bug cross-device résolu)
 "cmc_cagnottes","cmc_events","cmc_timeclock","cmc_chefs_t","cmc_chef_eq","cmc_learned_codes","cmc_features","cmc_exchanges","cmc_exchanges_enabled","cmc_day_notes","cmc_geofence",
 // v9.214 — Positions live (admin uniquement les consulte) + consentement RGPD
@@ -3996,6 +3996,8 @@ function fbApplyData(k,v){
   // v9.580 — Invalider _gplCache quand cmc_ov change via Firebase SSE
   // (sinon vues affichent ancien planning même après nouvel import sur autre device)
   if(k==="cmc_ov"){A.overrides=vc;try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}}
+  // v9.615 — Sync A.overrides_meta cross-device (visual markers: bg, fg, star, ff)
+  else if(k==="cmc_ov_meta"){A.overrides_meta=vc;}
   else if(k==="cmc_e"){
     A.employees=Array.isArray(vc)?vc:Object.values(vc);
     // Dédupliquer par id (empêche les doublons provenant de Firebase ou inscription)
@@ -4777,6 +4779,7 @@ var A={
   employees:lg("cmc_e",DEF_EMP),
   teams:lg("cmc_t",DEF_TEAMS),
   overrides:lg("cmc_ov",{}),
+  overrides_meta:lg("cmc_ov_meta",{}), // v9.615 — meta cell (bg/fg/star/ff) cross-device
   passwords:lg("cmc_pw",{}),
   reg:lg("cmc_reg",{}),
   showLeg:false,
@@ -4860,7 +4863,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.614";
+var APP_VER="v9.615";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22227,6 +22230,10 @@ function vPlan(){
         +(function(){var _todCode2=todayD?(pl[emp.id]||{})[todayD]||"":"";return isWork(_todCode2)?'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#5aaa70;margin-right:3px;vertical-align:middle"></span>':"";})()+(_onlineSet[emp.id]?'<span class="pres-dot" aria-hidden="true" title="En ligne actuellement"></span>':"")+( isMe?"\u25b6 ":"")+empLabelHtml(emp)+(emp.chef&&emp.family!=="roulettes"?'<span class="chef-badge" style="margin-left:3px">C</span>':"")+(emp.role&&emp.family==="cadres"?'<span title="'+esc(getRoleLabel(emp.role))+'" style="margin-left:3px;font-size:11px">'+getRoleIcon(emp.role)+'</span>':"")+'</div></td>');
       da.forEach(function(d){
         var code=p[d]||"",ci=CODES[code]||{bg:"transparent",c:"#1e2e1e",b:"#182818",cdp:false};
+        // v9.615 — Meta cell (bg/fg/star/ff) lue depuis A.overrides_meta. Stylise la cell selon
+        // le fond PDF original (CDP orange, FF bleu, AF vert, etc.) quand applicable.
+        var _meta=null;try{_meta=cmcMetaForCell(A.year+"-"+A.month,emp.id,d);}catch(_){}
+        var _metaBg=_meta?cmcCellBgFromMeta(_meta):"";
         // v9.153 dbl-clic=brosse ; v9.155 Shift+clic=multi-sel ; v9.156 drag&drop ; v9.158 long-press mobile
         var click="";
         if(isAdm){
@@ -22251,7 +22258,8 @@ function vPlan(){
         var _isKb=isAdm&&window._kbFocus&&window._kbFocus.eid===emp.id&&window._kbFocus.day===d;
         var _admClass=(isAdm?" admc"+(window._lastPickedCode?" brush-active":"")+(_isSel?" bulk-sel":"")+(_isKb?" kb-focus":""):"")+_codeCls2;
         var isTodCell=d===todayD;
-        var cellBg=isTodCell?(code?ci.bg:"rgba(201,162,39,.06)"):ci.bg;
+        // v9.615 — _metaBg override si meta capture du PDF (ex: fond bleu FF) prioritaire sur ci.bg
+        var cellBg=isTodCell?(code?(_metaBg||ci.bg):"rgba(201,162,39,.06)"):(_metaBg||ci.bg);
         // v9.71 — Toutes les cellules utilisent box-shadow:inset (ne déborde pas sur voisines)
         // au lieu de border (qui avec border-collapse:collapse créait un chevauchement visuel
         // sur la colonne "aujourd'hui" à cause de la bordure dorée plus épaisse)
@@ -24026,7 +24034,40 @@ function _cmcStoreImportMeta(key, eid, d, meta){
       star:meta.star||prev.star||false, // ★ sur la ligne
       ff:meta.ff||prev.ff||false        // faisant fonction (fond bleu)
     };
+    // v9.615 — Persist + sync Firebase via ls() (cmc_ov_meta dans FB_FIX)
+    // Throttled : on flush en batch après doImport (pas chaque cell)
   }catch(_e){}
+}
+// v9.615 — Helper public + flush manuel persistence
+function cmcMetaForCell(key, eid, d){
+  if(!key||!eid||d==null)return null;
+  var m=A.overrides_meta;
+  if(!m||!m[key]||!m[key][eid])return null;
+  return m[key][eid][d]||null;
+}
+function _cmcFlushOverridesMeta(){
+  // Appelé après import pour persist + sync Firebase
+  try{
+    if(!A.overrides_meta)return;
+    ls("cmc_ov_meta",A.overrides_meta); // ls() synca FB_FIX automatiquement
+  }catch(_){}
+}
+// v9.615 — Couleurs de fond standardisées pour rendu cells (CSS background)
+var CMC_META_BG_COLORS={
+  CDP:"rgba(224,128,32,.32)",   // Café de Paris (orange)
+  AF: "rgba(90,170,112,.32)",   // Formation (vert)
+  CP: "rgba(255,180,210,.35)",  // Congé payé (rose)
+  RH: "rgba(96,72,160,.35)",    // Repos hebdo (violet foncé)
+  R:  "rgba(180,170,220,.30)",  // Repos (lavande)
+  RRT:"rgba(255,232,72,.30)",   // RRT/PRT (jaune)
+  PNL:"rgba(255,224,40,.45)",   // Poker No Limit (jaune vif)
+  CONV:"rgba(224,64,64,.32)",   // Convention (rouge)
+  FF: "rgba(74,160,255,.30)",   // Faisant fonction (bleu)
+  AMENAGE:"rgba(180,180,180,.28)" // Aménagé Casino (gris)
+};
+function cmcCellBgFromMeta(meta){
+  if(!meta||!meta.bg)return "";
+  return CMC_META_BG_COLORS[meta.bg]||"";
 }
 function _cmcApplyVisualMarkers(key, sourceText){
   // Lit window._pdfStarMarkers + window._pdfFaisantFonctionCells + window._pdfRedNames
@@ -29150,6 +29191,10 @@ function vEmps(){
             <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.20);border:1px solid ${emp.senior?"rgba(255,206,58,.45)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.senior?"#ffce3a":"#4a6040"}" title="Rotation max 40 min · pause 20 min obligatoire">
               <input type="checkbox" ${emp.senior?"checked":""} onchange="updEmp('${emp.id}','senior',this.checked)">
               <span style="color:#ffce3a;margin-right:2px;text-shadow:0 0 4px rgba(255,206,58,.6)">\u2605</span> 55+ ans
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(6,15,10,.20);border:1px solid ${emp.faisantFonction?"rgba(74,160,255,.5)":"#182818"};border-radius:8px;cursor:pointer;font-size:15px;color:${emp.faisantFonction?"#4aa0ff":"#4a6040"}" title="Faisant fonction (PDF: fond bleu) \u2014 occupe un poste sup\u00e9rieur sans le titre officiel">
+              <input type="checkbox" ${emp.faisantFonction?"checked":""} onchange="updEmp('${emp.id}','faisantFonction',this.checked)">
+              <span style="color:#4aa0ff;margin-right:2px;font-weight:800">FF</span> Faisant fonction
             </label>
           </div>
 
@@ -35139,6 +35184,8 @@ function doImport(){
         _visualStats=_cmcApplyVisualMarkers(key,txt);
       }
     }catch(_visErr){console.warn("[visual-markers]",_visErr&&_visErr.message);}
+    // v9.615 — Flush A.overrides_meta cross-device via Firebase
+    try{if(typeof _cmcFlushOverridesMeta==="function")_cmcFlushOverridesMeta();}catch(_fmErr){console.warn("[flush-meta]",_fmErr&&_fmErr.message);}
     try{
       if(typeof _cmcImportCompletenessCheck==="function"){
         _completeness=_cmcImportCompletenessCheck(key,txt);
