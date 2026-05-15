@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.632";
+var APP_VER="v9.633";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7535,6 +7535,76 @@ var CMC_PARSER_TESTS=[
       var input="62224/62056 DI COLANGELO F 1 31 19/4: 15/19 RH R";
       var stripped=input.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,"").replace(/^\s*0\s+(?=[A-Z])/,"");
       return stripped==="DI COLANGELO F 1 31 19/4: 15/19 RH R";
+    }},
+  // v9.633 — Tests fixes audit #6 P1 (CP-de-masse été + expectedCount hard-stop)
+  {id:"VS39",label:"_cmcDetectIdenticalScheduleBug : CP masse été (5 cadres tous CP) NON détecté comme bug",
+    input:"v9.633 CP masse été légitime",
+    customCheck:function(){
+      try{
+        if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        var key="2026-7"; // août 2026 (mois 7)
+        A.overrides[key]={};
+        // 5 cadres tous en CP tout août (cas légitime "CP masse été")
+        var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,2026,7);}).slice(0,5);
+        if(cadres.length<3){A.overrides=origOv;return {skipped:true,reason:"pas assez de cadres en DB"};}
+        cadres.forEach(function(c){
+          var row={};
+          for(var d=1;d<=31;d++)row[d]="CP"; // tous CP
+          A.overrides[key][c.id]=row;
+        });
+        var r=_cmcDetectIdenticalScheduleBug(key);
+        A.overrides=origOv;
+        // CP masse légitime → ne doit PAS être détecté comme bug parser
+        return r===null;
+      }catch(e){return false;}
+    }},
+  {id:"VS40",label:"_cmcDetectIdenticalScheduleBug : VRAI bug (5 cadres tous mêmes horaires VARIÉS) détecté",
+    input:"v9.633 vrai bug parser duplique horaires variés",
+    customCheck:function(){
+      try{
+        if(typeof _cmcDetectIdenticalScheduleBug!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        var key="2026-4";
+        A.overrides[key]={};
+        var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,2026,4);}).slice(0,5);
+        if(cadres.length<3){A.overrides=origOv;return {skipped:true,reason:"pas assez de cadres en DB"};}
+        // 5 cadres avec EXACTEMENT le même schedule VARIÉ (bug parser typique : pit boss tous même horaire)
+        cadres.forEach(function(c){
+          A.overrides[key][c.id]={1:"22/6",2:"16/20",3:"12H30/19",4:"RH",5:"R",6:"22/6",7:"19/4"};
+        });
+        var r=_cmcDetectIdenticalScheduleBug(key);
+        A.overrides=origOv;
+        // Mix horaires identiques sur N≥3 cadres → BUG détecté
+        return r && r.bug===true && r.scope==="cadres";
+      }catch(e){return false;}
+    }},
+  {id:"VS41",label:"_parseEncadresStatuts hard-stop expectedCount : ne dépasse pas la limite",
+    input:"v9.633 hard-stop expectedCount",
+    customCheck:function(){
+      try{
+        if(typeof _parseEncadresStatuts!=="function")return false;
+        var origOv=A.overrides;
+        A.overrides={};
+        var key="TEST-VS41";
+        A.overrides[key]={};
+        // Section "2 CP" mais 5 noms suivent (PDF malformé ou block fallback)
+        // Test : hard-stop doit limiter à 2 forces, pas 5
+        var fakeEmp1=A.employees[0];
+        var fakeEmp2=A.employees[1];
+        if(!fakeEmp1||!fakeEmp2){A.overrides=origOv;return {skipped:true,reason:"pas assez d'emps"};}
+        var src="2 CP du au\nBRTP+E. "+fakeEmp1.name.toUpperCase()+" 1 31\nBRTP+E. "+fakeEmp2.name.toUpperCase()+" 1 31\n";
+        // ajouter 3 noms supplémentaires (qui ne devraient PAS être matchés à cause de expectedCount=2)
+        for(var i=2;i<5 && i<A.employees.length;i++){
+          src+="BRTP+E. "+A.employees[i].name.toUpperCase()+" 1 31\n";
+        }
+        var res=_parseEncadresStatuts(src,key,2026,4);
+        A.overrides=origOv;
+        // Hard-stop : maximum 2 emps doivent recevoir CP (expectedCount=2)
+        return res && res.forced<=2;
+      }catch(e){return false;}
     }}
 ];
 // v9.521 — Helpers de normalisation utilises par les tests + le parser etendu
@@ -24639,6 +24709,28 @@ function _cmcDetectIdenticalScheduleBug(key){
       var keys=Object.keys(row).filter(function(d){return !!row[d];}).sort(function(a,b){return parseInt(a)-parseInt(b);});
       return keys.map(function(d){return d+":"+row[d];}).join("|");
     }
+    // v9.633 (audit #6 P1 #1) — Exclure schedules dominés par 1 seul code absence légitime.
+    // Si tous les cadres ont CP pendant l'été, schedule "1:CP|2:CP|...|31:CP" est LÉGITIME
+    // (pas un bug parser). Idem M (maladie longue), AF (formation), PAT, ABI, etc.
+    // Un VRAI bug parser duplique des codes VARIÉS (mix d'horaires + repos).
+    var ABSENCE_CODES=["CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","RH","R","EDC"];
+    function isAbsenceDominated(scheduleString){
+      // schedule="1:CP|2:CP|3:CP|..." → extract codes
+      var codes=scheduleString.split("|").map(function(c){
+        var p=c.split(":");return (p[1]||"").trim();
+      }).filter(Boolean);
+      if(codes.length<5)return false;
+      // Compte le code dominant
+      var freq={};
+      codes.forEach(function(c){freq[c]=(freq[c]||0)+1;});
+      var maxC=null,maxN=0;
+      Object.keys(freq).forEach(function(c){if(freq[c]>maxN){maxN=freq[c];maxC=c;}});
+      // Si >80% du schedule est UN SEUL code d'absence → schedule légitime, pas bug parser
+      if(maxN/codes.length>=0.8 && ABSENCE_CODES.indexOf((maxC||"").toUpperCase())>=0){
+        return true;
+      }
+      return false;
+    }
     function checkGroup(emps, label){
       if(emps.length<3)return null;
       var freq={};
@@ -24646,6 +24738,8 @@ function _cmcDetectIdenticalScheduleBug(key){
       emps.forEach(function(e){
         var s=scheduleStr(e);
         if(s && s.length>5){ // au moins quelques cells
+          // v9.633 — Exclure schedules absence-dominée (CP masse été = légitime)
+          if(isAbsenceDominated(s))return;
           schedulesNonEmpty.push({eid:e.id,name:e.name,s:s});
           freq[s]=(freq[s]||0)+1;
         }
@@ -33750,12 +33844,31 @@ function _parseEncadresStatuts(txt, key, year, month){
   // initiale : 1-3 lettres
   var nameRe=/(?:[\.\w+]{2,12}\s+)?([A-Z][A-Z][A-Z\s\-']{0,30}[A-Z])\s+([A-Z]{1,3})\s*\*?\s+(\d{1,2})\s+(\d{1,2})/g;
   sections.forEach(function(section,sidx){
-    var blockEnd=(sidx+1<sections.length)?sections[sidx+1].idx:Math.min(txt.length,section.headerEnd+8000);
+    // v9.633 (audit #6 P1 #2) — HARD-STOP par expectedCount.
+    // Avant : block fallback 8000 chars pour DERNIÈRE section pouvait s'étendre
+    // dans le tableau positionnel et FORCE override emps légitimes (corruption silencieuse).
+    // Fix : on enforce expectedCount comme limite stricte du nombre de noms à matcher.
+    // Si on a déjà matché N noms (N=expectedCount), on stoppe la regex sur cette section.
+    // Si dernière section ET expectedCount=0 (header malformé), on limite block à 2000 chars
+    // au lieu de 8000 pour minimiser le risque de débordement.
+    var blockEnd;
+    if(sidx+1<sections.length){
+      blockEnd=sections[sidx+1].idx;
+    }else{
+      // Dernière section : block limité par expectedCount * ~150 chars/ligne, max 8000
+      var maxBlock=section.expectedCount>0?Math.min(8000,section.expectedCount*150+200):2000;
+      blockEnd=Math.min(txt.length,section.headerEnd+maxBlock);
+    }
     var block=txt.substring(section.headerEnd,blockEnd);
     nameRe.lastIndex=0;
     var nm,sectionFilled=0;
     var matched={};
     while((nm=nameRe.exec(block))!==null){
+      // v9.633 — HARD-STOP : ne pas matcher plus que expectedCount noms
+      if(section.expectedCount>0 && sectionFilled>=section.expectedCount){
+        console.info("[encadres v9.633] section="+section.code+" hard-stop atteint expectedCount="+section.expectedCount);
+        break;
+      }
       var rawSurname=nm[1].trim();
       var rawInit=nm[2].trim();
       var fromDay=parseInt(nm[3])||1;
