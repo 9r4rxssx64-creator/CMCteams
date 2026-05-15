@@ -536,23 +536,29 @@ K.toast = toast;
 //  Auth — Firebase Phone + comptes pré-configurés
 // ============================================================================
 async function _authSendOtp(phone, name){
-  // Phase 1 : appel API worker pour rate limit + log
   try{
     const r = await fetch(API_BASE + '/api/auth/send-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, name })
     });
+    const data = await r.json().catch(()=>({}));
     if(!r.ok){
-      const e = await r.json().catch(()=>({}));
-      throw new Error(e.message || 'Erreur réseau');
+      throw new Error(data.message || 'Erreur ' + r.status);
     }
-    return await r.json();
+    return data;  // contient _dev_otp / _admin_bypass si applicable
   }catch(e){
     _safeCatch('authSendOtp', e);
     throw e;
   }
 }
+
+K._autofillDevOtp = function(){
+  if(K.authData._dev_otp){
+    $('#auth-otp').value = K.authData._dev_otp;
+    K._handleAuthOtp();
+  }
+};
 
 async function _authVerifyOtp(phone, name, pseudo, firebase_id_token){
   try{
@@ -683,10 +689,20 @@ function renderAuthStep(){
     setTimeout(()=>$('#auth-phone')?.focus(), 100);
   }
   else if(K.authStep === 'otp'){
+    const showCode = K.authData._dev_show && K.authData._dev_otp;
     host.innerHTML = `
-      <p style="text-align:center;color:var(--ax-text-2)">📲 SMS envoyé au <strong style="color:var(--ax-gold)">${esc(K.authData.phone)}</strong></p>
-      <label class="label" style="margin-top:14px">Code SMS reçu (6 chiffres)</label>
-      <input id="auth-otp" type="text" class="input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+      ${showCode ? `
+        <div style="background:#3a3a1a;border:2px solid var(--ax-gold);padding:14px;border-radius:14px;margin-bottom:14px;text-align:center">
+          <p style="margin:0 0 8px;color:var(--ax-warn);font-size:.85em">⚠ SMS indisponible (Vonage trial / config)</p>
+          <p style="margin:0;color:var(--ax-text-2);font-size:.85em">Ton code (mode cercle privé) :</p>
+          <div style="font-family:ui-monospace,monospace;font-size:2em;letter-spacing:8px;color:var(--ax-gold);margin:10px 0;font-weight:700">${esc(K.authData._dev_otp)}</div>
+          <button class="btn btn-sm btn-out" onclick="K._autofillDevOtp()">📋 Auto-remplir</button>
+        </div>
+      ` : `
+        <p style="text-align:center;color:var(--ax-text-2)">📲 SMS envoyé au <strong style="color:var(--ax-gold)">${esc(K.authData.phone)}</strong></p>
+      `}
+      <label class="label" style="margin-top:14px">Code SMS (6 chiffres)</label>
+      <input id="auth-otp" type="text" class="input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code"${showCode ? ` value="${esc(K.authData._dev_otp)}"` : ''}>
       <button class="btn btn-block" onclick="K._handleAuthOtp()" style="margin-top:16px">
         ✓ Vérifier
       </button>
@@ -717,8 +733,25 @@ K._handleAuthPhone = async function(){
 
   try{
     toast('Envoi du SMS...', 'info', 1500);
-    await _authSendOtp(phone, name);
+    const result = await _authSendOtp(phone, name);
     K.authData = { phone, name };
+
+    // === Bypass admin Kevin (numéro reconnu) ===
+    if(result._admin_bypass){
+      K.authData.otp = result._admin_otp;
+      toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
+      K.authStep = 'pseudo';
+      renderAuthStep();
+      return;
+    }
+
+    // === Mode inline (SMS indisponible — code retourné dans réponse) ===
+    if(result._dev_otp){
+      K.authData._dev_otp = result._dev_otp;
+      K.authData._dev_show = true;
+      toast('SMS indispo — code affiché à l\'écran', 'warn', 3000);
+    }
+
     K.authStep = 'otp';
     renderAuthStep();
   }catch(e){

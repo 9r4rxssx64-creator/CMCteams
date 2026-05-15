@@ -132,7 +132,24 @@ async function handleSendOtp(request, env) {
   const { phone, name } = await request.json();
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
 
-  // Rate limit
+  // Normaliser phone (retirer espaces/tirets)
+  const cleanPhone = phone.replace(/[\s\-]/g, '');
+  const phoneHash = await sha256(cleanPhone);
+
+  // ============ BYPASS ADMIN (Kevin reconnu via numéro) ============
+  // Kevin admin auto-reconnu via KEVIN_PHONE_E164 → pas besoin d'OTP
+  if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164) {
+    return json({
+      ok: true,
+      sessionId: phoneHash,
+      provider: 'admin-bypass',
+      _admin_bypass: true,
+      _admin_otp: '000000',  // OTP fictif pour passer l'étape suivante
+      _note: 'Admin Kevin reconnu via numéro téléphone — bypass OTP'
+    });
+  }
+
+  // ============ Rate limit ============
   const ipHash = await sha256(request.headers.get('CF-Connecting-IP') || 'unknown');
   const hourKey = new Date().toISOString().slice(0, 13);
   const rl = await env.APEX_CHAT_DB.prepare(
@@ -145,10 +162,9 @@ async function handleSendOtp(request, env) {
     'INSERT OR REPLACE INTO ratelimit_otp (ip_hash, hour_key, count) VALUES (?, ?, COALESCE((SELECT count FROM ratelimit_otp WHERE ip_hash=? AND hour_key=?),0)+1)'
   ).bind(ipHash, hourKey, ipHash, hourKey).run();
 
-  // Génère OTP 6 chiffres
+  // ============ Génère OTP 6 chiffres ============
   const otp = String(Math.floor(100000 + Math.random() * 900000));
-  const phoneHash = await sha256(phone);
-  const otpHash = await sha256(otp + ':' + phone);
+  const otpHash = await sha256(otp + ':' + cleanPhone);
 
   // Stocke OTP hashé en D1 (TTL 5 min)
   await env.APEX_CHAT_DB.prepare(
@@ -164,8 +180,11 @@ async function handleSendOtp(request, env) {
     'INSERT OR REPLACE INTO otp_pending (phone_hash, otp_hash, attempts, created_at, expires_at) VALUES (?, ?, 0, ?, ?)'
   ).bind(phoneHash, otpHash, Date.now(), Date.now() + 300000).run();
 
-  // Envoie via Vonage si configuré
+  // ============ Envoi SMS — chaîne failover ============
   let smsProvider = 'none';
+  let smsError = null;
+
+  // Tentative 1 : Vonage
   if (env.VONAGE_API_KEY && env.VONAGE_API_SECRET) {
     try {
       const smsResponse = await fetch('https://rest.nexmo.com/sms/json', {
@@ -175,32 +194,57 @@ async function handleSendOtp(request, env) {
           api_key: env.VONAGE_API_KEY,
           api_secret: env.VONAGE_API_SECRET,
           from: 'ApexChat',
-          to: phone.replace(/^\+/, ''),
-          text: `Apex Chat : ton code de verification est ${otp}. Valide 5 min. Ne le partage avec personne.`
+          to: cleanPhone.replace(/^\+/, ''),
+          text: `Apex Chat : ton code de verification est ${otp}. Valide 5 min.`
         })
       });
       const smsData = await smsResponse.json();
       const msg = smsData.messages?.[0];
       if (msg?.status === '0') {
         smsProvider = 'vonage';
-        console.log('SMS Vonage envoyé:', msg['message-id']);
       } else {
-        console.error('Vonage error:', msg);
-        return err('Erreur envoi SMS : ' + (msg?.['error-text'] || 'unknown') + '. Verifie ton numero.', 500);
+        smsError = msg?.['error-text'] || 'Vonage error ' + msg?.status;
+        console.error('Vonage:', smsError);
       }
     } catch (e) {
-      console.error('Vonage exception:', e.message);
-      return err('Service SMS temporairement indisponible. Reessaie dans 1 min.', 503);
+      smsError = 'Vonage exception: ' + e.message;
+      console.error(smsError);
     }
-  } else {
-    // Mode dev/test : retourne le code dans la réponse (visible dans console)
-    console.log('OTP DEV (no Vonage):', otp);
+  }
+
+  // Tentative 2 : TextBelt (gratuit 1 SMS/jour, fallback)
+  if (smsProvider === 'none') {
+    try {
+      const tbResponse = await fetch('https://textbelt.com/text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          phone: cleanPhone,
+          message: `Apex Chat: ton code est ${otp}. Valide 5 min.`,
+          key: 'textbelt'  // gratuit 1/jour
+        })
+      });
+      const tbData = await tbResponse.json();
+      if (tbData.success) {
+        smsProvider = 'textbelt-free';
+      } else {
+        console.error('TextBelt:', tbData.error);
+      }
+    } catch (e) {
+      console.error('TextBelt exception:', e.message);
+    }
+  }
+
+  // Fallback ultime : retourner OTP dans la réponse (mode "dev/cercle privé")
+  // → Le client affiche le code à l'utilisateur en gros pour qu'il le saisisse
+  if (smsProvider === 'none') {
     return json({
       ok: true,
       sessionId: phoneHash,
-      provider: 'dev',
-      _dev_otp: otp,  // Phase 1 sans SMS : code visible pour test
-      _dev_note: 'Vonage non configure. Code OTP affiche pour test : ' + otp
+      provider: 'inline',
+      _dev_otp: otp,  // visible dans la réponse JSON
+      _dev_note: 'SMS indispo (' + (smsError || 'config') + '). Code affiche ci-dessous (mode cercle prive).',
+      _show_code_in_app: true
     });
   }
 
@@ -274,7 +318,30 @@ async function handleVerifyOtp(request, env) {
   if (!phone || !pseudo) return err('Champs manquants', 400);
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
 
-  const phoneHash = await sha256(phone);
+  const cleanPhone = phone.replace(/[\s\-]/g, '');
+  const phoneHash = await sha256(cleanPhone);
+
+  // ============ BYPASS ADMIN Kevin ============
+  if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164 && otp === '000000') {
+    // Skip OTP check, créer/récupérer compte Kevin admin
+    let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind('kdmc_admin').first();
+    if (!user) {
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT OR REPLACE INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
+         identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
+         VALUES (?, ?, ?, ?, ?, 1, 1, 'PENDING', 'PENDING', 'PENDING', 'admin-bypass', ?, 'active')`
+      ).bind('kdmc_admin', pseudo || 'kevin', name || 'Kevin DESARZENS', cleanPhone, phoneHash, Date.now()).run();
+      user = { id: 'kdmc_admin', pseudo: pseudo || 'kevin', real_name: name || 'Kevin DESARZENS', is_admin: 1 };
+    }
+    const jwt = await signJWT({
+      sub: 'kdmc_admin',
+      pseudo: user.pseudo,
+      is_admin: true,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 30 * 86400
+    }, env.JWT_SIGN_KEY || 'dev-key');
+    return json({ ok: true, token: jwt, user: { id: 'kdmc_admin', pseudo: user.pseudo, is_admin: true }});
+  }
 
   // Mode 1 : OTP Vonage (priorité)
   if (otp) {
