@@ -40,7 +40,8 @@ import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
-/* v13.4.165-169 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+/* v13.4.165-170 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+import { renderMessageActions } from './chat-actions-render.js';
 import { buildMessagesForApi } from './chat-api-format.js';
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
@@ -503,27 +504,9 @@ export function pushTransformResult(
  *
  * Exposé pour tests.
  */
-export function renderMessageActions(msg: DisplayMessage): string {
-  if (msg.role !== 'assistant' || msg.streaming) return '';
-  if (!msg.text || msg.text.length === 0) return '';
-  const btnStyle =
-    'width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,0.1);' +
-    'border:1px solid rgba(201,162,39,0.3);cursor:pointer;display:inline-flex;' +
-    'align-items:center;justify-content:center;font-size:14px;color:var(--ax-gold);' +
-    'transition:all 200ms;opacity:0.7;-webkit-tap-highlight-color:transparent;padding:0;';
-  return (
-    `<div class="ax-msg-actions" style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap">` +
-    `<button class="ax-msg-action" data-action="speak" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Lire la réponse à voix haute" aria-label="Lire la réponse">🔊</button>` +
-    `<button class="ax-msg-action" data-action="copy" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Copier dans presse-papiers" aria-label="Copier le texte">📋</button>` +
-    `<button class="ax-msg-action" data-action="regen" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Régénérer une autre réponse" aria-label="Régénérer">🔄</button>` +
-    `<button class="ax-msg-action" data-action="export-pdf" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Exporter en PDF" aria-label="Exporter PDF">📄</button>` +
-    `</div>`
-  );
-}
+/* v13.4.170 refactor : renderMessageActions extrait vers chat-actions-render.ts
+ * (façade backward-compat, import déjà en haut du fichier). */
+export { renderMessageActions } from './chat-actions-render.js';
 
 /* v13.4.165 refactor : renderMarkdownLight extrait vers chat-markdown.ts
  * (re-export façade ligne ~172). Aucun wrapper inutile pour rester lint-clean. */
