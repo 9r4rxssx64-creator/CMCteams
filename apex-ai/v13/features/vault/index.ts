@@ -988,8 +988,12 @@ function attachHandlers(rootEl: HTMLElement): void {
 
   /* v13.4.115 (Kevin "J'ai tout collé" 18 clés + Firebase backup KO) :
    * Backup vault complet en QR pour sauvegarde Photos iCloud.
-   * QR contient JSON chiffré AES-GCM-256 de toutes les clés + iCloud Photos
-   * survit reinstall PWA + sync cross-device Apple ID. */
+   *
+   * v13.4.116 (Kevin "Vault 4.9KB > 2.9KB max") :
+   * Strategy fallback en cascade :
+   * 1. Try LZ-string compress (UTF16) → souvent -70% taille
+   * 2. Si toujours trop gros → upload Gist privé chiffré + QR contient juste l'URL
+   * 3. Si Gist KO → fallback download JSON */
   const qrBackupBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-qr-backup');
   if (qrBackupBtn && activeVaultScope) {
     activeVaultScope.bind(qrBackupBtn, 'click', () => {
@@ -997,18 +1001,67 @@ function attachHandlers(rootEl: HTMLElement): void {
         haptic.tap();
         try {
           const json = exportVaultJson(listVaultEntries());
-          const sizeKB = (json.length / 1024).toFixed(1);
-          if (json.length > 2900) {
-            toast.warn(`Vault trop gros pour QR (${sizeKB}KB > 2.9KB max). Utilise "Exporter JSON" à la place.`, { duration: 8000 });
+          const origSizeKB = (json.length / 1024).toFixed(1);
+          const count = listVaultEntries().length;
+          const QR_MAX_SAFE = 2500; /* QR v40 binaire ~2953 mais on prend marge */
+
+          /* Strategy 1 : compression LZ-string */
+          let compressed = '';
+          try {
+            const lz = await import('https://cdn.jsdelivr.net/npm/lz-string@1.5.0/+esm' as string) as {
+              compressToEncodedURIComponent: (s: string) => string;
+            };
+            compressed = lz.compressToEncodedURIComponent(json);
+            const compSizeKB = (compressed.length / 1024).toFixed(1);
+            logger.info('vault-qr-backup', `LZ compress ${origSizeKB}KB → ${compSizeKB}KB (${Math.round((1 - compressed.length / json.length) * 100)}% gain)`);
+          } catch (err: unknown) {
+            logger.warn('vault-qr-backup', 'LZ-string load failed', { err });
+          }
+
+          if (compressed && compressed.length < QR_MAX_SAFE) {
+            /* Compress OK + tient dans QR → modal QR */
+            const { apexQrBackup } = await import('../../services/apex-qr-backup.js');
+            await apexQrBackup.showQrBackupModal({
+              text: `APEXVAULT_LZ:${compressed}`, /* prefix pour détection au scan */
+              title: '📦 Backup Vault Compressé — Photos iCloud',
+              description: `${count} clés compressées LZ (${(compressed.length / 1024).toFixed(1)}KB vs ${origSizeKB}KB orig). JSON chiffré AES-GCM-256. Sauvegarde dans Photos iCloud — au reinstall, scan = restore complet.`,
+              filename: `apex-vault-backup-${new Date().toISOString().slice(0, 10)}.png`,
+            });
             return;
           }
-          const { apexQrBackup } = await import('../../services/apex-qr-backup.js');
-          await apexQrBackup.showQrBackupModal({
-            text: json,
-            title: '📦 Backup Vault Complet — Photos iCloud',
-            description: `Apex a généré un QR code de tes ${listVaultEntries().length} clés (JSON chiffré AES-GCM-256, ${sizeKB}KB). Sauvegarde-le dans Photos iCloud — au prochain reinstall PWA, scan ce QR pour TOUT restaurer en 1 clic.`,
-            filename: `apex-vault-backup-${new Date().toISOString().slice(0, 10)}.png`,
-          });
+
+          /* Strategy 2 : vault trop gros même compressé → upload Gist privé + QR de l'URL */
+          toast.info(`Vault compressé ${compressed.length}B encore > QR max. Upload Gist privé chiffré...`, { duration: 4000 });
+          try {
+            const { apexGithubGistBackup } = await import('../../services/apex-github-gist-backup.js');
+            const r = await apexGithubGistBackup.pushBackup({ force: true });
+            if (r.ok && r.gist_id) {
+              const gistUrl = `https://gist.github.com/${r.gist_id}`;
+              const { apexQrBackup } = await import('../../services/apex-qr-backup.js');
+              await apexQrBackup.showQrBackupModal({
+                text: `APEXVAULT_GIST:${r.gist_id}`,
+                title: '📦 Backup Vault → Gist URL — Photos iCloud',
+                description: `${count} clés uploadées Gist privé chiffré (${(r.bytes ?? 0) / 1024}KB). QR contient juste l'ID Gist. Au reinstall, scan + PAT GitHub = pull Gist + restore complet. URL : ${gistUrl}`,
+                filename: `apex-vault-gist-${new Date().toISOString().slice(0, 10)}.png`,
+              });
+              return;
+            }
+            toast.warn(`Gist upload échoué : ${r.error ?? '?'}. Fallback download JSON.`, { duration: 6000 });
+          } catch (err: unknown) {
+            logger.warn('vault-qr-backup', 'gist push failed', { err });
+          }
+
+          /* Strategy 3 : fallback download JSON */
+          const blob = new Blob([json], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `apex-vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success(`📥 Backup JSON téléchargé (${origSizeKB}KB chiffré). Sauvegarde dans iCloud Drive / Notes.`, { duration: 8000 });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           toast.error(`Backup QR échoué : ${msg.slice(0, 60)}`, { duration: 6000 });
