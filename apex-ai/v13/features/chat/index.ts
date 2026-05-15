@@ -40,7 +40,8 @@ import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
-/* v13.4.165-168 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+/* v13.4.165-169 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+import { buildMessagesForApi } from './chat-api-format.js';
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
 import {
@@ -422,39 +423,9 @@ export { saveCodeSnippet, listCodeSnippets, deleteCodeSnippet } from './chat-sni
  * - PDF/non-image attachments ignorés silencieusement (Anthropic vision = image/* only)
  * - Messages assistant : toujours content string (les attachments leaked sont ignorés)
  */
-export function buildMessagesForApi(
-  conversation: Array<{
-    role: 'user' | 'assistant' | 'tool_card';
-    text: string;
-    streaming?: boolean;
-    attachments?: Array<{ mime: string; base64: string; name: string }>;
-  }>,
-  excludeMsg?: { role: string },
-  maxContext = 30,
-): Array<{ role: 'user' | 'assistant' | 'system'; content: string | Array<{ type: string; [k: string]: unknown }> }> {
-  return conversation
-    .filter((m) => !m.streaming || m === excludeMsg)
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .slice(-maxContext)
-    .filter((m) => m !== excludeMsg)
-    .map((m) => {
-      if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
-        const contentArr: Array<{ type: string; [k: string]: unknown }> = [];
-        for (const att of m.attachments) {
-          if (att.mime.startsWith('image/')) {
-            const dataOnly = att.base64.replace(/^data:[^;]+;base64,/, '');
-            contentArr.push({
-              type: 'image',
-              source: { type: 'base64', media_type: att.mime, data: dataOnly },
-            });
-          }
-        }
-        if (m.text) contentArr.push({ type: 'text', text: m.text });
-        return { role: m.role as 'user' | 'assistant', content: contentArr };
-      }
-      return { role: m.role as 'user' | 'assistant', content: m.text };
-    });
-}
+/* v13.4.169 refactor : buildMessagesForApi extrait vers chat-api-format.ts
+ * (façade backward-compat, import déjà en haut du fichier). */
+export { buildMessagesForApi } from './chat-api-format.js';
 
 /**
  * Push résultat transformation comme bulle Apex avec image générée.
