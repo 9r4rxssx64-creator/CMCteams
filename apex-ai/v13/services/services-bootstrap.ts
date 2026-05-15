@@ -485,7 +485,9 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
        + URL fix. */
     safeInit('cf-vault-deploy', async () => {
       const { apexCloudflareVaultDeploy } = await import('./apex-cloudflare-vault-deploy.js');
-      /* Différé 8s : laisse vault unlock + auto-restore + gist-backup tourner d'abord */
+      /* v13.4.120 (Kevin "verifie maintenant avant d'etre bloque") :
+       * Diagnostic IMMEDIAT 2s apres boot (au lieu de 8s) pour que Kevin
+       * sache vite si Cloudflare API est OK ou KO. */
       setTimeout(() => {
         void (async () => {
           try {
@@ -526,7 +528,7 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
             logger.warn('cf-vault-deploy', 'boot run failed (non-blocking)', { err });
           }
         })();
-      }, 8000);
+      }, 2000); /* v13.4.120 : 2s au lieu de 8s pour test rapide Kevin */
     }),
 
     /* v13.4.105 (Kevin "zero manip autonome") —
