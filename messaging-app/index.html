@@ -1037,8 +1037,191 @@ async function _handleWsMessage(data, convId){
   }
 }
 
-K._call = function(type, convId){
-  toast(`Appel ${type} — Phase 5 (à venir)`, 'info');
+// ============================================================================
+//  Phase 5 — Appels WebRTC P2P (4 max)
+// ============================================================================
+K._call = async function(type, convId){
+  if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
+
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+
+  K._activeCall = { type, convId, peerConn: null, localStream: null, remoteStream: null, startedAt: Date.now() };
+
+  // UI overlay appel
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" style="background:#000">
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;color:white">
+        <div style="padding:20px;text-align:center">
+          <div style="font-size:3em">${type === 'video' ? '📹' : '📞'}</div>
+          <div style="font-size:1.5em;margin-top:10px">${esc(conv.name || conv.pseudo || 'Appel')}</div>
+          <div style="color:var(--ax-text-3);margin-top:6px" id="call-status">🛜 Connexion...</div>
+        </div>
+        <div style="flex:1;position:relative">
+          ${type === 'video' ? '<video id="remote-video" style="width:100%;height:100%;object-fit:cover" autoplay playsinline></video><video id="local-video" style="position:absolute;top:14px;right:14px;width:30%;border-radius:14px" autoplay playsinline muted></video>' : ''}
+        </div>
+        <div style="padding:20px calc(var(--ax-safe-bottom) + 20px);text-align:center">
+          <button class="btn btn-err" onclick="K._endCall()" style="border-radius:50%;width:64px;height:64px;font-size:1.5em">📴</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  try{
+    // Get user media
+    const constraints = { audio: true, video: type === 'video' };
+    K._activeCall.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    if(type === 'video'){
+      const lv = $('#local-video');
+      if(lv) lv.srcObject = K._activeCall.localStream;
+    }
+
+    // Peer connection
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    });
+    K._activeCall.peerConn = pc;
+
+    // Add local tracks
+    K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
+
+    // Remote stream
+    pc.ontrack = (e) => {
+      K._activeCall.remoteStream = e.streams[0];
+      if(type === 'video'){
+        const rv = $('#remote-video');
+        if(rv) rv.srcObject = e.streams[0];
+      }
+      $('#call-status').textContent = '🟢 En cours';
+    };
+
+    // ICE candidates → envoyer via WS
+    pc.onicecandidate = (e) => {
+      if(e.candidate && K.ws?.readyState === WebSocket.OPEN){
+        K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, convId }));
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      $('#call-status').textContent = '📶 ' + pc.connectionState;
+      if(pc.connectionState === 'failed' || pc.connectionState === 'disconnected'){
+        toast('Connexion perdue', 'warn');
+        K._endCall();
+      }
+    };
+
+    // Créer offer + envoyer via WS
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    if(K.ws?.readyState === WebSocket.OPEN){
+      K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
+      $('#call-status').textContent = '📞 Appel en cours...';
+    } else {
+      toast('WebSocket non connecté', 'err');
+      K._endCall();
+    }
+  }catch(e){
+    _safeCatch('call-start', e);
+    toast('Impossible de démarrer l\'appel : ' + e.message, 'err');
+    K._endCall();
+  }
+};
+
+K._endCall = function(){
+  if(K._activeCall){
+    try{ K._activeCall.peerConn?.close(); }catch(_){}
+    try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_){}
+    if(K.ws?.readyState === WebSocket.OPEN){
+      try{ K.ws.send(JSON.stringify({ type: 'webrtc-hangup', convId: K._activeCall.convId })); }catch(_){}
+    }
+    K._activeCall = null;
+  }
+  K._closeModal();
+};
+
+// ============================================================================
+//  Phase 8 — Mini-apps embedded (Apex Studios + paiement QR)
+// ============================================================================
+K.openMiniApps = function(){
+  K._showModal('🎨 Mini-apps Apex', `
+    <div class="admin-grid">
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('traducteur')">
+        <div class="ico">🌐</div><div class="lbl">Traducteur</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('cuisine')">
+        <div class="ico">🍳</div><div class="lbl">Cuisine</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('medical')">
+        <div class="ico">🩺</div><div class="lbl">Médical</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('finance')">
+        <div class="ico">💰</div><div class="lbl">Finance</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('legal')">
+        <div class="ico">⚖</div><div class="lbl">Légal</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openPayQr()">
+        <div class="ico">💸</div><div class="lbl">Paiement QR</div>
+      </div>
+    </div>
+  `);
+};
+
+K._openStudio = function(name){
+  const apexBase = 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/';
+  window.open(apexBase + '#studio=' + name, '_blank');
+};
+
+K._openPayQr = function(){
+  K._showModal('💸 Demande de paiement', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Génère un QR code de demande de paiement à envoyer à un contact.</p>
+    <label class="label">Montant (€)</label>
+    <input id="pq-amount" class="input" type="number" min="0.01" step="0.01" placeholder="20.00">
+    <label class="label" style="margin-top:14px">Méthode</label>
+    <select id="pq-method" class="input">
+      <option value="paypal">PayPal.me</option>
+      <option value="revolut">Revolut @tag</option>
+      <option value="iban">Virement IBAN</option>
+    </select>
+    <label class="label" style="margin-top:14px">Ton identifiant (username PayPal/Revolut/IBAN)</label>
+    <input id="pq-id" class="input" placeholder="@kevin ou IBAN FR76...">
+    <label class="label" style="margin-top:14px">Note (optionnel)</label>
+    <input id="pq-note" class="input" placeholder="Resto vendredi" maxlength="100">
+    <button class="btn btn-block" onclick="K._generatePayQr()" style="margin-top:14px">📱 Générer le QR</button>
+    <div id="pq-result" style="margin-top:14px"></div>
+  `);
+};
+
+K._generatePayQr = async function(){
+  const amount = parseFloat($('#pq-amount').value);
+  const method = $('#pq-method').value;
+  const id = $('#pq-id').value.trim();
+  const note = $('#pq-note').value.trim();
+  if(!amount || amount <= 0 || !id) return toast('Montant + identifiant requis', 'err');
+
+  let url;
+  if(method === 'paypal') url = `https://paypal.me/${id.replace(/^@/, '')}/${amount.toFixed(2)}EUR`;
+  else if(method === 'revolut') url = `https://revolut.me/${id.replace(/^@/, '')}?amount=${amount.toFixed(2)}&currency=EUR&description=${encodeURIComponent(note)}`;
+  else url = `SEPA:${id}:${amount.toFixed(2)}:EUR:${note}`;
+
+  // QR code via API tier (qrserver.com gratuit)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+
+  $('#pq-result').innerHTML = `
+    <div style="text-align:center;padding:14px;background:white;border-radius:14px">
+      <img src="${qrUrl}" alt="QR" style="max-width:100%;border-radius:8px">
+    </div>
+    <p style="text-align:center;margin-top:10px;color:var(--ax-text-2)">
+      <strong style="color:var(--ax-gold)">${amount.toFixed(2)} €</strong> via ${method}
+    </p>
+    <p style="text-align:center;font-size:.78em;word-break:break-all;color:var(--ax-text-3)">
+      ${esc(url)}
+    </p>
+    <button class="btn btn-out btn-block btn-sm" onclick="navigator.clipboard.writeText('${esc(url)}');K.toast('Lien copié','ok')" style="margin-top:10px">📋 Copier le lien</button>
+  `;
 };
 
 function renderContacts(app){
@@ -1095,6 +1278,15 @@ function renderSettings(app){
       </div>
       <div class="card-row" onclick="K.openMemoryLane()">
         <span>🕰</span><span style="flex:1">Memory Lane (il y a 1 an)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openMiniApps()">
+        <span>🎨</span><span style="flex:1">Mini-apps (Studios Apex)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._openPayQr()">
+        <span>💸</span><span style="flex:1">Paiement QR</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openPremium()">
+        <span>⭐</span><span style="flex:1">Apex Chat+ Premium</span><span>›</span>
       </div>
       <div class="card-row" onclick="window.open('./diag.html')">
         <span>🔧</span><span style="flex:1">Diagnostic technique</span><span>›</span>
@@ -1283,8 +1475,118 @@ function renderAdminAudit(app){
   `;
 }
 
-K._adminCmd = function(cmd){
-  toast('Commande "' + cmd + '" — Phase 6', 'info');
+K._adminCmd = async function(cmd){
+  // Phase 6 : exécute commande réelle via /api/admin/commands
+  if(cmd === 'analytics'){
+    K._showModal('📊 Statistiques globales', '<div class="loading"></div> Chargement...');
+    try{
+      const r = await K._api('POST', '/api/admin/commands', { command: 'globalStats' });
+      if(r.ok){
+        const s = r.result;
+        K._showModal('📊 Statistiques globales', `
+          <div class="card" style="margin:0">
+            <div class="card-row"><span style="flex:1">👥 Utilisateurs actifs</span><strong>${s.users}</strong></div>
+            <div class="card-row"><span style="flex:1">💬 Conversations actives</span><strong>${s.active_convs}</strong></div>
+            <div class="card-row"><span style="flex:1">📨 Messages 24h</span><strong>${s.msgs_24h}</strong></div>
+            <div class="card-row"><span style="flex:1">🟢 En ligne maintenant</span><strong style="color:var(--ax-ok)">${s.online_now}</strong></div>
+          </div>
+        `);
+      } else toast(r.message || 'Erreur', 'err');
+    }catch(e){ toast('Worker offline', 'warn'); }
+  }
+  else if(cmd === 'search'){
+    K._showModal('🔍 Rechercher messages', `
+      <p style="color:var(--ax-text-2);font-size:.85em">Recherche dans les métadonnées (contenu chiffré E2E, illisible serveur).</p>
+      <label class="label">Période (jours)</label>
+      <input id="search-days" class="input" type="number" value="7" min="1" max="365">
+      <button class="btn btn-block" onclick="K._adminSearch()" style="margin-top:12px">🔍 Rechercher</button>
+      <div id="search-results" style="margin-top:14px"></div>
+    `);
+  }
+  else if(cmd === 'broadcast'){
+    K._showModal('📢 Broadcast notification', `
+      <label class="label">Titre</label>
+      <input id="bc-title" class="input" placeholder="📢 Annonce Apex Chat" maxlength="60">
+      <label class="label" style="margin-top:14px">Message</label>
+      <textarea id="bc-body" class="input" rows="3" placeholder="Votre message..." maxlength="200"></textarea>
+      <p style="color:var(--ax-warn);font-size:.78em;margin-top:10px">⚠ Sera envoyé à TOUS les utilisateurs actifs.</p>
+      <button class="btn btn-block" onclick="K._adminBroadcast()" style="margin-top:10px">📤 Envoyer le broadcast</button>
+    `);
+  }
+  else if(cmd === 'signalements'){
+    K._adminLoadSignalements();
+  }
+  else {
+    toast('Commande inconnue: ' + cmd, 'warn');
+  }
+};
+
+K._adminSearch = async function(){
+  const days = parseInt($('#search-days').value) || 7;
+  const res = $('#search-results');
+  res.innerHTML = '<div class="loading"></div>';
+  try{
+    const r = await K._api('POST', '/api/admin/commands', { command: 'searchAllMessages', params: { days } });
+    if(r.ok && r.result?.results){
+      const msgs = r.result.results;
+      res.innerHTML = msgs.length === 0
+        ? '<p style="color:var(--ax-text-3)">Aucun résultat</p>'
+        : msgs.slice(0,30).map(m => `
+          <div class="card" style="font-size:.85em;padding:8px 12px;margin-bottom:6px">
+            <div><strong>${esc(m.sender_pseudo || '?')}</strong> <span style="color:var(--ax-text-3)">→</span> ${esc(m.conv_name || m.conv_id?.slice(0,12)+'...')}</div>
+            <div style="color:var(--ax-text-3);font-size:.78em">${formatTime(m.ts)} · ${esc(m.mime)}</div>
+          </div>
+        `).join('') + `<p style="color:var(--ax-text-3);font-size:.75em;text-align:center;margin-top:8px">${msgs.length} résultats</p>`;
+    } else res.innerHTML = '<p style="color:var(--ax-err)">' + esc(r.message || 'Erreur') + '</p>';
+  }catch(e){ res.innerHTML = '<p style="color:var(--ax-err)">' + esc(e.message) + '</p>'; }
+};
+
+K._adminBroadcast = async function(){
+  const title = $('#bc-title').value.trim() || '📢 Annonce Apex Chat';
+  const body = $('#bc-body').value.trim();
+  if(!body) return toast('Message requis', 'err');
+  if(!confirm('Envoyer ce broadcast à TOUS les utilisateurs ?\n\n' + title + '\n' + body)) return;
+  try{
+    const r = await K._api('POST', '/api/admin/commands', {
+      command: 'broadcastNotif',
+      params: { title, body },
+      confirm_token: 'KEVIN-ADMIN-' + Date.now()
+    });
+    if(r.ok){
+      toast(`✓ Envoyé à ${r.result.sent}/${r.result.total} users`, 'ok', 4000);
+      K._closeModal();
+    } else toast(r.message || 'Erreur', 'err');
+  }catch(e){ toast('Worker offline', 'warn'); }
+};
+
+K._adminLoadSignalements = async function(){
+  K._showModal('⚠ Signalements en attente', '<div class="loading"></div>');
+  try{
+    const r = await K._api('POST', '/api/admin/commands', { command: 'listSignalements', params: { status: 'pending' } });
+    if(r.ok && r.result?.signalements){
+      const sgs = r.result.signalements;
+      K._showModal('⚠ Signalements (' + sgs.length + ')', sgs.length === 0
+        ? '<p style="color:var(--ax-ok)">✓ Aucun signalement en attente</p>'
+        : sgs.map(s => `
+          <div class="card" style="margin-bottom:8px">
+            <div><strong>${esc(s.reason)}</strong> · <span style="color:var(--ax-text-3)">${formatTime(s.ts)}</span></div>
+            <div style="font-size:.85em;color:var(--ax-text-2);margin-top:4px">
+              ${esc(s.reporter_pseudo || '?')} → <strong>${esc(s.target_pseudo || '?')}</strong>
+            </div>
+            ${s.description ? '<div style="font-size:.85em;margin-top:6px;font-style:italic;color:var(--ax-text-3)">' + esc(s.description) + '</div>' : ''}
+            <div style="margin-top:8px;display:flex;gap:6px">
+              <button class="btn btn-sm btn-out" onclick="K._adminResolveSignal('${esc(s.id)}','dismiss')">Ignorer</button>
+              <button class="btn btn-sm btn-err" onclick="K._adminResolveSignal('${esc(s.id)}','ban')">Bannir</button>
+            </div>
+          </div>
+        `).join(''));
+    } else K._showModal('⚠ Signalements', '<p>Erreur</p>');
+  }catch(e){ K._showModal('⚠ Signalements', '<p style="color:var(--ax-err)">' + esc(e.message) + '</p>'); }
+};
+
+K._adminResolveSignal = async function(id, action){
+  toast('Phase 6b — résolution signalement', 'info');
+  K._closeModal();
 };
 
 K._adminAiAsk = async function(){
@@ -1292,15 +1594,38 @@ K._adminAiAsk = async function(){
   if(!q) return;
   const res = $('#admin-ai-result');
   res.innerHTML = '<div class="loading"></div> Apex réfléchit...';
-  // Phase 1 : stub. Phase 6 : appel ia-worker
-  setTimeout(() => {
-    res.innerHTML = `
-      <div class="card" style="margin:0;font-size:.9em">
-        <p style="margin:0"><strong>✨ Apex (admin)</strong></p>
-        <p style="margin:6px 0 0;color:var(--ax-text-2)">Cette fonction sera connectée à l'IA Apex en Phase 6. Tools dispo : <code>kickUser</code>, <code>banUser</code>, <code>searchAllMessages</code>, <code>analyzeUser</code>, <code>geoTrace</code>, <code>exportConv</code>, <code>broadcastNotif</code>.</p>
-      </div>
-    `;
-  }, 800);
+
+  try{
+    // Phase 6 : appel ia-worker via API
+    const r = await fetch(API_BASE.replace('apex-chat-api', 'apex-chat-ia') + '/ia/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: q }],
+        context: { user_pseudo: K.user.pseudo, is_admin: true, lang: 'fr' }
+      })
+    });
+    const data = await r.json().catch(() => ({}));
+    if(data.ok){
+      res.innerHTML = `
+        <div class="card" style="margin:0;font-size:.92em">
+          <p style="margin:0"><strong>✨ Apex (admin)</strong> <span style="color:var(--ax-text-3);font-size:.78em">${esc(data.provider || '')}${data.cached ? ' · cache' : ''}</span></p>
+          <p style="margin:8px 0 0;color:var(--ax-text);white-space:pre-wrap">${esc(data.content || '')}</p>
+        </div>`;
+    } else {
+      // Fallback : exécute commande directe si q matche un pattern
+      let matched = false;
+      if(/stat|kpi|global/i.test(q)){ K._adminCmd('analytics'); matched = true; }
+      else if(/cherche|search|trouve/i.test(q)){ K._adminCmd('search'); matched = true; }
+      else if(/broadcast|annonce|notif/i.test(q)){ K._adminCmd('broadcast'); matched = true; }
+      else if(/signalement|report|abus/i.test(q)){ K._adminLoadSignalements(); matched = true; }
+
+      if(matched){ res.innerHTML = '<p style="color:var(--ax-blue)">✓ Commande lancée</p>'; }
+      else res.innerHTML = '<p style="color:var(--ax-text-2)">IA indisponible. Essaie : stats globales, cherche messages, broadcast, signalements.</p>';
+    }
+  }catch(e){
+    res.innerHTML = '<p style="color:var(--ax-err)">' + esc(e.message) + '</p>';
+  }
 };
 
 // ============================================================================
@@ -1600,6 +1925,120 @@ K._reload = function(){
 };
 
 // ============================================================================
+//  Phase 9 — Premium / Stripe freemium
+// ============================================================================
+K.openPremium = function(){
+  const isPremium = PRECONFIGURED_USERS[K.user.id]?.premium || (K.user.premium_until > Date.now());
+  if(isPremium){
+    return K._showModal('⭐ Apex Chat+ Premium', `
+      <div style="text-align:center;padding:14px">
+        <div style="font-size:4em">✨</div>
+        <h3 style="color:var(--ax-gold);margin:10px 0">Tu as déjà Premium !</h3>
+        <p style="color:var(--ax-text-2)">Toutes les fonctionnalités sont débloquées.</p>
+        <ul style="text-align:left;color:var(--ax-text-2);margin:14px 0;line-height:2">
+          <li>✓ IA Apex illimitée</li>
+          <li>✓ Time Capsules illimitées</li>
+          <li>✓ Stockage 1 To (vs 30j gratuit)</li>
+          <li>✓ Voice Clone E2E (futur)</li>
+          <li>✓ Themes premium</li>
+          <li>✓ Priority support</li>
+        </ul>
+      </div>
+    `);
+  }
+
+  K._showModal('⭐ Apex Chat+ Premium', `
+    <div style="text-align:center;padding:14px">
+      <div style="font-size:3em">✨</div>
+      <h3 style="color:var(--ax-gold);margin:10px 0">Apex Chat+ — Premium</h3>
+      <p style="color:var(--ax-text-2);margin:0 0 18px">Débloque toutes les fonctionnalités.</p>
+    </div>
+    <div class="card">
+      <div class="card-row">
+        <div style="flex:1">
+          <strong>Mensuel</strong>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Annulable à tout moment</div>
+        </div>
+        <strong style="color:var(--ax-gold);font-size:1.2em">6,99 €/mois</strong>
+      </div>
+      <div class="card-row">
+        <div style="flex:1">
+          <strong>Lifetime</strong>
+          <div style="font-size:.78em;color:var(--ax-text-2)">1000 premiers seulement</div>
+        </div>
+        <strong style="color:var(--ax-gold);font-size:1.2em">199 €</strong>
+      </div>
+    </div>
+    <p style="font-size:.85em;color:var(--ax-text-2);margin:14px 0">
+      <strong>Avec Premium :</strong> IA illimitée, Time Capsules illimitées, stockage 1To, voice clone, themes premium.
+    </p>
+    <button class="btn btn-block" onclick="K._startCheckout('monthly')">⚡ Mensuel 6,99 €</button>
+    <button class="btn btn-out btn-block" onclick="K._startCheckout('lifetime')" style="margin-top:8px">🏆 Lifetime 199 €</button>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:14px">
+      Paiement sécurisé via Stripe. Aucune carte stockée. Annulable 1 clic.
+    </p>
+  `);
+};
+
+K._startCheckout = function(plan){
+  // Phase 9 : Stripe Checkout URL (à configurer)
+  // En attendant : ouvre Stripe.com en placeholder
+  const checkoutUrls = {
+    monthly: 'https://buy.stripe.com/apex-chat-plus-monthly-PLACEHOLDER',
+    lifetime: 'https://buy.stripe.com/apex-chat-plus-lifetime-PLACEHOLDER'
+  };
+  toast('Stripe checkout (Phase 9b — configuration nécessaire)', 'info', 3000);
+  // window.open(checkoutUrls[plan], '_blank');
+};
+
+// ============================================================================
+//  Phase 9 — Sentinelles enrichies + auto-fix
+// ============================================================================
+function _runSentinelsEnriched(){
+  _runSentinels();  // base sentinels
+
+  // Sentinel battery (mobile)
+  if('getBattery' in navigator){
+    navigator.getBattery?.().then(bat => {
+      K.sentinels.battery = { level: bat.level, charging: bat.charging };
+      if(bat.level < 0.15 && !bat.charging) _logTelemetry('warn', 'battery-low', { level: bat.level });
+    }).catch(()=>{});
+  }
+
+  // Sentinel memory (Chrome only)
+  if(performance.memory){
+    const m = performance.memory;
+    const ratio = m.usedJSHeapSize / m.jsHeapSizeLimit;
+    K.sentinels.memory = { ratio, usedMB: (m.usedJSHeapSize / 1048576).toFixed(1) };
+    if(ratio > 0.8) _logTelemetry('warn', 'memory-high', { ratio });
+  }
+
+  // Sentinel performance
+  if(performance.timing){
+    const t = performance.timing;
+    const loadTime = t.loadEventEnd - t.navigationStart;
+    if(loadTime > 5000) _logTelemetry('warn', 'slow-load', { ms: loadTime });
+    K.sentinels.perf = { loadTime };
+  }
+
+  // Sentinel WebSocket health
+  K.sentinels.ws = {
+    state: K.ws ? ['CONNECTING','OPEN','CLOSING','CLOSED'][K.ws.readyState] : 'DISCONNECTED',
+    activeCall: !!K._activeCall
+  };
+
+  // Sentinel API health (best-effort ping)
+  if(Math.random() < 0.1){  // 10% des runs, pas spam
+    fetch(API_BASE + '/health').then(r => {
+      K.sentinels.api = { ok: r.ok, status: r.status, ts: Date.now() };
+    }).catch(() => {
+      K.sentinels.api = { ok: false, ts: Date.now() };
+      _logTelemetry('warn', 'api-unreachable', {});
+    });
+  }
+}
+
+// ============================================================================
 //  Init / Boot
 // ============================================================================
 async function _boot(){
@@ -1654,9 +2093,9 @@ async function _boot(){
     renderAuthStep();
   }
 
-  // Démarrer sentinelles (toutes les 30s)
-  _runSentinels();
-  setInterval(_runSentinels, 30000);
+  // Démarrer sentinelles enrichies (toutes les 30s)
+  _runSentinelsEnriched();
+  setInterval(_runSentinelsEnriched, 30000);
 
   // Charger config depuis API (best-effort)
   fetch(API_BASE + '/api/system/config').then(r => r.json()).then(d => {
