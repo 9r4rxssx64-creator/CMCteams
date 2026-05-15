@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.630";
+var APP_VER="v9.631";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34507,6 +34507,16 @@ function doImport(){
     // v9.145b — Apr\u00e8s CSV : on continue le text parser mais on skip les emp d\u00e9j\u00e0 trait\u00e9s
     // PLUS de blocage par _csvParsed — le texte parse TOUT ce qui reste
     var rawLine=lines[li];
+    // v9.631 (Kevin 2026-05-16 — texte PDF V2 Pit Boss analysé) :
+    // Le PDF SBM V2 Pit Boss commence chaque ligne par préfix téléphone interne :
+    //   "62224/62056 JANEL JM 1 31 22/6 16/20 ..."
+    // ou pour superviseurs :
+    //   "0 ETTORI M. 1 31 22/6' 19/2 ..."
+    // Ces préfixes "62224/62056" et "0 " bloquaient reconnaissance format positionnel
+    // → 12 pit boss recevaient codes faux (test runtime confirmé).
+    // FIX : strip ces préfixes au début de chaque ligne.
+    rawLine=rawLine.replace(/^\s*\d{4,6}\/\d{4,6}\s+/,""); // "62224/62056 "
+    rawLine=rawLine.replace(/^\s*0\s+(?=[A-Z])/,"");         // "0 " avant nom UPPERCASE
     var _ltoks=rawLine.trim().split(/\s+/);
     // Compter codes poste sur cette ligne
     var _pCnt=_ltoks.filter(_isPostTok).length;

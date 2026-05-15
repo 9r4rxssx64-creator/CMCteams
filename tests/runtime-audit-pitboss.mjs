@@ -186,7 +186,8 @@ async function main() {
     const s = result.schedules.find(x => x.name === name);
     if (!s || !s.inDB) { console.log(`  ⊘ ${name} NOT_IN_DB`); return; }
     const actualDay1 = (s.firstFiveDays || '').split(' ')[0];
-    if (actualDay1 === expected) {
+    // Comparaison case-insensitive (CODES normalise les codes en majuscules)
+    if (actualDay1.toLowerCase() === expected.toLowerCase()) {
       console.log(`  ✓ ${name} jour 1 = ${actualDay1} (attendu ${expected})`);
       pass++;
     } else {
