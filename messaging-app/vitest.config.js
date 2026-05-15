@@ -21,7 +21,6 @@ export default defineConfig({
         'node_modules/**',
         '**/*.test.js',
         '**/*.spec.js',
-        'workers/durable-objects/**', // Phase B (à venir)
         'workers/api-worker.js',       // Phase C (gros refactor à venir)
       ],
       thresholds: {
