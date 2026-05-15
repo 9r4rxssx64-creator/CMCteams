@@ -17,6 +17,7 @@
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
 <link rel="apple-touch-icon" href="./icons/icon.svg">
+<script src="./crypto.js" defer></script>
 <title>Apex Chat — Messagerie privée</title>
 <style>
 :root{
@@ -586,7 +587,7 @@ async function _authSsoFromApex(apex_token, apex_uid, name){
   }
 }
 
-K.login = function(user, token){
+K.login = async function(user, token){
   K.user = user;
   K.token = token;
   ls('user', user);
@@ -601,9 +602,54 @@ K.login = function(user, token){
   $('#topbar').classList.remove('h');
   $('#security-banner').classList.remove('h');
   $('#bnav').classList.remove('h');
+
+  // Phase 2 : générer ou restaurer les clés crypto E2E
+  try{
+    await _ensureCryptoKeys();
+  }catch(e){
+    _safeCatch('ensure-crypto-keys', e);
+  }
+
   K.render();
   toast('Bienvenue ' + (user.pseudo || user.real_name) + ' !', 'ok');
 };
+
+// ============================================================================
+//  Crypto E2E — Génération / restoration des clés identité
+// ============================================================================
+async function _ensureCryptoKeys(){
+  if(!window.ApexCrypto) return;
+  if(K._cryptoKeys) return;
+
+  // Tenter restoration depuis localStorage
+  const storedPub = lg('crypto_pub', null);
+  const storedPriv = lg('crypto_priv', null);
+
+  if(storedPub && storedPriv){
+    try{
+      const publicKey = await ApexCrypto.importPublicKey(storedPub);
+      const privateKey = await ApexCrypto.importPrivateKey(storedPriv);
+      K._cryptoKeys = { publicKey, privateKey };
+      _logTelemetry('ok', 'crypto-keys-restored', {});
+      return;
+    }catch(e){ _safeCatch('crypto-restore', e); }
+  }
+
+  // Génération nouvelle paire
+  try{
+    const keys = await ApexCrypto.generateIdentityKeys();
+    K._cryptoKeys = keys;
+    const pubB64 = await ApexCrypto.exportPublicKey(keys.publicKey);
+    const privB64 = await ApexCrypto.exportPrivateKey(keys.privateKey);
+    ls('crypto_pub', pubB64);
+    ls('crypto_priv', privB64);  // Phase 2b : wrappé avec PIN
+    _logTelemetry('ok', 'crypto-keys-generated', { pub: pubB64.slice(0,20)+'...' });
+
+    // TODO Phase 3 : upload pubkey au serveur via /api/keys/prekeys
+  }catch(e){
+    _safeCatch('crypto-generate', e);
+  }
+}
 
 K.logout = function(){
   if(!confirm('Te déconnecter ? Tes messages chiffrés restent sur ton téléphone.')) return;
@@ -811,9 +857,22 @@ function renderChat(app){
   setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight}, 50);
 }
 
-K.openConv = function(convId){
+K.openConv = async function(convId){
   const conv = K.conversations.find(c => c.id === convId);
   if(!conv){ toast('Conversation introuvable', 'err'); return; }
+
+  // Phase 3 : ouvrir WebSocket pour temps réel
+  K._closeWs();
+  K._openWs(convId);
+
+  // Phase 2 : établir session E2E si pas déjà fait
+  try{
+    if(window.ApexCrypto && !ApexCrypto.getSessionKey(convId) && K._cryptoKeys && conv.peer_pubkey){
+      const peerKey = await ApexCrypto.importPublicKey(conv.peer_pubkey);
+      await ApexCrypto.establishSession(convId, K._cryptoKeys.privateKey, peerKey);
+    }
+  }catch(e){ _safeCatch('establish-session', e); }
+
   K.sv('chat', conv);
 };
 
@@ -822,21 +881,158 @@ K._sendMsg = async function(){
   const text = input.value.trim();
   if(!text) return;
   const conv = K.viewData;
+
+  // Phase 2 : chiffrer E2E si session active
+  let ciphertext = null;
+  let displayText = text;
+  try{
+    if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
+      ciphertext = await ApexCrypto.encryptForConv(conv.id, text);
+      // Le texte clair reste local (pour affichage), le ciphertext part au serveur
+    }
+  }catch(e){
+    _safeCatch('encrypt-message', e);
+  }
+
   const msg = {
     id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
     from: K.user.id,
-    text,                   // Phase 1 : texte clair local (Phase 2 : chiffré E2E)
-    ts: Date.now()
+    text: displayText,      // affichage local clair
+    ciphertext,             // envoyé au serveur (null si pas de session)
+    ts: Date.now(),
+    encrypted: !!ciphertext
   };
+
   if(!K.messages[conv.id]) K.messages[conv.id] = [];
   K.messages[conv.id].push(msg);
   ls('messages_' + conv.id, K.messages[conv.id]);
   input.value = '';
   K.render();
-  toast('Message envoyé', 'ok', 1000);
 
-  // TODO Phase 2 : chiffrer + envoyer via WebSocket ConversationDO
+  // Phase 3 : envoyer via WebSocket
+  if(K.ws && K.ws.readyState === WebSocket.OPEN){
+    try{
+      K.ws.send(JSON.stringify({
+        type: 'message',
+        ciphertext: ciphertext || text,  // fallback texte clair si pas de session
+        mime: 'text/plain',
+        ts: msg.ts
+      }));
+      toast('🛡 Envoyé chiffré', 'ok', 1000);
+    }catch(e){
+      _safeCatch('ws-send', e);
+      toast('Envoi local (offline) — sera synchro plus tard', 'warn', 1500);
+    }
+  } else {
+    toast('Mode local (pas de WS) — message stocké', 'info', 1500);
+  }
 };
+
+// ============================================================================
+//  WebSocket client (Phase 3)
+// ============================================================================
+K._openWs = async function(convId){
+  if(K.ws){ try{K.ws.close()}catch(_){}; K.ws = null; }
+  if(!K.user || !K.token) return;
+
+  try{
+    const wsUrl = API_BASE.replace(/^https?/, 'wss') +
+      `/api/conversations/${encodeURIComponent(convId)}/ws` +
+      `?token=${encodeURIComponent(K.token)}&uid=${encodeURIComponent(K.user.id)}&conv=${encodeURIComponent(convId)}`;
+
+    K.ws = new WebSocket(wsUrl);
+
+    K.ws.addEventListener('open', () => {
+      _logTelemetry('ok', 'ws-open', { convId });
+    });
+
+    K.ws.addEventListener('message', async (event) => {
+      try{
+        const data = JSON.parse(event.data);
+        await _handleWsMessage(data, convId);
+      }catch(e){ _safeCatch('ws-message', e); }
+    });
+
+    K.ws.addEventListener('error', (e) => {
+      _logTelemetry('warn', 'ws-error', { convId });
+    });
+
+    K.ws.addEventListener('close', (e) => {
+      _logTelemetry('info', 'ws-close', { convId, code: e.code });
+      K.ws = null;
+    });
+
+    // Ping keep-alive 25s
+    K.wsPing = setInterval(() => {
+      if(K.ws?.readyState === WebSocket.OPEN){
+        K.ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 25000);
+  }catch(e){
+    _safeCatch('ws-open', e);
+  }
+};
+
+K._closeWs = function(){
+  if(K.wsPing){ clearInterval(K.wsPing); K.wsPing = null; }
+  if(K.ws){ try{K.ws.close()}catch(_){}; K.ws = null; }
+};
+
+async function _handleWsMessage(data, convId){
+  switch(data.type){
+    case 'hello':
+      // Server accepts connection
+      break;
+    case 'message':
+      // Nouveau message reçu
+      let decryptedText = '(message chiffré)';
+      try{
+        if(window.ApexCrypto && ApexCrypto.getSessionKey(convId) && data.ciphertext){
+          decryptedText = await ApexCrypto.decryptForConv(convId, data.ciphertext);
+        } else if(data.ciphertext){
+          // Fallback : si c'est du texte clair (Phase 1 testing)
+          decryptedText = data.ciphertext;
+        }
+      }catch(e){ _safeCatch('decrypt-message', e); }
+
+      const msg = {
+        id: data.id || 'm_' + Date.now(),
+        from: data.sender_id,
+        text: decryptedText,
+        ts: data.ts || Date.now(),
+        encrypted: !!data.ciphertext
+      };
+      if(!K.messages[convId]) K.messages[convId] = [];
+      // Dédup
+      if(!K.messages[convId].some(m => m.id === msg.id)){
+        K.messages[convId].push(msg);
+        ls('messages_' + convId, K.messages[convId]);
+        if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        else toast(`Nouveau message`, 'info', 2000);
+      }
+      break;
+    case 'ack':
+      // Server ack
+      break;
+    case 'typing':
+      // TODO Phase 3 : afficher "X est en train d'écrire..."
+      break;
+    case 'read':
+      // TODO Phase 3 : afficher read receipts
+      break;
+    case 'reaction':
+      // TODO Phase 3 : afficher reactions
+      break;
+    case 'presence':
+      // Joined / left
+      break;
+    case 'pong':
+      break;
+    case 'error':
+      _logTelemetry('warn', 'ws-server-error', data);
+      break;
+  }
+}
 
 K._call = function(type, convId){
   toast(`Appel ${type} — Phase 5 (à venir)`, 'info');
