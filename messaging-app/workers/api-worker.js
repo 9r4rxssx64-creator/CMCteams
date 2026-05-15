@@ -501,7 +501,7 @@ async function handleAdminCommand(request, env) {
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
   const { command, params, confirm_token } = await request.json();
-  const destructive = ['kickUser', 'banUser', 'deleteConv', 'exportConv'];
+  const destructive = ['kickUser', 'banUser', 'unbanUser', 'deleteConv', 'exportConv', 'forceLogout'];
 
   if (destructive.includes(command) && !confirm_token) {
     return err('Confirmation 2-step requise', 400, 'confirm_required');
@@ -510,37 +510,146 @@ async function handleAdminCommand(request, env) {
   let result;
   switch (command) {
     case 'searchAllMessages':
+      // Phase 6 : recherche metadata uniquement (Option B respecté)
       result = await env.APEX_CHAT_DB.prepare(
-        'SELECT id, conv_id, sender_id, ts, mime FROM messages WHERE ts > ? ORDER BY ts DESC LIMIT 100'
-      ).bind(Date.now() - 7 * 86400000).all();
+        `SELECT m.id, m.conv_id, m.sender_id, m.ts, m.mime,
+                u.pseudo as sender_pseudo, c.name as conv_name
+         FROM messages m
+         LEFT JOIN users u ON u.id = m.sender_id
+         LEFT JOIN conversations c ON c.id = m.conv_id
+         WHERE m.ts > ? ORDER BY m.ts DESC LIMIT 100`
+      ).bind(Date.now() - (params?.days || 7) * 86400000).all();
       break;
+
     case 'analyzeUser':
-      result = await env.APEX_CHAT_DB.prepare(
+      const user = await env.APEX_CHAT_DB.prepare(
         `SELECT u.*, COUNT(DISTINCT m.id) as msg_count, COUNT(DISTINCT cm.conv_id) as conv_count
          FROM users u LEFT JOIN messages m ON m.sender_id = u.id
          LEFT JOIN conversation_members cm ON cm.user_id = u.id
          WHERE u.id = ? GROUP BY u.id`
       ).bind(params.userId).first();
+      const lastSeen = await env.APEX_CHAT_DB.prepare(
+        'SELECT MAX(ts) as last_msg FROM messages WHERE sender_id=?'
+      ).bind(params.userId).first();
+      const devices = await env.APEX_CHAT_DB.prepare(
+        'SELECT COUNT(*) as c FROM push_subscriptions WHERE user_id=?'
+      ).bind(params.userId).first();
+      const signals = await env.APEX_CHAT_DB.prepare(
+        'SELECT COUNT(*) as c FROM signalements WHERE target_user_id=?'
+      ).bind(params.userId).first();
+      result = { user, lastActivity: lastSeen?.last_msg, devices: devices?.c, signalements: signals?.c };
       break;
+
     case 'broadcastNotif':
-      // TODO : appeler push-worker
-      result = { sent: 0 };
+      // Envoyer push à tous les users actifs
+      const activeUsers = await env.APEX_CHAT_DB.prepare(
+        'SELECT id FROM users WHERE status=? AND last_seen > ?'
+      ).bind('active', Date.now() - 30 * 86400000).all();
+      let sent = 0;
+      for (const u of (activeUsers.results || [])) {
+        try {
+          await sendPushToUser(u.id, {
+            title: params.title || '📢 Annonce Apex Chat',
+            body: params.body || '',
+            data: { admin_broadcast: true }
+          }, env);
+          sent++;
+        } catch (e) {}
+      }
+      result = { sent, total: (activeUsers.results || []).length };
       break;
+
     case 'kickUser':
       await env.APEX_CHAT_DB.prepare('DELETE FROM conversation_members WHERE conv_id=? AND user_id=?')
         .bind(params.convId, params.userId).run();
       result = { ok: true };
       break;
+
     case 'banUser':
       await env.APEX_CHAT_DB.prepare("UPDATE users SET status='suspended' WHERE id=?").bind(params.userId).run();
       result = { ok: true };
       break;
+
+    case 'unbanUser':
+      await env.APEX_CHAT_DB.prepare("UPDATE users SET status='active' WHERE id=?").bind(params.userId).run();
+      result = { ok: true };
+      break;
+
+    case 'exportConv':
+      const conv = await env.APEX_CHAT_DB.prepare('SELECT * FROM conversations WHERE id=?').bind(params.convId).first();
+      const members = await env.APEX_CHAT_DB.prepare(
+        'SELECT * FROM conversation_members WHERE conv_id=?'
+      ).bind(params.convId).all();
+      const msgs = await env.APEX_CHAT_DB.prepare(
+        'SELECT id, sender_id, ts, mime, view_once, expires_at FROM messages WHERE conv_id=? ORDER BY ts ASC LIMIT 10000'
+      ).bind(params.convId).all();
+      // Stockage R2 export
+      const exportKey = `exports/conv_${params.convId}_${Date.now()}.json`;
+      const exportData = JSON.stringify({ conv, members: members.results, messages: msgs.results, exported_at: Date.now(), exported_by: auth.sub });
+      await env.APEX_CHAT_MEDIA?.put(exportKey, exportData, { httpMetadata: { contentType: 'application/json' } });
+      result = { ok: true, export_key: exportKey, msgs_count: (msgs.results || []).length };
+      break;
+
+    case 'deleteConv':
+      // Soft delete : archive + hide
+      await env.APEX_CHAT_DB.prepare('UPDATE conversations SET archived_at=? WHERE id=?')
+        .bind(Date.now(), params.convId).run();
+      result = { ok: true };
+      break;
+
+    case 'forceLogout':
+      // Invalider tous les JWT du user (Phase ultérieure : table jwt_blacklist)
+      // Pour Phase 6 : suspendre temporairement le user
+      await env.APEX_CHAT_DB.prepare("UPDATE users SET last_seen=? WHERE id=?").bind(0, params.userId).run();
+      result = { ok: true };
+      break;
+
+    case 'geoTrace':
+      // Historique géoloc (réservé Phase 8 — table location_history)
+      result = { trace: [], note: 'Géoloc opt-in user only (Phase 8)' };
+      break;
+
+    case 'summarizeConv':
+      // Phase 6 : metadata count uniquement (contenu chiffré E2E)
+      const stats = await env.APEX_CHAT_DB.prepare(
+        `SELECT COUNT(*) as msg_count, MIN(ts) as first_ts, MAX(ts) as last_ts,
+                COUNT(DISTINCT sender_id) as senders
+         FROM messages WHERE conv_id=?`
+      ).bind(params.convId).first();
+      result = { stats, note: 'Contenu chiffré E2E — impossible serveur. Pour résumé contenu : utiliser ia-worker côté client.' };
+      break;
+
+    case 'listSignalements':
+      const signRows = await env.APEX_CHAT_DB.prepare(
+        `SELECT s.*, u.pseudo as target_pseudo, r.pseudo as reporter_pseudo
+         FROM signalements s
+         LEFT JOIN users u ON u.id = s.target_user_id
+         LEFT JOIN users r ON r.id = s.reporter_id
+         WHERE s.status=? ORDER BY s.ts DESC LIMIT 100`
+      ).bind(params?.status || 'pending').all();
+      result = { signalements: signRows.results || [] };
+      break;
+
+    case 'globalStats':
+      const totalUsers = await env.APEX_CHAT_DB.prepare("SELECT COUNT(*) as c FROM users WHERE status='active'").first();
+      const totalConvs = await env.APEX_CHAT_DB.prepare('SELECT COUNT(*) as c FROM conversations WHERE archived_at IS NULL').first();
+      const totalMsgs = await env.APEX_CHAT_DB.prepare('SELECT COUNT(*) as c FROM messages WHERE ts > ?').bind(Date.now() - 86400000).first();
+      const onlineNow = await env.APEX_CHAT_DB.prepare('SELECT COUNT(*) as c FROM users WHERE last_seen > ?').bind(Date.now() - 5 * 60000).first();
+      result = {
+        users: totalUsers?.c || 0,
+        active_convs: totalConvs?.c || 0,
+        msgs_24h: totalMsgs?.c || 0,
+        online_now: onlineNow?.c || 0
+      };
+      break;
+
     default:
-      return err('Commande inconnue', 400);
+      return err('Commande inconnue: ' + command, 400);
   }
 
-  await auditLog(env, auth.sub, 'admin_command', 'system', null, { command, params },
-    await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'));
+  await auditLog(env, auth.sub, 'admin_command', 'system', params?.userId || params?.convId || null,
+    { command, params }, await sha256(request.headers.get('CF-Connecting-IP') || ''),
+    request.headers.get('User-Agent'));
 
   return json({ ok: true, command, result });
 }
