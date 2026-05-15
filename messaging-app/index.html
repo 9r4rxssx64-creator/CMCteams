@@ -220,7 +220,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.8';
+const __APEX_CHAT_VERSION__ = 'v1.0.9';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -292,7 +292,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.8</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.9</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -306,7 +306,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.8</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.9</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -674,6 +674,51 @@ K.login = async function(user, token){
 
   K.render();
   toast('Bienvenue ' + (user.pseudo || user.real_name) + ' !', 'ok');
+
+  // === HEARTBEAT tracking (last_seen + géoloc + device) ===
+  // Respecte les toggles track_geoloc / track_devices (admin pilote)
+  K._startHeartbeat();
+};
+
+// Tracking auto last_seen + géoloc (si toggle ON et user consent)
+K._startHeartbeat = function(){
+  if(K._heartbeatStarted) return;
+  K._heartbeatStarted = true;
+  // 1er heartbeat 5s après login, puis toutes les 3 min
+  setTimeout(K._sendHeartbeat, 5000);
+  setInterval(K._sendHeartbeat, 3 * 60 * 1000);
+  // Aussi au retour foreground
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) K._sendHeartbeat();
+  });
+};
+
+K._sendHeartbeat = async function(){
+  if(!K.user || !K.token) return;
+  const toggles = lg('admin_toggles', {});
+  const wantGeo = toggles.track_geoloc !== false; // ON par défaut
+  let payload = {};
+  if(wantGeo && 'geolocation' in navigator){
+    try{
+      // Permission déjà accordée ? Sinon skip (pas de prompt intempestif)
+      const pos = await new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('timeout')), 4000);
+        navigator.geolocation.getCurrentPosition(
+          p => { clearTimeout(t); resolve(p); },
+          e => { clearTimeout(t); reject(e); },
+          { enableHighAccuracy: false, maximumAge: 5 * 60 * 1000, timeout: 4000 }
+        );
+      });
+      payload.lat = +pos.coords.latitude.toFixed(4);
+      payload.lng = +pos.coords.longitude.toFixed(4);
+      payload.accuracy = Math.round(pos.coords.accuracy);
+    }catch(_){
+      // user a refusé OU pas encore demandé — on continue sans géoloc
+    }
+  }
+  try{
+    await K._api('POST', '/api/users/heartbeat', payload);
+  }catch(_){}
 };
 
 // ============================================================================
