@@ -108,7 +108,19 @@ async function getAuthUser(request, env) {
   const auth = request.headers.get('Authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) return null;
-  return await verifyJWT(token, env.JWT_SIGN_KEY);
+  const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
+  if (!payload || !payload.sub) return null;
+  // Vérifier force_logout : si user.last_force_logout_at > token.iat → JWT révoqué par admin
+  try {
+    const u = await env.APEX_CHAT_DB.prepare(
+      'SELECT last_force_logout_at, is_banned, status FROM users WHERE id=?'
+    ).bind(payload.sub).first();
+    if (u) {
+      if (u.is_banned || u.status === 'deleted' || u.status === 'suspended') return null;
+      if (u.last_force_logout_at && payload.iat && u.last_force_logout_at > payload.iat * 1000) return null;
+    }
+  } catch (_) {}
+  return payload;
 }
 
 async function getModeConfig(env) {
@@ -144,14 +156,13 @@ async function handleSendOtp(request, env) {
 
   // ============ BYPASS ADMIN (Kevin reconnu via numéro) ============
   // Kevin admin auto-reconnu via KEVIN_PHONE_E164 → pas besoin d'OTP
+  // SECU : ne PAS retourner l'OTP fictif dans la réponse (audit P0)
   if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164) {
     return json({
       ok: true,
       sessionId: phoneHash,
       provider: 'admin-bypass',
-      _admin_bypass: true,
-      _admin_otp: '000000',  // OTP fictif pour passer l'étape suivante
-      _note: 'Admin Kevin reconnu via numéro téléphone — bypass OTP'
+      _admin_bypass: true
     });
   }
 
@@ -930,7 +941,7 @@ async function handleAdminWhitelistBulk(request, env) {
         invited_by: auth.sub,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 7 * 86400
-      }, env.JWT_SECRET);
+      }, env.JWT_SIGN_KEY);
 
       const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
       await env.APEX_CHAT_DB.prepare(
@@ -1017,7 +1028,7 @@ async function handleAdminInviteMagic(request, env) {
     invited_by: auth.sub,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 7 * 86400
-  }, env.JWT_SECRET);
+  }, env.JWT_SIGN_KEY);
 
   // Code court pour SMS (utilisable aussi)
   const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
@@ -1049,7 +1060,7 @@ async function handleMagicLogin(request, env) {
   const { magic_token } = await request.json();
   if (!magic_token) return err('Token requis');
 
-  const payload = await verifyJWT(magic_token, env.JWT_SECRET);
+  const payload = await verifyJWT(magic_token, env.JWT_SIGN_KEY);
   if (!payload || payload.typ !== 'magic_invite') return err('Token invalide', 401);
 
   const user = await env.APEX_CHAT_DB.prepare(
@@ -1069,7 +1080,7 @@ async function handleMagicLogin(request, env) {
     is_admin: false,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 30 * 86400
-  }, env.JWT_SECRET);
+  }, env.JWT_SIGN_KEY);
 
   await auditLog(env, user.id, 'magic_login_success', 'user', user.id,
     JSON.stringify({ invited_by: payload.invited_by }),
@@ -1209,17 +1220,17 @@ async function handleAdminUserTimeline(userId, request, env) {
 
   // 4. Signalements (faits OU reçus)
   const signalements = await env.APEX_CHAT_DB.prepare(
-    `SELECT id, reporter_id, target_user_id, reason, status, created_at, severity
+    `SELECT id, reporter_id, target_user_id, reason, status, ts as created_at
      FROM signalements
-     WHERE (reporter_id=? OR target_user_id=?) AND created_at >= ?
-     ORDER BY created_at DESC LIMIT 50`
+     WHERE (reporter_id=? OR target_user_id=?) AND ts >= ?
+     ORDER BY ts DESC LIMIT 50`
   ).bind(userId, userId, since).all().catch(() => ({ results: [] }));
 
   // 5. Conversations metadata (NO message content car E2E)
   const convs = await env.APEX_CHAT_DB.prepare(
     `SELECT c.id, c.type, c.name, c.created_at, c.last_msg_ts, c.member_count
      FROM conversations c
-     INNER JOIN conversation_members cm ON cm.conversation_id=c.id
+     INNER JOIN conversation_members cm ON cm.conv_id=c.id
      WHERE cm.user_id=?
      ORDER BY c.last_msg_ts DESC LIMIT 100`
   ).bind(userId).all().catch(() => ({ results: [] }));
@@ -1254,9 +1265,9 @@ async function handleAdminUserConvs(userId, request, env) {
   const convs = await env.APEX_CHAT_DB.prepare(
     `SELECT c.id, c.type, c.name, c.description, c.created_at, c.last_msg_ts, c.member_count,
             c.disappearing_seconds, c.archived_at,
-            (SELECT COUNT(*) FROM messages WHERE conversation_id=c.id) as msg_count
+            (SELECT COUNT(*) FROM messages WHERE conv_id=c.id) as msg_count
      FROM conversations c
-     INNER JOIN conversation_members cm ON cm.conversation_id=c.id
+     INNER JOIN conversation_members cm ON cm.conv_id=c.id
      WHERE cm.user_id=?
      ORDER BY c.last_msg_ts DESC LIMIT 100`
   ).bind(userId).all().catch(() => ({ results: [] }));
@@ -1301,13 +1312,54 @@ async function handleAdminSearch(request, env) {
   }
   if (scope === 'all' || scope === 'signalements') {
     const r = await env.APEX_CHAT_DB.prepare(
-      `SELECT id, reporter_id, target_user_id, reason, status, created_at FROM signalements
-       WHERE LOWER(reason) LIKE ? ORDER BY created_at DESC LIMIT 30`
+      `SELECT id, reporter_id, target_user_id, reason, status, ts as created_at FROM signalements
+       WHERE LOWER(reason) LIKE ? ORDER BY ts DESC LIMIT 30`
     ).bind(like).all().catch(() => ({ results: [] }));
     out.results.signalements = r.results || [];
   }
 
   return json(out);
+}
+
+// ============================================================================
+//  Admin map — TOUS users avec dernières positions + historique récent
+// ============================================================================
+
+async function handleAdminMap(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  // Users avec last_lat/lng connues (limité à 200 max actifs)
+  const users = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, pseudo, real_name, last_seen, last_lat, last_lng, last_geo_label,
+            last_device_label, is_admin, is_banned
+     FROM users
+     WHERE last_lat IS NOT NULL AND last_lng IS NOT NULL
+     ORDER BY last_seen DESC LIMIT 200`
+  ).all().catch(() => ({ results: [] }));
+
+  return json({
+    ok: true,
+    count: (users.results || []).length,
+    users: users.results || [],
+    server_ts: Date.now()
+  });
+}
+
+async function handleAdminUserGeoHistory(userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+  const url = new URL(request.url);
+  const days = Math.min(parseInt(url.searchParams.get('days') || '7'), 30);
+  const since = Date.now() - days * 86400000;
+
+  const rows = await env.APEX_CHAT_DB.prepare(
+    `SELECT ts, lat, lng, geo_label, user_agent FROM user_activity
+     WHERE user_id=? AND ts >= ? AND lat IS NOT NULL AND lng IS NOT NULL
+     ORDER BY ts ASC LIMIT 500`
+  ).bind(userId, since).all().catch(() => ({ results: [] }));
+
+  return json({ ok: true, points: rows.results || [], days });
 }
 
 // ============================================================================
@@ -2072,6 +2124,9 @@ export default {
       if (path === '/api/admin/whitelist-bulk' && method === 'POST') return await handleAdminWhitelistBulk(request, env);
       if (path === '/api/auth/magic-login' && method === 'POST') return await handleMagicLogin(request, env);
       if (path === '/api/admin/live-users' && method === 'GET') return await handleAdminLiveUsers(request, env);
+      if (path === '/api/admin/map' && method === 'GET') return await handleAdminMap(request, env);
+      const adminGeoMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/geo-history$/);
+      if (adminGeoMatch && method === 'GET') return await handleAdminUserGeoHistory(adminGeoMatch[1], request, env);
       if (path === '/api/admin/all-users' && method === 'GET') return await handleAdminAllUsers(request, env);
       const adminUserActionMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/(block|unblock|ban|unban|authorize|revoke|force_logout|delete)$/);
       if (adminUserActionMatch && method === 'POST') return await handleAdminUserAction(adminUserActionMatch[1], adminUserActionMatch[2], request, env);
