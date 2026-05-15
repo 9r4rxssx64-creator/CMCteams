@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.636";
+var APP_VER="v9.637";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9747,8 +9747,10 @@ function showEmpQuickProfile(empId){
   var pl=gpl()||{},p=pl[emp.id]||{};
   var mStats=calcStats(emp.id,{y:A.year,m:A.month});
   var yStats=calcStats(emp.id,{y:A.year});
-  var tcc=tc(emp.team);
-  var team=gt(emp.team);
+  // v9.637 — utiliser teamForMonth pour refléter la team du mois affiché
+  var teamIdNow=(typeof teamForMonth==="function"?teamForMonth(emp,A.year,A.month):emp.team)||emp.team;
+  var tcc=tc(teamIdNow);
+  var team=gt(teamIdNow);
   var online=false;try{online=(getOnlineUsers()||[]).some(function(u){return u.uid===emp.id;});}catch(_){}
   var modal=document.createElement("div");
   modal.id="empQP";
@@ -9760,7 +9762,7 @@ function showEmpQuickProfile(empId){
     +'<div style="position:relative">'+empAvatarHtml(emp,56,tcc)+(online?'<span class="pres-dot" aria-hidden="true" style="position:absolute;bottom:0;right:0;margin:0"></span>':'')+'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:18px;font-weight:800;color:#f0e8d0;line-height:1.2;word-break:break-word">'+esc(emp.name)+'</div>'
-    +'<div style="font-size:12px;color:#a0cca0;margin-top:3px">'+esc(emp.id)+' \u00b7 '+esc(team?team.name:emp.team||"?")+'</div>'
+    +'<div style="font-size:12px;color:#a0cca0;margin-top:3px">'+esc(emp.id)+' \u00b7 '+esc(team?team.name:teamIdNow||"?")+'</div>'
     +(emp.role?'<div style="font-size:12px;color:'+getRoleColor(emp.role)+';margin-top:2px;font-weight:700">'+getRoleIcon(emp.role)+' '+esc(getRoleLabel(emp.role))+'</div>':'')
     +'</div>'
     +'<button onclick="document.getElementById(\'empQP\').remove()" aria-label="Fermer" title="Fermer" style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer">\u2715</button>'
@@ -29916,8 +29918,12 @@ function vQuiEstLibre(){
         +'<div style="font-size:13px;font-weight:800;color:'+sec.col+';text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding:0 4px">'+sec.title+'</div>';
       sec.emps.sort(function(a,b){return a.emp.name.localeCompare(b.emp.name);});
       sec.emps.forEach(function(it){
-        var tcc=tc(it.emp.team);
-        var teamName=(gt(it.emp.team)||{}).name||"\u00c9q."+it.emp.team;
+        // v9.637 (Kevin "chefs gardent ancienne \u00e9quipe") \u2014 utiliser teamForMonth
+        // pour refl\u00e9ter l'\u00e9quipe du mois courant (depuis teamHistory \u00e9crit par import)
+        // au lieu de emp.team frozen (DEF_EMP seed initial).
+        var teamId=(typeof teamForMonth==="function"?teamForMonth(it.emp,A.year,A.month):it.emp.team)||it.emp.team;
+        var tcc=tc(teamId);
+        var teamName=(gt(teamId)||{}).name||"\u00c9q."+teamId;
         h+='<div style="padding:8px 10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-left:3px solid '+sec.col+';border-radius:7px;margin-bottom:4px;display:flex;align-items:center;gap:10px">'
           +empAvatarHtml(it.emp,28,tcc)
           +'<div style="flex:1;min-width:0">'
@@ -30135,8 +30141,12 @@ function vEmps(){
   var _vstate=_adminViewState();
   var _famsOrder=["bj","roulettes","baccara","cmc","cadres"];
   function _empGroupKey(e){
-    if(_isAdminUser&&_myT.primary&&e.team===_myT.primary)return "primary";
-    if(_isAdminUser&&_myT.mirror&&e.team===_myT.mirror)return "mirror";
+    // v9.637 — utiliser teamForMonth pour grouper selon l'équipe du mois affiché
+    // (sinon les chefs déplacés vers nouvelle équipe par import V1 restent dans
+    // l'ancien groupe "primary/mirror/fam:X").
+    var _et=(typeof teamForMonth==="function"?teamForMonth(e,A.year,A.month):e.team)||e.team;
+    if(_isAdminUser&&_myT.primary&&_et===_myT.primary)return "primary";
+    if(_isAdminUser&&_myT.mirror&&_et===_myT.mirror)return "mirror";
     return "fam:"+(e.family||"bj");
   }
   function _groupOrderIdx(k){
@@ -30152,9 +30162,11 @@ function vEmps(){
       var ka=_empGroupKey(a),kb=_empGroupKey(b);
       var oa=_groupOrderIdx(ka),ob=_groupOrderIdx(kb);
       if(oa!==ob)return oa-ob;
-      // Meme groupe : tri par equipe (numerique) puis nom
-      var ta=parseInt((a.team||"").replace(/[^0-9]/g,""))||0;
-      var tb=parseInt((b.team||"").replace(/[^0-9]/g,""))||0;
+      // Meme groupe : tri par equipe du mois (numerique) puis nom
+      var ate=(typeof teamForMonth==="function"?teamForMonth(a,A.year,A.month):a.team)||a.team||"";
+      var bte=(typeof teamForMonth==="function"?teamForMonth(b,A.year,A.month):b.team)||b.team||"";
+      var ta=parseInt(String(ate).replace(/[^0-9]/g,""))||0;
+      var tb=parseInt(String(bte).replace(/[^0-9]/g,""))||0;
       if(ta!==tb)return ta-tb;
       return (a.name||"").localeCompare(b.name||"");
     });
@@ -30205,7 +30217,9 @@ function vEmps(){
   // Si pas en mode groupe, on ouvre une seule grosse card
   if(!_useGroups){h+=`<div class="card">`;_inCard=true;}
   filt.forEach(function(emp,i){
-    var tcc=tc(emp.team),isAdm=emp.id===AID;
+    // v9.637 — refléter l'équipe du mois courant (depuis teamHistory écrit par import)
+    var _teamIdMonth=(typeof teamForMonth==="function"?teamForMonth(emp,A.year,A.month):emp.team)||emp.team;
+    var tcc=tc(_teamIdMonth),isAdm=emp.id===AID;
     var isEdit=editEmpId===emp.id;
     if(_useGroups){
       var k=_empGroupKey(emp);
