@@ -63,6 +63,67 @@ S'applique : Apex priorité absolue, CMCteams si pertinent, tous projets futurs.
 
 ---
 
+## 🔗 RÈGLE ABSOLUE — ASSOCIE IDENTIFIANT + CODES INTELLIGEMMENT + TESTE TOUT TOUJOURS (Kevin 2026-05-15, ABSOLUE)
+
+> **"Qu'il associe identifiant et codes, etc, intelligemment et teste tout toujours"** — Kevin 2026-05-15
+
+**Règle absolue, prioritaire** — Apex priorité 1, CMCteams priorité 2 :
+
+### 1. Association intelligente identifiant ↔ codes
+
+Pour CHAQUE credential / code détecté (token API, IBAN, login, etc.), Apex DOIT automatiquement :
+
+- **Lier au compte propriétaire** (Kevin admin / Laurence / client_pro / etc.)
+- **Lier au service correspondant** (anthropic, openai, github, stripe, etc.) via `AX_CREDENTIAL_PATTERNS`
+- **Lier à l'identifiant utilisateur** du service si présent dans le contexte de collage :
+  - Email collé proche du token → lier `service.email = email`
+  - Login GitHub `kdmc-clients-creator` + token GitHub → lier `github.login = "kdmc-clients-creator"`
+  - IBAN + nom titulaire → lier `iban.titulaire = "Kevin DESARZENS"`
+- **Lier au numéro de compte / référence client** si présent
+- **Lier aux autres credentials du MÊME service** (clé classic + fine-grained GitHub = même compte)
+
+Stocké dans `apex_v13_credential_associations` (admin only).
+Sentinelle `credential-assoc-watch` 1×/jour audite cohérence.
+
+### 2. Test systématique de TOUT — ZÉRO chose non-testée
+
+À CHAQUE ajout de credential :
+1. **Test ping endpoint** (HEAD ou requête minimale) → status 200 / 401 / 429 / 500
+2. **Test scopes/permissions** (`/me` ou équivalent → liste permissions)
+3. **Test rate-limit headers** (`x-ratelimit-remaining`)
+4. **Test solde / quota** (si endpoint dispo)
+5. **Test compatibilité avec autres credentials** (ex: clé Anthropic + GitHub doivent matcher même email)
+
+Pour CHAQUE link / URL stocké :
+1. **HEAD request** (alive)
+2. **Vérifier que le domaine matche le service attendu**
+3. **Re-test quotidien** via sentinelle `link-validation-watch`
+
+Pour CHAQUE feature/module ajouté :
+1. **Test unitaire vitest** (API surface)
+2. **Test runtime réel** (Playwright iOS Simulator OU vraie navigation user)
+3. **Test régression cross-feature** (un fix n'a pas cassé autre chose)
+
+**INTERDIT** : prétendre qu'un credential / lien / feature fonctionne sans avoir lancé un test réel qui l'a prouvé.
+
+### 3. Vue admin "🗂 Identifiants & Codes Associés"
+
+Affiche pour chaque user :
+- Compte propriétaire + identifiant
+- Liste credentials liés (service + masqué + status test)
+- Liste links dashboards liés
+- Métadonnées (plan, region, solde estimé)
+- Bouton "Re-tester tout maintenant" → relance tests parallèles
+- Bouton "Audit cohérence" → vérifie qu'aucun credential orphelin (sans owner)
+
+### 4. Test mental obligatoire avant chaque release
+
+> *"Pour chaque credential dans le Coffre, Apex sait-il (a) qui est le propriétaire, (b) à quel service il appartient, (c) quel est l'identifiant compte associé, (d) si la clé fonctionne réellement (test runtime) ? Si non à une seule question → enrichir avant push."*
+
+S'applique : Apex priorité absolue, CMCteams si pertinent, tous projets futurs.
+
+---
+
 ## 🔍 RÈGLE ABSOLUE — RECONNAISSANCE MULTI-SOURCE EXHAUSTIVE (Kevin 2026-05-07, ULTIME)
 
 > **"Même principe toujours pour les nouveaux codes ou identifiants, photos, notes, docs etc collés source possible. Doit reconnaître les codes, identifiants, sites etc autonome et installer le lien pour connexion et pilotage complet toujours auto. Peut avoir plusieurs codes, sites, identifiants sur même source donc bien analyser tout toujours."** — Kevin 2026-05-07
