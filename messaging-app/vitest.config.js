@@ -24,12 +24,13 @@ export default defineConfig({
         'node_modules/**',
         '**/*.test.js',
         '**/*.spec.js',
-        // Phase C2 : api-worker.js (2444 lignes) mesuré v8 (transparent) :
-        // 0% → 19.63% → 49.63% → 84.08% → 86.08% → **88.13% stmts**
-        // **100% FUNCTIONS (72/72)** / 81.9% branches / 88.13% lines.
-        // 346 tests. Reste 290 lines (handleVerifyOtp variations, handle
-        // AdminCommand DB ramifications, branches catch silent).
         'workers/api-worker.js',
+        // Phase C2 : api-worker.js (2444 lignes) mesuré v8 (transparent) :
+        // 0% → 19.63% → 49.63% → 84.08% → 88.13% → **91.73% stmts**
+        // **100% FUNCTIONS (72/72)** / 83.43% branches / 91.73% lines.
+        // 376 tests. Reste 202 lines (handleVerifyOtp Firebase signature internal, handleAdminCommand branches).
+        // AdminCommand DB ramifications, branches catch silent).
+
 
 
       ],
