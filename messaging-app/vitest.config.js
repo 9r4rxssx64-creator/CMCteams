@@ -26,9 +26,10 @@ export default defineConfig({
         '**/*.test.js',
         '**/*.spec.js',
         // Phase C2 en cours : api-worker.js (2444 lignes).
-        // Progression mesurée v8 (transparente, CLAUDE.md règle "réel toujours") :
-        // 0% → 19.63% → 25.9% → 49.63% → 54.99% → 57.48% → 71.11% → 74.87% → **79%**
-        // 231 tests api-worker. Reste handleSendOtp/handleVerifyOtp success paths.
+        // Progression mesurée v8 (transparente, CLAUDE.md "réel toujours") :
+        // 0% → 19.63% → 25.9% → 49.63% → 57.48% → 71.11% → 79% → **81.99%**
+        // **100% FUNCTIONS (72/72)** / 78.84% branches / 81.99% lines.
+        // 268 tests api-worker. Reste data paths success handlers DB.
         'workers/api-worker.js',
       ],
       thresholds: {
