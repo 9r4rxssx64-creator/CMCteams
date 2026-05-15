@@ -4,14 +4,25 @@
   "description": "Casino De MONACO Planning",
   "main": "app 2.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/runtime-audit.mjs",
+    "test:runtime": "node tests/runtime-audit.mjs",
+    "test:encadres": "node tests/runtime-audit-encadres.mjs",
+    "test:all": "node tests/runtime-audit.mjs && node tests/runtime-audit-encadres.mjs",
+    "test:check-syntax": "python3 -c \"import re;html=open('index.html','r',encoding='utf-8').read();blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL);open('/tmp/cmc_combined.js','w',encoding='utf-8').write(''.join(blocks))\" && node --check /tmp/cmc_combined.js",
+    "test:ci": "npm run test:check-syntax && npm run test:all",
+    "playwright:install": "playwright install --with-deps chromium"
   },
   "repository": {
     "type": "git",
     "url": "http://local_proxy@127.0.0.1:37103/git/9r4rxssx64-creator/CMCteams"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "cmcteams",
+    "casino",
+    "planning",
+    "monaco"
+  ],
+  "author": "Kevin DESARZENS",
   "license": "ISC",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
@@ -21,6 +32,7 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.5"
+    "@vitest/coverage-v8": "^4.1.5",
+    "playwright": "^1.56.1"
   }
 }

@@ -55,3 +55,8 @@ credentials.json
 *.cert
 ax_*_key.txt
 ax_*_token.txt
+
+# v9.628 — Playwright artefacts
+playwright-report/
+test-results/
+.playwright/
