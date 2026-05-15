@@ -22,12 +22,12 @@ export default defineConfig({
         '**/*.test.js',
         '**/*.spec.js',
         // Phase C2 en cours : api-worker.js (2444 lignes).
-        // Progression mesurée v8 : 19.63% → 25.9% → 49.63% → 54.99% → **57.48%**
-        // statements / 70.75% branches / 84.28% functions / 57.48% lines.
-        // 137 tests api-worker (routing+otp+handlers+admin-deep+scheduled).
-        // Pour atteindre 100% RÉEL : encore tests à ajouter pour
-        // verifyFirebaseIdToken, prekeys handlers, queue consumers,
-        // success paths features (story view DB, capsule open, magic-login DB).
+        // Progression mesurée v8 (transparente) :
+        // 19.63% → 25.9% → 49.63% → 54.99% → 57.48% → **71.11% statements**
+        // 74% branches / 85.91% functions / 71.11% lines.
+        // 166 tests api-worker (routing+otp+handlers+admin-deep+scheduled
+        // +admin-routes). Pour 100% RÉEL : reste verifyFirebaseIdToken,
+        // prekeys handlers, queue consumers, performDailyBackup.
         // Honnêteté CLAUDE.md : on ne ment pas en disant 100% global tant
         // que api-worker n'y est pas. Coverage global = lib/ + autres workers.
         'workers/api-worker.js',
