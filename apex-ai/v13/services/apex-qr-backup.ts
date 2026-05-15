@@ -132,6 +132,31 @@ export async function downloadQr(canvas: HTMLCanvasElement, filename = 'apex-vau
  * Partage le QR via Web Share API iOS (propose Photos iCloud directement).
  */
 export async function shareQrToPhotos(canvas: HTMLCanvasElement, title = 'Apex Vault Backup QR'): Promise<{ ok: boolean; reason?: string }> {
+  /* v13.4.124 (Kevin "passe en native iOS") :
+   * Si Apex tourne dans wrapper Capacitor iOS natif → Share plugin natif
+   * (UIActivityViewController = écriture directe Photos iCloud sans modal Safari).
+   * Mode PWA : fallback Web Share API. */
+  try {
+    const { apexIosNative } = await import('./apex-ios-native.js');
+    if (apexIosNative.isNative()) {
+      const nativeBlob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/png');
+      });
+      if (!nativeBlob) return { ok: false, reason: 'blob_failed' };
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (): void => resolve(String(reader.result));
+        reader.onerror = (): void => reject(new Error('FileReader fail'));
+        reader.readAsDataURL(nativeBlob);
+      });
+      const r = await apexIosNative.shareNative({
+        title,
+        text: 'Sauvegarde Apex Vault — Photos iCloud',
+        url: dataUrl,
+      });
+      return r.ok ? { ok: true } : { ok: false, reason: r.error ?? 'native_share_failed' };
+    }
+  } catch { /* mode PWA ou plugin absent : fallback Web Share */ }
   try {
     /* Test support Web Share API + canShare files */
     if (!('share' in navigator) || typeof navigator.share !== 'function') {

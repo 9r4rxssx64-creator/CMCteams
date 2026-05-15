@@ -212,6 +212,23 @@ class PushAutoInit {
    * Demande permission + subscribe (appelé après délai ou interaction user).
    */
   async requestPermissionAndSubscribe(uid: string): Promise<{ ok: boolean; reason?: string }> {
+    /* v13.4.124 (Kevin "passe en native iOS") :
+     * Si Apex tourne dans wrapper Capacitor iOS natif → APNs natif (plus fiable
+     * que Web Push iOS 16.4+ limité). Mode PWA Safari : fallback Notification API. */
+    try {
+      const { apexIosNative } = await import('./apex-ios-native.js');
+      if (apexIosNative.isNative()) {
+        const r = await apexIosNative.requestPushPermission();
+        if (r.granted && r.native) {
+          void auditLog.record('push.apns_native_granted', { details: { uid, platform: 'ios' } });
+          return { ok: true };
+        }
+        if (!r.granted && r.native) {
+          return { ok: false, reason: 'APNs permission denied (Réglages iOS)' };
+        }
+        /* Si fallback nécessaire, continue plus bas avec Web Push */
+      }
+    } catch { /* plugin absent : fallback Web Push */ }
     if (typeof Notification === 'undefined') return { ok: false, reason: 'Notification API absent' };
     if (Notification.permission === 'denied') return { ok: false, reason: 'Permission denied' };
     try {
