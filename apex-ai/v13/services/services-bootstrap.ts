@@ -583,6 +583,30 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       observability.init();
     }),
 
+    /* v13.4.99 (Kevin "Autonome réel") — Runtime self-diagnostic.
+       Affiche au boot un toast avec l'état RÉEL : anti-zoom OK ?, vault path OK ?,
+       N clés local + Firebase, SW actif, etc. Kevin voit en direct sur iPhone si
+       les fixes fonctionnent — pas de promesse vague de tests vitest. */
+    safeInit('runtime-diagnostic', async () => {
+      const { apexRuntimeDiagnostic } = await import('./apex-runtime-diagnostic.js');
+      /* Différé 3s après le boot pour laisser Firebase + SW + auto-restore tourner */
+      setTimeout(() => {
+        void apexRuntimeDiagnostic.runAll().then(async (result) => {
+          try {
+            const { toast } = await import('../ui/toast.js');
+            if (result.failCount === 0) {
+              toast.success(`🔬 Diagnostic v${result.version} : ${result.summary}`, { duration: 6000 });
+            } else {
+              const failed = result.checks.filter((c) => !c.ok).map((c) => c.label).join(', ');
+              toast.warn(`🔬 Diagnostic v${result.version} : ${result.summary} (KO : ${failed})`, { duration: 10000 });
+            }
+          } catch { /* toast non dispo : silencieux */ }
+        }).catch((err: unknown) => {
+          logger.warn('runtime-diagnostic', 'boot run failed', { err });
+        });
+      }, 3000);
+    }),
+
     /* P0 : bodyguard runtime security install (CSP violations, postMessage cross-frame) */
     safeInit('bodyguard', async () => {
       const { bodyguard } = await import('./bodyguard.js');
