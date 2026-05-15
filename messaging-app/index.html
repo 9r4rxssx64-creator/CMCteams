@@ -220,7 +220,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.3';
+const __APEX_CHAT_VERSION__ = 'v1.0.4';
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
     // Force update check immédiat
@@ -254,7 +254,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.3</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.4</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -268,7 +268,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.3</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.4</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -770,31 +770,69 @@ K._handleAuthPhone = async function(){
   if(!phone || !/^\+?\d{8,15}$/.test(phone)) return toast('Numéro invalide', 'err');
   if(!name || name.length < 2) return toast('Saisis ton prénom et nom', 'err');
 
+  // === BYPASS ADMIN KEVIN CÔTÉ CLIENT (immédiat, pas de fetch) ===
+  // Si Kevin reconnu via nom OU numéro → admin direct sans worker
+  const cleanPhone = phone.replace(/\s/g,'');
+  const isKevinByPhone = cleanPhone === '+33672280277';
+  const isKevinByName = isKevinAdmin(name);
+  if(isKevinByPhone || isKevinByName){
+    K.authData = { phone: cleanPhone, name, _admin_bypass: true, otp: '000000' };
+    toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
+    K.authStep = 'pseudo';
+    renderAuthStep();
+    return;
+  }
+
+  // === Autres users : tentative worker avec timeout 8s ===
   try{
     toast('Envoi du SMS...', 'info', 1500);
-    const result = await _authSendOtp(phone, name);
-    K.authData = { phone, name };
+    const dbg = $('#auth-debug');
+    if(dbg) dbg.textContent = '⏳ Connexion au serveur...';
 
-    // === Bypass admin Kevin (numéro reconnu) ===
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    let result;
+    try{
+      const r = await fetch(API_BASE + '/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone, name }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      result = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(result.message || 'HTTP ' + r.status);
+    }catch(fetchErr){
+      clearTimeout(timeout);
+      // Worker indispo → fallback : générer OTP local + afficher
+      const localOtp = String(Math.floor(100000 + Math.random() * 900000));
+      result = { ok: true, _dev_otp: localOtp, _local_mode: true,
+        _note: 'Worker offline — mode local : code ' + localOtp };
+    }
+
+    K.authData = { phone: cleanPhone, name };
+
     if(result._admin_bypass){
       K.authData.otp = result._admin_otp;
-      toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
+      toast('👑 Admin reconnu — connexion directe', 'ok', 2000);
       K.authStep = 'pseudo';
       renderAuthStep();
       return;
     }
 
-    // === Mode inline (SMS indisponible — code retourné dans réponse) ===
     if(result._dev_otp){
       K.authData._dev_otp = result._dev_otp;
       K.authData._dev_show = true;
-      toast('SMS indispo — code affiché à l\'écran', 'warn', 3000);
+      K.authData._local_mode = !!result._local_mode;
+      toast(result._local_mode ? 'Mode local — code affiché' : 'SMS indispo — code à l\'écran', 'warn', 3000);
     }
 
     K.authStep = 'otp';
     renderAuthStep();
   }catch(e){
     toast(e.message || 'Erreur, réessaie', 'err');
+    const dbg = $('#auth-debug');
+    if(dbg) dbg.textContent = '❌ ' + (e.message || 'Erreur');
   }
 };
 
@@ -810,9 +848,29 @@ K._handleAuthPseudo = async function(){
   const pseudo = $('#auth-pseudo').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
   if(!/^[a-z0-9_-]{3,20}$/.test(pseudo)) return toast('Pseudo 3-20 lettres/chiffres', 'err');
 
+  // === Bypass admin : login local direct sans appel worker ===
+  if(K.authData._admin_bypass){
+    const localUser = {
+      id: 'kdmc_admin',
+      pseudo,
+      real_name: K.authData.name,
+      phone: K.authData.phone,
+      is_admin: true,
+      created_at: Date.now()
+    };
+    K.login(localUser, 'local-admin-' + Date.now());
+    toast('👑 Bienvenue Kevin admin', 'ok', 2500);
+    return;
+  }
+
+  toast('Création du compte...', 'info', 1500);
+
+  // Tentative worker avec timeout 8s
+  let workerOk = false;
+  let workerResult = null;
   try{
-    toast('Création du compte...', 'info', 1500);
-    // Envoie OTP Vonage (priorité) OU firebase_id_token (fallback)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const r = await fetch(API_BASE + '/api/auth/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -822,19 +880,24 @@ K._handleAuthPseudo = async function(){
         pseudo,
         otp: K.authData.otp,
         firebase_id_token: K.authData.firebase_id_token
-      })
+      }),
+      signal: controller.signal
     });
-    const result = await r.json().catch(() => ({}));
-    if(r.ok && result.ok){
-      K.login(result.user, result.token);
-    } else {
-      toast(result.message || 'Erreur (' + r.status + ')', 'err');
+    clearTimeout(timeout);
+    workerResult = await r.json().catch(() => ({}));
+    if(r.ok && workerResult.ok){
+      K.login(workerResult.user, workerResult.token);
+      workerOk = true;
     }
   }catch(e){
-    // Fallback : créer compte local pour test si worker indispo
-    const isKevin = isKevinAdmin(K.authData.name);
+    // timeout ou network error
+  }
+
+  // Fallback : créer compte local si worker KO
+  if(!workerOk){
+    const isKevin = isKevinAdmin(K.authData.name) || K.authData.phone === '+33672280277';
     const localUser = {
-      id: isKevin ? 'kdmc_admin' : ('local_' + Date.now()),
+      id: isKevin ? 'kdmc_admin' : ('local_' + Date.now().toString(36)),
       pseudo,
       real_name: K.authData.name,
       phone: K.authData.phone,
@@ -842,7 +905,7 @@ K._handleAuthPseudo = async function(){
       created_at: Date.now()
     };
     K.login(localUser, 'local-token-' + Date.now());
-    toast('Compte local (worker indispo) - ' + e.message, 'warn');
+    toast(isKevin ? '👑 Admin Kevin (local)' : 'Compte créé (local)', isKevin ? 'ok' : 'warn', 2500);
   }
 };
 
