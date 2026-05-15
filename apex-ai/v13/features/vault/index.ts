@@ -617,9 +617,12 @@ export function render(rootEl: HTMLElement): void {
 
       <section style="margin-top:18px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px">
         <h3 style="margin:0 0 10px;color:#e8b830;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">💾 Backup & Restore</h3>
+        <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">⚠️ Sauvegarde TES clés AVANT tout reinstall PWA. Firebase rules require auth = ton backup auto Firebase ne marche pas.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="ax-vault-export"
-            style="padding:8px 14px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px">📥 Exporter (JSON)</button>
+            style="padding:10px 16px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📥 Exporter (JSON)</button>
+          <button id="ax-vault-qr-backup"
+            style="padding:10px 16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📦 Backup vault QR (Photos iCloud)</button>
         </div>
       </section>
 
@@ -982,6 +985,37 @@ function attachHandlers(rootEl: HTMLElement): void {
     URL.revokeObjectURL(url);
     toast.success('Coffre exporté (chiffré)');
   });
+
+  /* v13.4.115 (Kevin "J'ai tout collé" 18 clés + Firebase backup KO) :
+   * Backup vault complet en QR pour sauvegarde Photos iCloud.
+   * QR contient JSON chiffré AES-GCM-256 de toutes les clés + iCloud Photos
+   * survit reinstall PWA + sync cross-device Apple ID. */
+  const qrBackupBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-qr-backup');
+  if (qrBackupBtn && activeVaultScope) {
+    activeVaultScope.bind(qrBackupBtn, 'click', () => {
+      void (async () => {
+        haptic.tap();
+        try {
+          const json = exportVaultJson(listVaultEntries());
+          const sizeKB = (json.length / 1024).toFixed(1);
+          if (json.length > 2900) {
+            toast.warn(`Vault trop gros pour QR (${sizeKB}KB > 2.9KB max). Utilise "Exporter JSON" à la place.`, { duration: 8000 });
+            return;
+          }
+          const { apexQrBackup } = await import('../../services/apex-qr-backup.js');
+          await apexQrBackup.showQrBackupModal({
+            text: json,
+            title: '📦 Backup Vault Complet — Photos iCloud',
+            description: `Apex a généré un QR code de tes ${listVaultEntries().length} clés (JSON chiffré AES-GCM-256, ${sizeKB}KB). Sauvegarde-le dans Photos iCloud — au prochain reinstall PWA, scan ce QR pour TOUT restaurer en 1 clic.`,
+            filename: `apex-vault-backup-${new Date().toISOString().slice(0, 10)}.png`,
+          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          toast.error(`Backup QR échoué : ${msg.slice(0, 60)}`, { duration: 6000 });
+        }
+      })();
+    });
+  }
 
   attachCardHandlers(rootEl);
 }
