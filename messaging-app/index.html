@@ -254,6 +254,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.0.3</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -267,7 +268,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT</div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.0.3</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2124,6 +2125,14 @@ function _runSentinelsEnriched(){
 //  Init / Boot
 // ============================================================================
 async function _boot(){
+  // Affichage version partout (splash + topbar)
+  try{
+    const splashV = document.getElementById('splash-version');
+    const topbarV = document.getElementById('topbar-version');
+    if(splashV) splashV.textContent = __APEX_CHAT_VERSION__;
+    if(topbarV) topbarV.textContent = __APEX_CHAT_VERSION__;
+  }catch(_){}
+
   // SW update banner listener
   window.addEventListener('sw-update-available', () => {
     $('#update-banner').classList.remove('h');

@@ -51,9 +51,10 @@ jobs:
             echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate JS syntax (CMCteams + Apex)
+      - name: Validate JS syntax (CMCteams + Apex + Apex Chat)
         run: |
           set -e
+          # CMCteams
           if [ -f index.html ]; then
             node -e "
               const fs=require('fs');
@@ -66,6 +67,7 @@ jobs:
             node --check /tmp/check_cmc.js
             echo "OK: CMCteams JS syntax"
           fi
+          # Apex AI
           if [ -f apex-ai/index.html ]; then
             node -e "
               const fs=require('fs');
@@ -78,6 +80,29 @@ jobs:
             node --check /tmp/check_apex.js
             echo "OK: Apex JS syntax"
           fi
+          # Apex Chat
+          if [ -f messaging-app/index.html ]; then
+            node -e "
+              const fs=require('fs');
+              const html=fs.readFileSync('messaging-app/index.html','utf8');
+              const m=html.match(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g) || [];
+              let combined='';
+              m.forEach(s=>{
+                const c=s.replace(/<script(?:\s[^>]*)?>/,'').replace(/<\/script>/,'');
+                if(c.trim() && !c.includes('src=')) combined+=c+'\n';
+              });
+              fs.writeFileSync('/tmp/check_apex_chat.js',combined);
+            "
+            node --check /tmp/check_apex_chat.js
+            echo "OK: Apex Chat JS syntax"
+          fi
+          # Workers Cloudflare
+          for w in messaging-app/workers/*.js messaging-app/workers/durable-objects/*.js messaging-app/crypto.js; do
+            if [ -f "$w" ]; then
+              node --check "$w" || (echo "ERROR: $w syntax fail"; exit 1)
+            fi
+          done
+          echo "OK: Workers JS syntax"
 
       - name: Validate no merge markers
         run: |
