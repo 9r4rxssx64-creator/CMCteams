@@ -1,5 +1,42 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🍎 TODO MAJEUR — PASSER APEX SUR APPLE STORE (Kevin 2026-05-15 05h35)
+
+> **"Ajoute au mémo de passer lapp sur Apple Store ensuite en m'expliquant plus tard"** — Kevin 2026-05-15
+
+**Objectif** : transformer Apex PWA web → app native iOS sur Apple App Store.
+
+**Pourquoi** (à expliquer en détail plus tard) :
+- Casse définitivement les limites Safari WebKit sandbox PWA
+- Accès Keychain natif iOS (survit reinstall, sync iCloud automatique cross-device)
+- Accès Photos library, Notifications push, Apple Pay, Apple Wallet natif
+- Pas de force-update qui wipe localStorage (data persistante CoreData/UserDefaults)
+- Push notifications via APNs (vraies notifs, pas Web Push limité)
+- WebAuthn/Passkey full support natif
+- Performance native vs WebView
+
+**Effort estimé** :
+- Apple Developer Program $99/an obligatoire
+- Port code TypeScript Apex v13 → Swift/SwiftUI ou bien Capacitor/Tauri wrapper
+- Tests Xcode + TestFlight beta + soumission App Store Review (1-3 semaines)
+- Code 80% portable si Capacitor (garde HTML/TS/CSS, juste wrapper natif)
+
+**Décision à prendre plus tard** :
+- Option A : **Capacitor** (port rapide ~1 semaine, garde codebase web)
+- Option B : **Swift natif** (refonte ~2-3 mois, qualité Apple max)
+- Option C : **React Native** (compromise, ~3-4 semaines)
+
+**Préparation préalable Apex** (à faire AVANT port iOS natif) :
+- [ ] Apex v13 web stabilisé score 100/100 réel (audit externe)
+- [ ] Tous fixes Erreur #56/57/58 confirmés (zoom, GAP source vs build, etc.)
+- [ ] Backup Cloudflare Worker proxy opérationnel (au cas où native échoue)
+- [ ] 3 audits externes 100/100 atteints (Cure53/Calibre/Anthropic T&S)
+- [ ] Stable cross-session 30 jours sans bug critique
+
+**Tag** : `[TODO_APPLE_STORE]` — Explication détaillée à demander à Kevin quand timing OK.
+
+---
+
 ## 🆕 ÉTAT v13.3.51 — 19+ subagents finals (2026-05-07 23h59)
 
 ### ✅ DÉJÀ FAIT (configuré ou auto-géré)
