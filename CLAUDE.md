@@ -1,6 +1,81 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Apex v13.4.42 / CMC v9.602).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-15 (Apex v13.4.163 / CMC v9.602).
+
+---
+
+## 🚧 RÈGLE ABSOLUE — SANDBOX BLOCKAGES = SOLUTION GLOBALE (Kevin 2026-05-15, ABSOLUE)
+
+> **"Trouve une solution pour tous les problème qui bloque à cause de sandbox toujours et pour tous les projets"** — Kevin 2026-05-15
+
+**Règle absolue, prioritaire** — tous projets Kevin (Apex, CMCteams, e-KDMC, etc.) :
+
+### 1. Diagnostic sandbox
+
+Le sandbox CCR (Claude Code Runner) bloque **tous downloads externes** (`Host not in allowlist`) :
+- Playwright Chromium/WebKit download (`cdn.playwright.dev`)
+- npm registry alternatif (parfois)
+- Téléchargement assets externes (CDN tiers, jsdelivr non whitelisté)
+
+Détecté via env var : `CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1`.
+
+### 2. Stratégie multi-niveaux à appliquer SYSTÉMATIQUEMENT
+
+#### Niveau 1 — Tests unitaires LOCAL (jsdom, pas de browser réel)
+- ✅ vitest run (jsdom env, pas de browser téléchargement)
+- ✅ TypeScript strict, ESLint, Prettier
+- ✅ Build (Vite, esbuild) — pas de download
+
+#### Niveau 2 — Tests E2E browser = CI-ONLY
+- ❌ JAMAIS run Playwright en sandbox local
+- ✅ GitHub Actions installs browsers via `npx playwright install --with-deps`
+- ✅ Workflows `apex-v13-e2e.yml`, `apex-ios-simulator.yml`, `axe-a11y-apex-v13.yml`
+
+#### Niveau 3 — Helper sandbox skip (Apex v13.4.163)
+- `tests/_sandbox-skip.ts` : `isSandboxRestricted()` + `shouldSkipBrowserTests()`
+- `playwright.config.ts` : `grep: /__never__/` si sandbox détecté → skip toutes specs
+
+### 3. Pattern à appliquer aux autres projets Kevin
+
+CMCteams + e-KDMC + Télécommande + tools/ :
+
+```ts
+// playwright.config.ts (chaque projet)
+const isSandbox = process.env.CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST === '1';
+export default defineConfig({
+  ...(isSandbox && { grep: /__never__/ }),
+  // ...
+});
+```
+
+```yaml
+# .github/workflows/e2e.yml (chaque projet)
+- name: Install Playwright browsers (CI uniquement)
+  run: npx playwright install --with-deps chromium webkit
+  # En CI, downloads autorisés. Sandbox local skip via grep filter.
+```
+
+### 4. Documentation centralisée
+
+Chaque projet doit avoir dans son README :
+- Section "Local development" → vitest only
+- Section "E2E tests" → "Run via GitHub Actions ou avec browsers pré-installés"
+- Lien vers `_sandbox-skip.ts` helper
+
+### 5. Anti-pattern à NE PAS reproduire
+
+- ❌ Forcer `playwright install` en sandbox → erreur 403
+- ❌ Test E2E qui fail en local mais pass en CI → soit skip soit bouge en CI
+- ❌ Ignorer "Host not in allowlist" comme bug, c'est sandbox by design
+- ✅ TOUJOURS un fallback gracieux (skip + log info)
+
+### 6. Test mental obligatoire
+
+> *"Si Kevin lance les tests local sans connexion ou en sandbox, est-ce que ça PASSE proprement (skip browser tests) ou ça FAIL avec timeout 30s ?"*
+
+Si fail → ajouter skip helper.
+
+S'applique : Apex (priorité absolue v13.4.163+), CMCteams, e-KDMC, Télécommande, tous projets futurs Kevin.
 
 ---
 
