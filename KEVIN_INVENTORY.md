@@ -1166,3 +1166,40 @@ grep -n "storageKey:" services/credential-patterns.ts | awk -F"'" '{print $2}' |
 # 6. Services imports statiques vs dynamiques
 grep -rln "from.*services/X\.js'\|import('.*X\.js')" .
 ```
+
+## v13.4.125-126 — Qualité pro App Store-ready (Kevin 2026-05-15)
+
+### Fichiers créés
+- `.github/workflows/semgrep.yml` — SAST gratuit OWASP Top 10 (PR bloquant)
+- `.github/workflows/gitleaks.yml` — détection secrets clair (PR bloquant)
+- `.github/workflows/npm-audit.yml` — CVE deps high+critical (PR bloquant)
+- `.github/workflows/auto-pr-review.yml` — subagent auto-review PR claude/*
+- `.gitleaks.toml` — config secrets + allowlist patterns regex
+- `apex-ai/v13/tests/e2e/iphone-critical-flows.spec.ts` — 6 tests iPhone 14 Pro WebKit
+
+### Fichiers modifiés v13.4.125 (lint + XSS)
+- 26 fichiers reformatés par `npm run lint:fix` (import order)
+- `apex-ai/v13/services/apex-qr-backup.ts` — innerHTML XSS fixé via DOM API
+- `apex-ai/v13/services/{apex-runtime-tester,pdf-generator,memory}.ts` — `catch (_)` → `catch`
+- `apex-ai/v13/tests/unit/v13_4_{17,32,65}-html-safe.test.ts` — eslint-disable script-url
+- `.github/workflows/apex-v13-e2e.yml` — ajout `--project=mobile-safari` (iPhone E2E bloquant)
+- `apex-ai/v13/tests/unit/services-sentinels-registry.test.ts` — timeout 30s anti-flaky
+
+### Fichiers modifiés v13.4.126 (P1 audit)
+- `apex-ai/v13/vitest.config.ts` — coverage gate 75%/70%/65% (statements/lines/branches)
+- `.github/workflows/lighthouse-apex-v13.yml` — trigger pull_request (bloque merge si < seuils)
+- `apex-ai/v13/assets/css/animations.css` — global `prefers-reduced-motion: reduce` guard
+- `apex-ai/v13/services/apex-zoom-inspector.ts` — wire `lifecycle.trackInterval` cleanup
+
+### Score qualité 6 axes
+- Avant audit : 13.3/20 (66%)
+- Après v13.4.126 : **15.5/20 (78%)** estimation
+- Cible : 18/20 (90%) — gaps restants : bundle 118KB code split + 60fps anim profiling + theme CSS vars (dark-only volontaire)
+
+### Liens GitHub directs
+- workflow semgrep : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/semgrep.yml
+- workflow gitleaks : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/gitleaks.yml
+- workflow auto-pr-review : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/auto-pr-review.yml
+- workflow iPhone E2E : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/apex-v13-e2e.yml
+- workflow Lighthouse : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/lighthouse-apex-v13.yml
+- tests iPhone : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/e2e/iphone-critical-flows.spec.ts

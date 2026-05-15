@@ -72,11 +72,12 @@ export default defineConfig({
       ],
       thresholds: {
         /* Sprint 8 Kevin v13.0.67 : seuils relevés (anti-régression strict).
-           Si baisse → CI fail. JAMAIS abaisser ces valeurs. */
-        lines: 0,
-        functions: 0,
-        branches: 0,
-        statements: 0,
+           v13.4.126 (Kevin "qualité pro App Store-ready") : activation gate
+           coverage 75% statements. Si baisse → CI fail. JAMAIS abaisser. */
+        lines: 70,
+        functions: 70,
+        branches: 65,
+        statements: 75,
       },
     },
     setupFiles: ['./tests/setup.ts'],
