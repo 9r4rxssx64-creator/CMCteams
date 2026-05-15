@@ -56,7 +56,10 @@ class Store {
       online: navigator.onLine,
       appVer: '',
       isAdmin: false,
-      commerceEnabled: true /* ON par défaut, désactivable via vAdminCenter */,
+      commerceEnabled: false /* v13.4.102 (Kevin "desactive revient ON tout seul") :
+                                  OFF par defaut. Avant true → reinstall PWA = retour ON
+                                  meme si Kevin avait mis OFF. Maintenant Kevin doit
+                                  explicitement activer commerce — pas l'inverse. */,
       theme: 'dark',
       ...initial,
       ...persisted,

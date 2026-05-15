@@ -105,6 +105,63 @@ const SERVICE_TESTS: Record<string, ServiceTestConfig> = {
     method: 'GET',
     authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
   },
+  /* v13.4.102 (Kevin "no test endpoint configured") — ajout services manquants */
+  cohere: {
+    storageKey: 'ax_cohere_key',
+    testUrl: 'https://api.cohere.com/v1/models',
+    method: 'GET',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
+  },
+  openrouter: {
+    storageKey: 'ax_openrouter_key',
+    testUrl: 'https://openrouter.ai/api/v1/auth/key',
+    method: 'GET',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
+  },
+  gemini: {
+    storageKey: 'ax_gemini_key',
+    /* Google API : auth via query param ?key=, pas header */
+    testUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+    method: 'GET',
+    authHeader: (_t: string) => ({}),
+  },
+  pinecone: {
+    storageKey: 'ax_pinecone_key',
+    testUrl: 'https://api.pinecone.io/indexes',
+    method: 'GET',
+    authHeader: (t: string) => ({ 'Api-Key': t }),
+  },
+  stripe: {
+    storageKey: 'ax_stripe_key',
+    testUrl: 'https://api.stripe.com/v1/balance',
+    method: 'GET',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
+  },
+  telegram_bot: {
+    storageKey: 'ax_telegram_bot_token',
+    /* Telegram : token dans URL path, pas header */
+    testUrl: '', /* construit dynamiquement dans testRuntime */
+    method: 'GET',
+    authHeader: () => ({}),
+  },
+  resend: {
+    storageKey: 'ax_resend_key',
+    testUrl: 'https://api.resend.com/domains',
+    method: 'GET',
+    authHeader: (t: string) => ({ Authorization: `Bearer ${t}` }),
+  },
+  brevo: {
+    storageKey: 'ax_brevo_key',
+    testUrl: 'https://api.brevo.com/v3/account',
+    method: 'GET',
+    authHeader: (t: string) => ({ 'api-key': t }),
+  },
+  elevenlabs: {
+    storageKey: 'ax_elevenlabs_key',
+    testUrl: 'https://api.elevenlabs.io/v1/user',
+    method: 'GET',
+    authHeader: (t: string) => ({ 'xi-api-key': t }),
+  },
 };
 
 async function testRuntime(service: string): Promise<TestResult> {

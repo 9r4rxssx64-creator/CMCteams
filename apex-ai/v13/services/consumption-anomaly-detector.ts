@@ -169,11 +169,51 @@ class ConsumptionAnomalyDetector {
   }
 
   /**
-   * Liste tous services + status complet (normal inclus).
+   * Liste services + status complet (normal inclus).
+   *
+   * v13.4.102 (Kevin "incoherence Conso 7 ✅ vs Coffre 0 codes") :
+   * Filtre uniquement les services pour lesquels une clé EST réellement présente
+   * en vault local. Avant : retournait TOUS les services du registry statique,
+   * affichant ✅ même si aucune clé n'avait été collée → trompeur.
+   * Maintenant : Conso View ne montre QUE ce qui est réellement configuré.
    */
   scanAllVerbose(): readonly AnomalyReport[] {
-    const services = Object.keys(PROVIDER_LINKS);
-    return services.map((s) => this.detectAnomaly(s));
+    const allServices = Object.keys(PROVIDER_LINKS);
+    const present = allServices.filter((s) => this.hasKeyInVault(s));
+    return present.map((s) => this.detectAnomaly(s));
+  }
+
+  /** v13.4.102 — Détecte si une clé pour ce service est présente en vault. */
+  private hasKeyInVault(service: string): boolean {
+    try {
+      /* Convention storage keys : ax_<service>_key OU ax_<service>_token */
+      const candidates = [
+        `ax_${service}_key`,
+        `ax_${service}_token`,
+        `ax_${service}_api_key`,
+      ];
+      for (const k of candidates) {
+        const v = localStorage.getItem(k);
+        if (v && v.length > 10) return true;
+      }
+      /* Fallback : check multi_keys store */
+      const multi = localStorage.getItem('apex_v13_multi_keys');
+      if (multi) {
+        const parsed: unknown = JSON.parse(multi);
+        if (Array.isArray(parsed)) {
+          for (const entry of parsed) {
+            if (typeof entry === 'object' && entry !== null) {
+              const e = entry as { service?: string; storageKey?: string };
+              if (e.service?.toLowerCase() === service.toLowerCase()) return true;
+              if (e.storageKey && new RegExp(`^ax_${service}_`, 'i').test(e.storageKey)) return true;
+            }
+          }
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   /**

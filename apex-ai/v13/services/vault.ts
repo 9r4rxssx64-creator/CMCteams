@@ -777,6 +777,23 @@ class Vault {
       const { memory } = await import('../core/memory.js');
       void memory.refreshVaultAudit();
     } catch { /* silent */ }
+    /* v13.4.102 (Kevin "Coffre tjs perd memoire") :
+     * Émet event 'vault:key-stored' avec statut Firebase pour feedback UI.
+     * Kevin sait IMMÉDIATEMENT si la clé est juste locale (perdable au reinstall)
+     * ou bien backuppée Firebase (récupérable). */
+    try {
+      if (typeof window !== 'undefined' && typeof CustomEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('apex:vault-key-stored', {
+          detail: {
+            storageKey,
+            firebase_ok: persisted.firebase,
+            local_ok: persisted.local,
+            idb_ok: persisted.idb,
+            ts: Date.now(),
+          },
+        }));
+      }
+    } catch { /* silent */ }
     return { ok: persisted.local || persisted.idb || persisted.firebase, persisted };
   }
 

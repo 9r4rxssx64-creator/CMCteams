@@ -2400,6 +2400,25 @@ export function render(rootEl: HTMLElement): void {
               .map(([name, count]) => count > 1 ? `${name} ×${count}` : name)
               .join(', ');
             toast.success(`🔑 ${result.stored.length} clé(s) chiffrée(s) AES-GCM-256 : ${names}`, { duration: 6000 });
+            /* v13.4.102 — Vérification asynchrone push Firebase via vault-firebase-backup.
+             * Pas attendre dans le toast principal (UX rapide), mais checker 4s après. */
+            void (async () => {
+              try {
+                await new Promise((r) => setTimeout(r, 4000));
+                const { vaultFirebaseBackup } = await import('../../services/vault-firebase-backup.js');
+                const fbList = await vaultFirebaseBackup.listAll();
+                const fbKeys = new Set(fbList.map((e) => e.key));
+                const storedKeys = result.stored.map((s) => `ax_${s.pattern.name.toLowerCase().replace(/\s+/g, '_')}_key`);
+                const fbOk = storedKeys.filter((k) => fbKeys.has(k)).length;
+                if (fbOk === storedKeys.length) {
+                  toast.info(`💾 Firebase backup OK : ${fbOk}/${storedKeys.length} clés sauvegardées cross-device.`, { duration: 5000 });
+                } else if (fbOk === 0) {
+                  toast.warn(`🚨 Firebase backup KO : 0/${storedKeys.length} sauvegardées. Tes clés sont local-only — RISQUE perte au reinstall PWA.`, { duration: 10000 });
+                } else {
+                  toast.warn(`⚠️ Firebase backup partiel : ${fbOk}/${storedKeys.length}`, { duration: 7000 });
+                }
+              } catch { /* silent */ }
+            })();
           }
           if (result.forbidden.length > 0) {
             const names = result.forbidden.map((f) => f.pattern.name).join(', ');
