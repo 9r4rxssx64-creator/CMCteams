@@ -1128,6 +1128,19 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
   }
 
   const user = store.get('user');
+  /* v13.4.131 (Kevin "Apex IA chat réservée admin") :
+   * Si user n'est pas admin Kevin (kdmc_admin) → bloque appel AI
+   * + affiche message clair. Le chat reste accessible (lecture, historique
+   * Kevin partagé via Firebase si activé) mais l'envoi à l'IA est admin-only. */
+  if (user?.id !== 'kdmc_admin') {
+    pushAssistantMessage(
+      rootEl,
+      "🔒 L'assistant IA est réservé à l'admin. Tu peux lire l'historique mais pas envoyer de message à l'IA.",
+    );
+    queue.length = 0; /* purge messages non-admin pour éviter accumulation */
+    isProcessing = false;
+    return;
+  }
   const consume = commerce.consumeMessage(user?.id ?? null);
   if (!consume.allowed) {
     pushAssistantMessage(rootEl, "Tu as atteint ta limite quotidienne. Passe en plan supérieur ou réessaie demain.");
