@@ -990,6 +990,25 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
         });
       }, 7000);
     }),
+
+    /* v13.4.130 (Kevin "intègre secrets GitHub à Apex sans rien faire") :
+     * Auto-enable proxy Cloudflare au boot SI admin Kevin connecté + proxy /health OK.
+     * Sinon : skip silencieux (zéro régression tests vitest).
+     * Différé 8s pour laisser auth/store/firebase s'init proprement. */
+    safeInit('proxy-auto-enable', async () => {
+      const { proxyAutoEnable } = await import('./proxy-auto-enable.js');
+      setTimeout(() => {
+        void proxyAutoEnable.autoEnableIfReady().then((r) => {
+          if (r.enabled && r.reason === 'auto_enabled') {
+            logger.info('proxy-auto-enable', '✅ Proxy Cloudflare activé auto au boot (admin Kevin + health OK)');
+          } else {
+            logger.debug('proxy-auto-enable', `skip : ${r.reason}`);
+          }
+        }).catch((err: unknown) => {
+          logger.debug('proxy-auto-enable', 'boot check skipped', { err });
+        });
+      }, 8000);
+    }),
   ];
 
   const results = await Promise.all(tasks);

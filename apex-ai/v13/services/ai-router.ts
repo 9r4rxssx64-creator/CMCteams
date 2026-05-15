@@ -423,6 +423,116 @@ const MAX_TOTAL_BODY_TOKENS = 150_000; /* Anthropic Sonnet 4.6 = 200K context */
 const MAX_TOKENS_OUTPUT_HARD_CAP = 8192;
 const MAX_TOKENS_OUTPUT_HARD_MIN = 1;
 
+/* ============================================================
+ * v13.4.130 (Kevin "intègre secrets GitHub à Apex") — Proxy router
+ * ============================================================
+ *
+ * Si Cloudflare Worker `apex-secrets-proxy` déployé + healthy → forward fetch
+ * via le proxy avec PIN hash en auth. Clés API jamais exposées côté client.
+ * Sinon fallback direct fetch avec clé vault local.
+ *
+ * Health check caché 5min (apex_v13_proxy_health_cache).
+ * Feature flag via localStorage `apex_v13_use_secrets_proxy` (default true).
+ *
+ * Mapping providers AI router → proxy path :
+ *   anthropic → /anthropic/v1/messages
+ *   openai    → /openai/v1/chat/completions
+ *   groq      → /groq/openai/v1/chat/completions
+ *   gemini    → /gemini/v1beta/models/...
+ *   deepseek  → /deepseek/v1/chat/completions
+ *   perplexity→ /perplexity/...
+ *   openrouter→ pas proxifié (multi-providers, direct OK)
+ *   openclaw  → pas proxifié (placeholder)
+ */
+
+const PROXY_HEALTH_CACHE_MS = 5 * 60 * 1000;
+const PROXY_HEALTH_KEY = 'apex_v13_proxy_health_cache';
+const PROXY_FLAG_KEY = 'apex_v13_use_secrets_proxy';
+
+interface ProxyHealthCache {
+  ts: number;
+  available_providers: string[];
+  ok: boolean;
+}
+
+async function sha256HexAr(s: string): Promise<string> {
+  const enc = new TextEncoder().encode(s);
+  const hash = await crypto.subtle.digest('SHA-256', enc);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function getProxyHealth(): Promise<ProxyHealthCache | null> {
+  try {
+    const cached = localStorage.getItem(PROXY_HEALTH_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as ProxyHealthCache;
+      if (Date.now() - parsed.ts < PROXY_HEALTH_CACHE_MS) return parsed;
+    }
+  } catch { /* corrupt cache : refetch */ }
+  try {
+    const { apexSecretsProxy } = await import('./apex-secrets-proxy-client.js');
+    const r = await apexSecretsProxy.checkHealth();
+    if (!r.ok || !r.data) return null;
+    const cache: ProxyHealthCache = {
+      ts: Date.now(),
+      available_providers: r.data.available_providers,
+      ok: true,
+    };
+    try { localStorage.setItem(PROXY_HEALTH_KEY, JSON.stringify(cache)); } catch { /* quota */ }
+    return cache;
+  } catch {
+    return null;
+  }
+}
+
+async function tryProxyRoute(
+  provider: Provider,
+  directUrl: string,
+): Promise<{ url: string; headers: Record<string, string> } | null> {
+  /* Feature flag : default OFF (zéro régression). Kevin active via :
+   * admin button OU localStorage.setItem('apex_v13_use_secrets_proxy','true')
+   * Sentinelle boot pourra auto-enabler si Kevin opt-in dans Réglages. */
+  try {
+    const flag = localStorage.getItem(PROXY_FLAG_KEY);
+    if (flag !== 'true' && flag !== '1') return null;
+  } catch {
+    return null;
+  }
+  /* Health check (cached 5min) */
+  const health = await getProxyHealth();
+  if (!health || !health.ok) return null;
+  /* Provider supporté par proxy ? */
+  if (!health.available_providers.includes(provider)) return null;
+  /* PIN hash pour auth */
+  let pinHash = '';
+  try {
+    const { vault } = await import('./vault.js');
+    const pinPlain = (await vault.readKey('ax_pin_kdmc_admin')) ?? (await vault.readKey('ax_pin'));
+    if (!pinPlain) return null;
+    pinHash = await sha256HexAr(pinPlain);
+  } catch {
+    return null;
+  }
+  /* Transform URL : api.anthropic.com/v1/messages → worker/anthropic/v1/messages */
+  let proxyPath: string;
+  try {
+    const u = new URL(directUrl);
+    /* Extract path après .com → ex /v1/messages */
+    proxyPath = u.pathname + u.search;
+  } catch {
+    return null;
+  }
+  const workerBase = 'https://apex-secrets-proxy.desarzens-kevin.workers.dev';
+  const proxyUrl = `${workerBase}/${provider}${proxyPath}`;
+  return {
+    url: proxyUrl,
+    headers: {
+      'content-type': 'application/json',
+      'x-apex-pin': pinHash,
+    },
+  };
+}
+
 /**
  * v13.4.8 fix M5 — estimateur tokens heuristique multi-langue.
  *  - Détecte présence code/JSON (denser : 2.8 chars/token)
@@ -1393,7 +1503,7 @@ class AIRouter {
   ): Promise<ProviderStreamResult> {
     const cfg = PROVIDERS[provider];
     /* P0-2 fix : Gemini key DANS le header (déjà ci-dessus), URL ne contient QUE alt=sse */
-    const url = provider === 'gemini' ? `${cfg.endpoint}?alt=sse` : cfg.endpoint;
+    const directUrl = provider === 'gemini' ? `${cfg.endpoint}?alt=sse` : cfg.endpoint;
     const withTools = PROVIDERS_WITH_TOOLS.has(provider);
     /* v13.3.71 PERF : pré-load apex-tools si requis (sinon import statique alourdit boot).
      * Le buildBody synchrone consulte _apexTools déjà résolu ; aucune await dans la chaîne
@@ -1401,12 +1511,30 @@ class AIRouter {
     if (withTools && !_apexTools) {
       await loadApexTools();
     }
-    const res = await fetch(url, {
+    /* v13.4.130 (Kevin "intègre secrets GitHub à Apex") :
+     * Si Cloudflare Worker proxy `apex-secrets-proxy` disponible → route via proxy
+     * (clés API en env vars server-side, jamais exposées au client).
+     * Sinon → fallback direct fetch avec clé vault local (comportement actuel).
+     * Health check caché 5min pour éviter spam. */
+    const proxyRoute = await tryProxyRoute(provider, directUrl);
+    const url = proxyRoute?.url ?? directUrl;
+    const headers = proxyRoute?.headers ?? cfg.headers(apiKey);
+    let res = await fetch(url, {
       method: 'POST',
-      headers: cfg.headers(apiKey),
+      headers,
       body: JSON.stringify(cfg.buildBody(messages, system, { withTools })),
       signal,
     });
+    /* v13.4.130 fallback : si proxy a fail HTTP 5xx, retry direct avec clé vault local */
+    if (proxyRoute && !res.ok && res.status >= 500) {
+      logger.warn('ai-router', `proxy fail HTTP ${res.status} → fallback direct fetch`, { provider });
+      res = await fetch(directUrl, {
+        method: 'POST',
+        headers: cfg.headers(apiKey),
+        body: JSON.stringify(cfg.buildBody(messages, system, { withTools })),
+        signal,
+      });
+    }
     if (!res.ok) {
       /* v13.3.49 — Decode body Anthropic pour error détaillée (Kevin urgent fix HTTP 400).
        * Avant : "anthropic HTTP 400" sans contexte → Kevin voyait juste "(admin debug)".
