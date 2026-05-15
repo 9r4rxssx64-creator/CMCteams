@@ -17,8 +17,11 @@
 <meta property="og:description" content="Chiffrement militaire post-quantum. Serveur aveugle. IA Apex intégrée.">
 <meta property="og:image" content="./og-image.svg">
 <meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/">
-<!-- CSP : protège contre XSS — unpkg.com pour Leaflet admin map -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'">
+<!-- Sécurité : CSP + Referrer-Policy + X-Content-Type-Options + Permissions-Policy défense en profondeur -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(self), interest-cohort=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=()">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
 <link rel="apple-touch-icon" href="./icons/icon.svg">
@@ -39,6 +42,20 @@
   --ax-safe-bottom:env(safe-area-inset-bottom,0);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* Accessibility — focus visible (WCAG AA), skip-link, reduced-motion, print */
+*:focus-visible{outline:2px solid var(--ax-gold);outline-offset:2px;border-radius:4px}
+*:focus:not(:focus-visible){outline:none}
+.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;
+  background:var(--ax-gold);color:#000;padding:8px 16px;border-radius:8px;font-weight:600;z-index:99999}
+.skip-link:focus{position:fixed;left:50%;transform:translateX(-50%);top:8px;width:auto;height:auto}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
+@media print{
+  .topbar,.tabbar,.bottomnav,.modal-host,#splash,button{display:none !important}
+  body{background:#fff;color:#000;font-size:12pt;line-height:1.4}
+}
 html,body{margin:0;padding:0;background:var(--ax-bg);color:var(--ax-text);
   font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
@@ -220,11 +237,12 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 </style>
 </head>
 <body>
+<a href="#main-app" class="skip-link">Aller au contenu principal</a>
 
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.8';
+const __APEX_CHAT_VERSION__ = 'v1.1.9';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -300,7 +318,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.8</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.9</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -314,7 +332,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.8</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.9</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -323,7 +341,8 @@ if('serviceWorker' in navigator){
   🛡 <span class="key">Chiffrement militaire post-quantum</span> · Serveur aveugle 🛰
 </div>
 
-<main id="app">
+<main id="app" tabindex="-1" role="main" aria-label="Application Apex Chat">
+  <span id="main-app" tabindex="-1"></span>
   <!-- Vue active rendue ici -->
 </main>
 
@@ -1226,7 +1245,7 @@ function renderChat(app){
   const msgs = K.messages[conv.id] || [];
   app.innerHTML = `
     <div class="chat-header">
-      <button class="topbar-btn" onclick="K.sv('chats')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
       <div class="avatar">${esc((conv.name || conv.pseudo || '?')[0].toUpperCase())}</div>
       <div style="flex:1">
         <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
@@ -1832,7 +1851,7 @@ function renderAdminUsers(app){
   const users = Object.entries(PRECONFIGURED_USERS).map(([id, u]) => ({id, ...u}));
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
-      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Utilisateurs</h2>
     </div>
     <input class="input" placeholder="🔍 Rechercher pseudo / vrai nom / tel" oninput="K._filterUsers(this.value)" id="user-search">
@@ -1937,9 +1956,9 @@ async function renderAdminLiveUsers(app){
 
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
-      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🟢 Tous les comptes</h2>
-      <button class="btn btn-sm btn-out" onclick="K.render()">🔄</button>
+      <button class="btn btn-sm btn-out" onclick="K.render()" aria-label="Actualiser">🔄</button>
     </div>
     ${backendErr ? `<p style="color:var(--ax-warn);font-size:.78em">⚠ Backend offline (${esc(backendErr.slice(0,60))}) — affichage local fallback</p>` : ''}
     <div class="card" style="margin-bottom:12px">
@@ -2128,7 +2147,7 @@ function renderAdminToggles(app){
 
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
-      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🎛 Toggles features</h2>
     </div>
     <p style="color:var(--ax-text-2);font-size:.85em">Active/désactive chaque feature globalement. Per-user dans la fiche utilisateur.</p>
@@ -2217,7 +2236,7 @@ function renderAdminInviteBook(app){
 
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
-      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">📋 Carnet d'invitations</h2>
     </div>
     <p style="color:var(--ax-text-2);font-size:.85em;margin-bottom:14px">
@@ -2269,7 +2288,7 @@ function renderAdminInviteBook(app){
               <div style="color:var(--ax-text-3);font-size:.82em">${esc(c.phone)}</div>
             </div>
             <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._adminInviteFromBook(${i})">🪄</button>
-            <button class="btn btn-sm" style="margin-left:4px;background:var(--ax-bg-3);color:var(--ax-err)" onclick="event.stopPropagation();K._adminContactRemove(${i})">✕</button>
+            <button class="btn btn-sm" style="margin-left:4px;background:var(--ax-bg-3);color:var(--ax-err)" onclick="event.stopPropagation();K._adminContactRemove(${i})" aria-label="Fermer">✕</button>
           </div>
         `).join('')}
         <button class="btn btn-block btn-out" onclick="K._adminBookSendAll()" style="margin-top:10px">
@@ -2519,7 +2538,7 @@ function renderAdminSentinels(app){
   const s = K.sentinels || {};
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
-      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Sentinelles</h2>
       <button class="btn btn-sm btn-out" onclick="_runSentinels();K.render()">🔄 Actualiser</button>
     </div>
@@ -2542,7 +2561,7 @@ function renderAdminSearch(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
-      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🔍 Recherche globale</h2>
     </div>
     <p style="color:var(--ax-text-2);font-size:.85em">
@@ -2656,9 +2675,9 @@ async function renderAdminMap(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 10px">
-      <button class="topbar-btn" onclick="K._adminMapClose();K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K._adminMapClose();K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🗺 Carte temps réel</h2>
-      <button class="btn btn-sm btn-out" onclick="K._adminMapRefresh()" id="map-refresh-btn">🔄</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminMapRefresh()" id="map-refresh-btn" aria-label="Actualiser">🔄</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
       <button class="btn btn-sm btn-out" onclick="K._adminMapFilter('online')">🟢 En ligne</button>
@@ -2789,9 +2808,9 @@ async function renderAdminTimeline(app){
 
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
-      <button class="topbar-btn" onclick="K.sv('admin-live-users')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin-live-users')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">📜 Timeline</h2>
-      <button class="btn btn-sm btn-out" onclick="K.render()">🔄</button>
+      <button class="btn btn-sm btn-out" onclick="K.render()" aria-label="Actualiser">🔄</button>
     </div>
     <div id="admin-timeline-content"><div class="loading"></div> Chargement de l'historique complet...</div>
   `;
@@ -2878,7 +2897,7 @@ function renderAdminAudit(app){
   const tel = lg('telemetry', []);
   app.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
-      <button class="topbar-btn" onclick="K.sv('admin')">⬅</button>
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Audit & télémétrie</h2>
     </div>
     <p style="color:var(--ax-text-2);font-size:.85em">${tel.length} entrées (max 200 conservées)</p>
@@ -3266,7 +3285,7 @@ K._showModal = function(title, html){
   host.innerHTML = `
     <div class="modal-back" onclick="if(event.target===this)K._closeModal()">
       <div class="modal">
-        <button class="modal-close" onclick="K._closeModal()">✕</button>
+        <button class="modal-close" onclick="K._closeModal()" aria-label="Fermer">✕</button>
         <h3 class="modal-title">${esc(title)}</h3>
         ${html}
       </div>
