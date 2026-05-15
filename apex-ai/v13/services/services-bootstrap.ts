@@ -479,26 +479,48 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       void autoRestoreCredentials.boot();
     }),
 
-    /* v13.4.118 (Kevin "J'ai api Cloudfare tout autonome") —
-       Cloudflare KV vault backup auto-init + push à chaque setKey.
-       Au boot, si token Cloudflare présent → init namespace + push backup. */
+    /* v13.4.118+v13.4.119 (Kevin "Apex vérifie pour l api Cloudfare sinon
+       on sera encore bloqué") — Diagnostic complet Cloudflare API runtime
+       + auto-init + push backup. Si erreur, toast Kevin avec cause exacte
+       + URL fix. */
     safeInit('cf-vault-deploy', async () => {
       const { apexCloudflareVaultDeploy } = await import('./apex-cloudflare-vault-deploy.js');
       /* Différé 8s : laisse vault unlock + auto-restore + gist-backup tourner d'abord */
       setTimeout(() => {
         void (async () => {
           try {
+            /* v13.4.119 : diagnostic complet RUNTIME avant init */
+            const diag = await apexCloudflareVaultDeploy.runDiagnostic();
+            const { toast } = await import('../ui/toast.js');
+
+            if (!diag.token_present) {
+              /* Pas critique au boot : juste log debug, Kevin colle quand veut */
+              logger.debug('cf-vault-deploy', 'Token Cloudflare absent du vault — skip');
+              return;
+            }
+
+            if (!diag.token_valid) {
+              toast.error(`❌ Cloudflare API token INVALIDE (HTTP ${diag.http_status ?? '?'}). ${diag.error_reason ?? ''} Recharge token : ${diag.fix_url ?? 'dash.cloudflare.com'}`, { duration: 15000 });
+              return;
+            }
+
+            if (!diag.kv_permission) {
+              toast.warn(`⚠️ Cloudflare token valide MAIS manque permission "Workers KV Storage:Edit". Edit token + ajoute ce scope. ${diag.fix_url ?? ''}`, { duration: 15000 });
+              return;
+            }
+
+            /* Diagnostic OK : init + push */
             const init = await apexCloudflareVaultDeploy.initInfra();
             if (init.ok) {
-              logger.info('cf-vault-deploy', `✅ Cloudflare KV init OK : account=${init.account_id} namespace=${init.namespace_id}`);
-              /* Auto-push backup si vault non-vide */
+              logger.info('cf-vault-deploy', `✅ Cloudflare KV init OK : account=${init.account_id} (${diag.account_name ?? '?'}) namespace=${init.namespace_id}`);
               const push = await apexCloudflareVaultDeploy.pushBackup();
               if (push.ok) {
-                const { toast } = await import('../ui/toast.js');
-                toast.success(`☁️ Backup Cloudflare KV : ${push.bytes ?? 0} bytes pushés`, { duration: 6000 });
+                toast.success(`☁️ Backup Cloudflare KV OK : ${push.bytes ?? 0} bytes vault chiffré → account ${diag.account_name ?? diag.account_id}`, { duration: 6000 });
+              } else {
+                toast.warn(`⚠️ Backup Cloudflare KV push échoué : ${push.error ?? '?'}`, { duration: 8000 });
               }
             } else {
-              logger.debug('cf-vault-deploy', `init skipped : ${init.error}`);
+              toast.warn(`⚠️ Cloudflare init incomplet : ${init.error ?? '?'}`, { duration: 8000 });
             }
           } catch (err: unknown) {
             logger.warn('cf-vault-deploy', 'boot run failed (non-blocking)', { err });

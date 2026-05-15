@@ -174,6 +174,125 @@ async function hashPin(pin: string): Promise<string> {
 }
 
 /**
+ * v13.4.119 — Diagnostic complet Cloudflare API avec status precis.
+ * Permet a Kevin de savoir EXACTEMENT pourquoi backup KV bloque.
+ */
+export interface CloudflareDiagnostic {
+  token_present: boolean;
+  token_valid: boolean;
+  account_id?: string;
+  account_name?: string;
+  kv_permission: boolean;
+  workers_permission: boolean;
+  namespace_exists: boolean;
+  namespace_id?: string;
+  http_status?: number;
+  error_reason?: string;
+  fix_url?: string;
+}
+
+/**
+ * Teste reellement l'API Cloudflare en runtime et retourne diagnostic detaille.
+ * Affiche toast Kevin avec status precis + URL fix si necessaire.
+ */
+async function runDiagnostic(): Promise<CloudflareDiagnostic> {
+  const diag: CloudflareDiagnostic = {
+    token_present: false,
+    token_valid: false,
+    kv_permission: false,
+    workers_permission: false,
+    namespace_exists: false,
+  };
+
+  /* 1. Token present dans vault ? */
+  const token = await readCloudflareToken();
+  if (!token) {
+    diag.error_reason = 'Aucune cle Cloudflare dans le Coffre. Colle ax_cloudflare_token via Coffre.';
+    diag.fix_url = 'https://dash.cloudflare.com/profile/api-tokens';
+    return diag;
+  }
+  diag.token_present = true;
+
+  /* 2. Token valide ? Test /user/tokens/verify (endpoint dedie) */
+  try {
+    const verifyResp = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    diag.http_status = verifyResp.status;
+    if (verifyResp.status === 401 || verifyResp.status === 403) {
+      diag.error_reason = `Token Cloudflare invalide (HTTP ${verifyResp.status}). Genere un nouveau token.`;
+      diag.fix_url = 'https://dash.cloudflare.com/profile/api-tokens';
+      return diag;
+    }
+    if (!verifyResp.ok) {
+      diag.error_reason = `Cloudflare API erreur HTTP ${verifyResp.status}`;
+      return diag;
+    }
+    diag.token_valid = true;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    diag.error_reason = `Network error : ${msg.slice(0, 80)}`;
+    return diag;
+  }
+
+  /* 3. Account_id accessible ? */
+  const accountId = await getAccountId(token);
+  if (!accountId) {
+    diag.error_reason = 'Token valide mais aucun account_id retourne. Permissions insuffisantes.';
+    diag.fix_url = 'https://dash.cloudflare.com/profile/api-tokens';
+    return diag;
+  }
+  diag.account_id = accountId;
+
+  /* 4. Account name (cosmetic) */
+  try {
+    const acctResp = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (acctResp.ok) {
+      const data = await acctResp.json() as { result?: { name?: string } };
+      diag.account_name = data.result?.name ?? 'Unknown';
+    }
+  } catch { /* skip */ }
+
+  /* 5. KV permission ? Test list namespaces */
+  try {
+    const kvResp = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces?per_page=10`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (kvResp.ok) {
+      diag.kv_permission = true;
+      const data = await kvResp.json() as { result?: CloudflareKvNamespace[] };
+      const existing = data.result?.find((ns) => ns.title === KV_NAMESPACE_TITLE);
+      if (existing) {
+        diag.namespace_exists = true;
+        diag.namespace_id = existing.id;
+      }
+    } else if (kvResp.status === 403) {
+      diag.error_reason = `Token Cloudflare manque permission "Workers KV Storage:Edit". Edit token + ajoute scope KV.`;
+      diag.fix_url = `https://dash.cloudflare.com/${accountId}/profile/api-tokens`;
+      return diag;
+    } else {
+      diag.error_reason = `KV namespaces list HTTP ${kvResp.status}`;
+    }
+  } catch (err: unknown) {
+    diag.error_reason = `KV check failed: ${err instanceof Error ? err.message : String(err)}`.slice(0, 100);
+  }
+
+  /* 6. Workers permission ? (pour future auto-deploy Worker v13.4.119+) */
+  try {
+    const workersResp = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts?per_page=1`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    diag.workers_permission = workersResp.ok;
+  } catch { /* skip */ }
+
+  return diag;
+}
+
+/**
  * Init complet : trouve/crée account + namespace KV.
  * Retourne config pour future push/pull.
  */
@@ -276,4 +395,5 @@ export const apexCloudflareVaultDeploy = {
   pullBackup,
   readCloudflareToken,
   hashPin,
+  runDiagnostic,
 };
