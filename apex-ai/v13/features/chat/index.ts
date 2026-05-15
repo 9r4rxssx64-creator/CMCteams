@@ -2468,7 +2468,15 @@ export function render(rootEl: HTMLElement): void {
     /* Auto-detect paste v13.3.9 fix Kevin "rien ne colle" :
      * v13.0.78 utilisait e.preventDefault() dans async IIFE = trop tard,
      * cassait le paste normal. Maintenant : laisse le paste happen,
-     * détecte en background, si credential trouvé → clear async + store. */
+     * détecte en background, si credential trouvé → clear async + store.
+     *
+     * v13.4.103 (Kevin "messages dupliqués 10x dans chat") :
+     * Guard dataset.pasteWired pour ne wirer qu'UNE FOIS par textarea.
+     * Avant : chaque re-render du chat ajoutait un nouveau listener →
+     * un paste déclenchait N callbacks → N paste cards identiques.
+     * Maintenant : 1 listener max par textarea. */
+    if (textarea.dataset['pasteWired'] !== '1') {
+      textarea.dataset['pasteWired'] = '1';
     textarea.addEventListener('paste', (e) => {
       const pasted = e.clipboardData?.getData('text')?.trim() ?? '';
       if (!pasted) return;
@@ -2600,6 +2608,7 @@ export function render(rootEl: HTMLElement): void {
         } catch { /* non-bloquant */ }
       })();
     });
+    } /* v13.4.103 fermeture if (textarea.dataset['pasteWired'] !== '1') */
   }
 
   /* Mic handler : dictée vocale Web Speech API
