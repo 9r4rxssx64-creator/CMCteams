@@ -22,8 +22,8 @@ export default defineConfig({
         '**/*.test.js',
         '**/*.spec.js',
         // Phase C2 en cours : api-worker.js (2444 lignes) — actuellement
-        // 19.63% via api-worker-routing.test.js (22 tests). Sera à 100%
-        // après ajout de api-worker-{otp,conv,admin,features}.test.js.
+        // 25.9% mesuré via api-worker-routing+otp.test.js (43 tests). Sera
+        // à 100% après ajout de api-worker-{conv,admin,features}.test.js.
         // Honnêteté : on ne ment pas en disant 100% global tant que
         // api-worker n'y est pas. Coverage global = lib/ + autres workers.
         'workers/api-worker.js',
