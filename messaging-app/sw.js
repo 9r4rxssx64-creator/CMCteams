@@ -9,7 +9,7 @@
  * Sentinelle GitHub Action `sw-cache-sync.yml` rattrape automatiquement
  * le drift entre APP_VER (index.html) et CACHE_VERSION (ce fichier).
  */
-const CACHE_VERSION = 'apex-chat-v1.0.2';
+const CACHE_VERSION = 'apex-chat-v1.0.3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
@@ -75,16 +75,24 @@ self.addEventListener('install', (event) => {
   })());
 });
 
-// ===== ACTIVATE — purge anciens caches =====
+// ===== ACTIVATE — purge anciens caches (AGRESSIF) =====
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
+    // Purger TOUS les caches qui ne matchent pas la version exacte (même prefixés apex-chat)
     await Promise.all(keys.map(k => {
       if (!k.startsWith(CACHE_VERSION)) {
+        console.log('[SW] Purge ancien cache:', k);
         return caches.delete(k);
       }
     }));
+    // Force claim immédiat (page courante utilise le nouveau SW sans reload)
     await self.clients.claim();
+    // Notifier les clients que le SW est mis à jour
+    const clientList = await self.clients.matchAll({ type: 'window' });
+    for (const client of clientList) {
+      client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+    }
   })());
 });
 

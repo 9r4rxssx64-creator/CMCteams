@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08080f">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Apex Chat">
@@ -217,9 +220,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.2';
+const __APEX_CHAT_VERSION__ = 'v1.0.3';
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(reg=>{
+  navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
+    // Force update check immédiat
+    reg.update().catch(_=>{});
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       nw.addEventListener('statechange',()=>{
@@ -228,6 +233,18 @@ if('serviceWorker' in navigator){
         }
       });
     });
+    // Écoute messages du SW (notification SW_UPDATED)
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if(e.data?.type === 'SW_UPDATED'){
+        console.log('[App] SW mis à jour vers', e.data.version);
+        // Auto-reload si version SW != version app
+        if(e.data.version && !e.data.version.includes(__APEX_CHAT_VERSION__)){
+          location.reload();
+        }
+      }
+    });
+    // Vérif version périodique (toutes les 60s en background)
+    setInterval(() => reg.update().catch(_=>{}), 60000);
   }).catch(_=>{});
 }
 </script>
