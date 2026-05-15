@@ -1,4 +1,48 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.615 (2026-05-15)
+# Mémo de reprise — Apex v13.4.127 / CMC v9.618 (2026-05-15)
+
+## 🆕 SESSION 2026-05-15 23:59 — CMCteams v9.616→v9.618 (Kevin "100/100 réel partout")
+
+### v9.616 — vDeparts cell color + sentinelle + infer meta
+- **vDeparts cell color rendering** (les 2 branches de rendu cell) : lit `cmcMetaForCell` → applique `cellBg` meta prioritaire. Cell FF bleu maintenant visible dans vPlan ET vDeparts.
+- **`_cmcInferCellMetaFromCodes(key)`** : infère bg meta depuis codes parser (CP→bg=CP, RH→bg=RH, R→bg=R, AF→bg=AF, code*→bg=CDP, code'→bg=CONV, RRT/PRT→bg=RRT). Wired dans doImport avant flush. Permet rendu cell-color cohérent sans modifier 20+ call sites du parser.
+- **Sentinelle `meta-completeness-watch`** (`_agentMetaCompletenessWatch`, registry APP_AGENTS) : tourne 1×/jour, audit cohérence A.overrides_meta vs A.overrides, détecte orphans + lit score completeness persisté + stats FF/star + escalade `_cmcEscalate` si score<75 ou orphans>5.
+
+### v9.617 — Factorisation helper unique
+- **`cmcCellBgForView(year, month, eid, d)`** factorise (cmcMetaForCell + cmcCellBgFromMeta) en 1 appel. vPlan + vDeparts (les 3 sites) utilisent maintenant le helper unique. 12 lignes dupliquées remplacées par 3 lignes.
+- **4 tests régression VS10-VS13** : helper factorisé, edge cases, persistence flush, sentinelle registered.
+
+### v9.618 — Responsive iPhone SE 375px
+- Banner "🎨 Marqueurs visuels détectés" : grid `repeat(3,1fr)` → `repeat(auto-fit,minmax(100px,1fr))`. Plus de risque overflow sur iPhone SE.
+
+### Cumul session v9.613-618 (5 versions, ~24h dev)
+
+| Version | Livraison principale |
+|---|---|
+| v9.613 | Scoped-wipe V1↔V2 + vImport 9→3 boutons + 5 tests SW01-SW05 |
+| v9.614 | Capture fond bleu FF + étoile ★ TOUS familles + texte rouge noms + 3 helpers + banner enrichi + 5 tests VS01-VS05 |
+| v9.615 | Toggle FF dans vEmps + sync Firebase `cmc_ov_meta` + rendu cell-color vPlan + 10 couleurs meta |
+| v9.616 | vDeparts cell-color + `_cmcInferCellMetaFromCodes` + sentinelle meta-completeness + 4 tests VS06-VS09 |
+| v9.617 | Helper `cmcCellBgForView` factorise + 4 tests VS10-VS13 |
+| v9.618 | Banner responsive auto-fit 100px (iPhone SE) |
+
+**Total** : 19 tests régression (SW01-SW05 + VS01-VS13) · 6 commits propres · ~140 KB ajoutés (parser + helpers + tests) · 1 sentinelle nouvelle · 5 helpers publics nouveaux
+
+### Audit subagent indépendant 5 axes — en cours
+
+Lancé audit subagent général-purpose pour mesurer 100/100 réel sur :
+- Sécurité (esc XSS, guards admin)
+- Performance (complexité, file size, no leaks)
+- Tests Coverage (tous chemins critiques)
+- Architecture (helpers wirés, no doublons, naming)
+- UX (banner iPhone, toggle 44px, wording)
+
+Itération suivante = fixer ce que l'audit identifie comme P0/P1.
+
+### Reste à faire si audit identifie problèmes
+
+À déterminer après retour audit. Plan : zero P0 + zero P1 + score ≥95/100 par axe.
+
+---
 
 ## 🆕 SESSION 2026-05-15 23:55 — CMCteams v9.615 META CELLS SYNC + RENDU COULEUR (Kevin "Go")
 
