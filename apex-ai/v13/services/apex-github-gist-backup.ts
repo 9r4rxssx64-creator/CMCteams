@@ -190,11 +190,26 @@ class ApexGithubGistBackup {
   /* ===================== Internals ===================== */
 
   private async readGithubToken(): Promise<string> {
-    try {
-      return await vault.readKey('ax_github_token');
-    } catch {
-      return '';
+    /* v13.4.106 — Kevin colle un PAT classic (ghp_...) qui est stocké sous
+     * ax_github_pat_classic (rename v13.4.49). Cherche dans plusieurs storageKeys :
+     * 1. ax_github_pat_classic (PAT classic ghp_...)
+     * 2. ax_github_pat_finegrained (PAT fine-grained github_pat_...)
+     * 3. ax_github_token (legacy v13.4.x avant rename)
+     * Premier qui répond plaintext > 10 chars gagne. */
+    const candidates = [
+      'ax_github_pat_classic',
+      'ax_github_pat_finegrained',
+      'ax_github_token',
+    ];
+    for (const k of candidates) {
+      try {
+        const v = await vault.readKey(k);
+        if (v && v.length > 10) return v;
+      } catch {
+        /* try next */
+      }
     }
+    return '';
   }
 
   private getCurrentUid(): string {

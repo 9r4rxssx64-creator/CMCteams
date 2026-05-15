@@ -799,7 +799,10 @@ class Vault {
      * Push backup GitHub Gist automatique en arrière-plan. Throttle 30s.
      * Garantie : à chaque ajout de clé, le Gist est mis à jour avec vault complet.
      * Au prochain reinstall, Apex retrouve toutes les clés. */
-    if (storageKey !== 'ax_github_token' || persisted.local) {
+    const isGithubKey = storageKey === 'ax_github_token'
+      || storageKey === 'ax_github_pat_classic'
+      || storageKey === 'ax_github_pat_finegrained';
+    if (!isGithubKey || persisted.local) {
       /* Skip push si on est en train de stocker le PAT GitHub lui-même
        * (sinon recursion), sauf si PAT vient d'être stocké → on peut maintenant pusher */
       void (async () => {
@@ -812,12 +815,16 @@ class Vault {
       })();
     }
 
-    /* v13.4.105 (Kevin "zero manip autonome") :
-     * Si on vient de stocker le PAT GitHub → save dans iCloud Keychain Apple
-     * via navigator.credentials.store. iOS Safari proposera "Sauvegarder dans
-     * Trousseau iCloud ?" — Kevin valide UNE FOIS, et au prochain reinstall PWA
-     * Apex restaurera silencieusement le PAT au boot. */
-    if (storageKey === 'ax_github_token' && plaintext && persisted.local) {
+    /* v13.4.105/106 (Kevin "zero manip autonome") :
+     * Si on vient de stocker un PAT GitHub (3 variants storageKey) →
+     * save dans iCloud Keychain Apple via navigator.credentials.store.
+     * iOS Safari proposera "Sauvegarder dans Trousseau iCloud ?" — Kevin valide
+     * UNE FOIS, et au prochain reinstall PWA Apex restaurera silencieusement
+     * le PAT au boot. */
+    const isGithubPatKey = storageKey === 'ax_github_token'
+      || storageKey === 'ax_github_pat_classic'
+      || storageKey === 'ax_github_pat_finegrained';
+    if (isGithubPatKey && plaintext && persisted.local) {
       void (async () => {
         try {
           const { apexIcloudKeychain } = await import('./apex-icloud-keychain.js');
