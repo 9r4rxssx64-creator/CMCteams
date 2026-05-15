@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.116">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.117">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -8,7 +8,7 @@
   <!-- v13.4.98 Anti-zoom INLINE Safari iOS — agit AVANT le bundle JS, indépendant.
        Kevin "X zoom tjs UX" : le rescue.js peut arriver tard si le SW transition.
        Cet inline garantit l'anti-zoom dès le 1er paint. -->
-  <script nonce="a2329f645e365bc53b2eb3bf6c704f6c">
+  <script nonce="68b8518a0050146f79333f0da30503b5">
     (function(){
       try {
         ['gesturestart','gesturechange','gestureend'].forEach(function(evt){
@@ -36,8 +36,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-a2329f645e365bc53b2eb3bf6c704f6c' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-a2329f645e365bc53b2eb3bf6c704f6c';
+             script-src 'self' 'nonce-68b8518a0050146f79333f0da30503b5' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-68b8518a0050146f79333f0da30503b5';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -152,14 +152,14 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="a2329f645e365bc53b2eb3bf6c704f6c" type="module" crossorigin src="./core/main-L86-OAy2.js"></script>
+  <script nonce="68b8518a0050146f79333f0da30503b5" type="module" crossorigin src="./core/main-DJG6Q3RZ.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-CLzI061R.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-B_UxJsN3.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-mBanIfM_.js">
-  <link nonce="a2329f645e365bc53b2eb3bf6c704f6c" rel="stylesheet" crossorigin href="./assets/css/main-DBQtIeVv.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-kqvCDSpN.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-Cnq3N1Rl.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-Bnm9PKww.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-D15Z0Ibq.js">
+  <link nonce="68b8518a0050146f79333f0da30503b5" rel="stylesheet" crossorigin href="./assets/css/main-DBQtIeVv.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-BhskSAJh.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-DfNbImAn.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -206,6 +206,6 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="a2329f645e365bc53b2eb3bf6c704f6c" src="./assets/js/rescue.js"></script>
+  <script nonce="68b8518a0050146f79333f0da30503b5" src="./assets/js/rescue.js"></script>
 </body>
 </html>

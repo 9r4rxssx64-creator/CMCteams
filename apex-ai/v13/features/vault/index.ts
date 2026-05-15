@@ -621,6 +621,8 @@ export function render(rootEl: HTMLElement): void {
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="ax-vault-export"
             style="padding:10px 16px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📥 Exporter (JSON)</button>
+          <button id="ax-vault-import"
+            style="padding:10px 16px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📂 Importer JSON (depuis Drive)</button>
           <button id="ax-vault-qr-backup"
             style="padding:10px 16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📦 Backup vault QR (Photos iCloud)</button>
         </div>
@@ -968,6 +970,40 @@ function attachHandlers(rootEl: HTMLElement): void {
       }
     })();
   });
+
+  /* v13.4.117 (Kevin "Go autonome sans mentir") — Import JSON depuis Drive.
+   * iOS oblige gesture user pour <input type="file"> → 1 tap Kevin minimum.
+   * Sélection fichier apex-vault-backup-*.json → decrypt + restore complet. */
+  const importBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-import');
+  if (importBtn && activeVaultScope) {
+    activeVaultScope.bind(importBtn, 'click', () => {
+      void (async () => {
+        haptic.tap();
+        try {
+          const { apexVaultImport } = await import('../../services/apex-vault-import.js');
+          const r = await apexVaultImport.promptAndImport();
+          if (r.cancelled) {
+            toast.info('Import annulé', { duration: 2000 });
+            return;
+          }
+          if (r.ok && r.restored > 0) {
+            toast.success(`🔓 ${r.restored} clés restaurées depuis JSON Drive${r.failed > 0 ? ` · ${r.failed} échouées` : ''}`, { duration: 8000 });
+            /* Refresh UI */
+            setTimeout(() => location.reload(), 1500);
+          } else if (r.decrypt_failed > 0) {
+            toast.error(`🔒 ${r.decrypt_failed} clés non déchiffrables. PIN admin différent ? Vérifie ton PIN actuel.`, { duration: 10000 });
+          } else if (r.error) {
+            toast.error(`Import échoué : ${r.error.slice(0, 80)}`, { duration: 8000 });
+          } else {
+            toast.warn('Aucune clé restaurée depuis ce JSON', { duration: 5000 });
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          toast.error(`Import erreur : ${msg.slice(0, 80)}`, { duration: 8000 });
+        }
+      })();
+    });
+  }
 
   /* Export JSON */
   const exportBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-export');
