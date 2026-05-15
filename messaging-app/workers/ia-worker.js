@@ -69,7 +69,7 @@ async function cacheSet(env, key, value, ttlSeconds = 86400) {
 //  Failover chain
 // ============================================================================
 
-async function callAnthropic(messages, systemPrompt, env, signal) {
+export async function callAnthropic(messages, systemPrompt, env, signal) {
   if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -91,7 +91,7 @@ async function callAnthropic(messages, systemPrompt, env, signal) {
   return data.content?.[0]?.text || '';
 }
 
-async function callOpenRouter(messages, systemPrompt, env, signal) {
+export async function callOpenRouter(messages, systemPrompt, env, signal) {
   if (!env.OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY missing');
   const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -113,7 +113,7 @@ async function callOpenRouter(messages, systemPrompt, env, signal) {
   return data.choices?.[0]?.message?.content || '';
 }
 
-async function callGemini(messages, systemPrompt, env, signal) {
+export async function callGemini(messages, systemPrompt, env, signal) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY missing');
   const contents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -134,7 +134,7 @@ async function callGemini(messages, systemPrompt, env, signal) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
-async function callGroq(messages, systemPrompt, env, signal) {
+export async function callGroq(messages, systemPrompt, env, signal) {
   if (!env.GROQ_API_KEY) throw new Error('GROQ_API_KEY missing');
   const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -155,7 +155,7 @@ async function callGroq(messages, systemPrompt, env, signal) {
   return data.choices?.[0]?.message?.content || '';
 }
 
-async function callOpenAI(messages, systemPrompt, env, signal) {
+export async function callOpenAI(messages, systemPrompt, env, signal) {
   if (!env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY missing');
   const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -177,7 +177,7 @@ async function callOpenAI(messages, systemPrompt, env, signal) {
 }
 
 // DeepSeek (eco - Kevin a configuré DEEPSEEK_API_KEY)
-async function callDeepSeek(messages, systemPrompt, env, signal) {
+export async function callDeepSeek(messages, systemPrompt, env, signal) {
   if (!env.DEEPSEEK_API_KEY) throw new Error('DEEPSEEK_API_KEY missing');
   const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
   const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -199,7 +199,7 @@ async function callDeepSeek(messages, systemPrompt, env, signal) {
 }
 
 // Perplexity (Kevin a configuré PERPLEXITI_API_KEY avec typo)
-async function callPerplexity(messages, systemPrompt, env, signal) {
+export async function callPerplexity(messages, systemPrompt, env, signal) {
   const key = env.PERPLEXITI_API_KEY || env.PERPLEXITY_API_KEY;
   if (!key) throw new Error('PERPLEXITI_API_KEY missing');
   const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
@@ -223,7 +223,7 @@ async function callPerplexity(messages, systemPrompt, env, signal) {
 
 // P0 FIX (audit) : failover PARALLEL race avec Promise.any et timeout 8s
 // Worst-case latency : 8s (au lieu de 150s en série)
-async function callIAFailover(messages, systemPrompt, env) {
+export async function callIAFailover(messages, systemPrompt, env) {
   const providers = [
     { name: 'anthropic', fn: callAnthropic, hasKey: !!env.ANTHROPIC_API_KEY },
     { name: 'groq', fn: callGroq, hasKey: !!env.GROQ_API_KEY },
