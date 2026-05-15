@@ -749,7 +749,25 @@ class Vault {
     } catch (err: unknown) {
       logger.debug('vault', 'setKey vault-fb-backup race finished', { err, storageKey });
     }
-    /* 5. v13.4.6 (Kevin "ne JAMAIS perdre une clé") : si AUCUNE couche n'a réussi,
+    /* 5. v13.4.124 (Kevin "passe en native iOS") :
+     * Couche Keychain App Group iOS (via Capacitor Preferences plugin) SI mode natif.
+     * Garantit survie reinstall app (Keychain persiste cross-install iOS contrairement
+     * à localStorage). Mode PWA Safari : skip silencieux, fallback existant suffit.
+     * Non-bloquant : fire-and-forget pour ne pas ralentir setKey. */
+    try {
+      const { apexIosNative } = await import('./apex-ios-native.js');
+      if (apexIosNative.isNative()) {
+        /* Stocke valeur CHIFFRÉE dans Keychain — décryptable seulement avec PIN admin */
+        void apexIosNative.secureStore(storageKey, encrypted).then((r) => {
+          if (r.ok && r.native) {
+            logger.debug('vault', `setKey ${storageKey} → Keychain App Group iOS OK`);
+          }
+        }).catch((err: unknown) => {
+          logger.debug('vault', 'Keychain push skipped', { err });
+        });
+      }
+    } catch { /* mode PWA ou plugin absent : silent skip */ }
+    /* 6. v13.4.6 (Kevin "ne JAMAIS perdre une clé") : si AUCUNE couche n'a réussi,
      * push emergency path Firebase (encrypté) en dernier recours pour ne jamais perdre. */
     if (!persisted.local && !persisted.idb && !persisted.firebase) {
       try {
