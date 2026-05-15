@@ -479,6 +479,26 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       void autoRestoreCredentials.boot();
     }),
 
+    /* v13.4.105 (Kevin "zero manip autonome") —
+       iCloud Keychain Apple : restore PAT GitHub silencieusement au boot.
+       PAT stocké via Credentials Management API → survit reinstall PWA.
+       Trigger ensuite gist-backup pull pour restore Vault complet. */
+    safeInit('icloud-keychain-restore', async () => {
+      const { apexIcloudKeychain } = await import('./apex-icloud-keychain.js');
+      if (!apexIcloudKeychain.isSupported()) {
+        logger.info('icloud-keychain', 'API non supportée sur ce navigateur (skip)');
+        return;
+      }
+      /* Différé 3s pour laisser vault unlock d'abord */
+      setTimeout(() => {
+        void apexIcloudKeychain.bootRestore().then((r) => {
+          if (r.pat_restored) {
+            logger.info('icloud-keychain', `✅ PAT restauré + ${r.vault_restored ?? 0} clés vault`);
+          }
+        });
+      }, 3000);
+    }),
+
     /* v13.4.104 (Kevin "GitHub plus secu, jamais perdre PAT") —
        Backup Vault GitHub Gist privé chiffré au boot.
        Si Coffre vide ET PAT GitHub présent → pull Gist privé → restore tout.

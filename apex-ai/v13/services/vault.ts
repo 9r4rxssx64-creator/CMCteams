@@ -811,6 +811,27 @@ class Vault {
         }
       })();
     }
+
+    /* v13.4.105 (Kevin "zero manip autonome") :
+     * Si on vient de stocker le PAT GitHub → save dans iCloud Keychain Apple
+     * via navigator.credentials.store. iOS Safari proposera "Sauvegarder dans
+     * Trousseau iCloud ?" — Kevin valide UNE FOIS, et au prochain reinstall PWA
+     * Apex restaurera silencieusement le PAT au boot. */
+    if (storageKey === 'ax_github_token' && plaintext && persisted.local) {
+      void (async () => {
+        try {
+          const { apexIcloudKeychain } = await import('./apex-icloud-keychain.js');
+          if (apexIcloudKeychain.isSupported()) {
+            const r = await apexIcloudKeychain.saveGithubPat(plaintext);
+            if (r.ok) {
+              logger.info('vault', '🔐 PAT GitHub aussi sauvegardé iCloud Keychain Apple');
+            }
+          }
+        } catch (err: unknown) {
+          logger.debug('vault', 'icloud-keychain save failed (non-bloquant)', { err });
+        }
+      })();
+    }
     return { ok: persisted.local || persisted.idb || persisted.firebase, persisted };
   }
 
