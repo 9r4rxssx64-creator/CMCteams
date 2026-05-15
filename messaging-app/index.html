@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08080f">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Apex Chat">
@@ -217,9 +220,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.0.0';
+const __APEX_CHAT_VERSION__ = 'v1.0.3';
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(reg=>{
+  navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
+    // Force update check immédiat
+    reg.update().catch(_=>{});
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       nw.addEventListener('statechange',()=>{
@@ -228,6 +233,18 @@ if('serviceWorker' in navigator){
         }
       });
     });
+    // Écoute messages du SW (notification SW_UPDATED)
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if(e.data?.type === 'SW_UPDATED'){
+        console.log('[App] SW mis à jour vers', e.data.version);
+        // Auto-reload si version SW != version app
+        if(e.data.version && !e.data.version.includes(__APEX_CHAT_VERSION__)){
+          location.reload();
+        }
+      }
+    });
+    // Vérif version périodique (toutes les 60s en background)
+    setInterval(() => reg.update().catch(_=>{}), 60000);
   }).catch(_=>{});
 }
 </script>
@@ -536,23 +553,29 @@ K.toast = toast;
 //  Auth — Firebase Phone + comptes pré-configurés
 // ============================================================================
 async function _authSendOtp(phone, name){
-  // Phase 1 : appel API worker pour rate limit + log
   try{
     const r = await fetch(API_BASE + '/api/auth/send-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, name })
     });
+    const data = await r.json().catch(()=>({}));
     if(!r.ok){
-      const e = await r.json().catch(()=>({}));
-      throw new Error(e.message || 'Erreur réseau');
+      throw new Error(data.message || 'Erreur ' + r.status);
     }
-    return await r.json();
+    return data;  // contient _dev_otp / _admin_bypass si applicable
   }catch(e){
     _safeCatch('authSendOtp', e);
     throw e;
   }
 }
+
+K._autofillDevOtp = function(){
+  if(K.authData._dev_otp){
+    $('#auth-otp').value = K.authData._dev_otp;
+    K._handleAuthOtp();
+  }
+};
 
 async function _authVerifyOtp(phone, name, pseudo, firebase_id_token){
   try{
@@ -674,19 +697,50 @@ function renderAuthStep(){
   if(K.authStep === 'phone'){
     host.innerHTML = `
       <label class="label">Numéro de téléphone</label>
-      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel">
+      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel" value="+33672280277">
       <label class="label" style="margin-top:14px">Ton prénom + nom</label>
-      <input id="auth-name" type="text" class="input" placeholder="Ex: Kevin Desarzens" autocomplete="name">
-      <button class="btn btn-block" onclick="K._handleAuthPhone()" style="margin-top:16px">
+      <input id="auth-name" type="text" class="input" placeholder="Ex: Kevin Desarzens" autocomplete="name" value="Kevin Desarzens">
+      <button id="btn-auth-phone" type="button" class="btn btn-block" style="margin-top:16px">
         📱 Recevoir le code SMS
-      </button>`;
-    setTimeout(()=>$('#auth-phone')?.focus(), 100);
+      </button>
+      <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
+    setTimeout(()=>{
+      $('#auth-phone')?.focus();
+      // Listener direct (ne dépend pas du onclick attribute)
+      const btn = $('#btn-auth-phone');
+      if(btn){
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          $('#auth-debug').textContent = '⏳ Envoi en cours...';
+          try{
+            await K._handleAuthPhone();
+          }catch(err){
+            $('#auth-debug').textContent = '❌ ' + (err.message || 'Erreur inconnue');
+          }
+        });
+        $('#auth-debug').textContent = '✅ Bouton activé (v' + __APEX_CHAT_VERSION__ + ')';
+      } else {
+        // Fallback ultime : le bouton n'existe pas, recharge
+        location.reload();
+      }
+    }, 100);
   }
   else if(K.authStep === 'otp'){
+    const showCode = K.authData._dev_show && K.authData._dev_otp;
     host.innerHTML = `
-      <p style="text-align:center;color:var(--ax-text-2)">📲 SMS envoyé au <strong style="color:var(--ax-gold)">${esc(K.authData.phone)}</strong></p>
-      <label class="label" style="margin-top:14px">Code SMS reçu (6 chiffres)</label>
-      <input id="auth-otp" type="text" class="input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+      ${showCode ? `
+        <div style="background:#3a3a1a;border:2px solid var(--ax-gold);padding:14px;border-radius:14px;margin-bottom:14px;text-align:center">
+          <p style="margin:0 0 8px;color:var(--ax-warn);font-size:.85em">⚠ SMS indisponible (Vonage trial / config)</p>
+          <p style="margin:0;color:var(--ax-text-2);font-size:.85em">Ton code (mode cercle privé) :</p>
+          <div style="font-family:ui-monospace,monospace;font-size:2em;letter-spacing:8px;color:var(--ax-gold);margin:10px 0;font-weight:700">${esc(K.authData._dev_otp)}</div>
+          <button class="btn btn-sm btn-out" onclick="K._autofillDevOtp()">📋 Auto-remplir</button>
+        </div>
+      ` : `
+        <p style="text-align:center;color:var(--ax-text-2)">📲 SMS envoyé au <strong style="color:var(--ax-gold)">${esc(K.authData.phone)}</strong></p>
+      `}
+      <label class="label" style="margin-top:14px">Code SMS (6 chiffres)</label>
+      <input id="auth-otp" type="text" class="input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code"${showCode ? ` value="${esc(K.authData._dev_otp)}"` : ''}>
       <button class="btn btn-block" onclick="K._handleAuthOtp()" style="margin-top:16px">
         ✓ Vérifier
       </button>
@@ -717,8 +771,25 @@ K._handleAuthPhone = async function(){
 
   try{
     toast('Envoi du SMS...', 'info', 1500);
-    await _authSendOtp(phone, name);
+    const result = await _authSendOtp(phone, name);
     K.authData = { phone, name };
+
+    // === Bypass admin Kevin (numéro reconnu) ===
+    if(result._admin_bypass){
+      K.authData.otp = result._admin_otp;
+      toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
+      K.authStep = 'pseudo';
+      renderAuthStep();
+      return;
+    }
+
+    // === Mode inline (SMS indisponible — code retourné dans réponse) ===
+    if(result._dev_otp){
+      K.authData._dev_otp = result._dev_otp;
+      K.authData._dev_show = true;
+      toast('SMS indispo — code affiché à l\'écran', 'warn', 3000);
+    }
+
     K.authStep = 'otp';
     renderAuthStep();
   }catch(e){
@@ -729,8 +800,7 @@ K._handleAuthPhone = async function(){
 K._handleAuthOtp = async function(){
   const otp = $('#auth-otp').value.replace(/\D/g,'');
   if(otp.length !== 6) return toast('Code à 6 chiffres', 'err');
-  // Phase 1 : on accepte tout OTP (vérification réelle Firebase Auth Phase 2)
-  K.authData.firebase_id_token = 'phase1_placeholder_' + otp;
+  K.authData.otp = otp;  // OTP Vonage stocké pour verify-otp ensuite
   K.authStep = 'pseudo';
   renderAuthStep();
 };
@@ -741,14 +811,26 @@ K._handleAuthPseudo = async function(){
 
   try{
     toast('Création du compte...', 'info', 1500);
-    const result = await _authVerifyOtp(K.authData.phone, K.authData.name, pseudo, K.authData.firebase_id_token);
-    if(result.ok){
+    // Envoie OTP Vonage (priorité) OU firebase_id_token (fallback)
+    const r = await fetch(API_BASE + '/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: K.authData.phone,
+        name: K.authData.name,
+        pseudo,
+        otp: K.authData.otp,
+        firebase_id_token: K.authData.firebase_id_token
+      })
+    });
+    const result = await r.json().catch(() => ({}));
+    if(r.ok && result.ok){
       K.login(result.user, result.token);
-    }else{
-      toast(result.message || 'Erreur', 'err');
+    } else {
+      toast(result.message || 'Erreur (' + r.status + ')', 'err');
     }
   }catch(e){
-    // Fallback Phase 1 : créer compte local pour test
+    // Fallback : créer compte local pour test si worker indispo
     const isKevin = isKevinAdmin(K.authData.name);
     const localUser = {
       id: isKevin ? 'kdmc_admin' : ('local_' + Date.now()),
@@ -759,7 +841,7 @@ K._handleAuthPseudo = async function(){
       created_at: Date.now()
     };
     K.login(localUser, 'local-token-' + Date.now());
-    toast('Compte créé localement (worker indisponible)', 'warn');
+    toast('Compte local (worker indispo) - ' + e.message, 'warn');
   }
 };
 

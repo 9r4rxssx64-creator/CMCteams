@@ -176,14 +176,61 @@ async function callOpenAI(messages, systemPrompt, env, signal) {
   return data.choices?.[0]?.message?.content || '';
 }
 
+// DeepSeek (eco - Kevin a configuré DEEPSEEK_API_KEY)
+async function callDeepSeek(messages, systemPrompt, env, signal) {
+  if (!env.DEEPSEEK_API_KEY) throw new Error('DEEPSEEK_API_KEY missing');
+  const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
+  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    signal,
+    headers: {
+      'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: fullMessages,
+      max_tokens: 1024
+    })
+  });
+  if (!response.ok) throw new Error(`DeepSeek ${response.status}`);
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+// Perplexity (Kevin a configuré PERPLEXITI_API_KEY avec typo)
+async function callPerplexity(messages, systemPrompt, env, signal) {
+  const key = env.PERPLEXITI_API_KEY || env.PERPLEXITY_API_KEY;
+  if (!key) throw new Error('PERPLEXITI_API_KEY missing');
+  const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
+  const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    signal,
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'sonar-small-online',
+      messages: fullMessages,
+      max_tokens: 1024
+    })
+  });
+  if (!response.ok) throw new Error(`Perplexity ${response.status}`);
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
 // P0 FIX (audit) : failover PARALLEL race avec Promise.any et timeout 8s
 // Worst-case latency : 8s (au lieu de 150s en série)
 async function callIAFailover(messages, systemPrompt, env) {
   const providers = [
     { name: 'anthropic', fn: callAnthropic, hasKey: !!env.ANTHROPIC_API_KEY },
-    { name: 'openrouter', fn: callOpenRouter, hasKey: !!env.OPENROUTER_API_KEY },
-    { name: 'gemini', fn: callGemini, hasKey: !!env.GEMINI_API_KEY },
     { name: 'groq', fn: callGroq, hasKey: !!env.GROQ_API_KEY },
+    { name: 'gemini', fn: callGemini, hasKey: !!env.GEMINI_API_KEY },
+    { name: 'deepseek', fn: callDeepSeek, hasKey: !!env.DEEPSEEK_API_KEY },
+    { name: 'openrouter', fn: callOpenRouter, hasKey: !!env.OPENROUTER_API_KEY },
+    { name: 'perplexity', fn: callPerplexity, hasKey: !!(env.PERPLEXITI_API_KEY || env.PERPLEXITY_API_KEY) },
     { name: 'openai', fn: callOpenAI, hasKey: !!env.OPENAI_API_KEY }
   ];
 
