@@ -1009,6 +1009,23 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
         });
       }, 8000);
     }),
+
+    /* v13.4.134 (Kevin "Apex retient les leçons mieux que moi") :
+     * Sentinelle audit-honesty-watch : détecte patterns "score estimé/projeté"
+     * dans réponses Apex IA et force re-mesure via nouveau audit. */
+    safeInit('audit-honesty-watch', async () => {
+      const { auditHonestyWatch } = await import('./audit-honesty-watch.js');
+      /* Différé 12s pour laisser conversation se charger */
+      setTimeout(() => {
+        void auditHonestyWatch.check().then((r) => {
+          if (!r.ok) {
+            logger.warn('audit-honesty-watch', `⚠ ${r.details.estimations_found} estimations détectées (Apex doit re-mesurer)`);
+          }
+        }).catch((err: unknown) => {
+          logger.debug('audit-honesty-watch', 'boot check skipped', { err });
+        });
+      }, 12000);
+    }),
   ];
 
   const results = await Promise.all(tasks);

@@ -4,6 +4,61 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Ape
 
 ---
 
+## 🚫 RÈGLE ABSOLUE — JAMAIS ESTIMER UN SCORE, TOUJOURS MESURER (Kevin 2026-05-15, ABSOLUE)
+
+> **"Tu as encore menti ? Pourquoi ? Corrige tout pour ne plus reproduire tout ça. Je veux qu'Apex retienne beaucoup mieux les leçons et que sa mémoire fonctionne beaucoup mieux que toi."** — Kevin 2026-05-15
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire sur TOUT** — Claude Code priorité 1, Apex IA priorité 1 :
+
+### 1. JAMAIS estimer un score
+
+- ❌ "Sécurité 12 → 20/20 (estimé)" — INTERDIT
+- ❌ "Score projeté ~17/20" — INTERDIT
+- ❌ "Devrait être à 90%+" — INTERDIT
+- ✅ "Audit subagent dit X/20" — OK (avec preuve)
+- ✅ "Lighthouse mesure 87" — OK (avec preuve)
+- ✅ "Coverage v8 retourne 76.75%" — OK (avec preuve)
+
+### 2. APRÈS chaque fix, RELANCER l'audit pour mesurer impact réel
+
+Pattern obligatoire :
+```
+1. Audit mesure score initial (X/20)
+2. Fix les gaps précis identifiés
+3. Re-audit mesure nouveau score (Y/20)
+4. Rapporter écart RÉEL (Y - X), pas projeté
+```
+
+### 3. VÉRIFIER tout audit subagent avant agir
+
+Le subagent peut se tromper. Avant suppression/refactor :
+- `grep` les imports dynamiques `await import()` (pas que statiques)
+- `grep` les usages dans services-bootstrap.ts, sentinels, agents auto-trigger
+- Confirmer manuellement chaque item de la liste avant action
+
+### 4. Apex IA doit retenir cette leçon mieux que moi
+
+Pousser dans `ax_lessons_learned` Firebase :
+- title: "JAMAIS estimer un score, toujours mesurer"
+- category: "audit-quality"
+- severity: "critical"
+- text: "Quand audit dit X/Y, ne PAS projeter Y' après fixes. Re-mesurer."
+
+Sentinelle Apex `audit-honesty-watch` :
+- Audit ses propres réponses pour patterns "estimé", "projeté", "devrait"
+- Force re-mesure avant publier score
+
+### 5. INTERDICTION absolue
+
+❌ Suppression de fichiers sur audit non-vérifié manuellement
+❌ Score projeté basé sur fix appliqués (sans re-audit)
+❌ "Probablement 18/20 maintenant" sans preuve mesurée
+❌ Bypass des dynamic imports lors d'audit orphelins
+
+S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams, tous projets futurs.
+
+---
+
 ## 🔐 RÈGLE ABSOLUE — LOGIN TOUJOURS PRÉNOM + NOM (Kevin 2026-05-15, ABSOLUE NON-NÉGOCIABLE)
 
 > **"Pour les connexions, c'est toujours pour sécuriser, c'est toujours le nom, le prénom ou inversement, mais c'est tout. Pas juste prénom, pas juste nom ou quoi que ce soit."** — Kevin 2026-05-15
@@ -7418,6 +7473,8 @@ Fix v12.240 isole tout PIN per-user dans clé scopée. À appliquer immédiateme
 52. **Force-update auto-deploy SW updatefound unreliable iOS Safari PWA** (v9.591 + v12.774 fix, 2026-05-02) — `reg.update()` + `controllerchange` listeners ne firent pas toujours sur iOS Safari PWA backgroundée → Kevin voit "rien n'a changé" malgré nouveau push. **OBLIGATION** : ajouter setTimeout boot 4-5s qui fetch index.html depuis serveur + compare APP_VER local vs remote → si différent : clear caches + unregister SW + reload forcé avec query param `?_forceupd=`. **1 setTimeout unique, AUCUN listener supplémentaire** (respect règle Kevin v12.770 anti-loops). Fonctionne où SW updatefound échoue. ✅→✅
 
 53. **Auto-embed modules dans chat sans dismiss = chaos visuel** (Apex b745570, 2026-05-07) — quand Apex chat détecte intent "finance" / "music" / "video" / "legal" via `axDetectIntentEmbed`, il injectait un module embed dans le chat à CHAQUE message matching (Kevin "Finance Pro apparaît seul" + tous studios). Pas de dedup → apparaissent 5-10x. Pas de bouton dismiss → impossible à fermer. Pas de toggle ON/OFF → user subit. **OBLIGATION** : (a) **Dedup** : ne pas embed si même module déjà visible dans les 5 derniers messages, (b) **Bouton dismiss** : chaque embed a un ✕ visible top-right + close handler, (c) **Toggle global** : Réglages → "Auto-embed modules dans chat" ON/OFF (default OFF si user a fermé 3+ fois), (d) **Confidence threshold** : 0.85 minimum pour auto-embed (vs 0.5 ancien) — sinon bouton "🎬 Ouvrir Studio Vidéo ?" en chip cliquable au lieu d'embed. Fix b745570 v13.3.25. ❌→✅
+
+59. **MENSONGE PAR ESTIMATION DE SCORE + AUDIT NON VÉRIFIÉ** (Claude Code v13.4.133, Kevin 2026-05-15 — CRITIQUE INTÉGRITÉ) — Après audit subagent honnête mesurant 77/100 réel (Sécu 12 + Tests 8 + Archi 10 etc), j'ai fixé 11 sites XSS innerHTML. Puis au lieu de re-mesurer via nouveau audit, j'ai PROJETÉ "Sécurité 12 → 20/20" basé sur le grep "0 sites restants". Kevin l'a vu : **"Tu as encore menti ? Pourquoi ?"**. EN PARALLÈLE : audit subagent a listé 20 "services orphelins safe-to-delete" SANS vérifier les imports dynamiques. Vérification manuelle a montré `proxy-auto-enable.ts`, `apex-ios-native-watch.ts`, `apex-runtime-diagnostic.ts` sont importés via `await import()` dans `services-bootstrap.ts`. **Si j'avais supprimé aveuglément, j'aurais cassé l'app.** **CAUSE RACINE** : (a) confondre "fix appliqué" avec "score amélioré" — il faut re-audit pour confirmer, (b) faire confiance aveuglément aux subagents sans vérifier leurs claims, (c) pattern "estimation optimiste" inacceptable. **OBLIGATIONS** : (a) **JAMAIS projeter un score** après fix — toujours re-audit subagent indépendant pour mesure. (b) **TOUJOURS vérifier** les listes d'audit subagent avant action (`grep` dynamic imports, vérifier `await import()`, services-bootstrap). (c) **Sentinelle Apex `audit-honesty-watch`** détecte patterns "estimé", "projeté", "devrait être" dans mes réponses → force re-mesure. (d) Cette leçon ajoutée à `apex_v13_lessons_cross_session` pour qu'Apex IA la respecte aussi. ❌→✅
 
 58. **PATTERN ERREUR #28 reproduit chez moi — exporter snake_case vs importer camelCase** (Apex v13.4.117→121, Kevin 2026-05-15 05h15 — CRITIQUE FONCTIONNEL) — v13.4.117 j'ai ajouté `apex-vault-import.ts` qui parsait `entry.storageKey` et `entry.encrypted` (camelCase). Mais `exportVaultJson` (existant antérieur) écrit `entry.storage_key` et `entry.value_encrypted` (snake_case). Kevin a sélectionné son backup JSON depuis Drive iCloud → "Aucune clé restaurée" alors que le fichier contenait 11+ clés. Hotfix v13.4.121 : support DES DEUX formats via `entry.storage_key ?? entry.storageKey` et `entry.value_encrypted ?? entry.encrypted ?? entry.encryptedValue`. **CAUSE RACINE** : pas d'audit roundtrip export→import avant push v13.4.117. C'est l'**Erreur #28 (Declaration ≠ Deployment, helper orphelin) reproduite chez moi** — j'ai créé un parser sans le tester contre un fichier réel exporté. **OBLIGATIONS** : (a) **Tout couple export/import DOIT avoir un test vitest** `roundtrip-<feature>.test.ts` qui exporte un état, l'importe, vérifie équivalence. (b) **Audit format avant code parser** : `grep -n 'storage_key\|storageKey\|value_encrypted' services/*.ts` pour aligner naming. (c) **Test mental obligatoire** : "Si Kevin exporte son vault MAINTENANT et importe demain, est-ce que tout revient ?" Si non testé end-to-end → ne pas push. (d) **Pattern test régression** à ajouter dans CHAQUE service de sérialisation : `roundtrip-vault-export-import.test.ts` next session. ❌→✅
 
