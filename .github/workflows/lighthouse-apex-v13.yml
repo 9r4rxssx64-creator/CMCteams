@@ -5,6 +5,14 @@ name: 'Lighthouse CI Apex v13'
 # Job : build + serve preview + lighthouse autorun + assert seuils config.
 
 on:
+  # v13.4.126 (Kevin "qualité pro App Store-ready") :
+  # Ajout pull_request → Lighthouse bloque merge si score < seuils config.
+  # Avant : seulement push main (détecte trop tard).
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apex-ai/v13/**'
+      - '.github/workflows/lighthouse-apex-v13.yml'
   push:
     branches: [main]
     paths:

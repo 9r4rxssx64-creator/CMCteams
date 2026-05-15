@@ -138,6 +138,12 @@ function show(): void {
   };
   updateFn();
   intervalId = window.setInterval(updateFn, 500);
+  /* v13.4.126 (Kevin "qualité pro" audit P1) : wire lifecycle pour cleanup
+   * global au logout/reload (au cas où hide() oublié). */
+  const intervalIdForLifecycle = intervalId;
+  void import('./service-lifecycle.js').then(({ lifecycle }) => {
+    lifecycle.trackInterval('zoom-inspector', intervalIdForLifecycle as unknown as ReturnType<typeof setInterval>);
+  }).catch(() => { /* skip si service absent */ });
   logger.info('zoom-inspector', '🔍 Panel live affiché');
 }
 
