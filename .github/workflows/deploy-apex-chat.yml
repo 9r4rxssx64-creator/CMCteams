@@ -135,31 +135,46 @@ jobs:
           echo "$APEX_CHAT_ADMIN_TOKEN" | wrangler secret put APEX_CHAT_ADMIN_TOKEN
           echo "$APEX_HANDOFF_TOKEN" | wrangler secret put APEX_HANDOFF_TOKEN
 
-          # Secrets tiers (depuis GitHub Secrets si configurés, sinon skip)
-          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
-            echo "${{ secrets.ANTHROPIC_API_KEY }}" | wrangler secret put ANTHROPIC_API_KEY
-            echo "::notice::ANTHROPIC_API_KEY configurée"
-          fi
-          if [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
-            echo "${{ secrets.OPENROUTER_API_KEY }}" | wrangler secret put OPENROUTER_API_KEY
-          fi
-          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then
-            echo "${{ secrets.GEMINI_API_KEY }}" | wrangler secret put GEMINI_API_KEY
-          fi
-          if [ -n "${{ secrets.GROQ_API_KEY }}" ]; then
-            echo "${{ secrets.GROQ_API_KEY }}" | wrangler secret put GROQ_API_KEY
-          fi
-          if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then
-            echo "${{ secrets.OPENAI_API_KEY }}" | wrangler secret put OPENAI_API_KEY
-          fi
-          if [ -n "${{ secrets.VONAGE_API_KEY }}" ]; then
-            echo "${{ secrets.VONAGE_API_KEY }}" | wrangler secret put VONAGE_API_KEY
-            echo "${{ secrets.VONAGE_API_SECRET }}" | wrangler secret put VONAGE_API_SECRET
-          fi
-          if [ -n "${{ secrets.VAPID_PRIVATE_KEY }}" ]; then
-            echo "${{ secrets.VAPID_PRIVATE_KEY }}" | wrangler secret put VAPID_PRIVATE_KEY
-          fi
-          echo "::notice::Secrets configurés"
+          # Helper : push secret seulement si valeur définie
+          push_if_set() {
+            local name=$1
+            local value=$2
+            if [ -n "$value" ]; then
+              echo "$value" | wrangler secret put "$name"
+              echo "::notice::✓ $name configuré"
+            fi
+          }
+
+          # === IA (4 providers actifs côté Kevin) ===
+          push_if_set "ANTHROPIC_API_KEY" "${{ secrets.ANTHROPIC_API_KEY }}"
+          push_if_set "GROQ_API_KEY" "${{ secrets.GROQ_API_KEY }}"
+          push_if_set "GEMINI_API_KEY" "${{ secrets.GEMINI_API_KEY }}"
+          push_if_set "DEEPSEEK_API_KEY" "${{ secrets.DEEPSEEK_API_KEY }}"
+
+          # === IA failover (optionnels) ===
+          push_if_set "OPENROUTER_API_KEY" "${{ secrets.OPENROUTER_API_KEY }}"
+          push_if_set "OPENAI_API_KEY" "${{ secrets.OPENAI_API_KEY }}"
+          push_if_set "PERPLEXITI_API_KEY" "${{ secrets.PERPLEXITI_API_KEY }}"
+
+          # === SMS Vonage ===
+          push_if_set "VONAGE_API_KEY" "${{ secrets.VONAGE_API_KEY }}"
+          push_if_set "VONAGE_API_SECRET" "${{ secrets.VONAGE_API_SECRET }}"
+
+          # === Web Push VAPID ===
+          push_if_set "VAPID_PRIVATE_KEY" "${{ secrets.VAPID_PRIVATE_KEY }}"
+
+          # === Communications ===
+          push_if_set "TELEGRAM_API_KEY" "${{ secrets.TELEGRAM_API_KEY }}"
+          push_if_set "EMAILJS_PRIVATE_KEY" "${{ secrets.EMAILJS_PRIVATE_KEY }}"
+
+          # === Recherche & vector DB ===
+          push_if_set "TAVILY_API_KEY" "${{ secrets.TAVILY_API_KEY }}"
+          push_if_set "PINECONE_API_KEY" "${{ secrets.PINECONE_API_KEY }}"
+
+          # === Auth/Infra ===
+          push_if_set "FIREBASE_API_KEY" "${{ secrets.FIREBASE_API_KEY }}"
+
+          echo "::notice::Secrets configurés (skip silencieux si vide)"
 
       - name: Deploy api-worker
         working-directory: messaging-app/workers
