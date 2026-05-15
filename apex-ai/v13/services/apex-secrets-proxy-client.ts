@@ -19,7 +19,7 @@
 
 import { logger } from '../core/logger.js';
 
-const DEFAULT_WORKER_URL = 'https://apex-secrets-proxy.workers.dev';
+const DEFAULT_WORKER_URL = 'https://apex-secrets-proxy.desarzens-kevin.workers.dev';
 const PROXY_URL_STORAGE_KEY = 'apex_v13_secrets_proxy_url';
 
 /* Providers disponibles via le proxy (synced avec wrangler.toml secrets) */
