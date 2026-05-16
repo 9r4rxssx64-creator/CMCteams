@@ -28,7 +28,9 @@ describe('iosSimulator — previewURL', () => {
   });
 
   it('refuse URL javascript:', () => {
-    expect(() => iosSimulator.previewURL('javascript:alert(1)')).toThrow(/URL/);
+    /* eslint-disable-next-line no-script-url -- test du blocage scheme dangereux */
+    const dangerousUrl = 'javascript:alert(1)';
+    expect(() => iosSimulator.previewURL(dangerousUrl)).toThrow(/URL/);
   });
 
   it('refuse URL vide', () => {

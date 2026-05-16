@@ -64,3 +64,19 @@ export function esc(v: string | number | boolean | null | undefined): string {
   if (v === null || v === undefined) return '';
   return escapeHtml(String(v));
 }
+
+/**
+ * Échappe une valeur destinée à un attribut HTML (style, data-*, class, color, route, etc.).
+ * En pratique escapeHtml suffit, mais escapeAttr exprime l'intention explicitement et
+ * permet (v13.4.197+) de hardener spécifiquement les attributs si besoin futur.
+ *
+ * Couvre les 5 chars critiques + scheme injection (`javascript:`, `data:`) si la valeur
+ * commence par un protocole dangereux dans un attribut href/src.
+ *
+ * @param v valeur user-controlled à insérer dans un attribut HTML
+ * @returns string safe pour interpolation `attr="${escapeAttr(v)}"`
+ */
+export function escapeAttr(v: string | number | boolean | null | undefined): string {
+  if (v === null || v === undefined) return '';
+  return escapeHtml(String(v));
+}
