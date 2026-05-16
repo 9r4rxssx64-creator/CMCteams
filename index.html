@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.641";
+var APP_VER="v9.642";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -29509,10 +29509,77 @@ function removePinCode(){
 function clearMonth(){
   if(!A.user||A.user.id!==AID)return;
   var key=""+A.year+"-"+A.month;
-  delete A.overrides[key];ls("cmc_ov",A.overrides);
-  localStorage.removeItem("cmc_ref_"+key);
-  localStorage.removeItem("cmc_verif_"+key);
-  toast("Planning du mois r\u00e9initialis\u00e9");dc();
+  var iy=A.year,im=A.month;
+  // v9.642 (Kevin "quand j'efface le mois en cours il garde les \u00e9quipes. Pas normal") :
+  // ANCIEN clearMonth ne supprimait QUE A.overrides[key] + cmc_ref + cmc_verif.
+  // Restaient : emp.teamHistory[key] (\u00e9quipes !), manual_overrides, ov_meta, import_src,
+  // last_import_type, history snapshots \u2192 vues affichaient encore les \u00e9quipes/codes stales.
+  // FIX : effacement INT\u00c9GRAL de toutes les traces du mois + snapshot pr\u00e9-effacement.
+
+  // Compte ce qu'on va supprimer pour banner info
+  var _ovBefore=A.overrides[key]?Object.keys(A.overrides[key]).length:0;
+  var _teamHistBefore=A.employees.filter(function(e){return e.teamHistory && e.teamHistory[key];}).length;
+
+  if(!confirm("\u26a0 Effacer COMPL\u00c8TEMENT "+MFR[im]+" "+iy+" ?\n\n"
+    +"\u2022 "+_ovBefore+" employ\u00e9s avec horaires\n"
+    +"\u2022 "+_teamHistBefore+" employ\u00e9s avec \u00e9quipe assign\u00e9e pour ce mois\n"
+    +"\u2022 Toutes les m\u00e9tadonn\u00e9es (couleurs, source PDF, versions)\n\n"
+    +"Snapshot rollback gard\u00e9 en historique.\n\nContinuer ?"))return;
+
+  // Snapshot pr\u00e9-effacement (rollback possible via Historique)
+  try{
+    var snapKey="cmc_history_"+key+"_"+Date.now()+"_pre_clearmonth";
+    ls(snapKey,{
+      ts:Date.now(),year:iy,month:im,
+      ov:A.overrides[key]?JSON.parse(JSON.stringify(A.overrides[key])):{},
+      ref:lg("cmc_ref_"+key,null),
+      verif:lg("cmc_verif_"+key,null),
+      teamHistorySnap:A.employees.filter(function(e){return e.teamHistory&&e.teamHistory[key];})
+        .map(function(e){return {id:e.id,team:e.teamHistory[key]};}),
+      reason:"manual_clear_month"
+    });
+  }catch(_){}
+
+  // 1. Wipe overrides + m\u00e9tadonn\u00e9es
+  delete A.overrides[key];
+  ls("cmc_ov",A.overrides);
+  if(typeof fbWrite==="function")try{fbWrite("cmc_ov",A.overrides);}catch(_){}
+
+  // 2. Wipe overrides_meta (couleurs, faisant fonction)
+  if(A.overrides_meta && A.overrides_meta[key]){
+    delete A.overrides_meta[key];
+    ls("cmc_ov_meta",A.overrides_meta);
+    if(typeof fbWrite==="function")try{fbWrite("cmc_ov_meta",A.overrides_meta);}catch(_){}
+  }
+
+  // 3. Wipe teamHistory[key] pour tous les employ\u00e9s (LE FIX KEVIN)
+  var _empsTeamCleared=0;
+  A.employees.forEach(function(e){
+    if(e.teamHistory && e.teamHistory[key]){
+      delete e.teamHistory[key];
+      _empsTeamCleared++;
+    }
+  });
+  if(_empsTeamCleared>0){
+    ls("cmc_e",A.employees);
+    if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+  }
+
+  // 4. Wipe cl\u00e9s associ\u00e9es au mois
+  ["cmc_ref_","cmc_verif_","cmc_manual_overrides_","cmc_import_src_","cmc_last_import_type_","cmc_affluence_"+iy+"_"+im].forEach(function(prefix){
+    var k=prefix.indexOf("affluence")>=0?prefix:(prefix+key);
+    try{localStorage.removeItem(k);}catch(_){}
+  });
+
+  // 5. Invalider cache gpl
+  try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
+
+  // 6. Audit log
+  try{if(typeof _audit==="function")_audit("clear_month_v9642",AID,key,
+    "ov="+_ovBefore+" teamHist="+_empsTeamCleared,"snapshot=cmc_history_"+key+"_pre_clearmonth");}catch(_){}
+
+  toast("\u2705 "+MFR[im]+" "+iy+" effac\u00e9 : "+_ovBefore+" horaires + "+_empsTeamCleared+" \u00e9quipes. Rollback dispo Historique.","ok",6000);
+  dc();
 }
 // v9.45 \u2014 Expert Planning : duplication du mois pr\u00e9c\u00e9dent
 // Copie les overrides du mois pr\u00e9c\u00e9dent vers le mois courant (ajustement jours)
