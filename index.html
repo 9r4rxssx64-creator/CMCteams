@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.644";
+var APP_VER="v9.645";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -25433,7 +25433,48 @@ function _cmcScopedWipe(key, scope){
     try{ls("cmc_e",A.employees);}catch(_){}
     if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
   }
-  try{if(typeof _audit==="function")_audit("scoped_wipe",AID,key,scope,"wiped:"+res.wipedEmps+"emps/"+res.wipedCells+"cells/"+res.wipedTeamHist+"teamHist preserved:"+res.preservedEmps+"emps/"+res.preservedCells+"cells");}catch(_){}
+  // v9.645 (Kevin "automatique toujours") — wipe AUSSI per-emp dans :
+  //  1. A.overrides_meta[key][eid] (couleurs CDP/AF/CONV, faisant fonction)
+  //  2. cmc_manual_overrides_<key>[eid] (édits manuels Kevin sur cell)
+  // Sinon ces traces survivent au scoped wipe et ré-apparaissent post-import.
+  res.wipedMeta=0; res.wipedManual=0;
+  // Wipe overrides_meta per-emp (in-scope only)
+  if(A.overrides_meta && A.overrides_meta[key]){
+    Object.keys(A.overrides_meta[key]).forEach(function(eid){
+      var emp=A.employees.find(function(e){return e.id===eid;});
+      var isCadre=emp&&((emp.family||"")==="cadres");
+      var inScope=false;
+      if(scope==="complete")inScope=true;
+      else if(scope==="cadres"&&isCadre)inScope=true;
+      else if(scope==="employees"&&!isCadre&&emp)inScope=true;
+      if(inScope){delete A.overrides_meta[key][eid];res.wipedMeta++;}
+    });
+    if(res.wipedMeta>0){
+      try{ls("cmc_ov_meta",A.overrides_meta);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_ov_meta",A.overrides_meta);}catch(_){}
+    }
+  }
+  // Wipe manual_overrides per-emp (in-scope only)
+  try{
+    var _mo=lg("cmc_manual_overrides_"+key,null);
+    if(_mo && typeof _mo==="object"){
+      var _moChanged=false;
+      Object.keys(_mo).forEach(function(eid){
+        var emp=A.employees.find(function(e){return e.id===eid;});
+        var isCadre=emp&&((emp.family||"")==="cadres");
+        var inScope=false;
+        if(scope==="complete")inScope=true;
+        else if(scope==="cadres"&&isCadre)inScope=true;
+        else if(scope==="employees"&&!isCadre&&emp)inScope=true;
+        if(inScope){delete _mo[eid];res.wipedManual++;_moChanged=true;}
+      });
+      if(_moChanged){
+        if(Object.keys(_mo).length===0)try{localStorage.removeItem("cmc_manual_overrides_"+key);}catch(_){}
+        else ls("cmc_manual_overrides_"+key,_mo);
+      }
+    }
+  }catch(_moErr){}
+  try{if(typeof _audit==="function")_audit("scoped_wipe",AID,key,scope,"wiped:"+res.wipedEmps+"emps/"+res.wipedCells+"cells/"+res.wipedTeamHist+"teamHist/"+res.wipedMeta+"meta/"+res.wipedManual+"manual preserved:"+res.preservedEmps+"emps/"+res.preservedCells+"cells");}catch(_){}
   return res;
 }
 
