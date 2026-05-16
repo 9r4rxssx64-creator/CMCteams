@@ -39,6 +39,60 @@ Le PDF SBM utilise 2 conventions pour délimiter les équipes :
 - Détection miroir = paires (A,B) avec même family + même taille + offset RH constant
 - Stocké : `emp.teamHistory[key] = teamId` + `cmc_team_mirror_<key> = {teamId: mirrorId}`
 
+### Vérité terrain Pit Boss mai 2026 V2 (Kevin 2026-05-16)
+
+**Naming SBM** :
+- "Mai V2" = naming utilisé sur planning des **chefs et employés** (V1 = 1er PDF mois, V2 = mise à jour)
+- "Mai" tout court = naming utilisé pour le planning **Pit Boss/Superviseurs** (pas de versionning V1/V2 distinct pour cadres)
+
+**Évolution organisationnelle (importante)** :
+- Plus d'inspecteurs SBM en mai 2026 → tous **promus Pit Boss**
+- Effectif : 16 Pit Boss + 5 Superviseurs
+
+**Ordre des Pit Boss dans le planning (premier jour)** :
+JANEL JM, GARELLI C, PETIT J, HERVÉ A, LANDAU J, PELAZZA F, CORNUTELLO A, DI COLANGELO F, CAMPI H, EMMERICH JC, LONG JP, ENZA C, JONIAUX S, BOUVIER JF (+ ETTORI M, FOUQUE V, PLACENTI L, DOGLIOLO Y, MUS L = Superviseurs)
+
+**Code horaire `PK`** = Poker Cash Game (rotation Pit Boss au PK)
+
+**Statuts mai Pit Boss** :
+- 🤒 ROSPOCHER G = M (maladie) **tout le mois** (codes "M M M M M M..." 31 jours)
+- 🏖️ PENNACINO JP = CP partiel (jours 1-20 CP, ensuite codes normaux 21-31)
+
+**Pas d'équipes structurées** :
+Contrairement aux V1 chefs/employés, les Pit Boss n'ont pas d'équipes (A/B/C + miroirs). Ils sont individuellement assignés selon leur position dans la rotation (offset 1-14 dans le cycle).
+Algo : ne pas chercher équipes Pit Boss via pattern RH, juste les laisser avec emp.team = "pit15" ou "sup".
+
+### ⚠ Attention HOMONYMES
+
+Des employés ont le même nom de famille mais des prénoms différents. Ne JAMAIS confondre :
+- BORGIA T vs BORGIA L
+- LANDAU B (chef BJ) vs LANDAU J (Pit Boss)
+- DESSI P vs DESSI F
+- ELIODORI V vs ELIODORI J
+- SEGGIARO G vs SEGGIARO J
+- ENZA B (chef BJ) vs ENZA C (Pit Boss)
+- BARILARO A vs BARILARO H
+- ESPAGNOL S (chef BJ) vs ESPAGNOL P (Employé) vs ESPAGNOL A (Employé)
+- CAPRA C vs CAMPI PH vs CAMPI H (Pit Boss)
+- BERNARDI JE (chef roulette) vs BERNARDI J (Employé CMC)
+- BERNARD J (Employé) vs BERNARDI J/JE (différents)
+- ESPAGNOL S vs ESPAGNOL P vs ESPAGNOL A
+- MARTINI M (Employé CP) vs MARTIRE M (EDC)
+- LAVAGNA J (chef FORMATION) vs LAVAGNA Y (Employé) vs LAVAGNA E (Employé)
+- LANTERI E (employé) vs LANTERI T (employé) vs LANTERI MINET P (Roulette équipe 2)
+- DELLA PINA L vs DELLA PINA M
+- CATALA P (Employé M) vs CATALA T (Employé CMC)
+- ELENA C (Employé EDC) vs ELENA A (Employé)
+- MORANA A (Employé CMC) vs ?
+- BRASSEUR F (chef BJ) vs BRASSEUR Fr (Employé)
+- BORGIA T (Employé CP) vs BORGIA L (Employé)
+- MATTERA M (Employé CP/Formation) vs ?
+- INZIRILLO R (Employé CP/Formation) vs ?
+- CAPIOMONT K (Employé CP/Formation) vs ?
+
+**Règle parser** : bien vérifier l'initiale après le nom (ex `BORGIA T` ≠ `BORGIA L`). Fuzzy match interdit sans vérification d'initiale.
+Voir `cmc_known_identities` (v9.220) pour la liste cumulative.
+
 ### Vérité terrain V1 mai 2026 (Kevin 2026-05-16) — équipes Roulettes confirmées
 
 Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
