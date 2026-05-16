@@ -4900,7 +4900,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.656";
+var APP_VER="v9.657";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -41686,24 +41686,29 @@ document.addEventListener('input',function(){try{localStorage.setItem('cmc_last_
 document.addEventListener('click',function(){try{localStorage.setItem('cmc_last_interaction',String(Date.now()));}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-perform-update",_e);}catch(__){}}},true);
 try{var _cmcPreView=localStorage.getItem('cmc_pre_reload_view');var _cmcPreTs=+localStorage.getItem('cmc_pre_reload_ts')||0;if(_cmcPreView&&Date.now()-_cmcPreTs<120000&&typeof A!=='undefined'){A.view=_cmcPreView;localStorage.removeItem('cmc_pre_reload_view');localStorage.removeItem('cmc_pre_reload_ts');}}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-perform-update",_e);}catch(__){}}
 
-// v9.591 (Kevin "pourquoi MAJ auto ne se fait pas en autonomie ?") — boot check force :
+// v9.591 + v9.657 (Kevin "MAJ auto forcé toujours") — boot check force agressif :
 // au load, fetch index.html du serveur et compare APP_VER. Si different -> reload force.
-// Ne depend pas du SW updatefound qui est unreliable sur iOS Safari PWA.
+// v9.657 améliorations :
+//  - Boot delay 4s → 1.5s (plus rapide)
+//  - Visibility cooldown 5min → 60s (plus réactif)
+//  - Polling périodique 90s en continu (plus seulement au boot/visibility)
+//  - Check aussi au "focus" event (au cas où visibilitychange n'arrive pas iOS)
+//  - Pas dépend SW updatefound (unreliable iOS Safari PWA — Erreur #52)
 (function _cmcBootForceUpdateCheck(){
   try{
     if(window._cmcBootUpdateChecked)return;
     window._cmcBootUpdateChecked=true;
-    if(!navigator.onLine)return;
-    setTimeout(function(){
+
+    function _cmcCheckRemoteVersion(reason){
+      if(!navigator.onLine)return;
       try{
         var url=location.pathname.replace(/[^/]*$/,"")+"index.html?_v="+Date.now();
         fetch(url,{cache:"no-store"}).then(function(r){return r.text();}).then(function(html){
-          // Extraire APP_VER de la page distante
           var m=(html||"").match(/var\s+APP_VER\s*=\s*"([^"]+)"/);
           if(!m)return;
           var remoteVer=m[1];
           if(typeof APP_VER!=="undefined"&&remoteVer&&remoteVer!==APP_VER){
-            console.info("[v9.591 force-update] local="+APP_VER+" remote="+remoteVer+" -> reload");
+            console.info("[v9.657 force-update "+reason+"] local="+APP_VER+" remote="+remoteVer+" -> reload");
             try{
               if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}
               if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}
@@ -41712,25 +41717,37 @@ try{var _cmcPreView=localStorage.getItem('cmc_pre_reload_view');var _cmcPreTs=+l
           }
         }).catch(function(){});
       }catch(_){}
-    },4000); // 4s apres boot pour ne pas concurrencer init
-    // Re-check quand l'app revient au premier plan
+    }
+
+    // 1. Check au boot (1.5s après load — laisse init basique finir)
+    setTimeout(function(){_cmcCheckRemoteVersion("boot");},1500);
+
+    // 2. Polling périodique toutes 90s (Kevin "MAJ auto forcé toujours")
+    setInterval(function(){
+      if(document.hidden)return; // skip si app en background
+      var lastCheck=+lg("cmc_last_force_update_check",0);
+      if(Date.now()-lastCheck<60000)return; // 60s cooldown anti-spam
+      ls("cmc_last_force_update_check",Date.now());
+      _cmcCheckRemoteVersion("interval90s");
+    },90000);
+
+    // 3. Re-check à chaque visibilitychange (app revient au premier plan)
     document.addEventListener("visibilitychange",function(){
       if(!document.hidden&&navigator.onLine){
         var lastCheck=+lg("cmc_last_force_update_check",0);
-        if(Date.now()-lastCheck<300000)return; // 5min cooldown
+        if(Date.now()-lastCheck<60000)return; // v9.657 : 5min → 60s
         ls("cmc_last_force_update_check",Date.now());
-        try{
-          var url=location.pathname.replace(/[^/]*$/,"")+"index.html?_v="+Date.now();
-          fetch(url,{cache:"no-store"}).then(function(r){return r.text();}).then(function(html){
-            var m=(html||"").match(/var\s+APP_VER\s*=\s*"([^"]+)"/);
-            if(m&&m[1]&&typeof APP_VER!=="undefined"&&m[1]!==APP_VER){
-              console.info("[v9.591 force-update visibility] local="+APP_VER+" remote="+m[1]+" -> reload");
-              try{if("caches" in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}}catch(_){}
-              setTimeout(function(){location.href=location.pathname+"?_forceupd="+Date.now();},300);
-            }
-          }).catch(function(){});
-        }catch(_){}
+        _cmcCheckRemoteVersion("visibility");
       }
+    });
+
+    // 4. Re-check au focus event (au cas où visibilitychange ne fire pas iOS)
+    window.addEventListener("focus",function(){
+      if(!navigator.onLine)return;
+      var lastCheck=+lg("cmc_last_force_update_check",0);
+      if(Date.now()-lastCheck<60000)return;
+      ls("cmc_last_force_update_check",Date.now());
+      _cmcCheckRemoteVersion("focus");
     });
   }catch(_){}
 })();
