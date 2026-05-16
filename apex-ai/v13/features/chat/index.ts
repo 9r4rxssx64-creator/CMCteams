@@ -58,6 +58,7 @@ import {
   renderSlashAutocomplete,
 } from './chat-renderers.js';
 import { searchConversation, buildSearchResultMessage } from './chat-search.js';
+import { archiveSession } from './chat-sessions-history.js';
 import { saveCodeSnippet, listCodeSnippets } from './chat-snippets.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
@@ -1392,20 +1393,8 @@ function hideSlashAutocomplete(rootEl: HTMLElement): void {
  * v13.3.48 — Fork conversation (démarre une nouvelle session, garde la précédente en historique).
  */
 function forkConversation(rootEl: HTMLElement): void {
-  /* Save copy à l'historique sessions (best effort, localStorage) */
-  try {
-    const KEY = 'apex_v13_chat_sessions';
-    const raw = localStorage.getItem(KEY);
-    const sessions: { ts: number; messages: DisplayMessage[] }[] = raw
-      ? (JSON.parse(raw) as { ts: number; messages: DisplayMessage[] }[])
-      : [];
-    sessions.push({ ts: Date.now(), messages: [...conversation] });
-    /* Cap 10 sessions max */
-    while (sessions.length > 10) sessions.shift();
-    localStorage.setItem(KEY, JSON.stringify(sessions));
-  } catch {
-    /* ignore */
-  }
+  /* v13.4.175 refactor : archive load+push+save extrait dans chat-sessions-history.ts */
+  archiveSession([...conversation]);
   conversation.length = 0;
   renderMessages(rootEl);
   toast.success('🌿 Nouvelle conversation démarrée');
