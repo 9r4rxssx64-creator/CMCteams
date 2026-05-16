@@ -35,6 +35,12 @@ export default defineConfig({
       name: 'mobile-safari',
       use: { ...devices['iPhone 14 Pro'] },
     },
+    /* v13.4.196 (audit gap mobile 375px) : iPhone SE coverage
+     * pour garantir voice-overlay + chat + admin lisibles sur 375px. */
+    {
+      name: 'mobile-safari-se',
+      use: { ...devices['iPhone SE'] },
+    },
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },
