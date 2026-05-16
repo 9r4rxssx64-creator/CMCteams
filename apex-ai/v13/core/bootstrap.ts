@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.179';
+export const APP_VER = 'v13.4.180';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -248,6 +248,15 @@ async function bootstrap(): Promise<void> {
   await safeInit('version-badge', async () => {
     const { installVersionBadge } = await import('../ui/version-badge.js');
     installVersionBadge();
+  });
+
+  /* v13.4.180 (Kevin "intègre Playwright dans Apex et qu'il sache") :
+   * Apex auto-inspecte ses propres vues toutes les 30s + alerte si overflow détecté. */
+  await safeInit('layout-inspector', async () => {
+    const { apexLayoutInspector } = await import('../services/apex-layout-inspector.js');
+    apexLayoutInspector.startAutoMonitor(30_000);
+    /* Expose globally pour Apex IA tool use + console debug */
+    (window as unknown as { apexLayoutInspector?: unknown }).apexLayoutInspector = apexLayoutInspector;
   });
 
   /* 2. Feature detection */

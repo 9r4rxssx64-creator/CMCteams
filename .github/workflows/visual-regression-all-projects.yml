@@ -1,0 +1,58 @@
+name: Visual Regression — All Kevin Projects
+
+# Kevin règle 2026-05-16 : "Inspecter mes autres projets et corriger"
+# Inspecte Apex v13 + CMCteams + tools/ sur 3 viewports iPhone via Playwright.
+# Sandbox Claude Code bloque downloads browser → CI uniquement.
+
+on:
+  push:
+    branches: [main, claude/test-699LQ]
+    paths:
+      - 'apex-ai/v13/**'
+      - 'index.html'
+      - 'sw.js'
+      - 'tools/**'
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *'  # Daily 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  inspect-projects:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium webkit
+
+      - name: Run multi-project visual inspection
+        run: node ./.github/scripts/visual-inspect.mjs
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/visual-reports
+
+      - name: Upload screenshots + reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-reports-${{ github.sha }}
+          path: visual-reports/
+          retention-days: 14
+
+      - name: Fail if critical overflow detected
+        run: |
+          if [ -f visual-reports/critical_failures.txt ]; then
+            echo "❌ Critical visual issues detected:"
+            cat visual-reports/critical_failures.txt
+            exit 1
+          else
+            echo "✅ No critical visual issues"
+          fi

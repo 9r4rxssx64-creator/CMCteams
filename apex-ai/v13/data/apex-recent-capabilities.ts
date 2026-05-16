@@ -231,6 +231,14 @@ export const APEX_RECENT_CAPABILITIES: readonly Capability[] = [
     desc: 'Dashboard live mode autonome : session active avec progress bars (itérations/tokens), logs récents, queue + faites, history 10 dernières. Auto-refresh 5s. Kill switch + pause/resume + force-tick.',
     category: 'ux',
   },
+  {
+    version: 'v13.4.180',
+    name: 'Auto-inspection visuelle (Layout Inspector)',
+    service: 'apex-layout-inspector',
+    method: 'scanDom / screenshot / startAutoMonitor',
+    desc: "Apex s'auto-inspecte ! scanDom() audite le DOM courant pour overflow horizontal, boutons hors viewport, petits touch targets (<44px). screenshot() prend bitmap PNG du root via html2canvas (CDN lazy). startAutoMonitor scan toutes 30s + alerte si nouveau bug visuel. Exposé window.apexLayoutInspector pour debug + tool use IA. Kevin règle 'intègre Playwright dans Apex et qu'il sache' : Apex peut diagnostiquer ses propres problèmes UX en autonomie. Workflow CI Playwright multi-projets en complément (Apex + CMCteams + tools/).",
+    category: 'audit',
+  },
 ];
 
 /**
