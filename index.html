@@ -4871,7 +4871,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.615";
+var APP_VER="v9.616";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -30978,12 +30978,181 @@ function empAutoSaveProfil(){
 // Verifie qu'un import "ok" a vraiment applique des codes a >=50% des employes actifs.
 // Sinon : affiche alerte rouge + bouton re-tenter + telemetry escalade Apex.
 // Detecte les regressions silencieuses (ex: TypeError catch global avant fix v9.553).
+/* v9.616 (Kevin 2026-05-16 "AUCUNE erreur tolérée jamais" + NOTES_USER.md ligne 8+
+ * "RÈGLE MÉTIER FONDAMENTALE — DÉTECTION ÉQUIPES PAR JOURS REPOS") :
+ *
+ * Algo officiel V1 mai 2026 SBM : détecter équipes + équipes miroir par pattern
+ * RH (jours de repos hebdo). Le PDF SBM n'a pas de marqueur d'équipe explicite
+ * en V1 mai — les équipes sont reconstructibles par regroupement des employés
+ * qui ont les mêmes jours RH dans le mois.
+ *
+ * Critères Kevin :
+ *  - "Plusieurs personnes avec les mêmes jours RH = une équipe"
+ *  - "Autres personnes avec les mêmes jours repos = équipe miroir"
+ *  - Équipe typique = 4-6 employés (header PDF "4 RH du au" = 4 emps)
+ *  - Famille (BJ/Roulettes/CMC) déduite de l'emp.family existant
+ *
+ * Algo :
+ *  1. Pour chaque employé actif ce mois, extraire signature pattern RH
+ *     (liste triée des jours où code = RH ou RHS ou variantes repos)
+ *  2. Grouper employés par signature identique → groupe = équipe candidate
+ *  3. Pour chaque famille (bj/roulettes/cmc), trouver paires d'équipes
+ *     avec patterns RH décalés d'un offset constant → équipes miroir
+ *  4. Écrire emp.teamHistory[key] avec teamId reconstruit (ex "bj1", "r3")
+ *  5. Stocker cmc_team_mirror_<key> = {teamId: mirrorTeamId, ...}
+ *
+ * Exclusions :
+ *  - Cadres (Pit Boss/Sup/Insp) : team déjà assignée par section header
+ *    via _contextTeam (pit15/sup) → SKIP cet algo pour eux
+ *  - V1 juin 2026 format avec numéro équipe explicite (BRTP+K 5 NAME)
+ *    → SKIP cet algo, équipe explicite prioritaire
+ *
+ * Codes repos reconnus (cf ligne 2027+) :
+ *  RH, RHS, RTR, RTP, CRH, FRH (variantes repos hebdo)
+ */
+var _CMC_REST_CODES = ['RH','RHS','RTR','RTP','CRH','FRH'];
+
+function _cmcExtractRestPattern(emp, iy, im){
+  /* Retourne signature pattern RH : "5,12,19,26" (jours triés) */
+  var key = iy + '-' + im;
+  var ov = (A.overrides[key] || {})[emp.id] || {};
+  var restDays = [];
+  var daysInMonth = new Date(iy, im+1, 0).getDate();
+  for (var d = 1; d <= daysInMonth; d++) {
+    var cell = ov[d];
+    if (!cell) continue;
+    var code = (typeof cell === 'string') ? cell : (cell.code || cell.c || '');
+    code = String(code).trim().toUpperCase();
+    /* Match code repos exact ou avec sous-classes (RH, RH-S, RHS, etc.) */
+    for (var i = 0; i < _CMC_REST_CODES.length; i++) {
+      var rc = _CMC_REST_CODES[i];
+      if (code === rc || code.indexOf(rc) === 0) {
+        restDays.push(d);
+        break;
+      }
+    }
+  }
+  return restDays.sort(function(a,b){return a-b;}).join(',');
+}
+
+function _cmcIsCadre(emp){
+  /* Cadres = pit boss / superviseur / inspecteur (team préfixée pit/sup/insp) */
+  if (!emp || !emp.team) return false;
+  var t = String(emp.team).toLowerCase();
+  return t.indexOf('pit') === 0 || t.indexOf('sup') === 0 || t.indexOf('insp') === 0
+    || emp.is_pit_boss === true || emp.cadre_type;
+}
+
+function _cmcHasExplicitTeamV1Jun(emp, iy, im){
+  /* V1 juin 2026 ou +: si l'employé a déjà un teamHistory pour ce mois avec
+   * un format numérique explicite (ex "bj1", "r5"), on respecte. */
+  if (!emp.teamHistory) return false;
+  var key = iy + '-' + im;
+  var t = emp.teamHistory[key];
+  return !!(t && /^(bj|r|c)\d+$/i.test(String(t)));
+}
+
+function _cmcDetectTeamsByRestPattern(iy, im){
+  /* Implémente l'algo officiel Kevin "détection équipes par jours repos".
+   * Appelé en fin de _postValidateImport. Retourne diag {teamsFound, mirrors, assigned}. */
+  var diag = { teamsFound: 0, mirrors: 0, assigned: 0, families: {}, skipped: 0 };
+  try {
+    var key = iy + '-' + im;
+    /* 1. Grouper employés actifs par famille + signature RH */
+    var byFamilySignature = {}; /* { 'bj': { '5,12,19,26': [empId,...], ... } } */
+    for (var i = 0; i < A.employees.length; i++) {
+      var emp = A.employees[i];
+      if (!emp || !isEmpActive(emp, iy, im)) continue;
+      if (_cmcIsCadre(emp)) { diag.skipped++; continue; }
+      if (_cmcHasExplicitTeamV1Jun(emp, iy, im)) { diag.skipped++; continue; }
+      var fam = emp.family || 'bj';
+      var sig = _cmcExtractRestPattern(emp, iy, im);
+      if (!sig) continue; /* Pas de pattern RH → on ne peut pas classer */
+      if (!byFamilySignature[fam]) byFamilySignature[fam] = {};
+      if (!byFamilySignature[fam][sig]) byFamilySignature[fam][sig] = [];
+      byFamilySignature[fam][sig].push(emp.id);
+    }
+    /* 2. Pour chaque famille, créer teamId par signature */
+    var teamMirrors = lg('cmc_team_mirror_' + key, {});
+    var famPrefix = { 'bj':'bj', 'roulettes':'r', 'cmc':'c' };
+    for (var famName in byFamilySignature) {
+      if (!Object.prototype.hasOwnProperty.call(byFamilySignature, famName)) continue;
+      var prefix = famPrefix[famName] || famName.slice(0,2);
+      var signatures = Object.keys(byFamilySignature[famName]);
+      /* Sort signatures pour stabilité numérotation (basé sur 1er jour RH) */
+      signatures.sort(function(a, b){
+        var fa = parseInt((a.split(',')[0]||'0'), 10);
+        var fb = parseInt((b.split(',')[0]||'0'), 10);
+        return fa - fb;
+      });
+      diag.families[famName] = { teams: signatures.length, mirrors: 0 };
+      for (var sIdx = 0; sIdx < signatures.length; sIdx++) {
+        var sig2 = signatures[sIdx];
+        var teamId = prefix + (sIdx + 1);
+        var members = byFamilySignature[famName][sig2];
+        /* 3. Écrire emp.teamHistory[key] = teamId */
+        for (var mIdx = 0; mIdx < members.length; mIdx++) {
+          var memberEmp = A.employees.find(function(x){return x.id === members[mIdx];});
+          if (!memberEmp) continue;
+          if (!memberEmp.teamHistory) memberEmp.teamHistory = {};
+          memberEmp.teamHistory[key] = teamId;
+          diag.assigned++;
+        }
+        diag.teamsFound++;
+      }
+      /* 4. Détecter équipes miroir par offset constant patterns RH */
+      if (signatures.length >= 2) {
+        for (var aIdx = 0; aIdx < signatures.length - 1; aIdx++) {
+          var sigA = signatures[aIdx].split(',').map(Number).filter(function(n){return !isNaN(n);});
+          var sigB = signatures[aIdx+1].split(',').map(Number).filter(function(n){return !isNaN(n);});
+          if (sigA.length === 0 || sigB.length === 0 || sigA.length !== sigB.length) continue;
+          /* Offset = différence constante entre paires de jours triés */
+          var offsets = [];
+          for (var oI = 0; oI < sigA.length; oI++) offsets.push(sigB[oI] - sigA[oI]);
+          var firstOffset = offsets[0];
+          var allSameOffset = offsets.every(function(o){return o === firstOffset;});
+          if (allSameOffset && firstOffset !== 0) {
+            var teamIdA = prefix + (aIdx + 1);
+            var teamIdB = prefix + (aIdx + 2);
+            teamMirrors[teamIdA] = teamIdB;
+            teamMirrors[teamIdB] = teamIdA;
+            diag.mirrors++;
+            diag.families[famName].mirrors++;
+          }
+        }
+      }
+    }
+    /* 5. Persister mirrors + audit */
+    ls('cmc_team_mirror_' + key, teamMirrors);
+    try { _audit('detect_teams_by_rest_pattern', (A.user && A.user.id) || '', MFR[im] + ' ' + iy,
+      'teamsFound=' + diag.teamsFound + ' mirrors=' + diag.mirrors + ' assigned=' + diag.assigned,
+      JSON.stringify(diag.families)); } catch(_){}
+  } catch (e) {
+    console.warn('[_cmcDetectTeamsByRestPattern] err', e && e.message);
+  }
+  return diag;
+}
+
 function _postValidateImport(iy,im,okCount,errCount,errLines){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
     var totalActive=A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length;
     if(totalActive===0)return;
+    /* v9.616 — auto-détection équipes par pattern RH après chaque import */
+    try {
+      var teamDiag = _cmcDetectTeamsByRestPattern(iy, im);
+      try {
+        var ilog2 = lg('cmc_import_log', []);
+        ilog2.push({ts:Date.now(),y:iy,m:im,agent:'detect_teams_rest',
+          teamsFound:teamDiag.teamsFound, mirrors:teamDiag.mirrors,
+          assigned:teamDiag.assigned, skipped:teamDiag.skipped, families:teamDiag.families});
+        if(ilog2.length>200) ilog2 = ilog2.slice(-200);
+        ls('cmc_import_log', ilog2);
+      } catch(_) {}
+    } catch (_teamErr) {
+      console.warn('[_postValidateImport detect teams]', _teamErr && _teamErr.message);
+    }
     var withCodes=Object.keys(ov).filter(function(eid){
       var dm=ov[eid]||{};
       return Object.keys(dm).filter(function(d){return !!dm[d];}).length>0;

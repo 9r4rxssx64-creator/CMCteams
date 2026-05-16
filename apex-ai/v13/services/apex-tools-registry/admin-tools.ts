@@ -37,8 +37,21 @@ export const ADMIN_TOOLS: readonly ApexTool[] = [
   },
   {
     name: 'cmc_read',
-    description: 'Lit les données CMCteams (planning casino, employés) depuis Firebase shared.',
-    inputSchema: { type: 'object', properties: {} },
+    description: 'Lit les données CMCteams (planning casino, employés) depuis Firebase shared. UTILISE TOUJOURS un scope filtré (planning_user, planning_month, last_import_health) pour économiser les tokens — JAMAIS scope=all sauf si vraiment nécessaire (>50KB).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scope: {
+          type: 'string',
+          enum: ['all', 'employees', 'teams', 'overrides', 'planning_month', 'planning_user', 'motd', 'audit', 'last_import_health'],
+          description: "Type de donnée à lire. Préfère 'planning_user' (planning d'un user pour 1 mois ± 1 jour), 'planning_month' (toutes les cells d'un mois), 'last_import_health' (état dernier import).",
+        },
+        user_uid: { type: 'string', description: "ID employé CMC (pour scope planning_user, ex 'U11804')" },
+        year: { type: 'number', description: 'Année (pour planning_*)' },
+        month: { type: 'number', description: 'Mois 1-12 (pour planning_*)' },
+        day: { type: 'number', description: 'Jour 1-31 optionnel (focus 1 journée)' },
+      },
+    },
     minTier: 'admin',
     impactLevel: 'A',
   },

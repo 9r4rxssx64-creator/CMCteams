@@ -752,8 +752,16 @@ class ApexToolsDispatcher {
         return webFetch(params['url'] as string);
       case 'web_search':
         return webSearch(params['query'] as string, params['max_results'] as number | undefined);
-      case 'cmc_read':
-        return orchestrator.cmcRead();
+      case 'cmc_read': {
+        type CmcReadOpts = Parameters<typeof orchestrator.cmcRead>[0];
+        const cmcOpts: NonNullable<CmcReadOpts> = {};
+        if (typeof params['scope'] === 'string') cmcOpts.scope = params['scope'] as NonNullable<NonNullable<CmcReadOpts>['scope']>;
+        if (typeof params['user_uid'] === 'string') cmcOpts.user_uid = params['user_uid'];
+        if (typeof params['year'] === 'number') cmcOpts.year = params['year'];
+        if (typeof params['month'] === 'number') cmcOpts.month = params['month'];
+        if (typeof params['day'] === 'number') cmcOpts.day = params['day'];
+        return orchestrator.cmcRead(cmcOpts);
+      }
       case 'kdmc_stats':
         return orchestrator.kdmcStats();
       case 'open_tool':
