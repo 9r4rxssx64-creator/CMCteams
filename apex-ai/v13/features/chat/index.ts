@@ -2064,6 +2064,45 @@ export function render(rootEl: HTMLElement): void {
         /* Pas de clé → message normal */
         textarea.value = '';
         textarea.style.height = 'auto';
+
+        /* v13.4.199 (Kevin 2026-05-16 "il réfléchit, consomme, et se coupe.
+         * S'arrête. N'a rien fait") : SHORT-CIRCUIT IA si planning SBM détecté.
+         *
+         * Cause racine : un planning collé (30-50KB) passé à l'IA consomme tout
+         * le max_tokens 4096 output → stream tronqué silencieusement. Kevin voit
+         * "rien". L'IA n'a aucune valeur ajoutée ici — Kevin veut juste pousser
+         * le planning vers CMCteams (déjà l'objectif du bridge).
+         *
+         * Solution : si planning détecté + size ≥ 1000 chars → push direct,
+         * bypass IA, message assistant court fixe (zéro risque crash). */
+        try {
+          const { detectSbmPlanning, pushPlanningToCmc, _internals } = await import('../../services/cmc-planning-bridge.js');
+          const det = detectSbmPlanning(value);
+          if (det.detected && det.size >= _internals.MIN_PUSH_LENGTH) {
+            /* Ajout user msg dans conversation (visible) */
+            const userMsg: DisplayMessage = { id: `u_${Date.now()}`, role: 'user', text: value, ts: Date.now() };
+            conversation.push(userMsg);
+            renderMessages(rootEl);
+            /* Push CMC + reply court direct (pas d'IA) */
+            const r = await pushPlanningToCmc(value, 'chat');
+            const reply: DisplayMessage = {
+              id: `a_${Date.now()}`,
+              role: 'assistant',
+              ts: Date.now(),
+              text: r.ok
+                ? `📋 **Planning SBM détecté** (${Math.round(det.size / 1024)} KB, ${det.matches.length} patterns).\n\n✅ Poussé vers **CMCteams** (id \`${r.id}\`). Ouvre l'app CMC → un toast admin te proposera l'import 1-clic.\n\n_J'ai bypass mon IA volontairement pour éviter de cramer tes tokens sur un planning entier — le bridge fait le boulot directement._`
+                : `📋 Planning SBM détecté (${Math.round(det.size / 1024)} KB) mais **push CMC échoué** : ${r.error ?? 'erreur inconnue'}.\n\n${r.error === 'admin_only_cmc_push' ? '⚠️ Tu dois être connecté en admin Kevin pour pousser vers CMCteams.' : 'Réessaie dans quelques secondes ou colle directement dans l\'app CMC.'}`,
+            };
+            conversation.push(reply);
+            renderMessages(rootEl);
+            persistConversation(conversation);
+            if (r.ok) toast.success(`📋 Planning → CMCteams (${r.id})`, { duration: 6000 });
+            return;
+          }
+        } catch (e) {
+          logger.warn('chat', 'planning short-circuit error, fallback to AI', { err: e instanceof Error ? e.message : String(e) });
+        }
+
         queue.push(value);
         void processQueue(rootEl);
         /* v13.3.19 — Bridge Apex → CMCteams (règle Kevin 2026-05-07 §8) :
