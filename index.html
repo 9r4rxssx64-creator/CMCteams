@@ -33049,6 +33049,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       teamGroups.push({
         teamId:teamId,sig:sig,
         cycle:group[0].cycle,offset:group[0].offset,
+        firstWork:group[0].firstWork, // v9.655 fix : indispensable pour détection miroir
         family:domFam,empCount:group.length,
         rhDays:group[0].rhDays
       });
