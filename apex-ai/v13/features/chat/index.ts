@@ -44,6 +44,7 @@ import { toast } from '../../ui/toast.js';
 import { renderMessageActions } from './chat-actions-render.js';
 import { type AlbumImage, renderImageAlbum } from './chat-album.js';
 import { buildMessagesForApi } from './chat-api-format.js';
+import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
 import {
@@ -1337,22 +1338,16 @@ async function exportConversationMarkdown(): Promise<void> {
     toast.warn('Aucune conversation à exporter');
     return;
   }
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const header = `# Conversation Apex — ${new Date().toLocaleString('fr-FR')}\n\nVersion : ${APP_VER}\n\n---\n\n`;
-  const body = conversation
-    .filter((m) => m.role !== 'tool_card')
-    .map((m) => {
-      const role = m.role === 'user' ? '## 👤 Toi' : '## 🤖 Apex';
-      return `${role}\n\n${m.text}`;
-    })
-    .join('\n\n---\n\n');
-  const md = header + body;
+  /* v13.4.173 refactor : pure transformation extraite dans chat-export.ts */
+  const now = new Date();
+  const md = buildConversationMarkdown(conversation, APP_VER, now);
+  const filename = buildExportFilename(now);
   try {
     const blob = new Blob([md], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `apex-conversation-${ts}.md`;
+    a.download = filename;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast.success('📄 Conversation exportée en Markdown');
