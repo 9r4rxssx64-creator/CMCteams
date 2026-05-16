@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.197';
+export const APP_VER = 'v13.4.198';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -273,12 +273,23 @@ async function bootstrap(): Promise<void> {
     cloudflareStatus.init();
   });
 
-  /* v13.4.195 (audit subagent gap #1 vers 100/100) : pre-load voice-overlay
-   * au boot pour latence <100ms quand wake word/dictée déclenchent l'overlay.
-   * Évite le lazy import à la première activation micro. */
-  await safeInit('voice-overlay-preload', async () => {
-    await import('../services/voice-overlay.js');
-  });
+  /* v13.4.197 (audit Kevin P1 LCP +613% régression) : voice-overlay preload
+   * DÉCALÉ après FCP via requestIdleCallback pour ne PAS bloquer le LCP.
+   * Le module reste chaud quand wake word/dictée déclenchent (warm <100ms),
+   * mais sans coûter au rendu initial. Fallback setTimeout 1500ms si pas d'idle. */
+  safeInit('voice-overlay-preload-deferred', async () => {
+    const schedule = (cb: () => void): void => {
+      const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void };
+      if (typeof w.requestIdleCallback === 'function') {
+        w.requestIdleCallback(cb, { timeout: 3000 });
+      } else {
+        setTimeout(cb, 1500);
+      }
+    };
+    schedule(() => {
+      void import('../services/voice-overlay.js').catch(() => { /* lazy fallback à l'activation */ });
+    });
+  }).catch(() => { /* non-blocking */ });
 
   /* 2. Feature detection */
   if (!('serviceWorker' in navigator)) {
