@@ -26,6 +26,7 @@
  * - 0 secrets, 0 magic numbers (tout en const exportées)
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
@@ -149,10 +150,6 @@ export const STREAMING_LUFS_TARGETS = {
   amazon_music: -14, deezer: -15, podcast: -16, broadcast_eu: -23, broadcast_us: -24,
   cinema: -27, club: -9, audiobook: -18, twitch: -16,
 } as const;
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function defaultEffects(): TrackEffects {
   return {

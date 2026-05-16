@@ -3,6 +3,7 @@
  * Stub Sprint 2 P0 — sera enrichi avec parité v12.785 vSettings.
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -14,10 +15,6 @@ let activeSettingsScope: CleanupScope | null = null;
 export function dispose(): void {
   activeSettingsScope?.cleanup();
   activeSettingsScope = null;
-}
-
-function escapeHtmlSafe(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 const AUTO_READ_KEY = 'apex_v13_chat_auto_read';
@@ -94,19 +91,19 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
         .map((v) => {
           const isActive = v.id === activeId;
           const emoji = v.emoji ?? (v.category === 'pro' ? '🎙️' : v.category === 'fun' ? '🎉' : '🎨');
-          const desc = v.description ? escapeHtmlSafe(v.description) : '';
+          const desc = v.description ? escapeHtml(v.description) : '';
           const activeBg = isActive
             ? 'background:rgba(232,184,48,0.15);border-color:rgba(232,184,48,0.45)'
             : 'background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.06)';
           return `
-            <div class="ax-voice-item" data-voice-id="${escapeHtmlSafe(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
+            <div class="ax-voice-item" data-voice-id="${escapeHtml(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
               <span style="font-size:18px">${emoji}</span>
               <div style="flex:1;min-width:0">
-                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.name)}${isActive ? ' <span style="color:#e8b830;font-size:11px">★ active</span>' : ''}</div>
-                <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.category)}${desc ? ' · ' + desc : ''}</div>
+                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.name)}${isActive ? ' <span style="color:#e8b830;font-size:11px">★ active</span>' : ''}</div>
+                <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.category)}${desc ? ' · ' + desc : ''}</div>
               </div>
-              <button class="ax-voice-test-btn" data-test-voice="${escapeHtmlSafe(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtmlSafe(v.name)}" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
-              <button class="ax-voice-set-btn" data-set-voice="${escapeHtmlSafe(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtmlSafe(v.name)} par défaut" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
+              <button class="ax-voice-test-btn" data-test-voice="${escapeHtml(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtml(v.name)}" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
+              <button class="ax-voice-set-btn" data-set-voice="${escapeHtml(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtml(v.name)} par défaut" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
             </div>
           `;
         })
@@ -195,7 +192,7 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:680px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header style="margin-bottom:24px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards">
         <h1 style="margin:0 0 6px;font-size:clamp(26px,4.5vw,32px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
-        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtmlSafe(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:#e8b830">👑 Admin</span>' : ''}</p>
+        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtml(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:#e8b830">👑 Admin</span>' : ''}</p>
       </header>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:60ms">

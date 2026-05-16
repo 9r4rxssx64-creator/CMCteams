@@ -20,6 +20,7 @@
  * Validation : max 20MB upload, max 4096x4096, format whitelist.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
@@ -124,10 +125,6 @@ export const ACCEPTED_FORMATS: readonly string[] = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
   'image/bmp', 'image/tiff', 'image/heic', 'image/heif',
 ];
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function getStorageKey(uid: string, id: string): string {
   return `${STORAGE_PREFIX}${uid}_${id}`;

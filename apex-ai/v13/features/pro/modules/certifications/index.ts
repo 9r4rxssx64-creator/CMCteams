@@ -14,6 +14,7 @@
  * Sources autoritaires : sites officiels (ETS, Cambridge, France Éducation International, Hanban, etc.)
  */
 
+import { escapeHtml } from '../../../../core/escape-html.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
@@ -473,10 +474,6 @@ export function recommendCerts(category: CertCategory, level: 'beginner' | 'inte
   if (level === 'beginner') return allByCat.filter((c) => ['A1', 'A2', 'B1', 'beginner'].includes(c.difficulty)).slice(0, 5);
   if (level === 'intermediate') return allByCat.filter((c) => ['B2', 'intermediate'].includes(c.difficulty)).slice(0, 5);
   return allByCat.filter((c) => ['C1', 'C2', 'advanced', 'expert'].includes(c.difficulty)).slice(0, 5);
-}
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 /* ---------- UI render ---------- */

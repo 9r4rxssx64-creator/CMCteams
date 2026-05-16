@@ -25,6 +25,7 @@
  * - Pas de dépendances lourdes (jsPDF lazy CDN)
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
@@ -224,10 +225,6 @@ export const COMPETENCES_PAR_DOMAINE = {
   comm: ['Communication interne', 'Communication externe', 'RP', 'Réseaux sociaux', 'Community management', 'Storytelling', 'Brand', 'Crisis management'],
   juridique: ['Droit civil', 'Droit commercial', 'Droit social', 'Droit fiscal', 'Contrats', 'Compliance', 'RGPD', 'M&A', 'Contentieux', 'Property'],
 } as const;
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function getStorageKey(uid: string): string {
   return `${STORAGE_PREFIX}${uid}`;

@@ -4,16 +4,10 @@
  * Tableur simple : import CSV ou saisie manuelle → export .xlsx.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { xlsxGenerator, type XlsxCellValue } from '../../../services/skills/xlsx-generator.js';
 import { toast } from '../../../ui/toast.js';
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `

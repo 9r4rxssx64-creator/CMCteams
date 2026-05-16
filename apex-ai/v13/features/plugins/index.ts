@@ -15,7 +15,8 @@
  *  - Pour chaque card : badge status (🟢 installé / ⚪ dispo / 🔴 non-PWA).
  */
 
- 
+
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import {
@@ -84,13 +85,6 @@ const CATEGORY_LABELS: Record<PluginCategory, string> = {
   creator: '🎬 Creator',
   learning: '📚 Learning',
 };
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 /* État runtime UI (filtres) */
 interface UIState {

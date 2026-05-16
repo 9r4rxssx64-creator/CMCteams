@@ -12,6 +12,7 @@
  * crédit etc va plus loin. AUTOMATIQUE AUTONOME TOUJOURS."
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import type { SmartProvider, ProviderStats } from '../../services/smart-router.js';
@@ -35,13 +36,6 @@ const PROVIDER_ICONS: Record<SmartProvider, string> = {
   deepseek: '🐋',
   openrouter: '🌐',
 };
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 function fmtLatency(ms: number): string {
   if (ms < 0) return '—';

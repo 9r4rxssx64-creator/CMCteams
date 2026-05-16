@@ -17,6 +17,7 @@
  * Storage per-user. Anti-XSS escapeHtml. Pas de innerHTML brut user content.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
@@ -117,10 +118,6 @@ export const SECTION_DIVIDER_LAYOUTS = {
   poll: { label: 'Sondage live', description: 'Question + 4 réponses + QR Mentimeter' },
   exercise: { label: 'Exercice', description: 'Instructions + timer + résultats attendus' },
 };
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function getStorageKey(uid: string, id: string): string {
   return `${STORAGE_PREFIX}${uid}_${id}`;

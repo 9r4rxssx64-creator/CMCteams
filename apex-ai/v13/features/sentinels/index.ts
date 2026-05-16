@@ -4,6 +4,7 @@
  * Boost MAX (2026-05-04) : utilise sentinels-registry typé + métriques perf affichées.
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 
@@ -172,6 +173,3 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   logger.info('feature-sentinels', `rendered ${list.length} sentinels (${okCount}OK / ${warnCount}WARN)`);
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}

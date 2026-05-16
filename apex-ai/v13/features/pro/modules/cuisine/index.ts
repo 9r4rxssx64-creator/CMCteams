@@ -16,6 +16,7 @@
  * Sources autoritaires : Règlement INCO 1169/2011, ANSES, CIQUAL (data nutrition FR)
  */
 
+import { escapeHtml } from '../../../../core/escape-html.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
@@ -935,10 +936,6 @@ export const AX_CUISINE = {
   } as Record<string, MacroNutriments>,
 } as const;
  
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 /**
  * Convertir une mesure cuisine. Retourne null si non reconnue.

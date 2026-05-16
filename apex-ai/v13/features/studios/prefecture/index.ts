@@ -17,6 +17,7 @@
  * - gouv.mc (Monaco), Légimonaco
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
@@ -65,10 +66,6 @@ export interface Dossier {
 }
 
 export const STORAGE_PREFIX = 'ax_pref_';
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function getDossierKey(uid: string, id: string): string {
   return `${STORAGE_PREFIX}d_${uid}_${id}`;

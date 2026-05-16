@@ -20,6 +20,7 @@
  * Sources autoritaires : Impôts.gouv, Service-public.fr, Légimonaco, BOFiP
  */
 
+import { escapeHtml } from '../../../../core/escape-html.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
@@ -218,10 +219,6 @@ export const AX_FINANCE_FR = {
   } as Record<string, number>,
 } as const;
  
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 function trancheMarginale(qf: number): number {
   for (let i = AX_FINANCE_FR.ir_tranches.length - 1; i >= 0; i--) {

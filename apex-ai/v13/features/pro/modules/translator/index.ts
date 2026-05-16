@@ -144,11 +144,6 @@ export const AX_LANGS: Readonly<Record<string, string>> = {
   emoji: '😀 Emoji',
 };
 
-/* escapeHtml exporté pour usage tests + futures modules */
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
-
 const TRANSLATION_CACHE_KEY = 'ax_translator_cache';
 const TRANSLATION_PREFS_KEY = 'ax_translator_prefs';
 const TRANSLATION_HISTORY_KEY = 'ax_translator_history';
