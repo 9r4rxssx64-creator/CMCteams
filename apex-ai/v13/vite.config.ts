@@ -86,13 +86,24 @@ export default defineConfig({
           if (id.includes('apex-tools-dispatch/utils-data')) return 'apex-tools-dispatch-data';
           if (id.includes('apex-tools-dispatch/utils-misc')) return 'apex-tools-dispatch-misc';
           if (id.includes('apex-tools-dispatch')) return 'apex-tools-dispatch-core';
-          if (id.includes('apex-tools') && !id.includes('apex-tools-dispatch')) return 'apex-tools-registry';
+          /* v13.4.195 (audit subagent gap #2 vers 100/100) : split apex-tools-registry
+           * en sous-domaines pour passer sous 100KB par chunk. */
+          if (id.includes('apex-tools-registry/finance')) return 'apex-tools-registry-finance';
+          if (id.includes('apex-tools-registry/skills')) return 'apex-tools-registry-skills';
+          if (id.includes('apex-tools-registry/voice')) return 'apex-tools-registry-voice';
+          if (id.includes('apex-tools-registry/data')) return 'apex-tools-registry-data';
+          if (id.includes('apex-tools-registry')) return 'apex-tools-registry-core';
+          if (id.includes('apex-tools') && !id.includes('apex-tools-dispatch') && !id.includes('apex-tools-registry')) return 'apex-tools-misc';
           if (id.includes('credential-patterns')) return 'credential-patterns';
           if (id.includes('voices-registry') || id.includes('services/voice')) return 'voice';
           if (id.includes('apex-knowledge-base')) return 'apex-kb';
           if (id.includes('sentry-bridge') || id.includes('observability')) return 'monitoring';
           /* v13.3.57 PUSH-100 : split auto-improvement en bloc lazy à la demande */
-          if (id.includes('auto-improvement')) return 'auto-improvement';
+          /* v13.4.195 (audit gap #2) : split auto-improvement par sous-domaine */
+          if (id.includes('auto-improvement/innovation')) return 'auto-improvement-innovation';
+          if (id.includes('auto-improvement/audit')) return 'auto-improvement-audit';
+          if (id.includes('auto-improvement/rules')) return 'auto-improvement-rules';
+          if (id.includes('auto-improvement')) return 'auto-improvement-core';
           if (id.includes('innovation-watch')) return 'innovation-watch';
           if (id.includes('apex-plugins-marketplace')) return 'apex-plugins-marketplace';
           /* OCR offline lazy chunk (tesseract.js fallback) */

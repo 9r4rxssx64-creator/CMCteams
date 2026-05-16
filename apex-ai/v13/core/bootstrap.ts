@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.194';
+export const APP_VER = 'v13.4.195';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -271,6 +271,13 @@ async function bootstrap(): Promise<void> {
   await safeInit('cloudflare-status', async () => {
     const { cloudflareStatus } = await import('../services/cloudflare-status.js');
     cloudflareStatus.init();
+  });
+
+  /* v13.4.195 (audit subagent gap #1 vers 100/100) : pre-load voice-overlay
+   * au boot pour latence <100ms quand wake word/dictée déclenchent l'overlay.
+   * Évite le lazy import à la première activation micro. */
+  await safeInit('voice-overlay-preload', async () => {
+    await import('../services/voice-overlay.js');
   });
 
   /* 2. Feature detection */
