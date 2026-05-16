@@ -4873,7 +4873,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.661";
+var APP_VER="v9.662";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -13575,6 +13575,50 @@ function agentRunNow(id){
   if(!a)return;
   try{a.run();toast("\u2705 "+a.label+" ex\u00e9cut\u00e9");dc();}catch(e){toast("\u2717 "+(e.message||""),"err");}
 }
+// v9.662 \u2014 Kevin "Aucun agents ne fonctionne apparement alors qu'il dit oui"
+// Force run TOUS les agents synchrone + retourne diag clair (pas "OK" vague)
+function cmcAgentsForceAll(){
+  if(!A.user||A.user.id!==AID){toast("\u26a0 Admin only","err");return;}
+  if(typeof APP_AGENTS==="undefined"||!APP_AGENTS.length){toast("Aucun agent declare","err");return;}
+  var t0=Date.now();
+  var ran=0,errs=0,warns=0,oks=0,info=0;
+  var lines=[];
+  APP_AGENTS.forEach(function(a){
+    if(!agentIsEnabled(a.id)){lines.push("\u2296 "+a.icon+" "+a.label+" : OFF (desactive)");return;}
+    try{
+      _agentRunning[a.id]=false; /* unstuck if previous run died */
+      a.run();
+      ran++;
+      var last=agentLastReport(a.id);
+      if(last){
+        var st=last.status||"info";
+        if(st==="ok")oks++;else if(st==="warn")warns++;else if(st==="err")errs++;else info++;
+        var ic=st==="ok"?"\u2705":st==="warn"?"\u26a0":st==="err"?"\u2717":"\u24d8";
+        lines.push(ic+" "+a.icon+" "+a.label+" : "+st.toUpperCase()+" - "+(last.msg||"").slice(0,120));
+      }else{
+        lines.push("\u24d8 "+a.icon+" "+a.label+" : execute mais AUCUN rapport produit (bug agent)");
+      }
+    }catch(e){
+      errs++;
+      lines.push("\u2717 "+a.icon+" "+a.label+" : EXCEPTION "+(e.message||"").slice(0,100));
+    }
+  });
+  var elapsed=Date.now()-t0;
+  var header="Diag agents \u2014 "+ran+"/"+APP_AGENTS.length+" execute en "+elapsed+"ms\\n"
+    +"\u2705 OK: "+oks+" \u00b7 \u26a0 WARN: "+warns+" \u00b7 \u2717 ERR: "+errs+" \u00b7 \u24d8 INFO: "+info+"\\n\\n";
+  /* Modal full-screen pour Kevin voie le detail */
+  var modalId="cmcAgentsDiag_"+Date.now();
+  var html='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
+    +'<div style="background:#0f1a14;border:2px solid #c9a227;border-radius:14px;max-width:900px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="color:#c9a227;margin:0;font-size:18px">\ud83e\udd16 Diagnostic agents (v9.662)</h2>'
+    +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">\u2716</button></div>'
+    +'<pre style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px;font-size:12px;color:#cfd0e0;line-height:1.5;white-space:pre-wrap;word-break:break-word;font-family:SF Mono,Menlo,monospace">'+esc(header+lines.join("\n"))+'</pre>'
+    +'<div style="margin-top:10px;text-align:center;font-size:11px;color:#8aa088">Si tu vois "OK" partout c\'est NORMAL \u2014 les agents n\'agissent que si ils detectent un probleme. Re-lance ici pour rafraichir.</div>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML("beforeend",html);
+  toast(ran+" agents executes ("+oks+" OK, "+warns+" warn, "+errs+" err)",(errs>0?"err":(warns>0?"warn":"ok")),5000);
+  try{if(typeof _audit==="function")_audit("agents_force_all",AID,"",ran+"/"+APP_AGENTS.length,oks+"ok "+warns+"w "+errs+"e");}catch(_){}
+}
 function agentToggle(id){
   if(!A.user||A.user.id!==AID)return;
   var s=agentGetState();var cur=s[id]?s[id].enabled!==false:true;
@@ -13588,6 +13632,8 @@ function vAgents(){
   if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty" role="status"><div class="empty-title">Acc\u00e8s admin requis</div></div></div>';
   var h='<div class="page"><div class="sec-title">\ud83e\udd16 Agents internes permanents</div>';
   h+='<div style="font-size:13px;color:#a0c0a8;margin-bottom:14px;line-height:1.5">Ces agents tournent en arri\u00e8re-plan tant que l\u2019app est ouverte chez un admin. Ils surveillent l\u2019app en permanence et d\u00e9tectent automatiquement conflits, orphelins, burnout, soucis Firebase et d\u00e9rive performance. Pause quand l\u2019onglet est cach\u00e9.</div>';
+  // v9.662 \u2014 Kevin "agents disent OK mais font rien" : bouton diag complet
+  h+='<button onclick="cmcAgentsForceAll()" style="width:100%;min-height:48px;padding:12px;margin-bottom:14px;background:linear-gradient(135deg,rgba(201,162,39,.25),rgba(201,162,39,.12));border:2px solid rgba(201,162,39,.6);color:#ffdc40;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer">\ud83d\udd2c Diagnostic complet \u2014 Lancer TOUS les agents MAINTENANT</button>';
   APP_AGENTS.forEach(function(a){
     var en=agentIsEnabled(a.id);
     var last=agentLastReport(a.id);
