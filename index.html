@@ -4885,7 +4885,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.651";
+var APP_VER="v9.652";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22785,7 +22785,7 @@ function vPlan(){
   var utid=(A.user&&A.user.team&&gt(A.user.team))?A.user.team:null;
   var utc=tc(utid),mirT=utid?gm(utid):null;
   /* v9.604 \u2014 Sticky header : nav mois + boutons toujours visibles pendant scroll planning */
-  var h=`<div class="page bg-planning"><div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px"><div style="display:flex;align-items:center;gap:8px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}${typeof cmcVersionBadgeHTML==="function"?cmcVersionBadgeHTML(A.year,A.month,{size:"small"}):""}</div><div style="font-size:14px;color:#a0cca0">${A.year}</div></div>${todayD?`<button class="btn ghost" onclick="A.year=new Date().getFullYear();A.month=new Date().getMonth();dc();setTimeout(adjGrid,80)" title="Aller \u00e0 aujourd\u2019hui" style="padding:5px 10px;font-size:13px">\ud83d\udccd Aujourd\u2019hui</button>`:""}${isAdm?`<button class="btn ghost" onclick="exportPlanningCSV(A.year,A.month)" title="Export CSV du planning complet" style="padding:5px 10px;font-size:13px">\ud83d\udcca CSV</button>`:""}<button class="btn ghost" onclick="window.print()" title="Imprimer ce planning" style="padding:5px 10px;font-size:13px">\ud83d\udda8</button><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div></div>`;
+  var h=`<div class="page bg-planning"><div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px"><div style="display:flex;align-items:center;gap:8px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}${typeof cmcVersionBadgeHTML==="function"?cmcVersionBadgeHTML(A.year,A.month,{size:"small"}):""}</div><div style="font-size:14px;color:#a0cca0">${A.year}</div></div>${todayD?`<button class="btn ghost" onclick="A.year=new Date().getFullYear();A.month=new Date().getMonth();dc();setTimeout(adjGrid,80)" title="Aller \u00e0 aujourd\u2019hui" style="padding:5px 10px;font-size:13px">\ud83d\udccd Aujourd\u2019hui</button>`:""}${isAdm?`<button class="btn ghost" onclick="exportPlanningCSV(A.year,A.month)" title="Export CSV du planning complet" style="padding:5px 10px;font-size:13px">\ud83d\udcca CSV</button>`:""}${(function(){try{return lg("cmc_visual_planning_"+A.year+"-"+A.month,null)?'<button class="btn ghost" onclick="cmcShowVisualPlanning()" title="Voir le planning visuel SBM original (traits/couleurs)" style="padding:5px 10px;font-size:13px">\ud83d\uddbc\ufe0f</button>':'';}catch(_){return"";}})()}<button class="btn ghost" onclick="window.print()" title="Imprimer ce planning" style="padding:5px 10px;font-size:13px">\ud83d\udda8</button><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div></div>`;
   // v9.58 — Bandeau "Vue générale" pour user flottant
   if(_isFloating&&!isAdm){
     h+='<div style="padding:10px 14px;background:rgba(74,114,168,.08);border:1px solid rgba(74,114,168,.25);border-radius:10px;margin-bottom:10px">'
@@ -24827,6 +24827,108 @@ function _cmcInvalidateEmpByIdCache(){_cmcEmpByIdCache=null;_cmcEmpByIdCacheLen=
 // v9.625 — Export texte PDF source pour diagnostic offline.
 // Kevin clique → copie cmc_import_src_<key>.txt + métadonnées dans presse-papier
 // → envoie à Claude Code pour analyse parser sans reproduire le PDF original.
+// v9.652 (Kevin "Pourquoi pas un visuel du planning ?") :
+// Permet à Kevin d'attacher une image/PDF du planning visuel original
+// (avec traits rouges/noirs, couleurs SBM) en complément du texte parsé.
+// Stocké en localStorage cmc_visual_planning_<key> + IDB shadow + Firebase.
+// Affiché dans vImport post-attach + accessible via bouton "🖼️ Voir visuel" dans vPlan.
+function cmcAttachVisualPlanning(inputEl){
+  try{
+    if(!A.user||A.user.id!==AID){toast("⚠ Admin only","err");return;}
+    var file=inputEl&&inputEl.files&&inputEl.files[0];
+    if(!file){toast("Aucun fichier sélectionné","warn");return;}
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var info=document.getElementById("cmcVisualInfo");
+    var preview=document.getElementById("cmcVisualPreview");
+    if(info)info.textContent="⏳ Lecture "+file.name+" ("+Math.round(file.size/1024)+" KB)…";
+    // Limite 10 MB (taille raisonnable pour image scan PDF)
+    if(file.size>10*1024*1024){
+      if(info){info.style.color="#e06060";info.textContent="❌ Trop gros ("+Math.round(file.size/1024/1024)+" MB max 10MB). Compresse l'image.";}
+      return;
+    }
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var dataUrl=e.target.result;
+        var meta={
+          ts:Date.now(),
+          name:file.name,
+          mime:file.type,
+          size:file.size,
+          dataUrl:dataUrl,
+          key:key,year:iy,month:im
+        };
+        // Store localStorage (image en base64)
+        try{ls("cmc_visual_planning_"+key,meta);}catch(qErr){
+          // Si quota dépassé, essayer IDB shadow uniquement
+          if(typeof cmcIdbSet==="function")cmcIdbSet("cmc_visual_planning_"+key,meta);
+          if(info){info.style.color="#e0a040";info.textContent="⚠ Stockage local saturé, image sauvée en IndexedDB uniquement";}
+        }
+        // Sync Firebase si pas trop gros (Firebase a 32MB limit mais on cape à 2MB pour éviter ralentir cmc_ov sync)
+        if(file.size<2*1024*1024 && typeof fbWrite==="function"){
+          try{fbWrite("cmc_visual_planning_"+key,meta);}catch(_){}
+        }
+        // Audit
+        try{_audit("visual_planning_attached",AID,key,file.name,Math.round(file.size/1024)+" KB");}catch(_){}
+        // Preview
+        if(info){
+          info.style.color="#5aaa70";
+          info.textContent="✅ Visuel attaché : "+file.name+" ("+Math.round(file.size/1024)+" KB)";
+        }
+        if(preview){
+          var isImage=/^image\//.test(file.type);
+          if(isImage){
+            preview.innerHTML='<div style="margin-top:10px;padding:8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,140,80,.4);border-radius:8px"><img src="'+esc(dataUrl)+'" style="max-width:100%;border-radius:6px;display:block" alt="Visuel planning"><div style="margin-top:6px;text-align:center;font-size:11px;color:#a0a0a0">📌 Référence visuelle '+MFR[im]+' '+iy+' — utilise pour vérifier traits/couleurs SBM</div></div>';
+          }else{
+            // PDF : afficher lien téléchargeable
+            preview.innerHTML='<div style="margin-top:10px;padding:12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,140,80,.4);border-radius:8px;text-align:center"><a href="'+esc(dataUrl)+'" download="'+esc(file.name)+'" style="color:#ff8c50;text-decoration:none;font-weight:700;font-size:15px">📄 '+esc(file.name)+' (cliquer pour ouvrir)</a><div style="margin-top:6px;font-size:11px;color:#a0a0a0">PDF stocké en référence pour '+MFR[im]+' '+iy+'</div></div>';
+          }
+        }
+        toast("🖼️ Visuel planning attaché","ok",3000);
+      }catch(rerr){
+        if(info){info.style.color="#e06060";info.textContent="❌ Erreur lecture : "+(rerr&&rerr.message||rerr);}
+      }
+    };
+    reader.onerror=function(){
+      if(info){info.style.color="#e06060";info.textContent="❌ Erreur lecture fichier";}
+    };
+    reader.readAsDataURL(file);
+  }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
+}
+
+// v9.652 — Helper pour afficher le visuel dans vPlan en overlay si disponible
+function cmcShowVisualPlanning(){
+  try{
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var meta=lg("cmc_visual_planning_"+key,null);
+    if(!meta||!meta.dataUrl){
+      // Fallback IDB
+      if(typeof cmcIdbGet==="function"){
+        cmcIdbGet("cmc_visual_planning_"+key).then(function(m){
+          if(m&&m.dataUrl)_cmcRenderVisualPlanningModal(m);
+          else toast("Aucun visuel attaché pour "+MFR[im]+" "+iy+". Va dans Import pour en joindre un.","info",5000);
+        });
+        return;
+      }
+      toast("Aucun visuel attaché","info");return;
+    }
+    _cmcRenderVisualPlanningModal(meta);
+  }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
+}
+function _cmcRenderVisualPlanningModal(meta){
+  var modalId="cmcVisualModal_"+Date.now();
+  var isImage=/^image\//.test(meta.mime||"");
+  var content=isImage
+    ?'<img src="'+esc(meta.dataUrl)+'" style="max-width:100%;max-height:80vh;display:block;margin:0 auto;border-radius:6px" alt="Visuel planning">'
+    :'<a href="'+esc(meta.dataUrl)+'" download="'+esc(meta.name||"planning.pdf")+'" style="color:#ff8c50;font-size:18px;font-weight:700;padding:30px;display:block;text-align:center">📄 '+esc(meta.name||"planning.pdf")+' — cliquer pour ouvrir</a>';
+  var modal='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
+    +'<div style="background:#0f1a14;border:2px solid #ff8c50;border-radius:14px;max-width:1100px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="color:#ff8c50;margin:0;font-size:18px">🖼️ Visuel planning '+esc(MFR[A.month])+' '+A.year+'</h2>'
+    +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+    +content+'</div></div>';
+  document.body.insertAdjacentHTML("beforeend",modal);
+}
+
 function cmcExportPdfSourceForDiag(){
   try{
     if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
@@ -33399,6 +33501,18 @@ function vImport(){
       \ud83d\udcce Choisir le fichier PDF
     </button>
     <div id="fileInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
+  </div>
+
+  <!-- v9.652 (Kevin "Pourquoi pas un visuel du planning ?") — Joindre image PDF originale -->
+  <div class="card" style="padding:12px;margin-bottom:8px;border:2px solid rgba(255,140,80,.45);background:rgba(255,140,80,.06)">
+    <div style="font-size:15px;font-weight:700;color:#ff8c50;margin-bottom:6px">🖼️ Joindre image visuelle du planning</div>
+    <div style="font-size:12px;color:#a0cca0;margin-bottom:8px;line-height:1.4">Pour voir traits rouges/noirs et couleurs originales SBM à côté du texte parsé. JPG/PNG/PDF acceptés. Stocké en local + Firebase pour réf future.</div>
+    <input type="file" id="impVisualFile" accept="image/*,.pdf" style="display:none" onchange="cmcAttachVisualPlanning(this)">
+    <button onclick="document.getElementById('impVisualFile').click()" style="width:100%;min-height:52px;padding:12px;background:linear-gradient(135deg,#ff8c50,#cc6c30);border:none;border-radius:10px;font-size:15px;color:#0a0f0c;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+      🖼️ Choisir image / photo planning
+    </button>
+    <div id="cmcVisualInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
+    <div id="cmcVisualPreview" style="margin-top:10px"></div>
   </div>
 
   <!-- v9.508 Scanner planning camera iPhone (OCR Tesseract.js, auto-tri mois/cadres/employes) -->
