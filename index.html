@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.645";
+var APP_VER="v9.646";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22676,12 +22676,13 @@ function vAccueil(){
 function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
-  // v9.644 (Kevin "j'efface le planning du mois, toujours les équipes présentes
-  // mais sans horaires"): si A.overrides[key] vide → afficher empty state au lieu
-  // de la structure équipe (qui vient de emp.team DEF_EMP, permanente).
+  // v9.644+646 (Kevin "j'efface le planning du mois, toujours les équipes présentes" / "l'app scintille"):
+  // si A.overrides[key] vide → afficher empty state au lieu de la structure équipe.
+  // v9.646 : éviter scintillement, ne pas afficher empty state tant que Firebase
+  // n'a pas fini son load initial (sinon flash vide→complet quand SSE arrive).
   var _key=A.year+"-"+A.month;
   var _ovEmpty=!A.overrides[_key] || Object.keys(A.overrides[_key]).length===0;
-  if(_ovEmpty){
+  if(_ovEmpty && !window._fbInitialLoad){
     return '<div class="page bg-planning"><div style="padding:40px 20px;text-align:center">'
       +'<div style="font-size:60px;margin-bottom:14px">📭</div>'
       +'<div style="font-size:20px;font-weight:800;color:#c9a227;margin-bottom:8px">Aucun planning pour '+MFR[A.month]+' '+A.year+'</div>'
@@ -23124,9 +23125,10 @@ function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);}
 function vDeparts(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
-  // v9.644 (Kevin "on change tous d'équipe chaque mois") : empty state si pas de planning
+  // v9.644+646 (Kevin "on change tous d'équipe chaque mois" + "l'app scintille"): empty state si pas de planning
+  // Skip empty state pendant load Firebase initial pour éviter flash vide→complet
   var _key=A.year+"-"+A.month;
-  if(!A.overrides[_key] || Object.keys(A.overrides[_key]).length===0){
+  if((!A.overrides[_key] || Object.keys(A.overrides[_key]).length===0) && !window._fbInitialLoad){
     return '<div class="page"><div style="padding:40px 20px;text-align:center">'
       +'<div style="font-size:60px;margin-bottom:14px">📭</div>'
       +'<div style="font-size:20px;font-weight:800;color:#c9a227;margin-bottom:8px">Aucun ordre de départ pour '+MFR[A.month]+' '+A.year+'</div>'
@@ -35563,9 +35565,15 @@ function doImport(){
       err++;errLines.push("INTROUVABLE (skipped): "+name);
       continue;
     } else {
-      // Mettre a jour le contexte d'equipe depuis les employes DEF_EMP reconnus
-      // v9.410 — NE PAS écraser _contextTeam si on est dans une section CADRES (header = source de vérité)
-      if(DEF_EMP.some(function(d){return d.id===emp.id;})&&importFamily!=="cadres") _contextTeam=emp.team;
+      // v9.646 (Kevin "ça remet les anciennes équipes comme avant") :
+      // SUPPRIMÉ le fallback _contextTeam=emp.team (DEF_EMP default).
+      // Cause : Kevin et collègues changent d'équipe chaque mois. Le emp.team
+      // DEF_EMP est juste une valeur historique, PAS l'équipe courante.
+      // Si V1 mai ne fournit pas d'équipe explicite (BJ Éq.X / numéro juin),
+      // _contextTeam reste null → teamHistory[key] NON écrit → views fallback
+      // via teamForMonth sur dernier teamHistory connu ou emp.team (visuel
+      // potentiellement faux mais cohérent avec données disponibles).
+      // L'admin peut assigner manuellement via vEmps après import si besoin.
       // Pour les employes importes (non-DEF_EMP) uniquement : mettre a jour famille/chef
       var _isDefEmp=DEF_EMP.some(function(d){return d.id===emp.id;});
       if(!_isDefEmp){
