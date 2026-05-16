@@ -3777,7 +3777,7 @@ var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admi
 // ax_cmc_planning_pending : Apex push planning detecte dans son chat -> toast 1-clic Kevin
 "ax_cmc_planning_pending"];
 // Préfixes pour clés dynamiques (mois/année)
-var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_"];
+var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
 /* v9.530 - cmc_pin_fails enleve de FB_LOCAL : doit sync FB pour resister clear localStorage */
 var FB_LOCAL=["cmc_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm","cmc_admin_sessions","cmc_admin_pin","cmc_ia_enabled","cmc_ia_websearch","cmc_ia_key","cmc_ia_proxy","cmc_backend_url","cmc_fb_url","cmc_sync_queue","cmc_notif_ts","cmc_emailjs_config","cmc_last_seen_ver","cmc_a11y","cmc_err_log","cmc_theme","cmc_last_auto_backup","cmc_tts_enabled","cmc_lang","cmc_ghost_log","cmc_auto_rotation_off","cmc_auto_assign_gps","cmc_pit_ai_mode","cmc_pit_ai_shift_mode","cmc_qr_checkin_enabled","cmc_login_geo_log","cmc_import_anomalies",
@@ -4559,6 +4559,21 @@ function isEmpActive(emp,y,m){
 }
 // Équipe d'un employé pour un mois donné
 // Priorité : teamHistory[y-m] (import) > team le plus récent antérieur > emp.team (fallback)
+// v9.655 (Kevin "RAMOS chef BJ mai → roulettes juin = changement de secteur pour période")
+// familyForMonth retourne la family du mois (via familyHistory[key]) au lieu de emp.family
+// figé. Permet aux vues de refléter le secteur courant de l'emp.
+function familyForMonth(emp,y,m,opts){
+  if(!emp)return null;
+  var key=y+"-"+m;
+  var strict=opts&&opts.strict;
+  try{if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];}catch(e){return strict?null:(emp.family||"bj");}
+  if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];
+  // Chercher familyHistory plus récent antérieur (NON, règle Kevin "zéro historique")
+  // En strict mode → null (force section "Pas de planning"). Sinon fallback emp.family DEF_EMP.
+  if(strict)return null;
+  return emp.family||"bj";
+}
+
 function teamForMonth(emp,y,m,opts){
   if(!emp)return null;
   var key=y+"-"+m;
@@ -4885,7 +4900,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.648";
+var APP_VER="v9.656";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8623,6 +8638,25 @@ function gpl(y,m){
 function hasImportedData(y,m){
   var key=""+y+"-"+m;
   return !!lg("cmc_ref_"+key,null)||(function(){var ov=A.overrides[key]||{};return Object.keys(ov).some(function(eid){return Object.keys(ov[eid]).length>0;});})();
+}
+// v9.649 (Kevin "Quand V2 du même mois importé elle écrase la V1. Visuel V2 etc dans l'app") :
+// Helper : retourne la version d'import courante pour un mois (v1, v2, v3...).
+// Chaque import increment _importVersion → stocké dans cmc_ref_<key>.version
+function cmcGetImportVersion(y,m){
+  var key=""+y+"-"+m;
+  var ref=lg("cmc_ref_"+key,null);
+  return (ref&&typeof ref.version==="number")?ref.version:(ref?1:0);
+}
+// Helper : badge HTML "v2" pour afficher en header de vue. Vide si v1 ou pas import.
+function cmcVersionBadgeHTML(y,m,opts){
+  var v=cmcGetImportVersion(y,m);
+  if(v<=1)return ""; // pas de badge pour v1 (cas normal)
+  opts=opts||{};
+  var size=opts.size||"small"; // "small" | "large"
+  var style=size==="large"
+    ?"display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:800;color:#c9a227;background:linear-gradient(135deg,rgba(201,162,39,.22),rgba(201,162,39,.10));border:1.5px solid rgba(201,162,39,.5);border-radius:8px;padding:4px 10px;margin-left:8px"
+    :"display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:#c9a227;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:6px;padding:2px 7px;margin-left:6px";
+  return '<span title="Version d\'import courante — '+v+'ème PDF collé pour ce mois" style="'+style+'">📚 v'+v+'</span>';
 }
 // ── Accès par employé (v9.58) ──────────────────────────────────────────────
 // A.access[uid] = { mode:"auto"|"general"|"personal", blocked:[...] }
@@ -12531,7 +12565,45 @@ function cmcShowCadresDiagPopup(){
   m.innerHTML=h;
   document.body.appendChild(m);
 }
-function _agentCadresWatch(){try{var y=A.year,m=A.month;var pl=gpl(y,m)||{};var days=getDays(y,m);var missing=[];A.employees.forEach(function(e){if((e.family||"")!=="cadres")return;if(!isEmpActive(e,y,m))return;var row=pl[e.id]||{};var filled=0;for(var d=1;d<=days;d++)if(row[d])filled++;if(filled===0)missing.push(e.name);});if(missing.length){agentAppendReport("cadres-watch","warn",missing.length+" cadres sans horaires: "+missing.slice(0,5).join(", "));var diag=lg("cmc_cadres_fallback_diag",null);if(diag&&diag.ts&&Date.now()-diag.ts<3600000)_cmcEscalate({missing:missing,diag:diag},"Cadres sans horaires apres fallback v9.447");}else{agentAppendReport("cadres-watch","ok","Tous cadres OK "+MFR[m]+" "+y);}}catch(e){agentAppendReport("cadres-watch","err",(e.message||"").slice(0,100));}}
+function _agentCadresWatch(){try{
+  var y=A.year,m=A.month;
+  var pl=gpl(y,m)||{};
+  var days=getDays(y,m);
+  // v9.651 (Kevin "quand je colle V1 employés, ne cherche pas inspecteurs/pit boss
+  // qui ne sont pas dans ce planning. Idem V2 cadres, ne cherche pas employés.")
+  // Si dernier import = "employees" (V1) → on ne flag PAS les cadres absents
+  // (ils attendent un import V2). Si dernier import = "cadres" (V2) → idem inverse.
+  // Seul scope "complete" (V1+V2 dans un PDF) doit flag tout.
+  var lastImport=null;
+  try{lastImport=lg("cmc_last_import_type_"+y+"-"+m,null);}catch(_){}
+  var importType=lastImport&&lastImport.type;
+  if(importType==="employees"){
+    // V1 importé seul → ne PAS flag cadres absents (normal qu'ils manquent)
+    agentAppendReport("cadres-watch","ok","V1 employés/chefs importé — cadres en attente import V2 (normal)");
+    return;
+  }
+  if(importType==="unknown"||!importType){
+    // Pas d'import récent ou type indéterminé → silencieux (évite faux warning)
+    agentAppendReport("cadres-watch","ok","Pas d'import récent identifié — agent inactif");
+    return;
+  }
+  // V2 cadres ou complete : on flag les cadres réellement absents
+  var missing=[];
+  A.employees.forEach(function(e){
+    if((e.family||"")!=="cadres")return;
+    if(!isEmpActive(e,y,m))return;
+    var row=pl[e.id]||{};
+    var filled=0;for(var d=1;d<=days;d++)if(row[d])filled++;
+    if(filled===0)missing.push(e.name);
+  });
+  if(missing.length){
+    agentAppendReport("cadres-watch","warn",missing.length+" cadres sans horaires: "+missing.slice(0,5).join(", "));
+    var diag=lg("cmc_cadres_fallback_diag",null);
+    if(diag&&diag.ts&&Date.now()-diag.ts<3600000)_cmcEscalate({missing:missing,diag:diag},"Cadres sans horaires apres fallback v9.447");
+  }else{
+    agentAppendReport("cadres-watch","ok","Tous cadres OK "+MFR[m]+" "+y);
+  }
+}catch(e){agentAppendReport("cadres-watch","err",(e.message||"").slice(0,100));}}
 // v9.616 — Sentinelle meta-completeness-watch (1×/jour) :
 // Audit cohérence A.overrides_meta vs A.overrides + completeness score persisté.
 // Escalade si score < 75 ou si meta présente pour emp absent de overrides.
@@ -22728,7 +22800,7 @@ function vPlan(){
   var utid=(A.user&&A.user.team&&gt(A.user.team))?A.user.team:null;
   var utc=tc(utid),mirT=utid?gm(utid):null;
   /* v9.604 \u2014 Sticky header : nav mois + boutons toujours visibles pendant scroll planning */
-  var h=`<div class="page bg-planning"><div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px"><div style="display:flex;align-items:center;gap:8px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}</div><div style="font-size:14px;color:#a0cca0">${A.year}</div></div>${todayD?`<button class="btn ghost" onclick="A.year=new Date().getFullYear();A.month=new Date().getMonth();dc();setTimeout(adjGrid,80)" title="Aller \u00e0 aujourd\u2019hui" style="padding:5px 10px;font-size:13px">\ud83d\udccd Aujourd\u2019hui</button>`:""}${isAdm?`<button class="btn ghost" onclick="exportPlanningCSV(A.year,A.month)" title="Export CSV du planning complet" style="padding:5px 10px;font-size:13px">\ud83d\udcca CSV</button>`:""}<button class="btn ghost" onclick="window.print()" title="Imprimer ce planning" style="padding:5px 10px;font-size:13px">\ud83d\udda8</button><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div></div>`;
+  var h=`<div class="page bg-planning"><div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px"><div style="display:flex;align-items:center;gap:8px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}${typeof cmcVersionBadgeHTML==="function"?cmcVersionBadgeHTML(A.year,A.month,{size:"small"}):""}</div><div style="font-size:14px;color:#a0cca0">${A.year}</div></div>${todayD?`<button class="btn ghost" onclick="A.year=new Date().getFullYear();A.month=new Date().getMonth();dc();setTimeout(adjGrid,80)" title="Aller \u00e0 aujourd\u2019hui" style="padding:5px 10px;font-size:13px">\ud83d\udccd Aujourd\u2019hui</button>`:""}${isAdm?`<button class="btn ghost" onclick="exportPlanningCSV(A.year,A.month)" title="Export CSV du planning complet" style="padding:5px 10px;font-size:13px">\ud83d\udcca CSV</button>`:""}${(function(){try{return lg("cmc_visual_planning_"+A.year+"-"+A.month,null)?'<button class="btn ghost" onclick="cmcShowVisualPlanning()" title="Voir le planning visuel SBM original (traits/couleurs)" style="padding:5px 10px;font-size:13px">\ud83d\uddbc\ufe0f</button>':'';}catch(_){return"";}})()}<button class="btn ghost" onclick="window.print()" title="Imprimer ce planning" style="padding:5px 10px;font-size:13px">\ud83d\udda8</button><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div></div>`;
   // v9.58 — Bandeau "Vue générale" pour user flottant
   if(_isFloating&&!isAdm){
     h+='<div style="padding:10px 14px;background:rgba(74,114,168,.08);border:1px solid rgba(74,114,168,.25);border-radius:10px;margin-bottom:10px">'
@@ -23226,7 +23298,7 @@ function vDeparts(){
     +'<div style="display:flex;align-items:center;gap:8px">'
     +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px">\u2039</button>'
     +'<div style="flex:1;text-align:center">'
-    +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 D\u00e9parts</div>'
+    +'<div style="font-size:17px;font-weight:800;color:#d8cc9a">'+MFR[A.month]+' \u2014 D\u00e9parts'+(typeof cmcVersionBadgeHTML==="function"?cmcVersionBadgeHTML(A.year,A.month,{size:"small"}):"")+'</div>'
     +'<div style="font-size:14px;color:#a0cca0">Rotation par \u00e9quipe</div></div>'
     +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px">\u203a</button>'
     +'</div></div>'
@@ -24770,6 +24842,177 @@ function _cmcInvalidateEmpByIdCache(){_cmcEmpByIdCache=null;_cmcEmpByIdCacheLen=
 // v9.625 — Export texte PDF source pour diagnostic offline.
 // Kevin clique → copie cmc_import_src_<key>.txt + métadonnées dans presse-papier
 // → envoie à Claude Code pour analyse parser sans reproduire le PDF original.
+// v9.652 (Kevin "Pourquoi pas un visuel du planning ?") :
+// Permet à Kevin d'attacher une image/PDF du planning visuel original
+// (avec traits rouges/noirs, couleurs SBM) en complément du texte parsé.
+// Stocké en localStorage cmc_visual_planning_<key> + IDB shadow + Firebase.
+// Affiché dans vImport post-attach + accessible via bouton "🖼️ Voir visuel" dans vPlan.
+function cmcAttachVisualPlanning(inputEl){
+  try{
+    if(!A.user||A.user.id!==AID){toast("⚠ Admin only","err");return;}
+    var file=inputEl&&inputEl.files&&inputEl.files[0];
+    if(!file){toast("Aucun fichier sélectionné","warn");return;}
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var info=document.getElementById("cmcVisualInfo");
+    var preview=document.getElementById("cmcVisualPreview");
+    if(info)info.textContent="⏳ Lecture "+file.name+" ("+Math.round(file.size/1024)+" KB)…";
+    // Limite 10 MB (taille raisonnable pour image scan PDF)
+    if(file.size>10*1024*1024){
+      if(info){info.style.color="#e06060";info.textContent="❌ Trop gros ("+Math.round(file.size/1024/1024)+" MB max 10MB). Compresse l'image.";}
+      return;
+    }
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var dataUrl=e.target.result;
+        var meta={
+          ts:Date.now(),
+          name:file.name,
+          mime:file.type,
+          size:file.size,
+          dataUrl:dataUrl,
+          key:key,year:iy,month:im
+        };
+        // Store localStorage (image en base64)
+        try{ls("cmc_visual_planning_"+key,meta);}catch(qErr){
+          // Si quota dépassé, essayer IDB shadow uniquement
+          if(typeof cmcIdbSet==="function")cmcIdbSet("cmc_visual_planning_"+key,meta);
+          if(info){info.style.color="#e0a040";info.textContent="⚠ Stockage local saturé, image sauvée en IndexedDB uniquement";}
+        }
+        // Sync Firebase si pas trop gros (Firebase a 32MB limit mais on cape à 2MB pour éviter ralentir cmc_ov sync)
+        if(file.size<2*1024*1024 && typeof fbWrite==="function"){
+          try{fbWrite("cmc_visual_planning_"+key,meta);}catch(_){}
+        }
+        // Audit
+        try{_audit("visual_planning_attached",AID,key,file.name,Math.round(file.size/1024)+" KB");}catch(_){}
+        // Preview
+        if(info){
+          info.style.color="#5aaa70";
+          info.textContent="✅ Visuel attaché : "+file.name+" ("+Math.round(file.size/1024)+" KB)";
+        }
+        if(preview){
+          var isImage=/^image\//.test(file.type);
+          if(isImage){
+            preview.innerHTML='<div style="margin-top:10px;padding:8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,140,80,.4);border-radius:8px"><img src="'+esc(dataUrl)+'" style="max-width:100%;border-radius:6px;display:block" alt="Visuel planning"><div style="margin-top:6px;text-align:center;font-size:11px;color:#a0a0a0">📌 Référence visuelle '+MFR[im]+' '+iy+' — utilise pour vérifier traits/couleurs SBM</div></div>';
+          }else{
+            // PDF : afficher lien téléchargeable
+            preview.innerHTML='<div style="margin-top:10px;padding:12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,140,80,.4);border-radius:8px;text-align:center"><a href="'+esc(dataUrl)+'" download="'+esc(file.name)+'" style="color:#ff8c50;text-decoration:none;font-weight:700;font-size:15px">📄 '+esc(file.name)+' (cliquer pour ouvrir)</a><div style="margin-top:6px;font-size:11px;color:#a0a0a0">PDF stocké en référence pour '+MFR[im]+' '+iy+'</div></div>';
+          }
+        }
+        toast("🖼️ Visuel planning attaché","ok",3000);
+      }catch(rerr){
+        if(info){info.style.color="#e06060";info.textContent="❌ Erreur lecture : "+(rerr&&rerr.message||rerr);}
+      }
+    };
+    reader.onerror=function(){
+      if(info){info.style.color="#e06060";info.textContent="❌ Erreur lecture fichier";}
+    };
+    reader.readAsDataURL(file);
+  }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
+}
+
+// v9.652 — Helper pour afficher le visuel dans vPlan en overlay si disponible
+function cmcShowVisualPlanning(){
+  try{
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var meta=lg("cmc_visual_planning_"+key,null);
+    if(!meta||!meta.dataUrl){
+      // Fallback IDB
+      if(typeof cmcIdbGet==="function"){
+        cmcIdbGet("cmc_visual_planning_"+key).then(function(m){
+          if(m&&m.dataUrl)_cmcRenderVisualPlanningModal(m);
+          else toast("Aucun visuel attaché pour "+MFR[im]+" "+iy+". Va dans Import pour en joindre un.","info",5000);
+        });
+        return;
+      }
+      toast("Aucun visuel attaché","info");return;
+    }
+    _cmcRenderVisualPlanningModal(meta);
+  }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
+}
+// v9.653 (Kevin "Apex doit pouvoir voir le visuel et l'utiliser pour mieux
+// reproduire le planning, comme quand il fait des tests réels") :
+// Pousse une requête Firebase pour qu'Apex récupère le visuel + utilise
+// Claude Vision API pour le "lire" + cross-valide avec cmc_overrides[key]
+// + remonte les divergences détectées.
+function cmcRequestApexVision(){
+  try{
+    if(!A.user||A.user.id!==AID){toast("⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var visual=lg("cmc_visual_planning_"+key,null);
+    if(!visual||!visual.dataUrl){
+      toast("Aucun visuel attaché. Joins d'abord une image dans Import.","warn",6000);
+      return;
+    }
+    var ov=A.overrides[key]||{};
+    var empsWithCodes=Object.keys(ov).filter(function(eid){return Object.keys(ov[eid]||{}).length>0;}).length;
+    // Requête Apex
+    var request={
+      ts:Date.now(),
+      from:"cmcteams",
+      app_ver:APP_VER,
+      key:key,year:iy,month:im,
+      visual_attached:true,
+      visual_size:visual.size,
+      visual_mime:visual.mime,
+      visual_name:visual.name,
+      // dataUrl NON inclus dans requête pour éviter 5MB Firebase node (Apex lit depuis cmc_visual_planning_<key>)
+      ov_summary:{
+        emps_with_codes:empsWithCodes,
+        total_active:A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length,
+        sample_cadres:A.employees.filter(function(e){return (e.family||"")==="cadres"&&isEmpActive(e,iy,im);}).slice(0,3).map(function(e){
+          var r=ov[e.id]||{};
+          return {name:e.name,filled:Object.keys(r).filter(function(d){return !!r[d];}).length,sample:Object.keys(r).slice(0,5).map(function(d){return d+":"+r[d];}).join(" ")};
+        })
+      },
+      task:"vision_cross_validate",
+      expected_result_key:"cmc_apex_vision_result_"+key
+    };
+    ls("cmc_apex_vision_request_"+key,request);
+    if(typeof fbWrite==="function")try{fbWrite("cmc_apex_vision_request_"+key,request);}catch(_){}
+    try{_audit("apex_vision_request",AID,key,"",JSON.stringify({size:visual.size,emps:empsWithCodes}));}catch(_){}
+    toast("🤖 Apex notifié — analyse Vision en cours. Résultat dans 30-60s.","ok",5000);
+    // Listener léger pour notifier Kevin quand résultat dispo
+    var checkInt=setInterval(function(){
+      var res=lg("cmc_apex_vision_result_"+key,null);
+      if(res&&res.ts>request.ts){
+        clearInterval(checkInt);
+        _cmcRenderApexVisionResult(res);
+      }
+    },5000);
+    setTimeout(function(){clearInterval(checkInt);},300000); // timeout 5 min
+  }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
+}
+function _cmcRenderApexVisionResult(res){
+  var modalId="cmcApexVisionResult_"+Date.now();
+  var hasDiff=res.divergences&&res.divergences.length>0;
+  var statusColor=hasDiff?"#e0a040":"#5aaa70";
+  var statusIcon=hasDiff?"⚠":"✅";
+  var html='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
+    +'<div style="background:#0f1a14;border:2px solid '+statusColor+';border-radius:14px;max-width:900px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="color:'+statusColor+';margin:0;font-size:18px">'+statusIcon+' Apex Vision — '+esc(MFR[A.month])+' '+A.year+'</h2>'
+    +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+    +'<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px;font-size:14px;color:#cfd0e0;line-height:1.5;white-space:pre-wrap">'+esc(res.summary||"Résultat brut: "+JSON.stringify(res).slice(0,500))+'</div>'
+    +(hasDiff?'<div style="margin-top:10px;padding:10px;background:rgba(224,160,64,.10);border:1px solid rgba(224,160,64,.40);border-radius:8px;color:#ffd0a0;font-size:13px"><b>Divergences détectées :</b><br>'+esc(res.divergences.map(function(d){return "• "+d.emp+" jour "+d.day+" : visuel="+d.visual+" vs parsed="+d.parsed;}).join("\n"))+'</div>':'')
+    +'</div></div>';
+  document.body.insertAdjacentHTML("beforeend",html);
+  toast(statusIcon+" Apex Vision : "+(hasDiff?(res.divergences.length+" divergences trouvées"):"planning conforme au visuel"),hasDiff?"warn":"ok",6000);
+}
+
+function _cmcRenderVisualPlanningModal(meta){
+  var modalId="cmcVisualModal_"+Date.now();
+  var isImage=/^image\//.test(meta.mime||"");
+  var content=isImage
+    ?'<img src="'+esc(meta.dataUrl)+'" style="max-width:100%;max-height:80vh;display:block;margin:0 auto;border-radius:6px" alt="Visuel planning">'
+    :'<a href="'+esc(meta.dataUrl)+'" download="'+esc(meta.name||"planning.pdf")+'" style="color:#ff8c50;font-size:18px;font-weight:700;padding:30px;display:block;text-align:center">📄 '+esc(meta.name||"planning.pdf")+' — cliquer pour ouvrir</a>';
+  var modal='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
+    +'<div style="background:#0f1a14;border:2px solid #ff8c50;border-radius:14px;max-width:1100px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="color:#ff8c50;margin:0;font-size:18px">🖼️ Visuel planning '+esc(MFR[A.month])+' '+A.year+'</h2>'
+    +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+    +content+'</div></div>';
+  document.body.insertAdjacentHTML("beforeend",modal);
+}
+
 function cmcExportPdfSourceForDiag(){
   try{
     if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
@@ -24871,6 +25114,139 @@ function cmcExportPdfSourceForDiag(){
 // A.overrides[key] pour CHAQUE cadre, séparés par rôle. Permet de confirmer
 // runtime si tous ont vraiment le même horaire OU si c'est juste un effet
 // d'affichage (rotation décalée jour par jour).
+// v9.656 (Kevin "il ne met pas toutes les personnes correctement qui ont les mêmes
+// jours de repos dans la même équipe") : diagnostic dédié algo détection équipes
+// par pattern RH. Exporte signature cycle:offset:firstWork par emp + groupes formés
+// + raisons de skip → permet diagnostic immédiat pourquoi 2 emps avec mêmes RH
+// finissent dans équipes différentes (ou pas d'équipe du tout).
+function cmcExportTeamsDetectionDiag(){
+  try{
+    if(!A.user||A.user.id!==AID){toast("⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var ov=A.overrides[key]||{};
+    if(!Object.keys(ov).length){toast("Aucune donnée pour "+MFR[im]+" "+iy,"warn");return;}
+
+    // Re-run algo pour avoir le report
+    var algoRes=null;
+    try{algoRes=_cmcDetectTeamsByRestPattern(iy,im);}catch(e){}
+
+    // Pour chaque emp avec data, calculer signature potentielle
+    function _calcCycle(rhDays){
+      if(rhDays.length<2)return null;
+      var gaps=[];for(var i=1;i<rhDays.length;i++)gaps.push(rhDays[i]-rhDays[i-1]);
+      gaps.sort(function(a,b){return a-b;});
+      return gaps[Math.floor(gaps.length/2)];
+    }
+    var ABSENCE=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL"];
+    function _firstWork(r){
+      for(var d=1;d<=15;d++){
+        var c=r[d];if(!c)continue;
+        var cu=String(c).toUpperCase();
+        if(ABSENCE.indexOf(cu)>=0)continue;
+        return String(c);
+      }
+      return null;
+    }
+
+    var empAnalysis=[];
+    Object.keys(ov).forEach(function(eid){
+      var emp=A.employees.find(function(e){return e.id===eid;});
+      if(!emp)return;
+      var r=ov[eid]||{};
+      var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
+      var rhDays=[];
+      Object.keys(r).forEach(function(d){if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));});
+      rhDays.sort(function(a,b){return a-b;});
+      var cycle=_calcCycle(rhDays);
+      var offset=cycle?(rhDays[0]-1)%cycle:null;
+      var firstWork=_firstWork(r);
+      var firstWorkNorm=firstWork?firstWork.replace(/c$/i,""):null;
+      var sig=(cycle&&offset!=null&&firstWorkNorm)?(cycle+":"+offset+":"+firstWorkNorm):null;
+      var skipReason=null;
+      if((emp.family||"")==="cadres")skipReason="family=cadres (cadres exclus algo)";
+      else if(cellCount<10)skipReason="<10 cells écrites ("+cellCount+")";
+      else if(rhDays.length<2)skipReason="<2 RH days ("+rhDays.length+")";
+      else if(!cycle||cycle<2||cycle>15)skipReason="cycle invalide ("+cycle+")";
+      empAnalysis.push({
+        name:emp.name,id:eid,family:emp.family||"?",
+        cellCount:cellCount,rhDays:rhDays,
+        cycle:cycle,offset:offset,
+        firstWork:firstWork,firstWorkNorm:firstWorkNorm,
+        signature:sig,skipReason:skipReason,
+        teamHistoryWritten:emp.teamHistory&&emp.teamHistory[key]||null
+      });
+    });
+
+    // Grouper par signature pour voir clusters
+    var bySignature={};
+    empAnalysis.forEach(function(a){
+      if(!a.signature)return;
+      if(!bySignature[a.signature])bySignature[a.signature]=[];
+      bySignature[a.signature].push(a.name);
+    });
+
+    // Build report
+    var report="=== CMCteams DETECTION ÉQUIPES DIAG "+APP_VER+" ===\n"
+      +"Date: "+new Date().toISOString()+"\n"
+      +"Mois: "+MFR[im]+" "+iy+" (key="+key+")\n"
+      +"\n=== RÉSULTAT ALGO ===\n"
+      +(algoRes?JSON.stringify(algoRes.report||algoRes,null,2):"algo n'a pas retourné")
+      +"\n\n=== GROUPES PAR SIGNATURE (cycle:offset:firstWork) ===\n"
+      +Object.keys(bySignature).sort().map(function(s){
+        return s+" ("+bySignature[s].length+" emps): "+bySignature[s].join(", ");
+      }).join("\n")
+      +"\n\n=== EMPS SKIPPED (pas dans algo) ===\n"
+      +empAnalysis.filter(function(a){return a.skipReason;}).map(function(a){
+        return a.name.padEnd(28)+" → "+a.skipReason;
+      }).join("\n")
+      +"\n\n=== DÉTAIL PAR EMP (signature + teamHistory écrit) ===\n"
+      +empAnalysis.filter(function(a){return !a.skipReason;}).map(function(a){
+        return a.name.padEnd(28)+" RH="+JSON.stringify(a.rhDays).padEnd(35)+" cycle="+a.cycle+" offset="+a.offset
+          +" firstWork="+(a.firstWork||"?").padEnd(10)+" sig="+a.signature
+          +" → teamHistory["+key+"]="+(a.teamHistoryWritten||"NON ÉCRIT");
+      }).join("\n");
+
+    var modalId="cmcTeamsDiag_"+Date.now();
+    var reportEsc=esc(report);
+    var modal='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
+      +'<div style="background:#0f1a14;border:2px solid #c080ff;border-radius:14px;max-width:1100px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="color:#c080ff;margin:0;font-size:18px">🔍 Diag Détection Équipes '+esc(MFR[im])+' '+iy+'</h2>'
+      +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+      +'<p style="color:#cfd0e0;font-size:13px;margin:0 0 10px">Si 2 emps avec mêmes RH sont dans 2 groupes différents, c\'est qu\'ils ont firstWork différent. Si même sig mais teamHistory différent ➜ vrai bug.</p>'
+      +'<textarea readonly id="'+modalId+'_ta" style="width:100%;height:60vh;background:#0a0f0c;color:#d0d0ff;border:1px solid #c080ff55;border-radius:8px;padding:10px;font-family:monospace;font-size:11px;resize:none">'+reportEsc+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
+      +'<button id="'+modalId+'_copy" style="flex:2;min-width:160px;min-height:48px;padding:12px;background:linear-gradient(135deg,#5aaa70,#3a8a50);border:none;color:#fff;font-weight:800;border-radius:10px;cursor:pointer;font-size:14px">📋 Copier</button>'
+      +'<button id="'+modalId+'_dl" style="flex:1;min-width:120px;min-height:48px;padding:12px;background:rgba(74,160,255,.18);border:1px solid #4aa0ff;color:#4aa0ff;font-weight:700;border-radius:10px;cursor:pointer;font-size:13px">💾 .txt</button>'
+      +'</div>'
+      +'<div id="'+modalId+'_status" style="font-size:12px;color:#a0cca0;min-height:18px;text-align:center;margin-top:6px"></div>'
+      +'</div></div>';
+    document.body.insertAdjacentHTML("beforeend",modal);
+    var btnCopy=document.getElementById(modalId+"_copy");
+    var btnDl=document.getElementById(modalId+"_dl");
+    var status=document.getElementById(modalId+"_status");
+    var ta=document.getElementById(modalId+"_ta");
+    if(btnCopy)btnCopy.addEventListener("click",function(){
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(report).then(function(){
+          status.style.color="#5aaa70";status.textContent="✅ Copié ! Colle dans chat Claude Code.";
+          btnCopy.textContent="✅ Copié !";
+        },function(){ta.focus();ta.select();});
+      }else{ta.focus();ta.select();try{document.execCommand("copy");status.textContent="✅ Sélectionné";}catch(_){}}
+    });
+    if(btnDl)btnDl.addEventListener("click",function(){
+      try{
+        var blob=new Blob([report],{type:"text/plain;charset=utf-8"});
+        var url=URL.createObjectURL(blob),a=document.createElement("a");
+        a.href=url;a.download="cmcteams-teams-diag-"+key+"-"+APP_VER+".txt";
+        document.body.appendChild(a);a.click();
+        setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+        status.style.color="#4aa0ff";status.textContent="✅ Téléchargé.";
+      }catch(e){status.textContent="⚠ "+e.message;}
+    });
+    try{_audit("export_teams_diag",AID,key,"",empAnalysis.length+" emps analysés");}catch(_){}
+  }catch(e){toast("Erreur diag : "+(e&&e.message||e),"err");}
+}
+
 function cmcExportPitBossDiag(){
   try{
     if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
@@ -32699,62 +33075,101 @@ function empAutoSaveProfil(){
 // Verifie qu'un import "ok" a vraiment applique des codes a >=50% des employes actifs.
 // Sinon : affiche alerte rouge + bouton re-tenter + telemetry escalade Apex.
 // Detecte les regressions silencieuses (ex: TypeError catch global avant fix v9.553).
-// v9.648 (Kevin "reconnaissance équipe par jours de repos identiques" — algo
+// v9.648/650 (Kevin "reconnaissance équipe par jours de repos identiques" — algo
 // originel SBM avant que le trait noir du PDF disparaisse au copy-paste).
 // PRINCIPE : employés avec MÊME pattern de jours repos (RH/R) appartiennent à la
 // MÊME équipe. Équipe miroir = pattern offset cyclique (généralement +N jours).
 //
-// Algo :
-// 1. Pour chaque emp non-cadre avec horaires ce mois, extraire signature RH = liste
-//    des jours où code === "RH"
-// 2. Grouper par signature identique → un groupe = une équipe
-// 3. Trier groupes par taille (les vraies équipes ont >=3 emps) puis ordre
-//    d'apparition dans la liste
-// 4. Assigner team ID séquentiel : group 1 = "r1" (roulettes) ou "1" (bj) selon
-//    family majoritaire dans le groupe, group 2 = "r2"/"2", etc.
-// 5. Détecter miroir : si group A pattern = [5,11,17,23,29] et group B = [4,10,16,22,28]
-//    → miroir (offset constant). Stocker dans cmc_team_mirror_<key>.
-// 6. Écrire emp.teamHistory[key] = new team ID pour chaque emp du groupe.
+// Algo v9.650 ROBUSTE :
+// 1. Pour chaque emp non-cadre avec horaires ce mois (>=10 cells, plus permissif) :
+//    - Extraire RH days dans le mois
+//    - Calculer CYCLE = écart médian entre RH consécutifs (typique 6 ou 7 jours SBM)
+//    - Calculer OFFSET = (premier RH - 1) % cycle (position dans cycle)
+//    - Signature ROBUSTE = "cycle:offset" (résiste aux CP/AF qui remplacent UN RH)
+// 2. Grouper emps par signature ROBUSTE (>=2 emps min, plus permissif)
+// 3. Trier groupes par offset (ordre cycle)
+// 4. Assigner team IDs séquentiels par family (bj/roulettes/cmc/baccara)
+// 5. Détecter miroirs : (cycle identique + offset diff = cycle/2) → mirror pair
+// 6. Écrire emp.teamHistory[key] = teamId + miroir dans cmc_team_mirror_<key>
 //
-// Sécurité : ne s'exécute QUE si emp a >=20 cells (sinon pattern non fiable).
-// Préservation : N'écrase PAS teamHistory si déjà écrit par parser explicite
-// (V1 juin format avec numéro équipe entre POST et NOM).
+// Sécurité :
+// - Ne s'exécute QUE si emp a >=10 cells (vs 20 avant — accepter part-time)
+// - Préserve teamHistory si parser explicite a écrit (V1 juin numéro équipe)
+// - Skip emps avec <2 RH (pas assez pour cycle)
+// - Skip groupes <2 emps (vrai groupe min 2 personnes)
 function _cmcDetectTeamsByRestPattern(iy,im){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
-    if(!Object.keys(ov).length){console.log("[v9.648 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
-    // 1. Extraire signature RH par emp (non-cadre uniquement, >=20 cells)
+    if(!Object.keys(ov).length){console.log("[v9.650 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
+    // Helper : calcule cycle médian entre RH consécutifs
+    function _calcCycle(rhDays){
+      if(rhDays.length<2)return null;
+      var gaps=[];
+      for(var i=1;i<rhDays.length;i++){gaps.push(rhDays[i]-rhDays[i-1]);}
+      gaps.sort(function(a,b){return a-b;});
+      // Median plus robuste que mean (résiste aux CP qui élargit un gap)
+      return gaps[Math.floor(gaps.length/2)];
+    }
+    // 1. Extraire signature ROBUSTE (cycle:offset) par emp
     var empSigs={};
     var detectableEmps=[];
+    var skipReasons={cadres:0,explicit:0,low_cells:0,low_rh:0,no_cycle:0};
+    // v9.654 (Kevin "miroir = MÊMES RH days, codes travail différents") :
+    // Helper trouve le premier code de travail (pas RH/R/CP/AF/M) de l'emp
+    function _firstWorkCode(r){
+      var ABSENCE=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL"];
+      for(var d=1;d<=15;d++){
+        var c=r[d];
+        if(!c)continue;
+        var cu=String(c).toUpperCase();
+        if(ABSENCE.indexOf(cu)>=0)continue;
+        // Garder le code brut (avec suffixe ', ", *, c etc.) pour distinguer cycles
+        return String(c);
+      }
+      return null;
+    }
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
-      if((emp.family||"")==="cadres")return; // cadres ont leur propre team (pit15/sup)
-      // Skip si parser a DÉJÀ écrit teamHistory explicite ce mois (V1 juin format)
-      if(emp.teamHistory&&emp.teamHistory[key])return;
+      if((emp.family||"")==="cadres"){skipReasons.cadres++;return;}
+      if(emp.teamHistory&&emp.teamHistory[key]){skipReasons.explicit++;return;}
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
-      if(cellCount<20){return;}
-      // Signature = liste tri des jours RH (et seulement RH, pas R)
+      if(cellCount<10){skipReasons.low_cells++;return;}
       var rhDays=[];
       Object.keys(r).forEach(function(d){
         if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));
       });
       rhDays.sort(function(a,b){return a-b;});
-      if(rhDays.length<3){return;} // pattern non fiable
-      var sig=rhDays.join(",");
+      if(rhDays.length<2){skipReasons.low_rh++;return;}
+      var cycle=_calcCycle(rhDays);
+      if(!cycle||cycle<2||cycle>15){skipReasons.no_cycle++;return;}
+      var offset=(rhDays[0]-1)%cycle;
+      // v9.654 : signature inclut PREMIER CODE TRAVAIL (distingue miroir)
+      // ex équipe A "20/5" vs équipe miroir A' "22/6'" mêmes RH mais codes différents
+      var firstWork=_firstWorkCode(r)||"?";
+      // Normaliser légèrement : "20/5" et "20/5c" même groupe (suffixe c = CMC), garde *,',"
+      var firstWorkNorm=firstWork.replace(/c$/i,"");
+      var sig=cycle+":"+offset+":"+firstWorkNorm;
       if(!empSigs[sig])empSigs[sig]=[];
-      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,family:emp.family||"bj"});
+      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,firstWork:firstWorkNorm,family:emp.family||"bj"});
       detectableEmps.push(eid);
     });
-    var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=3;});
-    if(!sigs.length){console.log("[v9.648 detectTeams] no group with 3+ same RH, skip");return{ok:false,reason:"no_groups"};}
-    // 2. Trier groupes par premier RH day (ordre cycle)
-    sigs.sort(function(a,b){return parseInt(a.split(",")[0])-parseInt(b.split(",")[0]);});
+    var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=2;}); // v9.650 : 3→2
+    if(!sigs.length){
+      console.log("[v9.650 detectTeams] no group with 2+ same cycle:offset, skip. SkipReasons:",skipReasons);
+      return{ok:false,reason:"no_groups",skipReasons:skipReasons};
+    }
+    // 2. Trier groupes par offset croissant (ordre cycle)
+    sigs.sort(function(a,b){
+      var pa=a.split(":"),pb=b.split(":");
+      var oa=parseInt(pa[1]),ob=parseInt(pb[1]);
+      if(oa!==ob)return oa-ob;
+      return parseInt(pa[0])-parseInt(pb[0]);
+    });
     // 3. Assigner team IDs séquentiels par family
     var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
-    var assignments={};
     var teamGroups=[];
     sigs.forEach(function(sig){
       var group=empSigs[sig];
@@ -32764,24 +33179,30 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       famCounters[domFam]=(famCounters[domFam]||0)+1;
       var n=famCounters[domFam];
       var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:String(n);
-      assignments[teamId]={sig:sig,emps:group,rhDays:group[0].rhDays,family:domFam};
-      teamGroups.push({teamId:teamId,sig:sig,rhDays:group[0].rhDays,family:domFam,empCount:group.length});
-      // Écrire teamHistory[key] pour chaque emp du groupe
+      teamGroups.push({
+        teamId:teamId,sig:sig,
+        cycle:group[0].cycle,offset:group[0].offset,
+        firstWork:group[0].firstWork, // v9.655 fix : indispensable pour détection miroir
+        family:domFam,empCount:group.length,
+        rhDays:group[0].rhDays
+      });
       group.forEach(function(g){
         if(!g.emp.teamHistory)g.emp.teamHistory={};
         g.emp.teamHistory[key]=teamId;
       });
     });
-    // 4. Détection miroirs : pour chaque paire de teams, vérifier offset cyclique
+    // 4. Détection miroirs v9.654 (Kevin règle confirmée) :
+    // Miroir = MÊMES jours RH (même cycle:offset) + premier code travail DIFFÉRENT.
+    // Ex Roulettes : équipe A "20/5" RH=[5,11,17,23,29] miroir A' "22/6'" RH=[5,11,17,23,29].
+    // Cas Kevin mai V1 : BARONE/AUREGLIA/PARIZIA/GANCIA/DAGIONI (équipe A "20/5")
+    //                   + BASILE/RINALDI/SIRIO/MALENFANT/MILLET/MARCHI (miroir "22/6'")
     var mirrors={};
     for(var i=0;i<teamGroups.length;i++){
       for(var j=i+1;j<teamGroups.length;j++){
         var a=teamGroups[i],b=teamGroups[j];
-        if(a.family!==b.family||a.empCount!==b.empCount)continue;
-        // Offset constant ?
-        var offsets=a.rhDays.map(function(d,idx){return d-(b.rhDays[idx]||0);});
-        var firstOff=offsets[0];
-        if(offsets.every(function(o){return o===firstOff;})){
+        if(a.family!==b.family)continue;
+        // MÊMES RH days (cycle + offset identiques) ET premier code travail différent
+        if(a.cycle===b.cycle && a.offset===b.offset && a.firstWork!==b.firstWork){
           mirrors[a.teamId]=b.teamId;
           mirrors[b.teamId]=a.teamId;
         }
@@ -32793,13 +33214,20 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     // 5. Sync employees + Firebase
     try{ls("cmc_e",A.employees);}catch(_){}
     if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
-    // 6. Audit
-    var report={teams:teamGroups.length,empsAssigned:detectableEmps.length,mirrors:Object.keys(mirrors).length/2};
-    try{if(typeof _audit==="function")_audit("teams_detected_by_rh_pattern",AID,key,
-      report.teams+" teams / "+report.empsAssigned+" emps",JSON.stringify(report));}catch(_){}
-    console.log("[v9.648 detectTeams] "+report.teams+" équipes détectées par pattern RH, "+report.empsAssigned+" emps assignés, "+report.mirrors+" paires miroir");
+    // 6. Audit enrichi
+    var report={
+      teams:teamGroups.length,
+      empsAssigned:detectableEmps.length,
+      mirrors:Object.keys(mirrors).length/2,
+      skipReasons:skipReasons,
+      cycles:teamGroups.map(function(g){return g.cycle;}).filter(function(v,i,a){return a.indexOf(v)===i;})
+    };
+    try{if(typeof _audit==="function")_audit("teams_detected_by_rh_pattern_v650",AID,key,
+      report.teams+" teams / "+report.empsAssigned+" emps / "+report.mirrors+" mirrors",
+      JSON.stringify(report));}catch(_){}
+    console.log("[v9.650 detectTeams] "+report.teams+" équipes détectées par pattern cycle:offset, "+report.empsAssigned+" emps assignés, "+report.mirrors+" paires miroir, cycles="+report.cycles.join(","));
     return{ok:true,report:report,teamGroups:teamGroups,mirrors:mirrors};
-  }catch(e){console.warn("[v9.648 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
+  }catch(e){console.warn("[v9.650 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
 }
 
 function _postValidateImport(iy,im,okCount,errCount,errLines){
@@ -33312,6 +33740,21 @@ function vImport(){
     <div id="fileInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
   </div>
 
+  <!-- v9.652 (Kevin "Pourquoi pas un visuel du planning ?") — Joindre image PDF originale -->
+  <div class="card" style="padding:12px;margin-bottom:8px;border:2px solid rgba(255,140,80,.45);background:rgba(255,140,80,.06)">
+    <div style="font-size:15px;font-weight:700;color:#ff8c50;margin-bottom:6px">🖼️ Joindre image visuelle du planning</div>
+    <div style="font-size:12px;color:#a0cca0;margin-bottom:8px;line-height:1.4">Pour voir traits rouges/noirs et couleurs originales SBM à côté du texte parsé. JPG/PNG/PDF acceptés. Stocké en local + Firebase pour réf future.</div>
+    <input type="file" id="impVisualFile" accept="image/*,.pdf" style="display:none" onchange="cmcAttachVisualPlanning(this)">
+    <button onclick="document.getElementById('impVisualFile').click()" style="width:100%;min-height:52px;padding:12px;background:linear-gradient(135deg,#ff8c50,#cc6c30);border:none;border-radius:10px;font-size:15px;color:#0a0f0c;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+      🖼️ Choisir image / photo planning
+    </button>
+    <div id="cmcVisualInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
+    <div id="cmcVisualPreview" style="margin-top:10px"></div>
+    <button onclick="cmcRequestApexVision()" title="Apex lit le visuel avec Claude Vision API et compare avec le planning parsé pour détecter divergences" style="width:100%;min-height:48px;padding:10px;margin-top:10px;background:rgba(160,96,255,.15);border:1px solid rgba(160,96,255,.5);color:#c080ff;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+      🤖 Demander à Apex de vérifier visuel vs parsing
+    </button>
+  </div>
+
   <!-- v9.508 Scanner planning camera iPhone (OCR Tesseract.js, auto-tri mois/cadres/employes) -->
   <div class="card" style="padding:12px;margin-bottom:8px;border:2px solid rgba(90,168,255,.45);background:rgba(90,168,255,.06)">
     <div style="font-size:15px;font-weight:700;color:#5aa8ff;margin-bottom:6px">📷 Scanner planning (camera iPhone)</div>
@@ -33369,6 +33812,9 @@ function vImport(){
         </button>
         <button class="btn" onclick="cmcExportPitBossDiag()" title="Diagnostic Pit Boss : export horaires r\u00e9els par cadre pour comparaison PDF" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">
           \ud83d\udd0d Diag Pit Boss horaires
+        </button>
+        <button class="btn" onclick="cmcExportTeamsDetectionDiag()" title="Diagnostic algo d\u00e9tection \u00e9quipes : signature cycle:offset:firstWork par emp + groupes form\u00e9s + raisons skip" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(192,128,255,.15);border:1px solid rgba(192,128,255,.5);color:#c080ff;font-weight:800">
+          \ud83d\udd0d Diag d\u00e9tection \u00e9quipes
         </button>
         <button class="btn" onclick="cmcWipeCadresForMonth()" title="Efface les horaires des cadres (Pit Boss + Superviseurs) pour ce mois \u2014 snapshot rollback gard\u00e9. Utile avant re-import V2 propre." style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,64,64,.12);border:1px solid rgba(224,64,64,.45);color:#e06060;font-weight:700">
           \ud83d\uddd1\ufe0f Effacer cadres (ce mois)
@@ -35734,15 +36180,24 @@ function doImport(){
           if(typeof _audit==="function")_audit("cadre_role_change",(A.user&&A.user.id)||"import",emp.id,_oldRole||"",_contextCadreRole+" ("+_contextTeam+")");
         }
       }
-      // v9.590 ROLLBACK v9.584 (Kevin "y en a qui sont tout seuls dans les equipes,
-      // les equipes ne sont plus du tout bonnes") : update emp.team pour DEF_EMP
-      // creait fragmentation des equipes quand parser ratait detection section.
-      // Retour comportement v9.583 : DEF_EMP garde leur team du code (stable),
-      // non-DEF_EMP suit _contextTeam. teamHistory[key] continue de tracer per-mois.
+      // v9.590 ROLLBACK v9.584 + v9.655 (Kevin "changement de secteur pour période") :
+      // - DEF_EMP garde leur team du code (stable), non-DEF_EMP suit _contextTeam
+      // - teamHistory[key] trace per-mois (déjà acquis)
+      // - v9.655 : familyHistory[key] aussi écrit pour TOUS emps (DEF_EMP inclus)
+      //   permet à RAMOS (chef BJ mai) de devenir roulettes juin sans modifier
+      //   emp.family de base. Vues afficheront secteur du mois via familyForMonth().
       if(_contextTeam){
         if(!emp.teamHistory)emp.teamHistory={};
         if(emp.teamHistory[key]!==_contextTeam){emp.teamHistory[key]=_contextTeam;_changed=true;}
         if(!_isDefEmp&&emp.team!==_contextTeam){emp.team=_contextTeam;_changed=true;}
+      }
+      // v9.655 — familyHistory per-mois (changement de secteur temporaire)
+      if(importFamily){
+        if(!emp.familyHistory)emp.familyHistory={};
+        if(emp.familyHistory[key]!==importFamily){
+          emp.familyHistory[key]=importFamily;
+          _changed=true;
+        }
       }
       // Mettre à jour le poste depuis le code poste du PDF (colonne 0 si présent) — PDF = source de vérité
       if(nameIdx===1&&p0raw){
