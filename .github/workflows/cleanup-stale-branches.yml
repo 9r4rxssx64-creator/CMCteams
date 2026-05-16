@@ -72,9 +72,14 @@ jobs:
             | grep -E "^claude/" | grep -v "claude/test-699LQ" || true)
           echo "$MERGED_SQUASH"
 
-          echo "[3/3] Branches Kevin demande explicit delete :"
-          # Kevin 2026-05-16 : "Et de loque cette branche elle bug claude/continue-perfection-work-46Oic"
-          EXPLICIT="claude/continue-perfection-work-46Oic"
+          echo "[3/3] Branches Kevin demande explicit delete (multi) :"
+          # Kevin 2026-05-16 :
+          # - "Et de loque cette branche elle bug claude/continue-perfection-work-46Oic"
+          # - "Celle là aussi debug claude/continue-perfection-work-T47uI"
+          # Si la branche n'existe pas → ignore silencieusement (push --delete OK).
+          EXPLICIT=$(printf "%s\n" \
+            "claude/continue-perfection-work-46Oic" \
+            "claude/continue-perfection-work-T47uI")
           echo "$EXPLICIT"
 
           # Combine + dedupe
