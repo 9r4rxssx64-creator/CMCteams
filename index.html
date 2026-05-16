@@ -1196,6 +1196,9 @@ html[data-theme="light"] #topbar{
 </style>
 </head>
 <body>
+<!-- v9.615 Kevin "visuel des versions dans tous les projets toujours" :
+     Badge version permanent bottom-left, click → showReleaseNotes. -->
+<button id="cmc-version-badge" type="button" aria-label="Version CMCteams" title="Version CMCteams · click pour notes" onclick="if(typeof showReleaseNotes==='function')showReleaseNotes();else alert('CMCteams '+(typeof APP_VER!=='undefined'?APP_VER:'?'));" style="position:fixed;bottom:max(8px,env(safe-area-inset-bottom,8px));left:8px;z-index:9998;padding:5px 10px;background:linear-gradient(135deg,rgba(232,184,48,.22),rgba(232,184,48,.12));border:1px solid rgba(232,184,48,.55);color:#c9a227;font-size:11px;font-family:'SF Mono',Menlo,monospace;font-weight:700;border-radius:12px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;opacity:.85;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1;letter-spacing:.02em">v9.615</button>
 <div id="bgA" class="bg-slide"></div><div id="bgB" class="bg-slide"></div>
 <a href="#content" class="skip-link">Aller au contenu principal</a>
 <div id="app" style="min-height:100vh;background:transparent">
@@ -4868,7 +4871,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.614";
+var APP_VER="v9.615";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -20690,6 +20693,49 @@ function _checkVersionUpdate(){
   if(_versionGT(APP_VER,lastSeen)){
     setTimeout(function(){if(A.user)showReleaseNotes();},2000);
   }
+}
+
+// v9.615 (Kevin 2026-05-16 "MAJ auto forcé TOUJOURS tous projets") :
+// Force-update auto silencieux comme Apex v13.4.188. Check distant /index.html
+// avec ?_v= (SW skip via fix sw.js v9.615) → parse data-app-ver= → si différent
+// de APP_VER local : unregister SW + clear caches + reload silencieux.
+// Conditions : !typing + !modal-actif + throttle 10s. Foreground OK (drop isIdle).
+var _cmcAutoMajInProgress=false;
+async function _cmcAutoForceUpdate(){
+  if(_cmcAutoMajInProgress||!navigator.onLine)return;
+  var lastAuto=parseInt(localStorage.getItem("cmc_auto_maj_last")||"0",10);
+  if(Date.now()-lastAuto<10000)return; // throttle 10s
+  var active=document.activeElement;
+  var tag=active&&active.tagName&&active.tagName.toLowerCase();
+  if(tag==="textarea"||tag==="input"||(active&&active.getAttribute&&active.getAttribute("contenteditable")==="true"))return;
+  if(document.querySelector(".modal[style*='display:flex'],.modal-overlay:not([style*='display:none'])"))return;
+  _cmcAutoMajInProgress=true;
+  try{
+    var res=await fetch("./index.html?_v="+Date.now(),{cache:"reload",headers:{"Cache-Control":"no-cache, no-store","Pragma":"no-cache"}});
+    if(!res.ok){_cmcAutoMajInProgress=false;return;}
+    var html=await res.text();
+    var m=html.match(/var APP_VER\s*=\s*["']([^"']+)["']/);
+    var remoteVer=m&&m[1]?m[1]:null;
+    if(!remoteVer||remoteVer===APP_VER){_cmcAutoMajInProgress=false;return;}
+    console.log("[CMC v9.615 auto-maj]",APP_VER,"→",remoteVer);
+    localStorage.setItem("cmc_auto_maj_last",String(Date.now()));
+    try{if(typeof toast==="function")toast("🔄 Mise à jour CMCteams "+remoteVer+" en cours…","info");}catch(_){}
+    // NUCLEAR : unregister SW + clear caches + reload
+    if("serviceWorker" in navigator){
+      try{var regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(function(r){return r.unregister().catch(function(){});}));}catch(_){}
+    }
+    if(typeof caches!=="undefined"){
+      try{var keys=await caches.keys();await Promise.all(keys.map(function(k){return caches.delete(k).catch(function(){});}));}catch(_){}
+    }
+    setTimeout(function(){location.replace(location.pathname+"?_force_upd_"+Date.now());},300);
+  }catch(_e){console.warn("[CMC auto-maj]",_e);_cmcAutoMajInProgress=false;}
+}
+// Schedule auto check : boot + 60s recurrent + on focus/visibility
+setTimeout(function(){if(A.user)_cmcAutoForceUpdate();},2000);
+setInterval(function(){if(A.user)_cmcAutoForceUpdate();},60000);
+if(typeof document!=="undefined"){
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&A.user)_cmcAutoForceUpdate();});
+  window.addEventListener("focus",function(){if(A.user)_cmcAutoForceUpdate();});
 }
 
 // v9.94 — Accessibilité AAA : contrôles persistants

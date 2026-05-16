@@ -120,12 +120,14 @@ class ForceUpdateBanner {
     this.installed = false;
   }
 
-  /** Check version distante vs locale. */
+  /** Check version distante vs locale.
+   *  v13.4.188 (Kevin "MAJ auto force ne marche pas") :
+   *  cache:'reload' + sw.js skip `?_v=` URL → garantit fetch réseau sans SW. */
   async checkVersion(): Promise<VersionCheckResult> {
     try {
       const res = await fetch(`${REMOTE_URL}?_v=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        cache: 'reload', /* v13.4.188 : reload = bypass HTTP cache + bypass SW si SW skip */
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
       });
       if (!res.ok) {
         logger.warn('force-update', `version check fetch failed: ${res.status}`);
@@ -153,21 +155,17 @@ class ForceUpdateBanner {
     }
     const r = await this.checkVersion();
     if (r.is_stale && r.remote_ver) {
-      /* v13.4.6 (Kevin "Force MAJ auto toujours") :
-       * MAJ silencieuse automatique sans bouton ni banner.
-       * Conditions de sécurité :
-       *   1. Pas de fetch IA en cours (axe pas couper Apex pendant réponse)
-       *   2. Pas de modal/input/textarea actif (Kevin tape)
-       *   3. Throttle 1×/heure (`apex_v13_auto_maj_last`)
-       *   4. Visibilité document = caché OU page idle 30s
-       * Sinon → banner classique avec bouton pour qu'il décide. */
+      /* v13.4.188 (Kevin "MAJ auto forcé TOUJOURS tous projets") :
+       * MAJ silencieuse automatique TOUJOURS dès que stale détecté.
+       * Conditions de sécurité MINIMALES (drop isIdle qui bloquait app foreground) :
+       *   1. Pas de fetch IA en cours (axe pas couper Apex pendant streaming)
+       *   2. Pas de typing user actif (Kevin tape)
+       *   3. Throttle 10s entre 2 tentatives auto-MAJ
+       * Plus de isIdle/visibilityState — Kevin avec app foreground reçoit MAJ. */
       const lastAuto = parseInt(localStorage.getItem('apex_v13_auto_maj_last') ?? '0', 10);
-      /* v13.4.44 Kevin "L'app devrait se mettre à jour autonome temps réel toujours" :
-       * throttle 5 min → 30 sec. Quasi temps réel après chaque push v13.4.X. */
-      const throttleOK = Date.now() - lastAuto > 30 * 1000; /* 30 sec (était 5 min) */
-      const isIdle = document.visibilityState === 'hidden' || this.isUserIdle();
+      const throttleOK = Date.now() - lastAuto > 10 * 1000; /* 10s (était 30s) */
       const isSafe = !this.hasActiveFetch() && !this.hasUserTyping();
-      if (throttleOK && isIdle && isSafe) {
+      if (throttleOK && isSafe) {
         logger.info('force-update', `AUTO-MAJ silencieuse (${r.local_ver} → ${r.remote_ver})`);
         localStorage.setItem('apex_v13_auto_maj_last', String(Date.now()));
         /* Toast info bref */
@@ -203,7 +201,11 @@ class ForceUpdateBanner {
     }
   }
 
-  /** v13.4.6 — Détecte si la page est idle (pas d'interaction depuis 30s) */
+  /** v13.4.6 — Détecte si la page est idle (pas d'interaction depuis 30s).
+   *  v13.4.188 : déprécié (auto-MAJ ne dépend plus de isIdle, Kevin règle absolue
+   *  "MAJ auto forcé toujours" — l'app peut être foreground). Conservé pour
+   *  diagnostic console + futures features sensibles. */
+  // @ts-expect-error v13.4.188 helper conservé pour diagnostic
   private isUserIdle(): boolean {
     try {
       const lastInteraction = parseInt(localStorage.getItem('apex_v13_last_interaction') ?? '0', 10);

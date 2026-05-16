@@ -10,7 +10,7 @@
  * APP_VER dans bootstrap.js. Workflow `sw-cache-sync.yml` synchronise auto.
  */
 
-const CACHE_VERSION  = 'apex-v13.4.187';
+const CACHE_VERSION  = 'apex-v13.4.188';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const RUNTIME_CACHE  = CACHE_VERSION + '-runtime';
 const OFFLINE_CACHE  = CACHE_VERSION + '-offline';
@@ -181,6 +181,15 @@ self.addEventListener('fetch', function(e){
   if (req.method !== 'GET') return;
 
   var url = req.url;
+
+  /* v13.4.188 fix Kevin "MAJ auto force ne fonctionne pas" :
+   * Skip SW intercept pour URLs avec ?_v= ou ?_force_upd_ → garantit fetch
+   * réseau direct du checkVersion sans cache SW. Le SW ne retourne JAMAIS
+   * la version cachée pour ces URLs marquées explicitement bypass. */
+  if (url.indexOf('?_v=') >= 0 || url.indexOf('&_v=') >= 0
+      || url.indexOf('?_force_upd_') >= 0 || url.indexOf('&_force_upd_') >= 0) {
+    return; /* laisse passer en network direct (network-only effectif) */
+  }
 
   /* APIs : laisser passer (network-only) */
   if (isApiRequest(url)) return;
