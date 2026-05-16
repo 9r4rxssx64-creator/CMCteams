@@ -1,10 +1,10 @@
-# 📧 Réduire les emails GitHub qui saturent ta boîte
+# 📧 Réduire les emails GitHub qui saturent ta boîte Outlook
 
-**Kevin 2026-05-16** : "Arrête les mail creator GitHub pour moi, il sature ma boîte."
+**Kevin 2026-05-16** : "Arrête les mail creator GitHub pour moi, il sature ma boîte" + "je les reçois sur Outlook pas sur Gmail".
 
 ## ✅ Ce que j'ai fait côté workflows (v13.4.184)
 
-Réduction fréquence des cron jobs qui créent des emails :
+Réduction fréquence des cron jobs qui créent des notifications :
 
 | Workflow | Avant | Après |
 |----------|-------|-------|
@@ -12,47 +12,76 @@ Réduction fréquence des cron jobs qui créent des emails :
 | `handoff-sync.yml` | toutes les 15 min | toutes les 6h |
 | `branch-deployment-watch.yml` | toutes les 2h | lundi 08h UTC (1×/semaine) |
 
-Impact : ~95% des emails de notifications cron disparaissent.
+Impact côté CI : ~95% des notifications crons éliminées.
 
-## 🔧 Côté GitHub (toi à faire en 30 secondes)
+## 🔧 Côté GitHub — désactiver les emails À LA SOURCE (le mieux)
 
-GitHub envoie aussi des emails automatiques que je ne contrôle pas. Pour les couper :
+### Étape 1 — Couper TOUS les emails du compte `9r4rxssx64-creator`
 
-### Étape 1 : Désactiver les emails de workflow auto
+Le bot creator envoie les emails via TON compte GitHub lié. Tu dois te connecter au compte `9r4rxssx64-creator` :
 
-1. Ouvre https://github.com/settings/notifications
-2. Section **"Actions"**
-3. Décoche :
-   - ❌ **Send notifications for failed workflows only** (laisser coché si tu veux savoir les fails)
-   - ❌ **Send notifications for workflows you initiated** → **DÉCOCHE** (= le bot 9r4rxssx64-creator)
-4. Sauvegarder
+1. Ouvre https://github.com/settings/notifications (en étant connecté avec `9r4rxssx64-creator`)
+2. Section **"Email notification preferences"** :
+   - **Email** : ton adresse Outlook
+   - **Subscriptions** : décoche **"Comments on Issues and Pull Requests"**
+   - **Subscriptions** : décoche **"Pull Request reviews"**
+   - **Subscriptions** : décoche **"Pull Request pushes"**
+   - **Subscriptions** : décoche **"Include your own updates"**
+3. Section **"Actions"** :
+   - **Send notifications for failed workflows only** → laisse coché si tu veux les fails
+   - **Send notifications for workflows you initiated** → **DÉCOCHE** (tu n'as plus de notifs pour TES déclenchements bot)
+4. Section **"Dependabot alerts"** : décoche tout sauf "Security alerts" (vraiment important)
+5. **Save**
 
-### Étape 2 : Limiter les notifs du repo CMCteams
+### Étape 2 — Limiter les notifs du repo CMCteams
 
-1. Ouvre https://github.com/9r4rxssx64-creator/CMCteams
-2. Bouton **Watch** en haut à droite → clique
+1. https://github.com/9r4rxssx64-creator/CMCteams
+2. Bouton **Watch** (haut droite) → clique
 3. Sélectionne **"Custom"**
 4. Coche UNIQUEMENT :
-   - ✅ Issues (si tu veux voir les escalades Claude Code)
-   - ✅ Pull requests
-   - ❌ Releases · Discussions · Security alerts (au choix)
-5. Apply
+   - ✅ **Issues** (tu veux savoir si Claude Code escalade un bug critique)
+   - ✅ **Pull requests** (si tu veux suivre les PR)
+5. Décoche TOUT le reste (Releases · Discussions · Security · Workflow runs)
+6. Apply
 
-### Étape 3 : Filtre Gmail automatique (zéro email du bot)
+### Étape 3 — Bonus si tu veux ZÉRO email du bot
 
-1. Ouvre Gmail → barre de recherche
-2. Tape `from:notifications@github.com`
-3. Menu ⋮ → **Filtrer les messages comme ceux-ci**
-4. Critères :
-   - **De** : `notifications@github.com`
-   - **Objet** : `9r4rxssx64-creator/cmcteams`
-5. Action : **Ignorer la boîte de réception** + **Marquer comme lu** + **Appliquer le libellé "GitHub-bot"**
-6. **Créer le filtre**
+Sur https://github.com/settings/notifications :
+- **"Watching"** : sélectionne **"Only notify me about explicit @mentions"**
+- Tu n'auras d'email QUE si quelqu'un te @mention explicitement
 
-→ Tu ne verras plus aucun email GitHub bot, mais tu peux toujours les retrouver dans le libellé si besoin.
+## 📨 Côté Outlook — Règle automatique (filet de sécurité)
 
-## 📊 Pour Kevin : où je peux pas agir
+Si après étapes 1-3 quelques emails passent encore :
 
-Seul TOI peux faire ça (3 étapes ci-dessus, 30 secondes max). C'est volontaire de la part de GitHub : les notifications utilisateur sont liées à ton compte personnel, pas au repo.
+### Outlook.com (web)
+1. Ouvre Outlook → ⚙ Paramètres → **Afficher tous les paramètres Outlook**
+2. **Courrier** → **Règles** → **Ajouter une nouvelle règle**
+3. Nom : `GitHub bot creator`
+4. Condition : **De** contient `notifications@github.com`
+5. Condition : **Objet** contient `9r4rxssx64-creator/cmcteams`
+6. Action : **Déplacer vers** → choisis un dossier "GitHub-bot" (créer s'il n'existe pas)
+7. Action additionnelle : **Marquer comme lu**
+8. **Enregistrer**
 
-**Si ça sature encore après ces 3 étapes** : envoie-moi un screenshot d'un email qui revient, je vois lequel workflow et je le coupe à la source.
+### Outlook Desktop (Windows/Mac)
+1. **Accueil** → **Règles** → **Créer une règle**
+2. Cocher **De** : `notifications@github.com`
+3. Cocher **Objet contient** : `9r4rxssx64-creator/cmcteams`
+4. **Déplacer l'élément vers le dossier** → choisir "GitHub-bot"
+5. **OK** → confirmer "Exécuter sur les messages déjà reçus"
+
+### Outlook iOS/Android
+1. Ouvre l'app → ⚙ Paramètres
+2. **Compte** sélectionné → **Filtre/Règles** (pas dispo sur tous comptes mobiles, sinon utilise web)
+
+## 🎯 Recommandation Kevin
+
+**Le combo qui marche** :
+1. Étape 1 (GitHub Notifications) = **bloque la source** = -90% emails immédiat
+2. Étape 2 (Watch Custom) = -5% supplémentaires
+3. Règle Outlook = filet de sécurité pour les 5% restants
+
+**Si tu veux vraiment zéro email du bot** : étape 1 + sélectionne "Only notify me about explicit @mentions" dans Watching.
+
+**Si ça sature encore après ces étapes** : envoie-moi un screenshot d'un email qui revient, je vois lequel workflow envoie et je le coupe à la source.
