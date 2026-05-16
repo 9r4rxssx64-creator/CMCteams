@@ -4885,7 +4885,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.647";
+var APP_VER="v9.648";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -32699,10 +32699,115 @@ function empAutoSaveProfil(){
 // Verifie qu'un import "ok" a vraiment applique des codes a >=50% des employes actifs.
 // Sinon : affiche alerte rouge + bouton re-tenter + telemetry escalade Apex.
 // Detecte les regressions silencieuses (ex: TypeError catch global avant fix v9.553).
+// v9.648 (Kevin "reconnaissance équipe par jours de repos identiques" — algo
+// originel SBM avant que le trait noir du PDF disparaisse au copy-paste).
+// PRINCIPE : employés avec MÊME pattern de jours repos (RH/R) appartiennent à la
+// MÊME équipe. Équipe miroir = pattern offset cyclique (généralement +N jours).
+//
+// Algo :
+// 1. Pour chaque emp non-cadre avec horaires ce mois, extraire signature RH = liste
+//    des jours où code === "RH"
+// 2. Grouper par signature identique → un groupe = une équipe
+// 3. Trier groupes par taille (les vraies équipes ont >=3 emps) puis ordre
+//    d'apparition dans la liste
+// 4. Assigner team ID séquentiel : group 1 = "r1" (roulettes) ou "1" (bj) selon
+//    family majoritaire dans le groupe, group 2 = "r2"/"2", etc.
+// 5. Détecter miroir : si group A pattern = [5,11,17,23,29] et group B = [4,10,16,22,28]
+//    → miroir (offset constant). Stocker dans cmc_team_mirror_<key>.
+// 6. Écrire emp.teamHistory[key] = new team ID pour chaque emp du groupe.
+//
+// Sécurité : ne s'exécute QUE si emp a >=20 cells (sinon pattern non fiable).
+// Préservation : N'écrase PAS teamHistory si déjà écrit par parser explicite
+// (V1 juin format avec numéro équipe entre POST et NOM).
+function _cmcDetectTeamsByRestPattern(iy,im){
+  try{
+    var key=iy+"-"+im;
+    var ov=A.overrides[key]||{};
+    if(!Object.keys(ov).length){console.log("[v9.648 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
+    // 1. Extraire signature RH par emp (non-cadre uniquement, >=20 cells)
+    var empSigs={};
+    var detectableEmps=[];
+    Object.keys(ov).forEach(function(eid){
+      var emp=A.employees.find(function(e){return e.id===eid;});
+      if(!emp)return;
+      if((emp.family||"")==="cadres")return; // cadres ont leur propre team (pit15/sup)
+      // Skip si parser a DÉJÀ écrit teamHistory explicite ce mois (V1 juin format)
+      if(emp.teamHistory&&emp.teamHistory[key])return;
+      var r=ov[eid]||{};
+      var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
+      if(cellCount<20){return;}
+      // Signature = liste tri des jours RH (et seulement RH, pas R)
+      var rhDays=[];
+      Object.keys(r).forEach(function(d){
+        if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));
+      });
+      rhDays.sort(function(a,b){return a-b;});
+      if(rhDays.length<3){return;} // pattern non fiable
+      var sig=rhDays.join(",");
+      if(!empSigs[sig])empSigs[sig]=[];
+      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,family:emp.family||"bj"});
+      detectableEmps.push(eid);
+    });
+    var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=3;});
+    if(!sigs.length){console.log("[v9.648 detectTeams] no group with 3+ same RH, skip");return{ok:false,reason:"no_groups"};}
+    // 2. Trier groupes par premier RH day (ordre cycle)
+    sigs.sort(function(a,b){return parseInt(a.split(",")[0])-parseInt(b.split(",")[0]);});
+    // 3. Assigner team IDs séquentiels par family
+    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
+    var assignments={};
+    var teamGroups=[];
+    sigs.forEach(function(sig){
+      var group=empSigs[sig];
+      var famCount={};
+      group.forEach(function(g){famCount[g.family]=(famCount[g.family]||0)+1;});
+      var domFam=Object.keys(famCount).reduce(function(a,b){return famCount[a]>famCount[b]?a:b;});
+      famCounters[domFam]=(famCounters[domFam]||0)+1;
+      var n=famCounters[domFam];
+      var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:String(n);
+      assignments[teamId]={sig:sig,emps:group,rhDays:group[0].rhDays,family:domFam};
+      teamGroups.push({teamId:teamId,sig:sig,rhDays:group[0].rhDays,family:domFam,empCount:group.length});
+      // Écrire teamHistory[key] pour chaque emp du groupe
+      group.forEach(function(g){
+        if(!g.emp.teamHistory)g.emp.teamHistory={};
+        g.emp.teamHistory[key]=teamId;
+      });
+    });
+    // 4. Détection miroirs : pour chaque paire de teams, vérifier offset cyclique
+    var mirrors={};
+    for(var i=0;i<teamGroups.length;i++){
+      for(var j=i+1;j<teamGroups.length;j++){
+        var a=teamGroups[i],b=teamGroups[j];
+        if(a.family!==b.family||a.empCount!==b.empCount)continue;
+        // Offset constant ?
+        var offsets=a.rhDays.map(function(d,idx){return d-(b.rhDays[idx]||0);});
+        var firstOff=offsets[0];
+        if(offsets.every(function(o){return o===firstOff;})){
+          mirrors[a.teamId]=b.teamId;
+          mirrors[b.teamId]=a.teamId;
+        }
+      }
+    }
+    if(Object.keys(mirrors).length){
+      try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
+    }
+    // 5. Sync employees + Firebase
+    try{ls("cmc_e",A.employees);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+    // 6. Audit
+    var report={teams:teamGroups.length,empsAssigned:detectableEmps.length,mirrors:Object.keys(mirrors).length/2};
+    try{if(typeof _audit==="function")_audit("teams_detected_by_rh_pattern",AID,key,
+      report.teams+" teams / "+report.empsAssigned+" emps",JSON.stringify(report));}catch(_){}
+    console.log("[v9.648 detectTeams] "+report.teams+" équipes détectées par pattern RH, "+report.empsAssigned+" emps assignés, "+report.mirrors+" paires miroir");
+    return{ok:true,report:report,teamGroups:teamGroups,mirrors:mirrors};
+  }catch(e){console.warn("[v9.648 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
+}
+
 function _postValidateImport(iy,im,okCount,errCount,errLines){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
+    // v9.648 — Détection auto équipes par pattern RH avant validation
+    try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
     var totalActive=A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length;
     if(totalActive===0)return;
     var withCodes=Object.keys(ov).filter(function(eid){
