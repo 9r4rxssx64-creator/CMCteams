@@ -77,6 +77,46 @@ Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
 
 **⚠ Important** : les chefs et employés en M longue durée sont dans des **cases SÉPARÉES** du PDF (sections différentes). Ne pas les confondre dans le parsing.
 
+### 🎨 Nomenclature visuelle codes horaires SBM — **Mai V2 Pit Boss** (Kevin 2026-05-16)
+
+**Distinction CRITIQUE des marqueurs `*` / `★`** :
+
+| Marqueur | Position | Signification |
+|---|---|---|
+| `★` ou `*` rouge | À côté du **NOM** (avant les codes) | **Chef européen** (compétence E école premium SBM Art. 4) |
+| `*` après un code horaire | Suffixe d'un code (ex `20/5*`) | **CCDP + CMC** (lieu : Café de Paris + Casino + Cercle Monaco Carlo) |
+
+**Codes horaires par couleur de fond dans le PDF original** :
+
+| Couleur fond PDF | Écriture | Exemples codes | Signification métier |
+|---|---|---|---|
+| **BLANC** | noir | `22/6c`, `19/4c`, `16/3c`, `14/19c` (avec suffixe `c`) | Travail au CMC normal |
+| **ORANGE** | rouge | `22/6*`, `19/4*`, `16/3*`, `16/22*` (suffixe `*`) | CCDP + Casino + CMC (chef européen au Café de Paris) |
+| **ROUGE** | jaune | `19/4"'` (avec tirets `"'` après le code) | **Jours de CONVENTION** : jours rajoutés ponctuellement par la direction quand ils ont besoin de personnel supplémentaire sur les cycles |
+| **VERT** | normal | `AF` | **Formation** 9h15-17h45 en salle blanche (employés ET chefs/professeurs détachés au service formation) |
+
+**Cette nomenclature visuelle s'applique pour mai V2** (cadres Pit Boss/Superviseurs). Codes V2 spécifiques :
+- Codes Pit Boss : `22/6`, `16/20`, `12h30/19`, `19/2`, `15/19`, `19/4'`, `19/4:`
+- Codes alternés (cycle) avec suffixes `'`, `:`, `*` pour distinguer lieu/jour
+
+**Implications algorithme / affichage** :
+1. Le suffixe `c` est juste CMC normal (à conserver ou ignorer selon contexte)
+2. Le suffixe `*` est CCDP+CMC → afficher fond orange dans la cellule de l'UI
+3. Le suffixe `"'` (multiple tirets) = CONVENTION → fond rouge écriture jaune
+4. `AF` = formation → fond vert
+5. Mon algo `_firstWorkCode` v9.654 garde les suffixes ', ", * pour distinguer cycles ✓
+6. Mais `_firstWorkCode` norme `c` (enlève suffix CMC) → cohérent
+
+**Pour le rendu UI** : la fonction de coloration des cellules `cmcMetaForCell` (v9.619) stocke `bg` dans `A.overrides_meta[key][eid][d]`. Mapping à faire :
+- `c` suffix → bg blanc (default)
+- `*` suffix → bg orange "CCDP"
+- `"'` suffix → bg rouge "CONV"
+- `AF` → bg vert "FORMATION"
+- `CDP` standalone → bg orange "CCDP"
+- `CP` → bg rose "CONGÉ"
+- `RH` → bg violet
+- `R` → bg lavande
+
 ### ⭐ Petite étoile rouge `*` = CHEF EUROPÉEN (Kevin 2026-05-16)
 
 Le marqueur `*` rouge à côté du nom dans le PDF SBM (ex `BARONE E *`, `PORASSO C *`, `HAREL H *`) signifie **chef européen** = compétence Roulette Européenne (E) validée à l'**école premium SBM** (Convention Art. 4, École Jeux 1 an minimum).
