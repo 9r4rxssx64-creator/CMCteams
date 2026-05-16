@@ -11,13 +11,10 @@
  *   renderMarkdownLight(t) → markdown léger (gras/italique/code/br)
  */
 
-/** Échappe les caractères HTML dangereux (anti-XSS). */
-export function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
+import { escapeHtml } from '../../core/escape-html.js';
+
+/** Échappe les caractères HTML dangereux (anti-XSS). Re-export depuis central. */
+export { escapeHtml };
 
 /**
  * Markdown ultra-léger pour streaming progressif.

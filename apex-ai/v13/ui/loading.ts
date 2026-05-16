@@ -12,6 +12,8 @@
  * Tous respectent prefers-reduced-motion via CSS.
  */
 
+import { escapeHtml } from '../core/escape-html.js';
+
 export type SpinnerSize = 'sm' | 'md' | 'lg';
 
 interface SpinnerOptions {
@@ -156,12 +158,6 @@ export function inlineLoading(
 }
 
 /* ───────── Helpers escape ───────── */
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
-
 function escapeAttr(s: string): string {
   /* Whitelist alphanumeric + % + px + - + . + ! pour CSS values */
   return s.replace(/[^a-zA-Z0-9%.\-px! ]/g, '');

@@ -11,6 +11,7 @@
  * - Boutons RGPD widget : Export, Delete, Consent, OptOut
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
@@ -34,16 +35,12 @@ const TABS: Array<{ id: string; label: string; file: string; emoji: string }> = 
   { id: 'rgpd', label: 'Mes données', file: '', emoji: '⚙️' },
 ];
 
-function escapeHtmlSafe(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
-
 /**
  * Mini-renderer markdown. Simple mais suffisant pour les docs Apex
  * (titres, paragraphes, listes, tables, inline `code`, **bold**, *italic*).
  */
 function renderMarkdown(md: string): string {
-  let html = escapeHtmlSafe(md);
+  let html = escapeHtml(md);
   /* Headings */
   html = html.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
   html = html.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
@@ -103,7 +100,7 @@ function renderTabs(activeTab: string): string {
   return TABS.map((t) => {
     const active = t.id === activeTab;
     const style = `padding:10px 14px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;background:${active ? 'rgba(232,184,48,0.18)' : 'rgba(255,255,255,0.03)'};color:${active ? '#e8b830' : 'rgba(255,255,255,0.7)'};border:1px solid ${active ? 'rgba(232,184,48,0.4)' : 'rgba(255,255,255,0.05)'};transition:all 180ms`;
-    return `<button class="ax-legal-tab" data-tab="${escapeHtmlSafe(t.id)}" style="${style}">${t.emoji} ${escapeHtmlSafe(t.label)}</button>`;
+    return `<button class="ax-legal-tab" data-tab="${escapeHtml(t.id)}" style="${style}">${t.emoji} ${escapeHtml(t.label)}</button>`;
   }).join('');
 }
 
@@ -183,12 +180,12 @@ function wireRgpdActions(rootEl: HTMLElement): void {
     const reg = rgpd.getProcessingRegistry();
     registryEl.innerHTML = reg.map((r) => `
       <div style="margin-bottom:10px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px">
-        <strong>${escapeHtmlSafe(r.finalite)}</strong>
+        <strong>${escapeHtml(r.finalite)}</strong>
         <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px">
-          Données : ${r.donnees.map((d) => escapeHtmlSafe(d)).join(', ')}<br/>
-          Base légale : ${escapeHtmlSafe(r.baseLegale)}<br/>
-          Durée : ${escapeHtmlSafe(r.duree)}<br/>
-          Destinataires : ${r.destinataires.map((d) => escapeHtmlSafe(d)).join(', ')}
+          Données : ${r.donnees.map((d) => escapeHtml(d)).join(', ')}<br/>
+          Base légale : ${escapeHtml(r.baseLegale)}<br/>
+          Durée : ${escapeHtml(r.duree)}<br/>
+          Destinataires : ${r.destinataires.map((d) => escapeHtml(d)).join(', ')}
         </div>
       </div>
     `).join('');

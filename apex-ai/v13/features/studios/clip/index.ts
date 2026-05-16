@@ -15,6 +15,7 @@
  * Validation stricte (max 60s clip, max 10 segments, taille max 100MB).
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
@@ -150,10 +151,6 @@ export function estimateEngagement(durationSec: number, hasHook: boolean, hasCap
 export const ACCEPTED_VIDEO_FORMATS: readonly string[] = [
   'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska', 'video/avi',
 ];
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function getStorageKey(uid: string, id: string): string {
   return `${STORAGE_PREFIX}${uid}_${id}`;

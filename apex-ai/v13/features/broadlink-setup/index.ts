@@ -18,19 +18,13 @@
  * - Token chiffré AES-GCM-256 via vault (`ax_broadlink_token`)
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { broadlinkBridge, type BroadlinkDevice } from '../../services/broadlink-bridge.js';
 import { toast } from '../../ui/toast.js';
 
 const ADMIN_ID = 'kdmc_admin';
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 function isAdmin(): boolean {
   const u = store.get('user') as { id?: string } | null;

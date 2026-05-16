@@ -25,6 +25,7 @@
  * - 0 magic numbers, tout en const exportées
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
@@ -459,10 +460,6 @@ export const OPTIONAL_CLAUSES: readonly OptionalClause[] = [
 export const MAX_PARTIES = 10;
 export const MAX_CLAUSES = 30;
 export const STORAGE_PREFIX = 'ax_contracts_';
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function getStorageKey(uid: string): string {
   return `${STORAGE_PREFIX}${uid}`;

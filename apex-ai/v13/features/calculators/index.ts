@@ -15,13 +15,13 @@
  * - escapeHtml partout
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
+/* Re-export escapeHtml for backward compatibility (tests import from this module). */
+export { escapeHtml };
 
 /**
  * Validate IBAN via mod 97 (ISO 13616).

@@ -12,6 +12,7 @@
  * Pas de wiring router ici (feature montée par admin tab loader).
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import type { TechUpdate, InnovationCategory } from '../../services/innovation-watch.js';
@@ -38,13 +39,6 @@ const CATEGORY_LABELS: Record<InnovationCategory, string> = {
   'mobile-framework': '📱 Mobile',
   bundler: '⚙ Bundler',
 };
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 function formatGain(update: TechUpdate): string {
   const g = update.estimatedGain;

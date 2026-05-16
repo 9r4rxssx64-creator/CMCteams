@@ -23,10 +23,13 @@ const HTML_ESCAPE_MAP: Record<string, string> = {
  * Échappe une string pour insertion safe dans innerHTML.
  * Pure, déterministe, XSS-safe sur les 5 chars critiques.
  *
- * @param s string user-controlled à échapper (peut être null/undefined)
+ * Accepte string/number/boolean (auto-stringify via String()) pour ergonomie —
+ * v13.4.186 widening pour préserver le contrat historique de html-safe.ts.
+ *
+ * @param s valeur user-controlled à échapper (peut être null/undefined)
  * @returns string avec entités HTML
  */
-export function escapeHtml(s: string | null | undefined): string {
+export function escapeHtml(s: string | number | boolean | null | undefined): string {
   if (s === null || s === undefined) return '';
   return String(s).replace(/[&<>"']/g, (c) => HTML_ESCAPE_MAP[c] ?? c);
 }

@@ -15,16 +15,13 @@
  * Route : ?view=knowledge
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { toast } from '../../ui/toast.js';
 
 const ADMIN_ID = 'kdmc_admin';
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 interface UserCtx {
   id: string;

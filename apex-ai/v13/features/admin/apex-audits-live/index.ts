@@ -11,6 +11,7 @@
  * - Style lux : gradient backgrounds, blur, animations stagger
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { store } from '../../../core/store.js';
 import {
   type FunctionalHistoryEntry,
@@ -67,13 +68,6 @@ function severityOfFunctional(e: FunctionalHistoryEntry): Severity {
   if (e.okRate < 0.5 || e.errors > 3 || e.escalated) return 'critical';
   if (e.okRate < 0.8 || e.noResponse > 0 || e.errors > 0) return 'warning';
   return 'ok';
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
 }
 
 function formatTs(ts: number): string {

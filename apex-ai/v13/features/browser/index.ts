@@ -21,11 +21,15 @@
  *  - Validation URL stricte avant navigation (SSRF/javascript: scheme bloqué)
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
+
+/* Re-export escapeHtml for backward compatibility (tests import from this module). */
+export { escapeHtml };
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeBrowserScope: CleanupScope | null = null;
@@ -116,10 +120,6 @@ const BLOCKED_KEYWORDS: readonly string[] = [
 /* ============================================================
    Helpers
    ============================================================ */
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function isValidUrl(input: string): boolean {
   if (!input || typeof input !== 'string') return false;

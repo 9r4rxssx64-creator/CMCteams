@@ -19,14 +19,13 @@
  * - CGU implicite (geolocation API browser demande déjà permission)
  */
 
+export { escapeHtml } from '../../core/escape-html.js';
+
+import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { geolocation, type GeoPosition, type FavoriteLocation, type LocalWeather } from '../../services/geolocation.js';
 
 let activeWatchId = -1;
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 function precisionLabel(accuracyM: number): { label: string; color: string } {
   if (accuracyM <= 10) return { label: 'Excellente', color: '#4ade80' };

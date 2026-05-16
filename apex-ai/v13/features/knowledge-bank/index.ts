@@ -23,6 +23,7 @@
  * - JSON statique inline (pas de fetch externe)
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -36,10 +37,6 @@ let activeKbScope: CleanupScope | null = null;
 export function dispose(): void {
   activeKbScope?.cleanup();
   activeKbScope = null;
-}
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 export type KbCategoryId =

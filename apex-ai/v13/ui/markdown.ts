@@ -17,17 +17,8 @@
  * Reprend renderMarkdownLight existant + étend.
  */
 
-const ESCAPE_MAP: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
-};
-
-export function escapeHtml(s: string): string {
-  return String(s).replace(/[&<>"']/g, (c) => ESCAPE_MAP[c] ?? c);
-}
+export { escapeHtml } from '../core/escape-html.js';
+import { escapeHtml } from '../core/escape-html.js';
 
 /**
  * Render un bloc code avec header (langage + bouton copy).

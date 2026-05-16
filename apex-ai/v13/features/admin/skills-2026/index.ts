@@ -12,17 +12,11 @@
  * Sécurité : admin-only.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { skillsWatch } from '../../../services/skills-watch.js';
 import { toast } from '../../../ui/toast.js';
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 interface SkillInfo {
   id: string;

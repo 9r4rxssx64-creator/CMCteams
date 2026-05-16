@@ -10,6 +10,7 @@
  * - Conso    : consommation IA temps réel (Sprint port v12)
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -47,10 +48,6 @@ const ADMIN_TAB_TOGGLE_MAP: Record<Tab, string | null> = {
   consumption: 'admin.consumption',
   'audit-log': 'admin.audit-log',
 };
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 function renderCommerceTab(): string {
   const enabled = commerce.isEnabled();

@@ -16,6 +16,7 @@
  *  - Section "Recommandé pour Apex" en tête (recommendForApex).
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import {
@@ -46,13 +47,6 @@ const CATEGORY_LABELS: Record<MarketplaceCategory, string> = {
   datasets: '📊 Datasets',
   anthropic: '✨ Anthropic',
 };
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 function renderStatsHeader(): string {
   const stats = apexMetaMarketplace.getStats();

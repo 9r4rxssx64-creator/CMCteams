@@ -22,6 +22,7 @@
  *  - Touch targets ≥ 32px (mobile-first iPhone 375px)
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -45,12 +46,7 @@ export function dispose(): void {
   activeVaultScope = null;
 }
 
-/**
- * Échappement HTML strict (XSS-safe).
- */
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
+export { escapeHtml };
 
 /* ──────────────────────────── Types & domain helpers ──────────────────────────── */
 
