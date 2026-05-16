@@ -4559,11 +4559,12 @@ function isEmpActive(emp,y,m){
 }
 // Équipe d'un employé pour un mois donné
 // Priorité : teamHistory[y-m] (import) > team le plus récent antérieur > emp.team (fallback)
-function teamForMonth(emp,y,m){
+function teamForMonth(emp,y,m,opts){
   if(!emp)return null;
   var key=y+"-"+m;
+  var strict=opts&&opts.strict;
   // v9.66 robustesse : fallback sécurisé si teamHistory corrompu
-  try{if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];}catch(e){return emp.team||"?";}
+  try{if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];}catch(e){return strict?null:(emp.team||"?");}
   if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];
   // Chercher le teamHistory le plus récent antérieur à ce mois
   if(emp.teamHistory){
@@ -4576,7 +4577,26 @@ function teamForMonth(emp,y,m){
     });
     if(best)return best;
   }
+  // v9.647 (Kevin "on change tous d'équipe chaque mois") : mode strict
+  // retourne null si pas de teamHistory connu → empêche fallback emp.team
+  // DEF_EMP qui est l'ancienne équipe historique (Kevin "anciennes équipes
+  // comme avant"). Le caller décide d'afficher "?" ou de filtrer l'emp.
+  if(strict)return null;
   return emp.team;
+}
+// v9.647 — Helper : un emp a-t-il une présence pour ce mois (data OU team assignée
+// par import) ? Si non, devrait être masqué des vues centrées sur le mois courant.
+function empHasPresenceForMonth(emp,y,m){
+  if(!emp)return false;
+  var key=y+"-"+m;
+  // Présence 1 : a des cells dans A.overrides[key]
+  if(A.overrides&&A.overrides[key]&&A.overrides[key][emp.id]){
+    var r=A.overrides[key][emp.id];
+    if(r&&Object.keys(r).some(function(d){return !!r[d];}))return true;
+  }
+  // Présence 2 : a une équipe explicitement assignée par import pour CE mois (pas fallback)
+  if(emp.teamHistory&&emp.teamHistory[key])return true;
+  return false;
 }
 // Raccourci : retourne le label "Équipe du mois" pour affichage
 function teamForMonthLabel(emp,y,m){
@@ -4865,7 +4885,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.646";
+var APP_VER="v9.647";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -30320,9 +30340,16 @@ function vEmps(){
   var _famsOrder=["bj","roulettes","baccara","cmc","cadres"];
   function _empGroupKey(e){
     // v9.637 — utiliser teamForMonth pour grouper selon l'équipe du mois affiché
-    // (sinon les chefs déplacés vers nouvelle équipe par import V1 restent dans
-    // l'ancien groupe "primary/mirror/fam:X").
-    var _et=(typeof teamForMonth==="function"?teamForMonth(e,A.year,A.month):e.team)||e.team;
+    // v9.647 (Kevin "anciennes équipes comme avant") — STRICT : si pas de teamHistory
+    // pour ce mois ET pas de data overrides → mettre dans "Non assigné ce mois"
+    // (au lieu de fallback emp.team DEF_EMP qui montre l'ancienne équipe).
+    var _hasPresence=(typeof empHasPresenceForMonth==="function")&&empHasPresenceForMonth(e,A.year,A.month);
+    if(!_hasPresence)return "noteam:nopresence";
+    var _et=(typeof teamForMonth==="function"?teamForMonth(e,A.year,A.month,{strict:true}):null);
+    if(!_et){
+      // Présence (data ou teamHistory) mais pas de team identifiée → fam fallback
+      return "fam:"+(e.family||"bj");
+    }
     if(_isAdminUser&&_myT.primary&&_et===_myT.primary)return "primary";
     if(_isAdminUser&&_myT.mirror&&_et===_myT.mirror)return "mirror";
     return "fam:"+(e.family||"bj");
@@ -30378,7 +30405,11 @@ function vEmps(){
     "fam:roulettes":{title:"🎰 "+getFamLabel("roulettes"),sub:"",col:getFamColor("roulettes"),def:false},
     "fam:baccara":{title:"💰 "+getFamLabel("baccara"),sub:"",col:getFamColor("baccara"),def:false},
     "fam:cmc":{title:"🔓 "+getFamLabel("cmc"),sub:"",col:getFamColor("cmc"),def:false},
-    "fam:cadres":{title:"⭐ "+getFamLabel("cadres"),sub:"Pit Boss / Sup",col:getFamColor("cadres"),def:false}
+    "fam:cadres":{title:"⭐ "+getFamLabel("cadres"),sub:"Pit Boss / Sup",col:getFamColor("cadres"),def:false},
+    // v9.647 (Kevin "on change tous d'équipe chaque mois") : section dédiée
+    // aux emps SANS données ni équipe assignée pour ce mois. Évite que les
+    // anciennes équipes DEF_EMP soient affichées comme courantes.
+    "noteam:nopresence":{title:"❔ Pas de planning ce mois",sub:"Sans horaires ni équipe importée",col:"#7a8a90",def:false}
   };
   var _useGroups=_isAdminUser&&!_hasActiveFilter&&!isBulk;
   var _curGrp=null,_grpOpen=true,_inCard=false;
