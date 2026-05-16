@@ -1,0 +1,24 @@
+import{l as a}from"./monitoring-3uBGKGRH.js";import{s as o}from"../core/main-C62gmQPc.js";import{g as i}from"./apex-tools-dispatch-core-DB6Cja8x.js";import"./apex-kb-fUTW2FdY.js";import"./credential-patterns-CLzI061R.js";import"./multi-source-analyze-Dg-0hgS4.js";import"./apex-tools-dispatch-skills-ckrPzanx.js";import"./apex-tools-dispatch-data-BW24QWMA.js";import"./apex-tools-dispatch-finance-D84Ce07W.js";import"./apex-tools-dispatch-misc-C6HAgn2N.js";import"./apex-tools-registry-BzME5c52.js";import"./voice-BmMhoZp_.js";function f(t){const r=o.get("user")?.id??"anon";i("module.workflow",t,r)&&(t.innerHTML=`
+    <div class="ax-page" style="padding:16px;max-width:600px;margin:0 auto">
+      <h1 style="margin:0 0 16px;color:#c9a227">⚡ Workflows</h1>
+      <p style="color:var(--ax-text-dim)">Automatise tes tâches récurrentes (IF this THEN that).</p>
+
+      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:16px">
+        <h2 style="margin:0 0 12px;font-size:16px">Workflows actifs</h2>
+        <p style="color:var(--ax-text-dim);font-size:14px;margin:0">Aucun workflow configuré pour le moment.</p>
+        <button class="ax-btn ax-btn-primary" style="width:100%;margin-top:12px">+ Nouveau workflow</button>
+      </div>
+
+      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
+        <h2 style="margin:0 0 12px;font-size:16px">Templates pré-configurés</h2>
+        <div style="display:grid;gap:8px">
+          <button class="ax-btn ax-btn-sm" style="text-align:left;padding:12px">📧 Email reçu → notification</button>
+          <button class="ax-btn ax-btn-sm" style="text-align:left;padding:12px">📅 Réunion calendrier → préparer doc</button>
+          <button class="ax-btn ax-btn-sm" style="text-align:left;padding:12px">🌅 Lever soleil → routine matin</button>
+          <button class="ax-btn ax-btn-sm" style="text-align:left;padding:12px">📍 GPS arrivé maison → lumières on</button>
+        </div>
+      </div>
+
+      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+    </div>
+  `,a.info("feature-workflow","rendered"))}export{f as render};

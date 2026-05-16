@@ -40,6 +40,22 @@ export interface PersistedMessage {
 let _saveTimeout: ReturnType<typeof setTimeout> | null = null;
 let _firebaseSyncTimeout: ReturnType<typeof setTimeout> | null = null;
 
+/* v13.4.191 — Helper persist attachments en IDB (async, fire-and-forget). */
+async function persistAttachmentsAsync(
+  msgId: string,
+  attachments: Array<{ mime: string; base64: string; name: string }>,
+): Promise<void> {
+  /* Skip si déjà sentinels (déjà restoré depuis IDB) */
+  const fresh = attachments.filter((a) => a.base64 !== '__IDB__' && a.base64.length > 0);
+  if (fresh.length === 0) return;
+  try {
+    const { chatAttachmentsStore } = await import('../../services/chat-attachments-store.js');
+    await chatAttachmentsStore.persistAttachments(msgId, fresh);
+  } catch (err: unknown) {
+    logger.warn('chat-persistence', 'persistAttachmentsAsync failed', { err });
+  }
+}
+
 /**
  * Charge la conversation persistée depuis localStorage.
  * Strip streaming flag + filtre messages vides.
@@ -51,11 +67,38 @@ export function loadPersistedConversation(): PersistedMessage[] {
     if (!raw) return [];
     const arr = JSON.parse(raw) as PersistedMessage[];
     if (!Array.isArray(arr)) return [];
-    return arr
+    const loaded = arr
       .map((m) => ({ ...m, streaming: false }))
-      .filter((m) => m.text || m.role === 'tool_card');
+      .filter((m) => m.text || m.role === 'tool_card' || (m.attachments && m.attachments.length > 0));
+    /* v13.4.191 : restore attachments base64 depuis IDB async (fire-and-forget).
+     * Les sentinels '__IDB__' sont remplacés par le vrai base64 dès que IDB
+     * répond. Conversation render utilise les attachments rehydrated. */
+    void restoreAttachmentsForMessages(loaded);
+    return loaded;
   } catch {
     return [];
+  }
+}
+
+/* v13.4.191 — Restore attachments base64 depuis IDB pour tous messages
+ * avec sentinel '__IDB__'. Mute l'array conversation in-place. */
+async function restoreAttachmentsForMessages(messages: PersistedMessage[]): Promise<void> {
+  try {
+    const { chatAttachmentsStore } = await import('../../services/chat-attachments-store.js');
+    for (const msg of messages) {
+      if (!msg.attachments || msg.attachments.length === 0) continue;
+      const hasSentinel = msg.attachments.some((a) => a.base64 === '__IDB__');
+      if (!hasSentinel) continue;
+      try {
+        const restored = await chatAttachmentsStore.restoreAttachments(msg.id);
+        if (restored.length > 0) {
+          msg.attachments = restored;
+        }
+      } catch { /* skip ce message */ }
+    }
+    logger.info('chat-persistence', 'attachments restored from IDB');
+  } catch (err: unknown) {
+    logger.warn('chat-persistence', 'restoreAttachmentsForMessages failed', { err });
   }
 }
 
@@ -72,13 +115,33 @@ export function persistConversation(conversation: readonly PersistedMessage[]): 
       const toSave = conversation
         .filter((m) => !m.streaming)
         .slice(-CONV_MAX_PERSIST);
-      localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(toSave));
+      /* v13.4.191 fix Kevin "attachments perdus entre sessions" :
+       * Avant : base64 attachments stockés dans localStorage → quota exceeded
+       *         (5 MB iOS) → drop silencieux → fichiers perdus.
+       * Après : attachments dans IDB séparé (capacité 50-500 MB) + localStorage
+       *         garde uniquement métadonnées légères {mime, name} (pas base64).
+       *         Restoration au load via loadPersistedConversation. */
+      const lightToSave = toSave.map((m) => {
+        if (!m.attachments || m.attachments.length === 0) return m;
+        /* Persist heavy base64 dans IDB en async, fire-and-forget */
+        void persistAttachmentsAsync(m.id, m.attachments);
+        return {
+          ...m,
+          attachments: m.attachments.map((a) => ({
+            mime: a.mime,
+            name: a.name,
+            base64: '__IDB__', /* sentinel : restoré depuis IDB au load */
+          })),
+        };
+      });
+      localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(lightToSave));
     } catch {
       /* Quota exceeded → trim plus agressif */
       try {
         const half = conversation
           .filter((m) => !m.streaming)
-          .slice(-(CONV_MAX_PERSIST / 2));
+          .slice(-(CONV_MAX_PERSIST / 2))
+          .map((m) => ({ ...m, attachments: m.attachments ? m.attachments.map((a) => ({ mime: a.mime, name: a.name, base64: '__IDB__' })) : undefined }));
         localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(half));
       } catch {
         /* skip */
