@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.642";
+var APP_VER="v9.643";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7250,11 +7250,15 @@ var CMC_PARSER_TESTS=[
       if(typeof _cmcDecideImportMode!=="function")return false;
       return _cmcDecideImportMode("complete",null)==="replace-all";
     }},
-  {id:"VS17",label:"_cmcDecideImportMode unknown→merge (sécurité)",
-    input:"v9.620 E2E decision unknown",
+  {id:"VS17",label:"_cmcDecideImportMode unknown→replace-all v9.643 (Kevin écrase auto)",
+    input:"v9.643 E2E decision unknown override",
     customCheck:function(){
       if(typeof _cmcDecideImportMode!=="function")return false;
-      return _cmcDecideImportMode("unknown",null)==="merge";
+      // v9.643 : changement spec Kevin "écrase l'ancien auto quand nouveau planning"
+      // unknown ne signifie plus "ne touche à rien" mais "écrase tout".
+      // User peut toujours forcer merge via cmc_import_mode_explicit="merge".
+      return _cmcDecideImportMode("unknown",null)==="replace-all"
+          && _cmcDecideImportMode("unknown","merge")==="merge"; // user override préservé
     }},
   {id:"VS18",label:"_cmcDecideImportMode override explicit replace prioritaire",
     input:"v9.620 E2E override",
@@ -25339,7 +25343,11 @@ function _cmcDecideImportMode(importType, userExplicitMode){
   if(importType==="cadres")return "scoped-cadres";       // V2 (pit/sup/insp)
   if(importType==="employees")return "scoped-employees"; // V1 (employés+chefs)
   if(importType==="complete")return "replace-all";        // PDF complet
-  return "merge"; // unknown : sécurité (pas d'effacement)
+  // v9.643 (Kevin "il faut qu'il écrase l'ancien auto quand nouveau planning"):
+  // unknown ne signifie plus "ne touche à rien" mais "écrase tout ce qui existe".
+  // Si Kevin colle un PDF, il VEUT que ce soit la nouvelle vérité.
+  // Le user peut forcer "merge" via cmc_import_mode_explicit s'il veut l'ancien comportement.
+  return "replace-all";
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -25356,7 +25364,7 @@ function _cmcDecideImportMode(importType, userExplicitMode){
 // Retourne {wipedEmps, preservedEmps, wipedCells, preservedCells}.
 // ────────────────────────────────────────────────────────────────────────
 function _cmcScopedWipe(key, scope){
-  var res={wipedEmps:0,preservedEmps:0,wipedCells:0,preservedCells:0};
+  var res={wipedEmps:0,preservedEmps:0,wipedCells:0,preservedCells:0,wipedTeamHist:0};
   if(!A.overrides||!A.overrides[key])return res;
   var ov=A.overrides[key];
   var newOv={};
@@ -25378,7 +25386,27 @@ function _cmcScopedWipe(key, scope){
     }
   });
   A.overrides[key]=newOv;
-  try{if(typeof _audit==="function")_audit("scoped_wipe",AID,key,scope,"wiped:"+res.wipedEmps+"emps/"+res.wipedCells+"cells preserved:"+res.preservedEmps+"emps/"+res.preservedCells+"cells");}catch(_){}
+  // v9.643 (Kevin "écrase l'ancien auto") — wipe AUSSI emp.teamHistory[key] pour
+  // les emps in-scope. Sinon vEmps/vPlan affichent encore l'équipe ancienne via
+  // teamForMonth (fix v9.637) même après wipe overrides. Le nouveau import
+  // réécrira teamHistory[key] si l'emp est dans le nouveau PDF.
+  A.employees.forEach(function(emp){
+    if(!emp.teamHistory||!emp.teamHistory[key])return;
+    var isCadre=(emp.family||"")==="cadres";
+    var inScope=false;
+    if(scope==="complete")inScope=true;
+    else if(scope==="cadres"&&isCadre)inScope=true;
+    else if(scope==="employees"&&!isCadre)inScope=true;
+    if(inScope){
+      delete emp.teamHistory[key];
+      res.wipedTeamHist++;
+    }
+  });
+  if(res.wipedTeamHist>0){
+    try{ls("cmc_e",A.employees);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+  }
+  try{if(typeof _audit==="function")_audit("scoped_wipe",AID,key,scope,"wiped:"+res.wipedEmps+"emps/"+res.wipedCells+"cells/"+res.wipedTeamHist+"teamHist preserved:"+res.preservedEmps+"emps/"+res.preservedCells+"cells");}catch(_){}
   return res;
 }
 
@@ -34439,9 +34467,19 @@ function doImport(){
   try{
     var _scanTxt=(txt||"").slice(0,30000); // 30 KB suffisent pour headers
     var _scanUp=_scanTxt.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-    // Patterns équipes joueurs (BJ/Roul./CMC)
+    // v9.643 (Kevin "il faut qu'il écrase l'ancien auto quand nouveau planning")
+    // Bug : V1 SBM mai/juin utilise "ROULETTES", "CHEFS BLACK JACK", "EMPLOYES CARTES CMC"
+    // comme headers — l'ancienne regex cherchait seulement "BJ Éq.X" → type="unknown"
+    // → mode="merge" → PAS DE WIPE → ancien planning persistait. Élargi maintenant :
     var _hasEmps=/(BJ\s*[ÉE]Q\.?|BJ\s*EQ\.?|ROUL\.?\s*[ÉE]Q\.?|ROUL\.?\s*EQ\.?|CMC\s*[ÉE]Q\.?|CMC\s*EQ\.?|RA\s*[ÉE]Q\.?|RA\s*EQ\.?)/i.test(_scanTxt)
-                || /\b(BJ|RA|CMC|ROUL)\s*[ÉE]?Q\.?\s*\d/i.test(_scanUp);
+                || /\b(BJ|RA|CMC|ROUL)\s*[ÉE]?Q\.?\s*\d/i.test(_scanUp)
+                // v9.643 — élargi : headers de sections SBM standard
+                || /\bROULETT(ES?)?\b/i.test(_scanUp)        // "Roulettes" header
+                || /\bCHEFS?\s+BLACK\s*JACK\b/i.test(_scanUp) // "Chefs black Jack"
+                || /\bEMPLOY[EÉ]S?\s+CARTES\s+CMC\b/i.test(_scanUp) // "Employés cartes CMC"
+                || /\bCHEFS?\s+ROULETTE\b/i.test(_scanUp)     // "Chefs roulette"
+                || /\bRESPONSABLE\s+DE\s+TABLE\b/i.test(_scanUp) // "Responsable de Table"
+                || /\bEMPLOY[EÉ]S?\s+CARTES?\s+AM/i.test(_scanUp); // "Employés cartes aménagement"
     // Patterns cadres
     var _hasPit=/PIT[\s\-\.]*BOSS/i.test(_scanUp);
     var _hasSup=/SUPERVI(?:SEUR|SOR)/i.test(_scanUp);
@@ -34573,10 +34611,26 @@ function doImport(){
     }else if(_importMode==="scoped-employees"){
       _wipeStats=_cmcScopedWipe(key,"employees");
     }else if(_importMode==="replace-all"){
-      _wipeStats={wipedEmps:Object.keys(A.overrides[key]).length,preservedEmps:0};
+      // v9.643 (Kevin "écrase l'ancien auto") — replace-all wipe AUSSI teamHistory[key]
+      var _empsTeamCleared=0;
+      A.employees.forEach(function(e){
+        if(e.teamHistory && e.teamHistory[key]){delete e.teamHistory[key];_empsTeamCleared++;}
+      });
+      if(_empsTeamCleared>0){
+        try{ls("cmc_e",A.employees);}catch(_){}
+        if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+      }
+      _wipeStats={wipedEmps:Object.keys(A.overrides[key]).length,preservedEmps:0,wipedTeamHist:_empsTeamCleared};
       A.overrides[key]={};
+      // v9.643 — wipe métadonnées + cache associés au mois
+      if(A.overrides_meta && A.overrides_meta[key]){
+        delete A.overrides_meta[key];
+        try{ls("cmc_ov_meta",A.overrides_meta);}catch(_){}
+        if(typeof fbWrite==="function")try{fbWrite("cmc_ov_meta",A.overrides_meta);}catch(_){}
+      }
       try{localStorage.removeItem("cmc_verif_"+key);}catch(_){}
       try{localStorage.removeItem("cmc_ref_"+key);}catch(_){}
+      try{localStorage.removeItem("cmc_manual_overrides_"+key);}catch(_){}
       try{if(typeof gplInvalidate==="function")gplInvalidate(iy,im);}catch(_){}
     }
     // Mode merge : no wipe (déjà géré par init de _importMode)
