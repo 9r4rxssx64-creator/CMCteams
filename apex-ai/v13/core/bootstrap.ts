@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.176';
+export const APP_VER = 'v13.4.177';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -241,6 +241,13 @@ async function bootstrap(): Promise<void> {
     themeSwitcher.init();
     proFunMode.init();
     easterEggs.install();
+  });
+
+  /* v13.4.177 (Kevin "Je ne vois pas la version de l app") :
+   * Wire installVersionBadge() au boot — était JAMAIS appelé en prod, juste tests. */
+  await safeInit('version-badge', async () => {
+    const { installVersionBadge } = await import('../ui/version-badge.js');
+    installVersionBadge();
   });
 
   /* 2. Feature detection */

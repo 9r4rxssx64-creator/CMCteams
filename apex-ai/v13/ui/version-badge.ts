@@ -20,39 +20,44 @@ const BADGE_ID = 'apex-version-badge';
 const STATIC_BADGE_ID = 'apex-version-badge-static';
 const STYLE_INJECTOR_ID = 'apex-version-badge';
 
+/* v13.4.177 (Kevin "Je ne vois pas la version de l app") :
+ * AVANT : right:8px masqué par SOS bouton (right:16px, z-index 2147483647).
+ * APRÈS : bottom-LEFT (loin du SOS) + z-index élevé pour rester au-dessus
+ * de tout sauf modals. opacity 0.85 (vs 0.6) pour lisibilité immédiate. */
 const BADGE_CSS = `
   #${BADGE_ID} {
     position: fixed;
     bottom: max(8px, env(safe-area-inset-bottom, 8px));
-    right: 8px;
-    z-index: 9998;
-    padding: 4px 8px;
-    background: linear-gradient(135deg, rgba(232, 184, 48, 0.15), rgba(232, 184, 48, 0.08));
-    border: 1px solid rgba(232, 184, 48, 0.35);
-    color: rgba(232, 184, 48, 0.85);
-    font-size: 10px;
+    left: 8px;
+    z-index: 2147483646;
+    padding: 5px 10px;
+    background: linear-gradient(135deg, rgba(232, 184, 48, 0.22), rgba(232, 184, 48, 0.12));
+    border: 1px solid rgba(232, 184, 48, 0.55);
+    color: #c9a227;
+    font-size: 11px;
     font-family: 'SF Mono', Menlo, monospace;
-    font-weight: 600;
-    border-radius: 10px;
+    font-weight: 700;
+    border-radius: 12px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
-    opacity: 0.6;
+    opacity: 0.85;
     transition: opacity 200ms ease;
     pointer-events: auto;
     line-height: 1;
     letter-spacing: 0.02em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
   #${BADGE_ID}:hover, #${BADGE_ID}:active {
     opacity: 1;
   }
   @media (max-width: 480px) {
     #${BADGE_ID} {
-      font-size: 9px;
-      padding: 3px 6px;
+      font-size: 10px;
+      padding: 4px 8px;
     }
   }
 `;
