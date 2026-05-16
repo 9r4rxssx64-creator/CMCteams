@@ -58,8 +58,10 @@ Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
   FILIPPI F, LAVAGNA J, MOREL F, BONO F, VIGNA M, GAZAGNE F, EHRET G, PORTA A, GRAUSS A
 - 🎓 FORMATION — **EMPLOYÉS** courte période (4-8 mai, encadré "3 FORMATION du au" section Employés CMC) :
   MATTERA M, INZIRILLO R, CAPIOMONT K
-- 🏖️ CP intégral du mois — **CHEFS** (encadré "2 CP du au" section Chefs BJ) :
+- 🏖️ CP intégral du mois — **CHEFS BJ** (encadré "2 CP du au" section Chefs BJ) :
   MATTONE F, PEREIRA MACENA F
+- 🏖️ CP intégral du mois — **CHEFS ROULETTES / jeux européens** (encadré "10 CP du au" section Roulettes) :
+  SANGIORGIO G, BOURDIER C, CASSINI A, PASSERON G, NOVARETTI B, ELIODORI V, GRAUSS A, MACCARIO S, ANDRE C, CELLARIO T
 - 🏖️ CP intégral du mois — **EMPLOYÉS** (encadré "8 CP du au" section Employés CMC) :
   FAIVRE R, CAPIOMONT K, INZIRILLO R, MANFREDI H, MASSEGLIA J, MATTERA M, NOBBIO G, BORGIA T
 
@@ -74,6 +76,41 @@ Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
   DE RYCKE K, MARTIRE M, ELENA C
 
 **⚠ Important** : les chefs et employés en M longue durée sont dans des **cases SÉPARÉES** du PDF (sections différentes). Ne pas les confondre dans le parsing.
+
+### Compétences BRTPECK encodées dans le code poste devant le nom
+
+Le code poste devant chaque nom (ex `BRTP+E.`) indique les compétences validées de l'employé selon la Formation Jeux SBM 2016 :
+
+| Lettre | Jeu | Notes |
+|---|---|---|
+| **B** | BlackJack | Compétence base américaine |
+| **R** | Roulette américaine | |
+| **T** | Texas Hold'em | Poker tournoi |
+| **P** | Punto Banco | Baccara |
+| **E** | Roulette Européenne | Plaque jaune SBM (Convention art. 4 = école premium) |
+| **C** | Craps | Dés |
+| **K** | BlacKjack Super | Variante haut roller |
+
+Conventions des codes poste :
+- `+E` = compétence ajoutée formellement (formation suivie ET validée)
+- `.` à la fin = chef (Chef de Table) ex `BRTCP+E.`
+- Préfixe `.` au début = employé cartes CMC (ex `.BRTCP+KE`)
+- `+K` = pratique blackjack avancé après promotion
+- Niveau Expert (Convention Art. 11) = 7 compétences toutes = BRTPECK complet
+- Tier sous-chef (Convention Art. 11 niveau 9/1) = 7 compétences + 5 ans expérience
+
+Exemple décodage `BRTP+E.` :
+- B+R+T+P = base 4 jeux
+- +E = roulette européenne ajoutée
+- . = chef de table
+- Total : 5 compétences, chef
+
+Exemple `.BRTCP+KE` :
+- . = section CMC
+- B+R+T+C+P = 5 jeux base
+- +K = blackjack super
+- +E = roulette européenne
+- Total : 7 compétences = Expert
 
 ### Conséquence cruciale
 
