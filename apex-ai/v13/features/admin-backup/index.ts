@@ -15,6 +15,7 @@
  * UI HTML statique testée E2E (Playwright) — la logique est dans services/auto-backup.ts.
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -34,13 +35,6 @@ export function dispose(): void {
 /* ============================================================
    Helpers
    ============================================================ */
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return bytes + ' B';

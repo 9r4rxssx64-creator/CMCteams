@@ -123,8 +123,56 @@ function show(): void {
   if (panelEl) return;
   panelEl = document.createElement('div');
   panelEl.id = 'apex-zoom-inspector-panel';
-  panelEl.style.cssText = 'position:fixed;top:max(60px,env(safe-area-inset-top,0px));left:8px;background:rgba(15,15,25,0.95);border:1px solid #c9a227;border-radius:10px;padding:10px;z-index:99999;max-width:260px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5)';
+  /* v13.4.177 (Kevin screenshot v13.4.176 "panel masque titre + tabs") :
+   * Repositionné BAS-GAUCHE (au-dessus nav iPhone PWA), max-width 200px,
+   * draggable, opacity 0.9 → moins envahissant que top-left 260px. */
+  panelEl.style.cssText =
+    'position:fixed;' +
+    'bottom:max(80px,calc(env(safe-area-inset-bottom,0px) + 80px));' +
+    'left:8px;' +
+    'background:rgba(15,15,25,0.92);' +
+    'border:1px solid #c9a227;' +
+    'border-radius:10px;' +
+    'padding:8px 10px;' +
+    'z-index:99999;' +
+    'max-width:200px;' +
+    'opacity:0.92;' +
+    'backdrop-filter:blur(10px);' +
+    '-webkit-backdrop-filter:blur(10px);' +
+    'box-shadow:0 4px 20px rgba(0,0,0,0.5);' +
+    'cursor:move;' +
+    'touch-action:none;';
   document.body.appendChild(panelEl);
+  /* Drag-to-reposition (touch + mouse) */
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  let dragging = false;
+  const onDragStart = (clientX: number, clientY: number): void => {
+    if (!panelEl) return;
+    const rect = panelEl.getBoundingClientRect();
+    dragOffsetX = clientX - rect.left;
+    dragOffsetY = clientY - rect.top;
+    dragging = true;
+  };
+  const onDragMove = (clientX: number, clientY: number): void => {
+    if (!dragging || !panelEl) return;
+    panelEl.style.left = `${Math.max(0, clientX - dragOffsetX)}px`;
+    panelEl.style.top = `${Math.max(0, clientY - dragOffsetY)}px`;
+    panelEl.style.bottom = 'auto';
+  };
+  const onDragEnd = (): void => { dragging = false; };
+  panelEl.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    if (t) onDragStart(t.clientX, t.clientY);
+  }, { passive: true });
+  panelEl.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    if (t) onDragMove(t.clientX, t.clientY);
+  }, { passive: true });
+  panelEl.addEventListener('touchend', onDragEnd, { passive: true });
+  panelEl.addEventListener('mousedown', (e) => onDragStart(e.clientX, e.clientY));
+  document.addEventListener('mousemove', (e) => onDragMove(e.clientX, e.clientY));
+  document.addEventListener('mouseup', onDragEnd);
   /* Update toutes les 500ms */
   const updateFn = (): void => {
     if (!panelEl) return;

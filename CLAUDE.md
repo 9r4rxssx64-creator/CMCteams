@@ -30,6 +30,135 @@ pour détails complets de l'algorithme + safeguards.
 
 ---
 
+## 🔄 RÈGLE ABSOLUE — MAJ AUTO FORCÉE TOUJOURS TOUS PROJETS (Kevin 2026-05-16, ABSOLUE)
+
+> **"Pourquoi les Maj auto force ne fonctionne pas. Corige partout. Tous les projets toujours auto force."** — Kevin 2026-05-16
+> **"Maj auto forcé toujours. Comme pour tous les projets. Note le."** — Kevin 2026-05-16
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex, CMCteams, e-KDMC, Télécommande, CrackPass, tous projets futurs PWA :
+
+### 1. PWA = MAJ auto silencieuse TOUJOURS dès qu'une nouvelle version est détectée
+
+À CHAQUE projet Kevin avec service worker, OBLIGATOIRE :
+1. **Check version distant** au boot + toutes les 60 secondes + sur `visibilitychange` + `window.focus`
+2. **Fetch ressource version** avec query param `?_v=${Date.now()}` pour bust cache HTTP + signal SW skip
+3. **SW skip intercept** pour URLs `?_v=` ou `?_force_upd_` → garantit fetch réseau direct
+4. **`cache: 'reload'`** dans le fetch JS (pas seulement `no-store`) pour bypass complet
+5. **Headers anti-cache** : `Cache-Control: no-cache, no-store, must-revalidate`, `Pragma: no-cache`
+
+### 2. Auto-update silencieux SANS conditions restrictives
+
+❌ **JAMAIS** : conditions `isIdle` / `visibilityState === 'hidden'` qui bloquent app au foreground.
+✅ **TOUJOURS** : auto-MAJ même si app active. Conditions de SÉCURITÉ minimales uniquement :
+   - Pas de streaming IA en cours (`__apexActiveStream` flag)
+   - Pas de typing user actif (textarea/input focus)
+   - Throttle 10 secondes entre 2 tentatives auto-MAJ
+   - Pas de modal critique ouvert (paiement, signature)
+
+### 3. Procédure auto-MAJ nucléaire
+
+Quand version distante ≠ locale détectée :
+1. Pre-snapshot backup auto (Kevin "ne jamais rien perdre")
+2. Toast info bref : "🔄 Mise à jour ${remoteVer} en cours…"
+3. Unregister TOUS les service workers (`navigator.serviceWorker.getRegistrations()` puis `r.unregister()`)
+4. Clear TOUS les caches (`caches.keys()` puis `caches.delete()`)
+5. Clear localStorage clés CACHE uniquement (PRESERVE_PREFIXES strict : vault, user, PIN, persistent_memory, etc.)
+6. `location.replace()` avec param `?_force_upd_${ts}` pour bust HTTP cache
+
+### 4. SW pattern obligatoire — skip intercept sur version-check URLs
+
+Dans CHAQUE `sw.js` projet, en début de handler fetch :
+```js
+self.addEventListener('fetch', function(e){
+  var req = e.request;
+  if (req.method !== 'GET') return;
+  var url = req.url;
+  /* SKIP SW intercept pour version check (force network direct) */
+  if (url.indexOf('?_v=') >= 0 || url.indexOf('&_v=') >= 0
+      || url.indexOf('?_force_upd_') >= 0 || url.indexOf('&_force_upd_') >= 0) {
+    return; /* laisse passer en network direct */
+  }
+  /* ... reste du fetch normal ... */
+});
+```
+
+### 5. CACHE_VERSION = APP_VER toujours synchronisé
+
+Le `CACHE_VERSION` de `sw.js` doit TOUJOURS être `'<projet>-' + APP_VER`. Sentinelle GitHub Action `sw-cache-sync.yml` rattrape automatiquement le drift à chaque push.
+
+### 6. Test mental OBLIGATOIRE avant chaque release projet
+
+> *"Si Kevin force-quit l'app et la rouvre, est-ce qu'il a la dernière version dans les 60 secondes, SANS avoir à cliquer un bouton ni vider son cache iPhone, MÊME quand l'app est active foreground ?"*
+
+Si réponse "je crois que oui" sans vérif → tester avant push. Si non → fix avant push.
+
+### 7. Anti-patterns interdits (jamais reproduire)
+
+- ❌ Conditions auto-MAJ qui bloquent app foreground (isIdle, visibilityState hidden only)
+- ❌ Fetch version-check sans bypass SW (cache stale servi)
+- ❌ `cache: 'no-store'` SEUL (passe encore par SW) — utiliser `cache: 'reload'`
+- ❌ Throttle > 60s entre tentatives (Kevin manque les MAJ rapides)
+- ❌ Force-update bouton manuel sans auto-fallback (Kevin doit pas avoir à cliquer)
+- ❌ MAJ sans pre-snapshot backup (risque perdre données vault si fix v13.X foireux)
+
+S'applique : Apex (v13.4.188+ ABSOLU), CMCteams (v9.615+ ABSOLU), tous projets futurs Kevin.
+
+---
+
+## 🏷 RÈGLE ABSOLUE — BADGE VERSION VISIBLE TOUJOURS TOUS PROJETS (Kevin 2026-05-16, ABSOLUE)
+
+> **"Il faut un visuel des versions dans tous les projets toujours. Note et Corige."** — Kevin 2026-05-16
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex, CMCteams, tools/*.html, e-KDMC, Télécommande, tous projets futurs :
+
+### 1. Badge version VISIBLE en permanence
+
+Chaque projet web/PWA DOIT afficher la version courante (`APP_VER`) de manière visible permanente. Kevin doit voir d'un coup d'œil quelle version tourne, SANS ouvrir un menu ni une console.
+
+### 2. Position + style minimum
+
+- **Position** : fixed bottom-left (PAS bottom-right — éviter conflit avec SOS bouton + safe-area-inset)
+- **z-index** : très haut (juste sous modals) pour rester au-dessus du contenu mais sous overlays
+- **Style** : discret mais lisible — gradient gold/or sur fond sombre, opacity 0.85, font-size 10-11px, padding 4-6px
+- **Touchable** : clic → toast détaillé (version, SW state, dernier check MAJ, build date)
+- **Safe-area-inset-bottom** respecté pour iPhone notch
+
+### 3. Wire au boot OBLIGATOIRE
+
+Le module qui crée le badge DOIT être appelé au boot (`installVersionBadge()` ou équivalent). JAMAIS définir un module + oublier de le wirer (Erreur #28 CLAUDE.md "Declaration ≠ Deployment").
+
+### 4. Apex v13.4.177+ — implémentation référence
+
+- Module : `apex-ai/v13/ui/version-badge.ts` (`installVersionBadge`)
+- Wired bootstrap.ts `safeInit('version-badge', installVersionBadge)`
+- Position : bottom-left, z-index 2147483646 (sous SOS 2147483647)
+- Click → toast avec version + SW state + dernier check MAJ
+
+### 5. CMCteams v9.615+ — implémentation équivalente
+
+Badge HTML pur fixed bottom-left avec `APP_VER` string + click handler showReleaseNotes.
+
+### 6. Tests visuels obligatoires
+
+Avant chaque release projet :
+- ☑ Badge version visible sur viewport portrait iPhone (375px-440px)
+- ☑ Badge ne chevauche pas SOS / nav bottom / chat input
+- ☑ Click sur badge → toast informatif s'affiche
+- ☑ Badge contient la VRAIE version (pas un placeholder oublié)
+
+### 7. Anti-patterns interdits
+
+- ❌ Version visible UNIQUEMENT dans Settings ou Admin (Kevin doit voir au boot)
+- ❌ Badge créé dans le module mais JAMAIS appelé (orpheline)
+- ❌ Position right qui chevauche SOS bouton (Apex SOS = 2147483647)
+- ❌ Couleur identique au fond (illisible)
+- ❌ Font-size < 10px (illisible iPhone)
+- ❌ Pas de safe-area-inset-bottom (caché sous home indicator iOS)
+
+S'applique : Apex (priorité absolue), CMCteams, tools/*.html, tous projets futurs.
+
+---
+
 ## 🚧 RÈGLE ABSOLUE — SANDBOX BLOCKAGES = SOLUTION GLOBALE (Kevin 2026-05-15, ABSOLUE)
 
 > **"Trouve une solution pour tous les problème qui bloque à cause de sandbox toujours et pour tous les projets"** — Kevin 2026-05-15

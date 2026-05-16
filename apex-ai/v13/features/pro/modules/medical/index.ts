@@ -18,6 +18,7 @@
  * Sources autoritaires : Vidal, ANSM, Has-sante, Ameli, ESC Guidelines
  */
 
+import { escapeHtml } from '../../../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../../../core/listener-cleanup.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
@@ -690,10 +691,6 @@ export const AX_MEDICAL_FR = {
   } as Record<string, PremierSecours>,
 } as const;
  
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 /**
  * IMC = poids (kg) / taille^2 (m).

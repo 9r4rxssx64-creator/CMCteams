@@ -27,10 +27,14 @@
  *  - Lecture seule sur les sources (jamais muter notes/events depuis ici sauf restore explicite)
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
+
+/* Re-export escapeHtml for backward compatibility (tests import from this module). */
+export { escapeHtml };
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeArchiveScope: CleanupScope | null = null;
@@ -85,10 +89,6 @@ const VALID_CATEGORIES: readonly ArchiveCategory[] = [
 ] as const;
 
 /* ========== utils ========== */
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 function getStorageKey(uid: string): string {
   return `${STORAGE_PREFIX}${uid}`;

@@ -16,6 +16,7 @@
  * Sources autoritaires : Bessemer, Lean Startup, Y Combinator, INSEAD, HBS.
  */
 
+import { escapeHtml } from '../../../../core/escape-html.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
@@ -270,10 +271,6 @@ export function classifyBcg(item: BcgItem, shareThreshold = 10, growthThreshold 
   if (highShare && !highGrowth) return 'cash_cow';
   if (!highShare && highGrowth) return 'question_mark';
   return 'dog';
-}
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 /* boost v13 — Frameworks analyse strategique additionnels */

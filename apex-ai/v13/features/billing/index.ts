@@ -13,9 +13,13 @@
  * - escapeHtml partout
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
+
+/* Re-export escapeHtml for backward compatibility (tests import from this module). */
+export { escapeHtml };
 
 export interface BillingService {
   id: string;
@@ -172,10 +176,6 @@ const CATEGORY_LABELS: Record<BillingService['category'], string> = {
   finance: '💳 Finance',
   other: '🔧 Autres',
 };
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 class BillingHub {
   list(): readonly BillingService[] {

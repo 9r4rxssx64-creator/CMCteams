@@ -32,12 +32,16 @@ export function getTransformEmoji(type: string): string {
  */
 export function renderFollowUps(suggestions: FollowUpSuggestion[]): string {
   if (!suggestions || suggestions.length === 0) return '';
+  /* v13.4.187 fix Kevin "Ultra review détaillé tronqué après Ultra" :
+   * max-width 100% + white-space normal + word-break break-word pour wrap
+   * labels longs au lieu de déborder hors viewport portrait iPhone. */
   const chipStyle =
     'display:inline-flex;align-items:center;gap:6px;padding:8px 12px;' +
     'background:rgba(232,184,48,0.08);border:1px solid rgba(232,184,48,0.25);' +
     'border-radius:18px;font-size:12.5px;color:rgba(255,255,255,0.85);' +
     'cursor:pointer;transition:all 160ms cubic-bezier(0.16,1,0.3,1);' +
-    '-webkit-tap-highlight-color:transparent;min-height:36px;line-height:1.2;';
+    '-webkit-tap-highlight-color:transparent;min-height:36px;line-height:1.2;' +
+    'max-width:100%;white-space:normal;word-break:break-word;overflow-wrap:anywhere;text-align:left;';
   const chips = suggestions
     .map(
       (s) =>

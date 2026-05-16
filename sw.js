@@ -1,4 +1,4 @@
-const CACHE='cmcteams-v9.658';
+const CACHE='cmcteams-v9.659';
 const ASSETS=['./','/index.html'];
 
 // Install : pré-cache + force activation immédiate
@@ -25,6 +25,14 @@ self.addEventListener('activate',function(e){
 self.addEventListener('fetch',function(e){
   if(e.request.method!=='GET') return;
   var url=e.request.url;
+
+  // v9.615 fix Kevin "MAJ auto forcé TOUJOURS tous projets" :
+  // Skip SW intercept pour URLs avec ?_v= ou ?_force_upd_ → garantit
+  // fetch réseau direct du checkVersion sans cache stale SW.
+  if(url.indexOf('?_v=')>=0||url.indexOf('&_v=')>=0
+     ||url.indexOf('?_force_upd_')>=0||url.indexOf('&_force_upd_')>=0){
+    return;
+  }
 
   // Firebase/API : pas de cache (données temps réel)
   if(url.indexOf('firebasedatabase.app')>=0||url.indexOf('api.anthropic.com')>=0||url.indexOf('api.emailjs.com')>=0||url.indexOf('ipwho.is')>=0){

@@ -338,12 +338,17 @@ select:focus-visible {
   pointer-events: none;
 }
 
-/* Root mount */
-#apex-root {
-  min-height: 100vh;
-  min-height: 100dvh;
-  position: relative;
-}
+/* v13.4.178 (Kevin "toujours zoom toutes vues" — diagnostic CSS audit) :
+ * SUPPRESSION 2e définition #apex-root qui CONFLICTAIT avec ligne 111-120 :
+ * - ligne 111 : position:fixed; inset:0; width/height:100%; display:flex
+ * - ligne 342 (RETIRÉE) : min-height:100vh; position:relative
+ *
+ * CSS cascade : sélecteurs identiques → dernière déclaration GAGNE.
+ * Donc position:relative override position:fixed → layout iOS Safari PWA cassé.
+ * + min-height:100vh sur iOS = bug barre adresse (100vh > viewport visible)
+ * → contenu plus grand qu'attendu = perception "zoom" sur toutes vues.
+ *
+ * #apex-root garde sa définition unique ligne 111 (position:fixed inset:0). */
 
 /* Typography utilities */
 h1, h2, h3, h4, h5, h6 {

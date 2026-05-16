@@ -16,6 +16,7 @@
  * Sources : programmes Éducation Nationale, Khan Academy, Wolfram Alpha.
  */
 
+import { escapeHtml } from '../../../../core/escape-html.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
@@ -468,10 +469,6 @@ export function randomQuiz(subject: Subject, count = 10): readonly Question[] {
   const pool = questionsBySubject(subject);
   const shuffled = [...pool].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
-}
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 /* ---------- UI render ---------- */

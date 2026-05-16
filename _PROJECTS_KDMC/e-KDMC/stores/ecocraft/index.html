@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- v1.0.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -270,5 +271,11 @@ loadCart();dc();
 window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",scrollY>400)});
 if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-accept" onclick="localStorage.setItem(\'kdmc_cookie_ok\',1);this.closest(\'.cookie\').remove()">Accepter</button><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button></div>';document.body.appendChild(ck)}
 </script>
+<!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
+<script src="/CMCteams/tools/shared/version-badge-pwa.js"
+        data-project="ekdmc-ecocraft"
+        data-version="v1.0.0"
+        data-color="#e8b830"
+        defer></script>
 </body>
 </html>

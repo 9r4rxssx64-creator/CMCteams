@@ -120,12 +120,14 @@ class ForceUpdateBanner {
     this.installed = false;
   }
 
-  /** Check version distante vs locale. */
+  /** Check version distante vs locale.
+   *  v13.4.188 (Kevin "MAJ auto force ne marche pas") :
+   *  cache:'reload' + sw.js skip `?_v=` URL → garantit fetch réseau sans SW. */
   async checkVersion(): Promise<VersionCheckResult> {
     try {
       const res = await fetch(`${REMOTE_URL}?_v=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        cache: 'reload', /* v13.4.188 : reload = bypass HTTP cache + bypass SW si SW skip */
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
       });
       if (!res.ok) {
         logger.warn('force-update', `version check fetch failed: ${res.status}`);
@@ -153,20 +155,18 @@ class ForceUpdateBanner {
     }
     const r = await this.checkVersion();
     if (r.is_stale && r.remote_ver) {
-      /* v13.4.180 (Kevin "Maj auto forcé toujours. Corrige") :
-       * MAJ auto FORCÉE TOUJOURS dès qu'on a une nouvelle version distante.
-       * Seules conditions de sécurité non-négociables (anti-perte de données) :
-       *   1. Pas de stream IA actif (sinon attente prochain tick — coupure
-       *      pendant réponse = mauvais UX)
-       *   2. Pas de user en train de taper (sinon perte input)
-       *   3. Throttle 30s anti-loop infini
-       * Plus de condition `isIdle` (Kevin ne veut PLUS attendre que la page
-       * soit inactive 30s — la MAJ doit arriver immédiatement). */
+      /* v13.4.188 (Kevin "MAJ auto forcé TOUJOURS tous projets") :
+       * MAJ silencieuse automatique TOUJOURS dès que stale détecté.
+       * Conditions de sécurité MINIMALES (drop isIdle qui bloquait app foreground) :
+       *   1. Pas de fetch IA en cours (axe pas couper Apex pendant streaming)
+       *   2. Pas de typing user actif (Kevin tape)
+       *   3. Throttle 10s entre 2 tentatives auto-MAJ
+       * Plus de isIdle/visibilityState — Kevin avec app foreground reçoit MAJ. */
       const lastAuto = parseInt(localStorage.getItem('apex_v13_auto_maj_last') ?? '0', 10);
-      const throttleOK = Date.now() - lastAuto > 30 * 1000; /* 30 sec anti-loop */
+      const throttleOK = Date.now() - lastAuto > 10 * 1000; /* 10s (était 30s) */
       const isSafe = !this.hasActiveFetch() && !this.hasUserTyping();
       if (throttleOK && isSafe) {
-        logger.info('force-update', `AUTO-MAJ FORCÉE TOUJOURS (${r.local_ver} → ${r.remote_ver})`);
+        logger.info('force-update', `AUTO-MAJ silencieuse (${r.local_ver} → ${r.remote_ver})`);
         localStorage.setItem('apex_v13_auto_maj_last', String(Date.now()));
         /* Toast info bref */
         try {
@@ -175,8 +175,6 @@ class ForceUpdateBanner {
         } catch { /* ignore */ }
         await this.forceUpdate();
       } else {
-        /* Stream IA actif ou user tape → on diffère via banner SEULEMENT
-         * pour éviter perte. Le banner reste cliquable pour Kevin si urgent. */
         this.showBanner(r.remote_ver);
       }
     } else {
@@ -203,9 +201,20 @@ class ForceUpdateBanner {
     }
   }
 
-  /* v13.4.180 — isUserIdle supprimé : Kevin "Maj auto forcé toujours" → ne plus
-   * attendre que la page soit inactive 30s. Les seules conditions de sécurité
-   * restent : pas de stream IA actif + pas de typing user (cf. checkAndMaybeShow). */
+  /** v13.4.6 — Détecte si la page est idle (pas d'interaction depuis 30s).
+   *  v13.4.188 : déprécié (auto-MAJ ne dépend plus de isIdle, Kevin règle absolue
+   *  "MAJ auto forcé toujours" — l'app peut être foreground). Conservé pour
+   *  diagnostic console + futures features sensibles. */
+  // @ts-expect-error v13.4.188 helper conservé pour diagnostic
+  private isUserIdle(): boolean {
+    try {
+      const lastInteraction = parseInt(localStorage.getItem('apex_v13_last_interaction') ?? '0', 10);
+      if (!lastInteraction) return true;
+      return Date.now() - lastInteraction > 30_000;
+    } catch {
+      return true;
+    }
+  }
 
   private showBanner(remoteVer: string): void {
     if (document.getElementById(BANNER_ID)) return;

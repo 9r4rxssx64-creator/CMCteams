@@ -14,10 +14,14 @@
  * - Validation date stricte
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
+
+/* Re-export escapeHtml for backward compatibility (tests import from this module). */
+export { escapeHtml };
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeCalendarScope: CleanupScope | null = null;
@@ -41,10 +45,6 @@ const STORAGE_PREFIX = 'ax_calendar_';
 
 function getStorageKey(uid: string): string {
   return `${STORAGE_PREFIX}${uid}`;
-}
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 export function isValidDate(s: string): boolean {

@@ -15,6 +15,7 @@
  * Sources autoritaires : Légifrance, Légimonaco, Curia, CEDH, Cassation, Conseil d'État
  */
 
+import { escapeHtml } from '../../../../core/escape-html.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
 import { guardFeatureEnabled } from '../../../../services/feature-guard.js';
@@ -256,10 +257,6 @@ export const AX_LEGAL_FR = {
   } as Record<string, TemplateLettre>,
 } as const;
  
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 /**
  * Lookup article ou code → URL Légifrance directe ou recherche.

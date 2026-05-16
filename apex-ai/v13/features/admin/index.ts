@@ -10,6 +10,7 @@
  * - Conso    : consommation IA temps réel (Sprint port v12)
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -47,10 +48,6 @@ const ADMIN_TAB_TOGGLE_MAP: Record<Tab, string | null> = {
   consumption: 'admin.consumption',
   'audit-log': 'admin.audit-log',
 };
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 function renderCommerceTab(): string {
   const enabled = commerce.isEnabled();
@@ -217,8 +214,13 @@ function renderHealthTab(): string {
                 style="background:linear-gradient(135deg,rgba(16,185,129,0.22),rgba(34,197,94,0.14));color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
           🧪 Tester TOUT (live)
         </button>
+        <button class="ax-btn" data-nav-route="apex-audits-live"
+                style="background:linear-gradient(135deg,rgba(106,138,255,0.22),rgba(180,90,200,0.14));color:#8bb4ff;border:1px solid rgba(106,138,255,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
+          📊 Audits Apex (historique)
+        </button>
       </div>
       <div id="ax-admin-health-mount" style="margin-top:14px"></div>
+      <div id="ax-admin-audits-summary" style="margin-top:14px"></div>
     </div>
   `;
 }
@@ -423,6 +425,40 @@ function renderContent(): string {
  * Wires existing orphan modules into admin tabs (anti-pattern Declaration ≠ Deployment).
  */
 async function mountLazyAdminView(rootEl: HTMLElement): Promise<void> {
+  /* v13.4.182 (Kevin "Rapport historique auto dans admin") :
+   * Mini-summary des audits Apex live dans le tableau de bord admin. */
+  const mountAudits = rootEl.querySelector<HTMLElement>('#ax-admin-audits-summary');
+  if (mountAudits) {
+    try {
+      const { reportsHistory } = await import('../../services/apex-reports-history.js');
+      const stats = reportsHistory.getStats();
+      const lastLayoutDate = stats.lastLayoutTs
+        ? new Date(stats.lastLayoutTs).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+        : 'jamais';
+      const lastFuncDate = stats.lastFunctionalTs
+        ? new Date(stats.lastFunctionalTs).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+        : 'jamais';
+      const bugColor = stats.recentBugs > 0 ? '#ff5b5b' : '#22cc77';
+      const escColor = stats.recentEscalations > 0 ? '#ffaa66' : '#22cc77';
+      mountAudits.innerHTML = `
+        <div class="ax-bounce-tap" data-nav-route="apex-audits-live" style="background:linear-gradient(135deg,rgba(106,138,255,0.10),rgba(180,90,200,0.06));border:1px solid rgba(106,138,255,0.3);border-radius:12px;padding:14px;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+            <h3 style="margin:0;color:#8bb4ff;font-size:14px;font-weight:700">📊 Apex Audits Live</h3>
+            <span style="color:rgba(255,255,255,0.5);font-size:11px">Tap → historique complet →</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;font-size:12px;color:rgba(255,255,255,0.85)">
+            <div>📐 Layout : <b>${stats.layoutCount}</b> scans<br><span style="font-size:11px;color:rgba(255,255,255,0.5)">${lastLayoutDate}</span></div>
+            <div>🧪 Fonctionnel : <b>${stats.functionalCount}</b> tests<br><span style="font-size:11px;color:rgba(255,255,255,0.5)">${lastFuncDate}</span></div>
+            <div>🐛 Bugs 24h : <b style="color:${bugColor}">${stats.recentBugs}</b></div>
+            <div>📤 Escaladés 24h : <b style="color:${escColor}">${stats.recentEscalations}</b></div>
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      logger.warn('admin', 'audits summary render failed', { err });
+    }
+  }
+
   const mountBilan = rootEl.querySelector<HTMLElement>('#ax-admin-mount-bilan');
   if (mountBilan) {
     try {

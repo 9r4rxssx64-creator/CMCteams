@@ -24,8 +24,8 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      reporter: ['text-summary', 'lcov'], /* text-summary = synthèse rapide, lcov = CI */
-      reportOnFailure: false, /* v13.4.136 : ne génère rapport que si tests verts (gain temps) */
+      reporter: ['text-summary', 'lcov', 'json-summary'], /* text-summary = synthèse, lcov = CI, json-summary = audits */
+      reportOnFailure: true, /* v13.4.185 (audit Kevin gap #4) : génère rapport même si tests fail pour mesurer vraie couverture */
       include: ['core/**/*.ts', 'services/**/*.ts', 'features/**/*.ts'],
       exclude: [
         '**/*.test.ts',

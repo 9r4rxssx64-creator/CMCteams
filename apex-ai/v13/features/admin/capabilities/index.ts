@@ -14,12 +14,9 @@
  * - Vue admin standalone réutilisable
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { pwaCapabilities, type PwaApiId, type PwaCapabilityInfo } from '../../../services/pwa-capabilities.js';
 import { toast } from '../../../ui/toast.js';
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 function statusBadge(status: PwaCapabilityInfo['status']): string {
   switch (status) {

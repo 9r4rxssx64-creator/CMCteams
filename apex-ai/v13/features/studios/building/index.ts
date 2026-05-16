@@ -14,6 +14,7 @@
  * Anti-patterns évités : escapeHtml, validations strictes, no inline event listeners.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
@@ -25,10 +26,6 @@ let activeScope: CleanupScope | null = null;
 export function dispose(): void {
   activeScope?.cleanup();
   activeScope = null;
-}
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 export interface DtuRef {

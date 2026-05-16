@@ -17,7 +17,7 @@ name: Apex Autonomous Watcher
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '0 */6 * * *'  # v13.4.184 Kevin "mails saturent boite" : 6h (was 5min)
   workflow_dispatch:
 
 permissions:

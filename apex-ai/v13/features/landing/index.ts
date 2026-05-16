@@ -15,6 +15,7 @@
  */
 
 import { APP_VER } from '../../core/bootstrap.js';
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { router } from '../../core/router.js';
 import { auth } from '../../services/auth.js';
@@ -28,14 +29,6 @@ let activeLandingScope: CleanupScope | null = null;
 export function dispose(): void {
   activeLandingScope?.cleanup();
   activeLandingScope = null;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
 }
 
 function parseInviteToken(): { uid: string; name?: string } | null {

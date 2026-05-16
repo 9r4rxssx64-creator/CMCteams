@@ -20,6 +20,7 @@
  * Bypass admin Kevin : reconnu via aliases → onboarding skipped auto.
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { router } from '../../core/router.js';
@@ -57,13 +58,6 @@ const CAPABILITIES = [
   { id: 'domotique', label: '🏠 Domotique', desc: 'Maison connectée' },
   { id: 'remote', label: '📺 Remote TV', desc: 'Télécommande univ.' },
 ];
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 export function dispose(): void {
   activeScope?.cleanup();

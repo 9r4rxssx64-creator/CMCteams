@@ -8,30 +8,20 @@
  *
  * Règle d'or : si la donnée vient d'une source EXTERNE (API, user input,
  * Firebase, fichier picker, WebSocket) → DOIT passer par l'un des deux.
+ *
+ * v13.4.186 — escapeHtml/esc re-exportés depuis core/escape-html.ts (source unique).
  */
 
+import { escapeHtml, esc } from './escape-html.js';
+
 /**
- * Échappe les 5 caractères dangereux pour HTML interpolation.
- * Utilise CETTE FONCTION pour les `${variable}` dans les template literals
- * qui finissent dans `.innerHTML`.
+ * Re-export façade — utilise CETTE FONCTION pour les `${variable}` dans les
+ * template literals qui finissent dans `.innerHTML`.
  *
  * @example
  * el.innerHTML = `<p>${escapeHtml(userInput)}</p>`;
  */
-export function escapeHtml(s: string | number | null | undefined): string {
-  if (s === null || s === undefined) return '';
-  const str = String(s);
-  return str.replace(/[&<>"']/g, (c) => {
-    switch (c) {
-      case '&': return '&amp;';
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '"': return '&quot;';
-      case "'": return '&#39;';
-      default: return c;
-    }
-  });
-}
+export { escapeHtml, esc };
 
 /**
  * Sanitize HTML via DOMPurify (lazy CDN ou bundle local).

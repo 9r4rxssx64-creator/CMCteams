@@ -17,11 +17,15 @@
  */
 
 /* eslint-disable import/order -- type imports mixed with value imports détectés à tort comme groupes différents */
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import type { ApexTool } from '../../services/apex-tools.js';
 /* eslint-enable import/order */
+
+/* Re-export escapeHtml for backward compatibility (tests import from this module). */
+export { escapeHtml };
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeToolboxScope: CleanupScope | null = null;
@@ -33,10 +37,6 @@ export function dispose(): void {
 import { capabilities, type Capability } from '../../services/capabilities.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export type ToolboxFilter = {
   query?: string;

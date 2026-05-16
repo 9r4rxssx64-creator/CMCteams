@@ -4,16 +4,10 @@
  * Génère présentation .pptx avec slides dynamiques.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { pptxGenerator, type PptxGenerateInput } from '../../../services/skills/pptx-generator.js';
 import { toast } from '../../../ui/toast.js';
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 const TEMPLATES = [
   { id: 'pitch-startup', label: 'Pitch startup', emoji: '🚀' },

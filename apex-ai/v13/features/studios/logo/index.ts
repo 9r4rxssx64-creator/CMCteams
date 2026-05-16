@@ -16,6 +16,7 @@
  * Anti-XSS : escapeHtml partout. Storage per-user.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
@@ -82,10 +83,6 @@ export const MAX_LAYERS = 30;
 export const STORAGE_PREFIX = 'ax_logo_';
 export const CANVAS_W = 800;
 export const CANVAS_H = 800;
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
 
 export function getStorageKey(uid: string, id: string): string {
   return `${STORAGE_PREFIX}${uid}_${id}`;

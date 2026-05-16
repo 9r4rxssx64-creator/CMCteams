@@ -7,7 +7,7 @@ name: Branch Deployment Watch (Apex anti-PR-fantome)
 
 on:
   schedule:
-    - cron: "0 */2 * * *"  # toutes les 2h
+    - cron: "0 8 * * 1"  # v13.4.184 Kevin "mails saturent boite" : weekly Mon 08h UTC (was 2h)
   workflow_dispatch:
 
 permissions:

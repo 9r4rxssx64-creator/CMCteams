@@ -3,6 +3,7 @@
  * Stub Sprint 2 P0 — sera enrichi avec parité v12.785 vSettings.
  */
 
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -14,10 +15,6 @@ let activeSettingsScope: CleanupScope | null = null;
 export function dispose(): void {
   activeSettingsScope?.cleanup();
   activeSettingsScope = null;
-}
-
-function escapeHtmlSafe(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 const AUTO_READ_KEY = 'apex_v13_chat_auto_read';
@@ -94,19 +91,19 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
         .map((v) => {
           const isActive = v.id === activeId;
           const emoji = v.emoji ?? (v.category === 'pro' ? '🎙️' : v.category === 'fun' ? '🎉' : '🎨');
-          const desc = v.description ? escapeHtmlSafe(v.description) : '';
+          const desc = v.description ? escapeHtml(v.description) : '';
           const activeBg = isActive
             ? 'background:rgba(232,184,48,0.15);border-color:rgba(232,184,48,0.45)'
             : 'background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.06)';
           return `
-            <div class="ax-voice-item" data-voice-id="${escapeHtmlSafe(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
+            <div class="ax-voice-item" data-voice-id="${escapeHtml(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
               <span style="font-size:18px">${emoji}</span>
               <div style="flex:1;min-width:0">
-                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.name)}${isActive ? ' <span style="color:#e8b830;font-size:11px">★ active</span>' : ''}</div>
-                <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtmlSafe(v.category)}${desc ? ' · ' + desc : ''}</div>
+                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.name)}${isActive ? ' <span style="color:#e8b830;font-size:11px">★ active</span>' : ''}</div>
+                <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.category)}${desc ? ' · ' + desc : ''}</div>
               </div>
-              <button class="ax-voice-test-btn" data-test-voice="${escapeHtmlSafe(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtmlSafe(v.name)}" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
-              <button class="ax-voice-set-btn" data-set-voice="${escapeHtmlSafe(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtmlSafe(v.name)} par défaut" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
+              <button class="ax-voice-test-btn" data-test-voice="${escapeHtml(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtml(v.name)}" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
+              <button class="ax-voice-set-btn" data-set-voice="${escapeHtml(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtml(v.name)} par défaut" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
             </div>
           `;
         })
@@ -195,7 +192,7 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:680px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header style="margin-bottom:24px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards">
         <h1 style="margin:0 0 6px;font-size:clamp(26px,4.5vw,32px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
-        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtmlSafe(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:#e8b830">👑 Admin</span>' : ''}</p>
+        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtml(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:#e8b830">👑 Admin</span>' : ''}</p>
       </header>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:60ms">
@@ -239,6 +236,10 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:#c9a227;border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
         <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:#f78322;border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
         <div id="ax-cf-diagnostic-results" style="margin-top:8px;font-size:12px"></div>
+        <button class="ax-btn ax-btn-secondary" id="ax-functional-test-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.35)">🧪 Tester tous les boutons + auto-fix (v13.4.182)</button>
+        <div id="ax-functional-test-results" style="margin-top:8px;font-size:12px"></div>
+        <button class="ax-btn ax-btn-secondary" id="ax-layout-inspect-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(180,90,200,0.15);color:#c97aff;border:1px solid rgba(180,90,200,0.35)">📐 Scanner la vue actuelle (overflow, boutons cachés)</button>
+        <div id="ax-layout-inspect-results" style="margin-top:8px;font-size:12px"></div>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
@@ -362,6 +363,86 @@ export function render(rootEl: HTMLElement): void {
           apexZoomInspector.hide();
         } else {
           apexZoomInspector.show();
+        }
+      })();
+    });
+  }
+
+  /* v13.4.182 (Kevin "intègre un bouton" + "rapport historique auto dans admin") :
+   * Bouton 🧪 Tester tous les boutons + auto-fix. Persist historique pour vue admin. */
+  const functionalBtn = rootEl.querySelector<HTMLButtonElement>('#ax-functional-test-btn');
+  if (functionalBtn && activeSettingsScope) {
+    activeSettingsScope.bind(functionalBtn, 'click', () => {
+      void (async () => {
+        const resultsEl = rootEl.querySelector<HTMLDivElement>('#ax-functional-test-results');
+        if (!resultsEl) return;
+        resultsEl.innerHTML = '<div style="color:#6a8aff">⏳ Test des boutons en cours (jusqu\'à 40 boutons, ~30s)...</div>';
+        try {
+          const { apexFunctionalTester } = await import('../../services/apex-functional-tester.js');
+          const { reportsHistory } = await import('../../services/apex-reports-history.js');
+          const out = await apexFunctionalTester.testAndAutoFix({ maxButtons: 30 });
+          reportsHistory.recordFunctional(out.before, out.fixes, out.after, out.improvement);
+          const okPct = out.before.tested > 0 ? Math.round((out.before.ok / out.before.tested) * 100) : 0;
+          const improveStr = out.after
+            ? ` → après fix : ${Math.round((out.after.ok / Math.max(1, out.after.tested)) * 100)}% OK (${out.improvement > 0 ? '+' : ''}${Math.round(out.improvement * 100)}%)`
+            : '';
+          const sampleBugs = out.before.details
+            .filter((d) => d.status === 'no_response' || d.status === 'error')
+            .slice(0, 5)
+            .map((d) => `<li style="color:#ffaa66;font-size:11px">${d.label || '(no label)'} → ${d.status}</li>`)
+            .join('');
+          resultsEl.innerHTML = `
+            <div style="background:rgba(106,138,255,0.08);border:1px solid rgba(106,138,255,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
+              <div style="font-weight:700;margin-bottom:6px">🧪 Test fonctionnel terminé</div>
+              <div>Testés : <b>${out.before.tested}</b>/${out.before.totalButtons} · OK : <b style="color:#22cc77">${out.before.ok} (${okPct}%)</b> · No-response : <b style="color:#ffaa66">${out.before.noResponse}</b> · Erreurs : <b style="color:#ff5b5b">${out.before.errors}</b> · Skipped : ${out.before.skipped}${improveStr}</div>
+              ${out.fixes.applied.length ? `<div style="margin-top:6px;color:#c9a227">🔧 Auto-fix appliqué : ${out.fixes.applied.join(', ')}</div>` : ''}
+              ${out.fixes.escalated ? '<div style="margin-top:6px;color:#ff5b5b">⚠ Escaladé à Claude Code (ax_claude_todo)</div>' : ''}
+              ${sampleBugs ? `<ul style="margin:6px 0 0 16px;padding:0">${sampleBugs}</ul>` : ''}
+              <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">→ Historique complet dans Admin (Apex Audits Live)</div>
+            </div>
+          `;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur test : ${msg}</div>`;
+        }
+      })();
+    });
+  }
+
+  /* v13.4.182 — Bouton 📐 Scanner la vue actuelle (layout inspector) */
+  const layoutBtn = rootEl.querySelector<HTMLButtonElement>('#ax-layout-inspect-btn');
+  if (layoutBtn && activeSettingsScope) {
+    activeSettingsScope.bind(layoutBtn, 'click', () => {
+      void (async () => {
+        const resultsEl = rootEl.querySelector<HTMLDivElement>('#ax-layout-inspect-results');
+        if (!resultsEl) return;
+        resultsEl.innerHTML = '<div style="color:#c97aff">⏳ Scan layout...</div>';
+        try {
+          const { apexLayoutInspector } = await import('../../services/apex-layout-inspector.js');
+          const { reportsHistory } = await import('../../services/apex-reports-history.js');
+          const r = apexLayoutInspector.scanDom();
+          reportsHistory.recordLayout(r);
+          const sampleHidden = r.hiddenButtons.slice(0, 5).map(
+            (b) => `<li style="color:#ffaa66;font-size:11px">"${b.label}" → ${b.reason}</li>`
+          ).join('');
+          const sampleOverflow = r.overflowingElements.slice(0, 5).map(
+            (e) => `<li style="color:#ff5b5b;font-size:11px">${e.tag} (+${e.overflowBy}px)</li>`
+          ).join('');
+          resultsEl.innerHTML = `
+            <div style="background:rgba(180,90,200,0.08);border:1px solid rgba(180,90,200,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
+              <div style="font-weight:700;margin-bottom:6px">📐 Layout scan</div>
+              <div>Viewport : ${r.viewport.width}×${r.viewport.height} · Document : ${r.documentScroll.width}px</div>
+              <div>Overflow horizontal : <b style="color:${r.hasHorizontalOverflow ? '#ff5b5b' : '#22cc77'}">${r.hasHorizontalOverflow ? 'OUI' : 'NON'}</b> · Boutons cachés : <b style="color:${r.hiddenButtons.length ? '#ffaa66' : '#22cc77'}">${r.hiddenButtons.length}</b> · Touch < 44px : ${r.smallTouchTargets.length}</div>
+              ${sampleHidden ? `<div style="margin-top:6px;color:#c9a227">Boutons cachés:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleHidden}</ul>` : ''}
+              ${sampleOverflow ? `<div style="margin-top:6px;color:#c9a227">Éléments overflow:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleOverflow}</ul>` : ''}
+              <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">→ Historique complet dans Admin (Apex Audits Live)</div>
+            </div>
+          `;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          /* v13.4.187 audit XSS gap #1 closure : escape même les Error.message
+           * internes (peut contenir données user-controlled via stack traces). */
+          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur scan : ${escapeHtml(msg)}</div>`;
         }
       })();
     });

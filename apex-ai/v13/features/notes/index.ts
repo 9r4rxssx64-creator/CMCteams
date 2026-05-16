@@ -14,6 +14,9 @@
  * - Per-user isolation stricte
  */
 
+export { escapeHtml } from '../../core/escape-html.js';
+
+import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
@@ -41,10 +44,6 @@ const STORAGE_PREFIX = 'ax_notes_';
 
 function getStorageKey(uid: string): string {
   return `${STORAGE_PREFIX}${uid}`;
-}
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 class NotesStore {

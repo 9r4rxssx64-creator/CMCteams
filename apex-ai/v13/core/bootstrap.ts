@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.180';
+export const APP_VER = 'v13.4.189';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -243,6 +243,29 @@ async function bootstrap(): Promise<void> {
     easterEggs.install();
   });
 
+  /* v13.4.177 (Kevin "Je ne vois pas la version de l app") :
+   * Wire installVersionBadge() au boot — était JAMAIS appelé en prod, juste tests. */
+  await safeInit('version-badge', async () => {
+    const { installVersionBadge } = await import('../ui/version-badge.js');
+    installVersionBadge();
+  });
+
+  /* v13.4.180 (Kevin "intègre Playwright dans Apex et qu'il sache") :
+   * Apex auto-inspecte ses propres vues toutes les 30s + alerte si overflow détecté. */
+  await safeInit('layout-inspector', async () => {
+    const { apexLayoutInspector } = await import('../services/apex-layout-inspector.js');
+    apexLayoutInspector.startAutoMonitor(30_000);
+    /* Expose globally pour Apex IA tool use + console debug */
+    (window as unknown as { apexLayoutInspector?: unknown }).apexLayoutInspector = apexLayoutInspector;
+  });
+
+  /* v13.4.181 (Kevin "teste réel toutes fonctions, bouton, systèmes et corrige auto bugs") :
+   * Apex test runtime des boutons cliquables + auto-fix whitelist + escalade Claude Code. */
+  await safeInit('functional-tester', async () => {
+    const { apexFunctionalTester } = await import('../services/apex-functional-tester.js');
+    (window as unknown as { apexFunctionalTester?: unknown }).apexFunctionalTester = apexFunctionalTester;
+  });
+
   /* 2. Feature detection */
   if (!('serviceWorker' in navigator)) {
     logger.warn('boot', 'Service Worker not supported — degraded mode');
@@ -452,6 +475,7 @@ async function bootstrap(): Promise<void> {
   router.register('studio-pdf', { loader: () => import('@features/studios/pdf/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   /* v13.4.13 — Vue runtime-tests (Apex teste TOUT en réel browser) */
   router.register('runtime-tests', { loader: () => import('@features/admin/runtime-tests/index.js'), requiresAdmin: true });
+  router.register('apex-audits-live', { loader: () => import('@features/admin/apex-audits-live/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

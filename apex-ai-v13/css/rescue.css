@@ -203,6 +203,94 @@ html, body {
   box-sizing: border-box;
 }
 
+/* v13.4.179 (Kevin "Il manque à droite, ça déborde, c'est caché") :
+ * 3 screenshots prouvent overflow horizontal portrait iPhone :
+ * - Vue Chat : bouton Envoyer coupé, "Ultra" tronqué, nav bas tronquée
+ * - Vue Mémoire : cards "Scanner..." + "Zoom Inspector live (debug UX zoom Kevi..."
+ *   tronquées à droite + cards voix sans bouton visible
+ *
+ * CAUSE : flex children sans `min-width: 0` (default `min-width: auto`)
+ * gardent leur largeur intrinsèque (placeholder, label long, contenu) et
+ * poussent les autres enfants HORS viewport. Le `overflow-x:hidden` body
+ * masque visuellement mais le contenu reste inaccessible.
+ *
+ * FIX : force `min-width: 0` sur tous les flex/grid children potentiels
+ * + max-width: 100% sur cards/sections + safe-area-inset-right respect. */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Tous les containers principaux : respectent strict viewport + safe-area */
+#apex-root,
+.ax-page,
+.ax-chat,
+.ax-admin,
+.ax-settings,
+.ax-vault-page,
+.ax-modal,
+.ax-modal-content,
+main,
+[role="main"] {
+  max-width: 100%;
+  padding-right: env(safe-area-inset-right, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  box-sizing: border-box;
+}
+
+/* Flex/grid items : autorisent réduction quand espace manque (anti-push) */
+.ax-chat-input > *,
+.ax-chat-nav > *,
+.ax-row > *,
+.ax-actions > *,
+.ax-tabs > *,
+.ax-card > *,
+.ax-section > *,
+nav > *,
+form > *,
+[class*="ax-flex"] > * {
+  min-width: 0;
+}
+
+/* Textarea/input dans flex : doit pouvoir se rétracter (sinon placeholder pousse) */
+.ax-chat-input textarea,
+.ax-chat-input input,
+.ax-input,
+form textarea,
+form input[type="text"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Texts longs : break-word pour ne pas pousser horizontalement */
+.ax-card,
+.ax-pill,
+.ax-suggestion,
+.ax-suggestion-pill,
+.ax-section-title,
+.ax-msg,
+.ax-modal h1,
+.ax-modal h2,
+.ax-modal h3 {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+/* Très petits viewports (iPhone SE 375, iPhone mini 360) : nav bas + boutons compactés */
+@media (max-width: 400px) {
+  .ax-chat-nav .ax-btn-sm {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+    min-height: 28px !important;
+  }
+  .ax-chat-input .ax-btn-icon,
+  .ax-icon-compact {
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 4px !important;
+  }
+}
+
 /* v13.4.94 — FIX iOS Safari auto-zoom triple stack (Kevin "Zoom tjs UX") :
    1. -webkit-text-size-adjust:100% sur html : empêche Safari iOS de zoomer le texte
       automatiquement quand l'écran tourne ou quand un input prend le focus.

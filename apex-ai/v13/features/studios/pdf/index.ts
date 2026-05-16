@@ -4,16 +4,10 @@
  * Formulaire pour générer .pdf (facture, devis, etc.) via jsPDF.
  */
 
+import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { pdfGenerator, type PdfGenerateInput } from '../../../services/skills/pdf-generator.js';
 import { toast } from '../../../ui/toast.js';
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
-}
 
 const TEMPLATES = [
   { id: 'invoice', label: 'Facture', emoji: '💰' },
