@@ -3777,7 +3777,7 @@ var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admi
 // ax_cmc_planning_pending : Apex push planning detecte dans son chat -> toast 1-clic Kevin
 "ax_cmc_planning_pending"];
 // Préfixes pour clés dynamiques (mois/année)
-var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_"];
+var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
 /* v9.530 - cmc_pin_fails enleve de FB_LOCAL : doit sync FB pour resister clear localStorage */
 var FB_LOCAL=["cmc_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm","cmc_admin_sessions","cmc_admin_pin","cmc_ia_enabled","cmc_ia_websearch","cmc_ia_key","cmc_ia_proxy","cmc_backend_url","cmc_fb_url","cmc_sync_queue","cmc_notif_ts","cmc_emailjs_config","cmc_last_seen_ver","cmc_a11y","cmc_err_log","cmc_theme","cmc_last_auto_backup","cmc_tts_enabled","cmc_lang","cmc_ghost_log","cmc_auto_rotation_off","cmc_auto_assign_gps","cmc_pit_ai_mode","cmc_pit_ai_shift_mode","cmc_qr_checkin_enabled","cmc_login_geo_log","cmc_import_anomalies",
@@ -4885,7 +4885,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.652";
+var APP_VER="v9.653";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24915,6 +24915,75 @@ function cmcShowVisualPlanning(){
     _cmcRenderVisualPlanningModal(meta);
   }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
 }
+// v9.653 (Kevin "Apex doit pouvoir voir le visuel et l'utiliser pour mieux
+// reproduire le planning, comme quand il fait des tests réels") :
+// Pousse une requête Firebase pour qu'Apex récupère le visuel + utilise
+// Claude Vision API pour le "lire" + cross-valide avec cmc_overrides[key]
+// + remonte les divergences détectées.
+function cmcRequestApexVision(){
+  try{
+    if(!A.user||A.user.id!==AID){toast("⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var visual=lg("cmc_visual_planning_"+key,null);
+    if(!visual||!visual.dataUrl){
+      toast("Aucun visuel attaché. Joins d'abord une image dans Import.","warn",6000);
+      return;
+    }
+    var ov=A.overrides[key]||{};
+    var empsWithCodes=Object.keys(ov).filter(function(eid){return Object.keys(ov[eid]||{}).length>0;}).length;
+    // Requête Apex
+    var request={
+      ts:Date.now(),
+      from:"cmcteams",
+      app_ver:APP_VER,
+      key:key,year:iy,month:im,
+      visual_attached:true,
+      visual_size:visual.size,
+      visual_mime:visual.mime,
+      visual_name:visual.name,
+      // dataUrl NON inclus dans requête pour éviter 5MB Firebase node (Apex lit depuis cmc_visual_planning_<key>)
+      ov_summary:{
+        emps_with_codes:empsWithCodes,
+        total_active:A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length,
+        sample_cadres:A.employees.filter(function(e){return (e.family||"")==="cadres"&&isEmpActive(e,iy,im);}).slice(0,3).map(function(e){
+          var r=ov[e.id]||{};
+          return {name:e.name,filled:Object.keys(r).filter(function(d){return !!r[d];}).length,sample:Object.keys(r).slice(0,5).map(function(d){return d+":"+r[d];}).join(" ")};
+        })
+      },
+      task:"vision_cross_validate",
+      expected_result_key:"cmc_apex_vision_result_"+key
+    };
+    ls("cmc_apex_vision_request_"+key,request);
+    if(typeof fbWrite==="function")try{fbWrite("cmc_apex_vision_request_"+key,request);}catch(_){}
+    try{_audit("apex_vision_request",AID,key,"",JSON.stringify({size:visual.size,emps:empsWithCodes}));}catch(_){}
+    toast("🤖 Apex notifié — analyse Vision en cours. Résultat dans 30-60s.","ok",5000);
+    // Listener léger pour notifier Kevin quand résultat dispo
+    var checkInt=setInterval(function(){
+      var res=lg("cmc_apex_vision_result_"+key,null);
+      if(res&&res.ts>request.ts){
+        clearInterval(checkInt);
+        _cmcRenderApexVisionResult(res);
+      }
+    },5000);
+    setTimeout(function(){clearInterval(checkInt);},300000); // timeout 5 min
+  }catch(e){toast("Erreur : "+(e&&e.message||e),"err");}
+}
+function _cmcRenderApexVisionResult(res){
+  var modalId="cmcApexVisionResult_"+Date.now();
+  var hasDiff=res.divergences&&res.divergences.length>0;
+  var statusColor=hasDiff?"#e0a040":"#5aaa70";
+  var statusIcon=hasDiff?"⚠":"✅";
+  var html='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
+    +'<div style="background:#0f1a14;border:2px solid '+statusColor+';border-radius:14px;max-width:900px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="color:'+statusColor+';margin:0;font-size:18px">'+statusIcon+' Apex Vision — '+esc(MFR[A.month])+' '+A.year+'</h2>'
+    +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+    +'<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px;font-size:14px;color:#cfd0e0;line-height:1.5;white-space:pre-wrap">'+esc(res.summary||"Résultat brut: "+JSON.stringify(res).slice(0,500))+'</div>'
+    +(hasDiff?'<div style="margin-top:10px;padding:10px;background:rgba(224,160,64,.10);border:1px solid rgba(224,160,64,.40);border-radius:8px;color:#ffd0a0;font-size:13px"><b>Divergences détectées :</b><br>'+esc(res.divergences.map(function(d){return "• "+d.emp+" jour "+d.day+" : visuel="+d.visual+" vs parsed="+d.parsed;}).join("\n"))+'</div>':'')
+    +'</div></div>';
+  document.body.insertAdjacentHTML("beforeend",html);
+  toast(statusIcon+" Apex Vision : "+(hasDiff?(res.divergences.length+" divergences trouvées"):"planning conforme au visuel"),hasDiff?"warn":"ok",6000);
+}
+
 function _cmcRenderVisualPlanningModal(meta){
   var modalId="cmcVisualModal_"+Date.now();
   var isImage=/^image\//.test(meta.mime||"");
@@ -33513,6 +33582,9 @@ function vImport(){
     </button>
     <div id="cmcVisualInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
     <div id="cmcVisualPreview" style="margin-top:10px"></div>
+    <button onclick="cmcRequestApexVision()" title="Apex lit le visuel avec Claude Vision API et compare avec le planning parsé pour détecter divergences" style="width:100%;min-height:48px;padding:10px;margin-top:10px;background:rgba(160,96,255,.15);border:1px solid rgba(160,96,255,.5);color:#c080ff;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+      🤖 Demander à Apex de vérifier visuel vs parsing
+    </button>
   </div>
 
   <!-- v9.508 Scanner planning camera iPhone (OCR Tesseract.js, auto-tri mois/cadres/employes) -->
