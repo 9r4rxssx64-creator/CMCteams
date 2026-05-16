@@ -16,6 +16,7 @@
  * Honnêteté Kevin : pas de promesse vague, état réel observable.
  */
 
+import { APP_VER } from '../core/bootstrap.js';
 import { logger } from '../core/logger.js';
 
 export interface DiagnosticResult {
@@ -74,7 +75,7 @@ class ApexRuntimeDiagnostic {
     const failCount = checks.length - okCount;
     const result: DiagnosticResult = {
       ts: Date.now(),
-      version: '13.4.99',
+      version: APP_VER.replace(/^v/, ''),
       checks,
       okCount,
       failCount,
