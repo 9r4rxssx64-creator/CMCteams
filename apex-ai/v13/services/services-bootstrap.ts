@@ -502,7 +502,21 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
             }
 
             if (!diag.token_valid) {
-              toast.error(`❌ Cloudflare API token INVALIDE (HTTP ${diag.http_status ?? '?'}). ${diag.error_reason ?? ''} Recharge token : ${diag.fix_url ?? 'dash.cloudflare.com'}`, { duration: 15000 });
+              /* v13.4.196 fix UX critique (Kevin screenshot 2026-05-16) :
+               * HTTP 503/502/504/500/429 = infra Cloudflare dégradée OU transient
+               * réseau, PAS token invalide. Ne pas créer la panique "INVALIDE".
+               * Le banner orange cloudflare-status (déjà actif via recordHttp503)
+               * affiche le contexte exact. Ici on log info, pas toast rouge. */
+              const status = diag.http_status ?? 0;
+              const isInfraOrTransient = status === 503 || status === 502
+                || status === 504 || status === 500 || status === 429
+                || status === 0; /* 0 = network/CORS — pas le token */
+              if (isInfraOrTransient) {
+                logger.info('cf-vault-deploy', `Cloudflare API indisponible HTTP ${status} (infra ou transient) — token re-testé au prochain boot`);
+                return;
+              }
+              /* Vrai token invalide (401/403) → message clair + lien fix */
+              toast.error(`🔑 Cloudflare token rejeté (HTTP ${status}). ${diag.error_reason ?? ''} Recharge token : ${diag.fix_url ?? 'dash.cloudflare.com'}`, { duration: 15000 });
               return;
             }
 
