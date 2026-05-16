@@ -4885,7 +4885,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.649";
+var APP_VER="v9.650";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -32718,62 +32718,83 @@ function empAutoSaveProfil(){
 // Verifie qu'un import "ok" a vraiment applique des codes a >=50% des employes actifs.
 // Sinon : affiche alerte rouge + bouton re-tenter + telemetry escalade Apex.
 // Detecte les regressions silencieuses (ex: TypeError catch global avant fix v9.553).
-// v9.648 (Kevin "reconnaissance équipe par jours de repos identiques" — algo
+// v9.648/650 (Kevin "reconnaissance équipe par jours de repos identiques" — algo
 // originel SBM avant que le trait noir du PDF disparaisse au copy-paste).
 // PRINCIPE : employés avec MÊME pattern de jours repos (RH/R) appartiennent à la
 // MÊME équipe. Équipe miroir = pattern offset cyclique (généralement +N jours).
 //
-// Algo :
-// 1. Pour chaque emp non-cadre avec horaires ce mois, extraire signature RH = liste
-//    des jours où code === "RH"
-// 2. Grouper par signature identique → un groupe = une équipe
-// 3. Trier groupes par taille (les vraies équipes ont >=3 emps) puis ordre
-//    d'apparition dans la liste
-// 4. Assigner team ID séquentiel : group 1 = "r1" (roulettes) ou "1" (bj) selon
-//    family majoritaire dans le groupe, group 2 = "r2"/"2", etc.
-// 5. Détecter miroir : si group A pattern = [5,11,17,23,29] et group B = [4,10,16,22,28]
-//    → miroir (offset constant). Stocker dans cmc_team_mirror_<key>.
-// 6. Écrire emp.teamHistory[key] = new team ID pour chaque emp du groupe.
+// Algo v9.650 ROBUSTE :
+// 1. Pour chaque emp non-cadre avec horaires ce mois (>=10 cells, plus permissif) :
+//    - Extraire RH days dans le mois
+//    - Calculer CYCLE = écart médian entre RH consécutifs (typique 6 ou 7 jours SBM)
+//    - Calculer OFFSET = (premier RH - 1) % cycle (position dans cycle)
+//    - Signature ROBUSTE = "cycle:offset" (résiste aux CP/AF qui remplacent UN RH)
+// 2. Grouper emps par signature ROBUSTE (>=2 emps min, plus permissif)
+// 3. Trier groupes par offset (ordre cycle)
+// 4. Assigner team IDs séquentiels par family (bj/roulettes/cmc/baccara)
+// 5. Détecter miroirs : (cycle identique + offset diff = cycle/2) → mirror pair
+// 6. Écrire emp.teamHistory[key] = teamId + miroir dans cmc_team_mirror_<key>
 //
-// Sécurité : ne s'exécute QUE si emp a >=20 cells (sinon pattern non fiable).
-// Préservation : N'écrase PAS teamHistory si déjà écrit par parser explicite
-// (V1 juin format avec numéro équipe entre POST et NOM).
+// Sécurité :
+// - Ne s'exécute QUE si emp a >=10 cells (vs 20 avant — accepter part-time)
+// - Préserve teamHistory si parser explicite a écrit (V1 juin numéro équipe)
+// - Skip emps avec <2 RH (pas assez pour cycle)
+// - Skip groupes <2 emps (vrai groupe min 2 personnes)
 function _cmcDetectTeamsByRestPattern(iy,im){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
-    if(!Object.keys(ov).length){console.log("[v9.648 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
-    // 1. Extraire signature RH par emp (non-cadre uniquement, >=20 cells)
+    if(!Object.keys(ov).length){console.log("[v9.650 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
+    // Helper : calcule cycle médian entre RH consécutifs
+    function _calcCycle(rhDays){
+      if(rhDays.length<2)return null;
+      var gaps=[];
+      for(var i=1;i<rhDays.length;i++){gaps.push(rhDays[i]-rhDays[i-1]);}
+      gaps.sort(function(a,b){return a-b;});
+      // Median plus robuste que mean (résiste aux CP qui élargit un gap)
+      return gaps[Math.floor(gaps.length/2)];
+    }
+    // 1. Extraire signature ROBUSTE (cycle:offset) par emp
     var empSigs={};
     var detectableEmps=[];
+    var skipReasons={cadres:0,explicit:0,low_cells:0,low_rh:0,no_cycle:0};
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
-      if((emp.family||"")==="cadres")return; // cadres ont leur propre team (pit15/sup)
-      // Skip si parser a DÉJÀ écrit teamHistory explicite ce mois (V1 juin format)
-      if(emp.teamHistory&&emp.teamHistory[key])return;
+      if((emp.family||"")==="cadres"){skipReasons.cadres++;return;}
+      if(emp.teamHistory&&emp.teamHistory[key]){skipReasons.explicit++;return;}
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
-      if(cellCount<20){return;}
-      // Signature = liste tri des jours RH (et seulement RH, pas R)
+      if(cellCount<10){skipReasons.low_cells++;return;} // v9.650 : 20→10 (part-time OK)
       var rhDays=[];
       Object.keys(r).forEach(function(d){
         if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));
       });
       rhDays.sort(function(a,b){return a-b;});
-      if(rhDays.length<3){return;} // pattern non fiable
-      var sig=rhDays.join(",");
+      if(rhDays.length<2){skipReasons.low_rh++;return;} // v9.650 : 3→2 (court mois OK)
+      var cycle=_calcCycle(rhDays);
+      if(!cycle||cycle<2||cycle>15){skipReasons.no_cycle++;return;} // cycle plausible
+      var offset=(rhDays[0]-1)%cycle;
+      // Signature robuste : cycle + offset (au lieu de liste rhDays brute)
+      var sig=cycle+":"+offset;
       if(!empSigs[sig])empSigs[sig]=[];
-      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,family:emp.family||"bj"});
+      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,family:emp.family||"bj"});
       detectableEmps.push(eid);
     });
-    var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=3;});
-    if(!sigs.length){console.log("[v9.648 detectTeams] no group with 3+ same RH, skip");return{ok:false,reason:"no_groups"};}
-    // 2. Trier groupes par premier RH day (ordre cycle)
-    sigs.sort(function(a,b){return parseInt(a.split(",")[0])-parseInt(b.split(",")[0]);});
+    var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=2;}); // v9.650 : 3→2
+    if(!sigs.length){
+      console.log("[v9.650 detectTeams] no group with 2+ same cycle:offset, skip. SkipReasons:",skipReasons);
+      return{ok:false,reason:"no_groups",skipReasons:skipReasons};
+    }
+    // 2. Trier groupes par offset croissant (ordre cycle)
+    sigs.sort(function(a,b){
+      var pa=a.split(":"),pb=b.split(":");
+      var oa=parseInt(pa[1]),ob=parseInt(pb[1]);
+      if(oa!==ob)return oa-ob;
+      return parseInt(pa[0])-parseInt(pb[0]);
+    });
     // 3. Assigner team IDs séquentiels par family
     var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
-    var assignments={};
     var teamGroups=[];
     sigs.forEach(function(sig){
       var group=empSigs[sig];
@@ -32783,24 +32804,28 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       famCounters[domFam]=(famCounters[domFam]||0)+1;
       var n=famCounters[domFam];
       var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:String(n);
-      assignments[teamId]={sig:sig,emps:group,rhDays:group[0].rhDays,family:domFam};
-      teamGroups.push({teamId:teamId,sig:sig,rhDays:group[0].rhDays,family:domFam,empCount:group.length});
-      // Écrire teamHistory[key] pour chaque emp du groupe
+      teamGroups.push({
+        teamId:teamId,sig:sig,
+        cycle:group[0].cycle,offset:group[0].offset,
+        family:domFam,empCount:group.length,
+        rhDays:group[0].rhDays
+      });
       group.forEach(function(g){
         if(!g.emp.teamHistory)g.emp.teamHistory={};
         g.emp.teamHistory[key]=teamId;
       });
     });
-    // 4. Détection miroirs : pour chaque paire de teams, vérifier offset cyclique
+    // 4. Détection miroirs : même cycle + offset diff = cycle/2 (rotation décalée d'un demi-cycle)
     var mirrors={};
     for(var i=0;i<teamGroups.length;i++){
       for(var j=i+1;j<teamGroups.length;j++){
         var a=teamGroups[i],b=teamGroups[j];
-        if(a.family!==b.family||a.empCount!==b.empCount)continue;
-        // Offset constant ?
-        var offsets=a.rhDays.map(function(d,idx){return d-(b.rhDays[idx]||0);});
-        var firstOff=offsets[0];
-        if(offsets.every(function(o){return o===firstOff;})){
+        if(a.family!==b.family)continue;
+        if(a.cycle!==b.cycle)continue;
+        var offDiff=Math.abs(a.offset-b.offset);
+        // Miroir = offset diff = cycle/2 (typique 6/2=3 ou 7/3-4)
+        var halfCycle=Math.floor(a.cycle/2);
+        if(offDiff===halfCycle||offDiff===a.cycle-halfCycle){
           mirrors[a.teamId]=b.teamId;
           mirrors[b.teamId]=a.teamId;
         }
@@ -32812,13 +32837,20 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     // 5. Sync employees + Firebase
     try{ls("cmc_e",A.employees);}catch(_){}
     if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
-    // 6. Audit
-    var report={teams:teamGroups.length,empsAssigned:detectableEmps.length,mirrors:Object.keys(mirrors).length/2};
-    try{if(typeof _audit==="function")_audit("teams_detected_by_rh_pattern",AID,key,
-      report.teams+" teams / "+report.empsAssigned+" emps",JSON.stringify(report));}catch(_){}
-    console.log("[v9.648 detectTeams] "+report.teams+" équipes détectées par pattern RH, "+report.empsAssigned+" emps assignés, "+report.mirrors+" paires miroir");
+    // 6. Audit enrichi
+    var report={
+      teams:teamGroups.length,
+      empsAssigned:detectableEmps.length,
+      mirrors:Object.keys(mirrors).length/2,
+      skipReasons:skipReasons,
+      cycles:teamGroups.map(function(g){return g.cycle;}).filter(function(v,i,a){return a.indexOf(v)===i;})
+    };
+    try{if(typeof _audit==="function")_audit("teams_detected_by_rh_pattern_v650",AID,key,
+      report.teams+" teams / "+report.empsAssigned+" emps / "+report.mirrors+" mirrors",
+      JSON.stringify(report));}catch(_){}
+    console.log("[v9.650 detectTeams] "+report.teams+" équipes détectées par pattern cycle:offset, "+report.empsAssigned+" emps assignés, "+report.mirrors+" paires miroir, cycles="+report.cycles.join(","));
     return{ok:true,report:report,teamGroups:teamGroups,mirrors:mirrors};
-  }catch(e){console.warn("[v9.648 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
+  }catch(e){console.warn("[v9.650 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
 }
 
 function _postValidateImport(iy,im,okCount,errCount,errLines){
