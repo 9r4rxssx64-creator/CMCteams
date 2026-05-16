@@ -39,6 +39,24 @@ Le PDF SBM utilise 2 conventions pour délimiter les équipes :
 - Détection miroir = paires (A,B) avec même family + même taille + offset RH constant
 - Stocké : `emp.teamHistory[key] = teamId` + `cmc_team_mirror_<key> = {teamId: mirrorId}`
 
+### Vérité terrain V1 mai 2026 (Kevin 2026-05-16) — équipes Roulettes confirmées
+
+Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
+
+| # | Équipe principale | Code jour 1 | Équipe miroir | Code jour 1 | RH days |
+|---|---|---|---|---|---|
+| 1 | BARONE E, AUREGLIA R, PARIZIA K, GANCIA G, DAGIONI M | `20/5` | BASILE F, RINALDI S, SIRIO J, MALENFANT PJ, MILLET T, MARCHI T | `22/6'` | [5,11,17,23,29] |
+| 2 | AUBERT P, HAREL H, SBARATTO S, CARDONA P, LANTERI MINET P | `19/4` | LE DUC F, CHOISIT J, DEVERINI F, NUNEZ S | `19/4""` | [4,10,16,22,28] |
+| 3 | PORASSO C, ANTOGNELLI D, MERLINO B, ADROIT N, SEGGIARO G, ROSSI D | `16/22` | MUCCILLI D, IMBERT E, BRASSEUR F, RUZIC M, PICCIONE F | `16/3` | [3,9,15,21,27] |
+
+**Conventions** :
+- Sur premier jour travail : équipe = 22h, miroir = 20h. Cycle suivant inverse.
+- Exceptions possibles selon affluence/direction SBM.
+
+**Statuts mois entier** :
+- 🎓 FORMATION (9 chefs détachés au service formation) : FILIPPI F, LAVAGNA J, MOREL F, BONO F, VIGNA M, GAZAGNE F, EHRET G, PORTA A, GRAUSS A
+- 🏖️ CP intégral du mois : MATTONE F, PEREIRA MACENA F
+
 ### Conséquence cruciale
 
 ⚠️ **Kevin et collègues changent d'équipe CHAQUE MOIS au Casino SBM.**
