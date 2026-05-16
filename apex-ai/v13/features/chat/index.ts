@@ -2347,6 +2347,25 @@ export function render(rootEl: HTMLElement): void {
 
         recognition.onstart = () => {
           pushDictationLog('start', isiOS ? 'iOS' : 'desktop');
+          /* v13.4.193 Kevin "overlay transparent style Claude Code" :
+           * Affiche overlay fullscreen avec transcript en grand. Tap outside
+           * ou Stop = arrête + close. Envoyer = submit + close. */
+          void import('../../services/voice-overlay.js').then(({ voiceOverlay }) => {
+            voiceOverlay.show({
+              onStop: () => {
+                try { recognition?.stop(); } catch { /* ignore */ }
+                recognitionActive = false;
+                if (micBtn) micBtn.style.background = '';
+              },
+              onSubmit: (transcript: string) => {
+                const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+                if (ta && transcript) ta.value = transcript;
+                try { recognition?.stop(); } catch { /* ignore */ }
+                const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
+                form?.requestSubmit();
+              },
+            });
+          }).catch(() => { /* skip si module absent */ });
         };
 
         recognition.onresult = (e: Event) => {
@@ -2365,6 +2384,13 @@ export function render(rootEl: HTMLElement): void {
           }
           const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
           if (ta) ta.value = transcript;
+          /* v13.4.193 Kevin "overlay transparent comme Claude Code" :
+           * Affiche le transcript en grand dans overlay fullscreen (style Claude voice). */
+          void import('../../services/voice-overlay.js').then(({ voiceOverlay }) => {
+            if (voiceOverlay.isVisible()) {
+              voiceOverlay.updateTranscript(transcript, hasFinal);
+            }
+          }).catch(() => { /* skip si module absent */ });
           /* Reset compteur dès qu'on capte du son */
           dictationNoSpeechRetries = 0;
           pushDictationLog(hasFinal ? 'result' : 'interim', transcript.slice(0, 80));
@@ -2376,6 +2402,10 @@ export function render(rootEl: HTMLElement): void {
               /* Auto-submit après silence Kevin règle "envoie la question automatiquement" */
               if (lastFinalTranscript.trim().length > 0 && recognitionActive) {
                 try { recognition?.stop(); } catch { /* ignore */ }
+                /* v13.4.193 close overlay before submit */
+                void import('../../services/voice-overlay.js').then(({ voiceOverlay }) => {
+                  voiceOverlay.hide();
+                }).catch(() => { /* skip */ });
                 const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
                 form?.requestSubmit();
               }
