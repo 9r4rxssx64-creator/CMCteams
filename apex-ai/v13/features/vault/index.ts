@@ -27,6 +27,7 @@ import { createCleanupScope, type CleanupScope } from '../../core/listener-clean
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
+import { isCloudflareRecentlyDown } from '../../services/cloudflare-status.js';
 import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
@@ -585,6 +586,11 @@ export function render(rootEl: HTMLElement): void {
       ${(stats.total === 0 || stats.invalid > 0) ? `
       <section id="ax-vault-empty-rescue" style="background:linear-gradient(135deg,rgba(255,91,91,0.12),rgba(232,184,48,0.08));border:1px solid rgba(255,91,91,0.4);border-radius:14px;padding:14px;margin-bottom:14px">
         <h3 style="margin:0 0 6px;font-size:14px;color:#ff5b5b;font-weight:700">${stats.total === 0 ? '🆘 Coffre vide — Restauration possible' : `🚨 ${stats.invalid} clé(s) illisible(s) — récupération ou cleanup`}</h3>
+        ${stats.total === 0 && isCloudflareRecentlyDown() ? `
+        <div style="background:rgba(247,131,34,0.15);border:1px solid rgba(247,131,34,0.45);border-radius:10px;padding:10px;margin-bottom:10px;color:#ffb47a;font-size:12.5px;line-height:1.5">
+          <strong>☁️ Cloudflare 503 détecté</strong> — Firebase backup inaccessible tant que Cloudflare est dégradé. Restauration auto dès retour (vérifie <a href="https://www.cloudflarestatus.com/" target="_blank" rel="noopener" style="color:#ffd700">cloudflarestatus.com</a>). Si tu as un export JSON sur iCloud Files → utilise "Importer JSON" plus bas.
+        </div>
+        ` : ''}
         <p style="margin:0 0 10px;color:rgba(255,255,255,0.78);font-size:12.5px;line-height:1.45">${stats.total === 0 ? "Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection." : "Ces clés ont été chiffrées avec une passphrase historisée perdue (régression v13.3.86 fixée v13.3.88). Soit re-coller les clés une par une, soit supprimer les illisibles."}</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="ax-vault-rescue-fb" data-action="rescue-firebase" style="padding:10px 16px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">🔓 Restaurer depuis Firebase</button>
