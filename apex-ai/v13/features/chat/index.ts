@@ -1925,32 +1925,39 @@ export function render(rootEl: HTMLElement): void {
       </div>
       <button type="button" class="ax-scroll-bottom-fab" id="ax-scroll-bottom" aria-label="Aller en bas" title="Aller en bas">↓</button>
       </div>
-      <form class="ax-chat-input" id="ax-chat-form">
+      <!-- v13.4.187 fix Kevin "boutons coupés portrait iPhone" : flex-wrap +
+           min-width:0 INLINE pour garantir override CSS, gap réduit, padding 6px,
+           icon-compact min-width réduit à 32px. -->
+      <form class="ax-chat-input" id="ax-chat-form" style="flex-wrap:wrap;gap:4px;min-width:0">
         <textarea
           id="ax-chat-text"
           rows="1"
           placeholder="Demande, dicte ou colle…"
           aria-label="Message"
           autocomplete="off"
+          style="flex:1 1 100%;min-width:0;max-width:100%"
         ></textarea>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)">🎙</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif">👂</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none">📷</button>
-        <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer">↑</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)" style="min-width:36px;width:36px;flex:0 0 36px">🎙</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="min-width:36px;width:36px;flex:0 0 36px">👂</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive" style="min-width:36px;width:36px;flex:0 0 36px">📎</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none;min-width:36px;width:36px;flex:0 0 36px">📷</button>
+        <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer" style="flex:1 1 auto;min-width:44px">↑</button>
         <input type="file" id="ax-chat-file-input" aria-label="Joindre fichiers au message" multiple
           accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
           style="display:none">
       </form>
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
-      <nav class="ax-chat-nav" style="display:flex;gap:3px;padding:3px 4px;border-top:1px solid var(--ax-border);overflow-x:auto;background:var(--ax-bg-glass);-webkit-overflow-scrolling:touch">
-        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">💬 Chat</button>
-        <button class="ax-btn ax-btn-sm" data-nav-route="dashboard" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">📊 Dashboard</button>
-        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">⚙️ Admin</button>' : ''}
-        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
-        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔧 Réglages</button>
-        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔑 Clé</button>
-        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:#ff6666">🚪 Déco</button>
+      <!-- v13.4.187 fix Kevin "Clé+Déco coupés portrait iPhone" : flex-wrap
+           au lieu d'overflow-x:auto (Kevin ne savait pas qu'il fallait swiper).
+           Boutons en grille auto-fit pour viewport étroit. -->
+      <nav class="ax-chat-nav" style="display:flex;flex-wrap:wrap;gap:3px;padding:4px;border-top:1px solid var(--ax-border);background:var(--ax-bg-glass);min-width:0;max-width:100%">
+        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">💬 Chat</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="dashboard" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">📊 Dash</button>
+        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔧 Régl.</button>
+        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔑 Clé</button>
+        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:#ff6666">🚪 Déco</button>
       </nav>
       <footer style="text-align:center;padding:0 6px calc(env(safe-area-inset-bottom,0px));font-size:8px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.2px;opacity:0.25;line-height:1;height:auto" title="${APP_VER} · DK">
         <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#22c55e;vertical-align:middle"></span>

@@ -440,7 +440,9 @@ export function render(rootEl: HTMLElement): void {
           `;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur scan : ${msg}</div>`;
+          /* v13.4.187 audit XSS gap #1 closure : escape même les Error.message
+           * internes (peut contenir données user-controlled via stack traces). */
+          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur scan : ${escapeHtml(msg)}</div>`;
         }
       })();
     });

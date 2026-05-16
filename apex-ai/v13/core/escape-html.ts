@@ -1,14 +1,36 @@
 /**
  * APEX v13.4.185 — escapeHtml centralisé (Kevin "Go tout", gap audit #5).
  *
- * Audit indépendant v13.4.183 a flaggé 77 fichiers qui dupliquent
- * `function escapeHtml(s: string): string` en copy-paste. Maintenance réduite.
+ * v13.4.186 : migration 77 fichiers → import centralisé (zéro duplicate).
+ * v13.4.187 : audit XSS approfondi confirme 0 vrais XSS exploitables.
  *
- * Source unique ici. Migrations 77 duplicats → import centralisé en wave
- * (v13.4.186+).
+ * Audit indépendant v13.4.183 avait flaggé 77 fichiers qui dupliquaient
+ * `function escapeHtml(s: string): string`. Source unique ici. Migration
+ * complète v13.4.186.
  *
- * Implementation conforme aux 77 versions copiées : escape les 5 chars
- * dangereux (`& < > " '`) pour innerHTML XSS-safe.
+ * ═════════════════════════════════════════════════════════════════════════
+ * RÈGLE D'OR XSS-SAFETY (Kevin v13.4.187 audit gap #1 closure) :
+ * ═════════════════════════════════════════════════════════════════════════
+ * TOUJOURS wrapper toute interpolation `${variable}` dans `.innerHTML = `...`` :
+ *
+ *   ❌ INTERDIT : el.innerHTML = `<div>${userInput}</div>`;
+ *   ✅ OBLIGATOIRE : el.innerHTML = `<div>${escapeHtml(userInput)}</div>`;
+ *
+ * Sources user-controlled à TOUJOURS escape :
+ *   - localStorage.getItem() (peut être altéré via devtools)
+ *   - Firebase data (cross-user en certaines features)
+ *   - location.hash, URL params (attaquant craft URL)
+ *   - fetch() responses (API potentiellement compromise)
+ *   - input/textarea.value
+ *   - File picker / drag-drop content
+ *   - postMessage.data
+ *   - Error.message (peut contenir données externes via stack)
+ *
+ * Pour HTML produit dynamiquement (markdown, IA), utilise plutôt :
+ *   - `sanitizeHtml()` (async, DOMPurify) — html-safe.ts
+ *   - `safeSetHTML()` (sync stripping) — html-safe.ts
+ *
+ * Implementation : escape les 5 chars dangereux (`& < > " '`).
  */
 
 const HTML_ESCAPE_MAP: Record<string, string> = {
