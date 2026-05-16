@@ -57,6 +57,7 @@ import {
   renderFollowUps,
   renderSlashAutocomplete,
 } from './chat-renderers.js';
+import { searchConversation, buildSearchResultMessage } from './chat-search.js';
 import { saveCodeSnippet, listCodeSnippets } from './chat-snippets.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
@@ -1315,19 +1316,9 @@ async function regenerateLastAssistant(rootEl: HTMLElement): Promise<void> {
  * v13.3.48 — Cherche un mot-clé dans la conversation et affiche les résultats.
  */
 async function searchInConversation(rootEl: HTMLElement, keyword: string): Promise<void> {
-  const k = keyword.toLowerCase();
-  const matches = conversation
-    .filter((m) => m.text.toLowerCase().includes(k))
-    .map((m, idx) => {
-      const role = m.role === 'user' ? '👤 Toi' : '🤖 Apex';
-      const snippet = m.text.length > 200 ? m.text.slice(0, 200) + '…' : m.text;
-      return `**${idx + 1}. ${role}** : ${snippet}`;
-    });
-  if (matches.length === 0) {
-    pushAssistantMessage(rootEl, `🔎 Aucun résultat pour "${keyword}"`);
-  } else {
-    pushAssistantMessage(rootEl, `🔎 **${matches.length} résultat(s) pour "${keyword}"** :\n\n${matches.join('\n\n')}`);
-  }
+  /* v13.4.174 refactor : pure search + format extraits dans chat-search.ts */
+  const matches = searchConversation(conversation, keyword);
+  pushAssistantMessage(rootEl, buildSearchResultMessage(matches, keyword));
 }
 
 /**
