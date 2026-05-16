@@ -394,9 +394,18 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
 
 /**
  * Limite anti-boucle infinie pour le tool_use loop.
- * Si Claude continue d'appeler des tools après 10 itérations, on coupe.
+ *
+ * v13.4.200 (Kevin 2026-05-16 récurrent "Apex ne termine jamais son travail
+ * et se coupe. Il ne fais rien au final si ce n'est lire ses fichiers"):
+ * Passé de 10 → 25. Pour une tâche du type "modifie ton UX", Apex doit lire
+ * memory + docs + code source (~5-8 tools READ) AVANT de pouvoir agir avec
+ * modify_file / inject_function / modify_css → la limite 10 était souvent
+ * atteinte AVANT l'action. 25 donne la marge pour read multiple + execute.
+ *
+ * Sortie de boucle détectée explicitement : si iter atteint MAX_TOOL_USE_ITERATIONS
+ * sans break naturel, on émet un texte clair AVANT done (cf. ligne ~1077).
  */
-const MAX_TOOL_USE_ITERATIONS = 10;
+const MAX_TOOL_USE_ITERATIONS = 25;
 
 /**
  * v13.3.49 — Cap conversation history pour éviter HTTP 400 Anthropic.
@@ -966,6 +975,9 @@ class AIRouter {
     const currentMessages: ChatMessage[] = [...truncatedMessages];
     let lastErr: Error | null = null;
     let lastProvider: Provider = 'anthropic';
+    /* v13.4.200 : tracker pour détecter exit par saturation MAX_ITER vs naturel */
+    let exitedByMaxIter = false;
+    let lastIterHadToolUses = false;
 
     for (let iter = 0; iter < MAX_TOOL_USE_ITERATIONS; iter++) {
       const result = await this.streamWithFailover(
@@ -1071,6 +1083,24 @@ class AIRouter {
         type: 'tool_use_done',
         toolCount: result.streamResult.toolUses.length,
       });
+      /* v13.4.200 : track si cette iter avait des tool_uses → si on sort de
+       * la boucle avec ça à true c'est qu'on a atteint MAX_TOOL_USE_ITERATIONS
+       * sans avoir laissé l'IA finir naturellement. */
+      lastIterHadToolUses = true;
+      if (iter === MAX_TOOL_USE_ITERATIONS - 1) {
+        exitedByMaxIter = true;
+      }
+    }
+
+    /* v13.4.200 (Kevin "Apex ne termine jamais, se coupe, ne modifie rien") :
+     * Si on sort par saturation MAX_TOOL_USE_ITERATIONS sans message texte
+     * final → l'IA était en train d'enchaîner des tools et a été coupée. Émet
+     * un texte clair pour que Kevin VOIE que c'est une saturation, pas un
+     * crash silencieux, et puisse relancer avec "continue". */
+    if (exitedByMaxIter && lastIterHadToolUses && !lastErr) {
+      const msg = `⚠️ J'ai atteint la limite de ${MAX_TOOL_USE_ITERATIONS} étapes d'outils sans terminer ta demande. Tape **"continue"** pour que je reprenne là où je me suis arrêté.\n\n_Cause probable : ta demande nécessite trop de lectures/écritures successives. Reformule en plus court ou découpe-la en sous-étapes._`;
+      wrappedOnChunk({ text: msg, done: false, provider: lastProvider });
+      logger.warn('ai-router', 'tool_use loop saturé MAX_TOOL_USE_ITERATIONS', { max: MAX_TOOL_USE_ITERATIONS });
     }
 
     /* Sortie naturelle : tool_use loop terminée OU failover échoué */
