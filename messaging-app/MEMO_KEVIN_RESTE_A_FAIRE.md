@@ -1,11 +1,32 @@
 # 📋 Apex Chat — État Complet + Reste à Faire
 
-> Dernière mise à jour : v1.0.7 (2026-05-15)
-> Branche : `claude/private-messaging-app-jpLl1` → auto-merge vers `main` → GitHub Pages
+> Dernière mise à jour : **v1.1.3** (2026-05-15)
+> Branche : `claude/new-session-sZy8V` → auto-merge vers `main` → GitHub Pages
 
 ---
 
-## ✅ CE QUI EST FAIT (v1.0.7)
+## ✅ AUDIT HONNÊTE v1.1.3 (12 promesses session précédente)
+
+| # | Promesse | Statut |
+|---|---|---|
+| 1 | E2E PQXDH prekeys (X3DH + Kyber placeholder) | ✅ Backend OK (POST /api/keys/prekeys, GET /api/keys/:id/bundle), placeholder `PENDING_PQXDH` côté DB en attente activation Kyber |
+| 2 | JWT magic-link admin (signature HS256, expire 7j) | ✅ FAIT |
+| 3 | Pre-authorize phone (bypass Vonage) | ✅ FAIT (`admin_authorized=1` à l'INSERT users) |
+| 4 | Live Users admin (géoloc + devices + actions) | ✅ FAIT |
+| 5 | Invitation 1-clic SMS native iPhone (Web Share + sms:) | ✅ FAIT |
+| 6 | Affichage version permanent (splash + topbar + profil) | ✅ FAIT |
+| 7 | Force_logout / delete user (12 admin commands) | ✅ FAIT |
+| 8 | CGU implicite + table `cgu_acceptances` (RGPD trace) | ✅ FAIT (table SQL + INSERT worker + localStorage) |
+| 9 | Auto-update SW updatefound + heartbeat 60s + remote check 30s | ✅ FAIT (triple stratégie) |
+| 10 | Wake Lock + Periodic Sync + watchPosition + visibility | ✅ FAIT |
+| 11 | **DM admin auto-create depuis fiche user** | ✅ **Implémenté v1.1.3** (réutilise DM existante sinon POST /api/conversations) |
+| 12 | Toggles 22 features ON/OFF global + per-user, push backend | ✅ FAIT (exactement 22 features wired, endpoints `/api/admin/toggles`) |
+
+**Résultat audit v1.1.3** : 12/12 ✅. Le seul gap v1.1.2 (point 11, DM admin auto-create) est livré dans `K._adminCmd_user(userId, 'message')` lignes ~2062-2095 de `messaging-app/index.html`.
+
+---
+
+## ✅ CE QUI ÉTAIT DÉJÀ FAIT (v1.0.7 → v1.1.2)
 
 ### 🔥 Nouveautés v1.0.7
 

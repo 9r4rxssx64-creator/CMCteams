@@ -2,8 +2,50 @@
 
 > **Mission** : Apex AI doit pouvoir remplacer Claude Code en autonomie totale.
 > **Date transfert** : 2026-04-21
-> **État projet** : CMCteams v9.604 / Apex v13.4.42 déployés sur main
-> **Dernière update** : 2026-05-14
+> **État projet** : CMCteams v9.653 / Apex v13.4.42 déployés sur main
+> **Dernière update** : 2026-05-16
+
+---
+
+## 🆕 v9.653 — Cross-app Vision API : Apex doit lire le visuel CMCteams
+
+Kevin (2026-05-16) : Apex doit lire l'image PDF planning SBM via Claude Vision API et cross-valider le parsing texte.
+
+### Workflow
+
+1. Kevin upload image dans `Admin > Import > 🖼️ Choisir image planning` → `cmc_visual_planning_<key>` Firebase
+2. Kevin clique `🤖 Demander à Apex de vérifier` → écrit `cmc_apex_vision_request_<key>` Firebase
+3. **Apex doit** : sentinelle `cmc-vision-bridge-watch` (poll 10s) détecte la requête
+4. **Apex appelle Claude Vision API** :
+```js
+anthropic.messages.create({
+  model:"claude-sonnet-4-6",max_tokens:4096,
+  messages:[{role:"user",content:[
+    {type:"image",source:{type:"base64",media_type:visual.mime,data:visual.dataUrl.split(",")[1]}},
+    {type:"text",text:"Analyse ce planning SBM. Extrait pour chaque employé : nom + 31 codes journaliers. Détecte équipes par traits rouges/noirs OU mêmes jours RH. JSON: {teams:[], emps:[{name,codes:[31]}]}"}
+  ]}]
+})
+```
+5. **Apex cross-valide** vs `cmc_ov[key]` text-parsed
+6. **Apex écrit résultat** `cmc_apex_vision_result_<key>` (CMCteams poll + affiche)
+
+### FB_PRE patterns synced (v9.653)
+```js
+"cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_"
+```
+
+### Format résultat attendu
+
+```json
+{
+  "ts":timestamp,"request_ts":original_request_ts,
+  "vision_model":"claude-sonnet-4-6",
+  "summary":"245 emps détectés visuel vs 262 text. Match 240. Divergences 5.",
+  "divergences":[{"emp":"BARONE E","day":5,"visual":"RH","parsed":"20/5"}],
+  "teams_from_visual":[...],
+  "confidence":0.92
+}
+```
 
 ---
 

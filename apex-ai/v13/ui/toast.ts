@@ -122,16 +122,22 @@ class Toast {
   }
 
   dismiss(id: string): void {
+    if (typeof document === 'undefined') return;
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.remove('ax-toast-visible');
     el.classList.add('ax-toast-leaving');
     setTimeout(() => {
-      el.remove();
+      try {
+        el.remove();
+      } catch {
+        /* DOM torn down (test environment) */
+      }
     }, 300);
   }
 
   dismissAll(): void {
+    if (typeof document === 'undefined') return;
     const c = this.container;
     if (!c) return;
     c.querySelectorAll<HTMLElement>('.ax-toast').forEach((el) => {

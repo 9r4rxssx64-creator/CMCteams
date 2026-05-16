@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+.vitest-cache/
+playwright-report/
+test-results/
+.playwright/
+*.log
+.DS_Store

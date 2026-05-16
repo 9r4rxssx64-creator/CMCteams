@@ -46,7 +46,7 @@ function urlBase64Decode(s) {
     c => c.charCodeAt(0));
 }
 
-async function importVapidPrivateKey(privateKeyJWK) {
+export async function importVapidPrivateKey(privateKeyJWK) {
   return await crypto.subtle.importKey(
     'jwk',
     typeof privateKeyJWK === 'string' ? JSON.parse(privateKeyJWK) : privateKeyJWK,
@@ -56,7 +56,7 @@ async function importVapidPrivateKey(privateKeyJWK) {
   );
 }
 
-async function signVapidJWT(audience, subject, privateKey) {
+export async function signVapidJWT(audience, subject, privateKey) {
   const header = { alg: 'ES256', typ: 'JWT' };
   const payload = {
     aud: audience,
@@ -76,7 +76,7 @@ async function signVapidJWT(audience, subject, privateKey) {
 //  AES-128-GCM encrypt payload (Web Push RFC 8291 aes128gcm)
 // ============================================================================
 
-async function encryptWebPushPayload(payload, p256dh, auth) {
+export async function encryptWebPushPayload(payload, p256dh, auth) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const localKeys = await crypto.subtle.generateKey(
     { name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']

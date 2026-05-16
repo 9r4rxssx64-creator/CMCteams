@@ -5,6 +5,289 @@
 
 ---
 
+## 🎯 RÈGLE MÉTIER FONDAMENTALE — DÉTECTION ÉQUIPES PAR JOURS REPOS (Kevin 2026-05-15)
+
+> **"Avant ça marchait, reconnaissance équipe et équipe miroir par rapport aux jours de congés. Le trait noir plus foncé délimite les équipes quand il y est, sinon fait regarder les jours repos. Il y a plusieurs personnes avec les mêmes jours c'est une équipe, plus bas d'autres personnes avec les mêmes jours repos c'est l'équipe miroir."**
+
+### Algorithme officiel SBM pour identification équipes V1 (employés/chefs roulettes/BJ/CMC)
+
+Le PDF SBM utilise 2 conventions pour délimiter les équipes :
+
+1. **Trait noir plus foncé** entre les blocs d'équipes (visible dans le PDF mais **disparu après copy-paste texte**)
+2. **Pattern de jours de repos (RH/R) IDENTIQUE** entre membres d'une même équipe
+
+### Règle de détection
+
+- Les employés ayant **exactement les mêmes jours RH dans le mois** appartiennent à la **MÊME équipe**
+- L'**équipe miroir** est le groupe avec **pattern RH décalé d'un offset constant** (généralement +N jours dans le cycle)
+- Chaque équipe a typiquement **4-6 employés** (le header PDF indique le compte : "4 RH du au" = 4 emps avec RH à cette position)
+- Famille (BJ/Roulettes/CMC) déduite de la section PDF dans laquelle apparaît le bloc
+
+### Quand l'algorithme s'applique
+
+- V1 mai 2026 format (sans marqueur d'équipe explicite) → équipes reconstruites par pattern RH
+- V1 juin 2026 format (avec numéro d'équipe explicite entre POST et NOM, ex `BRTP+K 5 NAME`) → équipe EXPLICITE prioritaire
+- V2 cadres (PIT BOSS / SUPERVISEUR / INSPECTEUR) → équipes "pit15" / "sup" depuis section header (pas pattern RH)
+
+### Implémentation
+
+`_cmcDetectTeamsByRestPattern(iy, im)` (v9.648, ligne ~32700 index.html) :
+- Appelé auto dans `_postValidateImport` après chaque import
+- Skip emps avec teamHistory déjà écrit (priorité parser explicite)
+- Skip emps avec <20 cells (signature non fiable)
+- Skip groupes <3 emps (faux groupements évités)
+- Détection miroir = paires (A,B) avec même family + même taille + offset RH constant
+- Stocké : `emp.teamHistory[key] = teamId` + `cmc_team_mirror_<key> = {teamId: mirrorId}`
+
+### Vérité terrain Pit Boss mai 2026 V2 (Kevin 2026-05-16)
+
+**Naming SBM** :
+- "Mai V2" = naming utilisé sur planning des **chefs et employés** (V1 = 1er PDF mois, V2 = mise à jour)
+- "Mai" tout court = naming utilisé pour le planning **Pit Boss/Superviseurs** (pas de versionning V1/V2 distinct pour cadres)
+
+**Évolution organisationnelle (importante)** :
+- Plus d'inspecteurs SBM en mai 2026 → tous **promus Pit Boss**
+- Effectif : 16 Pit Boss + 5 Superviseurs
+
+**Ordre des Pit Boss dans le planning (premier jour)** :
+JANEL JM, GARELLI C, PETIT J, HERVÉ A, LANDAU J, PELAZZA F, CORNUTELLO A, DI COLANGELO F, CAMPI H, EMMERICH JC, LONG JP, ENZA C, JONIAUX S, BOUVIER JF (+ ETTORI M, FOUQUE V, PLACENTI L, DOGLIOLO Y, MUS L = Superviseurs)
+
+**Code horaire `PK`** = Poker Cash Game (rotation Pit Boss au PK)
+
+**Statuts mai Pit Boss** :
+- 🤒 ROSPOCHER G = M (maladie) **tout le mois** (codes "M M M M M M..." 31 jours)
+- 🏖️ PENNACINO JP = CP partiel (jours 1-20 CP, ensuite codes normaux 21-31)
+
+**Pas d'équipes structurées** :
+Contrairement aux V1 chefs/employés, les Pit Boss n'ont pas d'équipes (A/B/C + miroirs). Ils sont individuellement assignés selon leur position dans la rotation (offset 1-14 dans le cycle).
+Algo : ne pas chercher équipes Pit Boss via pattern RH, juste les laisser avec emp.team = "pit15" ou "sup".
+
+### ⚠ Attention HOMONYMES
+
+Des employés ont le même nom de famille mais des prénoms différents. Ne JAMAIS confondre :
+- BORGIA T vs BORGIA L
+- LANDAU B (chef BJ) vs LANDAU J (Pit Boss)
+- DESSI P vs DESSI F
+- ELIODORI V vs ELIODORI J
+- SEGGIARO G vs SEGGIARO J
+- ENZA B (chef BJ) vs ENZA C (Pit Boss)
+- BARILARO A vs BARILARO H
+- ESPAGNOL S (chef BJ) vs ESPAGNOL P (Employé) vs ESPAGNOL A (Employé)
+- CAPRA C vs CAMPI PH vs CAMPI H (Pit Boss)
+- BERNARDI JE (chef roulette) vs BERNARDI J (Employé CMC)
+- BERNARD J (Employé) vs BERNARDI J/JE (différents)
+- ESPAGNOL S vs ESPAGNOL P vs ESPAGNOL A
+- MARTINI M (Employé CP) vs MARTIRE M (EDC)
+- LAVAGNA J (chef FORMATION) vs LAVAGNA Y (Employé) vs LAVAGNA E (Employé)
+- LANTERI E (employé) vs LANTERI T (employé) vs LANTERI MINET P (Roulette équipe 2)
+- DELLA PINA L vs DELLA PINA M
+- CATALA P (Employé M) vs CATALA T (Employé CMC)
+- ELENA C (Employé EDC) vs ELENA A (Employé)
+- MORANA A (Employé CMC) vs ?
+- BRASSEUR F (chef BJ) vs BRASSEUR Fr (Employé)
+- BORGIA T (Employé CP) vs BORGIA L (Employé)
+- MATTERA M (Employé CP/Formation) vs ?
+- INZIRILLO R (Employé CP/Formation) vs ?
+- CAPIOMONT K (Employé CP/Formation) vs ?
+
+**Règle parser** : bien vérifier l'initiale après le nom (ex `BORGIA T` ≠ `BORGIA L`). Fuzzy match interdit sans vérification d'initiale.
+Voir `cmc_known_identities` (v9.220) pour la liste cumulative.
+
+### 🔥 Confirmations Kevin 2026-05-16 (v9.658)
+
+Kevin a confirmé spécifiquement :
+- **ENZA Christophe** (Pit Boss) ≠ **ENZA Bruno** (chef européen ou chef européen — frères potentiels). Note : initialement écrit "Iaenza/etenza" par dictée vocale, mais c'est bien "ENZA".
+- **LANDAU Ben** vs **LANDAU Jonathan** : ce sont **deux frères**, jamais les confondre.
+- **PETIT Thierry** vs **PETIT Johanna** : couple ou frère/sœur, à ne pas confondre.
+- **CAMPI H** vs **CAMPI PH** : c'est un **couple** — CAMPI Hélène + CAMPI Philippe. Les deux doivent apparaître séparément, jamais merger.
+
+**Règle parser stricte v9.658** : la fonction `runAudit` propose des "noms similaires" SEULEMENT si le surname (1er token) est EXACTEMENT identique OU si la similarité globale ≥ 0.85 (typo évident). Plus de Levenshtein 0.55 lax qui matchait MAIARELLI → GARELLI faux positifs.
+
+### 🚫 RÈGLE ABSOLUE : ZÉRO HISTORIQUE, ZÉRO ACQUIS (Kevin 2026-05-16)
+
+**Le planning change TOUT le mois entièrement :**
+
+1. ❌ **Nombre d'équipes variable** : peut y avoir 5 équipes un mois, 6 le mois suivant
+2. ❌ **Nombre d'employés par équipe variable** : équipe peut avoir 4, 5, 6, 7+ emps selon le mois
+3. ❌ **JAMAIS d'historique** : ne pas se baser sur l'équipe du mois précédent
+4. ❌ **JAMAIS d'acquis** : `emp.team` DEF_EMP n'est qu'une valeur initiale, jamais courante
+5. ❌ **PAS d'équipe pour les Pit Boss/Cadres** : ils sont assignés individuellement (offset rotation 1-14)
+
+**Implications algorithme** :
+- ✅ Chaque import RÉÉCRIT complètement `emp.teamHistory[key]` pour le mois
+- ✅ Scoped wipe v9.643 efface teamHistory[key] avant parser (jamais de fallback ancien)
+- ✅ Algo `_cmcDetectTeamsByRestPattern` skip les cadres (family="cadres")
+- ✅ `teamForMonth` strict mode v9.647 ne fallback PAS sur emp.team DEF_EMP pour affichage courant
+- ❌ **INTERDIT** : `autoFillMissingCadres()` copie historique mois N-1 → désactivé v9.604 (Erreur #48)
+
+**Conséquence pour affichage** :
+- Si pas de teamHistory[key] pour ce mois → emp dans section "❔ Pas de planning ce mois" (v9.647)
+- Ne JAMAIS afficher emp.team DEF_EMP comme équipe courante
+- Refresh complet à chaque import
+
+### 📅 Convention versioning planning SBM (Kevin 2026-05-16)
+
+- **Pas de V** dans le nom du planning = **V1** (premier planning du mois)
+- **V2, V3, etc.** = mises à jour successives
+- Le naming est toujours **écrit sur le planning** (ex "Mai 2026", "Mai 2026 V2", "Juin 2026")
+
+### Vérité terrain Juin 2026 V1 (Kevin 2026-05-16) — équipes Roulettes confirmées
+
+| # | Équipe principale | Membres | Code | Miroir | Membres | Code |
+|---|---|---|---|---|---|---|
+| 1 | (4 emps) | SOLFERINO F, ROSSI J, VECCHIERINI L, DELMAS G | `20/5` | (5 emps) | BONO V, CHATTAHY N, GARRO S, CARPINELLI K, MOUFLARD L | `22/6'` |
+| 2 | (6 emps) | BASILE F, RINALDI S, RAMOS R, PARIZIA K, MILLET T, MARCHI T | `19/4` | (4 emps) | BARONE E, MARCHISIO M, GARCIA N, DAGIONI M | `19/4""` |
+
+**📌 Preuve règle "tous changent chaque mois"** (cf section emp.team DEF_EMP) :
+
+| Emp | Mai V1 | Juin V1 |
+|---|---|---|
+| BARONE E | Équipe A principale (`20/5`) | Équipe 2 MIROIR (`19/4""`) |
+| BASILE F | Miroir A' (`22/6'`) | Équipe 2 principale (`19/4`) |
+| PARIZIA K | Équipe A principale | Équipe 2 principale |
+| DAGIONI M | Équipe A principale | Équipe 2 miroir |
+| RAMOS R | Chef BJ section dédiée | Équipe 2 roulettes (réaffecté) |
+
+**Conclusion** : `emp.team` du DEF_EMP n'est JAMAIS la vérité courante. Seul `emp.teamHistory[key]` écrit par l'import du mois donne l'équipe correcte. Mon algo doit détecter ces réaffectations sans erreur (v9.654 algorithme RH pattern).
+
+### Vérité terrain V1 mai 2026 (Kevin 2026-05-16) — équipes Roulettes confirmées
+
+Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
+
+| # | Équipe principale | Code jour 1 | Équipe miroir | Code jour 1 | RH days |
+|---|---|---|---|---|---|
+| 1 | BARONE E, AUREGLIA R, PARIZIA K, GANCIA G, DAGIONI M | `20/5` | BASILE F, RINALDI S, SIRIO J, MALENFANT PJ, MILLET T, MARCHI T | `22/6'` | [5,11,17,23,29] |
+| 2 | AUBERT P, HAREL H, SBARATTO S, CARDONA P, LANTERI MINET P | `19/4` | LE DUC F, CHOISIT J, DEVERINI F, NUNEZ S | `19/4""` | [4,10,16,22,28] |
+| 3 | PORASSO C, ANTOGNELLI D, MERLINO B, ADROIT N, SEGGIARO G, ROSSI D | `16/22` | MUCCILLI D, IMBERT E, BRASSEUR F, RUZIC M, PICCIONE F | `16/3` | [3,9,15,21,27] |
+
+**Conventions** :
+- Sur premier jour travail : équipe = 22h, miroir = 20h. Cycle suivant inverse.
+- Exceptions possibles selon affluence/direction SBM.
+
+**Statuts mois entier** :
+- 🎓 FORMATION — **CHEFS** détachés au service formation tout le mois (encadré "13 FORMATION du au" section Chefs BJ) :
+  FILIPPI F, LAVAGNA J, MOREL F, BONO F, VIGNA M, GAZAGNE F, EHRET G, PORTA A, GRAUSS A
+- 🎓 FORMATION — **EMPLOYÉS** courte période (4-8 mai, encadré "3 FORMATION du au" section Employés CMC) :
+  MATTERA M, INZIRILLO R, CAPIOMONT K
+- 🏖️ CP intégral du mois — **CHEFS BJ** (encadré "2 CP du au" section Chefs BJ) :
+  MATTONE F, PEREIRA MACENA F
+- 🏖️ CP intégral du mois — **CHEFS ROULETTES / jeux européens** (encadré "10 CP du au" section Roulettes) :
+  SANGIORGIO G, BOURDIER C, CASSINI A, PASSERON G, NOVARETTI B, ELIODORI V, GRAUSS A, MACCARIO S, ANDRE C, CELLARIO T
+- 🏖️ CP intégral du mois — **EMPLOYÉS** (encadré "8 CP du au" section Employés CMC) :
+  FAIVRE R, CAPIOMONT K, INZIRILLO R, MANFREDI H, MASSEGLIA J, MATTERA M, NOBBIO G, BORGIA T
+
+  ⚠ Superposition : CAPIOMONT, INZIRILLO et MATTERA ont une exception FORMATION 4-8 mai → CP partout SAUF jours 4-8 où ils sont en AF (formation). Le parser doit gérer cette priorité (CP par défaut, AF surcharge sur dates spécifiques).
+- 🤒 MALADIE longue durée — **ROULETTES** (encadré "7 M du au" section Roulettes) :
+  LORENZI Y, SANNA O, GALLIS F, BESSI N, ARDISSON S, SEGGIARO J, ORRADO F
+- 🤒 MALADIE longue durée — **CHEFS** (encadré "1 M du au" section Chefs BJ) :
+  ROBIN M, CAPRA C, LEMONNIER PH
+- 🤒 MALADIE longue durée — **EMPLOYÉS** (encadré "4 M du au" section Employés CMC/aménagement) :
+  MIRANDA T, CATALA P, MARTINI M, RICHARDIN T
+- 📋 EDC (En Détachement Cadre / statut spécial SBM, encadré "EDC du au") :
+  DE RYCKE K, MARTIRE M, ELENA C
+
+**⚠ Important** : les chefs et employés en M longue durée sont dans des **cases SÉPARÉES** du PDF (sections différentes). Ne pas les confondre dans le parsing.
+
+### 🎨 Nomenclature visuelle codes horaires SBM — **Mai V2 Pit Boss** (Kevin 2026-05-16)
+
+**Distinction CRITIQUE des marqueurs `*` / `★`** :
+
+| Marqueur | Position | Signification |
+|---|---|---|
+| `★` ou `*` rouge | À côté du **NOM** (avant les codes) | **Chef européen** (compétence E école premium SBM Art. 4) |
+| `*` après un code horaire | Suffixe d'un code (ex `20/5*`) | **CCDP + CMC** (lieu : Café de Paris + Casino + Cercle Monaco Carlo) |
+
+**Codes horaires par couleur de fond dans le PDF original** :
+
+| Couleur fond PDF | Écriture | Exemples codes | Signification métier |
+|---|---|---|---|
+| **BLANC** | noir | `22/6c`, `19/4c`, `16/3c`, `14/19c` (avec suffixe `c`) | Travail au CMC normal |
+| **ORANGE** | rouge | `22/6*`, `19/4*`, `16/3*`, `16/22*` (suffixe `*`) | CCDP + Casino + CMC (chef européen au Café de Paris) |
+| **ROUGE** | jaune | `19/4"'` (avec tirets `"'` après le code) | **Jours de CONVENTION** : jours rajoutés ponctuellement par la direction quand ils ont besoin de personnel supplémentaire sur les cycles |
+| **VERT** | normal | `AF` | **Formation** 9h15-17h45 en salle blanche (employés ET chefs/professeurs détachés au service formation) |
+
+**Cette nomenclature visuelle s'applique pour mai V2** (cadres Pit Boss/Superviseurs). Codes V2 spécifiques :
+- Codes Pit Boss : `22/6`, `16/20`, `12h30/19`, `19/2`, `15/19`, `19/4'`, `19/4:`
+- Codes alternés (cycle) avec suffixes `'`, `:`, `*` pour distinguer lieu/jour
+
+**Implications algorithme / affichage** :
+1. Le suffixe `c` est juste CMC normal (à conserver ou ignorer selon contexte)
+2. Le suffixe `*` est CCDP+CMC → afficher fond orange dans la cellule de l'UI
+3. Le suffixe `"'` (multiple tirets) = CONVENTION → fond rouge écriture jaune
+4. `AF` = formation → fond vert
+5. Mon algo `_firstWorkCode` v9.654 garde les suffixes ', ", * pour distinguer cycles ✓
+6. Mais `_firstWorkCode` norme `c` (enlève suffix CMC) → cohérent
+
+**Pour le rendu UI** : la fonction de coloration des cellules `cmcMetaForCell` (v9.619) stocke `bg` dans `A.overrides_meta[key][eid][d]`. Mapping à faire :
+- `c` suffix → bg blanc (default)
+- `*` suffix → bg orange "CCDP"
+- `"'` suffix → bg rouge "CONV"
+- `AF` → bg vert "FORMATION"
+- `CDP` standalone → bg orange "CCDP"
+- `CP` → bg rose "CONGÉ"
+- `RH` → bg violet
+- `R` → bg lavande
+
+### ⭐ Petite étoile rouge `*` = CHEF EUROPÉEN (Kevin 2026-05-16)
+
+Le marqueur `*` rouge à côté du nom dans le PDF SBM (ex `BARONE E *`, `PORASSO C *`, `HAREL H *`) signifie **chef européen** = compétence Roulette Européenne (E) validée à l'**école premium SBM** (Convention Art. 4, École Jeux 1 an minimum).
+
+⚠ **Distinction importante** :
+- Ma règle CLAUDE.md actuelle utilise `emp.senior=true` pour le marker `*` rouge et applique rotation 40 min (règle 55+ ans)
+- Kevin précise : le `*` signifie en fait "chef européen", PAS senior 55+
+- À clarifier : sont-ils corrélés ? (chefs européens sont souvent les plus anciens donc parfois 55+, mais pas systématique)
+
+**TODO algo** : ajouter `emp.chef_european = true` quand parser détecte `*` rouge, en parallèle de `emp.senior=true`. Permettra de :
+- Maintenir rétro-compat règle rotation 40 min
+- Ajouter règle séparée pour chefs européens (carrière, ancienneté, paie)
+- Affichage badge spécifique 🎖️ chef européen dans fiche emp
+
+### Compétences BRTPECK encodées dans le code poste devant le nom
+
+Le code poste devant chaque nom (ex `BRTP+E.`) indique les compétences validées de l'employé selon la Formation Jeux SBM 2016 :
+
+| Lettre | Jeu | Notes |
+|---|---|---|
+| **B** | BlackJack | Compétence base américaine |
+| **R** | Roulette américaine | |
+| **T** | Texas Hold'em | Poker tournoi |
+| **P** | Punto Banco | Baccara |
+| **E** | Roulette Européenne | Plaque jaune SBM (Convention art. 4 = école premium) |
+| **C** | Craps | Dés |
+| **K** | BlacKjack Super | Variante haut roller |
+
+Conventions des codes poste :
+- `+E` = compétence ajoutée formellement (formation suivie ET validée)
+- `.` à la fin = chef (Chef de Table) ex `BRTCP+E.`
+- Préfixe `.` au début = employé cartes CMC (ex `.BRTCP+KE`)
+- `+K` = pratique blackjack avancé après promotion
+- Niveau Expert (Convention Art. 11) = 7 compétences toutes = BRTPECK complet
+- Tier sous-chef (Convention Art. 11 niveau 9/1) = 7 compétences + 5 ans expérience
+
+Exemple décodage `BRTP+E.` :
+- B+R+T+P = base 4 jeux
+- +E = roulette européenne ajoutée
+- . = chef de table
+- Total : 5 compétences, chef
+
+Exemple `.BRTCP+KE` :
+- . = section CMC
+- B+R+T+C+P = 5 jeux base
+- +K = blackjack super
+- +E = roulette européenne
+- Total : 7 compétences = Expert
+
+### Conséquence cruciale
+
+⚠️ **Kevin et collègues changent d'équipe CHAQUE MOIS au Casino SBM.**
+
+- `emp.team` du DEF_EMP est une valeur **historique/défaut**, PAS l'équipe courante
+- L'équipe courante = `emp.teamHistory[YYYY-M]` écrite par l'import du mois
+- Si pas de teamHistory pour le mois → emp n'a PAS d'équipe ce mois (placé dans section "❔ Pas de planning ce mois" v9.647)
+- Ne JAMAIS utiliser `emp.team` comme fallback pour afficher l'équipe courante
+
+---
+
 ## 🆕 SESSION 2026-05-07 — Nouvelles fonctions Apex / outils / liens (Kevin 23h59)
 
 ### 🏠 IoT Smart Home — Apex pilote la domotique (livré v13.3.51 + IOT-AUTONOMY en cours v13.3.52)

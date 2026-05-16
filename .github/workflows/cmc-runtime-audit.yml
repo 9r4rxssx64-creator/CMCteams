@@ -1,0 +1,59 @@
+name: CMCteams Runtime Audit
+
+# v9.628+ (Kevin 2026-05-16 "Intègre playwright") :
+# Lance tests/runtime-audit.mjs + tests/runtime-audit-encadres.mjs
+# (Playwright Chromium + iPhone Safari UA) sur chaque push sur
+# claude/fix-cms-teams-import-* ou main.
+# Garantit que :
+#  - 147+ tests régression PASSENT en runtime réel (pas juste audit grep)
+#  - PASSERON G + autres encadrés correctement classés
+#  - Aucune régression intra-session
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/fix-cms-teams-import-*'
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/cmc-runtime-audit.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'tests/**'
+  workflow_dispatch:
+
+jobs:
+  runtime-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm dependencies (including playwright)
+        run: npm install --no-audit --no-fund
+
+      - name: Install Playwright Chromium
+        run: npm run playwright:install
+
+      - name: Validate JS syntax (CLAUDE.md erreur #32 method)
+        run: npm run test:check-syntax
+
+      - name: Run runtime audit suites (Playwright Chromium iPhone Safari UA)
+        run: npm run test:all
+
+      - name: Report
+        if: always()
+        run: echo "Runtime audit terminé. Voir output ci-dessus pour le score réel runtime."
