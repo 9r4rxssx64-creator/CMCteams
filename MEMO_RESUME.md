@@ -1,4 +1,27 @@
-# Mémo de reprise — Apex v13.4.197 / CMC v9.638 (2026-05-16)
+# Mémo de reprise — Apex v13.4.198 / CMC v9.638 (2026-05-16)
+
+## 🎯 SESSION 2026-05-16 — Apex v13.4.198 : coverage v8 dep + mesure RÉELLE
+
+v13.4.197 a été pushée mais le coverage tool restait cassé (`@vitest/coverage-v8` non installé malgré devDep `^3.0.0` listée).
+
+Fix v13.4.198 :
+- `npm install @vitest/coverage-v8` → bumpé devDep `^3.0.0` → `^3.2.4` (npm install résout au bon range)
+- Coverage tool fonctionnel = **MESURE RÉELLE** possible
+
+### Coverage MESURÉ (pas estimé) v13.4.198
+
+| Métrique | Mesure RÉELLE | Gate config | Headroom |
+|---|---|---|---|
+| Statements | **84%** (67606/80479) | 70% | +14 pts ✓ |
+| Branches | **75.41%** (16592/22001) | 70% | +5.4 pts ✓ |
+| Functions | **92.02%** (3588/3899) | 82% | +10 pts ✓ |
+| Lines | **84%** (67606/80479) | 70% | +14 pts ✓ |
+
+Tests : **541/541 files PASS · 11338/11347 tests PASS** (9 skipped, 0 failures).
+
+Per règle Kevin "JAMAIS ESTIMER UN SCORE, TOUJOURS MESURER" — ces chiffres sont les vrais retours v8 provider, pas une projection.
+
+---
 
 ## 🎯 SESSION 2026-05-16 — Apex v13.4.197 (continue perfection, 100/100 réel + sans régression)
 
