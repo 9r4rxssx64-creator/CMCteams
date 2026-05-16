@@ -1,4 +1,49 @@
-# Mémo de reprise — Apex v13.4.200 / CMC v9.638 (2026-05-16)
+# Mémo de reprise — Apex v13.4.201 / CMC v9.638 (2026-05-16)
+
+## 🎯 SESSION 2026-05-16 — Apex v13.4.201 : +8 tests apex-layout-inspector (screenshot/autoMonitor)
+
+Kevin "100/100 réel partout, nous n'y sommes toujours pas".
+
+Suite v13.4.200 → cible `services/apex-layout-inspector.ts` (252 lignes, 47% coverage).
+Tests existants : 12 (scanDom + autoMonitor lifecycle). Gaps : `screenshot()`,
+`loadHtml2Canvas`, et `autoMonitor recordLayout` (bug detection + persist).
+
+### Tests ajoutés (8)
+
+- **screenshot via html2canvas mock** (5) : utilise global déjà chargé, target body
+  par défaut, target custom, throw si CDN load échoue (script.onerror), options
+  scale/backgroundColor/useCORS passées
+- **autoMonitor bug detection** (2) : persiste si off-viewport-right (hiddenButtons),
+  scan failure caught via try/catch (querySelectorAll mock → lastReport inchangé)
+- **namespace** (1) : expose des 5 méthodes
+
+Mock pattern utilisé : `(window as unknown as { html2canvas?: unknown }).html2canvas
+= vi.fn().mockResolvedValue(...)` pour éviter de toucher au CDN dans les tests
+unitaires + `vi.spyOn(document, 'querySelectorAll')` pour forcer scanDom à throw.
+
+### Tests v13.4.201
+
+- 545+ files PASS (incl. enriched apex-layout-inspector → 20 tests vs 12)
+- **11433 tests PASS** (+8 vs v13.4.200, +115 cumul vs v13.4.198 baseline)
+- 9 skipped, 0 fails
+- TS strict 0 errors ✓
+- ESLint 0/0 ✓
+- Build prod OK (5.91s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+
+### Cumul session 2026-05-16 v13.4.197 → v13.4.201
+
+5 releases consécutives, toutes mesurées (per règle Kevin "JAMAIS estimer") :
+- v13.4.197 : 19 tests réparés + 6 XSS hardenés + 0 ESLint + deploy cleaned 24M→12M
+- v13.4.198 : coverage-v8 dep + mesure RÉELLE possible
+- v13.4.199 : +71 tests services 0% coverage (apex-reports-history, chat-attachments-store, voice-overlay, cloudflare-status)
+- v13.4.200 : +16 tests apex-functional-tester (autoFix + testAndAutoFix)
+- v13.4.201 : +8 tests apex-layout-inspector (screenshot + autoMonitor)
+
+Total : **+115 tests** (11318 → 11433), **0 régression**, **0 ESLint warning**, **0 TS error**.
+
+---
 
 ## 🎯 SESSION 2026-05-16 — Apex v13.4.200 : +16 tests apex-functional-tester (Kevin "100/100 réel partout pas encore")
 
