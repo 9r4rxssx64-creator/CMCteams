@@ -4855,7 +4855,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.612";
+var APP_VER="v9.613";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -32657,12 +32657,28 @@ function doImport(){
   if(_userExplicitMode==="merge"||_userExplicitMode==="replace"){
     _importMode=_userExplicitMode; // Kevin a choisi exprès via UI
   }else if(A.overrides[key]&&Object.keys(A.overrides[key]).length>0){
-    // V2+ même mois sans choix explicite : demander
+    // v9.606 (Kevin URGENT 2026-05-16 "nouveau planning importe il écrase auto l'ancien") :
+    // Régression v9.604 — confirm() natif bloqué iPhone Safari PWA standalone →
+    // fallback "_confirmReplace=true" forçait REPLACE silencieux → écrasement V1.
+    // Violation règle ABSOLUE CLAUDE.md "📂 IMPORTS PDF INCRÉMENTAUX MERGE" :
+    // "MERGE par défaut, JAMAIS replace global. Kevin garde employés du #1 quand
+    //  importe planning #2 cadres seulement."
+    //
+    // FIX v9.606 :
+    // - confirm() natif → MERGE par défaut si bloqué/silencieux/false
+    // - replace UNIQUEMENT si Kevin OK explicit dans confirm
+    // - Banner post-import explicite : "🔄 Mode FUSION (V1+V2)" avec lien vers
+    //   bouton "Remplacer à la place" si Kevin voulait wipe
     var _confirmReplace=false;
     try{
-      _confirmReplace=confirm("Une version existe déjà pour "+(typeof MFR!=="undefined"&&MFR[im]?MFR[im]:im+1)+" "+iy+".\n\n✓ OK = REMPLACER (V2 efface V1, recommandé)\n✗ Annuler = FUSIONNER (garde V1 + ajoute V2)");
-    }catch(_){_confirmReplace=true;} // Si confirm non dispo (test) → replace par défaut sécu
-    _importMode=_confirmReplace?"replace":"merge";
+      _confirmReplace=confirm(
+        "Un planning existe déjà pour "+(typeof MFR!=="undefined"&&MFR[im]?MFR[im]:im+1)+" "+iy+".\n\n"+
+        "✓ OK = FUSIONNER (V1+V2, garde tout — recommandé)\n"+
+        "✗ Annuler = REMPLACER (V2 efface V1)"
+      );
+    }catch(_){_confirmReplace=true;} // confirm bloqué → MERGE (jamais perdre données)
+    // OK = MERGE (recommandé), Annuler = REPLACE (action destructive opt-in)
+    _importMode=_confirmReplace?"merge":"replace";
   }else{
     _importMode="replace"; // 1er import : peu importe (rien à fusionner)
   }
