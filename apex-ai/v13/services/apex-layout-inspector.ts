@@ -210,11 +210,20 @@ export function startAutoMonitor(intervalMs: number = 30_000): void {
   _monitorInterval = setInterval(() => {
     try {
       const report = scanDom();
-      if (_lastReport && report.hasHorizontalOverflow !== _lastReport.hasHorizontalOverflow) {
+      const isNewBug = report.hasHorizontalOverflow || report.hiddenButtons.length > 0;
+      const statusChanged = _lastReport && report.hasHorizontalOverflow !== _lastReport.hasHorizontalOverflow;
+      if (statusChanged) {
         logger.warn('layout-inspector', `Overflow status changed: ${String(report.hasHorizontalOverflow)}`, {
           newOverflows: report.overflowingElements.length,
           hiddenButtons: report.hiddenButtons.length,
         });
+      }
+      /* v13.4.182 (Kevin "Rapport historique auto dans admin") :
+       * Auto-persist UNIQUEMENT si bug détecté (évite spam history sain). */
+      if (isNewBug) {
+        void import('./apex-reports-history.js')
+          .then(({ reportsHistory }) => reportsHistory.recordLayout(report))
+          .catch(() => { /* skip si module pas dispo */ });
       }
       _lastReport = report;
     } catch (err: unknown) {
