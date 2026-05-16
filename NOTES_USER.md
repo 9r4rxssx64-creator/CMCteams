@@ -93,6 +93,16 @@ Des employés ont le même nom de famille mais des prénoms différents. Ne JAMA
 **Règle parser** : bien vérifier l'initiale après le nom (ex `BORGIA T` ≠ `BORGIA L`). Fuzzy match interdit sans vérification d'initiale.
 Voir `cmc_known_identities` (v9.220) pour la liste cumulative.
 
+### 🔥 Confirmations Kevin 2026-05-16 (v9.658)
+
+Kevin a confirmé spécifiquement :
+- **ENZA Christophe** (Pit Boss) ≠ **ENZA Bruno** (chef européen ou chef européen — frères potentiels). Note : initialement écrit "Iaenza/etenza" par dictée vocale, mais c'est bien "ENZA".
+- **LANDAU Ben** vs **LANDAU Jonathan** : ce sont **deux frères**, jamais les confondre.
+- **PETIT Thierry** vs **PETIT Johanna** : couple ou frère/sœur, à ne pas confondre.
+- **CAMPI H** vs **CAMPI PH** : c'est un **couple** — CAMPI Hélène + CAMPI Philippe. Les deux doivent apparaître séparément, jamais merger.
+
+**Règle parser stricte v9.658** : la fonction `runAudit` propose des "noms similaires" SEULEMENT si le surname (1er token) est EXACTEMENT identique OU si la similarité globale ≥ 0.85 (typo évident). Plus de Levenshtein 0.55 lax qui matchait MAIARELLI → GARELLI faux positifs.
+
 ### 🚫 RÈGLE ABSOLUE : ZÉRO HISTORIQUE, ZÉRO ACQUIS (Kevin 2026-05-16)
 
 **Le planning change TOUT le mois entièrement :**

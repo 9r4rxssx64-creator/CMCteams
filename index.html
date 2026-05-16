@@ -4900,7 +4900,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.657";
+var APP_VER="v9.658";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10429,7 +10429,7 @@ var _dcLastView=null,_dcLastYM=null;
 function vIaFab(){
   if(!A.user||A.view==="ia"||A.view==="login")return"";
   return '<button id="iaFab" aria-label="Assistant IA" title="Assistant IA (clic = chat, appui long = voix)" '
-    +'style="position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:900;'
+    +'style="position:fixed;right:16px;bottom:calc(180px + env(safe-area-inset-bottom,0px));z-index:900;'
     +'width:58px;height:58px;border-radius:50%;border:2px solid #c9a227;'
     +'background:linear-gradient(135deg,#1a2e18 0%,#0a1a0c 100%);'
     +'box-shadow:0 6px 20px rgba(201,162,39,.35);'
@@ -28927,8 +28927,8 @@ function vAdmin(){
     // Planning
     {ic:"\ud83d\udce5",lb:"Importer un planning PDF",fn:"sv('import')"},
     {ic:"\u2705",lb:"V\u00e9rifier l\u2019import",fn:"sv('importVerif')"},
-    {ic:"\ud83e\udde0",lb:"Parser IA (apprentissage + tests)",fn:"sv('parserintel')"}, // v9.522
-    {ic:"\ud83d\udd04",lb:"Comparer 2 imports",fn:"sv('parsercompare')"}, // v9.522
+    {ic:"\ud83d\udcda",lb:"Apprentissage parser (formats appris)",fn:"sv('parserlearning')"}, // v9.658 \u2014 redirige vers vue existante
+    {ic:"\ud83d\udccb",lb:"Audit & historique imports",fn:"sv('auditlog')"}, // v9.658 \u2014 redirige vers vue existante
     {ic:"\u26a0\ufe0f",lb:"Alertes (conflits repos, s\u00e9ries)",fn:"sv('conflits')"},
     {ic:"\ud83d\ude34",lb:"Qui est libre ? (par jour)",fn:"sv('quilibre')"},
     {ic:"\ud83d\udd04",lb:"Dupliquer le mois pr\u00e9c\u00e9dent",fn:"duplicateMonthFromPrev()"},
@@ -29718,6 +29718,11 @@ function runAudit(y,m){
   var pl=(function(){var tmp=A.year,tm=A.month;A.year=y;A.month=m;var r=gpl();A.year=tmp;A.month=tm;return r;})();
   var ref=lg("cmc_ref_"+key,null);
   var importedIds=ref&&ref.rows?new Set(Object.keys(ref.rows)):new Set();
+  // v9.658 (Kevin "ne pas chercher les inspecteurs et pit boss quand on importe V1")
+  // Lit type d'import pour scope l'audit
+  var lastImport=null;
+  try{lastImport=lg("cmc_last_import_type_"+key,null);}catch(_){}
+  var importType=lastImport&&lastImport.type;
   // Noms importes depuis le PDF (pour suggestions de correspondance)
   var importedNames=[];
   if(ref&&ref.rows){
@@ -29747,7 +29752,19 @@ function runAudit(y,m){
     // Tokens du nom (ex: "DESARZENS", "K") doivent TOUS apparaitre dans le PDF text
     return toks.every(function(t){return _pdfText.indexOf(t)>=0;});
   }
-  A.employees.filter(function(emp){return isEmpActive(emp,y,m)&&defIds.has(emp.id);}).forEach(function(emp){
+  // v9.658 (Kevin "ne pas chercher inspecteurs/pit boss quand on importe V1") :
+  // Si import type === "employees" → ignorer cadres (family=cadres), ils attendent V2
+  // Si import type === "cadres" → ignorer employés/chefs (family!=cadres)
+  // Sinon ("complete" ou "unknown") → check tout
+  function _shouldAuditEmp(emp){
+    if(!isEmpActive(emp,y,m))return false;
+    if(!defIds.has(emp.id))return false;
+    var isCadre=(emp.family||"")==="cadres";
+    if(importType==="employees"&&isCadre)return false; // skip cadres si V1 employés
+    if(importType==="cadres"&&!isCadre)return false; // skip employés si V2 cadres
+    return true;
+  }
+  A.employees.filter(_shouldAuditEmp).forEach(function(emp){
     var plRow=pl[emp.id]||{};
     var hasDays=Object.keys(plRow).some(function(d){return !!plRow[d];});
     var codes=Object.values(plRow);
@@ -29762,12 +29779,19 @@ function runAudit(y,m){
         return;
       }
       // Vraiment absent : nom n'apparait NULLE PART dans le PDF
+      // v9.658 — Kevin "Pour les similaires bien verifie l'orthographe, ce n'est pas vraiment similaire"
+      // Strict : suggere SEULEMENT si surname (1er mot) identique OU similarite >= 0.85 (typo)
       var suggestions=[];
       if(ref&&ref.rows){
         var allImportedEmps=[];
         importedIds.forEach(function(eid){var e=A.employees.find(function(x){return x.id===eid;});if(e)allImportedEmps.push(e.name);});
+        var empSurname=String(emp.name||'').trim().toUpperCase().split(/\s+/)[0]||'';
         allImportedEmps.forEach(function(n){
-          if(_strSim(emp.name,n)>0.55)suggestions.push(n);
+          var nSurname=String(n||'').trim().toUpperCase().split(/\s+/)[0]||'';
+          // Match 1 : surname EXACT identique (vrais homonymes: BORGIA T/L, CAMPI H/P-H, ENZA C/B, LANDAU B/J, PETIT T/J)
+          if(empSurname && empSurname===nSurname){suggestions.push(n);return;}
+          // Match 2 : typo evident (similarite globale >= 0.85)
+          if(_strSim(emp.name,n)>=0.85)suggestions.push(n);
         });
       }
       results.absentDuPDF.push({id:emp.id,name:emp.name,team:emp.team,
@@ -33807,8 +33831,8 @@ function vImport(){
         <button class="btn" onclick="cmcRunFallbackOcrVision()" title="Si parser texte rate, lance OCR Tesseract + Claude Vision en cascade" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(160,96,255,.12);border:1px solid rgba(160,96,255,.4);color:#c080ff;font-weight:700">
           \ud83e\udd16 OCR + Vision
         </button>
-        <button class="btn" onclick="sv('parserintel')" title="Voir ce que l'app a appris sur les formats PDF" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(74,200,160,.12);border:1px solid rgba(74,200,160,.4);color:#7adcb0;font-weight:700">
-          \ud83e\udde0 Parser IA
+        <button class="btn" onclick="sv('parserlearning')" title="Voir ce que l'app a appris sur les formats PDF" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(74,200,160,.12);border:1px solid rgba(74,200,160,.4);color:#7adcb0;font-weight:700">
+          \ud83d\udcda Apprentissage parser
         </button>
         <button class="btn" onclick="cmcExportPitBossDiag()" title="Diagnostic Pit Boss : export horaires r\u00e9els par cadre pour comparaison PDF" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">
           \ud83d\udd0d Diag Pit Boss horaires
@@ -39060,6 +39084,23 @@ function buildIASystemPrompt(){
   s+="\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n";
   s+="\nR\u00e9ponds en fran\u00e7ais, sois concis et pr\u00e9cis. Cite les articles de la convention quand pertinent (ex: \"Article 17.5\") et les lieux pr\u00e9cis du CMC/CDP quand on demande o\u00f9 jouer \u00e0 tel jeu. Tu peux r\u00e9pondre \u00e0 toute question sur les plannings, \u00e9quipes, horaires, absences, droits, cong\u00e9s, salaires, promotions, codes paie, r\u00e8gles des jeux, lieux, dress codes, diff\u00e9rences CMC/CDP.";
   try{var mem=lg("cmc_persistent_memory",[]);var apexMem=lg("ax_persistent_memory",[]);var allMem=(mem||[]).concat(apexMem||[]).slice(-30);if(allMem.length){s+="\n\nMEMOIRE PERMANENTE (derniers "+allMem.length+" faits):";allMem.forEach(function(m){s+="\n- ["+(m.category||"?")+"] "+(m.fact||"").slice(0,200);});}s+="\n\nPour ajouter a la memoire: cmcMemoryAdd(category, fact). Shared avec Apex via Firebase. Consulter avant d'affirmer, jamais inventer.";}catch(_){}
+  // v9.658 — Visuel planning attaché (Kevin "Apex ne retrouve pas l'image")
+  try{
+    var _vkey=A.year+"-"+A.month;
+    var _vis=lg("cmc_visual_planning_"+_vkey,null);
+    if(_vis&&_vis.dataUrl){
+      var _vSizeKB=Math.round((_vis.size||0)/1024);
+      s+="\n\n━━━ VISUEL PLANNING ATTACHÉ ("+MFR[A.month]+" "+A.year+") ━━━\n";
+      s+="✅ Une image/PDF de référence visuelle EST attachée pour ce mois : "+(_vis.name||"sans nom")+" ("+_vSizeKB+" KB, "+(_vis.mime||"?")+").\n";
+      s+="Quand Kevin te demande 'as-tu reçu l'image ?' ou 'vérifie l'import', confirme OUI : visuel disponible, attaché le "+(new Date(_vis.ts||0).toLocaleString("fr-FR"))+".\n";
+      s+="Pour consulter le visuel, propose à Kevin de cliquer 🖼️ dans le header du planning OU bouton 'Apex Vision' dans Import.\n";
+      s+="Le visuel sert de RÉFÉRENCE pour vérifier traits/couleurs SBM. Compare avec A.overrides["+_vkey+"] pour détecter divergences.\n";
+      s+="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+    }else{
+      // Pas de visuel : informer pour ne pas mentir
+      s+="\nNB : aucun visuel planning attaché pour "+MFR[A.month]+" "+A.year+". Si Kevin demande 'as-tu l'image ?' réponds NON et propose d'aller dans Admin → Import → 'Joindre visuel planning'.\n";
+    }
+  }catch(_){}
   /* v9.506 — Inject memory pro + checklist auto */
   try{if(typeof cmcGetWorkflowReminder==="function")s+=cmcGetWorkflowReminder();}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ctx-unknown",_e);}catch(__){}}
   return s;
