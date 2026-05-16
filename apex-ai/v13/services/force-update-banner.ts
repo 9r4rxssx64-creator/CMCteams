@@ -153,22 +153,20 @@ class ForceUpdateBanner {
     }
     const r = await this.checkVersion();
     if (r.is_stale && r.remote_ver) {
-      /* v13.4.6 (Kevin "Force MAJ auto toujours") :
-       * MAJ silencieuse automatique sans bouton ni banner.
-       * Conditions de sécurité :
-       *   1. Pas de fetch IA en cours (axe pas couper Apex pendant réponse)
-       *   2. Pas de modal/input/textarea actif (Kevin tape)
-       *   3. Throttle 1×/heure (`apex_v13_auto_maj_last`)
-       *   4. Visibilité document = caché OU page idle 30s
-       * Sinon → banner classique avec bouton pour qu'il décide. */
+      /* v13.4.180 (Kevin "Maj auto forcé toujours. Corrige") :
+       * MAJ auto FORCÉE TOUJOURS dès qu'on a une nouvelle version distante.
+       * Seules conditions de sécurité non-négociables (anti-perte de données) :
+       *   1. Pas de stream IA actif (sinon attente prochain tick — coupure
+       *      pendant réponse = mauvais UX)
+       *   2. Pas de user en train de taper (sinon perte input)
+       *   3. Throttle 30s anti-loop infini
+       * Plus de condition `isIdle` (Kevin ne veut PLUS attendre que la page
+       * soit inactive 30s — la MAJ doit arriver immédiatement). */
       const lastAuto = parseInt(localStorage.getItem('apex_v13_auto_maj_last') ?? '0', 10);
-      /* v13.4.44 Kevin "L'app devrait se mettre à jour autonome temps réel toujours" :
-       * throttle 5 min → 30 sec. Quasi temps réel après chaque push v13.4.X. */
-      const throttleOK = Date.now() - lastAuto > 30 * 1000; /* 30 sec (était 5 min) */
-      const isIdle = document.visibilityState === 'hidden' || this.isUserIdle();
+      const throttleOK = Date.now() - lastAuto > 30 * 1000; /* 30 sec anti-loop */
       const isSafe = !this.hasActiveFetch() && !this.hasUserTyping();
-      if (throttleOK && isIdle && isSafe) {
-        logger.info('force-update', `AUTO-MAJ silencieuse (${r.local_ver} → ${r.remote_ver})`);
+      if (throttleOK && isSafe) {
+        logger.info('force-update', `AUTO-MAJ FORCÉE TOUJOURS (${r.local_ver} → ${r.remote_ver})`);
         localStorage.setItem('apex_v13_auto_maj_last', String(Date.now()));
         /* Toast info bref */
         try {
@@ -177,6 +175,8 @@ class ForceUpdateBanner {
         } catch { /* ignore */ }
         await this.forceUpdate();
       } else {
+        /* Stream IA actif ou user tape → on diffère via banner SEULEMENT
+         * pour éviter perte. Le banner reste cliquable pour Kevin si urgent. */
         this.showBanner(r.remote_ver);
       }
     } else {
@@ -203,16 +203,9 @@ class ForceUpdateBanner {
     }
   }
 
-  /** v13.4.6 — Détecte si la page est idle (pas d'interaction depuis 30s) */
-  private isUserIdle(): boolean {
-    try {
-      const lastInteraction = parseInt(localStorage.getItem('apex_v13_last_interaction') ?? '0', 10);
-      if (!lastInteraction) return true;
-      return Date.now() - lastInteraction > 30_000;
-    } catch {
-      return true;
-    }
-  }
+  /* v13.4.180 — isUserIdle supprimé : Kevin "Maj auto forcé toujours" → ne plus
+   * attendre que la page soit inactive 30s. Les seules conditions de sécurité
+   * restent : pas de stream IA actif + pas de typing user (cf. checkAndMaybeShow). */
 
   private showBanner(remoteVer: string): void {
     if (document.getElementById(BANNER_ID)) return;
