@@ -98,6 +98,42 @@
    - body padding-right libère 44px à droite pour content
    - Collapsible quand admin tap ailleurs (auto-fade 70% opacity)
    ============================================================ */
+/* v13.4.176 (Kevin "Toujours superposition de commandes") :
+ * Auto-hide rescue toolbar dès que l'app principale est rendue avec succès.
+ * La toolbar rescue est conçue POUR le mode rescue (app blanche, framework cassé).
+ * Quand #apex-root a du contenu (= app rendue), elle ne sert plus et chevauche
+ * le bouton Envoyer chat + nav bottom + SOS → confusion visuelle.
+ *
+ * Pattern : opacity 0 + pointer-events none par défaut, sauf si <body data-apex-rescue="1">
+ * (set par rescue.js au boot quand framework KO ou via long-press SOS).
+ */
+#apex-rescue-toolbar {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+body[data-apex-rescue="1"] #apex-rescue-toolbar,
+body[data-apex-rescue-show="1"] #apex-rescue-toolbar {
+  opacity: 0.72 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+body[data-apex-rescue="1"] #apex-rescue-toolbar:hover,
+body[data-apex-rescue="1"] #apex-rescue-toolbar:focus-within,
+body[data-apex-rescue-show="1"] #apex-rescue-toolbar:hover,
+body[data-apex-rescue-show="1"] #apex-rescue-toolbar:focus-within {
+  opacity: 1 !important;
+}
+
+/* v13.4.176 — Protection anti-zoom complémentaire :
+ * body { max-width:100vw + overflow-x:hidden } v13.4.112 garantit le viewport,
+ * mais un enfant direct peut quand même déclencher un layout horizontal qui
+ * provoque fit-to-content sur Safari iOS. On force max-width:100% sur tous
+ * les enfants directs de body (sans casser position:fixed/absolute existants). */
+body > *:not([style*="position:fixed"]):not([style*="position:absolute"]) {
+  max-width: 100%;
+}
+
 #apex-rescue-toolbar {
   position: fixed;
   bottom: max(72px, calc(env(safe-area-inset-bottom, 0px) + 72px));
