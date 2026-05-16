@@ -226,10 +226,23 @@ async function runDiagnostic(): Promise<CloudflareDiagnostic> {
       return diag;
     }
     if (!verifyResp.ok) {
+      /* v13.4.194 (Kevin 2026-05-16 audit HTTP 503) :
+       * HTTP 503/502/504 = infra Cloudflare dégradée, PAS un problème de token.
+       * Affiche banner informationnel + ne marque pas token invalide. */
       diag.error_reason = `Cloudflare API erreur HTTP ${verifyResp.status}`;
+      if ([502, 503, 504].includes(verifyResp.status)) {
+        diag.error_reason += ' (infra Cloudflare dégradée, pas ton token — voir cloudflarestatus.com)';
+        void import('./cloudflare-status.js').then(({ cloudflareStatus }) => {
+          cloudflareStatus.recordHttp503();
+        }).catch(() => { /* skip */ });
+      }
       return diag;
     }
+    /* HTTP 200 OK → token valide + clear éventuel banner Cloudflare down */
     diag.token_valid = true;
+    void import('./cloudflare-status.js').then(({ cloudflareStatus }) => {
+      cloudflareStatus.recordHttpOk();
+    }).catch(() => { /* skip */ });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     diag.error_reason = `Network error : ${msg.slice(0, 80)}`;
