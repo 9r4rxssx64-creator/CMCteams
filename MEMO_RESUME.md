@@ -1,4 +1,53 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.638 (2026-05-15)
+# Mémo de reprise — Apex v13.4.197 / CMC v9.638 (2026-05-16)
+
+## 🎯 SESSION 2026-05-16 — Apex v13.4.197 (continue perfection, 100/100 réel + sans régression)
+
+Kevin : "Continue le travail de cette branche qui ne répond plus. Sans rien oublié. Méthode de travail toujours pareil. Toujours 100/100 réel partout aussi sans t'arrêter sans régression. 10/10 réel partout aussi."
+
+### Travail v13.4.196 → v13.4.197
+
+Branche précédente `claude/continue-perfection-work-46Oic` (ne répondait plus) → reprise sur `claude/continue-perfection-work-5C2eH`.
+
+**Baseline v13.4.196** : 542 fichiers tests + 11 E2E + 168 chunks bundle + 390 fichiers TS source. Vitest baseline initial : 522 PASS / 19 FAIL (pré-existants — modules studios/pro/knowledge-bank/device-capabilities/self-diag importent escapeHtml mais ne re-exportent pas → tests cassent).
+
+### Fixes appliqués v13.4.197
+
+1. **XSS hardening 6 fichiers source** (defense en profondeur) :
+   - `features/settings/index.ts:409` — `${msg}` (Error.message) → `${escapeHtml(msg)}` + escape `d.label`/`d.status`/`out.fixes.applied.join`
+   - `features/laurence/index.ts:90` — userName + renderSuggestionChip (emoji/label/action) escapés
+   - `features/dashboard-personnel/index.ts:215` — userName + card dynamic (color/route/title/hint/emoji)
+   - `features/studios/index.ts:101,138` — def/studio config (defense en profondeur, static config)
+   - `features/pro/index.ts:218` — def config + sourcesHtml/capsHtml items
+   - `core/escape-html.ts` — ajout export `escapeAttr` (alias escapeHtml, exprime intention pour attributs)
+
+2. **Re-export escapeHtml dans 19 modules** (fix régression tests pré-existante) :
+   - Script `/tmp/add_reexport.py` automatise ajout `export { escapeHtml };` après import
+   - Modules : studios/{architecture, geo, scan, photo, contract, music, invoice, cv, prefecture, video, logo, clip, presentation}, pro/modules/{certifications, education, business}, knowledge-bank, self-diag, device-capabilities
+
+3. **Fix 2 erreurs ESLint pré-existantes** :
+   - `tests/unit/claude-mem-bridge-deep.test.ts:99` `no-throw-literal` test runtime non-Error → eslint-disable ciblé
+   - `tests/unit/ios-simulator-deep.test.ts:31` `no-script-url` test blocage javascript: → variable extraite + disable ciblé
+
+### Validation v13.4.197
+
+| Vérif | Avant | Après |
+|---|---|---|
+| TS strict 0 errors | ✓ | ✓ |
+| ESLint 0 errors 0 warnings | 2 errors | **0 / 0** |
+| Vitest test files | 522/541 PASS | **541/541 PASS** |
+| Vitest tests | 11318/11347 | **11338/11347** (9 skipped) |
+| Build prod | OK | OK (5.05s) |
+| 5-way version sync | n/a | **bootstrap.ts + sw.js + index.html + package.json + apex-ai-v13/index.html tous v13.4.197** |
+| CSP nonce literal count | 0 | **0** (Erreur #57 OK) |
+| XSS scan risky interps | 22 | **8** (tous false positives : blob: URLs, HTML internes, numeric, doc comment) |
+
+### Pattern leçon retenue
+
+L'audit subagent indépendant a flaggé "18 modules import escapeHtml sans re-export". 19 tests cassés pour cause technique simple (re-export manquant) — pas un faux positif, c'était un vrai gap. Script Python batch a appliqué le fix uniforme en 1 shot.
+
+Méthode : **mesure réelle** (vitest run) → **identification root cause** (tests veulent module-relative import) → **fix uniforme batch** (script Python) → **re-mesure** (519 → 541/541) → **TS strict + ESLint 0** → **build OK** → **sync deploy** → **push**.
+
+---
 
 ## 🎯 SESSION 2026-05-15 UX + chefs équipe + diag — CMC v9.635→v9.638 (Kevin)
 

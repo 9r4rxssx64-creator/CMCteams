@@ -392,13 +392,17 @@ export function render(rootEl: HTMLElement): void {
           const sampleBugs = out.before.details
             .filter((d) => d.status === 'no_response' || d.status === 'error')
             .slice(0, 5)
-            .map((d) => `<li style="color:#ffaa66;font-size:11px">${d.label || '(no label)'} → ${d.status}</li>`)
+            .map(
+              (d) =>
+                `<li style="color:#ffaa66;font-size:11px">${escapeHtml(d.label || '(no label)')} → ${escapeHtml(d.status)}</li>`,
+            )
             .join('');
+          const appliedSafe = out.fixes.applied.map((f) => escapeHtml(String(f))).join(', ');
           resultsEl.innerHTML = `
             <div style="background:rgba(106,138,255,0.08);border:1px solid rgba(106,138,255,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
               <div style="font-weight:700;margin-bottom:6px">🧪 Test fonctionnel terminé</div>
               <div>Testés : <b>${out.before.tested}</b>/${out.before.totalButtons} · OK : <b style="color:#22cc77">${out.before.ok} (${okPct}%)</b> · No-response : <b style="color:#ffaa66">${out.before.noResponse}</b> · Erreurs : <b style="color:#ff5b5b">${out.before.errors}</b> · Skipped : ${out.before.skipped}${improveStr}</div>
-              ${out.fixes.applied.length ? `<div style="margin-top:6px;color:#c9a227">🔧 Auto-fix appliqué : ${out.fixes.applied.join(', ')}</div>` : ''}
+              ${out.fixes.applied.length ? `<div style="margin-top:6px;color:#c9a227">🔧 Auto-fix appliqué : ${appliedSafe}</div>` : ''}
               ${out.fixes.escalated ? '<div style="margin-top:6px;color:#ff5b5b">⚠ Escaladé à Claude Code (ax_claude_todo)</div>' : ''}
               ${sampleBugs ? `<ul style="margin:6px 0 0 16px;padding:0">${sampleBugs}</ul>` : ''}
               <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">→ Historique complet dans Admin (Apex Audits Live)</div>
@@ -406,7 +410,7 @@ export function render(rootEl: HTMLElement): void {
           `;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur test : ${msg}</div>`;
+          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur test : ${escapeHtml(msg)}</div>`;
         }
       })();
     });

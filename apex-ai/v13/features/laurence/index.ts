@@ -20,6 +20,7 @@
  * - Cards arrondies soft shadows
  */
 
+import { escapeAttr, escapeHtml } from '../../core/escape-html.js';
 import { store } from '../../core/store.js';
 import { auditLog } from '../../services/audit-log.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
@@ -51,9 +52,9 @@ function getRandomWallpaper(): string {
 
 function renderSuggestionChip(emoji: string, label: string, action: string): string {
   return `
-    <button type="button" class="ax-laurence-chip" data-action="${action}">
-      <span class="ax-laurence-chip-emoji">${emoji}</span>
-      <span class="ax-laurence-chip-label">${label}</span>
+    <button type="button" class="ax-laurence-chip" data-action="${escapeAttr(action)}">
+      <span class="ax-laurence-chip-emoji">${escapeHtml(emoji)}</span>
+      <span class="ax-laurence-chip-label">${escapeHtml(label)}</span>
     </button>
   `;
 }
@@ -87,7 +88,7 @@ export function render(root: HTMLElement): void {
       <header class="ax-laurence-hero">
         <div class="ax-laurence-greeting">
           <span class="ax-laurence-emoji-big">🌸</span>
-          <h1>${greeting} <strong>${userName}</strong></h1>
+          <h1>${escapeHtml(greeting)} <strong>${escapeHtml(userName)}</strong></h1>
           <p class="ax-laurence-subtitle">Qu'est-ce que je peux faire pour toi ?</p>
         </div>
       </header>

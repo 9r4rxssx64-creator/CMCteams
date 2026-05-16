@@ -95,6 +95,7 @@ describe('claude-mem-bridge — add (admin path)', () => {
   it('admin + addFact throws non-Error → string fallback', () => {
     authIsAdminSyncMock.mockReturnValue(true);
     memoryAddFactMock.mockImplementationOnce(() => {
+      /* eslint-disable-next-line no-throw-literal -- test du cas runtime non-Error */
       throw 'string error';
     });
     const r = claudeMemBridge.add('cat', 'text');

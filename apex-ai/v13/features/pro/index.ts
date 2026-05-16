@@ -16,6 +16,7 @@
  * - Mention prudence pour conseils sensibles (médical, juridique, fiscal)
  */
 
+import { escapeAttr, escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 
 export type ProModuleId =
@@ -210,19 +211,19 @@ class ProModulesHub {
     } catch (e) {
       logger.error('pro-modules', `module load failed ${id}: ${e instanceof Error ? e.message : String(e)}`);
     }
-    const sourcesHtml = def.sources_autoritaires.map((s) => `<span class="ax-source">${s}</span>`).join(' ');
-    const capsHtml = def.capabilities.map((c) => `<span class="ax-cap">${c}</span>`).join(' ');
+    const sourcesHtml = def.sources_autoritaires.map((s) => `<span class="ax-source">${escapeHtml(s)}</span>`).join(' ');
+    const capsHtml = def.capabilities.map((c) => `<span class="ax-cap">${escapeHtml(c)}</span>`).join(' ');
     const disclaimer = def.prudence_disclaimer
       ? '<p class="ax-disclaimer">⚠️ Information indicative. Pour décision importante, consulter un professionnel qualifié.</p>'
       : '';
     root.innerHTML = `
-      <div class="ax-pro-module" data-module="${def.id}">
+      <div class="ax-pro-module" data-module="${escapeAttr(def.id)}">
         <header class="ax-pro-head">
-          <span class="ax-pro-emoji">${def.emoji}</span>
-          <h2>${def.label}</h2>
+          <span class="ax-pro-emoji">${escapeHtml(def.emoji)}</span>
+          <h2>${escapeHtml(def.label)}</h2>
           ${def.premium ? '<span class="ax-badge-premium">PRO</span>' : ''}
         </header>
-        <p class="ax-pro-desc">${def.description}</p>
+        <p class="ax-pro-desc">${escapeHtml(def.description)}</p>
         <div class="ax-pro-sources">Sources : ${sourcesHtml}</div>
         <div class="ax-pro-caps">${capsHtml}</div>
         ${disclaimer}

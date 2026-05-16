@@ -17,6 +17,7 @@
  */
 
 import { escapeHtml } from '../../../core/escape-html.js';
+export { escapeHtml }; /* re-export pour tests + parité historique */
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
 import { guardFeatureEnabled } from '../../../services/feature-guard.js';
