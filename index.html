@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.640";
+var APP_VER="v9.641";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -32530,29 +32530,23 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
       try{_audit("import_bug_identical_schedules",(A.user&&A.user.id)||"",MFR[im]+" "+iy,
         bugDetect.scope+" "+bugDetect.identicalCount+"/"+bugDetect.totalEmps,
         "schedule_sample="+(bugDetect.sample||"").slice(0,80));}catch(_){}
-      // Banner critique
+      // Banner info NON-bloquant (Kevin v9.641 "tout auto, garde en historique pour référence")
       var rBug=document.getElementById("impRes");
       if(rBug){
-        var bugHtml='<div id="bugIdenticalAlert" style="margin-top:14px;padding:14px;background:linear-gradient(135deg,rgba(224,32,32,.25),rgba(160,16,16,.12));border:3px solid #ff2020;border-radius:12px;color:#ffe0e0;box-shadow:0 0 24px rgba(255,32,32,.4)">'
-          +'<div style="font-size:18px;font-weight:900;color:#ff4040;margin-bottom:10px">🚨 BUG PARSER CRITIQUE — '+esc(bugDetect.scope)+' DUPLIQUÉS</div>'
-          +'<div style="font-size:14px;line-height:1.5;margin-bottom:10px"><b>'+bugDetect.identicalCount+' / '+bugDetect.totalEmps+'</b> '+esc(bugDetect.scope)+' ont EXACTEMENT le même horaire. C\'est <b>impossible dans la vraie vie</b>. Le parser PDF a probablement lu UNE ligne d\'horaires et l\'a copiée sur tous.</div>'
-          +'<div style="font-size:13px;color:#ffb0b0;margin-bottom:10px;padding:8px;background:rgba(255,32,32,.08);border-radius:6px">Schedule identique détecté : <code style="color:#ffce3a">'+esc((bugDetect.sample||"").slice(0,100))+'</code></div>'
-          +'<div style="font-size:13px;color:#ffd0a0;margin-bottom:10px">→ Ancien planning sera restauré automatiquement dans 5 secondes. Vérifie le PDF source et re-importe.</div>'
+        var bugHtml='<div id="bugIdenticalAlert" style="margin-top:14px;padding:14px;background:linear-gradient(135deg,rgba(224,160,40,.20),rgba(180,128,32,.10));border:2px solid #c9a227;border-radius:12px;color:#fff0d0">'
+          +'<div style="font-size:16px;font-weight:900;color:#e0b048;margin-bottom:8px">⚠ Anomalie possible — '+esc(bugDetect.scope)+' avec horaires similaires</div>'
+          +'<div style="font-size:13px;line-height:1.5;margin-bottom:8px"><b>'+bugDetect.identicalCount+' / '+bugDetect.totalEmps+'</b> '+esc(bugDetect.scope)+' partagent le même schedule. Si c\'est une rotation chef-de-table légitime (Convention SBM art. 11), ignore. Sinon, rollback dispo dans Historique.</div>'
+          +'<div style="font-size:12px;color:#c9a227;margin-bottom:8px;padding:6px 10px;background:rgba(201,162,39,.10);border-radius:6px">📌 <b>Données conservées</b> · ancien planning archivé dans Historique pour référence · pas de rollback auto (Kevin v9.641 "tout autonome").</div>'
           +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-          +'<button onclick="_cmcRollbackToPreviousImport(A.year,A.month);document.getElementById(\'bugIdenticalAlert\').remove();" style="flex:1;min-width:180px;min-height:48px;padding:12px;background:#ff2020;border:2px solid #ff6060;color:#fff;border-radius:10px;cursor:pointer;font-weight:800;font-size:15px">↩ Rollback maintenant</button>'
-          +'<button onclick="document.getElementById(\'bugIdenticalAlert\').remove();_cmcStayWithDuplicates=true;" style="flex:1;min-width:160px;min-height:48px;padding:12px;background:rgba(201,162,39,.20);border:1px solid rgba(201,162,39,.6);color:#c9a227;border-radius:10px;cursor:pointer;font-weight:800;font-size:14px">⚠ Garder quand même</button>'
+          +'<button onclick="sv(\'importversions\')" style="flex:1;min-width:160px;min-height:44px;padding:10px;background:rgba(74,160,255,.20);border:1px solid rgba(74,160,255,.6);color:#4aa0ff;border-radius:8px;cursor:pointer;font-weight:800;font-size:14px">📚 Voir Historique (rollback dispo)</button>'
+          +'<button onclick="document.getElementById(\'bugIdenticalAlert\').remove();" style="min-width:80px;min-height:44px;padding:10px 16px;background:rgba(160,160,160,.15);border:1px solid rgba(160,160,160,.35);color:#a0a0a0;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">Fermer</button>'
           +'</div></div>';
         rBug.innerHTML=bugHtml+rBug.innerHTML;
       }
-      // Auto-rollback après 5s si Kevin ne clique pas "garder quand même"
-      setTimeout(function(){
-        if(window._cmcStayWithDuplicates){window._cmcStayWithDuplicates=false;return;}
-        var el=document.getElementById("bugIdenticalAlert");
-        if(el){
-          try{_cmcRollbackToPreviousImport(iy,im);}catch(_){}
-          el.remove();
-        }
-      },5000);
+      // v9.641 : PLUS d'auto-rollback automatique (Kevin "tout auto, garde l'ancien
+      // en historique POUR RÉFÉRENCE, sinon il écrase l'ancien en automatique").
+      // Le nouveau import gagne TOUJOURS. Kevin peut rollback manuel via Historique
+      // s'il le souhaite. Pré-import snapshot reste auto (cmc_history_<key>_<ts>).
     }
     try{
       var ilog=lg("cmc_import_log",[]);
@@ -35717,8 +35711,17 @@ function doImport(){
   var verifBtn='<button onclick="A.view=\'importVerif\';dc()" style="margin-top:6px;margin-left:6px;background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.5);border-radius:6px;padding:4px 10px;font-size:14px;color:#3a8a50;cursor:pointer;font-weight:700">\ud83d\udd0d V\u00e9rifier employ\u00e9 par employ\u00e9</button>';
   var fillPart=_fillCount?" \u00b7 <span style='color:#6a92c8'>"+_fillCount+" cellules \u00e9quipe compl\u00e9t\u00e9es</span>":"";
   var _vBadgeRes=_importVersion>1?'<span style="font-size:13px;font-weight:800;color:#c9a227;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:4px;padding:1px 6px;margin-left:6px">v'+_importVersion+'</span>':"";
+  // v9.641 \u2014 Banner \u00e9crasement auto clair (Kevin "tout automatique, garde en historique")
+  var _modeLabel=({"scoped-cadres":"V2 cadres","scoped-employees":"V1 employ\u00e9s+chefs","replace-all":"V1+V2 complet","merge":"fusion"})[_importMode]||_importMode;
+  var _wipeStr=window._cmcLastWipeStats?
+    " \u00b7 <span style='color:#8a90a0'>"+window._cmcLastWipeStats.wipedEmps+" anciens \u00e9cras\u00e9s, "+window._cmcLastWipeStats.preservedEmps+" autres pr\u00e9serv\u00e9s</span>":"";
+  var _autoSection=_importVersion>1?
+    '<div style="margin-top:6px;padding:6px 10px;background:rgba(74,114,168,.10);border:1px solid rgba(74,114,168,.30);border-radius:6px;font-size:13px;color:#8ab0e0">'
+    +'\ud83d\udd04 <b>\u00c9crasement automatique V'+(_importVersion-1)+' \u2192 V'+_importVersion+'</b> \u00b7 scope: '+_modeLabel+_wipeStr
+    +' <button onclick="sv(\'importversions\')" style="background:rgba(74,160,255,.18);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;border-radius:5px;padding:3px 8px;font-size:12px;cursor:pointer;font-weight:700;margin-left:6px">\ud83d\udcda Historique</button>'
+    +'</div>':'';
   if(r)r.innerHTML='<div style="color:#c0cca8">'+ok+' cellules import\u00e9es'+errPart+fillPart+' \u2192 '+MFR[im]+' '+iy+_vBadgeRes+'</div>'+
-    '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv+exportBtn+verifBtn;
+    '<div style="margin-top:6px;font-weight:700;color:'+verifCol+'">'+verifTxt+'</div>'+errDiv+_autoSection+exportBtn+verifBtn;
   // --- Correspondances approximatives (bigram) — À VÉRIFIER MANUELLEMENT ---
   if(_fuzzyMatches.length>0&&r){
     r.innerHTML+='<div style="margin-top:8px;padding:8px 10px;background:rgba(200,50,0,.18);border-left:3px solid #e05020;font-size:14px;border-radius:0 6px 6px 0">'
