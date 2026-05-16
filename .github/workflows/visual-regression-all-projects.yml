@@ -1,7 +1,10 @@
-name: Visual Regression — All Kevin Projects
+name: Visual + Functional Regression — All Kevin Projects
 
-# Kevin règle 2026-05-16 : "Inspecter mes autres projets et corriger"
-# Inspecte Apex v13 + CMCteams + tools/ sur 3 viewports iPhone via Playwright.
+# Kevin règles 2026-05-16 :
+# - "Inspecter mes autres projets et corriger"
+# - "Teste réel toutes les fonctions, bouton, systèmes et corrige auto les bugs comme les vues"
+# Inspecte Apex v13 + CMCteams + tools/ sur 3 viewports iPhone via Playwright WebKit.
+# Test interaction réelle des boutons (click + observe réaction).
 # Sandbox Claude Code bloque downloads browser → CI uniquement.
 
 on:

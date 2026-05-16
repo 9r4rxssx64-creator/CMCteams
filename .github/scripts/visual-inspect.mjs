@@ -89,6 +89,75 @@ async function inspectPage(page) {
   });
 }
 
+/**
+ * v13.4.181 (Kevin "teste réel toutes fonctions, bouton, systèmes") :
+ * Test interaction REAL avec chaque bouton visible.
+ * Skip destructifs (Supprimer/Reset/Logout). Capture réaction (nav, toast, modal).
+ */
+async function testButtonInteractions(page, maxButtons = 15) {
+  const destructive = /supprim|efface|détruir|reset|vider|logout|déconnex|delete|destroy|format|purge|wipe|kill/i;
+  const buttons = await page.evaluate((maxBtn) => {
+    const all = Array.from(document.querySelectorAll('button, [role="button"], a[href]'));
+    const visible = all.filter((btn) => {
+      const cs = getComputedStyle(btn);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+      const rect = btn.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.left < window.innerWidth && rect.top < window.innerHeight;
+    });
+    return visible.slice(0, maxBtn).map((btn, i) => {
+      btn.setAttribute('data-test-id', `t${i}`);
+      return {
+        id: `t${i}`,
+        text: (btn.textContent || btn.getAttribute('aria-label') || '').trim().slice(0, 40),
+        disabled: btn.disabled === true,
+      };
+    });
+  }, maxButtons);
+
+  const results = [];
+  for (const b of buttons) {
+    if (b.disabled || destructive.test(b.text)) {
+      results.push({ label: b.text, status: b.disabled ? 'disabled' : 'skipped_destructive', reactions: [] });
+      continue;
+    }
+    const before = await page.evaluate(() => ({
+      hash: location.hash,
+      url: location.href,
+      toasts: document.querySelectorAll('[class*="toast"], [class*="ax-toast"]').length,
+      modals: document.querySelectorAll('[role="dialog"], [class*="modal"], [class*="ax-sheet"]').length,
+    }));
+    try {
+      await page.click(`[data-test-id="${b.id}"]`, { timeout: 2000 });
+      await page.waitForTimeout(600);
+      const after = await page.evaluate(() => ({
+        hash: location.hash,
+        url: location.href,
+        toasts: document.querySelectorAll('[class*="toast"], [class*="ax-toast"]').length,
+        modals: document.querySelectorAll('[role="dialog"], [class*="modal"], [class*="ax-sheet"]').length,
+      }));
+      const reactions = [];
+      if (after.hash !== before.hash) reactions.push(`nav:${before.hash || '/'}→${after.hash || '/'}`);
+      if (after.url !== before.url && after.hash === before.hash) reactions.push('url_change');
+      if (after.toasts > before.toasts) reactions.push(`+${after.toasts - before.toasts}toast`);
+      if (after.modals > before.modals) reactions.push(`+${after.modals - before.modals}modal`);
+      results.push({ label: b.text, status: reactions.length > 0 ? 'ok' : 'no_response', reactions });
+      /* Close modal si ouvert pour pas bloquer suite */
+      if (after.modals > before.modals) {
+        try {
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(200);
+        } catch { /* ignore */ }
+      }
+    } catch (err) {
+      results.push({ label: b.text, status: 'error', reactions: [], error: err.message?.slice(0, 100) });
+    }
+  }
+  const ok = results.filter((r) => r.status === 'ok').length;
+  const noResponse = results.filter((r) => r.status === 'no_response').length;
+  const errors = results.filter((r) => r.status === 'error').length;
+  return { tested: buttons.length, ok, noResponse, errors, details: results };
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const allReports = [];
@@ -118,15 +187,30 @@ async function main() {
           report.viewport_label = viewport.label;
           report.route = route || '/';
           report.url = url;
+          /* v13.4.181 : test interactions réelles (1 viewport seulement pour vitesse) */
+          if (viewport.id === 'iphone-14-pro') {
+            try {
+              report.interactions = await testButtonInteractions(page, 15);
+            } catch (err) {
+              report.interactions = { error: err.message?.slice(0, 100) };
+            }
+          }
           allReports.push(report);
 
-          /* Critical : overflow > 50px OU > 5 hidden buttons */
+          /* Critical : overflow > 50px OU > 5 hidden buttons OU > 50% boutons no_response */
           if (report.docScroll.width - report.viewport.width > 50 || report.hiddenButtonsCount > 5) {
             criticalFailures.push(`[${tag}] overflow=${report.docScroll.width - report.viewport.width}px, hidden=${report.hiddenButtonsCount}`);
           }
+          if (report.interactions && report.interactions.tested > 0) {
+            const failRate = (report.interactions.noResponse + report.interactions.errors) / report.interactions.tested;
+            if (failRate > 0.5) {
+              criticalFailures.push(`[${tag}] functional_fail_rate=${(failRate * 100).toFixed(0)}% (${report.interactions.noResponse}/${report.interactions.tested} no_response, ${report.interactions.errors} errors)`);
+            }
+          }
 
           await page.screenshot({ path: join(OUT, `${tag}.png`), fullPage: false });
-          console.log(`✅ ${tag} — overflow:${report.hasHorizontalOverflow} hidden:${report.hiddenButtonsCount}`);
+          const intInfo = report.interactions ? ` btn:${report.interactions.ok}/${report.interactions.tested}` : '';
+          console.log(`✅ ${tag} — overflow:${report.hasHorizontalOverflow} hidden:${report.hiddenButtonsCount}${intInfo}`);
         } catch (err) {
           console.error(`❌ ${tag} — ${err.message}`);
           allReports.push({ project: project.label, route, url, error: err.message });

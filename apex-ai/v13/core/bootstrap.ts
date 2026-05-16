@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.180';
+export const APP_VER = 'v13.4.181';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -257,6 +257,13 @@ async function bootstrap(): Promise<void> {
     apexLayoutInspector.startAutoMonitor(30_000);
     /* Expose globally pour Apex IA tool use + console debug */
     (window as unknown as { apexLayoutInspector?: unknown }).apexLayoutInspector = apexLayoutInspector;
+  });
+
+  /* v13.4.181 (Kevin "teste réel toutes fonctions, bouton, systèmes et corrige auto bugs") :
+   * Apex test runtime des boutons cliquables + auto-fix whitelist + escalade Claude Code. */
+  await safeInit('functional-tester', async () => {
+    const { apexFunctionalTester } = await import('../services/apex-functional-tester.js');
+    (window as unknown as { apexFunctionalTester?: unknown }).apexFunctionalTester = apexFunctionalTester;
   });
 
   /* 2. Feature detection */

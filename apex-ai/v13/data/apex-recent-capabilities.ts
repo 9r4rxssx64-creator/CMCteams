@@ -239,6 +239,14 @@ export const APEX_RECENT_CAPABILITIES: readonly Capability[] = [
     desc: "Apex s'auto-inspecte ! scanDom() audite le DOM courant pour overflow horizontal, boutons hors viewport, petits touch targets (<44px). screenshot() prend bitmap PNG du root via html2canvas (CDN lazy). startAutoMonitor scan toutes 30s + alerte si nouveau bug visuel. Exposé window.apexLayoutInspector pour debug + tool use IA. Kevin règle 'intègre Playwright dans Apex et qu'il sache' : Apex peut diagnostiquer ses propres problèmes UX en autonomie. Workflow CI Playwright multi-projets en complément (Apex + CMCteams + tools/).",
     category: 'audit',
   },
+  {
+    version: 'v13.4.181',
+    name: 'Auto-test fonctionnel runtime (Functional Tester)',
+    service: 'apex-functional-tester',
+    method: 'testButtonsInView / detectStaleButtons / autoFix / testAndAutoFix',
+    desc: "Apex teste RÉELLEMENT ses boutons ! testButtonsInView() simule click sur chaque bouton visible (skip destructifs Supprimer/Reset/Logout via regex + data-test-safe='false'), attend 600ms, observe réaction (URL hash, toast, modal, btn state). Classifie ok/no_response/error/skipped. detectStaleButtons() flag boutons sans handler. autoFix() whitelist : router.dispatch() si >30% no_response + root remount si >3 errors + escalade Claude Code via ax_claude_todo si >50% bugs. testAndAutoFix() cycle scan→fix→re-scan + reporte improvement %. Exposé window.apexFunctionalTester. Kevin règle 'teste réel toutes fonctions et corrige auto bugs comme les vues' : Apex devient son propre QA + auto-réparateur en runtime. Workflow CI Playwright étendu lui aussi (interaction tests cross-projets).",
+    category: 'audit',
+  },
 ];
 
 /**
