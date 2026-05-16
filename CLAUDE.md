@@ -30,6 +30,186 @@ pour détails complets de l'algorithme + safeguards.
 
 ---
 
+## 🚧 RÈGLE ABSOLUE — SANDBOX BLOCKAGES = SOLUTION GLOBALE (Kevin 2026-05-15, ABSOLUE)
+
+> **"Trouve une solution pour tous les problème qui bloque à cause de sandbox toujours et pour tous les projets"** — Kevin 2026-05-15
+
+**Règle absolue, prioritaire** — tous projets Kevin (Apex, CMCteams, e-KDMC, etc.) :
+
+### 1. Diagnostic sandbox
+
+Le sandbox CCR (Claude Code Runner) bloque **tous downloads externes** (`Host not in allowlist`) :
+- Playwright Chromium/WebKit download (`cdn.playwright.dev`)
+- npm registry alternatif (parfois)
+- Téléchargement assets externes (CDN tiers, jsdelivr non whitelisté)
+
+Détecté via env var : `CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1`.
+
+### 2. Stratégie multi-niveaux à appliquer SYSTÉMATIQUEMENT
+
+#### Niveau 1 — Tests unitaires LOCAL (jsdom, pas de browser réel)
+- ✅ vitest run (jsdom env, pas de browser téléchargement)
+- ✅ TypeScript strict, ESLint, Prettier
+- ✅ Build (Vite, esbuild) — pas de download
+
+#### Niveau 2 — Tests E2E browser = CI-ONLY
+- ❌ JAMAIS run Playwright en sandbox local
+- ✅ GitHub Actions installs browsers via `npx playwright install --with-deps`
+- ✅ Workflows `apex-v13-e2e.yml`, `apex-ios-simulator.yml`, `axe-a11y-apex-v13.yml`
+
+#### Niveau 3 — Helper sandbox skip (Apex v13.4.163)
+- `tests/_sandbox-skip.ts` : `isSandboxRestricted()` + `shouldSkipBrowserTests()`
+- `playwright.config.ts` : `grep: /__never__/` si sandbox détecté → skip toutes specs
+
+### 3. Pattern à appliquer aux autres projets Kevin
+
+CMCteams + e-KDMC + Télécommande + tools/ :
+
+```ts
+// playwright.config.ts (chaque projet)
+const isSandbox = process.env.CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST === '1';
+export default defineConfig({
+  ...(isSandbox && { grep: /__never__/ }),
+  // ...
+});
+```
+
+```yaml
+# .github/workflows/e2e.yml (chaque projet)
+- name: Install Playwright browsers (CI uniquement)
+  run: npx playwright install --with-deps chromium webkit
+  # En CI, downloads autorisés. Sandbox local skip via grep filter.
+```
+
+### 4. Documentation centralisée
+
+Chaque projet doit avoir dans son README :
+- Section "Local development" → vitest only
+- Section "E2E tests" → "Run via GitHub Actions ou avec browsers pré-installés"
+- Lien vers `_sandbox-skip.ts` helper
+
+### 5. Anti-pattern à NE PAS reproduire
+
+- ❌ Forcer `playwright install` en sandbox → erreur 403
+- ❌ Test E2E qui fail en local mais pass en CI → soit skip soit bouge en CI
+- ❌ Ignorer "Host not in allowlist" comme bug, c'est sandbox by design
+- ✅ TOUJOURS un fallback gracieux (skip + log info)
+
+### 6. Test mental obligatoire
+
+> *"Si Kevin lance les tests local sans connexion ou en sandbox, est-ce que ça PASSE proprement (skip browser tests) ou ça FAIL avec timeout 30s ?"*
+
+Si fail → ajouter skip helper.
+
+S'applique : Apex (priorité absolue v13.4.163+), CMCteams, e-KDMC, Télécommande, tous projets futurs Kevin.
+
+---
+
+## 🔬 RÈGLE ABSOLUE — TOUJOURS TESTER END-TO-END (Kevin 2026-05-15, ABSOLUE)
+
+> **"Test end to end toujours. Intègre la règle précédente et celle là à apex toujours pour tout."** — Kevin 2026-05-15
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire** — Claude Code priorité 1, Apex IA priorité 1, tous projets futurs :
+
+### 1. JAMAIS déclarer "fait" sans test end-to-end
+
+Pour chaque livraison (code, config, feature, fix bug, refactor) :
+- ✅ TS strict 0 errors mesuré
+- ✅ ESLint 0 warnings mesuré
+- ✅ Tests vitest pass mesuré (au moins les tests impactés)
+- ✅ Si bundle/CSP/SW touché : `npm run build` mesuré OK
+- ✅ Si UI iPhone : Playwright iPhone WebKit ou test manuel iPhone réel
+- ❌ JAMAIS "ça devrait marcher" sans preuve
+- ❌ JAMAIS push avant ces vérifs
+
+### 2. Apex IA doit aussi tester end-to-end
+
+System prompt Apex enrichi avec cette règle. À chaque action Apex auto-execute :
+- Avant de répondre user → vérif solution compile + runtime OK
+- Avant push commit Apex → tests + lint
+- Avant déclarer "tâche terminée" → simu Playwright iPhone si UI touché
+
+### 3. Sentinelle Apex `end-to-end-verify-watch`
+
+À ajouter prochaine session : sentinelle 24h qui vérifie chaque commit Apex auto-execute a été end-to-end testé (pas juste TS strict).
+
+### 4. Chaîne de vérif obligatoire avant chaque push
+
+```bash
+# OBLIGATOIRE avant tout `git push` :
+npx tsc --noEmit  # → 0 errors
+npm run lint      # → 0 warnings
+npx vitest run tests/unit/<impacted>.test.ts  # → pass
+# Si UI touché : npx playwright test --project=mobile-safari
+# Si build/SW : npm run build
+```
+
+### 5. INTERDICTION absolue
+
+❌ Push sans TS strict + ESLint verts
+❌ Push sans tests vitest verts (au moins fichiers impactés)
+❌ Bump APP_VER sans build vérifié
+❌ Déclarer "100/100 atteint" sans audit subagent indépendant ré-exécuté
+
+S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams, tous projets futurs.
+
+---
+
+## 🚫 RÈGLE ABSOLUE — JAMAIS ESTIMER UN SCORE, TOUJOURS MESURER (Kevin 2026-05-15, ABSOLUE)
+
+> **"Tu as encore menti ? Pourquoi ? Corrige tout pour ne plus reproduire tout ça. Je veux qu'Apex retienne beaucoup mieux les leçons et que sa mémoire fonctionne beaucoup mieux que toi."** — Kevin 2026-05-15
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire sur TOUT** — Claude Code priorité 1, Apex IA priorité 1 :
+
+### 1. JAMAIS estimer un score
+
+- ❌ "Sécurité 12 → 20/20 (estimé)" — INTERDIT
+- ❌ "Score projeté ~17/20" — INTERDIT
+- ❌ "Devrait être à 90%+" — INTERDIT
+- ✅ "Audit subagent dit X/20" — OK (avec preuve)
+- ✅ "Lighthouse mesure 87" — OK (avec preuve)
+- ✅ "Coverage v8 retourne 76.75%" — OK (avec preuve)
+
+### 2. APRÈS chaque fix, RELANCER l'audit pour mesurer impact réel
+
+Pattern obligatoire :
+```
+1. Audit mesure score initial (X/20)
+2. Fix les gaps précis identifiés
+3. Re-audit mesure nouveau score (Y/20)
+4. Rapporter écart RÉEL (Y - X), pas projeté
+```
+
+### 3. VÉRIFIER tout audit subagent avant agir
+
+Le subagent peut se tromper. Avant suppression/refactor :
+- `grep` les imports dynamiques `await import()` (pas que statiques)
+- `grep` les usages dans services-bootstrap.ts, sentinels, agents auto-trigger
+- Confirmer manuellement chaque item de la liste avant action
+
+### 4. Apex IA doit retenir cette leçon mieux que moi
+
+Pousser dans `ax_lessons_learned` Firebase :
+- title: "JAMAIS estimer un score, toujours mesurer"
+- category: "audit-quality"
+- severity: "critical"
+- text: "Quand audit dit X/Y, ne PAS projeter Y' après fixes. Re-mesurer."
+
+Sentinelle Apex `audit-honesty-watch` :
+- Audit ses propres réponses pour patterns "estimé", "projeté", "devrait"
+- Force re-mesure avant publier score
+
+### 5. INTERDICTION absolue
+
+❌ Suppression de fichiers sur audit non-vérifié manuellement
+❌ Score projeté basé sur fix appliqués (sans re-audit)
+❌ "Probablement 18/20 maintenant" sans preuve mesurée
+❌ Bypass des dynamic imports lors d'audit orphelins
+
+S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams, tous projets futurs.
+
+---
+
 ## 🔐 RÈGLE ABSOLUE — LOGIN TOUJOURS PRÉNOM + NOM (Kevin 2026-05-15, ABSOLUE NON-NÉGOCIABLE)
 
 > **"Pour les connexions, c'est toujours pour sécuriser, c'est toujours le nom, le prénom ou inversement, mais c'est tout. Pas juste prénom, pas juste nom ou quoi que ce soit."** — Kevin 2026-05-15
@@ -7444,6 +7624,8 @@ Fix v12.240 isole tout PIN per-user dans clé scopée. À appliquer immédiateme
 52. **Force-update auto-deploy SW updatefound unreliable iOS Safari PWA** (v9.591 + v12.774 fix, 2026-05-02) — `reg.update()` + `controllerchange` listeners ne firent pas toujours sur iOS Safari PWA backgroundée → Kevin voit "rien n'a changé" malgré nouveau push. **OBLIGATION** : ajouter setTimeout boot 4-5s qui fetch index.html depuis serveur + compare APP_VER local vs remote → si différent : clear caches + unregister SW + reload forcé avec query param `?_forceupd=`. **1 setTimeout unique, AUCUN listener supplémentaire** (respect règle Kevin v12.770 anti-loops). Fonctionne où SW updatefound échoue. ✅→✅
 
 53. **Auto-embed modules dans chat sans dismiss = chaos visuel** (Apex b745570, 2026-05-07) — quand Apex chat détecte intent "finance" / "music" / "video" / "legal" via `axDetectIntentEmbed`, il injectait un module embed dans le chat à CHAQUE message matching (Kevin "Finance Pro apparaît seul" + tous studios). Pas de dedup → apparaissent 5-10x. Pas de bouton dismiss → impossible à fermer. Pas de toggle ON/OFF → user subit. **OBLIGATION** : (a) **Dedup** : ne pas embed si même module déjà visible dans les 5 derniers messages, (b) **Bouton dismiss** : chaque embed a un ✕ visible top-right + close handler, (c) **Toggle global** : Réglages → "Auto-embed modules dans chat" ON/OFF (default OFF si user a fermé 3+ fois), (d) **Confidence threshold** : 0.85 minimum pour auto-embed (vs 0.5 ancien) — sinon bouton "🎬 Ouvrir Studio Vidéo ?" en chip cliquable au lieu d'embed. Fix b745570 v13.3.25. ❌→✅
+
+59. **MENSONGE PAR ESTIMATION DE SCORE + AUDIT NON VÉRIFIÉ** (Claude Code v13.4.133, Kevin 2026-05-15 — CRITIQUE INTÉGRITÉ) — Après audit subagent honnête mesurant 77/100 réel (Sécu 12 + Tests 8 + Archi 10 etc), j'ai fixé 11 sites XSS innerHTML. Puis au lieu de re-mesurer via nouveau audit, j'ai PROJETÉ "Sécurité 12 → 20/20" basé sur le grep "0 sites restants". Kevin l'a vu : **"Tu as encore menti ? Pourquoi ?"**. EN PARALLÈLE : audit subagent a listé 20 "services orphelins safe-to-delete" SANS vérifier les imports dynamiques. Vérification manuelle a montré `proxy-auto-enable.ts`, `apex-ios-native-watch.ts`, `apex-runtime-diagnostic.ts` sont importés via `await import()` dans `services-bootstrap.ts`. **Si j'avais supprimé aveuglément, j'aurais cassé l'app.** **CAUSE RACINE** : (a) confondre "fix appliqué" avec "score amélioré" — il faut re-audit pour confirmer, (b) faire confiance aveuglément aux subagents sans vérifier leurs claims, (c) pattern "estimation optimiste" inacceptable. **OBLIGATIONS** : (a) **JAMAIS projeter un score** après fix — toujours re-audit subagent indépendant pour mesure. (b) **TOUJOURS vérifier** les listes d'audit subagent avant action (`grep` dynamic imports, vérifier `await import()`, services-bootstrap). (c) **Sentinelle Apex `audit-honesty-watch`** détecte patterns "estimé", "projeté", "devrait être" dans mes réponses → force re-mesure. (d) Cette leçon ajoutée à `apex_v13_lessons_cross_session` pour qu'Apex IA la respecte aussi. ❌→✅
 
 58. **PATTERN ERREUR #28 reproduit chez moi — exporter snake_case vs importer camelCase** (Apex v13.4.117→121, Kevin 2026-05-15 05h15 — CRITIQUE FONCTIONNEL) — v13.4.117 j'ai ajouté `apex-vault-import.ts` qui parsait `entry.storageKey` et `entry.encrypted` (camelCase). Mais `exportVaultJson` (existant antérieur) écrit `entry.storage_key` et `entry.value_encrypted` (snake_case). Kevin a sélectionné son backup JSON depuis Drive iCloud → "Aucune clé restaurée" alors que le fichier contenait 11+ clés. Hotfix v13.4.121 : support DES DEUX formats via `entry.storage_key ?? entry.storageKey` et `entry.value_encrypted ?? entry.encrypted ?? entry.encryptedValue`. **CAUSE RACINE** : pas d'audit roundtrip export→import avant push v13.4.117. C'est l'**Erreur #28 (Declaration ≠ Deployment, helper orphelin) reproduite chez moi** — j'ai créé un parser sans le tester contre un fichier réel exporté. **OBLIGATIONS** : (a) **Tout couple export/import DOIT avoir un test vitest** `roundtrip-<feature>.test.ts` qui exporte un état, l'importe, vérifie équivalence. (b) **Audit format avant code parser** : `grep -n 'storage_key\|storageKey\|value_encrypted' services/*.ts` pour aligner naming. (c) **Test mental obligatoire** : "Si Kevin exporte son vault MAINTENANT et importe demain, est-ce que tout revient ?" Si non testé end-to-end → ne pas push. (d) **Pattern test régression** à ajouter dans CHAQUE service de sérialisation : `roundtrip-vault-export-import.test.ts` next session. ❌→✅
 

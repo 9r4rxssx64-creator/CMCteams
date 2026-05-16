@@ -51,12 +51,12 @@ function err(message, status = 400, code = 'error') {
   return json({ error: code, message }, status);
 }
 
-function normalizeName(s) {
+export function normalizeName(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[\s\-_.@]+/g, ' ').trim();
 }
 
-function isKevinAdmin(name, phone) {
+export function isKevinAdmin(name, phone) {
   if (!name) return false;
   const n = normalizeName(name);
   if (ADMIN_KEVIN_ALIASES.includes(n)) return true;
@@ -70,13 +70,13 @@ function isKevinAdmin(name, phone) {
   return false;
 }
 
-async function sha256(input) {
+export async function sha256(input) {
   const buf = new TextEncoder().encode(input);
   const hash = await crypto.subtle.digest('SHA-256', buf);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function signJWT(payload, secret) {
+export async function signJWT(payload, secret) {
   const header = { alg: 'HS256', typ: 'JWT' };
   const enc = (o) => btoa(JSON.stringify(o)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   const data = `${enc(header)}.${enc(payload)}`;
@@ -88,7 +88,7 @@ async function signJWT(payload, secret) {
   return `${data}.${sigB64}`;
 }
 
-async function verifyJWT(token, secret) {
+export async function verifyJWT(token, secret) {
   if (!token) return null;
   const [h, p, s] = token.split('.');
   if (!h || !p || !s) return null;
@@ -108,7 +108,19 @@ async function getAuthUser(request, env) {
   const auth = request.headers.get('Authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) return null;
-  return await verifyJWT(token, env.JWT_SIGN_KEY);
+  const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
+  if (!payload || !payload.sub) return null;
+  // Vérifier force_logout : si user.last_force_logout_at > token.iat → JWT révoqué par admin
+  try {
+    const u = await env.APEX_CHAT_DB.prepare(
+      'SELECT last_force_logout_at, is_banned, status FROM users WHERE id=?'
+    ).bind(payload.sub).first();
+    if (u) {
+      if (u.is_banned || u.status === 'deleted' || u.status === 'suspended') return null;
+      if (u.last_force_logout_at && payload.iat && u.last_force_logout_at > payload.iat * 1000) return null;
+    }
+  } catch (_) {}
+  return payload;
 }
 
 async function getModeConfig(env) {
@@ -128,7 +140,7 @@ async function auditLog(env, actor_id, action, target_type, target_id, details, 
 //  Routes Auth
 // ============================================================================
 
-async function handleSendOtp(request, env) {
+export async function handleSendOtp(request, env) {
   const { phone, name } = await request.json();
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
   // Règle Kevin : prénom + nom obligatoires (2 tokens ≥2 chars), sécurité anti-impersonation
@@ -144,14 +156,13 @@ async function handleSendOtp(request, env) {
 
   // ============ BYPASS ADMIN (Kevin reconnu via numéro) ============
   // Kevin admin auto-reconnu via KEVIN_PHONE_E164 → pas besoin d'OTP
+  // SECU : ne PAS retourner l'OTP fictif dans la réponse (audit P0)
   if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164) {
     return json({
       ok: true,
       sessionId: phoneHash,
       provider: 'admin-bypass',
-      _admin_bypass: true,
-      _admin_otp: '000000',  // OTP fictif pour passer l'étape suivante
-      _note: 'Admin Kevin reconnu via numéro téléphone — bypass OTP'
+      _admin_bypass: true
     });
   }
 
@@ -262,7 +273,7 @@ async function handleSendOtp(request, env) {
 //  Vérification réelle via Firebase JWKS public keys
 // ============================================================================
 
-async function fetchFirebasePublicKeys(env) {
+export async function fetchFirebasePublicKeys(env) {
   // Cache 1h dans KV
   const cached = await env.APEX_CHAT_CACHE?.get('firebase:public_keys', 'json');
   if (cached && cached.expires_at > Date.now()) return cached.keys;
@@ -278,7 +289,7 @@ async function fetchFirebasePublicKeys(env) {
   return keys;
 }
 
-async function verifyFirebaseIdToken(idToken, env) {
+export async function verifyFirebaseIdToken(idToken, env) {
   if (!env.FIREBASE_PROJECT_ID) throw new Error('FIREBASE_PROJECT_ID non configuré');
 
   const [headerB64, payloadB64, sigB64] = idToken.split('.');
@@ -319,7 +330,7 @@ async function verifyFirebaseIdToken(idToken, env) {
   return payload;  // { sub, phone_number, aud, iss, iat, exp, ... }
 }
 
-async function handleVerifyOtp(request, env) {
+export async function handleVerifyOtp(request, env) {
   const { phone, name, pseudo, otp, firebase_id_token } = await request.json();
   if (!phone || !pseudo) return err('Champs manquants', 400);
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
@@ -380,7 +391,7 @@ async function handleVerifyOtp(request, env) {
   // Mode 2 : Firebase ID token (fallback si configuré)
   else if (firebase_id_token && firebase_id_token !== '') {
     try {
-      const firebasePayload = await verifyFirebaseIdToken(firebase_id_token, env);
+      var firebasePayload = await verifyFirebaseIdToken(firebase_id_token, env);
       if (firebasePayload.phone_number !== phone) {
         return err('Numero ne correspond pas au token Firebase', 401, 'phone_mismatch');
       }
@@ -429,7 +440,7 @@ async function handleVerifyOtp(request, env) {
     sub: user.id,
     pseudo: user.pseudo,
     is_admin: !!user.is_admin,
-    firebase_uid: firebasePayload.sub,
+    firebase_uid: (typeof firebasePayload !== 'undefined' && firebasePayload) ? firebasePayload.sub : null,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 30 * 86400  // 30 jours
   }, env.JWT_SIGN_KEY);
@@ -441,7 +452,7 @@ async function handleVerifyOtp(request, env) {
   }});
 }
 
-async function handleSsoFromApex(request, env) {
+export async function handleSsoFromApex(request, env) {
   // P0 FIX (audit) : SSO avec vérification réelle JWT Apex
   // Kevin doit signer avec APEX_SSO_SIGN_KEY (HMAC HS256 partagée Apex ↔ Apex Chat)
   const { apex_token, apex_uid, name, phone } = await request.json();
@@ -513,6 +524,22 @@ async function handleGetMe(request, env) {
   return json({ ok: true, user });
 }
 
+// Acceptation CGU (RGPD trace immutable)
+async function handleCguAccept(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const ipHash = await sha256(request.headers.get('CF-Connecting-IP') || 'unknown');
+  const ua = (request.headers.get('user-agent') || '').slice(0, 240);
+  const phone = String(body.phone || '').replace(/[^\d+]/g, '');
+  const phoneHash = phone ? await sha256(phone) : null;
+  const auth = await getAuthUser(request, env);
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO cgu_acceptances (user_id, phone_hash, version, accepted_at, implicit, user_agent, ip_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(auth?.sub || null, phoneHash, String(body.version || 'v1.1.2'), Date.now(),
+         body.implicit === false ? 0 : 1, ua, ipHash).run().catch(() => {});
+  return json({ ok: true });
+}
+
 // Heartbeat user — last_seen + geoloc/device si consenti par toggle
 async function handleUserHeartbeat(request, env) {
   const auth = await getAuthUser(request, env);
@@ -559,6 +586,38 @@ async function handleUserHeartbeat(request, env) {
   return json({ ok: true });
 }
 
+// PATCH /api/users/me — update profil safe (avatar, bio, language, timezone, display_name)
+export async function handleUpdateMe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const body = await request.json().catch(() => ({}));
+  const ALLOWED = ['avatar_url', 'bio', 'display_name', 'language', 'timezone', 'email'];
+  const updates = [];
+  const args = [];
+  for (const k of ALLOWED) {
+    if (body[k] !== undefined) {
+      const v = String(body[k] || '').slice(0, 500);
+      updates.push(`${k}=?`);
+      args.push(v);
+    }
+  }
+  if (updates.length === 0) return err('Aucun champ à mettre à jour');
+  updates.push('updated_at=?');
+  args.push(Date.now());
+  args.push(auth.sub);
+
+  await env.APEX_CHAT_DB.prepare(
+    `UPDATE users SET ${updates.join(', ')} WHERE id=?`
+  ).bind(...args).run();
+
+  await auditLog(env, auth.sub, 'profile_update', 'user', auth.sub,
+    JSON.stringify(Object.keys(body)), null, request.headers.get('user-agent') || '');
+
+  const user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind(auth.sub).first();
+  return json({ ok: true, user });
+}
+
 async function handleGetPublicUser(pseudo, env) {
   const user = await env.APEX_CHAT_DB.prepare(
     'SELECT id, pseudo, avatar_url, bio, last_seen FROM users WHERE pseudo=? COLLATE NOCASE AND status=?'
@@ -602,7 +661,7 @@ async function handleListConversations(request, env) {
   return json({ ok: true, conversations: convs.results || [] });
 }
 
-async function handleCreateConversation(request, env) {
+export async function handleCreateConversation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -881,7 +940,7 @@ async function handleSystemConfig(request, env) {
 //  Admin bulk whitelist — colle 1 ou N numéros, tous auto-autorisés + liens magiques
 // ============================================================================
 
-async function handleAdminWhitelistBulk(request, env) {
+export async function handleAdminWhitelistBulk(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -930,7 +989,7 @@ async function handleAdminWhitelistBulk(request, env) {
         invited_by: auth.sub,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 7 * 86400
-      }, env.JWT_SECRET);
+      }, env.JWT_SIGN_KEY);
 
       const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
       await env.APEX_CHAT_DB.prepare(
@@ -966,7 +1025,7 @@ async function handleAdminWhitelistBulk(request, env) {
 // Crée une invitation magic link signée par l'admin Kevin.
 // L'invitee se connecte via /api/auth/magic-login (pas d'OTP/SMS).
 // Pré-créé son user record + ajoute son phone à la whitelist DB pour OTP futur.
-async function handleAdminInviteMagic(request, env) {
+export async function handleAdminInviteMagic(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -1017,7 +1076,7 @@ async function handleAdminInviteMagic(request, env) {
     invited_by: auth.sub,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 7 * 86400
-  }, env.JWT_SECRET);
+  }, env.JWT_SIGN_KEY);
 
   // Code court pour SMS (utilisable aussi)
   const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
@@ -1045,11 +1104,11 @@ async function handleAdminInviteMagic(request, env) {
 }
 
 // Auth via magic link (pas d'OTP requis — admin a pré-autorisé)
-async function handleMagicLogin(request, env) {
+export async function handleMagicLogin(request, env) {
   const { magic_token } = await request.json();
   if (!magic_token) return err('Token requis');
 
-  const payload = await verifyJWT(magic_token, env.JWT_SECRET);
+  const payload = await verifyJWT(magic_token, env.JWT_SIGN_KEY);
   if (!payload || payload.typ !== 'magic_invite') return err('Token invalide', 401);
 
   const user = await env.APEX_CHAT_DB.prepare(
@@ -1069,7 +1128,7 @@ async function handleMagicLogin(request, env) {
     is_admin: false,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 30 * 86400
-  }, env.JWT_SECRET);
+  }, env.JWT_SIGN_KEY);
 
   await auditLog(env, user.id, 'magic_login_success', 'user', user.id,
     JSON.stringify({ invited_by: payload.invited_by }),
@@ -1180,23 +1239,24 @@ async function handleAdminUserTimeline(userId, request, env) {
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
   const url = new URL(request.url);
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '200'), 1000);
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
+  const offset = parseInt(url.searchParams.get('offset') || '0');
   const since = parseInt(url.searchParams.get('since') || '0') || (Date.now() - 90 * 86400000); // 90j par défaut
 
-  // 1. Audit log (login, actions, modifications)
+  // 1. Audit log (login, actions, modifications) — paginé
   const audit = await env.APEX_CHAT_DB.prepare(
     `SELECT id, action, target_type, target_id, details, ts, ip_hash, user_agent
      FROM audit_log
      WHERE (actor_id=? OR target_id=?) AND ts >= ?
-     ORDER BY ts DESC LIMIT ?`
-  ).bind(userId, userId, since, limit).all().catch(() => ({ results: [] }));
+     ORDER BY ts DESC LIMIT ? OFFSET ?`
+  ).bind(userId, userId, since, limit, offset).all().catch(() => ({ results: [] }));
 
-  // 2. User activity (geoloc + device history)
+  // 2. User activity (geoloc + device history) — paginé
   const activity = await env.APEX_CHAT_DB.prepare(
     `SELECT id, ts, ip_hash, user_agent, lat, lng, geo_label, action
      FROM user_activity WHERE user_id=? AND ts >= ?
-     ORDER BY ts DESC LIMIT ?`
-  ).bind(userId, since, limit).all().catch(() => ({ results: [] }));
+     ORDER BY ts DESC LIMIT ? OFFSET ?`
+  ).bind(userId, since, limit, offset).all().catch(() => ({ results: [] }));
 
   // 3. Invitations envoyées par lui ou pour lui
   const invitations = await env.APEX_CHAT_DB.prepare(
@@ -1209,17 +1269,17 @@ async function handleAdminUserTimeline(userId, request, env) {
 
   // 4. Signalements (faits OU reçus)
   const signalements = await env.APEX_CHAT_DB.prepare(
-    `SELECT id, reporter_id, target_user_id, reason, status, created_at, severity
+    `SELECT id, reporter_id, target_user_id, reason, status, ts as created_at
      FROM signalements
-     WHERE (reporter_id=? OR target_user_id=?) AND created_at >= ?
-     ORDER BY created_at DESC LIMIT 50`
+     WHERE (reporter_id=? OR target_user_id=?) AND ts >= ?
+     ORDER BY ts DESC LIMIT 50`
   ).bind(userId, userId, since).all().catch(() => ({ results: [] }));
 
   // 5. Conversations metadata (NO message content car E2E)
   const convs = await env.APEX_CHAT_DB.prepare(
     `SELECT c.id, c.type, c.name, c.created_at, c.last_msg_ts, c.member_count
      FROM conversations c
-     INNER JOIN conversation_members cm ON cm.conversation_id=c.id
+     INNER JOIN conversation_members cm ON cm.conv_id=c.id
      WHERE cm.user_id=?
      ORDER BY c.last_msg_ts DESC LIMIT 100`
   ).bind(userId).all().catch(() => ({ results: [] }));
@@ -1254,9 +1314,9 @@ async function handleAdminUserConvs(userId, request, env) {
   const convs = await env.APEX_CHAT_DB.prepare(
     `SELECT c.id, c.type, c.name, c.description, c.created_at, c.last_msg_ts, c.member_count,
             c.disappearing_seconds, c.archived_at,
-            (SELECT COUNT(*) FROM messages WHERE conversation_id=c.id) as msg_count
+            (SELECT COUNT(*) FROM messages WHERE conv_id=c.id) as msg_count
      FROM conversations c
-     INNER JOIN conversation_members cm ON cm.conversation_id=c.id
+     INNER JOIN conversation_members cm ON cm.conv_id=c.id
      WHERE cm.user_id=?
      ORDER BY c.last_msg_ts DESC LIMIT 100`
   ).bind(userId).all().catch(() => ({ results: [] }));
@@ -1264,7 +1324,7 @@ async function handleAdminUserConvs(userId, request, env) {
 }
 
 // Recherche globale admin (metadata uniquement — E2E protège le contenu)
-async function handleAdminSearch(request, env) {
+export async function handleAdminSearch(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -1301,13 +1361,54 @@ async function handleAdminSearch(request, env) {
   }
   if (scope === 'all' || scope === 'signalements') {
     const r = await env.APEX_CHAT_DB.prepare(
-      `SELECT id, reporter_id, target_user_id, reason, status, created_at FROM signalements
-       WHERE LOWER(reason) LIKE ? ORDER BY created_at DESC LIMIT 30`
+      `SELECT id, reporter_id, target_user_id, reason, status, ts as created_at FROM signalements
+       WHERE LOWER(reason) LIKE ? ORDER BY ts DESC LIMIT 30`
     ).bind(like).all().catch(() => ({ results: [] }));
     out.results.signalements = r.results || [];
   }
 
   return json(out);
+}
+
+// ============================================================================
+//  Admin map — TOUS users avec dernières positions + historique récent
+// ============================================================================
+
+async function handleAdminMap(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  // Users avec last_lat/lng connues (limité à 200 max actifs)
+  const users = await env.APEX_CHAT_DB.prepare(
+    `SELECT id, pseudo, real_name, last_seen, last_lat, last_lng, last_geo_label,
+            last_device_label, is_admin, is_banned
+     FROM users
+     WHERE last_lat IS NOT NULL AND last_lng IS NOT NULL
+     ORDER BY last_seen DESC LIMIT 200`
+  ).all().catch(() => ({ results: [] }));
+
+  return json({
+    ok: true,
+    count: (users.results || []).length,
+    users: users.results || [],
+    server_ts: Date.now()
+  });
+}
+
+async function handleAdminUserGeoHistory(userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+  const url = new URL(request.url);
+  const days = Math.min(parseInt(url.searchParams.get('days') || '7'), 30);
+  const since = Date.now() - days * 86400000;
+
+  const rows = await env.APEX_CHAT_DB.prepare(
+    `SELECT ts, lat, lng, geo_label, user_agent FROM user_activity
+     WHERE user_id=? AND ts >= ? AND lat IS NOT NULL AND lng IS NOT NULL
+     ORDER BY ts ASC LIMIT 500`
+  ).bind(userId, since).all().catch(() => ({ results: [] }));
+
+  return json({ ok: true, points: rows.results || [], days });
 }
 
 // ============================================================================
@@ -1367,7 +1468,7 @@ async function handleAdminGetToggles(request, env) {
   return json({ ok: true, toggles });
 }
 
-async function handleAdminSetToggle(request, env) {
+export async function handleAdminSetToggle(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
@@ -1426,7 +1527,7 @@ async function handleWsConversation(convId, request, env) {
 //  Phase 4 — Groupes, communautés, channels (membership + stories + polls)
 // ============================================================================
 
-async function handleAddMember(convId, request, env) {
+export async function handleAddMember(convId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1469,7 +1570,7 @@ async function handleAddMember(convId, request, env) {
   return json({ ok: true, member_count: recount.c });
 }
 
-async function handleRemoveMember(convId, userId, request, env) {
+export async function handleRemoveMember(convId, userId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1505,7 +1606,7 @@ async function handleRemoveMember(convId, userId, request, env) {
   return json({ ok: true, member_count: recount.c });
 }
 
-async function handleListMembers(convId, request, env) {
+export async function handleListMembers(convId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1567,7 +1668,7 @@ async function handleUpdateConv(convId, request, env) {
 
 // ----- Stories 24h -----
 
-async function handleCreateStory(request, env) {
+export async function handleCreateStory(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1608,7 +1709,7 @@ async function handleListStories(request, env) {
   return json({ ok: true, stories: stories.results || [] });
 }
 
-async function handleViewStory(storyId, request, env) {
+export async function handleViewStory(storyId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1633,7 +1734,7 @@ async function handleViewStory(storyId, request, env) {
 
 // ----- Polls -----
 
-async function handleCreatePoll(request, env) {
+export async function handleCreatePoll(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1660,7 +1761,7 @@ async function handleCreatePoll(request, env) {
   return json({ ok: true, poll: { id, conv_id, question, options, multi_choice, anonymous, closes_at } });
 }
 
-async function handleVotePoll(pollId, request, env) {
+export async function handleVotePoll(pollId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1705,7 +1806,7 @@ async function handleVotePoll(pollId, request, env) {
 //  Phase 7 — Time Capsule + Letters + Memory Lane + Apex Memo
 // ============================================================================
 
-async function handleCreateTimeCapsule(request, env) {
+export async function handleCreateTimeCapsule(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1811,7 +1912,7 @@ async function handleCreateLetter(request, env) {
   return json({ ok: true, letter: { id, deliver_at: deliverAt } });
 }
 
-async function handleCancelLetter(letterId, request, env) {
+export async function handleCancelLetter(letterId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1838,7 +1939,7 @@ async function handleListLetters(request, env) {
 
 // ----- Memory Lane (il y a 1 an) -----
 
-async function handleMemoryLane(request, env) {
+export async function handleMemoryLane(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -1877,7 +1978,7 @@ async function handleMemoryLane(request, env) {
 //  IA endpoints (fusion ia-worker dans api-worker pour eviter worker separe)
 // ============================================================================
 
-async function _callAnthropicIA(messages, systemPrompt, env, signal) {
+export async function _callAnthropicIA(messages, systemPrompt, env, signal) {
   if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST', signal,
@@ -1889,7 +1990,7 @@ async function _callAnthropicIA(messages, systemPrompt, env, signal) {
   return d.content?.[0]?.text || '';
 }
 
-async function _callGroqIA(messages, systemPrompt, env, signal) {
+export async function _callGroqIA(messages, systemPrompt, env, signal) {
   if (!env.GROQ_API_KEY) throw new Error('GROQ missing');
   const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -1902,7 +2003,7 @@ async function _callGroqIA(messages, systemPrompt, env, signal) {
   return d.choices?.[0]?.message?.content || '';
 }
 
-async function _callGeminiIA(messages, systemPrompt, env, signal) {
+export async function _callGeminiIA(messages, systemPrompt, env, signal) {
   if (!env.GEMINI_API_KEY) throw new Error('Gemini missing');
   const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
@@ -1915,7 +2016,7 @@ async function _callGeminiIA(messages, systemPrompt, env, signal) {
   return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
-async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
+export async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
   if (!env.DEEPSEEK_API_KEY) throw new Error('DeepSeek missing');
   const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
   const r = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -1963,7 +2064,7 @@ Francais, tutoiement, concis (max 200 mots), pas d'erreur technique brute.`;
 
 // ----- Signalements -----
 
-async function handleSignalement(request, env) {
+export async function handleSignalement(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
@@ -2008,7 +2109,9 @@ export default {
 
       // Users
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
+      if (path === '/api/users/me' && method === 'PATCH') return await handleUpdateMe(request, env);
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
+      if (path === '/api/cgu/accept' && method === 'POST') return await handleCguAccept(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
@@ -2072,6 +2175,9 @@ export default {
       if (path === '/api/admin/whitelist-bulk' && method === 'POST') return await handleAdminWhitelistBulk(request, env);
       if (path === '/api/auth/magic-login' && method === 'POST') return await handleMagicLogin(request, env);
       if (path === '/api/admin/live-users' && method === 'GET') return await handleAdminLiveUsers(request, env);
+      if (path === '/api/admin/map' && method === 'GET') return await handleAdminMap(request, env);
+      const adminGeoMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/geo-history$/);
+      if (adminGeoMatch && method === 'GET') return await handleAdminUserGeoHistory(adminGeoMatch[1], request, env);
       if (path === '/api/admin/all-users' && method === 'GET') return await handleAdminAllUsers(request, env);
       const adminUserActionMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/(block|unblock|ban|unban|authorize|revoke|force_logout|delete)$/);
       if (adminUserActionMatch && method === 'POST') return await handleAdminUserAction(adminUserActionMatch[1], adminUserActionMatch[2], request, env);
@@ -2263,7 +2369,7 @@ export default {
 //  Helpers Queue consumer
 // ============================================================================
 
-async function pushToApexTelemetry(payload, env) {
+export async function pushToApexTelemetry(payload, env) {
   if (!env.APEX_HANDOFF_FIREBASE_URL || !env.APEX_HANDOFF_TOKEN) return;
   try {
     await fetch(`${env.APEX_HANDOFF_FIREBASE_URL}/apex/ax_telemetry_in.json?auth=${env.APEX_HANDOFF_TOKEN}`, {
@@ -2279,7 +2385,7 @@ async function pushToApexTelemetry(payload, env) {
   }
 }
 
-async function runAutoFix(body, env) {
+export async function runAutoFix(body, env) {
   // Whitelist auto-fix : restart DO / rotate keys / requeue push
   const whitelist = ['restart-do', 'rotate-keys', 'requeue-push', 'fb-reconnect', 'reset-streaming'];
   if (!whitelist.includes(body.action)) return;
@@ -2287,7 +2393,7 @@ async function runAutoFix(body, env) {
   console.log('Auto-fix attempt', body.action);
 }
 
-async function sendPushToUser(userId, payload, env) {
+export async function sendPushToUser(userId, payload, env) {
   const subs = await env.APEX_CHAT_DB.prepare(
     'SELECT endpoint, vapid_p256dh, vapid_auth, fcm_token, apns_token FROM push_subscriptions WHERE user_id=? AND last_seen > ?'
   ).bind(userId, Date.now() - 30 * 86400000).all();
@@ -2310,7 +2416,7 @@ async function sendPushToUser(userId, payload, env) {
   }
 }
 
-async function performDailyBackup(env) {
+export async function performDailyBackup(env) {
   // Backup D1 vers R2 (logique simplifiée — production utiliserait wrangler d1 export)
   try {
     const tables = ['users', 'conversations', 'conversation_members', 'messages', 'audit_log'];

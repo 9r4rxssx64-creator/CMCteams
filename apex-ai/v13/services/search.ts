@@ -138,19 +138,27 @@ class SearchService {
     }
     const id = this.nextId++;
     return new Promise<T>((resolve, reject) => {
-      this.pending.set(id, {
-        resolve: resolve as (v: unknown) => void,
-        reject,
-      });
-      const fullReq = { ...req, id } as unknown as SearchWorkerRequest;
-      this.worker?.postMessage(fullReq);
-      /* Timeout safety : 10s max par call */
-      setTimeout(() => {
+      /* Safety timeout 10s : si worker ne répond pas, on rejette + cleanup pending */
+      const timer = setTimeout(() => {
         if (this.pending.has(id)) {
           this.pending.delete(id);
           reject(new Error('worker_call_timeout'));
         }
       }, 10_000);
+      /* Wrap resolve/reject pour clear le timeout dès qu'on a une réponse
+       * (sinon le setTimeout reste vivant 10s → leak timers + ralentit tests). */
+      this.pending.set(id, {
+        resolve: (v: unknown) => {
+          clearTimeout(timer);
+          (resolve as (v: unknown) => void)(v);
+        },
+        reject: (err: Error) => {
+          clearTimeout(timer);
+          reject(err);
+        },
+      });
+      const fullReq = { ...req, id } as unknown as SearchWorkerRequest;
+      this.worker?.postMessage(fullReq);
     });
   }
 
@@ -364,7 +372,15 @@ class SearchService {
     this.workerInitPromise = null;
     this.useFallback = false;
     this.fallback.clear();
+    /* v13.4.172 (Kevin "tests rapides 100/100 réel") : reject pending pour
+     * forcer clearTimeout via wrapped reject. Sinon les setTimeout(10s) du
+     * call() restent actifs → ralentit suite tests + leak timers prod. */
+    for (const [, p] of this.pending) {
+      try { p.reject(new Error('search_cleanup')); } catch { /* ignore */ }
+    }
     this.pending.clear();
+    /* Reset nextId pour repartir de 1 après cleanup (cohérence ids cross-session) */
+    this.nextId = 1;
   }
 }
 

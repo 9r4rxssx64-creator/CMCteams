@@ -26,15 +26,12 @@ import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
 import {
   parseSlashCommand,
-  filterCommands,
   helpText,
   SLASH_COMMANDS,
-  type SlashCommand,
 } from '../../services/slash-commands.js';
 import {
   generateFollowUps,
   isFollowUpsEnabled,
-  type FollowUpSuggestion,
 } from '../../services/suggestions.js';
 import { vault } from '../../services/vault.js';
 import { haptic } from '../../ui/haptic.js';
@@ -42,6 +39,27 @@ import { renderMarkdownEnriched, wireMarkdownActions } from '../../ui/markdown.j
 import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
+
+/* v13.4.165-172 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+import { renderMessageActions } from './chat-actions-render.js';
+import { type AlbumImage, renderImageAlbum } from './chat-album.js';
+import { buildMessagesForApi } from './chat-api-format.js';
+import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
+import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
+import { detectPasteKind, pushPasteCard } from './chat-paste.js';
+import {
+  loadPersistedConversation,
+  persistConversation,
+  tryFirebaseRestoreConversation,
+} from './chat-persistence.js';
+import {
+  getTransformEmoji,
+  renderFollowUps,
+  renderSlashAutocomplete,
+} from './chat-renderers.js';
+import { searchConversation, buildSearchResultMessage } from './chat-search.js';
+import { archiveSession } from './chat-sessions-history.js';
+import { saveCodeSnippet, listCodeSnippets } from './chat-snippets.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
  * Garde max 30 derniers messages user/assistant. Drop les plus anciens. */
@@ -75,143 +93,37 @@ var pendingAttachments: Array<{ mime: string; base64: string; name: string }> = 
  
 var pendingAttachmentPromises: Array<Promise<void>> = [];
 
-/* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :
- * AVANT : conversation = array mémoire pure, perdu à chaque reload/MAJ.
- * APRÈS : load depuis localStorage au mount + save debounce après chaque push.
- * Cap 200 messages (drop oldest), exclus tool_card et streaming partial. */
-const CONV_STORAGE_KEY = 'apex_v13_conversation_active';
-const CONV_MAX_PERSIST = 200;
-
-/* v13.3.77 fix TDZ : déclarer conversation EN PREMIER (init []) puis remplir.
- * Évite "Cannot access 'conversation' before initialization" en isolation Vitest
- * (race conditions dynamic import + happy-dom + isolate). */
+/* v13.4.172 refactor Kevin "expert sans régression" :
+ * loadPersistedConversation / persistConversation / tryFirebaseRestoreConversation
+ * extraits vers chat-persistence.ts (façade backward-compat).
+ *
+ * v13.3.77 fix TDZ : déclarer conversation EN PREMIER (init []) puis remplir.
+ * Évite "Cannot access 'conversation' before initialization" en isolation Vitest. */
 const conversation: DisplayMessage[] = [];
 const queue: string[] = [];
 let isProcessing = false;
-
-function loadPersistedConversation(): DisplayMessage[] {
-  try {
-    const raw = localStorage.getItem(CONV_STORAGE_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw) as DisplayMessage[];
-    if (!Array.isArray(arr)) return [];
-    /* Strip streaming flag (au cas où sauvé pendant streaming) */
-    return arr.map((m) => ({ ...m, streaming: false })).filter((m) => m.text || m.role === 'tool_card');
-  } catch { return []; }
-}
-
-let _saveTimeout: ReturnType<typeof setTimeout> | null = null;
-let _firebaseSyncTimeout: ReturnType<typeof setTimeout> | null = null;
-function persistConversation(): void {
-  if (_saveTimeout) clearTimeout(_saveTimeout);
-  _saveTimeout = setTimeout(() => {
-    try {
-      /* Exclus messages en streaming partial pour éviter snapshot incomplet */
-      const toSave = conversation
-        .filter((m) => !m.streaming)
-        .slice(-CONV_MAX_PERSIST);
-      localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(toSave));
-    } catch {
-      /* Quota exceeded → trim plus agressif */
-      try {
-        const half = conversation.filter((m) => !m.streaming).slice(-(CONV_MAX_PERSIST / 2));
-        localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(half));
-      } catch { /* skip */ }
-    }
-  }, 500);
-
-  /* v13.4.10 fix Kevin "continue recommence à zéro" : sync Firebase debounce 30s
-   * pour survivre clear cache PWA iOS + restore au reload depuis cloud.
-   * Cap derniers 30 messages text-only (pas photos base64 = trop gros Firebase).
-   * Path : apex_v13_conversation_cloud (séparé de _active local pour éviter écrasement). */
-  if (_firebaseSyncTimeout) clearTimeout(_firebaseSyncTimeout);
-  _firebaseSyncTimeout = setTimeout(() => {
-    void (async () => {
-      try {
-        const cloudPayload = conversation
-          .filter((m) => !m.streaming && m.text && m.text.length < 8000)
-          .slice(-30)
-          .map((m) => ({ role: m.role, text: m.text, ts: m.ts }));
-        const { firebase } = await import('../../services/firebase.js');
-        await firebase.write('apex_v13_conversation_cloud', cloudPayload);
-      } catch (err: unknown) {
-        logger.warn('chat', 'Firebase sync conversation skipped', { err });
-      }
-    })();
-  }, 30000);
-}
-
-/* v13.4.10 — Restore Firebase au boot SI localStorage vide (cache PWA clear iOS).
- * Async, non-bloquant : conversation locale s'affiche d'abord, restore patché après. */
-async function tryFirebaseRestoreConversation(): Promise<void> {
-  if (conversation.length > 0) return; /* déjà chargé local */
-  try {
-    const { firebase } = await import('../../services/firebase.js');
-    const cloudRaw = await firebase.read('apex_v13_conversation_cloud');
-    if (!Array.isArray(cloudRaw) || cloudRaw.length === 0) return;
-    const restored = (cloudRaw as Array<{ role: 'user' | 'assistant'; text: string; ts: number }>)
-      .filter((m) => m && typeof m.text === 'string' && m.text.length > 0)
-      .map((m) => ({ ...m, streaming: false } as DisplayMessage));
-    if (restored.length > 0) {
-      conversation.push(...restored);
-      logger.info('chat', `Conversation restored from Firebase (${restored.length} messages)`);
-    }
-  } catch (err: unknown) {
-    logger.warn('chat', 'Firebase restore conversation skipped', { err });
-  }
-}
 
 /* Init populée APRÈS const conversation (pas de TDZ : conversation déjà bound) */
 {
   const persisted = loadPersistedConversation();
   if (persisted.length) {
-    conversation.push(...persisted);
+    conversation.push(...(persisted as DisplayMessage[]));
   }
 }
 
-/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent) */
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
+/* v13.4.165 refactor : escapeHtml + renderMarkdownLight extraits vers chat-markdown.ts
+ * Re-exportés ici pour compat tests existants (façade pattern, zéro régression).
+ * Imports déjà en haut du fichier (top imports group). */
+export { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 
 /**
  * Album image rendu : grille 2-3 cols mobile, 4 desktop, thumbnails visuels.
  * Kevin règle 2026-05-07 : "je veux avoir le visuel pas une liste d'écriture, album entier".
  * Exposé pour tests.
  */
-export interface AlbumImage {
-  url: string;
-  filename: string;
-}
-
-export function renderImageAlbum(images: AlbumImage[]): string {
-  if (!Array.isArray(images) || images.length === 0) return '';
-  const cols = images.length === 1 ? 1 : images.length <= 4 ? 2 : 3;
-  const items = images
-    .map((img, i) => {
-      const safeUrl = escapeHtml(img.url);
-      const safeName = escapeHtml(img.filename);
-      return (
-        `<div class="ax-album-item" data-img-idx="${i}" ` +
-        `style="aspect-ratio:1;background:#1a1a2e;border-radius:8px;overflow:hidden;` +
-        `position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent">` +
-        `<img src="${safeUrl}" alt="${safeName}" loading="lazy" ` +
-        `style="width:100%;height:100%;object-fit:cover;transition:transform 200ms cubic-bezier(0.16,1,0.3,1)">` +
-        `<div class="ax-album-overlay" ` +
-        `style="position:absolute;bottom:0;left:0;right:0;padding:8px;` +
-        `background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);` +
-        `color:#fff;font-size:11px;line-height:1.3;text-overflow:ellipsis;` +
-        `overflow:hidden;white-space:nowrap">${safeName}</div>` +
-        `</div>`
-      );
-    })
-    .join('');
-  return (
-    `<div class="ax-image-album" ` +
-    `style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;` +
-    `margin:12px 0;border-radius:12px">${items}</div>`
-  );
-}
+/* v13.4.171 refactor : AlbumImage + renderImageAlbum extraits vers chat-album.ts
+ * (façade backward-compat, import déjà en haut du fichier). */
+export { type AlbumImage, renderImageAlbum } from './chat-album.js';
 
 /**
  * Modal lightbox plein écran avec actions transformation (cartoon/anime/video/remove-bg/stylize).
@@ -385,92 +297,9 @@ export async function handleLightboxAction(
  * - 'planning'   : format SBM CMCteams → bridge (déjà géré)
  * - 'text'       : fallback normal
  */
-export type PasteKind = 'credential' | 'code' | 'url' | 'planning' | 'text';
-
-export function detectPasteKind(pasted: string): PasteKind {
-  const trimmed = pasted.trim();
-  if (!trimmed) return 'text';
-  /* 1. Backtick block multi-line (```lang ... ```) */
-  if (/```[\s\S]+?```/.test(trimmed)) return 'code';
-  /* 2. Patterns code (3+ lignes ou 1 ligne avec mot-clé fort) */
-  const lines = trimmed.split('\n');
-  if (lines.length >= 3) {
-    const codeKeywords = /\b(function|const|let|var|import|export|class|def|return|async|await|public|private|interface|type)\b/;
-    const hits = lines.filter((l) => codeKeywords.test(l)).length;
-    if (hits >= 2) return 'code';
-    /* Syntaxe JSON/YAML/HTML structuré multi-line */
-    if (/^\s*[{\[]/.test(lines[0] ?? '') && /[}\]]\s*$/.test(lines[lines.length - 1] ?? '')) return 'code';
-    if (/^<(\?php|!DOCTYPE|html|script|style)/i.test(lines[0] ?? '')) return 'code';
-  }
-  /* 3. URL pure (1 seule URL sans autre texte) */
-  if (/^https?:\/\/\S+$/i.test(trimmed)) return 'url';
-  /* 4. fallback */
-  return 'text';
-}
-
-/**
- * v13.4.14 — Push visual card dans le chat scroll pour Kevin "visuel pas toast".
- *
- * Card format : icône type + preview tronqué + actions buttons (sauver coffre / annuler).
- * XSS-safe : utilise textContent partout (jamais innerHTML sur user input).
- */
-export function pushPasteCard(
-  rootEl: HTMLElement,
-  type: PasteKind,
-  preview: string,
-  actions: Array<{ label: string; onClick: () => void; primary?: boolean }> = [],
-): HTMLElement | null {
-  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
-  if (!scroll) return null;
-  const icon = type === 'credential' ? '🔑'
-    : type === 'code' ? '💻'
-    : type === 'url' ? '🔗'
-    : type === 'planning' ? '📋'
-    : '📄';
-  const typeLabel = type === 'credential' ? 'Identifiant détecté'
-    : type === 'code' ? 'Code détecté'
-    : type === 'url' ? 'Lien détecté'
-    : type === 'planning' ? 'Planning détecté'
-    : 'Texte';
-  const card = document.createElement('div');
-  card.className = 'ax-msg ax-msg-user ax-paste-card ax-slide-up-fade';
-  card.style.cssText = 'background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:12px;margin:8px 0';
-
-  const head = document.createElement('div');
-  head.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;color:#c9a227;font-weight:600;margin-bottom:8px';
-  head.textContent = `${icon} ${typeLabel}`;
-  card.appendChild(head);
-
-  const previewDiv = document.createElement('pre');
-  previewDiv.style.cssText = 'background:rgba(0,0,0,0.3);color:#e0e0e0;padding:8px;border-radius:6px;font-family:Consolas,Monaco,monospace;font-size:12px;max-height:120px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:0 0 8px';
-  /* XSS-safe : textContent uniquement */
-  previewDiv.textContent = preview.length > 500 ? `${preview.slice(0, 500)}…` : preview;
-  card.appendChild(previewDiv);
-
-  if (actions.length > 0) {
-    const actionsDiv = document.createElement('div');
-    actionsDiv.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
-    for (const action of actions) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = action.primary ? 'ax-btn ax-btn-primary' : 'ax-btn ax-btn-outline';
-      btn.textContent = action.label;
-      btn.style.cssText = 'padding:6px 14px;font-size:13px;border-radius:6px;cursor:pointer';
-      btn.addEventListener('click', () => {
-        try { action.onClick(); }
-        catch (err: unknown) { logger.warn('chat', 'paste-card action failed', { err }); }
-        /* Disable buttons après clic action (évite double-trigger) */
-        actionsDiv.querySelectorAll('button').forEach((b) => { (b as HTMLButtonElement).disabled = true; });
-      });
-      actionsDiv.appendChild(btn);
-    }
-    card.appendChild(actionsDiv);
-  }
-
-  scroll.appendChild(card);
-  scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
-  return card;
-}
+/* v13.4.167 refactor : detectPasteKind + pushPasteCard + PasteKind extraits vers
+ * chat-paste.ts (façade backward-compat). Imports déjà en haut du fichier. */
+export { detectPasteKind, pushPasteCard, type PasteKind } from './chat-paste.js';
 
 /**
  * v13.4.14 — Sauve un snippet code dans le coffre dossier "Codes & snippets".
@@ -479,90 +308,10 @@ export function pushPasteCard(
  * Permet listing via UI vault future (préfix apex_v13_code_*).
  * Pour l'instant : stocké en clair (Kevin règle "codes = pas crypto" mais classés).
  */
-export async function saveCodeSnippet(code: string, lang?: string): Promise<{ ok: boolean; key?: string }> {
-  try {
-    const ts = Date.now();
-    const id = Math.random().toString(36).slice(2, 8);
-    const key = `apex_v13_code_${ts}_${id}`;
-    const entry = {
-      code,
-      lang: lang ?? 'unknown',
-      created: ts,
-      lines: code.split('\n').length,
-      size: code.length,
-    };
-    /* Stocke en JSON */
-    localStorage.setItem(key, JSON.stringify(entry));
-    /* Index pour listing rapide */
-    const indexKey = 'apex_v13_code_snippets_index';
-    let idx: string[] = [];
-    try {
-      const raw = localStorage.getItem(indexKey);
-      if (raw) idx = JSON.parse(raw) as string[];
-    } catch { idx = []; }
-    idx.unshift(key);
-    if (idx.length > 100) idx = idx.slice(0, 100); /* Cap 100 snippets */
-    localStorage.setItem(indexKey, JSON.stringify(idx));
-    return { ok: true, key };
-  } catch (err: unknown) {
-    logger.warn('chat', 'saveCodeSnippet failed', { err });
-    return { ok: false };
-  }
-}
-
-/**
- * v13.4.16 — Liste les snippets code sauvés dans le coffre (paste intelligent).
- *
- * Retourne les entries triées par date desc, max 100 (cap saveCodeSnippet).
- * XSS-safe : valeurs JSON parsées, jamais innerHTML.
- */
-export function listCodeSnippets(): Array<{
-  key: string;
-  code: string;
-  lang: string;
-  created: number;
-  lines: number;
-  size: number;
-}> {
-  try {
-    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
-    if (!idxRaw) return [];
-    const idx = JSON.parse(idxRaw) as string[];
-    const result: Array<{ key: string; code: string; lang: string; created: number; lines: number; size: number }> = [];
-    for (const key of idx) {
-      const raw = localStorage.getItem(key);
-      if (!raw) continue; /* Entry orpheline (cleanup quota) */
-      try {
-        const entry = JSON.parse(raw) as { code: string; lang: string; created: number; lines: number; size: number };
-        result.push({ key, ...entry });
-      } catch { /* Entry corrompue, skip */ }
-    }
-    return result;
-  } catch (err: unknown) {
-    logger.warn('chat', 'listCodeSnippets failed', { err });
-    return [];
-  }
-}
-
-/**
- * v13.4.16 — Supprime un snippet du coffre (Kevin clique 🗑 dans la liste).
- */
-export function deleteCodeSnippet(key: string): boolean {
-  try {
-    if (!key.startsWith('apex_v13_code_')) return false; /* Sécurité : pas d'arbitrary delete */
-    localStorage.removeItem(key);
-    /* Update index */
-    const idxRaw = localStorage.getItem('apex_v13_code_snippets_index');
-    if (idxRaw) {
-      const idx = (JSON.parse(idxRaw) as string[]).filter((k) => k !== key);
-      localStorage.setItem('apex_v13_code_snippets_index', JSON.stringify(idx));
-    }
-    return true;
-  } catch (err: unknown) {
-    logger.warn('chat', 'deleteCodeSnippet failed', { err, key });
-    return false;
-  }
-}
+/* v13.4.166 refactor : saveCodeSnippet + listCodeSnippets + deleteCodeSnippet
+ * extraits vers chat-snippets.ts (façade backward-compat).
+ * Imports déjà en haut du fichier. */
+export { saveCodeSnippet, listCodeSnippets, deleteCodeSnippet } from './chat-snippets.js';
 
 /**
  * v13.4.13 — Helper exporté : transforme conversation DisplayMessage → ChatMessage
@@ -578,39 +327,9 @@ export function deleteCodeSnippet(key: string): boolean {
  * - PDF/non-image attachments ignorés silencieusement (Anthropic vision = image/* only)
  * - Messages assistant : toujours content string (les attachments leaked sont ignorés)
  */
-export function buildMessagesForApi(
-  conversation: Array<{
-    role: 'user' | 'assistant' | 'tool_card';
-    text: string;
-    streaming?: boolean;
-    attachments?: Array<{ mime: string; base64: string; name: string }>;
-  }>,
-  excludeMsg?: { role: string },
-  maxContext = 30,
-): Array<{ role: 'user' | 'assistant' | 'system'; content: string | Array<{ type: string; [k: string]: unknown }> }> {
-  return conversation
-    .filter((m) => !m.streaming || m === excludeMsg)
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .slice(-maxContext)
-    .filter((m) => m !== excludeMsg)
-    .map((m) => {
-      if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
-        const contentArr: Array<{ type: string; [k: string]: unknown }> = [];
-        for (const att of m.attachments) {
-          if (att.mime.startsWith('image/')) {
-            const dataOnly = att.base64.replace(/^data:[^;]+;base64,/, '');
-            contentArr.push({
-              type: 'image',
-              source: { type: 'base64', media_type: att.mime, data: dataOnly },
-            });
-          }
-        }
-        if (m.text) contentArr.push({ type: 'text', text: m.text });
-        return { role: m.role as 'user' | 'assistant', content: contentArr };
-      }
-      return { role: m.role as 'user' | 'assistant', content: m.text };
-    });
-}
+/* v13.4.169 refactor : buildMessagesForApi extrait vers chat-api-format.ts
+ * (façade backward-compat, import déjà en haut du fichier). */
+export { buildMessagesForApi } from './chat-api-format.js';
 
 /**
  * Push résultat transformation comme bulle Apex avec image générée.
@@ -678,16 +397,7 @@ export function pushTransformResult(
   });
 }
 
-function getTransformEmoji(type: string): string {
-  const map: Record<string, string> = {
-    cartoon: '🎨',
-    anime: '🤖',
-    video: '🎬',
-    'remove-bg': '✂️',
-    stylize: '🎭',
-  };
-  return map[type] ?? '🖼️';
-}
+/* v13.4.168 refactor : getTransformEmoji extrait vers chat-renderers.ts (import top) */
 
 /**
  * Génère le HTML des boutons d'action sur un message assistant non-streaming.
@@ -697,41 +407,12 @@ function getTransformEmoji(type: string): string {
  *
  * Exposé pour tests.
  */
-export function renderMessageActions(msg: DisplayMessage): string {
-  if (msg.role !== 'assistant' || msg.streaming) return '';
-  if (!msg.text || msg.text.length === 0) return '';
-  const btnStyle =
-    'width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,0.1);' +
-    'border:1px solid rgba(201,162,39,0.3);cursor:pointer;display:inline-flex;' +
-    'align-items:center;justify-content:center;font-size:14px;color:var(--ax-gold);' +
-    'transition:all 200ms;opacity:0.7;-webkit-tap-highlight-color:transparent;padding:0;';
-  return (
-    `<div class="ax-msg-actions" style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap">` +
-    `<button class="ax-msg-action" data-action="speak" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Lire la réponse à voix haute" aria-label="Lire la réponse">🔊</button>` +
-    `<button class="ax-msg-action" data-action="copy" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Copier dans presse-papiers" aria-label="Copier le texte">📋</button>` +
-    `<button class="ax-msg-action" data-action="regen" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Régénérer une autre réponse" aria-label="Régénérer">🔄</button>` +
-    `<button class="ax-msg-action" data-action="export-pdf" data-msg-id="${escapeHtml(msg.id)}" ` +
-    `style="${btnStyle}" title="Exporter en PDF" aria-label="Exporter PDF">📄</button>` +
-    `</div>`
-  );
-}
+/* v13.4.170 refactor : renderMessageActions extrait vers chat-actions-render.ts
+ * (façade backward-compat, import déjà en haut du fichier). */
+export { renderMessageActions } from './chat-actions-render.js';
 
-/* Exposé pour tests anti-XSS Jet 7.8 (audit subagent)
- * v13.3.48 — Pendant streaming : version "light" (rapide, paragraphes simples)
- * Hors streaming : delegate vers renderMarkdownEnriched (tables, code+copy, headings) */
-export function renderMarkdownLight(text: string): string {
-  /* Markdown ultra-léger pour streaming progressif (gras, italique, code inline, code block) */
-  let html = escapeHtml(text);
-  html = html.replace(/```([\s\S]*?)```/g, (_, code: string) => `<pre class="ax-code"><code>${code}</code></pre>`);
-  html = html.replace(/`([^`\n]+)`/g, '<code class="ax-code-inline">$1</code>');
-  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-  html = html.replace(/\n/g, '<br>');
-  return html;
-}
+/* v13.4.165 refactor : renderMarkdownLight extrait vers chat-markdown.ts
+ * (re-export façade ligne ~172). Aucun wrapper inutile pour rester lint-clean. */
 
 /**
  * v13.3.51 — Auto-analyse device sur upload image (Kevin 2026-05-07).
@@ -900,58 +581,9 @@ async function proposeSmartTVSetup(
  * v13.3.48 — Demande Kevin "chat niveau Claude.ai/ChatGPT".
  * Exposé pour tests.
  */
-export function renderFollowUps(suggestions: FollowUpSuggestion[]): string {
-  if (!suggestions || suggestions.length === 0) return '';
-  const chipStyle =
-    'display:inline-flex;align-items:center;gap:6px;padding:8px 12px;' +
-    'background:rgba(232,184,48,0.08);border:1px solid rgba(232,184,48,0.25);' +
-    'border-radius:18px;font-size:12.5px;color:rgba(255,255,255,0.85);' +
-    'cursor:pointer;transition:all 160ms cubic-bezier(0.16,1,0.3,1);' +
-    '-webkit-tap-highlight-color:transparent;min-height:36px;line-height:1.2;';
-  const chips = suggestions
-    .map(
-      (s) =>
-        `<button class="ax-followup-chip" data-followup-prompt="${escapeHtml(s.prompt)}" ` +
-        `style="${chipStyle}" aria-label="Suggestion : ${escapeHtml(s.label)}">` +
-        `<span aria-hidden="true">${escapeHtml(s.emoji)}</span>` +
-        `<span>${escapeHtml(s.label)}</span></button>`,
-    )
-    .join('');
-  return (
-    `<div class="ax-followups" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;` +
-    `padding-top:8px;border-top:1px dashed rgba(232,184,48,0.15)">` +
-    `<span style="font-size:11px;color:rgba(255,255,255,0.45);width:100%;margin-bottom:2px">` +
-    `💡 Pour aller plus loin :</span>${chips}</div>`
-  );
-}
-
-/**
- * Render le panneau d'autocomplete pour slash commands.
- * Exposé pour tests.
- */
-export function renderSlashAutocomplete(prefix: string): string {
-  const cmds = filterCommands(prefix);
-  if (cmds.length === 0) return '';
-  const items = cmds
-    .map(
-      (c: SlashCommand) =>
-        `<button class="ax-slash-item" data-slash-name="${escapeHtml(c.name)}" ` +
-        `style="display:flex;width:100%;text-align:left;padding:8px 12px;background:transparent;` +
-        `border:none;color:#fff;cursor:pointer;align-items:center;gap:10px;` +
-        `font-size:13px;border-radius:6px;-webkit-tap-highlight-color:transparent">` +
-        `<span style="width:22px;text-align:center" aria-hidden="true">${escapeHtml(c.emoji)}</span>` +
-        `<span style="font-weight:600;color:#e8b830">/${escapeHtml(c.name)}</span>` +
-        `<span style="color:rgba(255,255,255,0.5);font-size:11.5px;flex:1">${escapeHtml(c.description)}</span>` +
-        `</button>`,
-    )
-    .join('');
-  return (
-    `<div class="ax-slash-autocomplete" style="position:absolute;bottom:100%;left:0;right:0;` +
-    `background:rgba(20,20,35,0.97);backdrop-filter:blur(16px);border:1px solid rgba(232,184,48,0.2);` +
-    `border-radius:10px;padding:6px;margin-bottom:6px;max-height:240px;overflow-y:auto;` +
-    `box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100">${items}</div>`
-  );
-}
+/* v13.4.168 refactor : renderFollowUps + renderSlashAutocomplete extraits vers
+ * chat-renderers.ts (façade backward-compat, imports déjà en haut du fichier). */
+export { renderFollowUps, renderSlashAutocomplete } from './chat-renderers.js';
 
 function buildSystemPrompt(): string {
   const user = store.get('user');
@@ -1198,7 +830,7 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     ...(takenAttachments ? { attachments: takenAttachments } : {}),
   };
   conversation.push(userMsg);
-  persistConversation();
+  persistConversation(conversation);
 
   const assistantMsg: DisplayMessage = {
     id: `a_${Date.now()}`,
@@ -1251,7 +883,7 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
         store.set('isStreaming', false);
         renderMessages(rootEl);
         /* v13.3.53 : persist conversation après streaming complet (Kevin "perds chat à chaque MAJ") */
-        persistConversation();
+        persistConversation(conversation);
         /* Auto-read si setting activé (Kevin demande "il puisse me lire les choses") */
         void maybeAutoReadAssistant(assistantMsg);
       }
@@ -1685,19 +1317,9 @@ async function regenerateLastAssistant(rootEl: HTMLElement): Promise<void> {
  * v13.3.48 — Cherche un mot-clé dans la conversation et affiche les résultats.
  */
 async function searchInConversation(rootEl: HTMLElement, keyword: string): Promise<void> {
-  const k = keyword.toLowerCase();
-  const matches = conversation
-    .filter((m) => m.text.toLowerCase().includes(k))
-    .map((m, idx) => {
-      const role = m.role === 'user' ? '👤 Toi' : '🤖 Apex';
-      const snippet = m.text.length > 200 ? m.text.slice(0, 200) + '…' : m.text;
-      return `**${idx + 1}. ${role}** : ${snippet}`;
-    });
-  if (matches.length === 0) {
-    pushAssistantMessage(rootEl, `🔎 Aucun résultat pour "${keyword}"`);
-  } else {
-    pushAssistantMessage(rootEl, `🔎 **${matches.length} résultat(s) pour "${keyword}"** :\n\n${matches.join('\n\n')}`);
-  }
+  /* v13.4.174 refactor : pure search + format extraits dans chat-search.ts */
+  const matches = searchConversation(conversation, keyword);
+  pushAssistantMessage(rootEl, buildSearchResultMessage(matches, keyword));
 }
 
 /**
@@ -1708,22 +1330,16 @@ async function exportConversationMarkdown(): Promise<void> {
     toast.warn('Aucune conversation à exporter');
     return;
   }
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const header = `# Conversation Apex — ${new Date().toLocaleString('fr-FR')}\n\nVersion : ${APP_VER}\n\n---\n\n`;
-  const body = conversation
-    .filter((m) => m.role !== 'tool_card')
-    .map((m) => {
-      const role = m.role === 'user' ? '## 👤 Toi' : '## 🤖 Apex';
-      return `${role}\n\n${m.text}`;
-    })
-    .join('\n\n---\n\n');
-  const md = header + body;
+  /* v13.4.173 refactor : pure transformation extraite dans chat-export.ts */
+  const now = new Date();
+  const md = buildConversationMarkdown(conversation, APP_VER, now);
+  const filename = buildExportFilename(now);
   try {
     const blob = new Blob([md], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `apex-conversation-${ts}.md`;
+    a.download = filename;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast.success('📄 Conversation exportée en Markdown');
@@ -1777,20 +1393,8 @@ function hideSlashAutocomplete(rootEl: HTMLElement): void {
  * v13.3.48 — Fork conversation (démarre une nouvelle session, garde la précédente en historique).
  */
 function forkConversation(rootEl: HTMLElement): void {
-  /* Save copy à l'historique sessions (best effort, localStorage) */
-  try {
-    const KEY = 'apex_v13_chat_sessions';
-    const raw = localStorage.getItem(KEY);
-    const sessions: { ts: number; messages: DisplayMessage[] }[] = raw
-      ? (JSON.parse(raw) as { ts: number; messages: DisplayMessage[] }[])
-      : [];
-    sessions.push({ ts: Date.now(), messages: [...conversation] });
-    /* Cap 10 sessions max */
-    while (sessions.length > 10) sessions.shift();
-    localStorage.setItem(KEY, JSON.stringify(sessions));
-  } catch {
-    /* ignore */
-  }
+  /* v13.4.175 refactor : archive load+push+save extrait dans chat-sessions-history.ts */
+  archiveSession([...conversation]);
   conversation.length = 0;
   renderMessages(rootEl);
   toast.success('🌿 Nouvelle conversation démarrée');
@@ -2117,7 +1721,7 @@ export function render(rootEl: HTMLElement): void {
   /* v13.4.10 fix Kevin "continue recommence à zéro" : restore Firebase conversation
    * si localStorage vide (cache PWA clear iOS). Async non-bloquant, re-render après. */
   if (conversation.length === 0) {
-    void tryFirebaseRestoreConversation().then(() => {
+    void tryFirebaseRestoreConversation(conversation).then(() => {
       if (conversation.length > 0) {
         try {
           renderMessages(rootEl);

@@ -120,40 +120,39 @@
      Persistence localStorage apex_v13_rescue_hidden. */
   function initToolbarToggle() {
     try {
-      var toolbar = document.getElementById('apex-rescue-toolbar');
-      if (!toolbar) return;
-      /* Restore visibility state */
-      var hidden = false;
-      try { hidden = localStorage.getItem('apex_v13_rescue_hidden') === '1'; } catch (_) {}
-      if (hidden) toolbar.style.display = 'none';
+      /* v13.4.176 (Kevin "Toujours superposition de commandes") :
+       * Toolbar rescue MASQUÉE par défaut (CSS force visibility:hidden).
+       * Activée uniquement si :
+       *   - body[data-apex-rescue="1"] : framework KO détecté par failSafe (6s)
+       *   - body[data-apex-rescue-show="1"] : Kevin a explicitement opt-in
+       * Long-press SOS bouton 800ms → toggle data-apex-rescue-show
+       */
+      var sosBtn = document.getElementById('apex-rescue-btn');
+      if (!sosBtn) return;
 
-      /* Bouton flottant 👁 pour ré-afficher si masqué */
-      var showBtn = document.createElement('button');
-      showBtn.id = 'apex-rescue-show';
-      showBtn.type = 'button';
-      showBtn.setAttribute('aria-label', 'Afficher toolbar rescue');
-      showBtn.title = 'Afficher toolbar rescue';
-      showBtn.textContent = '👁';
-      showBtn.style.cssText = 'position:fixed;bottom:max(48px,calc(env(safe-area-inset-bottom,0px) + 48px));right:4px;width:24px;height:24px;border-radius:50%;background:rgba(20,20,35,0.6);border:1px solid rgba(201,162,39,0.3);color:#c9a227;font-size:11px;cursor:pointer;z-index:9999;opacity:0.5;display:' + (hidden ? 'flex' : 'none') + ';align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation';
-      document.body.appendChild(showBtn);
+      /* Restore opt-in state */
+      var optIn = false;
+      try { optIn = localStorage.getItem('apex_v13_rescue_show') === '1'; } catch (_) {}
+      if (optIn) document.body.setAttribute('data-apex-rescue-show', '1');
 
-      showBtn.addEventListener('click', function () {
-        toolbar.style.display = 'flex';
-        showBtn.style.display = 'none';
-        try { localStorage.setItem('apex_v13_rescue_hidden', '0'); } catch (_) {}
-      });
-
-      /* Long press 800ms sur toolbar → masque + montre showBtn */
+      /* Long press 800ms sur SOS → toggle opt-in toolbar */
       var pressTimer = null;
-      toolbar.addEventListener('touchstart', function () {
+      sosBtn.addEventListener('touchstart', function () {
         pressTimer = setTimeout(function () {
-          toolbar.style.display = 'none';
-          showBtn.style.display = 'flex';
-          try { localStorage.setItem('apex_v13_rescue_hidden', '1'); } catch (_) {}
+          var nowShown = document.body.getAttribute('data-apex-rescue-show') === '1';
+          if (nowShown) {
+            document.body.removeAttribute('data-apex-rescue-show');
+            try { localStorage.setItem('apex_v13_rescue_show', '0'); } catch (_) {}
+          } else {
+            document.body.setAttribute('data-apex-rescue-show', '1');
+            try { localStorage.setItem('apex_v13_rescue_show', '1'); } catch (_) {}
+          }
+          /* Vibration feedback si dispo */
+          try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
         }, 800);
       }, { passive: true });
       ['touchend', 'touchmove', 'touchcancel'].forEach(function (evt) {
-        toolbar.addEventListener(evt, function () {
+        sosBtn.addEventListener(evt, function () {
           if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
         }, { passive: true });
       });
@@ -169,7 +168,7 @@
     initToolbarToggle();
   }
 
-  /* Fail-safe : si bundle ne charge pas dans 6s, montre rescue button */
+  /* Fail-safe : si bundle ne charge pas dans 6s, montre rescue button + toolbar */
   function failSafe() {
     setTimeout(function () {
       try {
@@ -177,6 +176,8 @@
         if (!root || !root.innerHTML.trim()) {
           var btn = document.getElementById('apex-rescue-btn');
           if (btn) btn.classList.add('visible');
+          /* v13.4.176 : framework KO → mode rescue forcé (toolbar visible) */
+          document.body.setAttribute('data-apex-rescue', '1');
           var splash = document.getElementById('apex-splash');
           if (splash) {
             var hint = document.createElement('div');

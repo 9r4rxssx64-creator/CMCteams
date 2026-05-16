@@ -17,6 +17,11 @@ on:
       - '!apex-ai/v13/coverage/**'
       - '!apex-ai/v13/node_modules/**'
       - '!apex-ai/v13/**/*.test.ts'
+  # v13.4.168 (Kevin 2026-05-15) : anti-récidive Erreur #54 — schedule cron 30 min
+  # détecte drift source vs apex-ai-v13/ même si push trigger raté.
+  # Étape "Sync dist/ to apex-ai-v13/" idempotente : skip si déjà à jour.
+  schedule:
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
