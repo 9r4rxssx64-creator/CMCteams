@@ -54,8 +54,26 @@ Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
 - Exceptions possibles selon affluence/direction SBM.
 
 **Statuts mois entier** :
-- 🎓 FORMATION (9 chefs détachés au service formation) : FILIPPI F, LAVAGNA J, MOREL F, BONO F, VIGNA M, GAZAGNE F, EHRET G, PORTA A, GRAUSS A
-- 🏖️ CP intégral du mois : MATTONE F, PEREIRA MACENA F
+- 🎓 FORMATION — **CHEFS** détachés au service formation tout le mois (encadré "13 FORMATION du au" section Chefs BJ) :
+  FILIPPI F, LAVAGNA J, MOREL F, BONO F, VIGNA M, GAZAGNE F, EHRET G, PORTA A, GRAUSS A
+- 🎓 FORMATION — **EMPLOYÉS** courte période (4-8 mai, encadré "3 FORMATION du au" section Employés CMC) :
+  MATTERA M, INZIRILLO R, CAPIOMONT K
+- 🏖️ CP intégral du mois — **CHEFS** (encadré "2 CP du au" section Chefs BJ) :
+  MATTONE F, PEREIRA MACENA F
+- 🏖️ CP intégral du mois — **EMPLOYÉS** (encadré "8 CP du au" section Employés CMC) :
+  FAIVRE R, CAPIOMONT K, INZIRILLO R, MANFREDI H, MASSEGLIA J, MATTERA M, NOBBIO G, BORGIA T
+
+  ⚠ Superposition : CAPIOMONT, INZIRILLO et MATTERA ont une exception FORMATION 4-8 mai → CP partout SAUF jours 4-8 où ils sont en AF (formation). Le parser doit gérer cette priorité (CP par défaut, AF surcharge sur dates spécifiques).
+- 🤒 MALADIE longue durée — **ROULETTES** (encadré "7 M du au" section Roulettes) :
+  LORENZI Y, SANNA O, GALLIS F, BESSI N, ARDISSON S, SEGGIARO J, ORRADO F
+- 🤒 MALADIE longue durée — **CHEFS** (encadré "1 M du au" section Chefs BJ) :
+  ROBIN M, CAPRA C, LEMONNIER PH
+- 🤒 MALADIE longue durée — **EMPLOYÉS** (encadré "4 M du au" section Employés CMC/aménagement) :
+  MIRANDA T, CATALA P, MARTINI M, RICHARDIN T
+- 📋 EDC (En Détachement Cadre / statut spécial SBM, encadré "EDC du au") :
+  DE RYCKE K, MARTIRE M, ELENA C
+
+**⚠ Important** : les chefs et employés en M longue durée sont dans des **cases SÉPARÉES** du PDF (sections différentes). Ne pas les confondre dans le parsing.
 
 ### Conséquence cruciale
 
