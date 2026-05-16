@@ -4865,7 +4865,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.643";
+var APP_VER="v9.644";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22676,6 +22676,23 @@ function vAccueil(){
 function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
+  // v9.644 (Kevin "j'efface le planning du mois, toujours les équipes présentes
+  // mais sans horaires"): si A.overrides[key] vide → afficher empty state au lieu
+  // de la structure équipe (qui vient de emp.team DEF_EMP, permanente).
+  var _key=A.year+"-"+A.month;
+  var _ovEmpty=!A.overrides[_key] || Object.keys(A.overrides[_key]).length===0;
+  if(_ovEmpty){
+    return '<div class="page bg-planning"><div style="padding:40px 20px;text-align:center">'
+      +'<div style="font-size:60px;margin-bottom:14px">📭</div>'
+      +'<div style="font-size:20px;font-weight:800;color:#c9a227;margin-bottom:8px">Aucun planning pour '+MFR[A.month]+' '+A.year+'</div>'
+      +'<div style="font-size:14px;color:#a0cca0;max-width:380px;margin:0 auto 18px;line-height:1.5">Le planning de ce mois a été effacé ou n\'a jamais été importé. Importez un PDF pour voir les équipes et horaires.</div>'
+      +(isAdm?'<button onclick="sv(\'import\')" style="background:linear-gradient(135deg,#c9a227,#a8821f);border:none;color:#0a0f0c;padding:14px 28px;font-size:16px;font-weight:800;border-radius:10px;cursor:pointer;min-height:52px">📥 Importer un planning</button>'
+       :'<div style="padding:14px 20px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:10px;color:#c9a227;font-size:14px;max-width:380px;margin:0 auto">⏳ Contactez l\'admin pour importer le planning du mois</div>')
+      +'<div style="margin-top:24px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+      +'<button onclick="prevM()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);color:#a0cca0;padding:10px 18px;font-size:14px;border-radius:8px;cursor:pointer">‹ '+MFR[(A.month+11)%12]+'</button>'
+      +'<button onclick="nextM()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);color:#a0cca0;padding:10px 18px;font-size:14px;border-radius:8px;cursor:pointer">'+MFR[(A.month+1)%12]+' ›</button>'
+      +'</div></div></div>';
+  }
   // v9.619 (audit P1 #3) — Cache meta précalculé pour éviter 8K recomputations
   var _vPlanMetaCache=_cmcMetaCacheForView(A.year,A.month);
   // v9.154 — Ensemble des utilisateurs en ligne (lookup O(1) pour live avatars)
@@ -23107,6 +23124,16 @@ function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);}
 function vDeparts(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
+  // v9.644 (Kevin "on change tous d'équipe chaque mois") : empty state si pas de planning
+  var _key=A.year+"-"+A.month;
+  if(!A.overrides[_key] || Object.keys(A.overrides[_key]).length===0){
+    return '<div class="page"><div style="padding:40px 20px;text-align:center">'
+      +'<div style="font-size:60px;margin-bottom:14px">📭</div>'
+      +'<div style="font-size:20px;font-weight:800;color:#c9a227;margin-bottom:8px">Aucun ordre de départ pour '+MFR[A.month]+' '+A.year+'</div>'
+      +'<div style="font-size:14px;color:#a0cca0;max-width:380px;margin:0 auto 18px;line-height:1.5">Le planning de ce mois est vide. Les équipes/horaires changent chaque mois selon le planning SBM importé.</div>'
+      +(isAdm?'<button onclick="sv(\'import\')" style="background:linear-gradient(135deg,#c9a227,#a8821f);border:none;color:#0a0f0c;padding:14px 28px;font-size:16px;font-weight:800;border-radius:10px;cursor:pointer;min-height:52px">📥 Importer un planning</button>':'')
+      +'</div></div>';
+  }
   // v9.619 (audit P1 #3) — Cache meta précalculé pour éviter 8K recomputations
   var _vDepMetaCache=_cmcMetaCacheForView(A.year,A.month);
   var CI=gCI(A.year,A.month);
