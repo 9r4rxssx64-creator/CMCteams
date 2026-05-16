@@ -4900,7 +4900,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.655";
+var APP_VER="v9.656";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -25114,6 +25114,139 @@ function cmcExportPdfSourceForDiag(){
 // A.overrides[key] pour CHAQUE cadre, séparés par rôle. Permet de confirmer
 // runtime si tous ont vraiment le même horaire OU si c'est juste un effet
 // d'affichage (rotation décalée jour par jour).
+// v9.656 (Kevin "il ne met pas toutes les personnes correctement qui ont les mêmes
+// jours de repos dans la même équipe") : diagnostic dédié algo détection équipes
+// par pattern RH. Exporte signature cycle:offset:firstWork par emp + groupes formés
+// + raisons de skip → permet diagnostic immédiat pourquoi 2 emps avec mêmes RH
+// finissent dans équipes différentes (ou pas d'équipe du tout).
+function cmcExportTeamsDetectionDiag(){
+  try{
+    if(!A.user||A.user.id!==AID){toast("⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var ov=A.overrides[key]||{};
+    if(!Object.keys(ov).length){toast("Aucune donnée pour "+MFR[im]+" "+iy,"warn");return;}
+
+    // Re-run algo pour avoir le report
+    var algoRes=null;
+    try{algoRes=_cmcDetectTeamsByRestPattern(iy,im);}catch(e){}
+
+    // Pour chaque emp avec data, calculer signature potentielle
+    function _calcCycle(rhDays){
+      if(rhDays.length<2)return null;
+      var gaps=[];for(var i=1;i<rhDays.length;i++)gaps.push(rhDays[i]-rhDays[i-1]);
+      gaps.sort(function(a,b){return a-b;});
+      return gaps[Math.floor(gaps.length/2)];
+    }
+    var ABSENCE=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL"];
+    function _firstWork(r){
+      for(var d=1;d<=15;d++){
+        var c=r[d];if(!c)continue;
+        var cu=String(c).toUpperCase();
+        if(ABSENCE.indexOf(cu)>=0)continue;
+        return String(c);
+      }
+      return null;
+    }
+
+    var empAnalysis=[];
+    Object.keys(ov).forEach(function(eid){
+      var emp=A.employees.find(function(e){return e.id===eid;});
+      if(!emp)return;
+      var r=ov[eid]||{};
+      var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
+      var rhDays=[];
+      Object.keys(r).forEach(function(d){if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));});
+      rhDays.sort(function(a,b){return a-b;});
+      var cycle=_calcCycle(rhDays);
+      var offset=cycle?(rhDays[0]-1)%cycle:null;
+      var firstWork=_firstWork(r);
+      var firstWorkNorm=firstWork?firstWork.replace(/c$/i,""):null;
+      var sig=(cycle&&offset!=null&&firstWorkNorm)?(cycle+":"+offset+":"+firstWorkNorm):null;
+      var skipReason=null;
+      if((emp.family||"")==="cadres")skipReason="family=cadres (cadres exclus algo)";
+      else if(cellCount<10)skipReason="<10 cells écrites ("+cellCount+")";
+      else if(rhDays.length<2)skipReason="<2 RH days ("+rhDays.length+")";
+      else if(!cycle||cycle<2||cycle>15)skipReason="cycle invalide ("+cycle+")";
+      empAnalysis.push({
+        name:emp.name,id:eid,family:emp.family||"?",
+        cellCount:cellCount,rhDays:rhDays,
+        cycle:cycle,offset:offset,
+        firstWork:firstWork,firstWorkNorm:firstWorkNorm,
+        signature:sig,skipReason:skipReason,
+        teamHistoryWritten:emp.teamHistory&&emp.teamHistory[key]||null
+      });
+    });
+
+    // Grouper par signature pour voir clusters
+    var bySignature={};
+    empAnalysis.forEach(function(a){
+      if(!a.signature)return;
+      if(!bySignature[a.signature])bySignature[a.signature]=[];
+      bySignature[a.signature].push(a.name);
+    });
+
+    // Build report
+    var report="=== CMCteams DETECTION ÉQUIPES DIAG "+APP_VER+" ===\n"
+      +"Date: "+new Date().toISOString()+"\n"
+      +"Mois: "+MFR[im]+" "+iy+" (key="+key+")\n"
+      +"\n=== RÉSULTAT ALGO ===\n"
+      +(algoRes?JSON.stringify(algoRes.report||algoRes,null,2):"algo n'a pas retourné")
+      +"\n\n=== GROUPES PAR SIGNATURE (cycle:offset:firstWork) ===\n"
+      +Object.keys(bySignature).sort().map(function(s){
+        return s+" ("+bySignature[s].length+" emps): "+bySignature[s].join(", ");
+      }).join("\n")
+      +"\n\n=== EMPS SKIPPED (pas dans algo) ===\n"
+      +empAnalysis.filter(function(a){return a.skipReason;}).map(function(a){
+        return a.name.padEnd(28)+" → "+a.skipReason;
+      }).join("\n")
+      +"\n\n=== DÉTAIL PAR EMP (signature + teamHistory écrit) ===\n"
+      +empAnalysis.filter(function(a){return !a.skipReason;}).map(function(a){
+        return a.name.padEnd(28)+" RH="+JSON.stringify(a.rhDays).padEnd(35)+" cycle="+a.cycle+" offset="+a.offset
+          +" firstWork="+(a.firstWork||"?").padEnd(10)+" sig="+a.signature
+          +" → teamHistory["+key+"]="+(a.teamHistoryWritten||"NON ÉCRIT");
+      }).join("\n");
+
+    var modalId="cmcTeamsDiag_"+Date.now();
+    var reportEsc=esc(report);
+    var modal='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
+      +'<div style="background:#0f1a14;border:2px solid #c080ff;border-radius:14px;max-width:1100px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="color:#c080ff;margin:0;font-size:18px">🔍 Diag Détection Équipes '+esc(MFR[im])+' '+iy+'</h2>'
+      +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+      +'<p style="color:#cfd0e0;font-size:13px;margin:0 0 10px">Si 2 emps avec mêmes RH sont dans 2 groupes différents, c\'est qu\'ils ont firstWork différent. Si même sig mais teamHistory différent ➜ vrai bug.</p>'
+      +'<textarea readonly id="'+modalId+'_ta" style="width:100%;height:60vh;background:#0a0f0c;color:#d0d0ff;border:1px solid #c080ff55;border-radius:8px;padding:10px;font-family:monospace;font-size:11px;resize:none">'+reportEsc+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
+      +'<button id="'+modalId+'_copy" style="flex:2;min-width:160px;min-height:48px;padding:12px;background:linear-gradient(135deg,#5aaa70,#3a8a50);border:none;color:#fff;font-weight:800;border-radius:10px;cursor:pointer;font-size:14px">📋 Copier</button>'
+      +'<button id="'+modalId+'_dl" style="flex:1;min-width:120px;min-height:48px;padding:12px;background:rgba(74,160,255,.18);border:1px solid #4aa0ff;color:#4aa0ff;font-weight:700;border-radius:10px;cursor:pointer;font-size:13px">💾 .txt</button>'
+      +'</div>'
+      +'<div id="'+modalId+'_status" style="font-size:12px;color:#a0cca0;min-height:18px;text-align:center;margin-top:6px"></div>'
+      +'</div></div>';
+    document.body.insertAdjacentHTML("beforeend",modal);
+    var btnCopy=document.getElementById(modalId+"_copy");
+    var btnDl=document.getElementById(modalId+"_dl");
+    var status=document.getElementById(modalId+"_status");
+    var ta=document.getElementById(modalId+"_ta");
+    if(btnCopy)btnCopy.addEventListener("click",function(){
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(report).then(function(){
+          status.style.color="#5aaa70";status.textContent="✅ Copié ! Colle dans chat Claude Code.";
+          btnCopy.textContent="✅ Copié !";
+        },function(){ta.focus();ta.select();});
+      }else{ta.focus();ta.select();try{document.execCommand("copy");status.textContent="✅ Sélectionné";}catch(_){}}
+    });
+    if(btnDl)btnDl.addEventListener("click",function(){
+      try{
+        var blob=new Blob([report],{type:"text/plain;charset=utf-8"});
+        var url=URL.createObjectURL(blob),a=document.createElement("a");
+        a.href=url;a.download="cmcteams-teams-diag-"+key+"-"+APP_VER+".txt";
+        document.body.appendChild(a);a.click();
+        setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+        status.style.color="#4aa0ff";status.textContent="✅ Téléchargé.";
+      }catch(e){status.textContent="⚠ "+e.message;}
+    });
+    try{_audit("export_teams_diag",AID,key,"",empAnalysis.length+" emps analysés");}catch(_){}
+  }catch(e){toast("Erreur diag : "+(e&&e.message||e),"err");}
+}
+
 function cmcExportPitBossDiag(){
   try{
     if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
@@ -33679,6 +33812,9 @@ function vImport(){
         </button>
         <button class="btn" onclick="cmcExportPitBossDiag()" title="Diagnostic Pit Boss : export horaires r\u00e9els par cadre pour comparaison PDF" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">
           \ud83d\udd0d Diag Pit Boss horaires
+        </button>
+        <button class="btn" onclick="cmcExportTeamsDetectionDiag()" title="Diagnostic algo d\u00e9tection \u00e9quipes : signature cycle:offset:firstWork par emp + groupes form\u00e9s + raisons skip" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(192,128,255,.15);border:1px solid rgba(192,128,255,.5);color:#c080ff;font-weight:800">
+          \ud83d\udd0d Diag d\u00e9tection \u00e9quipes
         </button>
         <button class="btn" onclick="cmcWipeCadresForMonth()" title="Efface les horaires des cadres (Pit Boss + Superviseurs) pour ce mois \u2014 snapshot rollback gard\u00e9. Utile avant re-import V2 propre." style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,64,64,.12);border:1px solid rgba(224,64,64,.45);color:#e06060;font-weight:700">
           \ud83d\uddd1\ufe0f Effacer cadres (ce mois)
