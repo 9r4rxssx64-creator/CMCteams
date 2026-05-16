@@ -40,12 +40,17 @@ import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
-/* v13.4.165-171 refactor : modules extraits depuis chat/index.ts pour testabilité. */
+/* v13.4.165-172 refactor : modules extraits depuis chat/index.ts pour testabilité. */
 import { renderMessageActions } from './chat-actions-render.js';
 import { type AlbumImage, renderImageAlbum } from './chat-album.js';
 import { buildMessagesForApi } from './chat-api-format.js';
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
+import {
+  loadPersistedConversation,
+  persistConversation,
+  tryFirebaseRestoreConversation,
+} from './chat-persistence.js';
 import {
   getTransformEmoji,
   renderFollowUps,
@@ -85,97 +90,21 @@ var pendingAttachments: Array<{ mime: string; base64: string; name: string }> = 
  
 var pendingAttachmentPromises: Array<Promise<void>> = [];
 
-/* v13.3.53 fix Kevin "À chaque MAJ je perds mon historique de chat" :
- * AVANT : conversation = array mémoire pure, perdu à chaque reload/MAJ.
- * APRÈS : load depuis localStorage au mount + save debounce après chaque push.
- * Cap 200 messages (drop oldest), exclus tool_card et streaming partial. */
-const CONV_STORAGE_KEY = 'apex_v13_conversation_active';
-const CONV_MAX_PERSIST = 200;
-
-/* v13.3.77 fix TDZ : déclarer conversation EN PREMIER (init []) puis remplir.
- * Évite "Cannot access 'conversation' before initialization" en isolation Vitest
- * (race conditions dynamic import + happy-dom + isolate). */
+/* v13.4.172 refactor Kevin "expert sans régression" :
+ * loadPersistedConversation / persistConversation / tryFirebaseRestoreConversation
+ * extraits vers chat-persistence.ts (façade backward-compat).
+ *
+ * v13.3.77 fix TDZ : déclarer conversation EN PREMIER (init []) puis remplir.
+ * Évite "Cannot access 'conversation' before initialization" en isolation Vitest. */
 const conversation: DisplayMessage[] = [];
 const queue: string[] = [];
 let isProcessing = false;
-
-function loadPersistedConversation(): DisplayMessage[] {
-  try {
-    const raw = localStorage.getItem(CONV_STORAGE_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw) as DisplayMessage[];
-    if (!Array.isArray(arr)) return [];
-    /* Strip streaming flag (au cas où sauvé pendant streaming) */
-    return arr.map((m) => ({ ...m, streaming: false })).filter((m) => m.text || m.role === 'tool_card');
-  } catch { return []; }
-}
-
-let _saveTimeout: ReturnType<typeof setTimeout> | null = null;
-let _firebaseSyncTimeout: ReturnType<typeof setTimeout> | null = null;
-function persistConversation(): void {
-  if (_saveTimeout) clearTimeout(_saveTimeout);
-  _saveTimeout = setTimeout(() => {
-    try {
-      /* Exclus messages en streaming partial pour éviter snapshot incomplet */
-      const toSave = conversation
-        .filter((m) => !m.streaming)
-        .slice(-CONV_MAX_PERSIST);
-      localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(toSave));
-    } catch {
-      /* Quota exceeded → trim plus agressif */
-      try {
-        const half = conversation.filter((m) => !m.streaming).slice(-(CONV_MAX_PERSIST / 2));
-        localStorage.setItem(CONV_STORAGE_KEY, JSON.stringify(half));
-      } catch { /* skip */ }
-    }
-  }, 500);
-
-  /* v13.4.10 fix Kevin "continue recommence à zéro" : sync Firebase debounce 30s
-   * pour survivre clear cache PWA iOS + restore au reload depuis cloud.
-   * Cap derniers 30 messages text-only (pas photos base64 = trop gros Firebase).
-   * Path : apex_v13_conversation_cloud (séparé de _active local pour éviter écrasement). */
-  if (_firebaseSyncTimeout) clearTimeout(_firebaseSyncTimeout);
-  _firebaseSyncTimeout = setTimeout(() => {
-    void (async () => {
-      try {
-        const cloudPayload = conversation
-          .filter((m) => !m.streaming && m.text && m.text.length < 8000)
-          .slice(-30)
-          .map((m) => ({ role: m.role, text: m.text, ts: m.ts }));
-        const { firebase } = await import('../../services/firebase.js');
-        await firebase.write('apex_v13_conversation_cloud', cloudPayload);
-      } catch (err: unknown) {
-        logger.warn('chat', 'Firebase sync conversation skipped', { err });
-      }
-    })();
-  }, 30000);
-}
-
-/* v13.4.10 — Restore Firebase au boot SI localStorage vide (cache PWA clear iOS).
- * Async, non-bloquant : conversation locale s'affiche d'abord, restore patché après. */
-async function tryFirebaseRestoreConversation(): Promise<void> {
-  if (conversation.length > 0) return; /* déjà chargé local */
-  try {
-    const { firebase } = await import('../../services/firebase.js');
-    const cloudRaw = await firebase.read('apex_v13_conversation_cloud');
-    if (!Array.isArray(cloudRaw) || cloudRaw.length === 0) return;
-    const restored = (cloudRaw as Array<{ role: 'user' | 'assistant'; text: string; ts: number }>)
-      .filter((m) => m && typeof m.text === 'string' && m.text.length > 0)
-      .map((m) => ({ ...m, streaming: false } as DisplayMessage));
-    if (restored.length > 0) {
-      conversation.push(...restored);
-      logger.info('chat', `Conversation restored from Firebase (${restored.length} messages)`);
-    }
-  } catch (err: unknown) {
-    logger.warn('chat', 'Firebase restore conversation skipped', { err });
-  }
-}
 
 /* Init populée APRÈS const conversation (pas de TDZ : conversation déjà bound) */
 {
   const persisted = loadPersistedConversation();
   if (persisted.length) {
-    conversation.push(...persisted);
+    conversation.push(...(persisted as DisplayMessage[]));
   }
 }
 
@@ -898,7 +827,7 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
     ...(takenAttachments ? { attachments: takenAttachments } : {}),
   };
   conversation.push(userMsg);
-  persistConversation();
+  persistConversation(conversation);
 
   const assistantMsg: DisplayMessage = {
     id: `a_${Date.now()}`,
@@ -951,7 +880,7 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
         store.set('isStreaming', false);
         renderMessages(rootEl);
         /* v13.3.53 : persist conversation après streaming complet (Kevin "perds chat à chaque MAJ") */
-        persistConversation();
+        persistConversation(conversation);
         /* Auto-read si setting activé (Kevin demande "il puisse me lire les choses") */
         void maybeAutoReadAssistant(assistantMsg);
       }
@@ -1817,7 +1746,7 @@ export function render(rootEl: HTMLElement): void {
   /* v13.4.10 fix Kevin "continue recommence à zéro" : restore Firebase conversation
    * si localStorage vide (cache PWA clear iOS). Async non-bloquant, re-render après. */
   if (conversation.length === 0) {
-    void tryFirebaseRestoreConversation().then(() => {
+    void tryFirebaseRestoreConversation(conversation).then(() => {
       if (conversation.length > 0) {
         try {
           renderMessages(rootEl);
