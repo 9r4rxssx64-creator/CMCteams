@@ -93,6 +93,53 @@ Des employés ont le même nom de famille mais des prénoms différents. Ne JAMA
 **Règle parser** : bien vérifier l'initiale après le nom (ex `BORGIA T` ≠ `BORGIA L`). Fuzzy match interdit sans vérification d'initiale.
 Voir `cmc_known_identities` (v9.220) pour la liste cumulative.
 
+### 🚫 RÈGLE ABSOLUE : ZÉRO HISTORIQUE, ZÉRO ACQUIS (Kevin 2026-05-16)
+
+**Le planning change TOUT le mois entièrement :**
+
+1. ❌ **Nombre d'équipes variable** : peut y avoir 5 équipes un mois, 6 le mois suivant
+2. ❌ **Nombre d'employés par équipe variable** : équipe peut avoir 4, 5, 6, 7+ emps selon le mois
+3. ❌ **JAMAIS d'historique** : ne pas se baser sur l'équipe du mois précédent
+4. ❌ **JAMAIS d'acquis** : `emp.team` DEF_EMP n'est qu'une valeur initiale, jamais courante
+5. ❌ **PAS d'équipe pour les Pit Boss/Cadres** : ils sont assignés individuellement (offset rotation 1-14)
+
+**Implications algorithme** :
+- ✅ Chaque import RÉÉCRIT complètement `emp.teamHistory[key]` pour le mois
+- ✅ Scoped wipe v9.643 efface teamHistory[key] avant parser (jamais de fallback ancien)
+- ✅ Algo `_cmcDetectTeamsByRestPattern` skip les cadres (family="cadres")
+- ✅ `teamForMonth` strict mode v9.647 ne fallback PAS sur emp.team DEF_EMP pour affichage courant
+- ❌ **INTERDIT** : `autoFillMissingCadres()` copie historique mois N-1 → désactivé v9.604 (Erreur #48)
+
+**Conséquence pour affichage** :
+- Si pas de teamHistory[key] pour ce mois → emp dans section "❔ Pas de planning ce mois" (v9.647)
+- Ne JAMAIS afficher emp.team DEF_EMP comme équipe courante
+- Refresh complet à chaque import
+
+### 📅 Convention versioning planning SBM (Kevin 2026-05-16)
+
+- **Pas de V** dans le nom du planning = **V1** (premier planning du mois)
+- **V2, V3, etc.** = mises à jour successives
+- Le naming est toujours **écrit sur le planning** (ex "Mai 2026", "Mai 2026 V2", "Juin 2026")
+
+### Vérité terrain Juin 2026 V1 (Kevin 2026-05-16) — équipes Roulettes confirmées
+
+| # | Équipe principale | Membres | Code | Miroir | Membres | Code |
+|---|---|---|---|---|---|---|
+| 1 | (4 emps) | SOLFERINO F, ROSSI J, VECCHIERINI L, DELMAS G | `20/5` | (5 emps) | BONO V, CHATTAHY N, GARRO S, CARPINELLI K, MOUFLARD L | `22/6'` |
+| 2 | (6 emps) | BASILE F, RINALDI S, RAMOS R, PARIZIA K, MILLET T, MARCHI T | `19/4` | (4 emps) | BARONE E, MARCHISIO M, GARCIA N, DAGIONI M | `19/4""` |
+
+**📌 Preuve règle "tous changent chaque mois"** (cf section emp.team DEF_EMP) :
+
+| Emp | Mai V1 | Juin V1 |
+|---|---|---|
+| BARONE E | Équipe A principale (`20/5`) | Équipe 2 MIROIR (`19/4""`) |
+| BASILE F | Miroir A' (`22/6'`) | Équipe 2 principale (`19/4`) |
+| PARIZIA K | Équipe A principale | Équipe 2 principale |
+| DAGIONI M | Équipe A principale | Équipe 2 miroir |
+| RAMOS R | Chef BJ section dédiée | Équipe 2 roulettes (réaffecté) |
+
+**Conclusion** : `emp.team` du DEF_EMP n'est JAMAIS la vérité courante. Seul `emp.teamHistory[key]` écrit par l'import du mois donne l'équipe correcte. Mon algo doit détecter ces réaffectations sans erreur (v9.654 algorithme RH pattern).
+
 ### Vérité terrain V1 mai 2026 (Kevin 2026-05-16) — équipes Roulettes confirmées
 
 Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
