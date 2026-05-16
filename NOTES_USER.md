@@ -5,6 +5,51 @@
 
 ---
 
+## 🎯 RÈGLE MÉTIER FONDAMENTALE — DÉTECTION ÉQUIPES PAR JOURS REPOS (Kevin 2026-05-15)
+
+> **"Avant ça marchait, reconnaissance équipe et équipe miroir par rapport aux jours de congés. Le trait noir plus foncé délimite les équipes quand il y est, sinon fait regarder les jours repos. Il y a plusieurs personnes avec les mêmes jours c'est une équipe, plus bas d'autres personnes avec les mêmes jours repos c'est l'équipe miroir."**
+
+### Algorithme officiel SBM pour identification équipes V1 (employés/chefs roulettes/BJ/CMC)
+
+Le PDF SBM utilise 2 conventions pour délimiter les équipes :
+
+1. **Trait noir plus foncé** entre les blocs d'équipes (visible dans le PDF mais **disparu après copy-paste texte**)
+2. **Pattern de jours de repos (RH/R) IDENTIQUE** entre membres d'une même équipe
+
+### Règle de détection
+
+- Les employés ayant **exactement les mêmes jours RH dans le mois** appartiennent à la **MÊME équipe**
+- L'**équipe miroir** est le groupe avec **pattern RH décalé d'un offset constant** (généralement +N jours dans le cycle)
+- Chaque équipe a typiquement **4-6 employés** (le header PDF indique le compte : "4 RH du au" = 4 emps avec RH à cette position)
+- Famille (BJ/Roulettes/CMC) déduite de la section PDF dans laquelle apparaît le bloc
+
+### Quand l'algorithme s'applique
+
+- V1 mai 2026 format (sans marqueur d'équipe explicite) → équipes reconstruites par pattern RH
+- V1 juin 2026 format (avec numéro d'équipe explicite entre POST et NOM, ex `BRTP+K 5 NAME`) → équipe EXPLICITE prioritaire
+- V2 cadres (PIT BOSS / SUPERVISEUR / INSPECTEUR) → équipes "pit15" / "sup" depuis section header (pas pattern RH)
+
+### Implémentation
+
+`_cmcDetectTeamsByRestPattern(iy, im)` (v9.648, ligne ~32700 index.html) :
+- Appelé auto dans `_postValidateImport` après chaque import
+- Skip emps avec teamHistory déjà écrit (priorité parser explicite)
+- Skip emps avec <20 cells (signature non fiable)
+- Skip groupes <3 emps (faux groupements évités)
+- Détection miroir = paires (A,B) avec même family + même taille + offset RH constant
+- Stocké : `emp.teamHistory[key] = teamId` + `cmc_team_mirror_<key> = {teamId: mirrorId}`
+
+### Conséquence cruciale
+
+⚠️ **Kevin et collègues changent d'équipe CHAQUE MOIS au Casino SBM.**
+
+- `emp.team` du DEF_EMP est une valeur **historique/défaut**, PAS l'équipe courante
+- L'équipe courante = `emp.teamHistory[YYYY-M]` écrite par l'import du mois
+- Si pas de teamHistory pour le mois → emp n'a PAS d'équipe ce mois (placé dans section "❔ Pas de planning ce mois" v9.647)
+- Ne JAMAIS utiliser `emp.team` comme fallback pour afficher l'équipe courante
+
+---
+
 ## 🆕 SESSION 2026-05-07 — Nouvelles fonctions Apex / outils / liens (Kevin 23h59)
 
 ### 🏠 IoT Smart Home — Apex pilote la domotique (livré v13.3.51 + IOT-AUTONOMY en cours v13.3.52)

@@ -1,6 +1,32 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-14 (Apex v13.4.42 / CMC v9.602).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-15 (Apex v13.4.42 / CMC v9.648).
+
+---
+
+## 🎯 RÈGLE MÉTIER ABSOLUE — DÉTECTION ÉQUIPES SBM (Kevin 2026-05-15, NON-NÉGOCIABLE)
+
+> **"Avant ça marchait, reconnaissance équipe et équipe miroir par rapport aux jours de congés. Le trait noir plus foncé délimite les équipes quand il y est sinon fait regarde les jours repos. Plusieurs personnes avec les mêmes jours = une équipe, autres personnes avec les mêmes jours repos = équipe miroir."**
+
+### Algo SBM officiel pour V1 (employés/chefs)
+
+PDF SBM délimite les équipes par 2 conventions :
+1. Trait noir foncé entre blocs (disparaît au copy-paste)
+2. **Pattern RH identique** entre membres d'une même équipe → SOURCE DE VÉRITÉ
+
+Implementation : `_cmcDetectTeamsByRestPattern(iy, im)` ligne ~32700 (v9.648).
+
+### Conséquence absolue
+
+⚠️ **Kevin et collègues changent d'équipe CHAQUE MOIS.**
+
+- `emp.team` (DEF_EMP) = valeur historique/défaut, JAMAIS l'équipe courante
+- `emp.teamHistory[YYYY-M]` = équipe pour ce mois (écrite par import)
+- Si pas de teamHistory → pas d'équipe ce mois (afficher "❔ Pas de planning")
+- INTERDIT d'utiliser `emp.team` comme fallback pour affichage équipe courante
+
+Voir NOTES_USER.md section "RÈGLE MÉTIER FONDAMENTALE — DÉTECTION ÉQUIPES PAR JOURS REPOS"
+pour détails complets de l'algorithme + safeguards.
 
 ---
 
