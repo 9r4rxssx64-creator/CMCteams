@@ -4885,7 +4885,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.653";
+var APP_VER="v9.654";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -32967,6 +32967,20 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     var empSigs={};
     var detectableEmps=[];
     var skipReasons={cadres:0,explicit:0,low_cells:0,low_rh:0,no_cycle:0};
+    // v9.654 (Kevin "miroir = MÊMES RH days, codes travail différents") :
+    // Helper trouve le premier code de travail (pas RH/R/CP/AF/M) de l'emp
+    function _firstWorkCode(r){
+      var ABSENCE=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL"];
+      for(var d=1;d<=15;d++){
+        var c=r[d];
+        if(!c)continue;
+        var cu=String(c).toUpperCase();
+        if(ABSENCE.indexOf(cu)>=0)continue;
+        // Garder le code brut (avec suffixe ', ", *, c etc.) pour distinguer cycles
+        return String(c);
+      }
+      return null;
+    }
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
@@ -32974,20 +32988,24 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       if(emp.teamHistory&&emp.teamHistory[key]){skipReasons.explicit++;return;}
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
-      if(cellCount<10){skipReasons.low_cells++;return;} // v9.650 : 20→10 (part-time OK)
+      if(cellCount<10){skipReasons.low_cells++;return;}
       var rhDays=[];
       Object.keys(r).forEach(function(d){
         if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));
       });
       rhDays.sort(function(a,b){return a-b;});
-      if(rhDays.length<2){skipReasons.low_rh++;return;} // v9.650 : 3→2 (court mois OK)
+      if(rhDays.length<2){skipReasons.low_rh++;return;}
       var cycle=_calcCycle(rhDays);
-      if(!cycle||cycle<2||cycle>15){skipReasons.no_cycle++;return;} // cycle plausible
+      if(!cycle||cycle<2||cycle>15){skipReasons.no_cycle++;return;}
       var offset=(rhDays[0]-1)%cycle;
-      // Signature robuste : cycle + offset (au lieu de liste rhDays brute)
-      var sig=cycle+":"+offset;
+      // v9.654 : signature inclut PREMIER CODE TRAVAIL (distingue miroir)
+      // ex équipe A "20/5" vs équipe miroir A' "22/6'" mêmes RH mais codes différents
+      var firstWork=_firstWorkCode(r)||"?";
+      // Normaliser légèrement : "20/5" et "20/5c" même groupe (suffixe c = CMC), garde *,',"
+      var firstWorkNorm=firstWork.replace(/c$/i,"");
+      var sig=cycle+":"+offset+":"+firstWorkNorm;
       if(!empSigs[sig])empSigs[sig]=[];
-      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,family:emp.family||"bj"});
+      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,firstWork:firstWorkNorm,family:emp.family||"bj"});
       detectableEmps.push(eid);
     });
     var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=2;}); // v9.650 : 3→2
@@ -33024,17 +33042,18 @@ function _cmcDetectTeamsByRestPattern(iy,im){
         g.emp.teamHistory[key]=teamId;
       });
     });
-    // 4. Détection miroirs : même cycle + offset diff = cycle/2 (rotation décalée d'un demi-cycle)
+    // 4. Détection miroirs v9.654 (Kevin règle confirmée) :
+    // Miroir = MÊMES jours RH (même cycle:offset) + premier code travail DIFFÉRENT.
+    // Ex Roulettes : équipe A "20/5" RH=[5,11,17,23,29] miroir A' "22/6'" RH=[5,11,17,23,29].
+    // Cas Kevin mai V1 : BARONE/AUREGLIA/PARIZIA/GANCIA/DAGIONI (équipe A "20/5")
+    //                   + BASILE/RINALDI/SIRIO/MALENFANT/MILLET/MARCHI (miroir "22/6'")
     var mirrors={};
     for(var i=0;i<teamGroups.length;i++){
       for(var j=i+1;j<teamGroups.length;j++){
         var a=teamGroups[i],b=teamGroups[j];
         if(a.family!==b.family)continue;
-        if(a.cycle!==b.cycle)continue;
-        var offDiff=Math.abs(a.offset-b.offset);
-        // Miroir = offset diff = cycle/2 (typique 6/2=3 ou 7/3-4)
-        var halfCycle=Math.floor(a.cycle/2);
-        if(offDiff===halfCycle||offDiff===a.cycle-halfCycle){
+        // MÊMES RH days (cycle + offset identiques) ET premier code travail différent
+        if(a.cycle===b.cycle && a.offset===b.offset && a.firstWork!==b.firstWork){
           mirrors[a.teamId]=b.teamId;
           mirrors[b.teamId]=a.teamId;
         }
