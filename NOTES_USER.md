@@ -77,6 +77,20 @@ Référence pour calibrer/valider l'algo `_cmcDetectTeamsByRestPattern`.
 
 **⚠ Important** : les chefs et employés en M longue durée sont dans des **cases SÉPARÉES** du PDF (sections différentes). Ne pas les confondre dans le parsing.
 
+### ⭐ Petite étoile rouge `*` = CHEF EUROPÉEN (Kevin 2026-05-16)
+
+Le marqueur `*` rouge à côté du nom dans le PDF SBM (ex `BARONE E *`, `PORASSO C *`, `HAREL H *`) signifie **chef européen** = compétence Roulette Européenne (E) validée à l'**école premium SBM** (Convention Art. 4, École Jeux 1 an minimum).
+
+⚠ **Distinction importante** :
+- Ma règle CLAUDE.md actuelle utilise `emp.senior=true` pour le marker `*` rouge et applique rotation 40 min (règle 55+ ans)
+- Kevin précise : le `*` signifie en fait "chef européen", PAS senior 55+
+- À clarifier : sont-ils corrélés ? (chefs européens sont souvent les plus anciens donc parfois 55+, mais pas systématique)
+
+**TODO algo** : ajouter `emp.chef_european = true` quand parser détecte `*` rouge, en parallèle de `emp.senior=true`. Permettra de :
+- Maintenir rétro-compat règle rotation 40 min
+- Ajouter règle séparée pour chefs européens (carrière, ancienneté, paie)
+- Affichage badge spécifique 🎖️ chef européen dans fiche emp
+
 ### Compétences BRTPECK encodées dans le code poste devant le nom
 
 Le code poste devant chaque nom (ex `BRTP+E.`) indique les compétences validées de l'employé selon la Formation Jeux SBM 2016 :
