@@ -22,6 +22,12 @@ on:
         options:
           - 'true'
           - 'false'
+  # v13.4.194 Kevin "compact toutes branches en parallèle" :
+  # Trigger immédiat via modification du yml lui-même → permet d'invoquer
+  # le cleanup quand Kevin demande sans attendre le cron quotidien.
+  push:
+    branches: [main]
+    paths: ['.github/workflows/cleanup-stale-branches.yml']
 
 permissions:
   contents: write
@@ -34,7 +40,7 @@ jobs:
   cleanup-merged:
     name: Delete merged claude/* branches
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 4 * * *' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '0 4 * * *' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,16 +56,37 @@ jobs:
       - name: Fetch all branches
         run: git fetch origin --prune
 
-      - name: Find merged claude/* branches
+      - name: Find merged claude/* branches (incl. squash-merged detection)
         id: find
         run: |
-          MERGED=$(git branch -r --merged origin/main | grep "origin/claude/" | sed 's|origin/||' | grep -v "claude/test-699LQ" || true)
-          echo "Merged claude/* branches found:"
-          echo "$MERGED"
-          COUNT=$(echo "$MERGED" | grep -c "claude/" || echo "0")
+          # v13.4.194 Kevin "compact toutes branches" : détection PR mergées
+          # par squash (que git --merged ne détecte pas) via gh CLI.
+          echo "[1/3] Branches détectées via git --merged origin/main :"
+          MERGED_DIRECT=$(git branch -r --merged origin/main | grep "origin/claude/" | sed 's|origin/||' | grep -v "claude/test-699LQ" || true)
+          echo "$MERGED_DIRECT"
+
+          echo "[2/3] Branches qui avaient PR fermée+mergée (squash detection) :"
+          # Récupère toutes branches claude/* qui ont une PR fermée+mergée vers main
+          MERGED_SQUASH=$(gh pr list --state merged --base main --limit 500 \
+            --json headRefName --jq '.[].headRefName' \
+            | grep -E "^claude/" | grep -v "claude/test-699LQ" || true)
+          echo "$MERGED_SQUASH"
+
+          echo "[3/3] Branches Kevin demande explicit delete :"
+          # Kevin 2026-05-16 : "Et de loque cette branche elle bug claude/continue-perfection-work-46Oic"
+          EXPLICIT="claude/continue-perfection-work-46Oic"
+          echo "$EXPLICIT"
+
+          # Combine + dedupe
+          ALL=$(printf "%s\n%s\n%s\n" "$MERGED_DIRECT" "$MERGED_SQUASH" "$EXPLICIT" | sort -u | grep -E "^claude/" || true)
+          echo ""
+          echo "=== TOTAL UNIQUE branches à delete ==="
+          echo "$ALL"
+          COUNT=$(echo "$ALL" | grep -c "claude/" || echo "0")
           echo "count=$COUNT" >> $GITHUB_OUTPUT
-          # Sauvegarde liste dans fichier pour étape suivante
-          echo "$MERGED" > /tmp/merged_branches.txt
+          echo "$ALL" > /tmp/merged_branches.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete merged branches (skip dry run)
         if: steps.find.outputs.count != '0' && github.event.inputs.dry_run != 'true'
