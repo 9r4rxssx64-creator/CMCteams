@@ -755,3 +755,9 @@
     transform: scale(1.08);
   }
 }
+
+/* v13.4.194 — Banner slide-in (Cloudflare infra status). */
+@keyframes ax-banner-slide-in {
+  from { transform: translate(-50%, -100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}

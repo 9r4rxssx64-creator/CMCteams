@@ -777,16 +777,18 @@ export function registerCoreSentinels(): void {
 
   /* Jet 5 : 8 sentinelles RÉELLES avec auto-repair (vs stubs morts Jet 4) */
 
-  /* 6. storage-watch : alerte si localStorage > 4 MB + GC auto */
+  /* 6. storage-watch : alerte si localStorage > 3.5 MB + GC auto agressif
+   * v13.4.194 (Kevin audit "Storage 4.25MB/5MB 85% quota") : seuil baissé
+   * 4MB → 3.5MB pour déclencher cleanup AVANT quota exceeded iOS Safari (5MB cap). */
   sentinels.register({
     id: 'storage-watch',
     name: 'Stockage saturation',
-    desc: 'Surveille localStorage et fait GC si > 4MB (anti quota exceeded)',
-    intervalMs: 30 * 60 * 1000, /* 30min */
+    desc: 'Surveille localStorage et fait GC si > 3.5MB (anti quota exceeded iOS)',
+    intervalMs: 10 * 60 * 1000, /* 10min (was 30min — Kevin storage 85% trop tard) */
     check: async () => {
       const size = JSON.stringify(localStorage).length;
       const sizeMB = size / (1024 * 1024);
-      if (sizeMB > 4) return { ok: false, msg: `localStorage ${sizeMB.toFixed(2)}MB > 4MB`, details: { sizeBytes: size } };
+      if (sizeMB > 3.5) return { ok: false, msg: `localStorage ${sizeMB.toFixed(2)}MB > 3.5MB (quota iOS 5MB)`, details: { sizeBytes: size } };
       return { ok: true, msg: `localStorage ${sizeMB.toFixed(2)}MB OK` };
     },
     autoFix: async () => {
@@ -810,7 +812,14 @@ export function registerCoreSentinels(): void {
       trim('apex_v13_fb_queue', 50);
       trim('ax_telemetry_in', 50);
       trim('ax_claude_todo', 20);
-      return { ok: freed > 0, msg: `Freed ${(freed / 1024).toFixed(1)} KB via cleanup` };
+      /* v13.4.194 : trim supplémentaire pour atteindre <3MB */
+      trim('apex_v13_audit_layout_history', 25);
+      trim('apex_v13_audit_functional_history', 25);
+      trim('apex_v13_conversation_active', 100);
+      trim('apex_v13_chat_sessions', 5);
+      trim('ax_voice_log', 50);
+      trim('apex_v13_backups', 5);
+      return { ok: freed > 0, msg: `Freed ${(freed / 1024).toFixed(1)} KB via cleanup agressif` };
     },
   });
 

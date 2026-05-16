@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.193';
+export const APP_VER = 'v13.4.194';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -264,6 +264,13 @@ async function bootstrap(): Promise<void> {
   await safeInit('functional-tester', async () => {
     const { apexFunctionalTester } = await import('../services/apex-functional-tester.js');
     (window as unknown as { apexFunctionalTester?: unknown }).apexFunctionalTester = apexFunctionalTester;
+  });
+
+  /* v13.4.194 (Kevin 2026-05-16 HTTP 503 Cloudflare) :
+   * Init Cloudflare status banner — restore banner si HTTP 503 récent. */
+  await safeInit('cloudflare-status', async () => {
+    const { cloudflareStatus } = await import('../services/cloudflare-status.js');
+    cloudflareStatus.init();
   });
 
   /* 2. Feature detection */
