@@ -4885,7 +4885,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.650";
+var APP_VER="v9.651";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12550,7 +12550,45 @@ function cmcShowCadresDiagPopup(){
   m.innerHTML=h;
   document.body.appendChild(m);
 }
-function _agentCadresWatch(){try{var y=A.year,m=A.month;var pl=gpl(y,m)||{};var days=getDays(y,m);var missing=[];A.employees.forEach(function(e){if((e.family||"")!=="cadres")return;if(!isEmpActive(e,y,m))return;var row=pl[e.id]||{};var filled=0;for(var d=1;d<=days;d++)if(row[d])filled++;if(filled===0)missing.push(e.name);});if(missing.length){agentAppendReport("cadres-watch","warn",missing.length+" cadres sans horaires: "+missing.slice(0,5).join(", "));var diag=lg("cmc_cadres_fallback_diag",null);if(diag&&diag.ts&&Date.now()-diag.ts<3600000)_cmcEscalate({missing:missing,diag:diag},"Cadres sans horaires apres fallback v9.447");}else{agentAppendReport("cadres-watch","ok","Tous cadres OK "+MFR[m]+" "+y);}}catch(e){agentAppendReport("cadres-watch","err",(e.message||"").slice(0,100));}}
+function _agentCadresWatch(){try{
+  var y=A.year,m=A.month;
+  var pl=gpl(y,m)||{};
+  var days=getDays(y,m);
+  // v9.651 (Kevin "quand je colle V1 employés, ne cherche pas inspecteurs/pit boss
+  // qui ne sont pas dans ce planning. Idem V2 cadres, ne cherche pas employés.")
+  // Si dernier import = "employees" (V1) → on ne flag PAS les cadres absents
+  // (ils attendent un import V2). Si dernier import = "cadres" (V2) → idem inverse.
+  // Seul scope "complete" (V1+V2 dans un PDF) doit flag tout.
+  var lastImport=null;
+  try{lastImport=lg("cmc_last_import_type_"+y+"-"+m,null);}catch(_){}
+  var importType=lastImport&&lastImport.type;
+  if(importType==="employees"){
+    // V1 importé seul → ne PAS flag cadres absents (normal qu'ils manquent)
+    agentAppendReport("cadres-watch","ok","V1 employés/chefs importé — cadres en attente import V2 (normal)");
+    return;
+  }
+  if(importType==="unknown"||!importType){
+    // Pas d'import récent ou type indéterminé → silencieux (évite faux warning)
+    agentAppendReport("cadres-watch","ok","Pas d'import récent identifié — agent inactif");
+    return;
+  }
+  // V2 cadres ou complete : on flag les cadres réellement absents
+  var missing=[];
+  A.employees.forEach(function(e){
+    if((e.family||"")!=="cadres")return;
+    if(!isEmpActive(e,y,m))return;
+    var row=pl[e.id]||{};
+    var filled=0;for(var d=1;d<=days;d++)if(row[d])filled++;
+    if(filled===0)missing.push(e.name);
+  });
+  if(missing.length){
+    agentAppendReport("cadres-watch","warn",missing.length+" cadres sans horaires: "+missing.slice(0,5).join(", "));
+    var diag=lg("cmc_cadres_fallback_diag",null);
+    if(diag&&diag.ts&&Date.now()-diag.ts<3600000)_cmcEscalate({missing:missing,diag:diag},"Cadres sans horaires apres fallback v9.447");
+  }else{
+    agentAppendReport("cadres-watch","ok","Tous cadres OK "+MFR[m]+" "+y);
+  }
+}catch(e){agentAppendReport("cadres-watch","err",(e.message||"").slice(0,100));}}
 // v9.616 — Sentinelle meta-completeness-watch (1×/jour) :
 // Audit cohérence A.overrides_meta vs A.overrides + completeness score persisté.
 // Escalade si score < 75 ou si meta présente pour emp absent de overrides.
