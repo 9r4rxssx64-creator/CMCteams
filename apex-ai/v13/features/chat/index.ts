@@ -2456,7 +2456,10 @@ export function render(rootEl: HTMLElement): void {
         }
         if (voicePrint.isListening()) {
           voicePrint.stopWakeWord();
-          if (wakeBtn) wakeBtn.style.background = '';
+          if (wakeBtn) {
+            wakeBtn.style.background = '';
+            wakeBtn.style.animation = '';
+          }
           toast.success('Wake word arrêté');
           return;
         }
@@ -2468,29 +2471,27 @@ export function render(rootEl: HTMLElement): void {
           });
           return;
         }
-        /* Optionnel : feedback live de la transcription dans le textarea (user voit que ça marche) */
-        voicePrint.onWakeInterim((transcript: string, isFinal: boolean) => {
-          const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
-          if (ta && transcript && ta.dataset['wakeInterim'] === '1') {
-            ta.placeholder = isFinal
-              ? `🎙 ${transcript.slice(0, 60)}`
-              : `🎙 ${transcript.slice(0, 60)}…`;
-          }
-        });
+        /* v13.4.192 fix Kevin "le micro fonctionne mais en permanence, pas comme Siri" :
+         * AVANT : onWakeInterim écrivait le transcript en temps réel dans placeholder
+         *         → Kevin voyait "écrire en permanence" avant le wake word.
+         * APRÈS : aucune écriture jusqu'à détection effective de "Dis Apex".
+         * Indicateur visuel discret : ondulation icon 👂 mais aucun texte affiché. */
         const r = voicePrint.startWakeWord((transcript: string) => {
+          /* Wake word DÉTECTÉ → maintenant on capture + soumet */
           const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
           if (ta) {
             ta.value = transcript;
-            ta.placeholder = '';
+            ta.placeholder = 'Demande, dicte ou colle…';
             const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
             form?.requestSubmit();
+            toast.info('🎙 Dis Apex détecté → envoi…', { duration: 2000 });
           }
         });
         if (r.ok && wakeBtn) {
+          /* Indicateur visuel : icon 👂 verte pulsante. Pas de texte placeholder. */
           wakeBtn.style.background = 'linear-gradient(135deg,#22cc77,#1a9a5a)';
-          const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
-          if (ta) ta.dataset['wakeInterim'] = '1';
-          toast.success('👂 "Dis Apex" actif — parle quand tu veux');
+          wakeBtn.style.animation = 'ax-wake-pulse 1.8s ease-in-out infinite';
+          toast.success('👂 Écoute passive activée — dis "Dis Apex" pour parler', { duration: 4000 });
         } else {
           toast.warn(`Wake word fail : ${r.reason ?? 'inconnu'}`);
         }

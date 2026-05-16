@@ -741,3 +741,17 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* v13.4.192 (Kevin "Dis Apex comme Siri") — Pulse écoute passive wake word.
+ * Indicateur visuel discret : ondulation verte lente sur le bouton 👂 quand
+ * wake word actif. PAS d'écriture interim placeholder (Kevin "permanence"). */
+@keyframes ax-wake-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 204, 119, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 12px 6px rgba(34, 204, 119, 0);
+    transform: scale(1.08);
+  }
+}
