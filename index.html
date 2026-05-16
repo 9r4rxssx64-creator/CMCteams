@@ -4559,6 +4559,21 @@ function isEmpActive(emp,y,m){
 }
 // Équipe d'un employé pour un mois donné
 // Priorité : teamHistory[y-m] (import) > team le plus récent antérieur > emp.team (fallback)
+// v9.655 (Kevin "RAMOS chef BJ mai → roulettes juin = changement de secteur pour période")
+// familyForMonth retourne la family du mois (via familyHistory[key]) au lieu de emp.family
+// figé. Permet aux vues de refléter le secteur courant de l'emp.
+function familyForMonth(emp,y,m,opts){
+  if(!emp)return null;
+  var key=y+"-"+m;
+  var strict=opts&&opts.strict;
+  try{if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];}catch(e){return strict?null:(emp.family||"bj");}
+  if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];
+  // Chercher familyHistory plus récent antérieur (NON, règle Kevin "zéro historique")
+  // En strict mode → null (force section "Pas de planning"). Sinon fallback emp.family DEF_EMP.
+  if(strict)return null;
+  return emp.family||"bj";
+}
+
 function teamForMonth(emp,y,m,opts){
   if(!emp)return null;
   var key=y+"-"+m;
@@ -4885,7 +4900,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.654";
+var APP_VER="v9.655";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36028,15 +36043,24 @@ function doImport(){
           if(typeof _audit==="function")_audit("cadre_role_change",(A.user&&A.user.id)||"import",emp.id,_oldRole||"",_contextCadreRole+" ("+_contextTeam+")");
         }
       }
-      // v9.590 ROLLBACK v9.584 (Kevin "y en a qui sont tout seuls dans les equipes,
-      // les equipes ne sont plus du tout bonnes") : update emp.team pour DEF_EMP
-      // creait fragmentation des equipes quand parser ratait detection section.
-      // Retour comportement v9.583 : DEF_EMP garde leur team du code (stable),
-      // non-DEF_EMP suit _contextTeam. teamHistory[key] continue de tracer per-mois.
+      // v9.590 ROLLBACK v9.584 + v9.655 (Kevin "changement de secteur pour période") :
+      // - DEF_EMP garde leur team du code (stable), non-DEF_EMP suit _contextTeam
+      // - teamHistory[key] trace per-mois (déjà acquis)
+      // - v9.655 : familyHistory[key] aussi écrit pour TOUS emps (DEF_EMP inclus)
+      //   permet à RAMOS (chef BJ mai) de devenir roulettes juin sans modifier
+      //   emp.family de base. Vues afficheront secteur du mois via familyForMonth().
       if(_contextTeam){
         if(!emp.teamHistory)emp.teamHistory={};
         if(emp.teamHistory[key]!==_contextTeam){emp.teamHistory[key]=_contextTeam;_changed=true;}
         if(!_isDefEmp&&emp.team!==_contextTeam){emp.team=_contextTeam;_changed=true;}
+      }
+      // v9.655 — familyHistory per-mois (changement de secteur temporaire)
+      if(importFamily){
+        if(!emp.familyHistory)emp.familyHistory={};
+        if(emp.familyHistory[key]!==importFamily){
+          emp.familyHistory[key]=importFamily;
+          _changed=true;
+        }
       }
       // Mettre à jour le poste depuis le code poste du PDF (colonne 0 si présent) — PDF = source de vérité
       if(nameIdx===1&&p0raw){
