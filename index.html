@@ -4871,7 +4871,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.615";
+var APP_VER="v9.660";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -26924,8 +26924,8 @@ function vAdmin(){
     // Planning
     {ic:"\ud83d\udce5",lb:"Importer un planning PDF",fn:"sv('import')"},
     {ic:"\u2705",lb:"V\u00e9rifier l\u2019import",fn:"sv('importVerif')"},
-    {ic:"\ud83e\udde0",lb:"Parser IA (apprentissage + tests)",fn:"sv('parserintel')"}, // v9.522
-    {ic:"\ud83d\udd04",lb:"Comparer 2 imports",fn:"sv('parsercompare')"}, // v9.522
+    {ic:"\ud83d\udcda",lb:"Apprentissage parser (formats appris)",fn:"sv('parserlearning')"}, // v9.660 \u2014 redirige vers vue existante
+    {ic:"\ud83d\udccb",lb:"Audit & historique imports",fn:"sv('auditlog')"}, // v9.660 \u2014 redirige vers vue existante
     {ic:"\u26a0\ufe0f",lb:"Alertes (conflits repos, s\u00e9ries)",fn:"sv('conflits')"},
     {ic:"\ud83d\ude34",lb:"Qui est libre ? (par jour)",fn:"sv('quilibre')"},
     {ic:"\ud83d\udd04",lb:"Dupliquer le mois pr\u00e9c\u00e9dent",fn:"duplicateMonthFromPrev()"},
@@ -27759,12 +27759,17 @@ function runAudit(y,m){
         return;
       }
       // Vraiment absent : nom n'apparait NULLE PART dans le PDF
+      // v9.660 — Kevin "Pour les similaires bien verifie l'orthographe, ce n'est pas vraiment similaire"
+      // Strict : suggere SEULEMENT si surname (1er mot) identique OU similarite >= 0.85 (typo)
       var suggestions=[];
       if(ref&&ref.rows){
         var allImportedEmps=[];
         importedIds.forEach(function(eid){var e=A.employees.find(function(x){return x.id===eid;});if(e)allImportedEmps.push(e.name);});
+        var empSurname=String(emp.name||'').trim().toUpperCase().split(/\s+/)[0]||'';
         allImportedEmps.forEach(function(n){
-          if(_strSim(emp.name,n)>0.55)suggestions.push(n);
+          var nSurname=String(n||'').trim().toUpperCase().split(/\s+/)[0]||'';
+          if(empSurname && empSurname===nSurname){suggestions.push(n);return;}
+          if(_strSim(emp.name,n)>=0.85)suggestions.push(n);
         });
       }
       results.absentDuPDF.push({id:emp.id,name:emp.name,team:emp.team,
@@ -31487,8 +31492,8 @@ function vImport(){
       <button class="btn" onclick="cmcImportTestRunAll()" title="Lance les 55+ tests parser et ouvre la vue d\u00e9taill\u00e9e par cat\u00e9gorie (v9.521)" style="flex:0 0 auto;min-width:170px;min-height:44px;justify-content:center;padding:12px;font-size:13px;border-radius:10px;background:rgba(218,165,32,.18);border:1px solid rgba(218,165,32,.5);color:#f0c850;font-weight:700">
         \ud83e\uddea Lancer 55+ tests parser
       </button>
-      <button class="btn" onclick="sv('parserintel')" title="Voir ce que l'app a appris sur les formats PDF (v9.522)" style="flex:0 0 auto;min-width:140px;min-height:44px;justify-content:center;padding:12px;font-size:13px;border-radius:10px;background:rgba(74,200,160,.15);border:1px solid rgba(74,200,160,.45);color:#7adcb0;font-weight:700">
-        \ud83e\udde0 Parser IA
+      <button class="btn" onclick="sv('parserlearning')" title="Voir ce que l'app a appris sur les formats PDF (v9.660 \u2014 redirige vers vue existante)" style="flex:0 0 auto;min-width:140px;min-height:44px;justify-content:center;padding:12px;font-size:13px;border-radius:10px;background:rgba(74,200,160,.15);border:1px solid rgba(74,200,160,.45);color:#7adcb0;font-weight:700">
+        \ud83d\udcda Apprentissage
       </button>
       <button class="btn" onclick="sv('parserlearning')" title="Apprentissage parser PDF : formats appris, patterns reusis, journal decisions (v9.527)" style="flex:0 0 auto;min-width:170px;min-height:44px;justify-content:center;padding:12px;font-size:13px;border-radius:10px;background:rgba(160,96,255,.15);border:1px solid rgba(160,96,255,.5);color:#c080ff;font-weight:700">
         \ud83d\udcda Apprentissage parser
@@ -36387,6 +36392,20 @@ function buildIASystemPrompt(){
   s+="\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n";
   s+="\nR\u00e9ponds en fran\u00e7ais, sois concis et pr\u00e9cis. Cite les articles de la convention quand pertinent (ex: \"Article 17.5\") et les lieux pr\u00e9cis du CMC/CDP quand on demande o\u00f9 jouer \u00e0 tel jeu. Tu peux r\u00e9pondre \u00e0 toute question sur les plannings, \u00e9quipes, horaires, absences, droits, cong\u00e9s, salaires, promotions, codes paie, r\u00e8gles des jeux, lieux, dress codes, diff\u00e9rences CMC/CDP.";
   try{var mem=lg("cmc_persistent_memory",[]);var apexMem=lg("ax_persistent_memory",[]);var allMem=(mem||[]).concat(apexMem||[]).slice(-30);if(allMem.length){s+="\n\nMEMOIRE PERMANENTE (derniers "+allMem.length+" faits):";allMem.forEach(function(m){s+="\n- ["+(m.category||"?")+"] "+(m.fact||"").slice(0,200);});}s+="\n\nPour ajouter a la memoire: cmcMemoryAdd(category, fact). Shared avec Apex via Firebase. Consulter avant d'affirmer, jamais inventer.";}catch(_){}
+  // v9.660 — Visuel planning attache (Kevin "Apex ne retrouve pas l'image")
+  try{
+    var _vkey=A.year+"-"+A.month;
+    var _vis=lg("cmc_visual_planning_"+_vkey,null);
+    if(_vis&&_vis.dataUrl){
+      var _vSizeKB=Math.round((_vis.size||0)/1024);
+      s+="\n\n--- VISUEL PLANNING ATTACHE ("+MFR[A.month]+" "+A.year+") ---\n";
+      s+="OUI une image/PDF de reference visuelle EST attachee pour ce mois : "+(_vis.name||"sans nom")+" ("+_vSizeKB+" KB, "+(_vis.mime||"?")+").\n";
+      s+="Quand Kevin te demande 'as-tu recu l'image ?' ou 'verifie l'import', confirme OUI : visuel disponible, attache le "+(new Date(_vis.ts||0).toLocaleString("fr-FR"))+".\n";
+      s+="Le visuel sert de REFERENCE pour verifier traits/couleurs SBM. Compare avec A.overrides["+_vkey+"] pour detecter divergences.\n";
+    }else{
+      s+="\nNB : aucun visuel planning attache pour "+MFR[A.month]+" "+A.year+". Si Kevin demande 'as-tu l'image ?' reponds NON et propose d'aller dans Admin > Import > 'Joindre visuel planning'.\n";
+    }
+  }catch(_){}
   /* v9.506 — Inject memory pro + checklist auto */
   try{if(typeof cmcGetWorkflowReminder==="function")s+=cmcGetWorkflowReminder();}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ctx-unknown",_e);}catch(__){}}
   return s;
