@@ -1093,132 +1093,149 @@ class VoicePrint {
       return { ok: true };
     }
     try {
-      const SpeechRec =
-        (window as unknown as { SpeechRecognition?: new () => unknown }).SpeechRecognition ??
-        (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
-      if (!SpeechRec) return { ok: false, reason: 'SpeechRecognition undefined' };
-
-      const isiOS = isiOSSafari();
-      const rec = new SpeechRec() as {
-        continuous: boolean;
-        interimResults: boolean;
-        lang: string;
-        onresult: (event: {
-          results: ArrayLike<{ 0: { transcript: string }; isFinal?: boolean }> & { length: number };
-        }) => void;
-        onerror: (event: { error?: string }) => void;
-        onend: () => void;
-        start: () => void;
-        stop: () => void;
-      };
-      rec.continuous = !isiOS; /* iOS Safari : continuous unstable, restart via onend */
-      rec.interimResults = true;
-      rec.lang = 'fr-FR';
-      this.wakeNoSpeechRetries = 0;
-
-      rec.onresult = (event) => {
-        const results = event.results;
-        for (let i = 0; i < results.length; i++) {
-          const transcript = results[i]?.[0]?.transcript?.toLowerCase() ?? '';
-          const isFinal = results[i]?.isFinal ?? false;
-          /* Reset compteur no-speech dès qu'on capte du son */
-          this.wakeNoSpeechRetries = 0;
-          /* Live interim feedback (UI panel diagnostic ou toast progress) */
-          if (this.wakeInterimCallback) {
-            try {
-              this.wakeInterimCallback(transcript, isFinal);
-            } catch {
-              /* ignore callback errors */
-            }
-          }
-          pushVoiceLog({
-            ts: Date.now(),
-            evt: isFinal ? 'result' : 'interim',
-            src: 'wake-word',
-            detail: transcript.slice(0, 80),
-          });
-          if (isWakeMatch(transcript)) {
-            pushVoiceLog({ ts: Date.now(), evt: 'wake', src: 'wake-word', detail: transcript.slice(0, 80) });
-            void auditLog.record('voice.wake_detected', {
-              details: { transcript: transcript.slice(0, 50) },
-            });
-            /* Iter copie pour éviter mutation pendant exec */
-            const cbs = [...this.wakeCallbacks];
-            for (const cb of cbs) {
-              try {
-                cb(transcript);
-              } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : String(err);
-                logger.warn('voice-print', 'wake callback threw', { err: msg });
-              }
-            }
-          }
-        }
-      };
-
-      rec.onerror = (event) => {
-        const err = event?.error ?? 'unknown';
-        pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word', detail: err });
-
-        if (err === 'no-speech') {
-          this.wakeNoSpeechRetries++;
-          if (this.wakeNoSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
-            logger.warn('voice-print', `${MAX_NO_SPEECH_RETRIES}× no-speech consécutifs → suspend 30s`);
-            pushVoiceLog({
-              ts: Date.now(),
-              evt: 'suspend',
-              src: 'wake-word',
-              detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
-            });
-            /* Suspend temporaire : stop puis restart auto après 30s */
-            this.suspendWakeAndResumeLater();
-          }
-          return;
-        }
-
-        if (err === 'not-allowed' || err === 'service-not-allowed') {
-          logger.warn('voice-print', 'permission micro refusée');
-          pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word', detail: 'denied' });
-          try {
-            if (typeof localStorage !== 'undefined') {
-              localStorage.setItem(PERMISSION_DENIED_KEY, String(Date.now()));
-            }
-          } catch {
-            /* ignore */
-          }
-          this.stopWakeWord();
-          return;
-        }
-
-        /* 'aborted', 'network', 'audio-capture' : recovery via onend (silencieux) */
-      };
-
-      rec.onend = () => {
-        pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word' });
-        if (!this.wakeListening) return;
-        /* Restart sur iOS (continuous=false) ou recovery erreur */
-        setTimeout(() => {
-          if (!this.wakeListening || this.wakeSuspendTimer !== null) return;
-          try {
-            rec.start();
-            pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word' });
-          } catch {
-            /* ignore double-start race InvalidStateError — restart au prochain onend */
-          }
-        }, RESTART_DELAY_MS);
-      };
-
-      this.wakeRecognition = rec;
+      /* v13.4.207 Kevin "Dis Apex ne marche pas" — FIX iOS Safari restart :
+       * createWakeRecognition() crée une NOUVELLE instance à chaque appel.
+       * Réutiliser la même instance après onend plante silencieusement sur iOS
+       * (InvalidStateError "recognition has already started"). */
+      const initial = this.createWakeRecognition();
+      if (!initial) return { ok: false, reason: 'SpeechRecognition undefined' };
+      this.wakeRecognition = initial;
       this.wakeCallbacks = [callback];
       this.wakeListening = true;
-      rec.start();
-      pushVoiceLog({ ts: Date.now(), evt: 'start', src: 'wake-word', detail: isiOS ? 'iOS' : 'desktop' });
+      this.wakeNoSpeechRetries = 0;
+      initial.start();
+      pushVoiceLog({ ts: Date.now(), evt: 'start', src: 'wake-word', detail: isiOSSafari() ? 'iOS' : 'desktop' });
       return { ok: true };
     } catch (err: unknown) {
       const reason = err instanceof Error ? err.message : String(err);
       pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word', detail: `start: ${reason}` });
       return { ok: false, reason };
     }
+  }
+
+  /**
+   * v13.4.207 — Crée une instance fresh de SpeechRecognition wake word, wire tous
+   * les handlers. iOS Safari : OBLIGATOIRE de créer une nouvelle instance à
+   * chaque restart (réutiliser l'instance après onend plante).
+   */
+  private createWakeRecognition(): {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: (event: { results: ArrayLike<{ 0: { transcript: string }; isFinal?: boolean }> & { length: number } }) => void;
+    onerror: (event: { error?: string }) => void;
+    onend: () => void;
+    start: () => void;
+    stop: () => void;
+  } | null {
+    const SpeechRec =
+      (window as unknown as { SpeechRecognition?: new () => unknown }).SpeechRecognition ??
+      (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
+    if (!SpeechRec) return null;
+    const isiOS = isiOSSafari();
+    const rec = new SpeechRec() as {
+      continuous: boolean;
+      interimResults: boolean;
+      lang: string;
+      onresult: (event: { results: ArrayLike<{ 0: { transcript: string }; isFinal?: boolean }> & { length: number } }) => void;
+      onerror: (event: { error?: string }) => void;
+      onend: () => void;
+      start: () => void;
+      stop: () => void;
+    };
+    rec.continuous = !isiOS;
+    rec.interimResults = true;
+    rec.lang = 'fr-FR';
+
+    rec.onresult = (event) => {
+      const results = event.results;
+      for (let i = 0; i < results.length; i++) {
+        const transcript = results[i]?.[0]?.transcript?.toLowerCase() ?? '';
+        const isFinal = results[i]?.isFinal ?? false;
+        this.wakeNoSpeechRetries = 0;
+        if (this.wakeInterimCallback) {
+          try {
+            this.wakeInterimCallback(transcript, isFinal);
+          } catch {
+            /* ignore */
+          }
+        }
+        pushVoiceLog({
+          ts: Date.now(),
+          evt: isFinal ? 'result' : 'interim',
+          src: 'wake-word',
+          detail: transcript.slice(0, 80),
+        });
+        if (isWakeMatch(transcript)) {
+          pushVoiceLog({ ts: Date.now(), evt: 'wake', src: 'wake-word', detail: transcript.slice(0, 80) });
+          void auditLog.record('voice.wake_detected', {
+            details: { transcript: transcript.slice(0, 50) },
+          });
+          const cbs = [...this.wakeCallbacks];
+          for (const cb of cbs) {
+            try {
+              cb(transcript);
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : String(err);
+              logger.warn('voice-print', 'wake callback threw', { err: msg });
+            }
+          }
+        }
+      }
+    };
+
+    rec.onerror = (event) => {
+      const err = event?.error ?? 'unknown';
+      pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word', detail: err });
+      if (err === 'no-speech') {
+        this.wakeNoSpeechRetries++;
+        if (this.wakeNoSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
+          logger.warn('voice-print', `${MAX_NO_SPEECH_RETRIES}× no-speech consécutifs → suspend 30s`);
+          pushVoiceLog({
+            ts: Date.now(),
+            evt: 'suspend',
+            src: 'wake-word',
+            detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
+          });
+          this.suspendWakeAndResumeLater();
+        }
+        return;
+      }
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        logger.warn('voice-print', 'permission micro refusée');
+        pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word', detail: 'denied' });
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(PERMISSION_DENIED_KEY, String(Date.now()));
+          }
+        } catch {
+          /* ignore */
+        }
+        this.stopWakeWord();
+        return;
+      }
+      /* 'aborted', 'network', 'audio-capture' : recovery via onend (silencieux) */
+    };
+
+    rec.onend = () => {
+      pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word' });
+      if (!this.wakeListening) return;
+      /* v13.4.207 FIX iOS Safari : recréer instance fresh (PAS rec.start() réutilisé). */
+      setTimeout(() => {
+        if (!this.wakeListening || this.wakeSuspendTimer !== null) return;
+        try {
+          const next = this.createWakeRecognition();
+          if (!next) return;
+          this.wakeRecognition = next;
+          next.start();
+          pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word' });
+        } catch {
+          /* ignore — retry au prochain onend */
+        }
+      }, RESTART_DELAY_MS);
+    };
+
+    return rec;
   }
 
   /**
@@ -1238,9 +1255,13 @@ class VoicePrint {
     this.wakeSuspendTimer = setTimeout(() => {
       this.wakeSuspendTimer = null;
       this.wakeNoSpeechRetries = 0;
-      if (!this.wakeListening || !this.wakeRecognition) return;
+      if (!this.wakeListening) return;
+      /* v13.4.207 — fresh instance après suspend (l'ancienne est morte) */
       try {
-        (this.wakeRecognition as { start: () => void }).start();
+        const next = this.createWakeRecognition();
+        if (!next) return;
+        this.wakeRecognition = next;
+        next.start();
         pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word', detail: 'after-suspend' });
       } catch {
         /* ignore */
