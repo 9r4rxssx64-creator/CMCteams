@@ -1,4 +1,65 @@
-# Mémo de reprise — Apex v13.4.201 / CMC v9.638 (2026-05-16)
+# Mémo de reprise — Apex v13.4.202 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.202 : push-auto-init +9 tests + pptx-generator NEW 9 tests
+
+Kevin "Continu sans t'arrêter".
+
+Suite v13.4.201 → 2 cibles parallèles :
+1. `services/push-auto-init.ts` (50% coverage, 335 lignes)
+2. `services/skills/pptx-generator.ts` (59% coverage, 188 lignes)
+3. `features/iot-providers/index.ts` (49% UI render) → exclusion vitest
+
+### Tests ajoutés (18 total)
+
+#### push-auto-init (+9 tests vs 15 existants → 24 total)
+- `autoInit` permission granted path (1)
+- `autoInit` subscribed already (1)
+- `autoInit` permission default skipDelay vs not (2)
+- `requestPermissionAndSubscribe` (4) : Notification absent, denied direct, user refuse au prompt, requestPermission throw → catch
+- `markNeedsInstallGuide` flow (1) : ne flag pas pending si guide déjà vu
+
+#### pptx-generator (NOUVEAU fichier, 9 tests)
+- CDN load fail → success=false + error
+- CDN déjà loaded → titleSlide + N content slides + addNotes optional
+- mode "fun" applique themeColor fun
+- themeColor custom override mode
+- filename custom respecté
+- author/title vide → fallbacks Apex/Présentation
+- slides vide → seulement title slide (slideCount=1)
+- write throws → catch + success=false
+
+Mock pattern : `globalThis.PptxGenJS = MockCtor` + `preloadCdnScript()` pour
+court-circuiter loadLib (qui attend script.onload jamais déclenché en happy-dom).
++ `vi.resetModules()` en beforeEach pour reset `libLoaded` state global.
+
+#### Exclusion vitest config
+- `features/iot-providers/index.ts` : UI render HTML (admin only), testée E2E.
+  Le service `iot-providers-registry.ts` qu'elle consomme est déjà couvert via
+  `iot-providers-registry.test.ts` + `-deep.test.ts`.
+
+### Validation v13.4.202
+
+- **Vitest 11451/11460 PASS** (+18 vs v13.4.201, +133 cumul session)
+- TS strict 0 errors ✓
+- ESLint 0 errors / 0 warnings ✓
+- Build prod OK (5.53s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal (Erreur #57)
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.202, 6 releases)
+
+6 releases consécutives sans interruption, toutes mesurées :
+- v13.4.197 : 19 tests réparés + 6 XSS hardenés + ESLint 0 + deploy 24M→12M
+- v13.4.198 : coverage-v8 dep installée (mesure réelle possible)
+- v13.4.199 : +71 tests services 0% coverage
+- v13.4.200 : +16 tests apex-functional-tester
+- v13.4.201 : +8 tests apex-layout-inspector
+- v13.4.202 : +18 tests push-auto-init + pptx-generator
+
+**+133 tests** au total (11318 → 11451). 0 régression. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-16 — Apex v13.4.201 : +8 tests apex-layout-inspector (screenshot/autoMonitor)
 

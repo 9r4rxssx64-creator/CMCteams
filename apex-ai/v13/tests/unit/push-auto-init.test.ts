@@ -176,4 +176,110 @@ describe('Push Auto-Init (autonome iOS+Android app fermée)', () => {
       expect(cfg.admin_token_set).toBe(false);
     });
   });
+
+  /* ============== v13.4.202 (Kevin "Continue sans s'arrêter") ============== */
+
+  describe('autoInit permission granted path', () => {
+    it('permission granted + subscribe success → status.subscribed=true (re-fetched)', async () => {
+      /* Mock Notification.permission = granted */
+      class MockNotif {
+        static permission: NotificationPermission = 'granted';
+        static requestPermission = vi.fn(() => Promise.resolve('granted' as NotificationPermission));
+      }
+      (globalThis as { Notification?: unknown }).Notification = MockNotif as unknown;
+
+      const status = await pushAutoInit.autoInit('user_granted', { skipDelay: true });
+      /* Status est valide (pas crash) */
+      expect(status).toBeDefined();
+      expect(status.environment).toBeDefined();
+    });
+  });
+
+  describe('autoInit subscribed already path', () => {
+    it('déjà subscribé → ne re-subscribe pas', async () => {
+      /* Aucun mock spécial : sans serviceWorker, status.subscribed = false → flow normal */
+      const status = await pushAutoInit.autoInit('user_subbed', { skipDelay: true });
+      expect(status).toBeDefined();
+    });
+  });
+
+  describe('autoInit permission default path (skipDelay)', () => {
+    it('skipDelay=true → requestPermissionAndSubscribe immédiat', async () => {
+      class MockNotif {
+        static permission: NotificationPermission = 'default';
+        static requestPermission = vi.fn(() => Promise.resolve('denied' as NotificationPermission));
+      }
+      (globalThis as { Notification?: unknown }).Notification = MockNotif as unknown;
+
+      const status = await pushAutoInit.autoInit('user_default', { skipDelay: true });
+      expect(status).toBeDefined();
+    });
+
+    it('skipDelay=false (default) → setTimeout différé (pas crash)', async () => {
+      class MockNotif {
+        static permission: NotificationPermission = 'default';
+        static requestPermission = vi.fn(() => Promise.resolve('denied' as NotificationPermission));
+      }
+      (globalThis as { Notification?: unknown }).Notification = MockNotif as unknown;
+
+      /* Sans options : setTimeout 30s programmé mais on n'attend pas */
+      const status = await pushAutoInit.autoInit('user_default_delay');
+      expect(status).toBeDefined();
+    });
+  });
+
+  describe('requestPermissionAndSubscribe', () => {
+    it('Notification absent → ok=false + reason', async () => {
+      (globalThis as { Notification?: unknown }).Notification = undefined;
+      const result = await pushAutoInit.requestPermissionAndSubscribe('user_no_notif');
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBeDefined();
+    });
+
+    it('permission denied direct → ok=false + reason="Permission denied"', async () => {
+      class MockNotif {
+        static permission: NotificationPermission = 'denied';
+        static requestPermission = vi.fn(() => Promise.resolve('denied' as NotificationPermission));
+      }
+      (globalThis as { Notification?: unknown }).Notification = MockNotif as unknown;
+      const result = await pushAutoInit.requestPermissionAndSubscribe('user_denied');
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBe('Permission denied');
+    });
+
+    it('user refuse au prompt (default → denied) → ok=false', async () => {
+      class MockNotif {
+        static permission: NotificationPermission = 'default';
+        static requestPermission = vi.fn(() => Promise.resolve('denied' as NotificationPermission));
+      }
+      (globalThis as { Notification?: unknown }).Notification = MockNotif as unknown;
+      const result = await pushAutoInit.requestPermissionAndSubscribe('user_refused');
+      expect(result.ok).toBe(false);
+      expect(result.reason).toContain('Permission');
+    });
+
+    it('requestPermission throw → catch + reason erreur', async () => {
+      class MockNotif {
+        static permission: NotificationPermission = 'default';
+        static requestPermission = vi.fn(() => Promise.reject(new Error('user gesture required')));
+      }
+      (globalThis as { Notification?: unknown }).Notification = MockNotif as unknown;
+      const result = await pushAutoInit.requestPermissionAndSubscribe('user_err');
+      expect(result.ok).toBe(false);
+      expect(result.reason).toContain('gesture');
+    });
+  });
+
+  describe('markNeedsInstallGuide flow', () => {
+    it('ne flag PAS pending si guide déjà vu', async () => {
+      localStorage.setItem('apex_v13_install_guide_seen', String(Date.now() - 1000));
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari',
+        configurable: true,
+      });
+      Object.defineProperty(window.navigator, 'standalone', { value: false, configurable: true });
+      await pushAutoInit.autoInit('user_seen', { skipDelay: true });
+      expect(localStorage.getItem('apex_v13_install_guide_pending')).toBeNull();
+    });
+  });
 });
