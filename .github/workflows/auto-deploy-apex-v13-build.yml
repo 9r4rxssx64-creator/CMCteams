@@ -1,0 +1,97 @@
+name: Auto-deploy Apex v13 build to apex-ai-v13/
+
+# Demande Kevin 2026-05-08 21h00 ABSOLUE :
+# "Apex ne veut pas se mettre à jour comme tu avais prévu" — cause racine
+# identifiée : GitHub Pages sert apex-ai-v13/ (build), mais source apex-ai/v13/
+# n'était pas auto-rebuildé. Cet workflow le fait en autonomie.
+#
+# RÉSOUT DÉFINITIVEMENT le gap source vs build qui causait
+# "v13.3.78 bloqué malgré force quit + clear cache".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apex-ai/v13/**'
+      - '!apex-ai/v13/dist/**'
+      - '!apex-ai/v13/coverage/**'
+      - '!apex-ai/v13/node_modules/**'
+      - '!apex-ai/v13/**/*.test.ts'
+  # v13.4.168 (Kevin 2026-05-15) : anti-récidive Erreur #54 — schedule cron 30 min
+  # détecte drift source vs apex-ai-v13/ même si push trigger raté.
+  # Étape "Sync dist/ to apex-ai-v13/" idempotente : skip si déjà à jour.
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-deploy-apex-v13
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'apex-ai/v13/package-lock.json'
+
+      - name: Install deps
+        working-directory: apex-ai/v13
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: TypeScript strict check
+        working-directory: apex-ai/v13
+        run: npx tsc --noEmit
+
+      - name: Build production bundle
+        working-directory: apex-ai/v13
+        run: npx vite build
+
+      - name: Sync dist/ to apex-ai-v13/
+        run: |
+          set -e
+          # Backup non-build files (sw.js, manifest.json sont copiés depuis source)
+          mkdir -p /tmp/apex-deploy
+          # Clean apex-ai-v13/ (sauf .git si présent)
+          find apex-ai-v13 -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          # Copy dist content
+          cp -r apex-ai/v13/dist/* apex-ai-v13/
+          # SW + manifest non bundlés par Vite
+          cp apex-ai/v13/sw.js apex-ai-v13/sw.js
+          cp apex-ai/v13/manifest.json apex-ai-v13/manifest.json
+          # Verify version cohérence
+          echo "=== Verification ==="
+          grep "data-app-ver" apex-ai-v13/index.html | head -1
+          grep "CACHE_VERSION" apex-ai-v13/sw.js | head -1
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "apex-deploy-bot"
+          git config user.email "apex-deploy-bot@noreply.github.com"
+          git add apex-ai-v13/
+          if git diff --cached --quiet; then
+            echo "No changes to deploy"
+            exit 0
+          fi
+          # Extraire APP_VER pour message commit
+          APP_VER=$(grep "data-app-ver" apex-ai-v13/index.html | sed 's/.*data-app-ver="\([^"]*\)".*/\1/')
+          git commit -m "Auto-deploy Apex ${APP_VER} build → apex-ai-v13/
+
+Triggered by push to apex-ai/v13/. GitHub Pages will serve this immediately.
+
+Resolves Kevin issue 2026-05-08 21h00 'Apex ne veut pas se mettre à jour'.
+Source apex-ai/v13/ → build dist/ → deployed apex-ai-v13/ entièrement automatisé."
+          git push origin main

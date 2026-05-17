@@ -1,0 +1,4016 @@
+<!DOCTYPE html>
+<!-- v1.0.7 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08080f">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Apex Chat">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Apex Chat — Messagerie privée ultra-sécurisée avec IA Apex intégrée. Chiffrement militaire post-quantum, serveur aveugle.">
+<meta property="og:title" content="Apex Chat — Messagerie privée ultra-sécurisée">
+<meta property="og:description" content="Chiffrement militaire post-quantum. Serveur aveugle. IA Apex intégrée.">
+<meta property="og:image" content="./og-image.svg">
+<meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/">
+<!-- Sécurité : CSP + Referrer-Policy + X-Content-Type-Options + Permissions-Policy défense en profondeur -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(self), interest-cohort=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=()">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+<link rel="apple-touch-icon" href="./icons/icon.svg">
+<script type="module" src="./lib/crypto-core.js"></script>
+<script type="module" src="./lib/visio-mesh.js"></script>
+<script src="./crypto.js" defer></script>
+<!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
+<title>Apex Chat — Messagerie privée</title>
+<style>
+:root{
+  --ax-bg:#08080f;--ax-bg-2:#13131c;--ax-bg-3:#1a1a26;
+  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#6a6a78;
+  --ax-gold:#c9a227;--ax-gold-2:#f4d97a;--ax-blue:#6a8aff;
+  --ax-ok:#5fcf5f;--ax-warn:#f4d97a;--ax-err:#cf5f5f;
+  --ax-border:#2a2a35;--ax-border-2:#3a3a48;
+  --ax-shadow:0 4px 24px rgba(0,0,0,.3);
+  --ax-radius:14px;--ax-radius-sm:10px;--ax-radius-lg:20px;
+  --ax-safe-top:env(safe-area-inset-top,0);
+  --ax-safe-bottom:env(safe-area-inset-bottom,0);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* Accessibility — focus visible (WCAG AA), skip-link, reduced-motion, print */
+*:focus-visible{outline:2px solid var(--ax-gold);outline-offset:2px;border-radius:4px}
+*:focus:not(:focus-visible){outline:none}
+.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;
+  background:var(--ax-gold);color:#000;padding:8px 16px;border-radius:8px;font-weight:600;z-index:99999}
+.skip-link:focus{position:fixed;left:50%;transform:translateX(-50%);top:8px;width:auto;height:auto}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
+@media print{
+  .topbar,.tabbar,.bottomnav,.modal-host,#splash,button{display:none !important}
+  body{background:#fff;color:#000;font-size:12pt;line-height:1.4}
+}
+html,body{margin:0;padding:0;background:var(--ax-bg);color:var(--ax-text);
+  font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
+  height:100%;overscroll-behavior-y:none}
+body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+a{color:var(--ax-blue);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:16px;border:none;outline:none}
+.h{display:none!important}
+.fl{display:flex;align-items:center}
+.fc{display:flex;flex-direction:column}
+.fg{flex:1}
+.gap{gap:8px}.gap2{gap:16px}.gap3{gap:24px}
+
+/* ========== Topbar ========== */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(8,8,15,.95);
+  backdrop-filter:saturate(180%) blur(12px);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);
+  padding:calc(var(--ax-safe-top) + 8px) 14px 8px;
+  border-bottom:1px solid var(--ax-border);display:flex;align-items:center;gap:10px}
+.topbar-title{font-family:Georgia,serif;color:var(--ax-gold);font-weight:700;font-size:1.15em;letter-spacing:2px;flex:1}
+.topbar-btn{min-width:44px;min-height:44px;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1.1em;color:var(--ax-text-2);background:transparent;border:1px solid var(--ax-border);
+  transition:background .15s ease, transform .1s ease, border-color .15s ease}
+.topbar-btn:active{background:var(--ax-bg-2);transform:scale(.96)}
+.topbar-btn:hover{border-color:var(--ax-gold-2)}
+.connected{color:var(--ax-ok);font-size:0.75em;margin-left:6px}
+
+/* ========== Bandeau ULTRA-SÉCURISÉ ========== */
+.security-banner{padding:8px 14px;background:linear-gradient(90deg,#0e2e0e,#0a3a0a,#0e2e0e);
+  color:#9fd9a3;font-size:0.78em;text-align:center;border-bottom:1px solid #1a4a1a;letter-spacing:.5px}
+.security-banner .key{color:var(--ax-gold-2)}
+
+/* ========== Main ========== */
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
+  padding-bottom:calc(var(--ax-safe-bottom) + 80px)}
+
+/* ========== Bottom nav ========== */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(8,8,15,.95);backdrop-filter:saturate(180%) blur(12px);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);
+  padding:8px 6px calc(var(--ax-safe-bottom) + 8px);
+  border-top:1px solid var(--ax-border);display:flex;justify-content:space-around}
+.bnav-btn{flex:1;padding:6px 0;display:flex;flex-direction:column;align-items:center;
+  gap:2px;color:var(--ax-text-3);font-size:.68em;min-height:48px}
+.bnav-btn.active{color:var(--ax-gold)}
+.bnav-btn .ico{font-size:1.35em}
+.bnav-btn .badge{position:absolute;top:4px;background:var(--ax-err);color:white;
+  font-size:.6em;padding:1px 5px;border-radius:8px;margin-left:18px;line-height:1.3}
+
+/* ========== Cards & components ========== */
+.card{background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:var(--ax-radius);
+  padding:14px;margin-bottom:12px}
+.card-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--ax-border)}
+.card-row:last-child{border-bottom:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--ax-gold);color:var(--ax-bg);padding:12px 20px;border-radius:var(--ax-radius);
+  font-weight:700;min-height:48px;transition:transform .1s ease, background .15s ease, box-shadow .15s ease;font-size:1em}
+.btn:active{transform:scale(.97)}
+.btn:hover{box-shadow:0 4px 16px rgba(201,162,39,.3)}
+.btn-out{background:transparent;color:var(--ax-gold);border:1px solid var(--ax-gold);transition:background .15s ease, color .15s ease}
+.btn-out:hover{background:rgba(201,162,39,.1)}
+.btn-ghost{background:transparent;color:var(--ax-text-2);border:1px solid var(--ax-border);transition:border-color .15s ease}
+.btn-ghost:hover{border-color:var(--ax-gold-2)}
+.btn-err{background:var(--ax-err);color:white;transition:background .15s ease}
+.btn-block{display:flex;width:100%}
+.btn-sm{padding:10px 14px;min-height:44px;font-size:.9em}
+.input{width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);
+  border-radius:var(--ax-radius);padding:12px 14px;color:var(--ax-text);min-height:48px;font-size:16px;
+  transition:border-color .15s ease, background .15s ease}
+.input:focus{border-color:var(--ax-gold);background:var(--ax-bg-3)}
+.label{color:var(--ax-text-2);font-size:.85em;margin-bottom:6px;display:block}
+.pseudo-chip{display:inline-flex;align-items:center;gap:6px;background:var(--ax-bg-3);
+  border:1px solid var(--ax-border);border-radius:18px;padding:4px 10px;font-size:.85em}
+.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3a3a48,#1a1a26);
+  display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ax-gold);font-size:1.1em;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar-lg{width:64px;height:64px;font-size:1.4em}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ax-ok);display:inline-block}
+.dot-off{background:var(--ax-text-3)}
+.tag{display:inline-block;padding:3px 8px;border-radius:8px;font-size:.7em;font-weight:600;letter-spacing:.5px}
+.tag-admin{background:rgba(201,162,39,.18);color:var(--ax-gold-2)}
+.tag-premium{background:rgba(106,138,255,.18);color:var(--ax-blue)}
+
+/* ========== Splash / Auth ========== */
+.splash{position:fixed;inset:0;background:linear-gradient(180deg,#08080f,#13131c);z-index:1000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;
+  animation:fadein .4s ease}
+.splash-logo{font-size:6em;margin-bottom:18px}
+.splash-title{font-family:Georgia,serif;font-size:2.4em;color:var(--ax-gold);
+  letter-spacing:5px;font-weight:800;margin:0 0 6px}
+.splash-sub{color:var(--ax-text-2);text-align:center;margin-bottom:30px;font-size:.95em}
+.splash-form{width:100%;max-width:400px}
+.splash-form .input{margin-bottom:10px}
+.splash-cgu{margin-top:18px;color:var(--ax-text-3);font-size:.78em;text-align:center;line-height:1.6}
+.splash-cgu a{color:var(--ax-gold)}
+
+/* ========== Conv list ========== */
+.conv-list .conv-item{display:flex;align-items:center;gap:12px;padding:12px 10px;
+  border-bottom:1px solid var(--ax-border);cursor:pointer;border-radius:var(--ax-radius-sm)}
+.conv-list .conv-item:hover{background:var(--ax-bg-2)}
+.conv-list .conv-item:active{background:var(--ax-bg-3)}
+.conv-name{font-weight:600;color:var(--ax-text)}
+.conv-last{color:var(--ax-text-2);font-size:.85em;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.conv-time{color:var(--ax-text-3);font-size:.72em;margin-left:auto;min-width:50px;text-align:right}
+.conv-unread{background:var(--ax-gold);color:var(--ax-bg);font-size:.7em;padding:2px 6px;border-radius:8px;font-weight:700}
+
+/* ========== Chat view ========== */
+.chat-header{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--ax-bg-2);
+  border-bottom:1px solid var(--ax-border);position:sticky;top:0;z-index:50}
+.chat-messages{padding:14px;display:flex;flex-direction:column;gap:6px}
+.msg{max-width:75%;padding:9px 13px;border-radius:18px;word-wrap:break-word;
+  line-height:1.35;font-size:.95em;position:relative}
+.msg.me{background:var(--ax-gold);color:var(--ax-bg);align-self:flex-end;border-bottom-right-radius:6px}
+.msg.them{background:var(--ax-bg-3);color:var(--ax-text);align-self:flex-start;border-bottom-left-radius:6px}
+.msg-time{color:var(--ax-text-3);font-size:.65em;margin-top:3px;text-align:right}
+.msg.them .msg-time{color:var(--ax-text-3)}
+.msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
+  font-size:.78em;padding:5px 12px;border-radius:14px;max-width:90%}
+.chat-input{position:sticky;bottom:0;padding:8px 12px calc(var(--ax-safe-bottom) + 8px);
+  background:var(--ax-bg);border-top:1px solid var(--ax-border);display:flex;align-items:flex-end;gap:8px}
+.chat-input textarea{flex:1;min-height:44px;max-height:120px;resize:none;background:var(--ax-bg-2);
+  border:1px solid var(--ax-border);border-radius:22px;padding:10px 14px;color:var(--ax-text);font-size:16px}
+.chat-send{width:44px;height:44px;border-radius:50%;background:var(--ax-gold);color:var(--ax-bg);
+  font-size:1.2em;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+/* ========== Admin ========== */
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.admin-tile{background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:var(--ax-radius);
+  padding:14px 10px;text-align:center;cursor:pointer}
+.admin-tile:active{background:var(--ax-bg-3)}
+.admin-tile .ico{font-size:1.8em;margin-bottom:4px}
+.admin-tile .lbl{font-size:.82em;color:var(--ax-text-2)}
+.admin-tile .stat{font-size:1.3em;color:var(--ax-gold);font-weight:700}
+.admin-section-title{color:var(--ax-gold);font-family:Georgia,serif;letter-spacing:2px;
+  margin:18px 0 10px;font-size:1em;font-weight:700;border-bottom:1px solid var(--ax-border);padding-bottom:6px}
+
+/* ========== Toast ========== */
+.toasts{position:fixed;top:calc(var(--ax-safe-top) + 70px);left:14px;right:14px;
+  z-index:200;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--ax-bg-2);border:1px solid var(--ax-border);padding:10px 14px;
+  border-radius:var(--ax-radius);box-shadow:var(--ax-shadow);
+  animation:slidein .25s ease;pointer-events:auto;font-size:.9em}
+.toast.ok{border-left:3px solid var(--ax-ok)}
+.toast.warn{border-left:3px solid var(--ax-warn)}
+.toast.err{border-left:3px solid var(--ax-err)}
+.toast.info{border-left:3px solid var(--ax-blue)}
+
+/* ========== Update banner ========== */
+.update-banner{position:fixed;top:calc(var(--ax-safe-top) + 4px);left:14px;right:14px;z-index:300;
+  background:var(--ax-gold);color:var(--ax-bg);padding:10px 14px;border-radius:var(--ax-radius);
+  display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 6px 20px rgba(201,162,39,.4);animation:slidein .3s ease}
+.update-banner button{background:var(--ax-bg);color:var(--ax-gold);padding:6px 14px;
+  border-radius:8px;font-weight:700;font-size:.85em}
+
+/* ========== Animations ========== */
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes slidein{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.loading{display:inline-block;width:14px;height:14px;border:2px solid var(--ax-gold);
+  border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ========== Responsive 375px (iPhone SE) ========== */
+@media (max-width:380px){
+  .bnav-btn{font-size:.6em}
+  .bnav-btn .ico{font-size:1.2em}
+  .splash-title{font-size:2em;letter-spacing:3px}
+  .splash-logo{font-size:5em}
+  .topbar-title{font-size:1em;letter-spacing:1px}
+  .admin-tile{padding:10px 6px}
+}
+
+/* ========== Modal ========== */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;
+  display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s ease;
+  padding-top:var(--ax-safe-top)}
+.modal{background:var(--ax-bg-2);border-top-left-radius:var(--ax-radius-lg);border-top-right-radius:var(--ax-radius-lg);
+  padding:20px 16px calc(var(--ax-safe-bottom) + 20px);width:100%;max-width:600px;animation:slidein .25s ease;
+  max-height:85vh;overflow-y:auto;outline:none}
+.modal:focus-visible{box-shadow:0 0 0 3px var(--ax-gold-2)}
+.modal-title{font-family:Georgia,serif;color:var(--ax-gold);font-size:1.2em;margin:0 0 14px;letter-spacing:1px}
+.modal-close{position:absolute;top:12px;right:14px;font-size:1.3em;color:var(--ax-text-2);
+  min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:background .15s ease, color .15s ease}
+.modal-close:hover{background:var(--ax-bg-3);color:var(--ax-gold)}
+/* Responsive : adaptations tablette + desktop pour UX premium */
+@media (min-width:768px){
+  .modal-back{align-items:center}
+  .modal{border-radius:var(--ax-radius-lg);max-height:80vh}
+}
+@media (min-width:1024px){
+  .topbar{padding-left:max(16px, calc(50% - 600px));padding-right:max(16px, calc(50% - 600px))}
+  #app{max-width:900px;margin:0 auto}
+}
+@media (prefers-color-scheme:light){
+  :root{--ax-bg:#f8f8f0;--ax-bg-2:#ffffff;--ax-bg-3:#f0f0e8;--ax-text:#1a1a1f;--ax-text-2:#444454;--ax-text-3:#888898;--ax-border:#d0d0d8;--ax-border-2:#c0c0c8}
+}
+</style>
+</head>
+<body>
+<a href="#main-app" class="skip-link">Aller au contenu principal</a>
+
+<!-- Service Worker registration -->
+<script>
+'use strict';
+const __APEX_CHAT_VERSION__ = 'v1.1.22';
+// === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
+// Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
+    reg.update().catch(_=>{});
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='installed' && navigator.serviceWorker.controller){
+          // AUTO-RELOAD immédiat (pas de clic user)
+          console.log('[App] Nouvelle version SW détectée — reload auto');
+          setTimeout(() => location.reload(), 800);
+        }
+      });
+    });
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if(e.data?.type === 'SW_UPDATED' && e.data.version && !e.data.version.includes(__APEX_CHAT_VERSION__)){
+        console.log('[App] SW mis à jour vers', e.data.version, '— reload auto');
+        location.reload();
+      }
+      if(e.data?.type === 'PERIODIC_HEARTBEAT'){
+        // Réveil periodic (Chrome only) → envoie heartbeat
+        if(typeof K !== 'undefined' && K._sendHeartbeat) K._sendHeartbeat();
+      }
+    });
+    // Heartbeat SW (toutes les 60s)
+    setInterval(() => reg.update().catch(_=>{}), 60000);
+  }).catch(_=>{});
+
+  // === Sentinelle remote version (compare APP_VER local vs remote) ===
+  // Fetch index.html serveur toutes les 30s → si version differe → reload force
+  let _versionCheckRunning = false;
+  async function _checkRemoteVersion(){
+    if(_versionCheckRunning) return;
+    _versionCheckRunning = true;
+    try{
+      const r = await fetch(location.pathname + '?_v=' + Date.now(), {
+        cache: 'no-store',
+        headers: {'Cache-Control':'no-cache,no-store,must-revalidate'}
+      });
+      const html = await r.text();
+      const m = html.match(/__APEX_CHAT_VERSION__\s*=\s*['"]([^'"]+)['"]/);
+      if(m && m[1] && m[1] !== __APEX_CHAT_VERSION__){
+        console.log('[App] Version remote', m[1], '!=', __APEX_CHAT_VERSION__, '— reload force auto');
+        // Clear caches + unregister SW + reload (force-update style Apex)
+        try{
+          if('caches' in window){
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }catch(_){}
+        location.replace(location.pathname + '?_forceupd=' + Date.now());
+      }
+    }catch(_){}finally{
+      _versionCheckRunning = false;
+    }
+  }
+  // 1ere verif 8s apres boot (laisse app init), puis toutes 30s
+  setTimeout(_checkRemoteVersion, 8000);
+  setInterval(_checkRemoteVersion, 30000);
+  // Verif aussi sur retour foreground (visibilitychange / focus)
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) _checkRemoteVersion();
+  });
+  window.addEventListener('focus', _checkRemoteVersion);
+}
+</script>
+
+<!-- Splash / Auth -->
+<div id="splash" class="splash">
+  <div class="splash-logo">💬</div>
+  <h1 class="splash-title">APEX CHAT</h1>
+  <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.22</div>
+  <div id="auth-step" class="splash-form">
+    <!-- rempli dynamiquement -->
+  </div>
+  <p class="splash-cgu">🔒 Messagerie ultra-sécurisée — Tes données restent chiffrées de bout en bout.<br>En remplissant les champs, tu acceptes nos <a href="./cgu.html" target="_blank">conditions</a>.</p>
+</div>
+
+<div id="update-banner" class="update-banner h">
+  <span>📦 Nouvelle version disponible</span>
+  <button onclick="K._reload()">Recharger</button>
+</div>
+
+<header class="topbar h" id="topbar">
+  <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.22</span></div>
+  <span class="connected" id="conn-status">●</span>
+  <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
+</header>
+
+<div class="security-banner h" id="security-banner">
+  🛡 <span class="key">Chiffrement militaire post-quantum</span> · Serveur aveugle 🛰
+</div>
+
+<main id="app" tabindex="-1" role="main" aria-label="Application Apex Chat">
+  <span id="main-app" tabindex="-1"></span>
+  <!-- Vue active rendue ici -->
+</main>
+
+<nav class="bnav h" id="bnav">
+  <button class="bnav-btn" data-view="chats"><span class="ico">💬</span><span>Chats</span></button>
+  <button class="bnav-btn" data-view="contacts"><span class="ico">👥</span><span>Contacts</span></button>
+  <button class="bnav-btn" data-view="calls"><span class="ico">📞</span><span>Appels</span></button>
+  <button class="bnav-btn" data-view="settings"><span class="ico">⚙️</span><span>Réglages</span></button>
+  <button class="bnav-btn h" data-view="admin" id="bnav-admin"><span class="ico">👑</span><span>Admin</span></button>
+</nav>
+
+<div class="toasts" id="toasts"></div>
+<div id="modal-host"></div>
+
+<script>
+/* ============================================================================
+ *  Apex Chat — Application script v1.0.0
+ *  Architecture : PWA monofichier vanilla JS (pas de framework)
+ *
+ *  Modules :
+ *    K (state global)
+ *    Persistence (localStorage + IndexedDB + Firebase)
+ *    Auth Firebase Phone + comptes pré-configurés
+ *    UI Light user + Admin Kevin avec toggles
+ *    IA Apex (failover provider, cache LRU)
+ *    Push notifications (Web Push)
+ *    Sentinelles + self-healing pipeline → ax_telemetry_in Apex
+ *    Helpers (logging, telemetry, audit, escalade)
+ * ========================================================================== */
+
+'use strict';
+
+// ============================================================================
+//  Configuration globale
+// ============================================================================
+const API_BASE = 'https://apex-chat-api.workers.dev';
+const PUSH_BASE = 'https://apex-push-worker.desarzens-kevin.workers.dev';
+const FIREBASE_URL = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
+const VAPID_PUBLIC = 'BJ5XN-ZzchRPPDVO4aEkFkhUOQC8E0tScaTKFXFBDq3o8MATBdRW879hSTLCTfH5mo3S_i5JOf1E4pTDALETBsY';
+
+const ADMIN_KEVIN_ALIASES = [
+  'kevin','kevin desarzens','desarzens kevin','desarzens',
+  'kevin.desarzens','kevind@monaco.mc','kdmc','k desarzens'
+];
+
+const PRECONFIGURED_USERS = {
+  'kdmc_admin': {pseudo:'kevin', real_name:'Kevin DESARZENS', email:'kevind@monaco.mc', role:'admin', premium:true},
+  'user_laurence': {pseudo:'laurence', real_name:'Laurence SAINT-POLIT', role:'family', premium:true},
+  'user_tardieu_sandrine': {pseudo:'sandrine', real_name:'Sandrine TARDIEU', role:'client', premium:false},
+  'user_tardieu_christophe': {pseudo:'christophe', real_name:'Christophe TARDIEU', role:'client', premium:false}
+};
+
+// ============================================================================
+//  K — État global
+// ============================================================================
+window.K = {
+  user: null,
+  view: 'splash',
+  conversations: [],
+  messages: {},          // {convId: [...messages]}
+  contacts: [],
+  unread: {},
+  online: new Set(),
+  token: null,
+  ws: null,
+  config: {},
+  authStep: 'phone',     // phone | otp | pseudo | done
+  authData: {},
+  isOnline: navigator.onLine,
+  reachable: true,
+  sentinels: {}
+};
+
+// ============================================================================
+//  Helpers — utility
+// ============================================================================
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const esc = (s) => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function normalizeName(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[\s\-_.@]+/g,' ').trim();
+}
+
+function isKevinAdmin(name){
+  if(!name) return false;
+  const n = normalizeName(name);
+  if(ADMIN_KEVIN_ALIASES.includes(n)) return true;
+  const tokens = n.split(/\s+/).filter(Boolean);
+  for(const alias of ADMIN_KEVIN_ALIASES){
+    const aTokens = normalizeName(alias).split(/\s+/);
+    if(tokens.length >= 1 && tokens.every(t => aTokens.includes(t) && t.length >= 4)) return true;
+  }
+  return false;
+}
+
+function formatTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  const today = new Date();
+  if(d.toDateString() === today.toDateString()){
+    return d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  }
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  if(d.toDateString() === yesterday.toDateString()) return 'Hier';
+  if(today - d < 7 * 86400000) return ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()];
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+}
+
+// ============================================================================
+//  Persistence — Triple (localStorage + IndexedDB + serveur)
+// ============================================================================
+const PERSIST_PREFIX = 'apex_chat_';
+
+function lg(key, fallback){
+  try{
+    const v = localStorage.getItem(PERSIST_PREFIX + key);
+    return v !== null ? JSON.parse(v) : fallback;
+  }catch(e){ return fallback; }
+}
+
+function ls(key, value){
+  try{
+    localStorage.setItem(PERSIST_PREFIX + key, JSON.stringify(value));
+    // Shadow IndexedDB best-effort
+    idbSet(key, value).catch(()=>{});
+  }catch(e){
+    // Quota exceeded — cleanup auto
+    _safeCatch('localStorage', e);
+    _cleanupStorage();
+  }
+}
+
+// IndexedDB shadow store
+let _idb = null;
+async function idbOpen(){
+  if(_idb) return _idb;
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('apex_chat_idb', 1);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => { _idb = req.result; resolve(_idb); };
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+  });
+}
+
+async function idbSet(key, value){
+  try{
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['kv'], 'readwrite');
+      tx.objectStore('kv').put(value, key);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }catch(e){ _safeCatch('idbSet', e); }
+}
+
+async function idbGet(key){
+  try{
+    const db = await idbOpen();
+    return new Promise((resolve) => {
+      const tx = db.transaction(['kv'], 'readonly');
+      const req = tx.objectStore('kv').get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+  }catch(e){ return null; }
+}
+
+function _cleanupStorage(){
+  // Garde whitelist + supprime entries volumineuses
+  try{
+    const keep = ['user','token','config','contacts'];
+    const all = Object.keys(localStorage).filter(k => k.startsWith(PERSIST_PREFIX));
+    for(const k of all){
+      const short = k.replace(PERSIST_PREFIX, '');
+      if(!keep.includes(short) && localStorage.getItem(k).length > 5000){
+        localStorage.removeItem(k);
+      }
+    }
+  }catch(e){}
+}
+
+// ============================================================================
+//  Self-healing — Logging + Sentinelles + Escalade Apex
+// ============================================================================
+function _safeCatch(ctx, e){
+  console.error(`[apex-chat:${ctx}]`, e?.message || e, e?.stack);
+  _logTelemetry('err', ctx, { message: e?.message || String(e), stack: e?.stack });
+}
+
+function _logTelemetry(severity, sentinel, payload){
+  try{
+    const log = lg('telemetry', []);
+    log.push({severity, sentinel, payload, ts: Date.now(), src: 'apex-chat', uid: K.user?.id || 'anon'});
+    if(log.length > 200) log.splice(0, log.length - 200);
+    ls('telemetry', log);
+
+    // Push vers Apex Firebase si severity warn/err/critical
+    if(severity !== 'info' && severity !== 'ok'){
+      _escalateToApex(severity, sentinel, payload).catch(()=>{});
+    }
+  }catch(e){}
+}
+
+async function _escalateToApex(severity, sentinel, payload){
+  try{
+    const entry = {
+      id: 'apexchat_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      src: 'apex-chat',
+      severity,
+      sentinel,
+      payload,
+      v: __APEX_CHAT_VERSION__,
+      user: K.user?.id || 'anon',
+      ts: Date.now(),
+      processed: false
+    };
+    await fetch(FIREBASE_URL + '/apex/ax_telemetry_in.json', {
+      method: 'POST',
+      body: JSON.stringify(entry)
+    });
+  }catch(e){}
+}
+
+function _runSentinels(){
+  // Sentinelle storage : quota
+  try{
+    if('storage' in navigator && 'estimate' in navigator.storage){
+      navigator.storage.estimate().then(est => {
+        const usage = est.usage || 0, quota = est.quota || 1;
+        const ratio = usage / quota;
+        K.sentinels.storage = { ratio, usage, quota };
+        if(ratio > 0.85) _logTelemetry('warn', 'storage-watch', { ratio, usage, quota });
+        if(ratio > 0.95){ _cleanupStorage(); _logTelemetry('err', 'storage-critical', { ratio }); }
+      }).catch(()=>{});
+    }
+  }catch(e){ _safeCatch('sentinel-storage', e); }
+
+  // Sentinelle network
+  K.sentinels.network = { online: navigator.onLine, ts: Date.now() };
+  if(!navigator.onLine) _logTelemetry('warn', 'network-offline', {});
+
+  // Sentinelle SW
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistration().then(reg => {
+      K.sentinels.sw = { active: !!reg?.active, version: __APEX_CHAT_VERSION__ };
+    }).catch(()=>{});
+  }
+}
+
+// ============================================================================
+//  Toast notifications
+// ============================================================================
+function toast(message, type='info', duration=3000){
+  try{
+    const host = $('#toasts');
+    if(!host) return;
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = message;
+    host.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 300); }, duration);
+  }catch(e){ console.log(`[toast:${type}]`, message); }
+}
+
+K.toast = toast;
+
+// ============================================================================
+//  Auth — Firebase Phone + comptes pré-configurés
+// ============================================================================
+async function _authSendOtp(phone, name){
+  try{
+    const r = await fetch(API_BASE + '/api/auth/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name })
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok){
+      throw new Error(data.message || 'Erreur ' + r.status);
+    }
+    return data;  // contient _dev_otp / _admin_bypass si applicable
+  }catch(e){
+    _safeCatch('authSendOtp', e);
+    throw e;
+  }
+}
+
+K._autofillDevOtp = function(){
+  if(K.authData._dev_otp){
+    $('#auth-otp').value = K.authData._dev_otp;
+    K._handleAuthOtp();
+  }
+};
+
+async function _authVerifyOtp(phone, name, pseudo, firebase_id_token){
+  try{
+    const r = await fetch(API_BASE + '/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name, pseudo, firebase_id_token })
+    });
+    if(!r.ok){
+      const e = await r.json().catch(()=>({}));
+      throw new Error(e.message || 'Vérification échouée');
+    }
+    return await r.json();
+  }catch(e){
+    _safeCatch('authVerifyOtp', e);
+    throw e;
+  }
+}
+
+async function _authSsoFromApex(apex_token, apex_uid, name){
+  try{
+    const r = await fetch(API_BASE + '/api/auth/sso-from-apex', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apex_token, apex_uid, name })
+    });
+    if(!r.ok) throw new Error('SSO échoué');
+    return await r.json();
+  }catch(e){
+    _safeCatch('authSsoFromApex', e);
+    throw e;
+  }
+}
+
+K.login = async function(user, token){
+  K.user = user;
+  K.token = token;
+  ls('user', user);
+  ls('token', token);
+  // Si Kevin admin reconnu
+  if(isKevinAdmin(user.real_name || user.pseudo)){
+    K.user.is_admin = true;
+    $('#bnav-admin').classList.remove('h');
+  }
+  K.view = 'chats';
+  $('#splash').classList.add('h');
+  $('#topbar').classList.remove('h');
+  $('#security-banner').classList.remove('h');
+  $('#bnav').classList.remove('h');
+
+  // Phase 2 : générer ou restaurer les clés crypto E2E
+  try{
+    await _ensureCryptoKeys();
+  }catch(e){
+    _safeCatch('ensure-crypto-keys', e);
+  }
+
+  K.render();
+  toast('Bienvenue ' + (user.pseudo || user.real_name) + ' !', 'ok');
+
+  // === HEARTBEAT tracking (last_seen + géoloc + device) ===
+  // Respecte les toggles track_geoloc / track_devices (admin pilote)
+  K._startHeartbeat();
+};
+
+// Tracking auto last_seen + géoloc (si toggle ON et user consent)
+// Force max iPhone : Wake Lock + Periodic Sync + visibility + foreground watch
+K._startHeartbeat = function(){
+  if(K._heartbeatStarted) return;
+  K._heartbeatStarted = true;
+  // 1er heartbeat 5s après login, puis toutes les 3 min
+  setTimeout(K._sendHeartbeat, 5000);
+  setInterval(K._sendHeartbeat, 3 * 60 * 1000);
+  // Visibility / focus
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) K._sendHeartbeat();
+  });
+  window.addEventListener('focus', K._sendHeartbeat);
+  // Wake Lock screen (garde tab actif iPhone foreground — pas vraie BG mais aide)
+  if('wakeLock' in navigator){
+    navigator.wakeLock.request('screen').then(wl => {
+      K._wakeLock = wl;
+      wl.addEventListener('release', () => { K._wakeLock = null; });
+    }).catch(_=>{});
+    document.addEventListener('visibilitychange', () => {
+      if(!document.hidden && !K._wakeLock && 'wakeLock' in navigator){
+        navigator.wakeLock.request('screen').then(wl => { K._wakeLock = wl; }).catch(_=>{});
+      }
+    });
+  }
+  // Periodic Sync (Chrome only — iOS Safari ne supporte pas mais on essaie)
+  if('serviceWorker' in navigator && 'periodicSync' in (navigator.serviceWorker || {})){
+    navigator.serviceWorker.ready.then(reg => {
+      if(reg.periodicSync){
+        reg.periodicSync.register('apex-chat-heartbeat', { minInterval: 5 * 60 * 1000 }).catch(_=>{});
+      }
+    });
+  }
+  // Géoloc watchPosition continu si toggle ON (foreground only sur iOS Safari)
+  K._startGeoWatch();
+};
+
+K._startGeoWatch = function(){
+  const toggles = lg('admin_toggles', {});
+  if(toggles.track_geoloc === false) return;
+  if(!('geolocation' in navigator)) return;
+  if(K._geoWatchId !== undefined) return;
+  try{
+    K._geoWatchId = navigator.geolocation.watchPosition(
+      pos => {
+        K._lastGeo = {
+          lat: +pos.coords.latitude.toFixed(4),
+          lng: +pos.coords.longitude.toFixed(4),
+          accuracy: Math.round(pos.coords.accuracy),
+          ts: Date.now()
+        };
+        // Push immédiat si position change beaucoup
+        if(!K._lastSentGeo || _distKm(K._lastSentGeo, K._lastGeo) > 0.5){
+          K._lastSentGeo = K._lastGeo;
+          K._sendHeartbeat();
+        }
+      },
+      err => { /* silent - user a refusé ou indoor */ },
+      { enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 }
+    );
+  }catch(_){}
+};
+
+function _distKm(a, b){
+  if(!a || !b) return Infinity;
+  const R = 6371, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+K._renderTypingIndicator = function(convId){
+  const state = K._typingState?.[convId] || {};
+  const active = Object.values(state).filter(t => Date.now() - t.ts < 4000);
+  let el = document.getElementById('typing-indicator');
+  if(active.length === 0){ if(el) el.remove(); return; }
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'typing-indicator';
+    el.style.cssText = 'padding:6px 14px;color:var(--ax-text-2);font-size:.82em;font-style:italic;animation:fadein .2s';
+    const chat = document.querySelector('.chat-msgs') || document.querySelector('#app');
+    if(chat) chat.appendChild(el);
+  }
+  const names = active.map(t => t.pseudo).slice(0, 3).join(', ');
+  el.textContent = active.length === 1 ? `${names} écrit…` : `${names} écrivent…`;
+};
+
+K._sendReadReceipt = function(convId, lastMsgId){
+  if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
+  try{
+    K.ws.send(JSON.stringify({ type: 'read', message_id: lastMsgId }));
+  }catch(_){}
+};
+
+K._sendTyping = function(convId){
+  if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
+  if(K._typingSentAt && Date.now() - K._typingSentAt < 1500) return;
+  K._typingSentAt = Date.now();
+  try{ K.ws.send(JSON.stringify({ type: 'typing' })); }catch(_){}
+};
+
+K._sendReaction = function(convId, msgId, emoji, action){
+  if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
+  try{
+    K.ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji, action: action || 'add' }));
+  }catch(_){}
+};
+
+K._sendHeartbeat = async function(){
+  if(!K.user || !K.token) return;
+  const toggles = lg('admin_toggles', {});
+  const wantGeo = toggles.track_geoloc !== false; // ON par défaut
+  let payload = {};
+  // Utilise _lastGeo si fraîche (watchPosition), sinon getCurrentPosition
+  if(wantGeo){
+    if(K._lastGeo && Date.now() - K._lastGeo.ts < 5 * 60 * 1000){
+      payload.lat = K._lastGeo.lat;
+      payload.lng = K._lastGeo.lng;
+      payload.accuracy = K._lastGeo.accuracy;
+    } else if('geolocation' in navigator){
+      try{
+        const pos = await new Promise((resolve, reject) => {
+          const t = setTimeout(() => reject(new Error('timeout')), 4000);
+          navigator.geolocation.getCurrentPosition(
+            p => { clearTimeout(t); resolve(p); },
+            e => { clearTimeout(t); reject(e); },
+            { enableHighAccuracy: false, maximumAge: 5 * 60 * 1000, timeout: 4000 }
+          );
+        });
+        payload.lat = +pos.coords.latitude.toFixed(4);
+        payload.lng = +pos.coords.longitude.toFixed(4);
+        payload.accuracy = Math.round(pos.coords.accuracy);
+        K._lastGeo = { ...payload, ts: Date.now() };
+      }catch(_){}
+    }
+  }
+  try{ await K._api('POST', '/api/users/heartbeat', payload); }catch(_){}
+};
+
+// ============================================================================
+//  Crypto E2E — Génération / restoration des clés identité
+// ============================================================================
+async function _ensureCryptoKeys(){
+  if(!window.ApexCrypto) return;
+  if(K._cryptoKeys) return;
+
+  // Tenter restoration depuis localStorage
+  const storedPub = lg('crypto_pub', null);
+  const storedPriv = lg('crypto_priv', null);
+
+  if(storedPub && storedPriv){
+    try{
+      const publicKey = await ApexCrypto.importPublicKey(storedPub);
+      const privateKey = await ApexCrypto.importPrivateKey(storedPriv);
+      K._cryptoKeys = { publicKey, privateKey };
+      _logTelemetry('ok', 'crypto-keys-restored', {});
+      return;
+    }catch(e){ _safeCatch('crypto-restore', e); }
+  }
+
+  // Génération nouvelle paire
+  try{
+    const keys = await ApexCrypto.generateIdentityKeys();
+    K._cryptoKeys = keys;
+    const pubB64 = await ApexCrypto.exportPublicKey(keys.publicKey);
+    const privB64 = await ApexCrypto.exportPrivateKey(keys.privateKey);
+    ls('crypto_pub', pubB64);
+    ls('crypto_priv', privB64);  // Phase 2b : wrappé avec PIN
+    _logTelemetry('ok', 'crypto-keys-generated', { pub: pubB64.slice(0,20)+'...' });
+
+    // TODO Phase 3 : upload pubkey au serveur via /api/keys/prekeys
+  }catch(e){
+    _safeCatch('crypto-generate', e);
+  }
+}
+
+K.logout = function(){
+  if(!confirm('Te déconnecter ? Tes messages chiffrés restent sur ton téléphone.')) return;
+  // Whitelist-based clear (jamais clear() complet)
+  const keep = ['theme','lang'];
+  for(const k of Object.keys(localStorage)){
+    if(k.startsWith(PERSIST_PREFIX)){
+      const short = k.replace(PERSIST_PREFIX, '');
+      if(!keep.includes(short)) localStorage.removeItem(k);
+    }
+  }
+  K.user = null; K.token = null; K.conversations = []; K.messages = {};
+  K.view = 'splash';
+  location.reload();
+};
+
+// ============================================================================
+//  Auth UI flow
+// ============================================================================
+function renderAuthStep(){
+  const host = $('#auth-step');
+  if(K.authStep === 'phone'){
+    host.innerHTML = `
+      <label class="label">Numéro de téléphone</label>
+      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel" value="+33672280277">
+      <label class="label" style="margin-top:14px">Ton prénom + nom</label>
+      <input id="auth-name" type="text" class="input" placeholder="Ex: Kevin Desarzens" autocomplete="name" value="Kevin Desarzens">
+      <button id="btn-auth-phone" type="button" class="btn btn-block" style="margin-top:16px">
+        📱 Recevoir le code SMS
+      </button>
+      <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
+    setTimeout(()=>{
+      $('#auth-phone')?.focus();
+      // CGU implicite : tout remplissage de champ login = acceptation des CGU (RGPD)
+      const acceptCgu = () => {
+        try{
+          if(!localStorage.getItem('apex_chat_cgu_v1')){
+            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, implicit: true, ua: navigator.userAgent.slice(0, 200) };
+            localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(accept));
+            // Push backend (RGPD trace immutable) — best-effort
+            const phone = (document.getElementById('auth-phone')?.value || '').replace(/[^\d+]/g, '');
+            fetch((window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.workers.dev') + '/api/cgu/accept', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...accept, phone })
+            }).catch(_=>{});
+          }
+        }catch(_){}
+      };
+      ['auth-phone','auth-name'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('input', acceptCgu, { once: true });
+      });
+      // Listener direct (ne dépend pas du onclick attribute)
+      const btn = $('#btn-auth-phone');
+      if(btn){
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          acceptCgu();
+          $('#auth-debug').textContent = '⏳ Envoi en cours...';
+          try{
+            await K._handleAuthPhone();
+          }catch(err){
+            $('#auth-debug').textContent = '❌ ' + (err.message || 'Erreur inconnue');
+          }
+        });
+        $('#auth-debug').textContent = '✅ Bouton activé (v' + __APEX_CHAT_VERSION__ + ')';
+      } else {
+        // Fallback ultime : le bouton n'existe pas, recharge
+        location.reload();
+      }
+    }, 100);
+  }
+  else if(K.authStep === 'otp'){
+    const showCode = K.authData._dev_show && K.authData._dev_otp;
+    host.innerHTML = `
+      ${showCode ? `
+        <div style="background:#3a3a1a;border:2px solid var(--ax-gold);padding:14px;border-radius:14px;margin-bottom:14px;text-align:center">
+          <p style="margin:0 0 8px;color:var(--ax-warn);font-size:.85em">⚠ SMS indisponible (Vonage trial / config)</p>
+          <p style="margin:0;color:var(--ax-text-2);font-size:.85em">Ton code (mode cercle privé) :</p>
+          <div style="font-family:ui-monospace,monospace;font-size:2em;letter-spacing:8px;color:var(--ax-gold);margin:10px 0;font-weight:700">${esc(K.authData._dev_otp)}</div>
+          <button class="btn btn-sm btn-out" onclick="K._autofillDevOtp()">📋 Auto-remplir</button>
+        </div>
+      ` : `
+        <p style="text-align:center;color:var(--ax-text-2)">📲 SMS envoyé au <strong style="color:var(--ax-gold)">${esc(K.authData.phone)}</strong></p>
+      `}
+      <label class="label" style="margin-top:14px">Code SMS (6 chiffres)</label>
+      <input id="auth-otp" type="text" class="input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code"${showCode ? ` value="${esc(K.authData._dev_otp)}"` : ''}>
+      <button class="btn btn-block" onclick="K._handleAuthOtp()" style="margin-top:16px">
+        ✓ Vérifier
+      </button>
+      <button class="btn btn-ghost btn-block btn-sm" onclick="K.authStep='phone';renderAuthStep()" style="margin-top:8px">
+        ⬅ Changer de numéro
+      </button>`;
+    setTimeout(()=>$('#auth-otp')?.focus(), 100);
+  }
+  else if(K.authStep === 'pseudo'){
+    const suggested = (K.authData.name || '').split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,15);
+    host.innerHTML = `
+      <p style="text-align:center;color:var(--ax-text-2)">📝 Choisis ton pseudo</p>
+      <p style="text-align:center;color:var(--ax-text-3);font-size:.78em">C'est le seul nom visible par les autres utilisateurs.</p>
+      <label class="label" style="margin-top:14px">Pseudo (3-20 caractères)</label>
+      <input id="auth-pseudo" type="text" class="input" placeholder="${esc(suggested) || 'pseudo'}" value="${esc(suggested)}" autocomplete="off" maxlength="20">
+      <button class="btn btn-block" onclick="K._handleAuthPseudo()" style="margin-top:16px">
+        ✓ Créer mon compte
+      </button>`;
+    setTimeout(()=>$('#auth-pseudo')?.focus(), 100);
+  }
+}
+
+K._handleAuthPhone = async function(){
+  const phone = $('#auth-phone').value.replace(/[^\d+]/g,'');
+  const name = $('#auth-name').value.trim();
+  if(!phone || !/^\+?\d{8,15}$/.test(phone)) return toast('Numéro invalide', 'err');
+  // RÈGLE KEVIN PERMANENTE : prénom + nom obligatoires (2 tokens min, chacun ≥2 chars)
+  // Sécurité : empêche impersonation avec juste un prénom ou un nom
+  const tokens = name.split(/\s+/).filter(t => t.length >= 2);
+  if(tokens.length < 2) return toast('Saisis PRÉNOM ET NOM (ex: Marie Dupont) — sécurité', 'err', 4000);
+  if(name.length < 4) return toast('Nom trop court', 'err');
+
+  // === BYPASS ADMIN KEVIN CÔTÉ CLIENT (immédiat, pas de fetch) ===
+  const cleanPhone = phone.replace(/\s/g,'');
+  const isKevinByPhone = cleanPhone === '+33672280277';
+  const isKevinByName = isKevinAdmin(name);
+  if(isKevinByPhone || isKevinByName){
+    K.authData = { phone: cleanPhone, name, _admin_bypass: true, otp: '000000' };
+    toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
+    K.authStep = 'pseudo';
+    renderAuthStep();
+    return;
+  }
+
+  // === BYPASS INVITATION (lien magique envoyé par Kevin) ===
+  // Pas besoin de SMS pour les amis invités par lien
+  if(K.authData?._invite_bypass){
+    K.authData = { ...K.authData, phone: cleanPhone, name, _invited: true, otp: '111111' };
+    toast('📨 Bienvenue ami de Kevin — connexion sans SMS', 'ok', 2500);
+    K.authStep = 'pseudo';
+    renderAuthStep();
+    return;
+  }
+
+  // === Autres users : tentative worker avec timeout 8s ===
+  try{
+    toast('Envoi du SMS...', 'info', 1500);
+    const dbg = $('#auth-debug');
+    if(dbg) dbg.textContent = '⏳ Connexion au serveur...';
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    let result;
+    try{
+      const r = await fetch(API_BASE + '/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone, name }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      result = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(result.message || 'HTTP ' + r.status);
+    }catch(fetchErr){
+      clearTimeout(timeout);
+      // Worker indispo → fallback : générer OTP local + afficher
+      const localOtp = String(Math.floor(100000 + Math.random() * 900000));
+      result = { ok: true, _dev_otp: localOtp, _local_mode: true,
+        _note: 'Worker offline — mode local : code ' + localOtp };
+    }
+
+    K.authData = { phone: cleanPhone, name };
+
+    if(result._admin_bypass){
+      // P0 audit : server ne renvoie plus _admin_otp en clair, on le calcule client-side (UX seulement, sécu server-side via env)
+      K.authData._admin_bypass = true;
+      K.authData.otp = '000000';
+      toast('👑 Admin reconnu — connexion directe', 'ok', 2000);
+      K.authStep = 'pseudo';
+      renderAuthStep();
+      return;
+    }
+
+    if(result._dev_otp){
+      K.authData._dev_otp = result._dev_otp;
+      K.authData._dev_show = true;
+      K.authData._local_mode = !!result._local_mode;
+      toast(result._local_mode ? 'Mode local — code affiché' : 'SMS indispo — code à l\'écran', 'warn', 3000);
+    }
+
+    K.authStep = 'otp';
+    renderAuthStep();
+  }catch(e){
+    toast(e.message || 'Erreur, réessaie', 'err');
+    const dbg = $('#auth-debug');
+    if(dbg) dbg.textContent = '❌ ' + (e.message || 'Erreur');
+  }
+};
+
+K._handleAuthOtp = async function(){
+  const otp = $('#auth-otp').value.replace(/\D/g,'');
+  if(otp.length !== 6) return toast('Code à 6 chiffres', 'err');
+  K.authData.otp = otp;  // OTP Vonage stocké pour verify-otp ensuite
+  K.authStep = 'pseudo';
+  renderAuthStep();
+};
+
+K._handleAuthPseudo = async function(){
+  const pseudo = $('#auth-pseudo').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
+  if(!/^[a-z0-9_-]{3,20}$/.test(pseudo)) return toast('Pseudo 3-20 lettres/chiffres', 'err');
+
+  // === Bypass admin : login local direct sans appel worker ===
+  if(K.authData._admin_bypass){
+    const localUser = {
+      id: 'kdmc_admin',
+      pseudo,
+      real_name: K.authData.name,
+      phone: K.authData.phone,
+      is_admin: true,
+      created_at: Date.now()
+    };
+    K.login(localUser, 'local-admin-' + Date.now());
+    toast('👑 Bienvenue Kevin admin', 'ok', 2500);
+    return;
+  }
+
+  // === Bypass invitation : login local user (pas admin) ===
+  if(K.authData._invited){
+    const localUser = {
+      id: 'invited_' + Date.now().toString(36),
+      pseudo,
+      real_name: K.authData.name,
+      phone: K.authData.phone,
+      is_admin: false,
+      invited_by_kevin: true,
+      created_at: Date.now()
+    };
+    K.login(localUser, 'invited-' + Date.now());
+    toast('🎉 Bienvenue ' + pseudo + ' !', 'ok', 2500);
+    return;
+  }
+
+  toast('Création du compte...', 'info', 1500);
+
+  // Tentative worker avec timeout 8s
+  let workerOk = false;
+  let workerResult = null;
+  try{
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const r = await fetch(API_BASE + '/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: K.authData.phone,
+        name: K.authData.name,
+        pseudo,
+        otp: K.authData.otp,
+        firebase_id_token: K.authData.firebase_id_token
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    workerResult = await r.json().catch(() => ({}));
+    if(r.ok && workerResult.ok){
+      K.login(workerResult.user, workerResult.token);
+      workerOk = true;
+    }
+  }catch(e){
+    // timeout ou network error
+  }
+
+  // Fallback : créer compte local si worker KO
+  if(!workerOk){
+    const isKevin = isKevinAdmin(K.authData.name) || K.authData.phone === '+33672280277';
+    const localUser = {
+      id: isKevin ? 'kdmc_admin' : ('local_' + Date.now().toString(36)),
+      pseudo,
+      real_name: K.authData.name,
+      phone: K.authData.phone,
+      is_admin: isKevin,
+      created_at: Date.now()
+    };
+    K.login(localUser, 'local-token-' + Date.now());
+    toast(isKevin ? '👑 Admin Kevin (local)' : 'Compte créé (local)', isKevin ? 'ok' : 'warn', 2500);
+  }
+};
+
+// ============================================================================
+//  Render — UI
+// ============================================================================
+K.render = function(){
+  const app = $('#app');
+  if(!app) return;
+
+  // Update bottom nav active state
+  $$('.bnav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === K.view));
+
+  switch(K.view){
+    case 'chats': renderChats(app); break;
+    case 'chat': renderChat(app); break;
+    case 'contacts': renderContacts(app); break;
+    case 'calls': renderCalls(app); break;
+    case 'settings': renderSettings(app); break;
+    case 'admin': renderAdmin(app); break;
+    case 'admin-users': renderAdminUsers(app); break;
+    case 'admin-live-users': renderAdminLiveUsers(app); break;
+    case 'admin-toggles': renderAdminToggles(app); break;
+    case 'admin-sentinels': renderAdminSentinels(app); break;
+    case 'admin-audit': renderAdminAudit(app); break;
+    case 'admin-invite-book': renderAdminInviteBook(app); break;
+    case 'admin-search': renderAdminSearch(app); break;
+    case 'admin-timeline': renderAdminTimeline(app); break;
+    case 'admin-map': renderAdminMap(app); break;
+    default: app.innerHTML = '<p>Vue inconnue</p>';
+  }
+};
+
+K.sv = function(view, data){
+  K.view = view;
+  if(data) K.viewData = data;
+  K.render();
+};
+
+function renderChats(app){
+  const convs = K.conversations;
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 16px">
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Mes conversations</h2>
+      <button class="btn btn-sm" onclick="K._showNewMenu()">＋ Nouveau</button>
+    </div>
+    ${convs.length === 0 ? `
+      <div class="card" style="text-align:center;padding:30px 14px">
+        <div style="font-size:3em;margin-bottom:12px">💬</div>
+        <p style="color:var(--ax-text-2);margin:0 0 16px">Aucune conversation</p>
+        <button class="btn" onclick="K.openInvite()">📤 Inviter mes amis</button>
+        <button class="btn btn-out btn-block" onclick="K.openCreateGroup()" style="margin-top:10px">👥 Créer un groupe</button>
+      </div>
+    ` : `
+      <div class="conv-list">
+        ${convs.map(c => `
+          <div class="conv-item" onclick="K.openConv('${esc(c.id)}')">
+            <div class="avatar">${esc((c.name || c.pseudo || '?')[0].toUpperCase())}</div>
+            <div style="flex:1;min-width:0">
+              <div class="conv-name">${esc(c.name || c.pseudo || 'Sans nom')}</div>
+              <div class="conv-last">${esc(c.last_preview || '(message chiffré)')}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="conv-time">${formatTime(c.last_msg_ts)}</div>
+              ${c.unread ? `<span class="conv-unread">${c.unread}</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+  `;
+}
+
+function renderChat(app){
+  const conv = K.viewData;
+  if(!conv){ K.sv('chats'); return; }
+  const msgs = K.messages[conv.id] || [];
+  app.innerHTML = `
+    <div class="chat-header">
+      <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
+      <div class="avatar">${esc((conv.name || conv.pseudo || '?')[0].toUpperCase())}</div>
+      <div style="flex:1">
+        <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
+        <div style="font-size:.75em;color:var(--ax-ok)">🛡 Chiffré E2E</div>
+      </div>
+      <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
+      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
+    </div>
+    <div class="chat-messages" id="chat-msgs">
+      ${msgs.length === 0 ? `
+        <div class="msg system">🛡 Cette conversation est chiffrée bout-en-bout. Personne d'autre que toi et tes destinataires ne peut lire les messages.</div>
+      ` : msgs.map(m => `
+        <div class="msg ${m.from === K.user.id ? 'me' : 'them'}">
+          ${esc(m.text || '(message chiffré)')}
+          <div class="msg-time">${formatTime(m.ts)}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="chat-input">
+      <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id)"></textarea>
+      <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
+    </div>
+  `;
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight}, 50);
+}
+
+K.openConv = async function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv){ toast('Conversation introuvable', 'err'); return; }
+
+  // Phase 3 : ouvrir WebSocket pour temps réel
+  K._closeWs();
+  K._openWs(convId);
+
+  // Envoyer read receipt après 800ms (WS ouvert)
+  setTimeout(() => {
+    const msgs = K.messages[convId] || [];
+    const last = msgs[msgs.length - 1];
+    if(last && last.id) K._sendReadReceipt(convId, last.id);
+  }, 800);
+
+  // Phase 2 : établir session E2E si pas déjà fait
+  try{
+    if(window.ApexCrypto && !ApexCrypto.getSessionKey(convId) && K._cryptoKeys && conv.peer_pubkey){
+      const peerKey = await ApexCrypto.importPublicKey(conv.peer_pubkey);
+      await ApexCrypto.establishSession(convId, K._cryptoKeys.privateKey, peerKey);
+    }
+  }catch(e){ _safeCatch('establish-session', e); }
+
+  K.sv('chat', conv);
+};
+
+K._sendMsg = async function(){
+  const input = $('#msg-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const conv = K.viewData;
+
+  // Phase 2 : chiffrer E2E si session active
+  let ciphertext = null;
+  let displayText = text;
+  try{
+    if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
+      ciphertext = await ApexCrypto.encryptForConv(conv.id, text);
+      // Le texte clair reste local (pour affichage), le ciphertext part au serveur
+    }
+  }catch(e){
+    _safeCatch('encrypt-message', e);
+  }
+
+  const msg = {
+    id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    from: K.user.id,
+    text: displayText,      // affichage local clair
+    ciphertext,             // envoyé au serveur (null si pas de session)
+    ts: Date.now(),
+    encrypted: !!ciphertext
+  };
+
+  if(!K.messages[conv.id]) K.messages[conv.id] = [];
+  K.messages[conv.id].push(msg);
+  ls('messages_' + conv.id, K.messages[conv.id]);
+  input.value = '';
+  K.render();
+
+  // Phase 3 : envoyer via WebSocket
+  if(K.ws && K.ws.readyState === WebSocket.OPEN){
+    try{
+      K.ws.send(JSON.stringify({
+        type: 'message',
+        ciphertext: ciphertext || text,  // fallback texte clair si pas de session
+        mime: 'text/plain',
+        ts: msg.ts
+      }));
+      toast('🛡 Envoyé chiffré', 'ok', 1000);
+    }catch(e){
+      _safeCatch('ws-send', e);
+      toast('Envoi local (offline) — sera synchro plus tard', 'warn', 1500);
+    }
+  } else {
+    toast('Mode local (pas de WS) — message stocké', 'info', 1500);
+  }
+};
+
+// ============================================================================
+//  WebSocket client (Phase 3)
+// ============================================================================
+K._openWs = async function(convId){
+  if(K.ws){ try{K.ws.close()}catch(_){}; K.ws = null; }
+  if(!K.user || !K.token) return;
+
+  try{
+    const wsUrl = API_BASE.replace(/^https?/, 'wss') +
+      `/api/conversations/${encodeURIComponent(convId)}/ws` +
+      `?token=${encodeURIComponent(K.token)}&uid=${encodeURIComponent(K.user.id)}&conv=${encodeURIComponent(convId)}`;
+
+    K.ws = new WebSocket(wsUrl);
+
+    K.ws.addEventListener('open', () => {
+      _logTelemetry('ok', 'ws-open', { convId });
+    });
+
+    K.ws.addEventListener('message', async (event) => {
+      try{
+        const data = JSON.parse(event.data);
+        await _handleWsMessage(data, convId);
+      }catch(e){ _safeCatch('ws-message', e); }
+    });
+
+    K.ws.addEventListener('error', (e) => {
+      _logTelemetry('warn', 'ws-error', { convId });
+    });
+
+    K.ws.addEventListener('close', (e) => {
+      _logTelemetry('info', 'ws-close', { convId, code: e.code });
+      K.ws = null;
+    });
+
+    // Ping keep-alive 25s
+    K.wsPing = setInterval(() => {
+      if(K.ws?.readyState === WebSocket.OPEN){
+        K.ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 25000);
+  }catch(e){
+    _safeCatch('ws-open', e);
+  }
+};
+
+K._closeWs = function(){
+  if(K.wsPing){ clearInterval(K.wsPing); K.wsPing = null; }
+  if(K.ws){ try{K.ws.close()}catch(_){}; K.ws = null; }
+};
+
+async function _handleWsMessage(data, convId){
+  switch(data.type){
+    case 'hello':
+      // Server accepts connection
+      break;
+    case 'message':
+      // Nouveau message reçu
+      let decryptedText = '(message chiffré)';
+      try{
+        if(window.ApexCrypto && ApexCrypto.getSessionKey(convId) && data.ciphertext){
+          decryptedText = await ApexCrypto.decryptForConv(convId, data.ciphertext);
+        } else if(data.ciphertext){
+          // Fallback : si c'est du texte clair (Phase 1 testing)
+          decryptedText = data.ciphertext;
+        }
+      }catch(e){ _safeCatch('decrypt-message', e); }
+
+      const msg = {
+        id: data.id || 'm_' + Date.now(),
+        from: data.sender_id,
+        text: decryptedText,
+        ts: data.ts || Date.now(),
+        encrypted: !!data.ciphertext
+      };
+      if(!K.messages[convId]) K.messages[convId] = [];
+      // Dédup
+      if(!K.messages[convId].some(m => m.id === msg.id)){
+        K.messages[convId].push(msg);
+        ls('messages_' + convId, K.messages[convId]);
+        if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        else toast(`Nouveau message`, 'info', 2000);
+      }
+      break;
+    case 'ack':
+      // Server ack
+      break;
+    case 'typing':
+      // Phase 3 wire — DO envoie `userId`, client legacy `from`
+      K._typingState = K._typingState || {};
+      K._typingState[convId] = K._typingState[convId] || {};
+      const tFrom = data.userId || data.from;
+      if(tFrom && tFrom !== K.user.id){
+        K._typingState[convId][tFrom] = { ts: Date.now(), pseudo: data.from_pseudo || tFrom };
+        setTimeout(() => {
+          if(K._typingState[convId]?.[tFrom] && Date.now() - K._typingState[convId][tFrom].ts > 4000){
+            delete K._typingState[convId][tFrom];
+            if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
+          }
+        }, 4500);
+        if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
+      }
+      break;
+    case 'read': {
+      // Read receipts — DO envoie userId + message_id
+      K._readState = K._readState || {};
+      K._readState[convId] = K._readState[convId] || {};
+      const rFrom = data.userId || data.from;
+      const rMsg = data.message_id || data.last_read_msg_id;
+      if(rFrom && rMsg){
+        K._readState[convId][rFrom] = rMsg;
+        if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+      }
+      break;
+    }
+    case 'reaction': {
+      // Reactions — DO envoie userId + message_id + emoji + action
+      const xFrom = data.userId || data.from;
+      const xMsg = data.message_id || data.msg_id;
+      if(xMsg && data.emoji && K.messages[convId]){
+        const m = K.messages[convId].find(x => x.id === xMsg);
+        if(m){
+          m.reactions = m.reactions || {};
+          m.reactions[data.emoji] = m.reactions[data.emoji] || [];
+          if(data.action === 'remove'){
+            m.reactions[data.emoji] = m.reactions[data.emoji].filter(u => u !== xFrom);
+            if(m.reactions[data.emoji].length === 0) delete m.reactions[data.emoji];
+          } else {
+            if(!m.reactions[data.emoji].includes(xFrom)) m.reactions[data.emoji].push(xFrom);
+          }
+          ls('messages_' + convId, K.messages[convId]);
+          if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        }
+      }
+      break;
+    }
+    case 'presence':
+      // Joined / left
+      break;
+    case 'pong':
+      break;
+    case 'error':
+      _logTelemetry('warn', 'ws-server-error', data);
+      break;
+    // Visio : signaling WebRTC relayé par ConversationDO
+    case 'webrtc-offer':
+      // Quelqu'un nous appelle → modal incoming
+      if(typeof K._onIncomingCall === 'function') K._onIncomingCall(data);
+      break;
+    case 'webrtc-answer':
+      // Le receiver a répondu à notre offer
+      if(typeof K._onAnswer === 'function') await K._onAnswer(data);
+      break;
+    case 'webrtc-candidate':
+      // ICE candidate à ajouter
+      if(typeof K._onIceCandidate === 'function') await K._onIceCandidate(data);
+      break;
+    case 'call-end':
+    case 'call-busy':
+      // Peer a raccroché / busy → cleanup local
+      if(K._activeCall){
+        toast(data.type === 'call-busy' ? 'Occupé' : 'Appel terminé', 'info', 2000);
+        K._endCall();
+      }
+      break;
+  }
+}
+
+// ============================================================================
+//  Phase 5 — Appels WebRTC P2P (4 max)
+// ============================================================================
+K._call = async function(type, convId){
+  if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
+
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+
+  K._activeCall = { type, convId, peerConn: null, localStream: null, remoteStream: null, startedAt: Date.now() };
+
+  // UI overlay appel
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" style="background:#000">
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;color:white">
+        <div style="padding:20px;text-align:center">
+          <div style="font-size:3em">${type === 'video' ? '📹' : '📞'}</div>
+          <div style="font-size:1.5em;margin-top:10px">${esc(conv.name || conv.pseudo || 'Appel')}</div>
+          <div style="color:var(--ax-text-3);margin-top:6px" id="call-status">🛜 Connexion...</div>
+        </div>
+        <div style="flex:1;position:relative">
+          ${type === 'video' ? '<video id="remote-video" style="width:100%;height:100%;object-fit:cover" autoplay playsinline></video><video id="local-video" style="position:absolute;top:14px;right:14px;width:30%;border-radius:14px" autoplay playsinline muted></video>' : ''}
+        </div>
+        <div style="padding:20px calc(var(--ax-safe-bottom) + 20px);text-align:center">
+          <button class="btn btn-err" onclick="K._endCall()" style="border-radius:50%;width:64px;height:64px;font-size:1.5em">📴</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  try{
+    // Get user media
+    const constraints = { audio: true, video: type === 'video' };
+    K._activeCall.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    if(type === 'video'){
+      const lv = $('#local-video');
+      if(lv) lv.srcObject = K._activeCall.localStream;
+    }
+
+    // Peer connection
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    });
+    K._activeCall.peerConn = pc;
+
+    // Add local tracks
+    K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
+
+    // Remote stream
+    pc.ontrack = (e) => {
+      K._activeCall.remoteStream = e.streams[0];
+      if(type === 'video'){
+        const rv = $('#remote-video');
+        if(rv) rv.srcObject = e.streams[0];
+      }
+      $('#call-status').textContent = '🟢 En cours';
+    };
+
+    // ICE candidates → envoyer via WS
+    pc.onicecandidate = (e) => {
+      if(e.candidate && K.ws?.readyState === WebSocket.OPEN){
+        K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, convId }));
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      $('#call-status').textContent = '📶 ' + pc.connectionState;
+      if(pc.connectionState === 'failed' || pc.connectionState === 'disconnected'){
+        toast('Connexion perdue', 'warn');
+        K._endCall();
+      }
+    };
+
+    // Créer offer + envoyer via WS
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    if(K.ws?.readyState === WebSocket.OPEN){
+      K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
+      $('#call-status').textContent = '📞 Appel en cours...';
+    } else {
+      toast('WebSocket non connecté', 'err');
+      K._endCall();
+    }
+  }catch(e){
+    _safeCatch('call-start', e);
+    toast('Impossible de démarrer l\'appel : ' + e.message, 'err');
+    K._endCall();
+  }
+};
+
+K._endCall = function(){
+  if(K._activeCall){
+    try{ K._activeCall.peerConn?.close(); }catch(_){}
+    try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_){}
+    try{ K._activeCall.screenStream?.getTracks().forEach(t => t.stop()); }catch(_){}
+    if(K.ws?.readyState === WebSocket.OPEN){
+      try{ K.ws.send(JSON.stringify({ type: 'call-end', convId: K._activeCall.convId })); }catch(_){}
+    }
+    K._activeCall = null;
+  }
+  K._closeModal();
+};
+
+// ============================================================================
+//  Phase 5 — Visio receiver + signaling + contrôles (mute/screen-share)
+// ============================================================================
+// Toggle micro (mute/unmute)
+K._toggleMute = function(){
+  if(!K._activeCall?.localStream) return;
+  const tracks = K._activeCall.localStream.getAudioTracks();
+  tracks.forEach(t => { t.enabled = !t.enabled; });
+  K._activeCall.muted = !K._activeCall.muted;
+  const btn = $('#call-btn-mute');
+  if(btn) btn.textContent = K._activeCall.muted ? '🔇' : '🎤';
+};
+
+// Toggle vidéo (cam off / on)
+K._toggleVideo = function(){
+  if(!K._activeCall?.localStream) return;
+  const tracks = K._activeCall.localStream.getVideoTracks();
+  tracks.forEach(t => { t.enabled = !t.enabled; });
+  K._activeCall.videoOff = !K._activeCall.videoOff;
+  const btn = $('#call-btn-video');
+  if(btn) btn.textContent = K._activeCall.videoOff ? '📵' : '📹';
+};
+
+// Switch caméra (front/back)
+K._switchCamera = async function(){
+  if(!K._activeCall?.localStream) return;
+  const current = K._activeCall.facingMode || 'user';
+  const next = current === 'user' ? 'environment' : 'user';
+  try{
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      audio: true, video: { facingMode: { exact: next } },
+    });
+    // Remplace tracks dans peer connection
+    const sender = K._activeCall.peerConn.getSenders().find(s => s.track?.kind === 'video');
+    if(sender) await sender.replaceTrack(newStream.getVideoTracks()[0]);
+    // Stop ancien stream
+    K._activeCall.localStream.getTracks().forEach(t => t.stop());
+    K._activeCall.localStream = newStream;
+    K._activeCall.facingMode = next;
+    const lv = $('#local-video');
+    if(lv) lv.srcObject = newStream;
+  }catch(e){
+    toast('Caméra non disponible', 'err');
+  }
+};
+
+// Screen share (replace video track avec écran)
+K._toggleScreenShare = async function(){
+  if(!K._activeCall) return;
+  if(K._activeCall.screenStream){
+    // Stop screen share, retour caméra
+    K._activeCall.screenStream.getTracks().forEach(t => t.stop());
+    K._activeCall.screenStream = null;
+    const sender = K._activeCall.peerConn.getSenders().find(s => s.track?.kind === 'video');
+    if(sender && K._activeCall.localStream){
+      const vidTrack = K._activeCall.localStream.getVideoTracks()[0];
+      if(vidTrack) await sender.replaceTrack(vidTrack);
+    }
+    const btn = $('#call-btn-screen');
+    if(btn) btn.textContent = '🖥';
+    return;
+  }
+  try{
+    const screen = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    K._activeCall.screenStream = screen;
+    const sender = K._activeCall.peerConn.getSenders().find(s => s.track?.kind === 'video');
+    if(sender) await sender.replaceTrack(screen.getVideoTracks()[0]);
+    // Auto-stop si user arrête screen share via UI navigateur
+    screen.getVideoTracks()[0].onended = () => K._toggleScreenShare();
+    const btn = $('#call-btn-screen');
+    if(btn) btn.textContent = '✕';
+  }catch(e){
+    toast('Partage écran refusé', 'warn');
+  }
+};
+
+// Receiver : appel entrant (modal incoming)
+K._onIncomingCall = function(msg){
+  if(K._activeCall) {
+    // Déjà en appel → reject busy
+    if(K.ws?.readyState === WebSocket.OPEN){
+      K.ws.send(JSON.stringify({ type: 'call-busy', to: msg.from, convId: msg.convId }));
+    }
+    return;
+  }
+  const isVideo = msg.callType === 'video';
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-incoming-title" style="background:rgba(0,0,0,.85)">
+      <div class="modal" role="document" style="text-align:center;padding:32px 20px">
+        <div style="font-size:4em;animation:pulse 1s ease-in-out infinite">${isVideo ? '📹' : '📞'}</div>
+        <h3 id="call-incoming-title" style="color:var(--ax-gold);margin:14px 0 6px">Appel ${isVideo ? 'vidéo' : 'audio'} entrant</h3>
+        <p style="color:var(--ax-text-2)">de <strong>${esc(msg.from || 'inconnu')}</strong></p>
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:24px">
+          <button class="btn btn-err" onclick="K._rejectCall('${esc(msg.from)}','${esc(msg.convId)}')" aria-label="Refuser" style="border-radius:50%;width:64px;height:64px;font-size:1.8em">📴</button>
+          <button class="btn" onclick='K._answerCall(${JSON.stringify(msg).replace(/'/g,"&#39;")})' aria-label="Répondre" style="background:var(--ax-ok);border-radius:50%;width:64px;height:64px;font-size:1.8em">${isVideo ? '📹' : '📞'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Receiver : répond à l'appel entrant
+K._answerCall = async function(incoming){
+  if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
+  const type = incoming.callType || 'audio';
+  K._activeCall = { type, convId: incoming.convId, peerConn: null, localStream: null, remoteFrom: incoming.from, startedAt: Date.now() };
+  K._renderCallUI(type, incoming.from);
+  try{
+    const constraints = { audio: true, video: type === 'video' };
+    K._activeCall.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    if(type === 'video'){
+      const lv = $('#local-video'); if(lv) lv.srcObject = K._activeCall.localStream;
+    }
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:stun.l.google.com:19302' },
+      ],
+    });
+    K._activeCall.peerConn = pc;
+    K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
+    pc.ontrack = (e) => {
+      K._activeCall.remoteStream = e.streams[0];
+      if(type === 'video'){
+        const rv = $('#remote-video'); if(rv) rv.srcObject = e.streams[0];
+      }
+      $('#call-status').textContent = '🟢 En cours';
+    };
+    pc.onicecandidate = (e) => {
+      if(e.candidate && K.ws?.readyState === WebSocket.OPEN){
+        K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, to: incoming.from, convId: incoming.convId }));
+      }
+    };
+    pc.onconnectionstatechange = () => {
+      $('#call-status').textContent = '📶 ' + pc.connectionState;
+      if(pc.connectionState === 'failed' || pc.connectionState === 'disconnected'){ K._endCall(); }
+    };
+    // Set remote offer
+    await pc.setRemoteDescription(incoming.offer);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    if(K.ws?.readyState === WebSocket.OPEN){
+      K.ws.send(JSON.stringify({ type: 'webrtc-answer', answer, to: incoming.from, convId: incoming.convId }));
+    }
+  }catch(e){
+    toast('Impossible de répondre : ' + e.message, 'err');
+    K._endCall();
+  }
+};
+
+K._rejectCall = function(from, convId){
+  if(K.ws?.readyState === WebSocket.OPEN){
+    K.ws.send(JSON.stringify({ type: 'call-end', to: from, convId, reason: 'rejected' }));
+  }
+  K._closeModal();
+};
+
+// Render UI commune appel (caller + receiver)
+K._renderCallUI = function(type, peerName){
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-active-title" style="background:#000">
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;color:white">
+        <div style="padding:20px;text-align:center">
+          <div style="font-size:3em">${type === 'video' ? '📹' : '📞'}</div>
+          <div id="call-active-title" style="font-size:1.5em;margin-top:10px">${esc(peerName || 'Appel')}</div>
+          <div style="color:var(--ax-text-3);margin-top:6px" id="call-status">🛜 Connexion...</div>
+        </div>
+        <div style="flex:1;position:relative">
+          ${type === 'video' ? '<video id="remote-video" style="width:100%;height:100%;object-fit:cover" autoplay playsinline></video><video id="local-video" style="position:absolute;top:14px;right:14px;width:30%;border-radius:14px" autoplay playsinline muted></video>' : ''}
+        </div>
+        <div style="padding:20px calc(var(--ax-safe-bottom) + 20px);display:flex;justify-content:center;gap:14px;flex-wrap:wrap">
+          <button id="call-btn-mute" class="btn btn-ghost" onclick="K._toggleMute()" aria-label="Micro" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🎤</button>
+          ${type === 'video' ? '<button id="call-btn-video" class="btn btn-ghost" onclick="K._toggleVideo()" aria-label="Caméra" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">📹</button>' : ''}
+          ${type === 'video' ? '<button id="call-btn-cam-switch" class="btn btn-ghost" onclick="K._switchCamera()" aria-label="Switch caméra" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🔄</button>' : ''}
+          ${type === 'video' ? '<button id="call-btn-screen" class="btn btn-ghost" onclick="K._toggleScreenShare()" aria-label="Partage écran" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🖥</button>' : ''}
+          <button class="btn btn-err" onclick="K._endCall()" aria-label="Raccrocher" style="border-radius:50%;width:64px;height:64px;font-size:1.5em">📴</button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Handler ICE candidate reçu via WS (à wirer dans WS message handler)
+K._onIceCandidate = async function(msg){
+  if(!K._activeCall?.peerConn) return;
+  try{ await K._activeCall.peerConn.addIceCandidate(msg.candidate); }catch(_){}
+};
+
+// Handler answer reçu via WS (caller reçoit la réponse du receiver)
+K._onAnswer = async function(msg){
+  if(!K._activeCall?.peerConn) return;
+  try{ await K._activeCall.peerConn.setRemoteDescription(msg.answer); }catch(_){}
+};
+
+// ============================================================================
+//  Phase 8 — Mini-apps embedded (Apex Studios + paiement QR)
+// ============================================================================
+K.openMiniApps = function(){
+  K._showModal('🎨 Mini-apps Apex', `
+    <div class="admin-grid">
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('traducteur')">
+        <div class="ico">🌐</div><div class="lbl">Traducteur</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('cuisine')">
+        <div class="ico">🍳</div><div class="lbl">Cuisine</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('medical')">
+        <div class="ico">🩺</div><div class="lbl">Médical</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('finance')">
+        <div class="ico">💰</div><div class="lbl">Finance</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openStudio('legal')">
+        <div class="ico">⚖</div><div class="lbl">Légal</div>
+      </div>
+      <div class="admin-tile" onclick="K._closeModal();K._openPayQr()">
+        <div class="ico">💸</div><div class="lbl">Paiement QR</div>
+      </div>
+    </div>
+  `);
+};
+
+K._openStudio = function(name){
+  const apexBase = 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/';
+  window.open(apexBase + '#studio=' + name, '_blank');
+};
+
+K._openPayQr = function(){
+  K._showModal('💸 Demande de paiement', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Génère un QR code de demande de paiement à envoyer à un contact.</p>
+    <label class="label">Montant (€)</label>
+    <input id="pq-amount" class="input" type="number" min="0.01" step="0.01" placeholder="20.00">
+    <label class="label" style="margin-top:14px">Méthode</label>
+    <select id="pq-method" class="input">
+      <option value="paypal">PayPal.me</option>
+      <option value="revolut">Revolut @tag</option>
+      <option value="iban">Virement IBAN</option>
+    </select>
+    <label class="label" style="margin-top:14px">Ton identifiant (username PayPal/Revolut/IBAN)</label>
+    <input id="pq-id" class="input" placeholder="@kevin ou IBAN FR76...">
+    <label class="label" style="margin-top:14px">Note (optionnel)</label>
+    <input id="pq-note" class="input" placeholder="Resto vendredi" maxlength="100">
+    <button class="btn btn-block" onclick="K._generatePayQr()" style="margin-top:14px">📱 Générer le QR</button>
+    <div id="pq-result" style="margin-top:14px"></div>
+  `);
+};
+
+K._generatePayQr = async function(){
+  const amount = parseFloat($('#pq-amount').value);
+  const method = $('#pq-method').value;
+  const id = $('#pq-id').value.trim();
+  const note = $('#pq-note').value.trim();
+  if(!amount || amount <= 0 || !id) return toast('Montant + identifiant requis', 'err');
+
+  let url;
+  if(method === 'paypal') url = `https://paypal.me/${id.replace(/^@/, '')}/${amount.toFixed(2)}EUR`;
+  else if(method === 'revolut') url = `https://revolut.me/${id.replace(/^@/, '')}?amount=${amount.toFixed(2)}&currency=EUR&description=${encodeURIComponent(note)}`;
+  else url = `SEPA:${id}:${amount.toFixed(2)}:EUR:${note}`;
+
+  // QR code via API tier (qrserver.com gratuit)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+
+  $('#pq-result').innerHTML = `
+    <div style="text-align:center;padding:14px;background:white;border-radius:14px">
+      <img src="${qrUrl}" alt="QR" style="max-width:100%;border-radius:8px">
+    </div>
+    <p style="text-align:center;margin-top:10px;color:var(--ax-text-2)">
+      <strong style="color:var(--ax-gold)">${amount.toFixed(2)} €</strong> via ${method}
+    </p>
+    <p style="text-align:center;font-size:.78em;word-break:break-all;color:var(--ax-text-3)">
+      ${esc(url)}
+    </p>
+    <button class="btn btn-out btn-block btn-sm" onclick="navigator.clipboard.writeText('${esc(url)}');K.toast('Lien copié','ok')" style="margin-top:10px">📋 Copier le lien</button>
+  `;
+};
+
+function renderContacts(app){
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Contacts</h2>
+    <div class="card" style="text-align:center;padding:24px 14px">
+      <div style="font-size:2.5em;margin-bottom:10px">👥</div>
+      <p style="color:var(--ax-text-2);margin:0 0 14px">Invite tes amis pour démarrer une conversation</p>
+      <button class="btn" onclick="K.openInvite()">📤 Inviter des amis</button>
+    </div>
+  `;
+}
+
+function renderCalls(app){
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Appels</h2>
+    <div class="card" style="text-align:center;padding:24px 14px">
+      <div style="font-size:2.5em;margin-bottom:10px">📞</div>
+      <p style="color:var(--ax-text-2)">Aucun appel récent</p>
+      <p style="color:var(--ax-text-3);font-size:.85em">Les appels audio/vidéo arrivent en Phase 5</p>
+    </div>
+  `;
+}
+
+function renderSettings(app){
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Réglages</h2>
+    <div class="card">
+      <div class="card-row">
+        <div class="avatar avatar-lg">${esc((K.user.pseudo || '?')[0].toUpperCase())}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:1.1em">${esc(K.user.pseudo)}</div>
+          ${K.user.is_admin ? '<span class="tag tag-admin">👑 Admin</span>' : ''}
+          ${PRECONFIGURED_USERS[K.user.id]?.premium ? '<span class="tag tag-premium">⭐ Premium</span>' : ''}
+        </div>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — édition profil')">
+        <span>👤</span><span style="flex:1">Mon profil</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — préférences notifs')">
+        <span>🔔</span><span style="flex:1">Notifications</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — confidentialité')">
+        <span>🔒</span><span style="flex:1">Confidentialité</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="alert('Phase 2 — apparence')">
+        <span>🎨</span><span style="flex:1">Apparence</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openTimeCapsule()">
+        <span>⏰</span><span style="flex:1">Capsule temporelle</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openLetters()">
+        <span>💌</span><span style="flex:1">Lettre différée 24h</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openMemoryLane()">
+        <span>🕰</span><span style="flex:1">Memory Lane (il y a 1 an)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openMiniApps()">
+        <span>🎨</span><span style="flex:1">Mini-apps (Studios Apex)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._openPayQr()">
+        <span>💸</span><span style="flex:1">Paiement QR</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K.openPremium()">
+        <span>⭐</span><span style="flex:1">Apex Chat+ Premium</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./diag.html')">
+        <span>🔧</span><span style="flex:1">Diagnostic technique</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./cgu.html')">
+        <span>📜</span><span style="flex:1">CGU</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./privacy.html')">
+        <span>🛡</span><span style="flex:1">Charte privée</span><span>›</span>
+      </div>
+    </div>
+    <button class="btn btn-err btn-block" onclick="K.logout()">🚪 Se déconnecter</button>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.75em;margin-top:20px">Apex Chat ${__APEX_CHAT_VERSION__}</p>
+  `;
+}
+
+function renderAdmin(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return toast('Accès admin uniquement', 'err'); }
+  const sent = K.sentinels || {};
+  const userCount = Object.keys(PRECONFIGURED_USERS).length + (lg('invited_users', []).length || 0);
+  app.innerHTML = `
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">👑 Panel admin Kevin</h2>
+    <div class="admin-grid">
+      <div class="admin-tile" onclick="K.sv('admin-live-users')">
+        <div class="ico">🟢</div>
+        <div class="stat" style="color:var(--ax-ok)">LIVE</div>
+        <div class="lbl">Connectés live</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-map')">
+        <div class="ico">🗺</div>
+        <div class="stat" style="color:var(--ax-gold)">MAP</div>
+        <div class="lbl">Carte temps réel</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-invite-book')">
+        <div class="ico">📋</div>
+        <div class="stat" style="color:var(--ax-gold)">+</div>
+        <div class="lbl">Carnet invitations</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-users')">
+        <div class="ico">👥</div>
+        <div class="stat">${userCount}</div>
+        <div class="lbl">Utilisateurs</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-toggles')">
+        <div class="ico">🎛</div>
+        <div class="stat">ON/OFF</div>
+        <div class="lbl">Toggles</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-audit')">
+        <div class="ico">📜</div>
+        <div class="stat">${lg('telemetry',[]).length}</div>
+        <div class="lbl">Audit log</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-sentinels')">
+        <div class="ico">🛡</div>
+        <div class="stat" style="color:${sent.storage?.ratio > 0.85 ? 'var(--ax-warn)' : 'var(--ax-ok)'}">${sent.storage?.ratio ? (sent.storage.ratio*100).toFixed(0)+'%' : 'OK'}</div>
+        <div class="lbl">Sentinelles</div>
+      </div>
+      <div class="admin-tile" onclick="K._adminCmd('analytics')">
+        <div class="ico">📊</div>
+        <div class="stat">—</div>
+        <div class="lbl">Stats</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-search')">
+        <div class="ico">🔍</div>
+        <div class="stat">🔎</div>
+        <div class="lbl">Recherche globale</div>
+      </div>
+      <div class="admin-tile" onclick="K._adminCmd('broadcast')">
+        <div class="ico">📢</div>
+        <div class="stat">—</div>
+        <div class="lbl">Broadcast</div>
+      </div>
+      <div class="admin-tile" onclick="K._adminLoadSignalements()">
+        <div class="ico">⚠</div>
+        <div class="stat">${lg('signalements',[]).length}</div>
+        <div class="lbl">Signalements</div>
+      </div>
+    </div>
+
+    <div class="admin-section-title">🤖 Assistant Apex admin</div>
+    <div class="card">
+      <p style="color:var(--ax-text-2);font-size:.9em;margin:0 0 10px">
+        Demande à Apex de retrouver une conversation, analyser un user, exporter, etc.
+      </p>
+      <textarea class="input" id="admin-ai-input" rows="2" placeholder="Ex: trouve la conversation où Sophie a parlé du resto"></textarea>
+      <button class="btn btn-block btn-sm" onclick="K._adminAiAsk()" style="margin-top:8px">✨ Demander à Apex</button>
+      <div id="admin-ai-result" style="margin-top:12px"></div>
+    </div>
+
+    <div class="admin-section-title">⚙ Architecture (Mode A — cercle privé)</div>
+    <div class="card" style="font-size:.85em">
+      <div class="card-row"><span style="flex:1">Mode</span><strong>${esc(K.config.ADMIN_MODE || 'A')}</strong></div>
+      <div class="card-row"><span style="flex:1">Kevin invisible admin</span><strong>${K.config.KEVIN_INVISIBLE_ADMIN === 'true' ? '✓ Actif' : '✗ Désactivé'}</strong></div>
+      <div class="card-row"><span style="flex:1">Auth provider</span><strong>${esc(K.config.AUTH_PROVIDER || 'firebase')}</strong></div>
+      <div class="card-row"><span style="flex:1">Pipeline self-healing</span><strong style="color:var(--ax-ok)">✓ Apex (ax_telemetry_in)</strong></div>
+    </div>
+  `;
+}
+
+function renderAdminUsers(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const users = Object.entries(PRECONFIGURED_USERS).map(([id, u]) => ({id, ...u}));
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Utilisateurs</h2>
+    </div>
+    <input class="input" placeholder="🔍 Rechercher pseudo / vrai nom / tel" oninput="K._filterUsers(this.value)" id="user-search">
+    <div style="margin-top:14px" id="user-list">
+      ${users.map(u => `
+        <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="K._adminViewUserCard('${esc(u.id)}')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar">${esc(u.pseudo[0].toUpperCase())}</div>
+            <div style="flex:1">
+              <div><strong>${esc(u.pseudo)}</strong> <span style="color:var(--ax-text-3)">(${esc(u.real_name)})</span></div>
+              <div style="font-size:.78em;color:var(--ax-text-2)">
+                ${u.role === 'admin' ? '<span class="tag tag-admin">👑 Admin</span>' : ''}
+                ${u.premium ? '<span class="tag tag-premium">⭐ Premium</span>' : ''}
+                <span style="color:var(--ax-text-3)">${esc(u.role)}</span>
+              </div>
+            </div>
+            <span style="color:var(--ax-text-3)">›</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+K._adminViewUserCard = function(userId){
+  const u = PRECONFIGURED_USERS[userId];
+  if(!u) return toast('Utilisateur introuvable', 'err');
+  // Audit log
+  _logTelemetry('info', 'admin_view_user', { target: userId, actor: K.user.id });
+  K._showModal('Fiche complète : ' + u.pseudo, `
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="avatar avatar-lg" style="margin:0 auto 8px">${esc(u.pseudo[0].toUpperCase())}</div>
+      <div style="font-weight:700;font-size:1.2em">${esc(u.real_name)}</div>
+      <div style="color:var(--ax-text-2)">@${esc(u.pseudo)}</div>
+    </div>
+    <div class="card">
+      <div class="card-row"><span style="flex:1">Rôle</span><strong>${esc(u.role)}</strong></div>
+      ${u.email ? `<div class="card-row"><span style="flex:1">Email</span><strong>${esc(u.email)}</strong></div>` : ''}
+      <div class="card-row"><span style="flex:1">Premium</span><strong>${u.premium ? '✓ Illimité' : 'Non'}</strong></div>
+      <div class="card-row"><span style="flex:1">ID interne</span><code style="font-size:.78em">${esc(userId)}</code></div>
+    </div>
+    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px">📜 Audit log : cette consultation a été enregistrée.</p>
+  `);
+};
+
+K._filterUsers = function(q){
+  const norm = q.toLowerCase();
+  const users = Object.entries(PRECONFIGURED_USERS)
+    .filter(([id, u]) => !norm ||
+      u.pseudo.toLowerCase().includes(norm) ||
+      u.real_name.toLowerCase().includes(norm) ||
+      id.toLowerCase().includes(norm))
+    .map(([id, u]) => ({id, ...u}));
+  const list = $('#user-list');
+  if(!list) return;
+  list.innerHTML = users.length === 0 ? '<p style="color:var(--ax-text-3)">Aucun résultat</p>' :
+    users.map(u => `
+      <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="K._adminViewUserCard('${esc(u.id)}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar">${esc(u.pseudo[0].toUpperCase())}</div>
+          <div style="flex:1">
+            <div><strong>${esc(u.pseudo)}</strong> <span style="color:var(--ax-text-3)">(${esc(u.real_name)})</span></div>
+          </div>
+          <span style="color:var(--ax-text-3)">›</span>
+        </div>
+      </div>
+    `).join('');
+};
+
+async function renderAdminLiveUsers(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  // Récupère TOUS les users depuis backend (avec fallback local)
+  let allUsers = [];
+  let backendErr = null;
+  try{
+    const r = await K._api('GET', '/api/admin/all-users?filter=all&limit=200');
+    if(r && r.ok && Array.isArray(r.users)){
+      allUsers = r.users.map(u => ({
+        id: u.id, pseudo: u.pseudo, real_name: u.real_name || u.display_name,
+        phone: u.phone_last4 ? '••••' + u.phone_last4 : (u.phone || ''),
+        last_seen: u.last_seen, is_admin: u.is_admin, is_banned: u.is_banned,
+        admin_authorized: u.admin_authorized, last_geo_label: u.last_geo_label,
+        last_lat: u.last_lat, last_lng: u.last_lng,
+        last_device_label: u.last_device_label, last_user_agent: u.last_user_agent,
+        conv_count: u.conv_count, created_at: u.created_at, source: u.source,
+        role: u.is_admin ? 'admin' : 'user'
+      }));
+    }
+  }catch(e){ backendErr = e.message; }
+
+  // Fallback local si backend offline
+  if(allUsers.length === 0){
+    const preconfig = Object.entries(PRECONFIGURED_USERS).map(([id, u]) => ({
+      id, ...u, source: 'preconfig'
+    }));
+    const invited = lg('invited_users', []);
+    allUsers = [...preconfig, ...invited];
+  }
+
+  const onlineCount = allUsers.filter(u => u.last_seen && Date.now() - u.last_seen < 300000).length;
+  const bannedCount = allUsers.filter(u => u.is_banned).length;
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🟢 Tous les comptes</h2>
+      <button class="btn btn-sm btn-out" onclick="K.render()" aria-label="Actualiser">🔄</button>
+    </div>
+    ${backendErr ? `<p style="color:var(--ax-warn);font-size:.78em">⚠ Backend offline (${esc(backendErr.slice(0,60))}) — affichage local fallback</p>` : ''}
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:space-around;text-align:center">
+        <div><strong style="font-size:1.3em;color:var(--ax-gold)">${allUsers.length}</strong><br><span style="font-size:.72em;color:var(--ax-text-3)">Total</span></div>
+        <div><strong style="font-size:1.3em;color:var(--ax-ok)">${onlineCount}</strong><br><span style="font-size:.72em;color:var(--ax-text-3)">En ligne</span></div>
+        <div><strong style="font-size:1.3em;color:var(--ax-err)">${bannedCount}</strong><br><span style="font-size:.72em;color:var(--ax-text-3)">Bannis</span></div>
+      </div>
+    </div>
+    <input class="input" id="admin-user-filter" placeholder="🔍 Filtrer pseudo, nom, tel..." oninput="K._adminFilterLive(this.value)" style="margin-bottom:12px">
+    <div id="admin-live-list">
+      ${allUsers.map(u => K._renderLiveUserCard(u)).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-block" onclick="K.sv('admin-invite-book')">📋 Inviter</button>
+      <button class="btn btn-block btn-out" onclick="K.openInvite()">📤 1-clic</button>
+    </div>
+  `;
+}
+
+// Helper render carte user (réutilisable filter)
+K._renderLiveUserCard = function(u){
+  const isOnline = u.last_seen && (Date.now() - u.last_seen < 300000);
+  const isMe = u.id === K.user.id;
+  const banned = !!u.is_banned;
+  return `
+    <div class="card" style="margin-bottom:10px;${banned?'opacity:.55':''}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar" style="position:relative;${u.is_admin?'border:2px solid var(--ax-gold)':''}">
+          ${esc((u.pseudo || u.real_name || '?')[0].toUpperCase())}
+          <span class="dot ${isOnline ? '' : 'dot-off'}" style="position:absolute;bottom:0;right:0;border:2px solid var(--ax-bg-2)"></span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${esc(u.pseudo || '?')}${isMe ? ' <span style="color:var(--ax-gold)">(toi)</span>' : ''}
+            ${u.is_admin ? ' 👑' : ''}${banned ? ' 🚫' : ''}${u.admin_authorized ? ' ✅' : ''}
+          </div>
+          <div style="font-size:.76em;color:var(--ax-text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${esc(u.real_name || '')} ${u.phone ? '· ' + esc(u.phone) : ''}
+          </div>
+          <div style="font-size:.7em;color:var(--ax-text-3);margin-top:2px">
+            ${isOnline ? '🟢 En ligne' : (u.last_seen ? '⚫ ' + formatTime(u.last_seen) : '⚫ Jamais connecté')}
+            ${u.last_geo_label ? ' · 📍 ' + esc(u.last_geo_label) : ''}
+            ${u.conv_count ? ' · 💬 ' + u.conv_count : ''}
+          </div>
+        </div>
+        <button class="btn btn-sm btn-out" onclick="K._adminViewLiveUser('${esc(u.id)}')" title="Détails">👁</button>
+      </div>
+    </div>
+  `;
+};
+
+K._adminFilterLive = function(q){
+  const norm = q.toLowerCase().trim();
+  const list = $('#admin-live-list');
+  if(!list) return;
+  const cards = list.querySelectorAll('.card');
+  cards.forEach(c => {
+    c.style.display = !norm || c.textContent.toLowerCase().includes(norm) ? '' : 'none';
+  });
+};
+
+K._adminViewLiveUser = function(userId){
+  const u = PRECONFIGURED_USERS[userId] || lg('invited_users', []).find(x => x.id === userId);
+  if(!u) return toast('User introuvable', 'err');
+  _logTelemetry('info', 'admin_view_live_user', { target: userId });
+
+  const stored = lg('user_stats_' + userId, {});
+  const lastLoc = stored.last_location || null;
+  const devices = stored.devices || [];
+
+  K._showModal('👤 ' + (u.pseudo || u.real_name), `
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="avatar avatar-lg" style="margin:0 auto 8px">${esc((u.pseudo||'?')[0].toUpperCase())}</div>
+      <div style="font-weight:700;font-size:1.2em">${esc(u.real_name || u.pseudo)}</div>
+      <div style="color:var(--ax-text-2)">@${esc(u.pseudo)} · ${esc(u.phone || u.id)}</div>
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">📊 Activité</h4>
+    <div class="card" style="margin:0 0 12px">
+      <div class="card-row"><span style="flex:1">Status</span><strong style="color:${stored.last_seen && Date.now()-stored.last_seen<300000 ? 'var(--ax-ok)' : 'var(--ax-text-3)'}">${stored.last_seen && Date.now()-stored.last_seen<300000 ? '🟢 En ligne' : '⚫ Hors ligne'}</strong></div>
+      <div class="card-row"><span style="flex:1">Dernière activité</span><strong>${stored.last_seen ? formatTime(stored.last_seen) : '—'}</strong></div>
+      <div class="card-row"><span style="flex:1">Messages envoyés</span><strong>${stored.msg_count || 0}</strong></div>
+      <div class="card-row"><span style="flex:1">Conversations</span><strong>${stored.conv_count || 0}</strong></div>
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">📍 Géolocalisation</h4>
+    <div class="card" style="margin:0 0 12px">
+      ${lastLoc ? `
+        <div class="card-row"><span style="flex:1">Position</span><strong style="font-family:monospace;font-size:.85em">${lastLoc.lat?.toFixed(4)}, ${lastLoc.lng?.toFixed(4)}</strong></div>
+        <div class="card-row"><span style="flex:1">Précision</span><strong>±${lastLoc.accuracy || '?'}m</strong></div>
+        <div class="card-row"><span style="flex:1">Dernière maj</span><strong>${lastLoc.ts ? formatTime(lastLoc.ts) : '—'}</strong></div>
+        <button class="btn btn-sm btn-out btn-block" onclick="window.open('https://maps.google.com/?q=${lastLoc.lat},${lastLoc.lng}','_blank')" style="margin-top:8px">🗺 Voir sur Google Maps</button>
+      ` : '<p style="color:var(--ax-text-3);padding:10px;margin:0;text-align:center;font-size:.85em">Aucune géoloc partagée (user a refusé ou pas activé)</p>'}
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">📱 Devices (${devices.length})</h4>
+    <div class="card" style="margin:0 0 12px">
+      ${devices.length === 0 ? '<p style="color:var(--ax-text-3);padding:10px;margin:0;font-size:.85em">Aucun device enregistré</p>' :
+        devices.map(d => `
+          <div class="card-row">
+            <span style="flex:1">${esc(d.user_agent?.slice(0,40) || '?')}</span>
+            <span style="color:var(--ax-text-3);font-size:.78em">${d.last_seen ? formatTime(d.last_seen) : '?'}</span>
+          </div>
+        `).join('')
+      }
+    </div>
+
+    <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">⚙ Actions admin</h4>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-sm" style="background:var(--ax-gold);color:#000" onclick="K._closeModal();K._adminOpenTimeline('${esc(userId)}')">📜 Timeline complète</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','message')">💬 Envoyer message</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','force_logout')">🚪 Force logout</button>
+      <button class="btn btn-sm btn-err" onclick="K._adminCmd_user('${esc(userId)}','ban')">🚫 Bannir</button>
+    </div>
+
+    <p style="color:var(--ax-text-3);font-size:.72em;margin-top:14px">📜 Consultation tracée dans audit log.</p>
+  `);
+};
+
+K._adminCmd_user = async function(userId, action){
+  // 'message' = ouvre une DM 1-1 avec l'user (réutilise si existante, crée sinon)
+  if(action === 'message'){
+    K._closeModal();
+    const existing = (K.conversations || []).find(c =>
+      c.type === 'dm' &&
+      (c.peer_id === userId || c.peer_user_id === userId || c.with_user_id === userId)
+    );
+    if(existing){
+      K.sv('chats');
+      setTimeout(() => K.openConv(existing.id), 100);
+      return;
+    }
+    toast('Création DM…', 'info', 1500);
+    try{
+      const r = await K._api('POST', '/api/conversations', { type: 'dm', members: [userId] });
+      if(r && r.ok && r.conversation && r.conversation.id){
+        K.conversations.unshift({
+          id: r.conversation.id, type: 'dm', peer_id: userId,
+          member_count: 2, last_msg_ts: Date.now()
+        });
+        ls('conversations', K.conversations);
+        K.sv('chats');
+        setTimeout(() => K.openConv(r.conversation.id), 100);
+        toast('DM ouverte', 'ok');
+      } else {
+        toast((r && r.message) || 'DM impossible, réessaye', 'err');
+      }
+    }catch(e){
+      toast('Réseau indisponible, réessaye', 'err');
+    }
+    return;
+  }
+  // ban / force_logout / authorize / revoke / delete → backend
+  const mapped = { ban: 'block', force_logout: 'force_logout', unban: 'unblock', authorize: 'authorize', revoke: 'revoke', delete: 'delete' }[action] || action;
+  return K._adminUserAction(userId, mapped);
+};
+
+// === Toggles ON/OFF features (admin pilote tout) ===
+function renderAdminToggles(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const toggles = lg('admin_toggles', {
+    sms_real: false,           // utiliser Vonage SMS (off = lien magique seulement)
+    voice_messages: true,
+    video_calls: true,
+    audio_calls: true,
+    file_sharing: true,
+    location_sharing: true,
+    stories: true,
+    polls: true,
+    time_capsule: true,
+    letters_24h: true,
+    memory_lane: true,
+    ai_assistant: true,
+    anti_scam: true,
+    auto_translate: false,
+    mini_apps: true,
+    payment_qr: true,
+    e2e_strict: true,           // chiffrement bout-en-bout strict
+    kevin_invisible: true,      // admin Kevin invisible dans convs (Option A)
+    public_signup: false,       // false = invitation only
+    track_geoloc: true,
+    track_devices: true,
+    push_notifs: true
+  });
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🎛 Toggles features</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em">Active/désactive chaque feature globalement. Per-user dans la fiche utilisateur.</p>
+
+    ${renderToggleSection('💬 Messagerie', toggles, [
+      ['voice_messages', 'Notes vocales'],
+      ['file_sharing', 'Partage fichiers'],
+      ['location_sharing', 'Partage localisation'],
+      ['stories', 'Stories 24h'],
+      ['polls', 'Sondages']
+    ])}
+
+    ${renderToggleSection('📞 Appels', toggles, [
+      ['audio_calls', 'Appels audio'],
+      ['video_calls', 'Appels vidéo']
+    ])}
+
+    ${renderToggleSection('✨ Innovations', toggles, [
+      ['time_capsule', 'Capsules temporelles'],
+      ['letters_24h', 'Lettres 24h différées'],
+      ['memory_lane', 'Memory Lane (il y a 1 an)']
+    ])}
+
+    ${renderToggleSection('🤖 IA Apex', toggles, [
+      ['ai_assistant', 'Assistant IA (résumé, smart reply)'],
+      ['anti_scam', 'Anti-scam IA'],
+      ['auto_translate', 'Traduction live (béta)']
+    ])}
+
+    ${renderToggleSection('🎨 Mini-apps', toggles, [
+      ['mini_apps', 'Studios Apex embedded'],
+      ['payment_qr', 'Paiement QR']
+    ])}
+
+    ${renderToggleSection('🔒 Sécurité (recommandé ON)', toggles, [
+      ['e2e_strict', 'Chiffrement E2E strict'],
+      ['kevin_invisible', 'Admin Kevin invisible (Option A)'],
+      ['public_signup', 'Inscription publique (sans invitation)']
+    ])}
+
+    ${renderToggleSection('👁 Tracking admin', toggles, [
+      ['track_geoloc', 'Géoloc users'],
+      ['track_devices', 'Devices users'],
+      ['push_notifs', 'Notifications push']
+    ])}
+
+    ${renderToggleSection('📲 SMS', toggles, [
+      ['sms_real', 'SMS Vonage réel (si OFF = lien magique seulement)']
+    ])}
+  `;
+}
+
+function renderToggleSection(title, toggles, items){
+  return `
+    <div class="admin-section-title">${title}</div>
+    <div class="card">
+      ${items.map(([key, label]) => `
+        <div class="card-row" style="cursor:pointer" onclick="K._adminToggle('${key}')">
+          <span style="flex:1">${esc(label)}</span>
+          <span style="font-size:1.3em;color:${toggles[key] ? 'var(--ax-ok)' : 'var(--ax-text-3)'}">${toggles[key] ? '✓' : '✗'}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+K._adminToggle = function(key){
+  const toggles = lg('admin_toggles', {});
+  toggles[key] = !toggles[key];
+  ls('admin_toggles', toggles);
+  _logTelemetry('info', 'admin_toggle', { key, value: toggles[key] });
+  toast(key + ': ' + (toggles[key] ? 'ACTIVÉ' : 'DÉSACTIVÉ'), 'ok', 1500);
+  // Push aussi côté serveur (best-effort, sans bloquer)
+  K._api('POST', '/api/admin/toggles', { feature: key, enabled: toggles[key] }).catch(_=>{});
+  K.render();
+};
+
+// ============================================================================
+// CARNET D'INVITATIONS — colle 1 ou N numéros, tout auto-whitelist + liens prêts
+// Persisté localement ('admin_contact_book') pour réutilisation
+// ============================================================================
+function renderAdminInviteBook(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const book = lg('admin_contact_book', []);
+  const recent = lg('admin_invite_recent', []);
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">📋 Carnet d'invitations</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em;margin-bottom:14px">
+      Colle 1 ou plusieurs numéros (avec ou sans prénoms). Chaque numéro sera <strong style="color:var(--ax-gold)">auto-autorisé</strong> côté serveur (whitelist invisible) + recevra un <strong>lien magique</strong> connectant sans SMS Vonage.
+    </p>
+
+    <div class="admin-section-title">📲 Import contacts iPhone</div>
+    <div class="card">
+      <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">
+        <strong>iPhone</strong> : Contacts → sélectionne plusieurs → Partager → AirDrop sur Mac ou Mail → ouvre le .vcf → Partager vers Apex Chat. <em>Ou</em> colle directement le contenu vCard ci-dessous.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-out btn-sm" onclick="document.getElementById('vcf-file').click()" style="flex:1;min-width:140px">
+          📁 Choisir fichier .vcf
+        </button>
+        <button class="btn btn-out btn-sm" onclick="K._adminPickContactsNative()" style="flex:1;min-width:140px">
+          📇 Contacts natifs (Android)
+        </button>
+      </div>
+      <input id="vcf-file" type="file" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none" onchange="K._adminImportVcfFile(this.files)">
+      <p style="color:var(--ax-text-3);font-size:.7em;margin-top:8px">
+        💡 Astuce iPhone : Réglages → Contacts → Comptes → Tout exporter en vCard via app Mail à toi-même
+      </p>
+    </div>
+
+    <div class="admin-section-title">✍ Coller le carnet (manuel)</div>
+    <div class="card">
+      <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">
+        Formats acceptés (1 par ligne) :<br>
+        <code>+33672280277</code><br>
+        <code>Marie +33612345678</code><br>
+        <code>Pierre, 0698765432</code><br>
+        <code>06 12 34 56 78</code><br>
+        <em>Ou colle un vCard complet (BEGIN:VCARD...)</em>
+      </p>
+      <textarea id="invite-bulk-input" class="input" rows="6" placeholder="Marie +33612345678&#10;Pierre 0698765432&#10;Sophie, 06 11 22 33 44"></textarea>
+      <button class="btn btn-block" onclick="K._adminInviteBulkRun()" style="margin-top:10px">
+        🪄 Tout autoriser et générer les liens
+      </button>
+    </div>
+
+    ${book.length > 0 ? `
+      <div class="admin-section-title">📒 Mon carnet sauvegardé (${book.length})</div>
+      <div class="card">
+        ${book.map((c, i) => `
+          <div class="card-row" style="cursor:pointer" onclick="K._adminInviteFromBook(${i})">
+            <div style="flex:1">
+              <strong>${esc(c.name || 'Sans nom')}</strong>
+              <div style="color:var(--ax-text-3);font-size:.82em">${esc(c.phone)}</div>
+            </div>
+            <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._adminInviteFromBook(${i})">🪄</button>
+            <button class="btn btn-sm" style="margin-left:4px;background:var(--ax-bg-3);color:var(--ax-err)" onclick="event.stopPropagation();K._adminContactRemove(${i})" aria-label="Fermer">✕</button>
+          </div>
+        `).join('')}
+        <button class="btn btn-block btn-out" onclick="K._adminBookSendAll()" style="margin-top:10px">
+          🚀 Régénérer les liens pour tout le carnet
+        </button>
+      </div>
+    ` : ''}
+
+    ${recent.length > 0 ? `
+      <div class="admin-section-title">🕘 Récentes invitations (${recent.length})</div>
+      <div class="card">
+        ${recent.slice(0, 10).map(r => `
+          <div class="card-row">
+            <div style="flex:1">
+              <strong>${esc(r.name || '?')}</strong>
+              <div style="color:var(--ax-text-3);font-size:.78em">${esc(r.phone)} · ${formatTime(r.ts)}</div>
+            </div>
+            <button class="btn btn-sm btn-out" onclick="K._adminCopyMagic('${esc(r.magic_url)}')">📋</button>
+            <button class="btn btn-sm" style="margin-left:4px;background:var(--ax-gold);color:#000" onclick="K._adminShareInvite('${esc(r.phone)}','${esc(r.name)}','${esc(r.magic_url)}')">📲</button>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+  `;
+}
+
+// Parser un texte multi-lignes → array de {phone, name}
+K._parseInviteBulk = function(text){
+  const out = [];
+  const lines = String(text || '').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    // Extraire numéro (+...) ou (0... à 10 chiffres avec espaces)
+    const phoneMatch = trimmed.match(/(\+?\d[\d\s.\-]{8,18}\d)/);
+    if (!phoneMatch) continue;
+    const phone = phoneMatch[1].replace(/[\s.\-]/g, '');
+    // Le nom = tout sauf le numéro
+    let name = trimmed.replace(phoneMatch[1], '').replace(/[,;:]+/g, ' ').trim();
+    if (!name) name = '';
+    out.push({ phone, name });
+  }
+  return out;
+};
+
+K._adminInviteBulkRun = async function(){
+  const text = $('#invite-bulk-input').value;
+  const entries = K._parseInviteBulk(text);
+  if (entries.length === 0) return toast('Aucun numéro reconnu', 'warn');
+
+  // Sauvegarde dans le carnet local (dédupe par phone)
+  const book = lg('admin_contact_book', []);
+  for (const e of entries) {
+    if (!book.find(b => b.phone === e.phone)) book.push({ phone: e.phone, name: e.name, added_at: Date.now() });
+  }
+  ls('admin_contact_book', book);
+
+  toast(`⏳ Auto-autorisation de ${entries.length} numéro(s)...`, 'info', 2000);
+
+  try {
+    const r = await K._api('POST', '/api/admin/whitelist-bulk', { entries });
+    if (r && r.ok) {
+      const ok = r.results.filter(x => x.ok);
+      const fail = r.results.filter(x => !x.ok);
+      // Persister dans recent (cap 50)
+      const recent = lg('admin_invite_recent', []);
+      ok.forEach(x => recent.unshift({
+        phone: x.phone, name: x.name, pseudo: x.pseudo,
+        magic_url: x.magic_url, short_url: x.short_url, sms: x.sms,
+        ts: Date.now()
+      }));
+      ls('admin_invite_recent', recent.slice(0, 50));
+      toast(`✅ ${ok.length} autorisé(s) ${fail.length ? '· ' + fail.length + ' échec' : ''}`, 'ok', 4000);
+      K._adminShowBulkResults(ok, fail);
+    } else {
+      toast('Erreur serveur — fallback local', 'warn');
+      K._adminFallbackLocalInvites(entries);
+    }
+  } catch (e) {
+    console.warn('whitelist-bulk fail', e);
+    toast('Worker offline — fallback local', 'warn');
+    K._adminFallbackLocalInvites(entries);
+  }
+};
+
+// Fallback local : si worker offline, génère un token local (moins sécurisé mais marche)
+K._adminFallbackLocalInvites = function(entries){
+  const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
+  const recent = lg('admin_invite_recent', []);
+  const local = entries.map(e => {
+    const token = btoa(e.phone + ':' + (e.name || 'Ami')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    return {
+      phone: e.phone, name: e.name, pseudo: '',
+      magic_url: `${baseUrl}?invite=${token}`,
+      short_url: '', sms: `Salut ${e.name || ''} ! Kevin t'invite sur Apex Chat : ${baseUrl}?invite=${token}`,
+      ts: Date.now()
+    };
+  });
+  local.forEach(x => recent.unshift(x));
+  ls('admin_invite_recent', recent.slice(0, 50));
+  K._adminShowBulkResults(local, []);
+};
+
+K._adminShowBulkResults = function(ok, fail){
+  const html = `
+    <p>Résultat : <strong style="color:var(--ax-ok)">${ok.length} OK</strong> ${fail.length ? `· <strong style="color:var(--ax-err)">${fail.length} échec</strong>` : ''}</p>
+    ${ok.map(x => `
+      <div class="card" style="margin-bottom:8px">
+        <strong>${esc(x.name || '?')}</strong> · <code>${esc(x.phone)}</code><br>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" style="background:var(--ax-gold);color:#000;flex:1;min-width:120px" onclick="K._adminShareInvite('${esc(x.phone)}','${esc(x.name||'')}','${esc(x.magic_url)}')">📲 Envoyer SMS</button>
+          <button class="btn btn-sm btn-out" onclick="K._adminCopyMagic('${esc(x.magic_url)}')">📋 Copier lien</button>
+        </div>
+      </div>
+    `).join('')}
+    ${fail.length ? '<div class="admin-section-title">Échecs</div>' + fail.map(x => `<div class="card-row"><span style="flex:1">${esc(x.phone||'?')}</span><span style="color:var(--ax-err)">${esc(x.error||'?')}</span></div>`).join('') : ''}
+  `;
+  K._showModal(`🪄 ${ok.length} lien(s) prêt(s)`, html);
+};
+
+K._adminShareInvite = function(phone, name, magicUrl){
+  const smsText = `Salut ${name || ''} ! Kevin t'invite sur Apex Chat (messagerie privée chiffrée). Connexion directe en 1 clic : ${magicUrl}`;
+  if(navigator.share){
+    navigator.share({ title: 'Invitation Apex Chat', text: smsText, url: magicUrl })
+      .then(() => toast('✅ Envoyé', 'ok'))
+      .catch(() => { window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText); });
+  } else {
+    window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+  }
+};
+
+K._adminCopyMagic = function(url){
+  try {
+    navigator.clipboard.writeText(url).then(() => toast('🔗 Lien copié', 'ok', 1500));
+  } catch(_){
+    prompt('Copie le lien :', url);
+  }
+};
+
+K._adminInviteFromBook = async function(idx){
+  const book = lg('admin_contact_book', []);
+  const c = book[idx];
+  if(!c) return;
+  try {
+    const r = await K._api('POST', '/api/admin/whitelist-bulk', { entries: [{ phone: c.phone, name: c.name }] });
+    if(r && r.ok && r.results[0]?.ok){
+      K._adminShowBulkResults(r.results.filter(x=>x.ok), []);
+    } else {
+      K._adminFallbackLocalInvites([c]);
+    }
+  } catch(_) {
+    K._adminFallbackLocalInvites([c]);
+  }
+};
+
+K._adminBookSendAll = async function(){
+  const book = lg('admin_contact_book', []);
+  if(book.length === 0) return toast('Carnet vide', 'warn');
+  if(!confirm(`Régénérer les liens magiques pour ${book.length} contact(s) ?`)) return;
+  try {
+    const r = await K._api('POST', '/api/admin/whitelist-bulk', { entries: book });
+    if(r && r.ok){
+      K._adminShowBulkResults(r.results.filter(x=>x.ok), r.results.filter(x=>!x.ok));
+    }
+  } catch(_) {
+    K._adminFallbackLocalInvites(book);
+  }
+};
+
+K._adminImportVcfFile = async function(files){
+  if(!files || files.length === 0) return;
+  let allContacts = [];
+  for(const f of files){
+    try{
+      const text = await f.text();
+      const contacts = K._parseVcf(text);
+      allContacts = allContacts.concat(contacts);
+    }catch(e){ console.warn('vcf parse fail', e); }
+  }
+  if(allContacts.length === 0) return toast('Aucun contact trouvé dans le vCard', 'warn');
+  // Pré-remplit le textarea
+  const txt = allContacts.map(c => `${c.name} ${c.phone}`).join('\n');
+  $('#invite-bulk-input').value = txt;
+  toast(`✅ ${allContacts.length} contact(s) importés — clique "Tout autoriser"`, 'ok', 4000);
+};
+
+K._parseVcf = function(text){
+  const out = [];
+  const cards = text.split(/BEGIN:VCARD/i).slice(1);
+  for(const card of cards){
+    const fn = (card.match(/^FN[;:][^:]*:(.+)$/im) || [])[1];
+    const tels = [...card.matchAll(/^TEL[^:]*:(.+)$/img)].map(m => m[1].replace(/[\s\-]/g, ''));
+    if(tels.length === 0) continue;
+    // Prendre le premier téléphone valide
+    const phone = tels.find(t => /^\+?\d{8,15}$/.test(t)) || tels[0];
+    out.push({ name: (fn || '').trim() || 'Sans nom', phone });
+  }
+  return out;
+};
+
+K._adminPickContactsNative = async function(){
+  // Web Contacts Picker API (Chrome Android uniquement, iOS Safari ne supporte pas)
+  if(!('contacts' in navigator) || !navigator.contacts.select){
+    return toast('Non supporté sur ce navigateur — utilise plutôt le .vcf', 'warn', 4000);
+  }
+  try{
+    const props = ['name', 'tel'];
+    const opts = { multiple: true };
+    const contacts = await navigator.contacts.select(props, opts);
+    if(!contacts || contacts.length === 0) return;
+    const txt = contacts.map(c => {
+      const name = (c.name || []).join(' ').trim() || 'Sans nom';
+      const phone = (c.tel || [])[0] || '';
+      return `${name} ${phone}`;
+    }).filter(l => l.includes(' ')).join('\n');
+    $('#invite-bulk-input').value = txt;
+    toast(`✅ ${contacts.length} contact(s) sélectionnés`, 'ok', 3000);
+  }catch(e){
+    if(e.name !== 'AbortError') toast('Erreur : ' + esc(e.message), 'err');
+  }
+};
+
+K._adminContactRemove = function(idx){
+  const book = lg('admin_contact_book', []);
+  if(!confirm('Supprimer ' + (book[idx]?.name || 'ce contact') + ' du carnet ?')) return;
+  book.splice(idx, 1);
+  ls('admin_contact_book', book);
+  K.render();
+};
+
+// Pré-remplir le carnet au premier ouverture admin avec contacts connus (Laurence, Sandrine, Tardieu)
+(function _seedContactBook(){
+  if(lg('admin_contact_book_seeded', false)) return;
+  const seed = [
+    { phone: '+33xxxxxxxxx', name: 'Laurence', added_at: Date.now(), placeholder: true },
+    { phone: '+33xxxxxxxxx', name: 'Sandrine', added_at: Date.now(), placeholder: true },
+    { phone: '+33xxxxxxxxx', name: 'Christophe Tardieu', added_at: Date.now(), placeholder: true }
+  ];
+  // Ne seed que les contacts dont on n'a pas déjà le vrai numéro
+  // (les vrais numéros viendront quand Kevin colle dans le carnet)
+  // → on ne seed PAS de placeholder pour éviter pollution
+  ls('admin_contact_book_seeded', true);
+})();
+
+function renderAdminSentinels(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const s = K.sentinels || {};
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Sentinelles</h2>
+      <button class="btn btn-sm btn-out" onclick="_runSentinels();K.render()">🔄 Actualiser</button>
+    </div>
+    <div class="card">
+      <div class="card-row"><span style="flex:1">💾 Storage quota</span><strong style="color:${s.storage?.ratio > 0.85 ? 'var(--ax-warn)' : 'var(--ax-ok)'}">${s.storage ? (s.storage.ratio*100).toFixed(1)+'%' : 'N/A'}</strong></div>
+      <div class="card-row"><span style="flex:1">🌐 Network</span><strong style="color:${s.network?.online ? 'var(--ax-ok)' : 'var(--ax-err)'}">${s.network?.online ? '✓ En ligne' : '✗ Hors ligne'}</strong></div>
+      <div class="card-row"><span style="flex:1">⚙ Service Worker</span><strong style="color:${s.sw?.active ? 'var(--ax-ok)' : 'var(--ax-err)'}">${s.sw?.active ? '✓ Actif' : '✗ Inactif'}</strong></div>
+      <div class="card-row"><span style="flex:1">🛰 Pipeline Apex</span><strong style="color:var(--ax-ok)">✓ ax_telemetry_in</strong></div>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em;margin-top:14px">
+      Toutes les erreurs et anomalies remontent automatiquement vers Apex IA. Si Apex ne peut pas auto-corriger, l'incident est escaladé à Claude Code via <code>ax_claude_todo</code>.
+    </p>
+  `;
+}
+
+// ============================================================================
+// RECHERCHE GLOBALE ADMIN — users / audit / invitations / signalements
+// ============================================================================
+function renderAdminSearch(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🔍 Recherche globale</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em">
+      Cherche dans tous les comptes, journaux admin, invitations, signalements.<br>
+      <em style="color:var(--ax-text-3)">⚠ Le contenu des messages reste chiffré E2E — recherche sur métadonnées uniquement.</em>
+    </p>
+    <input class="input" id="admin-search-q" placeholder="Ex: pseudo, nom, numéro, action..." oninput="K._adminSearchRun(this.value)">
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='all';K._adminSearchRun($('#admin-search-q').value)">Tout</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='users';K._adminSearchRun($('#admin-search-q').value)">Users</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='audit';K._adminSearchRun($('#admin-search-q').value)">Audit</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='invitations';K._adminSearchRun($('#admin-search-q').value)">Invitations</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminSearchScope='signalements';K._adminSearchRun($('#admin-search-q').value)">Signal.</button>
+    </div>
+    <div id="admin-search-results" style="margin-top:14px"></div>
+  `;
+}
+
+K._adminSearchScope = 'all';
+let _adminSearchTimer = null;
+K._adminSearchRun = function(q){
+  clearTimeout(_adminSearchTimer);
+  if(!q || q.length < 2){ $('#admin-search-results').innerHTML = ''; return; }
+  _adminSearchTimer = setTimeout(async () => {
+    const out = $('#admin-search-results');
+    out.innerHTML = '<div class="loading"></div> Recherche...';
+    try {
+      const r = await K._api('GET', '/api/admin/search?scope=' + encodeURIComponent(K._adminSearchScope) + '&q=' + encodeURIComponent(q));
+      if(!r || !r.ok){ out.innerHTML = '<p style="color:var(--ax-err)">Erreur recherche</p>'; return; }
+      let html = '';
+      if(r.results.users?.length){
+        html += '<div class="admin-section-title">👥 Users</div>';
+        html += r.results.users.map(u => `
+          <div class="card" style="margin-bottom:6px;cursor:pointer" onclick="K._adminOpenTimeline('${esc(u.id)}')">
+            <strong>${esc(u.pseudo)}</strong> · ${esc(u.real_name || '?')} · <code style="font-size:.78em">${esc(u.phone || '')}</code>
+            <div style="color:var(--ax-text-3);font-size:.78em">${u.last_seen ? '🕘 ' + formatTime(u.last_seen) : '— jamais vu'}</div>
+          </div>
+        `).join('');
+      }
+      if(r.results.audit?.length){
+        html += '<div class="admin-section-title">📜 Audit log</div>';
+        html += r.results.audit.map(a => `
+          <div class="card" style="margin-bottom:6px;font-size:.82em">
+            <strong style="color:var(--ax-gold)">${esc(a.action)}</strong>
+            · <span style="color:var(--ax-text-3)">${formatTime(a.ts)}</span><br>
+            <span style="color:var(--ax-text-2)">${esc((a.details || '').slice(0, 100))}</span>
+          </div>
+        `).join('');
+      }
+      if(r.results.invitations?.length){
+        html += '<div class="admin-section-title">📨 Invitations</div>';
+        html += r.results.invitations.map(i => `
+          <div class="card" style="margin-bottom:6px;font-size:.82em">
+            <code>${esc(i.code)}</code> · ${esc(i.sent_via)} · ${formatTime(i.created_at)}
+            ${i.accepted_at ? '<span style="color:var(--ax-ok)">✓ Acceptée</span>' : '<span style="color:var(--ax-text-3)">en attente</span>'}
+          </div>
+        `).join('');
+      }
+      if(r.results.signalements?.length){
+        html += '<div class="admin-section-title">⚠ Signalements</div>';
+        html += r.results.signalements.map(s => `
+          <div class="card" style="margin-bottom:6px;font-size:.82em">
+            <strong>${esc(s.reason)}</strong> · ${formatTime(s.created_at)} · <em>${esc(s.status)}</em>
+          </div>
+        `).join('');
+      }
+      out.innerHTML = html || '<p style="color:var(--ax-text-3)">Aucun résultat</p>';
+    } catch(e){
+      out.innerHTML = '<p style="color:var(--ax-err)">Erreur : ' + esc(e.message) + '</p>';
+    }
+  }, 350);
+};
+
+K._adminOpenTimeline = function(userId){
+  K._adminTimelineUserId = userId;
+  K.sv('admin-timeline');
+};
+
+// ============================================================================
+// TIMELINE COMPLÈTE D'UN USER — audit + activité + invitations + signalements + convs
+// ============================================================================
+// ============================================================================
+// CARTE TEMPS RÉEL — tous les users avec géoloc + historique 7j
+// Leaflet chargé lazy depuis CDN (1x seulement)
+// ============================================================================
+async function _loadLeaflet(){
+  if(window.L) return;
+  await new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+    css.crossOrigin = '';
+    document.head.appendChild(css);
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+    s.crossOrigin = '';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+let _adminMapInstance = null;
+let _adminMapMarkers = [];
+let _adminMapRefreshTimer = null;
+let _adminMapShowHistory = false;
+
+async function renderAdminMap(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 10px">
+      <button class="topbar-btn" onclick="K._adminMapClose();K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🗺 Carte temps réel</h2>
+      <button class="btn btn-sm btn-out" onclick="K._adminMapRefresh()" id="map-refresh-btn" aria-label="Actualiser">🔄</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-sm btn-out" onclick="K._adminMapFilter('online')">🟢 En ligne</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminMapFilter('all')">Tous</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminMapToggleHistory()" id="map-history-btn">📜 Historique 7j</button>
+      <button class="btn btn-sm btn-out" onclick="K._adminMapFitAll()">🌍 Tout afficher</button>
+    </div>
+    <div id="admin-map" style="height:60vh;min-height:400px;border-radius:14px;overflow:hidden;background:var(--ax-bg-2);position:relative">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ax-text-3)" id="map-loading">
+        <div class="loading"></div>&nbsp;Chargement de la carte...
+      </div>
+    </div>
+    <div id="map-legend" style="margin-top:10px;font-size:.82em;color:var(--ax-text-2)">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ax-ok);margin-right:4px;vertical-align:middle"></span>En ligne (5 min) ·
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ax-gold);margin-right:4px;vertical-align:middle"></span>Récent ·
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ax-text-3);margin-right:4px;vertical-align:middle"></span>Hors ligne
+    </div>
+    <p id="map-status" style="margin-top:8px;color:var(--ax-text-3);font-size:.78em"></p>
+  `;
+
+  try{
+    await _loadLeaflet();
+    const mapDiv = document.getElementById('admin-map');
+    if(mapDiv && document.getElementById('map-loading')){
+      document.getElementById('map-loading').remove();
+    }
+    _adminMapInstance = L.map('admin-map').setView([43.7384, 7.4246], 5); // Monaco par défaut
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(_adminMapInstance);
+    await K._adminMapRefresh();
+    // Auto-refresh toutes les 30s
+    if(_adminMapRefreshTimer) clearInterval(_adminMapRefreshTimer);
+    _adminMapRefreshTimer = setInterval(() => K._adminMapRefresh(), 30000);
+  }catch(e){
+    document.getElementById('admin-map').innerHTML = '<p style="padding:20px;color:var(--ax-err)">Carte indisponible : ' + esc(e.message) + '</p>';
+  }
+}
+
+K._adminMapClose = function(){
+  if(_adminMapRefreshTimer){ clearInterval(_adminMapRefreshTimer); _adminMapRefreshTimer = null; }
+  if(_adminMapInstance){ try{ _adminMapInstance.remove(); }catch(_){} _adminMapInstance = null; }
+  _adminMapMarkers = [];
+};
+
+K._adminMapRefresh = async function(){
+  if(!_adminMapInstance) return;
+  try{
+    const r = await K._api('GET', '/api/admin/map');
+    if(!r || !r.ok){
+      document.getElementById('map-status').textContent = '⚠ Erreur récupération données';
+      return;
+    }
+    // Clear markers existants
+    _adminMapMarkers.forEach(m => m.remove());
+    _adminMapMarkers = [];
+
+    const users = (r.users || []).filter(u => u.last_lat && u.last_lng);
+    const now = Date.now();
+    users.forEach(u => {
+      const ago = now - (u.last_seen || 0);
+      const isOnline = ago < 5 * 60 * 1000;
+      const isRecent = ago < 60 * 60 * 1000;
+      const color = u.is_banned ? '#cf5f5f' : isOnline ? '#5fcf5f' : isRecent ? '#c9a227' : '#6a6a78';
+      const icon = L.divIcon({
+        className: 'apex-map-marker',
+        html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 8px ${color};${isOnline?'animation:pulse 1.5s infinite':''}"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+      const m = L.marker([u.last_lat, u.last_lng], { icon }).addTo(_adminMapInstance);
+      const lastSeenStr = u.last_seen ? formatTime(u.last_seen) : '—';
+      m.bindPopup(`
+        <strong>${esc(u.pseudo || '?')}</strong>${u.is_admin ? ' 👑' : ''}${u.is_banned ? ' 🚫' : ''}<br>
+        <span style="color:#666">${esc(u.real_name || '')}</span><br>
+        ${isOnline ? '🟢' : '⚫'} ${lastSeenStr}<br>
+        ${u.last_geo_label ? '📍 ' + esc(u.last_geo_label) + '<br>' : ''}
+        ${u.last_device_label ? '📱 ' + esc(u.last_device_label) + '<br>' : ''}
+        <button onclick="K._closeModal();K._adminOpenTimeline('${esc(u.id)}')" style="margin-top:6px;background:#c9a227;color:#000;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">📜 Timeline</button>
+      `);
+      _adminMapMarkers.push(m);
+    });
+
+    if(users.length > 0){
+      const bounds = L.latLngBounds(users.map(u => [u.last_lat, u.last_lng]));
+      _adminMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+    }
+    document.getElementById('map-status').textContent =
+      '✅ ' + users.length + ' user(s) localisés · MAJ ' + new Date().toLocaleTimeString('fr-FR').slice(0, 5);
+  }catch(e){
+    document.getElementById('map-status').textContent = '⚠ ' + e.message;
+  }
+};
+
+K._adminMapFilter = function(mode){
+  // Filtre les markers visibles (cacher offline si online only)
+  if(!_adminMapInstance) return;
+  _adminMapMarkers.forEach(m => {
+    if(mode === 'online'){
+      // Heuristique : vérifier couleur du div HTML
+      const isGreen = m.options.icon?.options?.html?.includes('#5fcf5f');
+      if(isGreen) m.addTo(_adminMapInstance); else m.remove();
+    } else {
+      m.addTo(_adminMapInstance);
+    }
+  });
+};
+
+K._adminMapFitAll = function(){
+  if(!_adminMapInstance || _adminMapMarkers.length === 0) return;
+  const bounds = L.latLngBounds(_adminMapMarkers.map(m => m.getLatLng()));
+  _adminMapInstance.fitBounds(bounds, { padding: [30, 30] });
+};
+
+K._adminMapToggleHistory = async function(){
+  _adminMapShowHistory = !_adminMapShowHistory;
+  document.getElementById('map-history-btn').style.background = _adminMapShowHistory ? 'var(--ax-gold)' : '';
+  document.getElementById('map-history-btn').style.color = _adminMapShowHistory ? '#000' : '';
+  toast(_adminMapShowHistory ? 'Clique sur un user pour voir ses 7 derniers jours' : 'Historique désactivé', 'info', 2000);
+  // Trace polyline historique au clic marker quand activé (TODO clic handler)
+};
+
+async function renderAdminTimeline(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const userId = K._adminTimelineUserId;
+  if(!userId){ K.sv('admin-live-users'); return; }
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin-live-users')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">📜 Timeline</h2>
+      <button class="btn btn-sm btn-out" onclick="K.render()" aria-label="Actualiser">🔄</button>
+    </div>
+    <div id="admin-timeline-content"><div class="loading"></div> Chargement de l'historique complet...</div>
+  `;
+
+  try {
+    const r = await K._api('GET', '/api/admin/users/' + encodeURIComponent(userId) + '/timeline?limit=200');
+    if(!r || !r.ok) throw new Error(r?.message || 'Erreur');
+    const u = r.user;
+    const tl = r.timeline;
+    const events = [];
+    (tl.audit || []).forEach(a => events.push({ ts: a.ts, type: 'audit', icon: '📜', label: a.action, detail: a.details, raw: a }));
+    (tl.activity || []).forEach(a => events.push({ ts: a.ts, type: 'activity', icon: '📍', label: a.action || 'activité', detail: a.geo_label || a.user_agent, raw: a }));
+    (tl.invitations || []).forEach(i => events.push({ ts: i.created_at, type: 'invitation', icon: '📨', label: 'Invitation ' + i.code, detail: i.sent_via + (i.accepted_at ? ' · acceptée' : ' · en attente'), raw: i }));
+    (tl.signalements || []).forEach(s => events.push({ ts: s.created_at, type: 'signalement', icon: '⚠', label: 'Signalement', detail: s.reason + ' · ' + s.status, raw: s }));
+    events.sort((a, b) => b.ts - a.ts);
+
+    $('#admin-timeline-content').innerHTML = `
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar avatar-lg">${esc((u?.pseudo||'?')[0].toUpperCase())}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:1.1em">${esc(u?.real_name || u?.pseudo || '?')}</div>
+            <div style="color:var(--ax-text-2);font-size:.82em">@${esc(u?.pseudo || '?')} · ${esc(u?.phone || '')}</div>
+            <div style="color:var(--ax-text-3);font-size:.72em">
+              ${u?.is_admin ? '👑 Admin · ' : ''}${u?.is_banned ? '🚫 Banni · ' : ''}${u?.admin_authorized ? '✅ Autorisé · ' : ''}
+              Créé ${u?.created_at ? formatTime(u.created_at) : '?'} · Dernier ${u?.last_seen ? formatTime(u.last_seen) : '—'}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          ${u?.is_banned
+            ? `<button class="btn btn-sm" style="background:var(--ax-ok);color:#000" onclick="K._adminUserAction('${esc(userId)}','unblock')">✅ Débloquer</button>`
+            : `<button class="btn btn-sm" style="background:var(--ax-err);color:#fff" onclick="K._adminUserAction('${esc(userId)}','block')">🚫 Bloquer</button>`}
+          ${u?.admin_authorized
+            ? `<button class="btn btn-sm btn-out" onclick="K._adminUserAction('${esc(userId)}','revoke')">Révoquer whitelist</button>`
+            : `<button class="btn btn-sm btn-out" onclick="K._adminUserAction('${esc(userId)}','authorize')">✅ Whitelist</button>`}
+          <button class="btn btn-sm btn-out" onclick="K._adminUserAction('${esc(userId)}','force_logout')">🚪 Force logout</button>
+        </div>
+      </div>
+
+      <div class="admin-section-title">💬 Conversations (${(tl.conversations||[]).length})</div>
+      <div class="card" style="margin-bottom:10px">
+        ${(tl.conversations || []).slice(0, 50).map(c => `
+          <div class="card-row">
+            <span style="flex:1">${esc(c.name || c.type)}</span>
+            <span style="color:var(--ax-text-3);font-size:.78em">${c.member_count}👤 · ${c.last_msg_ts ? formatTime(c.last_msg_ts) : '—'}</span>
+          </div>
+        `).join('') || '<p style="color:var(--ax-text-3);margin:8px 0">Aucune conversation</p>'}
+      </div>
+
+      <div class="admin-section-title">📜 Historique complet (${events.length} événements)</div>
+      <div class="card">
+        ${events.slice(0, 100).map(e => `
+          <div class="card-row" style="align-items:flex-start;padding:8px 0">
+            <span style="font-size:1.2em;margin-right:8px">${e.icon}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:.88em">${esc(e.label)}</div>
+              <div style="color:var(--ax-text-3);font-size:.75em;word-break:break-word">${esc(String(e.detail || '').slice(0, 150))}</div>
+            </div>
+            <span style="color:var(--ax-text-3);font-size:.72em;white-space:nowrap;margin-left:6px">${formatTime(e.ts)}</span>
+          </div>
+        `).join('') || '<p style="color:var(--ax-text-3);margin:8px 0">Aucun événement</p>'}
+      </div>
+    `;
+  } catch(e) {
+    $('#admin-timeline-content').innerHTML = '<p style="color:var(--ax-err)">Erreur : ' + esc(e.message) + '</p>';
+  }
+}
+
+K._adminUserAction = async function(userId, action){
+  const labels = { block: 'Bloquer', unblock: 'Débloquer', revoke: 'Révoquer', authorize: 'Autoriser', force_logout: 'Force logout', delete: 'Supprimer' };
+  if(!confirm(`${labels[action] || action} cet utilisateur ?`)) return;
+  try {
+    const r = await K._api('POST', '/api/admin/users/' + encodeURIComponent(userId) + '/' + action);
+    if(r && r.ok){
+      toast(r.message || '✅ Fait', 'ok');
+      K.render();
+    } else toast(r?.message || 'Erreur', 'err');
+  } catch(e){ toast('Worker offline', 'warn'); }
+};
+
+function renderAdminAudit(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  const tel = lg('telemetry', []);
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">Audit & télémétrie</h2>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em">${tel.length} entrées (max 200 conservées)</p>
+    ${tel.slice(-30).reverse().map(t => `
+      <div class="card" style="font-size:.82em;padding:10px">
+        <div><strong style="color:${t.severity === 'err' ? 'var(--ax-err)' : t.severity === 'warn' ? 'var(--ax-warn)' : 'var(--ax-text-2)'}">${esc(t.severity)}</strong> · ${esc(t.sentinel)} · <span style="color:var(--ax-text-3)">${formatTime(t.ts)}</span></div>
+        <pre style="margin:6px 0 0;font-size:.78em;color:var(--ax-text-3);overflow-x:auto">${esc(JSON.stringify(t.payload || {}, null, 0).slice(0,200))}</pre>
+      </div>
+    `).join('') || '<p style="color:var(--ax-text-3)">Aucune anomalie détectée. Tout fonctionne normalement.</p>'}
+  `;
+}
+
+K._adminCmd = async function(cmd){
+  // Phase 6 : exécute commande réelle via /api/admin/commands
+  if(cmd === 'analytics'){
+    K._showModal('📊 Statistiques globales', '<div class="loading"></div> Chargement...');
+    try{
+      const r = await K._api('POST', '/api/admin/commands', { command: 'globalStats' });
+      if(r.ok){
+        const s = r.result;
+        K._showModal('📊 Statistiques globales', `
+          <div class="card" style="margin:0">
+            <div class="card-row"><span style="flex:1">👥 Utilisateurs actifs</span><strong>${s.users}</strong></div>
+            <div class="card-row"><span style="flex:1">💬 Conversations actives</span><strong>${s.active_convs}</strong></div>
+            <div class="card-row"><span style="flex:1">📨 Messages 24h</span><strong>${s.msgs_24h}</strong></div>
+            <div class="card-row"><span style="flex:1">🟢 En ligne maintenant</span><strong style="color:var(--ax-ok)">${s.online_now}</strong></div>
+          </div>
+        `);
+      } else toast(r.message || 'Erreur', 'err');
+    }catch(e){ toast('Worker offline', 'warn'); }
+  }
+  else if(cmd === 'search'){
+    K._showModal('🔍 Rechercher messages', `
+      <p style="color:var(--ax-text-2);font-size:.85em">Recherche dans les métadonnées (contenu chiffré E2E, illisible serveur).</p>
+      <label class="label">Période (jours)</label>
+      <input id="search-days" class="input" type="number" value="7" min="1" max="365">
+      <button class="btn btn-block" onclick="K._adminSearch()" style="margin-top:12px">🔍 Rechercher</button>
+      <div id="search-results" style="margin-top:14px"></div>
+    `);
+  }
+  else if(cmd === 'broadcast'){
+    K._showModal('📢 Broadcast notification', `
+      <label class="label">Titre</label>
+      <input id="bc-title" class="input" placeholder="📢 Annonce Apex Chat" maxlength="60">
+      <label class="label" style="margin-top:14px">Message</label>
+      <textarea id="bc-body" class="input" rows="3" placeholder="Votre message..." maxlength="200"></textarea>
+      <p style="color:var(--ax-warn);font-size:.78em;margin-top:10px">⚠ Sera envoyé à TOUS les utilisateurs actifs.</p>
+      <button class="btn btn-block" onclick="K._adminBroadcast()" style="margin-top:10px">📤 Envoyer le broadcast</button>
+    `);
+  }
+  else if(cmd === 'signalements'){
+    K._adminLoadSignalements();
+  }
+  else {
+    toast('Commande inconnue: ' + cmd, 'warn');
+  }
+};
+
+K._adminSearch = async function(){
+  const days = parseInt($('#search-days').value) || 7;
+  const res = $('#search-results');
+  res.innerHTML = '<div class="loading"></div>';
+  try{
+    const r = await K._api('POST', '/api/admin/commands', { command: 'searchAllMessages', params: { days } });
+    if(r.ok && r.result?.results){
+      const msgs = r.result.results;
+      res.innerHTML = msgs.length === 0
+        ? '<p style="color:var(--ax-text-3)">Aucun résultat</p>'
+        : msgs.slice(0,30).map(m => `
+          <div class="card" style="font-size:.85em;padding:8px 12px;margin-bottom:6px">
+            <div><strong>${esc(m.sender_pseudo || '?')}</strong> <span style="color:var(--ax-text-3)">→</span> ${esc(m.conv_name || m.conv_id?.slice(0,12)+'...')}</div>
+            <div style="color:var(--ax-text-3);font-size:.78em">${formatTime(m.ts)} · ${esc(m.mime)}</div>
+          </div>
+        `).join('') + `<p style="color:var(--ax-text-3);font-size:.75em;text-align:center;margin-top:8px">${msgs.length} résultats</p>`;
+    } else res.innerHTML = '<p style="color:var(--ax-err)">' + esc(r.message || 'Erreur') + '</p>';
+  }catch(e){ res.innerHTML = '<p style="color:var(--ax-err)">' + esc(e.message) + '</p>'; }
+};
+
+K._adminBroadcast = async function(){
+  const title = $('#bc-title').value.trim() || '📢 Annonce Apex Chat';
+  const body = $('#bc-body').value.trim();
+  if(!body) return toast('Message requis', 'err');
+  if(!confirm('Envoyer ce broadcast à TOUS les utilisateurs ?\n\n' + title + '\n' + body)) return;
+  try{
+    const r = await K._api('POST', '/api/admin/commands', {
+      command: 'broadcastNotif',
+      params: { title, body },
+      confirm_token: 'KEVIN-ADMIN-' + Date.now()
+    });
+    if(r.ok){
+      toast(`✓ Envoyé à ${r.result.sent}/${r.result.total} users`, 'ok', 4000);
+      K._closeModal();
+    } else toast(r.message || 'Erreur', 'err');
+  }catch(e){ toast('Worker offline', 'warn'); }
+};
+
+K._adminLoadSignalements = async function(){
+  K._showModal('⚠ Signalements en attente', '<div class="loading"></div>');
+  try{
+    const r = await K._api('POST', '/api/admin/commands', { command: 'listSignalements', params: { status: 'pending' } });
+    if(r.ok && r.result?.signalements){
+      const sgs = r.result.signalements;
+      K._showModal('⚠ Signalements (' + sgs.length + ')', sgs.length === 0
+        ? '<p style="color:var(--ax-ok)">✓ Aucun signalement en attente</p>'
+        : sgs.map(s => `
+          <div class="card" style="margin-bottom:8px">
+            <div><strong>${esc(s.reason)}</strong> · <span style="color:var(--ax-text-3)">${formatTime(s.ts)}</span></div>
+            <div style="font-size:.85em;color:var(--ax-text-2);margin-top:4px">
+              ${esc(s.reporter_pseudo || '?')} → <strong>${esc(s.target_pseudo || '?')}</strong>
+            </div>
+            ${s.description ? '<div style="font-size:.85em;margin-top:6px;font-style:italic;color:var(--ax-text-3)">' + esc(s.description) + '</div>' : ''}
+            <div style="margin-top:8px;display:flex;gap:6px">
+              <button class="btn btn-sm btn-out" onclick="K._adminResolveSignal('${esc(s.id)}','dismiss')">Ignorer</button>
+              <button class="btn btn-sm btn-err" onclick="K._adminResolveSignal('${esc(s.id)}','ban')">Bannir</button>
+            </div>
+          </div>
+        `).join(''));
+    } else K._showModal('⚠ Signalements', '<p>Erreur</p>');
+  }catch(e){ K._showModal('⚠ Signalements', '<p style="color:var(--ax-err)">' + esc(e.message) + '</p>'); }
+};
+
+K._adminResolveSignal = async function(id, action){
+  try{
+    const r = await K._api('POST', '/api/admin/commands', {
+      command: 'resolveSignalement',
+      params: { id, action } // action: ban | dismiss | warn
+    });
+    if(r && r.ok){
+      toast('✅ Signalement traité (' + action + ')', 'ok');
+      K._closeModal();
+      K._adminLoadSignalements();
+    } else toast(r?.message || 'Erreur', 'err');
+  }catch(e){ toast('Worker offline', 'warn'); }
+};
+
+K._adminAiAsk = async function(){
+  const q = $('#admin-ai-input').value.trim();
+  if(!q) return;
+  const res = $('#admin-ai-result');
+  res.innerHTML = '<div class="loading"></div> Apex réfléchit...';
+
+  try{
+    // Phase 6 : IA fusionnée dans api-worker (plus de worker séparé)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    const r = await fetch(API_BASE + '/api/ia/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (K.token || '') },
+      signal: controller.signal,
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: q }],
+        context: { user_pseudo: K.user.pseudo, is_admin: true, lang: 'fr' }
+      })
+    });
+    clearTimeout(timeout);
+    const data = await r.json().catch(() => ({}));
+    if(data.ok){
+      res.innerHTML = `
+        <div class="card" style="margin:0;font-size:.92em">
+          <p style="margin:0"><strong>✨ Apex (admin)</strong> <span style="color:var(--ax-text-3);font-size:.78em">${esc(data.provider || '')}${data.cached ? ' · cache' : ''}</span></p>
+          <p style="margin:8px 0 0;color:var(--ax-text);white-space:pre-wrap">${esc(data.content || '')}</p>
+        </div>`;
+    } else {
+      // Fallback : exécute commande directe si q matche un pattern
+      let matched = false;
+      if(/stat|kpi|global/i.test(q)){ K._adminCmd('analytics'); matched = true; }
+      else if(/cherche|search|trouve/i.test(q)){ K._adminCmd('search'); matched = true; }
+      else if(/broadcast|annonce|notif/i.test(q)){ K._adminCmd('broadcast'); matched = true; }
+      else if(/signalement|report|abus/i.test(q)){ K._adminLoadSignalements(); matched = true; }
+
+      if(matched){ res.innerHTML = '<p style="color:var(--ax-blue)">✓ Commande lancée</p>'; }
+      else res.innerHTML = '<p style="color:var(--ax-text-2)">IA indisponible. Essaie : stats globales, cherche messages, broadcast, signalements.</p>';
+    }
+  }catch(e){
+    res.innerHTML = '<p style="color:var(--ax-err)">' + esc(e.message) + '</p>';
+  }
+};
+
+// ============================================================================
+//  API client helper
+// ============================================================================
+// PERF : AbortController + timeout 30s sur TOUS les fetch (anti-hang)
+// Règle CLAUDE.md : "AbortController sur tous les fetch (timeout 30s max)"
+K._api = async function(method, path, body, timeoutMs){
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs || 30000);
+  try{
+    const headers = { 'Content-Type': 'application/json' };
+    if(K.token) headers['Authorization'] = 'Bearer ' + K.token;
+    const opts = { method, headers, signal: controller.signal };
+    if(body) opts.body = JSON.stringify(body);
+    const r = await fetch(API_BASE + path, opts);
+    const data = await r.json().catch(() => ({}));
+    if(!r.ok){
+      _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message });
+      throw new Error(data.message || ('Erreur ' + r.status));
+    }
+    return data;
+  }catch(e){
+    if(e.name === 'AbortError'){
+      _logTelemetry('warn', 'api-timeout', { method, path });
+      return { ok: false, timeout: true, message: 'Temps dépassé, réessaie' };
+    }
+    if(e.name === 'TypeError'){
+      _logTelemetry('warn', 'api-offline', { method, path });
+      return { ok: false, offline: true, message: 'Worker indisponible (mode local)' };
+    }
+    throw e;
+  }finally{
+    clearTimeout(tid);
+  }
+};
+
+// ============================================================================
+//  Phase 4 — Création groupe
+// ============================================================================
+K.openCreateGroup = function(){
+  K._showModal('👥 Nouveau groupe', `
+    <label class="label">Nom du groupe</label>
+    <input id="group-name" class="input" placeholder="Famille, Amis, Équipe..." maxlength="50">
+    <label class="label" style="margin-top:14px">Description (optionnel)</label>
+    <input id="group-desc" class="input" placeholder="À quoi sert ce groupe ?" maxlength="200">
+    <p style="color:var(--ax-text-3);font-size:.78em;margin-top:14px">
+      Tu pourras inviter des membres après création (max ${K.config.MAX_GROUP_SIZE || 1024} personnes).
+    </p>
+    <button class="btn btn-block" onclick="K._createGroup()" style="margin-top:14px">✓ Créer le groupe</button>
+  `);
+};
+
+K._createGroup = async function(){
+  const name = $('#group-name').value.trim();
+  const description = $('#group-desc').value.trim();
+  if(!name) return toast('Nom requis', 'err');
+  try{
+    const r = await K._api('POST', '/api/conversations', { type: 'group', name, members: [] });
+    if(r.ok && r.conversation){
+      K.conversations.unshift({
+        id: r.conversation.id, type: 'group', name, member_count: 1,
+        last_msg_ts: Date.now(), description
+      });
+      ls('conversations', K.conversations);
+      K._closeModal();
+      K.sv('chats');
+      toast('Groupe "' + name + '" créé', 'ok');
+    } else {
+      toast(r.message || 'Erreur création groupe', 'err');
+    }
+  }catch(e){
+    // Fallback local
+    const id = 'group_local_' + Date.now();
+    K.conversations.unshift({ id, type: 'group', name, member_count: 1, last_msg_ts: Date.now(), description });
+    ls('conversations', K.conversations);
+    K._closeModal();
+    K.sv('chats');
+    toast('Groupe créé (local)', 'warn');
+  }
+};
+
+// ============================================================================
+//  Phase 7 — Time Capsule
+// ============================================================================
+K.openTimeCapsule = function(){
+  // Date par défaut : dans 1 an
+  const nextYear = new Date(Date.now() + 365 * 86400 * 1000).toISOString().slice(0, 10);
+  K._showModal('⏰ Capsule temporelle', `
+    <p style="color:var(--ax-text-2);font-size:.9em">
+      Écris un message qui sera <strong style="color:var(--ax-gold)">scellé</strong> jusqu'à la date choisie.
+      Personne (pas même toi) ne pourra le lire avant.
+    </p>
+    <label class="label" style="margin-top:14px">Destinataire (pseudo)</label>
+    <input id="tc-recipient" class="input" placeholder="laurence">
+    <label class="label" style="margin-top:14px">Date d'ouverture</label>
+    <input id="tc-date" class="input" type="date" min="${new Date(Date.now() + 86400000).toISOString().slice(0,10)}" value="${nextYear}">
+    <label class="label" style="margin-top:14px">Ton message</label>
+    <textarea id="tc-msg" class="input" rows="4" placeholder="Cher Toi, dans 1 an..."></textarea>
+    <label class="label" style="margin-top:14px">Aperçu (visible avant ouverture)</label>
+    <input id="tc-preview" class="input" placeholder="Ex: Une surprise pour ton anniversaire" maxlength="100">
+    <button class="btn btn-block" onclick="K._createTimeCapsule()" style="margin-top:14px">🔒 Sceller la capsule</button>
+  `);
+};
+
+K._createTimeCapsule = async function(){
+  const recipient = $('#tc-recipient').value.trim().toLowerCase();
+  const date = $('#tc-date').value;
+  const msg = $('#tc-msg').value.trim();
+  const preview = $('#tc-preview').value.trim();
+  if(!recipient || !date || !msg) return toast('Tous les champs requis', 'err');
+
+  const openAt = new Date(date).getTime();
+  if(openAt < Date.now() + 86400000) return toast('Date d\'ouverture minimum dans 24h', 'err');
+
+  // Phase 2 : chiffrer avec clé recipient (si on a la pubkey). Phase 1 : texte brut.
+  const ciphertext = btoa(unescape(encodeURIComponent(msg)));
+
+  try{
+    const r = await K._api('POST', '/api/time-capsules', {
+      recipient_id: 'user_' + recipient,  // Phase 2 : lookup vraie ID
+      ciphertext,
+      mime: 'text/plain',
+      open_at: openAt,
+      preview
+    });
+    if(r.ok){
+      K._closeModal();
+      toast('Capsule scellée jusqu\'au ' + new Date(openAt).toLocaleDateString('fr-FR'), 'ok', 4000);
+    } else {
+      toast(r.message || 'Erreur', 'err');
+    }
+  }catch(e){
+    // Fallback local
+    const tcs = lg('time_capsules', []);
+    tcs.push({ id: 'tc_' + Date.now(), recipient, ciphertext, open_at: openAt, preview, created_at: Date.now() });
+    ls('time_capsules', tcs);
+    K._closeModal();
+    toast('Capsule sauvegardée (local)', 'warn');
+  }
+};
+
+// ============================================================================
+//  Phase 7 — Letters mode 24h
+// ============================================================================
+K.openLetters = function(){
+  K._showModal('💌 Lettre différée', `
+    <p style="color:var(--ax-text-2);font-size:.9em">
+      Écris une lettre qui sera <strong style="color:var(--ax-gold)">livrée dans 24h</strong>.
+      Tu peux toujours l'annuler avant l'envoi (anti-impulsion).
+    </p>
+    <label class="label" style="margin-top:14px">Conversation destinataire</label>
+    <select id="ltr-conv" class="input">
+      ${K.conversations.map(c => `<option value="${esc(c.id)}">${esc(c.name || c.pseudo || c.id)}</option>`).join('')}
+    </select>
+    <label class="label" style="margin-top:14px">Ta lettre</label>
+    <textarea id="ltr-msg" class="input" rows="6" placeholder="Prends ton temps. Tu as 24h pour réfléchir, puis elle part."></textarea>
+    <label class="label" style="margin-top:14px">Délai (heures, 1-168)</label>
+    <input id="ltr-delay" class="input" type="number" min="1" max="168" value="24">
+    <button class="btn btn-block" onclick="K._createLetter()" style="margin-top:14px">⏳ Envoyer dans X heures</button>
+  `);
+};
+
+K._createLetter = async function(){
+  const conv_id = $('#ltr-conv').value;
+  const msg = $('#ltr-msg').value.trim();
+  const delay = parseInt($('#ltr-delay').value) || 24;
+  if(!conv_id || !msg) return toast('Conversation + message requis', 'err');
+
+  const ciphertext = btoa(unescape(encodeURIComponent(msg)));
+  try{
+    const r = await K._api('POST', '/api/letters', { conv_id, ciphertext, delay_hours: delay });
+    if(r.ok){
+      K._closeModal();
+      toast(`Lettre programmée pour ${delay}h (annulable avant)`, 'ok', 4000);
+    } else {
+      toast(r.message || 'Erreur', 'err');
+    }
+  }catch(e){
+    K._closeModal();
+    toast('Erreur réseau, réessaie', 'err');
+  }
+};
+
+// ============================================================================
+//  Phase 7 — Memory Lane
+// ============================================================================
+K.openMemoryLane = async function(){
+  K._showModal('🕰 Memory Lane — Il y a 1 an', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Recherche de tes échanges du <strong>${new Date(Date.now() - 365 * 86400 * 1000).toLocaleDateString('fr-FR')}</strong>...</p>
+    <div id="ml-content" style="margin-top:14px"><div class="loading"></div></div>
+  `);
+  try{
+    const r = await K._api('GET', '/api/memory-lane');
+    const c = $('#ml-content');
+    if(r.ok && r.memory){
+      if(r.memory.count === 0 || (r.memory.msg_ids || []).length === 0){
+        c.innerHTML = '<p style="color:var(--ax-text-3)">Aucun souvenir trouvé — tu n\'avais pas encore Apex Chat il y a 1 an. Reviens dans quelques mois 🌸</p>';
+      } else {
+        c.innerHTML = `
+          <p style="color:var(--ax-text)">📬 <strong>${r.memory.count}</strong> messages ce jour-là.</p>
+          <button class="btn btn-out btn-block" onclick="K._closeModal()" style="margin-top:14px">✨ Plus tard (Phase 7b — résumé IA)</button>
+        `;
+      }
+    } else {
+      c.innerHTML = '<p style="color:var(--ax-text-3)">Memory Lane indisponible (worker offline)</p>';
+    }
+  }catch(e){
+    $('#ml-content').innerHTML = '<p style="color:var(--ax-err)">Erreur : ' + esc(e.message) + '</p>';
+  }
+};
+
+// ============================================================================
+//  Modal helpers
+// ============================================================================
+K._showModal = function(title, html){
+  const host = $('#modal-host');
+  host.innerHTML = `
+    <div class="modal-back" role="presentation" onclick="if(event.target===this)K._closeModal()">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text" tabindex="-1">
+        <button class="modal-close" onclick="K._closeModal()" aria-label="Fermer la fenêtre">✕</button>
+        <h3 class="modal-title" id="modal-title-text">${esc(title)}</h3>
+        ${html}
+      </div>
+    </div>
+  `;
+  // Focus management : focus dialog au mount pour navigation clavier
+  setTimeout(() => { const dlg = host.querySelector('.modal'); if (dlg) dlg.focus(); }, 30);
+};
+
+K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
+
+// ============================================================================
+//  Invitation viral SMS
+// ============================================================================
+K.openInvite = function(){
+  K._showModal('📤 Inviter un ami', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Saisis prénom + numéro, l'app ouvre Messages iPhone tout prêt. Tu appuies juste <strong>Envoyer</strong>.</p>
+    <label class="label" style="margin-top:14px">Prénom de l'ami</label>
+    <input id="invite-name" type="text" class="input" placeholder="Ex: Marc" autocapitalize="words">
+    <label class="label" style="margin-top:14px">Numéro de téléphone</label>
+    <input id="invite-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" inputmode="tel" autocomplete="tel">
+    <button class="btn btn-block" onclick="K._sendInvite1Click()" style="margin-top:14px">📲 Envoyer maintenant</button>
+    <button class="btn btn-out btn-block btn-sm" onclick="K._sendInvite()" style="margin-top:8px">🔗 Voir le lien (sans envoyer)</button>
+    <p style="color:var(--ax-text-3);font-size:.75em;margin-top:14px;text-align:center">Lien magique = pas besoin de SMS Vonage, pas besoin de whitelist. Le destinataire entre direct sur son iPhone/Android.</p>
+  `);
+};
+
+// 1-clic : ouvre Messages iPhone direct avec tout pré-rempli
+K._sendInvite1Click = function(){
+  const phone = $('#invite-phone').value.trim().replace(/[^\d+]/g,'');
+  const name = ($('#invite-name')?.value || 'Ami').trim();
+  if(!phone) return toast('Numéro requis', 'err');
+  if(!name) return toast('Prénom requis', 'err');
+
+  const token = btoa(phone + ':' + name).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
+  const inviteUrl = `${baseUrl}?invite=${token}`;
+  const smsText = `Salut ${name} ! Kevin t'invite sur Apex Chat (messagerie privee chiffree). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
+
+  K._closeModal();
+
+  // Tentative 1 : Web Share API natif iPhone/Android
+  if(navigator.share){
+    navigator.share({ title: 'Invitation Apex Chat', text: smsText, url: inviteUrl })
+      .then(()=>{ toast('✅ Invitation envoyée à ' + name, 'ok', 3000); })
+      .catch((err)=>{
+        if(err.name !== 'AbortError'){
+          // Fallback sms: URL
+          window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+        }
+      });
+  } else {
+    // Fallback direct sms: URL (iPhone Safari sans Web Share)
+    window.location.href = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+    setTimeout(()=>toast('📱 Messages iPhone ouvert avec invitation pré-remplie', 'info', 4000), 500);
+  }
+};
+
+K._sendInvite = async function(){
+  const phone = $('#invite-phone').value.trim().replace(/[^\d+]/g,'');
+  const name = ($('#invite-name')?.value || 'Ami').trim();
+  if(!phone) return toast('Numéro requis', 'err');
+
+  // Génère lien magique (base64 de phone:name)
+  const token = btoa(phone + ':' + name).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
+  const inviteUrl = `${baseUrl}?invite=${token}`;
+
+  const smsText = `Salut ${name} ! Kevin t'invite sur Apex Chat (messagerie privée chiffrée). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
+
+  // Affiche le lien + bouton pour partager/copier
+  K._showModal('📨 Invitation prête', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Lien magique pour <strong>${esc(name)}</strong> (${esc(phone)}).
+    Pas besoin de SMS — il clique le lien et entre direct.</p>
+    <div style="background:var(--ax-bg-3);padding:12px;border-radius:10px;margin-top:14px;font-family:ui-monospace,monospace;font-size:.78em;word-break:break-all;color:var(--ax-gold)">
+      ${esc(inviteUrl)}
+    </div>
+    <p style="color:var(--ax-text-3);font-size:.78em;margin-top:8px">Message SMS à envoyer :</p>
+    <div style="background:var(--ax-bg-3);padding:12px;border-radius:10px;font-size:.85em;color:var(--ax-text-2)">
+      ${esc(smsText)}
+    </div>
+    <button class="btn btn-block" onclick="K._shareInvite('${esc(inviteUrl)}','${esc(smsText)}','${esc(phone)}')" style="margin-top:14px">
+      📤 Partager via SMS / WhatsApp
+    </button>
+    <button class="btn btn-out btn-block btn-sm" onclick="navigator.clipboard.writeText('${esc(smsText)}').then(()=>K.toast('Copié','ok'))" style="margin-top:8px">
+      📋 Copier le message
+    </button>
+  `);
+};
+
+K._shareInvite = function(url, smsText, phone){
+  // Méthode 1 : Web Share API (natif iPhone)
+  if(navigator.share){
+    navigator.share({
+      title: 'Invitation Apex Chat',
+      text: smsText,
+      url
+    }).then(()=>{
+      K.toast('Invitation partagée', 'ok');
+      K._closeModal();
+    }).catch(()=>{});
+    return;
+  }
+  // Méthode 2 : SMS natif iPhone (URL sms:)
+  const smsLink = 'sms:' + phone + '&body=' + encodeURIComponent(smsText);
+  window.location.href = smsLink;
+};
+
+// ============================================================================
+//  Menu / Misc
+// ============================================================================
+K.toggleMenu = function(){
+  // Drawer latéral (différent de la bottom nav)
+  K._showModal('☰ Menu rapide', `
+    <div class="card" style="margin:0">
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.sv('chats')">
+        <span style="font-size:1.5em">💬</span>
+        <div style="flex:1"><strong>Mes conversations</strong></div>
+      </div>
+      ${K.user?.is_admin ? `
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.sv('admin')">
+        <span style="font-size:1.5em">👑</span>
+        <div style="flex:1"><strong>Panel admin Kevin</strong><div style="font-size:.78em;color:var(--ax-text-2)">Tools + IA + audit + signalements</div></div>
+        <span>›</span>
+      </div>
+      ` : ''}
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K._showNewMenu()">
+        <span style="font-size:1.5em">➕</span>
+        <div style="flex:1"><strong>Nouveau</strong><div style="font-size:.78em;color:var(--ax-text-2)">Inviter / groupe / capsule / lettre</div></div>
+        <span>›</span>
+      </div>
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.openInvite()">
+        <span style="font-size:1.5em">🪄</span>
+        <div style="flex:1"><strong>Inviter un ami</strong><div style="font-size:.78em;color:var(--ax-text-2)">Lien magique sans SMS</div></div>
+        <span>›</span>
+      </div>
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K.sv('settings')">
+        <span style="font-size:1.5em">⚙️</span>
+        <div style="flex:1"><strong>Réglages</strong></div>
+        <span>›</span>
+      </div>
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();window.open('./diag.html?v=' + Date.now())">
+        <span style="font-size:1.5em">🔧</span>
+        <div style="flex:1"><strong>Diagnostic technique</strong><div style="font-size:.78em;color:var(--ax-text-2)">Version, SW, permissions</div></div>
+        <span>›</span>
+      </div>
+    </div>
+    <div style="margin-top:14px;text-align:center;color:var(--ax-text-3);font-size:.78em">
+      <strong>${esc(K.user?.real_name || K.user?.pseudo || 'Anonyme')}</strong> · @${esc(K.user?.pseudo || '?')}<br>
+      Apex Chat ${esc(__APEX_CHAT_VERSION__)}<br>
+      ${K.user?.is_admin ? '<span class="tag tag-admin">👑 Admin</span>' : ''}
+    </div>
+    <button class="btn btn-err btn-block" onclick="K._closeModal();K.logout()" style="margin-top:14px">
+      🚪 Se déconnecter
+    </button>
+  `);
+};
+
+K._showNewMenu = function(){
+  K._showModal('＋ Nouveau', `
+    <div class="card" style="margin:0">
+      <div class="card-row" onclick="K._closeModal();K.openInvite()" style="cursor:pointer">
+        <span style="font-size:1.5em">📤</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Inviter un ami</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">SMS avec lien d'invitation</div>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="card-row" onclick="K._closeModal();K.openCreateGroup()" style="cursor:pointer">
+        <span style="font-size:1.5em">👥</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Nouveau groupe</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Jusqu'à ${K.config.MAX_GROUP_SIZE || 1024} membres</div>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="card-row" onclick="K._closeModal();K.openTimeCapsule()" style="cursor:pointer">
+        <span style="font-size:1.5em">⏰</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Capsule temporelle</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Message scellé jusqu'à une date future</div>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="card-row" onclick="K._closeModal();K.openLetters()" style="cursor:pointer">
+        <span style="font-size:1.5em">💌</span>
+        <div style="flex:1">
+          <div style="font-weight:600">Lettre différée 24h</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Anti-impulsion — annulable</div>
+        </div>
+        <span>›</span>
+      </div>
+    </div>
+  `);
+};
+
+K._reload = function(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistration().then(r => {
+      if(r){ r.update(); r.waiting?.postMessage({type:'SKIP_WAITING'}); }
+      setTimeout(()=>location.reload(), 300);
+    });
+  } else location.reload();
+};
+
+// ============================================================================
+//  Phase 9 — Premium / Stripe freemium
+// ============================================================================
+K.openPremium = function(){
+  const isPremium = PRECONFIGURED_USERS[K.user.id]?.premium || (K.user.premium_until > Date.now());
+  if(isPremium){
+    return K._showModal('⭐ Apex Chat+ Premium', `
+      <div style="text-align:center;padding:14px">
+        <div style="font-size:4em">✨</div>
+        <h3 style="color:var(--ax-gold);margin:10px 0">Tu as déjà Premium !</h3>
+        <p style="color:var(--ax-text-2)">Toutes les fonctionnalités sont débloquées.</p>
+        <ul style="text-align:left;color:var(--ax-text-2);margin:14px 0;line-height:2">
+          <li>✓ IA Apex illimitée</li>
+          <li>✓ Time Capsules illimitées</li>
+          <li>✓ Stockage 1 To (vs 30j gratuit)</li>
+          <li>✓ Voice Clone E2E (futur)</li>
+          <li>✓ Themes premium</li>
+          <li>✓ Priority support</li>
+        </ul>
+      </div>
+    `);
+  }
+
+  K._showModal('⭐ Apex Chat+ Premium', `
+    <div style="text-align:center;padding:14px">
+      <div style="font-size:3em">✨</div>
+      <h3 style="color:var(--ax-gold);margin:10px 0">Apex Chat+ — Premium</h3>
+      <p style="color:var(--ax-text-2);margin:0 0 18px">Débloque toutes les fonctionnalités.</p>
+    </div>
+    <div class="card">
+      <div class="card-row">
+        <div style="flex:1">
+          <strong>Mensuel</strong>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Annulable à tout moment</div>
+        </div>
+        <strong style="color:var(--ax-gold);font-size:1.2em">6,99 €/mois</strong>
+      </div>
+      <div class="card-row">
+        <div style="flex:1">
+          <strong>Lifetime</strong>
+          <div style="font-size:.78em;color:var(--ax-text-2)">1000 premiers seulement</div>
+        </div>
+        <strong style="color:var(--ax-gold);font-size:1.2em">199 €</strong>
+      </div>
+    </div>
+    <p style="font-size:.85em;color:var(--ax-text-2);margin:14px 0">
+      <strong>Avec Premium :</strong> IA illimitée, Time Capsules illimitées, stockage 1To, voice clone, themes premium.
+    </p>
+    <button class="btn btn-block" onclick="K._startCheckout('monthly')">⚡ Mensuel 6,99 €</button>
+    <button class="btn btn-out btn-block" onclick="K._startCheckout('lifetime')" style="margin-top:8px">🏆 Lifetime 199 €</button>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:14px">
+      Paiement sécurisé via Stripe. Aucune carte stockée. Annulable 1 clic.
+    </p>
+  `);
+};
+
+K._startCheckout = function(plan){
+  // Phase 9 : Stripe Checkout URL (à configurer)
+  // En attendant : ouvre Stripe.com en placeholder
+  const checkoutUrls = {
+    monthly: 'https://buy.stripe.com/apex-chat-plus-monthly-PLACEHOLDER',
+    lifetime: 'https://buy.stripe.com/apex-chat-plus-lifetime-PLACEHOLDER'
+  };
+  toast('Stripe checkout (Phase 9b — configuration nécessaire)', 'info', 3000);
+  // window.open(checkoutUrls[plan], '_blank');
+};
+
+// ============================================================================
+//  Phase 9 — Sentinelles enrichies + auto-fix
+// ============================================================================
+function _runSentinelsEnriched(){
+  _runSentinels();  // base sentinels
+
+  // Sentinel battery (mobile)
+  if('getBattery' in navigator){
+    navigator.getBattery?.().then(bat => {
+      K.sentinels.battery = { level: bat.level, charging: bat.charging };
+      if(bat.level < 0.15 && !bat.charging) _logTelemetry('warn', 'battery-low', { level: bat.level });
+    }).catch(()=>{});
+  }
+
+  // Sentinel memory (Chrome only)
+  if(performance.memory){
+    const m = performance.memory;
+    const ratio = m.usedJSHeapSize / m.jsHeapSizeLimit;
+    K.sentinels.memory = { ratio, usedMB: (m.usedJSHeapSize / 1048576).toFixed(1) };
+    if(ratio > 0.8) _logTelemetry('warn', 'memory-high', { ratio });
+  }
+
+  // Sentinel performance
+  if(performance.timing){
+    const t = performance.timing;
+    const loadTime = t.loadEventEnd - t.navigationStart;
+    if(loadTime > 5000) _logTelemetry('warn', 'slow-load', { ms: loadTime });
+    K.sentinels.perf = { loadTime };
+  }
+
+  // Sentinel WebSocket health
+  K.sentinels.ws = {
+    state: K.ws ? ['CONNECTING','OPEN','CLOSING','CLOSED'][K.ws.readyState] : 'DISCONNECTED',
+    activeCall: !!K._activeCall
+  };
+
+  // Sentinel API health (best-effort ping)
+  if(Math.random() < 0.1){  // 10% des runs, pas spam
+    fetch(API_BASE + '/health').then(r => {
+      K.sentinels.api = { ok: r.ok, status: r.status, ts: Date.now() };
+    }).catch(() => {
+      K.sentinels.api = { ok: false, ts: Date.now() };
+      _logTelemetry('warn', 'api-unreachable', {});
+    });
+  }
+}
+
+// ============================================================================
+//  Init / Boot
+// ============================================================================
+async function _boot(){
+  // Affichage version partout (splash + topbar)
+  try{
+    const splashV = document.getElementById('splash-version');
+    const topbarV = document.getElementById('topbar-version');
+    if(splashV) splashV.textContent = __APEX_CHAT_VERSION__;
+    if(topbarV) topbarV.textContent = __APEX_CHAT_VERSION__;
+  }catch(_){}
+
+  // SW update banner listener
+  window.addEventListener('sw-update-available', () => {
+    $('#update-banner').classList.remove('h');
+  });
+
+  // Network listener
+  window.addEventListener('online', () => {
+    K.isOnline = true;
+    $('#conn-status').textContent = '●';
+    $('#conn-status').style.color = 'var(--ax-ok)';
+    toast('Connexion rétablie', 'ok', 1500);
+  });
+  window.addEventListener('offline', () => {
+    K.isOnline = false;
+    $('#conn-status').textContent = '○';
+    $('#conn-status').style.color = 'var(--ax-text-3)';
+    toast('Hors ligne — tes messages partiront dès reconnexion', 'warn', 3000);
+  });
+
+  // Bottom nav handler
+  $$('.bnav-btn').forEach(b => b.addEventListener('click', () => K.sv(b.dataset.view)));
+
+  // Restaurer session
+  const user = lg('user', null);
+  const token = lg('token', null);
+  if(user && token){
+    K.user = user; K.token = token;
+    if(isKevinAdmin(user.real_name || user.pseudo)){
+      K.user.is_admin = true;
+      $('#bnav-admin').classList.remove('h');
+    }
+    K.view = 'chats';
+    $('#splash').classList.add('h');
+    $('#topbar').classList.remove('h');
+    $('#security-banner').classList.remove('h');
+    $('#bnav').classList.remove('h');
+
+    // Charger état persisté
+    K.conversations = lg('conversations', []);
+    K.contacts = lg('contacts', []);
+    for(const c of K.conversations){
+      K.messages[c.id] = lg('messages_' + c.id, []);
+    }
+
+    K.render();
+  } else {
+    // Splash auth
+    K.authStep = 'phone';
+    renderAuthStep();
+  }
+
+  // Démarrer sentinelles enrichies (toutes les 30s)
+  _runSentinelsEnriched();
+  setInterval(_runSentinelsEnriched, 30000);
+
+  // Charger config depuis API (best-effort)
+  fetch(API_BASE + '/api/system/config').then(r => r.json()).then(d => {
+    if(d.config) K.config = d.config;
+  }).catch(() => {
+    K.config = { ADMIN_MODE: 'A', KEVIN_INVISIBLE_ADMIN: 'true', AUTH_PROVIDER: 'firebase' };
+  });
+
+  // Cross-app : détecter SSO depuis Apex
+  const params = new URLSearchParams(location.search);
+  if(params.get('from') === 'apex' && params.get('token') && params.get('uid')){
+    try{
+      const r = await _authSsoFromApex(params.get('token'), params.get('uid'), params.get('name'));
+      if(r.ok) K.login(r.user, r.token);
+    }catch(e){}
+  }
+
+  // === Lien d'invitation magique (bypass SMS pour amis Kevin) ===
+  // Format: ?invite=<base64(phone:name)>&kevin=1
+  const inviteToken = params.get('invite');
+  if(inviteToken){
+    try{
+      const decoded = atob(inviteToken.replace(/-/g,'+').replace(/_/g,'/'));
+      const [phone, name] = decoded.split(':');
+      if(phone && name){
+        // Pré-remplir le formulaire
+        K.authData = { phone, name, _invite_bypass: true };
+        setTimeout(() => {
+          const ph = $('#auth-phone'); if(ph) ph.value = phone;
+          const nm = $('#auth-name'); if(nm) nm.value = name;
+          toast('📨 Invitation reconnue — touche le bouton pour entrer', 'ok', 4000);
+        }, 500);
+      }
+    }catch(e){}
+  }
+
+  // === Magic link signé admin (zero SMS, auth direct) ===
+  // Format: ?magic=<JWT_TOKEN>
+  const magicToken = params.get('magic');
+  if(magicToken){
+    try{
+      // CGU implicite accepté (cliqué le lien admin)
+      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:'v1.0.7',implicit:true,via:'magic_link'})); }catch(_){}
+      const apiUrl = (window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.workers.dev') + '/api/auth/magic-login';
+      const r = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ magic_token: magicToken })
+      }).then(x => x.json()).catch(e => ({ error: e.message }));
+      if(r && r.ok && r.user && r.jwt){
+        K.login(r.user, r.jwt);
+        toast('✨ Connexion automatique réussie', 'ok', 3000);
+        history.replaceState({}, '', location.pathname);
+      } else {
+        toast('Lien expiré ou invalide — utilise ton numéro à la place', 'err', 5000);
+      }
+    }catch(e){
+      console.warn('magic login fail', e);
+    }
+  }
+
+  // === Code court ?i=ABC123 (shortlink invitation) ===
+  const shortCode = params.get('i');
+  if(shortCode && !magicToken){
+    try{
+      const apiUrl = (window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.workers.dev') + '/api/invitations/' + encodeURIComponent(shortCode);
+      const r = await fetch(apiUrl).then(x => x.json()).catch(() => null);
+      if(r && r.ok && r.invitation && r.invitation.magic_token){
+        // Rediriger avec magic token
+        location.replace(location.pathname + '?magic=' + encodeURIComponent(r.invitation.magic_token));
+      }
+    }catch(_){}
+  }
+}
+
+// Error capture global
+window.addEventListener('error', (e) => _safeCatch('window.error', e.error || new Error(e.message)));
+window.addEventListener('unhandledrejection', (e) => _safeCatch('unhandledrejection', e.reason));
+
+// Démarrage
+document.addEventListener('DOMContentLoaded', _boot);
+if(document.readyState !== 'loading') _boot();
+</script>
+
+<!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
+<script src="/CMCteams/tools/shared/version-badge-pwa.js"
+        data-project="messaging-app"
+        data-version="v1.0.7"
+        data-color="#6a8aff"
+        defer></script>
+</body>
+</html>

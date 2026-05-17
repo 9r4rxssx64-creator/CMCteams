@@ -1,0 +1,109 @@
+{
+  "_comment": "Firebase Realtime Database Security Rules pour Apex AI v12.554+",
+  "_database": "kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app",
+  "_phase": "5 (auth.uid per-user gate active une fois apex-auth-worker deploye)",
+  "_instructions": [
+    "1. Console Firebase -> kdmc-clients project -> Realtime Database -> Rules",
+    "2. Copier-coller tout l'objet 'rules' ci-dessous",
+    "3. Cliquer Publier",
+    "",
+    "PHASE 5 ACTIVE : utilise auth.uid + custom tokens depuis apex-auth-worker (Cloudflare Worker)",
+    "Les utilisateurs SANS token Phase 5 (ancienne version Apex) ont acces lecture global lecture only,",
+    "mais ne peuvent ni ecrire ni lire les donnees per-user d'autres utilisateurs."
+  ],
+  "rules": {
+    "apex": {
+      "$key": { ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)" },
+
+      "ax_admin_pass": { ".write": false, ".read": "auth != null && auth.token.role === 'admin'" },
+      "ax_admin_pin": { ".write": false, ".read": false },
+      "ax_pin": { ".write": false, ".read": false },
+      "ax_user": { ".write": false, ".read": false },
+      "ax_uid": { ".write": false, ".read": false },
+
+      "ax_voice_print_$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false,
+        "_comment": "Biometrique = LOCAL strict + auth.uid gate lecture (RGPD Art.9)"
+      },
+      "ax_pin_$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+        ".write": false
+      },
+      "ax_user_chat_$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+        ".write": "auth != null && auth.uid === $uid"
+      },
+      "ax_user_locations_$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      },
+      "ax_health_reports_$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      },
+      "ax_msgs_$conv": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      },
+      "ax_settings_$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+        ".write": "auth != null && auth.uid === $uid"
+      },
+
+      "ax_auth_log": {
+        ".read": "auth != null && auth.token.role === 'admin'",
+        ".write": "auth != null"
+      },
+      "ax_audit": {
+        ".read": "auth != null && auth.token.role === 'admin'",
+        ".write": "auth != null",
+        ".validate": "newData.isString() == false || newData.val() === null"
+      },
+      "ax_security_log": {
+        ".read": "auth != null && auth.token.role === 'admin'",
+        ".write": "auth != null"
+      },
+      "ax_breach_log": {
+        ".read": "auth != null && auth.token.role === 'admin'",
+        ".write": "auth != null"
+      },
+
+      "ax_telemetry_in": {
+        ".read": "auth != null && auth.token.role === 'admin'",
+        ".write": "auth != null",
+        ".validate": "newData.isString() == false || newData.val() === null"
+      },
+      "ax_claude_todo": {
+        ".read": "auth != null && auth.token.role === 'admin'",
+        ".write": "auth != null",
+        ".validate": "newData.isString() == false || newData.val() === null"
+      },
+      "ax_lessons_learned_struct": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role === 'admin'",
+        ".validate": "newData.isString() == false || newData.val() === null"
+      },
+
+      "$other": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role === 'admin'"
+      }
+    }
+  },
+  "_phase4_legacy_fallback": {
+    "_comment": "Si Phase 5 worker non deploye, regles Phase 4 (.write false sur sensibles, .read true global) en backup. Apex AI fonctionne en mode degrade mais sans regression.",
+    "rules_phase4": {
+      "apex": {
+        ".read": true,
+        ".write": true,
+        "$key": { ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)" },
+        "ax_admin_pass": { ".write": false },
+        "ax_admin_pin": { ".write": false },
+        "ax_pin": { ".write": false },
+        "ax_user": { ".write": false },
+        "ax_uid": { ".write": false }
+      }
+    }
+  }
+}

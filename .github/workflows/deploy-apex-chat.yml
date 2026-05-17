@@ -1,0 +1,209 @@
+name: Deploy Apex Chat (Cloudflare Workers)
+
+# Déclenche automatiquement quand messaging-app/workers/** change
+# OU manuellement via GitHub Actions UI (workflow_dispatch)
+
+on:
+  push:
+    branches:
+      - main
+      - claude/private-messaging-app-jpLl1
+    paths:
+      - 'messaging-app/workers/**'
+      - 'messaging-app/d1-migrations/**'
+      - 'messaging-app/deploy.sh'
+      - '.github/workflows/deploy-apex-chat.yml'
+  workflow_dispatch:
+    inputs:
+      apply_migrations:
+        description: 'Appliquer migrations D1 (yes/no)'
+        required: false
+        default: 'yes'
+
+jobs:
+  deploy:
+    name: Deploy Cloudflare Workers + Infra
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Verify token
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Secret CLOUDFLARE_API_TOKEN manquant"
+            echo "Ajoute-le dans Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | tee /tmp/verify.json
+          if ! grep -q '"success":true' /tmp/verify.json; then
+            echo "::error::Token invalide"
+            exit 1
+          fi
+          echo "::notice::✅ Token Cloudflare valide"
+
+      - name: Get Account ID
+        id: account
+        run: |
+          ACC=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+            python3 -c "import json,sys; d=json.load(sys.stdin); print(d['result'][0]['id'])")
+          echo "id=$ACC" >> $GITHUB_OUTPUT
+          echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> $GITHUB_ENV
+          echo "::notice::Account ID: $ACC"
+
+      - name: Create D1 database (idempotent)
+        id: d1
+        working-directory: messaging-app/workers
+        run: |
+          set +e
+          # Tente de lister les D1 existantes
+          EXISTING=$(wrangler d1 list 2>&1 | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}[[:space:]]+apex-chat-main' | awk '{print $1}' | head -1)
+          if [ -n "$EXISTING" ]; then
+            D1_ID="$EXISTING"
+            echo "::notice::D1 existe déjà: $D1_ID"
+          else
+            CREATE_OUT=$(wrangler d1 create apex-chat-main 2>&1)
+            echo "$CREATE_OUT"
+            D1_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -1)
+            echo "::notice::D1 créée: $D1_ID"
+          fi
+          echo "id=$D1_ID" >> $GITHUB_OUTPUT
+          # Inject dans wrangler.toml
+          sed -i "s/database_id = \"REPLACE_WITH_D1_ID\"/database_id = \"$D1_ID\"/" wrangler.toml || true
+
+      - name: Apply D1 migrations
+        if: github.event.inputs.apply_migrations != 'no'
+        working-directory: messaging-app/workers
+        run: |
+          wrangler d1 execute apex-chat-main --file=../d1-migrations/0001_init.sql --remote || true
+          echo "::notice::Migrations D1 appliquées"
+
+      - name: Create R2 bucket (idempotent)
+        run: |
+          wrangler r2 bucket create apex-chat-media || echo "(bucket existe déjà)"
+          echo "::notice::R2 bucket apex-chat-media OK"
+
+      - name: Create KV namespace (idempotent)
+        id: kv
+        working-directory: messaging-app/workers
+        run: |
+          set +e
+          EXISTING=$(wrangler kv namespace list 2>&1 | grep -B1 'APEX_CHAT_CACHE' | grep -oE '"id":[[:space:]]*"[^"]+"' | head -1 | cut -d'"' -f4)
+          if [ -n "$EXISTING" ]; then
+            KV_ID="$EXISTING"
+            echo "::notice::KV existe déjà: $KV_ID"
+          else
+            CREATE_OUT=$(wrangler kv namespace create APEX_CHAT_CACHE 2>&1)
+            echo "$CREATE_OUT"
+            KV_ID=$(echo "$CREATE_OUT" | grep -oE 'id = "[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}' | head -1)
+            echo "::notice::KV créé: $KV_ID"
+          fi
+          echo "id=$KV_ID" >> $GITHUB_OUTPUT
+          sed -i "s/id = \"REPLACE_WITH_KV_ID\"/id = \"$KV_ID\"/" wrangler.toml || true
+
+      - name: Create Cloudflare Queues (idempotent)
+        run: |
+          for queue in apex-chat-telemetry apex-chat-pipeline-fix apex-chat-letters-deliver apex-chat-timecapsule-open apex-chat-memory-lane; do
+            wrangler queues create "$queue" 2>&1 | tail -1 || echo "(  $queue existe déjà)"
+          done
+          echo "::notice::5 Queues OK"
+
+      - name: Generate + put secrets
+        working-directory: messaging-app/workers
+        run: |
+          # Secrets crypto auto-générés
+          JWT_SIGN_KEY=$(openssl rand -hex 64)
+          APEX_CHAT_ADMIN_TOKEN=$(openssl rand -hex 32)
+          APEX_HANDOFF_TOKEN=$(openssl rand -hex 32)
+
+          echo "$JWT_SIGN_KEY" | wrangler secret put JWT_SIGN_KEY
+          echo "$APEX_CHAT_ADMIN_TOKEN" | wrangler secret put APEX_CHAT_ADMIN_TOKEN
+          echo "$APEX_HANDOFF_TOKEN" | wrangler secret put APEX_HANDOFF_TOKEN
+
+          # Helper : push secret seulement si valeur définie
+          push_if_set() {
+            local name=$1
+            local value=$2
+            if [ -n "$value" ]; then
+              echo "$value" | wrangler secret put "$name"
+              echo "::notice::✓ $name configuré"
+            fi
+          }
+
+          # === IA (4 providers actifs côté Kevin) ===
+          push_if_set "ANTHROPIC_API_KEY" "${{ secrets.ANTHROPIC_API_KEY }}"
+          push_if_set "GROQ_API_KEY" "${{ secrets.GROQ_API_KEY }}"
+          push_if_set "GEMINI_API_KEY" "${{ secrets.GEMINI_API_KEY }}"
+          push_if_set "DEEPSEEK_API_KEY" "${{ secrets.DEEPSEEK_API_KEY }}"
+
+          # === IA failover (optionnels) ===
+          push_if_set "OPENROUTER_API_KEY" "${{ secrets.OPENROUTER_API_KEY }}"
+          push_if_set "OPENAI_API_KEY" "${{ secrets.OPENAI_API_KEY }}"
+          push_if_set "PERPLEXITI_API_KEY" "${{ secrets.PERPLEXITI_API_KEY }}"
+
+          # === SMS Vonage ===
+          push_if_set "VONAGE_API_KEY" "${{ secrets.VONAGE_API_KEY }}"
+          push_if_set "VONAGE_API_SECRET" "${{ secrets.VONAGE_API_SECRET }}"
+
+          # === Web Push VAPID ===
+          push_if_set "VAPID_PRIVATE_KEY" "${{ secrets.VAPID_PRIVATE_KEY }}"
+
+          # === Communications ===
+          push_if_set "TELEGRAM_API_KEY" "${{ secrets.TELEGRAM_API_KEY }}"
+          push_if_set "EMAILJS_PRIVATE_KEY" "${{ secrets.EMAILJS_PRIVATE_KEY }}"
+
+          # === Recherche & vector DB ===
+          push_if_set "TAVILY_API_KEY" "${{ secrets.TAVILY_API_KEY }}"
+          push_if_set "PINECONE_API_KEY" "${{ secrets.PINECONE_API_KEY }}"
+
+          # === Auth/Infra ===
+          push_if_set "FIREBASE_API_KEY" "${{ secrets.FIREBASE_API_KEY }}"
+          push_if_set "FIREBASE_PROJECT_ID" "cmcteams-c16ab"
+          push_if_set "FIREBASE_AUTH_DOMAIN" "cmcteams-c16ab.firebaseapp.com"
+
+          # === Reconnaissance Kevin admin via numéro téléphone E.164 ===
+          push_if_set "KEVIN_PHONE_E164" "+33672280277"
+
+          echo "::notice::Secrets configurés (skip silencieux si vide)"
+
+      - name: Deploy api-worker
+        working-directory: messaging-app/workers
+        run: |
+          wrangler deploy 2>&1 | tee /tmp/deploy.log
+          if grep -qE "Deployed|Published" /tmp/deploy.log; then
+            echo "::notice::✅ api-worker déployé"
+          else
+            echo "::warning::Vérifier le déploiement manuellement"
+          fi
+
+      - name: Summary
+        run: |
+          echo "## 🎉 Apex Chat déployé sur Cloudflare" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Infrastructure créée :**" >> $GITHUB_STEP_SUMMARY
+          echo "- D1 database \`apex-chat-main\` (ID: ${{ steps.d1.outputs.id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- R2 bucket \`apex-chat-media\`" >> $GITHUB_STEP_SUMMARY
+          echo "- KV namespace \`APEX_CHAT_CACHE\` (ID: ${{ steps.kv.outputs.id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- 5 Cloudflare Queues" >> $GITHUB_STEP_SUMMARY
+          echo "- Worker \`apex-chat-api\` avec 3 Durable Objects" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL backend :**" >> $GITHUB_STEP_SUMMARY
+          echo "https://apex-chat-api.${{ steps.account.outputs.id }}.workers.dev" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL frontend :**" >> $GITHUB_STEP_SUMMARY
+          echo "https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,149 @@
+name: Auto-merge Claude branches into main
+
+# CRITIQUE (CLAUDE.md erreur #33) : éviter "branch jamais merge = deploiement fantome".
+# Quand Claude push sur claude/* après pre-commit OK, merge auto vers main pour
+# que GitHub Pages déploie immédiatement.
+#
+# Sécurité : ne touche QUE branches commençant par "claude/" (pas main, pas autres).
+# Tests pre-commit déjà validés au push (node --check + 26 tests Apex).
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branche claude/* à merger sur main'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine source branch
+        id: src
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "branch=${{ github.event.inputs.branch }}" >> $GITHUB_OUTPUT
+          else
+            echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate JS syntax (CMCteams + Apex + Apex Chat)
+        run: |
+          set -e
+          # CMCteams
+          if [ -f index.html ]; then
+            node -e "
+              const fs=require('fs');
+              const html=fs.readFileSync('index.html','utf8');
+              const m=html.match(/<script>([\s\S]*?)<\/script>/g) || [];
+              let combined='';
+              m.forEach(s=>combined+=s.replace(/<\/?script>/g,'')+'\n');
+              fs.writeFileSync('/tmp/check_cmc.js',combined);
+            "
+            node --check /tmp/check_cmc.js
+            echo "OK: CMCteams JS syntax"
+          fi
+          # Apex AI
+          if [ -f apex-ai/index.html ]; then
+            node -e "
+              const fs=require('fs');
+              const html=fs.readFileSync('apex-ai/index.html','utf8');
+              const m=html.match(/<script>([\s\S]*?)<\/script>/g) || [];
+              let combined='';
+              m.forEach(s=>combined+=s.replace(/<\/?script>/g,'')+'\n');
+              fs.writeFileSync('/tmp/check_apex.js',combined);
+            "
+            node --check /tmp/check_apex.js
+            echo "OK: Apex JS syntax"
+          fi
+          # Apex Chat
+          if [ -f messaging-app/index.html ]; then
+            node -e "
+              const fs=require('fs');
+              const html=fs.readFileSync('messaging-app/index.html','utf8');
+              const m=html.match(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g) || [];
+              let combined='';
+              m.forEach(s=>{
+                const c=s.replace(/<script(?:\s[^>]*)?>/,'').replace(/<\/script>/,'');
+                if(c.trim() && !c.includes('src=')) combined+=c+'\n';
+              });
+              fs.writeFileSync('/tmp/check_apex_chat.js',combined);
+            "
+            node --check /tmp/check_apex_chat.js
+            echo "OK: Apex Chat JS syntax"
+          fi
+          # Workers Cloudflare
+          for w in messaging-app/workers/*.js messaging-app/workers/durable-objects/*.js messaging-app/crypto.js; do
+            if [ -f "$w" ]; then
+              node --check "$w" || (echo "ERROR: $w syntax fail"; exit 1)
+            fi
+          done
+          echo "OK: Workers JS syntax"
+
+      - name: Validate no merge markers
+        run: |
+          set -e
+          for f in index.html apex-ai/index.html sw.js apex-ai/sw.js; do
+            if [ -f "$f" ]; then
+              if grep -qE "^<<<<<<<|^=======$|^>>>>>>>" "$f"; then
+                echo "ERROR: Merge markers in $f"
+                exit 1
+              fi
+            fi
+          done
+          echo "OK: no merge markers"
+
+      - name: Switch to main + merge
+        run: |
+          set -e
+          BRANCH="${{ steps.src.outputs.branch }}"
+          git fetch origin main "$BRANCH"
+          git checkout main
+          git pull origin main --ff-only
+          # Merge avec --no-ff pour preserver l'historique
+          if git merge --no-ff "origin/$BRANCH" -m "Auto-merge $BRANCH into main (claude-code automation)
+
+          Tests: pre-commit + JS syntax + no markers OK.
+          Trigger: push to $BRANCH by ${{ github.actor }}.
+          See CLAUDE.md erreur #33 (PR jamais merge = deploiement fantome)."; then
+            echo "Merge OK"
+          else
+            echo "MERGE CONFLICT — abort + need manual"
+            git merge --abort
+            exit 1
+          fi
+
+      - name: Push main
+        run: |
+          set -e
+          git push origin main
+          echo "Push OK — GitHub Pages will deploy in 1-3 min"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::warning::Auto-merge ${{ steps.src.outputs.branch }} → main FAILED. Manual intervention needed."

@@ -1,0 +1,38 @@
+name: Deploy Apex v13 Backend Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/apex-v13-backend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/apex-v13-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install --no-audit --no-fund
+
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        continue-on-error: true
+        # continue-on-error pour Jet 6.5 : Kevin doit configurer secrets GitHub
+        # CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID avant que ce workflow réussisse.
+        # Tant qu'ils ne sont pas configurés, deploy échoue mais ne bloque pas main.
