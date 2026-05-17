@@ -4,6 +4,100 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-16 (Ape
 
 ---
 
+## 🔬 RÈGLE ABSOLUE — AUTO-TEST + AUTO-FIX + AUTO-AMÉLIORATION TOUS PROJETS (Kevin 2026-05-16, ABSOLUE)
+
+> **"Apex doit s'auto-tester, s'auto-corriger, s'auto-améliorer. Et faire pareil pour tous mes projets toujours. Note et rappel toi. Pareil pour apex."** — Kevin 2026-05-16
+
+**Règle absolue, NON-NÉGOCIABLE, applicable à TOUS projets Kevin actuels et futurs** : Apex, CMCteams, e-KDMC, Télécommande, CrackPass, Apex Chat, Social Video Pipeline, e-APEX, tout nouveau projet.
+
+### 1. Auto-test runtime obligatoire dans CHAQUE projet
+
+Chaque projet DOIT avoir un service `auto-test-runner` qui :
+- **Teste TOUTES les fonctions critiques** en runtime (pas juste APIs surface) :
+  - Modules core (memory, store, router, vault si applicable)
+  - Services métier (orchestrator, AI router, bridges)
+  - Tools registry (count + sample dispatch)
+  - Sentinelles (count + dernière exec récente)
+  - Tests visuels (DOM monté, splash hidden, nav buttons visibles, pas overflow horizontal)
+  - Tests functional (boutons UI cliquables réagissent — au minimum quick scan)
+  - Tests connectivité (Firebase, providers IA, network)
+- **Tourne automatique 1×/12h via sentinelle** (`<projet>-auto-test-watch`)
+- **Persiste résultats** dans localStorage `<projet>_auto_test_log` (50 derniers FIFO)
+
+### 2. Auto-fix whitelist obligatoire
+
+Pour chaque test fail, tenter un auto-fix safe (whitelist par type) :
+- Memory load fail → memory.reload()
+- Vault decrypt fail → vault.reloadFromStorage()
+- Persistent memory fail → persistentMemory.reload()
+- Sentinels fail → re-import sentinels module
+- Storage saturé → storageCompressor.cleanup() / cleanupAggressive
+- Firebase fail → firebase.disconnect + init
+- Network fail → wait + retry
+- Tests non auto-fixables → escalade Claude Code (cf. étape 3)
+
+JAMAIS d'auto-fix qui :
+- Supprime des données user
+- Modifie credentials externes
+- Change PIN admin Kevin
+- Désactive sentinelles sécurité
+
+### 3. Escalade auto vers Claude Code
+
+Si auto-fix échoue OU test pas auto-fixable :
+- Push `ax_claude_todo` localStorage (cap 100 FIFO)
+- Si Firebase dispo : `firebase.write('apex/ax_claude_todo/<id>', todo)`
+- severity = `critical` si failed ≥ 3, sinon `warn`
+- Workflow `.github/workflows/claude-todo-watcher.yml` cron 6h récupère
+- Ouvre issue GitHub auto si critical pending > 30min
+- Prochaine session Claude Code lit issue → fix → push commit
+
+### 4. Auto-amélioration continue (innovation-watch)
+
+Sentinelle hebdomadaire qui scanne :
+- Nouvelles versions des libs/APIs utilisées (npm registry, GitHub releases)
+- Nouveaux modèles IA disponibles (Claude/OpenAI/Gemini/etc.)
+- Nouvelles features Web platform (CapacitorJS, Web NFC, Web Bluetooth)
+- Détection patterns optimisables (récurrences erreurs, perf bottlenecks)
+
+Si gain ≥ 20% → push proposition dans `ax_innovation_todo`
+Si gain ≥ 50% → notif push Kevin + auto-PR si confidence ≥ 0.95
+
+### 5. Apex IA peut être invoqué pour test manuel
+
+Tools IA disponibles (admin only) :
+- `run_auto_test` : lance test manuel + retourne résultat structuré
+- `run_self_test_now` : alias rapide
+- `audit_health` : combine auto-test + diagnostic + sentinels reports
+
+### 6. Reporting visible admin
+
+Vue admin `?view=runtime-tests` ou équivalent :
+- Liste 50 derniers runs auto-test avec résultats détaillés
+- Stats : pass rate hebdo, tests les plus flaky, auto-fix success rate
+- Bouton "Run now" + "Voir lessons learned"
+
+### 7. Test mental obligatoire avant CHAQUE release projet
+
+> *"Mon projet a-t-il un auto-test-runner wired en sentinelle 12h ? Si Kevin
+> n'utilise plus l'app pendant 1 mois et revient, est-ce que tout marche
+> ENCORE sans qu'il fasse rien ? Si fail détecté, l'auto-fix tente quelque
+> chose ET escalade Claude Code ? Le résultat est-il visible dans une vue
+> admin ?"*
+
+Si non aux 4 questions → fix avant push.
+
+### 8. Apex v13.4.204 référence implémentation
+
+- `services/auto-test-runner.ts` : 13 tests + auto-fix + escalade
+- Sentinelle `auto-test-runner-watch` 12h
+- Push `ax_claude_todo` via Firebase
+- Vue admin `?view=runtime-tests`
+
+À répliquer dans : CMCteams (`cmc-auto-test-runner.js`), e-KDMC, Télécommande, tous projets futurs.
+
+---
+
 ## 📧 RÈGLE ABSOLUE — ANTI-SPAM MAILS GITHUB ACTIONS (Kevin 2026-05-16)
 
 > **"Arrête les mails pour moi stp"** — Kevin 2026-05-16 (boîte saturée)
