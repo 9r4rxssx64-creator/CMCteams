@@ -1093,3 +1093,77 @@
     transform: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+ * v13.4.207 (Kevin "100/100 réel") — Markdown rendering classes.
+ * Extrait des styles inline `style=""` dans ui/markdown.ts vers classes CSS
+ * pour réduire surface CSP `style-src-attr unsafe-inline` (gain Sécurité).
+ * Les styles dynamiques (text-align cells table) restent inline car
+ * dépendent du contenu PDF (alignement marqueur :---:).
+ * ═══════════════════════════════════════════════════════════════════ */
+.ax-codeblock {
+  margin: 12px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0d0d1a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ax-codeblock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'SF Mono', Menlo, Monaco, Consolas, monospace;
+}
+.ax-codeblock-copy {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ax-codeblock pre {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-family: 'SF Mono', Menlo, Monaco, Consolas, monospace;
+}
+.ax-md-table {
+  overflow-x: auto;
+  margin: 10px 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.ax-md-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.ax-md-table th {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  font-weight: 600;
+}
+.ax-md-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.ax-code-inline {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Menlo, monospace;
+  font-size: 0.92em;
+}
+.ax-md-link {
+  color: #e8b830;
+  text-decoration: underline;
+}
