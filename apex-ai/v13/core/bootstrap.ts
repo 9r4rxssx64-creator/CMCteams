@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.209';
+export const APP_VER = 'v13.4.210';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -265,6 +265,23 @@ async function bootstrap(): Promise<void> {
     const { apexFunctionalTester } = await import('../services/apex-functional-tester.js');
     (window as unknown as { apexFunctionalTester?: unknown }).apexFunctionalTester = apexFunctionalTester;
   });
+
+  /* v13.4.210 (Kevin "Apex valide en réel") — expose autoTestRunner +
+   * apexMultiBranchCoordinator sur window pour exécution Playwright CI
+   * via eval() depuis workflow apex-ios-simulator.yml. Permet de fermer la
+   * boucle test runtime → résultat CI commit (latence <60s post-deploy)
+   * au lieu d'attendre cycle 12h + cron 6h. */
+  safeInit('runtime-tests-expose-window', async () => {
+    const { autoTestRunner } = await import('../services/auto-test-runner.js');
+    const { apexMultiBranchCoordinator } = await import('../services/apex-multi-branch-coordinator.js');
+    const w = window as unknown as {
+      autoTestRunner?: unknown;
+      apexMultiBranchCoordinator?: unknown;
+    };
+    w.autoTestRunner = autoTestRunner;
+    w.apexMultiBranchCoordinator = apexMultiBranchCoordinator;
+    logger.info('runtime-tests-expose-window', 'window.autoTestRunner + apexMultiBranchCoordinator ready');
+  }).catch(() => { /* non-blocking */ });
 
   /* v13.4.194 (Kevin 2026-05-16 HTTP 503 Cloudflare) :
    * Init Cloudflare status banner — restore banner si HTTP 503 récent. */
