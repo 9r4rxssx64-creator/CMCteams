@@ -39,7 +39,9 @@ const RETENTION_FACTORS = {
 export function scoreTitle(title) {
   const scores = { total: 0, breakdown: {} };
   const len = title.length;
-  if (len >= TITLE_RULES.idealLength.min && len <= TITLE_RULES.idealLength.max) {
+  if (len === 0) {
+    scores.breakdown.length = 0;
+  } else if (len >= TITLE_RULES.idealLength.min && len <= TITLE_RULES.idealLength.max) {
     scores.breakdown.length = 10;
   } else if (len <= TITLE_RULES.maxLength) {
     scores.breakdown.length = 7;
@@ -57,8 +59,8 @@ export function scoreTitle(title) {
   scores.breakdown.numbers = hasNumber ? 8 : 5;
   const hasEmotion = /(betray|revenge|love|hate|trust|fear|shock|horror)/i.test(title);
   scores.breakdown.emotion = hasEmotion ? 9 : 5;
-  const capsRatio = (title.match(/[A-Z]/g) || []).length / title.length;
-  scores.breakdown.caps = capsRatio > 0.5 ? 3 : capsRatio > 0.3 ? 5 : 8;
+  const capsRatio = len > 0 ? (title.match(/[A-Z]/g) || []).length / len : 0;
+  scores.breakdown.caps = len === 0 ? 0 : capsRatio > 0.5 ? 3 : capsRatio > 0.3 ? 5 : 8;
   const values = Object.values(scores.breakdown);
   scores.total = Math.round(values.reduce((a, b) => a + b, 0) / values.length * 10) / 10;
   scores.suggestions = [];

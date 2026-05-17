@@ -206,14 +206,56 @@ async function cmdGenerate(args) {
 
   console.log(`\n✅ Vidéo générée`);
   console.log(`   Path     : ${result.videoPath}`);
-  console.log(`   Durée    : ${result.durationSec.toFixed(1)}s`);
-  console.log(`   Taille   : ${(result.metadata.sizeBytes / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`   Format   : ${result.metadata.width}x${result.metadata.height}`);
+  console.log(`   Durée    : ${result.durationSec?.toFixed(1) || '?'}s`);
+  console.log(`   Taille   : ${result.metadata?.sizeBytes ? (result.metadata.sizeBytes / 1024 / 1024).toFixed(2) + ' MB' : '?'}`);
+  console.log(`   Format   : ${result.metadata?.width || '?'}x${result.metadata?.height || '?'}`);
 
-  // Sauvegarde le metadata
+  // Sauvegarde le metadata enrichi
   const metaPath = path.join(path.dirname(result.videoPath), "metadata.json");
-  fs.writeFileSync(metaPath, JSON.stringify(result.metadata, null, 2));
+  const enrichedMeta = { ...result.metadata, template: templateName, storyId: story.id, generatedAt: new Date().toISOString() };
+  fs.writeFileSync(metaPath, JSON.stringify(enrichedMeta, null, 2));
   console.log(`   Metadata : ${metaPath}`);
+
+  // ── Post-generate: Analytics tracking ──
+  try {
+    const { recordMetrics } = await import("./engine/analytics.js");
+    recordMetrics(story.id, "local", {
+      title: story.title,
+      niche: story.category || (story.tags || [])[0] || "unknown",
+      tags: story.tags,
+      duration: result.durationSec || 0,
+      publishedAt: new Date().toISOString(),
+      views: 0, likes: 0, comments: 0, shares: 0,
+    });
+    console.log(`   📊 Analytics : recorded`);
+  } catch (e) { /* analytics optional */ }
+
+  // ── Post-generate: Viral score ──
+  try {
+    const { predictViralPotential } = await import("./engine/viral-optimizer.js");
+    const viral = predictViralPotential(story);
+    console.log(`   🔥 Viral     : ${viral.viralScore}/10 — ${viral.verdict}`);
+    enrichedMeta.viralScore = viral.viralScore;
+    fs.writeFileSync(metaPath, JSON.stringify(enrichedMeta, null, 2));
+  } catch (e) { /* viral optional */ }
+
+  // ── Post-generate: SEO metadata ──
+  try {
+    const seo = await import("./engine/seo-optimizer.js");
+    const ytMeta = seo.generateYouTubeMetadata(story, { durationSec: result.durationSec || 300 });
+    const seoPath = path.join(path.dirname(result.videoPath), "seo.json");
+    fs.writeFileSync(seoPath, JSON.stringify(ytMeta, null, 2));
+    console.log(`   🔍 SEO       : ${seoPath}`);
+  } catch (e) { /* seo optional */ }
+
+  // ── Post-generate: Repurpose manifest ──
+  try {
+    const { repurposeAll, exportRepurposed } = await import("./engine/content-repurposer.js");
+    const repurposed = repurposeAll(story);
+    const repDir = path.join(path.dirname(result.videoPath), "repurposed");
+    exportRepurposed(repurposed, repDir);
+    console.log(`   ♻️ Repurposed : ${repurposed.totalPieces} pieces → ${repDir}`);
+  } catch (e) { /* repurpose optional */ }
 
   // Si --send-telegram, envoie automatiquement
   if (args["send-telegram"]) {
@@ -369,6 +411,19 @@ async function cmdPublish(args) {
   }
 
   console.log(`\n✅ Publié sur ${platform} : ${JSON.stringify(result, null, 2)}`);
+
+  // Record publish in analytics
+  try {
+    const { recordMetrics } = await import("./engine/analytics.js");
+    recordMetrics(meta.id || path.basename(video, '.mp4'), platform, {
+      title: title,
+      niche: (meta.tags || [])[0] || "unknown",
+      tags: meta.tags || tags,
+      publishedAt: new Date().toISOString(),
+      views: 0, likes: 0, comments: 0, shares: 0,
+    });
+    console.log(`📊 Analytics tracked for ${platform}`);
+  } catch (e) { /* analytics optional */ }
 }
 
 function buildDefaultDescription(meta) {

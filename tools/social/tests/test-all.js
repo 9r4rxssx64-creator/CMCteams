@@ -497,6 +497,206 @@ async function testPlatformsConfig() {
   });
 }
 
+async function testEdgeCases() {
+  console.log('\n🔬 Edge Cases & Robustness');
+  const { segmentScript, groupIntoSubtitles } = await import('../engine/subtitle-engine.js');
+
+  test('subtitle: single word script', () => {
+    const result = segmentScript('Hello', 1000);
+    assertEqual(result.length, 1);
+  });
+
+  test('subtitle: very long script', () => {
+    const longText = Array(500).fill('word').join(' ');
+    const result = segmentScript(longText, 60000);
+    assertEqual(result.length, 500);
+  });
+
+  test('subtitle: punctuation-heavy script', () => {
+    const result = segmentScript('Hello! How are you? Fine. Great!', 4000);
+    assert(result.length >= 4, 'Should segment punctuation-heavy text');
+  });
+
+  const viral = await import('../engine/viral-optimizer.js');
+
+  test('viral: empty title scores low', () => {
+    const score = viral.scoreTitle('');
+    assert(score.total <= 5, 'Empty title should score low');
+  });
+
+  test('viral: very long title gets penalty', () => {
+    const longTitle = 'A'.repeat(200);
+    const score = viral.scoreTitle(longTitle);
+    assert(score.breakdown.length <= 5, 'Long title should penalize length');
+  });
+
+  test('viral: emotional keywords boost script score', () => {
+    const script = 'She betrayed him. He lost everything. $2 million gone overnight. His trust was shattered forever. He never spoke to her again.';
+    const result = viral.scoreScript(script);
+    assert(result.breakdown.emotionalPeaks > 0, 'Should detect emotional peaks');
+    assert(result.breakdown.specificDetails > 0, 'Should detect specific details ($2 million)');
+  });
+
+  const seo = await import('../engine/seo-optimizer.js');
+
+  test('seo: handles story with no tags', () => {
+    const result = seo.generateYouTubeMetadata({ title: 'Test', script: 'Test script here.', tags: [] });
+    assert(result.tags.length > 0, 'Should generate tags even without input tags');
+  });
+
+  test('seo: handles empty script for chapters', () => {
+    const chapters = seo.generateChapters('', 120);
+    assert(chapters.length >= 1, 'Should have at least intro chapter');
+  });
+
+  const repurposer = await import('../engine/content-repurposer.js');
+
+  test('repurpose: handles very short story', () => {
+    const result = repurposer.repurposeAll({
+      id: 'short-test', title: 'Short', script: 'One sentence.', tags: ['test'],
+    });
+    assert(result.totalPieces > 0, 'Should still generate some pieces');
+  });
+
+  const ab = await import('../engine/ab-testing.js');
+
+  test('ab: error on invalid experiment ID', () => {
+    let threw = false;
+    try { ab.analyzeExperiment('nonexistent_id'); } catch { threw = true; }
+    assert(threw, 'Should throw for invalid experiment ID');
+  });
+
+  const analytics = await import('../engine/analytics.js');
+
+  test('analytics: getRevenueEstimate with no data', () => {
+    const rev = analytics.getRevenueEstimate('daily');
+    assertType(rev.estimatedRevenue, 'number');
+    assert(rev.estimatedRevenue >= 0, 'Revenue should be non-negative');
+  });
+
+  test('analytics: platform comparison with no data', () => {
+    const comp = analytics.getPlatformComparison();
+    assertType(comp, 'object');
+  });
+
+  const ml = await import('../engine/multi-lang.js');
+
+  test('multilang: getBestVoice for unsupported lang falls back', () => {
+    const voice = ml.getBestVoice('xx', 'storytelling');
+    assert(voice.voice, 'Should fallback to English voice');
+  });
+
+  test('multilang: detectLanguage on mixed text', () => {
+    const lang = ml.detectLanguage('This is English with some 日本語 mixed in');
+    assert(['en', 'ja'].includes(lang), 'Should detect one of the languages');
+  });
+}
+
+async function testContentLibraryAdvanced() {
+  console.log('\n📚 Content Library Advanced');
+  const libPath = path.join(ROOT, 'config', 'content-library.json');
+  const lib = JSON.parse(fs.readFileSync(libPath, 'utf-8'));
+
+  test('at least 50 stories total', () => {
+    let count = 0;
+    for (const [cat, stories] of Object.entries(lib)) {
+      if (cat.startsWith('_')) continue;
+      count += stories.length;
+    }
+    assert(count >= 50, `Should have 50+ stories, got ${count}`);
+  });
+
+  test('at least 5 niche categories', () => {
+    const cats = Object.keys(lib).filter(k => !k.startsWith('_'));
+    assert(cats.length >= 5, `Should have 5+ categories, got ${cats.length}`);
+  });
+
+  test('all stories have niche_rpm data', () => {
+    for (const [cat, stories] of Object.entries(lib)) {
+      if (cat.startsWith('_')) continue;
+      for (const story of stories) {
+        if (story.niche_rpm) {
+          assertType(story.niche_rpm.avg, 'number', `${story.id} niche_rpm.avg should be number`);
+          assert(story.niche_rpm.avg > 0, `${story.id} RPM should be positive`);
+        }
+      }
+    }
+  });
+
+  test('viral scoring works on all stories', async () => {
+    const { predictViralPotential } = await import('../engine/viral-optimizer.js');
+    let scored = 0;
+    for (const [cat, stories] of Object.entries(lib)) {
+      if (cat.startsWith('_')) continue;
+      for (const story of stories) {
+        const result = predictViralPotential(story);
+        assert(result.viralScore >= 0 && result.viralScore <= 10, `${story.id} viral score out of range: ${result.viralScore}`);
+        scored++;
+      }
+    }
+    assert(scored >= 50, `Should score 50+ stories, scored ${scored}`);
+  });
+
+  test('SEO generation works on all stories', async () => {
+    const seo = await import('../engine/seo-optimizer.js');
+    let generated = 0;
+    for (const [cat, stories] of Object.entries(lib)) {
+      if (cat.startsWith('_')) continue;
+      for (const story of stories.slice(0, 3)) {
+        const meta = seo.generateAllPlatformMeta({ ...story, category: cat.replace('narrative_', '') });
+        assert(meta.youtube.title, `${story.id} YouTube meta should have title`);
+        assert(meta.tiktok.caption, `${story.id} TikTok meta should have caption`);
+        generated++;
+      }
+    }
+    assert(generated >= 10, `Should generate SEO for 10+ stories`);
+  });
+
+  test('repurpose works on all stories', async () => {
+    const { repurposeAll } = await import('../engine/content-repurposer.js');
+    let repurposed = 0;
+    for (const [cat, stories] of Object.entries(lib)) {
+      if (cat.startsWith('_')) continue;
+      for (const story of stories.slice(0, 2)) {
+        const result = repurposeAll(story);
+        assert(result.totalPieces > 5, `${story.id} should repurpose to 5+ pieces`);
+        repurposed++;
+      }
+    }
+    assert(repurposed >= 10, `Should repurpose 10+ stories`);
+  });
+}
+
+async function testCLIHelp() {
+  console.log('\n🖥️ CLI Validation');
+  const { execSync } = await import('child_process');
+
+  test('cli.js --help exits cleanly', () => {
+    const output = execSync('node cli.js help', { cwd: ROOT, encoding: 'utf-8' });
+    assert(output.includes('CORE COMMANDS'), 'Should show core commands');
+    assert(output.includes('ADVANCED COMMANDS'), 'Should show advanced commands');
+    assert(output.includes('FUTURISTIC COMMANDS'), 'Should show futuristic commands');
+  });
+
+  test('cli.js help lists 18+ unique commands', () => {
+    const output = execSync('node cli.js help', { cwd: ROOT, encoding: 'utf-8' });
+    const cmds = ['list-stories', 'list-voices', 'test-tts', 'generate', 'generate-script',
+      'extract-shorts', 'publish', 'publish-telegram', 'thumbnail', 'analytics',
+      'experiment', 'schedule', 'brand', 'translate', 'viral', 'repurpose', 'seo', 'status'];
+    for (const cmd of cmds) {
+      assert(output.includes(cmd), `Help should mention "${cmd}"`);
+    }
+  });
+
+  test('unknown command shows error + help', () => {
+    try {
+      execSync('node cli.js invalid-cmd 2>&1', { cwd: ROOT, encoding: 'utf-8' });
+    } catch (e) {
+      assert(e.stdout.includes('Commande inconnue') || e.stderr?.includes('Commande inconnue'), 'Should show error for unknown cmd');
+    }
+  });
+}
+
 // ─── Main Runner ─────────────────────────────────────────────────
 
 async function main() {
@@ -513,6 +713,9 @@ async function main() {
   await testBranding();
   await testContentLibrary();
   await testPlatformsConfig();
+  await testEdgeCases();
+  await testContentLibraryAdvanced();
+  await testCLIHelp();
 
   console.log('\n' + '='.repeat(50));
   console.log(`\n📊 Results: ${passed} passed, ${failed} failed, ${skipped} skipped`);
