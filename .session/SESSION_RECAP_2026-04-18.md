@@ -9,8 +9,11 @@
 
 ## TL;DR
 
-6 commits, 1 fichier modifié (`NOTES_USER.md` uniquement, +124 lignes).
-Aucun code applicatif touché. Travail 100 % documentation/configuration.
+**8 commits**. Fichiers touchés : `NOTES_USER.md` (+124 l.), `CLAUDE.md`
+(+8 l. correctifs), `index.html` (7 fix font-size, neutre visuellement),
+deux nouveaux fichiers de session `.session/*`.
+
+**verify-build.sh : 9/9 OK** (avant : 8/9, régression font-size:10px).
 
 | # | Commit | Sujet |
 |---|--------|-------|
@@ -20,6 +23,8 @@ Aucun code applicatif touché. Travail 100 % documentation/configuration.
 | 4 | `cc69d19` | Décision APEX AI — session APEX AI initie l'intégration |
 | 5 | `c26960c` | Correction APEX AI — distinction projets + intégration KB |
 | 6 | `a4e0040` | Modèle APEX AI = hub + sous-apps installables seules |
+| 7 | `b491633` | Livrables session : recap + patch initial |
+| 8 | `4a79544` | **Fix régression font-size:10px + drift docs CLAUDE.md APP_VER** |
 
 Hors-repo (dans `~/.claude/settings.json`, pas dans la branche) :
 configuration globale Claude Code des timeouts Bash + MCP.
@@ -134,12 +139,61 @@ La règle vise juste à éviter les conflits actifs.
 
 ---
 
-## 4. Hors-périmètre / non fait
+## 4. Audit final + corrections (commit `4a79544`)
 
-- Aucun code applicatif (`index.html`, `sw.js`, `apex-ai/*`) modifié
-- Aucun outil, feature ou fix CMCteams
-- Aucune intégration APEX AI réalisée (laissée à la session APEX AI)
-- Aucune modification de `CLAUDE.md` (règles inchangées)
+Audit selon CLAUDE.md Phase 3 — exécution de
+`.github/scripts/verify-build.sh` (9 checks anti-régression officiels).
+
+**Résultat initial : 8/9 — 1 régression réelle détectée.**
+
+### Régression corrigée : font-size:10px (sous seuil mobile 11px)
+
+CLAUDE.md règle "Cette modification casse-t-elle le mobile ?" → font-size
+< 11px = illisible sur mobile. Trouvé 7 occurrences :
+
+| Ligne | Contexte | Fix |
+|---|---|---|
+| 367 | Règle CSS auto-correction `.page [style*="font-size:10px"]` | Simplification : ne catch plus que 11px (10px disparu) |
+| 471 | `.nt` nav button @media iPhone SE | 10px → 11px (labels masqués via `.nt-lb{display:none}`, neutre) |
+| 8370 | `_diagBox` label uppercase | 10px → 11px (auto-corrigé à 13px par règle 367) |
+| 9280 | Badge CDP vPlan | 10px → 11px |
+| 11601 | `_liveKPI` label uppercase | 10px → 11px |
+| 11602 | `_liveKPI` sous-titre | 10px → 11px |
+| 14665 | `_avKPI` label uppercase | 10px → 11px |
+
+**Visuellement identique avant/après** : tous les inline étaient déjà
+auto-corrigés à 13px par la règle CSS line 367 qui catche `[style*="font-size:10px"]`.
+Maintenant ils sont auto-corrigés via `[style*="font-size:11px"]`, même résultat.
+
+### Drift docs CLAUDE.md corrigé
+
+| Ligne | Avant | Après |
+|---|---|---|
+| 3 (header) | « session v9.68 » | « session v9.152 » |
+| 288 | `APP_VER = "v9.103"` | `v9.152` |
+| 289 | « ~1.10 MB v9.67 » | « ~1.44 MB v9.152 » |
+| 720 (intro Historique) | — | + ligne renvoyant à MEMO_RESUME.md pour v9.71→v9.152 |
+| 722-727 | Tableau saute de v9.70 à v9.69 | + 3 résumés (v9.150-v9.152, v9.133-v9.149, v9.71-v9.132) |
+| 836 | `var APP_VER = "v9.103"` | `v9.152` |
+
+### Audit complémentaire
+
+- ✅ 0 marqueur de conflit Git
+- ✅ 0 TODO/FIXME/XXX/HACK
+- ✅ 0 console.error
+- ✅ 0 erreur connue CLAUDE.md (`syncChefsT`, `genBase()` absents)
+- ✅ 12 features critiques présentes (rotation, viewAs, ROTATION, SESSION_TTL, …)
+- ✅ 50 `innerHTML` sans `esc()` analysés → tous safe (HTML statique ou
+       variable déjà escapée upstream)
+- ✅ JS syntax check passe
+- ⚠️ 2 occurrences `font-size:9px` restantes (badges design photos
+       gallery), non flaggées par verify-build, intention design préservée
+
+### Pas fait (hors périmètre)
+
+- Aucune nouvelle feature CMCteams
+- Aucune intégration APEX AI (laissée à la session APEX AI)
+- Pas de bump APP_VER (changes sont des correctifs neutres)
 
 ---
 
