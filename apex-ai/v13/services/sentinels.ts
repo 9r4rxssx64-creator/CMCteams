@@ -2640,10 +2640,40 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  /* v13.4.203 (Kevin 2026-05-16 "Apex doit avoir accès à GitHub et le faire
-   * pour moi") : auto-clean notifications GitHub Actions toutes les 6h.
-   * Apex nettoie sa boîte sans rien demander à Kevin → conforme règle
-   * "AUTONOMIE TOTALE" + "AUTOMATISE TOUT". */
+  /* v13.4.204 (Kevin 2026-05-16 "Apex fait tous les tests runtime autonome") :
+   * Wire auto-test-runner.runAll() en sentinelle 12h. Le service existait
+   * (orphelin v13.4.x) avec 6+ tests : memory, persistent_memory, vault,
+   * ai-router, firebase, store etc. Maintenant tourne en autonomie sans
+   * intervention Kevin. Si fails > 0 → record session learning + log warning.
+   * Résultats persistés dans apex_v13_auto_test_log (50 derniers). */
+  sentinels.register({
+    id: 'auto-test-runner-watch',
+    name: 'Auto-test runtime Apex',
+    desc: "Lance auto-test-runner toutes les 12h : memory, vault, ai-router, persistent-memory, firebase, store. Apex teste lui-même en autonomie sans Kevin.",
+    intervalMs: 12 * 60 * 60 * 1000, /* 12h */
+    check: async () => {
+      try {
+        const { autoTestRunner } = await import('./auto-test-runner.js');
+        const summary = await autoTestRunner.runAll();
+        const msg = `${summary.passed}/${summary.total} pass · ${summary.failed} fail · ${summary.skipped} skip (${summary.durationMs}ms)`;
+        if (summary.failed > 0) {
+          return {
+            ok: false,
+            msg,
+            details: {
+              failed_tests: summary.results.filter((r) => r.status === 'fail').map((r) => r.name),
+              duration_ms: summary.durationMs,
+            },
+          };
+        }
+        return { ok: true, msg, details: { duration_ms: summary.durationMs } };
+      } catch (err) {
+        return { ok: false, msg: 'auto-test-runner error: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  /* v13.4.204 — github-notifications-clean (déjà v13.4.203, gardé tel quel) */
   sentinels.register({
     id: 'github-notifications-clean-watch',
     name: 'GitHub Actions noise auto-clean',
@@ -2654,7 +2684,6 @@ export function registerCoreSentinels(): void {
         const { apexGithubNotifications } = await import('./apex-github-notifications.js');
         const r = await apexGithubNotifications.cleanActionsNotifications();
         if (!r.ok) {
-          /* Si pas de token vault ou non admin, OK silencieux (pas critique) */
           if (r.error === 'admin_only' || r.error === 'no_github_token_in_vault') {
             return { ok: true, msg: 'skipped (' + r.error + ')' };
           }
@@ -2675,5 +2704,5 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (27 active + apex-self-correct + github-clean + global-health méta)`);
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (28 active + auto-test-runner + github-clean + apex-self-correct + global-health méta)`);
 }
