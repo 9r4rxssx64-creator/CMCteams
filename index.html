@@ -4570,9 +4570,16 @@ function teamForMonth(emp,y,m){
   if(!emp)return null;
   var key=y+"-"+m;
   // v9.66 robustesse : fallback sécurisé si teamHistory corrompu
-  try{if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];}catch(e){return emp.team||"?";}
+  try{if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];}catch(e){return null;}
   if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];
-  // Chercher le teamHistory le plus récent antérieur à ce mois
+  /* v9.617 (Kevin "AUCUNE erreur jamais") : ne JAMAIS retomber sur emp.team
+   * DEF_EMP obsolète qui était cause récurrente d'erreurs (#48/#50 + règle
+   * CLAUDE.md "emp.team du DEF_EMP n'est JAMAIS la vérité courante").
+   *
+   * Pour les CADRES (pit boss/sup/insp) : emp.team est l'équipe section
+   * header valide (pit15/sup) → on l'autorise comme fallback.
+   * Pour TOUT LE RESTE : si pas de teamHistory[key] ni mois antérieur,
+   * retourner null pour signaler "Pas de planning ce mois" (affiché UI). */
   if(emp.teamHistory){
     var target=y*12+m;
     var best=null,bestMo=-Infinity;
@@ -4583,7 +4590,10 @@ function teamForMonth(emp,y,m){
     });
     if(best)return best;
   }
-  return emp.team;
+  /* Cadres : team déjà set par section header SBM (pit15/sup), c'est OK */
+  if(typeof _cmcIsCadre==='function' && _cmcIsCadre(emp))return emp.team||null;
+  /* Reste : NE PAS retomber sur emp.team obsolète → null = "pas de planning" */
+  return null;
 }
 // Raccourci : retourne le label "Équipe du mois" pour affichage
 function teamForMonthLabel(emp,y,m){
@@ -4871,7 +4881,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.616";
+var APP_VER="v9.617";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -6946,6 +6956,49 @@ var CMC_PARSER_TESTS=[
       var src="MAI 2026 - DESSI F 22/6 - REVOLLON D CP - ETTORI M RTP";
       var v=_cmcValidateAgainstSource(pseudoEmp,src);
       return v.valid===false&&v.reason&&v.reason.indexOf("ZZZINVENTED")>=0;
+    }},
+  /* v9.617 (Kevin "AUCUNE erreur jamais") — tests _cmcDetectTeamsByRestPattern v9.616 */
+  {id:"T100",label:"v9.616 _cmcExtractRestPattern existe + signature jours triés",
+    input:"",customCheck:function(){
+      if(typeof _cmcExtractRestPattern!=="function")return false;
+      var bak=A.overrides;A.overrides={};
+      A.overrides["2026-4"]={"TST001":{5:"RH",12:"RH",19:"RH",26:"RH",1:"22/6",2:"19/4"}};
+      var sig=_cmcExtractRestPattern({id:"TST001"},2026,4);
+      A.overrides=bak;
+      return sig==="5,12,19,26";
+    }},
+  {id:"T101",label:"v9.616 _cmcIsCadre détecte pit/sup/insp via team prefix",
+    input:"",customCheck:function(){
+      if(typeof _cmcIsCadre!=="function")return false;
+      return _cmcIsCadre({team:"pit15"})===true
+        && _cmcIsCadre({team:"sup"})===true
+        && _cmcIsCadre({team:"insp1"})===true
+        && _cmcIsCadre({team:"bj3"})===false
+        && _cmcIsCadre({is_pit_boss:true})===true
+        && _cmcIsCadre({cadre_type:"pit"})===true;
+    }},
+  {id:"T102",label:"v9.616 _cmcDetectTeamsByRestPattern existe + retourne diag",
+    input:"",customCheck:function(){
+      if(typeof _cmcDetectTeamsByRestPattern!=="function")return false;
+      var diag=_cmcDetectTeamsByRestPattern(1999,11);
+      return diag&&typeof diag.teamsFound==="number"
+        &&typeof diag.mirrors==="number"
+        &&typeof diag.assigned==="number";
+    }},
+  {id:"T103",label:"v9.617 teamForMonth ne retombe PAS sur emp.team DEF_EMP obsolète",
+    input:"",customCheck:function(){
+      /* Pour un employé sans teamHistory[key] ni mois antérieur et non-cadre,
+       * teamForMonth doit retourner null (NE PAS retomber sur emp.team obsolète). */
+      var emp={id:"TST_OBS",name:"TEST O",family:"bj",team:"bj3"};
+      var res=teamForMonth(emp,1999,11);
+      return res===null;
+    }},
+  {id:"T104",label:"v9.617 teamForMonth respecte emp.team pour cadres (pit15/sup)",
+    input:"",customCheck:function(){
+      /* Cadres : team déjà set par section header SBM → autorisé comme fallback. */
+      var emp={id:"TST_CAD",name:"TEST C",family:"cadres",team:"pit15",is_pit_boss:true};
+      var res=teamForMonth(emp,1999,11);
+      return res==="pit15";
     }}
 ];
 // v9.521 — Helpers de normalisation utilises par les tests + le parser etendu
