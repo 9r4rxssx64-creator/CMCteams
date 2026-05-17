@@ -1,6 +1,6 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.68.
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour après session v9.152.
 
 ---
 
@@ -285,10 +285,10 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.103"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.152"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
-- **Taille fichier :** ~1.10 MB (HTML + CSS + JS) — v9.67
+- **Taille fichier :** ~1.44 MB (HTML + CSS + JS) — v9.152
 - **Conventions intégrées :** Convention Collective Jeux de Table SBM (1er avril 2015) + Note DRH 2021 (congés familiaux) + Règles des 8 jeux de table (Blackjack, Roulette anglaise/européenne, Punto Banco, Punto High Roller, Texas Hold'em, Poker Cash Game, Craps)
 
 ---
@@ -718,9 +718,13 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 ## Historique versions récentes
 
 > 📖 **Historique complet** dans `CHANGELOG.md` à la racine du dépôt (v8.83 → v9.67 archivé).
+> 📖 **Sessions récentes (v9.71 → v9.152)** : voir `MEMO_RESUME.md` pour le détail commit-par-commit + audits associés.
 
 | Version | Changements |
 |---------|-------------|
+| **v9.150 → v9.152** | Sécurité connexion : `fbWrite` manquant sur 6 fonctions critiques corrigé (v9.151) + sync Firebase bidirectionnel admin↔employés (v9.151b) + tutoriel onboarding 8 étapes intégré (v9.152) + outil IA Constitution + fond jaune PNL PDF (v9.150). |
+| **v9.133 → v9.149** | 17 versions livrées session 2026-04-17 : anti-crash scroll iOS, auto-inférence rôles P/P+/E, groupe Ouvert/Fermé, vPlan/vDeparts familles pliables, monégasque 80+ clés, senior ★ auto-détecté + fond jaune PNL, auto-apprentissage codes inconnus, 9 niveaux fallback noms, fix critique cadres 0 horaire, BORGIA T + adminRenameEmp, sécurité passwords clear supprimés, Constitution de Monaco intégrée, audit expert 3 subagents (30 findings P0/P1 corrigés). |
+| **v9.71 → v9.132** | Voir `MEMO_RESUME.md` ou `git log`. |
 | **v9.70** | **Fixes responsive mobile complets**. Tests multi-devices Puppeteer (5 profils : iPhone SE, iPhone 14 Pro, Galaxy S22, Pixel 7, iPad Air). Fix nav bas #bnav : scroll-x interne, labels cachés < 420px (ne garde que les emojis), compact sur petits écrans. Fix overflow accueil (raccourcis `max-width:100vw`). Fix toolbars vIA, vChat header, vMonPlanning header : `flex-wrap:wrap`. Ajout `html,body{overflow-x:hidden;max-width:100vw}` en safety net. Résultat : **70 PASS / 0 FAIL** sur 5 devices (avant : 55 PASS / 25 WARN overflow). iPhone SE 375px entièrement fonctionnel. |
 | **v9.69** | **Audit expert 4 subagents parallèles + corrections**. Fix P1 : `cmc_motd` maintenant géré dans `fbApplyData` (accepte null=effacé, validation type objet). Fix P2 : auteur MOTD supprimé affiche "(supprimé)" au lieu de "undefined" ; bandeau MOTD gagne `word-break:break-word` + `overflow-wrap:anywhere` pour textes longs sans espaces. Section **"Outils & réflexes expert"** ajoutée dans CLAUDE.md (boîte à outils, commandes de validation, pièges à éviter). |
 | **v9.68** | **Message du jour admin + sync Firebase**. Store `A.motd={text,ts,author}` dans FB_FIX (`cmc_motd`). Fonctions `setMotd`/`clearMotd`/`adminSetMotdFromInput` (guard AID, max 500 car., audit `motd_set`/`motd_clear`). UI admin : textarea + boutons Publier/Effacer. UI employé : bandeau doré 📢 en haut de `vAccueil` (pre-wrap, date/heure). |
@@ -833,7 +837,7 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 ```javascript
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 30;
-var APP_VER  = "v9.103";
+var APP_VER  = "v9.152";
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 ```

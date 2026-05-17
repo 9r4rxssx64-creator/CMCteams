@@ -364,7 +364,7 @@ body{text-shadow:0 2px 4px rgba(0,0,0,1),0 0 10px rgba(0,0,0,.9);color:#e8f0e0;f
 .page [style*="color:#a0cca0"],.page [style*="color:#a8c8a0"],.page [style*="color:#b0ccb0"]{color:#d8f0d0!important}
 .page [style*="color:#8aaa80"],.page [style*="color:#7aaa80"],.page [style*="color:#8ab0e0"]{color:#c0dcc0!important}
 /* Titres et labels : taille minimum 14px, gras */
-.page [style*="font-size:11px"],.page [style*="font-size:10px"],.page *[style*="font-size:11px"],.page *[style*="font-size:10px"]{font-size:13px!important}
+.page [style*="font-size:11px"],.page *[style*="font-size:11px"]{font-size:13px!important}
 .page [style*="font-size:12px"],.page *[style*="font-size:12px"]{font-size:13px!important}
 .page [style*="letter-spacing:1px"],.page [style*="letter-spacing:2px"]{font-weight:800!important}
 /* v9.148 — Override AGRESSIF couleurs trop sombres (trouv\u00e9 par audit : 259 occurrences) */
@@ -468,7 +468,7 @@ body:not(.has-accueil-bg) #bnav{
 }
 /* v9.70 : compact sur petits écrans (iPhone SE 375px, Galaxy S22 360px) */
 @media (max-width:419px){
-  .nt{padding:7px 2px 6px;font-size:10px;min-width:34px;letter-spacing:.1px;gap:0}
+  .nt{padding:7px 2px 6px;font-size:11px;min-width:34px;letter-spacing:.1px;gap:0}
   .nt em{font-size:19px!important}
   .nt-lb{display:none} /* cacher les labels, ne garder que les emojis */
 }
@@ -8367,7 +8367,7 @@ function vDebug(){
 }
 function _diagBox(label,val,col){
   return '<div style="padding:8px 10px;background:rgba(0,0,0,.2);border:1px solid '+col+'33;border-radius:8px">'
-    +'<div style="font-size:10px;color:#a0cca0;text-transform:uppercase;letter-spacing:.5px">'+esc(label)+'</div>'
+    +'<div style="font-size:11px;color:#a0cca0;text-transform:uppercase;letter-spacing:.5px">'+esc(label)+'</div>'
     +'<div style="font-size:15px;font-weight:800;color:'+col+';margin-top:2px">'+val+'</div>'
     +'</div>';
 }
@@ -9277,7 +9277,7 @@ function vPlan(){
         var _codeLen=_codeTxt.length;
         var _codeCls=_codeLen>=7?"codeL7":_codeLen>=6?"codeL6":_codeLen>=5?"codeL5":"";
         var cellInner=ci.cdp
-          ?'<div style="display:flex;flex-direction:column;align-items:center;line-height:1.1"><span class="'+_codeCls+'" style="color:'+ci.c+';font-size:13px;font-weight:900">'+code.replace("*","")+'</span><span style="font-size:10px;color:#987018;font-weight:700">CDP</span></div>'
+          ?'<div style="display:flex;flex-direction:column;align-items:center;line-height:1.1"><span class="'+_codeCls+'" style="color:'+ci.c+';font-size:13px;font-weight:900">'+code.replace("*","")+'</span><span style="font-size:11px;color:#987018;font-weight:700">CDP</span></div>'
           :'<span class="'+_codeCls+'" style="color:'+ci.c+';font-weight:900">'+_codeTxt+'</span>';
         cellInner+=(_myComment?'<div style="width:4px;height:4px;border-radius:50%;background:#c9a227;margin:1px auto" title="'+esc(_myComment)+'"></div>':'');
         _rha.push('<td class="ctd" style="background:'+cellBg+';border:0;'+cellShadow+'"'+click+'>'+cellInner+'</td>');
@@ -11598,8 +11598,8 @@ function _liveKPI(icon,label,val,color,sub){
   return '<div style="padding:12px 10px;background:linear-gradient(135deg,'+color+'18,'+color+'05);border:1px solid '+color+'35;border-radius:10px;text-align:center;position:relative;overflow:hidden">'
     +'<div style="font-size:22px;margin-bottom:2px">'+icon+'</div>'
     +'<div style="font-size:26px;font-weight:800;color:'+color+';line-height:1">'+val+'</div>'
-    +'<div style="font-size:10px;color:#a0cca0;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">'+label+'</div>'
-    +(sub?'<div style="font-size:10px;color:#7aaa80;margin-top:2px">'+sub+'</div>':'')
+    +'<div style="font-size:11px;color:#a0cca0;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">'+label+'</div>'
+    +(sub?'<div style="font-size:11px;color:#7aaa80;margin-top:2px">'+sub+'</div>':'')
     +'</div>';
 }
 // v9.84 — Mode TV (dashboard grand \u00e9cran salle de pause)
@@ -14662,7 +14662,7 @@ function _showFullAuditReport(iy,im){
 }
 function _avKPI(label,val,color){
   return '<div style="padding:8px 6px;background:rgba(0,0,0,.2);border:1px solid '+color+'33;border-radius:6px;text-align:center">'
-    +'<div style="font-size:10px;color:#a0cca0;text-transform:uppercase;letter-spacing:.3px">'+esc(label)+'</div>'
+    +'<div style="font-size:11px;color:#a0cca0;text-transform:uppercase;letter-spacing:.3px">'+esc(label)+'</div>'
     +'<div style="font-size:18px;font-weight:800;color:'+color+';margin-top:2px">'+val+'</div>'
     +'</div>';
 }
