@@ -15,7 +15,8 @@
     "test:badge": "node tests/runtime-audit-v663-badge.mjs",
     "test:scoped": "node tests/runtime-audit-scoped-wipe.mjs",
     "test:agents": "node tests/runtime-audit-agents-sanity.mjs",
-    "test:all": "node tests/runtime-audit.mjs && node tests/runtime-audit-encadres.mjs && node tests/runtime-audit-pitboss.mjs && node tests/runtime-audit-teamhistory.mjs && node tests/runtime-audit-v639-format.mjs && node tests/runtime-audit-v650-rh.mjs && node tests/runtime-audit-kevin-truth.mjs && node tests/runtime-audit-v663-badge.mjs && node tests/runtime-audit-scoped-wipe.mjs && node tests/runtime-audit-agents-sanity.mjs",
+    "test:bridge": "node tests/runtime-audit-visual-bridge.mjs",
+    "test:all": "node tests/runtime-audit.mjs && node tests/runtime-audit-encadres.mjs && node tests/runtime-audit-pitboss.mjs && node tests/runtime-audit-teamhistory.mjs && node tests/runtime-audit-v639-format.mjs && node tests/runtime-audit-v650-rh.mjs && node tests/runtime-audit-kevin-truth.mjs && node tests/runtime-audit-v663-badge.mjs && node tests/runtime-audit-scoped-wipe.mjs && node tests/runtime-audit-agents-sanity.mjs && node tests/runtime-audit-visual-bridge.mjs",
     "test:check-syntax": "python3 -c \"import re;html=open('index.html','r',encoding='utf-8').read();blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL);open('/tmp/cmc_combined.js','w',encoding='utf-8').write(''.join(blocks))\" && node --check /tmp/cmc_combined.js",
     "test:ci": "npm run test:check-syntax && npm run test:all",
     "playwright:install": "playwright install --with-deps chromium"
