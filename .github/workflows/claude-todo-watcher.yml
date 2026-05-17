@@ -1,7 +1,7 @@
 name: Claude Todo Watcher (escalade autonome temps-réel)
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Toutes les 5 minutes (pipeline temps-réel Kevin 2026-05-07)
+    - cron: '0 */6 * * *'  # v9.617 Kevin "arrête les mails" : 6h (was 5min = 288 runs/j)
   workflow_dispatch:        # Déclenchement manuel + par Apex via API
   repository_dispatch:      # Apex peut déclencher via event apex_escalation
     types: [apex_escalation, critical_issue]

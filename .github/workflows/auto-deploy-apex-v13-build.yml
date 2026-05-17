@@ -21,7 +21,7 @@ on:
   # détecte drift source vs apex-ai-v13/ même si push trigger raté.
   # Étape "Sync dist/ to apex-ai-v13/" idempotente : skip si déjà à jour.
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 */6 * * *'  # v9.617 Kevin "arrête les mails" : 6h (was 30min = 48/j)
   workflow_dispatch:
 
 permissions:

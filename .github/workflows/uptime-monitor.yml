@@ -5,7 +5,7 @@ name: Uptime monitor (15 min)
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '0 */6 * * *'  # v9.617 Kevin "arrête les mails" : 6h (was 15min = 96/j)
   workflow_dispatch:
 
 permissions:

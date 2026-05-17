@@ -4,6 +4,56 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-16 (Ape
 
 ---
 
+## 📧 RÈGLE ABSOLUE — ANTI-SPAM MAILS GITHUB ACTIONS (Kevin 2026-05-16)
+
+> **"Arrête les mails pour moi stp"** — Kevin 2026-05-16 (boîte saturée)
+
+**Règle absolue, NON-NÉGOCIABLE** — pour tous workflows GitHub Actions, tous projets :
+
+### 1. INTERDICTIONS strictes
+
+- ❌ **JAMAIS** de cron < 1 heure (sauf si critique sécurité justifié)
+- ❌ **JAMAIS** créer un workflow `on:push` qui email à chaque commit
+- ❌ **JAMAIS** ajouter un nouveau cron sans demander : "Est-ce vraiment indispensable toutes les X minutes ?"
+- ❌ **JAMAIS** un workflow auto-bot qui commit SANS `[skip ci]` dans le message
+
+### 2. Caps obligatoires
+
+- **Cron min interval** : 6 heures (`0 */6 * * *`) sauf justification
+- **Cron quotidien** : préférer `0 3 * * *` (3h UTC = nuit Monaco)
+- **Cron hebdo** : préférer dimanche/lundi nuit
+- **Workflow on:push** : utiliser `paths:` pour scope strict + ajouter `if: !contains(github.event.head_commit.message, '[skip ci]')`
+
+### 3. Auto-bot commits
+
+À chaque commit fait par auto-merge bot / sw-cache-sync / autres bots :
+- **TOUJOURS** terminer le commit message par `[skip ci]`
+- Évite la cascade workflows → cascade emails
+
+### 4. Référence des cron à ne PAS dépasser
+
+Pre-v9.617 (mauvais — saturait boîte Kevin) :
+- claude-todo-watcher : */5 (288 runs/j) → réduit à 0 */6 (4/j)
+- uptime-monitor : */15 (96/j) → 0 */6 (4/j)
+- auto-deploy-apex-v13-build : */30 (48/j) → 0 */6 (4/j)
+
+### 5. Action une fois par Kevin (exception acceptée)
+
+Pour couper TOUS les mails GitHub Actions définitivement, Kevin doit faire UNE fois (exception "1 clic max" car compte personnel non-automatisable) :
+
+→ https://github.com/settings/notifications#actions-notifications
+→ Section "Actions" → décocher "Email" (et garder "Web/Mobile" si voulu)
+
+C'est la seule action Kevin restante après les fixes code.
+
+### 6. Test mental avant chaque création workflow
+
+> *"Ce workflow va envoyer combien de mails par jour à Kevin ? Si > 4/jour, je le réduis. Si > 24/jour, je ne le crée pas (sauf justification)."*
+
+S'applique TOUS projets (Apex, CMCteams, e-KDMC, etc.).
+
+---
+
 ## 🚫 RÈGLE ABSOLUE — JAMAIS DEMANDER UN CLIC ADMIN GITHUB UI À KEVIN (2026-05-16, ABSOLUE)
 
 > **"Parle simplement, tout autonome, automatisé, trouve des solutions pour faire à ma place toujours tout au max. Sinon 1 clic. Pareil tous projets."** — Kevin 2026-05-16
