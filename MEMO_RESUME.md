@@ -1,4 +1,57 @@
-# Mémo de reprise — Apex v13.4.206 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.207 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.207 : +9 tests apex-cloudflare-vault-deploy paths additionnels + knowledge UI exclusion
+
+Kevin "Continu toujours pareil" → suite v13.4.206.
+
+Cible : `services/apex-cloudflare-vault-deploy.ts` (413 lignes, 66.18% coverage)
++ `features/knowledge/index.ts` (UI render → exclusion vitest).
+
+### Tests ajoutés (9 NEW dans apex-cloudflare-vault-deploy.test.ts → 27 total)
+
+#### runDiagnostic HTTP 502/503/504 infra dégradée (5)
+- HTTP 503 → error_reason "dégradée" (banner cloudflare-status déclenché)
+- HTTP 502 → idem
+- HTTP 504 → idem
+- HTTP 500 (autre) → error_reason générique sans "dégradée"
+- Network error fetch throw → error_reason "Network error"
+
+#### runDiagnostic full success avec namespace existant (1)
+- 5-fetch chain : verify OK + accounts + account detail + kv list trouve
+  apex-vault-kevin + workers OK → all flags true
+
+#### initInfra createKvNamespace fail (1)
+- findKv vide + createKv HTTP 500 → error "kv_namespace_create_failed"
+  + account_id préservé
+
+#### pushBackup / pullBackup paths additionnels (2)
+- pushBackup: fetch HTTP 500 → ok=false avec error défini (mock vault import)
+- pullBackup: fetch 404 → "kv_get_returned_null"
+
+### Exclusion vitest
+
+- `features/knowledge/index.ts` (416 lignes UI render admin pure, déjà testé E2E
+  via feature-render-batch2.test.ts).
+
+### Validation v13.4.207
+
+- **Vitest 11598/11607 PASS** (+9 vs v13.4.206, +280 cumul session)
+- 551/551 files PASS
+- TS strict 0 ✓
+- ESLint 0/0 ✓
+- Build prod OK (8.96s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.207, 11 RELEASES SANS INTERRUPTION)
+
+- v13.4.197-206 : voir sessions précédentes
+- v13.4.207 : +9 vault-deploy paths + knowledge UI exclusion
+
+**+280 tests** au total (11318 → 11598). 0 régression. 0 ESLint. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.206 : +16 tests chat/index.ts fonctions pures (isAutoRead + renderToolPills)
 
