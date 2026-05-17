@@ -56,6 +56,20 @@ export const ADMIN_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
   {
+    name: 'github_clean_notifications',
+    description: "v13.4.203 (Kevin 'arrête les mails GitHub') : nettoie automatiquement les notifications GitHub Actions de Kevin. Liste les threads workflow/CI, les désabonne, puis marque toute la boîte comme lue. Utilise ax_github_token du Vault. Aucune action Kevin requise — appelle ce tool quand Kevin dit 'arrête les mails GitHub', 'vide mes notifs', 'github noise off', etc.",
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'github_mute_repo',
+    description: "v13.4.203 : mute COMPLÈTEMENT le repo cmcteams (ignore = true). Plus AUCUNE notification GitHub pour ce repo, jamais. À utiliser uniquement si Kevin demande explicitement de tout couper (pas Action seulement).",
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
+  {
     name: 'open_tool',
     description: 'Ouvre un outil HTML autonome (album-laurence, codes-decoder, calc-conventions, etc.) dans browser embed.',
     inputSchema: {

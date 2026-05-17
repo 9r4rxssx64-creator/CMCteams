@@ -2640,5 +2640,40 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (26 active + apex-self-correct + global-health méta)`);
+  /* v13.4.203 (Kevin 2026-05-16 "Apex doit avoir accès à GitHub et le faire
+   * pour moi") : auto-clean notifications GitHub Actions toutes les 6h.
+   * Apex nettoie sa boîte sans rien demander à Kevin → conforme règle
+   * "AUTONOMIE TOTALE" + "AUTOMATISE TOUT". */
+  sentinels.register({
+    id: 'github-notifications-clean-watch',
+    name: 'GitHub Actions noise auto-clean',
+    desc: "Nettoie automatiquement les notifications GitHub Actions de Kevin (unsubscribe threads + mark all read). 6h interval.",
+    intervalMs: 6 * 60 * 60 * 1000, /* 6h */
+    check: async () => {
+      try {
+        const { apexGithubNotifications } = await import('./apex-github-notifications.js');
+        const r = await apexGithubNotifications.cleanActionsNotifications();
+        if (!r.ok) {
+          /* Si pas de token vault ou non admin, OK silencieux (pas critique) */
+          if (r.error === 'admin_only' || r.error === 'no_github_token_in_vault') {
+            return { ok: true, msg: 'skipped (' + r.error + ')' };
+          }
+          return { ok: false, msg: 'clean failed: ' + (r.error ?? 'unknown') };
+        }
+        return {
+          ok: true,
+          msg: `Cleared ${r.notifications_cleared ?? 0} notifs, unsubscribed ${r.actions_threads_unsubscribed ?? 0} Actions threads`,
+          details: {
+            notifications_before: r.notifications_before,
+            notifications_cleared: r.notifications_cleared,
+            actions_threads_unsubscribed: r.actions_threads_unsubscribed,
+          },
+        };
+      } catch (err) {
+        return { ok: false, msg: 'sentinel error: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (27 active + apex-self-correct + github-clean + global-health méta)`);
 }

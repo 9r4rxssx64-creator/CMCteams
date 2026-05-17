@@ -764,6 +764,14 @@ class ApexToolsDispatcher {
       }
       case 'kdmc_stats':
         return orchestrator.kdmcStats();
+      case 'github_clean_notifications': {
+        const { apexGithubNotifications } = await import('./apex-github-notifications.js');
+        return apexGithubNotifications.cleanActionsNotifications();
+      }
+      case 'github_mute_repo': {
+        const { apexGithubNotifications } = await import('./apex-github-notifications.js');
+        return apexGithubNotifications.muteRepo();
+      }
       case 'open_tool':
         return orchestrator.openTool(params['tool_id'] as string);
       case 'read_logs':
