@@ -4,6 +4,103 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-16 (Ape
 
 ---
 
+## 🌿 RÈGLE ABSOLUE — COORDINATION MULTI-SESSIONS CLAUDE CODE (Kevin 2026-05-16, ABSOLUE)
+
+> **"Toutes branches Claude code connectées. Pas de double travail, pas de confusion, pas de conflit, pas de régression. Même les futures branches couplées automatiquement. Va plus loin."** — Kevin 2026-05-16
+
+**Règle absolue, NON-NÉGOCIABLE** — coordination automatique entre toutes sessions Claude Code, présentes et futures, sans intervention Kevin.
+
+### 1. Architecture coordination (v13.4.205)
+
+**3 couches synchronisées** :
+
+a) **Service Apex** `apex-multi-branch-coordinator.ts` (~250 lignes)
+   - GitHub API `/branches` + `/compare/main...{branch}` pour chaque claude/*
+   - Détecte fichiers touchés par 2+ branches (overlap = conflit potentiel)
+   - Détecte branches stale (>7j sans commit) et unmerged old (≥5 commits ahead)
+   - Persiste rapport Firebase `ax_multi_branch_status` (shared cross-session)
+   - localStorage shadow `apex_v13_multi_branch_status` (offline + UI rapide)
+
+b) **Sentinelle Apex** `multi-branch-coordinator-watch` 10min interval
+   - Auto-poll GitHub branches actives
+   - Alert si overlap critique détecté
+   - Skipped silent si pas de PAT vault ou non-admin
+
+c) **Workflow GitHub** `.github/workflows/branch-coordinator.yml` cron 6h
+   - Server-side detection via git CLI
+   - Ouvre issue auto si overlap critique
+   - Clôture auto issue si plus d'overlap
+   - Anti-doublon : 1 seule issue ouverte à la fois (label `branch-coordinator`)
+
+### 2. Tool IA admin
+
+`multi_branch_status` : retourne rapport coordination (branches actives, conflits, recommandations) au chat Apex. Trigger phrases : "Apex état branches", "conflits branches", "coordination".
+
+### 3. Couplage AUTO nouvelles branches
+
+Toute nouvelle branche `claude/*` créée par Kevin :
+- **Détectée automatiquement** au prochain cycle 10min Apex + 6h GitHub workflow
+- **Comparée** vs main : fichiers modifiés extraits
+- **Cross-référencée** avec autres branches actives
+- **Coordination instantanée** : si overlap → alert immédiat
+
+Aucune configuration manuelle requise.
+
+### 4. Détection critique 3 niveaux
+
+| Niveau | Condition | Action |
+|--------|-----------|--------|
+| ⚠️ Overlap | 2+ branches touchent même fichier | Issue GitHub + Firebase alert + sentinelle warn |
+| 📦 Unmerged old | Branche ≥5 commits ahead non mergés | Notif Kevin via push + recommandation merger |
+| 🕸️ Stale | Branche >7j sans activity | Workflow cleanup-stale-branches supprime auto |
+
+### 5. Test mental obligatoire avant CHAQUE session Claude Code
+
+> *"Y a-t-il déjà une session active sur le même fichier que je veux modifier ?
+> Si oui → coordonner via CLAUDE_HANDOFF.json OU attendre merge. Sinon → fix
+> normalement."*
+
+Helper côté Claude Code (à chaque début session) :
+```bash
+git fetch origin --prune
+git log --all --oneline main..origin/claude/* 2>/dev/null | head
+```
+
+### 6. Cas conflit détecté → procédure
+
+1. Sentinelle Apex iPhone Kevin → push notif "⚠️ overlap fichier X branches A+B"
+2. Tool `multi_branch_status` dans Apex chat → vue détaillée
+3. Recommandation : merger la branche la plus avancée d'abord (auto-merge bot)
+4. Auto-rebase des autres branches sur main après merge
+5. Issue GitHub `[Branch Coordinator]` ouverte avec liste + clôturée auto
+
+### 7. Conformité règles autres
+
+- ✓ "AUTONOMIE TOTALE" : 0 action Kevin requise (sentinelle + workflow auto)
+- ✓ "PIPELINE SELF-HEALING CROSS-APP" : escalade Claude Code via issue auto
+- ✓ "ANTI-SPAM MAILS" : cron 6h (pas plus), 1 issue à la fois, comments updates
+- ✓ "JAMAIS ESTIMER" : tous overlaps mesurés par git diff réel
+- ✓ "1 CLIC MAX" : zéro action Kevin, juste lecture status dans Apex chat
+
+### 8. Applicabilité
+
+S'applique à TOUS projets Kevin actuels + futurs avec multi-branches dev :
+- Apex (référence ✓ v13.4.205)
+- CMCteams (mêmes branches claude/* utilisées)
+- e-KDMC, Télécommande, CrackPass, Apex Chat, Social Video, e-APEX
+- Tout nouveau projet → workflow `.github/workflows/branch-coordinator.yml` à copier-coller
+
+### 9. Limitations honnêtes
+
+- Latence coordination = ~10min (sentinelle) + ~6h (workflow) — pas temps réel
+- 2 sessions Claude Code parallèles touchant même fichier dans la même minute :
+  conflict détecté mais APRÈS coup → fix avant push = obligatoire (l'humain
+  ou la sentinelle re-rebase au prochain cycle)
+- Pas de "lock atomic" possible sans serveur dédié — Firebase + GitHub API
+  fournissent eventual consistency (~secondes à minutes)
+
+---
+
 ## 🔬 RÈGLE ABSOLUE — AUTO-TEST + AUTO-FIX + AUTO-AMÉLIORATION TOUS PROJETS (Kevin 2026-05-16, ABSOLUE)
 
 > **"Apex doit s'auto-tester, s'auto-corriger, s'auto-améliorer. Et faire pareil pour tous mes projets toujours. Note et rappel toi. Pareil pour apex."** — Kevin 2026-05-16

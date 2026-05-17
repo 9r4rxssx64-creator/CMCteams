@@ -2640,6 +2640,44 @@ export function registerCoreSentinels(): void {
     },
   });
 
+  /* v13.4.205 (Kevin 2026-05-16 "Toutes branches Claude Code coordonnées") :
+   * Multi-branch coordinator — poll GitHub API branches claude/* + détecte
+   * conflits (fichiers touchés par 2+ branches) + overlaps + branches stale.
+   * Persiste status Firebase ax_multi_branch_status pour partage cross-session.
+   * Toute nouvelle branche Kevin créée est auto-détectée au prochain cycle. */
+  sentinels.register({
+    id: 'multi-branch-coordinator-watch',
+    name: 'Multi-Branch Coordinator Claude Code',
+    desc: "Poll GitHub branches claude/* + détecte conflits/overlaps/stale + push Firebase shared. 10min interval.",
+    intervalMs: 10 * 60 * 1000, /* 10min */
+    check: async () => {
+      try {
+        const { apexMultiBranchCoordinator } = await import('./apex-multi-branch-coordinator.js');
+        const r = await apexMultiBranchCoordinator.runCoordinationCycle();
+        if (!r.ok) {
+          if (r.error === 'admin_only' || r.error === 'no_github_token') {
+            return { ok: true, msg: 'skipped (' + r.error + ')' };
+          }
+          return { ok: false, msg: 'coordinator error: ' + r.error };
+        }
+        const hasConflicts = r.conflicts.files_overlapping.length > 0;
+        return {
+          ok: !hasConflicts,
+          msg: `${r.branches.length} branches actives, ${r.conflicts.files_overlapping.length} fichiers en conflit, ${r.conflicts.branches_unmerged_old.length} branches non mergées anciennes`,
+          details: {
+            total_branches: r.branches.length,
+            overlapping_files: r.conflicts.files_overlapping.length,
+            stale_branches: r.conflicts.branches_stale.length,
+            unmerged_old: r.conflicts.branches_unmerged_old.length,
+            recommendations: r.recommendations.slice(0, 3),
+          },
+        };
+      } catch (err) {
+        return { ok: false, msg: 'sentinel error: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
   /* v13.4.204 (Kevin 2026-05-16 "Apex fait tous les tests runtime autonome") :
    * Wire auto-test-runner.runAll() en sentinelle 12h. Le service existait
    * (orphelin v13.4.x) avec 6+ tests : memory, persistent_memory, vault,

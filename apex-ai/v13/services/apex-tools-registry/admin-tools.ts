@@ -63,6 +63,13 @@ export const ADMIN_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
   {
+    name: 'multi_branch_status',
+    description: "v13.4.205 (Kevin 'toutes branches Claude Code coordonnées') : retourne le rapport multi-branch coordinator. Liste branches claude/* actives, fichiers en conflit, branches non mergées anciennes, recommandations. Trigger : 'Apex état branches', 'conflits branches', 'coordination'.",
+    inputSchema: { type: 'object', properties: { refresh: { type: 'boolean', description: 'true = force refresh GitHub API, false = cache localStorage' } } },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
     name: 'github_mute_repo',
     description: "v13.4.203 : mute COMPLÈTEMENT le repo cmcteams (ignore = true). Plus AUCUNE notification GitHub pour ce repo, jamais. À utiliser uniquement si Kevin demande explicitement de tout couper (pas Action seulement).",
     inputSchema: { type: 'object', properties: {} },

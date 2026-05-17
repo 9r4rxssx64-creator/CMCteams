@@ -768,6 +768,12 @@ class ApexToolsDispatcher {
         const { apexGithubNotifications } = await import('./apex-github-notifications.js');
         return apexGithubNotifications.cleanActionsNotifications();
       }
+      case 'multi_branch_status': {
+        const { apexMultiBranchCoordinator } = await import('./apex-multi-branch-coordinator.js');
+        const refresh = params['refresh'] === true;
+        if (refresh) return apexMultiBranchCoordinator.runCoordinationCycle();
+        return apexMultiBranchCoordinator.getLastReport() ?? apexMultiBranchCoordinator.runCoordinationCycle();
+      }
       case 'github_mute_repo': {
         const { apexGithubNotifications } = await import('./apex-github-notifications.js');
         return apexGithubNotifications.muteRepo();
