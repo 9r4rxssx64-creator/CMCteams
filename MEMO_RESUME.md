@@ -1,4 +1,59 @@
-# Mémo de reprise — Apex v13.4.209 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.210 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.210 : +20 tests crypto-worker-client (Worker mock)
+
+Kevin "Continu toujours pareil" → suite v13.4.209.
+
+Cible : `services/crypto-worker-client.ts` (177 lignes, **0 test direct**). Service
+critique : wrapper Worker pour PBKDF2 200k off-main-thread.
+
+### Tests ajoutés (20 NEW dans crypto-worker-client.test.ts)
+
+#### ensure() lazy-init (7 tests)
+- Worker undefined → permanentlyUnavailable → false
+- Worker créé + ready event → workerReady=true
+- Idempotent : 2 ensure() concurrent partagent même promise
+- Cache : ensure() après ready → return true sans recréer
+- cleanup() reset state → next ensure() peut throw new
+- Worker constructor throw (CSP block) → permanentlyUnavailable
+- Ready timeout 3s sans event → false + worker terminated
+
+#### call() roundtrip (7 tests)
+- hashPin → echo "mocked_hashPin"
+- encrypt → echo "mocked_encrypt"
+- decrypt → echo "mocked_decrypt"
+- Worker emit type:"err" → reject avec error message
+- Worker emit error event → tous pending rejected (cleanup pending Map)
+- Timeout call() 15s sans réponse → reject crypto_worker_timeout
+- Data sans id → ignored silencieusement (vrai bon id résout après)
+
+#### call() sans worker (1) : hashPin avant ensure() → reject worker_not_ready
+
+#### cleanup (2) : terminate worker + reset state, cleanup sans worker no-op
+
+#### isAvailable (3) : false initial, true après ensure success, false si unavailable
+
+Mock pattern : `makeFakeWorker({ emitReadyImmediately, onMessage })` class qui
+simule message events + addEventListener/removeEventListener/postMessage/terminate.
+
+### Validation v13.4.210
+
+- **Vitest 11743/11752 PASS** (+20 vs v13.4.209, +425 cumul session)
+- TS strict 0 ✓
+- ESLint 0/0 ✓
+- Build prod OK (5.86s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.210, 14 RELEASES SANS INTERRUPTION)
+
+- v13.4.197-209 : voir sessions précédentes
+- v13.4.210 : +20 crypto-worker-client (Worker mock complet)
+
+**+425 tests** au total (11318 → 11743). 0 régression. 0 ESLint. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.209 : +76 tests utils-finance + soc2-compliance
 
