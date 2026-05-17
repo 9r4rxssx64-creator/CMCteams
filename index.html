@@ -1198,7 +1198,7 @@ html[data-theme="light"] #topbar{
 <body>
 <!-- v9.615 Kevin "visuel des versions dans tous les projets toujours" :
      Badge version permanent bottom-left, click → showReleaseNotes. -->
-<button id="cmc-version-badge" type="button" aria-label="Version CMCteams" title="Version CMCteams · click pour notes" onclick="if(typeof showReleaseNotes==='function')showReleaseNotes();else alert('CMCteams '+(typeof APP_VER!=='undefined'?APP_VER:'?'));" style="position:fixed;bottom:max(8px,env(safe-area-inset-bottom,8px));left:8px;z-index:9998;padding:5px 10px;background:linear-gradient(135deg,rgba(232,184,48,.22),rgba(232,184,48,.12));border:1px solid rgba(232,184,48,.55);color:#c9a227;font-size:11px;font-family:'SF Mono',Menlo,monospace;font-weight:700;border-radius:12px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;opacity:.85;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1;letter-spacing:.02em">v9.615</button>
+<button id="cmc-version-badge" type="button" aria-label="Version CMCteams" title="Version CMCteams · click pour notes" onclick="if(typeof showReleaseNotes==='function')showReleaseNotes();else alert('CMCteams '+(typeof APP_VER!=='undefined'?APP_VER:'?'));" style="position:fixed;bottom:max(8px,env(safe-area-inset-bottom,8px));left:8px;z-index:9998;padding:5px 10px;background:linear-gradient(135deg,rgba(232,184,48,.22),rgba(232,184,48,.12));border:1px solid rgba(232,184,48,.55);color:#c9a227;font-size:11px;font-family:'SF Mono',Menlo,monospace;font-weight:700;border-radius:12px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;opacity:.85;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1;letter-spacing:.02em">v9.619</button>
 <div id="bgA" class="bg-slide"></div><div id="bgB" class="bg-slide"></div>
 <a href="#content" class="skip-link">Aller au contenu principal</a>
 <div id="app" style="min-height:100vh;background:transparent">
@@ -4881,7 +4881,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.618";
+var APP_VER="v9.619";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -39940,6 +39940,18 @@ try{
       document.addEventListener("DOMContentLoaded",function(){setTimeout(cmcShowCookieBanner,3000);});
     }
   }
+  /* v9.619 (Kevin "100/100 réel partout") — sync auto badge version → APP_VER.
+   * Empêche régression future où badge hardcoded != APP_VER (gap audit -1pt UX). */
+  function _cmcSyncVersionBadge(){
+    try{
+      var b=document.getElementById("cmc-version-badge");
+      if(b && typeof APP_VER!=="undefined" && b.textContent!==APP_VER){
+        b.textContent=APP_VER;
+      }
+    }catch(_){}
+  }
+  if(document.readyState!=="loading"){_cmcSyncVersionBadge();}
+  else{document.addEventListener("DOMContentLoaded",_cmcSyncVersionBadge);}
 }catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("cmc-rgpd-card-h-t-m-l",_e);}catch(__){}}
 /* ============ FIN RGPD / COOKIES CMC ============ */
 
