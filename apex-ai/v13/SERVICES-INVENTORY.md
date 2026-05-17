@@ -104,11 +104,27 @@ Vérification systématique chaque release : tout service `services/*.ts` créé
 1. Importé dans `services-bootstrap.ts` OU
 2. Lazy-loaded via dynamic `import()` dans un handler / dispatcher / sentinelle
 
-**Services orphelins identifiés v13.4.x** (à câbler ou supprimer) :
-- `search-index-worker.ts` : déclaré vite.config worker, aucun usage runtime
-- `ocr-worker.ts` : idem
+**Audit v13.4.219 cross-vérifié (CLAUDE.md règle Erreur #59 "vérifier claims subagent")** :
 
-**Tous autres services** : wired vérifiés via audit subagent v13.4.205 strict.
+Subagent v13.4.217 avait flaggé `search-index-worker.ts` et `ocr-worker.ts` comme orphelins. **FAUX POSITIF mesuré** :
+
+```bash
+$ grep -rn "workers/search-index" services/
+services/search.ts: 5+ usages (instantiation new Worker + types import)
+
+$ grep -rn "workers/ocr" services/
+services/ocr-offline.ts: import workers/ocr.worker
+```
+
+Les 2 workers sont **WIRED via dynamic import** depuis leurs services wrappers. Aucun gap réel.
+
+**Workers actifs (vérifiés v13.4.219)** :
+- `workers/search-index.worker.ts` → `services/search.ts` (full-text Fuse.js, lazy via `new Worker(new URL(...))`)
+- `workers/ocr.worker.ts` → `services/ocr-offline.ts` (Tesseract.js OCR off-main-thread)
+- `workers/crypto.worker.ts` → `services/vault.ts` (PBKDF2/AES-GCM hors UI)
+
+**Zéro service orphelin confirmé** ✅ (cross-référencé v13.4.219).
+
 
 ---
 
