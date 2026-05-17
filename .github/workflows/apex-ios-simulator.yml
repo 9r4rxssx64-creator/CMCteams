@@ -15,13 +15,14 @@ name: Apex v13 iOS Simulator (Playwright WebKit iPhone 14 Pro)
 # Cloud iOS Simulator natif macOS = trop coûteux, WebKit suffit (même moteur).
 
 on:
-  # v13.4.95 (Kevin "Pourquoi les tests réels ne te montrent pas ces problèmes") :
-  # Lance sur CHAQUE push qui touche le code Apex pour détecter régression UX iPhone.
-  # Avant : workflow existait mais jamais déclenché auto → bugs iPhone échappaient.
+  # v9.617 (Kevin "arrête les mails") : restreint à main only.
+  # Avant : tournait sur push 'claude/**' (toutes branches transitoires) → fail
+  # fréquents (Playwright iPhone instable en CI) → spam mails à chaque push session.
+  # Maintenant : tourne quand auto-merge bot merge dans main = 1× par feature, pas
+  # à chaque commit intermédiaire. Tests sur PR aussi (block merge si fail).
   push:
     branches:
       - main
-      - 'claude/**'
     paths:
       - 'apex-ai/v13/**'
       - 'apex-ai-v13/**'

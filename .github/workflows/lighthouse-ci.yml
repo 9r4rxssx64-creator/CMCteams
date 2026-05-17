@@ -4,8 +4,11 @@ name: Lighthouse CI Mobile (Apex v13)
 # Budgets cibles : Performance ≥ 90, A11y ≥ 95, BP ≥ 95, SEO ≥ 90, PWA ≥ 90
 
 on:
+  # v9.617 (Kevin "arrête les mails") : retiré claude/test-699LQ pour éviter
+  # mails fail à chaque push intermédiaire session. Lighthouse tourne sur PR
+  # (block merge si score < seuils) et sur main (post-merge validation).
   push:
-    branches: [main, claude/test-699LQ]
+    branches: [main]
     paths:
       - 'apex-ai/v13/**'
       - '.github/workflows/lighthouse-ci.yml'
