@@ -1,4 +1,59 @@
-# Mémo de reprise — Apex v13.4.204 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.205 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.205 : +9 tests chat-persistence Firebase 30s + attachments IDB
+
+Kevin "Go" → suite v13.4.204.
+
+Cible : `features/chat/chat-persistence.ts` (207 lignes, 53% coverage). Tests
+existants 14 mais ne couvraient PAS le path Firebase sync 30s ni attachments IDB.
+
+### Tests ajoutés (9 NEW vs 14 existants → 23 total)
+
+#### Firebase restore avec data (3)
+- `Firebase read array valide → push messages in-place` (id preservé)
+- `Firebase read messages sans id → génère id restored_<ts>_<random>`
+- `Firebase read filtre messages text vide/non-string/null`
+
+#### Firebase sync 30s debounce (4)
+- `Firebase sync DECLENCHEE après 30s post-persist` : localStorage à 500ms,
+  Firebase à 30s avec payload {role, text, ts} (pas id ni streaming)
+- `Firebase sync filtre messages streaming + texte > 8000 chars`
+- `Firebase sync cap FIREBASE_MAX_MESSAGES=30 (derniers)`
+- `Firebase write throw → silent recovery (logger.warn, pas rethrow)`
+
+#### Attachments IDB sentinel (2)
+- `attachments avec base64 → remplace par sentinel "__IDB__" dans localStorage`
+  (mime + name préservés, base64 vidé pour économiser quota 5MB iOS)
+- `message sans attachments → pas modifié`
+
+Mock pattern : `vi.doMock('../../services/firebase.js')` + `vi.resetModules()`
+pour que `await import` du module sous test ramène le mock fraichement défini.
+
+### Validation v13.4.205
+
+- **Vitest 11573/11582 PASS** (+9 vs v13.4.204, +255 cumul session)
+- TS strict 0 ✓
+- ESLint 0/0 ✓
+- Build prod OK (10.35s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.205, 9 releases SANS INTERRUPTION)
+
+- v13.4.197 : 19 tests réparés + 6 XSS + ESLint 0 + deploy 24M→12M
+- v13.4.198 : coverage-v8 dep
+- v13.4.199 : +71 tests services 0% coverage
+- v13.4.200 : +16 apex-functional-tester
+- v13.4.201 : +8 apex-layout-inspector
+- v13.4.202 : +18 push-auto-init + pptx-generator NEW
+- v13.4.203 : +23 apex-tools-handlers/data
+- v13.4.204 : +90 apex-tools-handlers cloud+ai+payments+comm+github
+- v13.4.205 : +9 chat-persistence Firebase sync 30s + IDB attachments
+
+**+255 tests** au total (11318 → 11573). 0 régression. 0 ESLint. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.204 : +90 tests handlers cloud+ai+payments+comm+github
 
