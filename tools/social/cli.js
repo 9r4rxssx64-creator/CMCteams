@@ -586,6 +586,106 @@ async function cmdTranslate(args) {
   console.log(`\n${result}`);
 }
 
+async function cmdViral(args) {
+  const viral = await import("./engine/viral-optimizer.js");
+  const action = args.action || "score";
+
+  if (action === "score" && args.story) {
+    const lib = JSON.parse(fs.readFileSync(path.join(SOCIAL_ROOT, "config", "content-library.json"), "utf8"));
+    let story = null;
+    for (const [cat, stories] of Object.entries(lib)) {
+      if (cat.startsWith("_")) continue;
+      const found = (stories || []).find(s => s.id === args.story);
+      if (found) { story = { ...found, category: cat }; break; }
+    }
+    if (!story) { console.error(`❌ Story "${args.story}" not found`); process.exit(1); }
+    const result = viral.predictViralPotential(story);
+    console.log(`\n🔥 Viral Analysis: "${story.title}"`);
+    console.log(`   Viral Score : ${result.viralScore}/10 — ${result.verdict}`);
+    console.log(`   Title Score : ${result.title.total}/10`);
+    console.log(`   Hook Score  : ${result.hook.score}/10`);
+    console.log(`   Script Score: ${result.script.viralScore}/10`);
+    if (result.recommendations.length > 0) {
+      console.log(`\n   💡 Recommendations:`);
+      result.recommendations.forEach(r => console.log(`      → ${r}`));
+    }
+  } else if (action === "title") {
+    const title = args.title || args.text;
+    if (!title) { console.error("❌ --title required"); process.exit(1); }
+    const result = viral.optimizeTitle(title);
+    console.log(`\n🔥 Title Optimization: "${title}"`);
+    console.log(`   Current Score: ${result.original.score}/10`);
+    console.log(`   Best Variant : "${result.best.title}" (${result.best.total}/10)`);
+    if (result.alternatives.length > 0) {
+      console.log(`\n   Alternatives:`);
+      result.alternatives.forEach(a => console.log(`      ${a.total}/10 — "${a.title}"`));
+    }
+  } else if (action === "hooks") {
+    const topic = args.topic || "trust";
+    const hooks = viral.generateHookVariants(topic, 5);
+    console.log(`\n🪝 Hook Variants for "${topic}":`);
+    hooks.forEach(h => console.log(`   ${h.variant}. ${h.hook}`));
+  } else {
+    console.error(`❌ Unknown viral action: ${action}. Use: score --story <id>, title --title "...", hooks --topic "..."`);
+  }
+}
+
+async function cmdRepurpose(args) {
+  const repurposer = await import("./engine/content-repurposer.js");
+  const storyId = args.story;
+  if (!storyId) { console.error("❌ --story <id> required"); process.exit(1); }
+  const lib = JSON.parse(fs.readFileSync(path.join(SOCIAL_ROOT, "config", "content-library.json"), "utf8"));
+  let story = null;
+  for (const [cat, stories] of Object.entries(lib)) {
+    if (cat.startsWith("_")) continue;
+    const found = (stories || []).find(s => s.id === storyId);
+    if (found) { story = found; break; }
+  }
+  if (!story) { console.error(`❌ Story "${storyId}" not found`); process.exit(1); }
+  console.log(`\n♻️ Repurposing: "${story.title}"`);
+  const result = repurposer.repurposeAll(story);
+  console.log(`   Generated ${result.totalPieces} content pieces:\n`);
+  console.log(`   📱 ${result.generated.shortClips.length} short clips`);
+  console.log(`   💬 ${result.generated.quoteCards.length} quote cards`);
+  console.log(`   🐦 Twitter thread (${result.generated.twitterThread.length} tweets)`);
+  console.log(`   📸 Instagram carousel (${result.generated.instagramCarousel.length} slides)`);
+  console.log(`   💼 LinkedIn post (${result.generated.linkedInPost.chars} chars)`);
+  console.log(`   📝 Blog post (${result.generated.blogPost.words} words)`);
+  console.log(`   📧 Newsletter`);
+  console.log(`   🎙 Podcast notes`);
+  if (args.export) {
+    const outDir = path.join(SOCIAL_ROOT, "output", `repurposed_${storyId}`);
+    repurposer.exportRepurposed(result, outDir);
+    console.log(`\n   📁 Exported to: ${outDir}`);
+  }
+}
+
+async function cmdSeo(args) {
+  const seo = await import("./engine/seo-optimizer.js");
+  const storyId = args.story;
+  if (!storyId) { console.error("❌ --story <id> required"); process.exit(1); }
+  const lib = JSON.parse(fs.readFileSync(path.join(SOCIAL_ROOT, "config", "content-library.json"), "utf8"));
+  let story = null;
+  for (const [cat, stories] of Object.entries(lib)) {
+    if (cat.startsWith("_")) continue;
+    const found = (stories || []).find(s => s.id === storyId);
+    if (found) { story = { ...found, category: cat.replace("narrative_", "") }; break; }
+  }
+  if (!story) { console.error(`❌ Story "${storyId}" not found`); process.exit(1); }
+  const duration = parseInt(args.duration || "300", 10);
+  const all = seo.generateAllPlatformMeta(story, { durationSec: duration });
+  console.log(`\n🔍 SEO Metadata: "${story.title}"\n`);
+  console.log(`=== YouTube ===`);
+  console.log(`Title: ${all.youtube.title}`);
+  console.log(`Tags: ${all.youtube.tags.slice(0, 10).join(", ")}`);
+  console.log(`Chapters: ${all.youtube.chapters.length}`);
+  console.log(`\n=== TikTok ===`);
+  console.log(`Caption: ${all.tiktok.caption.slice(0, 100)}...`);
+  console.log(`\n=== Instagram ===`);
+  console.log(`Hashtags: ${all.instagram.hashtags.length}`);
+  console.log(`Caption length: ${all.instagram.caption.length} chars`);
+}
+
 function cmdHelp() {
   console.log(`
 🎬 CMCteams Social — Pipeline vidéo automatisé expert+++
@@ -665,6 +765,18 @@ ADVANCED COMMANDS :
     --to fr|es|it|de|pt|ar|ja|hi  Langue cible
     --list                        Liste les langues supportées
 
+FUTURISTIC COMMANDS :
+  viral                           Prédiction virale + optimisation
+    --action score --story <id>   Analyse virale complète d'une story
+    --action title --title "..."  Optimise un titre (score + variantes)
+    --action hooks --topic "..."  Génère 5 variantes de hooks
+
+  repurpose --story <id>          Transforme 1 vidéo en 10+ contenus
+    --export                      Exporte les fichiers (Twitter, LinkedIn, blog...)
+
+  seo --story <id>                Génère métadonnées SEO multi-plateformes
+    --duration <sec>              Durée vidéo (pour chapitres YouTube)
+
 EXEMPLES :
   node cli.js generate --random --format short
   node cli.js thumbnail --title "He Lost Everything" --variants
@@ -673,6 +785,9 @@ EXEMPLES :
   node cli.js experiment --action create --name "Title Test" --variants "VersionA,VersionB"
   node cli.js translate --text "Hello world" --to fr
   node cli.js brand --action list
+  node cli.js viral --action score --story betrayal-001
+  node cli.js repurpose --story betrayal-001 --export
+  node cli.js seo --story betrayal-001
 `);
 }
 
@@ -712,6 +827,9 @@ async function main() {
       case "schedule":          await cmdSchedule(args); break;
       case "brand":             await cmdBrand(args); break;
       case "translate":         await cmdTranslate(args); break;
+      case "viral":             await cmdViral(args); break;
+      case "repurpose":         await cmdRepurpose(args); break;
+      case "seo":               await cmdSeo(args); break;
       case "status":            cmdStatus(); break;
       case "help":
       case "--help":
