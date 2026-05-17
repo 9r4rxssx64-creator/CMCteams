@@ -1,4 +1,58 @@
-# Mémo de reprise — Apex v13.4.205 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.206 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.206 : +16 tests chat/index.ts fonctions pures (isAutoRead + renderToolPills)
+
+Kevin "Go" → suite v13.4.205.
+
+Cible : `features/chat/index.ts` (3286 lignes, 30% coverage — le plus gros gap).
+Fonctions pures testables sans monter le DOM complet :
+- `isAutoReadEnabled` / `setAutoReadEnabled` (préférence vocale TTS)
+- `renderToolPills` (HTML résumé des tools IA exécutés)
+
+### Tests ajoutés (16 NEW dans `chat-pure-functions.test.ts`)
+
+**isAutoReadEnabled / setAutoReadEnabled (8 tests)** :
+- Default false si key absente
+- True si key === "1", false sinon ou si invalide
+- Round-trip true → false → true
+- Silent recovery si `localStorage.getItem` throw (access denied)
+- Silent recovery si `localStorage.setItem` throw (quota exceeded)
+
+**renderToolPills (8 tests)** :
+- Empty string si `toolPills` absent OU vide
+- All done → résumé compact `<details>` repliable avec count + labels
+- Singular "opération" si 1 tool / pluriel "opérations" si N
+- `toolBatchCount` override le count (utile pour batching)
+- En cours (mix running/done) → pills inline avec icônes 🔧/✅
+- XSS hardening : noms de tools échappés via `escapeHtml`
+
+### Validation v13.4.206
+
+- **Vitest 11589/11598 PASS** (+16 vs v13.4.205, +271 cumul session)
+- **551/551 files PASS**
+- TS strict 0 ✓
+- ESLint 0/0 ✓
+- Build prod OK (7.79s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.206, 10 releases SANS INTERRUPTION)
+
+- v13.4.197 : 19 tests réparés + 6 XSS + deploy 24M→12M + ESLint 0
+- v13.4.198 : coverage-v8 dep installée
+- v13.4.199 : +71 tests services 0% coverage
+- v13.4.200 : +16 apex-functional-tester
+- v13.4.201 : +8 apex-layout-inspector
+- v13.4.202 : +18 push-auto-init + pptx-generator NEW
+- v13.4.203 : +23 apex-tools-handlers/data
+- v13.4.204 : +90 apex-tools-handlers (cloud+ai+payments+comm+github)
+- v13.4.205 : +9 chat-persistence Firebase 30s + IDB
+- v13.4.206 : +16 chat/index pure functions (isAutoRead + renderToolPills)
+
+**+271 tests** au total (11318 → 11589). 0 régression. 0 ESLint. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.205 : +9 tests chat-persistence Firebase 30s + attachments IDB
 
