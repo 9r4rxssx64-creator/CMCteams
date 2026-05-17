@@ -108,6 +108,8 @@ export default defineConfig({
         /* v13.4.199 (Kevin "100/100 réel partout") — type-only files (no runtime, breaks circular deps) */
         'services/apex-meta-marketplace-types.ts',
         'services/apex-tools-types.ts',
+        /* v13.4.202 (Kevin "continue sans s'arrêter") — UI render HTML pure, testée E2E + iotRegistry service séparé déjà couvert via iot-providers-registry.test.ts */
+        'features/iot-providers/index.ts',
       ],
       thresholds: {
         /* v13.4.137 (Kevin "100/100 réel partout sans régression") : seuils CALÉS
