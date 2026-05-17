@@ -768,6 +768,16 @@ class ApexToolsDispatcher {
         const { apexGithubNotifications } = await import('./apex-github-notifications.js');
         return apexGithubNotifications.cleanActionsNotifications();
       }
+      case 'view_audit_log': {
+        /* v13.4.215 — Navigation vers vue admin via router (déjà registrée v211) */
+        try {
+          const { router } = await import('../core/router.js');
+          router.navigate('audit-log-viewer');
+          return { ok: true, action: 'navigated_to_audit_log_viewer', route: 'audit-log-viewer' };
+        } catch (err) {
+          return { ok: false, error: err instanceof Error ? err.message : String(err) };
+        }
+      }
       case 'multi_branch_status': {
         const { apexMultiBranchCoordinator } = await import('./apex-multi-branch-coordinator.js');
         const refresh = params['refresh'] === true;

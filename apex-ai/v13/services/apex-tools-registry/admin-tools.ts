@@ -63,6 +63,13 @@ export const ADMIN_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
   {
+    name: 'view_audit_log',
+    description: "v13.4.215 — Ouvre la vue admin Audit Log Viewer (chain hash immutable, 1000 entries max, filtres action/actor/search, export JSON). Trigger : 'voir audit log', 'historique actions admin', 'export audit'.",
+    inputSchema: { type: 'object', properties: {} },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
     name: 'multi_branch_status',
     description: "v13.4.205 (Kevin 'toutes branches Claude Code coordonnées') : retourne le rapport multi-branch coordinator. Liste branches claude/* actives, fichiers en conflit, branches non mergées anciennes, recommandations. Trigger : 'Apex état branches', 'conflits branches', 'coordination'.",
     inputSchema: { type: 'object', properties: { refresh: { type: 'boolean', description: 'true = force refresh GitHub API, false = cache localStorage' } } },
