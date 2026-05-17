@@ -1,4 +1,56 @@
-# Mémo de reprise — Apex v13.4.202 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.203 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.203 : apex-tools-handlers/data NEW (Notion+Airtable+Shopify)
+
+Kevin "Continue sans t'arrêter" suite v13.4.202.
+
+Cible : `services/apex-tools-handlers/data.ts` (90 lignes, 61.25% coverage).
+3 handlers SaaS critiques pour les tools IA Apex.
+
+### Tests ajoutés (23 NEW dans `apex-tools-handlers-data.test.ts`)
+
+#### Notion (6 tests)
+- throw si `ax_notion_key` non configuré
+- `create_page` POST /v1/pages avec database_id + headers Notion-Version
+- alias `add_page` équivalent
+- `search` POST /v1/search avec body.query
+- HTTP error (500) → throw "Notion HTTP 500"
+- task inconnue → throw "Task Notion inconnue"
+
+#### Airtable (8 tests)
+- throw si `ax_airtable_pat` non configuré
+- throw si base_id OU table manquant (2 tests)
+- `list_records` GET avec encodeURIComponent(table) — `My Table` → `My%20Table`
+- alias `list` équivalent
+- `create_record` POST avec body.records[].fields
+- alias `create` équivalent
+- HTTP error → throw "Airtable HTTP 422"
+- task inconnue → throw "Task Airtable inconnue"
+
+#### Shopify (8 tests)
+- throw si `ax_shopify_token` non configuré
+- throw si shop manquant
+- `list_products` GET admin/api/2024-01/products.json avec X-Shopify-Access-Token
+- alias `products` équivalent
+- `list_orders` GET orders.json
+- alias `orders` équivalent
+- HTTP error (401) → throw "Shopify HTTP 401"
+- task inconnue → throw "Task Shopify inconnue"
+
+Mock pattern : `vi.mock('../../services/vault.js')` + `vi.spyOn(globalThis, 'fetch')`.
+
+### Validation v13.4.203
+
+- **Vitest 11474/11483 PASS** (+23 vs v13.4.202, +156 cumul session)
+- 547/547 files PASS
+- TS strict 0 ✓
+- ESLint 0/0 ✓
+- Build prod OK (8.55s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.202 : push-auto-init +9 tests + pptx-generator NEW 9 tests
 
