@@ -43,6 +43,10 @@ const SOCIAL_ROOT = path.resolve(__dirname, "..");
  * @param {boolean} opts.verbose     Logs ffmpeg
  * @returns {Promise<{videoPath, durationSec, audioPath, metadata}>}
  */
+export async function generate(story, opts = {}) {
+  return generateNarrativeVideo(story, opts);
+}
+
 export async function generateNarrativeVideo(story, opts = {}) {
   if (!story || !story.script) {
     throw new Error("generateNarrativeVideo: story.script required");

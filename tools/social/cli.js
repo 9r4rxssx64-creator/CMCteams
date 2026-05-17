@@ -167,15 +167,36 @@ async function cmdGenerate(args) {
     }
   }
 
-  console.log(`\n🎬 Génération vidéo`);
-  console.log(`   Story  : ${story.id} — "${story.title}"`);
-  console.log(`   Tags   : ${story.tags.join(", ")}`);
-  console.log(`   Format : ${format}`);
-  console.log(`   Mots   : ${story.script.split(/\s+/).length}\n`);
+  if (!story.script || typeof story.script !== "string" || story.script.trim().length < 20) {
+    console.error(`❌ Script invalide pour ${story.id} — doit contenir au moins 20 caractères`);
+    process.exit(1);
+  }
+  if (!["long", "short"].includes(format)) {
+    console.error(`❌ Format invalide : "${format}". Utilise "long" ou "short".`);
+    process.exit(1);
+  }
 
-  const { generateNarrativeVideo } = await import("./templates/narrative-storytelling.js");
+  console.log(`\n🎬 Génération vidéo`);
+  console.log(`   Story    : ${story.id} — "${story.title}"`);
+  console.log(`   Tags     : ${(story.tags || []).join(", ")}`);
+  console.log(`   Format   : ${format}`);
+  console.log(`   Template : ${templateName}`);
+  console.log(`   Mots     : ${story.script.split(/\s+/).length}\n`);
+
+  const templateName = args.template || "narrative-storytelling";
+  const TEMPLATES = ["narrative-storytelling", "documentary", "listicle", "breaking-news", "tutorial"];
+  if (!TEMPLATES.includes(templateName)) {
+    console.error(`❌ Template inconnu : ${templateName}. Disponibles : ${TEMPLATES.join(", ")}`);
+    process.exit(1);
+  }
+  const template = await import(`./templates/${templateName}.js`);
+  const generateFn = template.generate || template.generateNarrativeVideo;
+  if (!generateFn) {
+    console.error(`❌ Template ${templateName} n'exporte pas de fonction generate()`);
+    process.exit(1);
+  }
   const musicPath = args.music || findFirstMusic();
-  const result = await generateNarrativeVideo(story, {
+  const result = await generateFn(story, {
     format,
     musicPath,
     bgImage: args.bg,
@@ -379,58 +400,279 @@ function cmdStatus() {
   }
 }
 
+/* ---------- New module commands ---------- */
+
+async function cmdThumbnail(args) {
+  const { generateThumbnail, generateVariants, generateForAllPlatforms } = await import("./engine/thumbnail-generator.js");
+  const title = args.title || "Untitled Video";
+  const layout = args.layout || "dramatic";
+  const scheme = args.color || args.scheme || "midnight-gold";
+  const platform = args.platform || "youtube";
+
+  if (args.variants) {
+    console.log(`\n🎨 Generating A/B thumbnail variants for: "${title}"`);
+    const results = await generateVariants(title, { colorScheme: scheme, channelName: args.channel });
+    console.log(`✅ ${results.length} variants generated:`);
+    for (const r of results) console.log(`   ${r.variant} → ${r.path}`);
+  } else if (args["all-platforms"]) {
+    console.log(`\n🎨 Generating thumbnails for ALL platforms: "${title}"`);
+    const results = await generateForAllPlatforms(title, { layout, colorScheme: scheme, channelName: args.channel });
+    console.log(`✅ Generated for ${Object.keys(results).length} platforms:`);
+    for (const [p, r] of Object.entries(results)) console.log(`   ${p} (${r.width}x${r.height}) → ${r.path}`);
+  } else {
+    console.log(`\n🎨 Generating ${layout} thumbnail (${scheme}) for: "${title}"`);
+    const result = await generateThumbnail(title, { layout, colorScheme: scheme, platform, channelName: args.channel });
+    console.log(`✅ ${result.path}`);
+  }
+}
+
+async function cmdAnalytics(args) {
+  const analytics = await import("./engine/analytics.js");
+  const action = args.action || "report";
+
+  switch (action) {
+    case "report": {
+      const period = args.period || "weekly";
+      const report = analytics.generateReport(period);
+      if (args.format === "csv") { console.log(analytics.exportCsv(report)); }
+      else if (args.format === "html") {
+        const htmlPath = path.join(SOCIAL_ROOT, "output", `report_${Date.now()}.html`);
+        fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
+        fs.writeFileSync(htmlPath, analytics.exportHtml(report));
+        console.log(`✅ HTML report: ${htmlPath}`);
+      } else { console.log(analytics.exportMarkdown(report)); }
+      break;
+    }
+    case "top": {
+      const n = parseInt(args.count || "10", 10);
+      const metric = args.metric || "views";
+      const top = analytics.getTopVideos(n, metric);
+      console.log(`\n🏆 Top ${n} by ${metric}:`);
+      top.forEach((v, i) => console.log(`  ${i+1}. ${v.title || v.videoId} — ${v.latest?.[metric] || 0} ${metric}`));
+      break;
+    }
+    case "recommend": {
+      const recs = analytics.getRecommendations();
+      console.log(`\n💡 Recommendations:`);
+      recs.forEach(r => console.log(`  [${r.priority.toUpperCase()}] ${r.message}`));
+      break;
+    }
+    default:
+      console.error(`❌ Unknown analytics action: ${action}. Use: report, top, recommend`);
+  }
+}
+
+async function cmdExperiment(args) {
+  const ab = await import("./engine/ab-testing.js");
+  const action = args.action || "list";
+
+  switch (action) {
+    case "create": {
+      const name = args.name || "Title Test";
+      const variants = (args.variants || "A,B").split(",").map(v => v.trim());
+      const exp = ab.createExperiment(name, variants, { type: args.type || "title" });
+      console.log(`✅ Experiment created: ${exp.id} — "${exp.name}" (${exp.variants.length} variants)`);
+      break;
+    }
+    case "list": {
+      const exps = ab.listExperiments(args.status || null);
+      console.log(`\n🧪 Experiments (${exps.length}):`);
+      exps.forEach(e => console.log(`  ${e.status === "active" ? "🔬" : "✅"} ${e.id} — ${e.name} (${e.status})`));
+      break;
+    }
+    case "analyze": {
+      if (!args.id) { console.error("❌ --id required"); process.exit(1); }
+      const report = ab.generateExperimentReport(args.id);
+      console.log(report);
+      break;
+    }
+    default:
+      console.error(`❌ Unknown experiment action: ${action}. Use: create, list, analyze`);
+  }
+}
+
+async function cmdSchedule(args) {
+  const sched = await import("./scheduler/scheduler.js");
+  const action = args.action || "next";
+
+  switch (action) {
+    case "create": {
+      const config = {
+        name: args.name || "Daily Upload",
+        platforms: (args.platforms || "youtube").split(","),
+        frequency: args.frequency || "daily",
+        niche: args.niche || "auto",
+        template: args.template || "narrative-storytelling",
+      };
+      const s = sched.createSchedule(config);
+      console.log(`✅ Schedule created: ${s.id} — ${s.name} (${s.platforms.join(",")})`);
+      break;
+    }
+    case "list": {
+      const schedules = sched.listSchedules();
+      console.log(`\n📅 Schedules (${schedules.length}):`);
+      schedules.forEach(s => console.log(`  ${s.active ? "🟢" : "⚪"} ${s.id} — ${s.name} [${s.platforms.join(",")}]`));
+      break;
+    }
+    case "calendar": {
+      const days = parseInt(args.days || "14", 10);
+      const cal = sched.generateCalendar(days);
+      console.log(sched.exportCalendarMarkdown(cal));
+      break;
+    }
+    case "next": {
+      const n = parseInt(args.count || "10", 10);
+      const runs = sched.getNextRuns(n);
+      console.log(`\n📅 Next ${runs.length} runs:`);
+      runs.forEach(r => console.log(`  ${r.time.slice(0,16)} | ${r.platform} | ${r.niche}`));
+      break;
+    }
+    case "queue": {
+      const q = sched.getQueue(args.status || null);
+      console.log(`\n📦 Queue (${q.length} jobs):`);
+      q.slice(0, 20).forEach(j => console.log(`  ${j.status === "completed" ? "✅" : j.status === "failed" ? "❌" : "⏳"} ${j.id} — ${j.platform} ${j.niche} (${j.status})`));
+      break;
+    }
+    default:
+      console.error(`❌ Unknown schedule action: ${action}. Use: create, list, calendar, next, queue`);
+  }
+}
+
+async function cmdBrand(args) {
+  const branding = await import("./engine/branding.js");
+  const action = args.action || "list";
+
+  switch (action) {
+    case "list": {
+      const kits = branding.listBrandKits();
+      const schemes = branding.listSchemes();
+      console.log(`\n🎨 Brand kits: ${kits.join(", ")}`);
+      console.log(`🎨 Color schemes: ${schemes.join(", ")}`);
+      break;
+    }
+    case "create": {
+      const name = args.name || "custom";
+      const kit = branding.saveBrandKit(name, {
+        channelName: args.channel || "KDMC Stories",
+        tagline: args.tagline || "Stories that stick with you",
+      });
+      console.log(`✅ Brand kit saved: "${name}"`);
+      break;
+    }
+    case "intro": {
+      const kit = branding.loadBrandKit(args.kit || "default");
+      console.log(`🎬 Generating intro frames...`);
+      const frames = branding.generateIntroFrames(kit, args.title || "");
+      console.log(`✅ ${frames.length} intro frames generated`);
+      break;
+    }
+    default:
+      console.error(`❌ Unknown brand action: ${action}. Use: list, create, intro`);
+  }
+}
+
+async function cmdTranslate(args) {
+  const ml = await import("./engine/multi-lang.js");
+  if (args.list) {
+    console.log(`\n🌍 Supported languages:`);
+    ml.listLanguages().forEach(l => console.log(`  ${l.code} — ${l.name}${l.rtl ? " (RTL)" : ""}${l.cjk ? " (CJK)" : ""}`));
+    return;
+  }
+  const text = args.text;
+  const toLang = args.to || "fr";
+  if (!text) { console.error("❌ --text required"); process.exit(1); }
+  console.log(`\n🌍 Translating to ${toLang}...`);
+  const result = await ml.translateScript(text, "en", toLang);
+  console.log(`\n${result}`);
+}
+
 function cmdHelp() {
   console.log(`
-🎬 CMCteams Social — Pipeline vidéo automatisé
+🎬 CMCteams Social — Pipeline vidéo automatisé expert+++
 
 USAGE :
   node tools/social/cli.js <command> [options]
 
-COMMANDS :
+CORE COMMANDS :
   list-stories                    Liste les histoires de la bibliothèque
   list-voices                     Liste les voix TTS disponibles
   test-tts --text "..." --voice X Test rapide du TTS
 
   generate                        Génère une vidéo
     --type narrative              Type de contenu (défaut: narrative)
+    --template <name>             Template: narrative-storytelling|documentary|listicle|breaking-news|tutorial
     --story <id>                  ID spécifique (défaut: première non utilisée)
     --random                      Sélection aléatoire
     --ai-script                   Génère un script via Gemma 4 avant la vidéo
-    --niche <niche>               Niche pour AI script (betrayal-revenge, mystery, finance-lesson...)
+    --niche <niche>               Niche pour AI script
     --format long|short           Format (défaut: long, 16:9)
-    --music <path>                Musique de fond MP3 (optionnel)
-    --bg <path>                   Image de fond (optionnel)
-    --send-telegram               Envoie la vidéo sur Telegram après génération
-    --keep                        Garde les frames PNG (debug)
+    --music <path>                Musique de fond MP3
+    --bg <path>                   Image de fond
+    --send-telegram               Envoie sur Telegram après génération
+    --keep                        Garde les frames PNG
 
-  generate-script                 Génère script(s) via Gemma 4 (sans vidéo)
+  generate-script                 Génère script(s) via Gemma 4
     --niche <niche>               betrayal-revenge | mystery | finance-lesson | motivation | true-crime
-    --length <len>                short | medium | long | longform
-    --count <n>                   Nombre de scripts à générer (défaut 1)
+    --count <n>                   Nombre de scripts (défaut 1)
     --language en|fr              Langue (défaut en)
-    --topic "..."                 Topic spécifique (sinon Gemma invente)
 
-  extract-shorts --video <path>   Extrait N Shorts 9:16 depuis un long-form 16:9
+  extract-shorts --video <path>   Extrait N Shorts 9:16
     --count <n>                   Nombre de Shorts (défaut 3)
-    --duration <sec>              Durée par Short en secondes (défaut 45)
+    --duration <sec>              Durée par Short (défaut 45)
 
   publish --platform <p> --video <path>  Publie sur une plateforme
     --platform youtube|facebook|instagram
-    --title "..."                 Titre (défaut: lu depuis metadata)
-    --description "..."           Description
-    --tags "tag1,tag2"            Tags comma-separated
-    --privacy private|unlisted|public  Pour YouTube (défaut private)
-    --short                       Si c'est un Short/Reel
+    --privacy private|unlisted|public
 
-  publish-telegram --video <path> Envoie une vidéo existante sur Telegram
-
+  publish-telegram --video <path> Envoie sur Telegram
   status                          Liste les vidéos générées
 
+ADVANCED COMMANDS :
+  thumbnail                       Génère des thumbnails IA
+    --title "..."                 Titre de la vidéo
+    --layout dramatic|split|numbered|versus|question|minimal
+    --color midnight-gold|blood-red|neon-pink|ocean-blue|...
+    --platform youtube|instagram|tiktok|twitter|facebook
+    --variants                    Génère A/B variants
+    --all-platforms               Génère pour toutes les plateformes
+    --channel "..."               Nom de chaîne (watermark)
+
+  analytics                       Dashboard analytics + revenue
+    --action report|top|recommend
+    --period daily|weekly|monthly
+    --format markdown|csv|html
+    --count <n>                   Top N vidéos (pour action=top)
+
+  experiment                      A/B testing framework
+    --action create|list|analyze
+    --name "..."                  Nom de l'expérience
+    --variants "A,B,C"            Variantes (comma-separated)
+    --id <exp_id>                 ID expérience (pour analyze)
+
+  schedule                        Scheduler automatique
+    --action create|list|calendar|next|queue
+    --platforms youtube,tiktok    Plateformes (comma-separated)
+    --niche auto|betrayal|...     Niche (auto = rotation)
+    --days <n>                    Jours de calendrier (défaut 14)
+
+  brand                           Branding & watermark
+    --action list|create|intro
+    --name "..."                  Nom du brand kit
+    --channel "..."               Nom de chaîne
+
+  translate                       Traduction multi-langue
+    --text "..."                  Texte à traduire
+    --to fr|es|it|de|pt|ar|ja|hi  Langue cible
+    --list                        Liste les langues supportées
+
 EXEMPLES :
-  node tools/social/cli.js list-stories
-  node tools/social/cli.js test-tts --text "Hello world"
-  node tools/social/cli.js generate --story betrayal-001 --format short --send-telegram
-  node tools/social/cli.js generate --random --format long
+  node cli.js generate --random --format short
+  node cli.js thumbnail --title "He Lost Everything" --variants
+  node cli.js analytics --action report --format html
+  node cli.js schedule --action calendar --days 30
+  node cli.js experiment --action create --name "Title Test" --variants "VersionA,VersionB"
+  node cli.js translate --text "Hello world" --to fr
+  node cli.js brand --action list
 `);
 }
 
@@ -464,6 +706,12 @@ async function main() {
       case "extract-shorts":    await cmdExtractShorts(args); break;
       case "publish":           await cmdPublish(args); break;
       case "publish-telegram":  await cmdPublishTelegram(args); break;
+      case "thumbnail":         await cmdThumbnail(args); break;
+      case "analytics":         await cmdAnalytics(args); break;
+      case "experiment":        await cmdExperiment(args); break;
+      case "schedule":          await cmdSchedule(args); break;
+      case "brand":             await cmdBrand(args); break;
+      case "translate":         await cmdTranslate(args); break;
       case "status":            cmdStatus(); break;
       case "help":
       case "--help":

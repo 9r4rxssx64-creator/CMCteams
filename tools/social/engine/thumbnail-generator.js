@@ -2,7 +2,16 @@
  * AI Thumbnail Generator — Professional-grade, multi-layout, A/B variant system
  * Supports 6 layouts × 5 platforms × multiple color schemes
  */
-import { createCanvas, loadImage, registerFont } from 'canvas';
+let createCanvas, loadImage, registerFont;
+try {
+  const canvas = await import('canvas');
+  createCanvas = canvas.createCanvas;
+  loadImage = canvas.loadImage;
+  registerFont = canvas.registerFont || (() => {});
+} catch {
+  const err = () => { throw new Error('canvas package required: npm install canvas'); };
+  createCanvas = err; loadImage = err; registerFont = () => {};
+}
 import fs from 'fs';
 import path from 'path';
 
