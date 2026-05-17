@@ -10,18 +10,13 @@
 //   - Notifications via Telegram/Gmail
 //   - Sauvegardes auto dans Drive/GitHub
 
-import { loadConfig } from "./lib/config.js";
-import { initSentry } from "./lib/sentry.js";
-
-const cfg = loadConfig();
-// IMPORTANT : init Sentry AVANT tout autre import applicatif (bonne pratique SDK)
-const Sentry = initSentry(cfg);
-
 import Anthropic from "@anthropic-ai/sdk";
+import { loadConfig } from "./lib/config.js";
 import { fetchCmcState, saveCmcState } from "./lib/firebase.js";
 import { notifyTelegram, notifyEmail } from "./lib/notifier.js";
 import { listTasks, runTask } from "./lib/tasks.js";
 
+const cfg = loadConfig();
 const anthropic = new Anthropic({ apiKey: cfg.ANTHROPIC_API_KEY });
 
 /**
@@ -82,18 +77,8 @@ export async function runAgentCycle({ trigger = "manual", verbose = false } = {}
     report.status = "error";
     report.fatalError = err.message;
     console.error("[agent] Erreur fatale :", err);
-    // Sentry : capture l'erreur fatale avec contexte trigger
-    Sentry.withScope((scope) => {
-      scope.setTag("trigger", trigger);
-      scope.setLevel("fatal");
-      scope.setContext("agent_report", { empCount: report.empCount, tasks: report.tasks.length });
-      Sentry.captureException(err);
-    });
     try { await notifyTelegram(cfg, `🚨 Agent KDMC crash : ${err.message}`); } catch (_) {}
   }
-
-  // Flush Sentry avant que Vercel ne termine la fonction (serverless)
-  try { await Sentry.flush(2000); } catch (_) {}
 
   return report;
 }

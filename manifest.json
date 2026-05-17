@@ -13,33 +13,9 @@
   "icons": [
     {
       "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230a1408'/%3E%3Crect x='16' y='16' width='480' height='480' rx='80' fill='none' stroke='%23c9a227' stroke-width='3'/%3E%3Ctext x='256' y='200' text-anchor='middle' font-size='120' font-weight='800' fill='%23c9a227' font-family='Georgia,serif'%3E%E2%99%A6%3C/text%3E%3Ctext x='256' y='300' text-anchor='middle' font-size='72' font-weight='800' fill='%23c9a227' font-family='system-ui' letter-spacing='6'%3ECMC%3C/text%3E%3Ctext x='256' y='370' text-anchor='middle' font-size='36' fill='%237aaa80' font-family='system-ui' letter-spacing='4'%3ETEAMS%3C/text%3E%3Ctext x='256' y='440' text-anchor='middle' font-size='22' fill='%23c9a22780' font-family='Georgia,serif' letter-spacing='2'%3ECASINO DE MONACO%3C/text%3E%3C/svg%3E",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230a1408'/%3E%3Crect x='16' y='16' width='480' height='480' rx='80' fill='none' stroke='%23c9a227' stroke-width='3'/%3E%3Ctext x='256' y='200' text-anchor='middle' font-size='120' font-weight='800' fill='%23c9a227' font-family='Georgia,serif'%3E%E2%99%A6%3C/text%3E%3Ctext x='256' y='300' text-anchor='middle' font-size='72' font-weight='800' fill='%23c9a227' font-family='system-ui' letter-spacing='6'%3ECMC%3C/text%3E%3Ctext x='256' y='370' text-anchor='middle' font-size='36' fill='%237aaa80' font-family='system-ui' letter-spacing='4'%3ETEAMS%3C/text%3E%3Ctext x='256' y='440' text-anchor='middle' font-size='22' fill='%23c9a22780' font-family='Georgia,serif' letter-spacing='2'%3ECASINO DE MONACO%3C/text%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%230a1408'/%3E%3Ctext x='90' y='75' text-anchor='middle' font-size='48' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='90' y='120' text-anchor='middle' font-size='28' font-weight='800' fill='%23c9a227'%3ECMC%3C/text%3E%3C/svg%3E",
-      "sizes": "180x180",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 167 167'%3E%3Crect width='167' height='167' rx='34' fill='%230a1408'/%3E%3Ctext x='83.5' y='70' text-anchor='middle' font-size='44' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='83.5' y='112' text-anchor='middle' font-size='26' font-weight='800' fill='%23c9a227'%3ECMC%3C/text%3E%3C/svg%3E",
-      "sizes": "167x167",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 152 152'%3E%3Crect width='152' height='152' rx='30' fill='%230a1408'/%3E%3Ctext x='76' y='65' text-anchor='middle' font-size='40' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='76' y='102' text-anchor='middle' font-size='24' font-weight='800' fill='%23c9a227'%3ECMC%3C/text%3E%3C/svg%3E",
-      "sizes": "152x152",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
   ],
   "shortcuts": [

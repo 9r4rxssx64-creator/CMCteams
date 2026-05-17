@@ -11,8 +11,6 @@ export default function handler(req, res) {
       TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN ? "set" : "MISSING",
       TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID ? "set (" + process.env.TELEGRAM_CHAT_ID + ")" : "MISSING",
       AGENT_SECRET: process.env.AGENT_SECRET ? "set (" + process.env.AGENT_SECRET.length + " chars)" : "NOT SET (auth disabled)",
-      SENTRY_DSN: process.env.SENTRY_DSN ? "set (monitoring active)" : "MISSING (Sentry Node SDK disabled — add in Vercel env vars)",
-      SENTRY_ENVIRONMENT: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
     }
   });
 }
