@@ -48,6 +48,13 @@ export default defineConfig({
       name: 'tablet-safari',
       use: { ...devices['iPad (gen 7)'] },
     },
+    /* v13.4.218 (audit gap UX iPad Air 768px breakpoint) : couverture
+     * tablet portrait. iPad (gen 7) couvre paysage 1024px+, iPad Air
+     * couvre portrait 820px (proche breakpoint critique 768px). */
+    {
+      name: 'tablet-air-portrait',
+      use: { ...devices['iPad Air'] },
+    },
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },
