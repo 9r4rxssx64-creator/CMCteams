@@ -1,4 +1,59 @@
-# Mémo de reprise — Apex v13.4.203 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.204 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.204 : +90 tests handlers cloud+ai+payments+comm+github
+
+Kevin "Go" + "Continu sans t'arrêter" suite v13.4.203.
+
+Mission : couvrir **TOUS** les handlers `services/apex-tools-handlers/` (61.25% baseline).
+6 fichiers, ~549 lignes au total. 3 fichiers déjà couverts (data ✓). 3 nouveaux.
+
+### Tests ajoutés (90 NEW)
+
+#### `apex-tools-handlers-cloud.test.ts` (16 tests, NEW)
+**Vercel (7)** : token absent, list_projects, alias projects, list_deployments avec/sans project_id, HTTP 401, task inconnue.
+**Cloudflare (9)** : token absent, verify_token + alias verify, list_zones, purge_cache avec zone_id (POST purge_everything), purge_cache sans zone_id throw, HTTP errors verify+purge, task inconnue.
+
+#### `apex-tools-handlers-ai-payments.test.ts` (30 tests, NEW)
+**OpenAI (6)** : token absent, chat → Bearer auth + body messages depuis prompt OU array, aliases completion/ask, HTTP 429, task inconnue.
+**Anthropic (6)** : token absent, message → x-api-key + anthropic-version header, aliases chat/ask, messages array + custom model/max_tokens, HTTP 401, task inconnue.
+**Stripe (12)** : sk absent, create_payment_intent + alias → URL-encoded body, refund SANS confirm throw / AVEC confirm POST /v1/refunds + alias create_refund, transfer SANS confirm throw / AVEC confirm POST /v1/transfers + alias create_transfer, HTTP errors payment/refund/transfer, task inconnue.
+**PayPal (4)** : client OR secret absent, get_token + alias oauth OAuth2 Basic auth (btoa client:secret), HTTP 401, task inconnue.
+
+#### `apex-tools-handlers-comm-github.test.ts` (44 tests, NEW)
+**Telegram (6)** : token absent, send_message + alias send (chat_id ou chatId), parse_mode override, chat_id manquant, get_me/verify, task inconnue.
+**Discord (6)** : webhook_url ni vault throw, webhook_send avec param, fallback vault, status 204 = succès, HTTP 403, task inconnue.
+**Slack (4)** : token absent, send_message → Bearer + chat.postMessage, HTTP 401, task inconnue.
+**Resend (5)** : key absente, send_email html + to array OU string converti en array, HTTP 400, task inconnue.
+**Brevo (5)** : key absente, send_email api-key header, alias send_transactional, HTTP 401, task inconnue (pas d'alias "send").
+**GitHub (18)** : token absent, create_issue + custom repo, add_comment + issue_number manquant, merge_pr SANS/AVEC confirm + merge_method custom, dispatch_workflow, create_or_update_file existing (check SHA + PUT) ET nouveau (404 → no SHA), path manquant, content vide refusé, delete_file SANS/AVEC confirm + fichier introuvable, HTTP 403, task inconnue.
+
+Mock pattern uniforme : `vi.mock('../../services/vault.js')` + `vi.spyOn(globalThis, 'fetch')`.
+
+### Validation v13.4.204
+
+- **Vitest 11564/11573 PASS** (+90 vs v13.4.203, +246 cumul session)
+- 549/549 files PASS
+- TS strict 0 errors ✓
+- ESLint 0/0 ✓
+- Build prod OK (7.72s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.204, 8 releases SANS INTERRUPTION)
+
+- v13.4.197 : 19 tests réparés + 6 XSS hardenés + ESLint 0 + deploy 24M→12M
+- v13.4.198 : coverage-v8 dep installée
+- v13.4.199 : +71 tests services 0% coverage
+- v13.4.200 : +16 tests apex-functional-tester
+- v13.4.201 : +8 tests apex-layout-inspector
+- v13.4.202 : +18 tests push-auto-init + pptx-generator NEW
+- v13.4.203 : +23 tests apex-tools-handlers/data (Notion+Airtable+Shopify)
+- v13.4.204 : **+90 tests** apex-tools-handlers cloud+ai+payments+comm+github
+
+**+246 tests** au total (11318 → 11564). 0 régression. 0 ESLint. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.203 : apex-tools-handlers/data NEW (Notion+Airtable+Shopify)
 
