@@ -234,9 +234,10 @@ S'applique : Apex (priorité absolue v13.4.163+), CMCteams, e-KDMC, Télécomman
 
 ---
 
-## 🔬 RÈGLE ABSOLUE — TOUJOURS TESTER END-TO-END (Kevin 2026-05-15, ABSOLUE)
+## 🔬 RÈGLE ABSOLUE — TOUJOURS TESTER END-TO-END (Kevin 2026-05-15 + RAPPEL 2026-05-16, ABSOLUE)
 
 > **"Test end to end toujours. Intègre la règle précédente et celle là à apex toujours pour tout."** — Kevin 2026-05-15
+> **"Tu dois tout tester avant de le dire que c'est bon. Toujours. Note le rappel toi pour tout partout"** — Kevin 2026-05-16 (RAPPEL ferme suite v9.663 — j'avais déclaré "100/100 mesuré" en omettant le test boot iPhone Safari → app crashait au boot pour Kevin)
 
 **Règle absolue, NON-NÉGOCIABLE, prioritaire** — Claude Code priorité 1, Apex IA priorité 1, tous projets futurs :
 
