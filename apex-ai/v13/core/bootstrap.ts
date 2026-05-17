@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.210';
+export const APP_VER = 'v13.4.211';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -555,6 +555,8 @@ async function bootstrap(): Promise<void> {
   /* v13.4.13 — Vue runtime-tests (Apex teste TOUT en réel browser) */
   router.register('runtime-tests', { loader: () => import('@features/admin/runtime-tests/index.js'), requiresAdmin: true });
   router.register('apex-audits-live', { loader: () => import('@features/admin/apex-audits-live/index.js'), requiresAdmin: true });
+  /* v13.4.211 — Audit Log Viewer (Kevin "100/100 réel", gap audit subagent) */
+  router.register('audit-log-viewer', { loader: () => import('@features/admin/audit-log-viewer/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 
