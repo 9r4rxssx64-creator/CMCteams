@@ -1,4 +1,65 @@
-# Mémo de reprise — Apex v13.4.207 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.208 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.208 : +49 tests services jamais testés (autonomous-watch, sentinel-auto-repair, notification-actions)
+
+Kevin "Tout à 100 réel partout et 10/10 réel partout sans t'arrêter" + "Continu toujours pareil"
+→ suite v13.4.207.
+
+Identifié 3 services SANS aucun test dédié via scan `find services -name "*.ts"
+| xargs -I{} sh -c '...has_test...'` :
+- `services/autonomous-watch.ts` (82 lignes)
+- `services/sentinel-auto-repair.ts` (100 lignes)
+- `services/notification-actions.ts` (143 lignes)
+
+### Tests ajoutés (49 NEW dans 2 nouveaux fichiers)
+
+#### autonomous-watch-sentinel-repair.test.ts (16 tests, NEW)
+
+**autonomousWatch (7)** : start/stop lifecycle + idempotent + stop avant start, tick auto 30s, forceTick, tick swallow exception, getStats shape.
+
+**sentinelAutoRepair (9)** :
+- securityRebuildChain : chain valide (no-op), rebuilt N entries, autoRepair ok=false, throw catch
+- conflictMergeResolve : pas de queue, queue sans stale, queue avec stale (>5min flushing) → reset + fb pull, JSON parse fail, firebase.init throw silent
+
+#### notification-actions.test.ts (33 tests, NEW)
+
+**resolveNotificationRoute (24)** :
+- null/undefined/vide/whitespace → null
+- hash route #admin / #/admin → strip
+- URL absolue avec hash → extract / sans hash → null / URL invalide → null
+- Mapping credentials_missing, credentials-missing, auto-restore-watch, auto_reset, ai-providers-health, backup-watch, vault-watch, memory-watch, handoff_received, iot-providers, signup_otp, default
+- Case-insensitive fallback (UPPERCASE_INPUT)
+- Unknown string → retourne tel quel (assume route)
+
+**handleNotificationClick (8)** :
+- url priorité, tag fallback, source fallback, candidates vide → fallback chat
+- router.navigate throw → fallback location.hash
+- url null + tag null + source null
+- Priorité url > tag > source
+- Si url ne resolve pas mais tag oui → utilise tag
+- Fallback chat avec navigate fail → location.hash
+
+**Namespace (1)** : resolveRoute + handleClick exposés.
+
+### Validation v13.4.208
+
+- **Vitest 11647/11656 PASS** (+49 vs v13.4.207, +329 cumul session)
+- **553/553 files PASS**
+- TS strict 0 ✓
+- ESLint 0/0 ✓
+- Build prod OK (6.16s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.208, 12 RELEASES SANS INTERRUPTION)
+
+- v13.4.197-207 : voir sessions précédentes
+- v13.4.208 : +49 tests autonomous-watch + sentinel-auto-repair + notification-actions
+
+**+329 tests** au total (11318 → 11647). 0 régression. 0 ESLint. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.207 : +9 tests apex-cloudflare-vault-deploy paths additionnels + knowledge UI exclusion
 
