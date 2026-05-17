@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.208';
+export const APP_VER = 'v13.4.209';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -299,6 +299,43 @@ async function bootstrap(): Promise<void> {
     logger.error('boot', 'Web Crypto API not available — vault DISABLED');
     /* Continue boot mais vault sera désactivé */
   }
+
+  /* v13.4.209 (Kevin "Apex valide en réel à ma place") — auto-test on first boot
+   * après nouvelle version. Pas d'attente cycle 12h sentinelle.
+   * Throttle : 1 test par version. Stocké apex_v13_auto_test_last_version.
+   * Déclenché en idle après render (pas bloquer LCP). */
+  safeInit('auto-test-on-first-boot', async () => {
+    try {
+      const lastTestedVer = localStorage.getItem('apex_v13_auto_test_last_version') ?? '';
+      if (lastTestedVer === APP_VER) {
+        logger.debug('auto-test-boot', `Skip (version ${APP_VER} déjà testée ce boot)`);
+        return;
+      }
+      const schedule = (cb: () => void): void => {
+        const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void };
+        if (typeof w.requestIdleCallback === 'function') {
+          w.requestIdleCallback(cb, { timeout: 8000 });
+        } else {
+          setTimeout(cb, 5000);
+        }
+      };
+      schedule(() => {
+        void (async () => {
+          try {
+            const { autoTestRunner } = await import('../services/auto-test-runner.js');
+            const summary = await autoTestRunner.runAll();
+            localStorage.setItem('apex_v13_auto_test_last_version', APP_VER);
+            logger.info('auto-test-boot',
+              `Auto-test post-MAJ ${APP_VER} : ${summary.passed}/${summary.total} pass, ${summary.failed} fail`);
+          } catch (err) {
+            logger.warn('auto-test-boot', 'Run failed', { err: err instanceof Error ? err.message : String(err) });
+          }
+        })();
+      });
+    } catch (err) {
+      logger.warn('auto-test-boot', 'Schedule failed', { err: err instanceof Error ? err.message : String(err) });
+    }
+  }).catch(() => { /* non-blocking */ });
 
   /* 3. Store init (Proxy reactive) */
   store.init({
