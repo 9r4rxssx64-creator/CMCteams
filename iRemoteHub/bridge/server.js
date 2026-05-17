@@ -16,6 +16,11 @@ const macros = require('./macros');
 const ia = require('./ia');
 const auth = require('./auth');
 const clone = require('./adapters/clone');
+const log = require('./logger').child('server');
+
+// ---------- État global (déclaré tôt pour éviter TDZ dans les handlers) ----------
+const state = { devices: new Map() };
+let scanInProgress = false;
 
 // ---------- Configuration ----------
 const CONFIG_PATH = path.join(__dirname, 'config.json');
@@ -32,7 +37,7 @@ if (fs.existsSync(CONFIG_PATH)) {
   try { Object.assign(CONFIG, JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'))); } catch {}
 } else {
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(CONFIG, null, 2));
-  console.log('[config] Généré config.json — token :', CONFIG.auth_token);
+  log.info('config.json généré — token : ' + CONFIG.auth_token);
 }
 
 // ---------- QR code ASCII pour appairage PWA ----------
@@ -75,6 +80,10 @@ app.get('/devices', (_, res) => {
 });
 
 app.post('/scan', async (_, res) => {
+  if (scanInProgress) {
+    return res.status(429).json({ error: 'scan déjà en cours', retry_after_s: 30 });
+  }
+  scanInProgress = true;
   try {
     broadcast({ type: 'scan:start' });
     const results = await discovery.runAll({ enableBLE: CONFIG.enable_ble });
@@ -82,10 +91,14 @@ app.post('/scan', async (_, res) => {
       state.devices.set(d.id, { ...state.devices.get(d.id), ...d, last_seen: Date.now() });
     }
     broadcast({ type: 'scan:done', count: results.length });
+    log.ok('scan manuel : ' + results.length + ' appareils');
     res.json({ ok: true, count: results.length });
   } catch (e) {
+    log.error('scan échec : ' + e.message);
     broadcast({ type: 'scan:error', message: e.message });
     res.status(500).json({ error: e.message });
+  } finally {
+    scanInProgress = false;
   }
 });
 
@@ -193,9 +206,7 @@ function broadcast(msg) {
   }
 }
 
-// ---------- État global ----------
-const state = { devices: new Map() };
-let scanInProgress = false;
+// ---------- État global (déjà déclaré plus haut) ----------
 
 // Scan périodique + garbage collection des appareils disparus (TTL 7j)
 const DEVICE_TTL_MS = 7 * 24 * 3600 * 1000;
@@ -224,17 +235,20 @@ setInterval(async () => {
 // ---------- Boot ----------
 server.listen(CONFIG.port, () => {
   printQrPairing();
-  console.log(`[server] écoute sur :${CONFIG.port}`);
+  log.ok(`écoute sur :${CONFIG.port}`);
   // 1er scan au démarrage
   setTimeout(() => {
     discovery.runAll({ enableBLE: CONFIG.enable_ble })
       .then(r => {
         for (const d of r) state.devices.set(d.id, { ...d, last_seen: Date.now() });
-        console.log(`[scan initial] ${r.length} appareils`);
+        log.ok(`scan initial : ${r.length} appareils`);
         broadcast({ type: 'devices:update', count: r.length });
       })
-      .catch(e => console.error('[scan initial]', e.message));
+      .catch(e => log.error('scan initial : ' + e.message));
   }, 1500);
 });
 
-process.on('SIGINT', () => { console.log('\n[server] arrêt'); process.exit(0); });
+process.on('SIGINT', () => { log.info('arrêt'); process.exit(0); });
+process.on('SIGTERM', () => { log.info('arrêt (SIGTERM)'); process.exit(0); });
+process.on('uncaughtException', (e) => log.error('uncaughtException : ' + e.message, e.stack));
+process.on('unhandledRejection', (e) => log.error('unhandledRejection : ' + (e && e.message)));
