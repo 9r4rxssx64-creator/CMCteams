@@ -57,14 +57,17 @@ function renderTable(rows: string[][]): string {
     if (t.endsWith(':')) return 'right';
     return 'left';
   });
+  /* v13.4.213 — classes CSS au lieu de style="text-align:..." inline.
+   * Whitelist values (left/center/right) → pas de XSS injection via aligns. */
+  const taClass = (a: string | undefined): string => `ax-ta-${a === 'center' || a === 'right' ? a : 'left'}`;
   const headerHtml = header
-    .map((h, i) => `<th style="text-align:${aligns[i] ?? 'left'}">${renderInline(h.trim())}</th>`)
+    .map((h, i) => `<th class="${taClass(aligns[i])}">${renderInline(h.trim())}</th>`)
     .join('');
   const bodyHtml = body
     .map(
       (row) =>
         `<tr>${row
-          .map((c, i) => `<td style="text-align:${aligns[i] ?? 'left'}">${renderInline(c.trim())}</td>`)
+          .map((c, i) => `<td class="${taClass(aligns[i])}">${renderInline(c.trim())}</td>`)
           .join('')}</tr>`,
     )
     .join('');

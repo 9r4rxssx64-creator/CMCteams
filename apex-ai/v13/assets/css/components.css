@@ -1167,3 +1167,11 @@
   color: #e8b830;
   text-decoration: underline;
 }
+
+/* v13.4.213 (Kevin "100/100 réel") — text-align classes pour tables Markdown.
+ * Remplacent les style="text-align:${align}" inline qui nécessitaient
+ * `style-src-attr 'unsafe-inline'` CSP. Maintenant valeurs whitelist : left,
+ * center, right (depuis marqueur :---: parsé dans renderTable). */
+.ax-ta-left { text-align: left; }
+.ax-ta-center { text-align: center; }
+.ax-ta-right { text-align: right; }
