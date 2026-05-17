@@ -267,7 +267,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.22';
+const __APEX_CHAT_VERSION__ = 'v1.1.23';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -343,7 +343,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.22</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.23</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -357,7 +357,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.22</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.23</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1876,19 +1876,24 @@ K._openStudio = function(name){
 };
 
 K._openPayQr = function(){
+  // v1.1.23 : pré-fill identifiant + méthode depuis localStorage si déjà saisis
+  const savedId = lg('payqr_id', '');
+  const savedMethod = lg('payqr_method', 'paypal');
   K._showModal('💸 Demande de paiement', `
     <p style="color:var(--ax-text-2);font-size:.9em">Génère un QR code de demande de paiement à envoyer à un contact.</p>
-    <label class="label">Montant (€)</label>
-    <input id="pq-amount" class="input" type="number" min="0.01" step="0.01" placeholder="20.00">
-    <label class="label" style="margin-top:14px">Méthode</label>
+    <label class="label">👤 Destinataire (à qui ?)</label>
+    <input id="pq-recipient" class="input" placeholder="Ex: Marc Dupont" maxlength="60" autocapitalize="words">
+    <label class="label" style="margin-top:14px">💶 Montant (€)</label>
+    <input id="pq-amount" class="input" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="20.00">
+    <label class="label" style="margin-top:14px">💳 Méthode</label>
     <select id="pq-method" class="input">
-      <option value="paypal">PayPal.me</option>
-      <option value="revolut">Revolut @tag</option>
-      <option value="iban">Virement IBAN</option>
+      <option value="paypal" ${savedMethod==='paypal'?'selected':''}>PayPal.me</option>
+      <option value="revolut" ${savedMethod==='revolut'?'selected':''}>Revolut @tag</option>
+      <option value="iban" ${savedMethod==='iban'?'selected':''}>Virement IBAN</option>
     </select>
-    <label class="label" style="margin-top:14px">Ton identifiant (username PayPal/Revolut/IBAN)</label>
-    <input id="pq-id" class="input" placeholder="@kevin ou IBAN FR76...">
-    <label class="label" style="margin-top:14px">Note (optionnel)</label>
+    <label class="label" style="margin-top:14px">🆔 Ton identifiant (username PayPal/Revolut/IBAN)</label>
+    <input id="pq-id" class="input" value="${esc(savedId)}" placeholder="@kevin ou IBAN FR76...">
+    <label class="label" style="margin-top:14px">📝 Note (optionnel)</label>
     <input id="pq-note" class="input" placeholder="Resto vendredi" maxlength="100">
     <button class="btn btn-block" onclick="K._generatePayQr()" style="margin-top:14px">📱 Générer le QR</button>
     <div id="pq-result" style="margin-top:14px"></div>
@@ -1896,33 +1901,304 @@ K._openPayQr = function(){
 };
 
 K._generatePayQr = async function(){
-  const amount = parseFloat($('#pq-amount').value);
-  const method = $('#pq-method').value;
-  const id = $('#pq-id').value.trim();
-  const note = $('#pq-note').value.trim();
-  if(!amount || amount <= 0 || !id) return toast('Montant + identifiant requis', 'err');
+  // v1.1.23 : meilleure validation (messages d'erreur spécifiques) + champ destinataire
+  const recipientEl = $('#pq-recipient');
+  const amountEl = $('#pq-amount');
+  const methodEl = $('#pq-method');
+  const idEl = $('#pq-id');
+  const noteEl = $('#pq-note');
+  if(!amountEl || !methodEl || !idEl){
+    return toast('Erreur formulaire (re-ouvre la modale)', 'err');
+  }
+  const recipient = (recipientEl?.value || '').trim();
+  const amount = parseFloat(amountEl.value);
+  const method = methodEl.value;
+  const id = idEl.value.trim();
+  const note = (noteEl?.value || '').trim();
 
+  // Validation détaillée : 1 erreur par champ manquant
+  if(!recipient) return toast('À qui ? Renseigne le destinataire', 'err');
+  if(!amount || isNaN(amount) || amount <= 0) return toast('Montant invalide (ex: 20.00)', 'err');
+  if(!id) return toast('Ton identifiant requis (PayPal/Revolut/IBAN)', 'err');
+
+  // Mémorise identifiant + méthode pour prochaine fois
+  ls('payqr_id', id);
+  ls('payqr_method', method);
+
+  // Construction lien selon méthode
   let url;
-  if(method === 'paypal') url = `https://paypal.me/${id.replace(/^@/, '')}/${amount.toFixed(2)}EUR`;
-  else if(method === 'revolut') url = `https://revolut.me/${id.replace(/^@/, '')}?amount=${amount.toFixed(2)}&currency=EUR&description=${encodeURIComponent(note)}`;
-  else url = `SEPA:${id}:${amount.toFixed(2)}:EUR:${note}`;
+  const recipientNote = note ? `${note} (pour ${recipient})` : `Pour ${recipient}`;
+  if(method === 'paypal') {
+    url = `https://paypal.me/${id.replace(/^@/, '')}/${amount.toFixed(2)}EUR`;
+  } else if(method === 'revolut') {
+    url = `https://revolut.me/${id.replace(/^@/, '')}?amount=${amount.toFixed(2)}&currency=EUR&description=${encodeURIComponent(recipientNote)}`;
+  } else {
+    url = `SEPA:${id}:${amount.toFixed(2)}:EUR:${recipientNote}`;
+  }
 
   // QR code via API tier (qrserver.com gratuit)
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
 
   $('#pq-result').innerHTML = `
     <div style="text-align:center;padding:14px;background:white;border-radius:14px">
-      <img src="${qrUrl}" alt="QR" style="max-width:100%;border-radius:8px">
+      <img src="${qrUrl}" alt="QR code paiement ${esc(amount.toFixed(2))} euros pour ${esc(recipient)}" style="max-width:100%;border-radius:8px">
     </div>
     <p style="text-align:center;margin-top:10px;color:var(--ax-text-2)">
-      <strong style="color:var(--ax-gold)">${amount.toFixed(2)} €</strong> via ${method}
+      <strong style="color:var(--ax-gold)">${amount.toFixed(2)} €</strong> à <strong>${esc(recipient)}</strong> via ${esc(method)}
     </p>
     <p style="text-align:center;font-size:.78em;word-break:break-all;color:var(--ax-text-3)">
       ${esc(url)}
     </p>
-    <button class="btn btn-out btn-block btn-sm" onclick="navigator.clipboard.writeText('${esc(url)}');K.toast('Lien copié','ok')" style="margin-top:10px">📋 Copier le lien</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <button class="btn btn-out btn-sm" onclick="navigator.clipboard.writeText('${esc(url)}');K.toast('Lien copié','ok')">📋 Copier le lien</button>
+      <button class="btn btn-out btn-sm" onclick="K._sharePayQr('${esc(recipient)}','${esc(amount.toFixed(2))}','${esc(url)}')">📤 Partager</button>
+    </div>
   `;
 };
+
+K._sharePayQr = async function(recipient, amount, url){
+  const text = `Salut ${recipient}, peux-tu me régler ${amount} € via ce lien ? Merci ! ${url}`;
+  if(navigator.share){
+    try {
+      await navigator.share({ title:'Demande de paiement', text, url });
+      return;
+    } catch(e){ /* user cancel ou indispo */ }
+  }
+  // Fallback : copier au presse-papier
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Message + lien copiés', 'ok');
+  } catch(e){
+    toast('Partage indisponible', 'err');
+  }
+};
+
+// ============================================================================
+//  v1.1.23 — Mon profil (édition pseudo + email)
+// ============================================================================
+K.openProfile = function(){
+  if(!K.user){ return toast('Connecte-toi d\'abord', 'err'); }
+  const u = K.user;
+  K._showModal('👤 Mon profil', `
+    <div style="text-align:center;margin-bottom:14px">
+      <div class="avatar avatar-lg" style="margin:0 auto 8px;width:64px;height:64px;font-size:1.8em">${esc((u.pseudo||'?')[0].toUpperCase())}</div>
+      <div style="color:var(--ax-text-3);font-size:.85em">ID : ${esc(u.id)}</div>
+    </div>
+    <label class="label">Pseudo affiché</label>
+    <input id="pf-pseudo" class="input" value="${esc(u.pseudo||'')}" maxlength="40" autocapitalize="words">
+    <label class="label" style="margin-top:14px">Email (optionnel, pour notifs)</label>
+    <input id="pf-email" class="input" type="email" value="${esc(u.email||'')}" placeholder="ex@email.com" autocapitalize="none">
+    <label class="label" style="margin-top:14px">Téléphone WhatsApp (optionnel)</label>
+    <input id="pf-phone" class="input" type="tel" value="${esc(u.phone||'')}" placeholder="+33612345678" inputmode="tel">
+    <button class="btn btn-block" onclick="K._saveProfile()" style="margin-top:14px">💾 Sauvegarder</button>
+  `);
+};
+K._saveProfile = function(){
+  const pseudo = ($('#pf-pseudo')?.value || '').trim();
+  const email = ($('#pf-email')?.value || '').trim();
+  const phone = ($('#pf-phone')?.value || '').trim();
+  if(!pseudo || pseudo.length < 2){ return toast('Pseudo trop court', 'err'); }
+  K.user = { ...K.user, pseudo, email, phone };
+  ls('user', K.user);
+  toast('Profil sauvegardé', 'ok');
+  K._closeModal();
+  if(K.view === 'settings') K.sv('settings'); // re-render
+};
+
+// ============================================================================
+//  v1.1.23 — Préférences notifications
+// ============================================================================
+K.openNotifPrefs = function(){
+  const prefs = lg('notif_prefs', { push:true, sound:true, vibrate:true, badge:true, preview:true, quietHours:false, quietStart:'22:00', quietEnd:'08:00' });
+  const tog = (id, val, label, desc) => `
+    <label class="card-row" style="cursor:pointer;display:flex;align-items:center;gap:10px">
+      <div style="flex:1">
+        <div style="font-weight:600">${label}</div>
+        <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">${desc}</div>
+      </div>
+      <input type="checkbox" id="np-${id}" ${val ? 'checked' : ''} style="width:44px;height:26px;cursor:pointer">
+    </label>`;
+  K._showModal('🔔 Préférences notifications', `
+    <p style="color:var(--ax-text-2);font-size:.88em">Personnalise comment Apex Chat te notifie des nouveaux messages.</p>
+    <div class="card" style="margin-top:14px">
+      ${tog('push', prefs.push, '📱 Notifications push', 'Affiche un toast à chaque message reçu')}
+      ${tog('sound', prefs.sound, '🔊 Son', 'Joue un son court (chime)')}
+      ${tog('vibrate', prefs.vibrate, '📳 Vibration', 'Vibre brièvement (iOS/Android)')}
+      ${tog('badge', prefs.badge, '🔴 Badge non lus', 'Compteur sur l\'icône app + onglet Chats')}
+      ${tog('preview', prefs.preview, '👁 Aperçu contenu', 'Affiche les premiers mots du message')}
+      ${tog('quietHours', prefs.quietHours, '🌙 Mode silencieux nocturne', 'Coupe son + vibration pendant les heures choisies')}
+    </div>
+    <div id="np-quiet-block" style="margin-top:14px;${prefs.quietHours?'':'opacity:.5;pointer-events:none'}">
+      <label class="label">⏰ Plage silencieuse (de ... à ...)</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <input type="time" id="np-quietStart" class="input" value="${esc(prefs.quietStart)}">
+        <input type="time" id="np-quietEnd" class="input" value="${esc(prefs.quietEnd)}">
+      </div>
+    </div>
+    <button class="btn btn-block" onclick="K._saveNotifPrefs()" style="margin-top:14px">💾 Sauvegarder</button>
+    <button class="btn btn-out btn-block btn-sm" onclick="K._testNotification()" style="margin-top:8px">🧪 Tester une notif</button>
+  `);
+  // Live toggle de la zone quiet hours
+  setTimeout(() => {
+    const cb = $('#np-quietHours');
+    const block = $('#np-quiet-block');
+    if(cb && block){
+      cb.addEventListener('change', () => {
+        block.style.opacity = cb.checked ? '1' : '.5';
+        block.style.pointerEvents = cb.checked ? 'auto' : 'none';
+      });
+    }
+  }, 50);
+};
+K._saveNotifPrefs = function(){
+  const get = (id) => $('#np-' + id);
+  const prefs = {
+    push: !!get('push')?.checked,
+    sound: !!get('sound')?.checked,
+    vibrate: !!get('vibrate')?.checked,
+    badge: !!get('badge')?.checked,
+    preview: !!get('preview')?.checked,
+    quietHours: !!get('quietHours')?.checked,
+    quietStart: get('quietStart')?.value || '22:00',
+    quietEnd: get('quietEnd')?.value || '08:00',
+  };
+  ls('notif_prefs', prefs);
+  toast('Préférences sauvegardées', 'ok');
+  K._closeModal();
+};
+K._testNotification = function(){
+  const prefs = lg('notif_prefs', { push:true, sound:true, vibrate:true });
+  if(prefs.vibrate && navigator.vibrate){ navigator.vibrate(50); }
+  toast('🔔 Test notification ' + (prefs.push ? '(push ON)' : '(push OFF)'), 'ok');
+};
+
+// ============================================================================
+//  v1.1.23 — Préférences confidentialité
+// ============================================================================
+K.openPrivacyPrefs = function(){
+  const prefs = lg('privacy_prefs', { readReceipts:true, onlineStatus:true, typingIndicator:true, profilePhotoVisibility:'contacts', autoDeleteAfter:0 });
+  K._showModal('🔒 Confidentialité', `
+    <p style="color:var(--ax-text-2);font-size:.88em">Contrôle qui voit quoi et comment tes messages sont gérés.</p>
+    <div class="card" style="margin-top:14px">
+      <label class="card-row" style="cursor:pointer">
+        <div style="flex:1">
+          <div style="font-weight:600">✓✓ Confirmation de lecture</div>
+          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Tes contacts voient quand tu as lu leurs messages</div>
+        </div>
+        <input type="checkbox" id="pv-readReceipts" ${prefs.readReceipts?'checked':''} style="width:44px;height:26px;cursor:pointer">
+      </label>
+      <label class="card-row" style="cursor:pointer">
+        <div style="flex:1">
+          <div style="font-weight:600">🟢 Statut en ligne</div>
+          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Affiche "en ligne" quand tu utilises l'app</div>
+        </div>
+        <input type="checkbox" id="pv-onlineStatus" ${prefs.onlineStatus?'checked':''} style="width:44px;height:26px;cursor:pointer">
+      </label>
+      <label class="card-row" style="cursor:pointer">
+        <div style="flex:1">
+          <div style="font-weight:600">⌨ Indicateur "en train d'écrire"</div>
+          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Tes contacts voient les "..." quand tu tapes</div>
+        </div>
+        <input type="checkbox" id="pv-typingIndicator" ${prefs.typingIndicator?'checked':''} style="width:44px;height:26px;cursor:pointer">
+      </label>
+    </div>
+    <div style="margin-top:14px">
+      <label class="label">🖼 Qui peut voir ta photo de profil ?</label>
+      <select id="pv-profilePhotoVisibility" class="input">
+        <option value="everyone" ${prefs.profilePhotoVisibility==='everyone'?'selected':''}>Tout le monde</option>
+        <option value="contacts" ${prefs.profilePhotoVisibility==='contacts'?'selected':''}>Mes contacts uniquement</option>
+        <option value="nobody" ${prefs.profilePhotoVisibility==='nobody'?'selected':''}>Personne</option>
+      </select>
+    </div>
+    <div style="margin-top:14px">
+      <label class="label">⏱ Auto-suppression messages</label>
+      <select id="pv-autoDeleteAfter" class="input">
+        <option value="0" ${prefs.autoDeleteAfter===0?'selected':''}>Jamais (garder messages)</option>
+        <option value="86400" ${prefs.autoDeleteAfter===86400?'selected':''}>Après 24h</option>
+        <option value="604800" ${prefs.autoDeleteAfter===604800?'selected':''}>Après 7 jours</option>
+        <option value="2592000" ${prefs.autoDeleteAfter===2592000?'selected':''}>Après 30 jours</option>
+      </select>
+    </div>
+    <p style="color:var(--ax-text-3);font-size:.78em;margin-top:14px;padding:10px;background:rgba(232,184,48,.08);border-radius:8px">
+      🛡 Le chiffrement bout-en-bout (E2E) est <strong>toujours actif</strong>. Personne, pas même nous, ne peut lire tes messages.
+    </p>
+    <button class="btn btn-block" onclick="K._savePrivacyPrefs()" style="margin-top:14px">💾 Sauvegarder</button>
+  `);
+};
+K._savePrivacyPrefs = function(){
+  const prefs = {
+    readReceipts: !!$('#pv-readReceipts')?.checked,
+    onlineStatus: !!$('#pv-onlineStatus')?.checked,
+    typingIndicator: !!$('#pv-typingIndicator')?.checked,
+    profilePhotoVisibility: $('#pv-profilePhotoVisibility')?.value || 'contacts',
+    autoDeleteAfter: parseInt($('#pv-autoDeleteAfter')?.value || '0', 10) || 0,
+  };
+  ls('privacy_prefs', prefs);
+  toast('Confidentialité sauvegardée', 'ok');
+  K._closeModal();
+};
+
+// ============================================================================
+//  v1.1.23 — Préférences apparence (thème + taille texte)
+// ============================================================================
+K.openAppearance = function(){
+  const prefs = lg('appearance_prefs', { theme:'dark', fontSize:'medium', accentColor:'gold' });
+  const themeOpt = (val, label, swatch) => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;cursor:pointer;border:1px solid ${prefs.theme===val?'var(--ax-gold)':'transparent'}">
+      <input type="radio" name="ap-theme" value="${val}" ${prefs.theme===val?'checked':''}>
+      <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:${swatch}"></span>
+      <span style="flex:1">${label}</span>
+    </label>`;
+  K._showModal('🎨 Apparence', `
+    <p style="color:var(--ax-text-2);font-size:.88em">Personnalise l'interface d'Apex Chat.</p>
+    <label class="label" style="margin-top:14px">Thème</label>
+    <div style="display:grid;gap:8px">
+      ${themeOpt('dark', '🌙 Sombre (par défaut)', '#0a0a14')}
+      ${themeOpt('light', '☀ Clair', '#f4f4f4')}
+      ${themeOpt('auto', '🔄 Auto (suit système)', 'linear-gradient(135deg,#0a0a14 50%,#f4f4f4 50%)')}
+    </div>
+    <label class="label" style="margin-top:14px">📏 Taille du texte</label>
+    <select id="ap-fontSize" class="input">
+      <option value="small" ${prefs.fontSize==='small'?'selected':''}>Petite</option>
+      <option value="medium" ${prefs.fontSize==='medium'?'selected':''}>Moyenne (défaut)</option>
+      <option value="large" ${prefs.fontSize==='large'?'selected':''}>Grande</option>
+      <option value="xl" ${prefs.fontSize==='xl'?'selected':''}>Très grande</option>
+    </select>
+    <button class="btn btn-block" onclick="K._saveAppearance()" style="margin-top:14px">💾 Appliquer</button>
+  `);
+};
+K._saveAppearance = function(){
+  const themeChecked = document.querySelector('input[name="ap-theme"]:checked');
+  const prefs = {
+    theme: themeChecked?.value || 'dark',
+    fontSize: $('#ap-fontSize')?.value || 'medium',
+    accentColor: 'gold',
+  };
+  ls('appearance_prefs', prefs);
+  K._applyAppearance(prefs);
+  toast('Apparence appliquée', 'ok');
+  K._closeModal();
+};
+K._applyAppearance = function(prefs){
+  const root = document.documentElement;
+  // Theme : dark|light|auto
+  if(prefs.theme === 'auto'){
+    const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+  } else {
+    root.setAttribute('data-theme', prefs.theme);
+  }
+  // Font size
+  const sizes = { small:'14px', medium:'16px', large:'18px', xl:'20px' };
+  root.style.fontSize = sizes[prefs.fontSize] || '16px';
+};
+// Apply au boot
+try {
+  const apPrefs = lg('appearance_prefs', null);
+  if(apPrefs && typeof K._applyAppearance === 'function'){
+    K._applyAppearance(apPrefs);
+  }
+} catch(e){ /* ignore */ }
 
 function renderContacts(app){
   app.innerHTML = `
@@ -1958,16 +2234,16 @@ function renderSettings(app){
           ${PRECONFIGURED_USERS[K.user.id]?.premium ? '<span class="tag tag-premium">⭐ Premium</span>' : ''}
         </div>
       </div>
-      <div class="card-row" onclick="alert('Phase 2 — édition profil')">
+      <div class="card-row" onclick="K.openProfile()">
         <span>👤</span><span style="flex:1">Mon profil</span><span>›</span>
       </div>
-      <div class="card-row" onclick="alert('Phase 2 — préférences notifs')">
+      <div class="card-row" onclick="K.openNotifPrefs()">
         <span>🔔</span><span style="flex:1">Notifications</span><span>›</span>
       </div>
-      <div class="card-row" onclick="alert('Phase 2 — confidentialité')">
+      <div class="card-row" onclick="K.openPrivacyPrefs()">
         <span>🔒</span><span style="flex:1">Confidentialité</span><span>›</span>
       </div>
-      <div class="card-row" onclick="alert('Phase 2 — apparence')">
+      <div class="card-row" onclick="K.openAppearance()">
         <span>🎨</span><span style="flex:1">Apparence</span><span>›</span>
       </div>
       <div class="card-row" onclick="K.openTimeCapsule()">
