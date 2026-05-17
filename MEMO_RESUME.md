@@ -1,4 +1,50 @@
-# Mémo de reprise — Apex v13.4.208 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex v13.4.209 / CMC v9.638 (2026-05-17)
+
+## 🎯 SESSION 2026-05-17 — Apex v13.4.209 : +76 tests utils-finance + soc2-compliance
+
+Kevin "Tout à 100 réel partout et 10/10 réel partout sans t'arrêter" → suite v13.4.208.
+
+### Tests ajoutés (76 NEW dans 2 nouveaux fichiers)
+
+#### utils-finance.test.ts (53 tests, NEW)
+- financeCalculate `iban_check` (5) : valide IBAN FR MOD 97, refuse trop court/long, MOD invalid, trim+upper
+- financeCalculate `ir` (4) : sous seuil = 0, tranche 11%, tranche 45%, couple 2 parts
+- financeCalculate `credit` (2) : taux 0 simple, taux 3% sur 240 mois mensualité+total
+- financeCalculate `plus_value` (3) : <6 ans pas d'abattement, ≥22 ans 100%, 10 ans 30%
+- financeCalculate type inconnu → throw
+- emailValidate (5) : vide/valide/sans @/trop long/trim+lowercase domain
+- phoneValidate (10) : FR 06.../33.../invalide, MC 8 digits/+377, intl 7-15, trop long, chars invalides
+- whatsappLink (4) : valide sans text/avec text encoded, vide throw, trop court throw
+- vatValidateEu (6) : FR/sans prefix/vide/US non-EU/XI northern ireland/whitespace
+- compoundInterest (6) : mensuel/annuel/effective_rate/principal négatif/years 0/freq clamp
+- currencyConvert (7) : NaN throw, ISO invalide error, same identity (no fetch), API success, HTTP error, no rate, network error
+
+#### soc2-compliance.test.ts (23 tests, NEW)
+- record (6) : event simple, catégorie auto-détectée (5 types), chain link prev_hash, hash unique, retention 365j, silent recovery corruption
+- list (6) : sans filter, filter category/type/uid/sinceMs/combiné
+- verifyIntegrity (4) : log vide, chain valide, tamper hash détecté + broken_at, prev_hash tampered
+- getStats (5) : total, by_category counts, last_24h, retention_days=365, log vide → 0
+- exportLog (2) : JSON valide, retourne "[]" si vide
+
+### Validation v13.4.209
+
+- **Vitest 11723/11732 PASS** (+76 vs v13.4.208, +405 cumul session)
+- **555/555 files PASS**
+- TS strict 0 ✓
+- ESLint 0/0 ✓
+- Build prod OK (7.12s)
+- 5-way version sync OK
+- 0 APEX_BOOT_NONCE literal
+- 0 régression
+
+### Cumul session 2026-05-16/17 (v13.4.197 → v13.4.209, 13 RELEASES SANS INTERRUPTION)
+
+- v13.4.197-208 : voir sessions précédentes
+- v13.4.209 : +76 utils-finance + soc2-compliance
+
+**+405 tests** au total (11318 → 11723). 0 régression. 0 ESLint. 0 estimation.
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.208 : +49 tests services jamais testés (autonomous-watch, sentinel-auto-repair, notification-actions)
 
