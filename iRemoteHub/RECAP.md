@@ -202,34 +202,36 @@ Demande utilisateur récurrente intégrée :
 | Bridge Node.js | ✅ Complet (12 adapters + IA + clone) |
 | Documentation | ✅ Complète (14 fichiers) |
 | Service Worker | ✅ Complet |
-| Manifest PWA | ✅ Complet |
-| Apple Shortcuts (guides) | ✅ Complets (à exporter en `.shortcut`) |
-| Module IA | ✅ Complet |
-| Module Clone | ✅ Complet (avec garde-fous légaux) |
+| Manifest PWA | ✅ Complet (SVG + PNG 192/512/maskable) |
+| Icônes | ✅ icon.svg + 3 PNG générés (Node Buffer pur) |
+| Apple Shortcuts (guides) | ✅ Complets (à exporter en `.shortcut` via iPhone) |
+| Module IA | ✅ Complet (Claude API + KB locale + tools) |
+| Module Clone | ✅ Complet (garde-fous légaux + BLOCKED_FORMATS) |
 | Audits experts 360° | ✅ 4 audits + fixes P0 |
 | Anti-timeout config | ✅ Appliqué globalement |
-| Doc intégration APEX | ✅ Complète |
-| **`index.html` PWA** | ⚠ **Reste à écrire** |
-| Apple Shortcuts `.shortcut` binaires | ⚠ Reste à exporter via iPhone |
-| Tests end-to-end | ⚠ Reste à faire (start bridge + ouvrir PWA) |
-| Déploiement GitHub Pages | ⚠ Auto sur push de `index.html` |
+| Doc intégration APEX | ✅ Complète + API publique window.iRemoteHub |
+| **`index.html` PWA** | ✅ **Complet** (48 KB, 5 thèmes, 4 modes, scanner, remote, macros, clone, IA, réglages) |
+| Validation syntaxe | ✅ JS PWA + 27 fichiers bridge + JSONs |
+| Apple Shortcuts `.shortcut` binaires | ⚠ Reste à exporter via iPhone (action manuelle utilisateur) |
+| Tests end-to-end live | ⚠ Reste à faire (start bridge sur Termux/Pi + ouvrir PWA) |
+| Déploiement GitHub Pages | ⚠ Auto sur push (configuration repo) |
 
 ---
 
-## 🎯 Reste à faire pour v0.1 "terminé"
+## 🎯 Reste à faire (actions utilisateur — pas Claude)
 
-1. **Écrire `index.html`** (PWA monofichier, ~40 KB cible) :
-   - Header + topbar + nav bottom (responsive).
-   - 5 thèmes (Casino, Nuit, Jour, Arcade, Pro) via CSS variables.
-   - Vues : Accueil (favoris+macros), Scanner (liste), Device (remote), Clone (bibliothèque), IA, Paramètres.
-   - Bridge connection (WS + REST).
-   - Macro recorder (capture actions → rejouer).
-   - NFC pairing (Web NFC Android).
-   - Mode embedded APEX (postMessage + window.iRemoteHub global).
-2. Tester bridge + PWA en local.
-3. Pousser sur GitHub Pages.
-4. Exporter `.shortcut` Apple via iPhone (manuel).
-5. → Intégrer dans APEX AI.
+1. Côté utilisateur :
+   - Installer le bridge sur Termux (`pkg install nodejs-lts && cd bridge && npm install && node server.js`).
+   - Scanner le QR token avec la PWA (Réglages → Bridge).
+   - Importer les Raccourcis Apple via iCloud (sur iPhone).
+2. Tests live possibles :
+   - PWA : ouvrir `index.html` localement (`python3 -m http.server` ou GitHub Pages).
+   - Bridge : lancer + faire un scan, vérifier détection Sonos/TV/etc.
+3. Intégration APEX AI :
+   - Voir `docs/APEX-INTEGRATION.md`.
+   - APEX monte iRemoteHub en iframe avec `?embedded=1`.
+   - Communication via `postMessage` (commandes `runMacro`, `scanNow`, `setTheme`, etc.).
+   - `window.iRemoteHub` exposé pour APEX.
 
 ---
 
