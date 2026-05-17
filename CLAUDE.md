@@ -1,6 +1,55 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-15 (Apex v13.4.42 / CMC v9.648).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-16 (Apex v13.4.201 / CMC v9.617).
+
+---
+
+## 🚫 RÈGLE ABSOLUE — JAMAIS DEMANDER UN CLIC ADMIN GITHUB UI À KEVIN (2026-05-16, ABSOLUE)
+
+> **"Parle simplement, tout autonome, automatisé, trouve des solutions pour faire à ma place toujours tout au max. Sinon 1 clic. Pareil tous projets."** — Kevin 2026-05-16
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire sur tout** — Apex, CMCteams, tous projets futurs Kevin :
+
+### 1. INTERDICTION ABSOLUE de demander à Kevin
+
+- ❌ "Va sur github.com → onglet Actions → clique Run workflow"
+- ❌ "Ouvre Settings → Secrets → ajoute X"
+- ❌ "Clique sur Approve dans la PR"
+- ❌ "Tape cette commande dans un terminal"
+- ❌ Tout flow > 1 clic dans une interface admin externe
+
+### 2. Solutions à trouver SYSTÉMATIQUEMENT à la place
+
+Avant d'écrire "tu dois cliquer X" à Kevin, je DOIS me demander :
+
+1. **Auto-trigger via push** : créer un workflow qui se déclenche sur `push` d'un fichier marker → zéro clic Kevin
+2. **Cron schedule** : `schedule: cron:` dans GitHub Actions → exécution automatique périodique
+3. **GitHub API depuis un workflow** : `permissions: actions: write` + `github-script` pour dispatch un autre workflow
+4. **Bouton 1-clic dans l'app** : si action vraiment requise → modal Apex avec UN bouton "Lancer" qui call l'API
+5. **Sentinelle auto-fix** : si problème détecté → la sentinelle corrige toute seule
+
+### 3. Cas concret — apex-execute workflow_dispatch
+
+Mauvais (violation) : "Action Kevin requise : va sur GitHub Actions, clique Run workflow apex-execute.yml task=run_test"
+
+Bon (autonome) : créer `.github/workflows/apex-execute-auto-trigger.yml` qui dispatch `apex-execute.yml` automatiquement au prochain push de fichier Apex critique. Zéro clic Kevin. Le test se lance tout seul, le résultat arrive dans les commits.
+
+### 4. Pareil pour TOUS les projets
+
+CMCteams, Apex, e-KDMC, IA-KDMC, Télécommande, CrackPass, futurs projets : aucune action manuelle Kevin sauf :
+- KYC bancaire (papiers signés physiques)
+- Recharge CB (sa carte)
+- Création compte Apple/Google primaire
+- Signature physique
+- Choix éditorial subjectif
+
+Pour TOUT le reste → automatisation obligatoire.
+
+### 5. Test mental avant CHAQUE message à Kevin
+
+> *"Est-ce que je suis en train de lui demander de faire quelque chose qu'un workflow ou une sentinelle pourrait faire à sa place ? Si oui, je code le workflow, je ne lui demande pas."*
+
+S'applique à : Claude Code (moi-même priorité absolue), Apex IA, tous projets.
 
 ---
 
