@@ -4610,26 +4610,14 @@ function teamForMonth(emp,y,m,opts){
   if(!emp)return null;
   var key=y+"-"+m;
   var strict=opts&&opts.strict;
-  // v9.66 robustesse : fallback sécurisé si teamHistory corrompu
-  try{if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];}catch(e){return strict?null:(emp.team||"?");}
-  if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];
-  // Chercher le teamHistory le plus récent antérieur à ce mois
-  if(emp.teamHistory){
-    var target=y*12+m;
-    var best=null,bestMo=-Infinity;
-    Object.keys(emp.teamHistory).forEach(function(k){
-      var p=k.split("-"),yy=parseInt(p[0]),mm=parseInt(p[1]);
-      var mo=yy*12+mm;
-      if(mo<=target&&mo>bestMo){bestMo=mo;best=emp.teamHistory[k];}
-    });
-    if(best)return best;
-  }
-  // v9.647 (Kevin "on change tous d'équipe chaque mois") : mode strict
-  // retourne null si pas de teamHistory connu → empêche fallback emp.team
-  // DEF_EMP qui est l'ancienne équipe historique (Kevin "anciennes équipes
-  // comme avant"). Le caller décide d'afficher "?" ou de filtrer l'emp.
+  // v9.685 (Kevin 2026-05-18 "Pas de mémoire équipe. Jamais") :
+  // SUPPRIMÉ : fallback historique + fallback emp.team. Si pas teamHistory[key]
+  // pour ce mois précis → "?" (mode normal) ou null (strict).
+  try{
+    if(emp.teamHistory&&emp.teamHistory[key])return emp.teamHistory[key];
+  }catch(e){return strict?null:"?";}
   if(strict)return null;
-  return emp.team;
+  return "?";
 }
 // v9.647 — Helper : un emp a-t-il une présence pour ce mois (data OU team assignée
 // par import) ? Si non, devrait être masqué des vues centrées sur le mois courant.
@@ -4946,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.684";
+var APP_VER="v9.685";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8695,14 +8683,15 @@ function cmcGetImportVersion(y,m){
 }
 // Helper : badge HTML "v2" pour afficher en header de vue. Vide si v1 ou pas import.
 function cmcVersionBadgeHTML(y,m,opts){
+  // v9.685 Kevin "Afficher version entière avec V" : TOUJOURS visible dès qu'import existe.
   var v=cmcGetImportVersion(y,m);
-  if(v<=1)return ""; // pas de badge pour v1 (cas normal)
+  if(v<=0)return ""; // aucun import → pas de badge
   opts=opts||{};
-  var size=opts.size||"small"; // "small" | "large"
+  var size=opts.size||"small";
   var style=size==="large"
     ?"display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:800;color:#c9a227;background:linear-gradient(135deg,rgba(201,162,39,.22),rgba(201,162,39,.10));border:1.5px solid rgba(201,162,39,.5);border-radius:8px;padding:4px 10px;margin-left:8px"
     :"display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:#c9a227;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:6px;padding:2px 7px;margin-left:6px";
-  return '<span title="Version d\'import courante — '+v+'ème PDF collé pour ce mois" style="'+style+'">📚 v'+v+'</span>';
+  return '<span title="Version import courante pour ce mois" style="'+style+'">📚 V'+v+'</span>';
 }
 // ── Accès par employé (v9.58) ──────────────────────────────────────────────
 // A.access[uid] = { mode:"auto"|"general"|"personal", blocked:[...] }
@@ -10494,21 +10483,20 @@ function dc(){
   if(_dcRunning)return; // Protection anti-boucle
   _dcRunning=true;
   try{
-  // v9.676 (Kevin "Les équipes ne doivent si jamais été gardé en mémoire") :
-  // Auto-détecte les équipes du mois courant si overrides présent mais aucune
-  // teamHistory[key] en session. Garantit que les équipes sont TOUJOURS
-  // recalculées depuis A.overrides[key] (jamais sur historique stale).
+  // v9.685 (Kevin 2026-05-18 "Pas de mémoire équipe. Jamais") :
+  // À CHAQUE render, WIPE teamHistory[key] + familyHistory[key] du mois courant
+  // + cmc_team_mirror_<key>, puis re-détecte depuis A.overrides[key] frais.
+  // Zéro persistence entre 2 renders. Coût ~5ms / render (négligeable).
   try{
     var _km=A.year+"-"+A.month;
-    if(A.overrides && A.overrides[_km] && Object.keys(A.overrides[_km]).length>3){
-      var _anyTh=false;
-      for(var _i=0;_i<A.employees.length&&!_anyTh;_i++){
-        var _emp=A.employees[_i];
-        if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])_anyTh=true;
-      }
-      if(!_anyTh && typeof _cmcDetectTeamsByRestPattern==="function"){
-        try{_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
-      }
+    A.employees.forEach(function(_emp){
+      if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])delete _emp.teamHistory[_km];
+      if(_emp&&_emp.familyHistory&&_emp.familyHistory[_km])delete _emp.familyHistory[_km];
+    });
+    try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
+    if(A.overrides && A.overrides[_km] && Object.keys(A.overrides[_km]).length>3
+       && typeof _cmcDetectTeamsByRestPattern==="function"){
+      try{_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
     }
   }catch(_dcDetErr){}
   // v9.183 — Appliquer deep-link URL une seule fois après login
@@ -11821,23 +11809,32 @@ function _agentHorairesCoverage(){
     var y=A.year,m=A.month;
     var ov=gpl(y,m)||{};
     var days=new Date(y,m+1,0).getDate();
+    // v9.685 Kevin "Il cherche encore les cadres alors que c'est planning employé"
+    // Skip selon scope dernier import (V1=skip cadres, V2=skip emps).
+    var _key=y+"-"+m;
+    var _impType=null;
+    try{var _impRec=lg("cmc_last_import_type_"+_key,null);_impType=_impRec&&_impRec.type;}catch(_){}
+    var _skipCadres=(_impType==="employees");
+    var _skipEmps=(_impType==="cadres");
     var empty=[],byFam={cadres:[],bj:[],roulettes:[],baccara:[],cmc:[]};
     A.employees.forEach(function(e){
       if(!isEmpActive(e,y,m))return;
       if(e.visitor)return;
+      var fam=e.family||"bj";
+      if(_skipCadres && fam==="cadres")return;
+      if(_skipEmps && fam!=="cadres")return;
       var codes=ov[e.id]||{};
       var nCodes=0;
       for(var d=1;d<=days;d++)if(codes[d])nCodes++;
       if(nCodes===0){
-        var fam=e.family||"bj";
         var entry={uid:e.id,name:e.name,team:e.team,family:fam,role:e.role||null,chef:!!e.chef};
         empty.push(entry);
         if(byFam[fam])byFam[fam].push(entry);
       }
     });
     if(empty.length){
-      // Criticité : cadres sans horaire = P0 (bug historique inspecteurs), reste = P1
-      var sev=byFam.cadres.length>0?"err":"warn";
+      // v9.685 Kevin "ça ne bloque pas si emp manquant, juste info admin" : TOUJOURS warn.
+      var sev="warn";
       var summary=[];
       ["cadres","bj","roulettes","baccara","cmc"].forEach(function(f){
         if(byFam[f].length)summary.push(f+":"+byFam[f].length);
@@ -34138,9 +34135,10 @@ function _autoVerifyAfterImport(iy,im){
   zone.innerHTML=html;
   // === 13. TOAST RÉSUMÉ ===
   var fixStr=(autoFixed.orphans||autoFixed.outOfBounds)?" \u00b7 \ud83d\udd27 "+(autoFixed.orphans+autoFixed.outOfBounds)+" auto-corrig\u00e9":"";
-  if(health==="perfect")toast("\u2705 Import parfait : "+empCount+" emps, "+cellCount+" cellules"+fixStr);
-  else if(health==="warn")toast("\u26a0 Import OK mais "+(unknownCount?unknownCount+" codes inconnus ":"")+(cohIssues.length?cohIssues.length+" issues m\u00e9tier ":"")+(crit?crit+" conflits":"")+fixStr,"warn");
-  else toast("\u274c Import \u00e0 v\u00e9rifier : "+(crit?crit+" conflits ":"")+(unknownCount?unknownCount+" codes ":"")+(empsMissing.length?empsMissing.length+" emps absents":"")+fixStr,"err");
+  // v9.685 Kevin "\u00e7a ne bloque pas s'il ne retrouve pas tous les emps, juste visuel/notif admin"
+  if(health==="perfect")toast("\u2705 Import OK : "+empCount+" emps, "+cellCount+" cellules"+fixStr);
+  else if(health==="warn")toast("\u2705 Import OK \u00b7 "+(unknownCount?unknownCount+" codes inconnus ":"")+(cohIssues.length?cohIssues.length+" issues ":"")+(crit?crit+" conflits ":"")+"(info admin)"+fixStr,"warn");
+  else toast("\u2705 Import OK avec anomalies non bloquantes \u00b7 "+(crit?crit+" conflits ":"")+(unknownCount?unknownCount+" codes ":"")+(empsMissing.length?empsMissing.length+" emps absents":"")+" \u2014 voir rapport"+fixStr,"warn");
   // === 14. RE-RENDER pour refléter les auto-fixes ===
   if(autoFixed.orphans||autoFixed.outOfBounds){setTimeout(function(){if(typeof dc==="function")dc();},100);}
 }
