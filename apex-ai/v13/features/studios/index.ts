@@ -16,6 +16,7 @@
  * - Tools IA wirables (apex-tools dispatch)
  */
 
+import { escapeAttr, escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 
 export type StudioId =
@@ -98,14 +99,14 @@ class StudiosHub {
     }
     /* Render UI minimaliste universelle (chaque studio extensible Jet 9) */
     root.innerHTML = `
-      <div class="ax-studio" data-studio="${def.id}">
+      <div class="ax-studio" data-studio="${escapeAttr(def.id)}">
         <header class="ax-studio-head">
-          <span class="ax-studio-emoji">${def.emoji}</span>
-          <h2>${def.label}</h2>
+          <span class="ax-studio-emoji">${escapeHtml(def.emoji)}</span>
+          <h2>${escapeHtml(def.label)}</h2>
         </header>
-        <p class="ax-studio-desc">${def.description}</p>
+        <p class="ax-studio-desc">${escapeHtml(def.description)}</p>
         <div class="ax-studio-caps">
-          ${def.capabilities.map((c) => `<span class="ax-cap">${c}</span>`).join(' ')}
+          ${def.capabilities.map((c) => `<span class="ax-cap">${escapeHtml(c)}</span>`).join(' ')}
         </div>
         <div class="ax-studio-actions">
           <button class="ax-btn-primary" data-action="start">Commencer</button>
@@ -136,10 +137,10 @@ export const studiosHub = new StudiosHub();
  */
 export function render(root: HTMLElement): void {
   const cards = STUDIOS.map((s) => `
-    <div class="ax-studio-card" data-studio="${s.id}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;transition:transform 0.15s">
-      <div class="ax-studio-card-emoji" style="font-size:36px">${s.emoji}</div>
-      <div class="ax-studio-card-label" style="font-weight:700;color:#c9a227;margin-top:8px">${s.label}</div>
-      <div class="ax-studio-card-desc" style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${s.description}</div>
+    <div class="ax-studio-card" data-studio="${escapeAttr(s.id)}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;transition:transform 0.15s">
+      <div class="ax-studio-card-emoji" style="font-size:36px">${escapeHtml(s.emoji)}</div>
+      <div class="ax-studio-card-label" style="font-weight:700;color:#c9a227;margin-top:8px">${escapeHtml(s.label)}</div>
+      <div class="ax-studio-card-desc" style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${escapeHtml(s.description)}</div>
       ${s.premium ? '<span class="ax-badge-premium" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-top:8px;display:inline-block">PRO</span>' : ''}
     </div>
   `).join('');
@@ -189,9 +190,9 @@ export function render(root: HTMLElement): void {
         if (detail) {
           detail.innerHTML = `
             <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:24px;text-align:center">
-              <div style="font-size:64px">${studio.emoji}</div>
-              <h2 style="color:#c9a227;margin:8px 0">${studio.label}</h2>
-              <p style="color:var(--ax-text-dim);margin:0">${studio.description}</p>
+              <div style="font-size:64px">${escapeHtml(studio.emoji)}</div>
+              <h2 style="color:#c9a227;margin:8px 0">${escapeHtml(studio.label)}</h2>
+              <p style="color:var(--ax-text-dim);margin:0">${escapeHtml(studio.description)}</p>
               <p style="margin-top:16px;font-size:13px;color:#888">Studio en cours de développement (Sprint 5).</p>
             </div>
           `;

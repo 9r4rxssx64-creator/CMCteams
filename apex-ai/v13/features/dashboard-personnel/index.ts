@@ -17,6 +17,7 @@
  * Stats live à chaque mount. Touch targets 44px Apple HIG.
  */
 
+import { escapeAttr, escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 
@@ -212,7 +213,7 @@ export function render(rootEl: HTMLElement): void {
     <div style="max-width:900px;margin:0 auto;padding:16px 12px;color:#f1f5f9">
       <div style="margin-bottom:16px">
         <h1 style="font-size:22px;margin:0 0 4px;font-weight:700;color:#f1f5f9">
-          🗂 Dashboard ${userName}
+          🗂 Dashboard ${escapeHtml(userName)}
         </h1>
         <p style="color:#94a3b8;font-size:13px;margin:0">
           Vue centralisée — tout ce qu'Apex sait de toi en un coup d'œil. Tap une card pour drill-down.
@@ -223,10 +224,10 @@ export function render(rootEl: HTMLElement): void {
         ${cards.map((c) => `
           <button
             type="button"
-            data-route="${c.route}"
+            data-route="${escapeAttr(c.route)}"
             style="
               background:#0f172a;
-              border:1px solid ${c.color}33;
+              border:1px solid ${escapeAttr(c.color)}33;
               border-radius:12px;
               padding:14px;
               text-align:left;
@@ -236,13 +237,13 @@ export function render(rootEl: HTMLElement): void {
               touch-action:manipulation;
               transition:transform 80ms,border-color 120ms;
             "
-            onmouseover="this.style.borderColor='${c.color}'"
-            onmouseout="this.style.borderColor='${c.color}33'"
+            onmouseover="this.style.borderColor='${escapeAttr(c.color)}'"
+            onmouseout="this.style.borderColor='${escapeAttr(c.color)}33'"
           >
-            <div style="font-size:24px;line-height:1">${c.emoji}</div>
-            <div style="font-size:24px;font-weight:700;color:${c.color};margin-top:6px;line-height:1">${c.count}</div>
-            <div style="font-size:13px;font-weight:600;margin-top:6px;color:#e2e8f0">${c.title}</div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:4px;line-height:1.3">${c.hint}</div>
+            <div style="font-size:24px;line-height:1">${escapeHtml(c.emoji)}</div>
+            <div style="font-size:24px;font-weight:700;color:${escapeAttr(c.color)};margin-top:6px;line-height:1">${escapeHtml(String(c.count))}</div>
+            <div style="font-size:13px;font-weight:600;margin-top:6px;color:#e2e8f0">${escapeHtml(c.title)}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;line-height:1.3">${escapeHtml(c.hint)}</div>
           </button>
         `).join('')}
       </div>
