@@ -195,6 +195,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .msg-status{font-size:.9em;margin-left:4px;opacity:.7;letter-spacing:-1px}
 .msg-edited{font-size:.85em;margin-left:4px;opacity:.6;font-style:italic}
 .msg.deleted-tombstone{opacity:.55;font-style:italic}
+.forwarded-mark{font-size:.72em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px;letter-spacing:.3px}
 .translate-hint{display:inline-block;margin-top:6px;font-size:.72em;color:var(--ax-blue);
   background:rgba(106,138,255,.1);border:1px solid rgba(106,138,255,.3);
   border-radius:10px;padding:3px 8px;cursor:pointer;transition:all .15s}
@@ -300,7 +301,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.49';
+const __APEX_CHAT_VERSION__ = 'v1.1.50';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -381,7 +382,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.49</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.50</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -395,7 +396,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.49</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.50</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1527,6 +1528,10 @@ K._openReactionPicker = function(msgId){
       actions.push(`<button class="btn btn-out btn-sm" onclick="K._openEditMsg('${esc(msgId)}')">✏️ Modifier (15 min)</button>`);
     }
   }
+  // v1.1.50 — Forward (toujours dispo si message a du contenu)
+  if(msg && (hasText || msg.image_data || msg.voice_data)){
+    actions.push(`<button class="btn btn-out btn-sm" onclick="K._openForwardMenu('${esc(msgId)}')">↗ Transférer</button>`);
+  }
   // v1.1.49 — Delete (toujours dispo : "pour moi" sinon "pour tout le monde" si mien)
   if(msg){
     actions.push(`<button class="btn btn-out btn-sm" style="color:#e63946;border-color:#e63946" onclick="K._openDeleteMenu('${esc(msgId)}')">🗑 Supprimer</button>`);
@@ -2158,6 +2163,7 @@ function renderChat(app){
         const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
         return `
         <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
+          ${m.forwarded ? `<div class="forwarded-mark" title="Transféré depuis ${esc(m.forwarded_from_conv || '')}">↗ Transféré</div>` : ''}
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
@@ -3775,6 +3781,65 @@ K._openDeleteMenu = function(msgId){
       <button class="btn btn-out btn-block" onclick="K._closeModal()">↩ Annuler</button>
     </div>
   `);
+};
+
+// ============================================================================
+//  v1.1.50 — Forward message vers autre conversation
+// ============================================================================
+K._openForwardMenu = function(msgId){
+  const conv = K.viewData;
+  if(!conv || !msgId) return;
+  const msgs = K.messages[conv.id] || [];
+  const m = msgs.find(x => x.id === msgId);
+  if(!m){ toast('Message introuvable', 'warn'); return; }
+  const targets = (K.conversations || []).filter(c => c.id !== conv.id);
+  if(targets.length === 0){ toast('Aucune autre conversation', 'warn'); return; }
+  const preview = m.text || (m.image_data ? '📷 Image' : (m.voice_data ? '🎙️ Vocal' : '(vide)'));
+  K._showModal('↗ Transférer vers', `
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:14px;font-size:.88em;color:var(--ax-text-2)">
+      <strong>Message :</strong><br><em>${esc(preview.slice(0, 200))}</em>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.82em;margin-bottom:8px">Choisir la conversation destination :</p>
+    <div style="max-height:50vh;overflow-y:auto;display:grid;gap:6px">
+      ${targets.map(t => `
+        <div onclick="K._doForward('${esc(msgId)}','${esc(t.id)}')"
+             style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:32px;height:32px">${esc((t.name || t.pseudo || '?')[0].toUpperCase())}</div>
+          <div style="flex:1"><div style="font-weight:600">${esc(t.name || t.pseudo || 'Sans nom')}</div></div>
+          <span>↗</span>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+K._doForward = function(srcMsgId, targetConvId){
+  const srcConv = K.viewData;
+  if(!srcConv || !srcMsgId || !targetConvId) return;
+  const srcMsgs = K.messages[srcConv.id] || [];
+  const srcMsg = srcMsgs.find(x => x.id === srcMsgId);
+  if(!srcMsg){ toast('Message source introuvable', 'warn'); return; }
+  const targetConv = K.conversations?.find(c => c.id === targetConvId);
+  if(!targetConv){ toast('Destination introuvable', 'warn'); return; }
+  const fwdMsg = {
+    id: 'm_fwd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    from: K.user.id,
+    text: srcMsg.text || '',
+    image_data: srcMsg.image_data,
+    alt: srcMsg.alt,
+    voice_data: srcMsg.voice_data,
+    voice_text: srcMsg.voice_text,
+    ts: Date.now(),
+    forwarded: true,
+    forwarded_from_conv: srcConv.name || srcConv.pseudo || '',
+    encrypted: false,
+  };
+  K.messages = K.messages || {};
+  K.messages[targetConvId] = K.messages[targetConvId] || [];
+  K.messages[targetConvId].push(fwdMsg);
+  ls('messages_' + targetConvId, K.messages[targetConvId]);
+  K._closeModal && K._closeModal();
+  toast(`↗ Transféré à ${targetConv.name || targetConv.pseudo}`, 'ok');
 };
 
 K._deleteMsg = function(msgId, scope){
@@ -6363,7 +6428,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.49"
+        data-version="v1.1.50"
         data-color="#6a8aff"
         defer></script>
 </body>
