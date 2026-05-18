@@ -156,6 +156,46 @@ describe('sw-handlers — handleFetch routing', () => {
     expect(r.body).toBe('ok:https://api.anthropic.com/v1/x');
   });
 
+  // v1.1.35 — règle Kevin "MAJ auto forcée" : version-check URLs DOIVENT bypass SW cache
+  it('version-check URL avec ?_v= → skip SW cache, fetch direct', async () => {
+    deps.fetch = vi.fn(async (req) => new MockResponse('fresh-from-network', { status: 200 }));
+    const event = { request: new MockRequest('https://x.com/index.html?_v=1234567890') };
+    const r = await sw.handleFetch(event, deps);
+    expect(deps.fetch).toHaveBeenCalled();
+    expect(r.body).toBe('fresh-from-network');
+    // PAS de mise en cache (sinon next request retournerait du stale)
+    const swrCache = deps.caches.stores.get(sw.RUNTIME_CACHE);
+    expect(swrCache?.get?.('https://x.com/index.html?_v=1234567890')).toBeUndefined();
+  });
+
+  it('version-check URL avec ?_forceupd= → skip SW cache, fetch direct', async () => {
+    deps.fetch = vi.fn(async () => new MockResponse('fresh-forced', { status: 200 }));
+    const event = { request: new MockRequest('https://x.com/index.html?_forceupd=99') };
+    const r = await sw.handleFetch(event, deps);
+    expect(r.body).toBe('fresh-forced');
+  });
+
+  it('version-check URL avec &_v= (param secondaire) → skip aussi', async () => {
+    deps.fetch = vi.fn(async () => new MockResponse('skip-secondary', { status: 200 }));
+    const event = { request: new MockRequest('https://x.com/index.html?lang=fr&_v=ts') };
+    const r = await sw.handleFetch(event, deps);
+    expect(r.body).toBe('skip-secondary');
+  });
+
+  it('non-GET (POST) → fetch direct sans cache', async () => {
+    deps.fetch = vi.fn(async () => new MockResponse('post-result', { status: 200 }));
+    const event = {
+      request: {
+        url: 'https://x.com/api/post',
+        method: 'POST',
+        mode: 'cors',
+      },
+    };
+    const r = await sw.handleFetch(event, deps);
+    expect(deps.fetch).toHaveBeenCalled();
+    expect(r.body).toBe('post-result');
+  });
+
   it('API host fail → 503 offline JSON', async () => {
     deps.fetch = vi.fn(async () => { throw new Error('netfail'); });
     const event = { request: new MockRequest('https://api.anthropic.com/v1/x') };
