@@ -1175,7 +1175,7 @@ function speakViaWebSpeech(text: string, voice: Voice, options: SpeakOptions): S
 }
 
 /* v13.3.73 helpers — différenciation voix Web Speech (sans casser API existante). */
-function deriveDefaultsFromId(id: string): { pitch: number; rate: number } {
+export function deriveDefaultsFromId(id: string): { pitch: number; rate: number } {
   const lower = id.toLowerCase();
   /* v13.4.212 (règle Kevin 2026-05-18 "voix RÉELLEMENT différentes") :
    * Match par ID EXACT en priorité avec pitch/rate très distincts,
