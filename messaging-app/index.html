@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.67';
+const __APEX_CHAT_VERSION__ = 'v1.1.68';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.67</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.68</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.67</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.68</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,6 +870,62 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.68 — Block / unblock contacts (sécurité harassment)
+// ============================================================================
+K._isBlocked = function(peerId){
+  if(!peerId) return false;
+  return (lg('blocked_users', []) || []).includes(peerId);
+};
+
+K._blockUser = function(peerId, peerName){
+  if(!peerId) return;
+  if(!confirm(`Bloquer ${peerName || 'cet utilisateur'} ?\n\nIl ne pourra plus t'envoyer de messages.\nTes messages ne lui parviendront plus.`)) return;
+  const blocked = lg('blocked_users', []);
+  if(!blocked.includes(peerId)) blocked.push(peerId);
+  ls('blocked_users', blocked);
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'block_user', target_id: peerId })); } catch(_) {}
+  }
+  K._closeModal && K._closeModal();
+  K.render();
+  toast('🚫 Utilisateur bloqué', 'ok');
+};
+
+K._unblockUser = function(peerId){
+  if(!peerId) return;
+  const blocked = lg('blocked_users', []);
+  ls('blocked_users', blocked.filter(id => id !== peerId));
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'unblock_user', target_id: peerId })); } catch(_) {}
+  }
+  K._closeModal && K._closeModal();
+  K.render();
+  toast('✅ Utilisateur débloqué', 'ok');
+};
+
+K._viewBlockedList = function(){
+  const blocked = lg('blocked_users', []);
+  const peerNames = lg('peer_names_cache', {});
+  K._showModal('🚫 Utilisateurs bloqués', blocked.length === 0 ? `
+    <p style="text-align:center;color:var(--ax-text-3);padding:20px">Aucun utilisateur bloqué.</p>
+    <p style="font-size:.78em;color:var(--ax-text-3);text-align:center">Bloquer depuis chat : ⋯ → Bloquer.</p>
+  ` : `
+    <div style="max-height:60vh;overflow-y:auto">
+      ${blocked.map(id => `
+        <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:36px;height:36px;background:rgba(230,57,70,.2);color:#e63946">🚫</div>
+          <div style="flex:1">
+            <div style="font-weight:600">${esc(peerNames[id] || id.slice(0, 12))}</div>
+            <div style="font-size:.72em;color:var(--ax-text-3)">${esc(id.slice(0, 18))}...</div>
+          </div>
+          <button class="btn btn-out btn-sm" onclick="K._unblockUser('${esc(id)}')">Débloquer</button>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+// ============================================================================
 //  v1.1.67 — Custom status / about (bio + emoji presence WhatsApp-style)
 // ============================================================================
 K._STATUS_PRESETS = [
@@ -959,6 +1015,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._toggleConvMuted('${esc(convId)}')">${conv.muted ? '🔔 Réactiver notifs' : '🔕 Mettre en muet'}</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvArchived('${esc(convId)}')">${conv.archived ? '📤 Désarchiver' : '📦 Archiver'}</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
+      ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
     </div>
   `);
 };
@@ -1147,7 +1204,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.67',
+    version: 'v1.1.68',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3567,6 +3624,11 @@ async function _handleWsMessage(data, convId){
       // Server accepts connection
       break;
     case 'message':
+      // v1.1.68 : drop si sender bloqué
+      if(K._isBlocked && K._isBlocked(data.sender_id)){
+        console.log('[ws] message dropped from blocked user', data.sender_id);
+        break;
+      }
       // Nouveau message reçu
       let decryptedText = '(message chiffré)';
       try{
@@ -4420,6 +4482,8 @@ try {
 //  v1.1.24 — Notification incoming message (câble notif_prefs au runtime)
 // ============================================================================
 K._notifyIncoming = function(convId, msg){
+  // v1.1.68 : si sender bloqué → skip total (msg pas affiché non plus côté serveur futur)
+  if(msg && K._isBlocked && K._isBlocked(msg.from)) return;
   // v1.1.66 : respect conv.muted (skip totalement si muet)
   const conv = (K.conversations || []).find(c => c.id === convId);
   if(conv && conv.muted) return;
@@ -5645,6 +5709,9 @@ function renderSettings(app){
       </div>
       <div class="card-row" onclick="K._openMyStatus()">
         <span>💬</span><span style="flex:1">Mon statut${(()=>{ const s=lg('my_status',''); return s?` <span style="font-size:.75em;color:var(--ax-text-3)">— ${esc(s.slice(0,30))}</span>`:''; })()}</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._viewBlockedList()">
+        <span>🚫</span><span style="flex:1">Utilisateurs bloqués${(()=>{ const b=lg('blocked_users',[]); return b.length?` <span style="font-size:.75em;color:var(--ax-text-3)">(${b.length})</span>`:''; })()}</span><span>›</span>
       </div>
       <div class="card-row" onclick="K._openThemePicker()">
         <span>🎨</span><span style="flex:1">Thème + couleur d'accent</span><span>›</span>
@@ -7727,7 +7794,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.67"
+        data-version="v1.1.68"
         data-color="#6a8aff"
         defer></script>
 </body>
