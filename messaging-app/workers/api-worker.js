@@ -2488,6 +2488,150 @@ export async function handleAiTranslate(request, env) {
 }
 
 // ============================================================================
+//  v1.1.28 — POST /api/ai/voice-transcribe : audio → texte (Whisper Groq)
+//  Input : multipart/form-data avec audio file (mp3/m4a/webm/ogg/wav, max 25MB)
+//  Output : { ok, text, language, duration_s, provider }
+// ============================================================================
+export async function handleAiVoiceTranscribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.GROQ_API_KEY) return err('Groq Whisper non configuré (GROQ_API_KEY manquant)', 503);
+
+  // Récupère audio binary depuis multipart
+  let audioBlob;
+  let audioFilename = 'audio.webm';
+  const ct = request.headers.get('content-type') || '';
+  try {
+    if (ct.includes('multipart/form-data')) {
+      const form = await request.formData();
+      const f = form.get('audio') || form.get('file');
+      if (!f || !(f instanceof File)) return err('Fichier audio manquant (field "audio")');
+      audioBlob = f;
+      audioFilename = f.name || audioFilename;
+    } else if (ct.includes('audio/') || ct.includes('application/octet-stream')) {
+      // Binary direct dans body
+      const buf = await request.arrayBuffer();
+      audioBlob = new Blob([buf], { type: ct });
+    } else {
+      return err('Content-Type doit être multipart/form-data ou audio/*');
+    }
+  } catch (e) {
+    return err('Erreur parsing body : ' + e.message);
+  }
+
+  if (!audioBlob || audioBlob.size === 0) return err('Audio vide');
+  if (audioBlob.size > 25 * 1024 * 1024) return err('Audio trop gros (max 25 MB)');
+
+  // Forward vers Groq Whisper API (audio/transcriptions, modèle whisper-large-v3)
+  try {
+    const groqForm = new FormData();
+    groqForm.append('file', audioBlob, audioFilename);
+    groqForm.append('model', 'whisper-large-v3-turbo');
+    groqForm.append('response_format', 'verbose_json');
+    // Heuristique langue : si user a paramétré language, le passer (sinon auto-detect)
+    const url = new URL(request.url);
+    const lang = url.searchParams.get('lang');
+    if (lang && /^[a-z]{2}$/.test(lang)) groqForm.append('language', lang);
+
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 30_000);
+    let r;
+    try {
+      r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + env.GROQ_API_KEY },
+        body: groqForm,
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(timeoutId); }
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      console.warn('[voice-transcribe] Groq HTTP', r.status, errBody.slice(0, 200));
+      return err(`Whisper HTTP ${r.status}`, 502);
+    }
+    const data = await r.json();
+    return json({
+      ok: true,
+      text: data.text || '',
+      language: data.language || null,
+      duration_s: data.duration || null,
+      provider: 'groq-whisper-large-v3-turbo',
+    });
+  } catch (e) {
+    return err('Whisper error: ' + e.message, 502);
+  }
+}
+
+// ============================================================================
+//  v1.1.28 — POST /api/ai/image-describe : image → description (Anthropic Vision)
+//  Input : { image_base64, prompt (optional) }
+//  Output : { ok, description, provider }
+//  Use case : alt-text accessibilité, OCR léger, modération
+// ============================================================================
+export async function handleAiImageDescribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.ANTHROPIC_API_KEY) return err('Anthropic Vision non configuré', 503);
+
+  const body = await request.json().catch(() => ({}));
+  const imageBase64 = String(body.image_base64 || '').trim();
+  const customPrompt = String(body.prompt || 'Décris cette image en français en 1-3 phrases. Bref, factuel, sans emoji.').slice(0, 500);
+
+  if (!imageBase64 || imageBase64.length < 100) return err('image_base64 required');
+  // Strip data:image/...;base64, prefix si présent
+  const cleanB64 = imageBase64.replace(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/, '');
+  if (cleanB64.length > 5 * 1024 * 1024) return err('Image trop grosse (max ~5MB base64)');
+
+  // Detect mime type
+  let mediaType = 'image/jpeg';
+  if (imageBase64.startsWith('data:image/png')) mediaType = 'image/png';
+  else if (imageBase64.startsWith('data:image/webp')) mediaType = 'image/webp';
+  else if (imageBase64.startsWith('data:image/gif')) mediaType = 'image/gif';
+
+  try {
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 20_000);
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 500,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: cleanB64 } },
+              { type: 'text', text: customPrompt },
+            ],
+          }],
+        }),
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(timeoutId); }
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      console.warn('[image-describe] Anthropic HTTP', r.status, errBody.slice(0, 200));
+      return err(`Anthropic Vision HTTP ${r.status}`, 502);
+    }
+    const data = await r.json();
+    const description = data.content?.[0]?.text || '';
+    return json({
+      ok: true,
+      description,
+      provider: 'anthropic-claude-haiku-vision',
+    });
+  } catch (e) {
+    return err('Vision error: ' + e.message, 502);
+  }
+}
+
+// ============================================================================
 //  v1.1.24 — GET /api/premium/status : sync premium cross-device
 // ============================================================================
 export async function handlePremiumStatus(request, env) {
@@ -2626,6 +2770,10 @@ export default {
       if (path === '/api/premium/portal' && method === 'POST') return await handlePremiumPortal(request, env);
       if (path === '/api/ai/smart-reply' && method === 'POST') return await handleAiSmartReply(request, env);
       if (path === '/api/ai/translate' && method === 'POST') return await handleAiTranslate(request, env);
+
+      // v1.1.28 — Voice transcribe (Whisper) + Image describe (Vision)
+      if (path === '/api/ai/voice-transcribe' && method === 'POST') return await handleAiVoiceTranscribe(request, env);
+      if (path === '/api/ai/image-describe' && method === 'POST') return await handleAiImageDescribe(request, env);
 
       // Invitations
       if (path === '/api/invitations' && method === 'POST') return await handleCreateInvitation(request, env);

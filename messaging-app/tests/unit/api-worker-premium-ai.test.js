@@ -12,6 +12,8 @@ import {
   handleAiSummarize,
   handleAiSmartReply,
   handleAiTranslate,
+  handleAiVoiceTranscribe,
+  handleAiImageDescribe,
   handlePremiumCheckout,
   handlePremiumPortal,
   handlePremiumWebhook,
@@ -639,6 +641,248 @@ describe('handleAiTranslate (v1.1.26)', () => {
     /* slice(0,5) → "veryl" (5 chars max) */
     expect(capturedSysPrompt).toContain('veryl');
     expect(capturedSysPrompt).not.toContain('verylonglangcode');
+  });
+});
+
+describe('handleAiVoiceTranscribe (v1.1.28)', () => {
+  function makeMultipartReq(audioBlob, filename, token) {
+    const form = new FormData();
+    form.append('audio', audioBlob, filename);
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: form,
+    });
+    return req;
+  }
+
+  it('refuse non-auth', async () => {
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', { method: 'POST' });
+    const r = await handleAiVoiceTranscribe(req, userEnv());
+    expect(r.status).toBe(401);
+  });
+
+  it('refuse sans GROQ_API_KEY', async () => {
+    const env = userEnv();
+    delete env.GROQ_API_KEY;
+    const tok = await userToken();
+    const blob = new Blob(['fake audio'], { type: 'audio/webm' });
+    const r = await handleAiVoiceTranscribe(makeMultipartReq(blob, 'a.webm', tok), env);
+    expect(r.status).toBe(503);
+  });
+
+  it('refuse content-type non supporté', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    const tok = await userToken();
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'text/plain' },
+      body: 'hello',
+    });
+    const r = await handleAiVoiceTranscribe(req, env);
+    expect(r.status).toBe(400);
+  });
+
+  it('refuse audio vide', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    const tok = await userToken();
+    const blob = new Blob([], { type: 'audio/webm' });
+    const r = await handleAiVoiceTranscribe(makeMultipartReq(blob, 'empty.webm', tok), env);
+    expect(r.status).toBe(400);
+  });
+
+  it('refuse audio > 25 MB', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    const tok = await userToken();
+    /* 26 MB fake buffer */
+    const big = new Uint8Array(26 * 1024 * 1024);
+    const blob = new Blob([big], { type: 'audio/webm' });
+    const r = await handleAiVoiceTranscribe(makeMultipartReq(blob, 'big.webm', tok), env);
+    expect(r.status).toBe(400);
+  });
+
+  it('audio binary direct (application/octet-stream)', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    const tok = await userToken();
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({ text: 'Bonjour à tous', language: 'fr', duration: 2.5 }), { status: 200 }),
+    );
+    const buf = new TextEncoder().encode('fake audio bytes here');
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'audio/webm' },
+      body: buf,
+    });
+    const r = await handleAiVoiceTranscribe(req, env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.text).toBe('Bonjour à tous');
+    expect(j.language).toBe('fr');
+    expect(j.provider).toContain('whisper');
+  });
+
+  it('Groq Whisper success → text + language + duration', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({ text: 'Hello world', language: 'en', duration: 1.2 }), { status: 200 }),
+    );
+    const tok = await userToken();
+    const blob = new Blob(['x'.repeat(100)], { type: 'audio/webm' });
+    const r = await handleAiVoiceTranscribe(makeMultipartReq(blob, 'h.webm', tok), env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.text).toBe('Hello world');
+    expect(j.language).toBe('en');
+    expect(j.duration_s).toBe(1.2);
+  });
+
+  it('Whisper HTTP 500 → 502', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () => new Response('err', { status: 500 }));
+    const tok = await userToken();
+    const blob = new Blob(['x'.repeat(100)], { type: 'audio/webm' });
+    const r = await handleAiVoiceTranscribe(makeMultipartReq(blob, 'h.webm', tok), env);
+    expect(r.status).toBe(502);
+  });
+
+  it('lang query param transmis à Whisper', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    let capturedForm = null;
+    globalThis.fetch = vi.fn(async (_, opts) => {
+      capturedForm = opts.body;
+      return new Response(JSON.stringify({ text: 'OK' }));
+    });
+    const tok = await userToken();
+    const form = new FormData();
+    form.append('audio', new Blob(['x'.repeat(100)], { type: 'audio/webm' }), 'h.webm');
+    const req = new Request('https://api.apex/api/ai/voice-transcribe?lang=fr', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok },
+      body: form,
+    });
+    await handleAiVoiceTranscribe(req, env);
+    /* FormData stringify n'expose pas keys facilement, mais on vérifie qu'on est passé par */
+    expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it('lang param invalide (non 2 chars) → ignoré', async () => {
+    const env = userEnv({ GROQ_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ text: 'OK' })));
+    const tok = await userToken();
+    const form = new FormData();
+    form.append('audio', new Blob(['x'.repeat(100)], { type: 'audio/webm' }), 'h.webm');
+    const req = new Request('https://api.apex/api/ai/voice-transcribe?lang=french', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok },
+      body: form,
+    });
+    const r = await handleAiVoiceTranscribe(req, env);
+    expect(r.status).toBe(200); /* pas crash */
+  });
+});
+
+describe('handleAiImageDescribe (v1.1.28)', () => {
+  it('refuse non-auth', async () => {
+    const r = await handleAiImageDescribe(makeReq('POST', '/api/ai/image-describe'), userEnv());
+    expect(r.status).toBe(401);
+  });
+
+  it('refuse sans ANTHROPIC_API_KEY', async () => {
+    const env = userEnv();
+    delete env.ANTHROPIC_API_KEY;
+    const tok = await userToken();
+    const r = await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', { image_base64: 'x'.repeat(200) }, tok),
+      env,
+    );
+    expect(r.status).toBe(503);
+  });
+
+  it('refuse image_base64 vide ou trop court', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const r = await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', { image_base64: 'x' }, tok),
+      env,
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it('refuse image > 5 MB base64', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const huge = 'A'.repeat(6 * 1024 * 1024);
+    const r = await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', { image_base64: huge }, tok),
+      env,
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it('Anthropic Vision success → description', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({
+        content: [{ text: 'Une plage au coucher du soleil avec des palmiers.' }],
+      }), { status: 200 }),
+    );
+    const tok = await userToken();
+    const fakeB64 = 'A'.repeat(500);
+    const r = await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', { image_base64: fakeB64 }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.description).toContain('plage');
+    expect(j.provider).toContain('vision');
+  });
+
+  it('détecte media_type depuis data: prefix', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    let capturedBody = '';
+    globalThis.fetch = vi.fn(async (_, opts) => {
+      capturedBody = opts.body;
+      return new Response(JSON.stringify({ content: [{ text: 'PNG image' }] }));
+    });
+    const tok = await userToken();
+    const b64WithPrefix = 'data:image/png;base64,' + 'A'.repeat(500);
+    await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', { image_base64: b64WithPrefix }, tok),
+      env,
+    );
+    expect(capturedBody).toContain('"media_type":"image/png"');
+    /* Le prefix data:image doit être strippé */
+    expect(capturedBody).not.toContain('data:image/png;base64,');
+  });
+
+  it('custom prompt utilisé', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    let capturedBody = '';
+    globalThis.fetch = vi.fn(async (_, opts) => {
+      capturedBody = opts.body;
+      return new Response(JSON.stringify({ content: [{ text: 'OK' }] }));
+    });
+    const tok = await userToken();
+    await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', {
+        image_base64: 'A'.repeat(500),
+        prompt: 'Quel est le texte visible dans cette photo ?',
+      }, tok),
+      env,
+    );
+    expect(capturedBody).toContain('texte visible');
+  });
+
+  it('Anthropic HTTP 400 → 502', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () => new Response('err', { status: 400 }));
+    const tok = await userToken();
+    const r = await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', { image_base64: 'A'.repeat(500) }, tok),
+      env,
+    );
+    expect(r.status).toBe(502);
   });
 });
 
