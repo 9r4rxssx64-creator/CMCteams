@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.100';
+const __APEX_CHAT_VERSION__ = 'v1.1.101';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.100</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.101</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.100</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.101</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -988,6 +988,26 @@ K._openReactionStats = function(convId){
 // ============================================================================
 //  v1.1.100 — Global search across all conversations (milestone)
 // ============================================================================
+K._markAllConvsRead = function(){
+  if(!confirm('Marquer toutes les conversations comme lues ?')) return;
+  const now = Date.now();
+  let count = 0;
+  for(const convId in (K.messages || {})){
+    const msgs = K.messages[convId] || [];
+    if(msgs.length === 0) continue;
+    const conv = (K.conversations || []).find(c => c.id === convId);
+    if(conv && (conv.archived || conv.muted)) continue;
+    const lastTs = msgs[msgs.length - 1].ts || now;
+    ls('lastread_' + convId, lastTs);
+    count++;
+  }
+  K._unreadPerConv = {};
+  document.title = 'Apex Chat';
+  if('clearAppBadge' in navigator){ try{ navigator.clearAppBadge(); }catch(_){} }
+  toast(`✅ ${count} conversation${count > 1 ? 's' : ''} marquée${count > 1 ? 's' : ''} lue${count > 1 ? 's' : ''}`, 'ok');
+  if(K.view === 'chats' && typeof K.render === 'function') K.render();
+};
+
 K._openGlobalSearch = function(){
   K._showModal('🔍 Rechercher dans toutes les convs', `
     <input type="search" id="gs-input" placeholder="Tape ton mot-clé..." autocomplete="off" autocapitalize="off" autocorrect="off"
@@ -3198,7 +3218,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.100',
+    version: 'v1.1.101',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5379,6 +5399,7 @@ function renderChats(app){
     <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Mes conversations</h2>
       <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-out" onclick="K._markAllConvsRead()" aria-label="Tout marquer comme lu" title="Tout marquer comme lu">✓✓</button>
         <button class="btn btn-sm btn-out" onclick="K._openGlobalSearch()" aria-label="Rechercher dans toutes les conversations">🔍</button>
         <button class="btn btn-sm" onclick="K._showNewMenu()">＋ Nouveau</button>
       </div>
