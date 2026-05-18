@@ -1,1 +1,303 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<!-- v1.0.0 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tech Hub | KDMC Boutique</title>
+<meta name="description" content="Tech Hub — Boutique en ligne professionnelle KDMC. Découvrez nos 100+ produits de qualité.">
+<meta name="theme-color" content="#3b82f6">
+<link rel="manifest" href="manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;background:#0f172a;color:#f1f5f9;min-height:100vh}
+a{color:inherit;text-decoration:none}button{cursor:pointer;border:none;background:none;font:inherit}
+input,textarea,select{font:inherit}img{max-width:100%;height:auto}
+:root{--p:#3b82f6;--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#888;--border:#333;--hover:#252525;--r:12px;--rs:8px;--shadow:0 4px 20px rgba(0,0,0,0.3)}
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:#1e293b;border-bottom:1px solid var(--border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.hdr-inner{max-width:1280px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:16px}
+.logo{font-size:20px;font-weight:800;color:var(--p);cursor:pointer;white-space:nowrap}
+.logo span{font-size:14px;color:var(--muted);font-weight:400;margin-left:4px}
+.search-box{flex:1;max-width:400px;position:relative}
+.search-box input{width:100%;padding:10px 16px 10px 36px;border-radius:100px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px}
+.search-box input:focus{outline:none;border-color:var(--p)}
+.search-box::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px}
+.nav-actions{display:flex;gap:8px;align-items:center}
+.cart-btn{position:relative;font-size:22px;padding:8px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
+.cart-badge{position:absolute;top:2px;right:2px;background:var(--p);color:#000;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:100px;display:none;align-items:center;justify-content:center;padding:0 4px}
+/* NAV */
+.nav{display:flex;gap:4px;overflow-x:auto;padding:8px 16px;max-width:1280px;margin:0 auto;-webkit-overflow-scrolling:touch}
+.nav::-webkit-scrollbar{display:none}
+.nav-item{padding:8px 16px;border-radius:100px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;transition:all .25s;border:1px solid var(--border);color:var(--muted)}
+.nav-item:hover,.nav-item.active{background:var(--p);color:#000;border-color:var(--p)}
+/* HERO */
+.hero{background:linear-gradient(135deg,#3b82f622,#1e293b);padding:48px 16px;text-align:center}
+.hero h1{font-size:clamp(28px,5vw,48px);font-weight:800;margin-bottom:8px}
+.hero h1 em{color:var(--p);font-style:normal}
+.hero p{font-size:16px;color:var(--muted);max-width:600px;margin:0 auto 24px}
+.hero-stats{display:flex;justify-content:center;gap:32px;flex-wrap:wrap}
+.hero-stat{text-align:center}.hero-stat strong{font-size:24px;color:var(--p);display:block}.hero-stat span{font-size:12px;color:var(--muted)}
+/* SECTIONS */
+.section{max-width:1280px;margin:0 auto;padding:32px 16px}
+.section-title{font-size:22px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+/* GRID */
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+/* CARD */
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;transition:all .25s;cursor:pointer;position:relative}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--p)}
+.card-img{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:56px;background:var(--bg);position:relative}
+.card-badge{position:absolute;top:8px;left:8px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700}
+.badge-sale{background:#ef4444;color:#fff}.badge-new{background:#22c55e;color:#fff}.badge-hot{background:#f97316;color:#fff}
+.card-body{padding:14px}
+.card-title{font-size:14px;font-weight:600;line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.stars{color:#3b82f6}
+.card-price{display:flex;align-items:baseline;gap:6px}
+.price-now{font-size:17px;font-weight:700;color:var(--p)}
+.price-was{font-size:12px;color:var(--muted);text-decoration:line-through}
+.price-off{font-size:11px;font-weight:700;color:#ef4444;background:rgba(239,68,68,.1);padding:2px 6px;border-radius:4px}
+.card-cta{width:100%;padding:10px;background:var(--p);color:#000;font-weight:700;font-size:13px;border:none;cursor:pointer;transition:opacity .2s;margin-top:10px;border-radius:var(--rs)}
+.card-cta:hover{opacity:.85}
+/* PRODUCT DETAIL */
+.pdp{max-width:900px;margin:0 auto;padding:24px 16px}
+.pdp-back{font-size:14px;color:var(--muted);margin-bottom:16px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.pdp-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.pdp-img{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:120px;background:var(--bg);border-radius:var(--r)}
+.pdp-info h1{font-size:24px;font-weight:700;margin-bottom:8px}
+.pdp-info .meta{color:var(--muted);font-size:14px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.pdp-price{font-size:28px;font-weight:800;color:var(--p);margin-bottom:4px}
+.pdp-orig{font-size:16px;color:var(--muted);text-decoration:line-through;margin-left:8px}
+.pdp-desc{font-size:15px;line-height:1.7;color:var(--muted);margin:16px 0}
+.pdp-features{margin:16px 0}
+.pdp-features li{padding:6px 0;font-size:14px;display:flex;align-items:center;gap:8px}
+.pdp-features li::before{content:"✓";color:var(--p);font-weight:700}
+.btn-add{width:100%;padding:16px;background:var(--p);color:#000;font-size:16px;font-weight:700;border:none;border-radius:var(--rs);cursor:pointer;transition:all .2s;margin-top:16px}
+.btn-add:hover{opacity:.9;transform:translateY(-1px)}
+/* CART */
+.cart-overlay{position:fixed;top:0;right:-420px;width:400px;max-width:100vw;height:100vh;background:var(--card);z-index:200;transition:right .3s;box-shadow:-4px 0 20px rgba(0,0,0,.2);display:flex;flex-direction:column}
+.cart-overlay.open{right:0}
+.cart-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+.cart-backdrop.open{display:block}
+.cart-header{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.cart-header h2{font-size:18px;font-weight:700}
+.cart-close{font-size:24px;cursor:pointer;padding:8px}
+.cart-items{flex:1;overflow-y:auto;padding:16px}
+.cart-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.cart-item-img{width:60px;height:60px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.cart-item-info{flex:1}
+.cart-item-name{font-size:14px;font-weight:600}
+.cart-item-price{font-size:15px;font-weight:700;color:var(--p);margin-top:4px}
+.cart-item-qty{display:flex;align-items:center;gap:8px;margin-top:6px}
+.cart-item-qty button{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--bg)}
+.cart-item-rm{font-size:12px;color:#ef4444;cursor:pointer;margin-top:4px}
+.cart-footer{padding:16px;border-top:1px solid var(--border)}
+.cart-total{display:flex;justify-content:space-between;font-size:18px;font-weight:700;margin-bottom:12px}
+.cart-total .amount{color:var(--p)}
+.btn-checkout{width:100%;padding:14px;background:var(--p);color:#000;font-size:15px;font-weight:700;border:none;border-radius:var(--rs);cursor:pointer}
+.cart-empty{text-align:center;padding:48px 16px;color:var(--muted)}
+.cart-empty span{font-size:48px;display:block;margin-bottom:16px}
+/* FOOTER */
+.footer{background:var(--card);border-top:1px solid var(--border);padding:32px 16px;margin-top:48px}
+.footer-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px}
+.footer h4{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--p)}
+.footer a{display:block;font-size:13px;color:var(--muted);padding:4px 0;transition:color .2s}
+.footer a:hover{color:var(--p)}
+.footer-bottom{text-align:center;padding-top:24px;margin-top:24px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+/* TRUST */
+.trust{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:32px 0}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.trust-icon{font-size:18px}
+/* TOAST */
+.toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);z-index:10000;padding:12px 24px;border-radius:var(--r);background:var(--card);color:var(--text);box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;transition:bottom .3s;border:1px solid var(--border)}
+.toast.show{bottom:24px}
+/* COOKIE */
+.cookie{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--card);border-top:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 -2px 10px rgba(0,0,0,.1);font-size:13px;color:var(--muted)}
+.cookie a{color:var(--p);text-decoration:underline}
+.cookie-btns{display:flex;gap:8px}
+.cookie-btns button{padding:8px 18px;border-radius:var(--rs);font-size:13px;font-weight:600;min-height:36px}
+.btn-accept{background:var(--p);color:#000}
+.btn-refuse{border:1px solid var(--border);color:var(--muted)}
+/* BTT */
+.btt{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--p);color:#000;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--shadow);z-index:998;opacity:0;pointer-events:none;transition:all .25s;cursor:pointer}
+.btt.show{opacity:1;pointer-events:auto}
+/* RESPONSIVE */
+@media(max-width:768px){
+.pdp-grid{grid-template-columns:1fr}.search-box{max-width:none;order:3;width:100%}
+.hdr-inner{flex-wrap:wrap;height:auto;padding:10px 16px}.grid{grid-template-columns:repeat(2,1fr);gap:10px}
+.card-img{font-size:40px}.card-body{padding:10px}.card-title{font-size:13px}.price-now{font-size:15px}
+.hero{padding:32px 16px}.hero h1{font-size:24px}.footer-inner{grid-template-columns:1fr 1fr}
+}
+@media(max-width:375px){.grid{gap:8px}.card-body{padding:8px}.nav-item{padding:6px 12px;font-size:12px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="cart-backdrop" id="cartBg" onclick="toggleCart()"></div>
+<div class="cart-overlay" id="cartPanel">
+<div class="cart-header"><h2>🛒 Panier</h2><span class="cart-close" onclick="toggleCart()">✕</span></div>
+<div class="cart-items" id="cartItems"></div>
+<div class="cart-footer" id="cartFooter"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="btt" id="btt" onclick="scrollTo({top:0,behavior:'smooth'})">↑</div>
+<script>
+"use strict";
+/* ===== CONFIG ===== */
+var SHOP={name:"Tech Hub",slug:"tech-hub",emoji:"💻",color:"#3b82f6",desc:"Le meilleur de la technologie, smartphones, PC, accessoires et gadgets innovants.",cats:["Smartphones","Ordinateurs","Audio","Gaming","Accessoires","Objets connectés","Photo & Vidéo","Stockage","Réseau","Composants"]};
+/* ===== PRODUCTS 100 ===== */
+var P=[
+{id:1,n:"iPhone 16 Pro Max 256Go",p:1479,op:1599,c:"Smartphones",e:"📱",b:"new",r:4.9,rv:847,d:"Le smartphone ultime d'Apple avec puce A18 Pro, écran Super Retina XDR 6.9 pouces et système photo révolutionnaire.",f:["Puce A18 Pro gravée en 3nm","Écran 6.9\" Super Retina XDR ProMotion","Triple caméra 48MP avec zoom optique 5x","Titane grade 5 ultra-résistant","USB-C Thunderbolt 4"]},
+{id:2,n:"Samsung Galaxy S25 Ultra",p:1369,op:1469,c:"Smartphones",e:"📱",b:"hot",r:4.8,rv:612,d:"Le fleuron Samsung avec Galaxy AI intégré, S Pen amélioré et capteur photo 200MP.",f:["Snapdragon 8 Elite for Galaxy","Écran 6.8\" Dynamic AMOLED 2X","Caméra 200MP avec IA","S Pen intégré avec IA","Galaxy AI multimodal"]},
+{id:3,n:"MacBook Pro M4 Pro 14\"",p:2399,op:2599,c:"Ordinateurs",e:"💻",b:"new",r:4.9,rv:523,d:"Puissance professionnelle avec la puce M4 Pro, écran Liquid Retina XDR et autonomie record.",f:["Puce M4 Pro 14 coeurs","24 Go mémoire unifiée","Écran Liquid Retina XDR","Autonomie 18 heures","Thunderbolt 5"]},
+{id:4,n:"Sony WH-1000XM6",p:349,op:399,c:"Audio",e:"🎧",b:"sale",r:4.8,rv:1203,d:"Le casque à réduction de bruit de référence, encore amélioré avec le processeur V2.",f:["Réduction de bruit adaptative IA","Autonomie 40 heures","Audio haute résolution LDAC","Multipoint 3 appareils","Speak-to-Chat amélioré"]},
+{id:5,n:"PlayStation 5 Pro",p:699,op:799,c:"Gaming",e:"🎮",b:"hot",r:4.7,rv:934,d:"La console next-gen de Sony avec ray tracing amélioré et SSD ultra-rapide.",f:["GPU 16.7 TFLOPS","SSD 2 To NVMe","Ray tracing matériel avancé","Wi-Fi 7","Lecteur Blu-ray 4K intégré"]},
+{id:6,n:"iPad Pro M4 13\"",p:1599,op:1799,c:"Ordinateurs",e:"📱",b:"new",r:4.9,rv:445,d:"La tablette la plus puissante au monde avec puce M4 et écran OLED tandem.",f:["Puce M4 à 10 coeurs","Écran OLED tandem 13\"","Apple Pencil Pro compatible","Face ID","Thunderbolt / USB 4"]},
+{id:7,n:"AirPods Pro 3",p:279,op:299,c:"Audio",e:"🎵",b:"new",r:4.7,rv:2105,d:"Écouteurs sans fil avec réduction de bruit adaptative et audio spatial personnalisé.",f:["Puce H3 avec IA audio","Réduction bruit adaptative 2x","Audio spatial personnalisé","Protection auditive","Autonomie 8h (36h boîtier)"]},
+{id:8,n:"Samsung Odyssey G9 57\"",p:1299,op:1599,c:"Gaming",e:"🖥️",b:"sale",r:4.6,rv:312,d:"Moniteur gaming ultra-wide incurvé Dual 4K avec 240Hz et HDR 1000.",f:["57\" Dual UHD (7680x2160)","240Hz taux rafraîchissement","HDR 1000 Mini LED","1ms temps réponse","AMD FreeSync Premium Pro"]},
+{id:9,n:"Coque MagSafe iPhone 16 Pro",p:29,op:49,c:"Accessoires",e:"📦",b:"sale",r:4.5,rv:1876,d:"Protection élégante en silicone avec aimants MagSafe intégrés pour iPhone 16 Pro.",f:["Silicone doux au toucher","Aimants MagSafe intégrés","Protection anti-chocs 2m","Compatible charge sans fil","7 coloris disponibles"]},
+{id:10,n:"Apple Watch Ultra 3",p:899,op:999,c:"Objets connectés",e:"⌚",b:"new",r:4.8,rv:567,d:"La montre connectée la plus robuste d'Apple avec GPS double fréquence et autonomie 72h.",f:["Boîtier titane grade 5","Écran 2000 nits","GPS double fréquence L1+L5","Autonomie 72 heures","Profondimètre et sirène 86dB"]},
+{id:11,n:"Canon EOS R6 Mark III",p:2799,op:2999,c:"Photo & Vidéo",e:"📷",b:"new",r:4.8,rv:289,d:"Hybride plein format ultra-polyvalent avec AF intelligent et vidéo 6K.",f:["Capteur CMOS 24.2MP plein format","Vidéo 6K 60fps RAW","AF DUAL PIXEL CMOS II","Stabilisation 8 stops","Wi-Fi 6E + Bluetooth 5.3"]},
+{id:12,n:"Samsung T9 SSD 4To",p:279,op:349,c:"Stockage",e:"💾",b:"sale",r:4.7,rv:823,d:"SSD portable ultra-rapide avec vitesses de transfert jusqu'à 2000 Mo/s.",f:["Capacité 4 To","USB 3.2 Gen 2x2","2000 Mo/s lecture/écriture","Résistant chocs IP65","Chiffrement AES 256 bits"]},
+{id:13,n:"ASUS ROG Ally X",p:799,op:899,c:"Gaming",e:"🎮",b:"hot",r:4.6,rv:445,d:"Console portable gaming avec AMD Z1 Extreme et écran 120Hz Full HD.",f:["AMD Z1 Extreme","7\" IPS 120Hz FHD","24 Go LPDDR5x","1 To SSD NVMe","80Wh batterie longue durée"]},
+{id:14,n:"Sonos Era 300",p:449,op:499,c:"Audio",e:"🔊",b:"",r:4.7,rv:678,d:"Enceinte sans fil avec audio spatial Dolby Atmos et design acoustique révolutionnaire.",f:["Dolby Atmos natif","6 haut-parleurs orientés","Wi-Fi 6 + Bluetooth 5.3","Trueplay auto-calibration","Compatible AirPlay 2 / Alexa"]},
+{id:15,n:"Logitech MX Master 4",p:119,op:129,c:"Accessoires",e:"🖱️",b:"",r:4.8,rv:2340,d:"Souris ergonomique premium avec molette MagSpeed et connexion multi-appareils.",f:["Capteur 8000 DPI","Molette MagSpeed en acier","USB-C rechargeable 70j","Connexion 3 appareils","Compatible Flow cross-computer"]},
+{id:16,n:"Ring Doorbell Pro 3",p:199,op:249,c:"Objets connectés",e:"🔔",b:"sale",r:4.5,rv:1567,d:"Sonnette vidéo connectée avec détection 3D et vision nocturne HDR couleur.",f:["Vidéo 1536p HDR","Détection mouvement 3D","Vision nocturne couleur","Wi-Fi 6 bi-bande","Alimentation filaire PoE"]},
+{id:17,n:"DJI Air 4",p:999,op:1199,c:"Photo & Vidéo",e:"🚁",b:"new",r:4.8,rv:345,d:"Drone compact avec caméra Hasselblad, détection d'obstacles 360° et autonomie 42 min.",f:["Caméra Hasselblad 1\" CMOS","Vidéo 4K 120fps","Détection obstacles 360°","Autonomie 42 minutes","Transmission O4+ 20km"]},
+{id:18,n:"Crucial DDR5 64Go Kit",p:169,op:219,c:"Composants",e:"🔧",b:"sale",r:4.6,rv:567,d:"Kit mémoire DDR5-6000 CL36 haute performance pour gaming et création.",f:["64 Go (2x32 Go)","DDR5-6000 CL36","Intel XMP 3.0","Dissipateur thermique","Garantie à vie"]},
+{id:19,n:"TP-Link Deco BE85",p:549,op:649,c:"Réseau",e:"📡",b:"new",r:4.7,rv:234,d:"Système Wi-Fi 7 Mesh tri-bande couvrant jusqu'à 700m² avec débit 30 Gbps.",f:["Wi-Fi 7 tri-bande","Débit total 30 Gbps","Couverture 700m² (3 unités)","IA anti-interférences","8 ports Ethernet 10G"]},
+{id:20,n:"Chargeur MagSafe Duo",p:49,op:69,c:"Accessoires",e:"🔌",b:"",r:4.4,rv:1234,d:"Station de charge sans fil pour iPhone et Apple Watch simultanément.",f:["Charge iPhone 15W MagSafe","Charge Apple Watch rapide","Pliable et portable","USB-C universel","LED indicateur de charge"]},
+{id:21,n:"Google Pixel 9 Pro XL",p:1179,op:1299,c:"Smartphones",e:"📱",b:"",r:4.7,rv:534,d:"Le meilleur smartphone photo avec Tensor G4 et fonctions IA Google exclusives.",f:["Google Tensor G4","Écran 6.8\" LTPO OLED 120Hz","Triple caméra 50MP","7 ans de mises à jour","Gemini Nano on-device"]},
+{id:22,n:"Dell XPS 16 9640",p:1899,op:2199,c:"Ordinateurs",e:"💻",b:"sale",r:4.6,rv:312,d:"Ultrabook premium avec écran OLED 4K tactile et Intel Core Ultra 9.",f:["Intel Core Ultra 9 185H","32 Go LPDDR5x","Écran 16\" OLED 4K tactile","NVIDIA RTX 4070","Thunderbolt 4 x2"]},
+{id:23,n:"Bose QuietComfort Ultra",p:299,op:349,c:"Audio",e:"🎧",b:"",r:4.7,rv:1567,d:"Casque premium avec réduction de bruit inégalée et son immersif spatial.",f:["Réduction bruit CustomTune","Son spatial Bose Immersive","Autonomie 24 heures","Multipoint Bluetooth 5.3","Mode Aware transparent"]},
+{id:24,n:"Nintendo Switch 2",p:449,op:499,c:"Gaming",e:"🎮",b:"hot",r:4.8,rv:2345,d:"La nouvelle génération Switch avec écran 8 pouces LCD 120Hz et dock 4K.",f:["Écran 8\" LCD 1080p 120Hz","Dock 4K DLSS","Joy-Con magnétiques","Rétrocompatible Switch 1","Autonomie 5-7 heures"]},
+{id:25,n:"Samsung Galaxy Buds 4 Pro",p:229,op:269,c:"Audio",e:"🎵",b:"new",r:4.6,rv:789,d:"Écouteurs premium avec ANC intelligent et codec SSC HiFi pour audio 24 bits.",f:["ANC intelligent adaptatif","Codec SSC HiFi 24 bits","Autonomie 8h (30h total)","IPX7 étanche","Détection conversation"]},
+{id:26,n:"LG C4 OLED 65\"",p:1699,op:2199,c:"Objets connectés",e:"📺",b:"sale",r:4.8,rv:678,d:"TV OLED evo 4K avec processeur α9 AI Gen7 et webOS 24.",f:["OLED evo 4K 120Hz","Processeur α9 AI Gen7","Dolby Vision IQ / Atmos","4x HDMI 2.1 48Gbps","webOS 24 avec ThinQ AI"]},
+{id:27,n:"GoPro Hero 13 Black",p:399,op:449,c:"Photo & Vidéo",e:"📹",b:"",r:4.6,rv:1234,d:"Caméra d'action avec vidéo 5.3K, stabilisation HyperSmooth 7 et GPS intégré.",f:["Vidéo 5.3K 60fps","HyperSmooth 7.0","Étanche 10m sans caisson","GPS intégré","Objectifs modulaires HB"]},
+{id:28,n:"WD Black SN850X 4To",p:299,op:399,c:"Stockage",e:"💾",b:"sale",r:4.7,rv:567,d:"SSD NVMe PCIe Gen4 hautes performances pour gaming et workstation.",f:["4 To NVMe Gen4","7300 Mo/s lecture","6600 Mo/s écriture","Cache SLC adaptatif","Compatible PS5 / PC"]},
+{id:29,n:"Ubiquiti Dream Machine SE",p:499,op:599,c:"Réseau",e:"📡",b:"",r:4.7,rv:345,d:"Routeur/pare-feu professionnel tout-en-un avec PoE+ intégré et IDS/IPS.",f:["8 ports PoE+ (130W)","2.5G WAN + SFP+","IDS/IPS intégré","UniFi OS intégré","Rack-mountable 1U"]},
+{id:30,n:"NVIDIA RTX 5080 16Go",p:1099,op:1199,c:"Composants",e:"🔧",b:"hot",r:4.8,rv:234,d:"Carte graphique gaming haut de gamme avec architecture Blackwell et DLSS 4.",f:["16 Go GDDR7","Architecture Blackwell","DLSS 4 Frame Generation","Ray Tracing 4e gen","PCIe 5.0 x16"]},
+{id:31,n:"OnePlus 13",p:899,op:999,c:"Smartphones",e:"📱",b:"",r:4.7,rv:456,d:"Flagship killer avec Snapdragon 8 Elite, charge 100W et caméra Hasselblad.",f:["Snapdragon 8 Elite","Écran 6.82\" LTPO AMOLED","Triple Hasselblad 50MP","Charge 100W 25min","OxygenOS 15 fluide"]},
+{id:32,n:"Lenovo ThinkPad X1 Carbon G12",p:1799,op:1999,c:"Ordinateurs",e:"💻",b:"",r:4.7,rv:289,d:"Ultrabook professionnel léger avec Intel Core Ultra 7 et certification MIL-STD.",f:["Intel Core Ultra 7 155H","14\" 2.8K OLED HDR","1.08 kg ultra-léger","MIL-STD-810H certifié","4G LTE / Wi-Fi 7"]},
+{id:33,n:"Sennheiser Momentum 4",p:269,op:349,c:"Audio",e:"🎧",b:"sale",r:4.6,rv:890,d:"Casque audiophile avec son signature Sennheiser et réduction de bruit adaptative.",f:["Transducteurs 42mm","ANC adaptatif","Autonomie 60 heures","Codec aptX Adaptive","Application Sound Personalization"]},
+{id:34,n:"Xbox Series X 2To",p:599,op:649,c:"Gaming",e:"🎮",b:"",r:4.7,rv:1123,d:"Console Microsoft la plus puissante avec 2 To de stockage et Game Pass inclus.",f:["12 TFLOPS GPU","2 To SSD NVMe","Smart Delivery 4K 120fps","Quick Resume 6 jeux","Game Pass Ultimate 1 mois"]},
+{id:35,n:"Belkin MagSafe 3-en-1",p:129,op:149,c:"Accessoires",e:"🔌",b:"",r:4.5,rv:1567,d:"Station de charge sans fil pour iPhone, Apple Watch et AirPods simultanément.",f:["Charge iPhone 15W Qi2","Charge Apple Watch rapide","Charge AirPods Qi","Design compact voyageur","USB-C 30W inclus"]},
+{id:36,n:"Withings ScanWatch 2",p:349,op:399,c:"Objets connectés",e:"⌚",b:"",r:4.6,rv:345,d:"Montre connectée hybride avec ECG, SpO2 et détection température cutanée.",f:["ECG médical certifié","SpO2 continu","Température cutanée","Autonomie 30 jours","Étanche 50m"]},
+{id:37,n:"Sony Alpha A7C II",p:1999,op:2299,c:"Photo & Vidéo",e:"📷",b:"sale",r:4.7,rv:234,d:"Hybride plein format compact avec AF intelligent et vidéo 4K 60fps.",f:["Capteur 33MP plein format","AF temps réel IA","Vidéo 4K 60fps 10 bits","Stabilisation 7 stops","514g ultra-compact"]},
+{id:38,n:"Samsung 990 EVO Plus 2To",p:149,op:189,c:"Stockage",e:"💾",b:"",r:4.6,rv:1234,d:"SSD NVMe PCIe 5.0 compact avec performances gaming et efficacité énergétique.",f:["2 To NVMe Gen5","7250 Mo/s lecture","6300 Mo/s écriture","TLC V-NAND 8e gen","Faible consommation"]},
+{id:39,n:"Netgear Nighthawk RS700S",p:449,op:549,c:"Réseau",e:"📡",b:"",r:4.5,rv:167,d:"Routeur Wi-Fi 7 tri-bande avec couverture 350m² et protection Armor.",f:["Wi-Fi 7 tri-bande","19 Gbps total","10G WAN + LAN","Netgear Armor inclus 1 an","Couverture 350m²"]},
+{id:40,n:"AMD Ryzen 9 9950X",p:549,op:649,c:"Composants",e:"🔧",b:"hot",r:4.8,rv:345,d:"Processeur desktop 16 coeurs avec architecture Zen 5 et efficacité record.",f:["16 coeurs / 32 threads","5.7 GHz boost","Cache 80 Mo L3","170W TDP","PCIe 5.0 + DDR5"]},
+{id:41,n:"Xiaomi 15 Ultra",p:1099,op:1299,c:"Smartphones",e:"📱",b:"new",r:4.7,rv:345,d:"Smartphone premium avec capteur Leica 1 pouce et charge sans fil 80W.",f:["Snapdragon 8 Elite","Leica Summilux 1\" 50MP","Écran 6.73\" LTPO AMOLED","Charge 90W filaire / 80W sans fil","Batterie silicium-carbone 6000mAh"]},
+{id:42,n:"ASUS ROG Strix G16",p:1599,op:1899,c:"Ordinateurs",e:"💻",b:"sale",r:4.6,rv:456,d:"PC portable gaming avec RTX 4070 et écran 240Hz pour performances maximales.",f:["Intel Core i9-14900HX","RTX 4070 8 Go","16\" QHD+ 240Hz","32 Go DDR5","1 To SSD PCIe Gen4"]},
+{id:43,n:"JBL Charge 6",p:169,op:199,c:"Audio",e:"🔊",b:"",r:4.5,rv:1890,d:"Enceinte Bluetooth portable étanche avec basses profondes et autonomie 24h.",f:["Autonomie 24 heures","IP67 étanche/poussière","Bluetooth 5.3","Powerbank USB-C","JBL Pro Sound"]},
+{id:44,n:"Steam Deck OLED 1To",p:569,op:649,c:"Gaming",e:"🎮",b:"",r:4.7,rv:678,d:"Console portable PC avec écran OLED HDR et stockage 1 To.",f:["Écran 7.4\" OLED HDR","AMD APU custom","1 To NVMe SSD","SteamOS + mode desktop","Autonomie 3-12 heures"]},
+{id:45,n:"Anker 737 Powerbank 25600mAh",p:89,op:119,c:"Accessoires",e:"🔋",b:"sale",r:4.6,rv:2345,d:"Batterie externe haute capacité avec Power Delivery 140W et écran LED.",f:["25600 mAh capacité","140W Power Delivery","Charge MacBook Pro","Écran LED numérique","3 ports (2xUSB-C + 1xUSB-A)"]},
+{id:46,n:"Ecovacs Deebot X2 Omni",p:899,op:1099,c:"Objets connectés",e:"🤖",b:"sale",r:4.5,rv:567,d:"Robot aspirateur-laveur avec navigation LiDAR et station auto-vidage/lavage.",f:["Aspiration 8000 Pa","Navigation LiDAR 3D","Lavage rotatif OZMO","Station auto-vidage+lavage","YIKO commande vocale"]},
+{id:47,n:"Fujifilm X-T6",p:1699,op:1899,c:"Photo & Vidéo",e:"📷",b:"new",r:4.8,rv:234,d:"Hybride APS-C rétro avec simulateur film légendaire et vidéo 6K.",f:["Capteur X-Trans 40MP","Vidéo 6.2K 30fps","20 simulations film","Stabilisation 7 stops","Viseur OLED 5.76M points"]},
+{id:48,n:"Seagate IronWolf Pro 20To",p:399,op:479,c:"Stockage",e:"💾",b:"",r:4.6,rv:345,d:"Disque dur NAS haute performance avec capteurs de santé IHM et garantie 5 ans.",f:["20 To 7200 RPM","SATA 6 Gb/s","Cache 256 Mo","Capteurs IHM intégrés","Garantie 5 ans rescue"]},
+{id:49,n:"Google Nest WiFi Pro 6E",p:299,op:379,c:"Réseau",e:"📡",b:"sale",r:4.5,rv:789,d:"Système Mesh Wi-Fi 6E avec Matter intégré et couverture 370m².",f:["Wi-Fi 6E tri-bande","Matter smart home","Couverture 370m² (3 unités)","Google Home intégré","Thread border router"]},
+{id:50,n:"Corsair Dominator Titanium 64Go",p:289,op:349,c:"Composants",e:"🔧",b:"",r:4.7,rv:234,d:"Kit DDR5-7200 avec iCUE RGB et profils Intel XMP 3.0 optimisés.",f:["64 Go (2x32 Go)","DDR5-7200 CL34","iCUE RGB intégré","Intel XMP 3.0","Dissipateur DHX"]},
+{id:51,n:"Nothing Phone 3",p:599,op:699,c:"Smartphones",e:"📱",b:"new",r:4.5,rv:345,d:"Smartphone au design unique avec interface Glyph LED et Nothing OS 3.",f:["Snapdragon 8s Gen 4","Glyph Interface LED","Écran 6.7\" LTPO AMOLED","Triple caméra 50MP","Nothing OS 3 épuré"]},
+{id:52,n:"HP Spectre x360 16",p:1999,op:2299,c:"Ordinateurs",e:"💻",b:"",r:4.6,rv:234,d:"Convertible premium avec écran OLED 4K tactile et Intel Core Ultra 9.",f:["Intel Core Ultra 9","Écran 16\" OLED 4K tactile","32 Go LPDDR5x","2 To SSD PCIe Gen4","Stylet rechargeable inclus"]},
+{id:53,n:"Marshall Emberton III",p:149,op:179,c:"Audio",e:"🔊",b:"",r:4.5,rv:1234,d:"Enceinte portable au design rock iconique avec son multi-directionnel.",f:["Son True Stereophonic","Autonomie 32 heures","IP67 étanche","Bluetooth 5.3 LE","Charge rapide 20min=5h"]},
+{id:54,n:"Razer Viper V3 Pro",p:159,op:179,c:"Gaming",e:"🖱️",b:"",r:4.7,rv:567,d:"Souris gaming ultra-légère 54g avec capteur 35K DPI et HyperSpeed sans fil.",f:["54g ultra-légère","35K DPI Focus Pro 4K","HyperSpeed sans fil","Autonomie 95 heures","Polling rate 8000Hz"]},
+{id:55,n:"Apple AirTag 4-Pack",p:99,op:129,c:"Accessoires",e:"📍",b:"",r:4.6,rv:3456,d:"Trackers Bluetooth avec puce U1 Ultra Wideband pour localisation précise.",f:["Puce U1 Ultra Wideband","Réseau Localiser mondial","Étanche IP67","Pile CR2032 1 an","NFC contact info"]},
+{id:56,n:"Netatmo Station Météo Pro",p:179,op:219,c:"Objets connectés",e:"🌡️",b:"sale",r:4.4,rv:890,d:"Station météo connectée avec capteur CO2, sonore et prévisions personnalisées.",f:["Capteur CO2 intérieur","Pluviomètre et anémomètre","Prévisions hyper-locales","7 ans d'historique","Compatible HomeKit / Alexa"]},
+{id:57,n:"Insta360 X4",p:499,op:579,c:"Photo & Vidéo",e:"📹",b:"",r:4.6,rv:345,d:"Caméra 360° avec vidéo 8K et stabilisation FlowState pour contenus immersifs.",f:["Vidéo 360° 8K 30fps","FlowState stabilisation","Étanche 10m natif","Invisible selfie stick","Reframe IA montage auto"]},
+{id:58,n:"SanDisk Extreme Pro microSDXC 1To",p:119,op:159,c:"Stockage",e:"💾",b:"sale",r:4.7,rv:2345,d:"Carte microSD ultra-rapide pour smartphones, drones et caméras d'action.",f:["1 To capacité","200 Mo/s lecture","140 Mo/s écriture","A2 App Performance","Garantie à vie"]},
+{id:59,n:"Synology DS224+",p:349,op:399,c:"Réseau",e:"📡",b:"",r:4.8,rv:456,d:"NAS 2 baies compact avec DSM 7.2 pour stockage personnel et streaming 4K.",f:["Intel Celeron J4125","2 Go DDR4 (max 6 Go)","2x baies 3.5\" hot-swap","2x GbE LAN","DSM 7.2 + packages"]},
+{id:60,n:"be quiet! Dark Power 13 1000W",p:219,op:269,c:"Composants",e:"🔧",b:"",r:4.7,rv:345,d:"Alimentation PC modulaire 80+ Titanium avec ventilateur Silent Wings 4.",f:["1000W 80+ Titanium","Full modulaire","Silent Wings 4 135mm","ATX 3.1 + PCIe 5.1","Garantie 10 ans"]},
+{id:61,n:"Motorola Razr 50 Ultra",p:999,op:1199,c:"Smartphones",e:"📱",b:"sale",r:4.4,rv:234,d:"Smartphone pliant à clapet avec écran externe 4 pouces AMOLED.",f:["Snapdragon 8s Gen 3","Écran externe 4\" AMOLED","Écran interne 6.9\" pOLED","Caméra 50MP OIS","Charge 45W TurboPower"]},
+{id:62,n:"Framework Laptop 16",p:1399,op:1599,c:"Ordinateurs",e:"💻",b:"",r:4.5,rv:189,d:"PC portable modulaire et réparable avec GPU dédié interchangeable.",f:["AMD Ryzen 9 7940HS","GPU module AMD RX 7700S","16\" 2560x1600 165Hz","Entièrement réparable","Modules d'extension custom"]},
+{id:63,n:"KEF LS60 Wireless",p:4999,op:5499,c:"Audio",e:"🔊",b:"",r:4.9,rv:123,d:"Enceintes colonne HiFi sans fil avec DAC intégré et Uni-Q driver.",f:["Uni-Q driver 12e gen","DAC 32bit/384kHz intégré","Streaming Tidal/Spotify/AirPlay","1400W amplification totale","Configuration via app KEF"]},
+{id:64,n:"Alienware AW3225QF 32\"",p:899,op:1099,c:"Gaming",e:"🖥️",b:"sale",r:4.7,rv:234,d:"Moniteur gaming QD-OLED 4K 240Hz avec temps de réponse 0.03ms.",f:["32\" QD-OLED 4K","240Hz rafraîchissement","0.03ms temps réponse","HDR True Black 400","NVIDIA G-Sync certifié"]},
+{id:65,n:"Spigen Armor iPhone 16",p:19,op:29,c:"Accessoires",e:"📦",b:"",r:4.4,rv:4567,d:"Coque robuste avec technologie Air Cushion et protection militaire.",f:["Protection MIL-STD-810G","Air Cushion anti-chocs","Boutons tactiles précis","Compatible MagSafe","Slim 12mm profil"]},
+{id:66,n:"Philips Hue Starter Kit E27",p:129,op:169,c:"Objets connectés",e:"💡",b:"sale",r:4.5,rv:2345,d:"Kit de démarrage ampoules connectées avec pont Hue et 3 ampoules couleur.",f:["3 ampoules White & Color","Pont Hue Bridge inclus","16 millions de couleurs","Compatible Matter","Routines automatiques"]},
+{id:67,n:"DJI Osmo Pocket 3",p:519,op:579,c:"Photo & Vidéo",e:"📹",b:"",r:4.7,rv:456,d:"Caméra gimbal de poche avec capteur 1\" et écran rotatif OLED 2\".",f:["Capteur CMOS 1\"","Vidéo 4K 120fps","Écran OLED 2\" rotatif","Stabilisation 3 axes","D-Log M 10 bits"]},
+{id:68,n:"Kingston FURY Renegade 4To",p:399,op:479,c:"Stockage",e:"💾",b:"",r:4.7,rv:234,d:"SSD NVMe PCIe 5.0 pour les gamers et créateurs les plus exigeants.",f:["4 To NVMe Gen5","14000 Mo/s lecture","12000 Mo/s écriture","Dissipateur graphène","Compatible PS5 Pro"]},
+{id:69,n:"MikroTik hAP ax3",p:79,op:99,c:"Réseau",e:"📡",b:"",r:4.5,rv:567,d:"Routeur Wi-Fi 6 compact et puissant avec RouterOS pour les power users.",f:["Wi-Fi 6 AX1800","RouterOS v7 inclus","4x GbE + 1x 2.5GbE","Dual-chain 2.4/5 GHz","Firewall avancé intégré"]},
+{id:70,n:"NZXT Kraken Elite 360",p:269,op:299,c:"Composants",e:"🔧",b:"",r:4.6,rv:456,d:"Watercooling AIO 360mm avec écran LCD 2.36\" personnalisable.",f:["Radiateur 360mm","Écran LCD 2.36\" custom","Pompe Asetek 8e gen","Ventilateurs F120Q","NZXT CAM logiciel"]},
+{id:71,n:"Samsung Galaxy Z Fold 6",p:1799,op:1999,c:"Smartphones",e:"📱",b:"",r:4.6,rv:678,d:"Smartphone pliable grand écran avec Galaxy AI et multitâche avancé.",f:["Snapdragon 8 Gen 3 for Galaxy","Écran 7.6\" + 6.3\" AMOLED","Galaxy AI multi-fenêtre","Triple caméra 50MP","IPX8 étanche"]},
+{id:72,n:"Apple Mac Mini M4 Pro",p:1649,op:1799,c:"Ordinateurs",e:"💻",b:"new",r:4.8,rv:345,d:"Desktop compact surpuissant avec M4 Pro et connectique complète.",f:["Puce M4 Pro 14 coeurs","24 Go mémoire unifiée","512 Go SSD","Thunderbolt 5 x3","Format ultra-compact"]},
+{id:73,n:"Bang & Olufsen Beoplay H100",p:899,op:999,c:"Audio",e:"🎧",b:"",r:4.8,rv:167,d:"Casque audiophile premium avec matériaux nobles et son spatial immersif.",f:["Titane + cuir véritable","Transducteurs 40mm custom","ANC hybride adaptatif","Autonomie 38 heures","Dolby Head Tracking"]},
+{id:74,n:"Corsair K100 RGB",p:219,op:249,c:"Gaming",e:"⌨️",b:"",r:4.7,rv:890,d:"Clavier mécanique gaming premium avec iCUE et molette de contrôle.",f:["Cherry MX Speed switches","iCUE RGB par touche","Molette contrôle multimédia","44 touches macro","PBT double-shot keycaps"]},
+{id:75,n:"Peak Design Everyday Backpack 30L",p:259,op:299,c:"Accessoires",e:"🎒",b:"",r:4.7,rv:1234,d:"Sac à dos photo/tech modulaire avec accès latéral et système FlexFold.",f:["30L capacité modulable","Accès latéral rapide","FlexFold dividers","Laptop 16\" + tablette","Matériaux recyclés 100%"]},
+{id:76,n:"Aqara Hub M3",p:79,op:99,c:"Objets connectés",e:"🏠",b:"",r:4.5,rv:567,d:"Hub domotique Matter avec Thread, Zigbee 3.0 et IR intégré.",f:["Matter + Thread natif","Zigbee 3.0 128 appareils","Émetteur IR intégré","PoE ou USB-C","Aqara Home / HomeKit"]},
+{id:77,n:"Nikon Z6 III",p:2499,op:2799,c:"Photo & Vidéo",e:"📷",b:"",r:4.7,rv:289,d:"Hybride plein format polyvalent avec viseur dual-stream et vidéo 6K N-RAW.",f:["Capteur CMOS 24.5MP","Vidéo 6K N-RAW 60fps","Viseur dual-stream EVF","AF 3D intégral","Stabilisation synchro VR"]},
+{id:78,n:"OWC Envoy Pro SX 4To",p:499,op:599,c:"Stockage",e:"💾",b:"",r:4.6,rv:167,d:"SSD externe Thunderbolt 4 ultra-rapide en boîtier aluminium IP67.",f:["4 To Thunderbolt 4","2800 Mo/s transfert","IP67 étanche/poussière","Boîtier alu CNC","Compatible Mac + PC"]},
+{id:79,n:"UniFi U7 Pro",p:189,op:229,c:"Réseau",e:"📡",b:"new",r:4.6,rv:234,d:"Point d'accès Wi-Fi 7 professionnel avec couverture haute densité.",f:["Wi-Fi 7 tri-bande","Débit 9.3 Gbps","2.5GbE uplink","PoE+ alimenté","Jusqu'à 300 clients"]},
+{id:80,n:"ASUS ROG Maximus Z890 Hero",p:599,op:699,c:"Composants",e:"🔧",b:"",r:4.7,rv:167,d:"Carte mère gaming haut de gamme pour Intel Core Ultra 200S avec DDR5.",f:["LGA 1851 Socket","DDR5-9200+ (OC)","4x M.2 Gen5","Thunderbolt 4","AI Overclocking II"]},
+{id:81,n:"Sony Xperia 1 VI",p:1199,op:1399,c:"Smartphones",e:"📱",b:"sale",r:4.5,rv:234,d:"Smartphone créateur avec écran 4K HDR OLED et zoom optique continu 85-170mm.",f:["Snapdragon 8 Gen 3","Écran 6.5\" 4K HDR OLED","Zoom optique 85-170mm","Enregistrement LOG vidéo","Audio Hi-Res sans fil"]},
+{id:82,n:"Microsoft Surface Pro 11",p:1399,op:1599,c:"Ordinateurs",e:"💻",b:"",r:4.6,rv:345,d:"Tablette PC 2-en-1 avec Snapdragon X Elite et NPU 45 TOPS pour Copilot+.",f:["Snapdragon X Elite","13\" PixelSense Flow OLED","NPU 45 TOPS Copilot+","Wi-Fi 7","Autonomie 14 heures"]},
+{id:83,n:"Devialet Phantom I 108dB",p:2190,op:2490,c:"Audio",e:"🔊",b:"",r:4.8,rv:167,d:"Enceinte sans fil haute fidélité avec 1100W de puissance et basses profondes.",f:["1100W puissance crête","108dB SPL max","14Hz-27kHz réponse","SAM processing actif","AirPlay 2 / UPnP / Spotify"]},
+{id:84,n:"SteelSeries Arctis Nova Pro",p:329,op:369,c:"Gaming",e:"🎧",b:"",r:4.7,rv:567,d:"Casque gaming premium avec DAC GameDAC Gen 2 et ANC multi-points.",f:["GameDAC Gen 2 intégré","Hi-Res Audio certifié","ANC 4 microphones","Dual USB-C + Bluetooth","Batterie hot-swap infinie"]},
+{id:85,n:"Twelve South BookArc",p:49,op:69,c:"Accessoires",e:"💻",b:"",r:4.4,rv:890,d:"Support vertical en aluminium pour MacBook, élégant et gain de place.",f:["Aluminium brossé premium","Compatible tous MacBook","Inserts ajustables","Antidérapant silicone","Design minimaliste"]},
+{id:86,n:"Yale Linus Smart Lock L2",p:249,op:299,c:"Objets connectés",e:"🔒",b:"",r:4.5,rv:456,d:"Serrure connectée avec déverrouillage auto, Matter et design européen.",f:["Auto-unlock approche","Matter / Thread natif","Compatible HomeKit/Alexa","Design cylindre EU","Batterie 4 mois"]},
+{id:87,n:"Panasonic Lumix S5 IIX",p:2199,op:2499,c:"Photo & Vidéo",e:"📷",b:"sale",r:4.6,rv:189,d:"Hybride plein format vidéaste avec phase AF et codecs professionnels.",f:["Capteur 24.2MP plein format","Vidéo 6K 30fps C4K 60fps","Phase AF 779 points","V-Log / V-Gamut natif","ProRes RAW externe"]},
+{id:88,n:"LaCie Rugged SSD Pro 4To",p:449,op:549,c:"Stockage",e:"💾",b:"",r:4.6,rv:234,d:"SSD externe Thunderbolt 3 ultra-résistant pour vidéastes terrain.",f:["4 To Thunderbolt 3","2800 Mo/s transfert","IP67 + chute 3m","Dissipateur intégré","Boîtier orange iconique"]},
+{id:89,n:"Eero Max 7",p:449,op:549,c:"Réseau",e:"📡",b:"",r:4.5,rv:345,d:"Système Mesh Wi-Fi 7 avec 10 GbE et TrueMesh pour couverture totale.",f:["Wi-Fi 7 tri-bande","2x 10G Ethernet","TrueMesh topology","Eero Secure inclus","Couverture 230m² / unité"]},
+{id:90,n:"G.Skill Trident Z5 Royal Neo 64Go",p:249,op:299,c:"Composants",e:"🔧",b:"",r:4.6,rv:345,d:"Kit DDR5-6400 CL32 avec design cristal RGB et profils EXPO/XMP.",f:["64 Go (2x32 Go)","DDR5-6400 CL32","Design cristal illuminé","AMD EXPO + Intel XMP","Garantie à vie"]},
+{id:91,n:"Samsung Galaxy Ring",p:399,op:449,c:"Objets connectés",e:"💍",b:"new",r:4.3,rv:456,d:"Anneau connecté discret avec suivi santé 24/7 et autonomie 7 jours.",f:["Titane grade 5","SpO2 + fréquence cardiaque","Suivi sommeil avancé","Autonomie 7 jours","Étanche IP68"]},
+{id:92,n:"Keychron Q Max",p:199,op:229,c:"Gaming",e:"⌨️",b:"",r:4.7,rv:678,d:"Clavier mécanique custom sans fil avec gasket mount et QMK/VIA.",f:["Gasket mount alu CNC","QMK/VIA programmable","Bluetooth 5.1 + 2.4G + USB","Batterie 4000mAh","Hot-swap switches"]},
+{id:93,n:"Nomad Base One Max 3",p:149,op:179,c:"Accessoires",e:"🔌",b:"",r:4.5,rv:567,d:"Station de charge 3-en-1 avec MagSafe officiel et finition verre trempé.",f:["MagSafe officiel 15W","Charge Apple Watch rapide","Charge AirPods Qi2","Surface verre trempé","NomadGoods design"]},
+{id:94,n:"ASUS ZenScreen MB16QHG 16\"",p:349,op:399,c:"Accessoires",e:"🖥️",b:"",r:4.5,rv:345,d:"Écran portable 16\" 2.5K 120Hz pour productivité nomade.",f:["16\" IPS 2.5K 120Hz","USB-C DisplayPort","Kickstand intégré","550g ultra-léger","Étui magnétique inclus"]},
+{id:95,n:"Tesla Wall Connector Gen 4",p:399,op:499,c:"Objets connectés",e:"⚡",b:"sale",r:4.6,rv:234,d:"Borne de recharge domestique avec Wi-Fi, programmation et design compact.",f:["48A / 11.5kW max","Wi-Fi intégré","Compatible J1772/NACS","Programmation heures creuses","IP56 extérieur"]},
+{id:96,n:"Hasselblad X2D 100C",p:7999,op:8499,c:"Photo & Vidéo",e:"📷",b:"",r:4.9,rv:89,d:"Moyen format 100MP avec stabilisation et autofocus pour la photographie ultime.",f:["Capteur 100MP 44x33mm","Stabilisation IBIS 7 stops","AF phase 294 zones","Boîtier magnésium","Écran tactile 3.6\""]},
+{id:97,n:"Sabrent Rocket 5 8To",p:899,op:1099,c:"Stockage",e:"💾",b:"new",r:4.5,rv:123,d:"SSD NVMe PCIe 5.0 monstrueux de 8 To pour les archives massives.",f:["8 To NVMe Gen5","14000 Mo/s lecture","12000 Mo/s écriture","Contrôleur Phison E26","Dissipateur aluminium"]},
+{id:98,n:"Ubiquiti UniFi Switch Ultra 42",p:599,op:699,c:"Réseau",e:"📡",b:"",r:4.7,rv:167,d:"Switch manageable 42 ports avec PoE++ haute puissance et 10G uplinks.",f:["42x GbE PoE++","Total PoE 600W","4x 10G SFP+","UniFi Network intégré","Rack 1U fanless"]},
+{id:99,n:"Lian Li O11 Dynamic EVO 2",p:169,op:199,c:"Composants",e:"🔧",b:"",r:4.7,rv:567,d:"Boîtier PC dual-chamber premium avec panneaux verre trempé et flexibilité max.",f:["Dual-chamber design","4 panneaux verre trempé","ATX / E-ATX support","420mm radiateur support","USB-C front panel"]},
+{id:100,n:"Câble Thunderbolt 5 0.8m",p:69,op:89,c:"Accessoires",e:"🔌",b:"new",r:4.4,rv:234,d:"Câble Thunderbolt 5 haute performance 80 Gbps bidirectionnel avec charge 240W.",f:["80 Gbps bidirectionnel","Charge 240W USB-PD","Compatible USB4 v2","Gaine nylon tressé","Certifié Intel"]}
+];
+/* ===== STATE ===== */
+var cart=JSON.parse(localStorage.getItem("cart_"+SHOP.slug)||"[]");
+var view="home",selCat="",query="",selProd=null;
+/* ===== UTILS ===== */
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function fmt(n){return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €"}
+function stars(r){var s="";for(var i=0;i<5;i++)s+=i<Math.floor(r)?"★":"☆";return s}
+function toast(msg){var t=document.getElementById("toast");t.innerHTML=msg;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},2500)}
+function saveCart(){localStorage.setItem("cart_"+SHOP.slug,JSON.stringify(cart))}
+function disc(p){return p.op?Math.round((1-p.p/p.op)*100):0}
+function filtered(){return P.filter(function(p){var cm=!selCat||p.c===selCat;var qm=!query||p.n.toLowerCase().indexOf(query.toLowerCase())>=0||p.c.toLowerCase().indexOf(query.toLowerCase())>=0||p.d.toLowerCase().indexOf(query.toLowerCase())>=0;return cm&&qm})}
+/* ===== CART ===== */
+function addToCart(id){var p=P.find(function(x){return x.id===id});if(!p)return;var ci=cart.find(function(x){return x.id===id});if(ci){ci.qty++}else{cart.push({id:id,qty:1})}saveCart();renderCartBadge();toast("✅ "+esc(p.n)+" ajouté au panier")}
+function removeFromCart(id){cart=cart.filter(function(x){return x.id!==id});saveCart();renderCart();renderCartBadge()}
+function updateQty(id,delta){var ci=cart.find(function(x){return x.id===id});if(!ci)return;ci.qty+=delta;if(ci.qty<=0){removeFromCart(id);return}saveCart();renderCart();renderCartBadge()}
+function toggleCart(){document.getElementById("cartPanel").classList.toggle("open");document.getElementById("cartBg").classList.toggle("open")}
+function cartTotal(){var t=0;cart.forEach(function(ci){var p=P.find(function(x){return x.id===ci.id});if(p)t+=p.p*ci.qty});return t}
+function cartCount(){var c=0;cart.forEach(function(ci){c+=ci.qty});return c}
+function renderCartBadge(){var b=document.querySelector(".cart-badge");var c=cartCount();if(c>0){b.style.display="flex";b.textContent=c}else{b.style.display="none"}}
+function renderCart(){var el=document.getElementById("cartItems");var ft=document.getElementById("cartFooter");if(cart.length===0){el.innerHTML='<div class="cart-empty"><span>🛒</span>Votre panier est vide</div>';ft.innerHTML="";return}
+var h="";cart.forEach(function(ci){var p=P.find(function(x){return x.id===ci.id});if(!p)return;h+='<div class="cart-item"><div class="cart-item-img">'+p.e+'</div><div class="cart-item-info"><div class="cart-item-name">'+esc(p.n)+'</div><div class="cart-item-price">'+fmt(p.p)+'</div><div class="cart-item-qty"><button onclick="updateQty('+p.id+',-1)">−</button><span>'+ci.qty+'</span><button onclick="updateQty('+p.id+',1)">+</button></div><div class="cart-item-rm" onclick="removeFromCart('+p.id+')">Supprimer</div></div></div>'});
+el.innerHTML=h;ft.innerHTML='<div class="cart-total"><span>Total</span><span class="amount">'+fmt(cartTotal())+'</span></div><button class="btn-checkout" onclick="toast(\'✅ Commande validée ! Merci.\');cart=[];saveCart();renderCart();renderCartBadge();toggleCart()">Commander</button>'}
+/* ===== RENDER ===== */
+function renderCard(p){var d=disc(p);var badge=p.b==="sale"?'<span class="card-badge badge-sale">PROMO</span>':p.b==="new"?'<span class="card-badge badge-new">NOUVEAU</span>':p.b==="hot"?'<span class="card-badge badge-hot">POPULAIRE</span>':"";
+return'<div class="card" onclick="selProd='+p.id+';view=\'product\';render()"><div class="card-img">'+badge+p.e+'</div><div class="card-body"><div class="card-title">'+esc(p.n)+'</div><div class="card-meta"><span class="stars">'+stars(p.r)+'</span><span>'+p.r+'</span><span>('+p.rv+')</span></div><div class="card-price"><span class="price-now">'+fmt(p.p)+'</span>'+(p.op?'<span class="price-was">'+fmt(p.op)+'</span>':'')+(d?'<span class="price-off">-'+d+'%</span>':'')+'</div><button class="card-cta" onclick="event.stopPropagation();addToCart('+p.id+')">Ajouter au panier</button></div></div>'}
+function renderHome(){var fp=filtered();var cats=SHOP.cats;var hot=P.filter(function(p){return p.b==="hot"||p.b==="new"}).slice(0,8);var sales=P.filter(function(p){return p.b==="sale"}).slice(0,8);
+var h='<div class="hero"><h1>'+SHOP.emoji+' <em>'+esc(SHOP.name)+'</em></h1><p>'+esc(SHOP.desc)+'</p><div class="hero-stats"><div class="hero-stat"><strong>'+P.length+'</strong><span>Produits</span></div><div class="hero-stat"><strong>'+cats.length+'</strong><span>Catégories</span></div><div class="hero-stat"><strong>4.7★</strong><span>Note moyenne</span></div><div class="hero-stat"><strong>24/7</strong><span>Support</span></div></div></div>';
+h+='<div class="nav" id="nav">';h+='<div class="nav-item'+(selCat===""?" active":"")+'" onclick="selCat=\'\';render()">Tout</div>';cats.forEach(function(c){h+='<div class="nav-item'+(selCat===c?" active":"")+'" onclick="selCat=\''+esc(c)+'\';render()">'+esc(c)+'</div>'});h+='</div>';
+h+='<div class="trust"><div class="trust-item"><span class="trust-icon">🚚</span> Livraison gratuite dès 50€</div><div class="trust-item"><span class="trust-icon">🔒</span> Paiement sécurisé</div><div class="trust-item"><span class="trust-icon">↩️</span> Retour 30 jours</div><div class="trust-item"><span class="trust-icon">⭐</span> +10 000 avis clients</div></div>';
+if(!selCat&&!query){if(hot.length){h+='<div class="section"><div class="section-title">🔥 Tendances & Nouveautés</div><div class="grid">'+hot.map(renderCard).join("")+'</div></div>'}
+if(sales.length){h+='<div class="section"><div class="section-title">💰 Meilleures Promos</div><div class="grid">'+sales.map(renderCard).join("")+'</div></div>'}
+h+='<div class="section"><div class="section-title">🛍️ Tous nos produits</div><div class="grid">'+P.map(renderCard).join("")+'</div></div>'}else{h+='<div class="section"><div class="section-title">'+(selCat?esc(selCat):"Résultats")+' <span style="color:var(--muted);font-weight:400;font-size:14px">('+fp.length+' produits)</span></div>'+(fp.length?'<div class="grid">'+fp.map(renderCard).join("")+'</div>':'<p style="color:var(--muted);text-align:center;padding:48px">Aucun produit trouvé</p>')+'</div>'}
+h+='<footer class="footer"><div class="footer-inner"><div><h4>'+esc(SHOP.name)+'</h4><a href="#">À propos</a><a href="#">Carrières</a><a href="#">Presse</a></div><div><h4>Aide</h4><a href="#">FAQ</a><a href="#">Livraison</a><a href="#">Retours</a><a href="#">Contact</a></div><div><h4>Légal</h4><a href="#">CGV</a><a href="#">Mentions légales</a><a href="#">Confidentialité</a><a href="#">Cookies</a></div><div><h4>Suivez-nous</h4><a href="#">Instagram</a><a href="#">Twitter / X</a><a href="#">YouTube</a><a href="#">TikTok</a></div></div><div class="footer-bottom">© 2026 '+esc(SHOP.name)+' — KDMC Boutique. Tous droits réservés.</div></footer>';return h}
+function renderProduct(){var p=P.find(function(x){return x.id===selProd});if(!p){view="home";return renderHome()}var d=disc(p);
+var h='<div class="pdp"><div class="pdp-back" onclick="view=\'home\';render()">← Retour à la boutique</div><div class="pdp-grid"><div class="pdp-img">'+p.e+'</div><div class="pdp-info"><h1>'+esc(p.n)+'</h1><div class="meta"><span class="stars">'+stars(p.r)+'</span> '+p.r+'/5 ('+p.rv+' avis) · '+esc(p.c)+'</div><div><span class="pdp-price">'+fmt(p.p)+'</span>'+(p.op?'<span class="pdp-orig">'+fmt(p.op)+'</span>':'')+(d?' <span class="price-off" style="font-size:14px">-'+d+'%</span>':'')+'</div><p class="pdp-desc">'+esc(p.d)+'</p>';
+if(p.f&&p.f.length){h+='<ul class="pdp-features">';p.f.forEach(function(f){h+='<li>'+esc(f)+'</li>'});h+='</ul>'}
+h+='<button class="btn-add" onclick="addToCart('+p.id+')">🛒 Ajouter au panier — '+fmt(p.p)+'</button></div></div></div>';return h}
+function render(){var app=document.getElementById("app");app.innerHTML=view==="product"?renderProduct():renderHome();renderCartBadge();renderCart();window.scrollTo({top:0})}
+/* ===== EVENTS ===== */
+window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",window.scrollY>400)});
+document.addEventListener("DOMContentLoaded",function(){render();
+if(!localStorage.getItem("cookie_"+SHOP.slug)){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies pour améliorer votre expérience. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button><button class="btn-accept" onclick="localStorage.setItem(\'cookie_'+SHOP.slug+'\',\'1\');this.closest(\'.cookie\').remove()">Accepter</button></div>';document.body.appendChild(ck)}
+var si=document.querySelector(".search-box input");if(si)si.addEventListener("input",function(e){query=e.target.value;render();var ni=document.querySelector(".search-box input");if(ni){ni.value=query;ni.focus()}})});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@anthropic-ai/claude-ai-widget@0.1/dist/widget.min.js"
+        data-shop-name="Tech Hub"
+        data-shop-slug="tech-hub"
+        data-version="v1.0.0"
+        data-color="#e8b830"
+        defer></script>
+</body>
+</html>
