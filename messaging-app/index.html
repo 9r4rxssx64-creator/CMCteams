@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.69';
+const __APEX_CHAT_VERSION__ = 'v1.1.70';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.69</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.70</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.69</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.70</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,6 +870,94 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.70 — Keyboard shortcuts (power-user productivity)
+// ============================================================================
+K._KEYBOARD_SHORTCUTS = [
+  { keys: 'Cmd/Ctrl + K', desc: 'Rechercher dans conversations' },
+  { keys: 'Cmd/Ctrl + N', desc: 'Nouvelle conversation' },
+  { keys: 'Cmd/Ctrl + /', desc: 'Voir tous les raccourcis' },
+  { keys: 'Esc', desc: 'Fermer modal / annuler sélection' },
+  { keys: 'Cmd/Ctrl + F', desc: 'Recherche IA dans conv' },
+  { keys: 'Cmd/Ctrl + E', desc: 'Modifier dernier message envoyé' },
+  { keys: 'Enter', desc: 'Envoyer message (Shift+Enter = nouvelle ligne)' }
+];
+
+K._installKeyboardShortcuts = function(){
+  if(K._kbInstalled) return;
+  K._kbInstalled = true;
+  document.addEventListener('keydown', (e) => {
+    const isMac = navigator.platform.toLowerCase().includes('mac');
+    const meta = isMac ? e.metaKey : e.ctrlKey;
+    if(e.key === 'Escape'){
+      if(document.getElementById('modal-host')?.innerHTML){
+        K._closeModal && K._closeModal();
+        e.preventDefault();
+      } else if(K._selectedMsgs && K._selectedMsgs.size > 0){
+        K._clearSelection && K._clearSelection();
+        e.preventDefault();
+      } else if(K._replyToMsg){
+        K._cancelReply && K._cancelReply();
+        e.preventDefault();
+      }
+      return;
+    }
+    if(meta && e.key.toLowerCase() === 'k' && !e.shiftKey){
+      e.preventDefault();
+      if(K.view !== 'chats') K.sv('chats');
+      setTimeout(() => {
+        const input = document.getElementById('conv-search-input');
+        if(input){ input.focus(); input.select(); }
+      }, 100);
+      return;
+    }
+    if(meta && e.key.toLowerCase() === 'n'){
+      e.preventDefault();
+      K._showNewMenu && K._showNewMenu();
+      return;
+    }
+    if(meta && e.key === '/'){
+      e.preventDefault();
+      K._openKeyboardShortcuts();
+      return;
+    }
+    if(meta && e.key.toLowerCase() === 'f' && K.view === 'chat'){
+      e.preventDefault();
+      K._openSearchModal && K._openSearchModal();
+      return;
+    }
+    if(meta && e.key.toLowerCase() === 'e' && K.view === 'chat'){
+      const conv = K.viewData;
+      if(conv){
+        const msgs = K.messages[conv.id] || [];
+        const mine = msgs.filter(m => m.from === K.user?.id).reverse();
+        const editable = mine.find(m => K._canEditMsg && K._canEditMsg(m));
+        if(editable){
+          e.preventDefault();
+          K._openEditMsg && K._openEditMsg(editable.id);
+        }
+      }
+      return;
+    }
+  });
+};
+
+K._openKeyboardShortcuts = function(){
+  const rows = K._KEYBOARD_SHORTCUTS.map(s =>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ax-border)">
+      <span style="color:var(--ax-text)">${esc(s.desc)}</span>
+      <code style="background:var(--ax-bg-3);padding:2px 8px;border-radius:6px;color:var(--ax-gold);font-size:.82em;font-family:ui-monospace,monospace">${esc(s.keys)}</code>
+    </div>`
+  ).join('');
+  K._showModal('⌨️ Raccourcis clavier', rows);
+};
+
+if(typeof window !== 'undefined' && document.readyState !== 'loading'){
+  K._installKeyboardShortcuts();
+} else {
+  document.addEventListener('DOMContentLoaded', () => K._installKeyboardShortcuts());
+}
+
+// ============================================================================
 //  v1.1.68 — Block / unblock contacts (sécurité harassment)
 // ============================================================================
 K._isBlocked = function(peerId){
@@ -1207,7 +1295,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.69',
+    version: 'v1.1.70',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5766,6 +5854,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._viewBlockedList()">
         <span>🚫</span><span style="flex:1">Utilisateurs bloqués${(()=>{ const b=lg('blocked_users',[]); return b.length?` <span style="font-size:.75em;color:var(--ax-text-3)">(${b.length})</span>`:''; })()}</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openKeyboardShortcuts()">
+        <span>⌨️</span><span style="flex:1">Raccourcis clavier</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._openThemePicker()">
         <span>🎨</span><span style="flex:1">Thème + couleur d'accent</span><span>›</span>
       </div>
@@ -7847,7 +7938,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.69"
+        data-version="v1.1.70"
         data-color="#6a8aff"
         defer></script>
 </body>
