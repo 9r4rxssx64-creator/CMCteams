@@ -196,6 +196,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .msg-edited{font-size:.85em;margin-left:4px;opacity:.6;font-style:italic}
 .msg.deleted-tombstone{opacity:.55;font-style:italic}
 .forwarded-mark{font-size:.72em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px;letter-spacing:.3px}
+.msg-selected{outline:2px solid var(--ax-gold);outline-offset:2px;background:rgba(232,184,48,.15) !important}
 .reply-quote{background:rgba(232,184,48,.08);border-left:3px solid var(--ax-gold);
   padding:5px 8px;border-radius:6px;margin-bottom:6px;cursor:pointer;min-width:0;max-width:100%}
 .reply-quote:active{background:rgba(232,184,48,.15)}
@@ -318,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.60';
+const __APEX_CHAT_VERSION__ = 'v1.1.61';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -399,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.60</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.61</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -413,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.60</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.61</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -867,6 +868,151 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.61 — Multi-select messages : bulk forward / delete / star
+// ============================================================================
+K._selectedMsgs = new Set();
+
+K._toggleSelectMode = function(msgId){
+  if(msgId){ K._selectedMsgs.add(msgId); }
+  K.render();
+  setTimeout(() => K._renderSelectionBar(), 10);
+};
+
+K._toggleSelectMsg = function(msgId){
+  if(!K._selectedMsgs) K._selectedMsgs = new Set();
+  if(K._selectedMsgs.has(msgId)){
+    K._selectedMsgs.delete(msgId);
+  } else {
+    K._selectedMsgs.add(msgId);
+  }
+  K._renderSelectionBar();
+  const el = document.querySelector(`.msg[data-msg-id="${msgId}"]`);
+  if(el){
+    if(K._selectedMsgs.has(msgId)) el.classList.add('msg-selected');
+    else el.classList.remove('msg-selected');
+  }
+  if(K._selectedMsgs.size === 0) K.render();
+};
+
+K._clearSelection = function(){
+  K._selectedMsgs = new Set();
+  K._renderSelectionBar();
+  K.render();
+};
+
+K._renderSelectionBar = function(){
+  let bar = document.getElementById('selection-bar');
+  const count = K._selectedMsgs.size;
+  if(count === 0){
+    if(bar) bar.remove();
+    return;
+  }
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'selection-bar';
+    bar.style.cssText = 'position:sticky;top:0;z-index:50;background:var(--ax-bg-2);border-bottom:1px solid var(--ax-gold);padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:.88em';
+    const header = document.querySelector('.chat-header');
+    if(header && header.parentNode) header.parentNode.insertBefore(bar, header.nextSibling);
+  }
+  bar.innerHTML = `
+    <span style="flex:1;color:var(--ax-gold);font-weight:600">${count} sélectionné${count > 1 ? 's' : ''}</span>
+    <button onclick="K._bulkForward()" class="btn btn-out btn-sm" title="Transférer">↗</button>
+    <button onclick="K._bulkStar()" class="btn btn-out btn-sm" title="Favoris">⭐</button>
+    <button onclick="K._bulkDelete()" class="btn btn-out btn-sm" style="color:#e63946;border-color:#e63946" title="Supprimer">🗑</button>
+    <button onclick="K._clearSelection()" class="btn btn-out btn-sm" title="Annuler">✕</button>
+  `;
+};
+
+K._bulkForward = function(){
+  if(K._selectedMsgs.size === 0) return;
+  const conv = K.viewData;
+  if(!conv) return;
+  const targets = (K.conversations || []).filter(c => c.id !== conv.id);
+  if(targets.length === 0){ toast('Aucune autre conv', 'warn'); return; }
+  K._showModal(`↗ Transférer ${K._selectedMsgs.size} message(s)`, `
+    <p style="color:var(--ax-text-2);font-size:.82em;margin:0 0 8px">Choisir destination :</p>
+    <div style="max-height:50vh;overflow-y:auto;display:grid;gap:6px">
+      ${targets.map(t => `
+        <div onclick="K._doBulkForward('${esc(t.id)}')"
+             style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:32px;height:32px">${esc((t.name || t.pseudo || '?')[0].toUpperCase())}</div>
+          <div style="flex:1"><div style="font-weight:600">${esc(t.name || t.pseudo || 'Sans nom')}</div></div>
+          <span>↗</span>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+K._doBulkForward = function(targetConvId){
+  const srcConv = K.viewData;
+  if(!srcConv || !targetConvId) return;
+  const srcMsgs = K.messages[srcConv.id] || [];
+  const ids = Array.from(K._selectedMsgs);
+  let count = 0;
+  for(const id of ids){
+    const srcMsg = srcMsgs.find(x => x.id === id);
+    if(!srcMsg) continue;
+    const fwdMsg = {
+      id: 'm_fwd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5) + '_' + count,
+      from: K.user.id,
+      text: srcMsg.text || '',
+      image_data: srcMsg.image_data, alt: srcMsg.alt,
+      voice_data: srcMsg.voice_data, voice_text: srcMsg.voice_text,
+      ts: Date.now() + count,
+      forwarded: true,
+      forwarded_from_conv: srcConv.name || srcConv.pseudo || '',
+      encrypted: false,
+    };
+    K.messages = K.messages || {};
+    K.messages[targetConvId] = K.messages[targetConvId] || [];
+    K.messages[targetConvId].push(fwdMsg);
+    count++;
+  }
+  ls('messages_' + targetConvId, K.messages[targetConvId]);
+  K._closeModal && K._closeModal();
+  K._clearSelection();
+  toast(`↗ ${count} message(s) transféré(s)`, 'ok');
+};
+
+K._bulkStar = function(){
+  if(K._selectedMsgs.size === 0) return;
+  const conv = K.viewData;
+  if(!conv) return;
+  const stars = lg('starred_messages', []);
+  const msgs = K.messages[conv.id] || [];
+  let added = 0;
+  for(const id of K._selectedMsgs){
+    if(stars.some(s => s.id === id)) continue;
+    const m = msgs.find(x => x.id === id);
+    if(!m) continue;
+    stars.push({
+      id, convId: conv.id,
+      convName: conv.name || conv.pseudo || '',
+      text: m.text || (m.voice_text ? '🎙️ ' + m.voice_text : '') || (m.image_data ? '📷 Image' : ''),
+      from: m.from, ts: m.ts, starred_at: Date.now()
+    });
+    added++;
+  }
+  ls('starred_messages', stars);
+  K._clearSelection();
+  toast(`⭐ ${added} ajouté(s) aux favoris`, 'ok');
+};
+
+K._bulkDelete = function(){
+  if(K._selectedMsgs.size === 0) return;
+  const count = K._selectedMsgs.size;
+  if(!confirm(`Supprimer ${count} message(s) pour toi ?\n\nIrréversible localement.`)) return;
+  const conv = K.viewData;
+  if(!conv) return;
+  const msgs = K.messages[conv.id] || [];
+  K.messages[conv.id] = msgs.filter(m => !K._selectedMsgs.has(m.id));
+  ls('messages_' + conv.id, K.messages[conv.id]);
+  K._clearSelection();
+  toast(`🗑 ${count} message(s) supprimé(s)`, 'ok');
+};
 
 // ============================================================================
 //  v1.1.60 — Voice player Telegram-style : play/pause + speed cycle 1×/1.5×/2×
@@ -2093,6 +2239,8 @@ K._openReactionPicker = function(msgId){
   if(msg && (hasText || msg.image_data || msg.voice_data)){
     actions.push(`<button class="btn btn-out btn-sm" onclick="K._setReplyTo('${esc(msgId)}')">↩ Répondre</button>`);
   }
+  // v1.1.61 — Sélection multiple (active mode + ajoute ce message)
+  actions.push(`<button class="btn btn-out btn-sm" onclick="K._closeModal();K._toggleSelectMode('${esc(msgId)}')">☑ Sélection multiple</button>`);
   // v1.1.50 — Forward (toujours dispo si message a du contenu)
   if(msg && (hasText || msg.image_data || msg.voice_data)){
     actions.push(`<button class="btn btn-out btn-sm" onclick="K._openForwardMenu('${esc(msgId)}')">↗ Transférer</button>`);
@@ -2787,7 +2935,7 @@ function renderChat(app){
         const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
         const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
         return `
-        <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
+        <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}${K._selectedMsgs && K._selectedMsgs.has(m.id) ? ' msg-selected' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')" onclick="if(K._selectedMsgs && K._selectedMsgs.size > 0){event.stopPropagation();K._toggleSelectMsg('${esc(m.id)}')}">
           ${m.reply_to ? `<div class="reply-quote" onclick="K._scrollToMsg('${esc(m.reply_to.id)}')">
             <div style="color:var(--ax-gold);font-size:.72em;font-weight:600">↩ ${esc(m.reply_to.from_name || '')}</div>
             <div style="color:var(--ax-text-2);font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.reply_to.text || '')}</div>
@@ -7179,7 +7327,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.60"
+        data-version="v1.1.61"
         data-color="#6a8aff"
         defer></script>
 </body>
