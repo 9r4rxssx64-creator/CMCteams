@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.102';
+const __APEX_CHAT_VERSION__ = 'v1.1.103';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.102</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.103</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.102</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.103</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -988,6 +988,17 @@ K._openReactionStats = function(convId){
 // ============================================================================
 //  v1.1.100 — Global search across all conversations (milestone)
 // ============================================================================
+// ============================================================================
+//  v1.1.103 — Compose textarea auto-resize (multiline smooth)
+// ============================================================================
+K._autoResize = function(el){
+  if(!el) return;
+  el.style.height = 'auto';
+  const newHeight = Math.min(el.scrollHeight, 160); // max ~6 lignes
+  el.style.height = newHeight + 'px';
+  el.style.overflowY = el.scrollHeight > 160 ? 'auto' : 'hidden';
+};
+
 K._scrollToFirstUnread = function(convId){
   const msgs = K.messages[convId] || [];
   const lastRead = lg('lastread_' + convId, 0);
@@ -3235,7 +3246,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.102',
+    version: 'v1.1.103',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5570,7 +5581,7 @@ function renderChat(app){
       <button class="chat-attach" onclick="K._openLocationShare()" aria-label="Partager position" title="Position GPS">📍</button>
       <button class="chat-attach" onclick="K._openContactCardComposer()" aria-label="Partager un contact" title="Carte de contact">📇</button>
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
-      <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft()">${esc(K._loadDraft(conv.id) || '')}</textarea>
+      <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft();K._autoResize&&K._autoResize(this)">${esc(K._loadDraft(conv.id) || '')}</textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
