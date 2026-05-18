@@ -29662,7 +29662,7 @@ function _renderAdminItemsV10(items){
 }
 
 // svAdminCat(cat) — helper de navigation : ouvre la vue détaillée d'une catégorie
-function svAdminCat(cat){A.adminCat=cat;sv('admincat');}
+function svAdminCat(cat){A.adminCat=cat;A._adminCatQ="";sv('admincat');} // v9.685 reset filtre à chaque ouverture de catégorie
 
 // vAdminV10() — nouveau panneau admin : home avec raccourcis du jour + grille 5 catégories
 function vAdminV10(){
@@ -29779,17 +29779,36 @@ function vAdminCat(){
   var cat=A.adminCat;
   var data=cats[cat];
   if(!data)return '<div class="card" style="padding:20px"><div style="font-size:18px;font-weight:700;color:#e09848">❓ Catégorie inconnue</div><button class="btn gold" onclick="sv(\'adminv10\')" style="margin-top:12px">← Retour Admin</button></div>';
+  // v9.685 — Filtre/recherche dans la catégorie (utile pour Système 14 items, Sécurité 9 items)
+  var q=(A._adminCatQ||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  var filteredItems=data.items;
+  var totalItems=data.items.filter(function(it){return it.lb;}).length;
+  var visibleItems=totalItems;
+  if(q&&q.length>=2){
+    filteredItems=data.items.filter(function(it){
+      if(it.sep||it.grp||it.grpEnd||it.kill)return true; // structure conservée
+      if(!it.lb)return false;
+      var lbl=it.lb.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+      return lbl.indexOf(q)>=0;
+    });
+    visibleItems=filteredItems.filter(function(it){return it.lb;}).length;
+  }
   return '<div class="page bg-palace" style="position:relative">'
     +'<button onclick="sv(\'adminv10\')" class="btn ghost" style="margin-bottom:14px;font-size:14px;padding:8px 14px;min-height:40px">← Admin</button>'
-    +'<div style="margin-bottom:18px;display:flex;align-items:center;gap:12px">'
+    +'<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px">'
     +'<div style="font-size:32px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:rgba(201,162,39,.10);border:1px solid rgba(201,162,39,.25);border-radius:14px">'+data.ic+'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:24px;font-weight:800;color:#c9a227;font-family:Cormorant Garamond,Garamond,serif;line-height:1.1">'+data.title+'</div>'
     +'<div style="font-size:12px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase;margin-top:2px">'+data.desc+'</div>'
     +'</div>'
     +'</div>'
+    // v9.685 — Champ de recherche pour filtrer dans la catégorie (n'apparaît que si > 6 items)
+    +(totalItems>6?'<div style="margin-bottom:12px;position:relative">'
+      +'<input id="adminCatQIn" type="text" placeholder="🔍 Filtrer dans cette catégorie…" value="'+esc(A._adminCatQ||"")+'" oninput="searchInput(\'_adminCatQ\',this.value,\'adminCatQIn\')" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:9px;color:#d8e8c8;font-size:14px;font-family:inherit;outline:none">'
+      +(q&&q.length>=2?'<div style="font-size:11px;color:#9bb89b;margin-top:6px;letter-spacing:.3px">'+visibleItems+' action'+(visibleItems>1?"s":"")+' sur '+totalItems+' · <a onclick="A._adminCatQ=\'\';dc()" style="color:#c9a227;cursor:pointer;text-decoration:underline">✕ effacer le filtre</a></div>':'')
+      +'</div>':'')
     +'<div style="display:flex;flex-direction:column;gap:6px">'
-    +_renderAdminItemsV10(data.items)
+    +(visibleItems===0?'<div style="padding:24px;text-align:center;color:#7a8a70;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:10px"><div style="font-size:28px;margin-bottom:6px">🔎</div><div style="font-size:14px">Aucune action trouvée pour "<b style="color:#c9a227">'+esc(q)+'</b>"</div><div style="font-size:12px;margin-top:6px;opacity:.7">Essaye un autre mot-clé ou efface le filtre.</div></div>':_renderAdminItemsV10(filteredItems))
     +'</div>'
     +'</div>';
 }
