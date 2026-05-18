@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.95';
+const __APEX_CHAT_VERSION__ = 'v1.1.96';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.95</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.96</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.95</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.96</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -921,6 +921,97 @@ function _distKm(a, b){
   const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+// ============================================================================
+//  v1.1.96 — Pull-to-refresh sur liste conv (iOS standard gesture)
+// ============================================================================
+K._installPullToRefresh = function(){
+  if(K._ptrInstalled) return;
+  K._ptrInstalled = true;
+  let startY = 0, currentY = 0, tracking = false;
+  let indicator = null;
+  function getContainer(){
+    if(K.view !== 'chats') return null;
+    return document.getElementById('app') || document.scrollingElement;
+  }
+  document.addEventListener('touchstart', (e) => {
+    const container = getContainer();
+    if(!container || container.scrollTop > 5) return;
+    startY = e.touches[0].clientY;
+    currentY = startY;
+    tracking = true;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if(!tracking) return;
+    currentY = e.touches[0].clientY;
+    const dy = currentY - startY;
+    if(dy < 0){ tracking = false; if(indicator) indicator.remove(); indicator = null; return; }
+    if(dy > 20){
+      if(!indicator){
+        indicator = document.createElement('div');
+        indicator.id = 'ptr-indicator';
+        indicator.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:60;background:var(--ax-gold);color:var(--ax-bg);padding:6px 14px;border-radius:14px;font-size:.88em;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.3)';
+        document.body.appendChild(indicator);
+      }
+      const progress = Math.min(1, dy / 80);
+      indicator.textContent = progress >= 1 ? '⟳ Lâche pour rafraîchir' : '↓ Continue à tirer';
+      indicator.style.opacity = String(0.4 + progress * 0.6);
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if(!tracking) return;
+    tracking = false;
+    const dy = currentY - startY;
+    if(indicator){
+      if(dy > 80){
+        indicator.textContent = '🔄 Rafraîchissement...';
+        if('vibrate' in navigator){ try { navigator.vibrate(15); } catch(_) {} }
+        K._refreshConvs && K._refreshConvs();
+        setTimeout(() => { if(indicator) indicator.remove(); indicator = null; }, 1200);
+      } else {
+        indicator.remove();
+        indicator = null;
+      }
+    }
+  }, { passive: true });
+};
+
+K._refreshConvs = async function(){
+  if(K._checkRemoteVersion){ try { K._checkRemoteVersion(); } catch(_) {} }
+  if(K.token && typeof API_BASE !== 'undefined'){
+    try {
+      const r = await fetch(API_BASE + '/api/conversations', {
+        headers: { 'Authorization': 'Bearer ' + K.token }
+      });
+      if(r.ok){
+        const data = await r.json();
+        if(data && Array.isArray(data.conversations)){
+          const localById = {};
+          for(const c of K.conversations || []){ localById[c.id] = c; }
+          K.conversations = data.conversations.map(c => ({
+            ...c,
+            pinned: localById[c.id]?.pinned,
+            muted: localById[c.id]?.muted,
+            archived: localById[c.id]?.archived,
+            label_ids: localById[c.id]?.label_ids,
+            bg_id: localById[c.id]?.bg_id,
+            peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
+          }));
+          ls('conversations', K.conversations);
+          K.render();
+        }
+      }
+    } catch(_) {}
+  }
+  K._updateUnreadBadge && K._updateUnreadBadge();
+  toast('🔄 Rafraîchi', 'ok', 1500);
+};
+
+if(typeof window !== 'undefined' && document.readyState !== 'loading'){
+  K._installPullToRefresh && K._installPullToRefresh();
+} else {
+  document.addEventListener('DOMContentLoaded', () => K._installPullToRefresh && K._installPullToRefresh());
 }
 
 // ============================================================================
@@ -2968,7 +3059,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.95',
+    version: 'v1.1.96',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -9776,7 +9867,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.95"
+        data-version="v1.1.96"
         data-color="#6a8aff"
         defer></script>
 </body>
