@@ -1,4 +1,44 @@
-# Mémo de reprise — Apex v13.4.127 / CMC v9.638 (2026-05-15)
+# Mémo de reprise — Apex v13.4.220 / CMC v9.638 / Social Video Pipeline v1.0 (2026-05-18)
+
+## 🎬 SESSION 2026-05-18 — Pipeline vidéo social media automatisé (LIVE sur main)
+
+### Ce qui a été livré
+
+**Pipeline complet** de génération + publication automatique de vidéos faceless.
+Mergé dans `main` via PR #267 (squash merge).
+
+| Métrique | Valeur |
+|----------|--------|
+| Code source | 8 909 lignes, 28 fichiers JS |
+| Tests | 78/78 PASS |
+| CLI | 18 commandes fonctionnelles |
+| Templates | 5 (narrative, documentary, listicle, breaking-news, tutorial) |
+| Stories | 51 prêtes (10 niches) |
+| Langues | 9 (EN/FR/ES/IT/DE/PT/AR/JA/HI) |
+| Plateformes | 6 (YouTube, TikTok, Instagram, Facebook, Twitter, Telegram) |
+| GitHub Actions | 2 workflows (quotidien 12h + scheduler 6h) |
+
+### Modules livrés
+
+- **Engine** : compiler, tts, subtitles, frames, renderer, script-generator, shorts-extractor, thumbnail-generator, analytics, ab-testing, branding, multi-lang, viral-optimizer, content-repurposer, seo-optimizer
+- **Templates** : narrative-storytelling, documentary, listicle, breaking-news, tutorial
+- **Publishers** : youtube, facebook, instagram, base-publisher
+- **Scheduler** : scheduler + cron-runner + GitHub Actions
+
+### Statut live
+
+- Code sur `main` : ✅
+- Workflows GitHub Actions : ✅ actifs (`social-publish.yml` + `social-scheduler.yml`)
+- Secrets GitHub : ⏳ Kevin doit ajouter (voir KEVIN_ACTIONS_TODO.md)
+
+### Pour activer la publication automatique
+
+Kevin doit ajouter 1 secret minimum dans GitHub Settings → Secrets :
+1. `GOOGLE_AI_API_KEY` (gratuit, 5 min) → scripts IA fonctionnent
+2. `YOUTUBE_*` (15 min) → publication YouTube automatique
+3. `TELEGRAM_*` (5 min) → notifications sur téléphone
+
+---
 
 ## 🎯 SESSION 2026-05-15 UX + chefs équipe + diag — CMC v9.635→v9.638 (Kevin)
 
