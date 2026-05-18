@@ -2824,6 +2824,73 @@ export async function handleAiImageDescribe(request, env) {
 }
 
 // ============================================================================
+//  v1.1.41 — POST /api/ai/rewrite : reformule un message (ton, style, longueur)
+//  Input : { text, style: 'shorter'|'longer'|'formal'|'friendly'|'apology'|'fun' }
+//  Output : { ok, rewritten, original, style, provider, premium }
+// ============================================================================
+export async function handleAiRewrite(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'translate'); // share translate quota bucket
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} reformulations aujourd'hui).`,
+      used: quota.used, limit: quota.limit, feature: 'translate'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const text = String(body.text || '').trim();
+  const style = String(body.style || 'friendly').toLowerCase();
+  if (!text || text.length < 3) return err('text required (min 3 chars)');
+  if (text.length > 2000) return err('text too long (max 2000)');
+
+  const STYLE_PROMPTS = {
+    shorter: 'Reformule ce message en 50% moins de mots, en gardant le sens essentiel.',
+    longer: 'Développe ce message en ajoutant 1-2 phrases de contexte ou nuance.',
+    formal: 'Reformule ce message en français formel (vouvoiement, structure professionnelle).',
+    friendly: 'Reformule ce message en français amical (tutoiement, ton chaleureux, peut-être 1 emoji adapté).',
+    apology: 'Reformule ce message comme une excuse sincère et empathique.',
+    fun: 'Reformule ce message avec humour léger, 1-2 emojis adaptés. Reste naturel.',
+    professional: 'Reformule comme un email business clair, concis, factuel.',
+    fix_typos: 'Corrige uniquement les fautes (orthographe, grammaire, ponctuation). Ne change pas le sens ni le ton.',
+  };
+  const stylePrompt = STYLE_PROMPTS[style] || STYLE_PROMPTS.friendly;
+  const sysPrompt = `Tu es un assistant de rédaction. ${stylePrompt} Retourne UNIQUEMENT le texte reformulé, sans préambule, sans guillemets, sans explication.`;
+  const messages = [{ role: 'user', content: text }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 10_000);
+      const rewritten = await p.fn(messages, sysPrompt, env, ctrl.signal, 800);
+      clearTimeout(to);
+      const cleaned = String(rewritten || '').trim().replace(/^["«»"']|["«»"']$/g, '');
+      if (cleaned && cleaned.length > 0) {
+        await consumeQuota(env, quota);
+        return json({
+          ok: true,
+          rewritten: cleaned,
+          original: text,
+          style,
+          provider: p.name,
+          premium: quota.premium,
+        });
+      }
+    } catch (e) {
+      console.warn(`[rewrite] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('Reformulation IA indisponible', 503);
+}
+
+// ============================================================================
 //  v1.1.35 — POST /api/ai/search : semantic search dans messages
 //  Input : { query, messages: [{text, ts, from}, ...] } (max 200 messages)
 //  Output : { ok, results: [{idx, score, snippet, reason}], provider }
@@ -3074,6 +3141,8 @@ export default {
       if (path === '/api/premium/quota' && method === 'GET') return await handlePremiumQuota(request, env);
       // v1.1.35 — Semantic search messages
       if (path === '/api/ai/search' && method === 'POST') return await handleAiSemanticSearch(request, env);
+      // v1.1.41 — AI rewrite message (8 styles)
+      if (path === '/api/ai/rewrite' && method === 'POST') return await handleAiRewrite(request, env);
 
       // v1.1.26 — Customer Portal + Smart Reply + Translate
       if (path === '/api/premium/portal' && method === 'POST') return await handlePremiumPortal(request, env);
