@@ -1,23 +1,23 @@
-# e-KDMC — Création commerce en ligne automatisé
+# e-KDMC — Plateforme e-Commerce Automatisée KDMC
 
 Projet de Kevin DESARZENS (U11804 · kevind@monaco.mc).
-Créé le 2026-04-13. **Pas encore commencé** — l'admin dira quand démarrer.
+Créé le 2026-04-13. **EN PRODUCTION v1.10** depuis le 2026-05-18.
 
 ---
 
-## 🎯 Objectif (à préciser avec l'admin au démarrage)
+## 🎯 État du projet
 
-Commerce en ligne **automatisé** (dropshipping ? print-on-demand ? SaaS ?).
-Nature exacte à définir au premier message :
+**5 boutiques en ligne + dashboard admin + agent automation 24/7.**
 
-- Quel produit / service vendu ?
-- Audience cible ?
-- Plateforme (Shopify / WooCommerce / custom ?)
-- Paiement (Stripe / PayPal / Monabanq ?)
-- Fournisseur / stock (dropshipping AliExpress ? fournisseur local SBM ?)
-- Automatisations clés : commandes, SAV, marketing, facturation
-- Langues (FR/EN/IT comme CMCteams ?)
-- Intégration IA (IA-KDMC pour SAV automatique, génération contenus ?)
+| Boutique | Thème | Produits | Status |
+|----------|-------|----------|--------|
+| **CHEZ LOLO** | Cosmétiques Provence (olive/crème) | 100 | ✅ Live |
+| **Tech Hub** | Gadgets & accessoires tech | 100 | ✅ Live |
+| **EcoCraft** | Éco-responsable, zéro déchet | 100 | ✅ Live |
+| **Digital Vault** | Produits numériques (formations, templates) | 100 | ✅ Live |
+| **Pawsome** | Animaux (chiens, chats) | 100 | ✅ Live |
+
+**Total : 500 produits, descriptions uniques, photos Unsplash réelles.**
 
 ---
 
@@ -29,101 +29,161 @@ Nature exacte à définir au premier message :
 - **Localisation** : Monaco / Monte-Carlo
 - **Préfix projets** : KDMC
 
-Voir `~/.claude/CLAUDE.md` pour les méta-règles globales.
+---
+
+## 🏗 Architecture technique
+
+### Stack
+- **Frontend** : SPA HTML/CSS/JS vanilla (monofichier par boutique, 0 dépendance)
+- **Hébergement** : GitHub Pages (gratuit) + Vercel (à configurer pour URLs courtes)
+- **Paiement** : PayPal (`paypal.me/kdmc`) + Revolut (`@kdmc`) + Virement IBAN
+- **Emails** : Brevo (à connecter) — 6 templates prêts
+- **Factures** : Générateur PDF serverless
+- **Agent** : Node.js Vercel cron — inventory, orders, health, notifications
+- **Dashboard** : SPA admin 6 vues (orders, products, customers, analytics, finance, settings)
+
+### Structure fichiers
+```
+shops/
+├── index.html              # Portail (liste les 5 boutiques)
+├── vercel.json             # Rewrites URLs courtes (/lolo, /tech, etc.)
+├── chez-lolo/index.html    # CHEZ LOLO (ex glow-wellness)
+├── tech-hub/index.html     # Tech Hub
+├── ecocraft/index.html     # EcoCraft
+├── digital-vault/index.html # Digital Vault
+├── pawsome/index.html      # Pawsome
+├── dashboard/index.html    # Dashboard admin
+├── legal/
+│   ├── cgv.html            # Conditions Générales de Vente
+│   ├── mentions.html       # Mentions Légales
+│   └── confidentialite.html # Politique Confidentialité
+
+_PROJECTS_KDMC/e-KDMC/
+├── CLAUDE.md               # Ce fichier
+├── NOTES_USER.md           # Infos métier e-commerce
+├── TODO_KEVIN.md           # Actions Kevin priorisées
+├── functions/
+│   ├── stripe-webhook.js   # Webhook Stripe (signature vérifiée)
+│   ├── email-trigger.js    # 6 templates email transactionnel
+│   └── invoice-generate.js # Générateur factures PDF
+├── automation/agent/index.js # Agent 24/7 (7 fonctions)
+├── _shared/
+│   ├── css/kdmc-components.css
+│   └── js/kdmc-core.js
+└── tools/scripts/
+    ├── generate-store.js
+    └── generate-products.js
+```
+
+### URLs
+
+| Boutique | GitHub Pages | Vercel (à configurer) |
+|----------|-------------|----------------------|
+| Portail | `.../shops/` | `kdmc-shops.vercel.app/` |
+| CHEZ LOLO | `.../shops/chez-lolo/` | `.../lolo/` |
+| Tech Hub | `.../shops/tech-hub/` | `.../tech/` |
+| EcoCraft | `.../shops/ecocraft/` | `.../eco/` |
+| Digital Vault | `.../shops/digital-vault/` | `.../digital/` |
+| Pawsome | `.../shops/pawsome/` | `.../pets/` |
+| Dashboard | `.../shops/dashboard/` | `.../admin/` |
 
 ---
 
-## 🚨 MÉTA-RÈGLES PERMANENTES (comme les autres projets Kevin)
+## 🛒 CHEZ LOLO — Détails
 
-1. **Toute info métier = enregistrée immédiatement** dans ce CLAUDE.md
-2. **Tout doit être AUTOMATISÉ** au maximum (le nom du projet le dit)
-3. **Boutons manuels admin** en secours pour chaque automatisation
-4. **Backup cloud** des configs sensibles (clés API Stripe, etc.)
-5. **Clés API jamais dans le repo** — variables d'environnement / vault
-6. **UX simple, visuel, ludique** (même règle que CMCteams)
-7. **Erreurs connues documentées** ici
-8. **TodoWrite obligatoire**
-9. **Tests + validation avant push**
-10. **Branche unique `main`**
+**Rebrand de Glow Wellness** (Kevin 2026-05-18).
 
----
-
-## ⚙️ Automatisations à prévoir (checklist de démarrage)
-
-- [ ] Import catalogue produits (CSV ? API fournisseur ?)
-- [ ] Synchro stock temps réel
-- [ ] Commandes → notification fournisseur auto
-- [ ] Tracking colis auto (17track / AfterShip)
-- [ ] Emails transactionnels (achat, expédition, livraison) automatiques
-- [ ] SAV IA (via IA-KDMC ?)
-- [ ] Facturation auto (PDF conforme MC/FR/UE)
-- [ ] Comptabilité auto (export compta)
-- [ ] Marketing auto (abandon panier, remarketing)
-- [ ] Analytics dashboard admin
-- [ ] Multi-devises (EUR / USD / GBP)
-- [ ] Multi-langues (FR/EN/IT)
-- [ ] TVA/fiscalité Monaco (spécificités)
-- [ ] RGPD / CNIL (cookies, données clients)
+- **Nom** : CHEZ LOLO
+- **Thème** : Provençal — cosmétiques naturels, soins bio
+- **Palette** : olive (#7c8c3c), crème (#faf8f0), terre cuite
+- **Typo** : Playfair Display (serif élégant) pour titres + logos
+- **Images** : Olivier, lavande, amande douce, flacons cosmétiques
+- **Catégories** : Soins Visage 🫒, Soins Corps 🌿, Huiles & Aromathérapie 🪻, Bien-être Provence ☀️, Soins Cheveux 🌾, Cosmétiques Naturels 🌸, Coffrets Provence 🎁, Accessoires & Spa 🛁
+- **Produits** : Exemples réalistes — Kevin choisira les vrais produits (donne un nom ou photo → recherche fournisseur auto)
 
 ---
 
-## 🛡 Erreurs à NE PAS reproduire (hérités de CMCteams + nouvelles e-commerce)
+## 💳 Paiement
 
-1. **Pas de clé API Stripe / paiement en clair** dans le code/commits
-2. **Toujours `.catch()` sur `fetch()`** (hérité CMCteams Safari iOS)
-3. **Webhooks payment = idempotents** (signature Stripe à vérifier)
-4. **Pas de prix calculés côté client** → toujours serveur pour éviter fraude
-5. **Stock décrémenté avec transaction atomique** (pas de double-vente)
-6. **Emails transactionnels = queue + retry** (pas de fire-and-forget)
-7. **Logs d'audit sur chaque commande** (RGPD + compta)
-8. **Backup DB quotidien automatique**
-9. **Monitoring uptime + alertes** admin en cas de crash
-10. **Tests de paiement en mode test Stripe avant prod**
+### Moyens intégrés
+1. **PayPal** — lien `paypal.me/kdmc` + montant pré-rempli
+2. **Revolut** — lien `revolut.me/kdmc` (@kdmc)
+3. **Virement IBAN** — MC98••• affiché + bouton copier
+4. **Stripe** — webhook prêt (`functions/stripe-webhook.js`), pas encore connecté
+
+### Modal checkout
+Clic "Commander" → modal avec les 3 options de paiement. Style luxe, glassmorphism.
 
 ---
 
-## 💰 Considérations Monaco / SBM
+## 📱 Notifications
 
-- **Fiscalité Monaco** : pas de TVA personne physique mais TVA entreprise
-- **Commerce électronique Monaco** : déclaration Direction du Développement Économique
-- **Si Kevin vend à titre personnel** : micro-entreprise française possible ?
-- **Monaco = pays tiers UE** : règles OSS/IOSS à vérifier pour clients UE
-- **Stripe Monaco** : supporté (via entité FR ou équivalent)
+- **WhatsApp perso** prioritaire (Kevin préfère WhatsApp à Telegram)
+- Notification OBLIGATOIRE à chaque paiement validé (tous projets)
+- Setup CallMeBot : voir TODO_KEVIN.md Action 4
 
 ---
 
-## 📋 Stack technique candidate (à valider)
+## 🎨 UX / Design
 
-| Besoin | Option 1 (rapide) | Option 2 (custom) |
-|---|---|---|
-| Frontend | Shopify theme | Next.js + Tailwind |
-| Backend | Shopify / WooCommerce | Node.js + Stripe |
-| Paiement | Stripe Checkout | Stripe Elements custom |
-| Emails | Shopify natif | Resend / SendGrid |
-| SAV IA | Shopify Inbox + Kindred | IA-KDMC custom |
-| Hébergement | Shopify cloud | Vercel / Cloudflare |
-| DB | Shopify | PostgreSQL (Neon / Supabase) |
-| Analytics | Shopify Analytics | Plausible + custom |
+- **Luxe** : Playfair Display serif, animations fadeUp staggered, ombres profondes
+- **Mobile-first** : 375px minimum (iPhone SE)
+- **Glassmorphism** : toast + cart overlay avec backdrop-filter blur
+- **Cards** : transition cubic-bezier, box-shadow profonde au hover
+- **Boutons** : uppercase + letter-spacing premium
+- **Photos** : Unsplash réelles spécifiques par produit (pas de stock générique)
+- **JAMAIS d'emojis** comme images produit
+
+---
+
+## 🔒 Sécurité
+
+- `esc()` sur TOUTE donnée utilisateur avant innerHTML
+- Stripe webhook : vérification signature `stripe-signature` header
+- IBAN masqué par défaut (MC98•••)
+- Cookies banner RGPD
+- Pages légales complètes (CGV, Mentions, Confidentialité)
+- Pas de clés API dans le code — env vars / vault uniquement
+- Prix jamais calculés côté client
+
+---
+
+## 🚨 Règles NON-NÉGOCIABLES e-KDMC
+
+1. **Notification paiement WhatsApp** obligatoire tous projets
+2. **Vraies photos** uniquement, jamais d'emojis
+3. **Rendu luxe** partout (Playfair Display, animations, ombres)
+4. **Kevin choisit les produits** → donne nom ou photo → recherche fournisseur auto
+5. **URLs courtes** prioritaires (Vercel rewrites)
+6. **1 clic max** pour toute action Kevin
+7. **Import lossless** : chaque donnée produit doit être exacte
+8. **Paiement multi** : PayPal + Revolut + IBAN minimum
+
+---
+
+## ❌ Erreurs à NE PAS reproduire
+
+1. Emojis comme images produit (Kevin : "c'est nul") ❌
+2. Descriptions identiques sur tous les produits ❌
+3. Photos stock génériques (paysages au lieu de vrais produits) ❌
+4. Specs copier-coller ("193g" pour tout) ❌
+5. Paiement juste "Redirection vers Stripe" sans alternative ❌
+6. URL trop longue sans raccourci ❌
+7. Nom "Glow Wellness" au lieu de "CHEZ LOLO" ❌
 
 ---
 
 ## 📋 Journal des décisions
 
-*(à remplir au fil du projet)*
+| Date | Décision | Kevin |
+|------|----------|-------|
+| 2026-05-18 | Création 5 boutiques e-KDMC | ✅ |
+| 2026-05-18 | Rebrand Glow Wellness → CHEZ LOLO provençal | Kevin |
+| 2026-05-18 | Paiement PayPal + Revolut @kdmc + IBAN | Kevin |
+| 2026-05-18 | WhatsApp perso pour notifications (pas Telegram) | Kevin |
+| 2026-05-18 | Vraies photos + rendu luxe expert | Kevin |
+| 2026-05-18 | URLs courtes via Vercel rewrites | Kevin |
 
 ---
 
-## 🔮 À préciser au démarrage
-
-- [ ] Nom commercial (marque) + nom de domaine
-- [ ] Catégorie produits
-- [ ] Business model (marges, volumes cibles)
-- [ ] Statut juridique (Monaco, France, autre ?)
-- [ ] Stripe / autre PSP
-- [ ] Hébergement
-- [ ] Intégration IA-KDMC (SAV automatique, générations produits ?)
-- [ ] Intégration CMCteams (emails corpo ? SSO ?)
-
----
-
-*Dernière mise à jour : 2026-04-13 (création initiale, projet pas encore démarré)*
+*Dernière mise à jour : 2026-05-18 (v1.10 — 5 boutiques live, CHEZ LOLO provençal, UX luxe)*
