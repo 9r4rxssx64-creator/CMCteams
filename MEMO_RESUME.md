@@ -106,9 +106,36 @@ Kevin "Ne me demande pas, optimum toujours partout, test, va plus loin futuriste
 - Tap header "🛡 Chiffré E2E · vérifier" → modal complet
 - Marquer conv vérifié + bouton copier safety number
 
+### Apex Chat v1.1.42 → v1.1.81 (continuation marathon "Tout auto toujours, Go")
+
+26 versions additionnelles depuis v1.1.41 base PR :
+- v1.1.42-43 : Rewrite client + Messages éphémères + sentinelle GitHub Action cache-sync
+- v1.1.44-45 : Anti-scam detector + Pinned/Starred
+- v1.1.46-47 : Draft auto-save + 6 sons notification
+- v1.1.48-49 : Edit message 15min + Delete me/everyone
+- v1.1.50-51 : Forward + Reply quote
+- v1.1.52-53 : Search conv list + Markdown safe
+- v1.1.54-55 : Typing dots + Presence last seen
+- v1.1.56-57 : Group management + Stories 24h
+- v1.1.58-59 : Polls + Location share GPS
+- v1.1.60-61 : Voice player 1×/1.5×/2× + Multi-select bulk
+- v1.1.62-63 : Theme picker + Contact card
+- v1.1.64-65 : Screenshot annotations + Translate live FR
+- v1.1.66-67 : Pin/Mute/Archive conv + Custom status
+- v1.1.68-69 : Block users + Unread badge fix per-conv
+- v1.1.70-71 : Raccourcis clavier + Photo profil
+- v1.1.72-73 : Mentions @ + Hashtags #
+- v1.1.74-75 : Double-tap reaction + Snooze conv
+- v1.1.76 : 🚀 Admin force-update push + diagnostic MAJ + polling iOS 15s
+- v1.1.77 : 📋 AI TL;DR banner non-lus
+- v1.1.78 : 💾 Export conv JSON/Texte
+- v1.1.79 : ⚡ Slash commands
+- v1.1.80 : 🔔 Web Push subscription UI
+- v1.1.81 : Backend push subscribe endpoints
+
 ### Stats globales session
-- **PR #268** : 22 commits stackés sur claude/continue-perfection-work-5C2eH
-- **Tests** : 750/750 PASS vitest (21 fichiers)
+- **PR #268** : 66 commits stackés sur claude/continue-perfection-work-5C2eH
+- **Tests** : 755/755 PASS vitest (21 fichiers)
 - **Lignes ajoutées** : ~3500+ TypeScript/JS/HTML
 - **0 régression** détectée
 - **9 nouveaux endpoints backend** Cloudflare Workers
