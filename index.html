@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.696";
+var APP_VER="v9.697";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8675,17 +8675,22 @@ function hasImportedData(y,m){
 }
 // v9.649 (Kevin "Quand V2 du même mois importé elle écrase la V1. Visuel V2 etc dans l'app") :
 // Helper : retourne la version d'import courante pour un mois (v1, v2, v3...).
-// Chaque import increment _importVersion → stocké dans cmc_ref_<key>.version
+// v9.697 (Kevin "V1 n'a généralement pas de V. Ne pas écrire V1 si c'est une V2") :
+// Retourne UNIQUEMENT la version DÉTECTÉE depuis le texte PDF.
+// Si aucun V[N] explicite dans le PDF → null (= pas de badge affiché, V1 implicite).
+// Si V2/V3/V4 explicite → ce N.
+// Le storage cmc_ref_<key>.version contient maintenant : null OU N>=2.
 function cmcGetImportVersion(y,m){
   var key=""+y+"-"+m;
   var ref=lg("cmc_ref_"+key,null);
-  return (ref&&typeof ref.version==="number")?ref.version:(ref?1:0);
+  if(!ref)return null;
+  return (typeof ref.version==="number"&&ref.version>=2)?ref.version:null;
 }
-// Helper : badge HTML "v2" pour afficher en header de vue. Vide si v1 ou pas import.
+// Helper : badge HTML "V2/V3" — affiché UNIQUEMENT si version explicite >= 2.
+// V1 implicite = pas de badge (Kevin "la première version n'a généralement pas de V").
 function cmcVersionBadgeHTML(y,m,opts){
-  // v9.685 Kevin "Afficher version entière avec V" : TOUJOURS visible dès qu'import existe.
   var v=cmcGetImportVersion(y,m);
-  if(v<=0)return ""; // aucun import → pas de badge
+  if(!v||v<2)return ""; // V1 implicite ou pas d'import → pas de badge
   opts=opts||{};
   var size=opts.size||"small";
   var style=size==="large"
@@ -34584,11 +34589,22 @@ function vImport(){
     <div class="sec-sub">${MFR[im]} ${iy}</div>
   </div>
 
-  <!-- Sélection mois (compact) -->
+  <!-- Sélection mois + version optionnelle (compact) -->
   <div class="card" style="padding:10px;margin-bottom:8px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <select id="impY" class="inp" onchange="renderImportRollbackBanner()" style="font-size:16px;padding:10px">${[2025,2026,2027].map(function(y){return "<option value=\""+y+"\""+(y===A.year?" selected":"")+">"+y+"</option>";}).join("")}</select>
       <select id="impM" class="inp" onchange="renderImportRollbackBanner()" style="font-size:16px;padding:10px">${MFR.map(function(m,i){return "<option value=\""+i+"\""+(i===A.month?" selected":"")+">"+m+"</option>";}).join("")}</select>
+    </div>
+    <!-- v9.697 Kevin "V1 n'a pas de V. Si V2/V3 importé, marquer". Optionnel : badge V[N] forcé -->
+    <div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:12px;color:#a0cca0">
+      <span>Version (optionnel) :</span>
+      <select id="impVer" class="inp" style="flex:1;font-size:14px;padding:6px" title="V1 = implicite (pas de badge). Mettre V2/V3 si c'est une version révisée du planning SBM.">
+        <option value="">Auto (V1 implicite)</option>
+        <option value="2">V2 (révision 2)</option>
+        <option value="3">V3 (révision 3)</option>
+        <option value="4">V4</option>
+        <option value="5">V5</option>
+      </select>
     </div>
   </div>
 
@@ -36140,16 +36156,23 @@ function doImport(){
   // Versioning : récupérer la version précédente si elle existe
   // v9.693 Kevin "Il marque mai V1 alors que c'est marqué mai V2 sur l'import" :
   // Détection V[N] depuis le texte PDF source (patterns: "V2", "v2", "mai V2", "mai 2026 V2").
-  // Si trouvé → utilise ce N ; sinon → fallback auto-increment N+1.
+  // v9.697 Kevin "V1 n'a pas de V. Ne pas écrire V1 si c'est une V2 importée".
+  // Priorité 1 : input admin manuel (#impVer) → V2/V3 forcé
+  // Priorité 2 : regex V[N] dans PDF texte (V2, V3...)
+  // Sinon → null (V1 implicite, pas de badge affiché). PAS d'auto-increment.
   var _prevRef=lg("cmc_ref_"+key,null);
   var _detectedVer=null;
   try{
-    // Cherche pattern V<chiffre> dans les 1500 premiers chars (titre/header PDF)
-    var _head=String(txt||"").slice(0,1500);
-    var _vm=_head.match(/\bV\s*(\d{1,2})\b/i)||_head.match(/version\s*(\d{1,2})/i);
-    if(_vm){var _vn=parseInt(_vm[1]);if(_vn>=1&&_vn<=20)_detectedVer=_vn;}
+    var _verEl=document.getElementById("impVer");
+    var _manualVer=_verEl?parseInt(_verEl.value||"0"):0;
+    if(_manualVer>=2&&_manualVer<=20)_detectedVer=_manualVer;
+    if(!_detectedVer){
+      var _head=String(txt||"").slice(0,1500);
+      var _vm=_head.match(/\bV\s*(\d{1,2})\b/i)||_head.match(/version\s*(\d{1,2})/i);
+      if(_vm){var _vn=parseInt(_vm[1]);if(_vn>=2&&_vn<=20)_detectedVer=_vn;}
+    }
   }catch(_vErr){}
-  var _importVersion=_detectedVer||((_prevRef&&_prevRef.version?_prevRef.version:0)+1);
+  var _importVersion=_detectedVer; // null si V1 implicite (pas de badge)
   var _importHistory=_prevRef&&_prevRef.history?_prevRef.history:[];
   if(_prevRef&&_prevRef.importedAt)_importHistory=_importHistory.concat([{importedAt:_prevRef.importedAt,version:_prevRef.version||1,rowCount:_prevRef.rows?Object.keys(_prevRef.rows).length:0}]).slice(-5);
   // Fusion : l'import ajoute/remplace les cellules du PDF, mais garde les corrections manuelles
