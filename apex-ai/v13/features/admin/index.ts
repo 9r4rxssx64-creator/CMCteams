@@ -218,6 +218,11 @@ function renderHealthTab(): string {
                 style="background:linear-gradient(135deg,rgba(106,138,255,0.22),rgba(180,90,200,0.14));color:#8bb4ff;border:1px solid rgba(106,138,255,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
           📊 Audits Apex (historique)
         </button>
+        <button class="ax-btn" data-nav-route="audit-log-viewer"
+                style="background:linear-gradient(135deg,rgba(232,184,48,0.22),rgba(201,162,39,0.14));color:#e8b830;border:1px solid rgba(232,184,48,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent"
+                title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">
+          🔒 Audit Log Viewer
+        </button>
       </div>
       <div id="ax-admin-health-mount" style="margin-top:14px"></div>
       <div id="ax-admin-audits-summary" style="margin-top:14px"></div>

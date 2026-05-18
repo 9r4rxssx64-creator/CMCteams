@@ -365,9 +365,8 @@ describe('ai-router tools wiring (Kevin v13.1.0)', () => {
         () => undefined,
       );
 
-      /* Cap MAX_TOOL_USE_ITERATIONS = 25 (bump v13.4.200 — agents complexes
-       * Apex IA peuvent enchaîner jusqu'à 25 outils légitimement). Pas plus. */
-      expect(callCount).toBeLessThanOrEqual(25);
+      /* Cap MAX_TOOL_USE_ITERATIONS = 10 — pas plus de 10 fetch consécutifs */
+      expect(callCount).toBeLessThanOrEqual(10);
       expect(callCount).toBeGreaterThan(1); /* au moins 2 itérations pour valider la boucle */
     }, 10000);
   });

@@ -113,6 +113,45 @@ class WhatsApp {
     }
   }
 
+  /**
+   * v13.4.211 (Kevin "Laurence doit recevoir directement son code") :
+   * Construit un lien wa.me qui ouvre WhatsApp de Kevin pré-rempli vers le
+   * numéro du CLIENT (Laurence) avec le code OTP dans le message.
+   *
+   * Kevin clique → son WhatsApp s'ouvre déjà adressé à Laurence avec :
+   * "Bonjour [Name], voici ton code Apex : XXXXXX-YYYYYY"
+   * Kevin tape juste "envoyer" → Laurence reçoit sur son WhatsApp en ~2s.
+   *
+   * Pas besoin de WhatsApp Business API ni Twilio (gratuit, immédiat).
+   */
+  buildKevinToClientLink(opts: { clientPhone: string; clientName: string; otp: string }): string {
+    const cleanPhone = opts.clientPhone.replace(/[^\d]/g, '');
+    const message = encodeURIComponent(
+      `Bonjour ${opts.clientName}, voici ton code d'accès Apex : ${opts.otp}\n\nTape ce code sur Apex pour activer ton compte. Code valide 24h.`,
+    );
+    return `https://wa.me/${cleanPhone}?text=${message}`;
+  }
+
+  /**
+   * v13.4.211 — Verify OTP saisi par le client (Laurence tape le code reçu).
+   * Match contre la liste des pending confirmations.
+   */
+  verifyClientOtp(otp: string): { ok: boolean; uid?: string; name?: string } {
+    try {
+      const cleanOtp = otp.trim().toUpperCase();
+      const list = JSON.parse(localStorage.getItem('apex_v13_pending_confirms') ?? '[]') as PendingConfirmation[];
+      const found = list.find((p) => p.otp.toUpperCase() === cleanOtp && !p.confirmed && p.expiresAt > Date.now());
+      if (!found) return { ok: false };
+      found.confirmed = true;
+      localStorage.setItem('apex_v13_pending_confirms', JSON.stringify(list));
+      logger.info('whatsapp', `Client OTP verified for ${found.name}`);
+      return { ok: true, uid: found.uid, name: found.name };
+    } catch (err: unknown) {
+      logger.error('whatsapp', 'verifyClientOtp failed', { err });
+      return { ok: false };
+    }
+  }
+
   /* P1 fix : OTP 12 chars alphanumériques (entropie ~70 bits vs 20 bits 6-digit) */
   private generateOTP(): string {
     const bytes = crypto.getRandomValues(new Uint8Array(9));

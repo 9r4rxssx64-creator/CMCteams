@@ -22,26 +22,20 @@ import { escapeHtml } from '../core/escape-html.js';
 
 /**
  * Render un bloc code avec header (langage + bouton copy).
+ * v13.4.207 — styles extraits vers .ax-codeblock, .ax-codeblock-header,
+ * .ax-codeblock-copy, .ax-codeblock pre (assets/css/components.css).
  */
 function renderCodeBlock(lang: string, code: string): string {
   const safeCode = escapeHtml(code);
   const safeLang = escapeHtml(lang);
   const id = `ax-code-${Math.random().toString(36).slice(2, 9)}`;
   return (
-    `<div class="ax-codeblock" style="margin:12px 0;border-radius:10px;overflow:hidden;` +
-    `background:#0d0d1a;border:1px solid rgba(255,255,255,0.08)">` +
-    `<div class="ax-codeblock-header" style="display:flex;justify-content:space-between;align-items:center;` +
-    `padding:6px 12px;background:rgba(255,255,255,0.04);font-size:11px;color:rgba(255,255,255,0.6);` +
-    `font-family:'SF Mono',Menlo,Monaco,Consolas,monospace">` +
+    `<div class="ax-codeblock">` +
+    `<div class="ax-codeblock-header">` +
     `<span class="ax-codeblock-lang">${safeLang}</span>` +
-    `<button class="ax-codeblock-copy" data-target="${id}" ` +
-    `style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);` +
-    `padding:2px 8px;border-radius:6px;font-size:11px;cursor:pointer;` +
-    `-webkit-tap-highlight-color:transparent" aria-label="Copier le code">📋 Copier</button>` +
+    `<button class="ax-codeblock-copy" data-target="${id}" aria-label="Copier le code">📋 Copier</button>` +
     `</div>` +
-    `<pre style="margin:0;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;` +
-    `font-family:'SF Mono',Menlo,Monaco,Consolas,monospace"><code id="${id}" ` +
-    `data-lang="${safeLang}">${safeCode}</code></pre>` +
+    `<pre><code id="${id}" data-lang="${safeLang}">${safeCode}</code></pre>` +
     `</div>`
   );
 }
@@ -49,6 +43,8 @@ function renderCodeBlock(lang: string, code: string): string {
 /**
  * Render une table Markdown standard (header | row | row).
  * Gère alignement (:---, :---:, ---:).
+ * v13.4.207 — styles statiques extraits vers .ax-md-table (components.css).
+ * text-align reste inline car DYNAMIQUE (dépend du marqueur :---: parsé).
  */
 function renderTable(rows: string[][]): string {
   if (rows.length < 2) return '';
@@ -61,21 +57,23 @@ function renderTable(rows: string[][]): string {
     if (t.endsWith(':')) return 'right';
     return 'left';
   });
+  /* v13.4.213 — classes CSS au lieu de style="text-align:..." inline.
+   * Whitelist values (left/center/right) → pas de XSS injection via aligns. */
+  const taClass = (a: string | undefined): string => `ax-ta-${a === 'center' || a === 'right' ? a : 'left'}`;
   const headerHtml = header
-    .map((h, i) => `<th style="text-align:${aligns[i] ?? 'left'};padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.15);font-weight:600">${renderInline(h.trim())}</th>`)
+    .map((h, i) => `<th class="${taClass(aligns[i])}">${renderInline(h.trim())}</th>`)
     .join('');
   const bodyHtml = body
     .map(
       (row) =>
         `<tr>${row
-          .map((c, i) => `<td style="text-align:${aligns[i] ?? 'left'};padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.05)">${renderInline(c.trim())}</td>`)
+          .map((c, i) => `<td class="${taClass(aligns[i])}">${renderInline(c.trim())}</td>`)
           .join('')}</tr>`,
     )
     .join('');
   return (
-    `<div class="ax-md-table" style="overflow-x:auto;margin:10px 0;border-radius:8px;` +
-    `background:rgba(255,255,255,0.02)">` +
-    `<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>${headerHtml}</tr></thead>` +
+    `<div class="ax-md-table">` +
+    `<table><thead><tr>${headerHtml}</tr></thead>` +
     `<tbody>${bodyHtml}</tbody></table></div>`
   );
 }
@@ -86,12 +84,10 @@ function renderTable(rows: string[][]): string {
  */
 function renderInline(text: string): string {
   let html = escapeHtml(text);
-  /* Code inline `xxx` */
+  /* Code inline `xxx` — v13.4.207 styles extraits vers .ax-code-inline */
   html = html.replace(
     /`([^`\n]+)`/g,
-    (_m, code: string) =>
-      `<code class="ax-code-inline" style="background:rgba(255,255,255,0.08);padding:1px 6px;` +
-      `border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:0.92em">${code}</code>`,
+    (_m, code: string) => `<code class="ax-code-inline">${code}</code>`,
   );
   /* Bold ** */
   html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
@@ -103,8 +99,7 @@ function renderInline(text: string): string {
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label: string, url: string) => {
     const safeUrl = url.trim();
     if (!/^(https?:|mailto:|#)/i.test(safeUrl)) return `[${label}](${escapeHtml(safeUrl)})`;
-    return `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" ` +
-      `style="color:#e8b830;text-decoration:underline">${label}</a>`;
+    return `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" class="ax-md-link">${label}</a>`;
   });
   /* Footnotes [1] [2] — cliquables (data-footnote=N pour scroll vers source) */
   html = html.replace(
