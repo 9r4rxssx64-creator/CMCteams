@@ -4023,7 +4023,23 @@ function fbApplyData(k,v){
   // Mettre à jour l'état A directement (sans passer par ls pour éviter la boucle)
   // v9.580 — Invalider _gplCache quand cmc_ov change via Firebase SSE
   // (sinon vues affichent ancien planning même après nouvel import sur autre device)
-  if(k==="cmc_ov"){A.overrides=vc;try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}}
+  if(k==="cmc_ov"){
+    // v9.701 Kevin "anciens plannings reviennent" : si wipe-lock récent (<1h),
+    // bloque la restauration de cmc_ov depuis Firebase (autre device qui push old data).
+    try{
+      var _lockTs=parseInt(lg("cmc_wipe_lock_ts",0))||0;
+      if(_lockTs>0 && Date.now()-_lockTs<3600000){
+        var _vcSize=vc?Object.keys(vc).length:0;
+        if(_vcSize>0){
+          console.warn("[v9.701 wipe-lock] BLOCKED cmc_ov restore — lock age "+Math.round((Date.now()-_lockTs)/60000)+"min, "+_vcSize+" months in incoming data");
+          if(typeof fbWrite==="function")try{fbWrite("cmc_ov",{});}catch(_){} // force re-push empty
+          return;
+        }
+      }
+    }catch(_){}
+    A.overrides=vc;
+    try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
+  }
   // v9.615 — Sync A.overrides_meta cross-device (visual markers: bg, fg, star, ff)
   else if(k==="cmc_ov_meta"){A.overrides_meta=vc;}
   else if(k==="cmc_e"){
@@ -4933,7 +4949,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.700";
+var APP_VER="v9.701";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -14574,17 +14590,17 @@ function agentEmit(eventName,payload){
 function agentsStart(){
   if(!A.user||A.user.id!==AID)return; // Agents admin seulement
   // v9.696 Kevin "Efface toute sa mémoire de planning et on repart à zéro maintenant"
-  // v9.698 Kevin "On repart à zéro à partir de maintenant sur l'historique"
-  // Re-trigger wipe TOTAL (planning + logs + audits + snapshots) avec nouveau flag.
+  // v9.701 Kevin "anciens plannings reviennent, avril" — re-trigger wipe avec fix
+  // cmc_auto_backup_* + Firebase delete + wipe-lock anti-restore 1h.
   try{
-    if(!lg("cmc_v698_wipe_done",false)){
+    if(!lg("cmc_v701_wipe_done",false)){
       if(typeof cmcWipeAllPlanningMemory==="function"){
         var _ws=cmcWipeAllPlanningMemory(true);
-        ls("cmc_v698_wipe_done",{ts:Date.now(),stats:_ws||null});
-        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.698 : planning + historique vérification effacés. Prêt pour mai V2.","ok",6000);}catch(_){}
+        ls("cmc_v701_wipe_done",{ts:Date.now(),stats:_ws||null});
+        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.701 : planning + backups + Firebase nodes effacés. Lock anti-restore 1h actif.","ok",7000);}catch(_){}
       }
     }
-  }catch(_v698err){}
+  }catch(_v701err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
@@ -30801,7 +30817,10 @@ function cmcWipeAllPlanningMemory(silent){
   ls("cmc_e",A.employees);
   if(typeof fbWrite==="function"){try{fbWrite("cmc_e",A.employees);}catch(_){}}
   // 3. localStorage keys préfixées
-  var prefixes=["cmc_ref_","cmc_verif_","cmc_ci_","cmc_comments_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_","cmc_structured_","cmc_team_mirror_","cmc_last_import_type_","cmc_manual_overrides_","cmc_import_completeness_"];
+  // v9.701 (Kevin "d'anciens plannings reviennent, avril") :
+  // Ajout cmc_auto_backup_*, cmc_import_snap_, cmc_agent_backup_, cmc_snapshot_, cmc_history_
+  // qui contenaient A.overrides et faisaient re-pop avril après wipe.
+  var prefixes=["cmc_ref_","cmc_verif_","cmc_ci_","cmc_comments_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_","cmc_structured_","cmc_team_mirror_","cmc_last_import_type_","cmc_manual_overrides_","cmc_import_completeness_","cmc_auto_backup_","cmc_import_snap_","cmc_agent_backup_","cmc_snapshot_"];
   var keysToRemove=[];
   for(var k in localStorage){
     if(localStorage.hasOwnProperty(k)){
@@ -30811,6 +30830,20 @@ function cmcWipeAllPlanningMemory(silent){
     }
   }
   keysToRemove.forEach(function(k){try{localStorage.removeItem(k);stats.prefixed++;}catch(_){}});
+  // v9.701 Kevin "anciens plannings reviennent" : effacer AUSSI ces nodes côté Firebase
+  // pour bloquer la restauration via SSE depuis un autre device. Sans ça, Firebase garde
+  // les anciennes valeurs et les push à chaque reconnect.
+  if(typeof fbWrite==="function"){
+    keysToRemove.forEach(function(k){
+      try{fbWrite(k,null);}catch(_){} // null = delete node Firebase
+    });
+  }
+  // Pose un verrou anti-restore : tant qu'il est récent (<1h), fbApplyData ignore cmc_ov entrant.
+  try{
+    var _lockTs=Date.now();
+    ls("cmc_wipe_lock_ts",_lockTs);
+    if(typeof fbWrite==="function")try{fbWrite("cmc_wipe_lock_ts",_lockTs);}catch(_){}
+  }catch(_){}
   // v9.698 (Kevin "vérification il y a tous les mois passés en historique toujours présent. Efface tout. Peut-être ça porte confusion") :
   // Wipe AUSSI logs/audits/snapshots qui pourraient apparaître dans Vérification.
   stats.logs=0;
