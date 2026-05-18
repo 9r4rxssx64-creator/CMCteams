@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.89';
+const __APEX_CHAT_VERSION__ = 'v1.1.90';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.89</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.90</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.89</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.90</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -922,6 +922,72 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.90 — Time zone awareness (heure locale peer + warning si tard)
+// ============================================================================
+K._guessPeerLocalTime = function(conv){
+  if(!conv) return null;
+  const offsetMin = conv.peer_tz_offset_min;
+  if(offsetMin === undefined || offsetMin === null) return null;
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+  return new Date(utcMs + offsetMin * 60 * 1000);
+};
+
+K._isPeerSleepingHours = function(conv){
+  const peerDate = K._guessPeerLocalTime(conv);
+  if(!peerDate) return false;
+  const h = peerDate.getHours();
+  return h >= 22 || h < 8;
+};
+
+K._setPeerTz = function(convId, offsetMin){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  if(offsetMin === null || offsetMin === undefined){ delete conv.peer_tz_offset_min; }
+  else { conv.peer_tz_offset_min = parseInt(offsetMin, 10); }
+  ls('conversations', K.conversations);
+  K.render();
+};
+
+K._openPeerTzMenu = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  const current = conv.peer_tz_offset_min;
+  const peerDate = K._guessPeerLocalTime(conv);
+  const peerLocalStr = peerDate ? peerDate.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'inconnu (config requise)';
+  const presets = [
+    { lbl: '🌍 Aucun (same as moi)', val: null },
+    { lbl: '🇫🇷 Paris/Monaco (UTC+1/+2)', val: 60 },
+    { lbl: '🇬🇧 Londres (UTC/+1)', val: 0 },
+    { lbl: '🇺🇸 NYC (UTC-5/-4)', val: -300 },
+    { lbl: '🇺🇸 LA (UTC-8/-7)', val: -480 },
+    { lbl: '🇯🇵 Tokyo (UTC+9)', val: 540 },
+    { lbl: '🇦🇺 Sydney (UTC+10)', val: 600 },
+    { lbl: '🇦🇪 Dubaï (UTC+4)', val: 240 },
+  ];
+  K._showModal('🌐 Fuseau horaire de ' + esc(conv.name || conv.pseudo || '?'), `
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:14px;text-align:center">
+      <div style="font-size:.78em;color:var(--ax-text-3)">Heure locale peer :</div>
+      <div style="font-size:1.2em;color:var(--ax-gold);font-weight:600">${esc(peerLocalStr)}</div>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 8px">Fuseau :</p>
+    <div style="display:grid;gap:6px">
+      ${presets.map(p => `<button class="btn ${current === p.val ? '' : 'btn-out'}" style="text-align:left" onclick="K._setPeerTz('${esc(convId)}',${p.val === null ? 'null' : p.val});K._closeModal()">${current === p.val ? '✓ ' : ''}${esc(p.lbl)}</button>`).join('')}
+    </div>
+  `);
+};
+
+K._renderTzWarning = function(conv){
+  if(!conv || !K._isPeerSleepingHours(conv)) return '';
+  const peerDate = K._guessPeerLocalTime(conv);
+  if(!peerDate) return '';
+  const peerTime = peerDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return `<div style="background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.4);border-radius:8px;padding:6px 10px;margin:6px 12px;font-size:.78em;color:#ffa500">
+    🌙 Il est ${esc(peerTime)} chez ${esc(conv.name || conv.pseudo || 'le destinataire')}. Programmer plus tard ⏰ ?
+  </div>`;
+};
 
 // ============================================================================
 //  v1.1.89 — Quick scroll-to-bottom FAB + swipe back gesture
@@ -2427,6 +2493,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._openSnoozeMenu('${esc(convId)}')">${K._isSnoozed && K._isSnoozed(convId) ? '💤 Modifier snooze' : '💤 Snooze temporaire'}</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvArchived('${esc(convId)}')">${conv.archived ? '📤 Désarchiver' : '📦 Archiver'}</button>
       <button class="btn btn-out btn-block" onclick="K._openLabelMenu('${esc(convId)}')">🏷 Labels${conv.label_ids && conv.label_ids.length ? ' (' + conv.label_ids.length + ')' : ''}</button>
+      <button class="btn btn-out btn-block" onclick="K._openPeerTzMenu('${esc(convId)}')">🌐 Fuseau horaire peer${conv.peer_tz_offset_min !== undefined ? ' (set)' : ''}</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
@@ -2621,7 +2688,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.89',
+    version: 'v1.1.90',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4874,6 +4941,7 @@ function renderChat(app){
         <span style="color:var(--ax-text-3);font-size:.85em;margin-left:6px">${esc((pinned[0].text || '').slice(0, 60))}…</span>
       </div>`;
     })()}
+    ${K._renderTzWarning ? K._renderTzWarning(conv) : ''}
     <div class="chat-messages" id="chat-msgs">
       ${msgs.length === 0 ? `
         <div class="msg system">🛡 Cette conversation est chiffrée bout-en-bout. Personne d'autre que toi et tes destinataires ne peut lire les messages.</div>
@@ -9392,7 +9460,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.89"
+        data-version="v1.1.90"
         data-color="#6a8aff"
         defer></script>
 </body>
