@@ -209,6 +209,8 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .md-link:active{opacity:.7}
 .mention{color:var(--ax-blue);background:rgba(106,138,255,.12);border-radius:4px;padding:0 4px;font-weight:600}
 .mention-me{color:var(--ax-gold);background:rgba(232,184,48,.18);font-weight:700}
+.hashtag{color:var(--ax-blue);font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.hashtag:active{opacity:.7}
 .typing-dots{display:inline-flex;gap:2px;margin-left:4px}
 .typing-dots span{animation:typing-bounce 1.2s infinite;display:inline-block;font-size:1.3em;line-height:.5}
 .typing-dots span:nth-child(1){animation-delay:0s}
@@ -321,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.72';
+const __APEX_CHAT_VERSION__ = 'v1.1.73';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -402,7 +404,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.72</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.73</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -416,7 +418,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.72</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.73</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,6 +872,37 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.73 — Hashtags # (Twitter/Slack style + recherche par tag)
+// ============================================================================
+K._parseHashtags = function(text){
+  if(!text) return [];
+  const re = /#([a-zA-Z0-9_]{2,30})/g;
+  const matches = [];
+  let m;
+  while((m = re.exec(text)) !== null) matches.push(m[1].toLowerCase());
+  return matches;
+};
+
+K._renderHashtags = function(html){
+  if(!html) return '';
+  return html.replace(/#([a-zA-Z0-9_]{2,30})/g, (match, tag) =>
+    `<span class="hashtag" onclick="K._searchByHashtag('${esc(tag)}')">#${esc(tag)}</span>`
+  );
+};
+
+K._searchByHashtag = function(tag){
+  if(!tag) return;
+  if(K.view !== 'chats') K.sv('chats');
+  K._convSearchQuery = '#' + tag;
+  K.render();
+  setTimeout(() => {
+    const input = document.getElementById('conv-search-input');
+    if(input){ input.value = '#' + tag; input.focus(); }
+  }, 100);
+  toast('🔍 Recherche : #' + tag, 'info');
+};
 
 // ============================================================================
 //  v1.1.72 — Mentions @ users (style Slack/Discord) + notif renforcée
@@ -1393,7 +1426,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.72',
+    version: 'v1.1.73',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3582,7 +3615,7 @@ function renderChat(app){
           ${m.poll ? K._renderPoll(m) : ''}
           ${m.location ? K._renderLocation(m) : ''}
           ${m.contact_card ? K._renderContactCard(m) : ''}
-          ${m.deleted ? esc(m.text) : (m.text ? K._renderMentions(K._renderMarkdown(m.text)) : (m.image_data || m.voice_data || m.poll || m.location || m.contact_card ? '' : '(message chiffré)'))}
+          ${m.deleted ? esc(m.text) : (m.text ? K._renderHashtags(K._renderMentions(K._renderMarkdown(m.text))) : (m.image_data || m.voice_data || m.poll || m.location || m.contact_card ? '' : '(message chiffré)'))}
           ${scamReason ? `<div class="scam-warning" onclick="K._showScamInfo('${esc(scamReason)}','${esc(m.id)}')" title="Message potentiellement suspect">⚠️ Suspect : ${esc(scamReason)}</div>` : ''}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
@@ -8041,7 +8074,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.72"
+        data-version="v1.1.73"
         data-color="#6a8aff"
         defer></script>
 </body>
