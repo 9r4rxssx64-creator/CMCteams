@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.117';
+const __APEX_CHAT_VERSION__ = 'v1.1.118';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.117</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.118</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.117</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.118</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3529,7 +3529,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.117',
+    version: 'v1.1.118',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4791,14 +4791,18 @@ K._openInsightsModal = function(){
   try{
   // Compute stats locally (pas besoin IA pour ça)
   // v1.1.117 fix Kevin "statistique ça fonctionne pas" : guard K.messages
+  // v1.1.118 fix Kevin "ça cherche mais fais que ça" : empty state explicite
+  //         + check total messages avant d'afficher boutons IA
   const now = Date.now();
   const week = 7 * 24 * 60 * 60 * 1000;
   let totalSent = 0, totalReceived = 0;
+  let totalAllTime = 0;
   const perConv = {};
   const hourBuckets = new Array(24).fill(0);
   let imageCount = 0, voiceCount = 0, reactionCount = 0;
   Object.entries(K.messages || {}).forEach(([convId, arr]) => {
     if(!Array.isArray(arr)) return;
+    totalAllTime += arr.length;
     arr.forEach(m => {
       if(!m) return;
       if(!m.ts || m.ts < now - week) return;
@@ -4832,6 +4836,24 @@ K._openInsightsModal = function(){
     return `<rect x="${i * barW}" y="${barChartH - h}" width="${barW - 1}" height="${h}" fill="${i === peakHour ? 'var(--ax-gold)' : 'rgba(232,184,48,.3)'}" rx="2"/>`;
   }).join('');
 
+  // v1.1.118 : empty state si aucune activité 7 derniers jours
+  if(totalSent + totalReceived === 0){
+    K._showModal('📊 Insights IA — 7 derniers jours', `
+      <div style="text-align:center;padding:24px 14px">
+        <div style="font-size:3em;margin-bottom:10px">📭</div>
+        <p style="color:var(--ax-text-2);font-size:.95em;margin:0 0 8px">Aucune activité cette semaine</p>
+        <p style="color:var(--ax-text-3);font-size:.82em;margin:0 0 14px">
+          ${totalAllTime > 0
+            ? `${totalAllTime} message${totalAllTime>1?'s':''} au total, mais rien dans les 7 derniers jours.`
+            : `Tu n'as pas encore de messages locaux. ${(K.conversations||[]).length} conv stockée${(K.conversations||[]).length>1?'s':''}.`}
+        </p>
+        ${K.sentinels?.network?.online === false
+          ? `<p style="color:#ffa500;font-size:.78em;margin:0">🔌 Hors ligne — les messages syncent au retour réseau.</p>`
+          : ''}
+      </div>
+    `);
+    return;
+  }
   K._showModal('📊 Insights IA — 7 derniers jours', `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;text-align:center">
@@ -4896,7 +4918,16 @@ K._openInsightsModal = function(){
 K._aiInsightsSummary = async function(){
   const out = document.getElementById('ai-insights-result');
   if(!out) return;
-  out.innerHTML = `<div style="text-align:center;padding:14px;color:var(--ax-text-3)">⏳ Apex analyse...</div>`;
+  // v1.1.118 : countdown visible + Worker-down friendly feedback
+  let secsLeft = 20;
+  out.innerHTML = `<div style="text-align:center;padding:14px;color:var(--ax-text-3)">⏳ Apex analyse... <span id="ai-countdown">(${secsLeft}s)</span></div>`;
+  const countdownTid = setInterval(() => {
+    secsLeft--;
+    const el = document.getElementById('ai-countdown');
+    if(el) el.textContent = '(' + Math.max(0, secsLeft) + 's)';
+    if(secsLeft <= 0) clearInterval(countdownTid);
+  }, 1000);
+  const cleanup = () => { clearInterval(countdownTid); };
   const now = Date.now();
   const week = 7 * 24 * 60 * 60 * 1000;
   // Échantillonne max 80 messages anonymisés (pas de noms)
@@ -4912,7 +4943,8 @@ K._aiInsightsSummary = async function(){
     });
   });
   if(sample.length < 5){
-    out.innerHTML = `<div style="color:var(--ax-text-3);padding:14px;text-align:center">Pas assez de messages cette semaine pour un résumé.</div>`;
+    cleanup();
+    out.innerHTML = `<div style="color:var(--ax-text-3);padding:14px;text-align:center">📭 Pas assez de messages cette semaine pour un résumé IA. (Min 5, trouvé ${sample.length})</div>`;
     return;
   }
   const prompt = `Voici ${sample.length} messages anonymisés des 7 derniers jours d'un utilisateur. Sans répéter les messages, donne en 4-5 lignes : (1) sujets dominants, (2) tonalité générale (positive/neutre/stressée), (3) rythme de communication (calme/intense), (4) une suggestion bienveillante pour la semaine prochaine.\n\nMessages :\n${sample.join('\n')}`;
@@ -4928,6 +4960,7 @@ K._aiInsightsSummary = async function(){
         signal: ctrl.signal,
       });
     } finally { clearTimeout(tid); }
+    cleanup();
     if(r.status === 429){
       const e429 = await r.json().catch(() => ({}));
       out.innerHTML = `<div style="color:var(--ax-warn);padding:14px;text-align:center">⏰ ${esc(e429.message || 'Limite gratuite')}</div>`;
@@ -4946,8 +4979,10 @@ K._aiInsightsSummary = async function(){
       </div>
     `;
   } catch(e){
+    cleanup();
     _safeCatch('ai-insights', e);
-    out.innerHTML = `<div style="color:var(--ax-err);padding:14px;text-align:center">❌ Erreur réseau</div>`;
+    const isAbort = e?.name === 'AbortError';
+    out.innerHTML = `<div style="color:#ffa500;padding:14px;text-align:center">${isAbort ? '⏰ Serveur trop lent (20s timeout). Réessaie plus tard.' : '🔌 Serveur IA indisponible. Tes stats locales ci-dessus restent visibles.'}</div>`;
   }
 };
 
