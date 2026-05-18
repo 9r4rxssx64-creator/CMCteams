@@ -15911,50 +15911,20 @@ function viewAsBack(){
 
 // v9.67 — Recherche universelle (employés, codes, jeux, convention, docs)
 var _searchOpen=false,_searchQ="";
-// v10 Sprint 2 \u2014 Cibles de navigation (raccourci \u2318K/Ctrl+K). Ajoute vues et actions admin/employ\u00e9 fr\u00e9quentes \u00e0 la recherche globale.
-var _CMD_PALETTE_TARGETS=[
-  {kw:"accueil dashboard home", cat:"\u25c6", label:"Accueil",                    action:"sv('accueil')"},
-  {kw:"mon planning perso shifts", cat:"\ud83d\udcc6", label:"Mon planning",       action:"sv('monplanning')"},
-  {kw:"profil identite mes infos", cat:"\ud83d\udc64", label:"Mon profil",         action:"sv('profil')"},
-  {kw:"planning equipe grille",    cat:"\ud83d\udcc5", label:"Planning \u00e9quipe", action:"sv('planning')"},
-  {kw:"departs ordres",            cat:"\ud83c\udfaf", label:"Ordres de d\u00e9part", action:"sv('departs')"},
-  {kw:"chat messages discussion",  cat:"\ud83d\udcac", label:"Chat",               action:"sv('chat')"},
-  {kw:"ia chatbot claude assistant", cat:"\ud83e\udd16", label:"Assistant IA",     action:"sv('ia')"},
-  {kw:"convention sbm articles loi", cat:"\ud83d\udcd6", label:"Convention SBM",   action:"sv('convention')"},
-  {kw:"echanges shifts swap",      cat:"\ud83d\udd04", label:"\u00c9changes de shifts", action:"sv('echanges')"},
-  {kw:"admin panneau v10 nouveau", cat:"\ud83d\udc51", label:"Admin v10 (nouveau)", action:"sv('adminv10')", admin:true},
-  {kw:"admin panneau classique",   cat:"\ud83d\udc51", label:"Admin classique",    action:"sv('admin')",    admin:true},
-  {kw:"stats statistiques mois",   cat:"\ud83d\udcca", label:"Stats du mois",      action:"sv('stats')",    admin:true},
-  {kw:"stats globales lieu role",  cat:"\ud83c\udf10", label:"Stats globales",     action:"sv('statsglobal')", admin:true},
-  {kw:"employes gestion fiches",   cat:"\ud83d\udc65", label:"Employ\u00e9s",      action:"sv('employees')", admin:true},
-  {kw:"chefs ordres equipes",      cat:"\ud83d\udc51", label:"Chefs & \u00e9quipes", action:"sv('teams')", admin:true},
-  {kw:"import pdf planning",       cat:"\ud83d\udce5", label:"Importer planning PDF", action:"sv('import')", admin:true},
-  {kw:"verifier import controle",  cat:"\u2705", label:"V\u00e9rifier l'import",   action:"sv('importVerif')", admin:true},
-  {kw:"conflits alertes repos",    cat:"\u26a0", label:"Alertes conflits",         action:"sv('conflits')", admin:true},
-  {kw:"qui libre disponible jour", cat:"\ud83d\ude34", label:"Qui est libre ?",    action:"sv('quilibre')", admin:true},
-  {kw:"passation nouvelle fin tournee", cat:"\ud83d\udcdd", label:"Nouvelle passation", action:"sv('passation')", admin:true},
-  {kw:"audit journal modifications", cat:"\ud83d\udcdd", label:"Journal modifications", action:"sv('auditlog')", admin:true},
-  {kw:"securite admin journal",    cat:"\ud83d\udee1", label:"Journal s\u00e9curit\u00e9", action:"sv('security')", admin:true},
-  {kw:"rgpd vie privee donnees",   cat:"\ud83d\udd12", label:"Vie priv\u00e9e & RGPD", action:"sv('rgpd')", admin:true},
-  {kw:"retardataires relancer",    cat:"\ud83d\udce2", label:"Retardataires",      action:"sv('retardataires')", admin:true},
-  {kw:"documents banque photos pdf", cat:"\ud83d\udcc1", label:"Documents",        action:"sv('documents')", admin:true},
-  {kw:"sauvegarde backup json",    cat:"\ud83d\udcbe", label:"Sauvegarde JSON",    action:"exportFullBackup()", admin:true},
-  {kw:"ia desactiver kill switch tokens", cat:"\u23f8", label:"Toggle IA Claude (kill-switch)", action:"iaToggle()", admin:true},
-  {kw:"ia configurer cle api claude", cat:"\ud83d\udd11", label:"Configurer cl\u00e9 API IA", action:"iaSetApiKey()", admin:true},
-  {kw:"ia configurer proxy securise", cat:"\ud83d\udd17", label:"Configurer proxy IA", action:"iaSetProxy()", admin:true},
-  {kw:"mode presentation plein ecran fullscreen", cat:"\ud83d\udcfa", label:"Mode pr\u00e9sentation", action:"togglePresentation()"}
-];
+// v10 Sprint 2 \u2014 Recherche globale enrichie : r\u00e9utilise CMD_PALETTE_ACTIONS (v9.82, l. 9037) au lieu d'un tableau dupliqu\u00e9. Source unique de v\u00e9rit\u00e9. Le bouton \ud83d\udd0d ouvre la recherche rapide (dropdown), \u2318K ouvre la palette compl\u00e8te (modal).
 function globalSearch(q){
   _searchQ=q;if(!q||q.length<2){A._searchResults=[];dc();return;}
   var ql=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   var isAdm=A.user&&A.user.id===AID;
   var results=[];
-  // v10 Sprint 2 \u2014 Navigation rapide vers vues et actions admin/employ\u00e9
-  _CMD_PALETTE_TARGETS.forEach(function(t){
-    if(t.admin&&!isAdm)return;
-    var lbl=t.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    if(t.kw.indexOf(ql)>=0||lbl.indexOf(ql)>=0){results.push({cat:t.cat,label:t.label,action:t.action});}
-  });
+  // v10 Sprint 2 \u2014 Navigation rapide : r\u00e9utilise CMD_PALETTE_ACTIONS (v9.82) \u2014 source unique de v\u00e9rit\u00e9, \u00e9limine doublon
+  if(typeof CMD_PALETTE_ACTIONS!=="undefined"){
+    CMD_PALETTE_ACTIONS.forEach(function(a,idx){
+      if(a.adminOnly&&!isAdm)return;
+      var hay=(a.label+" "+(a.cat||"")+" "+((a.keywords||[]).join(" "))).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      if(hay.indexOf(ql)>=0)results.push({cat:a.icon||"",label:a.label,action:"CMD_PALETTE_ACTIONS["+idx+"].fn()"});
+    });
+  }
   // Employés
   A.employees.filter(function(e){return e.name.toLowerCase().indexOf(ql)>=0||e.id.toLowerCase().indexOf(ql)>=0;}).slice(0,5).forEach(function(e){
     results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+e.id+"';sv('employees')"});
@@ -16049,7 +16019,7 @@ function vTopbar(){
     :(_todCode&&isWork(_todCode)?`<span title="${(_todCi&&_todCi.l)||_todCode}" style="background:${(_todCi&&_todCi.c)||col}18;color:${(_todCi&&_todCi.c)||col};border:1px solid ${(_todCi&&_todCi.c)||col}35;border-radius:6px;padding:2px 6px;font-size:13px;font-weight:800;flex-shrink:0">${esc(_todCode)}</span>`:"")}
   ${!isAdm&&t?`<span style="background:${col}14;color:${col};border:1px solid ${col}28;border-radius:8px;padding:2px 7px;font-size:12px;font-weight:700;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${esc(t.name)}</span>`:""}
   <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:auto">
-    <button onclick="toggleSearch()" title="Rechercher (\u2318K / Ctrl+K)" aria-label="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
+    <button onclick="toggleSearch()" title="Recherche rapide (employ\u00e9s, codes, jeux, convention) \u00b7 Pour la palette compl\u00e8te : \u2318K" aria-label="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
     <div id="topClock" style="font-size:11px;font-family:monospace;color:#a0cca0;line-height:1;white-space:nowrap"></div>
     ${_syncDot}
     ${_iaOffBadge}
@@ -38708,17 +38678,10 @@ function toggleFavView(viewId){
   ls("cmc_favs",_favs);dc();
 }
 
-// v9.67 — Raccourcis clavier (desktop) — v10 : Ctrl+K / Cmd+K ouvre la command palette
+// v9.67 — Raccourcis clavier (desktop). Note v10 : Ctrl+K est géré par le listener v9.82 (l. 9224+) qui ouvre la VRAIE command palette (openCommandPalette — modal plein écran avec fuzzy search, navigation flèches). Ne PAS dupliquer ici. Le bouton 🔍 topbar reste pour le dropdown rapide.
 document.addEventListener("keydown",function(e){
   if(!A.user)return;
-  // v10 Sprint 2 — Ctrl+K / Cmd+K : ouvre la recherche globale (command palette) AVANT le test focus input
-  if((e.ctrlKey||e.metaKey)&&(e.key==="k"||e.key==="K")){
-    e.preventDefault();
-    if(!_searchOpen)toggleSearch();
-    else{var _el=document.getElementById("globalSearchIn");if(_el){_el.focus();_el.select();}}
-    return;
-  }
-  // Ignorer si focus dans un input (sauf Ctrl+K géré au-dessus)
+  // Ignorer si focus dans un input (Ctrl+K déjà géré ailleurs)
   var tag=(document.activeElement||{}).tagName||"";
   if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT")return;
   if(e.key==="Escape"){if(_searchOpen){toggleSearch();e.preventDefault();return;}if(_presentMode){togglePresentation();e.preventDefault();return;}goBack();e.preventDefault();return;}
