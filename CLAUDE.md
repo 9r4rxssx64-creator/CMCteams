@@ -285,7 +285,7 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.683"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.684"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 - **Taille fichier :** ~1.10 MB (HTML + CSS + JS) — v9.67
@@ -721,6 +721,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 | Version | Changements |
 |---------|-------------|
+| **v9.684** | **Toast IA désactivée adapté au rôle**. `iaBlockedToast()` affiche désormais 2 messages distincts. **Admin** : "⏸ IA désactivée — tokens préservés. Cliquer sur le badge IA OFF (topbar) ou Admin → IA pour réactiver." (explique où réactiver). **Employé** : "⏸ Assistant IA temporairement indisponible. Contactez l'administrateur si besoin." (pas de demande d'action impossible — évite frustration). Variante "err" du toast pour rester visible. |
 | **v9.683** | **Empty states "Aucun planning" distincts admin/employé**. vMonPlanning et vDeparts : si pas de planning importé pour le mois, affichent désormais 2 versions selon rôle. **Admin** : "Aucun planning pour mai 2026" + sous-titre "Importez le PDF SBM…" + gros bouton CTA gradient or `📥 Ouvrir l'import` (44px). **Employé** : "Le planning sera publié dès l'import par l'administrateur. Aucune action n'est nécessaire de ta part." — pas de bouton trompeur (avant : tous voyaient un bouton "→ Importer le planning" qui ouvrait une vue inaccessible). Icône 📋 42px, padding généreux. UX clair, simple, FR : chacun voit ce qui le concerne. |
 | **v9.682** | **Bouton ⌘ dans la topbar — palette accessible sur mobile**. Ajout d'un mini bouton ⌘ (30x30) à côté de 🔍 qui appelle `openCommandPalette()` directement. La palette plein écran existante (v9.82) n'était accessible que par raccourci clavier `Ctrl+K`/`Cmd+K`, donc inaccessible sur mobile/tactile. Désormais tous les users (admin et employés) peuvent l'ouvrir d'un tap. Title explicite `"Palette de commandes (toutes actions, vues, raccourcis) · ⌘K"`. Style mono pour le `⌘` (différencie visuellement du 🔍 emoji). |
 | **v9.681** | **Mini-calendrier visuel "Couverture mois"**. La barre de progression linéaire est remplacée par un mini-calendrier 1 case/jour : vert si planifié, sombre si non, semi-transparent si passé, **or pulse** si aujourd'hui. Tooltip natif par case (`title="N : planifié/non planifié (aujourd'hui)"`). Légende sous le calendrier (planifié / à venir / aujourd'hui). Kevin voit d'un coup d'oeil quels jours du mois en cours sont encore à importer. Cliquable pour ouvrir vPlan. |

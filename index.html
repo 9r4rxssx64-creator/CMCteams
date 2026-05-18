@@ -4929,7 +4929,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.683";
+var APP_VER="v9.684";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -38366,7 +38366,7 @@ setInterval(function(){var k=_resolveIaKey();if(k&&k!==iaApiKey)iaApiKey=k;},600
 var iaEnabled=localStorage.getItem("cmc_ia_enabled")!=="0";
 // v9.675 — Kill-switch global IA : source unique de vérité, relue à chaque appel pour bloquer 100% des call sites Anthropic quand OFF
 function iaIsEnabled(){try{return localStorage.getItem("cmc_ia_enabled")!=="0";}catch(_){return iaEnabled;}}
-function iaBlockedToast(){try{toast("⏸ IA désactivée — tokens préservés. Réactivez dans Admin → IA.","err");}catch(_){}}
+function iaBlockedToast(){try{var isAdm=A.user&&A.user.id===AID;toast(isAdm?"⏸ IA désactivée — tokens préservés. Cliquer sur le badge IA OFF (topbar) ou Admin → IA pour réactiver.":"⏸ Assistant IA temporairement indisponible. Contactez l'administrateur si besoin.","err");}catch(_){}}
 var iaWebSearch=localStorage.getItem("cmc_ia_websearch")==="1";
 // Proxy optionnel : si défini, les requêtes Anthropic passent par ce proxy (sécurise la clé API)
 var iaProxyUrl=localStorage.getItem("cmc_ia_proxy")||"";
