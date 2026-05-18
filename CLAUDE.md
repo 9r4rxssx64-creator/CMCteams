@@ -285,7 +285,7 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.103"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.675"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 - **Taille fichier :** ~1.10 MB (HTML + CSS + JS) — v9.67
@@ -721,6 +721,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 | Version | Changements |
 |---------|-------------|
+| **v9.675** | **Kill-switch IA admin global**. Bouton `⏸ Désactiver IA` en tête de `vAdmin` + badge `⏸ IA OFF` topbar permanent quand actif. Helper centralisé `iaIsEnabled()` (l. 37903) consulté par TOUS les sites d'appel Anthropic. Guards ajoutés sur 5 sites non protégés : sentinelle maintenance (l. 11962), vision fallback PDF (l. 26070), OCR scan document (l. 38601), scanner badge (l. 38674), camera studio (l. 38776). Toggle existant `iaToggle()` réutilisé. Coupe 100% des appels Anthropic (avant : seul le chat vIA était gardé, les scans/OCR consommaient toujours). Doc pattern dans `MEMO_KILLSWITCH_IA.md` pour application aux autres projets (Apex AI exclu volontairement). |
 | **v9.70** | **Fixes responsive mobile complets**. Tests multi-devices Puppeteer (5 profils : iPhone SE, iPhone 14 Pro, Galaxy S22, Pixel 7, iPad Air). Fix nav bas #bnav : scroll-x interne, labels cachés < 420px (ne garde que les emojis), compact sur petits écrans. Fix overflow accueil (raccourcis `max-width:100vw`). Fix toolbars vIA, vChat header, vMonPlanning header : `flex-wrap:wrap`. Ajout `html,body{overflow-x:hidden;max-width:100vw}` en safety net. Résultat : **70 PASS / 0 FAIL** sur 5 devices (avant : 55 PASS / 25 WARN overflow). iPhone SE 375px entièrement fonctionnel. |
 | **v9.69** | **Audit expert 4 subagents parallèles + corrections**. Fix P1 : `cmc_motd` maintenant géré dans `fbApplyData` (accepte null=effacé, validation type objet). Fix P2 : auteur MOTD supprimé affiche "(supprimé)" au lieu de "undefined" ; bandeau MOTD gagne `word-break:break-word` + `overflow-wrap:anywhere` pour textes longs sans espaces. Section **"Outils & réflexes expert"** ajoutée dans CLAUDE.md (boîte à outils, commandes de validation, pièges à éviter). |
 | **v9.68** | **Message du jour admin + sync Firebase**. Store `A.motd={text,ts,author}` dans FB_FIX (`cmc_motd`). Fonctions `setMotd`/`clearMotd`/`adminSetMotdFromInput` (guard AID, max 500 car., audit `motd_set`/`motd_clear`). UI admin : textarea + boutons Publier/Effacer. UI employé : bandeau doré 📢 en haut de `vAccueil` (pre-wrap, date/heure). |

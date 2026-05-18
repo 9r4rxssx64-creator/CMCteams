@@ -11959,6 +11959,7 @@ function cmcSetConsumptionLevel(uid,level){
 function _cmcAiHandleIssue(sentinelId,severity,finding){
   try{
     if(!A.user||A.user.id!==AID)return;
+    if(typeof iaIsEnabled==="function"&&!iaIsEnabled())return; // v9.675 kill-switch IA (sentinelle silencieuse)
     var rateKey="cmc_ai_sn_"+sentinelId;
     var last=+lg(rateKey,0);
     if(Date.now()-last<1800000)return;
@@ -15909,6 +15910,11 @@ function vTopbar(){
     var _sDotCol=_fbConnected?"#5aaa70":"#c9a227";
     _syncDot='<span title="'+_syncTitle+'" onclick="flushSyncQueue()" style="display:inline-flex;align-items:center;justify-content:center;width:10px;height:10px;border-radius:50%;background:'+_sDotCol+';flex-shrink:0;box-shadow:0 0 6px '+_sDotCol+'80;cursor:pointer"'+(_fbConnected?'':';animation:pulseDot 1.5s ease-in-out infinite')+'></span>';
   }
+  // v9.675 — Badge "IA OFF" topbar (kill-switch visible en permanence quand admin a coup\u00e9 l'IA)
+  var _iaOffBadge='';
+  if(isAdm&&typeof iaIsEnabled==="function"&&!iaIsEnabled()){
+    _iaOffBadge='<span onclick="iaToggle()" title="IA d\u00e9sactiv\u00e9e \u2014 aucun appel Anthropic, tokens pr\u00e9serv\u00e9s. Cliquer pour r\u00e9activer." style="cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:9px;background:rgba(192,120,48,.18);color:#c07830;border:1px solid rgba(192,120,48,.45);font-size:10px;font-weight:800;flex-shrink:0">\u23f8 IA OFF</span>';
+  }
   // v9.59 — Flèche "Retour" globale : visible si pas sur accueil ET qu'il y a une vue précédente
   var _backBtn=(A.view&&A.view!=="accueil"&&_viewHistory.length)
     ?'<button onclick="goBack()" title="Retour" aria-label="Retour" style="flex-shrink:0;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:7px;color:#c9a227;font-size:18px;padding:3px 9px;cursor:pointer;line-height:1;font-weight:700;min-width:32px;min-height:30px">\u2190</button>'
@@ -15928,6 +15934,7 @@ function vTopbar(){
     <button onclick="toggleSearch()" title="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
     <div id="topClock" style="font-size:11px;font-family:monospace;color:#a0cca0;line-height:1;white-space:nowrap"></div>
     ${_syncDot}
+    ${_iaOffBadge}
     ${_agentBadge}
     <span id="syncBadge" onclick="flushSyncQueue()" title="Cliquer pour synchroniser" style="display:none;font-size:11px;color:#c9a227;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:5px;padding:1px 5px;cursor:pointer"></span>
     ${(u&&typeof _pendingPitMessages==="function"&&_pendingPitMessages(u.id).length)?'<button onclick="sv(\'monfilpit\')" title="Messages pit boss en attente" aria-label="Messages pit boss" style="background:linear-gradient(135deg,#c04080,#8a2860);border:1.5px solid #ffb0d0;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:13px;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(192,64,128,.6);animation:pulseDot 1.5s ease-in-out infinite">'+_pendingPitMessages(u.id).length+'</button>':""}
@@ -26074,6 +26081,7 @@ async function _cmcOcrFallback(pdfFile,iy,im){
 // a Claude Vision pour extraction structuree. Fallback ultime "intelligence cas pas standard".
 async function _cmcVisionFallback(pdfFile,iy,im){
   try{
+    if(typeof iaIsEnabled==="function"&&!iaIsEnabled()){return{ok:false,reason:"IA désactivée (kill-switch)"};} // v9.675 kill-switch IA
     var apiKey=lg("cmc_ia_key","")||lg("cmc_shared_api_key","");
     if(!apiKey){return{ok:false,reason:"no Anthropic API key"};}
     if(typeof pdfjsLib==="undefined"){return{ok:false,reason:"pdfjsLib unavailable"};}
@@ -28970,7 +28978,13 @@ function vAdmin(){
     if(_se.type==="pin_fail")_failsAlert++;
   }
   // v9.475 \u2014 R\u00e9organisation admin : 4 cat\u00e9gories (vs 8) avec sous-groupes collapsibles
+  var _iaOn=(typeof iaIsEnabled==="function")?iaIsEnabled():iaEnabled;
   var items=[
+    /* v9.675 — Kill-switch IA (priorit\u00e9 absolue Kevin : couper conso tokens en 1 clic) */
+    {sep:"\ud83e\udd16 IA \u2014 Kill-switch tokens"+(_iaOn?"":" \u2014 \u23f8 OFF")},
+    {ic:_iaOn?"\u23f8":"\u25b6",lb:(_iaOn?"D\u00e9sactiver IA":"Activer IA")+" (Claude \u2014 \u00e9conomie tokens)",fn:"iaToggle()"},
+    {ic:"\ud83d\udd11",lb:"Configurer cl\u00e9 API Claude",fn:"iaSetApiKey()"},
+    {ic:"\ud83d\udd17",lb:"Configurer proxy s\u00e9curis\u00e9",fn:"iaSetProxy()"},
     /* v9.540 - Passation digitale (acces 1-clic top admin) */
     {sep:"\ud83d\udcdd PASSATION & COMMUNICATION"},
     {ic:"\ud83d\udcdd",lb:"Nouvelle passation (fin de tourn\u00e9e)",fn:"sv('passation')"},
@@ -37954,6 +37968,9 @@ function _resolveIaKey(){var k=localStorage.getItem("cmc_ia_key")||"";if(!k){k=l
 var iaApiKey=_resolveIaKey();
 setInterval(function(){var k=_resolveIaKey();if(k&&k!==iaApiKey)iaApiKey=k;},60000);
 var iaEnabled=localStorage.getItem("cmc_ia_enabled")!=="0";
+// v9.675 — Kill-switch global IA : source unique de vérité, relue à chaque appel pour bloquer 100% des call sites Anthropic quand OFF
+function iaIsEnabled(){try{return localStorage.getItem("cmc_ia_enabled")!=="0";}catch(_){return iaEnabled;}}
+function iaBlockedToast(){try{toast("⏸ IA désactivée — tokens préservés. Réactivez dans Admin → IA.","err");}catch(_){}}
 var iaWebSearch=localStorage.getItem("cmc_ia_websearch")==="1";
 // Proxy optionnel : si défini, les requêtes Anthropic passent par ce proxy (sécurise la clé API)
 var iaProxyUrl=localStorage.getItem("cmc_ia_proxy")||"";
@@ -38650,6 +38667,7 @@ function cmcScanPlanningCamera(){
 
 /* v9.501 — OCR Scanner CMCteams (Kevin: 'ajoute scanner ocr full fonctions comme apex + ameliore a fond') */
 function cmcScanDocument(){
+  if(typeof iaIsEnabled==="function"&&!iaIsEnabled()){iaBlockedToast();return;} // v9.675 kill-switch IA
   try{
     if(typeof cmcCguAsk==="function"&&!cmcCguAsk("camera","📄 Scanner document OCR","CMCteams ouvre la caméra arrière pour scanner un document. L'IA Claude Vision extrait le texte (factures, RIB, CNI, contrats, plannings, fiches employés, badges...). Données restent locales sauf si IA cloud activée."))return;
     var input=document.createElement("input");
@@ -38722,6 +38740,7 @@ function _cmcCaptureFrameFromStream(stream,opts){opts=opts||{};return new Promis
 function _cmcDetectBarcode(canvas){return new Promise(function(resolve){try{if(typeof BarcodeDetector==="undefined"){resolve({supported:false,codes:[]});return;}var det=new BarcodeDetector({formats:["qr_code","ean_13","code_128","code_39","data_matrix","pdf417"]});det.detect(canvas).then(function(codes){resolve({supported:true,codes:codes.map(function(c){return{format:c.format,value:c.rawValue};})});}).catch(function(){resolve({supported:true,codes:[]});});}catch(e){resolve({supported:false,codes:[]});}});}
 function cmcScanBadgeEmploye(){
   if(!A.user||A.user.id!==AID){toast("Admin uniquement","warn");return;}
+  if(typeof iaIsEnabled==="function"&&!iaIsEnabled()){iaBlockedToast();return;} // v9.675 kill-switch IA
   if(typeof cmcCguAsk==="function"&&!cmcCguAsk("camera","📛 Scanner badge employé","Photo du badge, l'IA extrait nom/prénom/rôle/matricule + match auto avec une fiche existante."))return;
   var input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";
   input.onchange=function(){
@@ -38823,6 +38842,7 @@ function vCMCCameraStudio(){
 }
 function cmcCameraStudioCapture(){
   if(!A.user||A.user.id!==AID)return;
+  if(typeof iaIsEnabled==="function"&&!iaIsEnabled()){iaBlockedToast();return;} // v9.675 kill-switch IA
   if(typeof cmcCguAsk==="function"&&!cmcCguAsk("camera","Camera Studio HD","Capture + analyse multi-modes"))return;
   var modes=[];["ocr","objects","scene","barcode","color"].forEach(function(m){var el=document.getElementById("cmccs_"+m);if(el&&el.checked)modes.push(m);});
   if(!modes.length){toast("Sélectionne au moins 1 mode","warn");return;}
@@ -38955,7 +38975,7 @@ function iaToggle(){
   iaEnabled=!iaEnabled;
   localStorage.setItem("cmc_ia_enabled",iaEnabled?"1":"0");
   _audit("ia_"+(iaEnabled?"activee":"desactivee"),AID,"IA Claude",!iaEnabled?"activée":"désactivée",iaEnabled?"activée":"désactivée");
-  toast(iaEnabled?"✓ IA Claude activée":"IA Claude désactivée — tokens préservés");
+  toast(iaEnabled?"✓ IA Claude activée (chat, OCR, scan, vision, sentinelle)":"⏸ IA désactivée — aucun appel Anthropic, tokens préservés");
   dc();
 }
 
