@@ -1210,9 +1210,8 @@ html[data-theme="light"] #topbar{
 <!-- v9.171 — FAB flottant (Floating Action Button) pour actions rapides contextuelles -->
 <button id="fab" aria-label="Actions rapides" title="Actions rapides (ou tapez '?')" onclick="toggleFab(event)" style="display:none">+</button>
 <div id="fab-menu" role="menu" aria-label="Menu actions rapides"></div>
-<!-- v9.663 Kevin "visuel des versions toujours" : badge dynamique APP_VER (jamais hardcode). -->
-<button id="cmc-version-badge" type="button" aria-label="Version CMCteams" title="Version CMCteams · click pour notes" onclick="if(typeof showReleaseNotes==='function')showReleaseNotes();else alert('CMCteams '+(typeof APP_VER!=='undefined'?APP_VER:'?'));" style="position:fixed;bottom:max(8px,env(safe-area-inset-bottom,8px));left:8px;z-index:9998;padding:5px 10px;background:linear-gradient(135deg,rgba(232,184,48,.22),rgba(232,184,48,.12));border:1px solid rgba(232,184,48,.55);color:#c9a227;font-size:11px;font-family:'SF Mono',Menlo,monospace;font-weight:700;border-radius:12px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;opacity:.85;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1;letter-spacing:.02em">…</button>
-<script>(function(){function _setBadge(){try{var b=document.getElementById('cmc-version-badge');if(b&&typeof APP_VER!=='undefined')b.textContent=APP_VER;}catch(_){}}_setBadge();setTimeout(_setBadge,200);setTimeout(_setBadge,1000);setTimeout(_setBadge,3000);if(document.readyState!=='complete')window.addEventListener('load',_setBadge);})();</script>
+<!-- v9.699 Kevin "Enlève la version en dorée qui reste sur toutes les vu. MAJ force auto marche, version écrite à la connexion." -->
+<!-- Badge cmc-version-badge supprimé (était redondant avec version login). -->
 <script>
 // v9.45 \u2014 Error boundary global renforc\u00e9 + unhandledrejection
 (function(){
@@ -4934,7 +4933,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.698";
+var APP_VER="v9.699";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{

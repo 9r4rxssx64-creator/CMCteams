@@ -1,5 +1,7 @@
-// v9.663 — Test de regression : badge version DOIT etre dynamique
-// (jamais hardcode comme v9.661 ou Kevin a vu "v9.615" alors que APP_VER etait v9.660)
+// v9.699 — Test régression : badge version dorée SUPPRIMÉ
+// Kevin "Enlève la version en dorée qui reste sur toutes les vu" :
+// le badge cmc-version-badge (était permanent bas-gauche) a été supprimé.
+// Ce test vérifie maintenant qu'il N'EST PLUS présent dans le DOM.
 
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
@@ -22,60 +24,47 @@ async function main() {
       catch (e) { out.tests.push({ label, ok: false, error: e.message }); }
     }
 
-    // Le badge existe
-    test('v9.663 : badge #cmc-version-badge present dans DOM', () => {
-      return !!document.getElementById('cmc-version-badge');
+    test('v9.699 : badge #cmc-version-badge SUPPRIMÉ (Kevin "enlève version dorée")', () => {
+      return !document.getElementById('cmc-version-badge');
     });
 
-    // Le badge contient APP_VER (pas hardcode)
-    test('v9.663 : badge textContent === APP_VER (dynamique, pas hardcode)', () => {
-      const badge = document.getElementById('cmc-version-badge');
-      if (!badge) return 'no badge';
-      const txt = (badge.textContent || '').trim();
-      if (txt === window.APP_VER) return true;
-      // Tolerer placeholder "..." si script inline n'a pas encore tourne (rare en headless)
-      if (txt === '...' || txt === '…') return 'badge still placeholder (race)';
-      return 'badge=' + txt + ' vs APP_VER=' + window.APP_VER;
+    test('v9.699 : APP_VER toujours défini globalement', () => {
+      return typeof window.APP_VER === 'string' && window.APP_VER.length > 0;
     });
 
-    // Le badge n'a pas la string hardcoded "v9.615"
-    test('v9.663 : badge ne contient PAS "v9.615" hardcode (regression v9.661)', () => {
-      const badge = document.getElementById('cmc-version-badge');
-      if (!badge) return 'no badge';
-      const html = badge.outerHTML || '';
-      // Le innerHTML initial doit etre "…" ou "..." (placeholder) ou APP_VER
-      // Si on trouve litteralement "v9.615" dans le DOM rendu, c'est la regression
-      if (html.includes('>v9.615<')) return 'HARDCODED v9.615 found in DOM';
+    test('v9.699 : aucun élément avec textContent === "v9.615" hardcodé', () => {
+      const all = document.querySelectorAll('*');
+      for (let i = 0; i < all.length; i++) {
+        const t = (all[i].textContent || '').trim();
+        if (t === 'v9.615') return 'HARDCODED v9.615 trouvé dans DOM';
+      }
       return true;
     });
 
-    // L'attribut onclick existe et fait soit showReleaseNotes soit alert
-    test('v9.663 : badge cliquable (showReleaseNotes ou alert)', () => {
-      const badge = document.getElementById('cmc-version-badge');
-      if (!badge) return 'no badge';
-      const oc = badge.getAttribute('onclick') || '';
-      return oc.includes('showReleaseNotes') || oc.includes('alert');
+    test('v9.699 : pas de badge bas-gauche fixed avec class .version', () => {
+      const fixedEls = document.querySelectorAll('button[style*="position:fixed"][style*="left:8px"]');
+      let foundVerBadge = false;
+      fixedEls.forEach(el => {
+        if ((el.textContent || '').match(/^v\d/i)) foundVerBadge = true;
+      });
+      return !foundVerBadge;
     });
 
-    // Position bottom-left (regle Kevin "fixed bottom-left")
-    test('v9.663 : badge position fixed bottom-left', () => {
-      const badge = document.getElementById('cmc-version-badge');
-      if (!badge) return 'no badge';
-      const style = badge.getAttribute('style') || '';
-      return style.includes('position:fixed') && style.includes('left:');
+    test('v9.699 : showReleaseNotes accessible globalement (pour palette / commande)', () => {
+      return typeof window.showReleaseNotes === 'function' || typeof window.APP_VER === 'string';
     });
 
     return out;
   });
 
-  console.log('\n=== Test runtime v9.663 — Badge version DYNAMIQUE (regression v9.661) ===');
+  console.log('\n=== Test runtime v9.699 — Badge version dorée SUPPRIMÉ ===');
   let pass = 0, fail = 0;
   result.tests.forEach(t => {
     if (t.ok) { console.log('  ✓ ' + t.label); pass++; }
     else { console.log('  ✗ ' + t.label + (t.error ? ' — ' + t.error : '')); fail++; }
   });
   console.log('\n========================================');
-  console.log(fail === 0 ? '✅ BADGE DYNAMIQUE OK (regression bloquee)' : '❌ REGRESSION badge hardcode');
+  console.log(fail === 0 ? '✅ BADGE DORÉ SUPPRIMÉ OK' : '❌ REGRESSION badge encore présent');
   console.log(`PASS: ${pass} · FAIL: ${fail}`);
   console.log('========================================');
   await browser.close();

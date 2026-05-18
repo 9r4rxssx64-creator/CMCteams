@@ -95,11 +95,10 @@ async function main() {
     check('FEATURES', 'ROTATION standards 60/40/20', () => typeof window.ROTATION === 'object' || typeof window.isSenior === 'function');
 
     // ── AXE 5 : UX (target /20) ──
-    check('UX', 'Version badge present', () => !!document.getElementById('cmc-version-badge'));
-    check('UX', 'Badge contient APP_VER (pas hardcoded)', () => {
-      const b = document.getElementById('cmc-version-badge');
-      return b && b.textContent === window.APP_VER;
-    });
+    // v9.699 Kevin "Enlève la version en dorée qui reste sur toutes les vu" :
+    // badge cmc-version-badge supprimé. Version visible à la connexion + MAJ auto force.
+    check('UX', 'APP_VER toujours défini globalement (visible à la connexion)', () => typeof window.APP_VER === 'string' && window.APP_VER.length > 0);
+    check('UX', 'Badge doré bas-gauche SUPPRIMÉ (UX épuré v9.699)', () => !document.getElementById('cmc-version-badge'));
     check('UX', 'Skip-link a11y présent', () => !!document.querySelector('a.skip-link'));
     check('UX', 'Manifest PWA lié', () => !!document.querySelector('link[rel="manifest"]'));
     check('UX', 'Apple-touch-icon défini', () => !!document.querySelector('link[rel="apple-touch-icon"]'));
