@@ -23333,9 +23333,18 @@ function vPlan(){
       +'<span style="font-size:14px;font-weight:800;color:'+utc+';text-transform:uppercase;letter-spacing:1px">\u25b6 Ma section</span>'
       +(mirT?'<span style="font-size:14px;color:#c8dccb;margin-left:8px">\u21cc '+esc(mirT.name)+'</span>':"")
       +'</div>';
+    // v9.691 Kevin "Toujours mon équipe et la miroir en première vu" :
+    // Filtre permissif Ma section. Si teamHistory[key] présent (mois importé) → détection.
+    // Sinon → fallback emp.team (membership officielle, pas un cache).
+    var _vKeyMa=A.year+"-"+A.month;
     _priTids.forEach(function(tid){
       var tcc2=tc(tid);
-      var te2=A.employees.filter(function(e){return teamForMonth(e,A.year,A.month)===tid&&isEmpActive(e,A.year,A.month);});
+      var te2=A.employees.filter(function(e){
+        if(!isEmpActive(e,A.year,A.month))return false;
+        var th=e.teamHistory&&e.teamHistory[_vKeyMa];
+        if(th)return th===tid;
+        return e.team===tid;
+      });
       if(!te2.length) return;
       _globalShown[tid]=true;
       h+=_renderTeamBlock(tid,te2,tcc2);
@@ -23366,7 +23375,16 @@ function vPlan(){
     if(!famEmps.length) return;
     var famColor=getFamColor(fid),famLabel=getFamLabel(fid),famIcon=getFamIcon(fid);
     var byFT={},ftOrd=[];
-    famEmps.forEach(function(e){var et=teamForMonth(e,A.year,A.month);if(!et)return;if(!byFT[et])byFT[et]=[];byFT[et].push(e);if(ftOrd.indexOf(et)<0)ftOrd.push(et);});
+    // v9.691 — groupe par teamHistory[key] si présent, sinon e.team (autre équipes toujours visibles)
+    var _vKeyFam=A.year+"-"+A.month;
+    famEmps.forEach(function(e){
+      var th=e.teamHistory&&e.teamHistory[_vKeyFam];
+      var et=th||e.team;
+      if(!et||et==="?")return;
+      if(!byFT[et])byFT[et]=[];
+      byFT[et].push(e);
+      if(ftOrd.indexOf(et)<0)ftOrd.push(et);
+    });
     ftOrd.sort(function(a,b){var na=parseInt(a.replace(/[^0-9]/g,""))||0,nb=parseInt(b.replace(/[^0-9]/g,""))||0;return na-nb;});
     var hasUnshown=ftOrd.some(function(tid){return !_globalShown[tid];});
     if(!hasUnshown) return;
