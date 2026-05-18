@@ -48,12 +48,12 @@ jobs:
       - name: Generate video
         working-directory: tools/social
         env:
-          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           NICHE="${{ github.event.inputs.niche || 'betrayal-revenge' }}"
           FORMAT="${{ github.event.inputs.format || 'long' }}"
 
-          # Si on a Gemma, génère un nouveau script
+          # Si on a Gemini, génère un nouveau script
           if [ -n "$GOOGLE_AI_API_KEY" ]; then
             node cli.js generate --ai-script --niche "$NICHE" --format "$FORMAT" || node cli.js generate --random --format "$FORMAT"
           else
