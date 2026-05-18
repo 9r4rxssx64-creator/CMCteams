@@ -6,6 +6,9 @@
 -- 1) Plan premium tracking (monthly/yearly/lifetime)
 ALTER TABLE users ADD COLUMN premium_plan TEXT;
 
+-- 1b) v1.1.26 : Stripe customer_id (pour Customer Portal "gérer abo")
+ALTER TABLE users ADD COLUMN stripe_customer_id TEXT;
+
 -- 2) Cache résumés IA (clé = SHA-256 du prompt + max_tokens)
 --    TTL : 7 jours (purge via cron sentinel)
 CREATE TABLE IF NOT EXISTS ai_summary_cache (

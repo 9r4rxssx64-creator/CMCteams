@@ -2278,10 +2278,18 @@ export async function handlePremiumWebhook(request, env) {
       else if (plan === 'yearly') premiumUntil = Date.now() + 365 * 86400 * 1000;
       else premiumUntil = Date.now() + 31 * 86400 * 1000; // monthly + buffer
 
+      // v1.1.26 : store stripe_customer_id pour Customer Portal futur
+      const stripeCustomerId = session?.customer || null;
       try {
-        await env.APEX_CHAT_DB?.prepare(
-          'UPDATE users SET premium_until=?, premium_plan=? WHERE id=?'
-        ).bind(premiumUntil, plan, userId).run();
+        if (stripeCustomerId) {
+          await env.APEX_CHAT_DB?.prepare(
+            'UPDATE users SET premium_until=?, premium_plan=?, stripe_customer_id=? WHERE id=?'
+          ).bind(premiumUntil, plan, stripeCustomerId, userId).run();
+        } else {
+          await env.APEX_CHAT_DB?.prepare(
+            'UPDATE users SET premium_until=?, premium_plan=? WHERE id=?'
+          ).bind(premiumUntil, plan, userId).run();
+        }
 
         await env.APEX_CHAT_DB?.prepare(
           'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
@@ -2338,6 +2346,145 @@ async function _verifyStripeSignature(rawBody, signatureHeader, secret) {
     diff |= expectedHex.charCodeAt(i) ^ parts.v1.charCodeAt(i);
   }
   return diff === 0;
+}
+
+// ============================================================================
+//  v1.1.26 — POST /api/premium/portal : Stripe Customer Portal (gérer abo)
+//  User clique "Gérer mon abonnement" → ouvre portail Stripe officiel (annuler,
+//  changer carte, voir factures, télécharger reçus).
+// ============================================================================
+export async function handlePremiumPortal(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.STRIPE_SECRET_KEY) return err('Stripe non configuré', 503);
+
+  const body = await request.json().catch(() => ({}));
+  const returnUrl = String(body.return_url || 'https://apex.chat/?from=portal');
+  if (!returnUrl.startsWith('http')) return err('return_url invalide');
+
+  try {
+    // Cherche customer_id Stripe (stocké après 1er checkout)
+    const u = await env.APEX_CHAT_DB?.prepare(
+      'SELECT stripe_customer_id FROM users WHERE id=?'
+    ).bind(auth.sub).first();
+    if (!u?.stripe_customer_id) {
+      return err('Aucun abonnement actif. Souscris d\'abord à un plan Premium.', 404);
+    }
+
+    const fd = new URLSearchParams();
+    fd.set('customer', u.stripe_customer_id);
+    fd.set('return_url', returnUrl);
+    fd.set('locale', 'fr');
+
+    const r = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: fd.toString(),
+    });
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      console.warn('[stripe-portal] HTTP', r.status, errBody.slice(0, 200));
+      return err(`Stripe HTTP ${r.status}`, 502);
+    }
+    const data = await r.json();
+    return json({ ok: true, url: data.url });
+  } catch (e) {
+    return err('Stripe error: ' + e.message, 502);
+  }
+}
+
+// ============================================================================
+//  v1.1.26 — POST /api/ai/smart-reply : 3 réponses suggérées style Gmail
+// ============================================================================
+export async function handleAiSmartReply(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const body = await request.json().catch(() => ({}));
+  const lastMessage = String(body.last_message || '').trim();
+  const context = String(body.context || '').trim().slice(0, 500);
+  const tone = String(body.tone || 'friendly'); /* friendly | formal | brief */
+  if (!lastMessage || lastMessage.length < 3) return err('last_message required');
+  if (lastMessage.length > 2000) return err('last_message too long (max 2000)');
+
+  const sysPrompt = `Tu suggères 3 réponses TRÈS COURTES (max 8 mots) en français pour répondre au message reçu. Style ${tone === 'formal' ? 'formel/vous' : tone === 'brief' ? 'ultra-bref' : 'amical/tu'}. Retourne UNIQUEMENT un JSON {"replies": ["...", "...", "..."]}. Pas d'explication.`;
+  const userPrompt = `Message reçu: "${lastMessage}"${context ? `\nContexte: ${context}` : ''}`;
+  const messages = [{ role: 'user', content: userPrompt }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 6000);
+      const text = await p.fn(messages, sysPrompt, env, ctrl.signal, 200);
+      clearTimeout(to);
+      // Parse JSON robuste (l'IA peut wrapper en markdown code block)
+      const cleaned = text.replace(/```(?:json)?/g, '').trim();
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (!m) continue;
+      const parsed = JSON.parse(m[0]);
+      if (Array.isArray(parsed.replies) && parsed.replies.length > 0) {
+        return json({
+          ok: true,
+          replies: parsed.replies.slice(0, 3).map(r => String(r).slice(0, 80)),
+          provider: p.name,
+        });
+      }
+    } catch (e) {
+      console.warn(`[smart-reply] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('IA indisponible', 503);
+}
+
+// ============================================================================
+//  v1.1.26 — POST /api/ai/translate : traduction message FR/EN/ES/IT/DE/AR/etc.
+// ============================================================================
+export async function handleAiTranslate(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const body = await request.json().catch(() => ({}));
+  const text = String(body.text || '').trim();
+  const targetLang = String(body.target_lang || 'fr').toLowerCase().slice(0, 5);
+  if (!text || text.length < 1) return err('text required');
+  if (text.length > 5000) return err('text too long (max 5000)');
+
+  // Detect rapide langue source (heuristique simple — IA fera le vrai détect)
+  const sysPrompt = `Tu es un traducteur expert. Traduis le texte fourni en ${targetLang}. Retourne UNIQUEMENT la traduction, sans préambule ni explication. Préserve le ton, les emojis, la ponctuation.`;
+  const messages = [{ role: 'user', content: text }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 8000);
+      const translated = await p.fn(messages, sysPrompt, env, ctrl.signal, 1500);
+      clearTimeout(to);
+      if (translated && translated.trim().length > 0) {
+        return json({
+          ok: true,
+          translated: translated.trim(),
+          source_text: text.slice(0, 200),
+          target_lang: targetLang,
+          provider: p.name,
+        });
+      }
+    } catch (e) {
+      console.warn(`[translate] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('Traduction IA indisponible', 503);
 }
 
 // ============================================================================
@@ -2474,6 +2621,11 @@ export default {
       if (path === '/api/premium/checkout' && method === 'POST') return await handlePremiumCheckout(request, env);
       if (path === '/api/premium/webhook' && method === 'POST') return await handlePremiumWebhook(request, env);
       if (path === '/api/premium/status' && method === 'GET') return await handlePremiumStatus(request, env);
+
+      // v1.1.26 — Customer Portal + Smart Reply + Translate
+      if (path === '/api/premium/portal' && method === 'POST') return await handlePremiumPortal(request, env);
+      if (path === '/api/ai/smart-reply' && method === 'POST') return await handleAiSmartReply(request, env);
+      if (path === '/api/ai/translate' && method === 'POST') return await handleAiTranslate(request, env);
 
       // Invitations
       if (path === '/api/invitations' && method === 'POST') return await handleCreateInvitation(request, env);

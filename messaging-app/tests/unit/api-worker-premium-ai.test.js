@@ -10,7 +10,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   handleAiSummarize,
+  handleAiSmartReply,
+  handleAiTranslate,
   handlePremiumCheckout,
+  handlePremiumPortal,
   handlePremiumWebhook,
   handlePremiumStatus,
 } from '../../workers/api-worker.js';
@@ -372,6 +375,270 @@ describe('handlePremiumWebhook', () => {
     });
     const r = await handlePremiumWebhook(req, env);
     expect(r.status).toBe(400);
+  });
+});
+
+describe('handlePremiumPortal (v1.1.26)', () => {
+  it('refuse non-auth', async () => {
+    const r = await handlePremiumPortal(makeReq('POST', '/api/premium/portal'), userEnv());
+    expect(r.status).toBe(401);
+  });
+
+  it('refuse sans STRIPE_SECRET_KEY', async () => {
+    const env = userEnv();
+    const tok = await userToken();
+    const r = await handlePremiumPortal(makeReq('POST', '/api/premium/portal', {}, tok), env);
+    expect(r.status).toBe(503);
+  });
+
+  it('refuse return_url invalide (non http)', async () => {
+    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
+    const tok = await userToken();
+    const r = await handlePremiumPortal(
+      makeReq('POST', '/api/premium/portal', { return_url: 'javascript:alert(1)' }, tok),
+      env,
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it('user sans stripe_customer_id → 404 (pas d\'abo actif)', async () => {
+    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ stripe_customer_id: null }),
+    }));
+    const tok = await userToken();
+    const r = await handlePremiumPortal(
+      makeReq('POST', '/api/premium/portal', { return_url: 'https://apex.chat/back' }, tok),
+      env,
+    );
+    expect(r.status).toBe(404);
+  });
+
+  it('user avec customer_id → retourne url portail', async () => {
+    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ stripe_customer_id: 'cus_test_123' }),
+    }));
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({ url: 'https://billing.stripe.com/p/session/abc' }), { status: 200 }),
+    );
+    const tok = await userToken();
+    const r = await handlePremiumPortal(
+      makeReq('POST', '/api/premium/portal', { return_url: 'https://apex.chat/' }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.url).toContain('billing.stripe.com');
+  });
+
+  it('Stripe HTTP error → 502', async () => {
+    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ stripe_customer_id: 'cus_x' }),
+    }));
+    globalThis.fetch = vi.fn(async () => new Response('err', { status: 500 }));
+    const tok = await userToken();
+    const r = await handlePremiumPortal(
+      makeReq('POST', '/api/premium/portal', { return_url: 'https://apex.chat/' }, tok),
+      env,
+    );
+    expect(r.status).toBe(502);
+  });
+});
+
+describe('handleAiSmartReply (v1.1.26)', () => {
+  it('refuse non-auth', async () => {
+    const r = await handleAiSmartReply(makeReq('POST', '/api/ai/smart-reply'), userEnv());
+    expect(r.status).toBe(401);
+  });
+
+  it('refuse last_message vide', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const r = await handleAiSmartReply(makeReq('POST', '/api/ai/smart-reply', { last_message: '' }, tok), env);
+    expect(r.status).toBe(400);
+  });
+
+  it('refuse last_message > 2000 chars', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const r = await handleAiSmartReply(
+      makeReq('POST', '/api/ai/smart-reply', { last_message: 'x'.repeat(2500) }, tok),
+      env,
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it('IA Anthropic retourne JSON valide → 3 replies', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({
+        content: [{ text: '{"replies":["Bien sûr !","D\'accord","Je dois voir"]}' }],
+      })),
+    );
+    const tok = await userToken();
+    const r = await handleAiSmartReply(
+      makeReq('POST', '/api/ai/smart-reply', { last_message: 'Tu viens samedi ?' }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.replies).toHaveLength(3);
+    expect(j.replies[0]).toBe('Bien sûr !');
+  });
+
+  it('IA retourne markdown code block → parse robuste', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({
+        content: [{ text: '```json\n{"replies":["Oui","Non","Peut-être"]}\n```' }],
+      })),
+    );
+    const tok = await userToken();
+    const r = await handleAiSmartReply(
+      makeReq('POST', '/api/ai/smart-reply', { last_message: 'Ça te va ?' }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.replies).toHaveLength(3);
+  });
+
+  it('IA réponse non-JSON → failover Groq', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k1', GROQ_API_KEY: 'k2' });
+    globalThis.fetch = vi.fn(async (url) => {
+      if (url.includes('anthropic')) {
+        return new Response(JSON.stringify({ content: [{ text: 'pas du JSON' }] }));
+      }
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: '{"replies":["G1","G2","G3"]}' } }],
+      }));
+    });
+    const tok = await userToken();
+    const r = await handleAiSmartReply(
+      makeReq('POST', '/api/ai/smart-reply', { last_message: 'hello' }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.provider).toBe('groq');
+  });
+
+  it('cap à 3 replies (si IA en retourne plus)', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({
+        content: [{ text: '{"replies":["A","B","C","D","E"]}' }],
+      })),
+    );
+    const tok = await userToken();
+    const r = await handleAiSmartReply(
+      makeReq('POST', '/api/ai/smart-reply', { last_message: 'hello' }, tok),
+      env,
+    );
+    const j = await r.json();
+    expect(j.replies).toHaveLength(3);
+  });
+});
+
+describe('handleAiTranslate (v1.1.26)', () => {
+  it('refuse non-auth', async () => {
+    const r = await handleAiTranslate(makeReq('POST', '/api/ai/translate'), userEnv());
+    expect(r.status).toBe(401);
+  });
+
+  it('refuse text vide', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const r = await handleAiTranslate(makeReq('POST', '/api/ai/translate', { text: '' }, tok), env);
+    expect(r.status).toBe(400);
+  });
+
+  it('refuse text > 5000 chars', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const r = await handleAiTranslate(
+      makeReq('POST', '/api/ai/translate', { text: 'x'.repeat(6000) }, tok),
+      env,
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it('Anthropic → retourne traduction', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({
+        content: [{ text: 'Bonjour le monde' }],
+      })),
+    );
+    const tok = await userToken();
+    const r = await handleAiTranslate(
+      makeReq('POST', '/api/ai/translate', { text: 'Hello world', target_lang: 'fr' }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.translated).toBe('Bonjour le monde');
+    expect(j.target_lang).toBe('fr');
+    expect(j.provider).toBe('anthropic');
+  });
+
+  it('failover providers si Anthropic vide', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k1', GROQ_API_KEY: 'k2' });
+    globalThis.fetch = vi.fn(async (url) => {
+      if (url.includes('anthropic')) {
+        return new Response(JSON.stringify({ content: [{ text: '' }] }));
+      }
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: 'Hola mundo' } }],
+      }));
+    });
+    const tok = await userToken();
+    const r = await handleAiTranslate(
+      makeReq('POST', '/api/ai/translate', { text: 'Bonjour', target_lang: 'es' }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.translated).toBe('Hola mundo');
+    expect(j.provider).toBe('groq');
+  });
+
+  it('aucun provider → 503', async () => {
+    const env = userEnv();
+    delete env.ANTHROPIC_API_KEY;
+    delete env.GROQ_API_KEY;
+    delete env.GEMINI_API_KEY;
+    const tok = await userToken();
+    const r = await handleAiTranslate(
+      makeReq('POST', '/api/ai/translate', { text: 'hello' }, tok),
+      env,
+    );
+    expect(r.status).toBe(503);
+  });
+
+  it('target_lang clamp à 5 chars', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    let capturedSysPrompt = '';
+    globalThis.fetch = vi.fn(async (_, opts) => {
+      const body = JSON.parse(opts.body);
+      // system can be string OR array (Anthropic prompt caching format)
+      const sys = body.system;
+      capturedSysPrompt = Array.isArray(sys) ? sys[0]?.text : sys;
+      return new Response(JSON.stringify({ content: [{ text: 'OK' }] }));
+    });
+    const tok = await userToken();
+    await handleAiTranslate(
+      makeReq('POST', '/api/ai/translate', { text: 'hi', target_lang: 'verylonglangcode' }, tok),
+      env,
+    );
+    /* slice(0,5) → "veryl" (5 chars max) */
+    expect(capturedSysPrompt).toContain('veryl');
+    expect(capturedSysPrompt).not.toContain('verylonglangcode');
   });
 });
 
