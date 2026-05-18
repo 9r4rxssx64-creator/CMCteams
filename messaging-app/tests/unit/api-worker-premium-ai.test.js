@@ -19,6 +19,7 @@ import {
   handlePremiumWebhook,
   handlePremiumStatus,
   handlePremiumQuota,
+  _sendPremiumReceipt,
 } from '../../workers/api-worker.js';
 import { ENV, makeJWT } from './api-worker-helpers.js';
 
@@ -1197,5 +1198,95 @@ describe("handlePremiumQuota (v1.1.31)", () => {
     expect(r.status).toBe(200);
     const j = await r.json();
     expect(j.usage["voice-transcribe"].used).toBe(0);
+  });
+});
+
+// ============================================================================
+//  v1.1.32 — _sendPremiumReceipt tests (Resend email after Stripe success)
+// ============================================================================
+describe('_sendPremiumReceipt (v1.1.32)', () => {
+  it('rejette si RESEND_API_KEY manquant', async () => {
+    await expect(
+      _sendPremiumReceipt({}, { email: 'k@apex.fr', plan: 'monthly', amount: 699, currency: 'eur', sessionId: 's', premiumUntil: Date.now() })
+    ).rejects.toThrow(/RESEND_API_KEY missing/);
+  });
+
+  it('envoie email avec plan monthly + retourne id', async () => {
+    globalThis.fetch = vi.fn(async () => new Response(
+      JSON.stringify({ id: 'email_abc123' }), { status: 200, headers: { 'Content-Type': 'application/json' } }
+    ));
+    const result = await _sendPremiumReceipt({ RESEND_API_KEY: 're_xxx' }, {
+      email: 'laurence@apex.fr', plan: 'monthly', amount: 699, currency: 'eur',
+      sessionId: 'cs_test_1', premiumUntil: Date.now() + 31 * 86400 * 1000
+    });
+    expect(result.ok).toBe(true);
+    expect(result.id).toBe('email_abc123');
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    const call = globalThis.fetch.mock.calls[0];
+    expect(call[0]).toBe('https://api.resend.com/emails');
+    const body = JSON.parse(call[1].body);
+    expect(body.to).toEqual(['laurence@apex.fr']);
+    expect(body.subject).toMatch(/Mensuel/);
+    expect(body.html).toMatch(/Apex Chat\+ Premium/);
+    expect(body.html).toMatch(/6\.99 EUR/);
+    expect(call[1].headers.Authorization).toBe('Bearer re_xxx');
+  });
+
+  it('plan lifetime → "À vie" dans subject + body', async () => {
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e1' }), { status: 200 }));
+    await _sendPremiumReceipt({ RESEND_API_KEY: 're' }, {
+      email: 'k@a.fr', plan: 'lifetime', amount: 19900, currency: 'eur',
+      sessionId: 'cs', premiumUntil: 9999999999000
+    });
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.subject).toMatch(/À vie/);
+    expect(body.html).toMatch(/À vie/);
+    expect(body.html).toMatch(/199\.00 EUR/);
+  });
+
+  it('plan yearly → "Annuel" + date formatée', async () => {
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e' }), { status: 200 }));
+    await _sendPremiumReceipt({ RESEND_API_KEY: 're' }, {
+      email: 'k@a.fr', plan: 'yearly', amount: 5999, currency: 'eur',
+      sessionId: 'cs2', premiumUntil: Date.now() + 365 * 86400 * 1000
+    });
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.subject).toMatch(/Annuel/);
+  });
+
+  it('Resend HTTP error → throw avec status', async () => {
+    globalThis.fetch = vi.fn(async () => new Response('Invalid API key', { status: 401 }));
+    await expect(
+      _sendPremiumReceipt({ RESEND_API_KEY: 'bad' }, {
+        email: 'k@a.fr', plan: 'monthly', amount: 699, currency: 'eur',
+        sessionId: 'cs', premiumUntil: Date.now()
+      })
+    ).rejects.toThrow(/Resend HTTP 401/);
+  });
+
+  it('From custom env.RESEND_FROM est utilisé', async () => {
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e' }), { status: 200 }));
+    await _sendPremiumReceipt({
+      RESEND_API_KEY: 're',
+      RESEND_FROM: 'Apex <hello@kdmc.io>'
+    }, {
+      email: 'k@a.fr', plan: 'monthly', amount: 699, currency: 'eur',
+      sessionId: 'cs', premiumUntil: Date.now()
+    });
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.from).toBe('Apex <hello@kdmc.io>');
+  });
+
+  it('tags Resend incluent category + plan', async () => {
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e' }), { status: 200 }));
+    await _sendPremiumReceipt({ RESEND_API_KEY: 're' }, {
+      email: 'k@a.fr', plan: 'lifetime', amount: 19900, currency: 'eur',
+      sessionId: 'cs', premiumUntil: 9999999999000
+    });
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.tags).toEqual([
+      { name: 'category', value: 'premium-receipt' },
+      { name: 'plan', value: 'lifetime' }
+    ]);
   });
 });

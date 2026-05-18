@@ -2351,6 +2351,20 @@ export async function handlePremiumWebhook(request, env) {
           JSON.stringify({ plan, premium_until: premiumUntil, stripe_session: session.id }),
           Date.now()
         ).run();
+        // v1.1.32 : email receipt via Resend (best-effort, non-bloquant)
+        try {
+          const email = session?.customer_details?.email || session?.customer_email;
+          if (email && env.RESEND_API_KEY) {
+            await _sendPremiumReceipt(env, {
+              email,
+              plan,
+              amount: session?.amount_total || 0,
+              currency: session?.currency || 'eur',
+              sessionId: session.id,
+              premiumUntil
+            });
+          }
+        } catch (e) { console.warn('[webhook] receipt send failed:', e.message); }
       } catch (e) {
         console.warn('[webhook] DB update failed:', e.message);
       }
@@ -2368,6 +2382,82 @@ export async function handlePremiumWebhook(request, env) {
   }
 
   return json({ ok: true, received: event.type });
+}
+
+// ============================================================================
+//  v1.1.32 — Resend email receipt après paiement Stripe (best-effort)
+//  Doc Resend : https://resend.com/docs/api-reference/emails/send-email
+// ============================================================================
+export async function _sendPremiumReceipt(env, opts) {
+  if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY missing');
+  const { email, plan, amount, currency, sessionId, premiumUntil } = opts;
+  const amountStr = (amount / 100).toFixed(2) + ' ' + (currency || 'eur').toUpperCase();
+  const planLabel = plan === 'lifetime' ? 'À vie (Lifetime)' : plan === 'yearly' ? 'Annuel' : 'Mensuel';
+  const expiresStr = plan === 'lifetime' ? 'À vie' : new Date(premiumUntil).toLocaleDateString('fr-FR');
+  const from = env.RESEND_FROM || 'Apex Chat <noreply@apex-chat.com>';
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Reçu Apex Chat+ Premium</title></head>
+<body style="margin:0;padding:0;background:#0e0e10;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#f5e9c2">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e10;padding:30px 0">
+    <tr><td align="center">
+      <table width="540" cellpadding="0" cellspacing="0" style="background:#1a1a1f;border:1px solid #e8b830;border-radius:14px;padding:30px;max-width:540px">
+        <tr><td align="center">
+          <div style="font-size:42px;margin-bottom:8px">⭐</div>
+          <h1 style="margin:0;color:#e8b830;font-family:Georgia,serif">Apex Chat+ Premium</h1>
+          <p style="color:#bdb89a;margin:6px 0 24px;font-size:14px">Merci pour ton abonnement !</p>
+        </td></tr>
+        <tr><td style="background:#0e0e10;border-radius:10px;padding:18px;color:#f5e9c2;font-size:14px;line-height:1.7">
+          <strong style="color:#e8b830">Détails de ta commande :</strong><br>
+          • Plan : <strong>${planLabel}</strong><br>
+          • Montant : <strong>${amountStr}</strong><br>
+          • Valable jusqu'à : <strong>${expiresStr}</strong><br>
+          • Session Stripe : <code style="color:#8a8a8a;font-size:11px">${(sessionId || '').slice(0, 32)}</code>
+        </td></tr>
+        <tr><td style="padding-top:22px;color:#bdb89a;font-size:13px;line-height:1.6">
+          <strong style="color:#f5e9c2">Tu débloques :</strong><br>
+          ✓ IA Apex illimitée (Voice, Vision, Smart Reply, Traduction, Résumé)<br>
+          ✓ Time Capsules illimitées<br>
+          ✓ Stockage 1 To (vs 30 jours gratuit)<br>
+          ✓ Voice Clone E2E (bientôt)<br>
+          ✓ Themes premium<br>
+          ✓ Support prioritaire
+        </td></tr>
+        <tr><td align="center" style="padding-top:24px">
+          <a href="https://apex-chat.com/?premium=ok" style="display:inline-block;background:#e8b830;color:#0e0e10;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600">Ouvrir Apex Chat</a>
+        </td></tr>
+        <tr><td align="center" style="padding-top:24px;color:#8a8a8a;font-size:11px;line-height:1.5">
+          Reçu généré automatiquement. Pas besoin de répondre.<br>
+          Annulable 1 clic depuis ton espace Apex Chat → ⭐ Premium → Gérer mon abonnement.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 10_000);
+  let r;
+  try {
+    r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        subject: '✅ Reçu Apex Chat+ Premium — ' + planLabel,
+        html,
+        tags: [{ name: 'category', value: 'premium-receipt' }, { name: 'plan', value: plan }]
+      }),
+      signal: ctrl.signal
+    });
+  } finally { clearTimeout(tid); }
+  if (!r.ok) {
+    const body = await r.text().catch(() => '');
+    throw new Error(`Resend HTTP ${r.status}: ${body.slice(0, 200)}`);
+  }
+  const data = await r.json();
+  return { ok: true, id: data.id };
 }
 
 async function _verifyStripeSignature(rawBody, signatureHeader, secret) {
