@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.697";
+var APP_VER="v9.698";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -14575,16 +14575,17 @@ function agentEmit(eventName,payload){
 function agentsStart(){
   if(!A.user||A.user.id!==AID)return; // Agents admin seulement
   // v9.696 Kevin "Efface toute sa mémoire de planning et on repart à zéro maintenant"
-  // Auto-wipe ONE-SHOT au premier boot v9.696+, flag persistant.
+  // v9.698 Kevin "On repart à zéro à partir de maintenant sur l'historique"
+  // Re-trigger wipe TOTAL (planning + logs + audits + snapshots) avec nouveau flag.
   try{
-    if(!lg("cmc_v696_wipe_done",false)){
+    if(!lg("cmc_v698_wipe_done",false)){
       if(typeof cmcWipeAllPlanningMemory==="function"){
-        var _ws=cmcWipeAllPlanningMemory(true); // silent=true (pas de confirm popup)
-        ls("cmc_v696_wipe_done",{ts:Date.now(),stats:_ws||null});
-        try{if(typeof toast==="function")toast("🧹 Mémoire planning effacée (reset Kevin v9.696). Prêt pour mai V2.","ok",6000);}catch(_){}
+        var _ws=cmcWipeAllPlanningMemory(true);
+        ls("cmc_v698_wipe_done",{ts:Date.now(),stats:_ws||null});
+        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.698 : planning + historique vérification effacés. Prêt pour mai V2.","ok",6000);}catch(_){}
       }
     }
-  }catch(_v696err){}
+  }catch(_v698err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
@@ -23169,10 +23170,12 @@ function vPlan(){
   var todayD=(todayN.getFullYear()===A.year&&todayN.getMonth()===A.month)?todayN.getDate():0;
   // v9.58 — detect user flottant pour activer la vue générale
   var _isFloating=isUserFloating(A.user,A.year,A.month);
-  // v9.693 Kevin "Toujours mon équipe en 1ère vue" : si A.user.team manque (Firebase sync
-  // a remplacé A.user par un objet sans team), fallback sur A.employees[A.user.id].team.
+  // v9.698 Kevin "Ma section avec MON équipe détectée du mois en cours" :
+  // utid priorité 1 = emp.teamHistory[key] (détection mois courant),
+  // priorité 2 = emp.team (DEF_EMP statique). Fallback robuste si _myEmpRec sans team.
   var _myEmpRec=A.user?(empById(A.user.id)||A.user):null;
-  var _myTeamId=_myEmpRec&&_myEmpRec.team||null;
+  var _vUKey=A.year+"-"+A.month;
+  var _myTeamId=(_myEmpRec&&_myEmpRec.teamHistory&&_myEmpRec.teamHistory[_vUKey])||(_myEmpRec&&_myEmpRec.team)||null;
   var utid=(_myTeamId&&gt(_myTeamId))?_myTeamId:null;
   var utc=tc(utid),mirT=utid?gm(utid):null;
   /* v9.604 \u2014 Sticky header : nav mois + boutons toujours visibles pendant scroll planning */
@@ -30809,6 +30812,22 @@ function cmcWipeAllPlanningMemory(silent){
     }
   }
   keysToRemove.forEach(function(k){try{localStorage.removeItem(k);stats.prefixed++;}catch(_){}});
+  // v9.698 (Kevin "vérification il y a tous les mois passés en historique toujours présent. Efface tout. Peut-être ça porte confusion") :
+  // Wipe AUSSI logs/audits/snapshots qui pourraient apparaître dans Vérification.
+  stats.logs=0;
+  ["cmc_import_log","cmc_silent_log","cmc_err_log","cmc_telemetry","cmc_user_telemetry","cmc_pdf_fingerprints","cmc_learned_patterns","cmc_client_anomalies","cmc_anomalies","cmc_import_anomalies","cmc_click_failures","cmc_agent_reports","cmc_sentinels_log","cmc_audit","cmc_audit_security","cmc_ia_log","cmc_userlog","cmc_admin_sessions","cmc_seed_apr2026_loaded","cmc_v696_wipe_done"].forEach(function(k){
+    try{if(localStorage.getItem(k)!==null){localStorage.removeItem(k);stats.logs++;}}catch(_){}
+  });
+  // Wipe snapshots historiques (cmc_history_*) — Kevin "porte confusion"
+  // ATTENTION : ça supprime aussi les rollbacks. On garde JUSTE le snapshot pré-wipe créé maintenant.
+  stats.snaps=0;
+  var snapKeysToRemove=[];
+  for(var sk in localStorage){
+    if(localStorage.hasOwnProperty(sk) && sk.indexOf("cmc_history_")===0 && sk!==snapKey){
+      snapKeysToRemove.push(sk);
+    }
+  }
+  snapKeysToRemove.forEach(function(k){try{localStorage.removeItem(k);stats.snaps++;}catch(_){}});
   // 4. Cache gpl invalidé
   try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
   try{if(typeof _cmcInvalidateEmpByIdCache==="function")_cmcInvalidateEmpByIdCache();}catch(_){}
