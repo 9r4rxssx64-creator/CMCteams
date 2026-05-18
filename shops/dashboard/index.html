@@ -112,7 +112,7 @@ function vOrders(){return '<div class="topbar"><h1>📦 Commandes</h1></div><div
 +Array.from({length:15},function(_,i){var st=STORES[i%5];return '<tr><td style="font-weight:600">KDMC-'+Math.random().toString(36).slice(2,6).toUpperCase()+'</td><td style="color:var(--muted)">'+new Date(Date.now()-i*3600000*Math.random()*24).toLocaleDateString("fr-FR")+'</td><td>Client '+(i+1)+'</td><td>'+st.icon+' '+st.name+'</td><td style="color:var(--p);font-weight:600">'+fmtP(10+Math.random()*80)+'</td><td><span class="badge badge-'+["success","warning","info"][i%3]+'">'+(i%3===0?"Livré":i%3===1?"En cours":"Nouveau")+'</span></td></tr>'}).join("")
 +'</tbody></table></div>'}
 function vProducts(){return '<div class="topbar"><h1>🏷️ Produits (500 total)</h1></div>'
-+'<div class="store-pills">'+STORES.map(function(st){return '<div class="store-pill" onclick="toast(\'Filtre: '+st.name+'\')">'+ st.icon+' '+st.name+' ('+st.products+')</div>'}).join("")+'</div>'
++'<div class="store-pills">'+STORES.map(function(st){return '<div class="store-pill" onclick="toast(\'Filtre: '+st.name+'\')">'+st.icon+' '+st.name+' ('+st.products+')</div>'}).join("")+'</div>'
 +'<div class="card"><p style="color:var(--muted);text-align:center;padding:32px">Les produits sont gérés dans chaque boutique. Cliquez sur une boutique dans la sidebar pour y accéder.</p></div>'}
 function vCustomers(){return '<div class="topbar"><h1>👥 Clients</h1></div><div class="kpi-grid">'
 +'<div class="kpi"><div class="kpi-label">Clients total</div><div class="kpi-value">347</div></div>'
