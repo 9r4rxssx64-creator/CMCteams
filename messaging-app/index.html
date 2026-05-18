@@ -318,7 +318,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.59';
+const __APEX_CHAT_VERSION__ = 'v1.1.60';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -399,7 +399,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.59</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.60</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -413,7 +413,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.59</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.60</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -867,6 +867,63 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.60 — Voice player Telegram-style : play/pause + speed cycle 1×/1.5×/2×
+// ============================================================================
+K._VOICE_SPEEDS = [1, 1.5, 2];
+K._voicePlaying = null;
+
+K._togglePlayVoice = function(msgId){
+  const aud = document.getElementById('aud-' + msgId);
+  const btn = document.getElementById('play-' + msgId);
+  if(!aud || !btn) return;
+  // Stop other playing first
+  if(K._voicePlaying && K._voicePlaying !== msgId){
+    const otherAud = document.getElementById('aud-' + K._voicePlaying);
+    const otherBtn = document.getElementById('play-' + K._voicePlaying);
+    if(otherAud){ otherAud.pause(); otherAud.currentTime = 0; }
+    if(otherBtn){ otherBtn.textContent = '▶'; }
+  }
+  if(aud.paused){
+    aud.play();
+    btn.textContent = '⏸';
+    K._voicePlaying = msgId;
+    aud.ontimeupdate = () => {
+      const dur = document.getElementById('dur-' + msgId);
+      if(dur && aud.duration && !isNaN(aud.duration)){
+        const cur = Math.floor(aud.currentTime);
+        const tot = Math.floor(aud.duration);
+        const fmt = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        // Préserve emoji + transcript dans le dur, ajoute progression
+        const baseText = dur.dataset.originalText || dur.textContent.split(' · ')[0];
+        if(!dur.dataset.originalText) dur.dataset.originalText = baseText;
+        dur.textContent = `${baseText} · ${fmt(cur)}/${fmt(tot)}`;
+      }
+    };
+    aud.onended = () => {
+      btn.textContent = '▶';
+      K._voicePlaying = null;
+      const dur = document.getElementById('dur-' + msgId);
+      if(dur && dur.dataset.originalText) dur.textContent = dur.dataset.originalText;
+    };
+  } else {
+    aud.pause();
+    btn.textContent = '▶';
+    K._voicePlaying = null;
+  }
+};
+
+K._cycleVoiceSpeed = function(msgId){
+  const aud = document.getElementById('aud-' + msgId);
+  const spdBtn = document.getElementById('spd-' + msgId);
+  if(!aud || !spdBtn) return;
+  const current = parseFloat(spdBtn.textContent.replace('×', '')) || 1;
+  const idx = K._VOICE_SPEEDS.indexOf(current);
+  const next = K._VOICE_SPEEDS[(idx + 1) % K._VOICE_SPEEDS.length];
+  aud.playbackRate = next;
+  spdBtn.textContent = next + '×';
+};
 
 // ============================================================================
 //  v1.1.59 — Partage position GPS (one-shot ou live 15 min / 1h)
@@ -2737,7 +2794,14 @@ function renderChat(app){
           </div>` : ''}
           ${m.forwarded ? `<div class="forwarded-mark" title="Transféré depuis ${esc(m.forwarded_from_conv || '')}">↗ Transféré</div>` : ''}
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
-          ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
+          ${m.voice_data ? `<div class="voice-player" style="margin-bottom:4px">
+            <audio id="aud-${esc(m.id)}" src="${esc(m.voice_data)}" preload="metadata" style="display:none"></audio>
+            <div style="display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:18px;padding:6px 10px;max-width:260px">
+              <button onclick="K._togglePlayVoice('${esc(m.id)}')" id="play-${esc(m.id)}" style="background:var(--ax-gold);color:var(--ax-bg);width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;font-size:.9em;flex-shrink:0">▶</button>
+              <div style="flex:1;font-size:.8em;color:var(--ax-text-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="dur-${esc(m.id)}">🎙️ ${esc(m.voice_text ? m.voice_text.slice(0, 26) + (m.voice_text.length > 26 ? '...' : '') : 'Audio')}</div>
+              <button onclick="K._cycleVoiceSpeed('${esc(m.id)}')" id="spd-${esc(m.id)}" style="background:transparent;border:1px solid var(--ax-border);border-radius:10px;padding:2px 6px;font-size:.7em;cursor:pointer;color:var(--ax-text-2);flex-shrink:0">1×</button>
+            </div>
+          </div>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
           ${m.poll ? K._renderPoll(m) : ''}
           ${m.location ? K._renderLocation(m) : ''}
@@ -7115,7 +7179,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.59"
+        data-version="v1.1.60"
         data-color="#6a8aff"
         defer></script>
 </body>
