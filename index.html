@@ -4919,7 +4919,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.674";
+var APP_VER="v9.675";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -25085,14 +25085,28 @@ function cmcExportPdfSourceForDiag(){
     var cadres=A.employees.filter(function(e){return (e.family||"")==="cadres" && isEmpActive(e,iy,im);});
     var cadresKo=cadres.filter(function(e){var r=ov[e.id]||{};return Object.keys(r).filter(function(d){return !!r[d];}).length===0;});
     var bug=null;try{bug=_cmcDetectIdenticalScheduleBug(key);}catch(_){}
+    // v9.675 — Kevin diag mai V1 : "Cadres KO" false positive si import V1 (employees+chefs).
+    // Lecture cmc_last_import_type_<key> pour savoir si V1 ou V2.
+    var lastImportRec=null;
+    try{lastImportRec=lg("cmc_last_import_type_"+key,null);}catch(_){}
+    var importType=lastImportRec&&lastImportRec.type||null;
+    var cadresWarningContext="";
+    if(importType==="employees"){
+      cadresWarningContext=" [V1 employees+chefs détecté → cadres SANS horaire est NORMAL, importer V2 Pit Boss séparément]";
+    }else if(importType==="cadres"){
+      cadresWarningContext=" [V2 cadres détecté]";
+    }
     var report="=== CMCteams DIAGNOSTIC EXPORT "+APP_VER+" ===\n"
       +"Date export: "+new Date().toISOString()+"\n"
       +"Mois: "+MFR[im]+" "+iy+" (key="+key+")\n"
+      +"Import type: "+(importType||"unknown")+cadresWarningContext+"\n"
       +"\n=== STATS RUNTIME ===\n"
       +"Employés actifs: "+totalEmps+"\n"
       +"Employés avec codes: "+withCodes+" ("+Math.round(withCodes/totalEmps*100)+"%)\n"
-      +"Cadres total: "+cadres.length+", sans horaire: "+cadresKo.length+"\n"
-      +"Cadres KO: "+cadresKo.map(function(e){return e.name;}).join(", ")+"\n"
+      +"Cadres total: "+cadres.length+", sans horaire: "+cadresKo.length+(importType==="employees"?" (NORMAL pour V1)":"")+"\n"
+      +(importType!=="employees"||cadresKo.length<cadres.length
+        ? "Cadres KO: "+cadresKo.map(function(e){return e.name;}).join(", ")+"\n"
+        : "")
       +"Bug schedule identique: "+(bug?JSON.stringify(bug):"non détecté")+"\n"
       +"\n=== SAMPLE A.overrides[key] (3 premiers cadres) ===\n"
       +cadres.slice(0,3).map(function(c){
@@ -28993,6 +29007,7 @@ function vAdmin(){
     {ic:"\ud83d\udcbe",lb:"Sauvegarder comme mod\u00e8le",fn:"saveTemplate()"},
     {ic:"\ud83d\udd34",lb:"Marquer jours forte affluence",fn:"markAffluenceBulk()"},
     {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
+    {ic:"\ud83d\udd04",lb:"Reset \u00e9quipes (TOUS mois) \u2014 anti-stale",fn:"cmcResetAllTeamHistory()"}, // v9.675 Kevin "anciennes \u00e9quipes restent"
     {grp:"\ud83d\udcca Statistiques"},
     {ic:"\ud83d\udcca",lb:"Stats du mois",fn:"sv('stats')"},
     {ic:"\ud83c\udf10",lb:"Stats globales (lieu/r\u00f4le/famille)",fn:"sv('statsglobal')"},
@@ -30109,18 +30124,28 @@ function clearMonth(){
     if(typeof fbWrite==="function")try{fbWrite("cmc_ov_meta",A.overrides_meta);}catch(_){}
   }
 
-  // 3. Wipe teamHistory[key] pour tous les employ\u00e9s (LE FIX KEVIN)
+  // 3. Wipe teamHistory[key] ET familyHistory[key] pour tous les employ\u00e9s
+  // v9.675 (Kevin "import mai V2 mais toujours anciennes \u00e9quipe. Les copie m\u00eame
+  // pour les mois suivant. Auto rempli") : familyHistory n'\u00e9tait PAS nettoy\u00e9,
+  // donc vEmps/vPlan tombaient en fallback sur valeurs stales d'autres mois.
   var _empsTeamCleared=0;
+  var _empsFamCleared=0;
   A.employees.forEach(function(e){
     if(e.teamHistory && e.teamHistory[key]){
       delete e.teamHistory[key];
       _empsTeamCleared++;
     }
+    if(e.familyHistory && e.familyHistory[key]){
+      delete e.familyHistory[key];
+      _empsFamCleared++;
+    }
   });
-  if(_empsTeamCleared>0){
+  if(_empsTeamCleared>0||_empsFamCleared>0){
     ls("cmc_e",A.employees);
     if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
   }
+  // 3b. Wipe cmc_team_mirror_<key> (mapping miroir d\u00e9tect\u00e9 par algo)
+  try{localStorage.removeItem("cmc_team_mirror_"+key);}catch(_){}
 
   // 4. Wipe cl\u00e9s associ\u00e9es au mois
   ["cmc_ref_","cmc_verif_","cmc_manual_overrides_","cmc_import_src_","cmc_last_import_type_","cmc_affluence_"+iy+"_"+im].forEach(function(prefix){
@@ -30135,7 +30160,51 @@ function clearMonth(){
   try{if(typeof _audit==="function")_audit("clear_month_v9642",AID,key,
     "ov="+_ovBefore+" teamHist="+_empsTeamCleared,"snapshot=cmc_history_"+key+"_pre_clearmonth");}catch(_){}
 
-  toast("\u2705 "+MFR[im]+" "+iy+" effac\u00e9 : "+_ovBefore+" horaires + "+_empsTeamCleared+" \u00e9quipes. Rollback dispo Historique.","ok",6000);
+  toast("\u2705 "+MFR[im]+" "+iy+" effac\u00e9 : "+_ovBefore+" horaires + "+_empsTeamCleared+" \u00e9quipes + "+_empsFamCleared+" familles. Rollback dispo Historique.","ok",6000);
+  dc();
+}
+
+// v9.675 \u2014 Kevin "il garde les \u00e9quipes en m\u00e9moire. Les copie m\u00eame pour les mois suivant"
+// Reset GLOBAL teamHistory + familyHistory de TOUS les mois.
+// Force re-d\u00e9tection \u00e0 chaque import futur (pas de fallback historique stale).
+function cmcResetAllTeamHistory(){
+  if(!A.user||A.user.id!==AID){toast("\u26a0 Admin only","err");return;}
+  if(!confirm("\u26a0 RESET COMPLET \u00c9QUIPES \u2014 TOUS MOIS ?\n\n"
+    +"Va effacer emp.teamHistory + emp.familyHistory pour TOUS les employ\u00e9s,\n"
+    +"TOUS les mois confondus. Les \u00e9quipes seront re-d\u00e9tect\u00e9es au prochain import.\n\n"
+    +"Les horaires (overrides) ne sont PAS touch\u00e9s.\n"
+    +"Snapshot auto-cr\u00e9\u00e9 pour rollback.\n\n"
+    +"Continuer ?"))return;
+  try{
+    var snapKey="cmc_history_reset_team_all_"+Date.now();
+    ls(snapKey,{
+      ts:Date.now(),
+      reason:"manual_reset_all_teamHistory",
+      teams:A.employees.filter(function(e){return e.teamHistory&&Object.keys(e.teamHistory).length;}).map(function(e){return {id:e.id,th:JSON.parse(JSON.stringify(e.teamHistory))};}),
+      families:A.employees.filter(function(e){return e.familyHistory&&Object.keys(e.familyHistory).length;}).map(function(e){return {id:e.id,fh:JSON.parse(JSON.stringify(e.familyHistory))};}),
+    });
+  }catch(_){}
+  var teamsWiped=0, famsWiped=0, mirrorsWiped=0;
+  A.employees.forEach(function(e){
+    if(e.teamHistory){
+      teamsWiped+=Object.keys(e.teamHistory).length;
+      e.teamHistory={};
+    }
+    if(e.familyHistory){
+      famsWiped+=Object.keys(e.familyHistory).length;
+      e.familyHistory={};
+    }
+  });
+  // Wipe ALL cmc_team_mirror_<key> across years
+  Object.keys(localStorage).forEach(function(k){
+    if(k.indexOf("cmc_team_mirror_")===0){
+      try{localStorage.removeItem(k);mirrorsWiped++;}catch(_){}
+    }
+  });
+  ls("cmc_e",A.employees);
+  if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+  try{if(typeof _audit==="function")_audit("reset_all_team_history",AID,"","teams="+teamsWiped+" fams="+famsWiped+" mirrors="+mirrorsWiped,"snapshot pour rollback");}catch(_){}
+  toast("\u2705 Reset \u00e9quipes total : "+teamsWiped+" teamHistory + "+famsWiped+" familyHistory + "+mirrorsWiped+" miroirs effac\u00e9s. Snapshot gard\u00e9.","ok",8000);
   dc();
 }
 // v9.45 \u2014 Expert Planning : duplication du mois pr\u00e9c\u00e9dent
