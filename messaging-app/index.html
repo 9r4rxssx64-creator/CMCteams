@@ -197,6 +197,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
   background:rgba(106,138,255,.1);border:1px solid rgba(106,138,255,.3);
   border-radius:10px;padding:3px 8px;cursor:pointer;transition:all .15s}
 .translate-hint:active{background:rgba(106,138,255,.2);transform:scale(.95)}
+.ephemeral-badge{display:inline-block;margin-top:6px;font-size:.7em;color:#e63946;
+  background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.3);
+  border-radius:8px;padding:2px 6px;font-weight:600;letter-spacing:.3px}
 .msg-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .msg-reaction{font-size:.85em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   border-radius:12px;padding:2px 8px;cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none}
@@ -288,7 +291,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.42';
+const __APEX_CHAT_VERSION__ = 'v1.1.43';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -369,7 +372,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.42</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.43</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -383,7 +386,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.42</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.43</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -897,6 +900,80 @@ K._sendReaction = function(convId, msgId, emoji, action){
   try{
     K.ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji, action: action || 'add' }));
   }catch(_){}
+};
+
+// ============================================================================
+//  v1.1.43 — Messages éphémères (self-destruct timer, style Snapchat/iMessage)
+//  expires_at sur message → cron auto-delete 1×/min
+// ============================================================================
+K._ephemeralMs = 0;
+K._ephemeralLabel = '';
+K._EPHEMERAL_PRESETS = [
+  { ms: 60_000, label: '1 minute' },
+  { ms: 5 * 60_000, label: '5 minutes' },
+  { ms: 60 * 60_000, label: '1 heure' },
+  { ms: 24 * 60 * 60_000, label: '24 heures' },
+  { ms: 7 * 24 * 60 * 60_000, label: '7 jours' },
+];
+
+K._openEphemeralMenu = function(){
+  const active = K._ephemeralMs > 0;
+  const presets = K._EPHEMERAL_PRESETS.map(p =>
+    `<button class="btn btn-out btn-sm" onclick="K._setEphemeral(${p.ms},'${p.label}')">⏳ ${p.label}</button>`
+  ).join('');
+  K._showModal('💣 Message éphémère', `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 12px;line-height:1.5">
+      Le prochain message s'autodétruira automatiquement après le délai choisi
+      (côté toi <strong>ET</strong> côté destinataire, dès que la cron tourne).
+    </p>
+    ${active ? `
+      <div style="background:rgba(230,57,70,.12);border:1px solid #e63946;border-radius:10px;padding:10px;margin-bottom:12px;text-align:center;color:#e63946;font-weight:600">
+        💣 Mode éphémère ACTIF — ${esc(K._ephemeralLabel)}
+      </div>
+      <button class="btn btn-out btn-block" style="margin-bottom:8px" onclick="K._cancelEphemeral()">↺ Annuler mode éphémère</button>
+    ` : ''}
+    <p style="font-size:.78em;color:var(--ax-text-3);margin-bottom:6px">Choisir le délai :</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${presets}</div>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:14px">
+      ⚠️ Délais courts (< 1h) : le destinataire doit lire vite. Pas de garantie 100% (l'autre peut screen).
+    </p>
+  `);
+};
+
+K._setEphemeral = function(ms, label){
+  K._ephemeralMs = ms;
+  K._ephemeralLabel = label;
+  const btn = document.getElementById('chat-ephem-btn');
+  if(btn){
+    btn.style.background = '#e63946';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#e63946';
+  }
+  K._closeModal && K._closeModal();
+  toast(`💣 Prochain message éphémère (${label})`, 'ok');
+};
+
+K._cancelEphemeral = function(){
+  K._ephemeralMs = 0;
+  K._ephemeralLabel = '';
+  const btn = document.getElementById('chat-ephem-btn');
+  if(btn){ btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+  K._closeModal && K._closeModal();
+  toast('Mode éphémère annulé', 'info');
+};
+
+K._ephemeralRemaining = function(expiresAt){
+  if(!expiresAt) return '';
+  const ms = expiresAt - Date.now();
+  if(ms <= 0) return 'expiré';
+  const s = Math.floor(ms / 1000);
+  if(s < 60) return s + 's';
+  const m = Math.floor(s / 60);
+  if(m < 60) return m + 'min';
+  const h = Math.floor(m / 60);
+  if(h < 24) return h + 'h';
+  const d = Math.floor(h / 24);
+  return d + 'j';
 };
 
 // ============================================================================
@@ -2052,6 +2129,7 @@ function renderChat(app){
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
           ${esc(m.text || (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
+          ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
           <div class="msg-time">
             ${formatTime(m.ts)}
             ${isMine ? `<span class="msg-status" title="${readStatus === 'read' ? 'Lu' : readStatus === 'delivered' ? 'Livré' : 'Envoyé'}">${readStatus === 'read' ? '<span style="color:var(--ax-blue)">✓✓</span>' : readStatus === 'delivered' ? '✓✓' : '✓'}</span>` : ''}
@@ -2073,6 +2151,7 @@ function renderChat(app){
       <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
       <button class="chat-attach" onclick="document.getElementById('chat-img-input').click()" aria-label="Envoyer une image" title="Envoyer une image">📷</button>
       <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
+      <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
       <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id)"></textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
@@ -2141,6 +2220,16 @@ K._sendMsg = async function(){
     ts: Date.now(),
     encrypted: !!ciphertext
   };
+
+  // v1.1.43 — Mode éphémère : ajoute expires_at + reset après envoi
+  if(K._ephemeralMs && K._ephemeralMs > 0){
+    msg.expires_at = Date.now() + K._ephemeralMs;
+    msg.ephemeral_label = K._ephemeralLabel || '';
+    K._ephemeralMs = 0;
+    K._ephemeralLabel = '';
+    const btn = document.getElementById('chat-ephem-btn');
+    if(btn){ btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+  }
 
   if(!K.messages[conv.id]) K.messages[conv.id] = [];
   K.messages[conv.id].push(msg);
@@ -3095,17 +3184,27 @@ K._requestNotifPermissionIfNeeded = function(){
 };
 
 // ============================================================================
+// ============================================================================
 //  v1.1.24 — Auto-delete messages anciens (privacy_prefs.autoDeleteAfter)
+//  + v1.1.43 — Per-message ephemeral timer (expires_at)
 // ============================================================================
 K._autoDeleteCron = function(){
   const prefs = lg('privacy_prefs', { autoDeleteAfter: 0 });
-  if(!prefs.autoDeleteAfter || prefs.autoDeleteAfter <= 0) return;
-  const cutoff = Date.now() - prefs.autoDeleteAfter * 1000;
+  const now = Date.now();
+  const cutoff = (prefs.autoDeleteAfter && prefs.autoDeleteAfter > 0)
+    ? now - prefs.autoDeleteAfter * 1000
+    : null;
   let deleted = 0;
   try{
     Object.keys(K.messages || {}).forEach(convId => {
       const before = K.messages[convId].length;
-      K.messages[convId] = K.messages[convId].filter(m => m.ts >= cutoff);
+      K.messages[convId] = K.messages[convId].filter(m => {
+        // v1.1.43 — Ephemeral : si m.expires_at défini ET dépassé → supprimer
+        if(m.expires_at && m.expires_at <= now) return false;
+        // Global cutoff (sauf si message ephemeral encore valide)
+        if(cutoff && !m.expires_at && m.ts < cutoff) return false;
+        return true;
+      });
       const after = K.messages[convId].length;
       if(before !== after){
         deleted += (before - after);
@@ -3115,10 +3214,11 @@ K._autoDeleteCron = function(){
   }catch(e){ /* ignore */ }
   if(deleted > 0){
     toast(`🧹 ${deleted} message${deleted>1?'s':''} auto-supprimé${deleted>1?'s':''}`, 'info', 2000);
+    if(K.view === 'chat' && K.render) K.render();
   }
 };
-// Cron 1× par heure
-setInterval(() => { try{ K._autoDeleteCron(); }catch(_){} }, 60 * 60 * 1000);
+// Cron 1× par minute (pour ephemeral courts timers — était 1× par heure)
+setInterval(() => { try{ K._autoDeleteCron(); }catch(_){} }, 60 * 1000);
 
 // ============================================================================
 //  v1.1.24 — Phase 7b : IA Memory Lane résumé année passée
@@ -5825,7 +5925,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.42"
+        data-version="v1.1.43"
         data-color="#6a8aff"
         defer></script>
 </body>
