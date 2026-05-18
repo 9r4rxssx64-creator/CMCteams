@@ -1,4 +1,121 @@
-# Mémo de reprise — Apex v13.4.210 / CMC v9.638 (2026-05-17)
+# Mémo de reprise — Apex Chat v1.1.40 / Apex IA v13.4.211 / CMC v9.638 (2026-05-18)
+
+## 🚀 SESSION 2026-05-18 — Apex Chat v1.1.22 → v1.1.40 + Apex IA v13.4.211 (self-signup direct)
+
+Kevin "Ne me demande pas, optimum toujours partout, test, va plus loin futuriste" → 19 commits en chaîne sans interruption (PR #268).
+
+### Apex IA v13.4.211 — Self-signup direct (Laurence se connecte auto)
+- `signup.selfSignupDirect()` : compte créé instantané + connexion auto (fini OTP/SMS/Kevin manuel)
+- PIN per-user `apex_v13_pin_<uid>` (jamais `apex_v13_pin` admin)
+- registerUserAliases multi-formats (règle Kevin v9.458)
+- Route signup direct → chat (au lieu de waiting-approval)
+- 10 tests selfSignupDirect + 4 mocks render mis à jour
+- Fix : 469 tests vitest PASS
+
+### Apex Chat v1.1.23 — Fixes 4 bugs Kevin (screenshots)
+- Paiement QR : destinataire field + pré-remplissage
+- 4 stubs Phase 2 remplacés par modals fonctionnels
+
+### Apex Chat v1.1.24 — Phases manquantes câblées (notif/privacy/Phase 5/7b/9)
+- notif_prefs runtime : push + sound + vibrate + badge + quietHours
+- privacy_prefs runtime : readReceipts + typingIndicator + autoDelete
+- Phase 5 calls : UI réelle (contacts + audio/video + history)
+- Phase 7b Memory Lane : connecté `/api/ai/summarize`
+- Phase 9 Stripe : checkout LIVE
+
+### Apex Chat v1.1.25 — Backend Cloudflare Workers (5 endpoints)
+- `/api/ai/summarize` : Anthropic + Groq + Gemini failover, cache D1 7j, prompt caching
+- `/api/premium/checkout` : Stripe 3 plans, trial 7j, idempotency
+- `/api/premium/webhook` : HMAC SHA-256 + anti-replay 5min
+- `/api/premium/status` : sync cross-device
+- D1 migration 0004 : premium_plan, stripe_customer_id, ai_summary_cache, audit_log
+
+### Apex Chat v1.1.26 — 3 endpoints futuristes
+- `/api/premium/portal` : Customer Portal Stripe
+- `/api/ai/smart-reply` : 3 suggestions Gmail-style
+- `/api/ai/translate` : 6 langues
+
+### Apex Chat v1.1.27 — Client wiring futuriste
+- Smart Reply chips + Long-press translate + Premium auto-sync + Customer Portal
+
+### Apex Chat v1.1.28 — Voice + Vision backend
+- `/api/ai/voice-transcribe` : Whisper Groq (multipart + binary, 25MB)
+- `/api/ai/image-describe` : Anthropic Vision (alt-text 5MB)
+- Fix AbortSignal.timeout → AbortController + setTimeout
+
+### Apex Chat v1.1.29 — Client Voice/Image
+- Bouton 🎙️ + 📷 dans chat-input
+- Récap audio + transcript + alt-text accessibilité
+
+### Apex Chat v1.1.30 — Premium quota daily middleware
+- 5 features × FREE_QUOTAS : voice 5/10/3/30/20 par jour
+- KV-based quota check + fail-open + 429 + 8 tests régression
+
+### Apex Chat v1.1.31 — Endpoint /api/premium/quota + UI usage
+- GET /api/premium/quota retourne usage daily par feature
+- Modal Premium affiche "📊 Ton usage IA aujourd'hui"
+- Plan annuel 59,99€ visible (était caché)
+
+### Apex Chat v1.1.32 — Email receipts Resend
+- `_sendPremiumReceipt` après Stripe success (best-effort, non bloquant)
+- Email HTML responsive style Apex gold/dark
+- 7 tests Resend (RESEND_API_KEY missing, success, plans, errors, tags)
+
+### Apex Chat v1.1.33 — Voice messages preview + playback
+- Modal preview (audio + transcript éditable) avant envoi
+- Audio data:URL persisté si < 1MB
+- Rendu <audio controls> dans messages chat
+
+### Apex Chat v1.1.34 — Emoji reactions (long-press iOS)
+- 8 emojis : ❤️ 👍 😂 😮 😢 🙏 🔥 👏
+- Long-press 500ms (touchstart/touchend) + vibrate haptique
+- WS reaction protocol déjà câblé (v1.1.21)
+- Render reactions chips sous message
+
+### Apex Chat v1.1.35 — MAJ AUTO FORCÉE HARDENING (règle Kevin) + AI search
+- **RÉPONSE À KEVIN "Maj force auto oublie pas même PWA iOS"**
+- SW skip-intercept sur `?_v=` / `?_forceupd=` (lib/sw-handlers.js)
+- `cache: 'reload'` (plus agressif que `no-store`)
+- CACHE_VERSION sync v1.1.35 partout (lib était stale v1.1.22 !)
+- 4 tests régression skip-intercept
+- BONUS : `/api/ai/search` semantic search + bouton 🔍 chat header
+
+### Apex Chat v1.1.36 — Read receipts ✓/✓✓/✓✓ bleu (WhatsApp style)
+- K._isMsgRead() helper + render mes messages avec statut
+- ✓ envoyé · ✓✓ livré · ✓✓ bleu = lu par peer
+
+### Apex Chat v1.1.37 — Messages programmés (Gmail/Slack style)
+- Bouton ⏰ chat-input → modal presets (1h/ce soir 20h/demain 9h/custom)
+- K._scheduledCheckTimer 30s + visibilitychange + focus
+- K._viewScheduledList settings → annuler programmés
+
+### Apex Chat v1.1.38 — Insights IA (stats hebdo + résumé)
+- KPI envoyés/reçus + bar chart SVG 24h + pic horaire
+- Compteurs 📷 images · 🎙️ vocaux · ❤️ réactions
+- Top 5 conversations
+- Bouton "🤖 Résumé IA" → anonymisé via /api/ai/summarize
+
+### Apex Chat v1.1.39 — Auto-détection langue + suggestion traduction
+- K._LANG_HINTS 9 langues (en/es/it/de/pt/ar/ru/zh/ja)
+- K._detectLang() heuristique regex locale (zéro coût IA)
+- Chip "🌐 EN → traduire" sous messages reçus en langue étrangère
+
+### Apex Chat v1.1.40 — Vérification sécurité E2E (Signal safety number)
+- K._computeSafetyNumber : SHA-256(sort(pubKeys)) → 60 digits décimaux
+- 12 groupes de 5 chiffres style Signal
+- Tap header "🛡 Chiffré E2E · vérifier" → modal complet
+- Marquer conv vérifié + bouton copier safety number
+
+### Stats globales session
+- **PR #268** : 22 commits stackés sur claude/continue-perfection-work-5C2eH
+- **Tests** : 750/750 PASS vitest (21 fichiers)
+- **Lignes ajoutées** : ~3500+ TypeScript/JS/HTML
+- **0 régression** détectée
+- **9 nouveaux endpoints backend** Cloudflare Workers
+- **3 helpers crypto** (safety number, Resend, semantic search)
+- **2 directives Kevin servies** : self-signup + MAJ auto forcée iOS
+
+---
 
 ## 🎯 SESSION 2026-05-17 — Apex v13.4.210 : +20 tests crypto-worker-client (Worker mock)
 
