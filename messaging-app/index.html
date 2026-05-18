@@ -267,7 +267,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.23';
+const __APEX_CHAT_VERSION__ = 'v1.1.24';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -343,7 +343,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.23</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.24</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -357,7 +357,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.23</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.24</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -821,6 +821,9 @@ K._renderTypingIndicator = function(convId){
 
 K._sendReadReceipt = function(convId, lastMsgId){
   if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
+  // v1.1.24 : respect privacy_prefs.readReceipts
+  const privacy = lg('privacy_prefs', { readReceipts:true });
+  if(!privacy.readReceipts) return; // user a désactivé → ne pas notifier que message lu
   try{
     K.ws.send(JSON.stringify({ type: 'read', message_id: lastMsgId }));
   }catch(_){}
@@ -828,6 +831,9 @@ K._sendReadReceipt = function(convId, lastMsgId){
 
 K._sendTyping = function(convId){
   if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
+  // v1.1.24 : respect privacy_prefs.typingIndicator
+  const privacy = lg('privacy_prefs', { typingIndicator:true });
+  if(!privacy.typingIndicator) return; // user ne veut pas signaler qu'il tape
   if(K._typingSentAt && Date.now() - K._typingSentAt < 1500) return;
   K._typingSentAt = Date.now();
   try{ K.ws.send(JSON.stringify({ type: 'typing' })); }catch(_){}
@@ -1455,7 +1461,7 @@ async function _handleWsMessage(data, convId){
         K.messages[convId].push(msg);
         ls('messages_' + convId, K.messages[convId]);
         if(K.view === 'chat' && K.viewData?.id === convId) K.render();
-        else toast(`Nouveau message`, 'info', 2000);
+        else K._notifyIncoming(convId, msg);
       }
       break;
     case 'ack':
@@ -2200,6 +2206,242 @@ try {
   }
 } catch(e){ /* ignore */ }
 
+// ============================================================================
+//  v1.1.24 — Notification incoming message (câble notif_prefs au runtime)
+// ============================================================================
+K._notifyIncoming = function(convId, msg){
+  const prefs = lg('notif_prefs', { push:true, sound:true, vibrate:true, badge:true, preview:true, quietHours:false, quietStart:'22:00', quietEnd:'08:00' });
+
+  // Quiet hours : skip notif si dans plage silencieuse
+  if(prefs.quietHours){
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const [sH, sM] = prefs.quietStart.split(':').map(Number);
+    const [eH, eM] = prefs.quietEnd.split(':').map(Number);
+    const start = sH * 60 + sM, end = eH * 60 + eM;
+    const inQuiet = (start < end) ? (cur >= start && cur < end) : (cur >= start || cur < end); // overnight
+    if(inQuiet){
+      // En quiet : juste maj badge, pas de son/vibration/notif
+      if(prefs.badge) K._updateUnreadBadge();
+      return;
+    }
+  }
+
+  // Toast préview ou générique
+  const previewText = prefs.preview ? (msg.text || '').slice(0, 80) : 'Nouveau message';
+  toast(`💬 ${previewText}`, 'info', 3000);
+
+  // Push notification API (si permission accordée)
+  if(prefs.push && 'Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible'){
+    try{
+      const n = new Notification('Apex Chat', {
+        body: prefs.preview ? (msg.text || '') : 'Tu as un nouveau message',
+        icon: './icons/icon-192.png',
+        badge: './icons/icon-72.png',
+        tag: 'conv-' + convId,
+        renotify: false,
+        silent: !prefs.sound,
+      });
+      n.onclick = () => { window.focus(); K.sv('chat', { id: convId }); n.close(); };
+    }catch(e){ /* ignore */ }
+  }
+
+  // Sound chime
+  if(prefs.sound) K._playChime();
+
+  // Vibrate (mobile)
+  if(prefs.vibrate && navigator.vibrate){
+    try{ navigator.vibrate([60, 30, 60]); }catch(_){}
+  }
+
+  // Badge non-lus
+  if(prefs.badge) K._updateUnreadBadge();
+};
+
+K._playChime = function(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    const ctx = new AC();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
+    g.gain.setValueAtTime(0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    o.start(); o.stop(ctx.currentTime + 0.3);
+    setTimeout(() => { try{ ctx.close(); }catch(_){ } }, 500);
+  }catch(e){ /* ignore */ }
+};
+
+K._updateUnreadBadge = function(){
+  try{
+    const total = Object.values(K.messages || {}).reduce((sum, msgs) => {
+      const lastRead = lg('lastread_' + (msgs[0]?.convId || ''), 0);
+      return sum + msgs.filter(m => m.from !== K.user?.id && m.ts > lastRead).length;
+    }, 0);
+    // Badge favicon-ish : titre document
+    if(total > 0){
+      document.title = `(${total}) Apex Chat`;
+      // PWA badging API
+      if('setAppBadge' in navigator){
+        try{ navigator.setAppBadge(total); }catch(_){}
+      }
+    } else {
+      document.title = 'Apex Chat';
+      if('clearAppBadge' in navigator){
+        try{ navigator.clearAppBadge(); }catch(_){}
+      }
+    }
+  }catch(e){ /* ignore */ }
+};
+
+// Demande permission notif si push activé et pas encore demandé
+K._requestNotifPermissionIfNeeded = function(){
+  const prefs = lg('notif_prefs', { push:true });
+  if(!prefs.push) return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    try{ Notification.requestPermission(); }catch(_){}
+  }
+};
+
+// ============================================================================
+//  v1.1.24 — Auto-delete messages anciens (privacy_prefs.autoDeleteAfter)
+// ============================================================================
+K._autoDeleteCron = function(){
+  const prefs = lg('privacy_prefs', { autoDeleteAfter: 0 });
+  if(!prefs.autoDeleteAfter || prefs.autoDeleteAfter <= 0) return;
+  const cutoff = Date.now() - prefs.autoDeleteAfter * 1000;
+  let deleted = 0;
+  try{
+    Object.keys(K.messages || {}).forEach(convId => {
+      const before = K.messages[convId].length;
+      K.messages[convId] = K.messages[convId].filter(m => m.ts >= cutoff);
+      const after = K.messages[convId].length;
+      if(before !== after){
+        deleted += (before - after);
+        ls('messages_' + convId, K.messages[convId]);
+      }
+    });
+  }catch(e){ /* ignore */ }
+  if(deleted > 0){
+    toast(`🧹 ${deleted} message${deleted>1?'s':''} auto-supprimé${deleted>1?'s':''}`, 'info', 2000);
+  }
+};
+// Cron 1× par heure
+setInterval(() => { try{ K._autoDeleteCron(); }catch(_){} }, 60 * 60 * 1000);
+
+// ============================================================================
+//  v1.1.24 — Phase 7b : IA Memory Lane résumé année passée
+// ============================================================================
+K._summarizeMemoryLane = async function(yearAgo){
+  // Cherche tous messages d'il y a ~1 an (+/- 7 jours)
+  const targetTs = Date.now() - 365 * 24 * 60 * 60 * 1000;
+  const window = 7 * 24 * 60 * 60 * 1000;
+  const msgs = [];
+  Object.values(K.messages || {}).forEach(arr => {
+    arr.forEach(m => {
+      if(Math.abs(m.ts - targetTs) < window){
+        msgs.push(m);
+      }
+    });
+  });
+
+  if(msgs.length === 0){
+    return { ok: false, reason: 'Aucun message il y a 1 an' };
+  }
+
+  // Construit prompt pour IA (Claude Haiku via api-worker)
+  const sample = msgs.slice(0, 30).map(m => `[${new Date(m.ts).toLocaleDateString('fr-FR')}] ${m.text || ''}`).join('\n');
+  const prompt = `Voici des extraits de conversations d'il y a 1 an (${msgs.length} messages au total). Résume en 3-5 lignes les moments importants, sujets discutés et ambiance :\n\n${sample}`;
+
+  try{
+    const res = await fetch(API_BASE + '/api/ai/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+      body: JSON.stringify({ prompt, max_tokens: 400 }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if(!res.ok) return { ok: false, reason: `IA HTTP ${res.status}` };
+    const data = await res.json();
+    return { ok: true, summary: data.text || data.summary || '(réponse vide)', msgCount: msgs.length };
+  }catch(e){
+    return { ok: false, reason: e.message || 'Erreur réseau IA' };
+  }
+};
+
+K._showMemoryLaneSummary = async function(){
+  K._showModal('🕰 Memory Lane — IA résumé', `
+    <p style="color:var(--ax-text-2);font-size:.9em">Apex IA va résumer tes messages d'il y a 1 an. Quelques instants...</p>
+    <div id="ml-result" style="margin-top:14px;text-align:center;padding:24px">
+      <div style="font-size:2em">⏳</div>
+      <p style="color:var(--ax-text-3)">Analyse en cours...</p>
+    </div>
+  `);
+  const result = await K._summarizeMemoryLane(365);
+  const resEl = $('#ml-result');
+  if(!resEl) return;
+  if(result.ok){
+    resEl.innerHTML = `
+      <div style="background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.3);border-radius:12px;padding:16px;text-align:left">
+        <div style="color:var(--ax-gold);font-size:.85em;margin-bottom:8px">📅 Il y a 1 an · ${result.msgCount} messages analysés</div>
+        <div style="white-space:pre-wrap;line-height:1.5;color:var(--ax-text-1)">${esc(result.summary)}</div>
+      </div>
+      <button class="btn btn-block" onclick="K._closeModal()" style="margin-top:14px">✓ Fermer</button>
+    `;
+  } else {
+    resEl.innerHTML = `
+      <div style="color:var(--ax-err);padding:14px">
+        ⚠️ ${esc(result.reason)}
+      </div>
+      <button class="btn btn-out btn-block" onclick="K._closeModal()" style="margin-top:14px">Fermer</button>
+    `;
+  }
+};
+
+// ============================================================================
+//  v1.1.24 — Phase 9 : Stripe Premium Checkout (real)
+// ============================================================================
+K._openStripeCheckout = async function(planId){
+  // planId : 'monthly' | 'yearly'
+  if(!K.token) return toast('Connecte-toi d\'abord', 'err');
+  toast('Ouverture Stripe Checkout...', 'info', 2000);
+  try{
+    const res = await fetch(API_BASE + '/api/premium/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+      body: JSON.stringify({ plan: planId, success_url: location.origin + location.pathname + '?premium=ok', cancel_url: location.href }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if(!res.ok){
+      const txt = await res.text().catch(() => '');
+      return toast('Stripe error: HTTP ' + res.status, 'err', 4000);
+    }
+    const data = await res.json();
+    if(data.url){
+      window.location.href = data.url; // redirect vers Stripe hosted Checkout
+    } else {
+      toast('Aucune URL Checkout retournée', 'err');
+    }
+  }catch(e){
+    toast('Erreur réseau Stripe: ' + (e.message || ''), 'err', 4000);
+  }
+};
+
+// Detect retour Stripe success (?premium=ok)
+try{
+  if(location.search.includes('premium=ok')){
+    setTimeout(() => {
+      toast('🎉 Premium activé ! Bienvenue.', 'ok', 5000);
+      // Nettoie URL
+      try{ history.replaceState({}, '', location.pathname); }catch(_){}
+    }, 1500);
+  }
+}catch(e){ /* ignore */ }
+
 function renderContacts(app){
   app.innerHTML = `
     <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Contacts</h2>
@@ -2212,12 +2454,51 @@ function renderContacts(app){
 }
 
 function renderCalls(app){
+  // v1.1.24 — Phase 5 LIVE : appels WebRTC P2P + visio implémentés (voir K._startCall / _answerCall)
+  const history = lg('call_history', []);
+  const contacts = lg('contacts', []);
   app.innerHTML = `
-    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Appels</h2>
-    <div class="card" style="text-align:center;padding:24px 14px">
-      <div style="font-size:2.5em;margin-bottom:10px">📞</div>
-      <p style="color:var(--ax-text-2)">Aucun appel récent</p>
-      <p style="color:var(--ax-text-3);font-size:.85em">Les appels audio/vidéo arrivent en Phase 5</p>
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">📞 Appels</h2>
+    <div class="card" style="padding:14px;margin-bottom:14px">
+      <div style="font-weight:600;margin-bottom:10px;color:var(--ax-text-1)">📲 Démarrer un appel</div>
+      <p style="color:var(--ax-text-3);font-size:.82em;margin:0 0 10px">WebRTC P2P chiffré bout-en-bout · audio ou vidéo</p>
+      ${contacts.length === 0 ? `
+        <p style="color:var(--ax-text-3);font-size:.85em;text-align:center;padding:14px">
+          Pas de contact encore. <a href="#" onclick="K.openInvite();return false" style="color:var(--ax-gold)">Invite un ami</a> d'abord.
+        </p>
+      ` : `
+        <div style="display:grid;gap:8px">
+          ${contacts.slice(0, 8).map(c => `
+            <div class="card-row" style="padding:10px">
+              <div class="avatar">${esc((c.pseudo||'?')[0].toUpperCase())}</div>
+              <div style="flex:1">
+                <div style="font-weight:600">${esc(c.pseudo)}</div>
+              </div>
+              <button class="btn btn-sm btn-out" onclick="K._startCall('${esc(c.id)}','audio')" aria-label="Appel audio ${esc(c.pseudo)}">📞</button>
+              <button class="btn btn-sm btn-out" onclick="K._startCall('${esc(c.id)}','video')" aria-label="Appel vidéo ${esc(c.pseudo)}">📹</button>
+            </div>
+          `).join('')}
+        </div>
+      `}
+    </div>
+    <div class="card" style="padding:14px">
+      <div style="font-weight:600;margin-bottom:10px;color:var(--ax-text-1)">🕓 Historique récent</div>
+      ${history.length === 0 ? `
+        <p style="color:var(--ax-text-3);font-size:.85em;text-align:center;padding:10px">Aucun appel récent</p>
+      ` : `
+        <div style="display:grid;gap:6px">
+          ${history.slice(0, 20).map(h => `
+            <div class="card-row" style="padding:8px;font-size:.88em">
+              <span>${h.type === 'video' ? '📹' : '📞'}</span>
+              <div style="flex:1">
+                <div>${esc(h.peer || 'Inconnu')}</div>
+                <div style="color:var(--ax-text-3);font-size:.78em">${new Date(h.ts).toLocaleString('fr-FR')} · ${h.duration ? Math.round(h.duration/1000) + 's' : 'manqué'}</div>
+              </div>
+              <span style="color:${h.direction === 'in' ? 'var(--ax-ok)' : 'var(--ax-text-3)'}">${h.direction === 'in' ? '↙' : '↗'}</span>
+            </div>
+          `).join('')}
+        </div>
+      `}
     </div>
   `;
 }
@@ -3790,9 +4071,11 @@ K.openMemoryLane = async function(){
       if(r.memory.count === 0 || (r.memory.msg_ids || []).length === 0){
         c.innerHTML = '<p style="color:var(--ax-text-3)">Aucun souvenir trouvé — tu n\'avais pas encore Apex Chat il y a 1 an. Reviens dans quelques mois 🌸</p>';
       } else {
+        // v1.1.24 Phase 7b LIVE : résumé IA Memory Lane
         c.innerHTML = `
           <p style="color:var(--ax-text)">📬 <strong>${r.memory.count}</strong> messages ce jour-là.</p>
-          <button class="btn btn-out btn-block" onclick="K._closeModal()" style="margin-top:14px">✨ Plus tard (Phase 7b — résumé IA)</button>
+          <button class="btn btn-block" onclick="K._showMemoryLaneSummary()" style="margin-top:14px">✨ Résumer avec l'IA</button>
+          <button class="btn btn-out btn-block btn-sm" onclick="K._closeModal()" style="margin-top:8px">Fermer</button>
         `;
       }
     } else {
@@ -4075,14 +4358,9 @@ K.openPremium = function(){
 };
 
 K._startCheckout = function(plan){
-  // Phase 9 : Stripe Checkout URL (à configurer)
-  // En attendant : ouvre Stripe.com en placeholder
-  const checkoutUrls = {
-    monthly: 'https://buy.stripe.com/apex-chat-plus-monthly-PLACEHOLDER',
-    lifetime: 'https://buy.stripe.com/apex-chat-plus-lifetime-PLACEHOLDER'
-  };
-  toast('Stripe checkout (Phase 9b — configuration nécessaire)', 'info', 3000);
-  // window.open(checkoutUrls[plan], '_blank');
+  // v1.1.24 Phase 9 LIVE : appelle backend /api/premium/checkout (Stripe hosted)
+  // Backend doit retourner { url } depuis stripe.checkout.sessions.create
+  K._openStripeCheckout(plan === 'lifetime' ? 'lifetime' : 'monthly');
 };
 
 // ============================================================================
