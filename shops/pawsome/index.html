@@ -155,7 +155,7 @@ function dc(){var a=document.getElementById("app");if(!a)return;a.innerHTML=hdr(
 document.querySelectorAll(".nav-item").forEach(function(el){el.classList.toggle("active",el.dataset.cat===(S.cat||"all"))});
 if(S.view==="home"||S.view==="products"){document.querySelectorAll(".card").forEach(function(c,i){c.style.animationDelay=i*30+"ms"})}}
 function hdr(){return '<div class="hdr"><div class="hdr-inner">'
-+'<div class="logo" onclick="sv(\'home\')">' +esc(STORE_NAME)+'<span>KDMC</span></div>'
++'<div class="logo" onclick="sv(\'home\')">'+esc(STORE_NAME)+'<span>KDMC</span></div>'
 +'<div class="search-box"><input type="text" placeholder="Rechercher..." value="'+esc(S.search)+'" oninput="S.search=this.value;S.page=1;dc();this.focus()" id="searchIn"></div>'
 +'<div class="nav-actions"><div class="cart-btn" onclick="toggleCart()">🛒<span class="cart-badge" id="cart-badge">0</span></div></div>'
 +'</div></div>'
@@ -164,12 +164,12 @@ function hdr(){return '<div class="hdr"><div class="hdr-inner">'
 +"</div>"}
 function footer(){return '<div class="footer"><div class="footer-inner">'
 +'<div><h4>'+esc(STORE_NAME)+'</h4><a href="#" onclick="sv(\'about\');return false">À propos</a><a href="#" onclick="sv(\'contact\');return false">Contact</a><a href="#">Livraison</a><a href="#">CGV</a></div>'
-+'<div><h4>Catégories</h4>'+CATS.slice(0,5).map(function(c){return '<a href="#" onclick="S.cat=\''+c.id+'\';sv(\'products\');return false">'+c.icon+" "+esc(c.name)+"</a>"}).join("")+"</div>"
++'<div><h4>Catégories</h4>'+CATS.slice(0,5).map(function(c){return '<a href="#" onclick="S.cat=\''+c.id+'\';sv(\'products\');return false">'+c.icon+" "+esc(c.name)+"</a>"}).join("")+'</div>'
 +'<div><h4>Aide</h4><a href="#">FAQ</a><a href="#">Retours</a><a href="#">Paiement sécurisé</a><a href="#">Confidentialité</a></div>'
 +'<div><h4>Newsletter</h4><p style="font-size:13px;color:var(--muted);margin-bottom:8px">Recevez nos offres exclusives</p>'
 +'<div style="display:flex;gap:8px"><input type="email" placeholder="votre@email.com" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" id="nlEmail">'
 +'<button onclick="nlSub()" style="padding:10px 16px;background:var(--p);color:#fff;border-radius:var(--rs);font-weight:700;font-size:13px">OK</button></div></div>'
-+'</div><div class="footer-bottom">© 2026 '+esc(STORE_NAME)+' — KDMC. Tous droits réservés. Paiement sécurisé par Stripe 🔒</div></div>'}
++'</div><div class="footer-bottom">© 2026 '+esc(STORE_NAME)+' — KDMC. Tous droits réservés. Paiement sécurisé — PayPal · Revolut · Virement 🔒</div></div>'}
 function stars(r){var f=Math.floor(r),h=r%1>=.3,s="";for(var i=0;i<f;i++)s+="★";if(h)s+="½";for(var j=f+(h?1:0);j<5;j++)s+="☆";return '<span class="stars" title="'+r+'/5">'+s+"</span>"}
 function fmtP(p){return p.toFixed(2).replace(".",",")+" €"}
 function disc(o,c){return o>c?Math.round((1-c/o)*100):0}
@@ -178,13 +178,13 @@ if(S.search.length>1){var q=S.search.toLowerCase();r=r.filter(function(p){return
 switch(S.sort){case"price-asc":r.sort(function(a,b){return a.price-b.price});break;case"price-desc":r.sort(function(a,b){return b.price-a.price});break;case"rating":r.sort(function(a,b){return b.rating-a.rating});break;default:r.sort(function(a,b){return b.reviews-a.reviews})}
 return r}
 function cardHtml(p){var d=disc(p.origPrice,p.price);
-return '<div class="card" onclick="sv(\'product\',\''+p.id+'\')">' + '<div class="card-img">'
+return '<div class="card" onclick="sv(\'product\',\''+p.id+'\')"><div class="card-img">'
 +(d>=20?'<span class="card-badge badge-sale">-'+d+"%</span>":"")
 +p.img+'</div><div class="card-body"><div class="card-title">'+esc(p.name)+'</div>'
 +'<div class="card-meta">'+stars(p.rating)+' <span>('+p.reviews+')</span></div>'
 +'<div class="card-price"><span class="price-now">'+fmtP(p.price)+'</span>'
 +(d>0?'<span class="price-was">'+fmtP(p.origPrice)+'</span><span class="price-off">-'+d+"%</span>":"")
-+'</div><button class="card-cta" onclick="event.stopPropagation();addCart(\''+p.id+'\')" >🛒 Ajouter</button></div></div>'}
++'</div><button class="card-cta" onclick="event.stopPropagation();addCart(\''+p.id+'\')">🛒 Ajouter</button></div></div>'}
 function vHome(){var featured=P.filter(function(p){return disc(p.origPrice,p.price)>=25}).slice(0,6);
 if(featured.length<6)featured=P.slice(0,6);
 var best=P.slice().sort(function(a,b){return b.rating-a.rating}).slice(0,6);
@@ -204,76 +204,100 @@ return '<div class="hero"><h1>Bienvenue sur <em>'+esc(STORE_NAME)+'</em></h1>'
 function vProducts(){var r=filtered(),total=r.length,pages=Math.ceil(total/S.pp),items=r.slice((S.page-1)*S.pp,S.page*S.pp);
 var sortOpts=[["popular","Populaires"],["price-asc","Prix ↑"],["price-desc","Prix ↓"],["rating","Note ↓"]];
 return '<div class="section"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">'
-+'<div class="section-title" style="margin:0">'+(S.cat!=="all"?(CATS.find(function(c){return c.id===S.cat})||{}).icon+" ":"")+' Produits <span style="font-weight:400;color:var(--muted);font-size:14px">('+total+' résultats)</span></div>'
++'<div class="section-title" style="margin:0">'+(S.cat!=="all"?(CATS.find(function(c){return c.id===S.cat})||{}).icon+" ":"")+'Produits <span style="font-weight:400;color:var(--muted);font-size:14px">('+total+' résultats)</span></div>'
 +'<select onchange="S.sort=this.value;dc()" style="padding:8px 32px 8px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;appearance:none;background-image:url(\'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 stroke=%27%23888%27 fill=%27none%27/%3E%3C/svg%3E\');background-repeat:no-repeat;background-position:right 10px center">'
 +sortOpts.map(function(o){return '<option value="'+o[0]+'"'+(S.sort===o[0]?" selected":"")+">"+o[1]+"</option>"}).join("")
-+'</select></div><div class="grid">'+items.map(cardHtml).join("")+'</div>'
-+(pages>1?'<div style="text-align:center;margin-top:24px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">'+Array.from({length:pages},function(_,i){return '<button onclick="S.page='+(i+1)+';dc();scrollTo({top:0,behavior:\'smooth\'})" style="padding:10px 16px;border-radius:var(--rs);border:1px solid '+(S.page===i+1?'var(--p)':'var(--border)')+';background:'+(S.page===i+1?'var(--p)':'var(--card)')+';color:'+(S.page===i+1?'#fff':'var(--text)')+';font-weight:600;font-size:13px;cursor:pointer;min-width:44px;min-height:44px">'+(i+1)+"</button>"}).join("")+"</div>":"")
++'</select></div>'
++(items.length?'<div class="grid">'+items.map(cardHtml).join("")+'</div>':'<div style="text-align:center;padding:48px;color:var(--muted)"><span style="font-size:48px;display:block;margin-bottom:12px">🔍</span>Aucun produit trouvé</div>')
++(pages>1?'<div style="display:flex;justify-content:center;gap:6px;margin-top:24px">'+Array.from({length:pages},function(_,i){return '<button onclick="S.page='+(i+1)+';dc();scrollTo({top:0,behavior:\'smooth\'})" style="min-width:36px;height:36px;border-radius:var(--rs);border:1px solid '+(S.page===i+1?"var(--p)":"var(--border)")+";background:"+(S.page===i+1?"var(--p)":"var(--card)")+";color:"+(S.page===i+1?(isLight?"#fff":"#000"):"var(--text)")+';font-weight:'+(S.page===i+1?"700":"400")+';font-size:13px;cursor:pointer">'+(i+1)+"</button>"}).join("")+"</div>":"")
 +'</div>'}
 function vProduct(){var p=P.find(function(x){return x.id===S.vp});if(!p)return '<div class="section">Produit introuvable</div>';
-var d=disc(p.origPrice,p.price),cat=CATS.find(function(c){return c.id===p.cat}),related=P.filter(function(x){return x.cat===p.cat&&x.id!==p.id}).slice(0,4);
-return '<div class="pdp"><div class="pdp-back" onclick="history.back?history.back():sv(\'products\')">← Retour</div>'
-+'<div class="pdp-grid"><div class="pdp-img">'+p.img+'</div><div class="pdp-info"><h1>'+esc(p.name)+'</h1>'
-+'<div class="meta">'+stars(p.rating)+' <span>'+p.reviews+' avis</span>'+(cat?' · <span>'+cat.icon+' '+esc(cat.name)+'</span>':'')+'</div>'
-+'<div><span class="pdp-price">'+fmtP(p.price)+'</span>'+(d>0?'<span class="pdp-orig">'+fmtP(p.origPrice)+'</span> <span class="price-off" style="font-size:14px">-'+d+'%</span>':'')+'</div>'
-+'<p class="pdp-desc">'+esc(p.desc)+'</p>'
-+'<ul class="pdp-features"><li>Livraison offerte dès 49€</li><li>Retours gratuits 30 jours</li><li>Garantie qualité KDMC</li><li>Paiement sécurisé</li>'+(p.stock<10?'<li style="color:#ef4444">Plus que '+p.stock+' en stock !</li>':'<li style="color:#22c55e">En stock</li>')+'</ul>'
-+'<button class="btn-add" onclick="addCart(\''+p.id+'\')" >🛒 Ajouter au panier</button>'
-+'</div></div></div>'
-+(related.length?'<div class="section"><div class="section-title">Vous aimerez aussi</div><div class="grid">'+related.map(cardHtml).join("")+'</div></div>':'')}
-function vCartPage(){if(!S.cart.length)return '<div class="section" style="text-align:center;padding:80px 16px"><div style="font-size:64px;margin-bottom:16px">🛒</div><h2>Votre panier est vide</h2><p style="color:var(--muted);margin:12px 0 24px">Découvrez nos produits et ajoutez vos favoris</p><button onclick="sv(\'products\')" style="padding:14px 32px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;border:none;cursor:pointer">Voir les produits</button></div>';
-var total=0;return '<div class="section"><div class="section-title">🛒 Mon panier ('+S.cart.reduce(function(a,c){return a+c.qty},0)+' articles)</div>'
-+S.cart.map(function(ci){var p=P.find(function(x){return x.id===ci.id});if(!p)return '';total+=p.price*ci.qty;
-return '<div style="display:flex;gap:16px;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;align-items:center">'
-+'<div style="width:80px;height:80px;border-radius:var(--rs);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0">'+p.img+'</div>'
-+'<div style="flex:1"><div style="font-weight:600;margin-bottom:4px">'+esc(p.name)+'</div><div style="color:var(--p);font-weight:700;font-size:17px">'+fmtP(p.price)+'</div>'
-+'<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><button onclick="cartQty(\''+ci.id+'\','+Math.max(1,ci.qty-1)+')" style="width:32px;height:32px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:16px;cursor:pointer">−</button>'
-+'<span style="font-weight:600;min-width:20px;text-align:center">'+ci.qty+'</span>'
-+'<button onclick="cartQty(\''+ci.id+'\','+(ci.qty+1)+')" style="width:32px;height:32px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:16px;cursor:pointer">+</button></div></div>'
-+'<div onclick="rmCart(\''+ci.id+'\')"
-style="cursor:pointer;color:#ef4444;font-size:20px;padding:8px" title="Supprimer">✕</div></div>'}).join("")
-+'<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:16px">'
-+'<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px"><span>Sous-total</span><span>'+fmtP(total)+'</span></div>'
-+'<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px;color:var(--muted)"><span>Livraison</span><span>'+(total>=49?'Gratuite':'4,99 €')+'</span></div>'
-+'<div style="border-top:1px solid var(--border);margin:12px 0"></div>'
-+'<div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700"><span>Total</span><span style="color:var(--p)">'+fmtP(total+(total>=49?0:4.99))+'</span></div>'
-+'<button onclick="checkout()" style="width:100%;padding:16px;background:var(--p);color:#fff;font-size:16px;font-weight:700;border:none;border-radius:var(--rs);cursor:pointer;margin-top:16px">Valider ma commande</button>'
-+'</div></div>'}
-function vAbout(){return '<div class="section" style="max-width:700px;margin:0 auto;padding:48px 16px"><h1 style="font-size:28px;margin-bottom:16px">À propos de '+esc(STORE_NAME)+'</h1>'
-+'<p style="color:var(--muted);line-height:1.8;margin-bottom:16px">'+esc(STORE_NAME)+' est une boutique en ligne du réseau KDMC, spécialisée dans les produits pour animaux de compagnie. Notre mission : offrir le meilleur à vos compagnons avec des produits de qualité, sélectionnés avec soin.</p>'
-+'<p style="color:var(--muted);line-height:1.8;margin-bottom:16px">Depuis 2024, nous accompagnons les propriétaires d\'animaux dans leur quotidien avec une gamme complète de produits premium : alimentation, jouets, couchage, toilettage et accessoires.</p>'
-+'<p style="color:var(--muted);line-height:1.8">Chaque produit est testé et approuvé par notre équipe de passionnés. Satisfaction garantie ou remboursé.</p></div>'}
-function vContact(){return '<div class="section" style="max-width:700px;margin:0 auto;padding:48px 16px"><h1 style="font-size:28px;margin-bottom:24px">Contactez-nous</h1>'
-+'<div style="display:grid;gap:16px"><input type="text" placeholder="Votre nom" style="padding:14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text)">'
-+'<input type="email" placeholder="Votre email" style="padding:14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text)">'
-+'<select style="padding:14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text)"><option>Question générale</option><option>Suivi commande</option><option>Retour produit</option><option>Partenariat</option></select>'
-+'<textarea rows="5" placeholder="Votre message..." style="padding:14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);resize:vertical"></textarea>'
-+'<button onclick="toast(\'Message envoyé ! Nous vous répondrons sous 24h.\')" style="padding:14px;background:var(--p);color:#fff;font-size:15px;font-weight:700;border:none;border-radius:var(--rs);cursor:pointer">Envoyer</button></div></div>'}
+var d=disc(p.origPrice,p.price);var related=P.filter(function(x){return x.cat===p.cat&&x.id!==p.id}).slice(0,4);
+return '<div class="pdp"><div class="pdp-back" onclick="sv(\'products\')">← Retour aux produits</div>'
++'<div class="pdp-grid"><div class="pdp-img">'+p.img+'</div><div class="pdp-info">'
++'<h1>'+esc(p.name)+'</h1>'
++'<div class="meta">'+stars(p.rating)+' '+p.reviews+' avis</div>'
++'<div><span class="pdp-price">'+fmtP(p.price)+'</span>'+(d>0?'<span class="pdp-orig">'+fmtP(p.origPrice)+'</span><span class="price-off" style="margin-left:8px">-'+d+"%</span>":"")+'</div>'
++'<div class="pdp-desc">'+esc(p.desc)+'</div>'
++(p.features?'<ul class="pdp-features">'+p.features.map(function(f){return "<li>"+esc(f)+"</li>"}).join("")+"</ul>":"")
++(p.specs?'<div style="margin:16px 0"><strong>Caractéristiques</strong>'+Object.keys(p.specs).map(function(k){return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--muted)">'+esc(k)+"</span><span>"+esc(String(p.specs[k]))+"</span></div>"}).join("")+"</div>":"")
++(p.ingredients?'<div style="margin:16px 0"><strong>Ingrédients</strong><p style="font-size:13px;color:var(--muted);margin-top:4px">'+p.ingredients.map(esc).join(", ")+"</p></div>":"")
++(p.vegan||p.organic||p.crueltyfree?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">'+(p.vegan?'<span style="font-size:12px;padding:4px 10px;border-radius:100px;background:rgba(34,197,94,.1);color:#22c55e">🌿 Vegan</span>':"")+(p.organic?'<span style="font-size:12px;padding:4px 10px;border-radius:100px;background:rgba(34,197,94,.1);color:#22c55e">🌱 Bio</span>':"")+(p.crueltyfree?'<span style="font-size:12px;padding:4px 10px;border-radius:100px;background:rgba(34,197,94,.1);color:#22c55e">🐰 Cruelty-free</span>':"")+"</div>":"")
++'<button class="btn-add" onclick="addCart(\''+p.id+'\')">🛒 Ajouter au panier — '+fmtP(p.price)+'</button>'
++'<div style="margin-top:16px;display:flex;gap:16px;font-size:13px;color:var(--muted)"><span>🔒 Paiement sécurisé</span><span>↩️ Retours 30j</span></div>'
++'</div></div>'
++(related.length?'<div style="margin-top:40px"><div class="section-title">Produits similaires</div><div class="grid">'+related.map(cardHtml).join("")+"</div></div>":"")
++'</div>'}
+function vCartPage(){if(!S.cart.length)return '<div class="section" style="text-align:center;padding:80px 16px"><span style="font-size:64px;display:block;margin-bottom:16px">🛒</span><h2>Votre panier est vide</h2><p style="color:var(--muted);margin:12px 0">Découvrez nos produits et ajoutez vos favoris !</p><button onclick="sv(\'products\')" style="padding:12px 24px;background:var(--p);color:#fff;border-radius:var(--rs);font-weight:700;border:none;cursor:pointer;margin-top:12px">Voir les produits</button></div>';
+var total=S.cart.reduce(function(s,i){return s+i.price*i.qty},0);
+return '<div class="section" style="max-width:700px;margin:0 auto"><div class="section-title">🛒 Mon panier ('+S.cart.reduce(function(s,i){return s+i.qty},0)+' articles)</div>'
++S.cart.map(function(item){return '<div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);align-items:center"><div style="width:70px;height:70px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0">'+item.img+'</div>'
++'<div style="flex:1"><div style="font-weight:600">'+esc(item.name)+'</div><div style="color:var(--p);font-weight:700;margin-top:4px">'+fmtP(item.price)+'</div>'
++'<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><button onclick="cartQty(\''+item.id+'\',-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:16px;display:flex;align-items:center;justify-content:center">−</button>'
++'<span style="min-width:24px;text-align:center;font-weight:600">'+item.qty+'</span>'
++'<button onclick="cartQty(\''+item.id+'\',1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:16px;display:flex;align-items:center;justify-content:center">+</button>'
++'<span style="margin-left:auto;font-weight:700">'+fmtP(item.price*item.qty)+'</span></div></div>'
++'<span onclick="rmCart(\''+item.id+'\');dc()" style="color:#ef4444;cursor:pointer;font-size:18px;padding:8px">✕</span></div>'}).join("")
++'<div style="margin-top:24px;padding:20px;background:var(--bg);border-radius:var(--r)"><div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700"><span>Total</span><span style="color:var(--p)">'+fmtP(total)+'</span></div>'
++'<button onclick="toast(\'Redirection vers le paiement Stripe...\')" style="width:100%;padding:16px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:16px;font-weight:700;border:none;cursor:pointer;margin-top:16px">💳 Payer '+fmtP(total)+'</button></div></div>'}
+function vAbout(){return '<div class="section" style="max-width:700px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:16px">À propos de '+esc(STORE_NAME)+'</h1><p style="color:var(--muted);line-height:1.8">'+esc(STORE_NAME)+' est une boutique en ligne KDMC dédiée à vous offrir les meilleurs produits de qualité à des prix accessibles. Notre mission : rendre le shopping en ligne simple, sûr et agréable.</p>'
++'<div class="trust" style="margin-top:32px"><div class="trust-item"><span class="trust-icon">🏆</span>Qualité Premium</div><div class="trust-item"><span class="trust-icon">💯</span>Satisfaction garantie</div><div class="trust-item"><span class="trust-icon">🌍</span>Livraison mondiale</div></div></div>'}
+function vContact(){return '<div class="section" style="max-width:500px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:24px">📧 Contactez-nous</h1>'
++'<div style="margin-bottom:16px"><label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Nom</label><input type="text" style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text)"></div>'
++'<div style="margin-bottom:16px"><label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Email</label><input type="email" style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text)"></div>'
++'<div style="margin-bottom:16px"><label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Message</label><textarea rows="5" style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);resize:vertical"></textarea></div>'
++'<button onclick="toast(\'Message envoyé ! Nous vous répondrons sous 24h.\')" style="width:100%;padding:14px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;border:none;cursor:pointer">📨 Envoyer</button></div>'}
 /* CART LOGIC */
-function addCart(id){var f=S.cart.find(function(c){return c.id===id});if(f)f.qty++;else S.cart.push({id:id,qty:1});saveCart();cartBadge();toast("Produit ajouté au panier");dc()}
-function rmCart(id){S.cart=S.cart.filter(function(c){return c.id!==id});saveCart();dc()}
-function cartQty(id,q){var f=S.cart.find(function(c){return c.id===id});if(f){f.qty=Math.max(1,q);saveCart();dc()}}
-function saveCart(){try{localStorage.setItem(STORE_ID+"_cart",JSON.stringify(S.cart))}catch(e){}}
-function loadCart(){try{var d=localStorage.getItem(STORE_ID+"_cart");if(d)S.cart=JSON.parse(d)}catch(e){}}
-function cartBadge(){var b=document.getElementById("cart-badge");if(!b)return;var n=S.cart.reduce(function(a,c){return a+c.qty},0);b.textContent=n;b.style.display=n>0?"flex":"none"}
-function toggleCart(){var p=document.getElementById("cartPanel"),b=document.getElementById("cartBg");if(!p)return;
-p.classList.toggle("open");b.classList.toggle("open");renderCart()}
-function renderCart(){var ci=document.getElementById("cartItems"),cf=document.getElementById("cartFooter");if(!ci)return;
+function loadCart(){S.cart=JSON.parse(localStorage.getItem("kdmc_cart_"+STORE_ID)||"[]")}
+function saveCart(){localStorage.setItem("kdmc_cart_"+STORE_ID,JSON.stringify(S.cart));cartBadge();renderCartPanel()}
+function addCart(id){var p=P.find(function(x){return x.id===id});if(!p)return;
+var ex=S.cart.find(function(x){return x.id===id});
+if(ex){ex.qty++}else{S.cart.push({id:p.id,name:p.name,price:p.price,img:p.img,qty:1})}
+saveCart();toast(p.name+" ajouté au panier")}
+function rmCart(id){S.cart=S.cart.filter(function(x){return x.id!==id});saveCart()}
+function cartQty(id,d){var it=S.cart.find(function(x){return x.id===id});if(it){it.qty=Math.max(1,it.qty+d);saveCart();dc()}}
+function cartBadge(){var b=document.getElementById("cart-badge");if(b){var c=S.cart.reduce(function(s,i){return s+i.qty},0);b.textContent=c;b.style.display=c>0?"flex":"none"}}
+function toggleCart(){document.getElementById("cartPanel").classList.toggle("open");document.getElementById("cartBg").classList.toggle("open");renderCartPanel()}
+function renderCartPanel(){var ci=document.getElementById("cartItems"),cf=document.getElementById("cartFooter");if(!ci)return;
 if(!S.cart.length){ci.innerHTML='<div class="cart-empty"><span>🛒</span>Votre panier est vide</div>';cf.innerHTML="";return}
-var total=0;ci.innerHTML=S.cart.map(function(c){var p=P.find(function(x){return x.id===c.id});if(!p)return"";total+=p.price*c.qty;
-return '<div class="cart-item"><div class="cart-item-img">'+p.img+'</div><div class="cart-item-info"><div class="cart-item-name">'+esc(p.name)+'</div>'
-+'<div class="cart-item-price">'+fmtP(p.price)+'</div><div class="cart-item-qty"><button onclick="cartQty(\''+c.id+'\','+(c.qty-1)+');renderCart()">−</button><span>'+c.qty+'</span><button onclick="cartQty(\''+c.id+'\','+(c.qty+1)+');renderCart()">+</button></div>'
-+'<div class="cart-item-rm" onclick="rmCart(\''+c.id+'\');renderCart()">Supprimer</div></div></div>'}).join("");
-cf.innerHTML='<div class="cart-total"><span>Total</span><span class="amount">'+fmtP(total)+'</span></div><button class="btn-checkout" onclick="checkout()">Commander ('+fmtP(total)+')</button>'}
-function checkout(){toast("Redirection vers le paiement sécurisé...");setTimeout(function(){toast("Merci pour votre commande !");S.cart=[];saveCart();sv("home")},2e3)}
-function nlSub(){var e=document.getElementById("nlEmail");if(e&&e.value.indexOf("@")>0){toast("Inscrit ! Vous recevrez nos offres exclusives.");e.value=""}else toast("Email invalide","error")}
+ci.innerHTML=S.cart.map(function(it){return '<div class="cart-item"><div class="cart-item-img">'+it.img+'</div><div class="cart-item-info"><div class="cart-item-name">'+esc(it.name)+'</div><div class="cart-item-price">'+fmtP(it.price)+'</div>'
++'<div class="cart-item-qty"><button onclick="cartQty(\''+it.id+'\',-1);renderCartPanel()">−</button><span>'+it.qty+'</span><button onclick="cartQty(\''+it.id+'\',1);renderCartPanel()">+</button></div>'
++'<div class="cart-item-rm" onclick="rmCart(\''+it.id+'\');renderCartPanel()">Supprimer</div></div></div>'}).join("");
+var total=S.cart.reduce(function(s,i){return s+i.price*i.qty},0);
+cf.innerHTML='<div class="cart-total"><span>Total</span><span class="amount">'+fmtP(total)+'</span></div>'
++'<button class="btn-checkout" onclick="showPayment('+total+')">💳 Commander — '+fmtP(total)+'"</button>'}
+function nlSub(){var e=document.getElementById("nlEmail");if(e&&e.value.indexOf("@")>0){toast("Bienvenue ! Vérifiez vos emails 📧");e.value=""}else toast("Email invalide","error")}
 /* INIT */
-window.addEventListener("scroll",function(){var b=document.getElementById("btt");if(b)b.classList.toggle("show",scrollY>400)});
+function showPayment(total){
+var m=document.createElement("div");m.id="payModal";
+m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
+m.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;max-width:440px;width:100%;border:1px solid var(--border);max-height:90vh;overflow-y:auto">'
++'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 style="font-size:22px;font-weight:800">Paiement</h2><span onclick="document.getElementById(\'payModal\').remove()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
++'<div style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:20px;text-align:center"><span style="font-size:14px;color:var(--muted)">Total à payer</span><div style="font-size:32px;font-weight:800;color:var(--p);margin-top:4px">'+fmtP(total)+'</div></div>'
++'<div style="display:flex;flex-direction:column;gap:12px">'
++'<a href="https://paypal.me/kdmc/'+total.toFixed(2)+'" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0070ba22;border:1px solid #0070ba55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🅿️</span><div><div>PayPal</div><div style="font-size:12px;color:var(--muted)">Paiement sécurisé instantané</div></div></a>'
++'<a href="https://revolut.me/kdmc" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0075eb22;border:1px solid #0075eb55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🔄</span><div><div>Revolut @kdmc</div><div style="font-size:12px;color:var(--muted)">Envoi instantané sans frais</div></div></a>'
++'<div onclick="showIBAN()" style="display:flex;align-items:center;gap:12px;padding:16px;background:#22c55e22;border:1px solid #22c55e55;border-radius:12px;cursor:pointer;font-weight:600"><span style="font-size:28px">🏦</span><div><div>Virement bancaire</div><div style="font-size:12px;color:var(--muted)">IBAN — délai 1-2 jours</div></div></div>'
++'</div>'
++'<p style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">🔒 Paiement sécurisé · Données protégées · KDMC Monaco</p>'
++'</div>';
+document.body.appendChild(m);m.onclick=function(e){if(e.target===m)m.remove()}}
+function showIBAN(){
+var ib=document.getElementById("ibanBox");if(ib){ib.style.display=ib.style.display==="none"?"block":"none";return}
+var d=document.createElement("div");d.id="ibanBox";d.style.cssText="margin-top:12px;background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)";
+d.innerHTML='<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Coordonnées bancaires :</div>'
++'<div style="font-family:monospace;font-size:14px;font-weight:600;letter-spacing:1px;margin-bottom:4px" id="ibanVal">MC98 •••• •••• •••• •••• •••</div>'
++'<div style="font-size:13px;margin-bottom:4px"><b>Titulaire :</b> Kevin DESARZENS</div>'
++'<div style="font-size:13px;margin-bottom:8px"><b>BIC :</b> Disponible sur demande</div>'
++'<div style="font-size:11px;color:var(--muted)">Envoyez le montant exact + votre numéro de commande en référence.</div>'
++'<button onclick="navigator.clipboard.writeText(document.getElementById(\'ibanVal\').textContent);toast(\'IBAN copié ✅\')" style="margin-top:8px;padding:8px 16px;background:var(--p);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">📋 Copier l\'IBAN</button>';
+document.querySelector("#payModal .gap-12,#payModal [style*=flex-direction]").appendChild(d)}
+
 loadCart();dc();
-/* COOKIE BANNER */
-if(!localStorage.getItem(STORE_ID+"_cookie")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies pour améliorer votre expérience. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button><button class="btn-accept" onclick="localStorage.setItem(\''+STORE_ID+'_cookie\',\'1\');this.closest(\'.cookie\').remove()">Accepter</button></div>';document.body.appendChild(ck)}
+window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",scrollY>400)});
+if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-accept" onclick="localStorage.setItem(\'kdmc_cookie_ok\',1);this.closest(\'.cookie\').remove()">Accepter</button><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button></div>';document.body.appendChild(ck)}
 </script>
-<!-- Version badge PWA loader -->
+<!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-pawsome"
         data-version="v1.0.0"
