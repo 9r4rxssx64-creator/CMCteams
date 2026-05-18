@@ -6,7 +6,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Digital Vault | KDMC Boutique</title>
+<meta property="og:title" content="Digital Vault — Produits Numériques | KDMC">
+<meta property="og:description" content="Formations, templates, ebooks, logiciels & assets créatifs. Téléchargement instantané.">
+<meta property="og:image" content="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Digital Vault — Produits Numériques | KDMC">
+<meta name="twitter:description" content="Formations, templates, ebooks, logiciels & assets créatifs. Téléchargement instantané.">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop">
 <meta name="description" content="Digital Vault — Boutique en ligne professionnelle KDMC. Découvrez nos 100+ produits de qualité.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>">
 <meta name="theme-color" content="#D4AF37">
 <link rel="manifest" href="manifest.json">
 <style>
@@ -135,6 +144,7 @@ input,textarea,select{font:inherit}img{max-width:100%;height:auto}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .card{animation:fadeUp .5s ease both}
 </style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"Digital Vault — Produits Numériques","description":"Formations, templates, ebooks, logiciels & assets créatifs. Téléchargement instantané.","url":"https://9r4rxssx64-creator.github.io/CMCteams/shops/","image":"https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
 </head>
 <body>
 <div id="app"></div>
@@ -173,7 +183,7 @@ function footer(){return '<div class="footer"><div class="footer-inner">'
 +'<div><h4>Newsletter</h4><p style="font-size:13px;color:var(--muted);margin-bottom:8px">Recevez nos offres exclusives</p>'
 +'<div style="display:flex;gap:8px"><input type="email" placeholder="votre@email.com" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" id="nlEmail">'
 +'<button onclick="nlSub()" style="padding:10px 16px;background:var(--p);color:#000;border-radius:var(--rs);font-weight:700;font-size:13px">OK</button></div></div>'
-+'</div><div class="footer-bottom">© 2026 '+esc(STORE_NAME)+' — KDMC. Tous droits réservés. Paiement sécurisé — PayPal · Revolut · Virement 🔒</div></div>'}
++'</div><div class="footer-bottom">© 2026 '+esc(STORE_NAME)+' — KDMC. Tous droits réservés. <a href="../legal/cgv.html" style="color:var(--muted)">CGV</a> · <a href="../legal/mentions.html" style="color:var(--muted)">Mentions</a> · <a href="../legal/confidentialite.html" style="color:var(--muted)">Confidentialité</a> Paiement sécurisé — PayPal · Revolut · Virement 🔒</div></div>'}
 function stars(r){var f=Math.floor(r),h=r%1>=.3,s="";for(var i=0;i<f;i++)s+="★";if(h)s+="½";for(var j=f+(h?1:0);j<5;j++)s+="☆";return '<span class="stars" title="'+r+'/5">'+s+"</span>"}
 function fmtP(p){return p.toFixed(2).replace(".",",")+" €"}
 function disc(o,c){return o>c?Math.round((1-c/o)*100):0}
