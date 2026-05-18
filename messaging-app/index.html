@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.65';
+const __APEX_CHAT_VERSION__ = 'v1.1.66';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.65</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.66</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.65</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.66</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,6 +870,77 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.66 — Conv management : pin / mute / archive
+// ============================================================================
+K._toggleConvPinned = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  conv.pinned = !conv.pinned;
+  conv.pinned_at = conv.pinned ? Date.now() : null;
+  ls('conversations', K.conversations);
+  K._closeModal && K._closeModal();
+  K.render();
+  toast(conv.pinned ? '📌 Conversation épinglée' : '📌 Épinglage retiré', 'ok');
+};
+
+K._toggleConvMuted = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  conv.muted = !conv.muted;
+  ls('conversations', K.conversations);
+  K._closeModal && K._closeModal();
+  K.render();
+  toast(conv.muted ? '🔕 Conversation muette' : '🔔 Notifications réactivées', 'ok');
+};
+
+K._toggleConvArchived = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  conv.archived = !conv.archived;
+  conv.archived_at = conv.archived ? Date.now() : null;
+  ls('conversations', K.conversations);
+  K._closeModal && K._closeModal();
+  K.sv('chats');
+  toast(conv.archived ? '📦 Archivée' : '📤 Désarchivée', 'ok');
+};
+
+K._openConvActionsMenu = function(convId, ev){
+  if(ev) ev.stopPropagation();
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  K._showModal('⚙️ Actions conversation', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px"><strong>${esc(conv.name || conv.pseudo || 'Sans nom')}</strong></p>
+    <div style="display:grid;gap:6px">
+      <button class="btn btn-out btn-block" onclick="K._toggleConvPinned('${esc(convId)}')">${conv.pinned ? '📌 Désépingler' : '📌 Épingler en haut'}</button>
+      <button class="btn btn-out btn-block" onclick="K._toggleConvMuted('${esc(convId)}')">${conv.muted ? '🔔 Réactiver notifs' : '🔕 Mettre en muet'}</button>
+      <button class="btn btn-out btn-block" onclick="K._toggleConvArchived('${esc(convId)}')">${conv.archived ? '📤 Désarchiver' : '📦 Archiver'}</button>
+      <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
+    </div>
+  `);
+};
+
+K._viewArchivedConvs = function(){
+  const archived = (K.conversations || []).filter(c => c.archived);
+  K._showModal('📦 Conversations archivées', archived.length === 0 ? `
+    <p style="text-align:center;color:var(--ax-text-3);padding:20px">Aucune conversation archivée.</p>
+  ` : `
+    <div style="max-height:60vh;overflow-y:auto">
+      ${archived.sort((a,b) => (b.archived_at||0) - (a.archived_at||0)).map(c => `
+        <div onclick="K._closeModal();K.openConv('${esc(c.id)}')"
+             style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:36px;height:36px">${esc((c.name || c.pseudo || '?')[0].toUpperCase())}</div>
+          <div style="flex:1">
+            <div style="font-weight:600">${esc(c.name || c.pseudo || 'Sans nom')}</div>
+            <div style="font-size:.75em;color:var(--ax-text-3)">📦 Archivée le ${esc(c.archived_at ? new Date(c.archived_at).toLocaleDateString('fr-FR') : '?')}</div>
+          </div>
+          <button onclick="event.stopPropagation();K._toggleConvArchived('${esc(c.id)}')" class="btn btn-out btn-sm">📤</button>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+// ============================================================================
 //  v1.1.64 — Contact card sharing (vCard 3.0 style WhatsApp)
 // ============================================================================
 K._openContactCardComposer = function(){
@@ -1032,7 +1103,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.65',
+    version: 'v1.1.66',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3106,17 +3177,27 @@ K._convSearchInput = function(val){
 function renderChats(app){
   const q = (K._convSearchQuery || '').toLowerCase().trim();
   let convs = K.conversations;
+  // v1.1.66 : filter archived (sauf si recherche active)
+  if(q.length === 0){
+    convs = convs.filter(c => !c.archived);
+  }
   if(q.length > 0){
     convs = convs.filter(c => {
       const name = (c.name || c.pseudo || '').toLowerCase();
       const lastPrev = (c.last_preview || '').toLowerCase();
       const draft = (K._loadDraft(c.id) || '').toLowerCase();
       if(name.includes(q) || lastPrev.includes(q) || draft.includes(q)) return true;
-      // Search dans les messages aussi (limité top 30 par conv pour perf)
       const msgs = (K.messages[c.id] || []).slice(-30);
       return msgs.some(m => (m.text || '').toLowerCase().includes(q));
     });
   }
+  // v1.1.66 : sort pinned en haut, puis last_msg_ts desc
+  convs = convs.slice().sort((a, b) => {
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    return (b.last_msg_ts || 0) - (a.last_msg_ts || 0);
+  });
+  const archivedCount = (K.conversations || []).filter(c => c.archived).length;
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Mes conversations</h2>
@@ -3128,6 +3209,7 @@ function renderChats(app){
            oninput="K._convSearchInput(this.value)"
            style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px 12px;color:var(--ax-text);font-size:15px;margin-bottom:12px">
     ${q.length > 0 ? `<p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">📂 ${convs.length} résultat${convs.length>1?'s':''} pour "<strong>${esc(q)}</strong>"</p>` : ''}
+    ${archivedCount > 0 && q.length === 0 ? `<button class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px" onclick="K._viewArchivedConvs()">📦 ${archivedCount} conv archivée${archivedCount>1?'s':''}</button>` : ''}
     ${convs.length === 0 ? `
       <div class="card" style="text-align:center;padding:30px 14px">
         <div style="font-size:3em;margin-bottom:12px">💬</div>
@@ -3140,16 +3222,17 @@ function renderChats(app){
         ${convs.map(c => {
           const draft = K._loadDraft(c.id);
           return `
-          <div class="conv-item" onclick="K.openConv('${esc(c.id)}')">
+          <div class="conv-item" onclick="K.openConv('${esc(c.id)}')" oncontextmenu="event.preventDefault();K._openConvActionsMenu('${esc(c.id)}',event)">
             <div class="avatar">${esc((c.name || c.pseudo || '?')[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0">
-              <div class="conv-name">${esc(c.name || c.pseudo || 'Sans nom')}</div>
+              <div class="conv-name">${c.pinned ? '📌 ' : ''}${c.muted ? '🔕 ' : ''}${esc(c.name || c.pseudo || 'Sans nom')}</div>
               <div class="conv-last">${draft ? `<span style="color:var(--ax-blue);font-style:italic">✏️ Brouillon : ${esc(draft.slice(0, 60))}</span>` : esc(c.last_preview || '(message chiffré)')}</div>
             </div>
             <div style="text-align:right">
               <div class="conv-time">${formatTime(c.last_msg_ts)}</div>
               ${c.unread ? `<span class="conv-unread">${c.unread}</span>` : ''}
             </div>
+            <button onclick="event.stopPropagation();K._openConvActionsMenu('${esc(c.id)}',event)" style="background:transparent;border:none;color:var(--ax-text-3);font-size:1.2em;padding:6px 4px;cursor:pointer;flex-shrink:0" aria-label="Actions">⋯</button>
           </div>
         `;}).join('')}
       </div>
@@ -4293,6 +4376,10 @@ try {
 //  v1.1.24 — Notification incoming message (câble notif_prefs au runtime)
 // ============================================================================
 K._notifyIncoming = function(convId, msg){
+  // v1.1.66 : respect conv.muted (skip totalement si muet)
+  const conv = (K.conversations || []).find(c => c.id === convId);
+  if(conv && conv.muted) return;
+
   const prefs = lg('notif_prefs', { push:true, sound:true, vibrate:true, badge:true, preview:true, quietHours:false, quietStart:'22:00', quietEnd:'08:00' });
 
   // Quiet hours : skip notif si dans plage silencieuse
@@ -7593,7 +7680,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.65"
+        data-version="v1.1.66"
         data-color="#6a8aff"
         defer></script>
 </body>
