@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.68';
+const __APEX_CHAT_VERSION__ = 'v1.1.69';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.68</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.69</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.68</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.69</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1186,6 +1186,9 @@ if(typeof window !== 'undefined'){
     const t = lg('theme_pref', 'dark');
     const a = lg('accent_pref', 'gold');
     K._applyTheme(t, a);
+    // v1.1.69 : badge unread au boot + interval
+    if(K._updateUnreadBadge) K._updateUnreadBadge();
+    setInterval(() => { try { K._updateUnreadBadge && K._updateUnreadBadge(); } catch(_) {} }, 30_000);
   }, 100);
   // Re-apply si système change (mode auto only)
   if(window.matchMedia){
@@ -1204,7 +1207,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.68',
+    version: 'v1.1.69',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3428,7 +3431,7 @@ function renderChat(app){
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
-  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();}, 50);
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._markConvAsRead&&K._markConvAsRead(conv.id);}, 50);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
@@ -3629,6 +3632,8 @@ async function _handleWsMessage(data, convId){
         console.log('[ws] message dropped from blocked user', data.sender_id);
         break;
       }
+      // v1.1.69 : trigger unread badge update après pousse du msg
+      setTimeout(() => K._updateUnreadBadge && K._updateUnreadBadge(), 50);
       // Nouveau message reçu
       let decryptedText = '(message chiffré)';
       try{
@@ -4626,14 +4631,28 @@ K._resetSound = function(convId){
 
 K._updateUnreadBadge = function(){
   try{
-    const total = Object.values(K.messages || {}).reduce((sum, msgs) => {
-      const lastRead = lg('lastread_' + (msgs[0]?.convId || ''), 0);
-      return sum + msgs.filter(m => m.from !== K.user?.id && m.ts > lastRead).length;
-    }, 0);
-    // Badge favicon-ish : titre document
+    // v1.1.69 fix : utilise convId comme key (msgs[0]?.convId était undefined)
+    let total = 0;
+    const perConv = {};
+    for(const convId in (K.messages || {})){
+      const msgs = K.messages[convId] || [];
+      const lastRead = lg('lastread_' + convId, 0);
+      // Skip si conv mutée ou bloquée
+      const conv = (K.conversations || []).find(c => c.id === convId);
+      if(conv && (conv.muted || conv.archived)) continue;
+      const unread = msgs.filter(m =>
+        m.from !== K.user?.id &&
+        (m.ts || 0) > lastRead &&
+        !(K._isBlocked && K._isBlocked(m.from))
+      ).length;
+      perConv[convId] = unread;
+      total += unread;
+    }
+    // Stocke per-conv (utilisable pour pastilles individuelles)
+    K._unreadPerConv = perConv;
+    // Update doc title + PWA badge
     if(total > 0){
       document.title = `(${total}) Apex Chat`;
-      // PWA badging API
       if('setAppBadge' in navigator){
         try{ navigator.setAppBadge(total); }catch(_){}
       }
@@ -4643,7 +4662,41 @@ K._updateUnreadBadge = function(){
         try{ navigator.clearAppBadge(); }catch(_){}
       }
     }
-  }catch(e){ /* ignore */ }
+    // Trigger UI refresh des conv badges si conv list visible
+    if(K.view === 'chats' && total > 0){
+      const items = document.querySelectorAll('.conv-item');
+      items.forEach(item => {
+        const onclick = item.getAttribute('onclick') || '';
+        const m = onclick.match(/openConv\('([^']+)'\)/);
+        if(m){
+          const cid = m[1];
+          const u = perConv[cid] || 0;
+          const badge = item.querySelector('.conv-unread');
+          if(u > 0 && !badge){
+            const rightDiv = item.querySelector('div[style*="text-align:right"]');
+            if(rightDiv){
+              const span = document.createElement('span');
+              span.className = 'conv-unread';
+              span.textContent = String(u);
+              rightDiv.appendChild(span);
+            }
+          } else if(u === 0 && badge){
+            badge.remove();
+          } else if(badge && badge.textContent !== String(u)){
+            badge.textContent = String(u);
+          }
+        }
+      });
+    }
+    return total;
+  }catch(e){ return 0; }
+};
+
+// v1.1.69 : marque conv comme lue quand on l'ouvre
+K._markConvAsRead = function(convId){
+  if(!convId) return;
+  ls('lastread_' + convId, Date.now());
+  K._updateUnreadBadge();
 };
 
 // Demande permission notif si push activé et pas encore demandé
@@ -7794,7 +7847,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.68"
+        data-version="v1.1.69"
         data-color="#6a8aff"
         defer></script>
 </body>
