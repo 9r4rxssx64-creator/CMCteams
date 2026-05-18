@@ -200,6 +200,10 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .ephemeral-badge{display:inline-block;margin-top:6px;font-size:.7em;color:#e63946;
   background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.3);
   border-radius:8px;padding:2px 6px;font-weight:600;letter-spacing:.3px}
+.scam-warning{display:block;margin-top:6px;font-size:.78em;color:#ffa500;
+  background:rgba(255,165,0,.12);border:1px solid #ffa500;
+  border-radius:8px;padding:5px 8px;cursor:pointer;font-weight:600}
+.scam-warning:active{background:rgba(255,165,0,.2)}
 .msg-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .msg-reaction{font-size:.85em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   border-radius:12px;padding:2px 8px;cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none}
@@ -291,7 +295,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.43';
+const __APEX_CHAT_VERSION__ = 'v1.1.44';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -372,7 +376,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.43</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.44</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -386,7 +390,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.43</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.44</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2122,12 +2126,14 @@ function renderChat(app){
         const isMine = m.from === K.user.id;
         const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
         const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
+        const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
         return `
         <div class="msg ${isMine ? 'me' : 'them'}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
           ${esc(m.text || (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
+          ${scamReason ? `<div class="scam-warning" onclick="K._showScamInfo('${esc(scamReason)}','${esc(m.id)}')" title="Message potentiellement suspect">⚠️ Suspect : ${esc(scamReason)}</div>` : ''}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
           <div class="msg-time">
@@ -3512,6 +3518,51 @@ K._useSmartReply = function(reply){
     input.value = reply;
     input.focus();
   }
+};
+
+// ============================================================================
+// ============================================================================
+//  v1.1.44 — Anti-scam / phishing local detector (heuristique regex)
+//  Affiche chip ⚠️ rouge sur messages reçus suspects (zéro coût IA)
+// ============================================================================
+K._SCAM_PATTERNS = [
+  { re: /\b(bit\.ly|tinyurl|t\.co|goo\.gl|ow\.ly|is\.gd|buff\.ly)\/\w+/i, reason: 'URL raccourcie' },
+  { re: /\b(urgent|immédiat|vite)\b.*\b(virement|paiement|argent|carte bancaire|cb)\b/i, reason: 'Demande argent urgente' },
+  { re: /\b(virement|paiement|argent|carte bancaire|cb)\b.*\b(urgent|immédiat|vite)\b/i, reason: 'Demande argent urgente' },
+  { re: /\b(donne|partage|envoie)\b.*\b(code|otp|password|mdp|pin|2fa)\b/i, reason: 'Demande code/mdp' },
+  { re: /\b(votre compte|compte bloqué|suspendu|compromis|sécurisé)\b.*\b(cliquez|cliquer|lien|vérifier)\b/i, reason: 'Phishing bancaire' },
+  { re: /\b(impôt|impots|cpam|caf|tresor public)\b.*\b(remboursement|rembours)\b/i, reason: 'Phishing administratif' },
+  { re: /\b(bitcoin|btc|crypto|ether|eth|nft)\b.*\b(investir|gain|multiplier|x100|x10|gagner)\b/i, reason: 'Crypto scam' },
+  { re: /\b(héritage|loterie|million|millionnaire)\b.*\b(félicit|gagn|won)\b/i, reason: 'Loterie/héritage 419' },
+  { re: /\b(carte cadeau|gift card|itunes|google play|steam)\b/i, reason: 'Demande gift card' },
+];
+
+K._detectScam = function(text){
+  if(!text || text.length < 10) return null;
+  for(const p of K._SCAM_PATTERNS){
+    if(p.re.test(text)) return p.reason;
+  }
+  return null;
+};
+
+K._showScamInfo = function(reason, msgId){
+  K._showModal('⚠️ Message potentiellement suspect', `
+    <div style="background:rgba(255,165,0,.12);border:1px solid #ffa500;border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="font-size:2em;text-align:center">⚠️</div>
+      <p style="color:#ffa500;font-weight:600;text-align:center;margin:6px 0">Pattern détecté : ${esc(reason)}</p>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.88em;line-height:1.5">
+      <strong>Conseils sécurité :</strong>
+    </p>
+    <ul style="color:var(--ax-text-2);font-size:.85em;line-height:1.7;margin:8px 0 14px 18px">
+      <li>Ne clique JAMAIS sur les liens sans vérifier le domaine</li>
+      <li>Ne partage AUCUN code OTP/SMS/password à qui que ce soit</li>
+      <li>Banques/Impôts ne demandent JAMAIS d'infos par SMS/message</li>
+      <li>"Urgence" + "argent" = drapeau rouge classique d'arnaque</li>
+      <li>En doute → appelle directement la personne au numéro connu (pas celui du message)</li>
+    </ul>
+    <button class="btn btn-out btn-block" onclick="K._closeModal()">J'ai compris</button>
+  `);
 };
 
 // ============================================================================
@@ -5925,7 +5976,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.43"
+        data-version="v1.1.44"
         data-color="#6a8aff"
         defer></script>
 </body>
