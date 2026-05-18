@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.78';
+const __APEX_CHAT_VERSION__ = 'v1.1.79';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.78</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.79</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.78</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.79</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -907,6 +907,69 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.79 — Slash commands (style Slack/Discord)
+// ============================================================================
+K._SLASH_COMMANDS = {
+  '/shrug': () => '¯\\_(ツ)_/¯',
+  '/tableflip': () => '(╯°□°)╯︵ ┻━┻',
+  '/unflip': () => '┬─┬ ノ( ゜-゜ノ)',
+  '/lenny': () => '( ͡° ͜ʖ ͡°)',
+  '/me': (rest) => `*${K.user?.pseudo || 'moi'} ${rest || ''}*`,
+  '/coin': () => Math.random() < 0.5 ? '🪙 Pile !' : '🪙 Face !',
+  '/dice': (rest) => {
+    const n = parseInt(rest, 10) || 6;
+    return `🎲 ${Math.floor(Math.random() * n) + 1} (1-${n})`;
+  },
+  '/time': () => `🕐 ${new Date().toLocaleString('fr-FR')}`,
+  '/clear': () => { K._clearConvLocal(); return null; },
+  '/giphy': (rest) => `🎬 [GIF "${rest}"] → https://giphy.com/search/${encodeURIComponent(rest)}`,
+};
+
+K._processSlashCommand = function(text){
+  if(!text.startsWith('/')) return null;
+  const space = text.indexOf(' ');
+  const cmd = (space > 0 ? text.slice(0, space) : text).toLowerCase();
+  const rest = space > 0 ? text.slice(space + 1).trim() : '';
+  if(cmd === '/help'){
+    K._showSlashHelp();
+    return false;
+  }
+  if(K._SLASH_COMMANDS[cmd]){
+    return K._SLASH_COMMANDS[cmd](rest);
+  }
+  return null;
+};
+
+K._showSlashHelp = function(){
+  const rows = Object.keys(K._SLASH_COMMANDS).map(k => {
+    let example = '';
+    try { example = K._SLASH_COMMANDS[k]('test'); } catch(_) {}
+    return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ax-border);font-size:.88em">
+      <code style="color:var(--ax-gold);font-family:ui-monospace,monospace">${esc(k)}</code>
+      <span style="color:var(--ax-text-3);max-width:200px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(typeof example === 'string' ? example.slice(0, 30) : '...')}</span>
+    </div>`;
+  }).join('');
+  K._showModal('⚡ Commandes /slash', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 10px">Tape une commande dans le chat :</p>
+    ${rows}
+    <p style="font-size:.72em;color:var(--ax-text-3);margin-top:12px">
+      Tape <code>/help</code> dans le chat pour revoir cette liste.<br>
+      Ex : <code>/dice 20</code> pour D20, <code>/me danse</code> pour roleplay.
+    </p>
+  `);
+};
+
+K._clearConvLocal = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  if(!confirm('🧹 Vider cette conversation localement ?\n\nLes msgs ne seront supprimés que de TON appareil.')) return;
+  delete K.messages[conv.id];
+  try { localStorage.removeItem('messages_' + conv.id); } catch(_) {}
+  K.render();
+  toast('🧹 Conversation vidée localement', 'ok');
+};
 
 // ============================================================================
 //  v1.1.78 — Conversation export JSON / texte (backup local)
@@ -1836,7 +1899,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.78',
+    version: 'v1.1.79',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4129,9 +4192,17 @@ K.openConv = async function(convId){
 
 K._sendMsg = async function(){
   const input = $('#msg-input');
-  const text = input.value.trim();
+  let text = input.value.trim();
   if(!text) return;
   const conv = K.viewData;
+
+  // v1.1.79 — Slash commands : transformer text si match
+  if(text.startsWith('/') && K._processSlashCommand){
+    const result = K._processSlashCommand(text);
+    if(result === false){ /* /help → modal, bloque envoi */ input.value = ''; return; }
+    if(result === null){ /* commande inconnue → laisse passer comme texte normal */ }
+    else { text = result; input.value = result; }
+  }
 
   // Phase 2 : chiffrer E2E si session active
   let ciphertext = null;
@@ -8489,7 +8560,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.78"
+        data-version="v1.1.79"
         data-color="#6a8aff"
         defer></script>
 </body>
