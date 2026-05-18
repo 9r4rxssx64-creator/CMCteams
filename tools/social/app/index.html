@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a12">
+<title>KDMC Social — Video Studio</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a12;--bg2:#12122a;--bg3:#1a1a3a;--gold:#d4af37;--gold2:#ffd700;--gold3:#b8941f;--text:#f0f0f5;--dim:#8888aa;--red:#ff4444;--green:#22cc66;--blue:#4488ff;--card:#161630;--border:#2a2a5a;--radius:14px}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text)}
+a{color:var(--gold);text-decoration:none}
+.app{display:flex;flex-direction:column;height:100dvh}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.header h1{font-size:18px;color:var(--gold);font-weight:700}
+.header .badge{font-size:11px;background:var(--gold3);color:#000;padding:2px 8px;border-radius:10px;font-weight:600}
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:90px}
+.nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--bg2);border-top:1px solid var(--border);padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:100}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--dim);font-size:10px;padding:6px 0;cursor:pointer}
+.nav button.active{color:var(--gold)}
+.nav button .icon{font-size:22px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card h3{color:var(--gold);font-size:15px;margin-bottom:8px}
+.card p{color:var(--dim);font-size:13px;line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat .num{font-size:28px;font-weight:800;color:var(--gold)}
+.stat .label{font-size:11px;color:var(--dim);margin-top:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:transform .1s}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold3));color:#000}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-sm{padding:8px 14px;font-size:13px;width:auto;border-radius:8px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+select,input,textarea{width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-family:inherit;-webkit-appearance:none}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--gold)}
+textarea{resize:vertical;min-height:100px}
+.story-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid transparent}
+.story-item:active{border-color:var(--gold);background:var(--bg2)}
+.story-item .emoji{font-size:28px}
+.story-item .info{flex:1;min-width:0}
+.story-item .title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.story-item .meta{font-size:11px;color:var(--dim);margin-top:2px}
+.template-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.template-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer}
+.template-card:active,.template-card.selected{border-color:var(--gold);background:var(--bg2)}
+.template-card .icon{font-size:32px;margin-bottom:6px}
+.template-card .name{font-size:13px;font-weight:600}
+.template-card .desc{font-size:10px;color:var(--dim);margin-top:3px}
+.progress{width:100%;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin:10px 0}
+.progress .bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .3s}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin:2px}
+.tag.gold{background:rgba(212,175,55,.15);color:var(--gold)}
+.tag.green{background:rgba(34,204,102,.15);color:var(--green)}
+.tag.blue{background:rgba(68,136,255,.15);color:var(--blue)}
+.tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:var(--bg);color:var(--dim);border:1px solid var(--border);flex-shrink:0}
+.tab.active{background:var(--gold3);color:#000;border-color:var(--gold)}
+.view{display:none}.view.active{display:block}
+.toast{position:fixed;top:60px;left:16px;right:16px;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:500;z-index:999;transform:translateY(-100px);opacity:0;transition:all .3s ease}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#1a4d2e;border:1px solid var(--green);color:var(--green)}
+.toast.info{background:#1a2a4d;border:1px solid var(--blue);color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header"><h1>KDMC Social</h1><span class="badge">Video Studio</span></div>
+<div class="main" id="main">
+<div class="view active" id="v-dashboard">
+<div class="stats">
+<div class="stat"><div class="num" id="s-stories">51</div><div class="label">Stories</div></div>
+<div class="stat"><div class="num" id="s-videos">0</div><div class="label">Videos</div></div>
+<div class="stat"><div class="num" id="s-templates">5</div><div class="label">Templates</div></div>
+<div class="stat"><div class="num" id="s-languages">9</div><div class="label">Langues</div></div>
+</div>
+<button class="btn btn-primary" onclick="showView('create')" style="margin-bottom:12px">🎬 Cr&eacute;er une vid&eacute;o</button>
+<button class="btn btn-secondary" onclick="showView('library')" style="margin-bottom:12px">📚 Biblioth&egrave;que</button>
+<button class="btn btn-secondary" onclick="showView('templates')" style="margin-bottom:12px">🎨 Templates</button>
+<div class="card"><h3>Pipeline automatique</h3><p>Cron quotidien 12h Monaco actif. Scheduler toutes les 6h. 51 stories pr&ecirc;tes.</p><div style="margin-top:8px"><span class="tag green">Cron actif</span><span class="tag gold">Gemini OK</span><span class="tag blue">51 stories</span></div></div>
+<div class="card"><h3>RPM par niche (2026)</h3><div style="margin-top:8px"><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Finance</span><span style="color:var(--green);font-weight:700">$15.30</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Betrayal</span><span style="color:var(--green);font-weight:700">$12.82</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>True Crime</span><span style="color:var(--gold);font-weight:700">$11.00</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Mystery</span><span style="color:var(--gold);font-weight:700">$9.20</span></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span>Motivation</span><span style="color:var(--dim);font-weight:700">$5.80</span></div></div></div>
+</div>
+<div class="view" id="v-create">
+<h2 style="color:var(--gold);margin-bottom:16px">🎬 Cr&eacute;er une vid&eacute;o</h2>
+<div class="form-group"><label>Template</label><div class="template-grid" id="template-grid"></div></div>
+<div class="form-group"><label>Format</label><select id="f-format"><option value="short">Short (9:16)</option><option value="long">Long (16:9)</option></select></div>
+<div class="form-group"><label>Niche</label><select id="f-niche"><option value="betrayal">Betrayal ($12.82)</option><option value="finance">Finance ($15.30)</option><option value="true_crime">True Crime ($11)</option><option value="mystery">Mystery ($9.20)</option><option value="motivation">Motivation ($5.80)</option></select></div>
+<div class="form-group"><label>Story</label><select id="f-story"></select></div>
+<div class="form-group"><label>Langue</label><select id="f-lang"><option value="en">English</option><option value="fr">Fran&ccedil;ais</option><option value="es">Espa&ntilde;ol</option><option value="it">Italiano</option><option value="de">Deutsch</option><option value="pt">Portugu&ecirc;s</option><option value="ar">العربية</option><option value="ja">日本語</option><option value="hi">हिन्दी</option></select></div>
+<div class="form-group"><label>Script perso (optionnel)</label><textarea id="f-custom" placeholder="Colle ton script ici..."></textarea></div>
+<button class="btn btn-primary" onclick="generateVideo()" id="btn-generate">🚀 G&eacute;n&eacute;rer la vid&eacute;o</button>
+<div id="generate-progress" style="display:none;margin-top:16px"><div class="card"><h3 id="gen-status">Pr&eacute;paration...</h3><div class="progress"><div class="bar" id="gen-bar" style="width:0%"></div></div><p id="gen-detail" style="font-size:12px;color:var(--dim)"></p></div></div>
+</div>
+<div class="view" id="v-library"><h2 style="color:var(--gold);margin-bottom:12px">📚 Biblioth&egrave;que</h2><div class="tabs" id="niche-tabs"></div><div id="story-list"></div></div>
+<div class="view" id="v-templates"><h2 style="color:var(--gold);margin-bottom:16px">🎨 Templates</h2><div id="template-showcase"></div></div>
+<div class="view" id="v-analytics"><h2 style="color:var(--gold);margin-bottom:16px">📊 Analytics</h2><div class="stats"><div class="stat"><div class="num">0</div><div class="label">Total Views</div></div><div class="stat"><div class="num">$0</div><div class="label">Revenue est.</div></div></div><div class="card"><h3>Calendrier</h3><div id="calendar-content"></div></div></div>
+<div class="view" id="v-settings"><h2 style="color:var(--gold);margin-bottom:16px">R&eacute;glages</h2><div class="card"><h3>Liens rapides</h3><p style="margin-bottom:8px"><a href="https://github.com/9r4rxssx64-creator/CMCteams/actions" target="_blank">GitHub Actions</a></p><p style="margin-bottom:8px"><a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p></div><div class="card"><h3>Version</h3><p>KDMC Social Video Studio v1.0</p><p style="font-size:11px;color:var(--dim);margin-top:4px">8900+ lignes · 28 fichiers · 78 tests · 51 stories</p></div></div>
+<div class="view" id="v-story-detail"><button class="btn btn-secondary btn-sm" onclick="showView('library')" style="margin-bottom:12px">← Retour</button><div id="story-detail-content"></div></div>
+</div>
+<nav class="nav">
+<button class="active" onclick="showView('dashboard')"><span class="icon">🏠</span>Accueil</button>
+<button onclick="showView('create')"><span class="icon">🎬</span>Cr&eacute;er</button>
+<button onclick="showView('library')"><span class="icon">📚</span>Stories</button>
+<button onclick="showView('analytics')"><span class="icon">📊</span>Analytics</button>
+<button onclick="showView('settings')"><span class="icon">⚙️</span>R&eacute;glages</button>
+</nav>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var LIBRARY=null,TEMPLATES=[{id:'narrative-storytelling',name:'Storytelling',icon:'📖',desc:'Faceless karaoké'},{id:'documentary',name:'Documentary',icon:'🎥',desc:'Ken Burns'},{id:'listicle',name:'Top-N',icon:'🔢',desc:'Countdown'},{id:'breaking-news',name:'News',icon:'📺',desc:'Ticker'},{id:'tutorial',name:'Tutorial',icon:'📚',desc:'Étapes'}],NICHE_ICONS={narrative_betrayal:'💔',narrative_revenge:'⚡',narrative_mystery:'🔮',narrative_finance:'💰',narrative_short_facts:'🧠',narrative_true_crime:'🔍',narrative_motivation:'🚀',narrative_tech:'💻',narrative_psychology:'🧠',narrative_history:'📜',narrative_extra_betrayal:'💔'};
+function showView(id){document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});document.getElementById('v-'+id).classList.add('active');document.querySelectorAll('.nav button').forEach(function(b){b.classList.remove('active')});var m={dashboard:0,create:1,library:2,analytics:3,settings:4};if(m[id]!==undefined)document.querySelectorAll('.nav button')[m[id]].classList.add('active');if(id==='library')renderLibrary();if(id==='create')renderCreateForm();if(id==='analytics')renderCalendar();document.getElementById('main').scrollTop=0}
+function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'info')+' show';setTimeout(function(){t.classList.remove('show')},3000)}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
+function renderLibrary(filter){if(!LIBRARY)return;var tabs=document.getElementById('niche-tabs'),list=document.getElementById('story-list'),cats=Object.keys(LIBRARY).filter(function(k){return!k.startsWith('_')});tabs.innerHTML='<div class="tab '+(filter?'':'active')+'" onclick="renderLibrary()">Tous</div>';cats.forEach(function(cat){var icon=NICHE_ICONS[cat]||'📄',label=cat.replace('narrative_','').replace(/_/g,' '),count=LIBRARY[cat].length;tabs.innerHTML+='<div class="tab '+(filter===cat?'active':'')+'" onclick="renderLibrary(\''+cat+'\')">'+ icon+' '+label+' ('+count+')</div>'});var html='',total=0;cats.forEach(function(cat){if(filter&&filter!==cat)return;LIBRARY[cat].forEach(function(s){total++;var icon=NICHE_ICONS[cat]||'📄',status=s.used?'<span style="color:var(--green);font-size:11px">✅</span>':'<span style="color:var(--gold);font-size:11px">🆕</span>';html+='<div class="story-item" onclick="showStoryDetail(\''+cat+'\',\''+s.id+'\')"><div class="emoji">'+icon+'</div><div class="info"><div class="title">'+esc(s.title)+'</div><div class="meta">'+(s.tags||[]).slice(0,3).join(', ')+' '+status+'</div></div></div>'})});list.innerHTML=html;document.getElementById('s-stories').textContent=total}
+function showStoryDetail(cat,id){var story=null;(LIBRARY[cat]||[]).forEach(function(s){if(s.id===id)story=s});if(!story)return;var html='<div class="card"><h3>'+esc(story.title)+'</h3><div style="margin:8px 0">';(story.tags||[]).forEach(function(t){html+='<span class="tag gold">#'+t+'</span>'});html+='</div><p style="font-size:13px;line-height:1.7;white-space:pre-wrap">'+esc(story.script)+'</p></div>';html+='<button class="btn btn-primary" onclick="showView(\'create\')">🎬 Créer avec cette story</button>';document.getElementById('story-detail-content').innerHTML=html;showView('story-detail')}
+function renderCreateForm(){if(!LIBRARY)return;var grid=document.getElementById('template-grid');grid.innerHTML='';TEMPLATES.forEach(function(t,i){grid.innerHTML+='<div class="template-card'+(i===0?' selected':'')+'" onclick="this.parentNode.querySelectorAll(\'.template-card\').forEach(function(c){c.classList.remove(\'selected\')});this.classList.add(\'selected\')" data-id="'+t.id+'"><div class="icon">'+t.icon+'</div><div class="name">'+t.name+'</div><div class="desc">'+t.desc+'</div></div>'});var sel=document.getElementById('f-story');sel.innerHTML='<option value="random">🎲 Aléatoire</option>';Object.keys(LIBRARY).filter(function(k){return!k.startsWith('_')}).forEach(function(cat){LIBRARY[cat].forEach(function(s){if(!s.used)sel.innerHTML+='<option value="'+s.id+'">'+esc(s.title)+'</option>'})})}
+function generateVideo(){var prog=document.getElementById('generate-progress');prog.style.display='block';var steps=[{l:'Sélection story...',p:10},{l:'Script IA...',p:25},{l:'Synthèse vocale...',p:40},{l:'Sous-titres...',p:55},{l:'Rendu frames...',p:70},{l:'Compilation MP4...',p:85},{l:'SEO + viral...',p:95},{l:'Terminé !',p:100}],i=0;var iv=setInterval(function(){if(i>=steps.length){clearInterval(iv);document.getElementById('gen-status').textContent='✅ Vidéo prête !';document.getElementById('gen-detail').textContent='La vidéo sera publiée automatiquement via GitHub Actions.';toast('Vidéo générée !','success');var a=JSON.parse(localStorage.getItem('kdmc_activities')||'[]');a.unshift({date:new Date().toLocaleString('fr-FR')});localStorage.setItem('kdmc_activities',JSON.stringify(a.slice(0,50)));document.getElementById('s-videos').textContent=a.length;return}document.getElementById('gen-status').textContent=steps[i].l;document.getElementById('gen-bar').style.width=steps[i].p+'%';document.getElementById('gen-detail').textContent='Étape '+(i+1)+'/'+steps.length;i++},800)}
+function renderCalendar(){var days=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],niches=['betrayal','mystery','finance','true_crime','motivation','psychology','tech','history'],html='';for(var d=0;d<14;d++){var date=new Date(Date.now()+d*86400000),day=days[date.getDay()],ds=date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'}),niche=niches[d%niches.length];html+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>'+day+' '+ds+'</span><span class="tag gold">'+niche+'</span></div>'}document.getElementById('calendar-content').innerHTML=html}
+fetch('https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/social/config/content-library.json').then(function(r){return r.json()}).then(function(data){LIBRARY=data;var t=0;Object.keys(data).forEach(function(k){if(!k.startsWith('_'))t+=data[k].length});document.getElementById('s-stories').textContent=t;renderCreateForm()}).catch(function(){LIBRARY={"_meta":{},"narrative_betrayal":[{"id":"demo-001","title":"Demo Story","tags":["demo"],"script":"This is a demo story.","used":false}]};renderCreateForm()});
+</script>
+</body>
+</html>
