@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.690";
+var APP_VER="v9.691";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -15957,7 +15957,7 @@ function _searchSuggestionsHTML(){
     ["💬","Chat","sv('chat')"],
     ["🤖","Assistant IA","sv('ia')"],
     ["📖","Convention SBM","sv('convention')"],
-    ["🔄","Échanges de shifts","sv('echanges')"]
+    ["🗓","Mes demandes","sv('mesdemandes')"]
   ];
   var rows=sugg.map(function(s){
     return '<button onclick="'+s[2]+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;background:rgba(255,255,255,.03);border:none;cursor:pointer;text-align:left;color:#c8dcc0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.03)"><span style="width:22px;text-align:center;flex-shrink:0">'+s[0]+'</span><span style="flex:1">'+s[1]+'</span><span style="color:#7a8a70;font-size:11px;flex-shrink:0">›</span></button>';
