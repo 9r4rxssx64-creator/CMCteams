@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.87';
+const __APEX_CHAT_VERSION__ = 'v1.1.88';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.87</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.88</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.87</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.88</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -922,6 +922,137 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.88 — Backup ALL conversations as JSON bundle
+// ============================================================================
+K._backupAllConversations = function(){
+  const convs = K.conversations || [];
+  if(convs.length === 0){ toast('Aucune conv à sauvegarder', 'warn'); return; }
+  if(!confirm(`💾 Sauvegarder ${convs.length} conv ?\n\nFichier JSON généré localement.`)) return;
+  const backup = {
+    app: 'Apex Chat',
+    version: typeof __APEX_CHAT_VERSION__ !== 'undefined' ? __APEX_CHAT_VERSION__ : '?',
+    user: K.user?.pseudo || 'anon',
+    exported_at: new Date().toISOString(),
+    exported_at_local: new Date().toLocaleString('fr-FR'),
+    conversations: convs.map(c => ({
+      id: c.id, name: c.name || c.pseudo || 'Inconnu',
+      type: c.type || 'dm', member_count: c.member_count || 2,
+      pinned: !!c.pinned, muted: !!c.muted, archived: !!c.archived,
+      labels: c.label_ids || [],
+      messages: (K.messages[c.id] || []).map(m => ({
+        id: m.id, from: m.from === K.user?.id ? 'me' : (c.name || 'peer'),
+        ts: m.ts, time_iso: new Date(m.ts).toISOString(),
+        text: m.text || null, has_image: !!m.image_data, has_voice: !!m.voice_data,
+        voice_text: m.voice_text || null,
+        edited: !!m.edited_at, deleted: !!m.deleted, forwarded: !!m.forwarded,
+        reply_to_text: m.reply_to?.text || null,
+        reactions: m.reactions || null,
+        poll: m.poll ? { question: m.poll.question, options: m.poll.options } : null,
+        location: m.location ? { lat: m.location.lat, lng: m.location.lng } : null,
+      })),
+    })),
+    labels: K._getLabels(),
+    stats: {
+      total_conversations: convs.length,
+      total_messages: Object.values(K.messages || {}).reduce((s, arr) => s + arr.length, 0),
+      pinned: convs.filter(c => c.pinned).length,
+      archived: convs.filter(c => c.archived).length,
+    }
+  };
+  const content = JSON.stringify(backup, null, 2);
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `apex-chat-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  toast(`💾 Backup ${(content.length/1024).toFixed(0)}KB téléchargé`, 'ok');
+};
+
+K._restoreBackup = function(){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'application/json,.json';
+  input.style.display = 'none';
+  input.onchange = (e) => {
+    const file = e.target.files?.[0];
+    if(!file || file.size > 10 * 1024 * 1024){ toast('Backup invalide ou > 10MB', 'err'); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if(!data.app || data.app !== 'Apex Chat'){ toast('Pas un backup Apex Chat valide', 'err'); return; }
+        const convCount = (data.conversations || []).length;
+        if(!confirm(`📥 Restaurer ${convCount} conv ?\n\nMerge par id, conv actuelles préservées.`)) return;
+        const existingIds = new Set((K.conversations || []).map(c => c.id));
+        let added = 0;
+        for(const c of (data.conversations || [])){
+          if(!c.id) continue;
+          K.messages[c.id] = (c.messages || []).map(m => ({
+            id: m.id || ('m_restored_' + Date.now() + '_' + Math.random()),
+            from: m.from === 'me' ? K.user?.id : (c.id + '_peer'),
+            ts: m.ts || Date.now(),
+            text: m.text || '',
+            voice_text: m.voice_text || undefined,
+            edited_at: m.edited ? m.ts : undefined,
+            deleted: m.deleted || false,
+            forwarded: m.forwarded || false,
+            reactions: m.reactions || undefined,
+          }));
+          ls('messages_' + c.id, K.messages[c.id]);
+          if(!existingIds.has(c.id)){
+            K.conversations.push({
+              id: c.id, name: c.name, type: c.type || 'dm',
+              member_count: c.member_count || 2,
+              pinned: c.pinned, muted: c.muted, archived: c.archived,
+              label_ids: c.labels || [],
+              last_msg_ts: K.messages[c.id]?.[K.messages[c.id].length - 1]?.ts || Date.now(),
+              last_preview: (K.messages[c.id]?.[K.messages[c.id].length - 1]?.text || '').slice(0, 60),
+            });
+            added++;
+          }
+        }
+        if(data.labels){
+          const existingLabels = K._getLabels();
+          const labelIds = new Set(existingLabels.map(l => l.id));
+          for(const l of data.labels){
+            if(!labelIds.has(l.id)){ existingLabels.push(l); }
+          }
+          ls('labels_v1', existingLabels);
+        }
+        ls('conversations', K.conversations);
+        K._closeModal && K._closeModal();
+        K.render();
+        toast(`📥 Restauré : ${added} nouv. conv`, 'ok');
+      } catch(err){
+        toast('Erreur backup : ' + err.message, 'err');
+      }
+    };
+    reader.readAsText(file);
+  };
+  document.body.appendChild(input);
+  input.click();
+  setTimeout(() => input.remove(), 30000);
+};
+
+K._openBackupRestoreMenu = function(){
+  const convCount = (K.conversations || []).length;
+  const msgCount = Object.values(K.messages || {}).reduce((s, arr) => s + arr.length, 0);
+  K._showModal('💾 Backup / Restauration', `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 14px">
+      Sauvegarde locale : <strong>${convCount} conv</strong>, <strong>${msgCount} messages</strong>.
+    </p>
+    <div style="display:grid;gap:6px">
+      <button class="btn btn-block" onclick="K._backupAllConversations()">💾 Sauvegarder TOUT (JSON)</button>
+      <button class="btn btn-out btn-block" onclick="K._restoreBackup()">📥 Restaurer un backup</button>
+    </div>
+    <p style="font-size:.72em;color:var(--ax-text-3);margin-top:14px">
+      💡 Inclut messages, settings conv, labels, stats. RGPD-compliant.
+    </p>
+  `);
+};
 
 // ============================================================================
 //  v1.1.86 — Mark all as read + Storage usage stats
@@ -2410,7 +2541,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.87',
+    version: 'v1.1.88',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -7091,6 +7222,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._openStorageStats()">
         <span>💾</span><span style="flex:1">Stockage local</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openBackupRestoreMenu()">
+        <span>📦</span><span style="flex:1">Backup / Restauration complète</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._openPushSettings()">
         <span>🔔</span><span style="flex:1">Notifications push (app fermée)</span><span>›</span>
       </div>
@@ -9178,7 +9312,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.87"
+        data-version="v1.1.88"
         data-color="#6a8aff"
         defer></script>
 </body>
