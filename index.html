@@ -3806,7 +3806,7 @@ var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admi
 // ax_cmc_planning_pending : Apex push planning detecte dans son chat -> toast 1-clic Kevin
 "ax_cmc_planning_pending"];
 // Préfixes pour clés dynamiques (mois/année)
-var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_"];
+var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_","cmc_structured_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
 /* v9.530 - cmc_pin_fails enleve de FB_LOCAL : doit sync FB pour resister clear localStorage */
 var FB_LOCAL=["cmc_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm","cmc_admin_sessions","cmc_admin_pin","cmc_ia_enabled","cmc_ia_websearch","cmc_ia_key","cmc_ia_proxy","cmc_backend_url","cmc_fb_url","cmc_sync_queue","cmc_notif_ts","cmc_emailjs_config","cmc_last_seen_ver","cmc_a11y","cmc_err_log","cmc_theme","cmc_last_auto_backup","cmc_tts_enabled","cmc_lang","cmc_ghost_log","cmc_auto_rotation_off","cmc_auto_assign_gps","cmc_pit_ai_mode","cmc_pit_ai_shift_mode","cmc_qr_checkin_enabled","cmc_login_geo_log","cmc_import_anomalies",
@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.693";
+var APP_VER="v9.694";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35734,6 +35734,97 @@ function parseLegendsFromPdf(txt){
   }
   return {found:found,enriched:enriched};
 }
+// v9.694 — Convertisseur PDF → JSON structuré (auto, sans bouton)
+// Kevin "Tout auto. Convertir un format différent pour meilleure reconnaissance".
+// S'exécute automatiquement dans doImport AVANT le parser legacy.
+// Résultat stocké dans cmc_structured_<key> pour audit + futur usage parser.
+//
+// Format de sortie :
+// {
+//   year, month, sections:[
+//     { name:"Roulettes"|"Chefs BJ"|"Employés CMC"|...,
+//       teams:[
+//         { label:"5 20/5 du au 5 19/4 du au...", emps:[
+//             { comp, name, days:["20/5","19/4","16/22","14/19","RH","R",...] }
+//         ]}
+//       ]
+//     }
+//   ],
+//   stats:{ sections, teams, emps, daysCovered, errors }
+// }
+function cmcStructuredParser(rawText, year, month){
+  var out={year:year,month:month,sections:[],stats:{sections:0,teams:0,emps:0,daysCovered:0,errors:[]}};
+  if(!rawText||typeof rawText!=="string")return out;
+  var daysExpected=new Date(year,month+1,0).getDate();
+  // Strip markers {{REDNAME}}, {{CP}}, {{CONV}} (purement visuels PDF)
+  var cleanText=rawText.replace(/\{\{[A-Z]+\}\}/g,'');
+  var lines=cleanText.split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean);
+  // Détection sections par mots-clés header
+  var SECTION_PATTERNS=[
+    {re:/^Roulettes(\s|\t|$)/i,name:"Roulettes"},
+    {re:/^Chefs black Jack/i,name:"Chefs BJ"},
+    {re:/^Employ.s cartes CMC/i,name:"Employés CMC"},
+    {re:/^Employ.s cartes (am|aménagement)/i,name:"Employés am."},
+    {re:/^FORMATION/i,name:"Formation"}
+  ];
+  var currentSection=null;
+  // Codes horaires connus pour identifier lignes data
+  var CODE_RE=/^(20\/5|19\/4|16\/22|14\/19|22\/6|16\/3|RH|R|CP|M|AF|RRT|PRT|DEPL|DELPT|EDC|PAT|MT|AT)[\*'"c]*$/;
+  function isCodeOrDay(tok){
+    if(!tok)return false;
+    var t=tok.replace(/[\*'"c]+$/,'').replace(/^['"]+|['"]+$/g,'');
+    return CODE_RE.test(t)||/^[A-Z][A-Z\/]*[0-9]*$/.test(t);
+  }
+  function looksLikeName(tok){
+    return /^[A-Z][A-Z\s\-']+[A-Z]$/.test(tok)||/^[A-Z][A-Z]+\s[A-Z]+$/.test(tok);
+  }
+  function looksLikeComp(tok){
+    // BRTP+E. ou .BRTCP+KE ou similaire
+    return /^\.?[BRTPCKE+]+\.?$/i.test(tok)&&tok.length>=2;
+  }
+  lines.forEach(function(line){
+    // Section header
+    for(var si=0;si<SECTION_PATTERNS.length;si++){
+      if(SECTION_PATTERNS[si].re.test(line)){
+        currentSection={name:SECTION_PATTERNS[si].name,teams:[],emps:[]};
+        out.sections.push(currentSection);
+        out.stats.sections++;
+        return;
+      }
+    }
+    if(!currentSection)return;
+    var cells=line.split(/\t+/).filter(Boolean);
+    if(cells.length<4)return;
+    // Team header (commence par chiffre + code + "du au" répété)
+    if(/^\d+\s/.test(line) && /\bdu\b/i.test(line) && /\bau\b/i.test(line) && cells.length>=6){
+      var teamHdr={label:line.slice(0,150),emps:[]};
+      currentSection.teams.push(teamHdr);
+      out.stats.teams++;
+      return;
+    }
+    // Emp planning row : [comp, name, from, to, ...days]
+    // Reconnaît si cells[2] et cells[3] sont des entiers ET >=daysExpected codes suivent
+    if(looksLikeComp(cells[0]) && cells.length>=daysExpected+3 && /^\d+$/.test(cells[2]) && /^\d+$/.test(cells[3])){
+      var fromD=parseInt(cells[2]),toD=parseInt(cells[3]);
+      if(fromD>=1&&fromD<=31&&toD>=1&&toD<=31&&toD>=fromD){
+        var days=cells.slice(4,4+daysExpected);
+        var emp={
+          comp:cells[0].trim(),
+          name:cells[1].trim(),
+          from:fromD,to:toD,
+          days:days,
+          dayCount:days.filter(Boolean).length
+        };
+        currentSection.emps.push(emp);
+        out.stats.emps++;
+        out.stats.daysCovered+=emp.dayCount;
+      }
+    }
+  });
+  if(out.stats.emps===0)out.stats.errors.push("Aucun employé détecté — vérifier format PDF");
+  if(out.stats.sections===0)out.stats.errors.push("Aucune section détectée");
+  return out;
+}
 /** Import PDF planning SBM into A.overrides. Multi-strategy parser. @returns {Promise} */
 function doImport(){
   if(!A.user||A.user.id!==AID)return;
@@ -35769,6 +35860,17 @@ function doImport(){
   if(!txt){_importInProgress=false;toast("\u26a0\ufe0f Aucun contenu \u2014 importez d'abord un PDF","err");return;}
   // v9.413 — Extraction légendes PDF (Kevin : "prendre en compte toutes les infos, encadrés, légendes")
   try{var _legRes=parseLegendsFromPdf(txt);if(_legRes.enriched>0)console.log("[legend] "+_legRes.found+" détectées, "+_legRes.enriched+" nouvelles/MAJ");}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("do-import",_e);}catch(__){}}
+  // v9.694 (Kevin "Tout auto. Workflow conversion format meilleure reconnaissance") :
+  // Convertit le texte brut → JSON structuré AVANT parser legacy.
+  // Sortie stockée dans cmc_structured_<key> pour audit + futur usage parser.
+  // Pas de bouton — exécution silencieuse.
+  try{
+    var _structKey=iy+"-"+im;
+    var _structured=cmcStructuredParser(txt,iy,im);
+    ls("cmc_structured_"+_structKey,_structured);
+    console.log("[v9.694 structured] sections="+_structured.stats.sections+" teams="+_structured.stats.teams+" emps="+_structured.stats.emps+" daysCovered="+_structured.stats.daysCovered+(_structured.stats.errors.length?" errors="+_structured.stats.errors.length:""));
+    if(typeof _audit==="function")_audit("structured_parse",AID,_structKey,"sections="+_structured.stats.sections+" teams="+_structured.stats.teams+" emps="+_structured.stats.emps,JSON.stringify(_structured.stats.errors||[]).slice(0,200));
+  }catch(_structErr){console.warn("[v9.694 cmcStructuredParser]",_structErr);}
   // v9.74 — SNAPSHOT avant modification pour rollback (P0+++ fidélité import)
   _saveImportSnapshot(iy,im,txt);
   // Detecter mois/annee depuis le texte colle (pas juste le nom de fichier)
