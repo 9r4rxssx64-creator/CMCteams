@@ -284,7 +284,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.36';
+const __APEX_CHAT_VERSION__ = 'v1.1.37';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -365,7 +365,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.36</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.37</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -379,7 +379,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.36</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.37</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -894,6 +894,179 @@ K._sendReaction = function(convId, msgId, emoji, action){
     K.ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji, action: action || 'add' }));
   }catch(_){}
 };
+
+// ============================================================================
+//  v1.1.37 — Messages programmés (scheduled messages, style Gmail/Slack)
+//  Stockés localement (ax_scheduled_msgs), check toutes 30s + au boot
+// ============================================================================
+K._openScheduleMenu = function(){
+  const conv = K.viewData;
+  if(!conv){ toast('Pas de conversation', 'warn'); return; }
+  const text = (document.getElementById('msg-input')?.value || '').trim();
+  if(!text){ toast('Tape ton message avant', 'warn'); return; }
+  // Presets rapides + datetime-local input
+  const now = new Date();
+  const in1h = new Date(now.getTime() + 60 * 60 * 1000);
+  const tomorrow9 = new Date(now);
+  tomorrow9.setDate(tomorrow9.getDate() + 1);
+  tomorrow9.setHours(9, 0, 0, 0);
+  const tonight20 = new Date(now);
+  tonight20.setHours(20, 0, 0, 0);
+  if(tonight20 < now) tonight20.setDate(tonight20.getDate() + 1);
+  const fmt = (d) => d.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+  K._showModal('⏰ Programmer message', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 10px">
+      Message à envoyer plus tard :
+    </p>
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:.9em;max-height:80px;overflow-y:auto;margin-bottom:14px">
+      ${esc(text)}
+    </div>
+    <p style="font-size:.82em;color:var(--ax-text-3);margin-bottom:6px">Choisir une heure :</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <button class="btn btn-out btn-sm" onclick="K._scheduleAt('${in1h.toISOString()}')">⏱ Dans 1h</button>
+      <button class="btn btn-out btn-sm" onclick="K._scheduleAt('${tonight20.toISOString()}')">🌙 Ce soir 20h</button>
+      <button class="btn btn-out btn-sm" onclick="K._scheduleAt('${tomorrow9.toISOString()}')">🌅 Demain 9h</button>
+      <button class="btn btn-out btn-sm" onclick="K._showCustomScheduleInput()">📅 Personnalisé</button>
+    </div>
+    <div id="custom-schedule-wrapper" style="display:none;margin-top:10px">
+      <input type="datetime-local" id="custom-schedule-input" min="${fmt(now)}" style="width:100%;padding:10px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;color:var(--ax-text);font-size:15px">
+      <button class="btn btn-block" style="margin-top:8px" onclick="K._scheduleCustom()">✅ Programmer</button>
+    </div>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.7em;margin-top:14px">
+      ⚠️ Tu dois garder Apex Chat ouvert pour l'envoi auto (envoi via ce device).
+    </p>
+  `);
+};
+
+K._showCustomScheduleInput = function(){
+  const w = document.getElementById('custom-schedule-wrapper');
+  if(w) w.style.display = 'block';
+};
+
+K._scheduleCustom = function(){
+  const input = document.getElementById('custom-schedule-input');
+  if(!input || !input.value){ toast('Choisis une date/heure', 'warn'); return; }
+  const ts = new Date(input.value).getTime();
+  if(isNaN(ts)){ toast('Date invalide', 'warn'); return; }
+  if(ts < Date.now() + 30_000){ toast('Doit être dans plus de 30 sec', 'warn'); return; }
+  K._scheduleAt(new Date(ts).toISOString());
+};
+
+K._scheduleAt = function(isoTs){
+  const conv = K.viewData;
+  const text = (document.getElementById('msg-input')?.value || '').trim();
+  if(!conv || !text){ toast('Erreur', 'err'); return; }
+  const ts = new Date(isoTs).getTime();
+  if(ts < Date.now()){ toast('Date dans le passé', 'warn'); return; }
+  const scheduled = lg('ax_scheduled_msgs', []);
+  scheduled.push({
+    id: 'sch_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    convId: conv.id,
+    convName: conv.name || conv.pseudo || '',
+    text,
+    sendAt: ts,
+    createdAt: Date.now(),
+  });
+  ls('ax_scheduled_msgs', scheduled);
+  const input = document.getElementById('msg-input');
+  if(input) input.value = '';
+  K._closeModal && K._closeModal();
+  const when = new Date(ts).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+  toast(`⏰ Programmé pour ${when}`, 'ok');
+};
+
+K._scheduledCheckTimer = null;
+K._startScheduledChecker = function(){
+  if(K._scheduledCheckTimer) return;
+  const run = () => {
+    const list = lg('ax_scheduled_msgs', []);
+    if(!list.length) return;
+    const now = Date.now();
+    const due = list.filter(s => s.sendAt <= now);
+    if(!due.length) return;
+    const remaining = list.filter(s => s.sendAt > now);
+    ls('ax_scheduled_msgs', remaining);
+    // Envoie les messages dûs
+    for(const sch of due){
+      try {
+        const conv = K.conversations?.find(c => c.id === sch.convId);
+        if(!conv){
+          console.warn('[scheduled] conv introuvable', sch.convId);
+          continue;
+        }
+        // Push msg dans K.messages + render si visible
+        const msg = {
+          id: 'm_sch_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+          from: K.user?.id,
+          text: sch.text,
+          ts: Date.now(),
+          encrypted: false,
+          scheduled_origin: sch.id,
+        };
+        K.messages = K.messages || {};
+        K.messages[sch.convId] = K.messages[sch.convId] || [];
+        K.messages[sch.convId].push(msg);
+        ls('messages_' + sch.convId, K.messages[sch.convId]);
+        // Envoi WS si conv ouverte, sinon le destinataire le verra à la sync suivante
+        if(K.ws && K.ws.readyState === 1 && K.viewData?.id === sch.convId){
+          try {
+            K.ws.send(JSON.stringify({ type: 'message', ciphertext: sch.text, mime: 'text/plain' }));
+          } catch(_) {}
+        }
+        toast(`📨 Message programmé envoyé à ${sch.convName}`, 'ok');
+      } catch(e){ console.warn('[scheduled] send fail', e); }
+    }
+    if(K.view === 'chat' && K.render) K.render();
+  };
+  // Check au boot + toutes 30s
+  setTimeout(run, 2000);
+  K._scheduledCheckTimer = setInterval(run, 30_000);
+  // Aussi sur visibilitychange (PWA iOS dort le timer)
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) run(); });
+  window.addEventListener('focus', run);
+};
+
+K._viewScheduledList = function(){
+  const list = lg('ax_scheduled_msgs', []);
+  const sorted = list.sort((a, b) => a.sendAt - b.sendAt);
+  K._showModal('⏰ Messages programmés', sorted.length === 0 ? `
+    <p style="text-align:center;color:var(--ax-text-3);padding:20px">Aucun message programmé.</p>
+  ` : `
+    <div style="max-height:60vh;overflow-y:auto">
+      ${sorted.map(s => `
+        <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:.75em;color:var(--ax-text-3);margin-bottom:6px">
+            <span>→ ${esc(s.convName)}</span>
+            <span style="color:var(--ax-gold)">${new Date(s.sendAt).toLocaleString('fr-FR', {dateStyle:'short',timeStyle:'short'})}</span>
+          </div>
+          <div style="color:var(--ax-text);font-size:.92em;margin-bottom:8px">${esc(s.text)}</div>
+          <button class="btn btn-out btn-sm" style="width:100%" onclick="K._cancelScheduled('${esc(s.id)}')">✕ Annuler</button>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+K._cancelScheduled = function(id){
+  const list = lg('ax_scheduled_msgs', []);
+  const remaining = list.filter(s => s.id !== id);
+  ls('ax_scheduled_msgs', remaining);
+  K._closeModal && K._closeModal();
+  toast('Message programmé annulé', 'ok');
+};
+
+// Auto-start checker au login (appelé depuis _onLogin / boot post-auth)
+if(typeof window !== 'undefined'){
+  // Démarre dès que K est prêt
+  const startWhenReady = () => {
+    if(typeof K !== 'undefined' && K.user){
+      K._startScheduledChecker && K._startScheduledChecker();
+    } else {
+      setTimeout(startWhenReady, 1000);
+    }
+  };
+  setTimeout(startWhenReady, 3000);
+}
 
 // ============================================================================
 //  v1.1.35 — Recherche sémantique IA dans messages de la conv courante
@@ -1531,6 +1704,7 @@ function renderChat(app){
     <div class="chat-input">
       <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
       <button class="chat-attach" onclick="document.getElementById('chat-img-input').click()" aria-label="Envoyer une image" title="Envoyer une image">📷</button>
+      <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
       <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id)"></textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
