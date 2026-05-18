@@ -1,1 +1,0 @@
-const r={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"};function e(t){return t==null?"":String(t).replace(/[&<>"']/g,n=>r[n]??n)}function u(t){return t==null?"":e(String(t))}export{e as a,u as e};
