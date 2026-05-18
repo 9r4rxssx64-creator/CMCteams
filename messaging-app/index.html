@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.85';
+const __APEX_CHAT_VERSION__ = 'v1.1.86';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.85</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.86</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.85</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.86</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -907,6 +907,90 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.86 — Mark all as read + Storage usage stats
+// ============================================================================
+K._markAllConvsAsRead = function(){
+  if(!confirm('✅ Marquer toutes les conversations comme lues ?')) return;
+  const now = Date.now();
+  let marked = 0;
+  for(const convId of Object.keys(K.messages || {})){
+    const before = lg('lastread_' + convId, 0);
+    if(before < now){ ls('lastread_' + convId, now); marked++; }
+  }
+  K._updateUnreadBadge && K._updateUnreadBadge();
+  K.render();
+  toast(`✅ ${marked} conversation(s) marquée(s) lues`, 'ok');
+};
+
+K._computeStorageUsage = function(){
+  const usage = { total: 0, byCategory: {}, conversations: 0, drafts: 0 };
+  try {
+    for(let i = 0; i < localStorage.length; i++){
+      const key = localStorage.key(i);
+      if(!key) continue;
+      const val = localStorage.getItem(key) || '';
+      const size = (key.length + val.length) * 2;
+      usage.total += size;
+      let cat = 'autres';
+      if(key.startsWith('messages_')){ cat = 'messages'; usage.conversations++; }
+      else if(key.startsWith('draft_')){ cat = 'brouillons'; usage.drafts++; }
+      else if(key.startsWith('lastread_')){ cat = 'lectures'; }
+      else if(key.includes('avatar') || key.includes('img')){ cat = 'images'; }
+      else if(key.includes('voice') || key.includes('audio')){ cat = 'audio'; }
+      else if(key.includes('label')){ cat = 'labels'; }
+      else if(key === 'conversations'){ cat = 'liste conv'; }
+      else if(key === 'token' || key === 'user'){ cat = 'auth'; }
+      else if(key.includes('starred') || key.includes('pinned')){ cat = 'favoris/pin'; }
+      usage.byCategory[cat] = (usage.byCategory[cat] || 0) + size;
+    }
+  } catch(_) {}
+  return usage;
+};
+
+K._openStorageStats = function(){
+  const u = K._computeStorageUsage();
+  const fmtSize = (b) => b < 1024 ? b + 'B' : b < 1024*1024 ? (b/1024).toFixed(1) + 'KB' : (b/1024/1024).toFixed(2) + 'MB';
+  const sorted = Object.entries(u.byCategory).sort((a, b) => b[1] - a[1]);
+  const quotaLimit = 10 * 1024 * 1024;
+  const usedPct = Math.min(100, Math.round((u.total / quotaLimit) * 100));
+  const barColor = usedPct < 50 ? 'var(--ax-ok)' : usedPct < 80 ? '#ffa500' : '#e63946';
+  K._showModal('💾 Stockage local', `
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:1.6em;color:${barColor};font-weight:600">${fmtSize(u.total)}</div>
+      <div style="font-size:.78em;color:var(--ax-text-3)">sur ~${fmtSize(quotaLimit)} (~${usedPct}%)</div>
+      <div style="margin-top:10px;background:var(--ax-bg-2);border-radius:10px;height:10px;overflow:hidden">
+        <div style="background:${barColor};height:100%;width:${usedPct}%;transition:width .3s"></div>
+      </div>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.82em;margin:0 0 8px">Par catégorie :</p>
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:14px">
+      ${sorted.map(([cat, size]) => `
+        <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.85em">
+          <span>${esc(cat)}</span>
+          <span style="color:var(--ax-gold);font-family:ui-monospace,monospace">${esc(fmtSize(size))}</span>
+        </div>
+      `).join('')}
+    </div>
+    <p style="font-size:.78em;color:var(--ax-text-3);margin-bottom:10px">
+      ${u.conversations} conv stockée(s) · ${u.drafts} brouillon(s)
+    </p>
+    ${usedPct > 70 ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946" onclick="K._cleanOldDrafts()">🧹 Nettoyer brouillons anciens</button>` : ''}
+  `);
+};
+
+K._cleanOldDrafts = function(){
+  if(!confirm('Supprimer tous les brouillons non envoyés ?')) return;
+  let deleted = 0;
+  for(let i = localStorage.length - 1; i >= 0; i--){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('draft_')){ localStorage.removeItem(k); deleted++; }
+  }
+  K._closeModal && K._closeModal();
+  K.render();
+  toast(`🧹 ${deleted} brouillon(s) supprimé(s)`, 'ok');
+};
 
 // ============================================================================
 //  v1.1.84 — AI auto-tag conversations (suggère hashtags via IA)
@@ -2311,7 +2395,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.85',
+    version: 'v1.1.86',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -6986,6 +7070,12 @@ function renderSettings(app){
       <div class="card-row" onclick="K._openKeyboardShortcuts()">
         <span>⌨️</span><span style="flex:1">Raccourcis clavier</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._markAllConvsAsRead()">
+        <span>✅</span><span style="flex:1">Marquer toutes les conv comme lues</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._openStorageStats()">
+        <span>💾</span><span style="flex:1">Stockage local</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._openPushSettings()">
         <span>🔔</span><span style="flex:1">Notifications push (app fermée)</span><span>›</span>
       </div>
@@ -9073,7 +9163,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.85"
+        data-version="v1.1.86"
         data-color="#6a8aff"
         defer></script>
 </body>
