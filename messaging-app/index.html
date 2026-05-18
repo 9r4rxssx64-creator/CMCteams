@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.70';
+const __APEX_CHAT_VERSION__ = 'v1.1.71';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.70</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.71</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.70</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.71</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,6 +870,73 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.71 — Profile photo upload + display
+// ============================================================================
+K._openProfilePhoto = function(){
+  const current = lg('my_avatar', '');
+  K._showModal('🖼 Photo de profil', `
+    <div style="text-align:center;margin-bottom:14px">
+      ${current
+        ? `<img src="${esc(current)}" alt="Photo profil" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid var(--ax-gold)">`
+        : `<div class="avatar" style="width:120px;height:120px;font-size:3em;display:inline-flex;align-items:center;justify-content:center;margin:auto">${esc((K.user?.pseudo || '?')[0].toUpperCase())}</div>`
+      }
+    </div>
+    <input type="file" id="avatar-input" accept="image/*" style="width:100%;padding:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text);margin-bottom:10px" onchange="K._previewAvatar(this.files[0])">
+    <p style="font-size:.72em;color:var(--ax-text-3);margin:0 0 12px">Max 1MB. Carré recommandé.</p>
+    <button class="btn btn-block" onclick="K._saveAvatar()" id="avatar-save-btn" disabled>💾 Enregistrer</button>
+    ${current ? `<button class="btn btn-out btn-block" style="margin-top:8px;color:#e63946;border-color:#e63946" onclick="K._removeAvatar()">🗑 Retirer photo</button>` : ''}
+  `);
+};
+
+K._pendingAvatar = null;
+K._previewAvatar = function(file){
+  if(!file) return;
+  if(!file.type?.startsWith('image/')){ toast('Pas une image', 'warn'); return; }
+  if(file.size > 1 * 1024 * 1024){ toast('Image > 1MB, trop lourde', 'warn'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    K._pendingAvatar = e.target.result;
+    const btn = document.getElementById('avatar-save-btn');
+    if(btn){ btn.disabled = false; btn.textContent = '💾 Enregistrer la nouvelle photo'; }
+  };
+  reader.readAsDataURL(file);
+};
+
+K._saveAvatar = function(){
+  if(!K._pendingAvatar){ toast('Pas d\'image sélectionnée', 'warn'); return; }
+  ls('my_avatar', K._pendingAvatar);
+  K._pendingAvatar = null;
+  K._closeModal && K._closeModal();
+  toast('🖼 Photo enregistrée', 'ok');
+  K.render();
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'avatar_update', avatar_set: true })); } catch(_) {}
+  }
+};
+
+K._removeAvatar = function(){
+  try { localStorage.removeItem('my_avatar'); } catch(_) {}
+  K._closeModal && K._closeModal();
+  toast('🗑 Photo retirée', 'info');
+  K.render();
+};
+
+K._getAvatar = function(userId){
+  if(userId === K.user?.id) return lg('my_avatar', '');
+  const cache = lg('peer_avatars_cache', {});
+  return cache[userId] || '';
+};
+
+K._renderAvatarHTML = function(name, userId, sizePx){
+  const size = sizePx || 36;
+  const avatar = K._getAvatar(userId);
+  if(avatar){
+    return `<img src="${esc(avatar)}" alt="${esc(name || '?')}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
+  }
+  return `<div class="avatar" style="width:${size}px;height:${size}px;flex-shrink:0">${esc((name || '?')[0].toUpperCase())}</div>`;
+};
+
+// ============================================================================
 //  v1.1.70 — Keyboard shortcuts (power-user productivity)
 // ============================================================================
 K._KEYBOARD_SHORTCUTS = [
@@ -1295,7 +1362,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.70',
+    version: 'v1.1.71',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5815,6 +5882,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K.openProfile()">
         <span>👤</span><span style="flex:1">Mon profil</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openProfilePhoto()">
+        <span>🖼</span><span style="flex:1">Photo de profil${(()=>{ return lg('my_avatar','')?' <span style="font-size:.75em;color:var(--ax-ok)">— définie</span>':''; })()}</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K.openNotifPrefs()">
         <span>🔔</span><span style="flex:1">Notifications</span><span>›</span>
       </div>
@@ -7938,7 +8008,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.70"
+        data-version="v1.1.71"
         data-color="#6a8aff"
         defer></script>
 </body>
