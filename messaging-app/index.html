@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.74';
+const __APEX_CHAT_VERSION__ = 'v1.1.75';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -404,7 +404,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.74</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.75</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -418,7 +418,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.74</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.75</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -874,6 +874,92 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.75 — Snooze notifications per conv (Gmail-style temporary mute)
+//  Différent de mute permanent : auto-réactivé à l'expiration
+// ============================================================================
+K._SNOOZE_PRESETS = [
+  { label: '😴 1 heure', ms: 60 * 60 * 1000 },
+  { label: '🍔 Jusqu\'à demain matin (8h)', ms: 'tomorrow_8am' },
+  { label: '🌙 Pour la nuit (8h)', ms: 8 * 60 * 60 * 1000 },
+  { label: '📅 1 jour', ms: 24 * 60 * 60 * 1000 },
+  { label: '🏖 Weekend', ms: 'weekend_end' },
+  { label: '📆 1 semaine', ms: 7 * 24 * 60 * 60 * 1000 },
+];
+
+K._openSnoozeMenu = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  const isSnoozed = conv.snoozed_until && conv.snoozed_until > Date.now();
+  K._showModal('💤 Mettre en sourdine temporaire', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">
+      Les notifs reviendront automatiquement à l'expiration.
+    </p>
+    ${isSnoozed ? `
+      <div style="background:rgba(46,213,115,.1);border:1px solid var(--ax-ok);border-radius:10px;padding:10px;margin-bottom:12px;text-align:center">
+        💤 Snooze actif jusqu'à <strong>${esc(new Date(conv.snoozed_until).toLocaleString('fr-FR', {dateStyle:'short',timeStyle:'short'}))}</strong>
+      </div>
+      <button class="btn btn-out btn-block" style="margin-bottom:14px" onclick="K._cancelSnooze('${esc(convId)}')">↺ Annuler le snooze</button>
+    ` : ''}
+    <p style="font-size:.78em;color:var(--ax-text-3);margin:0 0 8px">Durée :</p>
+    <div style="display:grid;gap:6px">
+      ${K._SNOOZE_PRESETS.map(p =>
+        `<button class="btn btn-out" style="text-align:left" onclick="K._setSnooze('${esc(convId)}','${typeof p.ms === 'number' ? p.ms : p.ms}')">${esc(p.label)}</button>`
+      ).join('')}
+    </div>
+  `);
+};
+
+K._setSnooze = function(convId, durationOrToken){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  let until;
+  const now = Date.now();
+  if(durationOrToken === 'tomorrow_8am'){
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(8, 0, 0, 0);
+    until = tomorrow.getTime();
+  } else if(durationOrToken === 'weekend_end'){
+    // Sunday end-of-day (Monday 8am)
+    const d = new Date(now);
+    const dayOfWeek = d.getDay(); // 0=sun, 1=mon, ..., 6=sat
+    const daysToMonday = (8 - dayOfWeek) % 7 || 7;
+    d.setDate(d.getDate() + daysToMonday);
+    d.setHours(8, 0, 0, 0);
+    until = d.getTime();
+  } else {
+    until = now + parseInt(durationOrToken, 10);
+  }
+  conv.snoozed_until = until;
+  ls('conversations', K.conversations);
+  K._closeModal && K._closeModal();
+  K.render();
+  toast('💤 Snooze jusqu\'à ' + new Date(until).toLocaleString('fr-FR', {dateStyle:'short',timeStyle:'short'}), 'ok');
+};
+
+K._cancelSnooze = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  delete conv.snoozed_until;
+  ls('conversations', K.conversations);
+  K._closeModal && K._closeModal();
+  K.render();
+  toast('🔔 Snooze annulé', 'ok');
+};
+
+K._isSnoozed = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv || !conv.snoozed_until) return false;
+  if(conv.snoozed_until <= Date.now()){
+    // Auto-cleanup expiré
+    delete conv.snoozed_until;
+    ls('conversations', K.conversations);
+    return false;
+  }
+  return true;
+};
+
+// ============================================================================
 //  v1.1.74 — Double-tap message → quick reaction ❤️ (style iMessage)
 // ============================================================================
 K._installDoubleTapReaction = function(){
@@ -1265,7 +1351,8 @@ K._openConvActionsMenu = function(convId, ev){
     <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px"><strong>${esc(conv.name || conv.pseudo || 'Sans nom')}</strong></p>
     <div style="display:grid;gap:6px">
       <button class="btn btn-out btn-block" onclick="K._toggleConvPinned('${esc(convId)}')">${conv.pinned ? '📌 Désépingler' : '📌 Épingler en haut'}</button>
-      <button class="btn btn-out btn-block" onclick="K._toggleConvMuted('${esc(convId)}')">${conv.muted ? '🔔 Réactiver notifs' : '🔕 Mettre en muet'}</button>
+      <button class="btn btn-out btn-block" onclick="K._toggleConvMuted('${esc(convId)}')">${conv.muted ? '🔔 Réactiver notifs' : '🔕 Mettre en muet (permanent)'}</button>
+      <button class="btn btn-out btn-block" onclick="K._openSnoozeMenu('${esc(convId)}')">${K._isSnoozed && K._isSnoozed(convId) ? '💤 Modifier snooze' : '💤 Snooze temporaire'}</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvArchived('${esc(convId)}')">${conv.archived ? '📤 Désarchiver' : '📦 Archiver'}</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
       ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
@@ -1460,7 +1547,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.74',
+    version: 'v1.1.75',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3582,7 +3669,7 @@ function renderChats(app){
           <div class="conv-item" onclick="K.openConv('${esc(c.id)}')" oncontextmenu="event.preventDefault();K._openConvActionsMenu('${esc(c.id)}',event)">
             <div class="avatar">${esc((c.name || c.pseudo || '?')[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0">
-              <div class="conv-name">${c.pinned ? '📌 ' : ''}${c.muted ? '🔕 ' : ''}${esc(c.name || c.pseudo || 'Sans nom')}</div>
+              <div class="conv-name">${c.pinned ? '📌 ' : ''}${c.muted ? '🔕 ' : ''}${K._isSnoozed && K._isSnoozed(c.id) ? '💤 ' : ''}${esc(c.name || c.pseudo || 'Sans nom')}</div>
               <div class="conv-last">${draft ? `<span style="color:var(--ax-blue);font-style:italic">✏️ Brouillon : ${esc(draft.slice(0, 60))}</span>` : esc(c.last_preview || '(message chiffré)')}</div>
             </div>
             <div style="text-align:right">
@@ -4742,11 +4829,13 @@ try {
 K._notifyIncoming = function(convId, msg){
   // v1.1.68 : si sender bloqué → skip total
   if(msg && K._isBlocked && K._isBlocked(msg.from)) return;
-  // v1.1.66 : respect conv.muted (skip totalement si muet)
   const conv = (K.conversations || []).find(c => c.id === convId);
-  // v1.1.72 : si mentionné explicitement → bypass mute (urgent)
+  // v1.1.72 : si mentionné explicitement → bypass mute/snooze (urgent)
   const isMentioned = msg && K._isMentionedInMsg && K._isMentionedInMsg(msg);
+  // v1.1.66 : respect conv.muted (sauf mention)
   if(conv && conv.muted && !isMentioned) return;
+  // v1.1.75 : respect snooze temporaire (sauf mention)
+  if(conv && K._isSnoozed && K._isSnoozed(convId) && !isMentioned) return;
 
   const prefs = lg('notif_prefs', { push:true, sound:true, vibrate:true, badge:true, preview:true, quietHours:false, quietStart:'22:00', quietEnd:'08:00' });
 
@@ -8108,7 +8197,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.74"
+        data-version="v1.1.75"
         data-color="#6a8aff"
         defer></script>
 </body>
