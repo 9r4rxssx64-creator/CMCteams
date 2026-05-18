@@ -3943,6 +3943,22 @@ function _fbShowSyncBadge(){
 }
 /** Write to Firebase Realtime DB at FB_PATH. Uses circuit breaker + queue offline. @param {string} k Key. @param {*} v Value. @returns {void} */
 function fbWrite(k,v,_retry){
+  // v9.702 Kevin "vérifier que l'import fonctionne sans erreur" :
+  // Auto-clear wipe-lock dès qu'un local fbWrite cmc_ov contient des mois.
+  // Le wipe-lock v9.701 (1h) bloquait fbApplyData pour cmc_ov non-vide → cassait
+  // les imports utilisateur si effectués dans l'heure suivant le wipe. Une écriture
+  // locale = intention explicite de pousser → on libère le lock immédiatement.
+  // Placé AVANT le check FB_URL pour que le lock soit clear même offline.
+  try{
+    if(k==="cmc_ov" && v && typeof v==="object" && Object.keys(v).length>0){
+      var _lock=parseInt(lg("cmc_wipe_lock_ts",0))||0;
+      if(_lock>0){
+        try{localStorage.removeItem("cmc_wipe_lock_ts");}catch(_){}
+        if(FB_URL){try{fetch(FB_URL+FB_PATH+"/cmc_wipe_lock_ts.json",{method:"DELETE"});}catch(_){}}
+        console.log("[v9.702] wipe-lock cleared on local cmc_ov write (import intent)");
+      }
+    }
+  }catch(_){}
   if(!FB_URL||!fbShouldSync(k))return;
   if(_importInProgress){_importPending[k]=v;return;}
   if(_cbIsOpen()){_syncQueueAdd(k,v);return;}
@@ -4047,6 +4063,11 @@ function fbApplyData(k,v){
     // v9.676 (Kevin "Les équipes ne doivent si jamais été gardé en mémoire") :
     // Strip teamHistory + familyHistory au sync Firebase. Session-only.
     if(typeof _stripPersistedTeamFamHistory==="function")_stripPersistedTeamFamHistory(A.employees);
+    // v9.702 (Kevin "vérifier que l'import fonctionne sans erreur") :
+    // INVALIDER le cache de détection — sinon le prochain dc() ne re-run pas
+    // _cmcDetectTeamsByRestPattern et les vues affichent emps invisibles (teamHistory
+    // vient juste d'être stripé). Force re-détection au prochain render.
+    try{window._cmcLastDetectCacheKey=null;}catch(_){}
     // Dédupliquer par id (empêche les doublons provenant de Firebase ou inscription)
     var _seen={};A.employees=A.employees.filter(function(e){if(_seen[e.id])return false;_seen[e.id]=true;return true;});
     _rebuildIndexes(); // v9.191 — maj index O(1)
