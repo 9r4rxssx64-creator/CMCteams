@@ -460,6 +460,16 @@ body.a11y-focus-strong :focus-visible{outline:3px solid #ffdc40!important;outlin
 /* Cards : hover lift subtle */
 .card{transition:transform .22s cubic-bezier(.4,0,.2,1),box-shadow .22s cubic-bezier(.4,0,.2,1),border-color .22s}
 .card:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+/* v10 — Refonte vAdmin (Sprint 1) : cards catégories + raccourcis */
+.adminv10-cat:hover{background:rgba(28,40,30,.75)!important;border-color:rgba(201,162,39,.45)!important;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 0 1px rgba(201,162,39,.15)}
+.adminv10-cat:active{transform:translateY(0);transition:none}
+.adminv10-cat:focus-visible{outline:2px solid var(--cmc-gold);outline-offset:3px}
+.adminv10-shortcut:hover{background:rgba(20,32,22,.85)!important;transform:translateY(-1px)}
+.adminv10-shortcut:active{transform:translateY(0)}
+.adminv10-shortcut:focus-visible{outline:2px solid var(--cmc-gold);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  .adminv10-cat:hover,.adminv10-shortcut:hover{transform:none}
+}
 /* Boutons transitions */
 .btn,.nt,.chat-act-btn{transition:transform .15s,box-shadow .15s,background .2s,color .2s,border-color .2s}
 .btn.gold{background-size:200% 100%;transition:background-position .6s,transform .1s,box-shadow .15s}
@@ -16084,6 +16094,8 @@ function _vMainImpl(){
     case"messtats": return vMesStats();
     case"chat":     return vChat();
     case"admin":    return isAdm?vAdmin():"";
+    case"adminv10": return isAdm?vAdminV10():""; // v10 — refonte 5 catégories (Sprint 1)
+    case"admincat": return isAdm?vAdminCat():""; // v10 — vue détaillée catégorie admin
     case"gestionlive": return isAdm?vGestionLive():"";
     case"convention": return vConvention();
     case"galerie": return vGalerie(); // v9.62
@@ -29119,8 +29131,11 @@ function vAdmin(){
   var _verifCodes=lg("cmc_verif_codes",{});
   var _pendingVerif=Object.keys(_verifCodes).map(function(k){return Object.assign({empId:k},_verifCodes[k]);}).filter(function(c){return !c.used&&Date.now()<c.expiresAt;}).sort(function(a,b){return b.createdAt-a.createdAt;});
   return '<div class="page bg-palace" style="position:relative">'
-  +'<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><div style="font-size:28px">\ud83c\uddf2\ud83c\udde8</div><div><div class="sec-title">\ud83d\udc51 Administration</div>'
-  +'<div class="sec-sub">Casino de Monte-Carlo \u2022 '+sbmLogo(40)+'</div></div></div>'
+  +'<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><div style="font-size:28px">\ud83c\uddf2\ud83c\udde8</div><div style="flex:1;min-width:0"><div class="sec-title">\ud83d\udc51 Administration</div>'
+  +'<div class="sec-sub">Casino de Monte-Carlo \u2022 '+sbmLogo(40)+'</div></div>'
+  // v10 \u2014 Sprint 1 : bouton d'opt-in vers le nouveau panneau refondu (5 cat\u00e9gories)
+  +'<button onclick="sv(\'adminv10\')" title="Essayer le nouveau panneau admin v10 (5 cat\u00e9gories, raccourcis du jour)" style="background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(255,215,0,.10));border:1px solid rgba(201,162,39,.45);color:#ffdc40;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">\u2728 Nouveau panneau v10</button>'
+  +'</div>'
   // v9.109 — Section sync Firebase COMPACTE quand tout va bien (1 ligne)
   // v9.136 — Firebase banner uniquement si DÉCONNECTÉ (actionnable). Sinon status visible dans topbar.
   +(!(FB_URL&&_fbConnected)
@@ -29332,6 +29347,302 @@ _failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
   +'</div></div>'
   +'</div>';
 }
+
+// ========================================================================
+// v10 — Refonte UX admin : sidebar 5 catégories (opt-in via sv('adminv10'))
+// Objectif Kevin : "plus pro, pratique, fonctionnelle, futuriste — pas de doublons"
+// ------------------------------------------------------------------------
+// _adminCatsV10() : structure des 5 catégories cibles. Les items reprennent
+// ceux de vAdmin actuel, dédupliqués et regroupés par mission.
+function _adminCatsV10(){
+  var iaOn=(typeof iaIsEnabled==="function")?iaIsEnabled():iaEnabled;
+  var pinSet=lg("cmc_admin_pin",null);
+  var nActifs=A.employees.filter(function(e){return !e.toMo;}).length;
+  var nRetraites=A.employees.filter(function(e){return e.toMo;}).length;
+  var nApex=(typeof _cmcCountApexPlanningPending==="function")?_cmcCountApexPlanningPending():0;
+  var nUploads=(typeof countPendingUploads==="function")?countPendingUploads():0;
+  var nPassations=(typeof cmcPassationsPendingCount==="function")?cmcPassationsPendingCount():0;
+  return {
+    team:{
+      ic:"👥", title:"Équipes & Employés",
+      desc:nActifs+" actifs · "+nRetraites+" retraités",
+      items:[
+        {ic:"👥",lb:"Employés",fn:"sv('employees')"},
+        {ic:"👑",lb:"Chefs & ordres de départ",fn:"sv('teams')"},
+        {ic:"🎓",lb:"Retraités",fn:"sv('retrait')"},
+        {ic:"🔎",lb:"Détecter doublons",fn:"detectDuplicates()"},
+        {ic:"📢",lb:"Retardataires à relancer",fn:"sv('retardataires')"},
+        {ic:"📇",lb:"Identités connues (historique)",fn:"sv('identities')"},
+        {ic:"🗂",lb:"Banque d'infos employés",fn:"sv('knowledgebank')"},
+        {ic:"👤",lb:"Activité par utilisateur",fn:"sv('usersactivity')"},
+        {grp:"💾 Export & sauvegardes"},
+        {ic:"📄",lb:"Exporter planning CSV",fn:"exportPlanningCSV()"},
+        {ic:"💾",lb:"Sauvegarde complète JSON",fn:"exportFullBackup()"},
+        {ic:"📥",lb:"Restaurer une sauvegarde",fn:"importFullBackup()"},
+        {ic:"🗄",lb:"Mois stockés",fn:"sv('mois')"},
+        {grpEnd:true}
+      ]
+    },
+    planning:{
+      ic:"📅", title:"Planning & Horaires",
+      desc:(new Date()).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}),
+      items:[
+        {ic:"📥",lb:"Importer un planning PDF",fn:"sv('import')"},
+        {ic:"✅",lb:"Vérifier l'import",fn:"sv('importVerif')"},
+        {ic:"📚",lb:"Apprentissage parser",fn:"sv('parserlearning')"},
+        {ic:"⚠",lb:"Alertes (conflits repos, séries)",fn:"sv('conflits')"},
+        {ic:"😴",lb:"Qui est libre ? (par jour)",fn:"sv('quilibre')"},
+        {ic:"🔄",lb:"Dupliquer le mois précédent",fn:"duplicateMonthFromPrev()"},
+        {ic:"💾",lb:"Sauvegarder comme modèle",fn:"saveTemplate()"},
+        {ic:"🔴",lb:"Marquer jours forte affluence",fn:"markAffluenceBulk()"},
+        {ic:"🗑",lb:"Effacer planning du mois",fn:"clearMonth()"},
+        {grp:"📊 Statistiques"},
+        {ic:"📊",lb:"Stats du mois",fn:"sv('stats')"},
+        {ic:"🌐",lb:"Stats globales (lieu/rôle/famille)",fn:"sv('statsglobal')"},
+        {ic:"📈",lb:"Stats par employé (archivage)",fn:"sv('statsannuelles')"},
+        {grpEnd:true}
+      ]
+    },
+    security:{
+      ic:"🔒", title:"Sécurité & Audit",
+      desc:pinSet?"PIN admin actif":"PIN admin inactif",
+      items:[
+        {ic:"⏱",lb:"Mon temps de travail",fn:"sv('admintimework')"},
+        {ic:"🛡",lb:"Journal sécurité admin",fn:"sv('security')"},
+        {ic:"📊",lb:"Statistiques de connexion (IP, navigateur, lieu)",fn:"sv('connexions')"},
+        {ic:"📝",lb:"Journal des modifications",fn:"sv('auditlog')"},
+        {ic:"🔍",lb:"Audit effectifs",fn:"sv('audit')"},
+        {ic:"🔒",lb:"Audit sauvegarde triple",fn:"sv('persaudit')"},
+        {ic:"🔒",lb:"Vie privée & RGPD",fn:"sv('rgpd')"},
+        {ic:pinSet?"🔐":"🔓",lb:pinSet?"Modifier PIN admin":"Activer PIN admin",fn:"showPinSetup()"},
+        {ic:"🔓",lb:"Réinit. tous les mots de passe",fn:"adminResetAllPw()"}
+      ]
+    },
+    system:{
+      ic:"⚙", title:"Système & Configuration",
+      desc:"Documents, cartes, maintenance",
+      items:[
+        {ic:"📁",lb:"Banque de données (photos, PDF)",fn:"sv('documents')"},
+        {ic:"📤",lb:"Modération uploads"+(nUploads>0?" — "+nUploads+" ⚠":""),fn:"sv('uploadreq')"},
+        {ic:"🗺",lb:"Éditeur cartes casinos (4 SBM)",fn:"sv('mapeditor')"},
+        {ic:"📺",lb:"Mode présentation (plein écran)",fn:"togglePresentation()"},
+        {grp:"🤖 IA & assistants"},
+        {ic:"🧠",lb:"Mémoire pro IA (règles + leçons)",fn:"sv('memorypro')"},
+        {ic:"📚",lb:"Lessons partagées Apex+CMCteams",fn:"sv('lessonscmc')"},
+        {ic:"🛡",lb:"Centre des sentinelles (12 agents)",fn:"sv('sentinelhub')"},
+        {grpEnd:true},
+        {grp:"⚡ Apex AI (assistant partenaire)"},
+        {ic:"⚡",lb:"Pub Apex (banner partout) — "+(_cmcApexPubEnabled()?"activée":"désactivée"),fn:"cmcApexPubToggle()"},
+        {ic:"📢",lb:"Popup Apex (1×/jour admin) — "+(_cmcApexPubPopupEnabled()?"activée":"désactivée"),fn:"cmcApexPubPopupToggle()"},
+        {ic:"⚡",lb:"Ouvrir APEX AI",fn:"window.open('"+APEX_URL+"','_blank','noopener')"},
+        {grpEnd:true},
+        {grp:"⚠ Maintenance"},
+        {ic:"🔧",lb:"Diagnostic & Debug (perf, erreurs)",fn:"sv('debug')"},
+        {ic:"🧪",lb:"Tests unitaires",fn:"runTests()"},
+        {ic:"🧹",lb:"Nettoyer employés PDF",fn:"cleanImportedEmps()"},
+        {ic:"⚠",lb:"Réinitialisation complète",fn:"hardReset()"},
+        {grpEnd:true}
+      ]
+    },
+    ia:{
+      ic:"🤖", title:"IA & Outils",
+      desc:iaOn?"IA active — Claude":"⏸ IA OFF — tokens préservés",
+      items:[
+        {kill:true}, // marqueur pour rendu spécial (gros bouton kill-switch en haut)
+        {ic:"🔑",lb:"Configurer clé API Claude",fn:"iaSetApiKey()"},
+        {ic:"🔗",lb:"Configurer proxy sécurisé",fn:"iaSetProxy()"},
+        {ic:"⚙",lb:"Niveau IA par employé",fn:"sv('consumptionlevels')"},
+        {ic:"🔊",lb:"Choisir voix (lecture vocale)",fn:"sv('voicepresets')"}
+      ]
+    },
+    // Raccourcis du jour (non rendus comme catégorie ; utilisés dans vAdminV10 home)
+    _shortcuts:{
+      passation:{ic:"📝",lb:"Nouvelle passation",fn:"sv('passation')",sub:"Fin de tournée"},
+      historique:{ic:"📖",lb:"Historique passations",fn:"sv('passations')",sub:nPassations>0?(nPassations+" non lue"+(nPassations>1?"s":"")):"À jour"},
+      apex:{ic:"📥",lb:"Plannings Apex reçus",fn:"_cmcOpenApexPendingList()",sub:nApex>0?(nApex+" en attente ⚡"):"Vide"},
+      crossteam:{ic:"📊",lb:"Activité cross-team",fn:"sv('crossteamactivity')",sub:"Chat stats"}
+    }
+  };
+}
+
+// _renderAdminItemsV10(items) : utilise la logique sep/grp/grpEnd existante,
+// mais avec un style v10 (cards + chevrons).
+function _renderAdminItemsV10(items){
+  var out="",inGrp=false;
+  items.forEach(function(it){
+    if(it.kill){
+      var on=(typeof iaIsEnabled==="function")?iaIsEnabled():iaEnabled;
+      out+='<div style="padding:18px;background:'+(on?'linear-gradient(135deg,rgba(80,200,100,.10),rgba(80,200,100,.04))':'linear-gradient(135deg,rgba(192,120,48,.14),rgba(192,120,48,.06))')
+        +';border:1.5px solid '+(on?'rgba(80,200,100,.35)':'rgba(192,120,48,.45)')+';border-radius:12px;margin-bottom:10px;display:flex;align-items:center;gap:14px">'
+        +'<div style="font-size:28px">'+(on?"✅":"⏸")+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:16px;font-weight:800;color:'+(on?'#7edc90':'#e0a040')+'">IA Claude : '+(on?'ACTIVE':'DÉSACTIVÉE')+'</div>'
+        +'<div style="font-size:13px;color:#a0cca0;margin-top:2px">'+(on?'Chat, OCR, scan, vision, sentinelle — tokens consommés':'Aucun appel API — tokens préservés')+'</div>'
+        +'</div>'
+        +'<button onclick="iaToggle()" style="padding:12px 18px;background:'+(on?'rgba(192,120,48,.18)':'rgba(80,200,100,.22)')+';border:1.5px solid '+(on?'rgba(192,120,48,.5)':'rgba(80,200,100,.5)')+';border-radius:10px;color:'+(on?'#e0a040':'#7edc90')+';font-size:14px;font-weight:800;cursor:pointer;min-height:44px;white-space:nowrap">'
+        +(on?'⏸ Désactiver':'▶ Activer')+'</button>'
+        +'</div>';
+      return;
+    }
+    if(it.sep){
+      if(inGrp){out+='</div></details>';inGrp=false;}
+      out+='<div style="font-size:13px;font-weight:800;color:#c9a227;text-transform:uppercase;letter-spacing:2px;padding:14px 4px 6px">'+it.sep+'</div>';
+      return;
+    }
+    if(it.grp){
+      if(inGrp){out+='</div></details>';}
+      out+='<details style="margin:8px 0 4px"><summary style="font-size:13px;font-weight:700;color:#a8902c;padding:10px 12px;cursor:pointer;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px;list-style:none;min-height:44px;display:flex;align-items:center;gap:6px">▸ '+it.grp+'</summary><div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-left:8px">';
+      inGrp=true;
+      return;
+    }
+    if(it.grpEnd){
+      if(inGrp){out+='</div></details>';inGrp=false;}
+      return;
+    }
+    // Item normal — style card-row v10 (plus pro, plus aéré que la liste plate)
+    out+='<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:12px 16px;font-size:15px;gap:12px;color:#c8dcc0;min-height:48px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);transition:background .15s,border-color .15s">'
+      +'<span style="font-size:18px;width:28px;text-align:center;flex-shrink:0">'+it.ic+'</span>'
+      +'<span style="flex:1;text-align:left;line-height:1.3">'+it.lb+'</span>'
+      +'<span style="color:#7aaa80;flex-shrink:0">›</span>'
+      +'</button>';
+  });
+  if(inGrp){out+='</div></details>';}
+  return out;
+}
+
+// svAdminCat(cat) — helper de navigation : ouvre la vue détaillée d'une catégorie
+function svAdminCat(cat){A.adminCat=cat;sv('admincat');}
+
+// vAdminV10() — nouveau panneau admin : home avec raccourcis du jour + grille 5 catégories
+function vAdminV10(){
+  if(!A.user||A.user.id!==AID)return '<div class="card">Admin uniquement</div>';
+  var cats=_adminCatsV10();
+  var sc=cats._shortcuts;
+  // Bannières critiques héritées de vAdmin (Firebase + MOTD + alertes + verifs + pin fails) — réutilise les patterns existants
+  var _failsAlert=0,_sessions=lg("cmc_admin_sessions",[]);
+  for(var _si=_sessions.length-1;_si>=0;_si--){var _se=_sessions[_si];if(_se.type==="success")break;if(_se.type==="pin_fail")_failsAlert++;}
+  var _regAlerts=lg("cmc_reg_alerts",[]);
+  (function(){var seen={},dedupd=[];_regAlerts.slice().reverse().forEach(function(a){if(seen[a.id])return;seen[a.id]=true;dedupd.push(a);});_regAlerts=dedupd.reverse();ls("cmc_reg_alerts",_regAlerts);})();
+  var _verifCodes=lg("cmc_verif_codes",{});
+  var _pendingVerif=Object.keys(_verifCodes).map(function(k){return Object.assign({empId:k},_verifCodes[k]);}).filter(function(c){return !c.used&&Date.now()<c.expiresAt;}).sort(function(a,b){return b.createdAt-a.createdAt;});
+
+  // Rendu carte catégorie : grand bouton 96px de haut, hover lift subtil
+  var renderCatCard=function(key,c){
+    return '<button onclick="svAdminCat(\''+key+'\')" class="adminv10-cat" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:14px;padding:18px;background:rgba(20,30,22,.55);border:1px solid rgba(201,162,39,.18);border-radius:14px;min-height:88px;text-align:left;transition:all .18s var(--ease);box-sizing:border-box">'
+      +'<div style="font-size:32px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:rgba(201,162,39,.10);border:1px solid rgba(201,162,39,.25);border-radius:12px;flex-shrink:0">'+c.ic+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:17px;font-weight:800;color:#e8f0e0;letter-spacing:.3px;font-family:Cormorant Garamond,Garamond,serif">'+c.title+'</div>'
+      +'<div style="font-size:13px;color:#9bb89b;margin-top:3px;overflow:hidden;text-overflow:ellipsis">'+c.desc+'</div>'
+      +'</div>'
+      +'<div style="font-size:20px;color:#c9a227;flex-shrink:0">›</div>'
+      +'</button>';
+  };
+
+  // Rendu raccourci du jour (mini-card cliquable)
+  var renderShortcut=function(s,accent){
+    return '<button onclick="'+s.fn+'" class="adminv10-shortcut" style="all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:rgba(14,24,16,.6);border:1px solid '+accent+'33;border-left:3px solid '+accent+';border-radius:10px;min-height:64px;text-align:left;transition:background .15s var(--ease);box-sizing:border-box">'
+      +'<div style="font-size:13px;font-weight:700;color:#dde8d8;display:flex;align-items:center;gap:6px"><span style="font-size:15px">'+s.ic+'</span>'+s.lb+'</div>'
+      +'<div style="font-size:11px;color:#8bb18b;font-weight:600">'+s.sub+'</div>'
+      +'</button>';
+  };
+
+  return '<div class="page bg-palace" style="position:relative">'
+    // Header v10 plus aéré
+    +'<div style="margin-bottom:18px;display:flex;align-items:center;gap:12px">'
+    +'<div style="font-size:32px">👑</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:24px;font-weight:800;color:#c9a227;font-family:Cormorant Garamond,Garamond,serif;line-height:1.1">Administration</div>'
+    +'<div style="font-size:12px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase;margin-top:2px">Casino de Monte-Carlo · '+APP_VER+'</div>'
+    +'</div>'
+    +'<button onclick="sv(\'admin\')" title="Revenir à la version classique" style="background:transparent;border:1px solid rgba(201,162,39,.25);color:#a8902c;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-weight:700">↩ Classique</button>'
+    +'</div>'
+
+    // Banner Firebase si déconnecté
+    +(!(FB_URL&&_fbConnected)
+      ?'<div style="padding:10px 14px;background:rgba(58,100,180,.08);border:1px solid rgba(58,100,180,.25);border-radius:10px;margin-bottom:12px">'
+        +'<div style="font-size:15px;font-weight:700;color:#6090d0;margin-bottom:6px">🔄 '+(FB_URL?'Connexion Firebase en cours…':'Firebase non connecté')+'</div>'
+        +'<div style="display:flex;gap:6px;align-items:center">'
+        +'<input id="fbUrlIn" class="inp" placeholder="https://mon-projet-default-rtdb.firebaseio.com" style="flex:1;font-size:14px;font-family:monospace;padding:6px 8px;margin-bottom:0" value="'+esc(FB_URL)+'">'
+        +'<button class="btn gold" onclick="fbSaveUrl()" style="padding:7px 12px;font-size:14px;white-space:nowrap">Connecter</button>'
+        +'</div></div>'
+      :'')
+
+    // MOTD admin (publication message du jour)
+    +(function(){
+      var m=A.motd;var curText=m&&m.text?m.text:"";var pubInfo="";
+      if(m&&m.ts){var d=new Date(m.ts);var au=A.employees.filter(function(e){return e.id===m.author;})[0];pubInfo='<div style="font-size:13px;color:#8abb70;margin-top:6px">✅ Publié le '+d.toLocaleDateString("fr-FR")+' à '+String(d.getHours()).padStart(2,"0")+'h'+String(d.getMinutes()).padStart(2,"0")+(au?' par '+esc(au.name):m.author?' par '+esc(m.author)+' (supprimé)':"")+'</div>';}
+      return '<div style="padding:12px 14px;background:rgba(201,162,39,.07);border:1px solid rgba(201,162,39,.25);border-radius:12px;margin-bottom:12px">'
+        +'<div style="font-size:13px;font-weight:800;color:#ffdc40;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px">📢 Message du jour'+helpIcon("motd","Qu'est-ce que le message du jour ?")+'</div>'
+        +'<textarea id="motdIn" class="inp" maxlength="500" rows="2" placeholder="Ex : Réunion à 14h aujourd’hui…" style="width:100%;font-size:14px;padding:8px 10px;margin-bottom:6px;resize:vertical;min-height:54px;font-family:inherit">'+esc(curText)+'</textarea>'
+        +'<div style="display:flex;gap:6px">'
+        +'<button class="btn gold" onclick="adminSetMotdFromInput()" style="padding:7px 12px;font-size:14px;flex:1">'+(curText?"Mettre à jour":"Publier")+'</button>'
+        +(curText?'<button class="btn ghost" onclick="if(confirm(\'Effacer le message du jour ?\'))clearMotd()" style="padding:7px 12px;font-size:14px">🗑</button>':"")
+        +'</div>'+pubInfo+'</div>';
+    })()
+
+    // Alertes critiques (regroupées)
+    +(_regAlerts.length>0||_pendingVerif.length>0||_failsAlert>0
+      ?'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
+        +(_pendingVerif.length>0?'<div style="padding:12px 14px;background:linear-gradient(135deg,rgba(74,114,168,.12),rgba(74,114,168,.06));border:1.5px solid rgba(74,114,168,.45);border-radius:10px"><div style="font-size:15px;font-weight:800;color:#a0c8f0">🔐 '+_pendingVerif.length+' code'+(_pendingVerif.length>1?'s':'')+' à valider</div><div style="font-size:12px;color:#8aaac0;margin-top:2px">Inscrits en attente — voir détails dans Équipes & Employés</div></div>':'')
+        +(_regAlerts.length>0?'<div onclick="var al=lg(\'cmc_reg_alerts\',[]);ls(\'cmc_reg_alerts\',[]);dc();" style="padding:10px 12px;background:rgba(192,120,48,.1);border:1px solid rgba(192,120,48,.35);border-radius:8px;cursor:pointer"><div style="font-size:14px;font-weight:700;color:#e09848">👤 '+_regAlerts.length+' nouveau'+(_regAlerts.length>1?"x":"")+' employé'+(_regAlerts.length>1?"s":"")+' — équipe inconnue</div></div>':'')
+        +(_failsAlert>0?'<div onclick="sv(\'security\')" style="padding:10px 12px;background:rgba(180,40,40,.1);border:1px solid rgba(180,40,40,.3);border-radius:8px;cursor:pointer"><div style="font-size:14px;font-weight:700;color:#d06060">⚠ '+_failsAlert+' tentative'+(_failsAlert>1?"s":"")+' PIN échouée'+(_failsAlert>1?"s":"")+' — voir Sécurité ›</div></div>':'')
+        +'</div>'
+      :'')
+
+    // RACCOURCIS DU JOUR — 4 mini-cards en haut
+    +'<div style="margin-bottom:18px">'
+    +'<div style="font-size:11px;font-weight:800;color:#9bb89b;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;padding-left:4px">Aujourd’hui</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">'
+    +renderShortcut(sc.passation,"#c9a227")
+    +renderShortcut(sc.historique,"#5aaa70")
+    +renderShortcut(sc.apex,"#a060ff")
+    +renderShortcut(sc.crossteam,"#4a72a8")
+    +'</div></div>'
+
+    // GRILLE 5 CATÉGORIES — cœur du panneau v10
+    +'<div style="margin-bottom:18px">'
+    +'<div style="font-size:11px;font-weight:800;color:#9bb89b;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;padding-left:4px">Catégories</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px">'
+    +renderCatCard("team",cats.team)
+    +renderCatCard("planning",cats.planning)
+    +renderCatCard("security",cats.security)
+    +renderCatCard("system",cats.system)
+    +renderCatCard("ia",cats.ia)
+    +'</div></div>'
+
+    // Panel toggles features (collapsible pour éviter le mur de toggles en bas)
+    +'<details style="margin-bottom:14px"><summary style="font-size:13px;font-weight:800;color:#9bb89b;text-transform:uppercase;letter-spacing:2px;padding:10px 4px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">▸ Fonctionnalités utilisateur (on/off)</summary>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;margin-top:8px">'
+    +(function(){
+      var _fList=[{id:"tts",ic:"🔊",lb:"Lecture vocale"},{id:"stt",ic:"🎙",lb:"Micro dictée"},{id:"likes",ic:"❤",lb:"Likes documents"},{id:"favorites",ic:"⭐",lb:"Favoris collègues"},{id:"requests",ic:"📨",lb:"Demandes employés"},{id:"themes",ic:"🎨",lb:"Thèmes visuels"},{id:"languages",ic:"🌐",lb:"Multi-langues"},{id:"pdf",ic:"📄",lb:"Export PDF"},{id:"ics",ic:"📅",lb:"Export ICS"},{id:"search",ic:"🔍",lb:"Recherche globale"},{id:"presentation",ic:"📺",lb:"Mode présentation"},{id:"visitor",ic:"👤",lb:"Compte visiteur"},{id:"affluence",ic:"📈",lb:"Affluence calendrier"},{id:"countdown",ic:"⏳",lb:"Compte à rebours"},{id:"voiceResume",ic:"📢",lb:"Résumé vocal login"},{id:"autoTheme",ic:"🌓",lb:"Thème auto jour/nuit"},{id:"geoloc",ic:"📍",lb:"Géoloc pointages"}];
+      return _fList.map(function(f){var on=isFeatureOn(f.id);return '<button onclick="toggleFeature(\''+f.id+'\')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:'+(on?'rgba(58,138,80,.10)':'rgba(160,40,40,.06)')+';border:1px solid '+(on?'rgba(58,138,80,.30)':'rgba(160,40,40,.20)')+';border-radius:8px;cursor:pointer;text-align:left;min-height:44px"><span style="font-size:14px">'+f.ic+'</span><span style="flex:1;font-size:12px;font-weight:700;color:'+(on?'#a0cca0':'#e0a0a0')+'">'+f.lb+'</span><span style="font-size:10px;font-weight:800;color:'+(on?'#5aaa70':'#e08080')+'">'+(on?'ON':'OFF')+'</span></button>';}).join('');
+    })()
+    +'</div></details>'
+    +'</div>';
+}
+
+// vAdminCat() — vue détaillée d'une catégorie. Reprend la liste filtrée + en-tête + retour.
+function vAdminCat(){
+  if(!A.user||A.user.id!==AID)return '<div class="card">Admin uniquement</div>';
+  var cats=_adminCatsV10();
+  var cat=A.adminCat;
+  var data=cats[cat];
+  if(!data)return '<div class="card" style="padding:20px"><div style="font-size:18px;font-weight:700;color:#e09848">❓ Catégorie inconnue</div><button class="btn gold" onclick="sv(\'adminv10\')" style="margin-top:12px">← Retour Admin</button></div>';
+  return '<div class="page bg-palace" style="position:relative">'
+    +'<button onclick="sv(\'adminv10\')" class="btn ghost" style="margin-bottom:14px;font-size:14px;padding:8px 14px;min-height:40px">← Admin</button>'
+    +'<div style="margin-bottom:18px;display:flex;align-items:center;gap:12px">'
+    +'<div style="font-size:32px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:rgba(201,162,39,.10);border:1px solid rgba(201,162,39,.25);border-radius:14px">'+data.ic+'</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:24px;font-weight:800;color:#c9a227;font-family:Cormorant Garamond,Garamond,serif;line-height:1.1">'+data.title+'</div>'
+    +'<div style="font-size:12px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase;margin-top:2px">'+data.desc+'</div>'
+    +'</div>'
+    +'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'
+    +_renderAdminItemsV10(data.items)
+    +'</div>'
+    +'</div>';
+}
+
 // v9.474 — Mon temps de travail (admin Kevin) : stats activité, heures cumulées, actions
 function vAdminTimework(){
   if(!A.user||A.user.id!==AID)return '<div class="card">Admin uniquement</div>';
@@ -40816,8 +41127,7 @@ function vIA(){
       ${isAdm?"<button onclick=\"iaCheckNow()\" style=\"background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:6px;padding:4px 9px;color:#c9a227;font-size:14px;cursor:pointer;font-weight:700\">\ud83d\udd0d V\u00e9rifier</button>":""}
       ${isAdm&&iaApiKey&&iaEnabled?"<button onclick=\"iaToggleWebSearch()\" style=\"background:"+(iaWebSearch?"rgba(74,154,255,.15)":"rgba(255,255,255,.05)")+";border:1px solid "+(iaWebSearch?"rgba(74,154,255,.4)":"#1e3020")+";border-radius:6px;padding:4px 8px;color:"+(iaWebSearch?"#4a9aff":"#7aaa80")+";font-size:14px;cursor:pointer;font-weight:700\" title=\""+(iaWebSearch?"Désactiver la recherche internet":"Activer la recherche internet pour répondre à toutes les questions")+"\">🔍 Web "+(iaWebSearch?"ON":"OFF")+"</button>":""}
       ${isAdm?"<button onclick=\"iaToggle()\" style=\"background:"+(iaEnabled?"rgba(192,120,48,.15)":"rgba(80,200,100,.1)")+";border:1px solid "+(iaEnabled?"rgba(192,120,48,.35)":"rgba(80,200,100,.25)")+";border-radius:6px;padding:4px 8px;color:"+(iaEnabled?"#c07830":"#50c864")+";font-size:14px;cursor:pointer;font-weight:700\" title=\""+(iaEnabled?"Désactiver IA Claude (économiser tokens)":"Activer IA Claude")+"\">"+(iaEnabled?"⏸ Désactiver IA":"▶ Activer IA")+"</button>":""}
-      ${isAdm?"<button onclick=\"iaSetApiKey()\" style=\"background:rgba(80,200,100,.1);border:1px solid rgba(80,200,100,.25);border-radius:6px;padding:4px 8px;color:#50c864;font-size:14px;cursor:pointer\" title=\"Configurer clé API Claude\">🔑</button>":""}
-      ${isAdm?"<button onclick=\"iaSetProxy()\" style=\"background:"+(iaProxyUrl?"rgba(74,114,168,.15)":"transparent")+";border:1px solid "+(iaProxyUrl?"rgba(74,114,168,.4)":"#1e3020")+";border-radius:6px;padding:4px 8px;color:"+(iaProxyUrl?"#4a72a8":"#3a5030")+";font-size:14px;cursor:pointer\" title=\""+(iaProxyUrl?"Proxy: "+iaProxyUrl.slice(0,40):"Configurer proxy sécurisé (masque la clé API)")+"\">🔗</button>":""}
+      ${''/* v10 Sprint 2 — boutons 🔑 clé API et 🔗 proxy retirés du toolbar vIA : désormais accessibles uniquement via Admin → IA & Outils (élimine doublons) */}
       ${window.speechSynthesis?"<button onclick=\"ttsToggle()\" style=\"background:"+(_ttsEnabled?"rgba(80,200,100,.2)":"transparent")+";border:2px solid "+(_ttsEnabled?"rgba(80,200,100,.5)":"#2a4030")+";border-radius:8px;padding:6px 10px;color:"+(_ttsEnabled?"#7edc90":"#5a7a50")+";font-size:18px;cursor:pointer;min-width:42px;min-height:42px;display:inline-flex;align-items:center;justify-content:center\" title=\""+(_ttsEnabled?"Lecture vocale ACTIV\u00c9E \u2014 l'IA lit ses r\u00e9ponses \u00e0 voix haute":"Lecture vocale des r\u00e9ponses de l'IA (TTS) \u2014 cliquer pour activer")+"\" aria-label=\"Lecture vocale IA\">"+(_ttsEnabled?"🔊":"🔇")+"</button>":""}
       ${isAdm?"<button onclick=\"iaClearHistory()\" style=\"background:transparent;border:1px solid #1e3020;border-radius:6px;padding:4px 8px;color:#a0cca0;font-size:14px;cursor:pointer\">\u2715</button>":""}
     </div>
