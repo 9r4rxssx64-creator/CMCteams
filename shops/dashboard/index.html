@@ -60,7 +60,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
 <div class="nav-item" onclick="window.open('../stores/digital-vault/index.html')">🏪 Digital Vault</div>
 <div class="nav-item" onclick="window.open('../stores/tech-hub/index.html')">🏪 Tech Hub</div>
-<div class="nav-item" onclick="window.open('../stores/glow-wellness/index.html')">🏪 Glow Wellness</div>
+<div class="nav-item" onclick="window.open('../stores/chez-lolo/index.html')">🏪 CHEZ LOLO</div>
 <div class="nav-item" onclick="window.open('../stores/pawsome/index.html')">🏪 Pawsome</div>
 <div class="nav-item" onclick="window.open('../stores/ecocraft/index.html')">🏪 EcoCraft</div>
 </div>
@@ -72,7 +72,7 @@ var D={view:"home",store:"all",orders:[],period:"today"};
 var STORES=[
 {id:"digital-vault",name:"Digital Vault",icon:"📋",revenue:2847,orders:89,products:100,conversion:4.2},
 {id:"tech-hub",name:"Tech Hub",icon:"📱",revenue:4215,orders:156,products:100,conversion:3.1},
-{id:"glow-wellness",name:"Glow Wellness",icon:"✨",revenue:3120,orders:112,products:100,conversion:3.8},
+{id:"chez-lolo",name:"CHEZ LOLO",icon:"✨",revenue:3120,orders:112,products:100,conversion:3.8},
 {id:"pawsome",name:"Pawsome",icon:"🐾",revenue:1890,orders:67,products:100,conversion:2.9},
 {id:"ecocraft",name:"EcoCraft",icon:"🌿",revenue:2340,orders:78,products:100,conversion:3.5}
 ];
@@ -100,7 +100,7 @@ return '<div class="topbar"><h1>📊 Vue d\'ensemble</h1><div class="topbar-righ
 +'</div>'
 +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
 +'<div class="card"><h3>📦 Dernières commandes</h3><table class="table"><thead><tr><th>ID</th><th>Boutique</th><th>Montant</th><th>Status</th></tr></thead><tbody>'
-+[{id:"KDMC-A1B2",store:"Digital Vault",amount:39.99,status:"success"},{id:"KDMC-C3D4",store:"Tech Hub",amount:67.50,status:"warning"},{id:"KDMC-E5F6",store:"Glow Wellness",amount:24.99,status:"success"},{id:"KDMC-G7H8",store:"Pawsome",amount:45.00,status:"success"},{id:"KDMC-I9J0",store:"EcoCraft",amount:32.99,status:"info"}].map(function(o){return '<tr><td style="font-weight:600">'+o.id+'</td><td>'+o.store+'</td><td style="color:var(--p);font-weight:600">'+fmtP(o.amount)+'</td><td><span class="badge badge-'+o.status+'">'+(o.status==="success"?"Livré":o.status==="warning"?"En cours":"Nouveau")+'</span></td></tr>'}).join("")
++[{id:"KDMC-A1B2",store:"Digital Vault",amount:39.99,status:"success"},{id:"KDMC-C3D4",store:"Tech Hub",amount:67.50,status:"warning"},{id:"KDMC-E5F6",store:"CHEZ LOLO",amount:24.99,status:"success"},{id:"KDMC-G7H8",store:"Pawsome",amount:45.00,status:"success"},{id:"KDMC-I9J0",store:"EcoCraft",amount:32.99,status:"info"}].map(function(o){return '<tr><td style="font-weight:600">'+o.id+'</td><td>'+o.store+'</td><td style="color:var(--p);font-weight:600">'+fmtP(o.amount)+'</td><td><span class="badge badge-'+o.status+'">'+(o.status==="success"?"Livré":o.status==="warning"?"En cours":"Nouveau")+'</span></td></tr>'}).join("")
 +'</tbody></table></div>'
 +'<div class="card"><h3>🔔 Alertes</h3>'
 +'<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:14px"><span class="badge badge-warning" style="margin-right:8px">Stock</span> Chargeur Sans Fil 15W — stock bas (3)</div>'
