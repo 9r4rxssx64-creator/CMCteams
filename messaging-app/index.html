@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.76';
+const __APEX_CHAT_VERSION__ = 'v1.1.77';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.76</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.77</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.76</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.77</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -907,6 +907,97 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.77 — AI TL;DR auto messages non-lus (offre résumé si > 20 unread)
+// ============================================================================
+K._TLDR_THRESHOLD = 20;
+
+K._maybeOfferTldr = function(convId){
+  const msgs = K.messages[convId] || [];
+  const lastRead = lg('lastread_' + convId, 0);
+  const unreadFromOthers = msgs.filter(m =>
+    m.from !== K.user?.id && (m.ts || 0) > lastRead && m.text && !m.deleted
+  );
+  if(unreadFromOthers.length < K._TLDR_THRESHOLD) return;
+  const dismissedKey = 'tldr_dismissed_' + convId + '_' + Math.floor(Date.now() / (24*60*60*1000));
+  if(localStorage.getItem(dismissedKey)) return;
+  setTimeout(() => {
+    const msgsEl = document.getElementById('chat-msgs');
+    if(!msgsEl || document.getElementById('tldr-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'tldr-banner';
+    banner.style.cssText = 'background:rgba(106,138,255,.12);border:1px solid rgba(106,138,255,.4);border-radius:10px;padding:10px 12px;margin:6px 12px 10px;font-size:.88em;display:flex;align-items:center;gap:8px';
+    banner.innerHTML = `
+      <span style="font-size:1.2em">📋</span>
+      <div style="flex:1;color:var(--ax-text-2)">
+        <strong style="color:var(--ax-blue)">${unreadFromOthers.length} non-lus</strong> · TL;DR IA ?
+      </div>
+      <button class="btn btn-sm" onclick="K._runTldr('${esc(convId)}')">Résumer</button>
+      <button onclick="K._dismissTldr('${esc(convId)}')" style="background:transparent;border:none;color:var(--ax-text-3);font-size:1em;cursor:pointer">✕</button>
+    `;
+    msgsEl.insertBefore(banner, msgsEl.firstChild);
+  }, 300);
+};
+
+K._dismissTldr = function(convId){
+  const k = 'tldr_dismissed_' + convId + '_' + Math.floor(Date.now() / (24*60*60*1000));
+  localStorage.setItem(k, '1');
+  const banner = document.getElementById('tldr-banner');
+  if(banner) banner.remove();
+};
+
+K._runTldr = async function(convId){
+  const banner = document.getElementById('tldr-banner');
+  if(!banner) return;
+  banner.innerHTML = `<div style="text-align:center;width:100%;color:var(--ax-text-3)">⏳ IA résume...</div>`;
+  try {
+    const msgs = K.messages[convId] || [];
+    const lastRead = lg('lastread_' + convId, 0);
+    const unread = msgs
+      .filter(m => m.from !== K.user?.id && (m.ts || 0) > lastRead && m.text && !m.deleted)
+      .slice(0, 80);
+    const conv = K.conversations.find(c => c.id === convId);
+    const peerName = (conv?.name || conv?.pseudo || 'L\'autre').slice(0, 40);
+    const sample = unread.map(m =>
+      `[${new Date(m.ts).toLocaleString('fr-FR', {hour:'2-digit',minute:'2-digit'})}] ${peerName}: ${(m.text || '').slice(0, 200)}`
+    ).join('\n');
+    const prompt = `Résume EN 3 LIGNES MAX les ${unread.length} messages suivants en français. Sujets + actions attendues. Concis.\n\n${sample}`;
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 15_000);
+    let r;
+    try {
+      r = await fetch(API_BASE + '/api/ai/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+        body: JSON.stringify({ prompt, max_tokens: 300 }),
+        signal: ctrl.signal
+      });
+    } finally { clearTimeout(tid); }
+    if(r.status === 429){
+      const e = await r.json().catch(() => ({}));
+      banner.innerHTML = `<div style="color:var(--ax-warn);width:100%;text-align:center">⏰ ${esc(e.message || 'Quota épuisé')}</div>`;
+      return;
+    }
+    if(!r.ok){
+      banner.innerHTML = `<div style="color:var(--ax-err);width:100%;text-align:center">❌ Erreur ${r.status}</div>`;
+      return;
+    }
+    const data = await r.json();
+    const summary = (data?.text || '').trim();
+    if(!summary){ banner.innerHTML = `<div style="width:100%;text-align:center">Pas de résumé</div>`; return; }
+    banner.innerHTML = `
+      <div style="flex:1">
+        <div style="font-size:.75em;color:var(--ax-blue);font-weight:600;margin-bottom:4px">📋 TL;DR · ${esc(unread.length)} messages</div>
+        <div style="color:var(--ax-text);white-space:pre-wrap;font-size:.88em;line-height:1.5">${esc(summary)}</div>
+      </div>
+      <button onclick="K._dismissTldr('${esc(convId)}')" style="background:transparent;border:none;color:var(--ax-text-3);font-size:1em;cursor:pointer">✕</button>
+    `;
+    banner.style.alignItems = 'flex-start';
+  } catch(e){
+    banner.innerHTML = `<div style="color:var(--ax-err);width:100%;text-align:center">❌ Erreur réseau</div>`;
+  }
+};
 
 // ============================================================================
 //  v1.1.76 — Admin force-update push pour TOUS + diagnostic MAJ
@@ -1659,7 +1750,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.76',
+    version: 'v1.1.77',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3883,7 +3974,7 @@ function renderChat(app){
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
-  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._markConvAsRead&&K._markConvAsRead(conv.id);}, 50);
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);}, 50);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
@@ -8312,7 +8403,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.76"
+        data-version="v1.1.77"
         data-color="#6a8aff"
         defer></script>
 </body>
