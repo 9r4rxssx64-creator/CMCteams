@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.62';
+const __APEX_CHAT_VERSION__ = 'v1.1.63';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.62</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.63</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.62</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.63</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,12 +870,95 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.63 — Theme switcher (dark/light/auto/midnight + 6 accents)
+// ============================================================================
+K._THEMES = {
+  dark: { '--ax-bg':'#0e0e10','--ax-bg-2':'#1a1a1f','--ax-bg-3':'#26262d','--ax-text':'#f5e9c2','--ax-text-2':'#bdb89a','--ax-text-3':'#8a8a8a','--ax-border':'#26262d' },
+  light: { '--ax-bg':'#ffffff','--ax-bg-2':'#f7f5ed','--ax-bg-3':'#e8e3d0','--ax-text':'#1a1a1f','--ax-text-2':'#4a4a4a','--ax-text-3':'#7a7a7a','--ax-border':'#d8d2bd' },
+  midnight: { '--ax-bg':'#000000','--ax-bg-2':'#0a0a0f','--ax-bg-3':'#15151c','--ax-text':'#e8e8f0','--ax-text-2':'#a8a8b0','--ax-text-3':'#606068','--ax-border':'#1a1a22' }
+};
+K._ACCENTS = { gold: '#e8b830', blue: '#6a8aff', green: '#2ed573', purple: '#a78bfa', pink: '#ec4899', red: '#e63946' };
+
+K._applyTheme = function(themeName, accent){
+  if(themeName === 'auto'){
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    K._applyTheme(prefersLight ? 'light' : 'dark', accent);
+    ls('theme_pref', 'auto');
+    return;
+  }
+  const theme = K._THEMES[themeName] || K._THEMES.dark;
+  const accentColor = K._ACCENTS[accent] || K._ACCENTS.gold;
+  const root = document.documentElement;
+  for(const [k, v] of Object.entries(theme)){
+    root.style.setProperty(k, v);
+  }
+  root.style.setProperty('--ax-gold', accentColor);
+  ls('theme_pref', themeName);
+  ls('accent_pref', accent);
+};
+
+K._openThemePicker = function(){
+  const currentTheme = lg('theme_pref', 'dark');
+  const currentAccent = lg('accent_pref', 'gold');
+  K._showModal('🎨 Thème + accent', `
+    <p style="font-size:.82em;color:var(--ax-text-3);margin:0 0 8px">Thème de l'app :</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+      ${['dark','light','midnight'].map(t => `
+        <button class="btn ${currentTheme === t ? '' : 'btn-out'} btn-sm" onclick="K._pickTheme('${t}')">
+          ${t === 'dark' ? '🌙 Sombre' : t === 'light' ? '☀️ Clair' : '⚫ Minuit'}
+        </button>
+      `).join('')}
+    </div>
+    <button class="btn ${currentTheme === 'auto' ? '' : 'btn-out'} btn-block btn-sm" onclick="K._pickTheme('auto')" style="margin-bottom:14px">📱 Auto (suit le système)</button>
+
+    <p style="font-size:.82em;color:var(--ax-text-3);margin:0 0 8px">Couleur d'accent :</p>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+      ${Object.entries(K._ACCENTS).map(([name, color]) => `
+        <button onclick="K._pickAccent('${name}')" style="background:${color};border:${currentAccent === name ? '3px solid #fff' : 'none'};border-radius:8px;height:44px;cursor:pointer" title="${name}" aria-label="Accent ${name}"></button>
+      `).join('')}
+    </div>
+  `);
+};
+
+K._pickTheme = function(t){
+  const accent = lg('accent_pref', 'gold');
+  K._applyTheme(t, accent);
+  K._closeModal && K._closeModal();
+  toast('🎨 Thème ' + t, 'ok');
+};
+
+K._pickAccent = function(name){
+  const theme = lg('theme_pref', 'dark');
+  K._applyTheme(theme, name);
+  K._closeModal && K._closeModal();
+  toast('🎨 Accent ' + name, 'ok');
+};
+
+// Auto-apply au boot
+if(typeof window !== 'undefined'){
+  setTimeout(() => {
+    const t = lg('theme_pref', 'dark');
+    const a = lg('accent_pref', 'gold');
+    K._applyTheme(t, a);
+  }, 100);
+  // Re-apply si système change (mode auto only)
+  if(window.matchMedia){
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if(lg('theme_pref', 'dark') === 'auto'){
+        const a = lg('accent_pref', 'gold');
+        K._applyTheme('auto', a);
+      }
+    });
+  }
+}
+
+// ============================================================================
 //  v1.1.62 — Export / Import conversations en JSON (data portability)
 // ============================================================================
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.62',
+    version: 'v1.1.63',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5348,6 +5431,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._viewMyStories()">
         <span>📸</span><span style="flex:1">Mes statuts (24h)</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openThemePicker()">
+        <span>🎨</span><span style="flex:1">Thème + couleur d'accent</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._exportAllData()">
         <span>💾</span><span style="flex:1">Exporter mes données (JSON)</span><span>›</span>
       </div>
@@ -7426,7 +7512,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.62"
+        data-version="v1.1.63"
         data-color="#6a8aff"
         defer></script>
 </body>
