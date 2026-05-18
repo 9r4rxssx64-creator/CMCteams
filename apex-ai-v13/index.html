@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.207">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.225">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -207,5 +207,64 @@
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
   <script nonce="a01affb817bee6b325f18a39eca124f8" src="./assets/js/rescue.js"></script>
+
+  <!-- v13.4.225 URGENT Kevin "tjs v207" — Auto-MAJ inline copie 1:1 CMCteams
+       v9.615 testé qui fonctionne. Indépendant du bundle Vite. Defense-in-depth.
+       Pousse Kevin de v207 → v225 sans intervention. -->
+  <script nonce="a01affb817bee6b325f18a39eca124f8">
+    (function(){
+      var APX_VER = document.documentElement.getAttribute('data-app-ver') || 'v0';
+      var inProgress = false;
+      async function autoForceUpdate(){
+        if(inProgress || !navigator.onLine) return;
+        var lastAuto = parseInt(localStorage.getItem('apex_v13_inline_maj_last') || '0', 10);
+        if(Date.now() - lastAuto < 10000) return;
+        var active = document.activeElement;
+        var tag = active && active.tagName && active.tagName.toLowerCase();
+        if(tag === 'textarea' || tag === 'input' ||
+           (active && active.getAttribute && active.getAttribute('contenteditable') === 'true')) return;
+        if(document.querySelector('.ax-modal[style*="display:flex"],[role="dialog"]:not([hidden])')) return;
+        if(window.__apexActiveStream === true) return;
+        inProgress = true;
+        try {
+          var res = await fetch('./index.html?_v=' + Date.now(), {
+            cache: 'reload',
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+          });
+          if(!res.ok){ inProgress = false; return; }
+          var html = await res.text();
+          var m = html.match(/data-app-ver="([^"]+)"/);
+          var remoteVer = m && m[1] ? m[1] : null;
+          if(!remoteVer || remoteVer === APX_VER){ inProgress = false; return; }
+          console.info('[Apex v13.4.225 inline auto-maj]', APX_VER, '→', remoteVer);
+          localStorage.setItem('apex_v13_inline_maj_last', String(Date.now()));
+          if('serviceWorker' in navigator){
+            try {
+              var regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
+            } catch(_){}
+          }
+          if(typeof caches !== 'undefined'){
+            try {
+              var keys = await caches.keys();
+              await Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); }));
+            } catch(_){}
+          }
+          setTimeout(function(){
+            location.replace(location.pathname + '?_force_upd_' + Date.now());
+          }, 300);
+        } catch(e){
+          console.warn('[Apex inline auto-maj]', e && e.message);
+          inProgress = false;
+        }
+      }
+      setTimeout(autoForceUpdate, 2000);
+      setInterval(autoForceUpdate, 60000);
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState === 'visible') autoForceUpdate();
+      });
+      window.addEventListener('focus', autoForceUpdate);
+    })();
+  </script>
 </body>
 </html>
