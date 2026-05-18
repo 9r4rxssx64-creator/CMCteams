@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.104';
+const __APEX_CHAT_VERSION__ = 'v1.1.105';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.104</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.105</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.104</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.105</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -989,6 +989,76 @@ K._openReactionStats = function(convId){
 // ============================================================================
 //  v1.1.100 — Global search across all conversations (milestone)
 // ============================================================================
+// ============================================================================
+//  v1.1.105 — Scheduled messages (envoyer plus tard, local-only)
+// ============================================================================
+K._scheduleMessage = function(convId){
+  const input = document.getElementById('msg-input');
+  const text = (input && input.value || '').trim();
+  if(!text){ toast('Tape ton message d\'abord', 'warn'); return; }
+  K._showModal('⏰ Programmer un envoi', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 10px">Message à envoyer plus tard :</p>
+    <div style="background:var(--ax-bg-2);border-radius:8px;padding:10px;margin-bottom:12px;font-size:.85em;color:var(--ax-text-2)">${esc(text.slice(0, 200))}${text.length > 200 ? '...' : ''}</div>
+    <label style="font-size:.85em;color:var(--ax-text-2)">Quand ?</label>
+    <input type="datetime-local" id="sched-when" style="width:100%;padding:10px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text);margin:6px 0 12px"
+      min="${new Date(Date.now()+60000).toISOString().slice(0,16)}"
+      value="${new Date(Date.now()+15*60000).toISOString().slice(0,16)}">
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-out" style="flex:1" onclick="K._closeModal()">Annuler</button>
+      <button class="btn" style="flex:2" onclick="K._confirmSchedule('${esc(convId)}')">⏰ Programmer</button>
+    </div>
+  `);
+};
+
+K._confirmSchedule = function(convId){
+  const when = document.getElementById('sched-when')?.value;
+  if(!when){ toast('Choisis une date', 'warn'); return; }
+  const ts = new Date(when).getTime();
+  if(ts <= Date.now()){ toast('Date dans le passé', 'warn'); return; }
+  const input = document.getElementById('msg-input');
+  const text = (input && input.value || '').trim();
+  if(!text) return;
+  const scheduled = lg('scheduled_msgs', []);
+  scheduled.push({ id: 'sched_' + Date.now(), convId, text, ts, createdAt: Date.now() });
+  ls('scheduled_msgs', scheduled);
+  if(input) input.value = '';
+  K._closeModal();
+  toast(`⏰ Programmé pour ${new Date(ts).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`, 'ok');
+  K._startScheduledWatcher && K._startScheduledWatcher();
+};
+
+K._startScheduledWatcher = function(){
+  if(K._schedWatcherStarted) return;
+  K._schedWatcherStarted = true;
+  setInterval(() => {
+    try{
+      const scheduled = lg('scheduled_msgs', []);
+      if(!scheduled.length) return;
+      const now = Date.now();
+      const due = scheduled.filter(s => s.ts <= now);
+      if(!due.length) return;
+      const remaining = scheduled.filter(s => s.ts > now);
+      ls('scheduled_msgs', remaining);
+      for(const s of due){
+        try{
+          const conv = (K.conversations || []).find(c => c.id === s.convId);
+          if(!conv) continue;
+          if(K.viewData?.id === s.convId){
+            const input = document.getElementById('msg-input');
+            if(input){ input.value = s.text; K._sendMsg && K._sendMsg(); }
+          } else {
+            toast(`⏰ Message programmé prêt : "${(s.text || '').slice(0, 40)}..."`, 'info');
+          }
+        }catch(e){ /* skip */ }
+      }
+    }catch(e){ /* ignore */ }
+  }, 30000);
+};
+
+if(typeof window !== 'undefined'){
+  setTimeout(() => { try{ K._startScheduledWatcher && K._startScheduledWatcher(); }catch(_){} }, 5000);
+}
+
 // ============================================================================
 //  v1.1.103 — Compose textarea auto-resize (multiline smooth)
 // ============================================================================
@@ -3247,7 +3317,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.104',
+    version: 'v1.1.105',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
