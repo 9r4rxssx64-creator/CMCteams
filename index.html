@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.694";
+var APP_VER="v9.695";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -33896,9 +33896,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       if(!cycle||cycle<2||cycle>15){skipReasons.no_cycle++;return;}
       var offset=(rhDays[0]-1)%cycle;
       // v9.654 : signature inclut PREMIER CODE TRAVAIL (distingue miroir)
-      // ex équipe A "20/5" vs équipe miroir A' "22/6'" mêmes RH mais codes différents
       var firstWork=_firstWorkCode(r)||"?";
-      // Normaliser légèrement : "20/5" et "20/5c" même groupe (suffixe c = CMC), garde *,',"
       var firstWorkNorm=firstWork.replace(/c$/i,"");
       var sig=cycle+":"+offset+":"+firstWorkNorm;
       if(!empSigs[sig])empSigs[sig]=[];
@@ -33917,6 +33915,45 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       if(oa!==ob)return oa-ob;
       return parseInt(pa[0])-parseInt(pb[0]);
     });
+    // v9.695 (Kevin diag : "emps de familles différentes mélangés") :
+    // SMART POST-grouping split — ne split QUE si pas de famille dominante (≥80%).
+    // 16 emps mixing 4 families avec 4/4/4/4 → split (vraies équipes distinctes).
+    // 5 emps 4 roulettes + 1 bj → keep ensemble (DEF_EMP bug isolé sur l'emp bj).
+    var splitSigs=[];
+    sigs.forEach(function(s){
+      var group=empSigs[s];
+      var byFam={};
+      group.forEach(function(g){
+        var f=g.family||"bj";
+        if(!byFam[f])byFam[f]=[];
+        byFam[f].push(g);
+      });
+      var fams=Object.keys(byFam);
+      if(fams.length===1){
+        splitSigs.push(s);return;
+      }
+      // Cherche famille dominante (>=80%)
+      var domFamCount=0,domFamName=null;
+      fams.forEach(function(f){
+        if(byFam[f].length>domFamCount){domFamCount=byFam[f].length;domFamName=f;}
+      });
+      var domRatio=domFamCount/group.length;
+      if(domRatio>=0.60){
+        // Famille dominante : keep ensemble (signature inchangée, DEF_EMP errors tolérés)
+        splitSigs.push(s);
+      }else{
+        // Pas de famille dominante : split réel par famille (cross-family mix legitime)
+        fams.forEach(function(f){
+          if(byFam[f].length>=2){
+            var subSig=f+"@"+s;
+            empSigs[subSig]=byFam[f];
+            splitSigs.push(subSig);
+          }
+        });
+        delete empSigs[s];
+      }
+    });
+    sigs=splitSigs;
     // 3. Assigner team IDs séquentiels par family
     var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
     var teamGroups=[];

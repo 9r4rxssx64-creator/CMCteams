@@ -47,25 +47,27 @@ async function main() {
       return window.teamForMonth(emp, 2026, 4) === 'r5';
     });
 
-    test('teamForMonth fallback emp.team si pas de teamHistory pour ce mois', () => {
+    // v9.680 (Kevin "Pas de mémoire équipe. Jamais") — fallback historique SUPPRIMÉ.
+    // teamForMonth retourne "?" si pas teamHistory[key] pour CE mois précis.
+    // Chaque mois est indépendant, zéro carryover entre mois.
+    test('teamForMonth retourne "?" si pas teamHistory pour ce mois (v9.680)', () => {
       emp.teamHistory = { '2025-0': 'r3' };
       emp.team = 'r1';
       const res = window.teamForMonth(emp, 2026, 4);
-      // Devrait fallback : teamHistory plus récent antérieur (r3) ou emp.team
-      return res === 'r3' || res === 'r1';
+      return res === '?'; // jamais fallback historique ni emp.team
     });
 
-    test('teamForMonth retourne emp.team si teamHistory vide', () => {
+    test('teamForMonth retourne "?" si teamHistory vide (v9.680)', () => {
       delete emp.teamHistory;
       emp.team = 'r1';
-      return window.teamForMonth(emp, 2026, 4) === 'r1';
+      return window.teamForMonth(emp, 2026, 4) === '?';
     });
 
-    test('teamForMonth utilise plus récent antérieur', () => {
+    test('teamForMonth retourne "?" même avec historique antérieur (v9.680 zéro mémoire)', () => {
       emp.teamHistory = { '2026-1': 'r2', '2026-2': 'r3' };
       emp.team = 'r1';
       const res = window.teamForMonth(emp, 2026, 4);
-      return res === 'r3'; // mois 2 le plus récent <= 4
+      return res === '?'; // pas de fallback sur mois antérieur
     });
 
     // Restore
