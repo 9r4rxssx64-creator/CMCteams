@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.97';
+const __APEX_CHAT_VERSION__ = 'v1.1.98';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.97</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.98</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.97</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.98</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2985,7 +2985,13 @@ K._applyTheme = function(themeName, accent){
     return;
   }
   const theme = K._THEMES[themeName] || K._THEMES.dark;
-  const accentColor = K._ACCENTS[accent] || K._ACCENTS.gold;
+  /* v1.1.98 : support custom hex color */
+  let accentColor;
+  if(accent === 'custom'){
+    accentColor = lg('accent_custom_hex', '#c9a227');
+  } else {
+    accentColor = K._ACCENTS[accent] || K._ACCENTS.gold;
+  }
   const root = document.documentElement;
   for(const [k, v] of Object.entries(theme)){
     root.style.setProperty(k, v);
@@ -3010,12 +3016,25 @@ K._openThemePicker = function(){
     <button class="btn ${currentTheme === 'auto' ? '' : 'btn-out'} btn-block btn-sm" onclick="K._pickTheme('auto')" style="margin-bottom:14px">📱 Auto (suit le système)</button>
 
     <p style="font-size:.82em;color:var(--ax-text-3);margin:0 0 8px">Couleur d'accent :</p>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px">
       ${Object.entries(K._ACCENTS).map(([name, color]) => `
         <button onclick="K._pickAccent('${name}')" style="background:${color};border:${currentAccent === name ? '3px solid #fff' : 'none'};border-radius:8px;height:44px;cursor:pointer" title="${name}" aria-label="Accent ${name}"></button>
       `).join('')}
     </div>
+    <p style="font-size:.82em;color:var(--ax-text-3);margin:8px 0 6px">Ou personnalisé :</p>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="color" id="accent-custom-input" class="input" value="${esc(lg('accent_custom_hex', '#c9a227'))}" style="flex:0 0 60px;padding:2px;height:44px">
+      <button class="btn ${currentAccent === 'custom' ? '' : 'btn-out'}" style="flex:1" onclick="K._pickCustomAccent()">${currentAccent === 'custom' ? '✓ ' : ''}🎨 Appliquer ma couleur</button>
+    </div>
   `);
+};
+
+K._pickCustomAccent = function(){
+  const input = document.getElementById('accent-custom-input');
+  if(!input) return;
+  const hex = input.value || '#c9a227';
+  ls('accent_custom_hex', hex);
+  K._pickAccent('custom');
 };
 
 K._pickTheme = function(t){
@@ -3059,7 +3078,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.97',
+    version: 'v1.1.98',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -9876,7 +9895,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.97"
+        data-version="v1.1.98"
         data-color="#6a8aff"
         defer></script>
 </body>
