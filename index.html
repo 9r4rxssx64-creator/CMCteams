@@ -4929,7 +4929,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.682";
+var APP_VER="v9.683";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23062,9 +23062,12 @@ function vPlan(){
       +'</div>';
   }
   if(!hasImportedData(A.year,A.month)){
-    h+=`<div style="margin-bottom:14px;padding:14px 16px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.2);border-radius:10px;text-align:center">
-      <div style="font-size:16px;color:#c9a227;font-weight:700;margin-bottom:4px">&#128203; Aucun planning importé</div>
-      <div style="font-size:14px;color:#a0cca0">Importez le planning PDF via Admin → Import pour afficher les horaires de ${esc(MFR[A.month])} ${A.year}.</div>
+    var _isAdmHere=A.user&&A.user.id===AID;
+    h+=`<div style="margin-bottom:14px;padding:18px 16px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.2);border-radius:12px;text-align:center">
+      <div style="font-size:42px;margin-bottom:6px">📋</div>
+      <div style="font-size:17px;color:#c9a227;font-weight:800;margin-bottom:6px">Aucun planning pour ${esc(MFR[A.month])} ${A.year}</div>
+      <div style="font-size:13px;color:#a0cca0;margin-bottom:${_isAdmHere?'12':'0'}px;line-height:1.4">${_isAdmHere?'Importez le PDF SBM pour afficher les horaires.':'Le planning sera publié dès l’import par l’administrateur. Aucune action n’est nécessaire de ta part.'}</div>
+      ${_isAdmHere?'<button onclick="sv(\'import\')" style="background:linear-gradient(135deg,#c9a227,#ffdc40);color:#000;border:none;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;min-height:44px">📥 Ouvrir l’import</button>':''}
     </div>`;
   } else if(todayD){
     // Compteur : combien travaillent aujourd'hui
@@ -23482,11 +23485,12 @@ function vDeparts(){
   }
   var _hasImport=hasImportedData(A.year,A.month);
   if(!_hasImport){
-    h+='<div style="padding:16px;text-align:center;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.15);border-radius:10px;margin-bottom:14px">'
-      +'<div style="font-size:28px;margin-bottom:8px">\ud83d\udce5</div>'
-      +'<div style="font-size:16px;font-weight:700;color:#c9a227;margin-bottom:4px">Aucun planning import\u00e9</div>'
-      +'<div style="font-size:15px;color:#7a8a68;margin-bottom:10px">Importez le planning PDF pour voir les ordres de d\u00e9part</div>'
-      +'<button onclick="sv(\'import\')" style="background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:8px;padding:8px 18px;font-size:16px;color:#c9a227;font-weight:700;cursor:pointer">\u2192 Importer le planning</button>'
+    var _isAdmDep=A.user&&A.user.id===AID;
+    h+='<div style="padding:18px;text-align:center;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.15);border-radius:12px;margin-bottom:14px">'
+      +'<div style="font-size:42px;margin-bottom:6px">\ud83d\udccb</div>'
+      +'<div style="font-size:17px;font-weight:800;color:#c9a227;margin-bottom:6px">Aucun planning pour '+MFR[A.month]+' '+A.year+'</div>'
+      +'<div style="font-size:13px;color:#a0cca0;margin-bottom:'+(_isAdmDep?'12':'0')+'px;line-height:1.4">'+(_isAdmDep?'Les ordres de d\u00e9part s\'afficheront d\u00e8s l\'import.':'Les ordres de d\u00e9part seront publi\u00e9s d\u00e8s l\'import par l\'administrateur. Aucune action n\'est n\u00e9cessaire de ta part.')+'</div>'
+      +(_isAdmDep?'<button onclick="sv(\'import\')" style="background:linear-gradient(135deg,#c9a227,#ffdc40);color:#000;border:none;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;min-height:44px">\ud83d\udce5 Ouvrir l\'import</button>':'')
       +'</div>';
   }
   // Bandeau "Aujourd'hui" si mois courant
