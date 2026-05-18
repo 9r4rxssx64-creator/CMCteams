@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.63';
+const __APEX_CHAT_VERSION__ = 'v1.1.64';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.63</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.64</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.63</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.64</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,6 +870,80 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.64 — Contact card sharing (vCard 3.0 style WhatsApp)
+// ============================================================================
+K._openContactCardComposer = function(){
+  const conv = K.viewData;
+  if(!conv){ toast('Pas de conversation', 'warn'); return; }
+  K._showModal('📇 Partager un contact', `
+    <label class="label">Nom complet</label>
+    <input id="vc-name" class="input" placeholder="Ex : Laurence Saint-Polit" maxlength="100">
+    <label class="label" style="margin-top:10px">Téléphone</label>
+    <input id="vc-phone" class="input" type="tel" placeholder="+33 6 12 34 56 78" maxlength="30">
+    <label class="label" style="margin-top:10px">Email (optionnel)</label>
+    <input id="vc-email" class="input" type="email" placeholder="contact@example.com" maxlength="100">
+    <label class="label" style="margin-top:10px">Société (optionnel)</label>
+    <input id="vc-org" class="input" placeholder="CMC Monaco" maxlength="100">
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._sendContactCard()">📇 Envoyer le contact</button>
+  `);
+};
+
+K._sendContactCard = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  const name = document.getElementById('vc-name')?.value.trim();
+  const phone = document.getElementById('vc-phone')?.value.trim();
+  const email = document.getElementById('vc-email')?.value.trim();
+  const org = document.getElementById('vc-org')?.value.trim();
+  if(!name){ toast('Nom requis', 'warn'); return; }
+  if(!phone && !email){ toast('Au moins téléphone OU email', 'warn'); return; }
+  const msg = {
+    id: 'm_vc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    from: K.user?.id,
+    text: '',
+    contact_card: { name, phone, email, org },
+    ts: Date.now(),
+    encrypted: false
+  };
+  K.messages = K.messages || {};
+  K.messages[conv.id] = K.messages[conv.id] || [];
+  K.messages[conv.id].push(msg);
+  ls('messages_' + conv.id, K.messages[conv.id]);
+  K._closeModal && K._closeModal();
+  K.render();
+  toast('📇 Contact partagé', 'ok');
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'contact_card', msg_id: msg.id, contact: msg.contact_card })); } catch(_) {}
+  }
+};
+
+K._renderContactCard = function(m){
+  if(!m.contact_card) return '';
+  const c = m.contact_card;
+  const vcfLines = [
+    'BEGIN:VCARD','VERSION:3.0','FN:' + (c.name || ''),
+    c.phone ? 'TEL;TYPE=CELL:' + c.phone : '',
+    c.email ? 'EMAIL:' + c.email : '',
+    c.org ? 'ORG:' + c.org : '',
+    'END:VCARD'
+  ].filter(Boolean).join('\n');
+  const vcfBlob = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcfLines);
+  return `<div style="background:rgba(106,138,255,.08);border:1px solid rgba(106,138,255,.3);border-radius:10px;padding:12px;margin-bottom:6px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div class="avatar" style="background:var(--ax-blue);color:#fff;width:40px;height:40px">${esc((c.name || '?')[0].toUpperCase())}</div>
+      <div style="flex:1">
+        <div style="font-weight:600">${esc(c.name)}</div>
+        ${c.org ? `<div style="font-size:.78em;color:var(--ax-text-3)">${esc(c.org)}</div>` : ''}
+      </div>
+      <span style="font-size:1.5em">📇</span>
+    </div>
+    ${c.phone ? `<a href="tel:${esc(c.phone)}" style="display:block;color:var(--ax-blue);text-decoration:none;font-size:.85em;margin-bottom:4px">📞 ${esc(c.phone)}</a>` : ''}
+    ${c.email ? `<a href="mailto:${esc(c.email)}" style="display:block;color:var(--ax-blue);text-decoration:none;font-size:.85em;margin-bottom:8px">📧 ${esc(c.email)}</a>` : ''}
+    <a href="${vcfBlob}" download="${esc(c.name)}.vcf" class="btn btn-out btn-sm" style="display:block;text-align:center;text-decoration:none;margin-top:6px">💾 Ajouter à mes contacts</a>
+  </div>`;
+};
+
+// ============================================================================
 //  v1.1.63 — Theme switcher (dark/light/auto/midnight + 6 accents)
 // ============================================================================
 K._THEMES = {
@@ -958,7 +1032,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.63',
+    version: 'v1.1.64',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3129,7 +3203,8 @@ function renderChat(app){
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
           ${m.poll ? K._renderPoll(m) : ''}
           ${m.location ? K._renderLocation(m) : ''}
-          ${m.deleted ? esc(m.text) : (m.text ? K._renderMarkdown(m.text) : (m.image_data || m.voice_data || m.poll || m.location ? '' : '(message chiffré)'))}
+          ${m.contact_card ? K._renderContactCard(m) : ''}
+          ${m.deleted ? esc(m.text) : (m.text ? K._renderMarkdown(m.text) : (m.image_data || m.voice_data || m.poll || m.location || m.contact_card ? '' : '(message chiffré)'))}
           ${scamReason ? `<div class="scam-warning" onclick="K._showScamInfo('${esc(scamReason)}','${esc(m.id)}')" title="Message potentiellement suspect">⚠️ Suspect : ${esc(scamReason)}</div>` : ''}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
@@ -3158,6 +3233,7 @@ function renderChat(app){
       <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
       <button class="chat-attach" onclick="K._openPollComposer()" aria-label="Créer sondage" title="Sondage / vote">📊</button>
       <button class="chat-attach" onclick="K._openLocationShare()" aria-label="Partager position" title="Position GPS">📍</button>
+      <button class="chat-attach" onclick="K._openContactCardComposer()" aria-label="Partager un contact" title="Carte de contact">📇</button>
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
       <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft()">${esc(K._loadDraft(conv.id) || '')}</textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
@@ -7512,7 +7588,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.63"
+        data-version="v1.1.64"
         data-color="#6a8aff"
         defer></script>
 </body>
