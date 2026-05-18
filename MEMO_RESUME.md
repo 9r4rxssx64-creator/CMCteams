@@ -1,5 +1,17 @@
 # Mémo de reprise — Apex v13.4.220 / CMC v9.638 / Social Video Pipeline v1.0 (2026-05-18)
 
+## À FAIRE (prochaine session)
+
+- [ ] Kevin a sa clé Gemini → vérifier que `GOOGLE_AI_API_KEY` est bien dans GitHub Secrets
+- [ ] Lancer manuellement le workflow `social-publish.yml` pour tester la première vidéo
+- [ ] Si YouTube souhaité : guider Kevin pour OAuth YouTube (15 min)
+- [ ] Si Telegram souhaité : guider Kevin pour créer bot (5 min)
+- [ ] Synchroniser branche `claude/test-699LQ` avec `main` (README social, contenu library 51 stories)
+- [ ] Mettre le README social à jour sur `main` aussi (version complète 18 commandes)
+- [ ] Apple Store Apex (TODO MAJEUR — voir KEVIN_ACTIONS_TODO.md)
+
+---
+
 ## 🎬 SESSION 2026-05-18 — Pipeline vidéo social media automatisé (LIVE sur main)
 
 ### Ce qui a été livré
