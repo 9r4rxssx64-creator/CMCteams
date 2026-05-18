@@ -285,7 +285,7 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.690"`, `DATA_VER = 30`
+- **Version actuelle :** `APP_VER = "v9.691"`, `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
 - **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC
 - **Taille fichier :** ~1.10 MB (HTML + CSS + JS) — v9.67
@@ -721,6 +721,7 @@ _checkNewChat(msgs)                 // Déclenché par fbApplyData("cmc_chat", .
 
 | Version | Changements |
 |---------|-------------|
+| **v9.691** | **Fix bug navigation broken ref `sv('echanges')`**. Audit des `sv()` après mes ajouts : la suggestion "Échanges de shifts" dans `_searchSuggestionsHTML` (employé) pointait vers une route `'echanges'` inexistante dans le router → fallback silencieux vers vAccueil. CLAUDE.md documente `demanderEchange()` et `adminRepondreEchange()` mais elles ne sont pas implémentées dans le code (probablement feature abandonnée). Remplacé par `sv('mesdemandes')` (vMesDemandes existe au router l. 16107) → suggestion "Mes demandes" qui ouvre la vue valide. Aucune autre route cassée détectée. |
 | **v9.690** | **Indicateur "👥 N en ligne" pulsant dans le widget Aperçu admin**. Ajout dans le header du widget : juste à droite du status "Tout à jour" ou "N alertes", un compteur live avec point vert qui pulse `● N en ligne`, cliquable pour ouvrir vOnline. Lit `getOnlineUsers()` (existant v8.91, TTL 5 min). Couleur verte cohérente avec les indicateurs sync. Bonus tooltip admin enrichi sur le bouton ⚙ Admin : "5 catégories : 👥 Équipes · 📅 Planning · 🔒 Sécurité · ⚙ Système · 🤖 IA". |
 | **v9.689** | **Sprint 5 — toolbar vIA nettoyée + 4 actions IA dans command palette**. Toolbar vIA passe de 4 boutons admin à 2 (Web Search + TTS, contextuels chat). Boutons retirés : "🔍 Vérifier" et "✕ Clear historique" → désormais via `⌘K` palette. Ajout dans `CMD_PALETTE_ACTIONS` (catégorie "IA") de 4 entrées : Vérifier connexion · Effacer historique chat · Toggle Web Search · Toggle TTS. Keywords riches (recherche, check, clear, voice, parler…) pour découverte fuzzy. Bénéfice : la toolbar reste lisible même sur 375px, et toutes les actions IA sont retrouvables via palette en 3 secondes. |
 | **v9.688** | **Widget Aperçu admin enrichi — dernière action audit dans l'empty state**. Quand pas d'alerte active, le widget affiche désormais : "✓ Aucune alerte. Dernière action : motd_set il y a 12 min · Astuce : ⌘K ouvre la palette." Lit le dernier `_audit()` depuis `cmc_audit`, calcule un timestamp relatif FR ("à l'instant", "il y a N min/h/j"). Information à valeur opérationnelle : Kevin sait quand quelqu'un a modifié quelque chose sans cliquer dans le journal. Plus de typo "Lessons partagees" → "Leçons partagées Apex + CMCteams" (correction FR/accents). |
