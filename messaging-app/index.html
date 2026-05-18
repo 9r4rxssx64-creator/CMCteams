@@ -318,7 +318,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.54';
+const __APEX_CHAT_VERSION__ = 'v1.1.55';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -399,7 +399,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.54</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.55</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -413,7 +413,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.54</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.55</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -867,6 +867,47 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// v1.1.55 — Presence (online/away/offline + last_seen) helpers
+K._presenceState = K._presenceState || {};
+
+K._presenceLabel = function(conv){
+  if(!conv) return '🛡 Chiffré E2E · vérifier';
+  // Trouve peer_id depuis conv.members ou conv.peer_id
+  const peerId = conv.peer_id || (Array.isArray(conv.members) ? conv.members.find(m => m !== K.user?.id) : null);
+  if(!peerId) return '🛡 Chiffré E2E · vérifier';
+  const p = K._presenceState[peerId];
+  if(!p) return '🛡 Chiffré E2E · vérifier';
+  if(p.status === 'online') return '🟢 En ligne · 🛡 E2E';
+  if(p.status === 'away') return '🟡 Absent · 🛡 E2E';
+  if(p.status === 'offline' && p.last_seen){
+    return `⚪ ${K._formatLastSeen(p.last_seen)} · 🛡 E2E`;
+  }
+  return '🛡 Chiffré E2E · vérifier';
+};
+
+K._formatLastSeen = function(ts){
+  if(!ts) return 'hors ligne';
+  const diff = Date.now() - ts;
+  if(diff < 60_000) return 'vu à l\'instant';
+  if(diff < 3600_000) return `vu il y a ${Math.floor(diff/60_000)} min`;
+  if(diff < 86400_000){
+    const h = Math.floor(diff/3600_000);
+    return `vu il y a ${h}h`;
+  }
+  if(diff < 7 * 86400_000){
+    const d = Math.floor(diff/86400_000);
+    return `vu il y a ${d}j`;
+  }
+  return `vu le ${new Date(ts).toLocaleDateString('fr-FR')}`;
+};
+
+K._updatePresenceHeader = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  const sub = document.getElementById('chat-header-subtitle');
+  if(sub) sub.innerHTML = K._presenceLabel(conv);
+};
 
 K._renderTypingIndicator = function(convId){
   const state = K._typingState?.[convId] || {};
@@ -2227,7 +2268,7 @@ function renderChat(app){
       <div class="avatar">${esc((conv.name || conv.pseudo || '?')[0].toUpperCase())}</div>
       <div style="flex:1;cursor:pointer" onclick="K._openSecurityVerification()" title="Toucher pour vérifier la sécurité E2E">
         <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
-        <div style="font-size:.75em;color:var(--ax-ok)">🛡 Chiffré E2E · vérifier</div>
+        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._presenceLabel(conv)}</div>
       </div>
       <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
@@ -2599,9 +2640,20 @@ async function _handleWsMessage(data, convId){
       }
       break;
     }
-    case 'presence':
-      // Joined / left
+    case 'presence': {
+      // v1.1.55 — Online status / last seen
+      const pFrom = data.userId || data.from;
+      const pStatus = data.status; // 'online' | 'offline' | 'away'
+      const pLastSeen = data.last_seen || (pStatus === 'offline' ? Date.now() : null);
+      if(pFrom && pStatus){
+        K._presenceState = K._presenceState || {};
+        K._presenceState[pFrom] = { status: pStatus, last_seen: pLastSeen, ts: Date.now() };
+        if(K.view === 'chat' && K.viewData?.id === convId){
+          K._updatePresenceHeader();
+        }
+      }
       break;
+    }
     case 'pong':
       break;
     case 'error':
@@ -6581,7 +6633,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.54"
+        data-version="v1.1.55"
         data-color="#6a8aff"
         defer></script>
 </body>
