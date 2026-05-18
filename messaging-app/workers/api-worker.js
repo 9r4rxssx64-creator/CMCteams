@@ -2965,6 +2965,52 @@ export async function handleAiSemanticSearch(request, env) {
 
 // ============================================================================
 // ============================================================================
+//  v1.1.81 — Web Push subscribe / unsubscribe endpoints
+//   POST /api/push/subscribe   { subscription: PushSubscription.toJSON() }
+//   POST /api/push/unsubscribe { endpoint: string }
+// ============================================================================
+export async function handlePushSubscribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const body = await request.json().catch(() => ({}));
+  const sub = body.subscription;
+  if (!sub || !sub.endpoint || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
+    return err('Subscription incomplète', 400);
+  }
+  try {
+    // Upsert : remove existing for same endpoint, then insert fresh
+    await env.APEX_CHAT_DB?.prepare(
+      'DELETE FROM push_subscriptions WHERE endpoint=?'
+    ).bind(sub.endpoint).run();
+    await env.APEX_CHAT_DB?.prepare(
+      'INSERT INTO push_subscriptions (id, user_id, endpoint, vapid_p256dh, vapid_auth, last_seen, ua) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      crypto.randomUUID(), auth.sub, sub.endpoint, sub.keys.p256dh, sub.keys.auth,
+      Date.now(), (request.headers.get('user-agent') || '').slice(0, 200)
+    ).run();
+    return json({ ok: true });
+  } catch (e) {
+    return err('DB error: ' + e.message, 500);
+  }
+}
+
+export async function handlePushUnsubscribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const body = await request.json().catch(() => ({}));
+  const endpoint = body.endpoint;
+  if (!endpoint) return err('Endpoint requis', 400);
+  try {
+    await env.APEX_CHAT_DB?.prepare(
+      'DELETE FROM push_subscriptions WHERE endpoint=? AND user_id=?'
+    ).bind(endpoint, auth.sub).run();
+    return json({ ok: true });
+  } catch (e) {
+    return err('DB error: ' + e.message, 500);
+  }
+}
+
+// ============================================================================
 //  v1.1.76 — Admin force-update : push à tous clients
 //   POST /api/admin/force-update     → admin only, stocke ts dans system_config
 //   GET  /api/admin/force-update-ts  → tous users, retourne dernier ts admin
@@ -3188,6 +3234,9 @@ export default {
       // v1.1.76 — Admin force-update push to all clients
       if (path === '/api/admin/force-update' && method === 'POST') return await handleAdminForceUpdate(request, env);
       if (path === '/api/admin/force-update-ts' && method === 'GET') return await handleAdminForceUpdateTs(request, env);
+      // v1.1.81 — Web Push subscribe / unsubscribe
+      if (path === '/api/push/subscribe' && method === 'POST') return await handlePushSubscribe(request, env);
+      if (path === '/api/push/unsubscribe' && method === 'POST') return await handlePushUnsubscribe(request, env);
       // v1.1.35 — Semantic search messages
       if (path === '/api/ai/search' && method === 'POST') return await handleAiSemanticSearch(request, env);
       // v1.1.41 — AI rewrite message (8 styles)
