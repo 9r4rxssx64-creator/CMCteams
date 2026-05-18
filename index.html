@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.695";
+var APP_VER="v9.696";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10630,7 +10630,7 @@ var _dcTimer=null;
 var _dcLastRun=0;
 var _dcCallCount=0;
 var _dcCallWindow=Date.now();
-var _dcMinIntervalMs=350; // v9.603 anti-scintillement Kevin : 350ms pour mieux coalescer bursts SSE iPhone
+var _dcMinIntervalMs=800; // v9.696 (Kevin "L'app scintille toujours autant, tout le temps") : 350→800ms pour coalescer agressif bursts SSE/agents iPhone
 function dcDebounced(){
   if(_dcPending)return;
   _dcPending=true;
@@ -14569,6 +14569,17 @@ function agentEmit(eventName,payload){
 })();
 function agentsStart(){
   if(!A.user||A.user.id!==AID)return; // Agents admin seulement
+  // v9.696 Kevin "Efface toute sa mémoire de planning et on repart à zéro maintenant"
+  // Auto-wipe ONE-SHOT au premier boot v9.696+, flag persistant.
+  try{
+    if(!lg("cmc_v696_wipe_done",false)){
+      if(typeof cmcWipeAllPlanningMemory==="function"){
+        var _ws=cmcWipeAllPlanningMemory(true); // silent=true (pas de confirm popup)
+        ls("cmc_v696_wipe_done",{ts:Date.now(),stats:_ws||null});
+        try{if(typeof toast==="function")toast("🧹 Mémoire planning effacée (reset Kevin v9.696). Prêt pour mai V2.","ok",6000);}catch(_){}
+      }
+    }
+  }catch(_v696err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
@@ -30738,6 +30749,71 @@ function removePinCode(){
   toast("Code PIN supprim\u00e9");
   var box=document.getElementById("pinBox");if(box)box.style.display="none";
   dc();
+}
+// v9.696 (Kevin 2026-05-18 "Efface toute sa mémoire de planning et on repart à zéro maintenant") :
+// Wipe TOTAL de toutes les données planning de TOUS les mois confondus.
+// Snapshot auto avant pour rollback éventuel. Sync Firebase pour cross-device.
+function cmcWipeAllPlanningMemory(silent){
+  if(!A.user||A.user.id!==AID){if(!silent)toast("⚠ Admin only","err");return;}
+  if(!silent){
+    if(!confirm("⚠ EFFACER TOUTE LA MÉMOIRE PLANNING ?\n\n"
+      +"Va supprimer :\n"
+      +"• TOUS les A.overrides[*] (horaires de TOUS les mois)\n"
+      +"• TOUS les emp.teamHistory + emp.familyHistory\n"
+      +"• TOUS les cmc_ref_*, cmc_verif_*, cmc_ci_*, cmc_comments_*\n"
+      +"• TOUS les cmc_visual_planning_*, cmc_team_mirror_*\n"
+      +"• TOUS les cmc_structured_*, cmc_last_import_type_*\n"
+      +"• TOUS les cmc_import_src_*, cmc_import_history_*\n\n"
+      +"Snapshot global créé avant effacement (rollback possible).\n"
+      +"Sync Firebase cross-device.\n\n"
+      +"Continuer ?"))return;
+  }
+  var stats={ovKeys:0,empsTeamHist:0,empsFamHist:0,prefixed:0};
+  try{
+    // Snapshot global
+    var snapKey="cmc_history_wipe_all_planning_"+Date.now();
+    ls(snapKey,{
+      ts:Date.now(),reason:"manual_wipe_all_planning_v696",
+      overrides:JSON.parse(JSON.stringify(A.overrides||{})),
+      overrides_meta:JSON.parse(JSON.stringify(A.overrides_meta||{})),
+      teamHistorySnap:A.employees.filter(function(e){return e.teamHistory&&Object.keys(e.teamHistory).length;}).map(function(e){return {id:e.id,th:JSON.parse(JSON.stringify(e.teamHistory))};}),
+      familyHistorySnap:A.employees.filter(function(e){return e.familyHistory&&Object.keys(e.familyHistory).length;}).map(function(e){return {id:e.id,fh:JSON.parse(JSON.stringify(e.familyHistory))};})
+    });
+  }catch(_){}
+  // 1. A.overrides + meta
+  stats.ovKeys=Object.keys(A.overrides||{}).length;
+  A.overrides={};
+  A.overrides_meta={};
+  ls("cmc_ov",A.overrides);ls("cmc_ov_meta",A.overrides_meta);
+  if(typeof fbWrite==="function"){try{fbWrite("cmc_ov",{});}catch(_){}try{fbWrite("cmc_ov_meta",{});}catch(_){}}
+  // 2. teamHistory + familyHistory sur tous emps
+  A.employees.forEach(function(e){
+    if(e.teamHistory){stats.empsTeamHist+=Object.keys(e.teamHistory).length;e.teamHistory={};}
+    if(e.familyHistory){stats.empsFamHist+=Object.keys(e.familyHistory).length;e.familyHistory={};}
+  });
+  ls("cmc_e",A.employees);
+  if(typeof fbWrite==="function"){try{fbWrite("cmc_e",A.employees);}catch(_){}}
+  // 3. localStorage keys préfixées
+  var prefixes=["cmc_ref_","cmc_verif_","cmc_ci_","cmc_comments_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_","cmc_structured_","cmc_team_mirror_","cmc_last_import_type_","cmc_manual_overrides_","cmc_import_completeness_"];
+  var keysToRemove=[];
+  for(var k in localStorage){
+    if(localStorage.hasOwnProperty(k)){
+      for(var pi=0;pi<prefixes.length;pi++){
+        if(k.indexOf(prefixes[pi])===0){keysToRemove.push(k);break;}
+      }
+    }
+  }
+  keysToRemove.forEach(function(k){try{localStorage.removeItem(k);stats.prefixed++;}catch(_){}});
+  // 4. Cache gpl invalidé
+  try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
+  try{if(typeof _cmcInvalidateEmpByIdCache==="function")_cmcInvalidateEmpByIdCache();}catch(_){}
+  // 5. Audit
+  try{if(typeof _audit==="function")_audit("wipe_all_planning_v696",AID,"","ov="+stats.ovKeys+" tH="+stats.empsTeamHist+" fH="+stats.empsFamHist+" pref="+stats.prefixed,"snapshot="+snapKey);}catch(_){}
+  if(!silent){
+    toast("✅ Wipe total : "+stats.ovKeys+" mois ov + "+stats.empsTeamHist+" teamHist + "+stats.empsFamHist+" famHist + "+stats.prefixed+" clés. Rollback dispo.","ok",8000);
+  }
+  dc();
+  return stats;
 }
 function clearMonth(){
   if(!A.user||A.user.id!==AID)return;
