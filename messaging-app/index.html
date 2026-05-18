@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.84';
+const __APEX_CHAT_VERSION__ = 'v1.1.85';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.84</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.85</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.84</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.85</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2311,7 +2311,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.84',
+    version: 'v1.1.85',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -2553,24 +2553,25 @@ K._togglePlayVoice = function(msgId){
   const aud = document.getElementById('aud-' + msgId);
   const btn = document.getElementById('play-' + msgId);
   if(!aud || !btn) return;
-  // Stop other playing first
   if(K._voicePlaying && K._voicePlaying !== msgId){
     const otherAud = document.getElementById('aud-' + K._voicePlaying);
     const otherBtn = document.getElementById('play-' + K._voicePlaying);
     if(otherAud){ otherAud.pause(); otherAud.currentTime = 0; }
     if(otherBtn){ otherBtn.textContent = '▶'; }
+    K._stopWaveformAnim();
   }
   if(aud.paused){
     aud.play();
     btn.textContent = '⏸';
     K._voicePlaying = msgId;
+    // v1.1.85 : démarre waveform progress
+    K._startVoicePlaybackWaveform(msgId);
     aud.ontimeupdate = () => {
       const dur = document.getElementById('dur-' + msgId);
       if(dur && aud.duration && !isNaN(aud.duration)){
         const cur = Math.floor(aud.currentTime);
         const tot = Math.floor(aud.duration);
         const fmt = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-        // Préserve emoji + transcript dans le dur, ajoute progression
         const baseText = dur.dataset.originalText || dur.textContent.split(' · ')[0];
         if(!dur.dataset.originalText) dur.dataset.originalText = baseText;
         dur.textContent = `${baseText} · ${fmt(cur)}/${fmt(tot)}`;
@@ -2579,14 +2580,91 @@ K._togglePlayVoice = function(msgId){
     aud.onended = () => {
       btn.textContent = '▶';
       K._voicePlaying = null;
+      K._stopWaveformAnim();
       const dur = document.getElementById('dur-' + msgId);
       if(dur && dur.dataset.originalText) dur.textContent = dur.dataset.originalText;
+      // Reset waveform à 0 progress
+      K._drawStaticWaveform(msgId, 0);
     };
   } else {
     aud.pause();
     btn.textContent = '▶';
     K._voicePlaying = null;
+    K._stopWaveformAnim();
   }
+};
+
+// ============================================================================
+//  v1.1.85 — Voice waveform sur PLAYBACK (visualisation + scrub click)
+// ============================================================================
+K._voicePlaybackAnim = null;
+K._voiceWaveformCache = {}; /* msgId → Float32Array peaks calculé une fois */
+
+K._drawStaticWaveform = function(msgId, progress){
+  const canvas = document.getElementById('wf-' + msgId);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  // Cache or generate pseudo-waveform peaks (déterministe par msgId hash)
+  if(!K._voiceWaveformCache[msgId]){
+    const peaks = new Float32Array(32);
+    let h = 0;
+    for(let i = 0; i < msgId.length; i++) h = ((h << 5) - h + msgId.charCodeAt(i)) | 0;
+    for(let i = 0; i < 32; i++){
+      h = ((h * 1103515245 + 12345) >> 0);
+      peaks[i] = 0.3 + Math.abs((h % 1000) / 1000) * 0.7;
+    }
+    K._voiceWaveformCache[msgId] = peaks;
+  }
+  const peaks = K._voiceWaveformCache[msgId];
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const barCount = peaks.length;
+  const barW = canvas.width / barCount - 1;
+  const progressBar = Math.floor((progress || 0) * barCount);
+  for(let i = 0; i < barCount; i++){
+    const h = peaks[i] * canvas.height * 0.9;
+    ctx.fillStyle = i < progressBar ? 'var(--ax-gold, #e8b830)' : 'rgba(232,184,48,.25)';
+    // canvas.context fillStyle CSS var n'est pas supporté → utiliser couleur directe
+    ctx.fillStyle = i < progressBar ? '#e8b830' : 'rgba(232,184,48,.3)';
+    ctx.fillRect(i * (barW + 1), (canvas.height - h) / 2, barW, h);
+  }
+};
+
+K._startVoicePlaybackWaveform = function(msgId){
+  K._stopWaveformAnim();
+  const aud = document.getElementById('aud-' + msgId);
+  if(!aud) return;
+  function loop(){
+    if(!aud || aud.paused || aud.ended){ return; }
+    const progress = aud.duration && !isNaN(aud.duration) ? (aud.currentTime / aud.duration) : 0;
+    K._drawStaticWaveform(msgId, progress);
+    K._voicePlaybackAnim = requestAnimationFrame(loop);
+  }
+  loop();
+};
+
+K._stopWaveformAnim = function(){
+  if(K._voicePlaybackAnim){ cancelAnimationFrame(K._voicePlaybackAnim); K._voicePlaybackAnim = null; }
+};
+
+K._scrubVoice = function(msgId, ev){
+  const canvas = document.getElementById('wf-' + msgId);
+  const aud = document.getElementById('aud-' + msgId);
+  if(!canvas || !aud || !aud.duration || isNaN(aud.duration)) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (ev.clientX || (ev.touches && ev.touches[0]?.clientX) || 0) - rect.left;
+  const ratio = Math.max(0, Math.min(1, x / rect.width));
+  aud.currentTime = ratio * aud.duration;
+  K._drawStaticWaveform(msgId, ratio);
+};
+
+// Auto-render waveforms à static (idle 0% progress) après chaque render chat
+K._renderStaticWaveforms = function(){
+  setTimeout(() => {
+    document.querySelectorAll('canvas[id^="wf-"]').forEach(c => {
+      const id = c.id.replace('wf-', '');
+      K._drawStaticWaveform(id, 0);
+    });
+  }, 100);
 };
 
 K._cycleVoiceSpeed = function(msgId){
@@ -4504,9 +4582,12 @@ function renderChat(app){
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<div class="voice-player" style="margin-bottom:4px">
             <audio id="aud-${esc(m.id)}" src="${esc(m.voice_data)}" preload="metadata" style="display:none"></audio>
-            <div style="display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:18px;padding:6px 10px;max-width:260px">
+            <div style="display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:18px;padding:6px 10px;max-width:280px">
               <button onclick="K._togglePlayVoice('${esc(m.id)}')" id="play-${esc(m.id)}" style="background:var(--ax-gold);color:var(--ax-bg);width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;font-size:.9em;flex-shrink:0">▶</button>
-              <div style="flex:1;font-size:.8em;color:var(--ax-text-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="dur-${esc(m.id)}">🎙️ ${esc(m.voice_text ? m.voice_text.slice(0, 26) + (m.voice_text.length > 26 ? '...' : '') : 'Audio')}</div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+                <canvas id="wf-${esc(m.id)}" width="180" height="20" style="width:100%;height:20px;cursor:pointer" onclick="K._scrubVoice('${esc(m.id)}',event)"></canvas>
+                <div style="font-size:.72em;color:var(--ax-text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="dur-${esc(m.id)}">🎙️ ${esc(m.voice_text ? m.voice_text.slice(0, 26) + (m.voice_text.length > 26 ? '...' : '') : 'Audio')}</div>
+              </div>
               <button onclick="K._cycleVoiceSpeed('${esc(m.id)}')" id="spd-${esc(m.id)}" style="background:transparent;border:1px solid var(--ax-border);border-radius:10px;padding:2px 6px;font-size:.7em;cursor:pointer;color:var(--ax-text-2);flex-shrink:0">1×</button>
             </div>
           </div>` : ''}
@@ -4549,7 +4630,7 @@ function renderChat(app){
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
-  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);}, 50);
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();}, 50);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
@@ -8992,7 +9073,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.84"
+        data-version="v1.1.85"
         data-color="#6a8aff"
         defer></script>
 </body>
