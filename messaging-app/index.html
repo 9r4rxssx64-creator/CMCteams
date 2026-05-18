@@ -318,7 +318,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.56';
+const __APEX_CHAT_VERSION__ = 'v1.1.57';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -399,7 +399,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.56</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.57</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -413,7 +413,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.56</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.57</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -867,6 +867,88 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.57 — Status / Stories 24h (style Snapchat/Insta/WhatsApp)
+// ============================================================================
+K._STORY_TTL_MS = 24 * 60 * 60 * 1000;
+K._storyPendingImg = null;
+
+K._publishStory = function(){
+  K._showModal('📸 Publier un statut', `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 10px">Visible 24h. S'auto-supprime après.</p>
+    <textarea id="story-text" rows="3" placeholder="Quoi de neuf ?" maxlength="500" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:15px;resize:vertical"></textarea>
+    <input type="file" id="story-img-input" accept="image/*" style="display:none" onchange="K._storyImageSelected(this.files[0])">
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-out" style="flex:1" onclick="document.getElementById('story-img-input').click()">📷 Photo</button>
+      <button class="btn" style="flex:2" onclick="K._saveStory()">✨ Publier</button>
+    </div>
+    <div id="story-preview" style="margin-top:12px"></div>
+  `);
+};
+
+K._storyImageSelected = function(file){
+  if(!file || !file.type?.startsWith('image/')){ toast('Pas une image', 'warn'); return; }
+  if(file.size > 2 * 1024 * 1024){ toast('Image > 2MB, trop lourde', 'warn'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    K._storyPendingImg = e.target.result;
+    const prev = document.getElementById('story-preview');
+    if(prev) prev.innerHTML = `<img src="${esc(K._storyPendingImg)}" style="max-width:100%;max-height:200px;border-radius:10px;display:block;margin:auto">`;
+  };
+  reader.readAsDataURL(file);
+};
+
+K._saveStory = function(){
+  const text = document.getElementById('story-text')?.value.trim() || '';
+  if(!text && !K._storyPendingImg){ toast('Texte ou photo requis', 'warn'); return; }
+  const stories = lg('my_stories', []);
+  stories.push({
+    id: 'st_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    text, img: K._storyPendingImg,
+    ts: Date.now(), expires_at: Date.now() + K._STORY_TTL_MS,
+    views: []
+  });
+  ls('my_stories', stories);
+  K._storyPendingImg = null;
+  K._closeModal && K._closeModal();
+  toast('✨ Statut publié 24h', 'ok');
+};
+
+K._viewMyStories = function(){
+  const all = lg('my_stories', []);
+  const now = Date.now();
+  const active = all.filter(s => s.expires_at > now).sort((a, b) => b.ts - a.ts);
+  if(active.length !== all.length) ls('my_stories', active);
+  K._showModal('📸 Mes statuts', active.length === 0 ? `
+    <p style="text-align:center;color:var(--ax-text-3);padding:20px">Aucun statut actif. Publie pour partager 24h.</p>
+    <button class="btn btn-block" onclick="K._closeModal();K._publishStory()">+ Nouveau statut</button>
+  ` : `
+    <div style="max-height:60vh;overflow-y:auto">
+      ${active.map(s => `
+        <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:8px">
+          ${s.img ? `<img src="${esc(s.img)}" style="max-width:100%;max-height:120px;border-radius:8px;display:block;margin-bottom:6px">` : ''}
+          ${s.text ? `<div style="color:var(--ax-text);margin-bottom:6px">${K._renderMarkdown(s.text)}</div>` : ''}
+          <div style="display:flex;justify-content:space-between;font-size:.75em;color:var(--ax-text-3)">
+            <span>📅 ${esc(new Date(s.ts).toLocaleString('fr-FR', {dateStyle:'short',timeStyle:'short'}))}</span>
+            <span>👁 ${esc(String(s.views?.length || 0))} vue(s)</span>
+          </div>
+          <button class="btn btn-out btn-sm" style="width:100%;margin-top:8px" onclick="K._deleteStory('${esc(s.id)}')">🗑 Supprimer</button>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn btn-block" style="margin-top:12px" onclick="K._closeModal();K._publishStory()">+ Nouveau statut</button>
+  `);
+};
+
+K._deleteStory = function(id){
+  const all = lg('my_stories', []);
+  const remaining = all.filter(s => s.id !== id);
+  ls('my_stories', remaining);
+  K._closeModal && K._closeModal();
+  K._viewMyStories();
+  toast('🗑 Statut supprimé', 'info');
+};
 
 // ============================================================================
 //  v1.1.56 — Group management (invite + members + admin + leave)
@@ -4665,6 +4747,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._openSoundPicker(null)">
         <span>🔔</span><span style="flex:1">Son de notification (global)</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._viewMyStories()">
+        <span>📸</span><span style="flex:1">Mes statuts (24h)</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K.openMiniApps()">
         <span>🎨</span><span style="flex:1">Mini-apps (Studios Apex)</span><span>›</span>
       </div>
@@ -6737,7 +6822,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.56"
+        data-version="v1.1.57"
         data-color="#6a8aff"
         defer></script>
 </body>
