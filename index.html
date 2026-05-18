@@ -4929,7 +4929,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.677";
+var APP_VER="v9.678";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -16110,8 +16110,9 @@ function _vMainImpl(){
     case"statsglobal": return isAdm?vStatsGlobal():"";
     case"messtats": return vMesStats();
     case"chat":     return vChat();
-    case"admin":    return isAdm?vAdmin():"";
-    case"adminv10": return isAdm?vAdminV10():""; // v10 — refonte 5 catégories (Sprint 1)
+    case"admin":    return isAdm?vAdminV10():""; // v10 — refonte 5 catégories devient le défaut (Sprint 1 validé)
+    case"adminold": return isAdm?vAdmin():"";    // v10 — ancien panneau accessible via bouton ↩ Classique
+    case"adminv10": return isAdm?vAdminV10():""; // v10 — alias (anciens liens conservés)
     case"admincat": return isAdm?vAdminCat():""; // v10 — vue détaillée catégorie admin
     case"gestionlive": return isAdm?vGestionLive():"";
     case"convention": return vConvention();
@@ -22240,6 +22241,47 @@ function vAccueil(){
     +'<div style="font-size:14px;color:#a0cca0;letter-spacing:1px;margin-top:8px">'+dateTxt+'</div>'
     +'</div>';
   // v9.85 — Suggestions proactives (banner si probl\u00e8mes d\u00e9tect\u00e9s)
+  // v9.678 — Sprint 3 : Widget Aperçu admin sur vAccueil (admin uniquement) — coup d'oeil rapide sur etat critique
+  if(A.user&&A.user.id===AID){
+    var _iaOn=(typeof iaIsEnabled==="function")?iaIsEnabled():true;
+    var _nApex=(typeof _cmcCountApexPlanningPending==="function")?_cmcCountApexPlanningPending():0;
+    var _nUpload=(typeof countPendingUploads==="function")?countPendingUploads():0;
+    var _verifs=lg("cmc_verif_codes",{});
+    var _nVerif=Object.keys(_verifs).filter(function(k){var c=_verifs[k];return c&&!c.used&&Date.now()<c.expiresAt;}).length;
+    var _nPass=(typeof cmcPassationsPendingCount==="function")?cmcPassationsPendingCount():0;
+    var _conflicts=0;try{var _cf=(typeof detectRepoConflicts==="function")?detectRepoConflicts(A.year,A.month):null;if(_cf&&_cf.length)_conflicts=_cf.length;}catch(_){}
+    var _regAlerts=(lg("cmc_reg_alerts",[])||[]).length;
+    var _totalAlerts=_nApex+_nVerif+_nPass+_conflicts+_regAlerts+_nUpload;
+    var _miniStat=function(ic,lb,n,col,act){
+      var hot=n>0;
+      return '<button onclick="'+act+'" style="all:unset;cursor:pointer;flex:1;min-width:84px;padding:10px 8px;background:'+(hot?col+"18":"rgba(255,255,255,.02)")+';border:1px solid '+(hot?col+"55":"rgba(255,255,255,.06)")+';border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;transition:all .15s var(--ease)">'
+        +'<div style="font-size:18px;line-height:1">'+ic+'</div>'
+        +'<div style="font-size:20px;font-weight:800;color:'+(hot?col:"#7aaa80")+';line-height:1.1;font-family:monospace">'+n+'</div>'
+        +'<div style="font-size:10px;color:#a0bca0;letter-spacing:.3px;text-transform:uppercase;font-weight:700">'+lb+'</div>'
+        +'</button>';
+    };
+    h+='<div style="padding:14px;background:linear-gradient(135deg,rgba(20,30,22,.55),rgba(14,24,16,.4));border:1px solid rgba(201,162,39,.22);border-radius:14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
+      +'<div style="font-size:18px">👑</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:15px;font-weight:800;color:#c9a227;font-family:Cormorant Garamond,Garamond,serif;line-height:1.2">Aperçu administrateur</div>'
+      +'<div style="font-size:11px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase">'+(_totalAlerts>0?(_totalAlerts+" alerte"+(_totalAlerts>1?"s":"")+" active"+(_totalAlerts>1?"s":"")):"Tout est à jour ✓")+'</div>'
+      +'</div>'
+      +'<button onclick="iaToggle()" title="'+(_iaOn?"IA active : appels Anthropic OK":"IA désactivée — tokens préservés")+'" style="background:'+(_iaOn?"rgba(80,200,100,.14)":"rgba(192,120,48,.18)")+';border:1px solid '+(_iaOn?"rgba(80,200,100,.4)":"rgba(192,120,48,.5)")+';color:'+(_iaOn?"#7edc90":"#e0a040")+';border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">'+(_iaOn?"✅ IA ON":"⏸ IA OFF")+'</button>'
+      +'<button onclick="sv(\'admin\')" title="Ouvrir le panneau d\'administration v10" style="background:linear-gradient(135deg,#c9a227,#ffdc40);color:#000;border:none;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">⚙ Admin</button>'
+      +'</div>'
+      +(_totalAlerts>0
+        ?'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+          +(_conflicts>0?_miniStat("⚠","Conflits",_conflicts,"#e08040","sv('conflits')"):"")
+          +(_regAlerts>0?_miniStat("👤","Nouveaux",_regAlerts,"#e09848","sv('employees')"):"")
+          +(_nVerif>0?_miniStat("🔐","Codes",_nVerif,"#7aa8d0","sv('admin')"):"")
+          +(_nApex>0?_miniStat("📥","Apex",_nApex,"#c090ff","_cmcOpenApexPendingList()"):"")
+          +(_nPass>0?_miniStat("📝","Passat.",_nPass,"#c9a227","sv('passations')"):"")
+          +(_nUpload>0?_miniStat("📤","Uploads",_nUpload,"#5aaa70","sv('uploadreq')"):"")
+          +'</div>'
+        :'<div style="padding:8px 12px;background:rgba(80,200,100,.06);border:1px solid rgba(80,200,100,.18);border-radius:8px;font-size:12px;color:#8bc89b;display:flex;align-items:center;gap:6px"><span>✓</span><span>Aucune alerte. <span style="opacity:.7">Astuce : <kbd style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:10px">⌘K</kbd> ouvre la recherche rapide.</span></span></div>')
+      +'</div>';
+  }
   h+=_renderSuggestions();
   // v9.68 \u2014 Message du jour (admin publie, tous voient)
   if(A.motd&&A.motd.text){
@@ -29547,7 +29589,7 @@ function vAdminV10(){
     +'<div style="font-size:24px;font-weight:800;color:#c9a227;font-family:Cormorant Garamond,Garamond,serif;line-height:1.1">Administration</div>'
     +'<div style="font-size:12px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase;margin-top:2px">Casino de Monte-Carlo · '+APP_VER+'</div>'
     +'</div>'
-    +'<button onclick="sv(\'admin\')" title="Revenir à la version classique" style="background:transparent;border:1px solid rgba(201,162,39,.25);color:#a8902c;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-weight:700">↩ Classique</button>'
+    +'<button onclick="sv(\'adminold\')" title="Revenir à la version classique (v9.x)" style="background:transparent;border:1px solid rgba(201,162,39,.25);color:#a8902c;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-weight:700">↩ Classique</button>'
     +'</div>'
 
     // Banner Firebase si déconnecté
