@@ -4933,7 +4933,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.699";
+var APP_VER="v9.700";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36017,6 +36017,41 @@ function doImport(){
     ls("cmc_structured_"+_structKey,_structured);
     console.log("[v9.694 structured] sections="+_structured.stats.sections+" teams="+_structured.stats.teams+" emps="+_structured.stats.emps+" daysCovered="+_structured.stats.daysCovered+(_structured.stats.errors.length?" errors="+_structured.stats.errors.length:""));
     if(typeof _audit==="function")_audit("structured_parse",AID,_structKey,"sections="+_structured.stats.sections+" teams="+_structured.stats.teams+" emps="+_structured.stats.emps,JSON.stringify(_structured.stats.errors||[]).slice(0,200));
+    // v9.700 (Kevin diag 2026-05-18 : SESTINI F, BAUBRIT R, FOREST M etc. mal classés
+    // dans DEF_EMP) — auto-override emp.family selon section PDF détectée.
+    // Mapping section structurée → family canonique CMCteams.
+    var SECTION_TO_FAMILY={
+      "Roulettes":"roulettes",
+      "Chefs BJ":"bj",
+      "Employés CMC":"cmc",
+      "Employés am.":"cmc",
+      "Formation":"bj"
+    };
+    var _famUpdated=0;
+    (_structured.sections||[]).forEach(function(sec){
+      var targetFam=SECTION_TO_FAMILY[sec.name];
+      if(!targetFam)return;
+      (sec.emps||[]).forEach(function(parsedEmp){
+        // Match emp par nom normalisé (case insensitive, NFD strip accents)
+        var nameNorm=(parsedEmp.name||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+        if(!nameNorm)return;
+        var emp=A.employees.find(function(e){
+          var en=(e.name||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+          return en===nameNorm;
+        });
+        if(!emp)return;
+        if(emp.family!==targetFam){
+          console.log("[v9.700 fam-override]",emp.name,emp.family,"→",targetFam,"(section "+sec.name+")");
+          emp.family=targetFam;
+          _famUpdated++;
+        }
+      });
+    });
+    if(_famUpdated>0){
+      try{ls("cmc_e",A.employees);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+      if(typeof _audit==="function")_audit("family_auto_override",AID,_structKey,String(_famUpdated)+" emps","DEF_EMP family corrigé selon section PDF");
+    }
   }catch(_structErr){console.warn("[v9.694 cmcStructuredParser]",_structErr);}
   // v9.74 — SNAPSHOT avant modification pour rollback (P0+++ fidélité import)
   _saveImportSnapshot(iy,im,txt);
