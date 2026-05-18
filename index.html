@@ -4946,7 +4946,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.678";
+var APP_VER="v9.679";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22197,6 +22197,34 @@ function _cmcApexPubBanner(variant){
   /* banner default */
   return '<div style="background:linear-gradient(90deg,rgba(201,162,39,.12),rgba(201,162,39,.04));border:1px solid rgba(201,162,39,.3);border-radius:8px;padding:8px 12px;margin:8px 0;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="window.open(\''+APEX_URL+'\',\'_blank\',\'noopener\')"><span style="font-size:20px">⚡</span><div style="flex:1;min-width:0;font-size:12px"><strong style="color:#c9a227">APEX AI</strong> — assistant IA premium <span style="color:#7a9a7a">(chat, finance, voix, agenda...)</span></div><span style="color:#c9a227;font-size:14px">→</span></div>';
 }
+// v9.679 — Welcome v10 : présentation des nouveautés admin une fois (admin uniquement)
+function _cmcShowV10Welcome(){
+  if(!A.user||A.user.id!==AID)return;
+  if(localStorage.getItem("cmc_seen_v10_678")==="1")return;
+  localStorage.setItem("cmc_seen_v10_678","1");
+  setTimeout(function(){
+    var html='<div id="cmcV10Welcome" style="position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s var(--ease)">'
+      +'<div style="max-width:460px;width:100%;background:linear-gradient(135deg,#1a2a1e,#0a1a0e);border:1.5px solid rgba(201,162,39,.5);border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.55),0 0 0 1px rgba(201,162,39,.08)">'
+        +'<div style="text-align:center;margin-bottom:18px">'
+        +'<div style="font-size:42px;margin-bottom:6px">✨</div>'
+        +'<h2 style="color:#ffdc40;margin:0 0 4px;font-family:Cormorant Garamond,Garamond,serif;font-size:26px;font-weight:800;letter-spacing:.5px">Bienvenue dans la v10</h2>'
+        +'<div style="color:#a0cca0;font-size:13px;letter-spacing:1px;text-transform:uppercase">Refonte UX — plus pro, plus pratique</div>'
+        +'</div>'
+        +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">👑</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Nouveau panneau Admin</div><div style="color:#9bb89b;font-size:12px;margin-top:2px">5 catégories au lieu de 67 items en vrac</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">🤖</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Kill-switch IA global</div><div style="color:#9bb89b;font-size:12px;margin-top:2px">Coupe 100% des appels Anthropic (chat, OCR, scan, vision)</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">⌘</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Recherche rapide <kbd style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:#ffdc40">⌘K</kbd></div><div style="color:#9bb89b;font-size:12px;margin-top:2px">30+ cibles : vues, actions, employés, codes, convention</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">👁</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Aperçu admin sur l\'Accueil</div><div style="color:#9bb89b;font-size:12px;margin-top:2px">Alertes du jour visibles d\'un coup d\'oeil</div></div></div>'
+        +'</div>'
+        +'<div style="display:flex;flex-direction:column;gap:8px">'
+        +'<button onclick="document.getElementById(\'cmcV10Welcome\').remove();sv(\'admin\')" style="background:linear-gradient(135deg,#c9a227,#ffd700);color:#000;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;min-height:48px;letter-spacing:.3px">⚙ Découvrir le nouveau Admin</button>'
+        +'<button onclick="document.getElementById(\'cmcV10Welcome\').remove()" style="background:transparent;color:#9bb89b;border:1px solid rgba(160,200,160,.18);border-radius:10px;padding:10px;font-size:13px;cursor:pointer">Plus tard</button>'
+        +'</div>'
+      +'</div></div>';
+    var div=document.createElement("div");div.innerHTML=html;document.body.appendChild(div.firstChild);
+  },1200);
+}
+
 function _cmcApexPubPopupShow(){
   if(!_cmcApexPubPopupEnabled())return;
   var today=new Date().toISOString().slice(0,10);
@@ -22248,7 +22276,11 @@ function vAccueil(){
   /* v9.480 — Pub Apex AI banner top accueil (Kevin: 'fais la pub à plusieurs endroits') */
   h+=_cmcApexPubBanner("banner");
   /* Trigger popup 1x par jour si admin a active */
-  if(A.user&&A.user.id===AID)setTimeout(function(){try{_cmcApexPubPopupShow();}catch(_){}},800);
+  if(A.user&&A.user.id===AID){
+    setTimeout(function(){try{_cmcApexPubPopupShow();}catch(_){}},800);
+    // v9.679 — Welcome v10 : 1 fois par admin pour annoncer les nouveautés
+    setTimeout(function(){try{_cmcShowV10Welcome();}catch(_){}},1400);
+  }
   // v9.387 — Widget météo mini cliquable en haut (si feature ON)
   if(typeof isFeatureEnabled==="function"&&isFeatureEnabled("meteo")){
     h+='<a href="https://meteofrance.com/previsions-meteo-monde/monaco/98000" target="_blank" rel="noopener" style="text-decoration:none">'
