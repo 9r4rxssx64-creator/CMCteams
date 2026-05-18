@@ -199,6 +199,13 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .reply-quote{background:rgba(232,184,48,.08);border-left:3px solid var(--ax-gold);
   padding:5px 8px;border-radius:6px;margin-bottom:6px;cursor:pointer;min-width:0;max-width:100%}
 .reply-quote:active{background:rgba(232,184,48,.15)}
+.md-code{background:rgba(0,0,0,.35);border:1px solid var(--ax-border);border-radius:6px;
+  padding:8px 10px;margin:4px 0;font-family:ui-monospace,monospace;font-size:.88em;
+  white-space:pre-wrap;word-break:break-word;overflow-x:auto;max-width:100%}
+.md-inline{background:rgba(0,0,0,.3);border-radius:4px;padding:1px 5px;
+  font-family:ui-monospace,monospace;font-size:.9em;color:var(--ax-gold)}
+.md-link{color:var(--ax-blue);text-decoration:underline;word-break:break-all}
+.md-link:active{opacity:.7}
 .translate-hint{display:inline-block;margin-top:6px;font-size:.72em;color:var(--ax-blue);
   background:rgba(106,138,255,.1);border:1px solid rgba(106,138,255,.3);
   border-radius:10px;padding:3px 8px;cursor:pointer;transition:all .15s}
@@ -304,7 +311,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.52';
+const __APEX_CHAT_VERSION__ = 'v1.1.53';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -385,7 +392,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.52</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.53</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -399,7 +406,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.52</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.53</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2101,6 +2108,29 @@ K.sv = function(view, data){
 };
 
 // ============================================================================
+//  v1.1.53 — Markdown rendering safe (bold/italic/code/links + auto URLs)
+// ============================================================================
+K._renderMarkdown = function(rawText){
+  if(!rawText || typeof rawText !== 'string') return '';
+  let html = esc(rawText);
+  // Code block ```...```
+  html = html.replace(/```([\s\S]*?)```/g, (_, code) => `<pre class="md-code">${code}</pre>`);
+  // Inline code `...`
+  html = html.replace(/`([^`\n]+?)`/g, '<code class="md-inline">$1</code>');
+  // Bold *text* (WhatsApp convention)
+  html = html.replace(/(^|\s)\*([^*\n]+?)\*(?=\s|$|[.,;:!?])/g, '$1<strong>$2</strong>');
+  // Italic _text_
+  html = html.replace(/(^|\s)_([^_\n]+?)_(?=\s|$|[.,;:!?])/g, '$1<em>$2</em>');
+  // Strike ~text~
+  html = html.replace(/(^|\s)~([^~\n]+?)~(?=\s|$|[.,;:!?])/g, '$1<s>$2</s>');
+  // Auto-link URLs
+  html = html.replace(/(https?:\/\/[^\s<>"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
+  // Auto-link emails
+  html = html.replace(/\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/g, '<a href="mailto:$1" class="md-link">$1</a>');
+  return html;
+};
+
+// ============================================================================
 //  v1.1.52 — Search conversations (name + last msg + draft + msg content)
 // ============================================================================
 K._convSearchQuery = '';
@@ -2215,7 +2245,7 @@ function renderChat(app){
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
-          ${esc(m.text || (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
+          ${m.deleted ? esc(m.text) : (m.text ? K._renderMarkdown(m.text) : (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
           ${scamReason ? `<div class="scam-warning" onclick="K._showScamInfo('${esc(scamReason)}','${esc(m.id)}')" title="Message potentiellement suspect">⚠️ Suspect : ${esc(scamReason)}</div>` : ''}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
@@ -6537,7 +6567,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.52"
+        data-version="v1.1.53"
         data-color="#6a8aff"
         defer></script>
 </body>
