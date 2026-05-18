@@ -709,11 +709,12 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
         void apexRuntimeDiagnostic.runAll().then(async (result) => {
           try {
             const { toast } = await import('../ui/toast.js');
+            /* v13.4.227 (Kevin UX "diagnostic moche") : compacté durée + texte court.
+             * 6-10s → 2-4s, message lisible vite, dismissable au tap. */
             if (result.failCount === 0) {
-              toast.success(`🔬 Diagnostic v${result.version} : ${result.summary}`, { duration: 6000 });
+              toast.success(`🔬 v${result.version} · ${result.okCount}/${result.checks.length} ✓`, { duration: 2000 });
             } else {
-              const failed = result.checks.filter((c) => !c.ok).map((c) => c.label).join(', ');
-              toast.warn(`🔬 Diagnostic v${result.version} : ${result.summary} (KO : ${failed})`, { duration: 10000 });
+              toast.info(`🔬 Diagnostic v${result.version} · ${result.okCount}/${result.checks.length} ✓ (tap pour détail)`, { duration: 4000 });
             }
           } catch { /* toast non dispo : silencieux */ }
         }).catch((err: unknown) => {

@@ -1813,7 +1813,7 @@ export function render(rootEl: HTMLElement): void {
       }
       .ax-chat-greeting {
         text-align: center;
-        padding: 6px 14px 4px;
+        padding: 8px 16px;
         font-size: 12px;
         font-weight: 500;
         color: rgba(255,255,255,0.78);
@@ -1827,7 +1827,7 @@ export function render(rootEl: HTMLElement): void {
         width: 24px;
         height: 1px;
         background: linear-gradient(90deg,transparent,#e8b830,transparent);
-        margin: 4px auto 0;
+        margin: 8px auto 0;
         opacity: 0.5;
       }
       .ax-info-card {
@@ -1905,15 +1905,8 @@ export function render(rootEl: HTMLElement): void {
       <div style="position:relative;flex:1;display:flex;flex-direction:column;min-height:0">
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
         ${conversation.length === 0 ? `<div class="ax-chat-greeting">${escapeHtml(greeting)}</div>` : ''}
-        ${!hasKey ? `
-          <div class="ax-info-card ax-modernized-card" style="margin:4px 8px;padding:8px 10px">
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <span style="font-size:12px;color:#e8b830;font-weight:600">🔑 Pas de clé API</span>
-              <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:5px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;min-height:32px;-webkit-tap-highlight-color:transparent">📋 Coller</button>
-              <span style="font-size:11px;color:rgba(255,255,255,0.5)">Anthropic / OpenAI / Groq / Gemini</span>
-            </div>
-          </div>
-        ` : ''}
+        ${/* v13.4.227 (UX audit Kevin) : retiré card "Pas de clé API" doublon —
+            bouton 🔑 Clé dans nav bottom suffit (id ax-paste-key-nav). */ ''}
         ${conversation.length === 0 && hasKey ? `
           <div class="ax-chat-chips" role="group" aria-label="Suggestions rapides">
             <button type="button" class="ax-chat-chip" data-chip-text="Aide-moi à mixer une musique">🎚 Mixe une musique</button>
@@ -1937,10 +1930,12 @@ export function render(rootEl: HTMLElement): void {
           autocomplete="off"
           style="flex:1 1 100%;min-width:0;max-width:100%"
         ></textarea>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)" style="min-width:36px;width:36px;flex:0 0 36px">🎙</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="min-width:36px;width:36px;flex:0 0 36px">👂</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive" style="min-width:36px;width:36px;flex:0 0 36px">📎</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none;min-width:36px;width:36px;flex:0 0 36px">📷</button>
+        <div class="ax-input-actions" style="display:flex;gap:2px;flex:0 0 auto">
+          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)" style="min-width:36px;width:36px">🎙</button>
+          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="min-width:36px;width:36px">👂</button>
+          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive" style="min-width:36px;width:36px">📎</button>
+          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none;min-width:36px;width:36px">📷</button>
+        </div>
         <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer" style="flex:0 0 52px;width:52px;min-width:52px;height:44px;padding:0">↑</button>
         <input type="file" id="ax-chat-file-input" aria-label="Joindre fichiers au message" multiple
           accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
@@ -3209,7 +3204,7 @@ export function render(rootEl: HTMLElement): void {
       }, 100);
     });
   };
-  attachPasteKey('#ax-paste-key');
+  /* v13.4.227 : seul #ax-paste-key-nav reste (card 🔑 Pas de clé API retirée) */
   attachPasteKey('#ax-paste-key-nav');
 
   /* Sprint 8 v13.0.69 P0 BUG FIX (Kevin "boutons header/footer marchent pas") :
