@@ -193,6 +193,10 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 @keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,.5)}50%{box-shadow:0 0 0 8px rgba(230,57,70,0)}}
 .msg{position:relative;user-select:none;-webkit-user-select:none}
 .msg-status{font-size:.9em;margin-left:4px;opacity:.7;letter-spacing:-1px}
+.translate-hint{display:inline-block;margin-top:6px;font-size:.72em;color:var(--ax-blue);
+  background:rgba(106,138,255,.1);border:1px solid rgba(106,138,255,.3);
+  border-radius:10px;padding:3px 8px;cursor:pointer;transition:all .15s}
+.translate-hint:active{background:rgba(106,138,255,.2);transform:scale(.95)}
 .msg-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .msg-reaction{font-size:.85em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   border-radius:12px;padding:2px 8px;cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none}
@@ -284,7 +288,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.38';
+const __APEX_CHAT_VERSION__ = 'v1.1.39';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -365,7 +369,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.38</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.39</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -379,7 +383,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.38</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.39</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1838,12 +1842,14 @@ function renderChat(app){
       ` : msgs.map(m => {
         const isMine = m.from === K.user.id;
         const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
+        const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
         return `
         <div class="msg ${isMine ? 'me' : 'them'}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
           ${esc(m.text || (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
+          ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           <div class="msg-time">
             ${formatTime(m.ts)}
             ${isMine ? `<span class="msg-status" title="${readStatus === 'read' ? 'Lu' : readStatus === 'delivered' ? 'Livré' : 'Envoyé'}">${readStatus === 'read' ? '<span style="color:var(--ax-blue)">✓✓</span>' : readStatus === 'delivered' ? '✓✓' : '✓'}</span>` : ''}
@@ -3204,6 +3210,47 @@ K._useSmartReply = function(reply){
     input.value = reply;
     input.focus();
   }
+};
+
+// ============================================================================
+//  v1.1.39 — Auto-détection langue étrangère + suggestion traduction inline
+//  Heuristique locale rapide (sans appel API) + bouton vers IA translate
+// ============================================================================
+K._USER_LANG = (navigator.language || 'fr').split('-')[0].toLowerCase();
+K._LANG_HINTS = {
+  en: /\b(the|and|you|with|have|that|this|from|hello|hi |hey|please|thanks|sorry|because)\b/i,
+  es: /\b(hola|gracias|por favor|como|esta|estoy|tambien|pero|porque|cuando)\b/i,
+  it: /\b(ciao|grazie|prego|sono|come|stai|bene|molto|tutto|niente|perche)\b/i,
+  de: /\b(hallo|danke|bitte|wie|geht|gut|nicht|aber|warum|wenn|ich|du)\b/i,
+  pt: /\b(ola|obrigado|por favor|como|esta|estou|muito|tudo|bem|porque)\b/i,
+  ar: /[؀-ۿ]/,           /* alphabet arabe */
+  ru: /[Ѐ-ӿ]/,           /* cyrillique */
+  zh: /[一-鿿]/,           /* sinogrammes */
+  ja: /[぀-ヿ]/,           /* hiragana/katakana */
+};
+
+K._detectLang = function(text){
+  if(!text || text.length < 4) return null;
+  const candidates = [];
+  for(const [lang, re] of Object.entries(K._LANG_HINTS)){
+    if(re.test(text)) candidates.push(lang);
+  }
+  if(candidates.length === 0) return null;
+  // Si user lang détectée, ne suggère pas
+  if(candidates.includes(K._USER_LANG)) return null;
+  return candidates[0];
+};
+
+K._suggestTranslate = function(msgId){
+  if(!msgId) return;
+  const conv = K.viewData;
+  if(!conv) return;
+  const m = (K.messages[conv.id] || []).find(x => x.id === msgId);
+  if(!m || !m.text) return;
+  // Ouvre menu translate qui contient déjà #tr-result + fait la trad direct
+  K._showTranslateMenu(m.text);
+  // Auto-déclenche traduction vers user lang
+  setTimeout(() => K._doTranslate(m.text, K._USER_LANG), 80);
 };
 
 // ============================================================================
