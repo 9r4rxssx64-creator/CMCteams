@@ -177,9 +177,9 @@ function hdr(){return '<div class="hdr"><div class="hdr-inner">'
 +CATS.map(function(c){return '<div class="nav-item" data-cat="'+c.id+'" onclick="S.cat=\''+c.id+'\';S.page=1;sv(\'products\')">'+c.icon+" "+esc(c.name)+"</div>"}).join("")
 +"</div>"}
 function footer(){return '<div class="footer"><div class="footer-inner">'
-+'<div><h4>'+esc(STORE_NAME)+'</h4><a href="#" onclick="sv(\'about\');return false">À propos</a><a href="#" onclick="sv(\'contact\');return false">Contact</a><a href="#">Livraison</a><a href="#">CGV</a></div>'
++'<div><h4>'+esc(STORE_NAME)+'</h4><a href="#" onclick="sv(\'about\');return false">À propos</a><a href="#" onclick="sv(\'contact\');return false">Contact</a><a href="../legal/livraison.html">Livraison</a><a href="../legal/cgv.html">CGV</a></div>'
 +'<div><h4>Catégories</h4>'+CATS.slice(0,5).map(function(c){return '<a href="#" onclick="S.cat=\''+c.id+'\';sv(\'products\');return false">'+c.icon+" "+esc(c.name)+"</a>"}).join("")+'</div>'
-+'<div><h4>Aide</h4><a href="#">FAQ</a><a href="#">Retours</a><a href="#">Paiement sécurisé</a><a href="#">Confidentialité</a></div>'
++'<div><h4>Aide</h4><a href="../legal/faq.html">FAQ</a><a href="../legal/retours.html">Retours</a><a href="../legal/livraison.html">Livraison</a><a href="../legal/confidentialite.html">Confidentialité</a></div>'
 +'<div><h4>Newsletter</h4><p style="font-size:13px;color:var(--muted);margin-bottom:8px">Recevez nos offres exclusives</p>'
 +'<div style="display:flex;gap:8px"><input type="email" placeholder="votre@email.com" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" id="nlEmail">'
 +'<button onclick="nlSub()" style="padding:10px 16px;background:var(--p);color:#000;border-radius:var(--rs);font-weight:700;font-size:13px">OK</button></div></div>'
@@ -317,5 +317,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
         data-version="v1.0.0"
         data-color="#e8b830"
         defer></script>
+
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js')</script>
 </body>
 </html>
