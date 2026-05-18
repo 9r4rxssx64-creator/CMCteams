@@ -4970,7 +4970,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.703";
+var APP_VER="v9.704";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10364,6 +10364,16 @@ window.vCmcQuietStatus = vCmcQuietStatus;
 
 function toast(msg,type,dur,undoFn){
   if(type===undefined)type="ok";
+  // v9.704 Kevin "Enlève tous les toasts erreur, vert etc..." :
+  // Tous les toasts sont désormais SILENCIEUX (log uniquement, pas d'affichage).
+  // Tu peux toujours retrouver les messages dans Admin → Journal silent.
+  try{
+    var sLog2 = lg("cmc_silent_log", []);
+    sLog2.push({msg:String(msg).slice(0,200), type:type||"ok", ts:Date.now(), reason:"toasts_disabled_v704"});
+    if(sLog2.length > 200) sLog2 = sLog2.slice(-200);
+    ls("cmc_silent_log", sLog2);
+  }catch(_){}
+  return;
   /* CMC_V9_573_QUIET : skip toast non-critique pendant boot quiet (parity Apex v12.499) */
   try{
     if(typeof window._cmcIsQuietMode === "function" && window._cmcIsQuietMode() && type !== "err"){
@@ -10677,14 +10687,18 @@ function dcDebounced(){
   _dcPending=true;
   var now=Date.now();
   var sinceLast=now-_dcLastRun;
-  // Si appelé < 250ms après le dernier dc(), on coalesce avec un setTimeout
+  // v9.704 Kevin "L'app saute, surtout quand elle réfléchit pendant import + tests" :
+  // pendant import, augmenter le debounce à 3000ms pour coalescer les multiples re-renders
+  // déclenchés par agents/SSE qui tournent en parallèle. Réactivité click préservée hors import.
+  var _activeInterval=_importInProgress?3000:_dcMinIntervalMs;
+  // Si appelé < activeInterval ms après le dernier dc(), on coalesce avec un setTimeout
   // Sinon on lance immédiatement via rAF (réactivité user click)
-  if(sinceLast<_dcMinIntervalMs){
+  if(sinceLast<_activeInterval){
     if(_dcTimer)clearTimeout(_dcTimer);
     _dcTimer=setTimeout(function(){
       _dcTimer=null;_dcPending=false;_dcLastRun=Date.now();
       try{dc();}catch(_){}
-    },_dcMinIntervalMs-sinceLast);
+    },_activeInterval-sinceLast);
   }else{
     (window.requestAnimationFrame||function(f){setTimeout(f,16);})(function(){
       _dcPending=false;_dcLastRun=Date.now();
@@ -14610,6 +14624,66 @@ function agentEmit(eventName,payload){
 })();
 function agentsStart(){
   if(!A.user||A.user.id!==AID)return; // Agents admin seulement
+  // v9.704 Kevin "On devait repartir à zéro mais il y avait encore l'équipe d'avril" :
+  // Auto-cleanup TOUS les mois antérieurs au mois courant. Tourne à CHAQUE login admin,
+  // pas un flag one-shot. Si Kevin est en mai 2026, supprime avril/mars/etc. de
+  // A.overrides + teamHistory + familyHistory + cmc_ref_* + cmc_verif_* + cmc_ci_*
+  // + cmc_comments_* + cmc_visual_planning_* + cmc_structured_* + cmc_team_mirror_*.
+  // Garde uniquement mois courant et mois futur immédiat.
+  try{
+    var _curY=A.year, _curM=A.month;
+    var _curMo=_curY*12+_curM;
+    var _wipedPast=0;
+    // 1. A.overrides : supprimer mois antérieurs
+    Object.keys(A.overrides||{}).forEach(function(k){
+      var p=k.split("-"), y=parseInt(p[0]), m=parseInt(p[1]);
+      if(isNaN(y)||isNaN(m))return;
+      if(y*12+m < _curMo){ delete A.overrides[k]; _wipedPast++; }
+    });
+    // 2. A.overrides_meta même
+    if(A.overrides_meta){
+      Object.keys(A.overrides_meta).forEach(function(k){
+        var p=k.split("-"), y=parseInt(p[0]), m=parseInt(p[1]);
+        if(isNaN(y)||isNaN(m))return;
+        if(y*12+m < _curMo) delete A.overrides_meta[k];
+      });
+    }
+    // 3. emp.teamHistory + familyHistory : supprimer entrées pour mois antérieurs
+    A.employees.forEach(function(e){
+      if(e.teamHistory)Object.keys(e.teamHistory).forEach(function(k){
+        var p=k.split("-"), y=parseInt(p[0]), m=parseInt(p[1]);
+        if(isNaN(y)||isNaN(m))return;
+        if(y*12+m < _curMo) delete e.teamHistory[k];
+      });
+      if(e.familyHistory)Object.keys(e.familyHistory).forEach(function(k){
+        var p=k.split("-"), y=parseInt(p[0]), m=parseInt(p[1]);
+        if(isNaN(y)||isNaN(m))return;
+        if(y*12+m < _curMo) delete e.familyHistory[k];
+      });
+    });
+    // 4. localStorage clés préfixées pour mois antérieurs
+    var _pastPrefixes=["cmc_ref_","cmc_verif_","cmc_ci_","cmc_comments_","cmc_day_notes_","cmc_visual_planning_","cmc_structured_","cmc_team_mirror_","cmc_last_import_type_","cmc_manual_overrides_","cmc_import_completeness_","cmc_apex_vision_result_"];
+    for(var lk in localStorage){
+      if(!localStorage.hasOwnProperty(lk))continue;
+      _pastPrefixes.forEach(function(pr){
+        if(lk.indexOf(pr)!==0)return;
+        var rest=lk.slice(pr.length); // "2026-3" ou "2026-3_xxx"
+        var p=rest.split(/[-_]/), y=parseInt(p[0]), m=parseInt(p[1]);
+        if(isNaN(y)||isNaN(m))return;
+        if(y*12+m < _curMo) try{localStorage.removeItem(lk);}catch(_){}
+      });
+    }
+    if(_wipedPast>0){
+      try{ls("cmc_ov",A.overrides);}catch(_){}
+      try{ls("cmc_ov_meta",A.overrides_meta);}catch(_){}
+      try{ls("cmc_e",A.employees);}catch(_){}
+      if(typeof fbWrite==="function"){
+        try{fbWrite("cmc_ov",A.overrides);}catch(_){}
+        try{fbWrite("cmc_e",A.employees);}catch(_){}
+      }
+      console.log("[v9.704 auto-cleanup past months] "+_wipedPast+" mois antérieurs effacés (avant "+MFR[_curM]+" "+_curY+")");
+    }
+  }catch(_cleanupErr){}
   // v9.703 Kevin diag "personnes dans mauvaises équipes" — re-trigger wipe pour
   // effacer les teamHistory erronés (BRASSEUR F en r4 au lieu de 4, etc.).
   // Le fix v9.703 (section detection + family override pour DEF_EMP) corrige le parseur
@@ -14619,7 +14693,6 @@ function agentsStart(){
       if(typeof cmcWipeAllPlanningMemory==="function"){
         var _ws=cmcWipeAllPlanningMemory(true);
         ls("cmc_v703_wipe_done",{ts:Date.now(),stats:_ws||null});
-        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.703 : équipes erronées effacées. Re-importe mai V2 pour reconnaissance correcte.","ok",8000);}catch(_){}
       }
     }
   }catch(_v703err){}
@@ -14627,9 +14700,12 @@ function agentsStart(){
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
     // Run immédiat (décalé 5s par agent pour étaler)
-    setTimeout(function(){if(document.visibilityState==="visible")try{a.run();}catch(_){}},(APP_AGENTS.indexOf(a)+1)*5000);
+    setTimeout(function(){if(document.visibilityState==="visible" && !_importInProgress)try{a.run();}catch(_){}},(APP_AGENTS.indexOf(a)+1)*5000);
     _agentTimers[a.id]=setInterval(function(){
       if(document.visibilityState!=="visible")return;
+      // v9.704 Kevin "L'app saute quand elle fait les tests pendant import" :
+      // skip TOUS les agents pendant import. Reprend automatiquement quand import fini.
+      if(_importInProgress)return;
       if(_agentRunning[a.id])return;
       _agentRunning[a.id]=true;
       try{a.run();}catch(_){}
