@@ -4929,7 +4929,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.679";
+var APP_VER="v9.680";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22285,6 +22285,17 @@ function vAccueil(){
         +'<div style="font-size:10px;color:#a0bca0;letter-spacing:.3px;text-transform:uppercase;font-weight:700">'+lb+'</div>'
         +'</button>';
     };
+    // v9.680 — Couverture planning du mois en cours (mini progress bar)
+    var _plMonth=gpl(A.year,A.month);
+    var _daysM=getDays(A.year,A.month);
+    var _daysCovered=0;
+    for(var _di=1;_di<=_daysM;_di++){
+      var _anyCode=false;
+      for(var _eid in _plMonth){if(_plMonth[_eid][_di]){_anyCode=true;break;}}
+      if(_anyCode)_daysCovered++;
+    }
+    var _coverPct=_daysM>0?Math.round(_daysCovered/_daysM*100):0;
+    var _coverCol=_coverPct>=90?"#5aaa70":_coverPct>=50?"#c9a227":"#e08040";
     h+='<div style="padding:14px;background:linear-gradient(135deg,rgba(20,30,22,.55),rgba(14,24,16,.4));border:1px solid rgba(201,162,39,.22);border-radius:14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
       +'<div style="font-size:18px">👑</div>'
@@ -22294,6 +22305,11 @@ function vAccueil(){
       +'</div>'
       +'<button onclick="iaToggle()" title="'+(_iaOn?"IA active : appels Anthropic OK":"IA désactivée — tokens préservés")+'" style="background:'+(_iaOn?"rgba(80,200,100,.14)":"rgba(192,120,48,.18)")+';border:1px solid '+(_iaOn?"rgba(80,200,100,.4)":"rgba(192,120,48,.5)")+';color:'+(_iaOn?"#7edc90":"#e0a040")+';border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">'+(_iaOn?"✅ IA ON":"⏸ IA OFF")+'</button>'
       +'<button onclick="sv(\'admin\')" title="Ouvrir le panneau d\'administration v10" style="background:linear-gradient(135deg,#c9a227,#ffdc40);color:#000;border:none;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">⚙ Admin</button>'
+      +'</div>'
+      // v9.680 — Mini progress bar couverture planning
+      +'<div onclick="sv(\'planning\')" style="cursor:pointer;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px" title="Cliquer pour voir le planning de l’équipe">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:#9bb89b;margin-bottom:5px"><span style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">📅 Couverture '+MFR[A.month]+' '+A.year+'</span><span style="font-family:monospace;font-weight:800;color:'+_coverCol+'">'+_daysCovered+' / '+_daysM+' jours · '+_coverPct+'%</span></div>'
+      +'<div style="height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+_coverPct+'%;background:linear-gradient(90deg,'+_coverCol+'88,'+_coverCol+');transition:width .6s var(--ease);box-shadow:0 0 8px '+_coverCol+'66"></div></div>'
       +'</div>'
       +(_totalAlerts>0
         ?'<div style="display:flex;gap:6px;flex-wrap:wrap">'
