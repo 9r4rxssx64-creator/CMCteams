@@ -4929,7 +4929,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.689";
+var APP_VER="v9.690";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22315,10 +22315,13 @@ function vAccueil(){
       +'<div style="font-size:18px">👑</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:15px;font-weight:800;color:#c9a227;font-family:Cormorant Garamond,Garamond,serif;line-height:1.2">Aperçu administrateur</div>'
-      +'<div style="font-size:11px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase">'+(_totalAlerts>0?(_totalAlerts+" alerte"+(_totalAlerts>1?"s":"")+" active"+(_totalAlerts>1?"s":"")):"Tout est à jour ✓")+'</div>'
+      +'<div style="font-size:11px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      +'<span>'+(_totalAlerts>0?(_totalAlerts+" alerte"+(_totalAlerts>1?"s":"")+" active"+(_totalAlerts>1?"s":"")):"Tout est à jour ✓")+'</span>'
+      +(function(){var _onl=(typeof getOnlineUsers==="function")?getOnlineUsers():[];if(!_onl.length)return"";return '<span onclick="sv(\'online\')" style="cursor:pointer;color:#7edc90;font-weight:800;letter-spacing:.3px" title="Cliquer pour voir qui est en ligne"><span style="display:inline-block;width:6px;height:6px;background:#7edc90;border-radius:50%;margin-right:4px;vertical-align:middle;animation:pulseDot 1.5s ease-in-out infinite"></span>'+_onl.length+' en ligne</span>';})()
+      +'</div>'
       +'</div>'
       +'<button onclick="iaToggle()" title="'+(_iaOn?"IA active : appels Anthropic OK":"IA désactivée — tokens préservés")+'" style="background:'+(_iaOn?"rgba(80,200,100,.14)":"rgba(192,120,48,.18)")+';border:1px solid '+(_iaOn?"rgba(80,200,100,.4)":"rgba(192,120,48,.5)")+';color:'+(_iaOn?"#7edc90":"#e0a040")+';border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">'+(_iaOn?"✅ IA ON":"⏸ IA OFF")+'</button>'
-      +'<button onclick="sv(\'admin\')" title="Ouvrir le panneau d\'administration v10" style="background:linear-gradient(135deg,#c9a227,#ffdc40);color:#000;border:none;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">⚙ Admin</button>'
+      +'<button onclick="sv(\'admin\')" title="Ouvrir le panneau d\'administration v10 — 5 catégories : 👥 Équipes · 📅 Planning · 🔒 Sécurité · ⚙ Système · 🤖 IA" style="background:linear-gradient(135deg,#c9a227,#ffdc40);color:#000;border:none;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">⚙ Admin</button>'
       +'</div>'
       // v9.680 — Mini progress bar couverture planning
       // v9.681 — Mini "calendrier" 1 case par jour : couvert (vert), non-couvert (sombre), jour passé (semi-transparent), aujourd'hui (or pulse)
