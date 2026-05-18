@@ -273,7 +273,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.32';
+const __APEX_CHAT_VERSION__ = 'v1.1.33';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -349,7 +349,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.32</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.33</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -363,7 +363,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.32</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.33</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1306,7 +1306,9 @@ function renderChat(app){
       ` : msgs.map(m => `
         <div class="msg ${m.from === K.user.id ? 'me' : 'them'}">
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
-          ${esc(m.text || (m.image_data ? '' : '(message chiffré)'))}
+          ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
+          ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
+          ${esc(m.text || (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
           <div class="msg-time">${formatTime(m.ts)}</div>
         </div>
       `).join('')}
@@ -2704,12 +2706,9 @@ K._toggleVoiceRecord = async function(){
         const data = await r.json();
         const text = (data && data.text || '').trim();
         if(!text){ toast('Aucun texte détecté', 'warn'); return; }
-        const input = document.getElementById('msg-input');
-        if(input){
-          input.value = (input.value ? input.value + ' ' : '') + '🎙️ ' + text;
-          input.focus();
-          toast('✅ Transcrit (' + text.length + ' chars)', 'ok');
-        }
+        // v1.1.33 : preview modal — l'user édite/envoie/annule (1 tap user-friendly)
+        const audioUrl = URL.createObjectURL(blob);
+        K._showVoicePreview({ text, audioUrl, blob });
       } catch(e){
         _safeCatch('voice-transcribe', e);
         toast('Transcription échouée', 'err');
@@ -2782,6 +2781,78 @@ K._uploadImage = async function(file){
   } catch(e){
     _safeCatch('upload-image', e);
     toast('Envoi image échoué', 'err');
+  }
+};
+
+// ============================================================================
+//  v1.1.33 — Voice preview modal : écoute + édite + envoie/annule
+// ============================================================================
+K._voicePending = null;
+K._showVoicePreview = function(payload){
+  K._voicePending = payload;
+  K._showModal('🎙️ Message vocal', `
+    <div style="text-align:center;padding:6px 0">
+      <audio id="voice-preview-audio" src="${payload.audioUrl}" controls style="width:100%;margin-bottom:12px;border-radius:10px"></audio>
+    </div>
+    <label style="display:block;color:var(--ax-text-2);font-size:.85em;margin-bottom:4px">Transcription (modifiable) :</label>
+    <textarea id="voice-preview-text" rows="3" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:15px;resize:vertical">${esc(payload.text)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-out" style="flex:1" onclick="K._cancelVoicePreview()">↩ Annuler</button>
+      <button class="btn" style="flex:2" onclick="K._sendVoiceMessage()">📤 Envoyer message vocal</button>
+    </div>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:8px">L'audio + le texte seront envoyés ensemble.</p>
+  `);
+};
+
+K._cancelVoicePreview = function(){
+  if(K._voicePending?.audioUrl){
+    try { URL.revokeObjectURL(K._voicePending.audioUrl); } catch(_) {}
+  }
+  K._voicePending = null;
+  K._closeModal && K._closeModal();
+};
+
+K._sendVoiceMessage = async function(){
+  const pending = K._voicePending;
+  if(!pending){ K._closeModal && K._closeModal(); return; }
+  const conv = K.viewData;
+  if(!conv){ toast('Pas de conversation active', 'warn'); return; }
+  const ta = document.getElementById('voice-preview-text');
+  const finalText = (ta?.value || pending.text || '').trim();
+  if(!finalText){ toast('Texte vide, annulé', 'warn'); K._cancelVoicePreview(); return; }
+  try {
+    // Convertit blob en data:URL pour persistance localStorage (best-effort, max 1MB)
+    let audioData = null;
+    if(pending.blob && pending.blob.size < 1024 * 1024){
+      audioData = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(pending.blob);
+      });
+    }
+    const msg = {
+      id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      from: K.user.id,
+      text: '🎙️ ' + finalText,
+      voice_text: finalText,
+      voice_data: audioData,
+      voice_too_large: !audioData,
+      ts: Date.now(),
+      encrypted: false
+    };
+    if(!K.messages[conv.id]) K.messages[conv.id] = [];
+    K.messages[conv.id].push(msg);
+    ls('messages_' + conv.id, K.messages[conv.id]);
+    K.render();
+    if(pending.audioUrl){
+      try { URL.revokeObjectURL(pending.audioUrl); } catch(_) {}
+    }
+    K._voicePending = null;
+    toast('✅ Message vocal envoyé', 'ok');
+  } catch(e){
+    _safeCatch('send-voice-msg', e);
+    toast('Envoi vocal échoué', 'err');
   }
 };
 
