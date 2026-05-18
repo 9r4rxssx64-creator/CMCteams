@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.685";
+var APP_VER="v9.686";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -16064,13 +16064,19 @@ function vNav(){
   }).join("")}</nav>`;
 }
 
-/* v9.486 — Breadcrumbs visibles (parite Apex v12.120) */
+/* v9.486 — Breadcrumbs visibles (parite Apex v12.120) — v9.686 enrichi pour vAdminCat */
 function _cmcBreadcrumb(){
   if(!A.user||!A.view)return "";
   var skip={accueil:1,login:1,monplanning:1,chat:1,ia:1};
   if(skip[A.view])return "";
-  var labels={planning:"📅 Planning équipe",departs:"🚪 Départs",stats:"📊 Statistiques",admin:"⚙️ Administration",teams:"👥 Équipes",emps:"👤 Employés",retrait:"🚫 Retraités",import:"📥 Import PDF",passwords:"🔐 Mots de passe",absences:"🏥 Absences",auditlog:"📋 Audit",convention:"📖 Convention",docs:"📄 Documents",exchanges:"🔄 Échanges",online:"🌐 En ligne",adminsecurity:"🔒 Sécurité admin",profil:"👤 Mon profil",monprofil:"👤 Mon profil",admintimework:"⏱ Mon temps",usersactivity:"👥 Activité users",consumptionlevels:"⚙️ Niveau IA"};
+  var labels={planning:"📅 Planning équipe",departs:"🚪 Départs",stats:"📊 Statistiques",admin:"⚙️ Administration",adminv10:"⚙️ Administration",teams:"👥 Équipes",emps:"👤 Employés",employees:"👤 Employés",retrait:"🚫 Retraités",import:"📥 Import PDF",passwords:"🔐 Mots de passe",absences:"🏥 Absences",auditlog:"📋 Audit",convention:"📖 Convention",docs:"📄 Documents",documents:"📄 Documents",exchanges:"🔄 Échanges",echanges:"🔄 Échanges",online:"🌐 En ligne",adminsecurity:"🔒 Sécurité admin",security:"🔒 Sécurité admin",profil:"👤 Mon profil",monprofil:"👤 Mon profil",admintimework:"⏱ Mon temps",usersactivity:"👥 Activité users",consumptionlevels:"⚙️ Niveau IA",importVerif:"✅ Vérifier import",conflits:"⚠ Conflits",quilibre:"😴 Qui est libre",passation:"📝 Nouvelle passation",passations:"📖 Historique passations",rgpd:"🔒 RGPD",retardataires:"📢 Retardataires",memorypro:"🧠 Mémoire IA",sentinelhub:"🛡 Sentinelles",mapeditor:"🗺 Cartes casinos",voicepresets:"🔊 Voix",debug:"🔧 Diagnostic",statsglobal:"🌐 Stats globales",statsannuelles:"📈 Stats annuelles"};
   var label=labels[A.view]||A.view;
+  // v9.686 — Cas spécial : vAdminCat (vue détaillée d'une catégorie admin) → fil à 3 niveaux
+  if(A.view==="admincat"){
+    var catTitles={team:"👥 Équipes & Employés",planning:"📅 Planning & Horaires",security:"🔒 Sécurité & Audit",system:"⚙ Système & Configuration",ia:"🤖 IA & Outils"};
+    var catLabel=catTitles[A.adminCat]||"Catégorie";
+    return '<div style="padding:6px 14px;background:rgba(201,162,39,.04);border-bottom:1px solid rgba(201,162,39,.1);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#" onclick="sv(\'accueil\');return false" style="color:#4a9aff;text-decoration:none;font-weight:600">🏠 Accueil</a><span style="color:#7a9a7a">›</span><a href="#" onclick="sv(\'admin\');return false" style="color:#4a9aff;text-decoration:none;font-weight:600">⚙️ Administration</a><span style="color:#7a9a7a">›</span><strong style="color:#c9a227">'+esc(catLabel)+'</strong></div>';
+  }
   return '<div style="padding:6px 14px;background:rgba(201,162,39,.04);border-bottom:1px solid rgba(201,162,39,.1);font-size:12px;display:flex;align-items:center;gap:8px"><a href="#" onclick="sv(\'accueil\');return false" style="color:#4a9aff;text-decoration:none;font-weight:600">🏠 Accueil</a><span style="color:#7a9a7a">›</span><strong style="color:#c9a227">'+esc(label)+'</strong></div>';
 }
 function vMain(){
