@@ -4946,7 +4946,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.681";
+var APP_VER="v9.682";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -16019,7 +16019,8 @@ function vTopbar(){
     :(_todCode&&isWork(_todCode)?`<span title="${(_todCi&&_todCi.l)||_todCode}" style="background:${(_todCi&&_todCi.c)||col}18;color:${(_todCi&&_todCi.c)||col};border:1px solid ${(_todCi&&_todCi.c)||col}35;border-radius:6px;padding:2px 6px;font-size:13px;font-weight:800;flex-shrink:0">${esc(_todCode)}</span>`:"")}
   ${!isAdm&&t?`<span style="background:${col}14;color:${col};border:1px solid ${col}28;border-radius:8px;padding:2px 7px;font-size:12px;font-weight:700;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${esc(t.name)}</span>`:""}
   <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:auto">
-    <button onclick="toggleSearch()" title="Recherche rapide (employ\u00e9s, codes, jeux, convention) \u00b7 Pour la palette compl\u00e8te : \u2318K" aria-label="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
+    <button onclick="toggleSearch()" title="Recherche rapide (employ\u00e9s, codes, jeux, convention)" aria-label="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
+    <button onclick="openCommandPalette()" title="Palette de commandes (toutes actions, vues, raccourcis) \u00b7 \u2318K" aria-label="Palette de commandes" style="background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;color:#7aaa80;font-family:monospace;font-weight:800">\u2318</button>
     <div id="topClock" style="font-size:11px;font-family:monospace;color:#a0cca0;line-height:1;white-space:nowrap"></div>
     ${_syncDot}
     ${_iaOffBadge}
