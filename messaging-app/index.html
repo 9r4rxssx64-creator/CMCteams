@@ -273,7 +273,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.29';
+const __APEX_CHAT_VERSION__ = 'v1.1.30';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -349,7 +349,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.29</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.30</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -363,7 +363,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.29</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.30</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2387,15 +2387,25 @@ K._summarizeMemoryLane = async function(yearAgo){
   const prompt = `Voici des extraits de conversations d'il y a 1 an (${msgs.length} messages au total). Résume en 3-5 lignes les moments importants, sujets discutés et ambiance :\n\n${sample}`;
 
   try{
-    const res = await fetch(API_BASE + '/api/ai/summarize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
-      body: JSON.stringify({ prompt, max_tokens: 400 }),
-      signal: AbortSignal.timeout(20_000),
-    });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 20_000);
+    let res;
+    try {
+      res = await fetch(API_BASE + '/api/ai/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+        body: JSON.stringify({ prompt, max_tokens: 400 }),
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(tid); }
+    // v1.1.30 : quota gracieux
+    if(res.status === 429){
+      const err429 = await res.json().catch(() => ({}));
+      return { ok: false, reason: err429.message || 'Limite gratuite atteinte. Passe Premium pour illimité.', quota: true };
+    }
     if(!res.ok) return { ok: false, reason: `IA HTTP ${res.status}` };
     const data = await res.json();
-    return { ok: true, summary: data.text || data.summary || '(réponse vide)', msgCount: msgs.length };
+    return { ok: true, summary: data.text || data.summary || '(réponse vide)', msgCount: msgs.length, premium: data.premium };
   }catch(e){
     return { ok: false, reason: e.message || 'Erreur réseau IA' };
   }
@@ -2542,12 +2552,21 @@ K._translateMessage = async function(text, targetLang){
   if(!K.token) return null;
   targetLang = (targetLang || 'fr').toLowerCase().slice(0, 5);
   try{
-    const res = await fetch(API_BASE + '/api/ai/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
-      body: JSON.stringify({ text: String(text || '').slice(0, 5000), target_lang: targetLang }),
-      signal: AbortSignal.timeout(12_000),
-    });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 12_000);
+    let res;
+    try {
+      res = await fetch(API_BASE + '/api/ai/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+        body: JSON.stringify({ text: String(text || '').slice(0, 5000), target_lang: targetLang }),
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(tid); }
+    if(res.status === 429){
+      const e429 = await res.json().catch(() => ({}));
+      return { ok: false, reason: e429.message || 'Limite gratuite atteinte', quota: true };
+    }
     if(!res.ok) return { ok: false, reason: `HTTP ${res.status}` };
     return await res.json();
   }catch(e){
@@ -2672,6 +2691,11 @@ K._toggleVoiceRecord = async function(){
           headers: { 'Authorization': 'Bearer ' + (K.token || '') },
           body: fd
         });
+        if(r.status === 429){
+          const e429 = await r.json().catch(() => ({}));
+          toast(e429.message || 'Limite gratuite atteinte. Premium = illimité.', 'warn');
+          return;
+        }
         if(!r.ok){
           const err = await r.json().catch(() => ({}));
           toast('Transcription : ' + (err.error || 'erreur'), 'err');
@@ -2730,7 +2754,10 @@ K._uploadImage = async function(file){
         },
         body: JSON.stringify({ image_base64: b64 })
       });
-      if(r.ok){
+      if(r.status === 429){
+        const e429 = await r.json().catch(() => ({}));
+        toast(e429.message || 'Alt-text Premium uniquement aujourd\'hui', 'warn');
+      } else if(r.ok){
         const data = await r.json();
         altText = (data && data.description || '').trim();
       }

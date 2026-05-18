@@ -947,3 +947,177 @@ describe('handlePremiumStatus', () => {
     expect(j.premium).toBe(false);
   });
 });
+
+// ============================================================================
+//  v1.1.30 — Premium quota daily middleware tests
+//  Vérifie : non-premium = limite/jour, premium = illimité, KV increment, 429
+// ============================================================================
+describe('Premium quota middleware (v1.1.30)', () => {
+  function mkUserWithPremium(env, isPremium, plan = 'monthly') {
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({
+        is_admin: 0, status: 'active', is_banned: 0,
+        premium_until: isPremium ? Date.now() + 86400_000 : 0,
+        premium_plan: isPremium ? plan : null,
+      }),
+      all: async () => ({ results: [] }),
+      run: async () => ({ success: true }),
+    }));
+  }
+
+  it('non-premium user : quota 5/jour voice-transcribe → 429 au 6e', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, false);
+    // Pré-remplit KV à la limite (5/5)
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:voice-transcribe:${today}`, '5');
+    const tok = await userToken();
+    const fd = new FormData();
+    fd.append('audio', new File([new Uint8Array(1000)], 'a.webm', { type: 'audio/webm' }));
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok },
+      body: fd,
+    });
+    const r = await handleAiVoiceTranscribe(req, env);
+    expect(r.status).toBe(429);
+    const j = await r.json();
+    expect(j.error).toBe('quota_exceeded');
+    expect(j.limit).toBe(5);
+    expect(j.feature).toBe('voice-transcribe');
+  });
+
+  it('premium user : pas de check quota, fetch Groq direct', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, true);
+    // Même si quota préfill 100 → ignoré pour premium
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:voice-transcribe:${today}`, '100');
+    globalThis.fetch = vi.fn(async () => new Response(
+      JSON.stringify({ text: 'Bonjour Apex', language: 'fr', duration: 1.5 }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    ));
+    const tok = await userToken();
+    const fd = new FormData();
+    fd.append('audio', new File([new Uint8Array(1000)], 'a.webm', { type: 'audio/webm' }));
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok },
+      body: fd,
+    });
+    const r = await handleAiVoiceTranscribe(req, env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.ok).toBe(true);
+    expect(j.premium).toBe(true);
+  });
+
+  it('non-premium : 1er appel → 200 + KV incrémenté à 1', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, false);
+    globalThis.fetch = vi.fn(async () => new Response(
+      JSON.stringify({ text: 'OK', language: 'fr' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    ));
+    const tok = await userToken();
+    const fd = new FormData();
+    fd.append('audio', new File([new Uint8Array(1000)], 'a.webm', { type: 'audio/webm' }));
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok },
+      body: fd,
+    });
+    const r = await handleAiVoiceTranscribe(req, env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.premium).toBe(false);
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = await env.APEX_CHAT_KV.get(`quota:user_test:voice-transcribe:${today}`);
+    expect(stored).toBe('1');
+  });
+
+  it('non-premium : image-describe quota 10/jour', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, false);
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:image-describe:${today}`, '10');
+    const tok = await userToken();
+    const r = await handleAiImageDescribe(
+      makeReq('POST', '/api/ai/image-describe', { image_base64: 'a'.repeat(200) }, tok),
+      env,
+    );
+    expect(r.status).toBe(429);
+    const j = await r.json();
+    expect(j.feature).toBe('image-describe');
+    expect(j.limit).toBe(10);
+  });
+
+  it('non-premium : summarize quota 3/jour', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, false);
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:summarize:${today}`, '3');
+    const tok = await userToken();
+    const r = await handleAiSummarize(
+      makeReq('POST', '/api/ai/summarize', { prompt: 'résume ceci stp longtemps' }, tok),
+      env,
+    );
+    expect(r.status).toBe(429);
+    const j = await r.json();
+    expect(j.feature).toBe('summarize');
+    expect(j.limit).toBe(3);
+  });
+
+  it('non-premium : smart-reply quota 30/jour', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, false);
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:smart-reply:${today}`, '30');
+    const tok = await userToken();
+    const r = await handleAiSmartReply(
+      makeReq('POST', '/api/ai/smart-reply', { last_message: 'salut ça va ?' }, tok),
+      env,
+    );
+    expect(r.status).toBe(429);
+    const j = await r.json();
+    expect(j.feature).toBe('smart-reply');
+  });
+
+  it('non-premium : translate quota 20/jour', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, false);
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:translate:${today}`, '20');
+    const tok = await userToken();
+    const r = await handleAiTranslate(
+      makeReq('POST', '/api/ai/translate', { text: 'hello', target_lang: 'fr' }, tok),
+      env,
+    );
+    expect(r.status).toBe(429);
+    const j = await r.json();
+    expect(j.feature).toBe('translate');
+    expect(j.limit).toBe(20);
+  });
+
+  it('KV indisponible → fail-open (pas de blocage)', async () => {
+    const env = userEnv();
+    mkUserWithPremium(env, false);
+    delete env.APEX_CHAT_KV; // simule absence binding
+    globalThis.fetch = vi.fn(async () => new Response(
+      JSON.stringify({ text: 'OK', language: 'fr' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    ));
+    const tok = await userToken();
+    const fd = new FormData();
+    fd.append('audio', new File([new Uint8Array(1000)], 'a.webm', { type: 'audio/webm' }));
+    const req = new Request('https://api.apex/api/ai/voice-transcribe', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + tok },
+      body: fd,
+    });
+    const r = await handleAiVoiceTranscribe(req, env);
+    // KV null → check_failed → fail open → 200 OK
+    expect(r.status).toBe(200);
+  });
+});

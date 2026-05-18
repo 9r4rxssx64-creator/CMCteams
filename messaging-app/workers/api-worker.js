@@ -123,6 +123,49 @@ async function getAuthUser(request, env) {
   return payload;
 }
 
+// ============================================================================
+//  v1.1.30 — Premium quota middleware
+//  Non-premium users : N usages / jour pour chaque feature IA gourmande
+//  Premium / lifetime : unlimited
+// ============================================================================
+const FREE_QUOTAS = {
+  'voice-transcribe': 5,   // 5 transcriptions /jour gratuit
+  'image-describe': 10,    // 10 alt-text /jour gratuit
+  'summarize': 3,          // 3 Memory Lane /jour gratuit
+  'smart-reply': 30,       // 30 suggestions /jour gratuit
+  'translate': 20          // 20 traductions /jour gratuit
+};
+async function checkPremiumOrQuota(env, userId, feature) {
+  if (!userId) return { ok: false, reason: 'no_user' };
+  try {
+    const u = await env.APEX_CHAT_DB.prepare(
+      'SELECT premium_until, premium_plan FROM users WHERE id=?'
+    ).bind(userId).first();
+    const isPremium = u && u.premium_until && u.premium_until > Date.now();
+    if (isPremium) return { ok: true, premium: true, plan: u.premium_plan };
+    // Non-premium : check quota daily KV
+    const limit = FREE_QUOTAS[feature] || 5;
+    const today = new Date().toISOString().slice(0, 10);
+    const kvKey = `quota:${userId}:${feature}:${today}`;
+    const usedStr = env.APEX_CHAT_KV ? await env.APEX_CHAT_KV.get(kvKey) : null;
+    const used = parseInt(usedStr || '0', 10);
+    if (used >= limit) {
+      return { ok: false, reason: 'quota_exceeded', used, limit, feature };
+    }
+    return { ok: true, premium: false, used, limit, kvKey, _incr: true };
+  } catch (e) {
+    console.error('[premium-quota]', e);
+    return { ok: true, premium: false, error: 'check_failed' }; // fail open
+  }
+}
+async function consumeQuota(env, quotaResult) {
+  if (!quotaResult || !quotaResult._incr || !quotaResult.kvKey || !env.APEX_CHAT_KV) return;
+  try {
+    const used = (quotaResult.used || 0) + 1;
+    await env.APEX_CHAT_KV.put(quotaResult.kvKey, String(used), { expirationTtl: 90000 }); // ~25h
+  } catch (e) { console.error('[quota-consume]', e); }
+}
+
 async function getModeConfig(env) {
   const stmt = await env.APEX_CHAT_DB.prepare('SELECT key, value FROM system_config').all();
   const config = {};
@@ -2074,6 +2117,16 @@ export async function handleAiSummarize(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'summarize');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} résumés aujourd'hui). Passe Premium pour illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'summarize'
+    }, 429);
+  }
+
   const body = await request.json().catch(() => ({}));
   const prompt = String(body.prompt || '').trim();
   const maxTokens = Math.min(2000, Math.max(50, body.max_tokens || 400));
@@ -2087,7 +2140,7 @@ export async function handleAiSummarize(request, env) {
       'SELECT text, ts FROM ai_summary_cache WHERE cache_key=? AND ts > ?'
     ).bind(cacheKey, Date.now() - 7 * 86400 * 1000).first();
     if (cached?.text) {
-      return json({ ok: true, text: cached.text, cached: true, provider: 'd1-cache' });
+      return json({ ok: true, text: cached.text, cached: true, provider: 'd1-cache', premium: quota.premium });
     }
   } catch (e) { /* cache table peut ne pas exister encore */ }
 
@@ -2117,7 +2170,8 @@ export async function handleAiSummarize(request, env) {
             'INSERT OR REPLACE INTO ai_summary_cache (cache_key, text, ts, provider) VALUES (?, ?, ?, ?)'
           ).bind(cacheKey, text, Date.now(), p.name).run();
         } catch (e) { /* schema peut manquer */ }
-        return json({ ok: true, text, cached: false, provider: p.name });
+        await consumeQuota(env, quota);
+        return json({ ok: true, text, cached: false, provider: p.name, premium: quota.premium });
       }
     } catch (e) {
       console.warn(`[summarize] ${p.name} failed:`, e.message);
@@ -2403,6 +2457,16 @@ export async function handleAiSmartReply(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'smart-reply');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} suggestions aujourd'hui).`,
+      used: quota.used, limit: quota.limit, feature: 'smart-reply'
+    }, 429);
+  }
+
   const body = await request.json().catch(() => ({}));
   const lastMessage = String(body.last_message || '').trim();
   const context = String(body.context || '').trim().slice(0, 500);
@@ -2430,10 +2494,12 @@ export async function handleAiSmartReply(request, env) {
       if (!m) continue;
       const parsed = JSON.parse(m[0]);
       if (Array.isArray(parsed.replies) && parsed.replies.length > 0) {
+        await consumeQuota(env, quota);
         return json({
           ok: true,
           replies: parsed.replies.slice(0, 3).map(r => String(r).slice(0, 80)),
           provider: p.name,
+          premium: quota.premium,
         });
       }
     } catch (e) {
@@ -2449,6 +2515,16 @@ export async function handleAiSmartReply(request, env) {
 export async function handleAiTranslate(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'translate');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} traductions aujourd'hui).`,
+      used: quota.used, limit: quota.limit, feature: 'translate'
+    }, 429);
+  }
 
   const body = await request.json().catch(() => ({}));
   const text = String(body.text || '').trim();
@@ -2472,12 +2548,14 @@ export async function handleAiTranslate(request, env) {
       const translated = await p.fn(messages, sysPrompt, env, ctrl.signal, 1500);
       clearTimeout(to);
       if (translated && translated.trim().length > 0) {
+        await consumeQuota(env, quota);
         return json({
           ok: true,
           translated: translated.trim(),
           source_text: text.slice(0, 200),
           target_lang: targetLang,
           provider: p.name,
+          premium: quota.premium,
         });
       }
     } catch (e) {
@@ -2496,6 +2574,16 @@ export async function handleAiVoiceTranscribe(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
   if (!env.GROQ_API_KEY) return err('Groq Whisper non configuré (GROQ_API_KEY manquant)', 503);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'voice-transcribe');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} transcriptions aujourd'hui). Premium = illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'voice-transcribe'
+    }, 429);
+  }
 
   // Récupère audio binary depuis multipart
   let audioBlob;
@@ -2550,12 +2638,14 @@ export async function handleAiVoiceTranscribe(request, env) {
       return err(`Whisper HTTP ${r.status}`, 502);
     }
     const data = await r.json();
+    await consumeQuota(env, quota);
     return json({
       ok: true,
       text: data.text || '',
       language: data.language || null,
       duration_s: data.duration || null,
       provider: 'groq-whisper-large-v3-turbo',
+      premium: quota.premium,
     });
   } catch (e) {
     return err('Whisper error: ' + e.message, 502);
@@ -2572,6 +2662,16 @@ export async function handleAiImageDescribe(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
   if (!env.ANTHROPIC_API_KEY) return err('Anthropic Vision non configuré', 503);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'image-describe');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} alt-text aujourd'hui). Premium = illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'image-describe'
+    }, 429);
+  }
 
   const body = await request.json().catch(() => ({}));
   const imageBase64 = String(body.image_base64 || '').trim();
@@ -2621,10 +2721,12 @@ export async function handleAiImageDescribe(request, env) {
     }
     const data = await r.json();
     const description = data.content?.[0]?.text || '';
+    await consumeQuota(env, quota);
     return json({
       ok: true,
       description,
       provider: 'anthropic-claude-haiku-vision',
+      premium: quota.premium,
     });
   } catch (e) {
     return err('Vision error: ' + e.message, 502);
