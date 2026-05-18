@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.81';
+const __APEX_CHAT_VERSION__ = 'v1.1.82';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.81</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.82</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.81</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.82</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -907,6 +907,87 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.82 — Voice waveform visualisation durant recording
+// ============================================================================
+K._voiceWfAnim = null;
+K._voiceWfCtx = null;
+K._voiceWfStartTs = 0;
+
+K._showVoiceWaveform = function(stream){
+  try {
+    let banner = document.getElementById('voice-wf-banner');
+    if(!banner){
+      banner = document.createElement('div');
+      banner.id = 'voice-wf-banner';
+      banner.style.cssText = 'position:sticky;bottom:0;background:rgba(230,57,70,.08);border-top:1px solid #e63946;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:.88em';
+      const chatInput = document.querySelector('.chat-input');
+      if(chatInput && chatInput.parentNode) chatInput.parentNode.insertBefore(banner, chatInput);
+    }
+    banner.innerHTML = `
+      <span style="color:#e63946;font-weight:600;font-size:1.1em;animation:pulse-rec 1s infinite">●</span>
+      <span style="color:#e63946;font-weight:600" id="voice-wf-time">0:00</span>
+      <canvas id="voice-wf-canvas" width="200" height="32" style="flex:1;background:transparent"></canvas>
+      <button onclick="K._cancelVoiceRecord()" style="background:transparent;border:1px solid var(--ax-border);color:var(--ax-text-2);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:.82em">Annuler</button>
+    `;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    const ctx = new AC();
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    K._voiceWfCtx = ctx;
+    K._voiceWfStartTs = Date.now();
+    const canvas = document.getElementById('voice-wf-canvas');
+    const cctx = canvas.getContext('2d');
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    function draw(){
+      analyser.getByteFrequencyData(dataArray);
+      cctx.clearRect(0, 0, canvas.width, canvas.height);
+      cctx.fillStyle = '#e63946';
+      const barCount = 32;
+      const barWidth = canvas.width / barCount - 1;
+      for(let i = 0; i < barCount; i++){
+        const idx = Math.floor(i * dataArray.length / barCount);
+        const v = dataArray[idx] / 255;
+        const h = Math.max(2, v * canvas.height);
+        cctx.fillRect(i * (barWidth + 1), (canvas.height - h) / 2, barWidth, h);
+      }
+      const elapsed = Math.floor((Date.now() - K._voiceWfStartTs) / 1000);
+      const m = Math.floor(elapsed / 60);
+      const s = elapsed % 60;
+      const timeEl = document.getElementById('voice-wf-time');
+      if(timeEl) timeEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+      K._voiceWfAnim = requestAnimationFrame(draw);
+    }
+    draw();
+  } catch(e){ console.warn('[voice-wf]', e); }
+};
+
+K._hideVoiceWaveform = function(){
+  if(K._voiceWfAnim){ cancelAnimationFrame(K._voiceWfAnim); K._voiceWfAnim = null; }
+  if(K._voiceWfCtx){ try { K._voiceWfCtx.close(); } catch(_) {} K._voiceWfCtx = null; }
+  const banner = document.getElementById('voice-wf-banner');
+  if(banner) banner.remove();
+};
+
+K._cancelVoiceRecord = function(){
+  if(K._voiceRecorder && K._voiceRecorder.state === 'recording'){
+    K._voiceRecorder.ondataavailable = null;
+    K._voiceRecorder.onstop = () => {
+      const stream = K._voiceRecorder.stream;
+      if(stream) stream.getTracks().forEach(t => t.stop());
+      K._hideVoiceWaveform();
+      K._voiceChunks = [];
+      const btn = document.getElementById('chat-mic-btn');
+      if(btn) btn.classList.remove('recording');
+      toast('Enregistrement annulé', 'info');
+    };
+    K._voiceRecorder.stop();
+  }
+};
 
 // ============================================================================
 //  v1.1.80 — Web Push subscription (notif iPhone PWA app fermée)
@@ -2024,7 +2105,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.81',
+    version: 'v1.1.82',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -6299,9 +6380,12 @@ K._toggleVoiceRecord = async function(){
     const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
     K._voiceRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
     K._voiceChunks = [];
+    // v1.1.82 — Waveform overlay durant recording
+    K._showVoiceWaveform(stream);
     K._voiceRecorder.ondataavailable = (e) => { if(e.data && e.data.size) K._voiceChunks.push(e.data); };
     K._voiceRecorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
+      K._hideVoiceWaveform();
       if(btn) btn.classList.remove('recording');
       const blob = new Blob(K._voiceChunks, { type: K._voiceRecorder.mimeType || 'audio/webm' });
       K._voiceChunks = [];
@@ -8688,7 +8772,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.81"
+        data-version="v1.1.82"
         data-color="#6a8aff"
         defer></script>
 </body>
