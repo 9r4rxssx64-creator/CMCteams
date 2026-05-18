@@ -196,6 +196,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .msg-edited{font-size:.85em;margin-left:4px;opacity:.6;font-style:italic}
 .msg.deleted-tombstone{opacity:.55;font-style:italic}
 .forwarded-mark{font-size:.72em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px;letter-spacing:.3px}
+.reply-quote{background:rgba(232,184,48,.08);border-left:3px solid var(--ax-gold);
+  padding:5px 8px;border-radius:6px;margin-bottom:6px;cursor:pointer;min-width:0;max-width:100%}
+.reply-quote:active{background:rgba(232,184,48,.15)}
 .translate-hint{display:inline-block;margin-top:6px;font-size:.72em;color:var(--ax-blue);
   background:rgba(106,138,255,.1);border:1px solid rgba(106,138,255,.3);
   border-radius:10px;padding:3px 8px;cursor:pointer;transition:all .15s}
@@ -301,7 +304,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.50';
+const __APEX_CHAT_VERSION__ = 'v1.1.51';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -382,7 +385,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.50</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.51</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -396,7 +399,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.50</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.51</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1528,6 +1531,10 @@ K._openReactionPicker = function(msgId){
       actions.push(`<button class="btn btn-out btn-sm" onclick="K._openEditMsg('${esc(msgId)}')">✏️ Modifier (15 min)</button>`);
     }
   }
+  // v1.1.51 — Reply (toujours dispo si message a du contenu)
+  if(msg && (hasText || msg.image_data || msg.voice_data)){
+    actions.push(`<button class="btn btn-out btn-sm" onclick="K._setReplyTo('${esc(msgId)}')">↩ Répondre</button>`);
+  }
   // v1.1.50 — Forward (toujours dispo si message a du contenu)
   if(msg && (hasText || msg.image_data || msg.voice_data)){
     actions.push(`<button class="btn btn-out btn-sm" onclick="K._openForwardMenu('${esc(msgId)}')">↗ Transférer</button>`);
@@ -2163,6 +2170,10 @@ function renderChat(app){
         const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
         return `
         <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
+          ${m.reply_to ? `<div class="reply-quote" onclick="K._scrollToMsg('${esc(m.reply_to.id)}')">
+            <div style="color:var(--ax-gold);font-size:.72em;font-weight:600">↩ ${esc(m.reply_to.from_name || '')}</div>
+            <div style="color:var(--ax-text-2);font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.reply_to.text || '')}</div>
+          </div>` : ''}
           ${m.forwarded ? `<div class="forwarded-mark" title="Transféré depuis ${esc(m.forwarded_from_conv || '')}">↗ Transféré</div>` : ''}
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
@@ -2199,7 +2210,7 @@ function renderChat(app){
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
-  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight}, 50);
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();}, 50);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
@@ -2301,6 +2312,16 @@ K._sendMsg = async function(){
     K._ephemeralLabel = '';
     const btn = document.getElementById('chat-ephem-btn');
     if(btn){ btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+  }
+  // v1.1.51 — Reply quote : attache reply_to + reset
+  if(K._replyToMsg){
+    msg.reply_to = {
+      id: K._replyToMsg.id,
+      text: K._replyToMsg.text,
+      from_name: K._replyToMsg.from_name
+    };
+    K._replyToMsg = null;
+    K._renderReplyBanner();
   }
 
   if(!K.messages[conv.id]) K.messages[conv.id] = [];
@@ -3786,6 +3807,57 @@ K._openDeleteMenu = function(msgId){
 // ============================================================================
 //  v1.1.50 — Forward message vers autre conversation
 // ============================================================================
+
+// ============================================================================
+//  v1.1.51 — Reply quote inline (WhatsApp style)
+// ============================================================================
+K._replyToMsg = null;
+
+K._setReplyTo = function(msgId){
+  const conv = K.viewData;
+  if(!conv || !msgId) return;
+  const msgs = K.messages[conv.id] || [];
+  const m = msgs.find(x => x.id === msgId);
+  if(!m){ toast('Message introuvable', 'warn'); return; }
+  K._replyToMsg = {
+    id: m.id,
+    text: (m.text || (m.image_data ? '📷 Image' : (m.voice_data ? '🎙️ Vocal' : ''))).slice(0, 200),
+    from: m.from,
+    from_name: m.from === K.user?.id ? 'Toi' : (conv.name || conv.pseudo || 'L\'autre')
+  };
+  K._closeModal && K._closeModal();
+  K._renderReplyBanner();
+  const input = document.getElementById('msg-input');
+  if(input) input.focus();
+};
+
+K._cancelReply = function(){
+  K._replyToMsg = null;
+  K._renderReplyBanner();
+};
+
+K._renderReplyBanner = function(){
+  let banner = document.getElementById('reply-banner');
+  if(K._replyToMsg){
+    if(!banner){
+      banner = document.createElement('div');
+      banner.id = 'reply-banner';
+      banner.style.cssText = 'background:var(--ax-bg-2);border-left:3px solid var(--ax-gold);padding:6px 12px;display:flex;align-items:center;gap:8px;font-size:.85em';
+      const chatInput = document.querySelector('.chat-input');
+      if(chatInput && chatInput.parentNode) chatInput.parentNode.insertBefore(banner, chatInput);
+    }
+    banner.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div style="color:var(--ax-gold);font-size:.75em;font-weight:600">↩ ${esc(K._replyToMsg.from_name)}</div>
+        <div style="color:var(--ax-text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(K._replyToMsg.text)}</div>
+      </div>
+      <button onclick="K._cancelReply()" style="background:transparent;border:none;color:var(--ax-text-2);font-size:1.2em;cursor:pointer;padding:4px 8px" aria-label="Annuler réponse">✕</button>
+    `;
+  } else if(banner){
+    banner.remove();
+  }
+};
+
 K._openForwardMenu = function(msgId){
   const conv = K.viewData;
   if(!conv || !msgId) return;
@@ -6428,7 +6500,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.50"
+        data-version="v1.1.51"
         data-color="#6a8aff"
         defer></script>
 </body>
