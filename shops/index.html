@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KDMC Shops — Portail e-Commerce</title>
+<meta name="theme-color" content="#e8b830">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0f0f0f;color:#f5f5f5;min-height:100vh;padding:24px 16px}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:clamp(28px,5vw,42px);font-weight:800;text-align:center;margin-bottom:8px}
+h1 em{color:#e8b830;font-style:normal}
+.subtitle{text-align:center;color:#888;margin-bottom:48px;font-size:16px}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.card{background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:32px 24px;text-align:center;transition:all .3s;cursor:pointer;text-decoration:none;color:inherit;display:block}
+.card:hover{transform:translateY(-6px);box-shadow:0 12px 40px rgba(232,184,48,0.15);border-color:#e8b830}
+.card-icon{font-size:48px;margin-bottom:16px}
+.card-title{font-size:20px;font-weight:700;margin-bottom:8px}
+.card-desc{font-size:14px;color:#888;margin-bottom:16px;line-height:1.5}
+.card-badge{display:inline-block;padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600;background:#e8b83022;color:#e8b830;border:1px solid #e8b83044}
+.footer{text-align:center;margin-top:64px;color:#555;font-size:13px}
+.footer a{color:#e8b830}
+.stats{display:flex;justify-content:center;gap:40px;margin-bottom:40px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat strong{display:block;font-size:28px;color:#e8b830}
+.stat span{font-size:12px;color:#888}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🛒 <em>KDMC</em> Shops</h1>
+<p class="subtitle">Plateforme e-commerce automatisée — Kevin DESARZENS Monaco</p>
+<div class="stats">
+<div class="stat"><strong>5</strong><span>Boutiques</span></div>
+<div class="stat"><strong>500</strong><span>Produits</span></div>
+<div class="stat"><strong>40</strong><span>Catégories</span></div>
+<div class="stat"><strong>24/7</strong><span>Automatisé</span></div>
+</div>
+<div class="grid">
+<a href="tech-hub/" class="card"><div class="card-icon">💻</div><div class="card-title">Tech Hub</div><div class="card-desc">Smartphones, audio, gaming, smart home, wearables & accessoires tech</div><div class="card-badge">100 produits</div></a>
+<a href="glow-wellness/" class="card"><div class="card-icon">✨</div><div class="card-title">Glow Wellness</div><div class="card-desc">Soins visage, corps, cheveux, maquillage, aromathérapie & compléments</div><div class="card-badge">100 produits</div></a>
+<a href="ecocraft/" class="card"><div class="card-icon">🌿</div><div class="card-title">EcoCraft</div><div class="card-desc">Produits éco-responsables, zéro déchet, maison verte & mode durable</div><div class="card-badge">100 produits</div></a>
+<a href="digital-vault/" class="card"><div class="card-icon">🔐</div><div class="card-title">Digital Vault</div><div class="card-desc">Logiciels, formations, templates, ebooks, assets créatifs & licences</div><div class="card-badge">100 produits</div></a>
+<a href="pawsome/" class="card"><div class="card-icon">🐾</div><div class="card-title">Pawsome</div><div class="card-desc">Alimentation, jouets, accessoires, santé & confort pour animaux</div><div class="card-badge">100 produits</div></a>
+<a href="dashboard/" class="card" style="border-color:#e8b83066;background:#1a1a0f"><div class="card-icon">📊</div><div class="card-title">Dashboard Admin</div><div class="card-desc">Commandes, produits, clients, analytics & paramètres — Vue admin KDMC</div><div class="card-badge">Admin Only</div></a>
+</div>
+<div class="footer">
+<p>KDMC e-Commerce Platform v1.0.0 — <a href="https://github.com/9r4rxssx64-creator/cmcteams">GitHub</a></p>
+<p style="margin-top:8px">Propulsé par Stripe • Automatisé 24/7 • Monaco 🇲🇨</p>
+</div>
+</div>
+</body>
+</html>
