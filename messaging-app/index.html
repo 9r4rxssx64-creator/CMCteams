@@ -185,6 +185,12 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
   border:1px solid var(--ax-border);border-radius:22px;padding:10px 14px;color:var(--ax-text);font-size:16px}
 .chat-send{width:44px;height:44px;border-radius:50%;background:var(--ax-gold);color:var(--ax-bg);
   font-size:1.2em;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700}
+.chat-attach{width:40px;height:40px;border-radius:50%;background:var(--ax-bg-2);border:1px solid var(--ax-border);
+  color:var(--ax-text);font-size:1.1em;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s}
+.chat-attach:active{background:var(--ax-bg-3);transform:scale(.92)}
+.chat-attach.recording{background:#e63946;border-color:#e63946;color:#fff;animation:pulse-rec 1s infinite}
+@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,.5)}50%{box-shadow:0 0 0 8px rgba(230,57,70,0)}}
 
 /* ========== Admin ========== */
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
@@ -267,7 +273,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.28';
+const __APEX_CHAT_VERSION__ = 'v1.1.29';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -343,7 +349,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.28</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.29</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -357,7 +363,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.28</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.29</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1299,13 +1305,17 @@ function renderChat(app){
         <div class="msg system">🛡 Cette conversation est chiffrée bout-en-bout. Personne d'autre que toi et tes destinataires ne peut lire les messages.</div>
       ` : msgs.map(m => `
         <div class="msg ${m.from === K.user.id ? 'me' : 'them'}">
-          ${esc(m.text || '(message chiffré)')}
+          ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
+          ${esc(m.text || (m.image_data ? '' : '(message chiffré)'))}
           <div class="msg-time">${formatTime(m.ts)}</div>
         </div>
       `).join('')}
     </div>
     <div id="smart-reply-chips" style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;overflow-x:auto"></div>
     <div class="chat-input">
+      <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
+      <button class="chat-attach" onclick="document.getElementById('chat-img-input').click()" aria-label="Envoyer une image" title="Envoyer une image">📷</button>
+      <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
       <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id)"></textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
@@ -2624,6 +2634,127 @@ K._useSmartReply = function(reply){
   if(input){
     input.value = reply;
     input.focus();
+  }
+};
+
+// ============================================================================
+//  v1.1.28 — Voice transcribe : tap pour enregistrer, retap pour stop+envoyer
+//  Utilise MediaRecorder + /api/ai/voice-transcribe (Whisper Groq)
+// ============================================================================
+K._voiceRecorder = null;
+K._voiceChunks = [];
+K._toggleVoiceRecord = async function(){
+  const btn = document.getElementById('chat-mic-btn');
+  if(K._voiceRecorder && K._voiceRecorder.state === 'recording'){
+    K._voiceRecorder.stop();
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
+    K._voiceRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+    K._voiceChunks = [];
+    K._voiceRecorder.ondataavailable = (e) => { if(e.data && e.data.size) K._voiceChunks.push(e.data); };
+    K._voiceRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      if(btn) btn.classList.remove('recording');
+      const blob = new Blob(K._voiceChunks, { type: K._voiceRecorder.mimeType || 'audio/webm' });
+      K._voiceChunks = [];
+      if(blob.size < 800){ toast('Enregistrement trop court', 'warn'); return; }
+      if(blob.size > 24 * 1024 * 1024){ toast('Audio > 24MB, trop long', 'err'); return; }
+      toast('🎙️ Transcription en cours...', 'info');
+      try{
+        const fd = new FormData();
+        fd.append('audio', blob, 'voice.webm');
+        fd.append('lang', 'fr');
+        const r = await fetch(API_BASE + '/ai/voice-transcribe', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + (K.token || '') },
+          body: fd
+        });
+        if(!r.ok){
+          const err = await r.json().catch(() => ({}));
+          toast('Transcription : ' + (err.error || 'erreur'), 'err');
+          return;
+        }
+        const data = await r.json();
+        const text = (data && data.text || '').trim();
+        if(!text){ toast('Aucun texte détecté', 'warn'); return; }
+        const input = document.getElementById('msg-input');
+        if(input){
+          input.value = (input.value ? input.value + ' ' : '') + '🎙️ ' + text;
+          input.focus();
+          toast('✅ Transcrit (' + text.length + ' chars)', 'ok');
+        }
+      } catch(e){
+        _safeCatch('voice-transcribe', e);
+        toast('Transcription échouée', 'err');
+      }
+    };
+    K._voiceRecorder.start();
+    if(btn) btn.classList.add('recording');
+    toast('🎙️ Enregistrement... retap pour stopper', 'info');
+  } catch(e){
+    _safeCatch('mic-getUserMedia', e);
+    toast('Micro refusé ou indisponible', 'err');
+  }
+};
+
+// ============================================================================
+//  v1.1.28 — Image upload + alt-text auto (accessibilité)
+//  Génère description IA via /api/ai/image-describe (Anthropic Vision)
+// ============================================================================
+K._uploadImage = async function(file){
+  if(!file) return;
+  if(!file.type || !file.type.startsWith('image/')){ toast('Fichier non-image', 'err'); return; }
+  if(file.size > 5 * 1024 * 1024){ toast('Image > 5MB, trop lourde', 'err'); return; }
+  const conv = K.viewData;
+  if(!conv){ toast('Pas de conversation active', 'warn'); return; }
+  toast('📷 Analyse image...', 'info');
+  try{
+    // Lecture base64
+    const b64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+    // Appel IA pour alt-text
+    let altText = '';
+    try{
+      const r = await fetch(API_BASE + '/ai/image-describe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (K.token || '')
+        },
+        body: JSON.stringify({ image_base64: b64 })
+      });
+      if(r.ok){
+        const data = await r.json();
+        altText = (data && data.description || '').trim();
+      }
+    } catch(e){ _safeCatch('image-describe', e); }
+
+    // Construit message avec image + alt-text
+    const msg = {
+      id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      from: K.user.id,
+      text: '📷 ' + (altText || 'Image'),
+      image_data: b64,
+      alt: altText,
+      ts: Date.now(),
+      encrypted: false
+    };
+    if(!K.messages[conv.id]) K.messages[conv.id] = [];
+    K.messages[conv.id].push(msg);
+    ls('messages_' + conv.id, K.messages[conv.id]);
+    K.render();
+    if(altText) toast('✅ Image + alt-text envoyée', 'ok');
+    else toast('📷 Image envoyée', 'ok');
+  } catch(e){
+    _safeCatch('upload-image', e);
+    toast('Envoi image échoué', 'err');
   }
 };
 
