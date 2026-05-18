@@ -192,6 +192,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .chat-attach.recording{background:#e63946;border-color:#e63946;color:#fff;animation:pulse-rec 1s infinite}
 @keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,.5)}50%{box-shadow:0 0 0 8px rgba(230,57,70,0)}}
 .msg{position:relative;user-select:none;-webkit-user-select:none}
+.msg-status{font-size:.9em;margin-left:4px;opacity:.7;letter-spacing:-1px}
 .msg-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .msg-reaction{font-size:.85em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   border-radius:12px;padding:2px 8px;cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none}
@@ -283,7 +284,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.35';
+const __APEX_CHAT_VERSION__ = 'v1.1.36';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -364,7 +365,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.35</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.36</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -378,7 +379,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.35</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.36</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -847,6 +848,24 @@ K._renderTypingIndicator = function(convId){
   }
   const names = active.map(t => t.pseudo).slice(0, 3).join(', ');
   el.textContent = active.length === 1 ? `${names} écrit…` : `${names} écrivent…`;
+};
+
+// v1.1.36 — Read receipt UI : ✓ envoyé · ✓✓ livré · ✓✓ bleu lu (style WhatsApp)
+K._isMsgRead = function(convId, msgId, allMsgs){
+  // K._readState[convId][otherUserId] = lastReadMsgId
+  const rs = K._readState?.[convId];
+  if(!rs || Object.keys(rs).length === 0) return 'delivered'; // pas encore lu
+  // Trouve l'index du msgId
+  const msgIdx = allMsgs.findIndex(m => m.id === msgId);
+  if(msgIdx < 0) return 'delivered';
+  // Pour chaque peer, vérifie si leur lastReadMsgId est >= ce msgIdx
+  let anyRead = false;
+  for(const [peerId, lastReadId] of Object.entries(rs)){
+    if(peerId === K.user?.id) continue;
+    const lastReadIdx = allMsgs.findIndex(m => m.id === lastReadId);
+    if(lastReadIdx >= msgIdx){ anyRead = true; break; }
+  }
+  return anyRead ? 'read' : 'delivered';
 };
 
 K._sendReadReceipt = function(convId, lastMsgId){
@@ -1483,13 +1502,19 @@ function renderChat(app){
     <div class="chat-messages" id="chat-msgs">
       ${msgs.length === 0 ? `
         <div class="msg system">🛡 Cette conversation est chiffrée bout-en-bout. Personne d'autre que toi et tes destinataires ne peut lire les messages.</div>
-      ` : msgs.map(m => `
-        <div class="msg ${m.from === K.user.id ? 'me' : 'them'}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
+      ` : msgs.map(m => {
+        const isMine = m.from === K.user.id;
+        const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
+        return `
+        <div class="msg ${isMine ? 'me' : 'them'}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
           ${esc(m.text || (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
-          <div class="msg-time">${formatTime(m.ts)}</div>
+          <div class="msg-time">
+            ${formatTime(m.ts)}
+            ${isMine ? `<span class="msg-status" title="${readStatus === 'read' ? 'Lu' : readStatus === 'delivered' ? 'Livré' : 'Envoyé'}">${readStatus === 'read' ? '<span style="color:var(--ax-blue)">✓✓</span>' : readStatus === 'delivered' ? '✓✓' : '✓'}</span>` : ''}
+          </div>
           ${m.reactions && Object.keys(m.reactions).length ? `
             <div class="msg-reactions">
               ${Object.entries(m.reactions).map(([emo, users]) => `
@@ -1500,7 +1525,7 @@ function renderChat(app){
             </div>
           ` : ''}
         </div>
-      `).join('')}
+      `;}).join('')}
     </div>
     <div id="smart-reply-chips" style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;overflow-x:auto"></div>
     <div class="chat-input">
