@@ -4929,7 +4929,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.688";
+var APP_VER="v9.689";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9080,6 +9080,11 @@ var CMD_PALETTE_ACTIONS=[
   {cat:"Utilitaire",icon:"\u21a9",label:"Annuler derni\u00e8re action (\u2318Z)",adminOnly:true,keywords:["undo","annuler","retour","arriere"],fn:function(){undoAdmin();}},
   {cat:"Utilitaire",icon:"\u21aa",label:"R\u00e9tablir (\u2318\u21e7Z)",adminOnly:true,keywords:["redo","retablir","refaire"],fn:function(){redoAdmin();}},
   {cat:"Utilitaire",icon:"\u23f3",label:"File de synchronisation (en attente)",keywords:["sync","queue","attente","offline","hors-ligne"],fn:function(){if(typeof showSyncQueueUI==="function")showSyncQueueUI();}},
+  // v9.689 \u2014 IA toolbar actions (d\u00e9plac\u00e9es de vIA pour nettoyer toolbar)
+  {cat:"IA",icon:"\ud83d\udd0d",label:"V\u00e9rifier la connexion IA Claude",adminOnly:true,keywords:["ia","verifier","connexion","check","ping","status"],fn:function(){if(typeof iaCheckNow==="function")iaCheckNow();}},
+  {cat:"IA",icon:"\u2715",label:"Effacer l'historique du chat IA",adminOnly:true,keywords:["ia","clear","effacer","historique","reset","chat"],fn:function(){if(typeof iaClearHistory==="function")iaClearHistory();}},
+  {cat:"IA",icon:"\ud83d\udd0d",label:"Activer/d\u00e9sactiver la recherche web (IA)",adminOnly:true,keywords:["web","internet","search","recherche","ia"],fn:function(){if(typeof iaToggleWebSearch==="function")iaToggleWebSearch();}},
+  {cat:"IA",icon:"\ud83d\udd0a",label:"Activer/d\u00e9sactiver la lecture vocale (TTS)",keywords:["tts","voice","vocale","parler","speech"],fn:function(){if(typeof ttsToggle==="function")ttsToggle();}},
   {cat:"Utilitaire",icon:"\u2728",label:"Nouveaut\u00e9s (release notes)",keywords:["nouveaut","release","notes","changelog","new"],fn:function(){if(typeof showReleaseNotes==="function")showReleaseNotes();}},
   {cat:"Utilitaire",icon:"\ud83c\udfa8",label:"Changer le th\u00e8me (Sombre/Clair/Auto)",keywords:["theme","dark","light","sombre","clair"],fn:function(){toggleTheme();}},
   {cat:"Accessibilit\u00e9",icon:"\ud83d\udd24",label:"Taille du texte (Petit/Normal/Grand/XL/Max)",keywords:["font","taille","texte","zoom","accessibilite","a11y"],fn:function(){if(typeof cycleFontScale==="function")cycleFontScale();}},
@@ -41252,12 +41257,12 @@ function vIA(){
         <div style="font-size:15px;font-weight:700;color:#c9a227;white-space:nowrap;display:flex;align-items:center">Assistant CMC ${iaApiKey&&iaEnabled?"<span style='font-size:12px;color:#50c864;margin-left:4px'>IA</span>":"<span style='font-size:12px;color:#a0cca0'>(local)</span>"}${helpIcon("ia_local","Qu'est-ce que l'Assistant IA ?")}</div>
         <div style="font-size:12px;color:#a0cca0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${iaApiKey&&iaEnabled?IA_TOOLS.length+" outils":"Planning · Jeux · Convention"}</div>
       </div>
-      ${isAdm?"<button onclick=\"iaCheckNow()\" style=\"background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:6px;padding:4px 9px;color:#c9a227;font-size:14px;cursor:pointer;font-weight:700\">\ud83d\udd0d V\u00e9rifier</button>":""}
+      ${''/* v9.689 Sprint 5 \u2014 bouton "\ud83d\udd0d V\u00e9rifier" retir\u00e9 du toolbar vIA : accessible via \u2318K palette "V\u00e9rifier la connexion IA Claude". Toolbar moins charg\u00e9e. */}
       ${isAdm&&iaApiKey&&iaEnabled?"<button onclick=\"iaToggleWebSearch()\" style=\"background:"+(iaWebSearch?"rgba(74,154,255,.15)":"rgba(255,255,255,.05)")+";border:1px solid "+(iaWebSearch?"rgba(74,154,255,.4)":"#1e3020")+";border-radius:6px;padding:4px 8px;color:"+(iaWebSearch?"#4a9aff":"#7aaa80")+";font-size:14px;cursor:pointer;font-weight:700\" title=\""+(iaWebSearch?"Désactiver la recherche internet":"Activer la recherche internet pour répondre à toutes les questions")+"\">🔍 Web "+(iaWebSearch?"ON":"OFF")+"</button>":""}
       ${''/* v10 Sprint 5 — bouton IA toggle retiré du toolbar vIA (déjà dans 4 endroits : Admin → IA, widget Aperçu vAccueil, badge topbar IA OFF, toast). Évite duplication massive. */}
       ${''/* v10 Sprint 2 — boutons 🔑 clé API et 🔗 proxy retirés du toolbar vIA : désormais accessibles uniquement via Admin → IA & Outils (élimine doublons) */}
       ${window.speechSynthesis?"<button onclick=\"ttsToggle()\" style=\"background:"+(_ttsEnabled?"rgba(80,200,100,.2)":"transparent")+";border:2px solid "+(_ttsEnabled?"rgba(80,200,100,.5)":"#2a4030")+";border-radius:8px;padding:6px 10px;color:"+(_ttsEnabled?"#7edc90":"#5a7a50")+";font-size:18px;cursor:pointer;min-width:42px;min-height:42px;display:inline-flex;align-items:center;justify-content:center\" title=\""+(_ttsEnabled?"Lecture vocale ACTIV\u00c9E \u2014 l'IA lit ses r\u00e9ponses \u00e0 voix haute":"Lecture vocale des r\u00e9ponses de l'IA (TTS) \u2014 cliquer pour activer")+"\" aria-label=\"Lecture vocale IA\">"+(_ttsEnabled?"🔊":"🔇")+"</button>":""}
-      ${isAdm?"<button onclick=\"iaClearHistory()\" style=\"background:transparent;border:1px solid #1e3020;border-radius:6px;padding:4px 8px;color:#a0cca0;font-size:14px;cursor:pointer\">\u2715</button>":""}
+      ${''/* v9.689 Sprint 5 \u2014 bouton "\u2715 Clear historique" retir\u00e9 : accessible via \u2318K palette "Effacer l'historique du chat IA". */}
     </div>
   </div>
   <div id="iaMsgs" style="flex:1;overflow-y:auto;padding:12px 14px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px">`;
