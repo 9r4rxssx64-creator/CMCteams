@@ -288,7 +288,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.41';
+const __APEX_CHAT_VERSION__ = 'v1.1.42';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -369,7 +369,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.41</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.42</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -383,7 +383,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.41</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.42</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1423,18 +1423,125 @@ K._REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🙏', '🔥', 
 
 K._openReactionPicker = function(msgId){
   if(!msgId) return;
+  const conv = K.viewData;
+  const msg = conv ? (K.messages[conv.id] || []).find(m => m.id === msgId) : null;
+  const isMine = msg && msg.from === K.user?.id;
+  const hasText = msg && msg.text && msg.text.length > 1;
   const picker = K._REACTION_EMOJIS.map(e =>
     `<button onclick="K._pickReaction('${esc(msgId)}','${esc(e)}')" aria-label="Réagir ${esc(e)}">${esc(e)}</button>`
   ).join('');
-  K._showModal('Réagir', `
+  // v1.1.42 : actions message context (rewrite si mine + text, translate si has text, copy)
+  const actions = [];
+  if(hasText){
+    actions.push(`<button class="btn btn-out btn-sm" onclick="K._openRewriteMenu('${esc(msgId)}')">✨ Reformuler avec IA</button>`);
+    actions.push(`<button class="btn btn-out btn-sm" onclick="K._showTranslateMenu(${JSON.stringify(msg.text).replace(/"/g,'&quot;')})">🌐 Traduire</button>`);
+    actions.push(`<button class="btn btn-out btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(msg.text).replace(/"/g,'&quot;')});K.toast?.('Copié','ok');K._closeModal()">📋 Copier</button>`);
+  }
+  K._showModal('Actions message', `
     <div class="reaction-picker">${picker}</div>
-    <p style="text-align:center;color:var(--ax-text-3);font-size:.78em;margin-top:10px">Tape pour ajouter ou retirer ta réaction.</p>
+    <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:6px">Tape une réaction</p>
+    ${actions.length > 0 ? `
+      <div style="margin-top:14px;display:grid;gap:6px">${actions.join('')}</div>
+    ` : ''}
   `);
 };
 
 K._pickReaction = function(msgId, emoji){
   K._closeModal && K._closeModal();
   K._toggleReaction(msgId, emoji);
+};
+
+// v1.1.42 — Reformuler message avec IA (8 styles)
+K._REWRITE_STYLES = [
+  { id: 'shorter', label: '✂️ Plus court', desc: 'Garde l\'essentiel' },
+  { id: 'longer', label: '📝 Plus développé', desc: 'Ajoute contexte' },
+  { id: 'formal', label: '🎩 Formel', desc: 'Vouvoiement pro' },
+  { id: 'friendly', label: '😊 Amical', desc: 'Tutoiement chaleureux' },
+  { id: 'apology', label: '🙏 Excuse', desc: 'Sincère + empathique' },
+  { id: 'fun', label: '😄 Humour', desc: 'Léger + emojis' },
+  { id: 'professional', label: '💼 Business', desc: 'Email pro factuel' },
+  { id: 'fix_typos', label: '🔡 Corriger fautes', desc: 'Ortho/grammaire only' },
+];
+
+K._openRewriteMenu = function(msgId){
+  if(!msgId) return;
+  const conv = K.viewData;
+  const msg = conv ? (K.messages[conv.id] || []).find(m => m.id === msgId) : null;
+  if(!msg || !msg.text){ toast('Message vide', 'warn'); return; }
+  const buttons = K._REWRITE_STYLES.map(s =>
+    `<button class="btn btn-out" style="text-align:left;padding:10px 12px" onclick="K._doRewrite('${esc(msgId)}','${s.id}')">
+      <div style="font-weight:600">${s.label}</div>
+      <div style="font-size:.75em;color:var(--ax-text-3)">${s.desc}</div>
+    </button>`
+  ).join('');
+  K._showModal('✨ Reformuler avec IA', `
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:.88em;max-height:80px;overflow-y:auto;margin-bottom:14px">
+      <em>${esc(msg.text)}</em>
+    </div>
+    <p style="font-size:.78em;color:var(--ax-text-3);margin-bottom:8px">Choisis le style :</p>
+    <div style="display:grid;gap:6px">${buttons}</div>
+    <div id="rewrite-result" style="margin-top:14px"></div>
+  `);
+};
+
+K._doRewrite = async function(msgId, style){
+  const out = document.getElementById('rewrite-result');
+  if(!out) return;
+  out.innerHTML = `<div style="text-align:center;padding:14px;color:var(--ax-text-3)">⏳ IA reformule...</div>`;
+  const conv = K.viewData;
+  const msg = conv ? (K.messages[conv.id] || []).find(m => m.id === msgId) : null;
+  if(!msg || !msg.text){ return; }
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 15_000);
+    let r;
+    try {
+      r = await fetch(API_BASE + '/api/ai/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+        body: JSON.stringify({ text: msg.text, style }),
+        signal: ctrl.signal
+      });
+    } finally { clearTimeout(tid); }
+    if(r.status === 429){
+      const e429 = await r.json().catch(() => ({}));
+      out.innerHTML = `<div style="color:var(--ax-warn);padding:12px;text-align:center">⏰ ${esc(e429.message || 'Limite gratuite')}</div>`;
+      return;
+    }
+    if(!r.ok){
+      out.innerHTML = `<div style="color:var(--ax-err);padding:12px;text-align:center">❌ Erreur ${r.status}</div>`;
+      return;
+    }
+    const data = await r.json();
+    const rewritten = data?.rewritten || '';
+    if(!rewritten){
+      out.innerHTML = `<div style="color:var(--ax-err);padding:12px;text-align:center">❌ Réponse vide</div>`;
+      return;
+    }
+    out.innerHTML = `
+      <div style="background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.3);border-radius:10px;padding:12px">
+        <div style="font-size:.72em;color:var(--ax-gold);margin-bottom:6px">✨ ${esc(style)} (${esc(data.provider || 'IA')})</div>
+        <div style="color:var(--ax-text);white-space:pre-wrap;font-size:.92em;line-height:1.5;margin-bottom:10px">${esc(rewritten)}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-out btn-sm" style="flex:1" onclick="navigator.clipboard.writeText(${JSON.stringify(rewritten).replace(/"/g,'&quot;')});K.toast?.('Copié','ok')">📋 Copier</button>
+          <button class="btn btn-sm" style="flex:1" onclick="K._useRewritten(${JSON.stringify(rewritten).replace(/"/g,'&quot;')})">📝 Utiliser dans textarea</button>
+        </div>
+      </div>
+    `;
+  } catch(e){
+    _safeCatch('rewrite', e);
+    out.innerHTML = `<div style="color:var(--ax-err);padding:12px;text-align:center">❌ Erreur réseau</div>`;
+  }
+};
+
+K._useRewritten = function(text){
+  const input = document.getElementById('msg-input');
+  if(input){
+    input.value = text;
+    input.focus();
+    K._closeModal && K._closeModal();
+    toast('📝 Texte placé dans la zone de saisie', 'ok');
+  }
 };
 
 K._toggleReaction = function(msgId, emoji){
@@ -5718,7 +5825,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.41"
+        data-version="v1.1.42"
         data-color="#6a8aff"
         defer></script>
 </body>
