@@ -284,7 +284,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.37';
+const __APEX_CHAT_VERSION__ = 'v1.1.38';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -365,7 +365,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.37</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.38</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -379,7 +379,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.37</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.38</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1067,6 +1067,166 @@ if(typeof window !== 'undefined'){
   };
   setTimeout(startWhenReady, 3000);
 }
+
+// ============================================================================
+//  v1.1.38 — Insights IA : statistiques + résumé hebdo conversations
+//  Analyse 7 derniers jours : msg count, top contacts, sentiment, topics
+// ============================================================================
+K._openInsightsModal = function(){
+  // Compute stats locally (pas besoin IA pour ça)
+  const now = Date.now();
+  const week = 7 * 24 * 60 * 60 * 1000;
+  let totalSent = 0, totalReceived = 0;
+  const perConv = {};
+  const hourBuckets = new Array(24).fill(0);
+  let imageCount = 0, voiceCount = 0, reactionCount = 0;
+  Object.entries(K.messages || {}).forEach(([convId, arr]) => {
+    arr.forEach(m => {
+      if(!m.ts || m.ts < now - week) return;
+      const isMine = m.from === K.user?.id;
+      if(isMine) totalSent++; else totalReceived++;
+      perConv[convId] = perConv[convId] || { sent: 0, received: 0, total: 0 };
+      perConv[convId][isMine ? 'sent' : 'received']++;
+      perConv[convId].total++;
+      hourBuckets[new Date(m.ts).getHours()]++;
+      if(m.image_data) imageCount++;
+      if(m.voice_data) voiceCount++;
+      if(m.reactions) reactionCount += Object.values(m.reactions).reduce((s, u) => s + u.length, 0);
+    });
+  });
+  // Top 5 conversations
+  const topConvs = Object.entries(perConv)
+    .map(([id, s]) => {
+      const c = K.conversations?.find(x => x.id === id);
+      return { id, name: c?.name || c?.pseudo || 'Inconnu', ...s };
+    })
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  // Peak hour
+  const peakHour = hourBuckets.indexOf(Math.max(...hourBuckets));
+  // SVG bar chart for hourBuckets (24h)
+  const maxBar = Math.max(...hourBuckets, 1);
+  const barChartW = 280, barChartH = 100;
+  const barW = barChartW / 24;
+  const bars = hourBuckets.map((v, i) => {
+    const h = (v / maxBar) * (barChartH - 10);
+    return `<rect x="${i * barW}" y="${barChartH - h}" width="${barW - 1}" height="${h}" fill="${i === peakHour ? 'var(--ax-gold)' : 'rgba(232,184,48,.3)'}" rx="2"/>`;
+  }).join('');
+
+  K._showModal('📊 Insights IA — 7 derniers jours', `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:1.8em;color:var(--ax-gold);font-weight:600">${totalSent}</div>
+        <div style="font-size:.78em;color:var(--ax-text-3)">Envoyés</div>
+      </div>
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:1.8em;color:var(--ax-blue);font-weight:600">${totalReceived}</div>
+        <div style="font-size:.78em;color:var(--ax-text-3)">Reçus</div>
+      </div>
+    </div>
+
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:14px">
+      <div style="font-size:.78em;color:var(--ax-text-3);margin-bottom:6px">📈 Activité par heure</div>
+      <svg width="100%" viewBox="0 0 ${barChartW} ${barChartH + 20}" style="display:block">
+        ${bars}
+        <text x="0" y="${barChartH + 14}" fill="var(--ax-text-3)" font-size="9">0h</text>
+        <text x="${barChartW * 0.25}" y="${barChartH + 14}" fill="var(--ax-text-3)" font-size="9">6h</text>
+        <text x="${barChartW * 0.5}" y="${barChartH + 14}" fill="var(--ax-text-3)" font-size="9">12h</text>
+        <text x="${barChartW * 0.75}" y="${barChartH + 14}" fill="var(--ax-text-3)" font-size="9">18h</text>
+        <text x="${barChartW - 12}" y="${barChartH + 14}" fill="var(--ax-text-3)" font-size="9">24h</text>
+      </svg>
+      <div style="font-size:.78em;color:var(--ax-gold);text-align:center;margin-top:4px">
+        Pic d'activité : ${peakHour}h–${peakHour + 1}h
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;text-align:center;font-size:.85em">
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;padding:8px">
+        📷 ${imageCount}<br><span style="font-size:.78em;color:var(--ax-text-3)">images</span>
+      </div>
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;padding:8px">
+        🎙️ ${voiceCount}<br><span style="font-size:.78em;color:var(--ax-text-3)">vocaux</span>
+      </div>
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;padding:8px">
+        ❤️ ${reactionCount}<br><span style="font-size:.78em;color:var(--ax-text-3)">réactions</span>
+      </div>
+    </div>
+
+    ${topConvs.length > 0 ? `
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:14px">
+        <div style="font-size:.78em;color:var(--ax-text-3);margin-bottom:6px">👥 Top contacts</div>
+        ${topConvs.map((c, i) => `
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88em">
+            <span>${i + 1}. ${esc(c.name)}</span>
+            <span style="color:var(--ax-text-3)">${c.total} msg</span>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
+    <button class="btn btn-block" onclick="K._aiInsightsSummary()" style="margin-top:8px">🤖 Demander un résumé IA</button>
+    <div id="ai-insights-result" style="margin-top:10px"></div>
+    <p style="text-align:center;font-size:.7em;color:var(--ax-text-3);margin-top:12px">Stats calculées localement (privé). Le résumé IA est anonymisé.</p>
+  `);
+};
+
+K._aiInsightsSummary = async function(){
+  const out = document.getElementById('ai-insights-result');
+  if(!out) return;
+  out.innerHTML = `<div style="text-align:center;padding:14px;color:var(--ax-text-3)">⏳ Apex analyse...</div>`;
+  const now = Date.now();
+  const week = 7 * 24 * 60 * 60 * 1000;
+  // Échantillonne max 80 messages anonymisés (pas de noms)
+  const sample = [];
+  Object.entries(K.messages || {}).forEach(([convId, arr]) => {
+    arr.forEach(m => {
+      if(!m.ts || m.ts < now - week) return;
+      if(sample.length >= 80) return;
+      const txt = String(m.text || m.voice_text || '').slice(0, 100);
+      if(txt && !m.image_data && !m.voice_data) {
+        sample.push(`[${new Date(m.ts).toLocaleString('fr-FR', {weekday:'short', hour:'2-digit'})}] ${txt}`);
+      }
+    });
+  });
+  if(sample.length < 5){
+    out.innerHTML = `<div style="color:var(--ax-text-3);padding:14px;text-align:center">Pas assez de messages cette semaine pour un résumé.</div>`;
+    return;
+  }
+  const prompt = `Voici ${sample.length} messages anonymisés des 7 derniers jours d'un utilisateur. Sans répéter les messages, donne en 4-5 lignes : (1) sujets dominants, (2) tonalité générale (positive/neutre/stressée), (3) rythme de communication (calme/intense), (4) une suggestion bienveillante pour la semaine prochaine.\n\nMessages :\n${sample.join('\n')}`;
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 20_000);
+    let r;
+    try {
+      r = await fetch(API_BASE + '/api/ai/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+        body: JSON.stringify({ prompt, max_tokens: 350 }),
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(tid); }
+    if(r.status === 429){
+      const e429 = await r.json().catch(() => ({}));
+      out.innerHTML = `<div style="color:var(--ax-warn);padding:14px;text-align:center">⏰ ${esc(e429.message || 'Limite gratuite')}</div>`;
+      return;
+    }
+    if(!r.ok){
+      out.innerHTML = `<div style="color:var(--ax-err);padding:14px;text-align:center">❌ Erreur ${r.status}</div>`;
+      return;
+    }
+    const data = await r.json();
+    const txt = data?.text || '(réponse vide)';
+    out.innerHTML = `
+      <div style="background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.3);border-radius:10px;padding:12px">
+        <div style="font-size:.78em;color:var(--ax-gold);margin-bottom:6px">🤖 ${esc(data?.provider || 'IA')}</div>
+        <div style="color:var(--ax-text);white-space:pre-wrap;font-size:.92em;line-height:1.5">${esc(txt)}</div>
+      </div>
+    `;
+  } catch(e){
+    _safeCatch('ai-insights', e);
+    out.innerHTML = `<div style="color:var(--ax-err);padding:14px;text-align:center">❌ Erreur réseau</div>`;
+  }
+};
 
 // ============================================================================
 //  v1.1.35 — Recherche sémantique IA dans messages de la conv courante
@@ -3337,6 +3497,12 @@ function renderSettings(app){
       </div>
       <div class="card-row" onclick="K.openMemoryLane()">
         <span>🕰</span><span style="flex:1">Memory Lane (il y a 1 an)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._viewScheduledList()">
+        <span>📅</span><span style="flex:1">Messages programmés</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._openInsightsModal()">
+        <span>📊</span><span style="flex:1">Insights IA (statistiques)</span><span>›</span>
       </div>
       <div class="card-row" onclick="K.openMiniApps()">
         <span>🎨</span><span style="flex:1">Mini-apps (Studios Apex)</span><span>›</span>
