@@ -8967,6 +8967,61 @@ var HELP_TOPICS={
     "L'employ\u00e9 gardera ce r\u00e9glage m\u00eame s'il n'est pas marqu\u00e9 senior.",
     "",
     "Pour **enlever** l'override : mettre 0 (retour aux r\u00e8gles par d\u00e9faut)."
+  ]},
+  // v9.692 \u2014 Topics aide v10
+  "v10_admin":{title:"\ud83d\udc51 Nouveau panneau Admin v10",icon:"\ud83d\udc51",body:[
+    "Le panneau **Admin** a \u00e9t\u00e9 refondu en **5 cat\u00e9gories** pour \u00e9viter le mur d'items :",
+    "",
+    "\u2022 **\ud83d\udc65 \u00c9quipes & Employ\u00e9s** \u2014 gestion, identit\u00e9s, retrait\u00e9s, doublons, export",
+    "\u2022 **\ud83d\udcc5 Planning & Horaires** \u2014 import PDF, v\u00e9rif, conflits, stats",
+    "\u2022 **\ud83d\udd12 S\u00e9curit\u00e9 & Audit** \u2014 journal, RGPD, PIN, mots de passe",
+    "\u2022 **\u2699 Syst\u00e8me & Configuration** \u2014 documents, cartes, IA m\u00e9moire, Apex, maintenance",
+    "\u2022 **\ud83e\udd16 IA & Outils** \u2014 kill-switch IA + cl\u00e9 API + proxy",
+    "",
+    "**Astuce** : tape dans le champ \"\ud83d\udd0d Filtrer dans cette cat\u00e9gorie\u2026\" pour trouver une action en 2 secondes.",
+    "",
+    "Pour revenir \u00e0 l'ancien panneau (transition) : bouton **\u21a9 Classique** en haut."
+  ]},
+  "v10_palette":{title:"\u2318 Palette de commandes \u2318K",icon:"\u2318",body:[
+    "La **palette \u2318K** ouvre une recherche universelle (style Linear/Vercel).",
+    "",
+    "**Comment l'ouvrir** :",
+    "\u2022 Clavier : **Ctrl+K** (Windows/Linux) ou **Cmd+K** (Mac)",
+    "\u2022 Mobile/tactile : bouton **\u2318** dans la topbar (\u00e0 c\u00f4t\u00e9 de \ud83d\udd0d)",
+    "",
+    "**Ce que tu trouves** :",
+    "\u2022 Navigation vers toutes les vues (Admin, Planning, Chat, IA\u2026)",
+    "\u2022 Actions admin (Importer, Conflits, Stats, Sauvegarde\u2026)",
+    "\u2022 Toggle IA, configurer cl\u00e9 API, configurer proxy",
+    "\u2022 Employ\u00e9s, codes horaires, jeux, articles de convention",
+    "",
+    "**Recherche fuzzy** : tape \"verif\" \u2192 trouve \"V\u00e9rifier l'import\" et \"V\u00e9rifier la connexion IA\"."
+  ]},
+  "v10_killswitch":{title:"\u23f8 Kill-switch IA \u2014 \u00e9conomiser les tokens",icon:"\u23f8",body:[
+    "Le **kill-switch IA** te permet de couper en 1 clic **TOUS** les appels API Anthropic.",
+    "",
+    "**Comment activer/d\u00e9sactiver** :",
+    "\u2022 Widget Aper\u00e7u admin sur l'Accueil : bouton **\u2705 IA ON** / **\u23f8 IA OFF**",
+    "\u2022 Topbar : badge **\u23f8 IA OFF** cliquable (visible si d\u00e9sactiv\u00e9e)",
+    "\u2022 Admin \u2192 IA & Outils : gros bouton d\u00e9di\u00e9",
+    "\u2022 Palette \u2318K : tape \"toggle IA\"",
+    "",
+    "**Ce qui est coup\u00e9 quand OFF** : chat IA, OCR scan cam\u00e9ra, scanner badge, vision PDF, sentinelle de maintenance, camera studio. **100 % des appels Anthropic**.",
+    "",
+    "L'\u00e9tat est persist\u00e9 localement (`cmc_ia_enabled` dans FB_LOCAL) \u2014 pas synchronis\u00e9 entre appareils, chacun d\u00e9cide pour son device."
+  ]},
+  "v10_apercu":{title:"\ud83d\udc41 Widget Aper\u00e7u administrateur",icon:"\ud83d\udc41",body:[
+    "Le widget **Aper\u00e7u administrateur** s'affiche en haut de l'Accueil **pour l'admin uniquement** (invisible pour les 258 employ\u00e9s).",
+    "",
+    "**Ce qu'il montre** :",
+    "\u2022 Status global : \"Tout est \u00e0 jour \u2713\" ou \"N alertes actives\"",
+    "\u2022 Compteur **\u25cf N en ligne** (utilisateurs actifs en temps r\u00e9el)",
+    "\u2022 Mini-calendrier 1 case/jour : vert=planifi\u00e9, sombre=\u00e0 faire, or pulse=aujourd'hui",
+    "\u2022 Boutons inline : toggle IA \u00b7 \u2699 Admin",
+    "\u2022 Mini-stats des alertes : Conflits, Nouveaux inscrits, Codes pending, Apex, Passations, Uploads",
+    "\u2022 Derni\u00e8re action audit + astuce \u2318K (si pas d'alerte)",
+    "",
+    "**Cliquable** : chaque mini-stat, le calendrier, le compteur en ligne \u2014 tous m\u00e8nent \u00e0 la vue correspondante."
   ]}
 };
 
@@ -9082,6 +9137,11 @@ var CMD_PALETTE_ACTIONS=[
   {cat:"Aide",icon:"\u2753",label:"Aide : Message du jour",keywords:["aide","help","motd"],fn:function(){showHelp("motd");}},
   {cat:"Aide",icon:"\u2753",label:"Aide : Dict\u00e9e vocale",keywords:["aide","help","micro","voix"],fn:function(){showHelp("stt_audio");}},
   {cat:"Aide",icon:"\u2753",label:"Aide : Super admin",adminOnly:true,keywords:["aide","help","admin","super"],fn:function(){showHelp("admin_super");}},
+  // v9.692 \u2014 Topics aide v10
+  {cat:"Aide",icon:"\ud83d\udc51",label:"Aide : Nouveau panneau Admin v10",adminOnly:true,keywords:["aide","help","admin","v10","panneau","categories"],fn:function(){showHelp("v10_admin");}},
+  {cat:"Aide",icon:"\u2318",label:"Aide : Palette de commandes (\u2318K)",keywords:["aide","help","palette","commande","ctrl k","cmd k","recherche"],fn:function(){showHelp("v10_palette");}},
+  {cat:"Aide",icon:"\u23f8",label:"Aide : Kill-switch IA (\u00e9conomie tokens)",adminOnly:true,keywords:["aide","help","ia","tokens","kill","switch","desactiver","economie"],fn:function(){showHelp("v10_killswitch");}},
+  {cat:"Aide",icon:"\ud83d\udc41",label:"Aide : Widget Aper\u00e7u administrateur",adminOnly:true,keywords:["aide","help","apercu","widget","dashboard","accueil"],fn:function(){showHelp("v10_apercu");}},
   // Utilitaires
   {cat:"Utilitaire",icon:"\u21a9",label:"Annuler derni\u00e8re action (\u2318Z)",adminOnly:true,keywords:["undo","annuler","retour","arriere"],fn:function(){undoAdmin();}},
   {cat:"Utilitaire",icon:"\u21aa",label:"R\u00e9tablir (\u2318\u21e7Z)",adminOnly:true,keywords:["redo","retablir","refaire"],fn:function(){redoAdmin();}},
