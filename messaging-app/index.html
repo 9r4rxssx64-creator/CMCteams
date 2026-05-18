@@ -298,7 +298,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.46';
+const __APEX_CHAT_VERSION__ = 'v1.1.47';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -379,7 +379,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.46</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.47</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -393,7 +393,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.46</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.47</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3177,8 +3177,8 @@ K._notifyIncoming = function(convId, msg){
     }catch(e){ /* ignore */ }
   }
 
-  // Sound chime
-  if(prefs.sound) K._playChime();
+  // Sound chime — v1.1.47 : per-conv override
+  if(prefs.sound) K._playChime(convId);
 
   // Vibrate (mobile)
   if(prefs.vibrate && navigator.vibrate){
@@ -3189,22 +3189,92 @@ K._notifyIncoming = function(convId, msg){
   if(prefs.badge) K._updateUnreadBadge();
 };
 
-K._playChime = function(){
+// ============================================================================
+//  v1.1.47 — Sons notification customizables per-conv (6 presets WebAudio)
+// ============================================================================
+K._SOUND_PRESETS = {
+  'default':  { freqs: [[880, 660]], dur: 0.3, type: 'sine', desc: 'Cloche douce (par défaut)' },
+  'gentle':   { freqs: [[440, 392]], dur: 0.5, type: 'sine', desc: 'Doux et long' },
+  'urgent':   { freqs: [[1200, 1200], [800, 800], [1200, 1200]], dur: 0.6, type: 'square', desc: 'Urgent (3 bips)' },
+  'glass':    { freqs: [[1568, 1318], [1318, 1046]], dur: 0.4, type: 'triangle', desc: 'Verre cristallin' },
+  'pop':      { freqs: [[523, 1046]], dur: 0.15, type: 'sine', desc: 'Pop court' },
+  'wood':     { freqs: [[200, 100]], dur: 0.2, type: 'square', desc: 'Bois discret' },
+  'mute':     { freqs: [], dur: 0, type: 'sine', desc: 'Silencieux' },
+};
+
+K._playChime = function(convId){
   try{
+    // Sound choisi : per-conv override sinon global pref sinon default
+    let soundKey = 'default';
+    if(convId){
+      const perConv = lg('sound_pref_' + convId, null);
+      if(perConv) soundKey = perConv;
+    }
+    if(soundKey === 'default'){
+      const globalPref = lg('sound_pref_default', 'default');
+      soundKey = globalPref;
+    }
+    if(soundKey === 'mute') return;
+    const preset = K._SOUND_PRESETS[soundKey] || K._SOUND_PRESETS.default;
+    if(!preset.freqs.length) return;
+
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
     const ctx = new AC();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type = 'sine';
-    o.frequency.setValueAtTime(880, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
-    g.gain.setValueAtTime(0.18, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    o.start(); o.stop(ctx.currentTime + 0.3);
-    setTimeout(() => { try{ ctx.close(); }catch(_){ } }, 500);
+    let t = ctx.currentTime;
+    preset.freqs.forEach(([fStart, fEnd], i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = preset.type;
+      o.frequency.setValueAtTime(fStart, t);
+      o.frequency.exponentialRampToValueAtTime(fEnd, t + preset.dur);
+      g.gain.setValueAtTime(0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + preset.dur);
+      o.start(t); o.stop(t + preset.dur + 0.05);
+      t += preset.dur + 0.05;
+    });
+    setTimeout(() => { try{ ctx.close(); }catch(_){ } }, (preset.freqs.length * (preset.dur + 0.05) + 0.2) * 1000);
   }catch(e){ /* ignore */ }
+};
+
+K._openSoundPicker = function(convId){
+  const currentPerConv = convId ? lg('sound_pref_' + convId, null) : null;
+  const currentGlobal = lg('sound_pref_default', 'default');
+  const current = currentPerConv || currentGlobal;
+  const buttons = Object.entries(K._SOUND_PRESETS).map(([key, p]) =>
+    `<button class="btn ${current === key ? '' : 'btn-out'} btn-sm" style="text-align:left;width:100%;justify-content:space-between;display:flex;margin-bottom:6px"
+            onclick="K._pickSound('${key}',${convId ? `'${esc(convId)}'` : 'null'})">
+      <span><strong>${esc(p.desc)}</strong></span>
+      <span style="font-size:.85em">▶</span>
+    </button>`
+  ).join('');
+  K._showModal(convId ? '🔔 Son pour cette conv' : '🔔 Son par défaut', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 10px">
+      ${convId ? 'Override le son global pour cette conversation uniquement.' : 'Son joué pour toutes les conversations sans son personnalisé.'}
+    </p>
+    ${buttons}
+    ${convId && currentPerConv ? `<button class="btn btn-out btn-block" style="margin-top:10px" onclick="K._resetSound('${esc(convId)}')">↺ Utiliser le son global</button>` : ''}
+  `);
+};
+
+K._pickSound = function(soundKey, convId){
+  if(convId){
+    ls('sound_pref_' + convId, soundKey);
+  } else {
+    ls('sound_pref_default', soundKey);
+  }
+  K._playChime(convId); // preview
+  toast('🔔 Son ' + (K._SOUND_PRESETS[soundKey]?.desc || soundKey), 'ok');
+  K._closeModal && K._closeModal();
+};
+
+K._resetSound = function(convId){
+  if(convId){
+    try { localStorage.removeItem('sound_pref_' + convId); } catch(_) {}
+  }
+  toast('Son global restauré', 'info');
+  K._closeModal && K._closeModal();
 };
 
 K._updateUnreadBadge = function(){
@@ -4061,6 +4131,9 @@ function renderSettings(app){
       </div>
       <div class="card-row" onclick="K._openStarredList()">
         <span>⭐</span><span style="flex:1">Messages favoris</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._openSoundPicker(null)">
+        <span>🔔</span><span style="flex:1">Son de notification (global)</span><span>›</span>
       </div>
       <div class="card-row" onclick="K.openMiniApps()">
         <span>🎨</span><span style="flex:1">Mini-apps (Studios Apex)</span><span>›</span>
@@ -6134,7 +6207,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.46"
+        data-version="v1.1.47"
         data-color="#6a8aff"
         defer></script>
 </body>
