@@ -267,7 +267,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.26';
+const __APEX_CHAT_VERSION__ = 'v1.1.27';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -343,7 +343,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.26</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.27</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -357,7 +357,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.26</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.27</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -725,6 +725,15 @@ K.login = async function(user, token){
   }
 
   K.render();
+
+  // v1.1.27 — Sync premium status + start auto-sync 30min
+  try{
+    if(typeof K._startPremiumSync === 'function') K._startPremiumSync();
+  }catch(e){ /* ignore */ }
+  // v1.1.27 — Request notif permission si user a activé push prefs
+  try{
+    if(typeof K._requestNotifPermissionIfNeeded === 'function') K._requestNotifPermissionIfNeeded();
+  }catch(e){ /* ignore */ }
   toast('Bienvenue ' + (user.pseudo || user.real_name) + ' !', 'ok');
 
   // === HEARTBEAT tracking (last_seen + géoloc + device) ===
@@ -1295,12 +1304,21 @@ function renderChat(app){
         </div>
       `).join('')}
     </div>
+    <div id="smart-reply-chips" style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;overflow-x:auto"></div>
     <div class="chat-input">
       <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id)"></textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
   setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight}, 50);
+  // v1.1.27 : Smart Reply chips si dernier message reçu
+  try {
+    const msgs = K.messages[K.viewData?.id] || [];
+    const lastMsg = msgs[msgs.length - 1];
+    if(lastMsg && lastMsg.from !== K.user?.id){
+      void K._renderSmartReplyChips(K.viewData?.id, lastMsg);
+    }
+  } catch(e) { /* ignore */ }
 }
 
 K.openConv = async function(convId){
@@ -2438,9 +2456,176 @@ try{
       toast('🎉 Premium activé ! Bienvenue.', 'ok', 5000);
       // Nettoie URL
       try{ history.replaceState({}, '', location.pathname); }catch(_){}
+      // Resync premium status depuis backend
+      if(typeof K._syncPremiumStatus === 'function') K._syncPremiumStatus();
     }, 1500);
   }
 }catch(e){ /* ignore */ }
+
+// ============================================================================
+//  v1.1.27 — Premium status auto-sync cross-device
+// ============================================================================
+K._syncPremiumStatus = async function(){
+  if(!K.user || !K.token) return null;
+  try{
+    const res = await fetch(API_BASE + '/api/premium/status', {
+      headers: { 'Authorization': 'Bearer ' + K.token },
+      signal: AbortSignal.timeout(8000),
+    });
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(data.ok){
+      // Update K.user local
+      K.user.premium_until = data.expires_at || 0;
+      K.user.premium_plan = data.plan || null;
+      ls('user', K.user);
+      // Re-render settings si visible (pour badge Premium)
+      if(K.view === 'settings'){ K.sv('settings'); }
+      return data;
+    }
+  }catch(e){ /* silent — ne pas bloquer UX */ }
+  return null;
+};
+
+// Auto-sync au boot (après login) + toutes les 30min
+K._premiumSyncInterval = null;
+K._startPremiumSync = function(){
+  if(K._premiumSyncInterval) clearInterval(K._premiumSyncInterval);
+  K._syncPremiumStatus(); /* sync immédiat */
+  K._premiumSyncInterval = setInterval(() => K._syncPremiumStatus(), 30 * 60 * 1000);
+};
+
+// ============================================================================
+//  v1.1.27 — Customer Portal Stripe (gérer abo)
+// ============================================================================
+K._openCustomerPortal = async function(){
+  if(!K.token) return toast('Connecte-toi d\'abord', 'err');
+  toast('Ouverture portail Stripe...', 'info', 2000);
+  try{
+    const res = await fetch(API_BASE + '/api/premium/portal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+      body: JSON.stringify({ return_url: location.href }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if(!res.ok){
+      if(res.status === 404){
+        return toast('Aucun abonnement actif à gérer', 'err', 4000);
+      }
+      return toast('Portail Stripe erreur HTTP ' + res.status, 'err', 4000);
+    }
+    const data = await res.json();
+    if(data.url){
+      window.location.href = data.url;
+    } else {
+      toast('Aucune URL portail retournée', 'err');
+    }
+  }catch(e){
+    toast('Erreur réseau: ' + (e.message || ''), 'err', 4000);
+  }
+};
+
+// ============================================================================
+//  v1.1.27 — Traduction message (long-press → menu)
+// ============================================================================
+K._translateMessage = async function(text, targetLang){
+  if(!K.token) return null;
+  targetLang = (targetLang || 'fr').toLowerCase().slice(0, 5);
+  try{
+    const res = await fetch(API_BASE + '/api/ai/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+      body: JSON.stringify({ text: String(text || '').slice(0, 5000), target_lang: targetLang }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    if(!res.ok) return { ok: false, reason: `HTTP ${res.status}` };
+    return await res.json();
+  }catch(e){
+    return { ok: false, reason: e.message || 'network' };
+  }
+};
+
+K._showTranslateMenu = function(messageText){
+  if(!messageText) return;
+  K._showModal('🌐 Traduire', `
+    <p style="color:var(--ax-text-2);font-size:.88em">Choisis la langue cible :</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">
+      <button class="btn btn-out btn-sm" onclick="K._doTranslate(${JSON.stringify(messageText).replace(/"/g,'&quot;')},'fr')">🇫🇷 Français</button>
+      <button class="btn btn-out btn-sm" onclick="K._doTranslate(${JSON.stringify(messageText).replace(/"/g,'&quot;')},'en')">🇬🇧 English</button>
+      <button class="btn btn-out btn-sm" onclick="K._doTranslate(${JSON.stringify(messageText).replace(/"/g,'&quot;')},'es')">🇪🇸 Español</button>
+      <button class="btn btn-out btn-sm" onclick="K._doTranslate(${JSON.stringify(messageText).replace(/"/g,'&quot;')},'it')">🇮🇹 Italiano</button>
+      <button class="btn btn-out btn-sm" onclick="K._doTranslate(${JSON.stringify(messageText).replace(/"/g,'&quot;')},'de')">🇩🇪 Deutsch</button>
+      <button class="btn btn-out btn-sm" onclick="K._doTranslate(${JSON.stringify(messageText).replace(/"/g,'&quot;')},'ar')">🇸🇦 العربية</button>
+    </div>
+    <div id="tr-result" style="margin-top:14px"></div>
+  `);
+};
+K._doTranslate = async function(text, lang){
+  const resEl = $('#tr-result');
+  if(resEl) resEl.innerHTML = '<div style="text-align:center;color:var(--ax-text-3);padding:14px">⏳ Traduction...</div>';
+  const result = await K._translateMessage(text, lang);
+  if(!resEl) return;
+  if(result?.ok){
+    resEl.innerHTML = `
+      <div style="background:rgba(232,184,48,.06);border:1px solid rgba(232,184,48,.2);border-radius:10px;padding:12px;margin-top:10px">
+        <div style="font-size:.75em;color:var(--ax-text-3);margin-bottom:4px">📤 ${esc(lang.toUpperCase())} (${esc(result.provider || 'IA')})</div>
+        <div style="color:var(--ax-text-1);white-space:pre-wrap">${esc(result.translated)}</div>
+        <button class="btn btn-out btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(result.translated).replace(/"/g,'&quot;')});K.toast('Traduction copiée','ok')" style="margin-top:10px;width:100%">📋 Copier</button>
+      </div>
+    `;
+  } else {
+    resEl.innerHTML = `<div style="color:var(--ax-err);padding:10px">❌ Erreur : ${esc(result?.reason || 'inconnue')}</div>`;
+  }
+};
+
+// ============================================================================
+//  v1.1.27 — Smart Reply chips au-dessus du clavier chat
+// ============================================================================
+K._loadSmartReplies = async function(lastMsgText, contextText){
+  if(!K.token || !lastMsgText) return null;
+  try{
+    const res = await fetch(API_BASE + '/api/ai/smart-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+      body: JSON.stringify({
+        last_message: String(lastMsgText).slice(0, 2000),
+        context: String(contextText || '').slice(0, 500),
+        tone: 'friendly',
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data?.ok ? data.replies : null;
+  }catch(e){ return null; }
+};
+
+K._renderSmartReplyChips = async function(convId, lastMsg){
+  const host = $('#smart-reply-chips');
+  if(!host || !lastMsg?.text) return;
+  // Skip si user (pas reçu) ou message > 5 min (trop tard pour suggestions)
+  if(lastMsg.from === K.user.id || Date.now() - lastMsg.ts > 5 * 60 * 1000){
+    host.innerHTML = '';
+    return;
+  }
+  host.innerHTML = '<div style="color:var(--ax-text-3);font-size:.78em;padding:4px 8px">💡 ...</div>';
+  const replies = await K._loadSmartReplies(lastMsg.text);
+  if(!replies || replies.length === 0){
+    host.innerHTML = '';
+    return;
+  }
+  host.innerHTML = replies.map(r => `
+    <button class="btn btn-out btn-sm smart-chip" onclick="K._useSmartReply(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="margin:2px;border-radius:14px;padding:4px 12px;font-size:.85em">${esc(r)}</button>
+  `).join('');
+};
+
+K._useSmartReply = function(reply){
+  const input = $('#msg-input');
+  if(input){
+    input.value = reply;
+    input.focus();
+  }
+};
 
 function renderContacts(app){
   app.innerHTML = `
@@ -4307,11 +4492,13 @@ K._reload = function(){
 K.openPremium = function(){
   const isPremium = PRECONFIGURED_USERS[K.user.id]?.premium || (K.user.premium_until > Date.now());
   if(isPremium){
+    const plan = K.user.premium_plan || (K.user.premium_until > 9000000000000 ? 'lifetime' : 'monthly');
+    const expires = K.user.premium_until > 9000000000000 ? 'À vie' : (K.user.premium_until ? new Date(K.user.premium_until).toLocaleDateString('fr-FR') : '?');
     return K._showModal('⭐ Apex Chat+ Premium', `
       <div style="text-align:center;padding:14px">
         <div style="font-size:4em">✨</div>
-        <h3 style="color:var(--ax-gold);margin:10px 0">Tu as déjà Premium !</h3>
-        <p style="color:var(--ax-text-2)">Toutes les fonctionnalités sont débloquées.</p>
+        <h3 style="color:var(--ax-gold);margin:10px 0">Premium actif !</h3>
+        <p style="color:var(--ax-text-2)">Plan : <strong>${esc(plan)}</strong> · Expire : <strong>${esc(expires)}</strong></p>
         <ul style="text-align:left;color:var(--ax-text-2);margin:14px 0;line-height:2">
           <li>✓ IA Apex illimitée</li>
           <li>✓ Time Capsules illimitées</li>
@@ -4321,6 +4508,7 @@ K.openPremium = function(){
           <li>✓ Priority support</li>
         </ul>
       </div>
+      ${plan !== 'lifetime' ? `<button class="btn btn-out btn-block" onclick="K._openCustomerPortal()" style="margin-top:14px">⚙️ Gérer mon abonnement</button>` : ''}
     `);
   }
 
