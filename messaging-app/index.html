@@ -204,6 +204,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
   background:rgba(255,165,0,.12);border:1px solid #ffa500;
   border-radius:8px;padding:5px 8px;cursor:pointer;font-weight:600}
 .scam-warning:active{background:rgba(255,165,0,.2)}
+.pinned-banner{padding:8px 14px;background:rgba(232,184,48,.1);border-bottom:1px solid rgba(232,184,48,.3);
+  color:var(--ax-gold);font-size:.85em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pinned-banner:active{background:rgba(232,184,48,.18)}
 .msg-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .msg-reaction{font-size:.85em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   border-radius:12px;padding:2px 8px;cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none}
@@ -295,7 +298,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.44';
+const __APEX_CHAT_VERSION__ = 'v1.1.45';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -376,7 +379,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.44</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.45</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -390,7 +393,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.44</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.45</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1518,6 +1521,12 @@ K._openReactionPicker = function(msgId){
     actions.push(`<button class="btn btn-out btn-sm" onclick="K._showTranslateMenu(${JSON.stringify(msg.text).replace(/"/g,'&quot;')})">🌐 Traduire</button>`);
     actions.push(`<button class="btn btn-out btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(msg.text).replace(/"/g,'&quot;')});K.toast?.('Copié','ok');K._closeModal()">📋 Copier</button>`);
   }
+  // v1.1.45 — Pin + Star (toutes les actions, même sans text)
+  if(msg){
+    actions.push(`<button class="btn btn-out btn-sm" onclick="K._togglePinMsg('${esc(msgId)}')">${msg.pinned ? '📌 Désépingler' : '📌 Épingler'}</button>`);
+    const isStarred = K._isStarred ? K._isStarred(msgId) : false;
+    actions.push(`<button class="btn btn-out btn-sm" onclick="K._toggleStarMsg('${esc(msgId)}')">${isStarred ? '⭐ Retirer favori' : '⭐ Favori'}</button>`);
+  }
   K._showModal('Actions message', `
     <div class="reaction-picker">${picker}</div>
     <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:6px">Tape une réaction</p>
@@ -2119,6 +2128,14 @@ function renderChat(app){
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
       <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
     </div>
+    ${(() => {
+      const pinned = (K.messages[conv.id] || []).filter(m => m.pinned);
+      if(!pinned.length) return '';
+      return `<div class="pinned-banner" onclick="K._showPinnedList()">
+        📌 ${pinned.length} message${pinned.length > 1 ? 's' : ''} épinglé${pinned.length > 1 ? 's' : ''}
+        <span style="color:var(--ax-text-3);font-size:.85em;margin-left:6px">${esc((pinned[0].text || '').slice(0, 60))}…</span>
+      </div>`;
+    })()}
     <div class="chat-messages" id="chat-msgs">
       ${msgs.length === 0 ? `
         <div class="msg system">🛡 Cette conversation est chiffrée bout-en-bout. Personne d'autre que toi et tes destinataires ne peut lire les messages.</div>
@@ -3545,6 +3562,111 @@ K._detectScam = function(text){
   return null;
 };
 
+// ============================================================================
+//  v1.1.45 — Pinned messages + starred favorites
+//  pinned : conv-scope (header chat) · starred : user-scope (vue dédiée)
+// ============================================================================
+K._togglePinMsg = function(msgId){
+  const conv = K.viewData;
+  if(!conv || !msgId) return;
+  const msgs = K.messages[conv.id] || [];
+  const m = msgs.find(x => x.id === msgId);
+  if(!m) return;
+  m.pinned = !m.pinned;
+  if(m.pinned){ m.pinned_by = K.user?.id; m.pinned_at = Date.now(); }
+  else { delete m.pinned_by; delete m.pinned_at; }
+  ls('messages_' + conv.id, msgs);
+  K.render();
+  K._closeModal && K._closeModal();
+  toast(m.pinned ? '📌 Message épinglé' : '📌 Épinglage retiré', 'ok');
+};
+
+K._toggleStarMsg = function(msgId){
+  const conv = K.viewData;
+  if(!conv || !msgId) return;
+  const stars = lg('starred_messages', []);
+  const idx = stars.findIndex(s => s.id === msgId);
+  if(idx >= 0){
+    stars.splice(idx, 1);
+    ls('starred_messages', stars);
+    toast('⭐ Retiré des favoris', 'info');
+  } else {
+    const msgs = K.messages[conv.id] || [];
+    const m = msgs.find(x => x.id === msgId);
+    if(!m) return;
+    stars.push({
+      id: msgId, convId: conv.id,
+      convName: conv.name || conv.pseudo || '',
+      text: m.text || (m.voice_text ? '🎙️ ' + m.voice_text : '') || (m.image_data ? '📷 Image' : ''),
+      from: m.from, ts: m.ts, starred_at: Date.now(),
+    });
+    ls('starred_messages', stars);
+    toast('⭐ Ajouté aux favoris', 'ok');
+  }
+  K._closeModal && K._closeModal();
+};
+
+K._isStarred = function(msgId){
+  return lg('starred_messages', []).some(s => s.id === msgId);
+};
+
+K._openStarredList = function(){
+  const stars = lg('starred_messages', []).sort((a, b) => b.starred_at - a.starred_at);
+  K._showModal('⭐ Messages favoris', stars.length === 0 ? `
+    <p style="text-align:center;color:var(--ax-text-3);padding:20px">
+      Aucun favori encore. Long-press sur un message → ⭐ pour le marquer.
+    </p>
+  ` : `
+    <div style="max-height:60vh;overflow-y:auto">
+      ${stars.map(s => `
+        <div onclick="K._jumpToStarred('${esc(s.convId)}','${esc(s.id)}')"
+             style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;font-size:.72em;color:var(--ax-text-3);margin-bottom:4px">
+            <span>${esc(s.convName)}</span>
+            <span>${esc(new Date(s.ts).toLocaleDateString('fr-FR'))}</span>
+          </div>
+          <div style="color:var(--ax-text);font-size:.9em">${esc(s.text || '(vide)')}</div>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+K._showPinnedList = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  const pinned = (K.messages[conv.id] || []).filter(m => m.pinned).sort((a, b) => b.pinned_at - a.pinned_at);
+  K._showModal('📌 Messages épinglés', pinned.length === 0 ? `
+    <p style="text-align:center;color:var(--ax-text-3);padding:20px">Aucun message épinglé.</p>
+  ` : `
+    <div style="max-height:60vh;overflow-y:auto">
+      ${pinned.map(m => `
+        <div onclick="K._scrollToMsg('${esc(m.id)}')"
+             style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer">
+          <div style="font-size:.72em;color:var(--ax-text-3);margin-bottom:4px">${esc(new Date(m.ts).toLocaleString('fr-FR'))}</div>
+          <div style="color:var(--ax-text);font-size:.9em">${esc(m.text || (m.image_data ? '📷 Image' : '(vide)'))}</div>
+          <button class="btn btn-out btn-sm" style="margin-top:6px;width:100%" onclick="event.stopPropagation();K._togglePinMsg('${esc(m.id)}')">📌 Désépingler</button>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+K._jumpToStarred = function(convId, msgId){
+  const conv = K.conversations?.find(c => c.id === convId);
+  if(!conv){ toast('Conversation introuvable', 'warn'); return; }
+  K._closeModal && K._closeModal();
+  K.openConv(convId);
+  setTimeout(() => {
+    const el = document.querySelector(`.msg[data-msg-id="${msgId}"]`);
+    if(el){
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.background = 'rgba(232,184,48,.25)';
+      setTimeout(() => { el.style.background = ''; }, 1500);
+    }
+  }, 300);
+};
+
 K._showScamInfo = function(reason, msgId){
   K._showModal('⚠️ Message potentiellement suspect', `
     <div style="background:rgba(255,165,0,.12);border:1px solid #ffa500;border-radius:10px;padding:12px;margin-bottom:14px">
@@ -3903,6 +4025,9 @@ function renderSettings(app){
       </div>
       <div class="card-row" onclick="K._openInsightsModal()">
         <span>📊</span><span style="flex:1">Insights IA (statistiques)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._openStarredList()">
+        <span>⭐</span><span style="flex:1">Messages favoris</span><span>›</span>
       </div>
       <div class="card-row" onclick="K.openMiniApps()">
         <span>🎨</span><span style="flex:1">Mini-apps (Studios Apex)</span><span>›</span>
@@ -5976,7 +6101,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.44"
+        data-version="v1.1.45"
         data-color="#6a8aff"
         defer></script>
 </body>
