@@ -148,9 +148,13 @@ bridge/data/clone-library.json — bibliothèque perso (disclaimer_accepted)
 ## Workflow Git
 
 - **Branche principale** : `main` (pas de push direct).
+- **Branche pipeline Claude code** : `claude/test-699LQ` ⭐ — toute MAJ iRemoteHub passe par là.
+  - Le pipeline auto-test/auto-fix/auto-merge tourne dessus puis pousse vers main.
+  - Workflow recommandé : push sur `claude/iphone-device-remote-control-Nam26` → merge dans `claude/test-699LQ` → la pipeline propage vers main.
 - **Branche feature courante** : `claude/iphone-device-remote-control-Nam26`.
 - Messages de commit : `vX.Y: description`.
 - Jamais de `--no-verify` ni `--force` sans demande explicite.
+- Jamais de PR directe vers main pour iRemoteHub — toujours via `claude/test-699LQ`.
 
 ---
 
