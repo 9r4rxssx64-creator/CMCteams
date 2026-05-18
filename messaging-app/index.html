@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.82';
+const __APEX_CHAT_VERSION__ = 'v1.1.83';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.82</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.83</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.82</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.83</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -907,6 +907,122 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.83 — Conversation labels / categories (Gmail-style)
+// ============================================================================
+K._DEFAULT_LABELS = [
+  { id: 'work', name: 'Boulot', color: '#6a8aff', emoji: '💼' },
+  { id: 'family', name: 'Famille', color: '#e63946', emoji: '❤️' },
+  { id: 'urgent', name: 'Urgent', color: '#ffa500', emoji: '🔥' },
+  { id: 'fun', name: 'Fun', color: '#2ed573', emoji: '🎉' },
+];
+
+K._getLabels = function(){
+  return lg('labels_v1', K._DEFAULT_LABELS);
+};
+
+K._getConvLabels = function(convId){
+  const conv = (K.conversations || []).find(c => c.id === convId);
+  return conv?.label_ids || [];
+};
+
+K._toggleConvLabel = function(convId, labelId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  if(!conv.label_ids) conv.label_ids = [];
+  const idx = conv.label_ids.indexOf(labelId);
+  if(idx >= 0) conv.label_ids.splice(idx, 1);
+  else conv.label_ids.push(labelId);
+  ls('conversations', K.conversations);
+  K.render();
+};
+
+K._openLabelMenu = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  const labels = K._getLabels();
+  const currentIds = conv.label_ids || [];
+  const rows = labels.map(l => {
+    const isActive = currentIds.includes(l.id);
+    return `<button class="btn ${isActive ? '' : 'btn-out'}" style="text-align:left;width:100%;justify-content:space-between;display:flex;margin-bottom:6px;${isActive ? 'background:' + l.color + ';color:#fff;border-color:' + l.color : ''}"
+      onclick="K._toggleConvLabel('${esc(convId)}','${esc(l.id)}');K._openLabelMenu('${esc(convId)}')">
+      <span>${esc(l.emoji)} ${esc(l.name)}</span>
+      <span>${isActive ? '✓' : '+'}</span>
+    </button>`;
+  }).join('');
+  K._showModal('🏷 Labels conversation', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">
+      Tague <strong>${esc(conv.name || conv.pseudo || '?')}</strong> avec des labels :
+    </p>
+    ${rows}
+    <button class="btn btn-out btn-block" style="margin-top:14px" onclick="K._manageLabels()">⚙️ Gérer labels (créer/renommer)</button>
+  `);
+};
+
+K._manageLabels = function(){
+  const labels = K._getLabels();
+  const rows = labels.map((l, i) => `
+    <div style="display:flex;align-items:center;gap:6px;padding:6px;border-bottom:1px solid var(--ax-border)">
+      <span style="font-size:1.2em">${esc(l.emoji)}</span>
+      <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${esc(l.color)}"></span>
+      <span style="flex:1">${esc(l.name)}</span>
+      ${!K._DEFAULT_LABELS.find(d => d.id === l.id) ? `<button onclick="K._deleteLabel('${esc(l.id)}')" style="background:transparent;border:none;color:#e63946;cursor:pointer">🗑</button>` : ''}
+    </div>
+  `).join('');
+  K._showModal('🏷 Gérer mes labels', `
+    ${rows}
+    <hr style="border-color:var(--ax-border);margin:14px 0">
+    <label class="label">Nouveau label</label>
+    <input id="lbl-name" class="input" placeholder="Nom (ex: Projet X)" maxlength="20">
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <input id="lbl-emoji" class="input" placeholder="🏷" maxlength="3" style="flex:0 0 80px;text-align:center;font-size:1.4em">
+      <input id="lbl-color" type="color" class="input" value="#c9a227" style="flex:0 0 60px;padding:2px">
+      <button class="btn" style="flex:1" onclick="K._createLabel()">+ Créer</button>
+    </div>
+  `);
+};
+
+K._createLabel = function(){
+  const name = document.getElementById('lbl-name')?.value.trim();
+  const emoji = document.getElementById('lbl-emoji')?.value.trim() || '🏷';
+  const color = document.getElementById('lbl-color')?.value || '#c9a227';
+  if(!name){ toast('Nom requis', 'warn'); return; }
+  const labels = K._getLabels();
+  const id = 'lbl_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5);
+  labels.push({ id, name, color, emoji });
+  ls('labels_v1', labels);
+  K._closeModal && K._closeModal();
+  K._manageLabels(); // reload
+  toast('🏷 Label créé : ' + name, 'ok');
+};
+
+K._deleteLabel = function(labelId){
+  if(!confirm('Supprimer ce label ? (les conv ne perdront pas leur ref)')) return;
+  const labels = K._getLabels().filter(l => l.id !== labelId);
+  ls('labels_v1', labels);
+  K._closeModal && K._closeModal();
+  K._manageLabels();
+  toast('🗑 Label supprimé', 'info');
+};
+
+K._renderConvLabels = function(conv){
+  if(!conv.label_ids || conv.label_ids.length === 0) return '';
+  const labels = K._getLabels();
+  return '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px">' +
+    conv.label_ids.map(id => {
+      const l = labels.find(x => x.id === id);
+      if(!l) return '';
+      return `<span style="background:${esc(l.color)};color:#fff;padding:1px 6px;border-radius:8px;font-size:.65em;font-weight:600">${esc(l.emoji)} ${esc(l.name)}</span>`;
+    }).join('') +
+  '</div>';
+};
+
+K._filterLabelId = null; /* filter active : labelId ou null */
+K._filterByLabel = function(labelId){
+  K._filterLabelId = labelId === K._filterLabelId ? null : labelId;
+  K.render();
+};
 
 // ============================================================================
 //  v1.1.82 — Voice waveform visualisation durant recording
@@ -1911,6 +2027,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._toggleConvMuted('${esc(convId)}')">${conv.muted ? '🔔 Réactiver notifs' : '🔕 Mettre en muet (permanent)'}</button>
       <button class="btn btn-out btn-block" onclick="K._openSnoozeMenu('${esc(convId)}')">${K._isSnoozed && K._isSnoozed(convId) ? '💤 Modifier snooze' : '💤 Snooze temporaire'}</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvArchived('${esc(convId)}')">${conv.archived ? '📤 Désarchiver' : '📦 Archiver'}</button>
+      <button class="btn btn-out btn-block" onclick="K._openLabelMenu('${esc(convId)}')">🏷 Labels${conv.label_ids && conv.label_ids.length ? ' (' + conv.label_ids.length + ')' : ''}</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
@@ -2105,7 +2222,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.82',
+    version: 'v1.1.83',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4193,6 +4310,10 @@ function renderChats(app){
       return msgs.some(m => (m.text || '').toLowerCase().includes(q));
     });
   }
+  // v1.1.83 : filter by label si actif
+  if(K._filterLabelId){
+    convs = convs.filter(c => (c.label_ids || []).includes(K._filterLabelId));
+  }
   // v1.1.66 : sort pinned en haut, puis last_msg_ts desc
   convs = convs.slice().sort((a, b) => {
     if(a.pinned && !b.pinned) return -1;
@@ -4211,6 +4332,15 @@ function renderChats(app){
            oninput="K._convSearchInput(this.value)"
            style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px 12px;color:var(--ax-text);font-size:15px;margin-bottom:12px">
     ${q.length > 0 ? `<p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">📂 ${convs.length} résultat${convs.length>1?'s':''} pour "<strong>${esc(q)}</strong>"</p>` : ''}
+    ${(() => {
+      const allLabels = K._getLabels();
+      const usedLabels = allLabels.filter(l => (K.conversations || []).some(c => (c.label_ids || []).includes(l.id)));
+      if(usedLabels.length === 0 || q.length > 0) return '';
+      return `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;overflow-x:auto">
+        <button onclick="K._filterByLabel(null)" style="background:${!K._filterLabelId ? 'var(--ax-gold)' : 'transparent'};color:${!K._filterLabelId ? 'var(--ax-bg)' : 'var(--ax-text-2)'};border:1px solid ${!K._filterLabelId ? 'var(--ax-gold)' : 'var(--ax-border)'};padding:3px 10px;border-radius:14px;font-size:.78em;cursor:pointer">Tous</button>
+        ${usedLabels.map(l => `<button onclick="K._filterByLabel('${esc(l.id)}')" style="background:${K._filterLabelId === l.id ? esc(l.color) : 'transparent'};color:${K._filterLabelId === l.id ? '#fff' : esc(l.color)};border:1px solid ${esc(l.color)};padding:3px 10px;border-radius:14px;font-size:.78em;cursor:pointer;white-space:nowrap">${esc(l.emoji)} ${esc(l.name)}</button>`).join('')}
+      </div>`;
+    })()}
     ${archivedCount > 0 && q.length === 0 ? `<button class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px" onclick="K._viewArchivedConvs()">📦 ${archivedCount} conv archivée${archivedCount>1?'s':''}</button>` : ''}
     ${convs.length === 0 ? `
       <div class="card" style="text-align:center;padding:30px 14px">
@@ -4229,6 +4359,7 @@ function renderChats(app){
             <div style="flex:1;min-width:0">
               <div class="conv-name">${c.pinned ? '📌 ' : ''}${c.muted ? '🔕 ' : ''}${K._isSnoozed && K._isSnoozed(c.id) ? '💤 ' : ''}${esc(c.name || c.pseudo || 'Sans nom')}</div>
               <div class="conv-last">${draft ? `<span style="color:var(--ax-blue);font-style:italic">✏️ Brouillon : ${esc(draft.slice(0, 60))}</span>` : esc(c.last_preview || '(message chiffré)')}</div>
+              ${K._renderConvLabels ? K._renderConvLabels(c) : ''}
             </div>
             <div style="text-align:right">
               <div class="conv-time">${formatTime(c.last_msg_ts)}</div>
@@ -8772,7 +8903,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.82"
+        data-version="v1.1.83"
         data-color="#6a8aff"
         defer></script>
 </body>

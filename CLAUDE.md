@@ -1,6 +1,67 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-15 (Apex v13.4.42 / CMC v9.648).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-18 (Apex Chat v1.1.83 / Apex v13.4.211 / CMC v9.658).
+
+---
+
+## 🎙 RÈGLE ABSOLUE — VOIX RÉELLEMENT DIFFÉRENTES TOUJOURS (Kevin 2026-05-18, ABSOLUE)
+
+> **"Assure toi que les voix sur réellement différentes les une des autre car depuis le début sur tous les projets se sont les même à chaque fois. Note le"** — Kevin 2026-05-18
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex, CMCteams, Apex Chat, e-KDMC, tous projets avec TTS / voix.
+
+### Constat Kevin (vérité brutale)
+
+Depuis le début, sur TOUS les projets, les voix dans menus paraissent différentes (noms ≠) mais **rendent le MÊME son** à l'oreille. Mensonge UX critique.
+
+### Cause racine
+
+Web Speech API `speechSynthesis.getVoices()` :
+- iOS Safari : 3-5 voix vraiment distinctes max par langue, reste = duplicates marketing
+- Android Chrome : 1 voix Google TTS principalement
+- Si on liste 50+ "voix par nom" sans tester → 90% sonnent identiques
+
+### Action obligatoire AVANT chaque release voix
+
+1. **TESTER** chaque entrée du catalogue produit un son DIFFÉRENT
+2. **DÉDUPLIQUER** : 2 voix identiques → en garder UNE seule
+3. **PRIVILÉGIER** différenciation via Web Audio (pitch, rate, filtres) sur **MÊME voix base** plutôt que 50 noms marketing identiques
+4. **3 voix base × 20 effets** = 60 sons VRAIMENT distincts (vs 50 noms duplicates)
+
+### Implementation correcte
+
+```js
+// ❌ INTERDIT : 50 voix Web Speech qui sonnent pareil
+var VOICES_BAD = [
+  { name: 'Thomas FR', voice: 'Google FR' },
+  { name: 'Marie FR', voice: 'Google FR' },  /* MÊME son */
+  { name: 'Pierre FR', voice: 'Google FR' }, /* MÊME son */
+];
+
+// ✅ OBLIGATOIRE : différenciation Web Audio garantie distinctes
+var VOICES_GOOD = [
+  { name: 'Femme', base: 'fr-FR-female', pitch: 1, rate: 1 },
+  { name: 'Homme', base: 'fr-FR-male', pitch: 1, rate: 1 },
+  { name: 'Robot', base: 'fr-FR-male', pitch: 0.6, rate: 0.9, filter: 'lowpass-1500' },
+  { name: 'Cartoon', base: 'fr-FR-male', pitch: 1.6, rate: 1.2 },
+  { name: 'Vieillard', base: 'fr-FR-male', pitch: 0.7, rate: 0.7, filter: 'reverb' },
+  { name: 'Echo cave', base: 'fr-FR-male', pitch: 1, rate: 0.9, filter: 'echo-long' },
+];
+```
+
+### Test mental obligatoire avant chaque release
+
+> *"Si Kevin tape 'Tester' sur 5 voix consécutives, entend-il 5 sons VRAIMENT distincts (timbre, pitch, OU effet) ? Si 3+ sonnent identiques avec juste un nom différent → catalogue cassé."*
+
+### À auditer en priorité prochaine session
+
+- **Apex IA v13** : `services/voice-catalog.ts` (50+ voix) → AUDIT urgent
+- **Apex Chat** : `K._SOUND_PRESETS` (déjà OK car WebAudio synth)
+- **CMCteams** : aucun catalogue voix actuellement
+
+Sentinelle `voice-distinctness-watch` à créer (audit doublons auto).
+
+---
 
 ---
 
