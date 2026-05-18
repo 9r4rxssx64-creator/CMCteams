@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.77';
+const __APEX_CHAT_VERSION__ = 'v1.1.78';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.77</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.78</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.77</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.78</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -907,6 +907,91 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.78 — Conversation export JSON / texte (backup local)
+// ============================================================================
+K._exportConversation = function(convId, format){
+  format = format || 'json';
+  const conv = (K.conversations || []).find(c => c.id === convId);
+  if(!conv){ toast('Conv introuvable', 'warn'); return; }
+  const msgs = K.messages[convId] || [];
+  const peerName = conv.name || conv.pseudo || 'Inconnu';
+  let content, filename, mime;
+  if(format === 'json'){
+    const data = {
+      app: 'Apex Chat',
+      version: typeof __APEX_CHAT_VERSION__ !== 'undefined' ? __APEX_CHAT_VERSION__ : '?',
+      exported_at: new Date().toISOString(),
+      conversation: { id: convId, name: peerName, type: conv.type || 'dm', member_count: conv.member_count || 2 },
+      messages: msgs.map(m => ({
+        id: m.id, from: m.from === K.user?.id ? 'me' : peerName,
+        ts: m.ts, time_iso: new Date(m.ts).toISOString(),
+        text: m.text || null,
+        has_image: !!m.image_data, has_voice: !!m.voice_data,
+        voice_text: m.voice_text || null,
+        edited: !!m.edited_at, deleted: !!m.deleted, forwarded: !!m.forwarded,
+        reply_to: m.reply_to ? { id: m.reply_to.id, text: m.reply_to.text } : null,
+        reactions: m.reactions || null, poll: m.poll || null,
+        location: m.location ? { lat: m.location.lat, lng: m.location.lng } : null,
+      })),
+      stats: {
+        total: msgs.length,
+        from_me: msgs.filter(m => m.from === K.user?.id).length,
+        from_peer: msgs.filter(m => m.from !== K.user?.id).length,
+      }
+    };
+    content = JSON.stringify(data, null, 2);
+    filename = `apex-chat-${peerName.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().slice(0, 10)}.json`;
+    mime = 'application/json';
+  } else {
+    const lines = [
+      `=== Conversation Apex Chat avec ${peerName} ===`,
+      `Exportée le : ${new Date().toLocaleString('fr-FR')}`,
+      `Total : ${msgs.length} messages`, ''
+    ];
+    msgs.forEach(m => {
+      if(m.deleted){ lines.push(`[${new Date(m.ts).toLocaleString('fr-FR')}] (message supprimé)`); return; }
+      const who = m.from === K.user?.id ? 'MOI' : peerName;
+      const time = new Date(m.ts).toLocaleString('fr-FR');
+      let body = m.text || '';
+      if(m.image_data) body = (body || '') + ' [📷 IMAGE]';
+      if(m.voice_data) body = (body || m.voice_text || '') + ' [🎙️ AUDIO]';
+      if(m.poll) body = `[📊 SONDAGE : ${m.poll.question}]`;
+      if(m.location) body = `[📍 POSITION : ${m.location.lat}, ${m.location.lng}]`;
+      if(m.forwarded) body = '↗ TRANSFÉRÉ : ' + body;
+      if(m.edited_at) body += ' (modifié)';
+      lines.push(`[${time}] ${who}: ${body}`);
+    });
+    content = lines.join('\n');
+    filename = `apex-chat-${peerName.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().slice(0, 10)}.txt`;
+    mime = 'text/plain';
+  }
+  const blob = new Blob([content], { type: mime + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  K._closeModal && K._closeModal();
+  toast(`💾 ${format.toUpperCase()} téléchargé (${(content.length/1024).toFixed(1)} KB)`, 'ok');
+};
+
+K._openExportMenu = function(convId){
+  const conv = (K.conversations || []).find(c => c.id === convId);
+  if(!conv){ toast('Conv introuvable', 'warn'); return; }
+  const msgCount = (K.messages[convId] || []).length;
+  K._showModal('💾 Exporter la conversation', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">
+      <strong>${esc(conv.name || conv.pseudo || '?')}</strong> · ${esc(String(msgCount))} messages
+    </p>
+    <div style="display:grid;gap:6px">
+      <button class="btn btn-block" onclick="K._exportConversation('${esc(convId)}','json')">📦 JSON (structure complète)</button>
+      <button class="btn btn-out btn-block" onclick="K._exportConversation('${esc(convId)}','text')">📄 Texte lisible (.txt)</button>
+    </div>
+    <p style="font-size:.72em;color:var(--ax-text-3);margin-top:14px">🔒 Généré localement. Aucune donnée ne quitte ton appareil.</p>
+  `);
+};
 
 // ============================================================================
 //  v1.1.77 — AI TL;DR auto messages non-lus (offre résumé si > 20 unread)
@@ -1558,6 +1643,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._openSnoozeMenu('${esc(convId)}')">${K._isSnoozed && K._isSnoozed(convId) ? '💤 Modifier snooze' : '💤 Snooze temporaire'}</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvArchived('${esc(convId)}')">${conv.archived ? '📤 Désarchiver' : '📦 Archiver'}</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
+      <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
     </div>
   `);
@@ -1750,7 +1836,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.77',
+    version: 'v1.1.78',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -8403,7 +8489,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.77"
+        data-version="v1.1.78"
         data-color="#6a8aff"
         defer></script>
 </body>
