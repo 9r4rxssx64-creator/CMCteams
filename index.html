@@ -14696,6 +14696,18 @@ function agentsStart(){
       }
     }
   }catch(_v703err){}
+  // v9.704 Kevin "je veux que tu efface de la mémoire avril et les autres mois,
+  // que l'on reparte propre" : wipe TOTAL one-shot pour effacer toute mémoire
+  // résiduelle (Firebase + IDB + localStorage). Différent de l'auto-cleanup qui
+  // tourne chaque login — ici un wipe complet à la première reconnexion v9.704.
+  try{
+    if(!lg("cmc_v704_purge_done",false)){
+      if(typeof cmcWipeAllPlanningMemory==="function"){
+        var _wp=cmcWipeAllPlanningMemory(true);
+        ls("cmc_v704_purge_done",{ts:Date.now(),stats:_wp||null});
+      }
+    }
+  }catch(_v704err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
@@ -34355,6 +34367,99 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
   }catch(_e){console.warn("[_postValidateImport] err",_e&&_e.message);}
 }
 
+// v9.704 Kevin "Le rapport c'est à la place de tout les toasts dans l'app après l'import" :
+// UNE modale de synthèse en fin d'import remplaçant les 5-10 toasts dispersés.
+// Affiche : emps importés, équipes détectées, miroirs, jours forte affluence, codes
+// spéciaux (CDP/AF/CONV), warnings, mois antérieurs effacés par auto-cleanup.
+function _cmcShowImportReport(p){
+  try{
+    if(!A.user||A.user.id!==AID)return;
+    p=p||{};
+    var iy=p.year, im=p.month, okN=p.ok||0, errN=p.err||0;
+    var key=iy+"-"+im;
+    var ov=A.overrides[key]||{};
+    var empCount=Object.keys(ov).length;
+    var cellCount=0;
+    Object.keys(ov).forEach(function(eid){
+      var r=ov[eid]||{};
+      Object.keys(r).forEach(function(d){if(r[d])cellCount++;});
+    });
+    // Équipes détectées du mois
+    var teamsThisMonth={};
+    var mirrorMap=lg("cmc_team_mirror_"+key,{});
+    var mirrorPairs=Object.keys(mirrorMap).length/2; // chaque paire = 2 entries
+    A.employees.forEach(function(e){
+      var th=e.teamHistory&&e.teamHistory[key];
+      if(th)teamsThisMonth[th]=(teamsThisMonth[th]||0)+1;
+    });
+    var teamCount=Object.keys(teamsThisMonth).length;
+    // Markers PDF
+    var redDaysCount=(window._pdfRedDaysLast||[]).length;
+    var cdpCount=(window._pdfCdpCellsLast||[]).filter(function(c){return c&&c.type==="cdp";}).length;
+    var afCount =(window._pdfCdpCellsLast||[]).filter(function(c){return c&&c.type==="af";}).length;
+    var convCount=(window._pdfCdpCellsLast||[]).filter(function(c){return c&&c.type==="conv";}).length;
+    // Mois antérieurs effacés (auto-cleanup v9.704)
+    var monthsRemaining=Object.keys(A.overrides||{}).length;
+    var curMonthLabel=(MFR&&MFR[im]?MFR[im]:im+1)+" "+iy;
+    // Health rapide
+    var health="ok";
+    if(errN>0)health="warn";
+    if(empCount===0)health="err";
+    var hCol=health==="ok"?"#5aaa70":health==="warn"?"#c9a227":"#e06060";
+    var hIc=health==="ok"?"✅":health==="warn"?"⚠":"❌";
+    var hLbl=health==="ok"?"IMPORT RÉUSSI":health==="warn"?"IMPORT AVEC AVERTISSEMENTS":"IMPORT ÉCHOUÉ";
+    // Build modal HTML
+    var modalId="cmcImportReport";
+    var old=document.getElementById(modalId);
+    if(old)old.remove();
+    var rows=[];
+    rows.push({ic:"📅",lbl:"Mois importé",val:curMonthLabel,col:"#c9a227"});
+    rows.push({ic:"👥",lbl:"Employés avec planning",val:empCount+" emps",col:"#5aaa70"});
+    rows.push({ic:"📋",lbl:"Cellules importées",val:cellCount,col:"#5aaa70"});
+    rows.push({ic:"🎯",lbl:"Équipes détectées (RH pattern)",val:teamCount+(teamCount===0?" — vérifier import":""),col:teamCount>0?"#5aaa70":"#c9a227"});
+    rows.push({ic:"🔁",lbl:"Paires miroir détectées",val:mirrorPairs+(mirrorPairs===0?" — voir Diag équipes":""),col:mirrorPairs>0?"#5aaa70":"#c9a227"});
+    if(errN>0)rows.push({ic:"⚠",lbl:"Lignes en erreur",val:errN,col:"#c9a227"});
+    if(redDaysCount)rows.push({ic:"🔴",lbl:"Jours forte affluence",val:redDaysCount+" jours",col:"#e06060"});
+    if(cdpCount)rows.push({ic:"☕",lbl:"Café de Paris (CDP)",val:cdpCount+" cellules",col:"#ffa040"});
+    if(afCount)rows.push({ic:"📚",lbl:"Formation (AF)",val:afCount+" cellules",col:"#5aaa70"});
+    if(convCount)rows.push({ic:"🎩",lbl:"Convention",val:convCount+" cellules",col:"#e06060"});
+    rows.push({ic:"🧹",lbl:"Mois en mémoire (auto-cleanup v9.704)",val:monthsRemaining+" mois (antérieurs effacés)",col:"#a0c8f0"});
+    var rowsHTML=rows.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;margin-bottom:6px">'
+        +'<div style="font-size:20px;flex-shrink:0;width:28px;text-align:center">'+r.ic+'</div>'
+        +'<div style="flex:1;font-size:14px;color:#cbd5d2">'+esc(r.lbl)+'</div>'
+        +'<div style="font-size:14px;font-weight:800;color:'+r.col+'">'+esc(String(r.val))+'</div>'
+        +'</div>';
+    }).join("");
+    var html=''
+      +'<div id="'+modalId+'" role="dialog" aria-modal="true" aria-labelledby="cmcImportReportTitle" style="position:fixed;inset:0;background:rgba(4,10,6,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9998;display:flex;align-items:center;justify-content:center;padding:14px;animation:fadeIn .25s ease-out">'
+      +'<div style="max-width:540px;width:100%;max-height:90vh;overflow-y:auto;background:linear-gradient(180deg,#0a1810,#06120a);border:2px solid '+hCol+';border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 40px '+hCol+'33;padding:0">'
+      +'<div style="padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.08);text-align:center;background:linear-gradient(180deg,'+hCol+'12,transparent)">'
+      +'<div style="font-size:42px;line-height:1">'+hIc+'</div>'
+      +'<div id="cmcImportReportTitle" style="font-size:18px;font-weight:800;color:'+hCol+';margin-top:6px;letter-spacing:1px">'+hLbl+'</div>'
+      +'<div style="font-size:13px;color:#90b8a0;margin-top:4px">Rapport synthèse — '+curMonthLabel+'</div>'
+      +'</div>'
+      +'<div style="padding:14px 16px">'+rowsHTML+'</div>'
+      +'<div style="padding:10px 16px 16px;display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="flex:2;min-width:120px;background:linear-gradient(135deg,'+hCol+',#3a8a50);border:none;color:#040c04;border-radius:10px;padding:12px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 4px 16px '+hCol+'40">OK — Continuer</button>'
+      +'<button onclick="document.getElementById(\''+modalId+'\').remove();sv(\'planning\')" style="flex:1;min-width:110px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:#cbd5d2;border-radius:10px;padding:12px;font-weight:700;font-size:13px;cursor:pointer">📅 Voir équipe</button>'
+      +'<button onclick="document.getElementById(\''+modalId+'\').remove();sv(\'admin\')" style="flex:1;min-width:110px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:#cbd5d2;border-radius:10px;padding:12px;font-weight:700;font-size:13px;cursor:pointer">⚙ Admin</button>'
+      +'</div>'
+      +'</div></div>';
+    var wrap=document.createElement("div");wrap.innerHTML=html;
+    document.body.appendChild(wrap.firstChild);
+    // Auto-close après 12s si l'admin n'a pas cliqué (non-bloquant)
+    setTimeout(function(){
+      var el=document.getElementById(modalId);
+      if(el){el.style.transition="opacity .4s";el.style.opacity="0";setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},400);}
+    },12000);
+    // Capture markers pour le prochain build (consommés une fois)
+    window._pdfRedDaysLast=window._pdfRedDays||[];
+    window._pdfCdpCellsLast=window._pdfCdpCells||[];
+  }catch(_e){console.warn("[_cmcShowImportReport]",_e);}
+}
+try{if(typeof window!=="undefined")window._cmcShowImportReport=_cmcShowImportReport;}catch(_){}
+
 function _autoVerifyAfterImport(iy,im){
   if(!A.user||A.user.id!==AID)return;
   var zone=document.getElementById("impAutoVerify");
@@ -38678,6 +38783,13 @@ function doImport(){
       }
     }catch(_alErr){console.warn("[cmcParserAutoLearn] doImport hook err",_alErr);}
   }catch(_finalErr){console.warn("v9.509 banner err",_finalErr);}
+  // v9.704 Kevin "Le rapport c'est à la place de tout les toasts dans l'app après l'import" :
+  // UNE seule modale de synthèse en fin d'import (remplace les 5-10 toasts dispersés).
+  try{
+    if(typeof _cmcShowImportReport==="function"){
+      _cmcShowImportReport({year:iy, month:im, ok:ok, err:err, errLines:errLines});
+    }
+  }catch(_repErr){console.warn("[v9.704 import report]",_repErr);}
   }catch(e){
     // v9.58 — En cas d'erreur : désactiver le flag et flush ce qui a été bufferisé
     _importInProgress=false;
