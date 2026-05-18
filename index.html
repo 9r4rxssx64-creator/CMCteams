@@ -4970,7 +4970,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.702";
+var APP_VER="v9.703";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -14610,19 +14610,19 @@ function agentEmit(eventName,payload){
 })();
 function agentsStart(){
   if(!A.user||A.user.id!==AID)return; // Agents admin seulement
-  // v9.702 Kevin "Équipes avril toujours avec nouvelle version" — re-trigger wipe + fix
-  // 2 fallbacks vPlan DEF_EMP qui faisaient apparaître l'équipe avril sur tous les mois.
-  // Nouveau flag cmc_v702_wipe_done pour forcer re-wipe sur les devices qui avaient
-  // déjà fait v9.701 (sinon flag déjà set → wipe sautait).
+  // v9.703 Kevin diag "personnes dans mauvaises équipes" — re-trigger wipe pour
+  // effacer les teamHistory erronés (BRASSEUR F en r4 au lieu de 4, etc.).
+  // Le fix v9.703 (section detection + family override pour DEF_EMP) corrige le parseur
+  // pour les futurs imports. Wipe + re-import = teamHistory corrects.
   try{
-    if(!lg("cmc_v702_wipe_done",false)){
+    if(!lg("cmc_v703_wipe_done",false)){
       if(typeof cmcWipeAllPlanningMemory==="function"){
         var _ws=cmcWipeAllPlanningMemory(true);
-        ls("cmc_v702_wipe_done",{ts:Date.now(),stats:_ws||null});
-        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.702 : planning + équipes en mémoire effacés. Importe mai V2 maintenant.","ok",7000);}catch(_){}
+        ls("cmc_v703_wipe_done",{ts:Date.now(),stats:_ws||null});
+        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.703 : équipes erronées effacées. Re-importe mai V2 pour reconnaissance correcte.","ok",8000);}catch(_){}
       }
     }
-  }catch(_v702err){}
+  }catch(_v703err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
@@ -30871,7 +30871,7 @@ function cmcWipeAllPlanningMemory(silent){
   // v9.702 : ajout flags obsolètes (v696/v698/v701) — sinon ils empêchent les futurs wipes
   // de se déclencher automatiquement.
   stats.logs=0;
-  ["cmc_import_log","cmc_silent_log","cmc_err_log","cmc_telemetry","cmc_user_telemetry","cmc_pdf_fingerprints","cmc_learned_patterns","cmc_client_anomalies","cmc_anomalies","cmc_import_anomalies","cmc_click_failures","cmc_agent_reports","cmc_sentinels_log","cmc_audit","cmc_audit_security","cmc_ia_log","cmc_userlog","cmc_admin_sessions","cmc_seed_apr2026_loaded","cmc_v696_wipe_done","cmc_v698_wipe_done","cmc_v701_wipe_done"].forEach(function(k){
+  ["cmc_import_log","cmc_silent_log","cmc_err_log","cmc_telemetry","cmc_user_telemetry","cmc_pdf_fingerprints","cmc_learned_patterns","cmc_client_anomalies","cmc_anomalies","cmc_import_anomalies","cmc_click_failures","cmc_agent_reports","cmc_sentinels_log","cmc_audit","cmc_audit_security","cmc_ia_log","cmc_userlog","cmc_admin_sessions","cmc_seed_apr2026_loaded","cmc_v696_wipe_done","cmc_v698_wipe_done","cmc_v701_wipe_done","cmc_v702_wipe_done"].forEach(function(k){
     try{if(localStorage.getItem(k)!==null){localStorage.removeItem(k);stats.logs++;}}catch(_){}
   });
   // v9.702 Kevin "il doit y avoir quelque chose qui le sauvegarde sans cesse" :
@@ -34046,10 +34046,24 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       }
       return null;
     }
+    // v9.703 (Kevin diag "personnes dans mauvaises équipes") :
+    // Utiliser familyForMonth(emp, iy, im) qui respecte familyHistory[key] (PDF section)
+    // au lieu de emp.family figé (DEF_EMP). Ainsi BRASSEUR F détecté "Chefs BJ" dans
+    // PDF mai 2026 retourne "bj" même si DEF_EMP family est "roulettes".
+    function _famForDetect(emp){
+      try{
+        if(typeof familyForMonth==="function"){
+          var f=familyForMonth(emp,iy,im,{strict:true});
+          if(f)return f;
+        }
+      }catch(_){}
+      return emp.family||"bj";
+    }
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
-      if((emp.family||"")==="cadres"){skipReasons.cadres++;return;}
+      var _empFam=_famForDetect(emp);
+      if(_empFam==="cadres"){skipReasons.cadres++;return;}
       if(emp.teamHistory&&emp.teamHistory[key]){skipReasons.explicit++;return;}
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
@@ -34068,7 +34082,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       var firstWorkNorm=firstWork.replace(/c$/i,"");
       var sig=cycle+":"+offset+":"+firstWorkNorm;
       if(!empSigs[sig])empSigs[sig]=[];
-      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,firstWork:firstWorkNorm,family:emp.family||"bj"});
+      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,firstWork:firstWorkNorm,family:_empFam}); // v9.703 : familyForMonth au lieu de emp.family
       detectableEmps.push(eid);
     });
     var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=2;}); // v9.650 : 3→2
@@ -36906,6 +36920,21 @@ function doImport(){
     // traiter comme format B m\u00eame avec 0-2 post tokens (sections courtes)
     var _isCadreHdr=/(PIT[\s\-\.]*BOSS|SUPERVI(?:SEUR|SOR)|INSPEC?TEUR|INSPECTOR|CHEF[\s\-]*CADRE|RESP[\s\.]*CADRE)/i.test(rawLine);
     var _fmtBThreshold=_isCadreHdr?0:3;
+    // v9.703 (Kevin diag 2026-05-18 "personnes dans mauvaises \u00e9quipes") :
+    // Pre-detection section header IND\u00c9PENDAMMENT du _pCnt. Avant : la ligne
+    // "Chefs black Jack/Responsable de Table\tBRTCK.\tPORTA A\t1\t31" n'a qu'1 code poste
+    // (BRTCK.) donc le format B (>=3) ne d\u00e9clenche pas \u2192 importFamily reste sur "roulettes"
+    // de la section pr\u00e9c\u00e9dente \u2192 BRASSEUR F, GAZAGNE F, BESSI N assign\u00e9s \u00e0 \u00e9quipes Roulette
+    // au lieu de BJ. Fix : d\u00e9tecter section par mot-cl\u00e9 en d\u00e9but de ligne.
+    try{
+      var _shU=rawLine.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+      if(/^ROULETTES?\b/i.test(_shU))importFamily="roulettes";
+      else if(/^CHEFS?\s+BLACK\s*JACK/i.test(_shU))importFamily="bj";
+      else if(/^EMPLOY[EE]S?\s+CARTES\s+CMC/i.test(_shU))importFamily="cmc";
+      else if(/^EMPLOY[EE]S?\s+CARTES\s+AMENAG/i.test(_shU))importFamily="cmc";
+      else if(/^(PIT[\s\-\.]*BOSS|SUPERVI(?:SEUR|SOR)|INSPEC?TEUR)/i.test(_shU))importFamily="cadres";
+      // FORMATION et autres : conserve family courante
+    }catch(_secHdr){}
     // --- FORMAT B : bloc ent\u00eate (3+ codes poste OU section cadres) ---
     if((_pCnt>=_fmtBThreshold||_isCadreHdr)&&!/^\d/.test(_ltoks[0])&&_ltoks[0]!=="*"&&_ltoks.length>=2){
       _hdrEmpList=[];_hdrEmpIdx=0;_pendingEmp=null;
@@ -37278,18 +37307,25 @@ function doImport(){
       // L'admin peut assigner manuellement via vEmps après import si besoin.
       // Pour les employes importes (non-DEF_EMP) uniquement : mettre a jour famille/chef
       var _isDefEmp=DEF_EMP.some(function(d){return d.id===emp.id;});
+      var _changed=false;
+      // v9.703 (Kevin diag 2026-05-18 "personnes dans mauvaises équipes") :
+      // Update emp.family pour TOUS emps (DEF_EMP inclus) selon section PDF.
+      // Avant : DEF_EMP emps gardaient leur family figée → BRASSEUR F (DEF_EMP roulettes)
+      // restait "roulettes" même après détection section "Chefs black Jack" → r4 au lieu de 4.
+      // Kevin "Pas de mémoire équipe. Jamais" s'applique aussi à la family.
+      var targetFam=isRouletteChef?"roulettes":importFamily;
+      if(isRouletteChef&&!emp.chef){emp.chef=true;_changed=true;}
+      if(isRouletteChef&&!emp.senior){emp.senior=true;_changed=true;}
+      if(emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;_changed=true;}
       if(!_isDefEmp){
-        var _changed=false;
-        var targetFam=isRouletteChef?"roulettes":importFamily;
-        if(isRouletteChef&&!emp.chef){emp.chef=true;_changed=true;}
-        if(isRouletteChef&&!emp.senior){emp.senior=true;_changed=true;}
-        if(emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;_changed=true;}
         // v9.409 — Fix bug historique : assigner role="pit"|"sup" pour les cadres importés
         if(targetFam==="cadres"&&_contextCadreRole&&emp.role!==_contextCadreRole){emp.role=_contextCadreRole;_changed=true;}
         // v9.410 — Assigner team pit15/sup automatiquement (bug Kevin : cadres sans équipe)
         if(targetFam==="cadres"&&_contextTeam&&(emp.team==="?"||!emp.team||emp.team!==_contextTeam)){emp.team=_contextTeam;_changed=true;}
         if(_changed) ls("cmc_e",A.employees);
       } else {
+        // v9.703 : DEF_EMP family aussi sauvée si changée
+        if(_changed) ls("cmc_e",A.employees);
         // v9.410 — Même employés DEF_EMP : détection "faisant fonction" ou promotion cadres
         // Si un inspecteur apparaît dans la section PIT BOSS, il est promu/faisant fonction
         if(emp.family==="cadres"&&_contextCadreRole&&emp.role!==_contextCadreRole){
