@@ -283,7 +283,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.34';
+const __APEX_CHAT_VERSION__ = 'v1.1.35';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -320,9 +320,14 @@ if('serviceWorker' in navigator){
     if(_versionCheckRunning) return;
     _versionCheckRunning = true;
     try{
+      // v1.1.35 — règle Kevin "MAJ auto forcée" : cache:'reload' bypass complet
+      // SW skip intercept déjà appliqué via ?_v= (lib/sw-handlers.js handleFetch)
       const r = await fetch(location.pathname + '?_v=' + Date.now(), {
-        cache: 'no-store',
-        headers: {'Cache-Control':'no-cache,no-store,must-revalidate'}
+        cache: 'reload',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       });
       const html = await r.text();
       const m = html.match(/__APEX_CHAT_VERSION__\s*=\s*['"]([^'"]+)['"]/);
@@ -359,7 +364,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.34</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.35</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -373,7 +378,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.34</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.35</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -869,6 +874,97 @@ K._sendReaction = function(convId, msgId, emoji, action){
   try{
     K.ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji, action: action || 'add' }));
   }catch(_){}
+};
+
+// ============================================================================
+//  v1.1.35 — Recherche sémantique IA dans messages de la conv courante
+// ============================================================================
+K._openSearchModal = function(){
+  const conv = K.viewData;
+  if(!conv){ toast('Pas de conversation', 'warn'); return; }
+  const count = (K.messages[conv.id] || []).length;
+  K._showModal('🔍 Recherche IA', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 10px">
+      Cherche dans ${count} message(s) de cette conversation.<br>
+      Exemples : "restaurant", "rendez-vous demain", "messages de Laurence".
+    </p>
+    <input id="ai-search-input" type="search" placeholder="Que cherches-tu ?"
+      style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;color:var(--ax-text);font-size:16px"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();K._doSearch()}" autofocus>
+    <button class="btn btn-block" style="margin-top:12px" onclick="K._doSearch()">🔍 Rechercher avec IA</button>
+    <div id="ai-search-results" style="margin-top:14px;max-height:50vh;overflow-y:auto"></div>
+  `);
+  setTimeout(() => { const i = document.getElementById('ai-search-input'); if(i) i.focus(); }, 50);
+};
+
+K._doSearch = async function(){
+  const conv = K.viewData;
+  const input = document.getElementById('ai-search-input');
+  const out = document.getElementById('ai-search-results');
+  if(!conv || !input || !out) return;
+  const query = input.value.trim();
+  if(query.length < 2){ toast('Tape au moins 2 caractères', 'warn'); return; }
+  out.innerHTML = `<div style="text-align:center;padding:20px;color:var(--ax-text-3)">⏳ Recherche IA...</div>`;
+  const msgs = (K.messages[conv.id] || []).slice(-200);
+  const payload = {
+    query,
+    messages: msgs.map(m => ({ text: m.text || m.voice_text || m.alt || '', ts: m.ts, from: m.from }))
+  };
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 18_000);
+    let r;
+    try {
+      r = await fetch(API_BASE + '/api/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+        body: JSON.stringify(payload),
+        signal: ctrl.signal
+      });
+    } finally { clearTimeout(tid); }
+    if(r.status === 429){
+      const e429 = await r.json().catch(() => ({}));
+      out.innerHTML = `<div style="color:var(--ax-warn);padding:14px;text-align:center">⏰ ${esc(e429.message || 'Limite gratuite atteinte')}</div>`;
+      return;
+    }
+    if(!r.ok){
+      out.innerHTML = `<div style="color:var(--ax-err);padding:14px;text-align:center">❌ Recherche échouée (HTTP ${r.status})</div>`;
+      return;
+    }
+    const data = await r.json();
+    const results = data?.results || [];
+    if(results.length === 0){
+      out.innerHTML = `<div style="text-align:center;padding:20px;color:var(--ax-text-3)">🔭 Aucun message ne correspond à "${esc(query)}".</div>`;
+      return;
+    }
+    out.innerHTML = results.map((r) => `
+      <div onclick="K._scrollToMsg('${esc(msgs[r.idx]?.id || '')}')"
+        style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;transition:all .15s">
+        <div style="display:flex;justify-content:space-between;font-size:.72em;color:var(--ax-text-3);margin-bottom:4px">
+          <span>${esc(r.ts ? new Date(r.ts).toLocaleString('fr-FR') : '')}</span>
+          <span style="color:var(--ax-gold)">${r.score}% pertinent</span>
+        </div>
+        <div style="color:var(--ax-text);font-size:.92em;margin-bottom:4px">${esc(r.snippet)}</div>
+        <div style="font-size:.75em;color:var(--ax-text-2);font-style:italic">💡 ${esc(r.reason)}</div>
+      </div>
+    `).join('');
+  } catch(e){
+    _safeCatch('ai-search', e);
+    out.innerHTML = `<div style="color:var(--ax-err);padding:14px;text-align:center">❌ Erreur réseau</div>`;
+  }
+};
+
+K._scrollToMsg = function(msgId){
+  K._closeModal && K._closeModal();
+  setTimeout(() => {
+    const el = document.querySelector(`.msg[data-msg-id="${msgId}"]`);
+    if(el){
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.transition = 'background .3s';
+      el.style.background = 'rgba(232,184,48,.25)';
+      setTimeout(() => { el.style.background = ''; }, 1500);
+    }
+  }, 80);
 };
 
 // v1.1.34 — Reactions UI : picker + toggle
@@ -1380,6 +1476,7 @@ function renderChat(app){
         <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
         <div style="font-size:.75em;color:var(--ax-ok)">🛡 Chiffré E2E</div>
       </div>
+      <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
       <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
     </div>

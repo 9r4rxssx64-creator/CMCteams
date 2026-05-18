@@ -2824,6 +2824,79 @@ export async function handleAiImageDescribe(request, env) {
 }
 
 // ============================================================================
+//  v1.1.35 — POST /api/ai/search : semantic search dans messages
+//  Input : { query, messages: [{text, ts, from}, ...] } (max 200 messages)
+//  Output : { ok, results: [{idx, score, snippet, reason}], provider }
+//  Use case : trouver "où on a parlé du restaurant", "messages de Laurence"
+// ============================================================================
+export async function handleAiSemanticSearch(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Quota gratuit (réutilise summarize bucket : recherche IA = aussi coûteuse)
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'summarize');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} recherches IA aujourd'hui). Passe Premium pour illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'summarize'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const query = String(body.query || '').trim();
+  const messages = Array.isArray(body.messages) ? body.messages.slice(0, 200) : [];
+  if (!query || query.length < 2) return err('query required (min 2 chars)');
+  if (query.length > 500) return err('query too long (max 500)');
+  if (messages.length === 0) return err('messages array required');
+
+  // Construit le prompt : numérote chaque message pour que l'IA retourne des index
+  const numbered = messages.map((m, i) => {
+    const t = String(m.text || '').slice(0, 200).replace(/\s+/g, ' ');
+    return `[${i}] ${t}`;
+  }).join('\n');
+
+  const sysPrompt = `Tu es un moteur de recherche sémantique pour messages chat. L'utilisateur cherche : "${query}". Identifie les messages les plus pertinents (max 10). Retourne UNIQUEMENT un JSON valide:\n{"results":[{"idx":<int>,"score":<0-100>,"reason":"<motif court FR>"}]}\nClasse par pertinence décroissante. Sois précis : un message non pertinent ne doit PAS apparaître.`;
+  const userPrompt = `Messages à analyser (chacun avec son index entre []):\n\n${numbered}`;
+  const msgsForAI = [{ role: 'user', content: userPrompt }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 12_000);
+      const text = await p.fn(msgsForAI, sysPrompt, env, ctrl.signal, 1500);
+      clearTimeout(to);
+      // Parse JSON robust
+      const cleaned = text.replace(/```(?:json)?/g, '').trim();
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (!m) continue;
+      const parsed = JSON.parse(m[0]);
+      if (Array.isArray(parsed.results)) {
+        const results = parsed.results
+          .filter(r => typeof r.idx === 'number' && r.idx >= 0 && r.idx < messages.length)
+          .slice(0, 10)
+          .map(r => ({
+            idx: r.idx,
+            score: Math.max(0, Math.min(100, parseInt(r.score, 10) || 50)),
+            reason: String(r.reason || '').slice(0, 120),
+            snippet: String(messages[r.idx]?.text || '').slice(0, 200),
+            ts: messages[r.idx]?.ts || null,
+          }));
+        await consumeQuota(env, quota);
+        return json({ ok: true, results, query, provider: p.name, premium: quota.premium });
+      }
+    } catch (e) {
+      console.warn(`[ai-search] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('Recherche IA indisponible', 503);
+}
+
+// ============================================================================
 //  v1.1.24 — GET /api/premium/status : sync premium cross-device
 // ============================================================================
 export async function handlePremiumStatus(request, env) {
@@ -2999,6 +3072,8 @@ export default {
       if (path === '/api/premium/status' && method === 'GET') return await handlePremiumStatus(request, env);
       // v1.1.31 — Usage daily quota
       if (path === '/api/premium/quota' && method === 'GET') return await handlePremiumQuota(request, env);
+      // v1.1.35 — Semantic search messages
+      if (path === '/api/ai/search' && method === 'POST') return await handleAiSemanticSearch(request, env);
 
       // v1.1.26 — Customer Portal + Smart Reply + Translate
       if (path === '/api/premium/portal' && method === 'POST') return await handlePremiumPortal(request, env);
