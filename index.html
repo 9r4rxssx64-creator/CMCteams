@@ -15969,6 +15969,29 @@ function globalSearch(q){
   if(typeof conventionSearch==="function"){conventionSearch(q).slice(0,3).forEach(function(a){results.push({cat:"\ud83d\udcd6",label:"Art."+a.num+" "+a.titre,action:"A.convTab='articles';sv('convention')"});});}
   A._searchResults=results.slice(0,30);dc();
 }
+// v10 Sprint 2 — Suggestions rapides quand la barre de recherche est vide
+function _searchSuggestionsHTML(){
+  var isAdm=A.user&&A.user.id===AID;
+  var sugg=isAdm?[
+    ["⚙","Ouvrir Admin","sv('admin')"],
+    ["📥","Importer un planning","sv('import')"],
+    ["⚠","Voir les conflits","sv('conflits')"],
+    ["📊","Stats du mois","sv('stats')"],
+    ["🤖","Toggle IA Claude","iaToggle()"],
+    ["📝","Nouvelle passation","sv('passation')"]
+  ]:[
+    ["📆","Mon planning","sv('monplanning')"],
+    ["👤","Mon profil","sv('profil')"],
+    ["💬","Chat","sv('chat')"],
+    ["🤖","Assistant IA","sv('ia')"],
+    ["📖","Convention SBM","sv('convention')"],
+    ["🔄","Échanges de shifts","sv('echanges')"]
+  ];
+  var rows=sugg.map(function(s){
+    return '<button onclick="'+s[2]+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;background:rgba(255,255,255,.03);border:none;cursor:pointer;text-align:left;color:#c8dcc0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.03)"><span style="width:22px;text-align:center;flex-shrink:0">'+s[0]+'</span><span style="flex:1">'+s[1]+'</span><span style="color:#7a8a70;font-size:11px;flex-shrink:0">›</span></button>';
+  }).join("");
+  return '<div style="margin-top:6px;max-height:340px;overflow-y:auto"><div style="font-size:10px;font-weight:800;color:#7a8a70;text-transform:uppercase;letter-spacing:2px;padding:8px 12px 4px">Suggestions rapides</div>'+rows+'</div>';
+}
 // v10 Sprint 2 — Enter dans le champ recherche = lance le 1er résultat (UX clavier)
 function _searchOnKeydown(e){
   if(e.key==="Enter"){
@@ -16038,7 +16061,7 @@ function vTopbar(){
   </div>`
   +(_searchOpen?`<div style="position:absolute;top:100%;left:0;right:0;background:rgba(10,20,12,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,162,39,.3);padding:8px 14px;z-index:89">
     <input id="globalSearchIn" class="inp" placeholder="\ud83d\udd0d Rechercher : employ\u00e9 \u00b7 code \u00b7 vue \u00b7 action \u00b7 convention\u2026  (Entr\u00e9e = ouvrir)" value="${esc(_searchQ)}" oninput="globalSearch(this.value)" onkeydown="_searchOnKeydown(event)" style="font-size:16px;padding:10px 14px;border-radius:20px">
-    ${(A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:340px;overflow-y:auto">'+A._searchResults.map(function(r,i){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:'+(i===0?'rgba(201,162,39,.10)':'rgba(255,255,255,.03)')+';border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:'+(i===0?'#ffdc40':'#c8dcc0')+';font-size:14px;border-left:'+(i===0?'3px solid #c9a227':'3px solid transparent')+'"><span style="width:24px;text-align:center;flex-shrink:0">'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:11px;flex-shrink:0">'+(i===0?'\u21b5 Entr\u00e9e':'\u203a')+'</span></button>';}).join('')+'</div>':(_searchQ.length>=2?'<div style="margin-top:6px;padding:14px;text-align:center;color:#7a8a70;font-size:13px">\ud83d\udd0e Aucun r\u00e9sultat pour "<b>'+esc(_searchQ)+'</b>"</div>':'')}
+    ${(A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:340px;overflow-y:auto">'+A._searchResults.map(function(r,i){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:'+(i===0?'rgba(201,162,39,.10)':'rgba(255,255,255,.03)')+';border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:'+(i===0?'#ffdc40':'#c8dcc0')+';font-size:14px;border-left:'+(i===0?'3px solid #c9a227':'3px solid transparent')+'"><span style="width:24px;text-align:center;flex-shrink:0">'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:11px;flex-shrink:0">'+(i===0?'\u21b5 Entr\u00e9e':'\u203a')+'</span></button>';}).join('')+'</div>':(_searchQ.length>=2?'<div style="margin-top:6px;padding:14px;text-align:center;color:#7a8a70;font-size:13px">\ud83d\udd0e Aucun r\u00e9sultat pour "<b>'+esc(_searchQ)+'</b>"</div>':_searchSuggestionsHTML())}
   </div>`:'');
 }
 
