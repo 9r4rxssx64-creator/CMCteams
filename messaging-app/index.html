@@ -298,7 +298,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.45';
+const __APEX_CHAT_VERSION__ = 'v1.1.46';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -379,7 +379,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.45</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.46</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -393,7 +393,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.45</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.46</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2094,19 +2094,21 @@ function renderChats(app){
       </div>
     ` : `
       <div class="conv-list">
-        ${convs.map(c => `
+        ${convs.map(c => {
+          const draft = K._loadDraft(c.id);
+          return `
           <div class="conv-item" onclick="K.openConv('${esc(c.id)}')">
             <div class="avatar">${esc((c.name || c.pseudo || '?')[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0">
               <div class="conv-name">${esc(c.name || c.pseudo || 'Sans nom')}</div>
-              <div class="conv-last">${esc(c.last_preview || '(message chiffré)')}</div>
+              <div class="conv-last">${draft ? `<span style="color:var(--ax-blue);font-style:italic">✏️ Brouillon : ${esc(draft.slice(0, 60))}</span>` : esc(c.last_preview || '(message chiffré)')}</div>
             </div>
             <div style="text-align:right">
               <div class="conv-time">${formatTime(c.last_msg_ts)}</div>
               ${c.unread ? `<span class="conv-unread">${c.unread}</span>` : ''}
             </div>
           </div>
-        `).join('')}
+        `;}).join('')}
       </div>
     `}
   `;
@@ -2176,7 +2178,7 @@ function renderChat(app){
       <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
       <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
-      <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id)"></textarea>
+      <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft()">${esc(K._loadDraft(conv.id) || '')}</textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
@@ -2190,6 +2192,36 @@ function renderChat(app){
     }
   } catch(e) { /* ignore */ }
 }
+
+// ============================================================================
+//  v1.1.46 — Draft auto-save per conv (style WhatsApp/Telegram)
+//  Stocké localStorage 'draft_<convId>', max 5000 chars, debounce 300ms
+// ============================================================================
+K._draftSaveTimer = null;
+K._saveDraft = function(){
+  if(K._draftSaveTimer) clearTimeout(K._draftSaveTimer);
+  K._draftSaveTimer = setTimeout(() => {
+    const conv = K.viewData;
+    if(!conv) return;
+    const input = document.getElementById('msg-input');
+    const text = input?.value || '';
+    if(text.length === 0){
+      try { localStorage.removeItem('draft_' + conv.id); } catch(_) {}
+    } else if(text.length <= 5000){
+      try { localStorage.setItem('draft_' + conv.id, text); } catch(_) {}
+    }
+  }, 300);
+};
+
+K._loadDraft = function(convId){
+  if(!convId) return '';
+  try { return localStorage.getItem('draft_' + convId) || ''; } catch(_) { return ''; }
+};
+
+K._clearDraft = function(convId){
+  if(!convId) return;
+  try { localStorage.removeItem('draft_' + convId); } catch(_) {}
+};
 
 K.openConv = async function(convId){
   const conv = K.conversations.find(c => c.id === convId);
@@ -2257,6 +2289,7 @@ K._sendMsg = async function(){
   if(!K.messages[conv.id]) K.messages[conv.id] = [];
   K.messages[conv.id].push(msg);
   ls('messages_' + conv.id, K.messages[conv.id]);
+  K._clearDraft(conv.id); // v1.1.46 — clear draft après envoi réussi
   input.value = '';
   K.render();
 
@@ -6101,7 +6134,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.45"
+        data-version="v1.1.46"
         data-color="#6a8aff"
         defer></script>
 </body>
