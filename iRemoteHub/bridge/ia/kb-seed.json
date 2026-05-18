@@ -145,5 +145,81 @@
     "device_type": "Dongle IR BroadLink",
     "confidence": 0.85,
     "suggested_libs": ["broadlinkjs-rm"]
+  },
+  "seed_ps5": {
+    "match_hints": { "mac_oui": "FC:F1:36", "ssdp_st": "PlayStation" },
+    "vendor": "Sony Interactive Entertainment",
+    "model": "PlayStation 5",
+    "category": "gaming-ps",
+    "device_type": "Console PlayStation 5",
+    "confidence": 0.85,
+    "protocol_hints": ["wol", "remote_play"],
+    "suggested_libs": ["wake_on_lan", "ps5-api (à venir)"]
+  },
+  "seed_xbox": {
+    "match_hints": { "mdns_type": "_xbox._tcp.local" },
+    "vendor": "Microsoft",
+    "model": "Xbox Series S/X",
+    "category": "gaming-xbox",
+    "device_type": "Console Xbox",
+    "confidence": 0.85,
+    "protocol_hints": ["wol", "smartglass"],
+    "suggested_libs": ["wake_on_lan"]
+  },
+  "seed_tesla": {
+    "match_hints": { "ssdp_st": "tesla" },
+    "vendor": "Tesla",
+    "model": "Tesla Vehicle",
+    "category": "car",
+    "device_type": "Véhicule électrique Tesla",
+    "confidence": 0.8,
+    "protocol_hints": ["oauth", "rest_cloud"],
+    "suggested_libs": ["tesla-api (tiers)"]
+  },
+  "seed_roomba": {
+    "match_hints": { "mdns_type": "_amzn-alexa._tcp.local", "port": 8883 },
+    "vendor": "iRobot",
+    "model": "Roomba (vacuum)",
+    "category": "vacuum",
+    "device_type": "Aspirateur Roomba",
+    "confidence": 0.8,
+    "protocol_hints": ["mqtt_tls"],
+    "suggested_libs": ["dorita980"]
+  },
+  "seed_dyson": {
+    "match_hints": { "mdns_type": "_dyson_mqtt._tcp", "port": 8883 },
+    "vendor": "Dyson",
+    "model": "Dyson Fan/Purifier",
+    "category": "appliance",
+    "device_type": "Ventilateur/purificateur Dyson",
+    "confidence": 0.8,
+    "protocol_hints": ["mqtt_tls"]
+  },
+  "seed_nuki": {
+    "match_hints": { "mdns_type": "_nuki._tcp" },
+    "vendor": "Nuki",
+    "model": "Nuki Smart Lock",
+    "category": "lock",
+    "device_type": "Serrure connectée Nuki",
+    "confidence": 0.85,
+    "protocol_hints": ["ble_gatt", "http_bridge"]
+  },
+  "seed_ring": {
+    "match_hints": { "ssdp_st": "ring" },
+    "vendor": "Ring",
+    "model": "Ring Doorbell/Camera",
+    "category": "camera",
+    "device_type": "Sonnette/caméra Ring",
+    "confidence": 0.8
+  },
+  "seed_ha": {
+    "match_hints": { "port": 8123 },
+    "vendor": "Home Assistant",
+    "model": "HA Core",
+    "category": "hub",
+    "device_type": "Hub Home Assistant",
+    "confidence": 0.85,
+    "protocol_hints": ["http_rest", "websocket"],
+    "suggested_libs": ["home-assistant-js-websocket"]
   }
 }
