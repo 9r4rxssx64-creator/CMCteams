@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.83';
+const __APEX_CHAT_VERSION__ = 'v1.1.84';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.83</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.84</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.83</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.84</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -909,6 +909,94 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.84 — AI auto-tag conversations (suggère hashtags via IA)
+// ============================================================================
+K._suggestConvTags = async function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv){ toast('Conv introuvable', 'warn'); return; }
+  const msgs = (K.messages[convId] || []).filter(m => m.text && !m.deleted).slice(-50);
+  if(msgs.length < 3){ toast('Pas assez de messages', 'warn'); return; }
+  K._showModal('🏷 IA suggère labels', `<div id="suggest-result" style="text-align:center;padding:20px"><div style="font-size:2em;animation:pulse 1.5s infinite">🤖</div><p style="color:var(--ax-text-3)">IA analyse...</p></div>`);
+  try {
+    const sample = msgs.map(m => (m.text || '').slice(0, 100)).join('\n');
+    const prompt = `Analyse ces ${msgs.length} messages de conversation. Suggère 3-5 labels courts (1-2 mots français) qui décrivent les thèmes principaux. Format JSON : {"labels":["Boulot","RDV","Urgent"]}. Sois concis.\n\n${sample}`;
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 12_000);
+    let r;
+    try {
+      r = await fetch(API_BASE + '/api/ai/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+        body: JSON.stringify({ prompt, max_tokens: 200 }),
+        signal: ctrl.signal
+      });
+    } finally { clearTimeout(tid); }
+    const out = document.getElementById('suggest-result');
+    if(!out) return;
+    if(r.status === 429){
+      const e = await r.json().catch(() => ({}));
+      out.innerHTML = `<div style="color:var(--ax-warn);padding:14px">⏰ ${esc(e.message || 'Quota épuisé')}</div>`;
+      return;
+    }
+    if(!r.ok){ out.innerHTML = `<div style="color:var(--ax-err);padding:14px">❌ Erreur ${r.status}</div>`; return; }
+    const data = await r.json();
+    const text = (data?.text || '').trim();
+    // Parse JSON robuste (markdown code blocks)
+    const cleaned = text.replace(/```(?:json)?/g, '').trim();
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    let labels = [];
+    if(m){
+      try { labels = (JSON.parse(m[0]).labels || []).slice(0, 5); } catch(_) {}
+    }
+    if(labels.length === 0){
+      out.innerHTML = `<div style="padding:14px;text-align:center">Aucun label suggéré.</div>`;
+      return;
+    }
+    // Affiche les labels suggérés + bouton créer
+    out.innerHTML = `
+      <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px;text-align:left">
+        L'IA suggère ces labels pour <strong>${esc(conv.name || conv.pseudo || '?')}</strong> :
+      </p>
+      <div style="display:grid;gap:6px;margin-bottom:12px">
+        ${labels.map((label, i) => {
+          const colors = ['#6a8aff', '#e63946', '#ffa500', '#2ed573', '#a55eea'];
+          const emojis = ['🏷', '📋', '⭐', '🔥', '💡'];
+          const c = colors[i % colors.length];
+          const e = emojis[i % emojis.length];
+          return `<button class="btn" style="text-align:left;background:${c};color:#fff;border-color:${c}" onclick="K._createSuggestedLabel('${esc(convId)}','${esc(label)}','${esc(e)}','${esc(c)}')">${esc(e)} ${esc(label)} → Créer + tagger</button>`;
+        }).join('')}
+      </div>
+      <button class="btn btn-out btn-block" onclick="K._closeModal()">↩ Plus tard</button>
+    `;
+  } catch(e){
+    const out = document.getElementById('suggest-result');
+    if(out) out.innerHTML = `<div style="color:var(--ax-err);padding:14px">❌ ${esc(e.message)}</div>`;
+  }
+};
+
+K._createSuggestedLabel = function(convId, name, emoji, color){
+  const labels = K._getLabels();
+  // Reuse existing label si nom match (case-insensitive)
+  let existing = labels.find(l => l.name.toLowerCase() === name.toLowerCase());
+  if(!existing){
+    const id = 'lbl_ai_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 4);
+    existing = { id, name, color, emoji };
+    labels.push(existing);
+    ls('labels_v1', labels);
+  }
+  // Tag conv
+  const conv = K.conversations.find(c => c.id === convId);
+  if(conv){
+    if(!conv.label_ids) conv.label_ids = [];
+    if(!conv.label_ids.includes(existing.id)) conv.label_ids.push(existing.id);
+    ls('conversations', K.conversations);
+  }
+  K._closeModal && K._closeModal();
+  K.render();
+  toast(`🏷 ${name} créé + appliqué`, 'ok');
+};
+
+// ============================================================================
 //  v1.1.83 — Conversation labels / categories (Gmail-style)
 // ============================================================================
 K._DEFAULT_LABELS = [
@@ -956,7 +1044,8 @@ K._openLabelMenu = function(convId){
       Tague <strong>${esc(conv.name || conv.pseudo || '?')}</strong> avec des labels :
     </p>
     ${rows}
-    <button class="btn btn-out btn-block" style="margin-top:14px" onclick="K._manageLabels()">⚙️ Gérer labels (créer/renommer)</button>
+    <button class="btn btn-block" style="margin-top:14px;background:linear-gradient(135deg,#6a8aff,#a55eea);color:#fff;border:none" onclick="K._suggestConvTags('${esc(convId)}')">🤖 Suggérer avec IA</button>
+    <button class="btn btn-out btn-block" style="margin-top:6px" onclick="K._manageLabels()">⚙️ Gérer labels (créer/renommer)</button>
   `);
 };
 
@@ -2222,7 +2311,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.83',
+    version: 'v1.1.84',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -8903,7 +8992,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.83"
+        data-version="v1.1.84"
         data-color="#6a8aff"
         defer></script>
 </body>
