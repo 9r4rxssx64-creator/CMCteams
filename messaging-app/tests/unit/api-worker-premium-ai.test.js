@@ -19,6 +19,7 @@ import {
   handlePremiumWebhook,
   handlePremiumStatus,
   handlePremiumQuota,
+  handleAiRewrite,
   _sendPremiumReceipt,
 } from '../../workers/api-worker.js';
 import { ENV, makeJWT } from './api-worker-helpers.js';
@@ -1288,5 +1289,72 @@ describe('_sendPremiumReceipt (v1.1.32)', () => {
       { name: 'category', value: 'premium-receipt' },
       { name: 'plan', value: 'lifetime' }
     ]);
+  });
+});
+
+// ============================================================================
+//  v1.1.41 — handleAiRewrite tests (8 styles, share translate quota)
+// ============================================================================
+describe('handleAiRewrite (v1.1.41)', () => {
+  it('refuse non-auth (401)', async () => {
+    const r = await handleAiRewrite(makeReq('POST', '/api/ai/rewrite', { text: 'hello' }), userEnv());
+    expect(r.status).toBe(401);
+  });
+
+  it('refuse text vide', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const r = await handleAiRewrite(makeReq('POST', '/api/ai/rewrite', { text: 'a' }, tok), env);
+    expect(r.status).toBe(400);
+  });
+
+  it('refuse text > 2000 chars', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    const tok = await userToken();
+    const r = await handleAiRewrite(
+      makeReq('POST', '/api/ai/rewrite', { text: 'a'.repeat(3000), style: 'friendly' }, tok),
+      env,
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it('Anthropic success retourne rewritten + style', async () => {
+    const env = userEnv({ ANTHROPIC_API_KEY: 'k' });
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ premium_until: Date.now() + 86400_000, premium_plan: 'monthly' }),
+    }));
+    globalThis.fetch = vi.fn(async () => new Response(
+      JSON.stringify({ content: [{ text: 'Bonjour, ravi de te rencontrer 🙏' }] }),
+      { status: 200 }
+    ));
+    const tok = await userToken();
+    const r = await handleAiRewrite(
+      makeReq('POST', '/api/ai/rewrite', { text: 'salut', style: 'formal' }, tok),
+      env,
+    );
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.ok).toBe(true);
+    expect(j.rewritten).toMatch(/Bonjour/);
+    expect(j.style).toBe('formal');
+    expect(j.original).toBe('salut');
+    expect(j.premium).toBe(true);
+  });
+
+  it('quota dépassé → 429', async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ premium_until: 0 }),
+    }));
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:translate:${today}`, '20');
+    const tok = await userToken();
+    const r = await handleAiRewrite(
+      makeReq('POST', '/api/ai/rewrite', { text: 'bonjour comment vas-tu' }, tok),
+      env,
+    );
+    expect(r.status).toBe(429);
   });
 });

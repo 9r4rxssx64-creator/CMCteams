@@ -1,5 +1,67 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🚀 SESSION 2026-05-18 — Apex Chat v1.1.41 prête (PR #268 attend merge)
+
+**PR #268** : 24 commits stackés sur `claude/continue-perfection-work-5C2eH` → main
+**Tests** : 750/750 PASS vitest
+
+### ⏳ Actions Kevin pour activer Apex Chat backend complet
+
+1. **Merger PR #268** :
+   - URL : https://github.com/9r4rxssx64-creator/CMCteams/pull/268
+   - Action : approve + merge (squash ou merge commit, peu importe)
+   - Effet : déploiement auto GitHub Pages Apex Chat v1.1.41
+
+2. **Cloudflare Workers wrangler secrets** (pour endpoints AI/Premium) :
+   ```bash
+   # Si pas déjà configurés (vérifier wrangler secret list)
+   wrangler secret put ANTHROPIC_API_KEY     # déjà OK probablement
+   wrangler secret put GROQ_API_KEY          # déjà OK probablement
+   wrangler secret put STRIPE_SECRET_KEY     # https://dashboard.stripe.com/apikeys
+   wrangler secret put STRIPE_PRICE_MONTHLY  # price_xxx mensuel 6,99€
+   wrangler secret put STRIPE_PRICE_YEARLY   # price_xxx annuel 59,99€
+   wrangler secret put STRIPE_PRICE_LIFETIME # price_xxx 199€ one-time
+   wrangler secret put STRIPE_WEBHOOK_SECRET # whsec_xxx (Stripe Dashboard webhook)
+   wrangler secret put RESEND_API_KEY        # https://resend.com/api-keys (free 100 emails/jour)
+   ```
+
+3. **D1 migration sur prod** (schéma premium + AI cache + audit_log) :
+   ```bash
+   cd messaging-app
+   wrangler d1 migrations apply apex-chat-db --remote
+   # OU manuellement :
+   wrangler d1 execute apex-chat-db --remote --file=d1-migrations/0004_premium_ai_cache.sql
+   ```
+
+4. **KV binding** pour quota daily middleware (vérifier wrangler.toml) :
+   ```toml
+   [[kv_namespaces]]
+   binding = "APEX_CHAT_KV"
+   id = "<créer via wrangler kv:namespace create>"
+   ```
+
+5. **Webhook Stripe** : ajouter endpoint `/api/premium/webhook` dans Stripe Dashboard :
+   - URL : `https://apex-chat-api.<ton-subdomain>.workers.dev/api/premium/webhook`
+   - Events : `checkout.session.completed` + `invoice.paid` + `customer.subscription.deleted` + `invoice.payment_failed`
+   - Copier le signing secret → `STRIPE_WEBHOOK_SECRET`
+
+6. **Test iPhone** (après merge + déploiement) :
+   - Self-signup Laurence (Apex IA v13.4.211)
+   - Voice message (🎙️ tap+retap)
+   - Image upload (📷)
+   - Long-press message → réaction emoji
+   - Tap header → safety number
+   - Settings → Insights IA + Messages programmés
+
+### ✅ Déjà livré cette session (rien à faire Kevin, juste merger)
+- 19 features futuristes Apex Chat (voir KEVIN_INVENTORY.md détails)
+- Hardening MAJ auto forcée iOS PWA (réponse à ta directive "n'oublie pas")
+- Self-signup direct Apex IA (Laurence se connecte auto)
+- 30+ tests nouveaux ajoutés
+- 0 régression détectée
+
+---
+
 ## 🍎 TODO MAJEUR — PASSER APEX SUR APPLE STORE (Kevin 2026-05-15 05h35)
 
 > **"Ajoute au mémo de passer lapp sur Apple Store ensuite en m'expliquant plus tard"** — Kevin 2026-05-15
