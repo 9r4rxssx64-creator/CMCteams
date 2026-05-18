@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.75';
+const __APEX_CHAT_VERSION__ = 'v1.1.76';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -388,14 +388,49 @@ if('serviceWorker' in navigator){
       _versionCheckRunning = false;
     }
   }
-  // 1ere verif 8s apres boot (laisse app init), puis toutes 30s
-  setTimeout(_checkRemoteVersion, 8000);
-  setInterval(_checkRemoteVersion, 30000);
-  // Verif aussi sur retour foreground (visibilitychange / focus)
+  // v1.1.76 : polling renforcé pour iOS PWA (5s boot + 15s + pageshow BFCache)
+  setTimeout(_checkRemoteVersion, 5000);
+  setInterval(_checkRemoteVersion, 15000);
   document.addEventListener('visibilitychange', () => {
     if(!document.hidden) _checkRemoteVersion();
   });
   window.addEventListener('focus', _checkRemoteVersion);
+  window.addEventListener('pageshow', (e) => {
+    if(e.persisted) _checkRemoteVersion();
+  });
+
+  // v1.1.76 : admin force-update polling (push global déclenché par admin)
+  let _adminForceUpdateLastTs = parseInt(localStorage.getItem('_admin_force_update_seen_ts') || '0', 10);
+  async function _checkAdminForceUpdate(){
+    try {
+      const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+      const r = await fetch(apiBase + '/api/admin/force-update-ts?_v=' + Date.now(), {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      if(!r.ok) return;
+      const data = await r.json();
+      if(data && data.ts && data.ts > _adminForceUpdateLastTs){
+        console.log('[App] Admin force-update ts=' + data.ts);
+        localStorage.setItem('_admin_force_update_seen_ts', String(data.ts));
+        _adminForceUpdateLastTs = data.ts;
+        try{
+          if('caches' in window){
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }catch(_){}
+        location.replace(location.pathname + '?_admin_force=' + data.ts);
+      }
+    } catch(_) {}
+  }
+  setTimeout(_checkAdminForceUpdate, 7000);
+  setInterval(_checkAdminForceUpdate, 60000);
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) _checkAdminForceUpdate();
+  });
 }
 </script>
 
@@ -404,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.75</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.76</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -418,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.75</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.76</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -872,6 +907,83 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.76 — Admin force-update push pour TOUS + diagnostic MAJ
+// ============================================================================
+K._adminForceUpdateAll = async function(){
+  if(!K.user?.is_admin){ toast('Admin uniquement', 'err'); return; }
+  if(!confirm('🚀 Forcer la MAJ chez TOUS les utilisateurs ?\n\nTous les clients connectés recevront un signal et seront rechargés dans les 60 sec.\n\nUtilise après chaque déploiement important.')) return;
+  try {
+    const r = await fetch(API_BASE + '/api/admin/force-update', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + K.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    if(r.status === 403){ toast('Pas admin', 'err'); return; }
+    if(!r.ok){
+      const e = await r.json().catch(() => ({}));
+      toast('Erreur : ' + (e.message || r.status), 'err');
+      return;
+    }
+    const data = await r.json();
+    toast('🚀 Force-update envoyé à TOUS (ts=' + data.ts + ')', 'ok');
+    // Soi-même reload après 2s
+    setTimeout(() => {
+      localStorage.setItem('_admin_force_update_seen_ts', String(data.ts));
+      location.replace(location.pathname + '?_admin_force=' + data.ts);
+    }, 2000);
+  } catch(e){
+    toast('Erreur réseau force-update : ' + e.message, 'err');
+  }
+};
+
+K._openUpdateDiagnostic = function(){
+  const swReg = navigator.serviceWorker?.controller;
+  const lastForceUpd = parseInt(localStorage.getItem('_admin_force_update_seen_ts') || '0', 10);
+  const cacheVersion = (typeof __APEX_CHAT_VERSION__ !== 'undefined') ? __APEX_CHAT_VERSION__ : '?';
+  const onlineState = navigator.onLine ? '🟢 Connecté' : '🔴 Hors ligne';
+  K._showModal('🔧 Diagnostic mise à jour', `
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;margin-bottom:12px;font-size:.88em">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--ax-border)">
+        <span>Version app</span><code style="color:var(--ax-gold)">${esc(cacheVersion)}</code>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--ax-border)">
+        <span>SW actif</span><code style="color:${swReg ? 'var(--ax-ok)' : 'var(--ax-err)'}">${swReg ? '✅ Oui' : '❌ Non'}</code>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--ax-border)">
+        <span>Connexion</span><code>${onlineState}</code>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--ax-border)">
+        <span>Dernier force-update admin</span><code style="font-size:.78em">${lastForceUpd ? new Date(lastForceUpd).toLocaleString('fr-FR') : '—'}</code>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0">
+        <span>Polling interval</span><code>15s</code>
+      </div>
+    </div>
+    <p style="font-size:.78em;color:var(--ax-text-3);margin:0 0 14px">
+      💡 Si la MAJ ne s'applique pas : retour foreground (sortir + revenir) déclenche un check immédiat.
+    </p>
+    <div style="display:grid;gap:6px">
+      <button class="btn btn-block" onclick="location.reload()">🔄 Recharger maintenant</button>
+      <button class="btn btn-out btn-block" onclick="K._hardResetCache()">💥 Vider cache + SW + reload</button>
+      ${K.user?.is_admin ? `<button class="btn btn-out btn-block" style="background:#e63946;color:#fff;border-color:#e63946" onclick="K._adminForceUpdateAll()">🚀 Forcer MAJ chez TOUS (admin)</button>` : ''}
+    </div>
+  `);
+};
+
+K._hardResetCache = async function(){
+  if(!confirm('💥 Vider tous les caches + désinscrire SW + recharger ?\n\nDernière option si la MAJ classique ne fonctionne pas.')) return;
+  try{
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+  }catch(_){}
+  location.replace(location.pathname + '?_hard_reset=' + Date.now());
+};
 
 // ============================================================================
 //  v1.1.75 — Snooze notifications per conv (Gmail-style temporary mute)
@@ -1547,7 +1659,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.75',
+    version: 'v1.1.76',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -6116,6 +6228,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._openKeyboardShortcuts()">
         <span>⌨️</span><span style="flex:1">Raccourcis clavier</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openUpdateDiagnostic()">
+        <span>🔧</span><span style="flex:1">Diagnostic MAJ${K.user?.is_admin ? ' + Forcer MAJ chez tous' : ''}</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._openThemePicker()">
         <span>🎨</span><span style="flex:1">Thème + couleur d'accent</span><span>›</span>
       </div>
@@ -8197,7 +8312,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.75"
+        data-version="v1.1.76"
         data-color="#6a8aff"
         defer></script>
 </body>

@@ -2964,6 +2964,52 @@ export async function handleAiSemanticSearch(request, env) {
 }
 
 // ============================================================================
+// ============================================================================
+//  v1.1.76 — Admin force-update : push à tous clients
+//   POST /api/admin/force-update     → admin only, stocke ts dans system_config
+//   GET  /api/admin/force-update-ts  → tous users, retourne dernier ts admin
+// ============================================================================
+export async function handleAdminForceUpdate(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  // Check is_admin from DB
+  try {
+    const u = await env.APEX_CHAT_DB?.prepare('SELECT is_admin FROM users WHERE id=?').bind(auth.sub).first();
+    if (!u || !u.is_admin) return err('Admin requis', 403);
+  } catch (e) {
+    return err('DB error: ' + e.message, 500);
+  }
+  const ts = Date.now();
+  try {
+    await env.APEX_CHAT_DB?.prepare(
+      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
+    ).bind('force_update_ts', String(ts)).run();
+    // Audit log
+    try {
+      await env.APEX_CHAT_DB?.prepare(
+        'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), auth.sub, 'admin.force_update_all',
+        JSON.stringify({ ts }), ts).run();
+    } catch (_) {}
+    return json({ ok: true, ts });
+  } catch (e) {
+    return err('Failed to set force_update_ts: ' + e.message, 500);
+  }
+}
+
+export async function handleAdminForceUpdateTs(request, env) {
+  // Public endpoint : tous users peuvent fetch (pas de leak admin info)
+  try {
+    const row = await env.APEX_CHAT_DB?.prepare(
+      'SELECT value FROM system_config WHERE key=?'
+    ).bind('force_update_ts').first();
+    return json({ ok: true, ts: row ? parseInt(row.value, 10) || 0 : 0 });
+  } catch (e) {
+    return json({ ok: true, ts: 0 }); // fail-open
+  }
+}
+
+// ============================================================================
 //  v1.1.24 — GET /api/premium/status : sync premium cross-device
 // ============================================================================
 export async function handlePremiumStatus(request, env) {
@@ -3139,6 +3185,9 @@ export default {
       if (path === '/api/premium/status' && method === 'GET') return await handlePremiumStatus(request, env);
       // v1.1.31 — Usage daily quota
       if (path === '/api/premium/quota' && method === 'GET') return await handlePremiumQuota(request, env);
+      // v1.1.76 — Admin force-update push to all clients
+      if (path === '/api/admin/force-update' && method === 'POST') return await handleAdminForceUpdate(request, env);
+      if (path === '/api/admin/force-update-ts' && method === 'GET') return await handleAdminForceUpdateTs(request, env);
       // v1.1.35 — Semantic search messages
       if (path === '/api/ai/search' && method === 'POST') return await handleAiSemanticSearch(request, env);
       // v1.1.41 — AI rewrite message (8 styles)
