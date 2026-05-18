@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.112';
+const __APEX_CHAT_VERSION__ = 'v1.1.114';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.112</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.114</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.112</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.114</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3159,6 +3159,67 @@ if(typeof window !== 'undefined'){
 }
 
 // ============================================================================
+//  v1.1.113 — Liste / gestion rappels actifs (modal accessible menu rapide)
+// ============================================================================
+K._openRemindersList = function(){
+  const list = lg('msg_reminders', []);
+  if(list.length === 0){
+    K._showModal('⏰ Mes rappels', `
+      <p style="text-align:center;color:var(--ax-text-3);padding:20px">Aucun rappel actif.</p>
+      <p style="text-align:center;color:var(--ax-text-3);font-size:.78em">Long-press sur un message → "⏰ Rappel".</p>
+    `);
+    return;
+  }
+  const sorted = list.slice().sort((a, b) => a.ts - b.ts);
+  K._showModal('⏰ Mes rappels', `
+    <p style="color:var(--ax-text-2);font-size:.82em;margin:0 0 10px">${list.length} rappel${list.length>1?'s':''} en attente :</p>
+    <div style="max-height:60vh;overflow-y:auto;display:grid;gap:8px">
+      ${sorted.map(r => {
+        const conv = (K.conversations || []).find(c => c.id === r.convId);
+        const msg = (K.messages[r.convId] || []).find(m => m.id === r.msgId);
+        const preview = (msg?.text || '(image / vocal)').slice(0, 100);
+        const when = new Date(r.ts).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+        const inMs = r.ts - Date.now();
+        const inHuman = inMs < 3600000 ? `dans ${Math.max(1, Math.round(inMs/60000))} min`
+                       : inMs < 86400000 ? `dans ${Math.round(inMs/3600000)}h`
+                       : `dans ${Math.round(inMs/86400000)}j`;
+        return `<div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px">
+          <div style="display:flex;justify-content:space-between;font-size:.78em;margin-bottom:6px">
+            <strong style="color:var(--ax-gold)">${esc(conv?.name || conv?.pseudo || '?')}</strong>
+            <span style="color:var(--ax-text-3)">${esc(inHuman)}</span>
+          </div>
+          <div style="font-size:.85em;color:var(--ax-text-2);margin-bottom:6px;font-style:italic">"${esc(preview)}${preview.length >= 100 ? '...' : ''}"</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.72em;color:var(--ax-text-3)">${esc(when)}</span>
+            <button class="btn btn-out btn-sm" onclick="K._cancelReminder('${esc(r.id)}')" style="color:#e63946;border-color:#e63946">✕ Annuler</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `);
+};
+
+K._cancelReminder = function(id){
+  const list = lg('msg_reminders', []);
+  const remaining = list.filter(r => r.id !== id);
+  ls('msg_reminders', remaining);
+  toast('🗑 Rappel annulé', 'ok');
+  K._closeModal && K._closeModal();
+  setTimeout(() => K._openRemindersList(), 200);
+};
+
+// ============================================================================
+//  v1.1.114 — Toggle filtre "non-lus uniquement" header chats
+// ============================================================================
+K._toggleFilterUnread = function(){
+  const cur = lg('filter_unread_only', false);
+  ls('filter_unread_only', !cur);
+  toast(!cur ? '🔵 Affichage non-lus uniquement' : '✓ Toutes les convs visibles', 'ok');
+  if(K.view === 'chats' && typeof K.render === 'function') K.render();
+};
+
+
+// ============================================================================
 //  v1.1.111 — Conv info modal (stats détaillées par conversation)
 // ============================================================================
 K._openConvInfo = function(convId){
@@ -3446,7 +3507,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.112',
+    version: 'v1.1.114',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5616,6 +5677,15 @@ function renderChats(app){
   if(lg('hide_muted_convs', false)){
     convs = convs.filter(c => !c.muted);
   }
+  // v1.1.114 : filter "non-lus uniquement" si actif
+  if(lg('filter_unread_only', false)){
+    convs = convs.filter(c => {
+      const msgs = K.messages[c.id] || [];
+      if(msgs.length === 0) return false;
+      const lastRead = lg('lastread_' + c.id, 0);
+      return msgs.some(m => m.from !== K.user?.id && (m.ts || 0) > lastRead);
+    });
+  }
   // v1.1.66 : sort pinned en haut, puis last_msg_ts desc
   convs = convs.slice().sort((a, b) => {
     if(a.pinned && !b.pinned) return -1;
@@ -5627,6 +5697,7 @@ function renderChats(app){
     <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Mes conversations</h2>
       <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-out" onclick="K._toggleFilterUnread()" aria-label="Filtre non-lus" title="${lg('filter_unread_only', false) ? 'Désactiver filtre non-lus' : 'Afficher uniquement non-lus'}" style="${lg('filter_unread_only', false) ? 'background:var(--ax-gold);color:var(--ax-bg)' : ''}">🔵</button>
         <button class="btn btn-sm btn-out" onclick="K._markAllConvsRead()" aria-label="Tout marquer comme lu" title="Tout marquer comme lu">✓✓</button>
         <button class="btn btn-sm btn-out" onclick="K._openGlobalSearch()" aria-label="Rechercher dans toutes les conversations">🔍</button>
         <button class="btn btn-sm" onclick="K._showNewMenu()">＋ Nouveau</button>
@@ -9874,6 +9945,11 @@ K.toggleMenu = function(){
       <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K._openScheduledList()">
         <span style="font-size:1.5em">⏰</span>
         <div style="flex:1"><strong>Messages programmés</strong><div style="font-size:.78em;color:var(--ax-text-2)">${(lg('ax_scheduled_msgs',[])||[]).length} en attente</div></div>
+        <span>›</span>
+      </div>
+      <div class="card-row" style="cursor:pointer" onclick="K._closeModal();K._openRemindersList()">
+        <span style="font-size:1.5em">🔔</span>
+        <div style="flex:1"><strong>Mes rappels</strong><div style="font-size:.78em;color:var(--ax-text-2)">${(lg('msg_reminders',[])||[]).length} actif${(lg('msg_reminders',[])||[]).length>1?'s':''}</div></div>
         <span>›</span>
       </div>
       <div class="card-row" style="cursor:pointer" onclick="K._toggleHideMuted()">
