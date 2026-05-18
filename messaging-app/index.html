@@ -318,7 +318,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.55';
+const __APEX_CHAT_VERSION__ = 'v1.1.56';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -399,7 +399,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.55</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.56</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -413,7 +413,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.55</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.56</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -867,6 +867,110 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.56 — Group management (invite + members + admin + leave)
+// ============================================================================
+K._isGroup = function(conv){
+  return conv && (conv.type === 'group' || (conv.member_count && conv.member_count > 2));
+};
+
+K._openGroupMenu = function(){
+  const conv = K.viewData;
+  if(!conv || !K._isGroup(conv)){ toast('Pas un groupe', 'warn'); return; }
+  const isAdmin = (conv.admins || []).includes(K.user?.id) || conv.created_by === K.user?.id;
+  K._showModal('👥 ' + (conv.name || 'Groupe'), `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 12px">${esc(conv.description || 'Aucune description')}</p>
+    <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 14px">${esc(String(conv.member_count || 0))} membre(s)</p>
+    <div style="display:grid;gap:6px">
+      <button class="btn btn-out btn-block" onclick="K._inviteToGroup()">📤 Inviter des membres</button>
+      <button class="btn btn-out btn-block" onclick="K._viewGroupMembers()">👥 Voir membres</button>
+      ${isAdmin ? `<button class="btn btn-out btn-block" onclick="K._editGroupInfo()">✏️ Modifier infos</button>` : ''}
+      <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:10px" onclick="K._leaveGroup()">🚪 Quitter le groupe</button>
+    </div>
+  `);
+};
+
+K._inviteToGroup = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  const link = `${location.origin}${location.pathname}?join=${encodeURIComponent(conv.id)}`;
+  K._showModal('📤 Inviter au groupe', `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 12px">Partage ce lien d'invitation à tes amis.</p>
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;font-family:ui-monospace,monospace;font-size:.78em;word-break:break-all;color:var(--ax-gold)">${esc(link)}</div>
+    <div style="display:grid;gap:6px;margin-top:14px">
+      <button class="btn btn-block" onclick="navigator.clipboard.writeText('${esc(link)}');K.toast?.('Lien copié','ok')">📋 Copier le lien</button>
+      ${navigator.share ? `<button class="btn btn-out btn-block" onclick="K._shareInviteLink('${esc(link)}','${esc(conv.name || 'Groupe')}')">📨 Partager via...</button>` : ''}
+    </div>
+  `);
+};
+
+K._shareInviteLink = async function(url, name){
+  try { await navigator.share({ title: 'Rejoins ' + name, text: 'Tu es invité à rejoindre "' + name + '" 🔒', url }); } catch(e) {}
+};
+
+K._viewGroupMembers = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  const members = conv.members_detail || [{ id: K.user?.id, name: K.user?.pseudo || 'Toi' }];
+  K._showModal('👥 Membres du groupe', `
+    <div style="max-height:60vh;overflow-y:auto">
+      ${members.map(m => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--ax-border)">
+          <div class="avatar" style="width:36px;height:36px">${esc((m.name || '?')[0].toUpperCase())}</div>
+          <div style="flex:1">
+            <div>${esc(m.name || 'Sans nom')}</div>
+            ${m.is_admin ? '<div style="font-size:.72em;color:var(--ax-gold)">👑 Admin</div>' : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+K._editGroupInfo = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  K._showModal('✏️ Modifier infos groupe', `
+    <label class="label">Nom</label>
+    <input id="edit-group-name" class="input" value="${esc(conv.name || '')}" maxlength="50">
+    <label class="label" style="margin-top:14px">Description</label>
+    <input id="edit-group-desc" class="input" value="${esc(conv.description || '')}" maxlength="200">
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._saveGroupInfo()">💾 Enregistrer</button>
+  `);
+};
+
+K._saveGroupInfo = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  const newName = document.getElementById('edit-group-name')?.value.trim();
+  const newDesc = document.getElementById('edit-group-desc')?.value.trim();
+  if(!newName){ toast('Nom requis', 'warn'); return; }
+  conv.name = newName;
+  conv.description = newDesc;
+  ls('conversations', K.conversations);
+  K._closeModal && K._closeModal();
+  K.render();
+  toast('✅ Groupe mis à jour', 'ok');
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'group_update', conv_id: conv.id, name: newName, description: newDesc })); } catch(_) {}
+  }
+};
+
+K._leaveGroup = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  if(!confirm('Quitter le groupe "' + (conv.name || '?') + '" ?\n\nTu ne recevras plus les messages.')) return;
+  K.conversations = K.conversations.filter(c => c.id !== conv.id);
+  delete K.messages[conv.id];
+  ls('conversations', K.conversations);
+  try { localStorage.removeItem('messages_' + conv.id); } catch(_) {}
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'group_leave', conv_id: conv.id })); } catch(_) {}
+  }
+  K.sv('chats');
+  toast('🚪 Groupe quitté', 'info');
+};
 
 // v1.1.55 — Presence (online/away/offline + last_seen) helpers
 K._presenceState = K._presenceState || {};
@@ -2266,9 +2370,9 @@ function renderChat(app){
     <div class="chat-header">
       <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
       <div class="avatar">${esc((conv.name || conv.pseudo || '?')[0].toUpperCase())}</div>
-      <div style="flex:1;cursor:pointer" onclick="K._openSecurityVerification()" title="Toucher pour vérifier la sécurité E2E">
+      <div style="flex:1;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
         <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
-        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._presenceLabel(conv)}</div>
+        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
       </div>
       <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
@@ -6633,7 +6737,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.55"
+        data-version="v1.1.56"
         data-color="#6a8aff"
         defer></script>
 </body>
