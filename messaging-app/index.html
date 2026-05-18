@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.61';
+const __APEX_CHAT_VERSION__ = 'v1.1.62';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.61</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.62</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.61</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.62</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -868,6 +868,99 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.62 — Export / Import conversations en JSON (data portability)
+// ============================================================================
+K._exportAllData = function(){
+  const data = {
+    app: 'Apex Chat',
+    version: 'v1.1.62',
+    exported_at: new Date().toISOString(),
+    user: { id: K.user?.id, pseudo: K.user?.pseudo },
+    conversations: K.conversations || [],
+    messages: K.messages || {},
+    starred_messages: lg('starred_messages', []),
+    my_stories: lg('my_stories', []),
+    drafts: {},
+    settings: {
+      privacy_prefs: lg('privacy_prefs', {}),
+      notif_prefs: lg('notif_prefs', {}),
+      sound_pref_default: lg('sound_pref_default', 'default')
+    }
+  };
+  try {
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('draft_')){
+        data.drafts[k.replace('draft_', '')] = localStorage.getItem(k);
+      }
+    }
+  } catch(_) {}
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `apex-chat-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('💾 Backup téléchargé', 'ok');
+};
+
+K._openImportData = function(){
+  K._showModal('📥 Importer un backup', `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 12px">
+      Importer un fichier JSON exporté depuis Apex Chat.
+      <strong style="color:#e63946">⚠️ Cela écrasera tes conversations actuelles.</strong>
+    </p>
+    <input type="file" id="import-file" accept=".json,application/json" style="width:100%;padding:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text)">
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._doImportData()">📥 Importer (écrase tout)</button>
+  `);
+};
+
+K._doImportData = function(){
+  const input = document.getElementById('import-file');
+  const file = input?.files?.[0];
+  if(!file){ toast('Sélectionne un fichier', 'warn'); return; }
+  if(!confirm('Écraser TOUTES tes conversations actuelles ?\n\nIrréversible (sauf si tu as fait un backup avant).')) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.app !== 'Apex Chat'){ toast('Pas un backup Apex Chat valide', 'err'); return; }
+      if(Array.isArray(data.conversations)){
+        K.conversations = data.conversations;
+        ls('conversations', K.conversations);
+      }
+      if(data.messages && typeof data.messages === 'object'){
+        K.messages = data.messages;
+        for(const convId in data.messages){
+          ls('messages_' + convId, data.messages[convId]);
+        }
+      }
+      if(Array.isArray(data.starred_messages)) ls('starred_messages', data.starred_messages);
+      if(Array.isArray(data.my_stories)) ls('my_stories', data.my_stories);
+      if(data.drafts && typeof data.drafts === 'object'){
+        for(const convId in data.drafts){
+          try { localStorage.setItem('draft_' + convId, data.drafts[convId]); } catch(_) {}
+        }
+      }
+      if(data.settings){
+        if(data.settings.privacy_prefs) ls('privacy_prefs', data.settings.privacy_prefs);
+        if(data.settings.notif_prefs) ls('notif_prefs', data.settings.notif_prefs);
+        if(data.settings.sound_pref_default) ls('sound_pref_default', data.settings.sound_pref_default);
+      }
+      K._closeModal && K._closeModal();
+      K.render();
+      toast(`✅ Backup importé (${data.conversations?.length || 0} conv, ${Object.keys(data.messages || {}).length} msg threads)`, 'ok');
+    } catch(err) {
+      toast('Erreur parsing JSON : ' + err.message, 'err');
+    }
+  };
+  reader.onerror = () => toast('Erreur lecture fichier', 'err');
+  reader.readAsText(file);
+};
 
 // ============================================================================
 //  v1.1.61 — Multi-select messages : bulk forward / delete / star
@@ -5255,6 +5348,12 @@ function renderSettings(app){
       <div class="card-row" onclick="K._viewMyStories()">
         <span>📸</span><span style="flex:1">Mes statuts (24h)</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._exportAllData()">
+        <span>💾</span><span style="flex:1">Exporter mes données (JSON)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._openImportData()">
+        <span>📥</span><span style="flex:1">Importer un backup</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K.openMiniApps()">
         <span>🎨</span><span style="flex:1">Mini-apps (Studios Apex)</span><span>›</span>
       </div>
@@ -7327,7 +7426,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.61"
+        data-version="v1.1.62"
         data-color="#6a8aff"
         defer></script>
 </body>
