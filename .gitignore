@@ -6,3 +6,6 @@ package-lock.json
 tools/video/frames/
 tools/video/output/_palette.png
 tools/video/assets/*.png
+
+# v13.4.225 — dist/ racine = build artifacts non versionnés
+/dist/
