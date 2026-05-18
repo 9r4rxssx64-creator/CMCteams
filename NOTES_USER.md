@@ -1715,3 +1715,35 @@ Dans Réglages → "🎙 Voice Bio" :
 - Mode admin Kevin : si Kevin reconnu (via son voiceprint) dans la vue d'un autre user → bascule mode admin temp
 - Kevin admin a la PRIORITÉ même dans la vue Laurence (sa voix override)
 
+
+---
+
+## E-COMMERCE e-KDMC (Kevin 2026-05-18)
+
+### Boutiques en ligne
+- 5 boutiques : Tech Hub, CHEZ LOLO (ex Glow Wellness), EcoCraft, Digital Vault, Pawsome
+- 500 produits (100/boutique), descriptions uniques, photos Unsplash
+- Paiement : PayPal + Revolut @kdmc + IBAN
+- Dashboard admin avec 6 vues
+- Agent automation 24/7
+
+### CHEZ LOLO
+- Rebrand de Glow Wellness → CHEZ LOLO
+- Thème provençal : olive (#7c8c3c), crème, Playfair Display serif
+- Cosmétiques naturels, soins bio, lavande, huile d'olive
+- Kevin choisira les vrais produits (nom ou photo → je cherche fournisseur auto)
+
+### Préférences Kevin e-commerce
+- WhatsApp perso pour notifications paiement (pas Telegram)
+- Notification OBLIGATOIRE chaque paiement validé (tous projets)
+- Vraies photos produits uniquement (jamais emojis)
+- Rendu luxe expert partout
+- URLs courtes (Vercel rewrites /lolo, /tech, /eco, /digital, /pets)
+- Domaine à acheter : kdmc.shop ou kdmc.store (~12€/an)
+- 1 clic max pour toute action Kevin
+
+### URLs actuelles
+- GitHub Pages : `9r4rxssx64-creator.github.io/CMCteams/shops/`
+- Vercel shops à configurer : Action 1 dans TODO_KEVIN.md
+- Agent : `kdmc-agent-monaco.vercel.app`
+
