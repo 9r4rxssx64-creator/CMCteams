@@ -74,8 +74,8 @@ export function getSubtitleConfig(langCode) {
 }
 
 export async function translateScript(script, fromLang, toLang, opts = {}) {
-  const apiKey = opts.apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_AI_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GOOGLE_AI_API_KEY required for translation');
+  const apiKey = opts.apiKey || process.env.GOOGLE_AI_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GOOGLE_AI_KEY required for translation');
   const targetLang = LANGUAGES[toLang];
   if (!targetLang) throw new Error(`Unsupported language: ${toLang}`);
   const prompt = `Translate this narration script from ${LANGUAGES[fromLang]?.name || fromLang} to ${targetLang.name}.
@@ -101,8 +101,8 @@ ${script}`;
 }
 
 export async function adaptScript(script, targetLang, opts = {}) {
-  const apiKey = opts.apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_AI_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GOOGLE_AI_API_KEY required');
+  const apiKey = opts.apiKey || process.env.GOOGLE_AI_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GOOGLE_AI_KEY required');
   const targetConfig = LANGUAGES[targetLang];
   if (!targetConfig) throw new Error(`Unsupported language: ${targetLang}`);
   const prompt = `Culturally adapt this English narration script for a ${targetConfig.name}-speaking audience.
