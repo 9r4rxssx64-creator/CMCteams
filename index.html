@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.686";
+var APP_VER="v9.687";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22207,11 +22207,13 @@ function _cmcShowV10Welcome(){
         +'<h2 style="color:#ffdc40;margin:0 0 4px;font-family:Cormorant Garamond,Garamond,serif;font-size:26px;font-weight:800;letter-spacing:.5px">Bienvenue dans la v10</h2>'
         +'<div style="color:#a0cca0;font-size:13px;letter-spacing:1px;text-transform:uppercase">Refonte UX — plus pro, plus pratique</div>'
         +'</div>'
-        +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">'
-          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">👑</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Nouveau panneau Admin</div><div style="color:#9bb89b;font-size:12px;margin-top:2px">5 catégories au lieu de 67 items en vrac</div></div></div>'
-          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">🤖</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Kill-switch IA global</div><div style="color:#9bb89b;font-size:12px;margin-top:2px">Coupe 100% des appels Anthropic (chat, OCR, scan, vision)</div></div></div>'
-          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">⌘</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Recherche rapide <kbd style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:#ffdc40">⌘K</kbd></div><div style="color:#9bb89b;font-size:12px;margin-top:2px">30+ cibles : vues, actions, employés, codes, convention</div></div></div>'
-          +'<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:22px;flex-shrink:0">👁</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Aperçu admin sur l\'Accueil</div><div style="color:#9bb89b;font-size:12px;margin-top:2px">Alertes du jour visibles d\'un coup d\'oeil</div></div></div>'
+        +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:20px;flex-shrink:0">👑</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Nouveau panneau Admin</div><div style="color:#9bb89b;font-size:11px;margin-top:1px">5 catégories au lieu de 67 items</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:20px;flex-shrink:0">🤖</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Kill-switch IA global</div><div style="color:#9bb89b;font-size:11px;margin-top:1px">Coupe 100 % des appels Anthropic</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:20px;flex-shrink:0">⌘</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Palette de commandes <kbd style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11px;color:#ffdc40">⌘K</kbd></div><div style="color:#9bb89b;font-size:11px;margin-top:1px">Bouton ⌘ topbar aussi sur mobile</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:20px;flex-shrink:0">📅</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Aperçu admin + mini-calendrier</div><div style="color:#9bb89b;font-size:11px;margin-top:1px">Couverture du mois en 1 coup d\'oeil</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:20px;flex-shrink:0">🔍</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Filtre dans chaque catégorie</div><div style="color:#9bb89b;font-size:11px;margin-top:1px">Trouvez une action en 2 secondes</div></div></div>'
+          +'<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(20,30,22,.5);border:1px solid rgba(201,162,39,.18);border-radius:10px"><div style="font-size:20px;flex-shrink:0">🧭</div><div style="flex:1"><div style="color:#dde8d8;font-size:14px;font-weight:700;line-height:1.2">Fil d\'Ariane à 3 niveaux</div><div style="color:#9bb89b;font-size:11px;margin-top:1px">Accueil › Admin › Catégorie (cliquable)</div></div></div>'
         +'</div>'
         +'<div style="display:flex;flex-direction:column;gap:8px">'
         +'<button onclick="document.getElementById(\'cmcV10Welcome\').remove();sv(\'admin\')" style="background:linear-gradient(135deg,#c9a227,#ffd700);color:#000;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;min-height:48px;letter-spacing:.3px">⚙ Découvrir le nouveau Admin</button>'
@@ -29592,6 +29594,9 @@ function _adminCatsV10(){
         {ic:"⚡",lb:"Pub Apex (banner partout) — "+(_cmcApexPubEnabled()?"activée":"désactivée"),fn:"cmcApexPubToggle()"},
         {ic:"📢",lb:"Popup Apex (1×/jour admin) — "+(_cmcApexPubPopupEnabled()?"activée":"désactivée"),fn:"cmcApexPubPopupToggle()"},
         {ic:"⚡",lb:"Ouvrir APEX AI",fn:"window.open('"+APEX_URL+"','_blank','noopener')"},
+        {grpEnd:true},
+        {grp:"✨ Nouveautés v10"},
+        {ic:"📖",lb:"Revoir les nouveautés v10 (modal welcome)",fn:"localStorage.removeItem('cmc_seen_v10_678');_cmcShowV10Welcome();"},
         {grpEnd:true},
         {grp:"⚠ Maintenance"},
         {ic:"🔧",lb:"Diagnostic & Debug (perf, erreurs)",fn:"sv('debug')"},
