@@ -318,7 +318,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.57';
+const __APEX_CHAT_VERSION__ = 'v1.1.58';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -399,7 +399,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.57</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.58</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -413,7 +413,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.57</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.58</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -867,6 +867,143 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.58 — Polls dans conversations (WhatsApp/Telegram style)
+//  Question + 2-10 options + vote single/multi + résultats live
+// ============================================================================
+K._openPollComposer = function(){
+  const conv = K.viewData;
+  if(!conv){ toast('Pas de conversation', 'warn'); return; }
+  K._showModal('📊 Créer un sondage', `
+    <label class="label">Question</label>
+    <input id="poll-question" class="input" placeholder="Ex : Où on mange ce soir ?" maxlength="200">
+
+    <label class="label" style="margin-top:14px">Options (2-10)</label>
+    <div id="poll-options-list">
+      <input class="input poll-opt" placeholder="Option 1" maxlength="80" style="margin-bottom:6px">
+      <input class="input poll-opt" placeholder="Option 2" maxlength="80" style="margin-bottom:6px">
+    </div>
+    <button class="btn btn-out btn-sm" onclick="K._addPollOption()" style="margin-top:4px">+ Ajouter option</button>
+
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer">
+      <input type="checkbox" id="poll-multi" style="width:20px;height:20px">
+      <span>Permettre plusieurs choix par personne</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer">
+      <input type="checkbox" id="poll-anon" style="width:20px;height:20px" checked>
+      <span>Vote anonyme</span>
+    </label>
+
+    <button class="btn btn-block" style="margin-top:18px" onclick="K._sendPoll()">📊 Publier sondage</button>
+  `);
+};
+
+K._addPollOption = function(){
+  const list = document.getElementById('poll-options-list');
+  if(!list) return;
+  if(list.children.length >= 10){ toast('Max 10 options', 'warn'); return; }
+  const input = document.createElement('input');
+  input.className = 'input poll-opt';
+  input.placeholder = 'Option ' + (list.children.length + 1);
+  input.maxLength = 80;
+  input.style.marginBottom = '6px';
+  list.appendChild(input);
+};
+
+K._sendPoll = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  const question = document.getElementById('poll-question')?.value.trim();
+  if(!question){ toast('Question requise', 'warn'); return; }
+  const options = Array.from(document.querySelectorAll('.poll-opt'))
+    .map(i => i.value.trim()).filter(v => v.length > 0);
+  if(options.length < 2){ toast('Min 2 options', 'warn'); return; }
+  const multi = document.getElementById('poll-multi')?.checked || false;
+  const anon = document.getElementById('poll-anon')?.checked || true;
+
+  const msg = {
+    id: 'm_poll_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    from: K.user?.id,
+    text: '',
+    poll: {
+      question, options, multi, anon,
+      votes: {} // userId → [option_idx, ...]
+    },
+    ts: Date.now(),
+    encrypted: false
+  };
+  K.messages = K.messages || {};
+  K.messages[conv.id] = K.messages[conv.id] || [];
+  K.messages[conv.id].push(msg);
+  ls('messages_' + conv.id, K.messages[conv.id]);
+  K._closeModal && K._closeModal();
+  K.render();
+  toast('📊 Sondage publié', 'ok');
+  // WS broadcast
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'poll', poll_id: msg.id, question, options, multi, anon })); } catch(_) {}
+  }
+};
+
+K._votePoll = function(msgId, optIdx){
+  const conv = K.viewData;
+  if(!conv) return;
+  const msgs = K.messages[conv.id] || [];
+  const m = msgs.find(x => x.id === msgId);
+  if(!m || !m.poll){ return; }
+  const uid = K.user?.id;
+  m.poll.votes = m.poll.votes || {};
+  m.poll.votes[uid] = m.poll.votes[uid] || [];
+  if(m.poll.multi){
+    // Toggle option
+    if(m.poll.votes[uid].includes(optIdx)){
+      m.poll.votes[uid] = m.poll.votes[uid].filter(o => o !== optIdx);
+    } else {
+      m.poll.votes[uid].push(optIdx);
+    }
+  } else {
+    // Single choice : replace
+    m.poll.votes[uid] = [optIdx];
+  }
+  if(m.poll.votes[uid].length === 0) delete m.poll.votes[uid];
+  ls('messages_' + conv.id, msgs);
+  K.render();
+  // WS broadcast vote
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'poll_vote', poll_id: msgId, voter: uid, votes: m.poll.votes[uid] || [] })); } catch(_) {}
+  }
+};
+
+K._renderPoll = function(m){
+  if(!m.poll) return '';
+  const p = m.poll;
+  const totalVoters = Object.keys(p.votes || {}).length;
+  const myVotes = (p.votes || {})[K.user?.id] || [];
+  const optsHtml = p.options.map((opt, i) => {
+    const voters = Object.entries(p.votes || {})
+      .filter(([uid, votes]) => votes.includes(i))
+      .map(([uid]) => uid);
+    const pct = totalVoters > 0 ? Math.round((voters.length / totalVoters) * 100) : 0;
+    const isMine = myVotes.includes(i);
+    return `<div onclick="K._votePoll('${esc(m.id)}',${i})"
+                 style="background:var(--ax-bg-2);border:1px solid ${isMine ? 'var(--ax-gold)' : 'var(--ax-border)'};
+                        border-radius:8px;padding:8px 10px;margin-bottom:4px;cursor:pointer;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;height:100%;width:${pct}%;background:rgba(232,184,48,.12);transition:width .3s"></div>
+      <div style="position:relative;display:flex;justify-content:space-between;align-items:center;font-size:.9em">
+        <span>${isMine ? '✓ ' : ''}${esc(opt)}</span>
+        <span style="font-size:.78em;color:var(--ax-text-3)">${voters.length} (${pct}%)</span>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div style="background:rgba(232,184,48,.04);border:1px solid rgba(232,184,48,.2);border-radius:10px;padding:10px;margin-bottom:6px">
+    <div style="font-weight:600;color:var(--ax-gold);margin-bottom:8px">📊 ${esc(p.question)}</div>
+    ${optsHtml}
+    <div style="font-size:.72em;color:var(--ax-text-3);margin-top:6px">
+      ${totalVoters} votant${totalVoters > 1 ? 's' : ''} · ${p.multi ? 'choix multiple' : 'choix unique'}${p.anon ? ' · anonyme' : ''}
+    </div>
+  </div>`;
+};
 
 // ============================================================================
 //  v1.1.57 — Status / Stories 24h (style Snapchat/Insta/WhatsApp)
@@ -2486,7 +2623,8 @@ function renderChat(app){
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
-          ${m.deleted ? esc(m.text) : (m.text ? K._renderMarkdown(m.text) : (m.image_data || m.voice_data ? '' : '(message chiffré)'))}
+          ${m.poll ? K._renderPoll(m) : ''}
+          ${m.deleted ? esc(m.text) : (m.text ? K._renderMarkdown(m.text) : (m.image_data || m.voice_data || m.poll ? '' : '(message chiffré)'))}
           ${scamReason ? `<div class="scam-warning" onclick="K._showScamInfo('${esc(scamReason)}','${esc(m.id)}')" title="Message potentiellement suspect">⚠️ Suspect : ${esc(scamReason)}</div>` : ''}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
@@ -2513,6 +2651,7 @@ function renderChat(app){
       <button class="chat-attach" onclick="document.getElementById('chat-img-input').click()" aria-label="Envoyer une image" title="Envoyer une image">📷</button>
       <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
       <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
+      <button class="chat-attach" onclick="K._openPollComposer()" aria-label="Créer sondage" title="Sondage / vote">📊</button>
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
       <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft()">${esc(K._loadDraft(conv.id) || '')}</textarea>
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
@@ -2760,6 +2899,26 @@ async function _handleWsMessage(data, convId){
         if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
       }
       break;
+    case 'poll_vote': {
+      // v1.1.58 — Peer a voté sur un sondage
+      const pId = data.poll_id;
+      const voter = data.voter;
+      const votes = data.votes || [];
+      if(pId && voter && K.messages[convId]){
+        const m = K.messages[convId].find(x => x.id === pId);
+        if(m && m.poll){
+          m.poll.votes = m.poll.votes || {};
+          if(votes.length === 0){
+            delete m.poll.votes[voter];
+          } else {
+            m.poll.votes[voter] = votes;
+          }
+          ls('messages_' + convId, K.messages[convId]);
+          if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        }
+      }
+      break;
+    }
     case 'delete_message': {
       // v1.1.49 — Peer a supprimé un message
       const dMsgId = data.message_id;
@@ -6822,7 +6981,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.57"
+        data-version="v1.1.58"
         data-color="#6a8aff"
         defer></script>
 </body>
