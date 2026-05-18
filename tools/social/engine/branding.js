@@ -1,7 +1,15 @@
 /**
  * Branding & Watermark System — Brand kits, intros/outros, color schemes
  */
-import { createCanvas, loadImage } from 'canvas';
+let createCanvas, loadImage;
+try {
+  const canvas = await import('canvas');
+  createCanvas = canvas.createCanvas;
+  loadImage = canvas.loadImage;
+} catch {
+  createCanvas = () => { throw new Error('canvas package required: npm install canvas'); };
+  loadImage = createCanvas;
+}
 import fs from 'fs';
 import path from 'path';
 

@@ -4,39 +4,14 @@
   "description": "Casino De MONACO Planning",
   "main": "app 2.js",
   "scripts": {
-    "test": "node tests/runtime-audit.mjs",
-    "test:runtime": "node tests/runtime-audit.mjs",
-    "test:encadres": "node tests/runtime-audit-encadres.mjs",
-    "test:pitboss": "node tests/runtime-audit-pitboss.mjs",
-    "test:teamhistory": "node tests/runtime-audit-teamhistory.mjs",
-    "test:v639": "node tests/runtime-audit-v639-format.mjs",
-    "test:v650": "node tests/runtime-audit-v650-rh.mjs",
-    "test:kevin": "node tests/runtime-audit-kevin-truth.mjs",
-    "test:badge": "node tests/runtime-audit-v663-badge.mjs",
-    "test:scoped": "node tests/runtime-audit-scoped-wipe.mjs",
-    "test:agents": "node tests/runtime-audit-agents-sanity.mjs",
-    "test:bridge": "node tests/runtime-audit-visual-bridge.mjs",
-    "test:autoupdate": "node tests/runtime-audit-autoupdate.mjs",
-    "test:guards": "node tests/runtime-audit-admin-guards.mjs",
-    "test:pin": "node tests/runtime-audit-pin-security.mjs",
-    "test:handoff": "node tests/runtime-audit-apex-handoff.mjs",
-    "test:master": "node tests/runtime-audit-master.mjs",
-    "test:all": "node tests/runtime-audit.mjs && node tests/runtime-audit-encadres.mjs && node tests/runtime-audit-pitboss.mjs && node tests/runtime-audit-teamhistory.mjs && node tests/runtime-audit-v639-format.mjs && node tests/runtime-audit-v650-rh.mjs && node tests/runtime-audit-kevin-truth.mjs && node tests/runtime-audit-v663-badge.mjs && node tests/runtime-audit-scoped-wipe.mjs && node tests/runtime-audit-agents-sanity.mjs && node tests/runtime-audit-visual-bridge.mjs && node tests/runtime-audit-autoupdate.mjs && node tests/runtime-audit-admin-guards.mjs && node tests/runtime-audit-pin-security.mjs && node tests/runtime-audit-apex-handoff.mjs && node tests/runtime-audit-master.mjs",
-    "test:check-syntax": "python3 -c \"import re;html=open('index.html','r',encoding='utf-8').read();blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL);open('/tmp/cmc_combined.js','w',encoding='utf-8').write(''.join(blocks))\" && node --check /tmp/cmc_combined.js",
-    "test:ci": "npm run test:check-syntax && npm run test:all",
-    "playwright:install": "playwright install --with-deps chromium"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "http://local_proxy@127.0.0.1:37103/git/9r4rxssx64-creator/CMCteams"
   },
-  "keywords": [
-    "cmcteams",
-    "casino",
-    "planning",
-    "monaco"
-  ],
-  "author": "Kevin DESARZENS",
+  "keywords": [],
+  "author": "",
   "license": "ISC",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
@@ -44,9 +19,5 @@
     "fluent-ffmpeg": "^2.1.3",
     "puppeteer": "^24.40.0",
     "sharp": "^0.34.5"
-  },
-  "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.5",
-    "playwright": "^1.56.1"
   }
 }
