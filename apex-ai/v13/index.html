@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.221">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.222">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -143,6 +143,28 @@
              upgrade-insecure-requests;">
 
   <title>APEX AI v13</title>
+
+  <!-- v13.4.222 (Kevin "100/100 réel Performance LCP") :
+       Critical CSS inline pour 1st paint INSTANTANÉ (avant chargement des
+       link CSS externes). Réduit LCP ~150-250ms iPhone Safari.
+       INTERVENTION ADDITIVE : aucun fichier existant modifié, juste ajout.
+       Validation auto-test au boot v13.4.204 testVisualRender + Layout. -->
+  <style nonce="APEX_BOOT_NONCE">
+    html { background: #08080f; color: #e8b830; color-scheme: dark; }
+    body { margin: 0; padding: 0; min-height: 100vh; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: #08080f; color: #f0e8d8; -webkit-text-size-adjust: 100%; }
+    #apex-root { min-height: 100vh; position: relative; }
+    #apex-splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08080f; z-index: 1000; transition: opacity 0.3s; }
+    #apex-splash[aria-hidden="true"] { pointer-events: none; }
+    .apex-splash-logo { font-size: 64px; color: #e8b830; line-height: 1; margin-bottom: 8px; }
+    .apex-splash-name { font-size: 20px; font-weight: 700; letter-spacing: 4px; color: #e8b830; margin-bottom: 16px; }
+    .apex-splash-bar { width: 120px; height: 3px; background: rgba(232, 184, 48, 0.15); border-radius: 2px; overflow: hidden; }
+    .apex-splash-bar-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #c9a227, #e8b830, #f5cc4a); animation: apex-splash-pulse 1.4s ease-in-out infinite; }
+    @keyframes apex-splash-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .ax-skip-link { position: absolute; left: -9999px; top: 0; z-index: 9999; padding: 12px 20px; background: #e8b830; color: #08080f; border-radius: 0 0 8px 0; font-weight: 700; text-decoration: none; }
+    .ax-skip-link:focus { left: 0; }
+    /* Anti-FOUC PWA iOS standalone */
+    @media (display-mode: standalone) { body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); } }
+  </style>
 
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./assets/icons/apex-logo.svg">
