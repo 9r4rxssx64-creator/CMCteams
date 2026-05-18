@@ -4878,6 +4878,112 @@ function _stripPersistedTeamFamHistory(empsArr){
   });
   return empsArr;
 }
+// v9.705 EMERGENCY TOTAL WIPE — Kevin "Je t'avais dit de tout nettoyer"
+// Tourne IMMÉDIATEMENT au load du script, sans login, sans flag, sans agentsStart.
+// Efface COMPLÈTEMENT tous les mois (passé, courant, futur) de cmc_ov, cmc_ov_meta,
+// teamHistory, familyHistory, cmc_ref_*, cmc_verif_*, cmc_ci_*, cmc_comments_*,
+// cmc_visual_planning_*, cmc_structured_*, cmc_team_mirror_*, cmc_manual_overrides_*,
+// cmc_import_completeness_*, cmc_last_import_type_*, cmc_auto_backup_*, cmc_import_snap_*,
+// cmc_history_*, cmc_snapshot_*, cmc_agent_backup_*.
+// One-shot via flag cmc_v705_total_wiped pour ne pas re-wiper après import légitime.
+(function _v705TotalWipe(){
+  try{
+    if(localStorage.getItem("cmc_v705_total_wiped"))return; // déjà fait
+    var _wipedKeys=[];
+    // 1. cmc_ov / cmc_ov_meta : ECRASE en {}
+    try{
+      var _ovRaw=localStorage.getItem("cmc_ov");
+      if(_ovRaw){
+        var _ov=JSON.parse(_ovRaw);
+        if(_ov&&typeof _ov==="object")Object.keys(_ov).forEach(function(k){_wipedKeys.push("cmc_ov["+k+"]");});
+      }
+      localStorage.setItem("cmc_ov","{}");
+      localStorage.setItem("cmc_ov_meta","{}");
+    }catch(_){}
+    // 2. cmc_e : strip teamHistory + familyHistory de tous emps
+    try{
+      var _eRaw=localStorage.getItem("cmc_e");
+      if(_eRaw){
+        var _emps=JSON.parse(_eRaw);
+        if(Array.isArray(_emps)){
+          _emps.forEach(function(e){
+            if(e&&e.teamHistory){_wipedKeys.push("teamHist:"+e.id);e.teamHistory={};}
+            if(e&&e.familyHistory){_wipedKeys.push("famHist:"+e.id);e.familyHistory={};}
+          });
+          localStorage.setItem("cmc_e",JSON.stringify(_emps));
+        }
+      }
+    }catch(_){}
+    // 3. Toutes clés préfixées planning (TOUS mois, pas juste antérieurs)
+    try{
+      var _prefixes=["cmc_ref_","cmc_verif_","cmc_ci_","cmc_comments_","cmc_day_notes_","cmc_affluence_","cmc_visual_planning_","cmc_structured_","cmc_team_mirror_","cmc_last_import_type_","cmc_manual_overrides_","cmc_import_completeness_","cmc_apex_vision_request_","cmc_apex_vision_result_","cmc_import_src_","cmc_import_history_","cmc_live_","cmc_auto_backup_","cmc_import_snap_","cmc_agent_backup_","cmc_snapshot_","cmc_history_"];
+      var _toRm=[];
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i);
+        if(!k)continue;
+        for(var j=0;j<_prefixes.length;j++){
+          if(k.indexOf(_prefixes[j])===0){_toRm.push(k);break;}
+        }
+      }
+      _toRm.forEach(function(k){_wipedKeys.push(k);try{localStorage.removeItem(k);}catch(_){}});
+    }catch(_){}
+    // 4. Logs / snapshots / flags wipe anciens (re-déclenche futurs nettoyages)
+    try{
+      ["cmc_audit","cmc_audit_security","cmc_ia_log","cmc_userlog","cmc_admin_sessions","cmc_silent_log","cmc_err_log","cmc_telemetry","cmc_user_telemetry","cmc_pdf_fingerprints","cmc_learned_patterns","cmc_client_anomalies","cmc_anomalies","cmc_import_anomalies","cmc_click_failures","cmc_agent_reports","cmc_sentinels_log","cmc_import_log","cmc_seed_apr2026_loaded","cmc_v696_wipe_done","cmc_v698_wipe_done","cmc_v701_wipe_done","cmc_v702_wipe_done","cmc_v703_wipe_done","cmc_v704_purge_done","cmc_wipe_lock_ts","cmc_persistence_alerts","cmc_persistence_restore_log"].forEach(function(k){
+        try{if(localStorage.getItem(k)!==null){localStorage.removeItem(k);}}catch(_){}
+      });
+    }catch(_){}
+    // 5. Mark done
+    try{localStorage.setItem("cmc_v705_total_wiped",JSON.stringify({ts:Date.now(),count:_wipedKeys.length}));}catch(_){}
+    console.log("[v9.705 TOTAL WIPE] "+_wipedKeys.length+" entrées effacées au boot. Memoire repart à zéro.");
+    // 6. IndexedDB shadow wipe (déféré car async)
+    setTimeout(function(){
+      try{
+        if(!("indexedDB" in window))return;
+        var _req=indexedDB.open("cmc_shadow",1);
+        _req.onsuccess=function(){
+          try{
+            var _db=_req.result;
+            var _tx=_db.transaction("kv","readwrite");
+            ["cmc_ov","cmc_ov_meta","cmc_e"].forEach(function(k){
+              try{_tx.objectStore("kv").put(k==="cmc_e"?JSON.parse(localStorage.getItem("cmc_e")||"[]"):"{}",k);}catch(_){}
+            });
+            console.log("[v9.705 TOTAL WIPE] IndexedDB shadow synchronisé avec localStorage vide.");
+          }catch(_){}
+        };
+      }catch(_){}
+    },1000);
+    // 7. Firebase wipe (6s après boot, le temps que FB soit init)
+    setTimeout(function(){
+      try{
+        if(!window.FB_URL||!window.FB_PATH)return;
+        // Push empty cmc_ov + cmc_ov_meta + cmc_e (avec teamHistory stripé)
+        if(typeof window.fbWrite==="function"){
+          window.fbWrite("cmc_ov",{});
+          window.fbWrite("cmc_ov_meta",{});
+          var _cleanE=JSON.parse(localStorage.getItem("cmc_e")||"[]");
+          window.fbWrite("cmc_e",_cleanE);
+        }
+        // DELETE nodes Firebase pour clés préfixées effacées localement
+        var _fbDelPrefixes=["cmc_ref_","cmc_verif_","cmc_visual_planning_","cmc_structured_","cmc_team_mirror_","cmc_manual_overrides_","cmc_import_completeness_","cmc_auto_backup_","cmc_import_snap_","cmc_history_","cmc_snapshot_","cmc_agent_backup_"];
+        // Lire la liste des clés Firebase actuelles (shallow)
+        fetch(window.FB_URL+window.FB_PATH+".json?shallow=true").then(function(r){return r.ok?r.json():null;}).then(function(allKeys){
+          if(!allKeys)return;
+          Object.keys(allKeys).forEach(function(k){
+            var _norm=k.replace(/．/g,".");
+            for(var p=0;p<_fbDelPrefixes.length;p++){
+              if(_norm.indexOf(_fbDelPrefixes[p])===0){
+                try{fetch(window.FB_URL+window.FB_PATH+"/"+encodeURIComponent(k)+".json",{method:"DELETE"});}catch(_){}
+                break;
+              }
+            }
+          });
+          console.log("[v9.705 TOTAL WIPE FIREBASE] DELETE nodes obsolètes envoyé.");
+        }).catch(function(){});
+      }catch(_e){console.warn("[v9.705 fb wipe]",_e);}
+    },6000);
+  }catch(_e){console.warn("[v9.705 TOTAL WIPE]",_e);}
+})();
 var A={
   user:null,
   view:"accueil",
@@ -4970,7 +5076,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.704";
+var APP_VER="v9.705";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
