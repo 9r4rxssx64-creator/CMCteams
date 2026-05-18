@@ -319,7 +319,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.66';
+const __APEX_CHAT_VERSION__ = 'v1.1.67';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.66</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.67</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -414,7 +414,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.66</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.67</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -870,6 +870,50 @@ function _distKm(a, b){
 }
 
 // ============================================================================
+//  v1.1.67 — Custom status / about (bio + emoji presence WhatsApp-style)
+// ============================================================================
+K._STATUS_PRESETS = [
+  '💼 Au travail',
+  '🍔 En pause repas',
+  '✈️ En voyage',
+  '😴 Indisponible',
+  '🏖 En vacances',
+  '🎮 Gaming',
+  '📚 Concentré',
+  '🎉 Disponible'
+];
+
+K._openMyStatus = function(){
+  const current = lg('my_status', '');
+  const presets = K._STATUS_PRESETS.map(s =>
+    `<button class="btn btn-out btn-sm" style="text-align:left" onclick="K._setStatus('${esc(s)}')">${esc(s)}</button>`
+  ).join('');
+  K._showModal('💬 Mon statut', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">Visible par tes contacts.</p>
+    <label class="label">Statut personnalisé</label>
+    <input id="status-custom" class="input" placeholder="Quoi de neuf ?" maxlength="80" value="${esc(current)}">
+    <button class="btn btn-block" style="margin-top:8px" onclick="K._saveCustomStatus()">💾 Enregistrer</button>
+    <p style="font-size:.78em;color:var(--ax-text-3);margin:18px 0 8px">Ou choisis un préréglage :</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${presets}</div>
+    ${current ? `<button class="btn btn-out btn-block" style="margin-top:14px;color:#e63946;border-color:#e63946" onclick="K._setStatus('')">🗑 Effacer mon statut</button>` : ''}
+  `);
+};
+
+K._setStatus = function(text){
+  ls('my_status', text);
+  K._closeModal && K._closeModal();
+  toast(text ? '💬 Statut : ' + text : 'Statut effacé', 'ok');
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'status_update', status: text })); } catch(_) {}
+  }
+};
+
+K._saveCustomStatus = function(){
+  const input = document.getElementById('status-custom');
+  K._setStatus(input?.value.trim() || '');
+};
+
+// ============================================================================
 //  v1.1.66 — Conv management : pin / mute / archive
 // ============================================================================
 K._toggleConvPinned = function(convId){
@@ -1103,7 +1147,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.66',
+    version: 'v1.1.67',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5599,6 +5643,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._viewMyStories()">
         <span>📸</span><span style="flex:1">Mes statuts (24h)</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openMyStatus()">
+        <span>💬</span><span style="flex:1">Mon statut${(()=>{ const s=lg('my_status',''); return s?` <span style="font-size:.75em;color:var(--ax-text-3)">— ${esc(s.slice(0,30))}</span>`:''; })()}</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._openThemePicker()">
         <span>🎨</span><span style="flex:1">Thème + couleur d'accent</span><span>›</span>
       </div>
@@ -7680,7 +7727,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.66"
+        data-version="v1.1.67"
         data-color="#6a8aff"
         defer></script>
 </body>
