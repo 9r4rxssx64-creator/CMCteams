@@ -194,6 +194,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .msg{position:relative;user-select:none;-webkit-user-select:none}
 .msg-status{font-size:.9em;margin-left:4px;opacity:.7;letter-spacing:-1px}
 .msg-edited{font-size:.85em;margin-left:4px;opacity:.6;font-style:italic}
+.msg.deleted-tombstone{opacity:.55;font-style:italic}
 .translate-hint{display:inline-block;margin-top:6px;font-size:.72em;color:var(--ax-blue);
   background:rgba(106,138,255,.1);border:1px solid rgba(106,138,255,.3);
   border-radius:10px;padding:3px 8px;cursor:pointer;transition:all .15s}
@@ -299,7 +300,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.48';
+const __APEX_CHAT_VERSION__ = 'v1.1.49';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -380,7 +381,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.48</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.49</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -394,7 +395,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.48</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.49</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1526,6 +1527,10 @@ K._openReactionPicker = function(msgId){
       actions.push(`<button class="btn btn-out btn-sm" onclick="K._openEditMsg('${esc(msgId)}')">✏️ Modifier (15 min)</button>`);
     }
   }
+  // v1.1.49 — Delete (toujours dispo : "pour moi" sinon "pour tout le monde" si mien)
+  if(msg){
+    actions.push(`<button class="btn btn-out btn-sm" style="color:#e63946;border-color:#e63946" onclick="K._openDeleteMenu('${esc(msgId)}')">🗑 Supprimer</button>`);
+  }
   // v1.1.45 — Pin + Star (toutes les actions, même sans text)
   if(msg){
     actions.push(`<button class="btn btn-out btn-sm" onclick="K._togglePinMsg('${esc(msgId)}')">${msg.pinned ? '📌 Désépingler' : '📌 Épingler'}</button>`);
@@ -2152,7 +2157,7 @@ function renderChat(app){
         const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
         const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
         return `
-        <div class="msg ${isMine ? 'me' : 'them'}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
+        <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')">
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
           ${m.voice_data ? `<audio src="${esc(m.voice_data)}" controls preload="none" style="max-width:240px;display:block;margin-bottom:4px;border-radius:10px"></audio>` : ''}
           ${m.voice_too_large && !m.voice_data ? `<div style="font-size:.78em;color:var(--ax-text-3);font-style:italic;margin-bottom:4px">🎙️ Audio non sauvegardé (trop volumineux)</div>` : ''}
@@ -2420,6 +2425,22 @@ async function _handleWsMessage(data, convId){
         if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
       }
       break;
+    case 'delete_message': {
+      // v1.1.49 — Peer a supprimé un message
+      const dMsgId = data.message_id;
+      if(dMsgId && K.messages[convId]){
+        const m = K.messages[convId].find(x => x.id === dMsgId);
+        if(m){
+          m.deleted = true;
+          m.text = '🗑 Message supprimé';
+          delete m.image_data; delete m.alt;
+          delete m.voice_data; delete m.voice_text;
+          ls('messages_' + convId, K.messages[convId]);
+          if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        }
+      }
+      break;
+    }
     case 'edit_message': {
       // v1.1.48 — Peer a édité un message
       const eMsgId = data.message_id;
@@ -3722,6 +3743,64 @@ K._openEditMsg = function(msgId){
     </div>
   `);
   setTimeout(() => { const ta = document.getElementById('edit-msg-input'); if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }, 50);
+};
+
+// ============================================================================
+//  v1.1.49 — Delete message (style WhatsApp)
+//   - "Pour moi" : remove local, anytime
+//   - "Pour tout le monde" : tombstone + WS, si mien + < 1h
+// ============================================================================
+K._DELETE_EVERYONE_WINDOW_MS = 60 * 60 * 1000;
+
+K._canDeleteForEveryone = function(m){
+  if(!m || m.from !== K.user?.id) return false;
+  if(Date.now() - (m.ts || 0) > K._DELETE_EVERYONE_WINDOW_MS) return false;
+  return true;
+};
+
+K._openDeleteMenu = function(msgId){
+  const conv = K.viewData;
+  if(!conv || !msgId) return;
+  const msgs = K.messages[conv.id] || [];
+  const m = msgs.find(x => x.id === msgId);
+  if(!m){ toast('Message introuvable', 'warn'); return; }
+  const canEveryone = K._canDeleteForEveryone(m);
+  K._showModal('🗑 Supprimer le message', `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 14px">
+      ${canEveryone ? 'Tu peux supprimer ce message pour tout le monde (envoi < 1h) ou seulement pour toi.' : 'Tu peux supprimer ce message uniquement pour toi.'}
+    </p>
+    <div style="display:grid;gap:6px">
+      ${canEveryone ? `<button class="btn btn-block" style="background:#e63946;color:#fff;border-color:#e63946" onclick="K._deleteMsg('${esc(msgId)}','everyone')">🌐 Supprimer pour tout le monde</button>` : ''}
+      <button class="btn btn-out btn-block" onclick="K._deleteMsg('${esc(msgId)}','me')">👤 Supprimer pour moi</button>
+      <button class="btn btn-out btn-block" onclick="K._closeModal()">↩ Annuler</button>
+    </div>
+  `);
+};
+
+K._deleteMsg = function(msgId, scope){
+  const conv = K.viewData;
+  if(!conv || !msgId) return;
+  const msgs = K.messages[conv.id] || [];
+  const idx = msgs.findIndex(x => x.id === msgId);
+  if(idx < 0){ toast('Message introuvable', 'warn'); return; }
+  const m = msgs[idx];
+  if(scope === 'everyone'){
+    if(!K._canDeleteForEveryone(m)){ toast('Fenêtre 1h expirée', 'warn'); return; }
+    m.deleted = true;
+    m.text = '🗑 Message supprimé';
+    delete m.image_data; delete m.alt;
+    delete m.voice_data; delete m.voice_text;
+    if(K.ws && K.ws.readyState === 1){
+      try { K.ws.send(JSON.stringify({ type: 'delete_message', message_id: msgId, scope: 'everyone' })); } catch(_) {}
+    }
+    toast('🗑 Supprimé pour tout le monde', 'ok');
+  } else {
+    msgs.splice(idx, 1);
+    toast('🗑 Supprimé pour toi', 'ok');
+  }
+  ls('messages_' + conv.id, msgs);
+  K.render();
+  K._closeModal && K._closeModal();
 };
 
 K._saveEditMsg = function(msgId){
@@ -6284,7 +6363,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.48"
+        data-version="v1.1.49"
         data-color="#6a8aff"
         defer></script>
 </body>
