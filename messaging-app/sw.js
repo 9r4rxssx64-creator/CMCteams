@@ -22,7 +22,7 @@ self.importScripts && self.importScripts; // no-op pour environnements anciens
     // Fallback ultra-minimal : Service Worker reste fonctionnel (no cache)
     console.warn('[SW] handlers ESM unavailable, fallback minimal', e);
     handlers = {
-      CACHE_VERSION: 'apex-chat-v1.1.117',
+      CACHE_VERSION: 'apex-chat-v1.1.118',
       handleInstall: async () => {},
       handleActivate: async () => ({ purged: [] }),
       handleFetch: async (event) => fetch(event.request),
