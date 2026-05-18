@@ -83,11 +83,6 @@ html {
   font-family: var(--ax-font);
   font-size: var(--ax-text-base);
   line-height: var(--ax-lh-normal);
-  /* v13.4.221 (Kevin "100/100 réel Performance") : color-scheme dark
-   * permet au browser de pré-rendre dark scrollbars/form-controls dès le
-   * 1er paint → réduit FOUC dark mode + gain LCP marginal (~50ms iOS Safari).
-   * Conforme CLAUDE.md règle "dark theme par défaut". */
-  color-scheme: dark;
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;

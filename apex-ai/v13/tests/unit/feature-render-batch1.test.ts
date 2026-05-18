@@ -43,12 +43,6 @@ vi.mock('../../core/logger.js', () => ({
 
 vi.mock('../../services/signup.js', () => ({
   signup: {
-    /* v13.4.211 — selfSignupDirect remplace requestSignup pour flow auto */
-    selfSignupDirect: vi.fn(async () => ({
-      ok: true,
-      uid: 'free_test_uid_123',
-      loggedIn: true,
-    })),
     requestSignup: vi.fn(async () => ({
       ok: true,
       requestId: 'signup_test_123',
@@ -199,26 +193,24 @@ const tick = (ms = 10) => new Promise((r) => setTimeout(r, ms));
  * ============================================================ */
 
 describe('features/signup — render', () => {
-  it('rend le formulaire avec inputs requis et 4 plans + champ PIN', () => {
+  it('rend le formulaire avec inputs requis et 4 plans', () => {
     renderSignup(root);
     expect(root.querySelector('#signup-prenom')).toBeTruthy();
     expect(root.querySelector('#signup-nom')).toBeTruthy();
     expect(root.querySelector('#signup-email')).toBeTruthy();
     expect(root.querySelector('#signup-whatsapp')).toBeTruthy();
-    expect(root.querySelector('#signup-pin')).toBeTruthy(); /* v13.4.211 */
     expect(root.querySelector('#signup-cgu')).toBeTruthy();
     expect(root.querySelector('#signup-rgpd')).toBeTruthy();
     expect(root.querySelector('#signup-submit')).toBeTruthy();
     expect(root.querySelectorAll('input[name="signup-plan"]').length).toBe(4);
   });
 
-  it('soumet → appelle signup.selfSignupDirect avec valeurs form (v13.4.211)', async () => {
+  it('soumet → appelle signup.requestSignup avec valeurs form', async () => {
     renderSignup(root);
     (root.querySelector('#signup-prenom') as HTMLInputElement).value = 'Marc';
     (root.querySelector('#signup-nom') as HTMLInputElement).value = 'Dupont';
     (root.querySelector('#signup-email') as HTMLInputElement).value = 'marc@example.com';
     (root.querySelector('#signup-whatsapp') as HTMLInputElement).value = '+33612345678';
-    (root.querySelector('#signup-pin') as HTMLInputElement).value = '1234';
     (root.querySelector('#signup-cgu') as HTMLInputElement).checked = true;
     (root.querySelector('#signup-rgpd') as HTMLInputElement).checked = true;
 
@@ -226,30 +218,30 @@ describe('features/signup — render', () => {
     form.dispatchEvent(new Event('submit'));
     await tick(20);
 
-    expect(signup.selfSignupDirect).toHaveBeenCalledTimes(1);
-    const arg = (signup.selfSignupDirect as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(signup.requestSignup).toHaveBeenCalledTimes(1);
+    const arg = (signup.requestSignup as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(arg.prenom).toBe('Marc');
     expect(arg.nom).toBe('Dupont');
     expect(arg.email).toBe('marc@example.com');
-    expect(arg.pin).toBe('1234');
     expect(arg.consent.cgu).toBe(true);
   });
 
-  it('après submit success → navigate chat (login auto, v13.4.211)', async () => {
+  it('après submit success → store request id + navigate waiting-approval', async () => {
     renderSignup(root);
     const form = root.querySelector<HTMLFormElement>('#signup-form')!;
     form.dispatchEvent(new Event('submit'));
     await tick(20);
+    expect(localStorage.getItem('apex_v13_signup_pending_id')).toBe('signup_test_123');
     expect(toast.success).toHaveBeenCalled();
-    /* navigate vers chat triggered après setTimeout 500ms */
+    /* navigate triggered after setTimeout 500ms — wait */
     await tick(600);
-    expect(router.navigate).toHaveBeenCalledWith('chat');
+    expect(router.navigate).toHaveBeenCalledWith('waiting-approval');
   });
 
   it('soumet erreur (ok:false) → affiche message erreur', async () => {
-    (signup.selfSignupDirect as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    (signup.requestSignup as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: false,
-      reason: 'Email déjà utilisé',
+      reason: 'Numéro déjà utilisé',
     });
     renderSignup(root);
     const form = root.querySelector<HTMLFormElement>('#signup-form')!;
@@ -257,11 +249,11 @@ describe('features/signup — render', () => {
     await tick(20);
     expect(toast.error).toHaveBeenCalled();
     const errEl = root.querySelector('#signup-error');
-    expect(errEl?.innerHTML).toContain('Email déjà utilisé');
+    expect(errEl?.innerHTML).toContain('Numéro déjà utilisé');
   });
 
   it('soumet exception → affiche erreur générique', async () => {
-    (signup.selfSignupDirect as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('boom'));
+    (signup.requestSignup as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('boom'));
     renderSignup(root);
     const form = root.querySelector<HTMLFormElement>('#signup-form')!;
     form.dispatchEvent(new Event('submit'));

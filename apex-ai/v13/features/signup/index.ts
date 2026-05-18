@@ -1,24 +1,18 @@
 /**
- * APEX v13 — Feature Signup (self-service inscription DIRECT)
+ * APEX v13 — Feature Signup (self-service inscription)
  *
- * Mission Kevin 2026-05-17 v13.4.211 :
- * "Gratuit et auto. À partir du moment où j'envoie le lien à qlq un il crée
- *  son code avec la fiche info et se Connect auto"
+ * Mission Kevin 2026-05-08 02h : "création de compte, 1ère connexion etc avec validation WhatsApp"
  *
  * Form public :
  *  - Prénom + Nom (séparés, validation 2-tokens règle v13.3.65)
  *  - Email
- *  - **Code PIN choisi par l'user (4-8 chiffres)**
- *  - Téléphone (optionnel, pour notifs futures)
+ *  - Téléphone WhatsApp (E.164)
  *  - Plan Free/Basic/Pro/Family
  *  - Consentements CGU + RGPD obligatoires
  *
- * Submit → signup.selfSignupDirect() → compte créé + PIN stocké + login auto
- * → redirect chat. ZERO intervention Kevin, ZERO OTP WhatsApp.
+ * Submit → signup.requestSignup() → wa.me link Kevin → vue waiting-approval.
  *
- * Le lien partagé EST l'authorization (Kevin choisit à qui il envoie).
- *
- * RGPD : consent enregistré dans audit log signup.self_direct.
+ * RGPD : consent enregistré dans signup record + audit log.
  */
 
 import { escapeHtml } from '../../core/escape-html.js';
@@ -51,7 +45,7 @@ export function render(rootEl: HTMLElement): void {
       <div class="ax-signup-card" style="max-width:560px;width:100%;background:rgba(20,20,35,0.92);backdrop-filter:blur(20px);border:1px solid rgba(201,162,39,0.3);border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
         <div style="text-align:center;margin-bottom:24px">
           <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">📝 Créer mon compte Apex</h1>
-          <p style="color:var(--ax-text-dim,#aaa);margin:0;font-size:14px">Inscription instantanée · Choisis ton code · Connecté auto</p>
+          <p style="color:var(--ax-text-dim,#aaa);margin:0;font-size:14px">Validation par Kevin via WhatsApp · Local-first · RGPD-friendly</p>
         </div>
 
         <form id="signup-form" novalidate style="display:grid;gap:14px">
@@ -76,17 +70,10 @@ export function render(rootEl: HTMLElement): void {
               placeholder="marc@example.com">
           </label>
           <label>
-            <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Téléphone WhatsApp (format +33xxx)</span>
-            <input type="tel" id="signup-whatsapp" aria-label="Numéro WhatsApp avec indicatif pays" autocomplete="tel" inputmode="tel" pattern="^\\+\\d{6,15}$"
+            <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Téléphone WhatsApp * (format +33xxx)</span>
+            <input type="tel" id="signup-whatsapp" aria-label="Numéro WhatsApp avec indicatif pays" required autocomplete="tel" inputmode="tel" pattern="^\\+\\d{6,15}$"
               style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
               placeholder="+33612345678">
-          </label>
-          <label>
-            <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">🔑 Ton code d'accès * (min 4 chiffres)</span>
-            <input type="password" id="signup-pin" aria-label="Code PIN personnel pour te connecter" required minlength="4" maxlength="20" inputmode="numeric" autocomplete="new-password"
-              style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px;letter-spacing:4px"
-              placeholder="••••">
-            <span style="display:block;color:var(--ax-text-dim,#888);font-size:11px;margin-top:4px">Tu utiliseras ce code à chaque connexion. Choisis-le bien.</span>
           </label>
 
           <div>
@@ -119,7 +106,7 @@ export function render(rootEl: HTMLElement): void {
           </div>
 
           <button type="submit" id="signup-submit" class="ax-btn ax-btn-primary ax-btn-block" style="margin-top:8px">
-            <span class="ax-btn-label">🚀 Créer mon compte et me connecter</span>
+            <span class="ax-btn-label">📤 Envoyer ma demande via WhatsApp</span>
             <span class="ax-spinner" aria-hidden="true" style="display:none"></span>
           </button>
         </form>
@@ -178,7 +165,6 @@ async function handleSubmit(rootEl: HTMLElement): Promise<void> {
   const nom = (rootEl.querySelector<HTMLInputElement>('#signup-nom')?.value ?? '').trim();
   const email = (rootEl.querySelector<HTMLInputElement>('#signup-email')?.value ?? '').trim();
   const whatsapp = (rootEl.querySelector<HTMLInputElement>('#signup-whatsapp')?.value ?? '').trim();
-  const pin = (rootEl.querySelector<HTMLInputElement>('#signup-pin')?.value ?? '').trim();
   const plan = (rootEl.querySelector<HTMLInputElement>('input[name="signup-plan"]:checked')?.value ?? 'free') as SignupPlan;
   const cgu = rootEl.querySelector<HTMLInputElement>('#signup-cgu')?.checked ?? false;
   const rgpdConsent = rootEl.querySelector<HTMLInputElement>('#signup-rgpd')?.checked ?? false;
@@ -191,51 +177,50 @@ async function handleSubmit(rootEl: HTMLElement): Promise<void> {
   if (errEl) errEl.innerHTML = '';
 
   if (submitBtn) submitBtn.disabled = true;
-  if (labelEl) labelEl.textContent = 'Création de ton compte...';
+  if (labelEl) labelEl.textContent = 'Envoi en cours...';
   if (spinnerEl) spinnerEl.style.display = 'inline-block';
 
   try {
-    /* v13.4.211 (Kevin "se Connect auto") : self-signup direct, plus de waiting-approval */
-    const opts: {
-      prenom: string;
-      nom: string;
-      email: string;
-      pin: string;
-      plan: SignupPlan;
-      consent: { cgu: boolean; rgpd: boolean; ts: number };
-      whatsapp?: string;
-    } = {
+    const result = await signup.requestSignup({
       prenom,
       nom,
       email,
-      pin,
+      whatsapp,
       plan,
       consent: { cgu, rgpd: rgpdConsent, ts: Date.now() },
-    };
-    if (whatsapp) opts.whatsapp = whatsapp;
-    const result = await signup.selfSignupDirect(opts);
+    });
 
     if (!result.ok) {
       haptic.error();
       if (errEl) errEl.innerHTML = `<div class="ax-alert ax-alert-warn">⚠️ ${escapeHtml(result.reason ?? 'Erreur')}</div>`;
       toast.error(result.reason ?? 'Erreur');
       if (submitBtn) submitBtn.disabled = false;
-      if (labelEl) labelEl.textContent = '🚀 Créer mon compte et me connecter';
+      if (labelEl) labelEl.textContent = '📤 Envoyer ma demande via WhatsApp';
       if (spinnerEl) spinnerEl.style.display = 'none';
       return;
     }
 
-    /* Success — login auto déjà fait par selfSignupDirect (store.set user + session) */
+    /* Success — store request id pour vue waiting-approval */
     haptic.success();
-    toast.success('🎉 Bienvenue ! Tu es connecté.');
-    setTimeout(() => router.navigate('chat'), 500);
+    try {
+      if (result.requestId) localStorage.setItem('apex_v13_signup_pending_id', result.requestId);
+      if (result.inviteLink) localStorage.setItem('apex_v13_signup_invite_link', result.inviteLink);
+    } catch { /* ignore */ }
+
+    /* Ouvre WhatsApp dans nouvel onglet (pré-rempli avec OTP) */
+    if (result.inviteLink) {
+      try { window.open(result.inviteLink, '_blank'); } catch { /* ignore */ }
+    }
+
+    toast.success('✅ Demande envoyée — ouvre WhatsApp pour valider');
+    setTimeout(() => router.navigate('waiting-approval'), 500);
   } catch (err: unknown) {
     haptic.error();
     const msg = err instanceof Error ? err.message : 'Erreur inattendue';
     if (errEl) errEl.innerHTML = `<div class="ax-alert ax-alert-error">${escapeHtml(msg)}</div>`;
     toast.error(msg);
     if (submitBtn) submitBtn.disabled = false;
-    if (labelEl) labelEl.textContent = '🚀 Créer mon compte et me connecter';
+    if (labelEl) labelEl.textContent = '📤 Envoyer ma demande via WhatsApp';
     if (spinnerEl) spinnerEl.style.display = 'none';
   }
 }

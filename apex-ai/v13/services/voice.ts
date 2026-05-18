@@ -1175,44 +1175,8 @@ function speakViaWebSpeech(text: string, voice: Voice, options: SpeakOptions): S
 }
 
 /* v13.3.73 helpers — différenciation voix Web Speech (sans casser API existante). */
-export function deriveDefaultsFromId(id: string): { pitch: number; rate: number } {
+function deriveDefaultsFromId(id: string): { pitch: number; rate: number } {
   const lower = id.toLowerCase();
-  /* v13.4.212 (règle Kevin 2026-05-18 "voix RÉELLEMENT différentes") :
-   * Match par ID EXACT en priorité avec pitch/rate très distincts,
-   * fallback keyword sinon. Garantit que les 5 voix PRO Web Speech
-   * sonnent CHACUNE différemment même si voice base identique iPhone Safari. */
-  const exactPresets: Record<string, { pitch: number; rate: number }> = {
-    /* PRO Web Speech : pitch/rate VRAIMENT distincts pour audio différent garanti */
-    'pro_neutral_fr':  { pitch: 1.00, rate: 1.00 },
-    'pro_male_fr':     { pitch: 0.72, rate: 0.92 },
-    'pro_female_fr':   { pitch: 1.38, rate: 1.05 },
-    'pro_male_en':     { pitch: 0.78, rate: 0.98 },
-    'pro_female_en':   { pitch: 1.45, rate: 1.08 },
-    'pro_wavenet_fr':  { pitch: 1.02, rate: 0.98 },
-    'pro_azure_fr':    { pitch: 0.95, rate: 1.02 },
-    /* THEMATIC : 20 voix toutes pitch/rate uniques (fallback Web Speech si pas ElevenLabs) */
-    'theme_yoda':            { pitch: 0.65, rate: 0.70 },
-    'theme_vader':           { pitch: 0.45, rate: 0.85 },
-    'theme_mickey':          { pitch: 1.90, rate: 1.20 },
-    'theme_santa':           { pitch: 0.60, rate: 0.95 },
-    'theme_pirate':          { pitch: 0.80, rate: 0.90 },
-    'theme_witch':           { pitch: 1.55, rate: 0.85 },
-    'theme_wizard':          { pitch: 0.75, rate: 0.80 },
-    'theme_cat':             { pitch: 1.80, rate: 1.05 },
-    'theme_dragon':          { pitch: 0.40, rate: 0.75 },
-    'theme_clown':           { pitch: 1.65, rate: 1.25 },
-    'theme_singer':          { pitch: 1.25, rate: 1.00 },
-    'theme_sport_announcer': { pitch: 1.15, rate: 1.45 },
-    'theme_sleepy':          { pitch: 0.90, rate: 0.55 },
-    'theme_hyper':           { pitch: 1.50, rate: 1.55 },
-    'theme_sad_movie':       { pitch: 0.85, rate: 0.78 },
-    'theme_angry':           { pitch: 0.68, rate: 1.18 },
-    'theme_superhero':       { pitch: 0.82, rate: 1.10 },
-    'theme_news_old':        { pitch: 1.05, rate: 0.95 },
-    'theme_hulk':            { pitch: 0.50, rate: 1.05 },
-    'theme_voldemort':       { pitch: 0.78, rate: 0.88 },
-  };
-  if (exactPresets[lower]) return exactPresets[lower];
   /* Pitch base par keyword caractère (semi-tons → ratio Web Speech 0..2) */
   const presets: Array<{ k: RegExp; pitch: number; rate: number }> = [
     { k: /baby|kid|child|chipmunk|cartoon|minion/, pitch: 1.7, rate: 1.2 },

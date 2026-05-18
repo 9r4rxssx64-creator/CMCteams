@@ -752,42 +752,10 @@ class ApexToolsDispatcher {
         return webFetch(params['url'] as string);
       case 'web_search':
         return webSearch(params['query'] as string, params['max_results'] as number | undefined);
-      case 'cmc_read': {
-        type CmcReadOpts = Parameters<typeof orchestrator.cmcRead>[0];
-        const cmcOpts: NonNullable<CmcReadOpts> = {};
-        if (typeof params['scope'] === 'string') cmcOpts.scope = params['scope'] as NonNullable<NonNullable<CmcReadOpts>['scope']>;
-        if (typeof params['user_uid'] === 'string') cmcOpts.user_uid = params['user_uid'];
-        if (typeof params['year'] === 'number') cmcOpts.year = params['year'];
-        if (typeof params['month'] === 'number') cmcOpts.month = params['month'];
-        if (typeof params['day'] === 'number') cmcOpts.day = params['day'];
-        return orchestrator.cmcRead(cmcOpts);
-      }
+      case 'cmc_read':
+        return orchestrator.cmcRead();
       case 'kdmc_stats':
         return orchestrator.kdmcStats();
-      case 'github_clean_notifications': {
-        const { apexGithubNotifications } = await import('./apex-github-notifications.js');
-        return apexGithubNotifications.cleanActionsNotifications();
-      }
-      case 'view_audit_log': {
-        /* v13.4.215 — Navigation vers vue admin via router (déjà registrée v211) */
-        try {
-          const { router } = await import('../core/router.js');
-          router.navigate('audit-log-viewer');
-          return { ok: true, action: 'navigated_to_audit_log_viewer', route: 'audit-log-viewer' };
-        } catch (err) {
-          return { ok: false, error: err instanceof Error ? err.message : String(err) };
-        }
-      }
-      case 'multi_branch_status': {
-        const { apexMultiBranchCoordinator } = await import('./apex-multi-branch-coordinator.js');
-        const refresh = params['refresh'] === true;
-        if (refresh) return apexMultiBranchCoordinator.runCoordinationCycle();
-        return apexMultiBranchCoordinator.getLastReport() ?? apexMultiBranchCoordinator.runCoordinationCycle();
-      }
-      case 'github_mute_repo': {
-        const { apexGithubNotifications } = await import('./apex-github-notifications.js');
-        return apexGithubNotifications.muteRepo();
-      }
       case 'open_tool':
         return orchestrator.openTool(params['tool_id'] as string);
       case 'read_logs':

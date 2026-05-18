@@ -911,62 +911,6 @@ class SentinelsRegistry {
      * - Empêche scénario v12.546→v12.564 (20 versions perdues sur branche non mergée)
      * - Sans intervention Kevin requise : autonomie totale.
      */
-
-    /* v13.4.214 (règle Kevin 2026-05-18 "voix réellement différentes") :
-     * voice-distinctness-watch : audit catalogue voix toutes 24h
-     * - Importe voices-registry + voice.deriveDefaultsFromId pour chaque ID
-     * - Compare pitch/rate combinaisons → flag duplicates
-     * - Si > 0 duplicates détectés → log warning + push notif admin Kevin
-     * - But : empêcher régression "50 voix qui sonnent pareil"
-     */
-    sentinelsManager.register({
-      id: 'voice-distinctness-watch',
-      name: 'Voice Distinctness Watch',
-      desc: 'Audit doublons pitch+rate dans catalogue voix (règle Kevin "voix vraiment différentes")',
-      intervalMs: 24 * 60 * 60 * 1000,
-      check: async () => {
-        try {
-          const mod = await import('./voices-registry.js');
-          const registry = (mod as { voicesRegistry?: { list: () => readonly { id: string; name: string }[] } }).voicesRegistry;
-          const all = registry ? registry.list() : [];
-          if (all.length === 0) {
-            return { ok: true, msg: 'voices catalogue vide' };
-          }
-          const voiceMod = await import('./voice.js');
-          const deriver = (voiceMod as { deriveDefaultsFromId?: (id: string) => { pitch: number; rate: number } }).deriveDefaultsFromId;
-          if (!deriver) {
-            return { ok: false, msg: 'deriveDefaultsFromId pas exporté' };
-          }
-          const seen: Record<string, string> = {};
-          const dupes: { a: string; b: string; pitch: number; rate: number }[] = [];
-          for (const v of all) {
-            const p = deriver(v.id);
-            const key = p.pitch.toFixed(2) + '_' + p.rate.toFixed(2);
-            if (seen[key]) {
-              dupes.push({ a: seen[key]!, b: v.id, pitch: p.pitch, rate: p.rate });
-            } else {
-              seen[key] = v.id;
-            }
-          }
-          if (dupes.length > 0) {
-            const summary = dupes.slice(0, 5).map((d) => `${d.a} ≡ ${d.b}`).join(', ');
-            return {
-              ok: false,
-              msg: `${dupes.length} voix doublon(s) audio détecté(s) : ${summary}`,
-              details: { dupes: dupes.length, examples: summary, total: all.length },
-            };
-          }
-          return {
-            ok: true,
-            msg: `${all.length} voix uniques (0 doublon pitch+rate)`,
-            details: { count: all.length },
-          };
-        } catch (e) {
-          return { ok: false, msg: 'voice-distinctness check failed: ' + (e instanceof Error ? e.message : String(e)) };
-        }
-      },
-    });
-
     sentinelsManager.register({
       id: 'version-drift-watch',
       name: 'Version Drift Watch',

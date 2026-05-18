@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.225';
+export const APP_VER = 'v13.4.207';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -266,23 +266,6 @@ async function bootstrap(): Promise<void> {
     (window as unknown as { apexFunctionalTester?: unknown }).apexFunctionalTester = apexFunctionalTester;
   });
 
-  /* v13.4.210 (Kevin "Apex valide en réel") — expose autoTestRunner +
-   * apexMultiBranchCoordinator sur window pour exécution Playwright CI
-   * via eval() depuis workflow apex-ios-simulator.yml. Permet de fermer la
-   * boucle test runtime → résultat CI commit (latence <60s post-deploy)
-   * au lieu d'attendre cycle 12h + cron 6h. */
-  safeInit('runtime-tests-expose-window', async () => {
-    const { autoTestRunner } = await import('../services/auto-test-runner.js');
-    const { apexMultiBranchCoordinator } = await import('../services/apex-multi-branch-coordinator.js');
-    const w = window as unknown as {
-      autoTestRunner?: unknown;
-      apexMultiBranchCoordinator?: unknown;
-    };
-    w.autoTestRunner = autoTestRunner;
-    w.apexMultiBranchCoordinator = apexMultiBranchCoordinator;
-    logger.info('runtime-tests-expose-window', 'window.autoTestRunner + apexMultiBranchCoordinator ready');
-  }).catch(() => { /* non-blocking */ });
-
   /* v13.4.194 (Kevin 2026-05-16 HTTP 503 Cloudflare) :
    * Init Cloudflare status banner — restore banner si HTTP 503 récent. */
   await safeInit('cloudflare-status', async () => {
@@ -316,43 +299,6 @@ async function bootstrap(): Promise<void> {
     logger.error('boot', 'Web Crypto API not available — vault DISABLED');
     /* Continue boot mais vault sera désactivé */
   }
-
-  /* v13.4.209 (Kevin "Apex valide en réel à ma place") — auto-test on first boot
-   * après nouvelle version. Pas d'attente cycle 12h sentinelle.
-   * Throttle : 1 test par version. Stocké apex_v13_auto_test_last_version.
-   * Déclenché en idle après render (pas bloquer LCP). */
-  safeInit('auto-test-on-first-boot', async () => {
-    try {
-      const lastTestedVer = localStorage.getItem('apex_v13_auto_test_last_version') ?? '';
-      if (lastTestedVer === APP_VER) {
-        logger.debug('auto-test-boot', `Skip (version ${APP_VER} déjà testée ce boot)`);
-        return;
-      }
-      const schedule = (cb: () => void): void => {
-        const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void };
-        if (typeof w.requestIdleCallback === 'function') {
-          w.requestIdleCallback(cb, { timeout: 8000 });
-        } else {
-          setTimeout(cb, 5000);
-        }
-      };
-      schedule(() => {
-        void (async () => {
-          try {
-            const { autoTestRunner } = await import('../services/auto-test-runner.js');
-            const summary = await autoTestRunner.runAll();
-            localStorage.setItem('apex_v13_auto_test_last_version', APP_VER);
-            logger.info('auto-test-boot',
-              `Auto-test post-MAJ ${APP_VER} : ${summary.passed}/${summary.total} pass, ${summary.failed} fail`);
-          } catch (err) {
-            logger.warn('auto-test-boot', 'Run failed', { err: err instanceof Error ? err.message : String(err) });
-          }
-        })();
-      });
-    } catch (err) {
-      logger.warn('auto-test-boot', 'Schedule failed', { err: err instanceof Error ? err.message : String(err) });
-    }
-  }).catch(() => { /* non-blocking */ });
 
   /* 3. Store init (Proxy reactive) */
   store.init({
@@ -555,8 +501,6 @@ async function bootstrap(): Promise<void> {
   /* v13.4.13 — Vue runtime-tests (Apex teste TOUT en réel browser) */
   router.register('runtime-tests', { loader: () => import('@features/admin/runtime-tests/index.js'), requiresAdmin: true });
   router.register('apex-audits-live', { loader: () => import('@features/admin/apex-audits-live/index.js'), requiresAdmin: true });
-  /* v13.4.211 — Audit Log Viewer (Kevin "100/100 réel", gap audit subagent) */
-  router.register('audit-log-viewer', { loader: () => import('@features/admin/audit-log-viewer/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

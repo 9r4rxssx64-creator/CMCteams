@@ -37,51 +37,10 @@ export const ADMIN_TOOLS: readonly ApexTool[] = [
   },
   {
     name: 'cmc_read',
-    description: 'Lit les données CMCteams (planning casino, employés) depuis Firebase shared. UTILISE TOUJOURS un scope filtré (planning_user, planning_month, last_import_health) pour économiser les tokens — JAMAIS scope=all sauf si vraiment nécessaire (>50KB).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        scope: {
-          type: 'string',
-          enum: ['all', 'employees', 'teams', 'overrides', 'planning_month', 'planning_user', 'motd', 'audit', 'last_import_health'],
-          description: "Type de donnée à lire. Préfère 'planning_user' (planning d'un user pour 1 mois ± 1 jour), 'planning_month' (toutes les cells d'un mois), 'last_import_health' (état dernier import).",
-        },
-        user_uid: { type: 'string', description: "ID employé CMC (pour scope planning_user, ex 'U11804')" },
-        year: { type: 'number', description: 'Année (pour planning_*)' },
-        month: { type: 'number', description: 'Mois 1-12 (pour planning_*)' },
-        day: { type: 'number', description: 'Jour 1-31 optionnel (focus 1 journée)' },
-      },
-    },
-    minTier: 'admin',
-    impactLevel: 'A',
-  },
-  {
-    name: 'github_clean_notifications',
-    description: "v13.4.203 (Kevin 'arrête les mails GitHub') : nettoie automatiquement les notifications GitHub Actions de Kevin. Liste les threads workflow/CI, les désabonne, puis marque toute la boîte comme lue. Utilise ax_github_token du Vault. Aucune action Kevin requise — appelle ce tool quand Kevin dit 'arrête les mails GitHub', 'vide mes notifs', 'github noise off', etc.",
+    description: 'Lit les données CMCteams (planning casino, employés) depuis Firebase shared.',
     inputSchema: { type: 'object', properties: {} },
     minTier: 'admin',
     impactLevel: 'A',
-  },
-  {
-    name: 'view_audit_log',
-    description: "v13.4.215 — Ouvre la vue admin Audit Log Viewer (chain hash immutable, 1000 entries max, filtres action/actor/search, export JSON). Trigger : 'voir audit log', 'historique actions admin', 'export audit'.",
-    inputSchema: { type: 'object', properties: {} },
-    minTier: 'admin',
-    impactLevel: 'A',
-  },
-  {
-    name: 'multi_branch_status',
-    description: "v13.4.205 (Kevin 'toutes branches Claude Code coordonnées') : retourne le rapport multi-branch coordinator. Liste branches claude/* actives, fichiers en conflit, branches non mergées anciennes, recommandations. Trigger : 'Apex état branches', 'conflits branches', 'coordination'.",
-    inputSchema: { type: 'object', properties: { refresh: { type: 'boolean', description: 'true = force refresh GitHub API, false = cache localStorage' } } },
-    minTier: 'admin',
-    impactLevel: 'A',
-  },
-  {
-    name: 'github_mute_repo',
-    description: "v13.4.203 : mute COMPLÈTEMENT le repo cmcteams (ignore = true). Plus AUCUNE notification GitHub pour ce repo, jamais. À utiliser uniquement si Kevin demande explicitement de tout couper (pas Action seulement).",
-    inputSchema: { type: 'object', properties: {} },
-    minTier: 'admin',
-    impactLevel: 'B',
   },
   {
     name: 'open_tool',

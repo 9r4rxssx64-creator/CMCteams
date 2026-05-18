@@ -37,6 +37,10 @@ export function recordHttpOk(): void {
   hideBanner();
 }
 
+export function isCloudflareRecentlyDown(): boolean {
+  return isRecentlyDown();
+}
+
 function isRecentlyDown(): boolean {
   try {
     const last = parseInt(localStorage.getItem(LAST_503_KEY) ?? '0', 10);

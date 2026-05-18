@@ -41,20 +41,6 @@ export default defineConfig({
       name: 'mobile-safari-se',
       use: { ...devices['iPhone SE'] },
     },
-    /* v13.4.206 (audit Top 10 gap E2E matrix élargie) : iPad coverage
-     * pour vérifier que les studios + dashboards admin fonctionnent sur
-     * tablet (UI Apex doit s'adapter au format paysage 1024px+). */
-    {
-      name: 'tablet-safari',
-      use: { ...devices['iPad (gen 7)'] },
-    },
-    /* v13.4.218 (audit gap UX iPad Air 768px breakpoint) : couverture
-     * tablet portrait. iPad (gen 7) couvre paysage 1024px+, iPad Air
-     * couvre portrait 820px (proche breakpoint critique 768px). */
-    {
-      name: 'tablet-air-portrait',
-      use: { ...devices['iPad Air'] },
-    },
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },
