@@ -288,7 +288,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.39';
+const __APEX_CHAT_VERSION__ = 'v1.1.40';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -369,7 +369,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.39</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.40</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -383,7 +383,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.39</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.40</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1071,6 +1071,101 @@ if(typeof window !== 'undefined'){
   };
   setTimeout(startWhenReady, 3000);
 }
+
+// ============================================================================
+//  v1.1.40 — Vérification sécurité E2E : safety number à comparer in-person
+//  Style Signal / WhatsApp : tap header → fingerprint à vérifier visuellement
+// ============================================================================
+K._computeSafetyNumber = async function(myPubB64, peerPubB64){
+  if(!myPubB64 || !peerPubB64) return null;
+  try {
+    // Concat deterministe (ordre lexicographique pour identique des deux côtés)
+    const sorted = [myPubB64, peerPubB64].sort();
+    const combined = sorted[0] + ':' + sorted[1];
+    const bytes = new TextEncoder().encode(combined);
+    const hash = await crypto.subtle.digest('SHA-256', bytes);
+    const hex = Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    // Group en 12 blocs de 5 chiffres décimaux (style Signal safety number)
+    const decimal = BigInt('0x' + hex).toString().padStart(60, '0').slice(0, 60);
+    const groups = [];
+    for(let i = 0; i < 60; i += 5) groups.push(decimal.slice(i, i + 5));
+    return groups.join(' ');
+  } catch(e){ return null; }
+};
+
+K._openSecurityVerification = async function(){
+  const conv = K.viewData;
+  if(!conv){ toast('Pas de conversation', 'warn'); return; }
+  const sessionActive = window.ApexCrypto && ApexCrypto.getSessionKey?.(conv.id);
+  const myPub = lg('crypto_pub', null);
+  const peerPub = conv.peer_pubkey || null;
+  let safetyNum = null;
+  if(myPub && peerPub){
+    safetyNum = await K._computeSafetyNumber(myPub, peerPub);
+  }
+  const verified = lg('verified_' + conv.id, false);
+
+  K._showModal('🛡 Vérification sécurité E2E', `
+    <div style="background:${sessionActive ? 'rgba(46,213,115,.1)' : 'rgba(255,200,0,.1)'};
+        border:1px solid ${sessionActive ? 'var(--ax-ok)' : 'var(--ax-warn, #ffa500)'};
+        border-radius:10px;padding:12px;text-align:center;margin-bottom:14px">
+      <div style="font-size:2em">${sessionActive ? '🔐' : '⚠️'}</div>
+      <div style="color:${sessionActive ? 'var(--ax-ok)' : 'var(--ax-warn, #ffa500)'};font-weight:600;margin-top:4px">
+        ${sessionActive ? 'Chiffrement E2E actif' : 'Session E2E non établie'}
+      </div>
+      <div style="font-size:.78em;color:var(--ax-text-2);margin-top:4px">
+        ${sessionActive ? 'Tes messages sont chiffrés bout-en-bout. Personne (même nous) ne peut les lire.' : 'Les clés ne sont pas encore échangées. Le premier message établira la session.'}
+      </div>
+    </div>
+
+    ${safetyNum ? `
+      <p style="color:var(--ax-text-2);font-size:.85em;margin-bottom:6px">
+        <strong>Numéro de sécurité</strong> (60 chiffres) :
+      </p>
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;
+          padding:14px;font-family:ui-monospace,monospace;font-size:1em;letter-spacing:1px;
+          word-spacing:6px;text-align:center;color:var(--ax-gold);line-height:1.8">
+        ${esc(safetyNum)}
+      </div>
+      <p style="font-size:.78em;color:var(--ax-text-3);margin:10px 0;line-height:1.5">
+        💡 Compare ce numéro avec celui affiché chez <strong>${esc(conv.name || conv.pseudo || 'ton contact')}</strong>
+        (en personne ou par appel vidéo). S'ils correspondent, ta conversation est 100% sécurisée
+        contre les attaques "man-in-the-middle".
+      </p>
+      ${verified ? `
+        <div style="background:rgba(46,213,115,.1);border:1px solid var(--ax-ok);border-radius:10px;padding:10px;text-align:center;color:var(--ax-ok);margin-top:10px">
+          ✅ Tu as marqué cette conversation comme vérifiée
+        </div>
+        <button class="btn btn-out btn-block" style="margin-top:8px" onclick="K._unverifyConv()">↺ Marquer non vérifié</button>
+      ` : `
+        <button class="btn btn-block" style="margin-top:10px" onclick="K._verifyConv()">✅ J'ai vérifié, marquer comme sûr</button>
+      `}
+      <button class="btn btn-out btn-block" style="margin-top:8px" onclick="navigator.clipboard.writeText('${esc(safetyNum)}');K.toast?.('Numéro copié','ok')">📋 Copier le numéro</button>
+    ` : `
+      <p style="color:var(--ax-text-3);font-size:.85em;text-align:center;padding:14px">
+        Numéro de sécurité indisponible (échange de clés en cours).
+        Envoie au moins 1 message pour initier la session E2E.
+      </p>
+    `}
+  `);
+};
+
+K._verifyConv = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  ls('verified_' + conv.id, true);
+  K._closeModal && K._closeModal();
+  toast('✅ Conversation marquée comme vérifiée', 'ok');
+};
+
+K._unverifyConv = function(){
+  const conv = K.viewData;
+  if(!conv) return;
+  ls('verified_' + conv.id, false);
+  K._closeModal && K._closeModal();
+  toast('Conversation marquée non vérifiée', 'info');
+};
 
 // ============================================================================
 //  v1.1.38 — Insights IA : statistiques + résumé hebdo conversations
@@ -1828,9 +1923,9 @@ function renderChat(app){
     <div class="chat-header">
       <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
       <div class="avatar">${esc((conv.name || conv.pseudo || '?')[0].toUpperCase())}</div>
-      <div style="flex:1">
+      <div style="flex:1;cursor:pointer" onclick="K._openSecurityVerification()" title="Toucher pour vérifier la sécurité E2E">
         <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
-        <div style="font-size:.75em;color:var(--ax-ok)">🛡 Chiffré E2E</div>
+        <div style="font-size:.75em;color:var(--ax-ok)">🛡 Chiffré E2E · vérifier</div>
       </div>
       <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
