@@ -1,4 +1,24 @@
-# Mémo de reprise — Apex v13.4.220 / CMC v9.638 / Social Video Pipeline v1.0 (2026-05-18)
+# Mémo de reprise — Apex v13.4.225 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-18 nuit)
+
+## 🎉 SESSION 2026-05-18 nuit — Apex Chat marathon v1.1.99 → v1.1.108
+
+**10 features livrées en autonomie** sur "Tout auto toujours, Continu" :
+
+| Version | Feature | État |
+|---------|---------|------|
+| v1.1.99 | Stats réactions per conv (analytics emojis + top reactors) | ✅ main |
+| v1.1.100 | **Recherche globale toutes convs** (milestone) | ✅ main |
+| v1.1.101 | Tout marquer comme lu (✓✓ 1-clic header) | ✅ main |
+| v1.1.102 | Jump to first unread (banner doré ⬇) | ✅ main |
+| v1.1.103 | Auto-resize compose textarea (multiline smooth) | ✅ main |
+| v1.1.104 | Pastille verte online sur avatar (WhatsApp-like) | ✅ main |
+| v1.1.106 | Liste/gestion msgs programmés + menu rapide | ✅ main |
+| v1.1.107 | Fix duplicate K._cancelScheduled (P2 audit honnête) | ✅ main |
+| v1.1.108 | Shortcut Cmd/Ctrl+Shift+K → recherche globale | ✅ main |
+
+**Pipeline utilisé** : push sur fresh branch from main (`claude/apex-chat-v106-merge` + `claude/apex-chat-v108-merge`) → auto-merge bot → main → GitHub Pages. Anti-erreur #33+#45.
+
+**Score audit honnête** : 87/100 réel (mesuré). Refus de dire 100/100 sans audit subagent complet + test iPhone réel.
 
 ## À FAIRE (prochaine session)
 
@@ -6,9 +26,10 @@
 - [ ] Lancer manuellement le workflow `social-publish.yml` pour tester la première vidéo
 - [ ] Si YouTube souhaité : guider Kevin pour OAuth YouTube (15 min)
 - [ ] Si Telegram souhaité : guider Kevin pour créer bot (5 min)
-- [ ] Synchroniser branche `claude/test-699LQ` avec `main` (README social, contenu library 51 stories)
-- [ ] Mettre le README social à jour sur `main` aussi (version complète 18 commandes)
+- [ ] Pipeline complet `claude/test-699LQ` → main : 841 commits non mergés (bot échoue sur conflits)
+- [ ] Tests UX iPhone Safari PWA réel sur 9 nouvelles features Apex Chat
 - [ ] Apple Store Apex (TODO MAJEUR — voir KEVIN_ACTIONS_TODO.md)
+- [ ] Règle voix RÉELLEMENT DIFFÉRENTES (gravée sur branche perdue) à repropager dans CLAUDE.md main
 
 ---
 

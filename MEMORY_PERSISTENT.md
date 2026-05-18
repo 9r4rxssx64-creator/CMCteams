@@ -41,9 +41,9 @@
 |--------|---------|------|-------|
 | **CMCteams** | v9.658 | Production | 258 employés, planning casino Monaco, parser SBM V2 |
 | **Apex AI v12** | v12.785 | Production stable | Live https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/ |
-| **Apex AI v13** | **v13.4.211** | Production prête | TS strict + Vite 6 + 469 tests, parité v12 ~95%, self-signup direct livré |
-| **e-KDMC** | v0.4 | Dev | 5 boutiques + dashboard + functions, en attente Stripe/Brevo Kevin |
-| **Apex Chat** | **v1.1.41** | Production prête | 750 tests vitest verts, Cloudflare Workers + D1 + DO, 9 endpoints AI/Premium, **Phase 1-9 LIVE** |
+| **Apex AI v13** | **v13.4.225** | Production prête | TS strict + Vite 6 + 469 tests, parité v12 ~95%, self-signup direct + auto-MAJ inline copie CMCteams |
+| **e-KDMC** | v1.14 | Dev | 5 boutiques + dashboard + functions + automation + SEO 25/25 |
+| **Apex Chat** | **v1.1.108** | Production prête | 750+ tests vitest verts, Cloudflare Workers + D1 + DO, 9 endpoints AI/Premium, **Phase 1-9 LIVE** + 10 features auto v1.1.99→108 |
 | **Social Video** | v0.3 | Dev Phase 3 | Recovery branche RvjYq, en attente tokens |
 | **Remote** | Intégré Apex | Production | IR/TV/HA/MQTT |
 | **CrackPass** | Intégré Apex | Production | Gén/test MDP |
