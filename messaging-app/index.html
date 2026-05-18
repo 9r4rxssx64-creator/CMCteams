@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.79';
+const __APEX_CHAT_VERSION__ = 'v1.1.80';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -439,7 +439,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.79</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.80</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +453,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.79</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.80</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -909,8 +909,133 @@ function _distKm(a, b){
 }
 
 // ============================================================================
-//  v1.1.79 — Slash commands (style Slack/Discord)
+//  v1.1.80 — Web Push subscription (notif iPhone PWA app fermée)
 // ============================================================================
+K._urlBase64ToUint8Array = function(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for(let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+};
+
+K._subscribePush = async function(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    toast('Push non supporté (navigateur ancien)', 'err');
+    return false;
+  }
+  try {
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      toast('Notifications refusées (Réglages iPhone → Apex Chat)', 'warn');
+      return false;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      if(typeof VAPID_PUBLIC === 'undefined' || !VAPID_PUBLIC){
+        toast('VAPID key manquante (config admin)', 'err');
+        return false;
+      }
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: K._urlBase64ToUint8Array(VAPID_PUBLIC)
+      });
+    }
+    // Envoie au backend
+    if(K.token && (typeof API_BASE !== 'undefined')){
+      try {
+        await fetch(API_BASE + '/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+          body: JSON.stringify({ subscription: sub.toJSON() })
+        });
+      } catch(_) { /* server might not have endpoint yet, sub stored locally */ }
+    }
+    ls('push_subscription', sub.toJSON());
+    toast('🔔 Notifications activées', 'ok');
+    return true;
+  } catch(e){
+    toast('Échec abonnement push : ' + e.message, 'err');
+    return false;
+  }
+};
+
+K._unsubscribePush = async function(){
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(sub){
+      await sub.unsubscribe();
+      if(K.token && typeof API_BASE !== 'undefined'){
+        try {
+          await fetch(API_BASE + '/api/push/unsubscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+            body: JSON.stringify({ endpoint: sub.endpoint })
+          });
+        } catch(_) {}
+      }
+    }
+    try { localStorage.removeItem('push_subscription'); } catch(_) {}
+    toast('🔕 Notifications désactivées', 'ok');
+    return true;
+  } catch(e){
+    toast('Erreur désabonnement', 'err');
+    return false;
+  }
+};
+
+K._checkPushStatus = async function(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return 'unsupported';
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(!sub) return 'not_subscribed';
+    if(Notification.permission !== 'granted') return 'denied';
+    return 'active';
+  } catch(_) { return 'error'; }
+};
+
+K._openPushSettings = async function(){
+  const status = await K._checkPushStatus();
+  const statusLabel = {
+    'unsupported': '❌ Non supporté',
+    'not_subscribed': '⚪ Inactif',
+    'denied': '🔴 Refusé',
+    'active': '🟢 Actif',
+    'error': '⚠️ Erreur'
+  }[status] || 'inconnu';
+  K._showModal('🔔 Notifications push', `
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;margin-bottom:14px;text-align:center">
+      <div style="font-size:1.5em;margin-bottom:4px">${statusLabel}</div>
+      <div style="font-size:.78em;color:var(--ax-text-3)">Statut actuel</div>
+    </div>
+    <p style="color:var(--ax-text-2);font-size:.85em;line-height:1.5;margin:0 0 14px">
+      Push notifications te préviennent même quand l'app est fermée (iPhone PWA installé requis).
+    </p>
+    ${status === 'active' ? `
+      <button class="btn btn-out btn-block" onclick="K._unsubscribePush().then(() => K._closeModal())">🔕 Désactiver les notifications</button>
+    ` : status === 'denied' ? `
+      <p style="color:var(--ax-warn);font-size:.82em;text-align:center;margin-bottom:10px">
+        Tu as refusé. Pour réactiver : iPhone Réglages → Apex Chat → Notifications.
+      </p>
+    ` : status === 'unsupported' ? `
+      <p style="color:var(--ax-err);font-size:.82em;text-align:center">
+        Ton navigateur ne supporte pas le push web. Sur iPhone : installer en PWA via Safari "Ajouter à l'écran d'accueil".
+      </p>
+    ` : `
+      <button class="btn btn-block" onclick="K._subscribePush().then(() => K._closeModal())">🔔 Activer les notifications</button>
+      <p style="font-size:.72em;color:var(--ax-text-3);margin-top:10px;text-align:center">
+        iOS Safari : nécessite PWA installée (icône home screen).
+      </p>
+    `}
+  `);
+};
+
+// ============================================================================
+//  v1.1.79 — Slash commands (style Slack/Discord)
 K._SLASH_COMMANDS = {
   '/shrug': () => '¯\\_(ツ)_/¯',
   '/tableflip': () => '(╯°□°)╯︵ ┻━┻',
@@ -1899,7 +2024,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.79',
+    version: 'v1.1.80',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -6476,6 +6601,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._openKeyboardShortcuts()">
         <span>⌨️</span><span style="flex:1">Raccourcis clavier</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openPushSettings()">
+        <span>🔔</span><span style="flex:1">Notifications push (app fermée)</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._openUpdateDiagnostic()">
         <span>🔧</span><span style="flex:1">Diagnostic MAJ${K.user?.is_admin ? ' + Forcer MAJ chez tous' : ''}</span><span>›</span>
       </div>
@@ -8560,7 +8688,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.79"
+        data-version="v1.1.80"
         data-color="#6a8aff"
         defer></script>
 </body>
