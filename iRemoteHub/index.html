@@ -178,8 +178,9 @@ label { display: block; font-size: .8rem; color: var(--fg-dim); margin: 8px 0 4p
 </head>
 <body>
 <div id="topbar">
-  <span class="logo" aria-label="iRemoteHub">🎛️ iRemoteHub</span>
+  <span class="logo" aria-label="iRemoteHub">🎛️ iRemoteHub <span class="badge" id="ver-badge" style="font-size:.65rem;font-weight:400">v0.1.1</span></span>
   <span id="bridge-badge" class="badge" title="État du bridge">⚪ bridge</span>
+  <button class="icbtn" id="btn-install" title="Installer l'app" aria-label="Installer la PWA" style="display:none">📥</button>
   <button class="icbtn" id="btn-mode" title="Mode contextuel" aria-label="Changer de mode">☀️</button>
   <button class="icbtn" id="btn-theme" title="Changer de thème" aria-label="Changer de thème">🎨</button>
 </div>
@@ -278,9 +279,16 @@ function setTheme(name) {
   emitApex("theme:changed", { theme: name });
 }
 
+function autoTheme() {
+  if (ls("theme_explicit", false)) return; // utilisateur a choisi
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "nuit" : "jour");
+}
+
 function cycleTheme() {
   const i = THEMES.indexOf(A.theme);
   setTheme(THEMES[(i + 1) % THEMES.length]);
+  ss("theme_explicit", true);
   toast(THEME_LABELS[A.theme]);
 }
 
@@ -371,13 +379,28 @@ function connectWS() {
 }
 
 async function loadDevices() {
-  if (!A.bridgeUrl) return;
+  if (!A.bridgeUrl) { loadDemoDevices(); return; }
   try {
     const list = await apiGet("/devices");
     A.devices.clear();
     for (const d of list) A.devices.set(d.id, d);
     if (A.view === "scanner" || A.view === "accueil") render();
   } catch (e) { /* silent */ }
+}
+
+function loadDemoDevices() {
+  if (!ls("demo_mode", true)) return;
+  if (A.devices.size > 0) return; // ne pas écraser si déjà rempli
+  const demo = [
+    { id: "demo-sonos", name: "Sonos Salon (démo)", vendor: "Sonos", category: "speaker", ip: "192.168.1.42", last_seen: Date.now(), demo: true },
+    { id: "demo-tv-samsung", name: "Samsung TV (démo)", vendor: "Samsung", category: "tv", ip: "192.168.1.50", last_seen: Date.now(), demo: true },
+    { id: "demo-hue", name: "Hue Bridge (démo)", vendor: "Philips", category: "hub", ip: "192.168.1.20", last_seen: Date.now(), demo: true },
+    { id: "demo-light-1", name: "Lampe salon (démo)", vendor: "Philips", category: "light", ip: "192.168.1.20", last_seen: Date.now(), demo: true },
+    { id: "demo-plug", name: "Prise café (démo)", vendor: "TP-Link", category: "plug", ip: "192.168.1.80", last_seen: Date.now(), demo: true },
+    { id: "demo-cast", name: "Chromecast (démo)", vendor: "Google", category: "cast", ip: "192.168.1.55", last_seen: Date.now(), demo: true }
+  ];
+  for (const d of demo) A.devices.set(d.id, d);
+  if (A.view === "scanner" || A.view === "accueil") render();
 }
 
 // ========== Mode APEX embedded ==========
@@ -478,6 +501,8 @@ async function doAction(deviceId, action, params) {
   if (A.mode === "invite") { toast("Mode invité : lecture seule", "err"); return; }
   if (A.mode === "enfant" && /power_off|delete|reset/i.test(action)) { toast("Mode enfant : action bloquée", "err"); return; }
   if (A.recording) recAdd({ device_id: deviceId, action, params });
+  const dev = A.devices.get(deviceId);
+  if (dev && dev.demo) { toast("🎭 [démo] " + action, "ok"); return { ok: true, demo: true }; }
   try {
     const r = await apiPost("/action", { device_id: deviceId, action, params: params || {} });
     toast("✅ " + action, "ok");
@@ -997,10 +1022,30 @@ function handleUrlAction() {
   if (u.searchParams.get("embedded") === "1") A.embedded = true;
 }
 
+// ========== PWA install prompt ==========
+let deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById("btn-install");
+  if (btn) btn.style.display = "";
+});
+async function triggerInstall() {
+  if (!deferredInstallPrompt) { toast("Déjà installée ou non-installable", "err"); return; }
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  if (choice.outcome === "accepted") toast("✅ Installation lancée", "ok");
+  deferredInstallPrompt = null;
+  const btn = document.getElementById("btn-install");
+  if (btn) btn.style.display = "none";
+}
+window.addEventListener("appinstalled", () => { toast("🎉 iRemoteHub installée", "ok"); });
+
 // ========== Boot ==========
 function boot() {
-  // Restaurer état
-  A.theme = ls("theme", "casino"); setTheme(A.theme);
+  // Restaurer état (theme = explicit si défini sinon auto prefers-color-scheme)
+  if (ls("theme_explicit", false)) { A.theme = ls("theme", "casino"); setTheme(A.theme); }
+  else autoTheme();
   A.mode = ls("mode", "jour"); setMode(A.mode);
   A.bridgeUrl = ls("bridge_url", "");
   A.token = ls("bridge_token", "");
@@ -1015,6 +1060,17 @@ function boot() {
   document.getElementById("btn-theme").onclick = cycleTheme;
   document.getElementById("btn-mode").onclick = cycleMode;
   document.getElementById("recbtn").onclick = recStop;
+  const installBtn = document.getElementById("btn-install");
+  if (installBtn) installBtn.onclick = triggerInstall;
+
+  // Auto-thème : re-evaluate si système change
+  if (window.matchMedia) {
+    try {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (!ls("theme_explicit", false)) autoTheme();
+      });
+    } catch {}
+  }
 
   // SW
   if ("serviceWorker" in navigator) {
@@ -1027,6 +1083,7 @@ function boot() {
 
   // Bridge
   if (A.bridgeUrl) { pingBridge(); connectWS(); loadDevices(); setInterval(pingBridge, 30000); }
+  else loadDemoDevices(); // mode démo si pas de bridge
 
   // First render
   setView("accueil");
