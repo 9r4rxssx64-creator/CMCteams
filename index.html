@@ -4949,7 +4949,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.701";
+var APP_VER="v9.702";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -14589,18 +14589,19 @@ function agentEmit(eventName,payload){
 })();
 function agentsStart(){
   if(!A.user||A.user.id!==AID)return; // Agents admin seulement
-  // v9.696 Kevin "Efface toute sa mémoire de planning et on repart à zéro maintenant"
-  // v9.701 Kevin "anciens plannings reviennent, avril" — re-trigger wipe avec fix
-  // cmc_auto_backup_* + Firebase delete + wipe-lock anti-restore 1h.
+  // v9.702 Kevin "Équipes avril toujours avec nouvelle version" — re-trigger wipe + fix
+  // 2 fallbacks vPlan DEF_EMP qui faisaient apparaître l'équipe avril sur tous les mois.
+  // Nouveau flag cmc_v702_wipe_done pour forcer re-wipe sur les devices qui avaient
+  // déjà fait v9.701 (sinon flag déjà set → wipe sautait).
   try{
-    if(!lg("cmc_v701_wipe_done",false)){
+    if(!lg("cmc_v702_wipe_done",false)){
       if(typeof cmcWipeAllPlanningMemory==="function"){
         var _ws=cmcWipeAllPlanningMemory(true);
-        ls("cmc_v701_wipe_done",{ts:Date.now(),stats:_ws||null});
-        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.701 : planning + backups + Firebase nodes effacés. Lock anti-restore 1h actif.","ok",7000);}catch(_){}
+        ls("cmc_v702_wipe_done",{ts:Date.now(),stats:_ws||null});
+        try{if(typeof toast==="function")toast("🧹 Reset zéro v9.702 : planning + équipes en mémoire effacés. Importe mai V2 maintenant.","ok",7000);}catch(_){}
       }
     }
-  }catch(_v701err){}
+  }catch(_v702err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
@@ -23185,12 +23186,12 @@ function vPlan(){
   var todayD=(todayN.getFullYear()===A.year&&todayN.getMonth()===A.month)?todayN.getDate():0;
   // v9.58 — detect user flottant pour activer la vue générale
   var _isFloating=isUserFloating(A.user,A.year,A.month);
-  // v9.698 Kevin "Ma section avec MON équipe détectée du mois en cours" :
-  // utid priorité 1 = emp.teamHistory[key] (détection mois courant),
-  // priorité 2 = emp.team (DEF_EMP statique). Fallback robuste si _myEmpRec sans team.
+  // v9.702 Kevin "Pas de mémoire équipe. Jamais. Équipes avril toujours" :
+  // utid STRICT = emp.teamHistory[key] UNIQUEMENT (détection mois courant). Plus de
+  // fallback emp.team (DEF_EMP) qui faisait apparaître l'équipe avril sur les mois sans import.
   var _myEmpRec=A.user?(empById(A.user.id)||A.user):null;
   var _vUKey=A.year+"-"+A.month;
-  var _myTeamId=(_myEmpRec&&_myEmpRec.teamHistory&&_myEmpRec.teamHistory[_vUKey])||(_myEmpRec&&_myEmpRec.team)||null;
+  var _myTeamId=(_myEmpRec&&_myEmpRec.teamHistory&&_myEmpRec.teamHistory[_vUKey])||null;
   var utid=(_myTeamId&&gt(_myTeamId))?_myTeamId:null;
   var utc=tc(utid),mirT=utid?gm(utid):null;
   /* v9.604 \u2014 Sticky header : nav mois + boutons toujours visibles pendant scroll planning */
@@ -23441,17 +23442,16 @@ function vPlan(){
       +'<span style="font-size:14px;font-weight:800;color:'+utc+';text-transform:uppercase;letter-spacing:1px">\u25b6 Ma section</span>'
       +(mirT?'<span style="font-size:14px;color:#c8dccb;margin-left:8px">\u21cc '+esc(mirT.name)+'</span>':"")
       +'</div>';
-    // v9.691 Kevin "Toujours mon équipe et la miroir en première vu" :
-    // Filtre permissif Ma section. Si teamHistory[key] présent (mois importé) → détection.
-    // Sinon → fallback emp.team (membership officielle, pas un cache).
+    // v9.702 Kevin "Pas de mémoire équipe. Jamais. Équipes avril toujours avec nouvelle version" :
+    // Filtre STRICT Ma section. Si teamHistory[key] présent (mois importé) → détection.
+    // Sinon → vide. Plus de fallback emp.team (DEF_EMP) qui faisait re-pop avril après wipe.
     var _vKeyMa=A.year+"-"+A.month;
     _priTids.forEach(function(tid){
       var tcc2=tc(tid);
       var te2=A.employees.filter(function(e){
         if(!isEmpActive(e,A.year,A.month))return false;
         var th=e.teamHistory&&e.teamHistory[_vKeyMa];
-        if(th)return th===tid;
-        return e.team===tid;
+        return th===tid; // v9.702 strict : pas de fallback emp.team
       });
       if(!te2.length) return;
       _globalShown[tid]=true;
@@ -23483,12 +23483,13 @@ function vPlan(){
     if(!famEmps.length) return;
     var famColor=getFamColor(fid),famLabel=getFamLabel(fid),famIcon=getFamIcon(fid);
     var byFT={},ftOrd=[];
-    // v9.691 — groupe par teamHistory[key] si présent, sinon e.team (autre équipes toujours visibles)
+    // v9.702 Kevin "Pas de mémoire équipe. Jamais. Équipes avril toujours" :
+    // STRICT — groupe UNIQUEMENT par teamHistory[key] du mois. Pas de fallback e.team
+    // (DEF_EMP statique) qui faisait apparaître l'équipe avril dans les mois suivants.
     var _vKeyFam=A.year+"-"+A.month;
     famEmps.forEach(function(e){
-      var th=e.teamHistory&&e.teamHistory[_vKeyFam];
-      var et=th||e.team;
-      if(!et||et==="?")return;
+      var et=e.teamHistory&&e.teamHistory[_vKeyFam];
+      if(!et||et==="?")return; // pas d'équipe pour CE mois → emp invisible
       if(!byFT[et])byFT[et]=[];
       byFT[et].push(e);
       if(ftOrd.indexOf(et)<0)ftOrd.push(et);
@@ -30846,10 +30847,24 @@ function cmcWipeAllPlanningMemory(silent){
   }catch(_){}
   // v9.698 (Kevin "vérification il y a tous les mois passés en historique toujours présent. Efface tout. Peut-être ça porte confusion") :
   // Wipe AUSSI logs/audits/snapshots qui pourraient apparaître dans Vérification.
+  // v9.702 : ajout flags obsolètes (v696/v698/v701) — sinon ils empêchent les futurs wipes
+  // de se déclencher automatiquement.
   stats.logs=0;
-  ["cmc_import_log","cmc_silent_log","cmc_err_log","cmc_telemetry","cmc_user_telemetry","cmc_pdf_fingerprints","cmc_learned_patterns","cmc_client_anomalies","cmc_anomalies","cmc_import_anomalies","cmc_click_failures","cmc_agent_reports","cmc_sentinels_log","cmc_audit","cmc_audit_security","cmc_ia_log","cmc_userlog","cmc_admin_sessions","cmc_seed_apr2026_loaded","cmc_v696_wipe_done"].forEach(function(k){
+  ["cmc_import_log","cmc_silent_log","cmc_err_log","cmc_telemetry","cmc_user_telemetry","cmc_pdf_fingerprints","cmc_learned_patterns","cmc_client_anomalies","cmc_anomalies","cmc_import_anomalies","cmc_click_failures","cmc_agent_reports","cmc_sentinels_log","cmc_audit","cmc_audit_security","cmc_ia_log","cmc_userlog","cmc_admin_sessions","cmc_seed_apr2026_loaded","cmc_v696_wipe_done","cmc_v698_wipe_done","cmc_v701_wipe_done"].forEach(function(k){
     try{if(localStorage.getItem(k)!==null){localStorage.removeItem(k);stats.logs++;}}catch(_){}
   });
+  // v9.702 Kevin "il doit y avoir quelque chose qui le sauvegarde sans cesse" :
+  // Wipe ALSO IndexedDB shadow store (cmc_shadow) — la triple-persistence v9.519
+  // re-stockait les données avant le wipe, et cmcRestoreFromAll les remettait au boot.
+  stats.idb=0;
+  try{
+    if(typeof cmcIdbSet==="function"){
+      // Push empty values for critical keys to IDB
+      ["cmc_e","cmc_ov","cmc_ov_meta"].forEach(function(k){
+        try{cmcIdbSet(k,k==="cmc_e"?(A.employees||[]):{}).then(function(){stats.idb++;});}catch(_){}
+      });
+    }
+  }catch(_idberr){}
   // Wipe snapshots historiques (cmc_history_*) — Kevin "porte confusion"
   // ATTENTION : ça supprime aussi les rollbacks. On garde JUSTE le snapshot pré-wipe créé maintenant.
   stats.snaps=0;
