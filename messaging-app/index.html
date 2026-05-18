@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.92';
+const __APEX_CHAT_VERSION__ = 'v1.1.93';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.92</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.93</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.92</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.93</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -922,6 +922,70 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.93 — Chat backgrounds custom per-conv (WhatsApp wallpaper style)
+// ============================================================================
+K._BG_PRESETS = [
+  { id: 'default', name: 'Défaut', preview: 'var(--ax-bg)', css: 'background:var(--ax-bg)' },
+  { id: 'gradient_gold', name: 'Or sombre', preview: 'linear-gradient(135deg,#1a1410,#0a0a05)', css: 'background:linear-gradient(135deg,#1a1410,#0a0a05)' },
+  { id: 'gradient_ocean', name: 'Océan', preview: 'linear-gradient(135deg,#0a1f3a,#0d2847)', css: 'background:linear-gradient(135deg,#0a1f3a,#0d2847)' },
+  { id: 'gradient_forest', name: 'Forêt', preview: 'linear-gradient(135deg,#0d2818,#1a3322)', css: 'background:linear-gradient(135deg,#0d2818,#1a3322)' },
+  { id: 'gradient_sunset', name: 'Coucher soleil', preview: 'linear-gradient(135deg,#2d1810,#1a0a05)', css: 'background:linear-gradient(135deg,#2d1810,#1a0a05)' },
+  { id: 'pattern_dots', name: 'Points', preview: '#0a0a0e', css: 'background:#0a0a0e;background-image:radial-gradient(rgba(232,184,48,.08) 1px,transparent 1px);background-size:20px 20px' },
+  { id: 'pattern_grid', name: 'Grille', preview: '#0a0a0e', css: 'background:#0a0a0e;background-image:linear-gradient(rgba(232,184,48,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(232,184,48,.05) 1px,transparent 1px);background-size:30px 30px' },
+];
+
+K._setConvBackground = function(convId, bgId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  if(!bgId || bgId === 'default'){ delete conv.bg_id; }
+  else { conv.bg_id = bgId; }
+  ls('conversations', K.conversations);
+  K.render();
+  K._applyConvBackground();
+};
+
+K._applyConvBackground = function(){
+  const conv = K.viewData;
+  if(!conv || K.view !== 'chat'){ K._clearChatBackground(); return; }
+  if(!conv.bg_id){ K._clearChatBackground(); return; }
+  const preset = K._BG_PRESETS.find(p => p.id === conv.bg_id);
+  if(!preset){ K._clearChatBackground(); return; }
+  const msgsEl = document.getElementById('chat-msgs');
+  if(!msgsEl) return;
+  /* Parse css and apply */
+  const styles = preset.css.split(';').filter(Boolean);
+  for(const s of styles){
+    const [prop, val] = s.split(':').map(x => x.trim());
+    if(prop && val) msgsEl.style.setProperty(prop, val);
+  }
+};
+
+K._clearChatBackground = function(){
+  const msgsEl = document.getElementById('chat-msgs');
+  if(!msgsEl) return;
+  msgsEl.style.removeProperty('background');
+  msgsEl.style.removeProperty('background-image');
+  msgsEl.style.removeProperty('background-size');
+};
+
+K._openBgPicker = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  const current = conv.bg_id || 'default';
+  const grid = K._BG_PRESETS.map(p => `
+    <button onclick="K._setConvBackground('${esc(convId)}','${esc(p.id)}');K._closeModal()"
+            style="border:2px solid ${current === p.id ? 'var(--ax-gold)' : 'var(--ax-border)'};border-radius:10px;padding:6px;cursor:pointer;background:transparent">
+      <div style="${p.preview.startsWith('linear-gradient') ? 'background:' + p.preview : 'background:' + p.preview};height:60px;border-radius:6px;margin-bottom:4px"></div>
+      <div style="font-size:.78em;color:var(--ax-text-2)">${current === p.id ? '✓ ' : ''}${esc(p.name)}</div>
+    </button>
+  `).join('');
+  K._showModal('🎨 Fond de conversation', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">Visible chez toi uniquement (pas chez le peer).</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${grid}</div>
+  `);
+};
 
 // ============================================================================
 //  v1.1.92 — Deep-link conv : URL ?conv=<id> = ouvre direct
@@ -2554,6 +2618,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._openLabelMenu('${esc(convId)}')">🏷 Labels${conv.label_ids && conv.label_ids.length ? ' (' + conv.label_ids.length + ')' : ''}</button>
       <button class="btn btn-out btn-block" onclick="K._openPeerTzMenu('${esc(convId)}')">🌐 Fuseau horaire peer${conv.peer_tz_offset_min !== undefined ? ' (set)' : ''}</button>
       <button class="btn btn-out btn-block" onclick="K._copyConvDeepLink('${esc(convId)}')">🔗 Lien direct (copier / partager)</button>
+      <button class="btn btn-out btn-block" onclick="K._openBgPicker('${esc(convId)}')">🎨 Fond de conversation${conv.bg_id ? ' (perso)' : ''}</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
@@ -2748,7 +2813,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.92',
+    version: 'v1.1.93',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5069,7 +5134,7 @@ function renderChat(app){
       <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
     </div>
   `;
-  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();}, 50);
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();K._applyConvBackground&&K._applyConvBackground();}, 50);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
@@ -9553,7 +9618,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.92"
+        data-version="v1.1.93"
         data-color="#6a8aff"
         defer></script>
 </body>
