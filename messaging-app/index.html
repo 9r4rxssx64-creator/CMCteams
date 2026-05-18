@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.88';
+const __APEX_CHAT_VERSION__ = 'v1.1.89';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.88</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.89</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.88</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.89</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -921,6 +921,86 @@ function _distKm(a, b){
   const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+// ============================================================================
+//  v1.1.89 — Quick scroll-to-bottom FAB + swipe back gesture
+// ============================================================================
+K._installScrollFab = function(){
+  if(K._scrollFabInstalled) return;
+  K._scrollFabInstalled = true;
+  document.addEventListener('scroll', (e) => {
+    if(K.view !== 'chat') { K._hideScrollFab(); return; }
+    const el = e.target;
+    if(el && el.id === 'chat-msgs'){
+      const fromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if(fromBottom > 200){ K._showScrollFab(); }
+      else { K._hideScrollFab(); }
+    }
+  }, true);
+};
+
+K._showScrollFab = function(){
+  if(document.getElementById('scroll-fab')) return;
+  const fab = document.createElement('button');
+  fab.id = 'scroll-fab';
+  fab.setAttribute('aria-label', 'Scroll bas');
+  fab.innerHTML = '↓';
+  fab.style.cssText = 'position:fixed;bottom:80px;right:14px;z-index:80;background:var(--ax-gold);color:var(--ax-bg);width:42px;height:42px;border-radius:50%;border:none;font-size:1.4em;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3)';
+  fab.onclick = () => {
+    const el = document.getElementById('chat-msgs');
+    if(el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  };
+  document.body.appendChild(fab);
+};
+
+K._hideScrollFab = function(){
+  const fab = document.getElementById('scroll-fab');
+  if(fab) fab.remove();
+};
+
+K._installSwipeBack = function(){
+  if(K._swipeBackInstalled) return;
+  K._swipeBackInstalled = true;
+  let startX = 0, startY = 0, startTime = 0, tracking = false;
+  document.addEventListener('touchstart', (e) => {
+    if(K.view !== 'chat') return;
+    if(e.touches.length !== 1) return;
+    if(e.touches[0].clientX > 25) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    tracking = true;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if(!tracking) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if(dy > 50 && dy > dx){ tracking = false; }
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if(!tracking) return;
+    tracking = false;
+    const dx = (e.changedTouches[0].clientX) - startX;
+    const dy = Math.abs((e.changedTouches[0].clientY) - startY);
+    const dt = Date.now() - startTime;
+    if(dx > 100 && dy < 80 && dt < 500){
+      if(K.view === 'chat' && K.sv){
+        K.sv('chats');
+        if('vibrate' in navigator){ try{ navigator.vibrate(15); } catch(_){} }
+      }
+    }
+  }, { passive: true });
+};
+
+if(typeof window !== 'undefined' && document.readyState !== 'loading'){
+  K._installScrollFab && K._installScrollFab();
+  K._installSwipeBack && K._installSwipeBack();
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    K._installScrollFab && K._installScrollFab();
+    K._installSwipeBack && K._installSwipeBack();
+  });
 }
 
 // ============================================================================
@@ -2541,7 +2621,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.88',
+    version: 'v1.1.89',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -9312,7 +9392,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.88"
+        data-version="v1.1.89"
         data-color="#6a8aff"
         defer></script>
 </body>
