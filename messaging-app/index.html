@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.94';
+const __APEX_CHAT_VERSION__ = 'v1.1.95';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.94</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.95</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.94</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.95</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -921,6 +921,72 @@ function _distKm(a, b){
   const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+// ============================================================================
+//  v1.1.95 — Quick reaction floating bar (long-press → 5 emojis instant)
+// ============================================================================
+K._QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '🙏'];
+
+K._openQuickReactionBar = function(msgId, anchorEl){
+  if(!msgId) return;
+  K._closeQuickReactionBar();
+  const bar = document.createElement('div');
+  bar.id = 'quick-reaction-bar';
+  bar.style.cssText = 'position:fixed;z-index:200;background:var(--ax-bg-2);border:1px solid var(--ax-gold);border-radius:24px;padding:6px 10px;display:flex;gap:4px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:fadein .15s';
+  bar.innerHTML = K._QUICK_REACTIONS.map(e =>
+    `<button onclick="K._quickReact('${esc(msgId)}','${esc(e)}')" style="background:transparent;border:none;font-size:1.4em;cursor:pointer;padding:4px 6px">${esc(e)}</button>`
+  ).join('') + `<button onclick="K._closeQuickReactionBar();K._openReactionPicker('${esc(msgId)}')" style="background:transparent;border:none;color:var(--ax-text-2);font-size:1em;padding:4px 8px;cursor:pointer">⋯</button>`;
+  document.body.appendChild(bar);
+  const rect = anchorEl ? anchorEl.getBoundingClientRect() : { top: window.innerHeight / 2, left: window.innerWidth / 2 - 100 };
+  const barRect = bar.getBoundingClientRect();
+  let top = rect.top - barRect.height - 8;
+  if(top < 60) top = rect.bottom + 8;
+  let left = rect.left + (rect.width / 2) - (barRect.width / 2);
+  if(left < 10) left = 10;
+  if(left + barRect.width > window.innerWidth - 10) left = window.innerWidth - barRect.width - 10;
+  bar.style.top = top + 'px';
+  bar.style.left = left + 'px';
+  if('vibrate' in navigator){ try { navigator.vibrate(20); } catch(_) {} }
+  setTimeout(() => {
+    document.addEventListener('click', K._closeQuickReactionBar, { once: true, capture: true });
+  }, 100);
+};
+
+K._closeQuickReactionBar = function(){
+  const bar = document.getElementById('quick-reaction-bar');
+  if(bar) bar.remove();
+};
+
+K._quickReact = function(msgId, emoji){
+  K._closeQuickReactionBar();
+  K._toggleReaction && K._toggleReaction(msgId, emoji);
+};
+
+K._installQuickLongPress = function(){
+  if(K._quickLpInstalled) return;
+  K._quickLpInstalled = true;
+  let pressTimer = null;
+  document.addEventListener('touchstart', (e) => {
+    const el = e.target.closest('.msg[data-msg-id]');
+    if(!el) return;
+    if(e.target.closest('button, a, audio, input, textarea, .reaction-picker, .msg-reaction')) return;
+    pressTimer = setTimeout(() => {
+      const msgId = el.getAttribute('data-msg-id');
+      if(msgId) K._openQuickReactionBar(msgId, el);
+      pressTimer = null;
+    }, 400);
+  }, { passive: true });
+  const cancel = () => { if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
+  document.addEventListener('touchmove', cancel, { passive: true });
+  document.addEventListener('touchend', cancel, { passive: true });
+  document.addEventListener('touchcancel', cancel, { passive: true });
+};
+
+if(typeof window !== 'undefined' && document.readyState !== 'loading'){
+  K._installQuickLongPress && K._installQuickLongPress();
+} else {
+  document.addEventListener('DOMContentLoaded', () => K._installQuickLongPress && K._installQuickLongPress());
 }
 
 // ============================================================================
@@ -2902,7 +2968,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.94',
+    version: 'v1.1.95',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -9710,7 +9776,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.94"
+        data-version="v1.1.95"
         data-color="#6a8aff"
         defer></script>
 </body>
