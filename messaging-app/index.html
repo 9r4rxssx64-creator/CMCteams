@@ -193,6 +193,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 @keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,.5)}50%{box-shadow:0 0 0 8px rgba(230,57,70,0)}}
 .msg{position:relative;user-select:none;-webkit-user-select:none}
 .msg-status{font-size:.9em;margin-left:4px;opacity:.7;letter-spacing:-1px}
+.msg-edited{font-size:.85em;margin-left:4px;opacity:.6;font-style:italic}
 .translate-hint{display:inline-block;margin-top:6px;font-size:.72em;color:var(--ax-blue);
   background:rgba(106,138,255,.1);border:1px solid rgba(106,138,255,.3);
   border-radius:10px;padding:3px 8px;cursor:pointer;transition:all .15s}
@@ -298,7 +299,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.47';
+const __APEX_CHAT_VERSION__ = 'v1.1.48';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -379,7 +380,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.47</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.48</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -393,7 +394,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.47</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.48</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1520,6 +1521,10 @@ K._openReactionPicker = function(msgId){
     actions.push(`<button class="btn btn-out btn-sm" onclick="K._openRewriteMenu('${esc(msgId)}')">✨ Reformuler avec IA</button>`);
     actions.push(`<button class="btn btn-out btn-sm" onclick="K._showTranslateMenu(${JSON.stringify(msg.text).replace(/"/g,'&quot;')})">🌐 Traduire</button>`);
     actions.push(`<button class="btn btn-out btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(msg.text).replace(/"/g,'&quot;')});K.toast?.('Copié','ok');K._closeModal()">📋 Copier</button>`);
+    // v1.1.48 — Edit (own messages only, within 15 min)
+    if(isMine && K._canEditMsg && K._canEditMsg(msg)){
+      actions.push(`<button class="btn btn-out btn-sm" onclick="K._openEditMsg('${esc(msgId)}')">✏️ Modifier (15 min)</button>`);
+    }
   }
   // v1.1.45 — Pin + Star (toutes les actions, même sans text)
   if(msg){
@@ -2157,6 +2162,7 @@ function renderChat(app){
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
           <div class="msg-time">
             ${formatTime(m.ts)}
+            ${m.edited_at ? `<span class="msg-edited" title="Modifié ${esc(new Date(m.edited_at).toLocaleString('fr-FR'))}">(modifié)</span>` : ''}
             ${isMine ? `<span class="msg-status" title="${readStatus === 'read' ? 'Lu' : readStatus === 'delivered' ? 'Livré' : 'Envoyé'}">${readStatus === 'read' ? '<span style="color:var(--ax-blue)">✓✓</span>' : readStatus === 'delivered' ? '✓✓' : '✓'}</span>` : ''}
           </div>
           ${m.reactions && Object.keys(m.reactions).length ? `
@@ -2414,6 +2420,23 @@ async function _handleWsMessage(data, convId){
         if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
       }
       break;
+    case 'edit_message': {
+      // v1.1.48 — Peer a édité un message
+      const eMsgId = data.message_id;
+      const newText = data.new_text;
+      if(eMsgId && newText && K.messages[convId]){
+        const m = K.messages[convId].find(x => x.id === eMsgId);
+        if(m){
+          if(!m.edit_history) m.edit_history = [];
+          if(m.edit_history.length === 0) m.edit_history.push({ text: m.text, ts: m.ts });
+          m.text = newText;
+          m.edited_at = data.edited_at || Date.now();
+          ls('messages_' + convId, K.messages[convId]);
+          if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        }
+      }
+      break;
+    }
     case 'read': {
       // Read receipts — DO envoie userId + message_id
       K._readState = K._readState || {};
@@ -3669,6 +3692,60 @@ K._detectScam = function(text){
 //  v1.1.45 — Pinned messages + starred favorites
 //  pinned : conv-scope (header chat) · starred : user-scope (vue dédiée)
 // ============================================================================
+
+// ============================================================================
+//  v1.1.48 — Edit message (style WhatsApp, fenêtre 15 min après envoi)
+// ============================================================================
+K._EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+K._canEditMsg = function(m){
+  if(!m || m.from !== K.user?.id) return false;
+  if(m.image_data || m.voice_data) return false;
+  if(!m.text) return false;
+  if(Date.now() - (m.ts || 0) > K._EDIT_WINDOW_MS) return false;
+  return true;
+};
+
+K._openEditMsg = function(msgId){
+  const conv = K.viewData;
+  if(!conv || !msgId) return;
+  const msgs = K.messages[conv.id] || [];
+  const m = msgs.find(x => x.id === msgId);
+  if(!m){ toast('Message introuvable', 'warn'); return; }
+  if(!K._canEditMsg(m)){ toast('Édition expirée (max 15 min) ou type non-text', 'warn'); return; }
+  K._showModal('✏️ Modifier le message', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 8px">Tu peux modifier ton message pendant 15 min après envoi.</p>
+    <textarea id="edit-msg-input" rows="4" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:15px;resize:vertical">${esc(m.text)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-out" style="flex:1" onclick="K._closeModal()">↩ Annuler</button>
+      <button class="btn" style="flex:2" onclick="K._saveEditMsg('${esc(msgId)}')">💾 Enregistrer</button>
+    </div>
+  `);
+  setTimeout(() => { const ta = document.getElementById('edit-msg-input'); if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }, 50);
+};
+
+K._saveEditMsg = function(msgId){
+  const conv = K.viewData;
+  if(!conv) return;
+  const ta = document.getElementById('edit-msg-input');
+  const newText = (ta?.value || '').trim();
+  if(!newText){ toast('Texte vide', 'warn'); return; }
+  const msgs = K.messages[conv.id] || [];
+  const m = msgs.find(x => x.id === msgId);
+  if(!m || !K._canEditMsg(m)){ toast('Édition expirée', 'warn'); return; }
+  if(!m.edit_history) m.edit_history = [];
+  if(m.edit_history.length === 0) m.edit_history.push({ text: m.text, ts: m.ts });
+  m.text = newText;
+  m.edited_at = Date.now();
+  ls('messages_' + conv.id, msgs);
+  K.render();
+  K._closeModal && K._closeModal();
+  toast('✅ Message modifié', 'ok');
+  if(K.ws && K.ws.readyState === 1){
+    try { K.ws.send(JSON.stringify({ type: 'edit_message', message_id: msgId, new_text: newText, edited_at: m.edited_at })); } catch(_) {}
+  }
+};
+
 K._togglePinMsg = function(msgId){
   const conv = K.viewData;
   if(!conv || !msgId) return;
@@ -6207,7 +6284,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.47"
+        data-version="v1.1.48"
         data-color="#6a8aff"
         defer></script>
 </body>
