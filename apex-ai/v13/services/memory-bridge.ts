@@ -176,7 +176,7 @@ class MemoryBridge {
       const entries = await persistentMemory.list({ scope: uid });
       const sanitized = this.sanitizeForExternal(entries);
       const path = `users/${uid}/memory_bridge_backup`;
-      const url = `https://kdmc-clients-default-rtdb.firebaseio.com/apex/${path}.json`;
+      const url = `https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/apex/${path}.json`;
       const res = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -264,7 +264,7 @@ class MemoryBridge {
         if (!uid) {
           return this.recordSync('firebase', false, 0, 'No uid for restore', start);
         }
-        const url = `https://kdmc-clients-default-rtdb.firebaseio.com/apex/users/${uid}/memory_bridge_backup.json`;
+        const url = `https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/apex/users/${uid}/memory_bridge_backup.json`;
         const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (!res.ok) {
           return this.recordSync('firebase', false, 0, `HTTP ${res.status}`, start);

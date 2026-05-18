@@ -406,7 +406,7 @@ export const DIRECT_CONNECTORS: DirectConnector[] = [
     name: 'Firebase Realtime Database',
     category: 'storage',
     accessMode: 'direct',
-    apiBase: 'https://kdmc-clients-default-rtdb.firebaseio.com',
+    apiBase: 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app',
     vaultKeys: ['firebase_secret', 'ax_firebase_secret'],
     operations: ['GET .json', 'PUT .json', 'PATCH .json', 'SSE listen'],
     docs: 'https://firebase.google.com/docs/database/rest/start',
