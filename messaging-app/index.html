@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.116';
+const __APEX_CHAT_VERSION__ = 'v1.1.117';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.116</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.117</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.116</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.117</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -928,62 +928,77 @@ function _distKm(a, b){
 //  v1.1.99 — Reaction stats per conv (analytics)
 // ============================================================================
 K._openReactionStats = function(convId){
-  const conv = (K.conversations || []).find(c => c.id === convId);
-  if(!conv){ toast('Conv introuvable', 'warn'); return; }
-  const msgs = K.messages[convId] || [];
-  const byEmoji = {};
-  const byUser = {};
-  let totalReactions = 0;
-  for(const m of msgs){
-    if(!m.reactions) continue;
-    for(const [emo, users] of Object.entries(m.reactions)){
-      byEmoji[emo] = (byEmoji[emo] || 0) + users.length;
-      for(const uid of users){
-        byUser[uid] = (byUser[uid] || 0) + 1;
-        totalReactions++;
+  try{
+    const conv = (K.conversations || []).find(c => c.id === convId);
+    if(!conv){ toast('Conv introuvable', 'warn'); return; }
+    // v1.1.117 fix Kevin "statistique ça fonctionne pas" :
+    // K.messages peut être undefined au cold boot → guard défensif
+    const allMsgs = (K.messages && K.messages[convId]) || [];
+    const byEmoji = {};
+    const byUser = {};
+    let totalReactions = 0;
+    for(const m of allMsgs){
+      if(!m || !m.reactions || typeof m.reactions !== 'object') continue;
+      for(const [emo, users] of Object.entries(m.reactions)){
+        if(!Array.isArray(users)) continue;
+        byEmoji[emo] = (byEmoji[emo] || 0) + users.length;
+        for(const uid of users){
+          byUser[uid] = (byUser[uid] || 0) + 1;
+          totalReactions++;
+        }
       }
     }
+    if(totalReactions === 0){
+      K._showModal('📊 Stats réactions', `
+        <p style="text-align:center;color:var(--ax-text-3);padding:20px;font-size:.95em">
+          📭 Aucune réaction dans cette conversation pour l'instant.
+        </p>
+        <p style="text-align:center;color:var(--ax-text-3);padding:0 20px 14px;font-size:.78em">
+          Long-press sur un message → tape un emoji pour réagir. Les stats apparaîtront ici.
+        </p>
+      `);
+      return;
+    }
+    const topEmojis = Object.entries(byEmoji).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const topUsers = Object.entries(byUser).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const myCount = byUser[K.user?.id] || 0;
+    K._showModal('📊 Stats réactions', `
+      <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;margin-bottom:14px;text-align:center">
+        <div style="font-size:1.8em;color:var(--ax-gold);font-weight:600">${totalReactions}</div>
+        <div style="font-size:.78em;color:var(--ax-text-3)">réactions au total</div>
+      </div>
+      <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 8px"><strong>Top emojis :</strong></p>
+      <div style="display:grid;gap:6px;margin-bottom:14px">
+        ${topEmojis.map(([emo, count]) => {
+          const pct = Math.round((count / totalReactions) * 100);
+          return `<div style="background:var(--ax-bg-2);border-radius:8px;padding:8px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.4em">${esc(emo)}</span>
+            <div style="flex:1;background:var(--ax-bg-3);border-radius:4px;height:8px;overflow:hidden">
+              <div style="background:var(--ax-gold);height:100%;width:${pct}%"></div>
+            </div>
+            <span style="font-size:.85em;color:var(--ax-gold);min-width:60px;text-align:right">${count} (${pct}%)</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 8px"><strong>Top réacteurs :</strong></p>
+      <div style="background:var(--ax-bg-2);border-radius:10px;padding:10px">
+        ${topUsers.map(([uid, count], i) => {
+          const isMe = uid === K.user?.id;
+          const name = isMe ? 'Toi' : (String(uid || '').slice(0, 10) + '...');
+          return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88em">
+            <span>${i + 1}. ${esc(name)}</span>
+            <span style="color:var(--ax-gold)">${count}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <p style="font-size:.72em;color:var(--ax-text-3);margin-top:14px;text-align:center">
+        Ta participation : <strong>${myCount}</strong> (${Math.round((myCount / totalReactions) * 100)}%)
+      </p>
+    `);
+  }catch(err){
+    console.error('[stats-reactions]', err);
+    toast('Stats indisponibles : ' + (err && err.message ? err.message : 'erreur'), 'warn');
   }
-  if(totalReactions === 0){
-    K._showModal('📊 Stats réactions', `<p style="text-align:center;color:var(--ax-text-3);padding:20px">Aucune réaction dans cette conv.</p>`);
-    return;
-  }
-  const topEmojis = Object.entries(byEmoji).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const topUsers = Object.entries(byUser).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const myCount = byUser[K.user?.id] || 0;
-  K._showModal('📊 Stats réactions', `
-    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;margin-bottom:14px;text-align:center">
-      <div style="font-size:1.8em;color:var(--ax-gold);font-weight:600">${totalReactions}</div>
-      <div style="font-size:.78em;color:var(--ax-text-3)">réactions au total</div>
-    </div>
-    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 8px"><strong>Top emojis :</strong></p>
-    <div style="display:grid;gap:6px;margin-bottom:14px">
-      ${topEmojis.map(([emo, count]) => {
-        const pct = Math.round((count / totalReactions) * 100);
-        return `<div style="background:var(--ax-bg-2);border-radius:8px;padding:8px;display:flex;align-items:center;gap:10px">
-          <span style="font-size:1.4em">${esc(emo)}</span>
-          <div style="flex:1;background:var(--ax-bg-3);border-radius:4px;height:8px;overflow:hidden">
-            <div style="background:var(--ax-gold);height:100%;width:${pct}%"></div>
-          </div>
-          <span style="font-size:.85em;color:var(--ax-gold);min-width:60px;text-align:right">${count} (${pct}%)</span>
-        </div>`;
-      }).join('')}
-    </div>
-    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 8px"><strong>Top réacteurs :</strong></p>
-    <div style="background:var(--ax-bg-2);border-radius:10px;padding:10px">
-      ${topUsers.map(([uid, count], i) => {
-        const isMe = uid === K.user?.id;
-        const name = isMe ? 'Toi' : (uid.slice(0, 10) + '...');
-        return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88em">
-          <span>${i + 1}. ${esc(name)}</span>
-          <span style="color:var(--ax-gold)">${count}</span>
-        </div>`;
-      }).join('')}
-    </div>
-    <p style="font-size:.72em;color:var(--ax-text-3);margin-top:14px;text-align:center">
-      Ta participation : <strong>${myCount}</strong> (${Math.round((myCount / totalReactions) * 100)}%)
-    </p>
-  `);
 };
 
 // ============================================================================
@@ -3223,12 +3238,15 @@ K._toggleFilterUnread = function(){
 //  v1.1.111 — Conv info modal (stats détaillées par conversation)
 // ============================================================================
 K._openConvInfo = function(convId){
+  try{
   const conv = (K.conversations || []).find(c => c.id === convId);
   if(!conv){ toast('Conv introuvable', 'warn'); return; }
-  const msgs = K.messages[convId] || [];
+  // v1.1.117 fix Kevin "statistique ça fonctionne pas" : K.messages peut être
+  // undefined au cold boot → guard défensif
+  const msgs = (K.messages && K.messages[convId]) || [];
   const me = K.user?.id;
-  const mySent = msgs.filter(m => m.from === me).length;
-  const peerSent = msgs.filter(m => m.from && m.from !== me).length;
+  const mySent = msgs.filter(m => m && m.from === me).length;
+  const peerSent = msgs.filter(m => m && m.from && m.from !== me).length;
   const total = msgs.length;
   const firstTs = msgs[0]?.ts || conv.created_at || Date.now();
   const lastTs = msgs[msgs.length - 1]?.ts || Date.now();
@@ -3274,6 +3292,10 @@ K._openConvInfo = function(convId){
       </div>
     </div>
   `);
+  }catch(err){
+    console.error('[conv-info]', err);
+    toast('Infos indisponibles : ' + (err && err.message ? err.message : 'erreur'), 'warn');
+  }
 };
 
 K._openConvActionsMenu = function(convId, ev){
@@ -3507,7 +3529,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.116',
+    version: 'v1.1.117',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4766,7 +4788,9 @@ K._unverifyConv = function(){
 //  Analyse 7 derniers jours : msg count, top contacts, sentiment, topics
 // ============================================================================
 K._openInsightsModal = function(){
+  try{
   // Compute stats locally (pas besoin IA pour ça)
+  // v1.1.117 fix Kevin "statistique ça fonctionne pas" : guard K.messages
   const now = Date.now();
   const week = 7 * 24 * 60 * 60 * 1000;
   let totalSent = 0, totalReceived = 0;
@@ -4774,7 +4798,9 @@ K._openInsightsModal = function(){
   const hourBuckets = new Array(24).fill(0);
   let imageCount = 0, voiceCount = 0, reactionCount = 0;
   Object.entries(K.messages || {}).forEach(([convId, arr]) => {
+    if(!Array.isArray(arr)) return;
     arr.forEach(m => {
+      if(!m) return;
       if(!m.ts || m.ts < now - week) return;
       const isMine = m.from === K.user?.id;
       if(isMine) totalSent++; else totalReceived++;
@@ -4861,6 +4887,10 @@ K._openInsightsModal = function(){
     <div id="ai-insights-result" style="margin-top:10px"></div>
     <p style="text-align:center;font-size:.7em;color:var(--ax-text-3);margin-top:12px">Stats calculées localement (privé). Le résumé IA est anonymisé.</p>
   `);
+  }catch(err){
+    console.error('[insights]', err);
+    toast('Insights indisponibles : ' + (err && err.message ? err.message : 'erreur'), 'warn');
+  }
 };
 
 K._aiInsightsSummary = async function(){
