@@ -12,7 +12,7 @@
  *   - OFFLINE_CACHE  : fallback HTML hors-ligne
  */
 
-export const CACHE_VERSION = 'apex-chat-v1.1.22';
+export const CACHE_VERSION = 'apex-chat-v1.1.106';
 export const STATIC_CACHE = `${CACHE_VERSION}-static`;
 export const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 export const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
@@ -142,11 +142,28 @@ export async function handleFetchSWR(request, { fetch, caches, response }) {
 }
 
 export async function handleFetch(event, deps) {
-  const url = new deps.URL(event.request.url);
-  if (isApiHost(url)) return handleFetchApi(event.request, deps);
-  if (event.request.mode === 'navigate') return handleFetchNavigation(event.request, deps);
-  if (isStaticAsset(url)) return handleFetchStatic(event.request, deps);
-  return handleFetchSWR(event.request, deps);
+  const req = event.request;
+  // Non-GET (POST/PUT/DELETE/etc.) → ne pas mettre en cache, fetch direct
+  // (method undefined dans certains MockRequest = considéré GET par défaut)
+  if (req.method && req.method !== 'GET') return deps.fetch(req);
+  const urlStr = req.url || '';
+  // v1.1.35 — règle Kevin "MAJ auto forcée" : skip SW intercept pour version-check URLs
+  // Garantit fetch réseau direct (pas de cache SW stale qui empêcherait détection nouvelle version)
+  if (
+    urlStr.indexOf('?_v=') >= 0 ||
+    urlStr.indexOf('&_v=') >= 0 ||
+    urlStr.indexOf('?_forceupd=') >= 0 ||
+    urlStr.indexOf('&_forceupd=') >= 0 ||
+    urlStr.indexOf('?_force_upd_') >= 0 ||
+    urlStr.indexOf('&_force_upd_') >= 0
+  ) {
+    return deps.fetch(req);
+  }
+  const url = new deps.URL(urlStr);
+  if (isApiHost(url)) return handleFetchApi(req, deps);
+  if (req.mode === 'navigate') return handleFetchNavigation(req, deps);
+  if (isStaticAsset(url)) return handleFetchStatic(req, deps);
+  return handleFetchSWR(req, deps);
 }
 
 // ----------------------------------------------------------------------------
@@ -168,10 +185,14 @@ export async function handlePush(event, { registration }) {
     renotify: !!data.renotify,
     requireInteraction: !!data.urgent,
     data: data.payload || {},
-    actions: data.actions || [
+    /* v1.1.87 — Quick reply actions if convId présent */
+    actions: data.actions || (data.payload?.convId ? [
+      { action: 'reply', title: '💬 Répondre' },
+      { action: 'mark_read', title: '✅ Vu' },
+    ] : [
       { action: 'open', title: 'Ouvrir' },
       { action: 'dismiss', title: 'Plus tard' },
-    ],
+    ]),
     vibrate: [100, 50, 100],
   });
 }
@@ -182,6 +203,17 @@ export async function handlePush(event, { registration }) {
 export async function handleNotificationClick(event, { clients }) {
   event.notification.close();
   if (event.action === 'dismiss') return null;
+  /* v1.1.87 — mark_read : juste fermer (server-side prochaine read receipt) */
+  if (event.action === 'mark_read') {
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of list) {
+      if (client.url.includes('/messaging-app/') && event.notification.data?.convId) {
+        client.postMessage({ type: 'mark-conv-read', convId: event.notification.data.convId });
+        return client;
+      }
+    }
+    return null;
+  }
 
   const targetUrl = event.notification.data?.url || './';
   const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
@@ -189,7 +221,8 @@ export async function handleNotificationClick(event, { clients }) {
     if (client.url.includes('/messaging-app/')) {
       client.focus();
       if (event.notification.data?.convId) {
-        client.postMessage({ type: 'open-conv', convId: event.notification.data.convId });
+        const msgType = event.action === 'reply' ? 'reply-to-conv' : 'open-conv';
+        client.postMessage({ type: msgType, convId: event.notification.data.convId });
       }
       return client;
     }
