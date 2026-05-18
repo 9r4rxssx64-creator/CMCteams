@@ -174,16 +174,75 @@ class WakeWord {
     if (!isFeatureEnabled('voice.wake_word')) {
       return { started: false, reason: 'wake-word désactivé par admin' };
     }
-    if (!getSpeechRecognitionCtor()) {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
       return { started: false, reason: 'Web Speech API non supportée sur ce navigateur' };
     }
     try {
-      /* v13.4.207 FIX iOS Safari "Dis Apex" — fresh instance pattern :
-       * createRecognition() construit + wire une nouvelle instance.
-       * onend appelle createRecognition() à chaque restart (iOS Safari plante
-       * si on rappelle start() sur la même instance morte). */
-      const rec = this.createRecognition();
-      if (!rec) return { started: false, reason: 'Web Speech API non supportée sur ce navigateur' };
+      const rec = new Ctor();
+      rec.continuous = !isiOS(); /* iOS Safari : continuous instable */
+      rec.interimResults = true;
+      rec.lang = 'fr-FR';
+
+      rec.onresult = (event) => {
+        const results = event.results;
+        for (let i = 0; i < results.length; i++) {
+          const transcript = (results[i]?.[0]?.transcript ?? '').toLowerCase();
+          pushVoiceLog({
+            ts: Date.now(),
+            evt: 'interim',
+            src: 'wake-word-svc',
+            detail: transcript.slice(0, 80),
+          });
+          if (this.keywordRegex.test(transcript)) {
+            this.handleWakeDetected(transcript);
+          }
+        }
+        /* reset no-speech compteur dès qu'on a un résultat */
+        this.noSpeechRetries = 0;
+      };
+
+      rec.onerror = (event) => {
+        const err = event.error ?? 'unknown';
+        pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word-svc', detail: err });
+        if (err === 'no-speech') {
+          this.noSpeechRetries++;
+          if (this.noSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
+            logger.warn('wake-word', 'Trop de no-speech consécutifs, stop pour éviter drain batterie');
+            pushVoiceLog({
+              ts: Date.now(),
+              evt: 'suspend',
+              src: 'wake-word-svc',
+              detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
+            });
+            this.stop();
+          }
+          return;
+        }
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          logger.warn('wake-word', 'Permission micro refusée');
+          pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word-svc', detail: 'denied' });
+          this.stop();
+          return;
+        }
+        /* aborted, network, audio-capture : recovery via onend (silencieux) */
+      };
+
+      rec.onend = () => {
+        pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word-svc' });
+        if (!this.listening) return;
+        /* Restart sur iOS (continuous=false) ou recovery erreur */
+        setTimeout(() => {
+          if (!this.listening) return;
+          try {
+            rec.start();
+            pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word-svc' });
+          } catch {
+            /* ignore double-start race InvalidStateError */
+          }
+        }, RESTART_DELAY_MS);
+      };
+
       this.recognition = rec;
       this.listening = true;
       this.config.enabled = true;
@@ -291,81 +350,6 @@ class WakeWord {
   /* ==========================================================================
    * Internals
    * ========================================================================== */
-
-  /**
-   * v13.4.207 — Crée une instance fresh de SpeechRecognition + wire handlers.
-   * iOS Safari : OBLIGATOIRE de créer une nouvelle instance à chaque restart
-   * (réutiliser après onend plante silencieusement). */
-  private createRecognition(): MinimalSpeechRecognition | null {
-    const Ctor = getSpeechRecognitionCtor();
-    if (!Ctor) return null;
-    const rec = new Ctor();
-    rec.continuous = !isiOS();
-    rec.interimResults = true;
-    rec.lang = 'fr-FR';
-
-    rec.onresult = (event) => {
-      const results = event.results;
-      for (let i = 0; i < results.length; i++) {
-        const transcript = (results[i]?.[0]?.transcript ?? '').toLowerCase();
-        pushVoiceLog({
-          ts: Date.now(),
-          evt: 'interim',
-          src: 'wake-word-svc',
-          detail: transcript.slice(0, 80),
-        });
-        if (this.keywordRegex.test(transcript)) {
-          this.handleWakeDetected(transcript);
-        }
-      }
-      this.noSpeechRetries = 0;
-    };
-
-    rec.onerror = (event) => {
-      const err = event.error ?? 'unknown';
-      pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word-svc', detail: err });
-      if (err === 'no-speech') {
-        this.noSpeechRetries++;
-        if (this.noSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
-          logger.warn('wake-word', 'Trop de no-speech consécutifs, stop pour éviter drain batterie');
-          pushVoiceLog({
-            ts: Date.now(),
-            evt: 'suspend',
-            src: 'wake-word-svc',
-            detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
-          });
-          this.stop();
-        }
-        return;
-      }
-      if (err === 'not-allowed' || err === 'service-not-allowed') {
-        logger.warn('wake-word', 'Permission micro refusée');
-        pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word-svc', detail: 'denied' });
-        this.stop();
-        return;
-      }
-      /* aborted, network, audio-capture : recovery via onend (silencieux) */
-    };
-
-    rec.onend = () => {
-      pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word-svc' });
-      if (!this.listening) return;
-      setTimeout(() => {
-        if (!this.listening) return;
-        const next = this.createRecognition();
-        if (!next) return;
-        this.recognition = next;
-        try {
-          next.start();
-          pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word-svc' });
-        } catch {
-          /* ignore double-start race InvalidStateError */
-        }
-      }, RESTART_DELAY_MS);
-    };
-
-    return rec;
-  }
 
   private handleWakeDetected(transcript: string): void {
     this.lastDetected = Date.now();

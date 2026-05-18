@@ -110,6 +110,8 @@ export default defineConfig({
         'services/apex-tools-types.ts',
         /* v13.4.202 (Kevin "continue sans s'arrêter") — UI render HTML pure, testée E2E + iotRegistry service séparé déjà couvert via iot-providers-registry.test.ts */
         'features/iot-providers/index.ts',
+        /* v13.4.207 (Kevin "Continu toujours pareil") — UI render HTML pure admin, testée via feature-render-batch2 */
+        'features/knowledge/index.ts',
       ],
       thresholds: {
         /* v13.4.137 (Kevin "100/100 réel partout sans régression") : seuils CALÉS
