@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.687";
+var APP_VER="v9.688";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22375,7 +22375,19 @@ function vAccueil(){
           +(_nPass>0?_miniStat("📝","Passat.",_nPass,"#c9a227","sv('passations')"):"")
           +(_nUpload>0?_miniStat("📤","Uploads",_nUpload,"#5aaa70","sv('uploadreq')"):"")
           +'</div>'
-        :'<div style="padding:8px 12px;background:rgba(80,200,100,.06);border:1px solid rgba(80,200,100,.18);border-radius:8px;font-size:12px;color:#8bc89b;display:flex;align-items:center;gap:6px"><span>✓</span><span>Aucune alerte. <span style="opacity:.7">Astuce : <kbd style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:10px">⌘K</kbd> ouvre la recherche rapide.</span></span></div>')
+        :(function(){
+          // v9.688 — Empty state enrichi : montre la dernière action audit + astuce ⌘K
+          var _al=lg("cmc_audit",[]);
+          var _last=_al.length?_al[_al.length-1]:null;
+          var _agoStr="";
+          if(_last){
+            var _diff=Math.floor((Date.now()-(_last.ts||0))/60000);
+            _agoStr=_diff<1?"à l\'instant":_diff<60?("il y a "+_diff+" min"):_diff<1440?("il y a "+Math.floor(_diff/60)+" h"):("il y a "+Math.floor(_diff/1440)+" j");
+          }
+          return '<div style="padding:8px 12px;background:rgba(80,200,100,.06);border:1px solid rgba(80,200,100,.18);border-radius:8px;font-size:12px;color:#8bc89b;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span>✓</span><span>Aucune alerte.'
+            +(_last?' <span style="opacity:.7">Dernière action : <b>'+esc(_last.action||"?")+'</b> '+_agoStr+'</span>':'')
+            +' <span style="opacity:.55">·</span> <span style="opacity:.7">Astuce : <kbd style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:10px">⌘K</kbd> ouvre la palette.</span></span></div>';
+        })())
       +'</div>';
   }
   h+=_renderSuggestions();
@@ -29587,7 +29599,7 @@ function _adminCatsV10(){
         {ic:"📺",lb:"Mode présentation (plein écran)",fn:"togglePresentation()"},
         {grp:"🤖 IA & assistants"},
         {ic:"🧠",lb:"Mémoire pro IA (règles + leçons)",fn:"sv('memorypro')"},
-        {ic:"📚",lb:"Lessons partagées Apex+CMCteams",fn:"sv('lessonscmc')"},
+        {ic:"📚",lb:"Leçons partagées Apex + CMCteams",fn:"sv('lessonscmc')"},
         {ic:"🛡",lb:"Centre des sentinelles (12 agents)",fn:"sv('sentinelhub')"},
         {grpEnd:true},
         {grp:"⚡ Apex AI (assistant partenaire)"},
