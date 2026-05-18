@@ -304,7 +304,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.51';
+const __APEX_CHAT_VERSION__ = 'v1.1.52';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -385,7 +385,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.51</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.52</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -399,7 +399,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.51</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.52</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2100,13 +2100,50 @@ K.sv = function(view, data){
   K.render();
 };
 
+// ============================================================================
+//  v1.1.52 — Search conversations (name + last msg + draft + msg content)
+// ============================================================================
+K._convSearchQuery = '';
+K._convSearchDebounce = null;
+K._convSearchInput = function(val){
+  K._convSearchQuery = val || '';
+  // Debounce render pour ne pas re-render à chaque keystroke
+  if(K._convSearchDebounce) clearTimeout(K._convSearchDebounce);
+  K._convSearchDebounce = setTimeout(() => {
+    K.render();
+    // Restore focus + selection
+    setTimeout(() => {
+      const input = document.getElementById('conv-search-input');
+      if(input){ input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+    }, 10);
+  }, 200);
+};
+
 function renderChats(app){
-  const convs = K.conversations;
+  const q = (K._convSearchQuery || '').toLowerCase().trim();
+  let convs = K.conversations;
+  if(q.length > 0){
+    convs = convs.filter(c => {
+      const name = (c.name || c.pseudo || '').toLowerCase();
+      const lastPrev = (c.last_preview || '').toLowerCase();
+      const draft = (K._loadDraft(c.id) || '').toLowerCase();
+      if(name.includes(q) || lastPrev.includes(q) || draft.includes(q)) return true;
+      // Search dans les messages aussi (limité top 30 par conv pour perf)
+      const msgs = (K.messages[c.id] || []).slice(-30);
+      return msgs.some(m => (m.text || '').toLowerCase().includes(q));
+    });
+  }
   app.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Mes conversations</h2>
       <button class="btn btn-sm" onclick="K._showNewMenu()">＋ Nouveau</button>
     </div>
+    <input id="conv-search-input" type="search"
+           placeholder="🔍 Rechercher conversation, msg, brouillon..."
+           value="${esc(K._convSearchQuery || '')}"
+           oninput="K._convSearchInput(this.value)"
+           style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px 12px;color:var(--ax-text);font-size:15px;margin-bottom:12px">
+    ${q.length > 0 ? `<p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">📂 ${convs.length} résultat${convs.length>1?'s':''} pour "<strong>${esc(q)}</strong>"</p>` : ''}
     ${convs.length === 0 ? `
       <div class="card" style="text-align:center;padding:30px 14px">
         <div style="font-size:3em;margin-bottom:12px">💬</div>
@@ -6500,7 +6537,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.51"
+        data-version="v1.1.52"
         data-color="#6a8aff"
         defer></script>
 </body>
