@@ -4934,7 +4934,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.692";
+var APP_VER="v9.693";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10548,20 +10548,30 @@ function dc(){
   if(_dcRunning)return; // Protection anti-boucle
   _dcRunning=true;
   try{
-  // v9.685 (Kevin 2026-05-18 "Pas de mémoire équipe. Jamais") :
-  // À CHAQUE render, WIPE teamHistory[key] + familyHistory[key] du mois courant
-  // + cmc_team_mirror_<key>, puis re-détecte depuis A.overrides[key] frais.
-  // Zéro persistence entre 2 renders. Coût ~5ms / render (négligeable).
+  // v9.693 Kevin "L'app saute et scintille, surtout quand elle réfléchit" :
+  // OPTIMISATION détection équipes — cache invalidé sur changement effectif.
+  // Avant : wipe + re-detect à CHAQUE render → 100-200ms freeze (scintille).
+  // Maintenant : detect seulement si (year, month, overrides hash) changent.
+  // Hash = nombre d'emps avec data (suffit pour détecter mutations).
+  // Si overrides retiré (clearMonth) → hash=0 → wipe + skip detect.
+  // Si overrides ajouté/modifié (import) → hash change → wipe + detect.
+  // Si dc() relancé sans changement (agent fire, SSE, etc.) → SKIP, pas de freeze.
   try{
     var _km=A.year+"-"+A.month;
-    A.employees.forEach(function(_emp){
-      if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])delete _emp.teamHistory[_km];
-      if(_emp&&_emp.familyHistory&&_emp.familyHistory[_km])delete _emp.familyHistory[_km];
-    });
-    try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
-    if(A.overrides && A.overrides[_km] && Object.keys(A.overrides[_km]).length>3
-       && typeof _cmcDetectTeamsByRestPattern==="function"){
-      try{_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
+    var _ov=A.overrides && A.overrides[_km];
+    var _hash=_ov?Object.keys(_ov).filter(function(eid){return _ov[eid]&&Object.keys(_ov[eid]).length>0;}).length:0;
+    var _cacheKey=_km+"|"+_hash;
+    if(window._cmcLastDetectCacheKey!==_cacheKey){
+      window._cmcLastDetectCacheKey=_cacheKey;
+      // Cache invalidé : wipe + recompute
+      A.employees.forEach(function(_emp){
+        if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])delete _emp.teamHistory[_km];
+        if(_emp&&_emp.familyHistory&&_emp.familyHistory[_km])delete _emp.familyHistory[_km];
+      });
+      try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
+      if(_hash>3 && typeof _cmcDetectTeamsByRestPattern==="function"){
+        try{_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
+      }
     }
   }catch(_dcDetErr){}
   // v9.183 — Appliquer deep-link URL une seule fois après login
@@ -23143,7 +23153,11 @@ function vPlan(){
   var todayD=(todayN.getFullYear()===A.year&&todayN.getMonth()===A.month)?todayN.getDate():0;
   // v9.58 — detect user flottant pour activer la vue générale
   var _isFloating=isUserFloating(A.user,A.year,A.month);
-  var utid=(A.user&&A.user.team&&gt(A.user.team))?A.user.team:null;
+  // v9.693 Kevin "Toujours mon équipe en 1ère vue" : si A.user.team manque (Firebase sync
+  // a remplacé A.user par un objet sans team), fallback sur A.employees[A.user.id].team.
+  var _myEmpRec=A.user?(empById(A.user.id)||A.user):null;
+  var _myTeamId=_myEmpRec&&_myEmpRec.team||null;
+  var utid=(_myTeamId&&gt(_myTeamId))?_myTeamId:null;
   var utc=tc(utid),mirT=utid?gm(utid):null;
   /* v9.604 \u2014 Sticky header : nav mois + boutons toujours visibles pendant scroll planning */
   var h=`<div class="page bg-planning"><div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px"><div style="display:flex;align-items:center;gap:8px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}${typeof cmcVersionBadgeHTML==="function"?cmcVersionBadgeHTML(A.year,A.month,{size:"small"}):""}</div><div style="font-size:14px;color:#a0cca0">${A.year}</div></div>${todayD?`<button class="btn ghost" onclick="A.year=new Date().getFullYear();A.month=new Date().getMonth();dc();setTimeout(adjGrid,80)" title="Aller \u00e0 aujourd\u2019hui" style="padding:5px 10px;font-size:13px">\ud83d\udccd Aujourd\u2019hui</button>`:""}${isAdm?`<button class="btn ghost" onclick="exportPlanningCSV(A.year,A.month)" title="Export CSV du planning complet" style="padding:5px 10px;font-size:13px">\ud83d\udcca CSV</button>`:""}${(function(){try{return lg("cmc_visual_planning_"+A.year+"-"+A.month,null)?'<button class="btn ghost" onclick="cmcShowVisualPlanning()" title="Voir le planning visuel SBM original (traits/couleurs)" style="padding:5px 10px;font-size:13px">\ud83d\uddbc\ufe0f</button>':'';}catch(_){return"";}})()}<button class="btn ghost" onclick="window.print()" title="Imprimer ce planning" style="padding:5px 10px;font-size:13px">\ud83d\udda8</button><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div></div>`;
@@ -35909,8 +35923,18 @@ function doImport(){
     console.log("[v9.600 doImport] manual overrides snapshot:",_manualOvCount,"cellules pour",key);
   }catch(_moErr){console.warn("[v9.600 manual-overrides snapshot]",_moErr);_manualOv=null;}
   // Versioning : récupérer la version précédente si elle existe
+  // v9.693 Kevin "Il marque mai V1 alors que c'est marqué mai V2 sur l'import" :
+  // Détection V[N] depuis le texte PDF source (patterns: "V2", "v2", "mai V2", "mai 2026 V2").
+  // Si trouvé → utilise ce N ; sinon → fallback auto-increment N+1.
   var _prevRef=lg("cmc_ref_"+key,null);
-  var _importVersion=(_prevRef&&_prevRef.version?_prevRef.version:0)+1;
+  var _detectedVer=null;
+  try{
+    // Cherche pattern V<chiffre> dans les 1500 premiers chars (titre/header PDF)
+    var _head=String(txt||"").slice(0,1500);
+    var _vm=_head.match(/\bV\s*(\d{1,2})\b/i)||_head.match(/version\s*(\d{1,2})/i);
+    if(_vm){var _vn=parseInt(_vm[1]);if(_vn>=1&&_vn<=20)_detectedVer=_vn;}
+  }catch(_vErr){}
+  var _importVersion=_detectedVer||((_prevRef&&_prevRef.version?_prevRef.version:0)+1);
   var _importHistory=_prevRef&&_prevRef.history?_prevRef.history:[];
   if(_prevRef&&_prevRef.importedAt)_importHistory=_importHistory.concat([{importedAt:_prevRef.importedAt,version:_prevRef.version||1,rowCount:_prevRef.rows?Object.keys(_prevRef.rows).length:0}]).slice(-5);
   // Fusion : l'import ajoute/remplace les cellules du PDF, mais garde les corrections manuelles
