@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.93';
+const __APEX_CHAT_VERSION__ = 'v1.1.94';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.93</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.94</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.93</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.94</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -922,6 +922,93 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.94 — Message templates / snippets (canned responses)
+// ============================================================================
+K._DEFAULT_SNIPPETS = [
+  { id: 'hello', name: '👋 Bonjour', text: 'Bonjour ! Comment ça va ?' },
+  { id: 'bye', name: '👋 Au revoir', text: 'À plus tard, bonne journée !' },
+  { id: 'thanks', name: '🙏 Merci', text: 'Merci beaucoup, c\'est gentil !' },
+  { id: 'np', name: '✅ De rien', text: 'De rien, c\'est avec plaisir !' },
+  { id: 'omw', name: '🚗 J\'arrive', text: 'J\'arrive dans quelques minutes 🚗' },
+  { id: 'late', name: '⏰ En retard', text: 'Désolé je suis un peu en retard, à très vite !' },
+  { id: 'busy', name: '📵 Occupé', text: 'Désolé je ne peux pas parler maintenant, je te recontacte plus tard.' },
+  { id: 'call_later', name: '📞 Je rappelle', text: 'Je te rappelle dans la journée 👍' },
+];
+
+K._getSnippets = function(){ return lg('snippets_v1', K._DEFAULT_SNIPPETS); };
+
+K._openSnippetsMenu = function(){
+  const snippets = K._getSnippets();
+  const rows = snippets.map(s =>
+    `<button class="btn btn-out" style="text-align:left;justify-content:space-between;display:flex;width:100%;margin-bottom:6px"
+            onclick="K._useSnippet('${esc(s.id)}')">
+      <span><strong>${esc(s.name)}</strong></span>
+      <span style="font-size:.75em;color:var(--ax-text-3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.text.slice(0, 30))}</span>
+    </button>`
+  ).join('');
+  K._showModal('📝 Templates / Snippets', `
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">Tap pour insérer dans la zone de saisie.</p>
+    ${rows}
+    <button class="btn btn-out btn-block" style="margin-top:10px" onclick="K._openSnippetEditor()">⚙️ Gérer mes snippets</button>
+  `);
+};
+
+K._useSnippet = function(snippetId){
+  const s = K._getSnippets().find(x => x.id === snippetId);
+  if(!s){ toast('Snippet introuvable', 'warn'); return; }
+  const input = document.getElementById('msg-input');
+  if(input){
+    const current = input.value;
+    input.value = current ? current + ' ' + s.text : s.text;
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+  K._closeModal && K._closeModal();
+  toast('📝 Snippet inséré', 'ok');
+};
+
+K._openSnippetEditor = function(){
+  const snippets = K._getSnippets();
+  const list = snippets.map(s => `
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;padding:8px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:.88em">${esc(s.name)}</div>
+        <div style="font-size:.78em;color:var(--ax-text-3);margin-top:2px">${esc(s.text.slice(0, 80))}</div>
+      </div>
+      <button onclick="K._deleteSnippet('${esc(s.id)}')" style="background:transparent;border:none;color:#e63946;cursor:pointer;font-size:1em">🗑</button>
+    </div>
+  `).join('');
+  K._showModal('⚙️ Gérer snippets', `
+    ${list}
+    <hr style="border-color:var(--ax-border);margin:14px 0">
+    <label class="label">Nouveau snippet</label>
+    <input id="snip-name" class="input" placeholder="Nom (ex: 👋 Bonsoir)" maxlength="40">
+    <textarea id="snip-text" class="input" placeholder="Texte du snippet" rows="2" maxlength="500" style="margin-top:8px;resize:vertical"></textarea>
+    <button class="btn btn-block" style="margin-top:8px" onclick="K._createSnippet()">+ Créer</button>
+  `);
+};
+
+K._createSnippet = function(){
+  const name = document.getElementById('snip-name')?.value.trim();
+  const text = document.getElementById('snip-text')?.value.trim();
+  if(!name || !text){ toast('Nom + texte requis', 'warn'); return; }
+  const snippets = K._getSnippets();
+  const id = 'snip_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5);
+  snippets.push({ id, name, text });
+  ls('snippets_v1', snippets);
+  K._closeModal && K._closeModal();
+  K._openSnippetEditor();
+  toast('📝 Snippet créé', 'ok');
+};
+
+K._deleteSnippet = function(snippetId){
+  ls('snippets_v1', K._getSnippets().filter(s => s.id !== snippetId));
+  K._closeModal && K._closeModal();
+  K._openSnippetEditor();
+  toast('🗑 Snippet supprimé', 'info');
+};
 
 // ============================================================================
 //  v1.1.93 — Chat backgrounds custom per-conv (WhatsApp wallpaper style)
@@ -1835,6 +1922,8 @@ K._SLASH_COMMANDS = {
   '/time': () => `🕐 ${new Date().toLocaleString('fr-FR')}`,
   '/clear': () => { K._clearConvLocal(); return null; },
   '/giphy': (rest) => `🎬 [GIF "${rest}"] → https://giphy.com/search/${encodeURIComponent(rest)}`,
+  '/snippet': () => { K._openSnippetsMenu && K._openSnippetsMenu(); return false; },
+  '/template': () => { K._openSnippetsMenu && K._openSnippetsMenu(); return false; },
 };
 
 K._processSlashCommand = function(text){
@@ -2813,7 +2902,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.93',
+    version: 'v1.1.94',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -7499,6 +7588,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K._openBackupRestoreMenu()">
         <span>📦</span><span style="flex:1">Backup / Restauration complète</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._openSnippetEditor()">
+        <span>📝</span><span style="flex:1">Templates / Snippets</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K._openPushSettings()">
         <span>🔔</span><span style="flex:1">Notifications push (app fermée)</span><span>›</span>
       </div>
@@ -9618,7 +9710,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.93"
+        data-version="v1.1.94"
         data-color="#6a8aff"
         defer></script>
 </body>
