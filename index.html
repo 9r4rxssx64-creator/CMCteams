@@ -4946,7 +4946,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.676";
+var APP_VER="v9.677";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -15911,10 +15911,50 @@ function viewAsBack(){
 
 // v9.67 — Recherche universelle (employés, codes, jeux, convention, docs)
 var _searchOpen=false,_searchQ="";
+// v10 Sprint 2 \u2014 Cibles de navigation (raccourci \u2318K/Ctrl+K). Ajoute vues et actions admin/employ\u00e9 fr\u00e9quentes \u00e0 la recherche globale.
+var _CMD_PALETTE_TARGETS=[
+  {kw:"accueil dashboard home", cat:"\u25c6", label:"Accueil",                    action:"sv('accueil')"},
+  {kw:"mon planning perso shifts", cat:"\ud83d\udcc6", label:"Mon planning",       action:"sv('monplanning')"},
+  {kw:"profil identite mes infos", cat:"\ud83d\udc64", label:"Mon profil",         action:"sv('profil')"},
+  {kw:"planning equipe grille",    cat:"\ud83d\udcc5", label:"Planning \u00e9quipe", action:"sv('planning')"},
+  {kw:"departs ordres",            cat:"\ud83c\udfaf", label:"Ordres de d\u00e9part", action:"sv('departs')"},
+  {kw:"chat messages discussion",  cat:"\ud83d\udcac", label:"Chat",               action:"sv('chat')"},
+  {kw:"ia chatbot claude assistant", cat:"\ud83e\udd16", label:"Assistant IA",     action:"sv('ia')"},
+  {kw:"convention sbm articles loi", cat:"\ud83d\udcd6", label:"Convention SBM",   action:"sv('convention')"},
+  {kw:"echanges shifts swap",      cat:"\ud83d\udd04", label:"\u00c9changes de shifts", action:"sv('echanges')"},
+  {kw:"admin panneau v10 nouveau", cat:"\ud83d\udc51", label:"Admin v10 (nouveau)", action:"sv('adminv10')", admin:true},
+  {kw:"admin panneau classique",   cat:"\ud83d\udc51", label:"Admin classique",    action:"sv('admin')",    admin:true},
+  {kw:"stats statistiques mois",   cat:"\ud83d\udcca", label:"Stats du mois",      action:"sv('stats')",    admin:true},
+  {kw:"stats globales lieu role",  cat:"\ud83c\udf10", label:"Stats globales",     action:"sv('statsglobal')", admin:true},
+  {kw:"employes gestion fiches",   cat:"\ud83d\udc65", label:"Employ\u00e9s",      action:"sv('employees')", admin:true},
+  {kw:"chefs ordres equipes",      cat:"\ud83d\udc51", label:"Chefs & \u00e9quipes", action:"sv('teams')", admin:true},
+  {kw:"import pdf planning",       cat:"\ud83d\udce5", label:"Importer planning PDF", action:"sv('import')", admin:true},
+  {kw:"verifier import controle",  cat:"\u2705", label:"V\u00e9rifier l'import",   action:"sv('importVerif')", admin:true},
+  {kw:"conflits alertes repos",    cat:"\u26a0", label:"Alertes conflits",         action:"sv('conflits')", admin:true},
+  {kw:"qui libre disponible jour", cat:"\ud83d\ude34", label:"Qui est libre ?",    action:"sv('quilibre')", admin:true},
+  {kw:"passation nouvelle fin tournee", cat:"\ud83d\udcdd", label:"Nouvelle passation", action:"sv('passation')", admin:true},
+  {kw:"audit journal modifications", cat:"\ud83d\udcdd", label:"Journal modifications", action:"sv('auditlog')", admin:true},
+  {kw:"securite admin journal",    cat:"\ud83d\udee1", label:"Journal s\u00e9curit\u00e9", action:"sv('security')", admin:true},
+  {kw:"rgpd vie privee donnees",   cat:"\ud83d\udd12", label:"Vie priv\u00e9e & RGPD", action:"sv('rgpd')", admin:true},
+  {kw:"retardataires relancer",    cat:"\ud83d\udce2", label:"Retardataires",      action:"sv('retardataires')", admin:true},
+  {kw:"documents banque photos pdf", cat:"\ud83d\udcc1", label:"Documents",        action:"sv('documents')", admin:true},
+  {kw:"sauvegarde backup json",    cat:"\ud83d\udcbe", label:"Sauvegarde JSON",    action:"exportFullBackup()", admin:true},
+  {kw:"ia desactiver kill switch tokens", cat:"\u23f8", label:"Toggle IA Claude (kill-switch)", action:"iaToggle()", admin:true},
+  {kw:"ia configurer cle api claude", cat:"\ud83d\udd11", label:"Configurer cl\u00e9 API IA", action:"iaSetApiKey()", admin:true},
+  {kw:"ia configurer proxy securise", cat:"\ud83d\udd17", label:"Configurer proxy IA", action:"iaSetProxy()", admin:true},
+  {kw:"mode presentation plein ecran fullscreen", cat:"\ud83d\udcfa", label:"Mode pr\u00e9sentation", action:"togglePresentation()"}
+];
 function globalSearch(q){
-  _searchQ=q;if(!q||q.length<2){dc();return;}
+  _searchQ=q;if(!q||q.length<2){A._searchResults=[];dc();return;}
   var ql=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  var isAdm=A.user&&A.user.id===AID;
   var results=[];
+  // v10 Sprint 2 \u2014 Navigation rapide vers vues et actions admin/employ\u00e9
+  _CMD_PALETTE_TARGETS.forEach(function(t){
+    if(t.admin&&!isAdm)return;
+    var lbl=t.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(t.kw.indexOf(ql)>=0||lbl.indexOf(ql)>=0){results.push({cat:t.cat,label:t.label,action:t.action});}
+  });
   // Employés
   A.employees.filter(function(e){return e.name.toLowerCase().indexOf(ql)>=0||e.id.toLowerCase().indexOf(ql)>=0;}).slice(0,5).forEach(function(e){
     results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+e.id+"';sv('employees')"});
@@ -15927,7 +15967,18 @@ function globalSearch(q){
   Object.keys(JEUX).forEach(function(jid){var j=JEUX[jid];if(j.nom.toLowerCase().indexOf(ql)>=0){results.push({cat:"\ud83c\udfb2",label:j.nom,action:"A.convTab='jeux';sv('convention')"});}});
   // Convention
   if(typeof conventionSearch==="function"){conventionSearch(q).slice(0,3).forEach(function(a){results.push({cat:"\ud83d\udcd6",label:"Art."+a.num+" "+a.titre,action:"A.convTab='articles';sv('convention')"});});}
-  A._searchResults=results;dc();
+  A._searchResults=results.slice(0,30);dc();
+}
+// v10 Sprint 2 — Enter dans le champ recherche = lance le 1er résultat (UX clavier)
+function _searchOnKeydown(e){
+  if(e.key==="Enter"){
+    if(A._searchResults&&A._searchResults.length){
+      var r=A._searchResults[0];
+      try{(new Function(r.action))();}catch(_e){console.warn("[search] action error",_e);}
+      toggleSearch();
+      e.preventDefault();
+    }
+  } else if(e.key==="Escape"){toggleSearch();e.preventDefault();}
 }
 function toggleSearch(){_searchOpen=!_searchOpen;_searchQ="";A._searchResults=[];dc();if(_searchOpen)setTimeout(function(){var el=document.getElementById("globalSearchIn");if(el)el.focus();},50);}
 function vTopbar(){
@@ -15975,7 +16026,7 @@ function vTopbar(){
     :(_todCode&&isWork(_todCode)?`<span title="${(_todCi&&_todCi.l)||_todCode}" style="background:${(_todCi&&_todCi.c)||col}18;color:${(_todCi&&_todCi.c)||col};border:1px solid ${(_todCi&&_todCi.c)||col}35;border-radius:6px;padding:2px 6px;font-size:13px;font-weight:800;flex-shrink:0">${esc(_todCode)}</span>`:"")}
   ${!isAdm&&t?`<span style="background:${col}14;color:${col};border:1px solid ${col}28;border-radius:8px;padding:2px 7px;font-size:12px;font-weight:700;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${esc(t.name)}</span>`:""}
   <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:auto">
-    <button onclick="toggleSearch()" title="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
+    <button onclick="toggleSearch()" title="Rechercher (\u2318K / Ctrl+K)" aria-label="Rechercher" style="background:${_searchOpen?'rgba(201,162,39,.2)':'transparent'};border:1px solid ${_searchOpen?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)'};border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:${_searchOpen?'#c9a227':'#7aaa80'}">\ud83d\udd0d</button>
     <div id="topClock" style="font-size:11px;font-family:monospace;color:#a0cca0;line-height:1;white-space:nowrap"></div>
     ${_syncDot}
     ${_iaOffBadge}
@@ -15986,8 +16037,8 @@ function vTopbar(){
     <button class="btn ghost" onclick="doLogout()" title="D\u00e9connexion" aria-label="D\u00e9connexion" style="padding:8px 12px;font-size:14px;line-height:1;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center">\u2715</button>
   </div>`
   +(_searchOpen?`<div style="position:absolute;top:100%;left:0;right:0;background:rgba(10,20,12,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,162,39,.3);padding:8px 14px;z-index:89">
-    <input id="globalSearchIn" class="inp" placeholder="\ud83d\udd0d Rechercher employ\u00e9, code, jeu, convention..." value="${esc(_searchQ)}" oninput="globalSearch(this.value)" style="font-size:16px;padding:10px 14px;border-radius:20px">
-    ${(A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:200px;overflow-y:auto">'+A._searchResults.map(function(r){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:#c0d8c0;font-size:14px"><span>'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:12px">\u203a</span></button>';}).join('')+'</div>':''}
+    <input id="globalSearchIn" class="inp" placeholder="\ud83d\udd0d Rechercher : employ\u00e9 \u00b7 code \u00b7 vue \u00b7 action \u00b7 convention\u2026  (Entr\u00e9e = ouvrir)" value="${esc(_searchQ)}" oninput="globalSearch(this.value)" onkeydown="_searchOnKeydown(event)" style="font-size:16px;padding:10px 14px;border-radius:20px">
+    ${(A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:340px;overflow-y:auto">'+A._searchResults.map(function(r,i){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:'+(i===0?'rgba(201,162,39,.10)':'rgba(255,255,255,.03)')+';border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:'+(i===0?'#ffdc40':'#c8dcc0')+';font-size:14px;border-left:'+(i===0?'3px solid #c9a227':'3px solid transparent')+'"><span style="width:24px;text-align:center;flex-shrink:0">'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:11px;flex-shrink:0">'+(i===0?'\u21b5 Entr\u00e9e':'\u203a')+'</span></button>';}).join('')+'</div>':(_searchQ.length>=2?'<div style="margin-top:6px;padding:14px;text-align:center;color:#7a8a70;font-size:13px">\ud83d\udd0e Aucun r\u00e9sultat pour "<b>'+esc(_searchQ)+'</b>"</div>':'')}
   </div>`:'');
 }
 
@@ -38560,10 +38611,17 @@ function toggleFavView(viewId){
   ls("cmc_favs",_favs);dc();
 }
 
-// v9.67 — Raccourcis clavier (desktop)
+// v9.67 — Raccourcis clavier (desktop) — v10 : Ctrl+K / Cmd+K ouvre la command palette
 document.addEventListener("keydown",function(e){
   if(!A.user)return;
-  // Ignorer si focus dans un input
+  // v10 Sprint 2 — Ctrl+K / Cmd+K : ouvre la recherche globale (command palette) AVANT le test focus input
+  if((e.ctrlKey||e.metaKey)&&(e.key==="k"||e.key==="K")){
+    e.preventDefault();
+    if(!_searchOpen)toggleSearch();
+    else{var _el=document.getElementById("globalSearchIn");if(_el){_el.focus();_el.select();}}
+    return;
+  }
+  // Ignorer si focus dans un input (sauf Ctrl+K géré au-dessus)
   var tag=(document.activeElement||{}).tagName||"";
   if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT")return;
   if(e.key==="Escape"){if(_searchOpen){toggleSearch();e.preventDefault();return;}if(_presentMode){togglePresentation();e.preventDefault();return;}goBack();e.preventDefault();return;}
