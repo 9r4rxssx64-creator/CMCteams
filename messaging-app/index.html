@@ -273,7 +273,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.30';
+const __APEX_CHAT_VERSION__ = 'v1.1.31';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -349,7 +349,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.30</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.31</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -363,7 +363,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.30</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.31</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -4674,15 +4674,26 @@ K.openPremium = function(){
     <div style="text-align:center;padding:14px">
       <div style="font-size:3em">✨</div>
       <h3 style="color:var(--ax-gold);margin:10px 0">Apex Chat+ — Premium</h3>
-      <p style="color:var(--ax-text-2);margin:0 0 18px">Débloque toutes les fonctionnalités.</p>
+      <p style="color:var(--ax-text-2);margin:0 0 12px">Débloque toutes les fonctionnalités.</p>
+    </div>
+    <div id="premium-quota-box" style="background:rgba(106,138,255,.08);border:1px solid rgba(106,138,255,.25);border-radius:10px;padding:10px;margin-bottom:14px;display:none">
+      <div style="font-size:.82em;color:var(--ax-blue);font-weight:600;margin-bottom:6px">📊 Ton usage IA aujourd'hui</div>
+      <div id="premium-quota-list" style="font-size:.78em;color:var(--ax-text-2);line-height:1.6"></div>
     </div>
     <div class="card">
       <div class="card-row">
         <div style="flex:1">
           <strong>Mensuel</strong>
-          <div style="font-size:.78em;color:var(--ax-text-2)">Annulable à tout moment</div>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Annulable à tout moment · Essai 7j</div>
         </div>
         <strong style="color:var(--ax-gold);font-size:1.2em">6,99 €/mois</strong>
+      </div>
+      <div class="card-row">
+        <div style="flex:1">
+          <strong>Annuel</strong>
+          <div style="font-size:.78em;color:var(--ax-text-2)">Économise 28 €</div>
+        </div>
+        <strong style="color:var(--ax-gold);font-size:1.2em">59,99 €/an</strong>
       </div>
       <div class="card-row">
         <div style="flex:1">
@@ -4693,14 +4704,45 @@ K.openPremium = function(){
       </div>
     </div>
     <p style="font-size:.85em;color:var(--ax-text-2);margin:14px 0">
-      <strong>Avec Premium :</strong> IA illimitée, Time Capsules illimitées, stockage 1To, voice clone, themes premium.
+      <strong>Avec Premium :</strong> IA illimitée (Voice, Vision, Smart Reply, Traduction, Résumé), Time Capsules illimitées, stockage 1To, voice clone, themes premium.
     </p>
     <button class="btn btn-block" onclick="K._startCheckout('monthly')">⚡ Mensuel 6,99 €</button>
+    <button class="btn btn-out btn-block" onclick="K._startCheckout('yearly')" style="margin-top:8px">📅 Annuel 59,99 €</button>
     <button class="btn btn-out btn-block" onclick="K._startCheckout('lifetime')" style="margin-top:8px">🏆 Lifetime 199 €</button>
     <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:14px">
       Paiement sécurisé via Stripe. Aucune carte stockée. Annulable 1 clic.
     </p>
   `);
+  // v1.1.31 : charge le quota daily en async (non-bloquant)
+  K._loadAndRenderQuota();
+};
+
+K._loadAndRenderQuota = async function(){
+  try{
+    const r = await fetch(API_BASE + '/api/premium/quota', {
+      headers: { 'Authorization': 'Bearer ' + K.token }
+    });
+    if(!r.ok) return;
+    const data = await r.json();
+    if(!data.ok || !data.usage) return;
+    const box = document.getElementById('premium-quota-box');
+    const list = document.getElementById('premium-quota-list');
+    if(!box || !list) return;
+    const labels = {
+      'voice-transcribe': '🎙️ Transcriptions vocales',
+      'image-describe': '📷 Alt-text images',
+      'summarize': '🕰️ Memory Lane IA',
+      'smart-reply': '💬 Smart Reply',
+      'translate': '🌐 Traductions'
+    };
+    list.innerHTML = Object.entries(data.usage).map(([feat, u]) => {
+      const label = labels[feat] || feat;
+      const bar = u.unlimited ? '∞ illimité' : `${u.used}/${u.limit}`;
+      const color = u.unlimited ? 'var(--ax-ok)' : (u.remaining === 0 ? 'var(--ax-err)' : 'var(--ax-text-2)');
+      return `<div style="display:flex;justify-content:space-between"><span>${label}</span><span style="color:${color};font-weight:600">${bar}</span></div>`;
+    }).join('');
+    box.style.display = 'block';
+  } catch(e){ /* silent */ }
 };
 
 K._startCheckout = function(plan){

@@ -2758,6 +2758,46 @@ export async function handlePremiumStatus(request, env) {
   }
 }
 
+// ============================================================================
+//  v1.1.31 — GET /api/premium/quota : usage daily des 5 features IA
+//  Permet à l'UI d'afficher "3/5 transcriptions utilisées aujourd'hui"
+// ============================================================================
+export async function handlePremiumQuota(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  try {
+    // Détecte premium d'abord
+    const u = await env.APEX_CHAT_DB?.prepare(
+      'SELECT premium_until, premium_plan FROM users WHERE id=?'
+    ).bind(auth.sub).first();
+    const isPremium = u && u.premium_until && u.premium_until > Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    const features = ['voice-transcribe', 'image-describe', 'summarize', 'smart-reply', 'translate'];
+    const usage = {};
+    for (const f of features) {
+      const limit = FREE_QUOTAS[f] || 5;
+      let used = 0;
+      if (env.APEX_CHAT_KV) {
+        try {
+          const v = await env.APEX_CHAT_KV.get(`quota:${auth.sub}:${f}:${today}`);
+          used = parseInt(v || '0', 10);
+        } catch (_) {}
+      }
+      usage[f] = { used, limit, remaining: Math.max(0, limit - used), unlimited: !!isPremium };
+    }
+    return json({
+      ok: true,
+      premium: !!isPremium,
+      plan: u?.premium_plan || null,
+      date: today,
+      usage,
+    });
+  } catch (e) {
+    return err('Quota error: ' + e.message, 500);
+  }
+}
+
 // ----- Signalements -----
 
 export async function handleSignalement(request, env) {
@@ -2867,6 +2907,8 @@ export default {
       if (path === '/api/premium/checkout' && method === 'POST') return await handlePremiumCheckout(request, env);
       if (path === '/api/premium/webhook' && method === 'POST') return await handlePremiumWebhook(request, env);
       if (path === '/api/premium/status' && method === 'GET') return await handlePremiumStatus(request, env);
+      // v1.1.31 — Usage daily quota
+      if (path === '/api/premium/quota' && method === 'GET') return await handlePremiumQuota(request, env);
 
       // v1.1.26 — Customer Portal + Smart Reply + Translate
       if (path === '/api/premium/portal' && method === 'POST') return await handlePremiumPortal(request, env);

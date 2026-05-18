@@ -18,6 +18,7 @@ import {
   handlePremiumPortal,
   handlePremiumWebhook,
   handlePremiumStatus,
+  handlePremiumQuota,
 } from '../../workers/api-worker.js';
 import { ENV, makeJWT } from './api-worker-helpers.js';
 
@@ -1119,5 +1120,82 @@ describe('Premium quota middleware (v1.1.30)', () => {
     const r = await handleAiVoiceTranscribe(req, env);
     // KV null → check_failed → fail open → 200 OK
     expect(r.status).toBe(200);
+  });
+});
+
+// ============================================================================
+//  v1.1.31 — handlePremiumQuota tests (GET /api/premium/quota)
+// ============================================================================
+describe("handlePremiumQuota (v1.1.31)", () => {
+  it("refuse non-auth (401)", async () => {
+    const r = await handlePremiumQuota(makeReq("GET", "/api/premium/quota"), userEnv());
+    expect(r.status).toBe(401);
+  });
+
+  it("non-premium user : retourne usage 0/limit pour chaque feature", async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ premium_until: 0, premium_plan: null }),
+    }));
+    const tok = await userToken();
+    const r = await handlePremiumQuota(makeReq("GET", "/api/premium/quota", undefined, tok), env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.premium).toBe(false);
+    expect(j.usage["voice-transcribe"].limit).toBe(5);
+    expect(j.usage["voice-transcribe"].used).toBe(0);
+    expect(j.usage["voice-transcribe"].remaining).toBe(5);
+    expect(j.usage["voice-transcribe"].unlimited).toBe(false);
+    expect(j.usage["image-describe"].limit).toBe(10);
+    expect(j.usage["summarize"].limit).toBe(3);
+    expect(j.usage["smart-reply"].limit).toBe(30);
+    expect(j.usage["translate"].limit).toBe(20);
+  });
+
+  it("non-premium user : usage incrémenté reflète KV", async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ premium_until: 0, premium_plan: null }),
+    }));
+    const today = new Date().toISOString().slice(0, 10);
+    await env.APEX_CHAT_KV.put(`quota:user_test:voice-transcribe:${today}`, "3");
+    await env.APEX_CHAT_KV.put(`quota:user_test:translate:${today}`, "20");
+    const tok = await userToken();
+    const r = await handlePremiumQuota(makeReq("GET", "/api/premium/quota", undefined, tok), env);
+    const j = await r.json();
+    expect(j.usage["voice-transcribe"].used).toBe(3);
+    expect(j.usage["voice-transcribe"].remaining).toBe(2);
+    expect(j.usage["translate"].used).toBe(20);
+    expect(j.usage["translate"].remaining).toBe(0);
+  });
+
+  it("premium user : unlimited:true sur tous", async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ premium_until: Date.now() + 86400_000, premium_plan: "monthly" }),
+    }));
+    const tok = await userToken();
+    const r = await handlePremiumQuota(makeReq("GET", "/api/premium/quota", undefined, tok), env);
+    const j = await r.json();
+    expect(j.premium).toBe(true);
+    expect(j.plan).toBe("monthly");
+    Object.values(j.usage).forEach(u => expect(u.unlimited).toBe(true));
+  });
+
+  it("KV indispo : usage remains 0 (pas crash)", async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ premium_until: 0 }),
+    }));
+    delete env.APEX_CHAT_KV;
+    const tok = await userToken();
+    const r = await handlePremiumQuota(makeReq("GET", "/api/premium/quota", undefined, tok), env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.usage["voice-transcribe"].used).toBe(0);
   });
 });
