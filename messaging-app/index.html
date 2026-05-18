@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.115';
+const __APEX_CHAT_VERSION__ = 'v1.1.116';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.115</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.116</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.115</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.116</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3507,7 +3507,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.115',
+    version: 'v1.1.116',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -9640,29 +9640,48 @@ K._createGroup = async function(){
   const name = $('#group-name').value.trim();
   const description = $('#group-desc').value.trim();
   if(!name) return toast('Nom requis', 'err');
-  try{
-    const r = await K._api('POST', '/api/conversations', { type: 'group', name, members: [] });
-    if(r.ok && r.conversation){
-      K.conversations.unshift({
-        id: r.conversation.id, type: 'group', name, member_count: 1,
-        last_msg_ts: Date.now(), description
-      });
-      ls('conversations', K.conversations);
-      K._closeModal();
-      K.sv('chats');
-      toast('Groupe "' + name + '" créé', 'ok');
-    } else {
-      toast(r.message || 'Erreur création groupe', 'err');
-    }
-  }catch(e){
-    // Fallback local
-    const id = 'group_local_' + Date.now();
-    K.conversations.unshift({ id, type: 'group', name, member_count: 1, last_msg_ts: Date.now(), description });
+  // v1.1.116 fix Kevin "bouton jaune ne fait rien, worker local en arrière plan"
+  // → tentative serveur puis fallback local AUTO si offline/timeout/erreur.
+  // Le groupe est TOUJOURS créé (jamais bloqué par état Worker).
+  function createLocal(reason){
+    const id = 'group_local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    K.conversations = K.conversations || [];
+    K.conversations.unshift({
+      id, type: 'group', name,
+      member_count: 1, last_msg_ts: Date.now(),
+      description, created_at: Date.now(), pending_sync: true
+    });
+    K.messages = K.messages || {};
+    K.messages[id] = [];
     ls('conversations', K.conversations);
-    K._closeModal();
-    K.sv('chats');
-    toast('Groupe créé (local)', 'warn');
+    K._closeModal && K._closeModal();
+    K.sv && K.sv('chats');
+    toast('✅ Groupe "' + name + '" créé' + (reason ? ' (' + reason + ')' : ''), 'ok');
   }
+  let r;
+  try{
+    r = await K._api('POST', '/api/conversations', { type: 'group', name, members: [] });
+  }catch(e){
+    return createLocal('mode local');
+  }
+  if(r && r.ok && r.conversation){
+    K.conversations = K.conversations || [];
+    K.conversations.unshift({
+      id: r.conversation.id, type: 'group', name, member_count: 1,
+      last_msg_ts: Date.now(), description, created_at: Date.now()
+    });
+    K.messages = K.messages || {};
+    K.messages[r.conversation.id] = [];
+    ls('conversations', K.conversations);
+    K._closeModal && K._closeModal();
+    K.sv && K.sv('chats');
+    toast('✅ Groupe "' + name + '" créé', 'ok');
+    return;
+  }
+  // r.offline / r.timeout / r.ok=false sans throw → fallback local
+  if(r && r.offline) return createLocal('hors ligne, sync auto');
+  if(r && r.timeout) return createLocal('serveur lent, sync auto');
+  return createLocal('mode local');
 };
 
 // ============================================================================
