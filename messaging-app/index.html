@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.86';
+const __APEX_CHAT_VERSION__ = 'v1.1.87';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -345,8 +345,23 @@ if('serviceWorker' in navigator){
         location.reload();
       }
       if(e.data?.type === 'PERIODIC_HEARTBEAT'){
-        // Réveil periodic (Chrome only) → envoie heartbeat
         if(typeof K !== 'undefined' && K._sendHeartbeat) K._sendHeartbeat();
+      }
+      /* v1.1.87 — Quick reply / open / mark read depuis notif */
+      if(e.data?.type === 'open-conv' && e.data.convId){
+        if(typeof K !== 'undefined' && K.openConv) K.openConv(e.data.convId);
+      }
+      if(e.data?.type === 'reply-to-conv' && e.data.convId){
+        if(typeof K !== 'undefined' && K.openConv) {
+          K.openConv(e.data.convId);
+          setTimeout(() => {
+            const input = document.getElementById('msg-input');
+            if(input) input.focus();
+          }, 300);
+        }
+      }
+      if(e.data?.type === 'mark-conv-read' && e.data.convId){
+        if(typeof K !== 'undefined' && K._markConvAsRead) K._markConvAsRead(e.data.convId);
       }
     });
     // Heartbeat SW (toutes les 60s)
@@ -439,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.86</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.87</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -453,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.86</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.87</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2395,7 +2410,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.86',
+    version: 'v1.1.87',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -9163,7 +9178,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.86"
+        data-version="v1.1.87"
         data-color="#6a8aff"
         defer></script>
 </body>
