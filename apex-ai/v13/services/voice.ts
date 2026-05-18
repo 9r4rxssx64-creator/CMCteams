@@ -1177,6 +1177,21 @@ function speakViaWebSpeech(text: string, voice: Voice, options: SpeakOptions): S
 /* v13.3.73 helpers — différenciation voix Web Speech (sans casser API existante). */
 function deriveDefaultsFromId(id: string): { pitch: number; rate: number } {
   const lower = id.toLowerCase();
+  /* v13.4.212 (règle Kevin 2026-05-18 "voix RÉELLEMENT différentes") :
+   * Match par ID EXACT en priorité avec pitch/rate très distincts,
+   * fallback keyword sinon. Garantit que les 5 voix PRO Web Speech
+   * sonnent CHACUNE différemment même si voice base identique iPhone Safari. */
+  const exactPresets: Record<string, { pitch: number; rate: number }> = {
+    /* PRO Web Speech : pitch/rate VRAIMENT distincts pour audio différent garanti */
+    'pro_neutral_fr':  { pitch: 1.00, rate: 1.00 },
+    'pro_male_fr':     { pitch: 0.72, rate: 0.92 },
+    'pro_female_fr':   { pitch: 1.38, rate: 1.05 },
+    'pro_male_en':     { pitch: 0.78, rate: 0.98 },
+    'pro_female_en':   { pitch: 1.45, rate: 1.08 },
+    'pro_wavenet_fr':  { pitch: 1.02, rate: 0.98 },
+    'pro_azure_fr':    { pitch: 0.95, rate: 1.02 },
+  };
+  if (exactPresets[lower]) return exactPresets[lower];
   /* Pitch base par keyword caractère (semi-tons → ratio Web Speech 0..2) */
   const presets: Array<{ k: RegExp; pitch: number; rate: number }> = [
     { k: /baby|kid|child|chipmunk|cartoon|minion/, pitch: 1.7, rate: 1.2 },
