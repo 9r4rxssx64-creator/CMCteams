@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.99';
+const __APEX_CHAT_VERSION__ = 'v1.1.100';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.99</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.100</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.99</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.100</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -983,6 +983,63 @@ K._openReactionStats = function(convId){
       Ta participation : <strong>${myCount}</strong> (${Math.round((myCount / totalReactions) * 100)}%)
     </p>
   `);
+};
+
+// ============================================================================
+//  v1.1.100 — Global search across all conversations (milestone)
+// ============================================================================
+K._openGlobalSearch = function(){
+  K._showModal('🔍 Rechercher dans toutes les convs', `
+    <input type="search" id="gs-input" placeholder="Tape ton mot-clé..." autocomplete="off" autocapitalize="off" autocorrect="off"
+      style="width:100%;padding:12px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;color:var(--ax-text);font-size:.95em;margin-bottom:10px"
+      oninput="K._runGlobalSearch(this.value)">
+    <div id="gs-results" style="max-height:60vh;overflow-y:auto">
+      <p style="text-align:center;color:var(--ax-text-3);font-size:.85em;padding:20px">Tape au moins 2 caractères pour chercher.</p>
+    </div>
+  `);
+  setTimeout(() => { const i = document.getElementById('gs-input'); if(i) i.focus(); }, 100);
+};
+
+K._runGlobalSearch = function(q){
+  const out = document.getElementById('gs-results');
+  if(!out) return;
+  q = (q || '').trim().toLowerCase();
+  if(q.length < 2){
+    out.innerHTML = `<p style="text-align:center;color:var(--ax-text-3);font-size:.85em;padding:20px">Tape au moins 2 caractères pour chercher.</p>`;
+    return;
+  }
+  const results = [];
+  for(const conv of (K.conversations || [])){
+    const msgs = K.messages[conv.id] || [];
+    for(const m of msgs){
+      const text = (m.text || m.content || '').toLowerCase();
+      if(text.includes(q)){
+        results.push({ conv, msg: m, snippet: text });
+        if(results.length >= 50) break;
+      }
+    }
+    if(results.length >= 50) break;
+  }
+  if(results.length === 0){
+    out.innerHTML = `<p style="text-align:center;color:var(--ax-text-3);font-size:.85em;padding:20px">Aucun résultat pour "${esc(q)}".</p>`;
+    return;
+  }
+  out.innerHTML = `
+    <p style="color:var(--ax-text-2);font-size:.78em;margin:0 0 8px"><strong>${results.length}</strong> résultat${results.length > 1 ? 's' : ''} :</p>
+    ${results.map(r => {
+      const name = r.conv.name || r.conv.pseudo || '?';
+      const txt = (r.msg.text || r.msg.content || '').slice(0, 120);
+      const date = r.msg.ts ? new Date(r.msg.ts).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '';
+      return `<div onclick="K._closeModal();K.openConv('${esc(r.conv.id)}')"
+        style="padding:10px;background:var(--ax-bg-2);border-radius:8px;margin-bottom:6px;cursor:pointer;border:1px solid var(--ax-border)">
+        <div style="display:flex;justify-content:space-between;font-size:.78em;margin-bottom:4px">
+          <strong style="color:var(--ax-gold)">${esc(name)}</strong>
+          <span style="color:var(--ax-text-3)">${esc(date)}</span>
+        </div>
+        <div style="font-size:.85em;color:var(--ax-text-2)">${esc(txt)}${txt.length >= 120 ? '...' : ''}</div>
+      </div>`;
+    }).join('')}
+  `;
 };
 
 // ============================================================================
@@ -3141,7 +3198,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.99',
+    version: 'v1.1.100',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5321,7 +5378,10 @@ function renderChats(app){
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Mes conversations</h2>
-      <button class="btn btn-sm" onclick="K._showNewMenu()">＋ Nouveau</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-out" onclick="K._openGlobalSearch()" aria-label="Rechercher dans toutes les conversations">🔍</button>
+        <button class="btn btn-sm" onclick="K._showNewMenu()">＋ Nouveau</button>
+      </div>
     </div>
     <input id="conv-search-input" type="search"
            placeholder="🔍 Rechercher conversation, msg, brouillon..."
