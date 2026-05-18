@@ -4019,6 +4019,9 @@ function fbApplyData(k,v){
   else if(k==="cmc_ov_meta"){A.overrides_meta=vc;}
   else if(k==="cmc_e"){
     A.employees=Array.isArray(vc)?vc:Object.values(vc);
+    // v9.676 (Kevin "Les équipes ne doivent si jamais été gardé en mémoire") :
+    // Strip teamHistory + familyHistory au sync Firebase. Session-only.
+    if(typeof _stripPersistedTeamFamHistory==="function")_stripPersistedTeamFamHistory(A.employees);
     // Dédupliquer par id (empêche les doublons provenant de Firebase ou inscription)
     var _seen={};A.employees=A.employees.filter(function(e){if(_seen[e.id])return false;_seen[e.id]=true;return true;});
     _rebuildIndexes(); // v9.191 — maj index O(1)
@@ -4827,12 +4830,26 @@ function _checkDeviceAnomaly(uid){
 }
 
 // \u00c9tat
+// v9.676 (Kevin "Les équipes ne doivent si jamais été gardé en mémoire") :
+// Strip teamHistory + familyHistory au LOAD. Elles sont session-only,
+// recalculées par _cmcDetectTeamsByRestPattern à chaque besoin.
+// Seuls A.overrides (horaires) sont gardés persistés + dans l'historique.
+function _stripPersistedTeamFamHistory(empsArr){
+  if(!Array.isArray(empsArr))return empsArr;
+  empsArr.forEach(function(e){
+    if(e){
+      if(e.teamHistory)delete e.teamHistory;
+      if(e.familyHistory)delete e.familyHistory;
+    }
+  });
+  return empsArr;
+}
 var A={
   user:null,
   view:"accueil",
   year:new Date().getFullYear(),
   month:new Date().getMonth(),
-  employees:lg("cmc_e",DEF_EMP),
+  employees:_stripPersistedTeamFamHistory(lg("cmc_e",DEF_EMP)),
   teams:lg("cmc_t",DEF_TEAMS),
   overrides:lg("cmc_ov",{}),
   overrides_meta:lg("cmc_ov_meta",{}), // v9.615 — meta cell (bg/fg/star/ff) cross-device
@@ -4919,7 +4936,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.675";
+var APP_VER="v9.676";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10467,6 +10484,23 @@ function dc(){
   if(_dcRunning)return; // Protection anti-boucle
   _dcRunning=true;
   try{
+  // v9.676 (Kevin "Les équipes ne doivent si jamais été gardé en mémoire") :
+  // Auto-détecte les équipes du mois courant si overrides présent mais aucune
+  // teamHistory[key] en session. Garantit que les équipes sont TOUJOURS
+  // recalculées depuis A.overrides[key] (jamais sur historique stale).
+  try{
+    var _km=A.year+"-"+A.month;
+    if(A.overrides && A.overrides[_km] && Object.keys(A.overrides[_km]).length>3){
+      var _anyTh=false;
+      for(var _i=0;_i<A.employees.length&&!_anyTh;_i++){
+        var _emp=A.employees[_i];
+        if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])_anyTh=true;
+      }
+      if(!_anyTh && typeof _cmcDetectTeamsByRestPattern==="function"){
+        try{_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
+      }
+    }
+  }catch(_dcDetErr){}
   // v9.183 — Appliquer deep-link URL une seule fois après login
   if(A.user&&(window._deepLinkYear!==undefined||window._deepLinkMonth!==undefined||window._deepLinkView!==undefined)){
     try{
@@ -25894,22 +25928,32 @@ function _cmcScopedWipe(key, scope){
   // les emps in-scope. Sinon vEmps/vPlan affichent encore l'équipe ancienne via
   // teamForMonth (fix v9.637) même après wipe overrides. Le nouveau import
   // réécrira teamHistory[key] si l'emp est dans le nouveau PDF.
+  // v9.676 (Kevin "tout auto, pas de boutons") — wipe AUSSI emp.familyHistory[key]
+  // in-scope. Sinon famille stale persiste → vEmps/vPlan fallback sur ancien secteur.
+  res.wipedFamHist=0;
   A.employees.forEach(function(emp){
-    if(!emp.teamHistory||!emp.teamHistory[key])return;
     var isCadre=(emp.family||"")==="cadres";
     var inScope=false;
     if(scope==="complete")inScope=true;
     else if(scope==="cadres"&&isCadre)inScope=true;
     else if(scope==="employees"&&!isCadre)inScope=true;
-    if(inScope){
+    if(!inScope)return;
+    if(emp.teamHistory&&emp.teamHistory[key]){
       delete emp.teamHistory[key];
       res.wipedTeamHist++;
     }
+    if(emp.familyHistory&&emp.familyHistory[key]){
+      delete emp.familyHistory[key];
+      res.wipedFamHist++;
+    }
   });
-  if(res.wipedTeamHist>0){
+  if(res.wipedTeamHist>0||res.wipedFamHist>0){
     try{ls("cmc_e",A.employees);}catch(_){}
     if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
   }
+  // v9.676 — Wipe AUSSI cmc_team_mirror_<key> (mapping miroir détecté par algo)
+  // sur scope complete ou cadres/employees (mirrors sont par-équipe = couvert par scope)
+  try{localStorage.removeItem("cmc_team_mirror_"+key);res.wipedMirror=1;}catch(_){res.wipedMirror=0;}
   // v9.645 (Kevin "automatique toujours") — wipe AUSSI per-emp dans :
   //  1. A.overrides_meta[key][eid] (couleurs CDP/AF/CONV, faisant fonction)
   //  2. cmc_manual_overrides_<key>[eid] (édits manuels Kevin sur cell)
@@ -29021,7 +29065,6 @@ function vAdmin(){
     {ic:"\ud83d\udcbe",lb:"Sauvegarder comme mod\u00e8le",fn:"saveTemplate()"},
     {ic:"\ud83d\udd34",lb:"Marquer jours forte affluence",fn:"markAffluenceBulk()"},
     {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
-    {ic:"\ud83d\udd04",lb:"Reset \u00e9quipes (TOUS mois) \u2014 anti-stale",fn:"cmcResetAllTeamHistory()"}, // v9.675 Kevin "anciennes \u00e9quipes restent"
     {grp:"\ud83d\udcca Statistiques"},
     {ic:"\ud83d\udcca",lb:"Stats du mois",fn:"sv('stats')"},
     {ic:"\ud83c\udf10",lb:"Stats globales (lieu/r\u00f4le/famille)",fn:"sv('statsglobal')"},
@@ -30175,50 +30218,6 @@ function clearMonth(){
     "ov="+_ovBefore+" teamHist="+_empsTeamCleared,"snapshot=cmc_history_"+key+"_pre_clearmonth");}catch(_){}
 
   toast("\u2705 "+MFR[im]+" "+iy+" effac\u00e9 : "+_ovBefore+" horaires + "+_empsTeamCleared+" \u00e9quipes + "+_empsFamCleared+" familles. Rollback dispo Historique.","ok",6000);
-  dc();
-}
-
-// v9.675 \u2014 Kevin "il garde les \u00e9quipes en m\u00e9moire. Les copie m\u00eame pour les mois suivant"
-// Reset GLOBAL teamHistory + familyHistory de TOUS les mois.
-// Force re-d\u00e9tection \u00e0 chaque import futur (pas de fallback historique stale).
-function cmcResetAllTeamHistory(){
-  if(!A.user||A.user.id!==AID){toast("\u26a0 Admin only","err");return;}
-  if(!confirm("\u26a0 RESET COMPLET \u00c9QUIPES \u2014 TOUS MOIS ?\n\n"
-    +"Va effacer emp.teamHistory + emp.familyHistory pour TOUS les employ\u00e9s,\n"
-    +"TOUS les mois confondus. Les \u00e9quipes seront re-d\u00e9tect\u00e9es au prochain import.\n\n"
-    +"Les horaires (overrides) ne sont PAS touch\u00e9s.\n"
-    +"Snapshot auto-cr\u00e9\u00e9 pour rollback.\n\n"
-    +"Continuer ?"))return;
-  try{
-    var snapKey="cmc_history_reset_team_all_"+Date.now();
-    ls(snapKey,{
-      ts:Date.now(),
-      reason:"manual_reset_all_teamHistory",
-      teams:A.employees.filter(function(e){return e.teamHistory&&Object.keys(e.teamHistory).length;}).map(function(e){return {id:e.id,th:JSON.parse(JSON.stringify(e.teamHistory))};}),
-      families:A.employees.filter(function(e){return e.familyHistory&&Object.keys(e.familyHistory).length;}).map(function(e){return {id:e.id,fh:JSON.parse(JSON.stringify(e.familyHistory))};}),
-    });
-  }catch(_){}
-  var teamsWiped=0, famsWiped=0, mirrorsWiped=0;
-  A.employees.forEach(function(e){
-    if(e.teamHistory){
-      teamsWiped+=Object.keys(e.teamHistory).length;
-      e.teamHistory={};
-    }
-    if(e.familyHistory){
-      famsWiped+=Object.keys(e.familyHistory).length;
-      e.familyHistory={};
-    }
-  });
-  // Wipe ALL cmc_team_mirror_<key> across years
-  Object.keys(localStorage).forEach(function(k){
-    if(k.indexOf("cmc_team_mirror_")===0){
-      try{localStorage.removeItem(k);mirrorsWiped++;}catch(_){}
-    }
-  });
-  ls("cmc_e",A.employees);
-  if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
-  try{if(typeof _audit==="function")_audit("reset_all_team_history",AID,"","teams="+teamsWiped+" fams="+famsWiped+" mirrors="+mirrorsWiped,"snapshot pour rollback");}catch(_){}
-  toast("\u2705 Reset \u00e9quipes total : "+teamsWiped+" teamHistory + "+famsWiped+" familyHistory + "+mirrorsWiped+" miroirs effac\u00e9s. Snapshot gard\u00e9.","ok",8000);
   dc();
 }
 // v9.45 \u2014 Expert Planning : duplication du mois pr\u00e9c\u00e9dent
