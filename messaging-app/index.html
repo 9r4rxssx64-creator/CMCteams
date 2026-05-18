@@ -323,7 +323,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.91';
+const __APEX_CHAT_VERSION__ = 'v1.1.92';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -454,7 +454,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.91</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.92</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -468,7 +468,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.91</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.92</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -922,6 +922,40 @@ function _distKm(a, b){
   const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============================================================================
+//  v1.1.92 — Deep-link conv : URL ?conv=<id> = ouvre direct
+// ============================================================================
+K._copyConvDeepLink = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv){ toast('Conv introuvable', 'err'); return; }
+  const url = `${location.origin}${location.pathname}?conv=${encodeURIComponent(convId)}`;
+  K._showModal('🔗 Lien direct vers ' + esc(conv.name || conv.pseudo || '?'), `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 12px">
+      Ce lien ouvre directement cette conversation (utile pour épingler à l'écran d'accueil iPhone, raccourci bookmark, etc.).
+    </p>
+    <div style="background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:12px;font-family:ui-monospace,monospace;font-size:.78em;word-break:break-all;color:var(--ax-gold)">
+      ${esc(url)}
+    </div>
+    <div style="display:grid;gap:6px;margin-top:14px">
+      <button class="btn btn-block" onclick="navigator.clipboard.writeText('${esc(url)}');K.toast?.('Lien copié','ok')">📋 Copier le lien</button>
+      ${navigator.share ? `<button class="btn btn-out btn-block" onclick="K._shareConvLink('${esc(url)}','${esc(conv.name || conv.pseudo || '?')}')">📨 Partager</button>` : ''}
+    </div>
+    <p style="font-size:.72em;color:var(--ax-text-3);margin-top:12px">
+      💡 iPhone : Safari → Partager → "Ajouter à l'écran d'accueil" pour épingler.
+    </p>
+  `);
+};
+
+K._shareConvLink = async function(url, name){
+  try {
+    await navigator.share({
+      title: 'Conv ' + name + ' sur Apex Chat',
+      text: 'Discussion privée 🔒',
+      url
+    });
+  } catch(e) {}
+};
 
 // ============================================================================
 //  v1.1.91 — "Lu par" groupe : qui a vu chaque msg (style WhatsApp groupes)
@@ -2519,6 +2553,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._toggleConvArchived('${esc(convId)}')">${conv.archived ? '📤 Désarchiver' : '📦 Archiver'}</button>
       <button class="btn btn-out btn-block" onclick="K._openLabelMenu('${esc(convId)}')">🏷 Labels${conv.label_ids && conv.label_ids.length ? ' (' + conv.label_ids.length + ')' : ''}</button>
       <button class="btn btn-out btn-block" onclick="K._openPeerTzMenu('${esc(convId)}')">🌐 Fuseau horaire peer${conv.peer_tz_offset_min !== undefined ? ' (set)' : ''}</button>
+      <button class="btn btn-out btn-block" onclick="K._copyConvDeepLink('${esc(convId)}')">🔗 Lien direct (copier / partager)</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
@@ -2713,7 +2748,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.91',
+    version: 'v1.1.92',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -9416,6 +9451,38 @@ async function _boot(){
     }catch(e){}
   }
 
+  /* v1.1.92 : Deep-links pour PWA shortcuts + conv direct */
+  setTimeout(() => {
+    if(!K.user) return; /* attend que user soit loggé */
+    /* Hash shortcuts : #new / #contacts / #calls / #invite */
+    const hash = location.hash.replace('#', '');
+    if(hash === 'new'){ K._showNewMenu && K._showNewMenu(); history.replaceState(null, '', location.pathname); }
+    else if(hash === 'contacts'){ K.sv && K.sv('contacts'); history.replaceState(null, '', location.pathname); }
+    else if(hash === 'calls'){ K.sv && K.sv('calls'); history.replaceState(null, '', location.pathname); }
+    else if(hash === 'invite'){ K.openInvite && K.openInvite(); history.replaceState(null, '', location.pathname); }
+    /* Query param ?conv=<id> : ouvre direct la conv */
+    const convId = params.get('conv');
+    if(convId && K.openConv){
+      const exists = (K.conversations || []).find(c => c.id === convId);
+      if(exists){
+        K.openConv(convId);
+        history.replaceState(null, '', location.pathname);
+      }
+    }
+    /* Query param ?join=<convId> : join groupe via lien invitation */
+    const joinId = params.get('join');
+    if(joinId){
+      const exists = (K.conversations || []).find(c => c.id === joinId);
+      if(exists){
+        K.openConv(joinId);
+      } else if(K.token){
+        /* Trigger backend join group (à wirer si endpoint existe) */
+        toast('📥 Demande rejoindre groupe ' + joinId.slice(0, 8), 'info');
+      }
+      history.replaceState(null, '', location.pathname);
+    }
+  }, 1500);
+
   // === Lien d'invitation magique (bypass SMS pour amis Kevin) ===
   // Format: ?invite=<base64(phone:name)>&kevin=1
   const inviteToken = params.get('invite');
@@ -9486,7 +9553,7 @@ if(document.readyState !== 'loading') _boot();
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="messaging-app"
-        data-version="v1.1.91"
+        data-version="v1.1.92"
         data-color="#6a8aff"
         defer></script>
 </body>
