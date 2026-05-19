@@ -26,7 +26,7 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y espeak-ng ffmpeg
       - run: cd tools/social && npm install --no-audit --no-fund
 
-      - name: Generate video
+      - name: Generate video (HD quality)
         working-directory: tools/social
         timeout-minutes: 70
         run: |
@@ -34,6 +34,7 @@ jobs:
           node --input-type=module << 'ENDSCRIPT'
           import fs from 'fs';
           import { execSync } from 'child_process';
+
           const lib = JSON.parse(fs.readFileSync('config/content-library.json','utf8'));
           const cats = Object.keys(lib).filter(k=>!k.startsWith('_'));
           let story = null;
@@ -48,41 +49,117 @@ jobs:
           const id = story.id;
           const outDir = 'output/' + id;
           fs.mkdirSync(outDir, {recursive:true});
-          const renderW = fmt==='short' ? 540 : 960;
-          const renderH = fmt==='short' ? 960 : 540;
-          const finalW = fmt==='short' ? 1080 : 1920;
-          const finalH = fmt==='short' ? 1920 : 1080;
+
+          // === TRY EDGE TTS FIRST (neural voice) ===
+          let ttsBackend = 'espeak';
+          let ttsVoice = 'en';
+          let ttsSpeed = '-s 160 -p 35';
+          try {
+            console.log('Testing Edge TTS...');
+            const { MsEdgeTTS } = await import('msedge-tts');
+            const tts = new MsEdgeTTS();
+            await tts.setMetadata('en-US-GuyNeural', 'audio-24khz-96kbitrate-mono-mp3');
+            const testPath = outDir + '/tts_test.mp3';
+            await tts.toFile(testPath, 'Test.');
+            if (fs.existsSync(testPath) && fs.statSync(testPath).size > 100) {
+              ttsBackend = 'edge';
+              console.log('Edge TTS OK - using neural voice');
+              fs.unlinkSync(testPath);
+            }
+          } catch(e) {
+            console.log('Edge TTS failed: ' + e.message + ' - using espeak');
+          }
+
+          // === DOWNLOAD BACKGROUND IMAGE FROM POLLINATIONS ===
+          let bgPath = null;
+          const nichePrompts = {
+            betrayal: 'dark moody room dramatic shadows broken trust cinematic',
+            revenge: 'dark justice courtroom dramatic lighting noir style',
+            mystery: 'foggy dark forest path moonlight mysterious atmosphere',
+            finance: 'luxury office gold coins stock market screens cinematic',
+            true_crime: 'detective desk evidence dark room police noir',
+            motivation: 'sunrise mountain peak golden light epic inspirational',
+            psychology: 'brain neural network glowing dark scientific',
+            tech: 'futuristic holographic interface neon circuits cyberpunk',
+            history: 'ancient ruins sunset dramatic clouds historical epic',
+          };
+          const niche = (story.tags||[])[0] || 'betrayal';
+          const prompt = nichePrompts[niche] || nichePrompts.betrayal;
+          try {
+            console.log('Downloading AI background...');
+            const bgUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt + ' 4k wallpaper') + '?width=1920&height=1080&nologo=true&seed=' + Date.now();
+            execSync('curl -sL -o ' + outDir + '/bg.jpg "' + bgUrl + '"', {timeout:30000});
+            if (fs.existsSync(outDir + '/bg.jpg') && fs.statSync(outDir + '/bg.jpg').size > 5000) {
+              bgPath = outDir + '/bg.jpg';
+              console.log('AI background downloaded (' + (fs.statSync(bgPath).size/1024).toFixed(0) + ' KB)');
+            }
+          } catch(e) { console.log('Background download failed, using cinematic gradient'); }
+
+          const renderW = 960;
+          const renderH = 540;
+          const finalW = 1920;
+          const finalH = 1080;
           const fps = 8;
           const chunkSize = 80;
           const chunks = [];
           for (let i = 0; i < words.length; i += chunkSize) chunks.push(words.slice(i, i + chunkSize).join(' '));
-          console.log('Chunks: ' + chunks.length);
+          console.log('Chunks: ' + chunks.length + ' | TTS: ' + ttsBackend + ' | BG: ' + (bgPath ? 'AI image' : 'gradient'));
+
           const chunkVideos = [];
           for (let c = 0; c < chunks.length; c++) {
             const chunk = chunks[c];
             const cd = outDir + '/c' + c;
             fs.mkdirSync(cd + '/f', {recursive:true});
             console.log('Chunk ' + (c+1) + '/' + chunks.length + ' (' + chunk.split(/\s+/).length + 'w)');
-            const safe = chunk.replace(/[\\"]/g, '').slice(0, 2500);
-            execSync('espeak-ng -v en -s 160 -p 35 -w ' + cd + '/a.wav "' + safe + '"', {timeout:30000});
-            execSync('ffmpeg -y -i ' + cd + '/a.wav -codec:a libmp3lame -b:a 128k ' + cd + '/a.mp3', {stdio:'pipe', timeout:15000});
-            try { fs.unlinkSync(cd + '/a.wav'); } catch {}
-            const sz = fs.statSync(cd + '/a.mp3').size;
-            const dur = Math.round(sz / 6000 * 1000);
+
+            // TTS
+            const mp3P = cd + '/a.mp3';
+            if (ttsBackend === 'edge') {
+              try {
+                const { MsEdgeTTS } = await import('msedge-tts');
+                const tts = new MsEdgeTTS();
+                await tts.setMetadata('en-US-GuyNeural', 'audio-24khz-96kbitrate-mono-mp3');
+                await tts.toFile(mp3P, chunk);
+              } catch(e) {
+                console.log('Edge TTS chunk failed, fallback espeak');
+                const safe = chunk.replace(/[\\"]/g, '').slice(0, 2500);
+                execSync('espeak-ng -v en ' + ttsSpeed + ' -w ' + cd + '/a.wav "' + safe + '"', {timeout:30000});
+                execSync('ffmpeg -y -i ' + cd + '/a.wav -codec:a libmp3lame -b:a 128k ' + mp3P, {stdio:'pipe', timeout:15000});
+                try { fs.unlinkSync(cd + '/a.wav'); } catch {}
+              }
+            } else {
+              const safe = chunk.replace(/[\\"]/g, '').slice(0, 2500);
+              execSync('espeak-ng -v en ' + ttsSpeed + ' -w ' + cd + '/a.wav "' + safe + '"', {timeout:30000});
+              execSync('ffmpeg -y -i ' + cd + '/a.wav -codec:a libmp3lame -b:a 128k ' + mp3P, {stdio:'pipe', timeout:15000});
+              try { fs.unlinkSync(cd + '/a.wav'); } catch {}
+            }
+
+            const sz = fs.statSync(mp3P).size;
+            const dur = ttsBackend === 'edge' ? Math.round(sz / 12000 * 1000) : Math.round(sz / 6000 * 1000);
+
+            // Subtitles
             const { segmentScript, groupIntoSubtitles } = await import('./engine/subtitle-engine.js');
             const segs = segmentScript(chunk, dur);
             const subs = groupIntoSubtitles(segs, {wordsPerLine:4, maxCharsPerLine:35, breakOnPunct:true});
             const sr = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(w=>({word:w.word,startMs:w.startMs,endMs:w.endMs}))}));
-            const scene = {width:renderW,height:renderH,fps,durationMs:dur+200,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:sr,title:c===0?story.title:'',watermark:'',showProgress:false};
+
+            // Frames with background image
+            const bgConfig = bgPath
+              ? {type:'image', imagePath:bgPath, options:{zoomStart:1.0+c*0.02, zoomEnd:1.05+c*0.02, panX:0.02}}
+              : {type:'cinematic'};
+            const scene = {width:renderW,height:renderH,fps,durationMs:dur+200,bg:bgConfig,style:'narrative',subtitles:sr,title:c===0?story.title:'',watermark:'KDMC Stories',showProgress:c===chunks.length-1};
             const { generateFrames } = await import('./engine/frame-generator.js');
             await generateFrames(scene, cd+'/f', {onProgress:(cur)=>{if(cur%10===0)process.stdout.write('.')}});
+
             const vp = cd + '/v.mp4';
-            execSync('ffmpeg -y -framerate '+fps+' -i '+cd+'/f/frame_%06d.png -i '+cd+'/a.mp3 -map 0:v -map 1:a -vf scale='+finalW+':'+finalH+':flags=lanczos -c:v libx264 -preset ultrafast -crf 26 -pix_fmt yuv420p -r 30 -c:a aac -b:a 128k -shortest -movflags +faststart '+vp, {stdio:'pipe', timeout:180000});
+            execSync('ffmpeg -y -framerate '+fps+' -i '+cd+'/f/frame_%06d.png -i '+mp3P+' -map 0:v -map 1:a -vf scale='+finalW+':'+finalH+':flags=lanczos -c:v libx264 -preset ultrafast -crf 26 -pix_fmt yuv420p -r 30 -c:a aac -b:a 128k -shortest -movflags +faststart '+vp, {stdio:'pipe', timeout:180000});
             console.log(' ' + (fs.statSync(vp).size/1024/1024).toFixed(1) + 'MB');
             chunkVideos.push(vp);
             try { fs.readdirSync(cd+'/f').forEach(f=>fs.unlinkSync(cd+'/f/'+f)); fs.rmdirSync(cd+'/f'); } catch {}
-            try { fs.unlinkSync(cd+'/a.mp3'); } catch {}
+            try { fs.unlinkSync(mp3P); } catch {}
           }
+
+          // Concatenate
           const finalVideo = outDir + '/' + id + '_' + fmt + '.mp4';
           if (chunkVideos.length === 1) {
             fs.renameSync(chunkVideos[0], finalVideo);
@@ -94,12 +171,15 @@ jobs:
             for (const cv of chunkVideos) try { fs.unlinkSync(cv); } catch {}
             try { fs.unlinkSync(concatFile); } catch {}
           }
+
           console.log('FINAL: ' + (fs.statSync(finalVideo).size/1024/1024).toFixed(2) + ' MB');
-          fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],format:fmt,width:finalW,height:finalH,sizeBytes:fs.statSync(finalVideo).size},null,2));
+          const desc = (story.tags||[]).map(t=>'#'+t).join(' ') + '\n\n' + story.script.split(/[.!?]/)[0] + '.\n\nGenerated by KDMC Studio';
+          fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],description:desc,format:fmt,width:finalW,height:finalH,sizeBytes:fs.statSync(finalVideo).size,tts:ttsBackend,hasBg:!!bgPath},null,2));
           story.used = true;
           fs.writeFileSync('config/content-library.json', JSON.stringify(lib,null,2));
           for (let c = 0; c < chunks.length; c++) try { fs.rmSync(outDir+'/c'+c, {recursive:true, force:true}); } catch {}
-          console.log('Done!');
+          if (bgPath) try { fs.unlinkSync(bgPath); } catch {}
+          console.log('Done! TTS: ' + ttsBackend + ' | BG: ' + (bgPath ? 'AI' : 'gradient'));
           ENDSCRIPT
 
       - name: Upload to YouTube via curl
@@ -111,82 +191,29 @@ jobs:
         run: |
           LATEST=$(ls -t output/*/*.mp4 2>/dev/null | head -1)
           if [ -z "$LATEST" ]; then echo "No video"; exit 0; fi
-          if [ -z "$YT_CLIENT_ID" ]; then echo "No YouTube creds"; exit 0; fi
-
-          # Debug: show lengths (not values)
-          echo "Client ID length: ${#YT_CLIENT_ID}"
-          echo "Client Secret length: ${#YT_CLIENT_SECRET}"
-          echo "Refresh Token length: ${#YT_REFRESH_TOKEN}"
-
-          # Step 1: Get access token via curl
-          echo "Getting access token..."
+          if [ -z "$YT_CLIENT_ID" ]; then echo "No YT creds"; exit 0; fi
           RESPONSE=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
-            -d "client_id=${YT_CLIENT_ID}" \
-            -d "client_secret=${YT_CLIENT_SECRET}" \
-            -d "refresh_token=${YT_REFRESH_TOKEN}" \
+            -d "client_id=$(echo -n $YT_CLIENT_ID)" \
+            -d "client_secret=$(echo -n $YT_CLIENT_SECRET)" \
+            -d "refresh_token=$(echo -n $YT_REFRESH_TOKEN)" \
             -d "grant_type=refresh_token")
-
-          echo "Token response: $(echo $RESPONSE | head -c 100)..."
-
           ACCESS_TOKEN=$(echo $RESPONSE | node -e "process.stdin.on('data',d=>{try{console.log(JSON.parse(d).access_token||'')}catch{console.log('')}})")
-
-          if [ -z "$ACCESS_TOKEN" ]; then
-            echo "Failed to get access token"
-            echo "Full response: $RESPONSE"
-            exit 1
-          fi
-
-          echo "Access token obtained (${#ACCESS_TOKEN} chars)"
-
-          # Step 2: Get title from metadata
+          if [ -z "$ACCESS_TOKEN" ]; then echo "Token failed: $RESPONSE"; exit 1; fi
           META=$(dirname "$LATEST")/metadata.json
-          TITLE="Story Video"
-          TAGS=""
-          if [ -f "$META" ]; then
-            TITLE=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).title)}catch{console.log('Story Video')}")
-            TAGS=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).tags.map(t=>'#'+t).join(' '))}catch{console.log('')}")
-          fi
-          echo "Title: $TITLE"
-
-          # Step 3: Upload via YouTube resumable upload API
-          echo "Initiating upload..."
-          UPLOAD_URL=$(curl -s -X POST \
+          TITLE=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).title)}catch{console.log('Story Video')}")
+          DESC=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).description||'')}catch{console.log('')}")
+          echo "Uploading: $TITLE"
+          LOCATION=$(curl -s -X POST \
             "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status" \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
             -H "Content-Type: application/json" \
-            -D /tmp/upload_headers.txt \
-            -d "{
-              \"snippet\": {
-                \"title\": \"$TITLE\",
-                \"description\": \"$TAGS\n\nGenerated by KDMC Studio\",
-                \"categoryId\": \"22\"
-              },
-              \"status\": {
-                \"privacyStatus\": \"private\",
-                \"selfDeclaredMadeForKids\": false
-              }
-            }")
-
-          LOCATION=$(grep -i "location:" /tmp/upload_headers.txt | tr -d '\r' | awk '{print $2}')
-
-          if [ -z "$LOCATION" ]; then
-            echo "Failed to get upload URL"
-            echo "Response: $UPLOAD_URL"
-            exit 1
-          fi
-
-          echo "Upload URL obtained"
-
-          # Step 4: Upload the video file
-          echo "Uploading video..."
-          RESULT=$(curl -s -X PUT "$LOCATION" \
-            -H "Authorization: Bearer $ACCESS_TOKEN" \
-            -H "Content-Type: video/mp4" \
-            --data-binary @"$LATEST")
-
-          VIDEO_ID=$(echo $RESULT | node -e "process.stdin.on('data',d=>{try{console.log(JSON.parse(d).id||'?')}catch{console.log('?')}})")
-          echo "Uploaded! Video ID: $VIDEO_ID"
-          echo "URL: https://youtu.be/$VIDEO_ID"
+            -D /tmp/yt_headers.txt \
+            -d "{\"snippet\":{\"title\":\"$TITLE\",\"description\":\"$DESC\",\"categoryId\":\"22\"},\"status\":{\"privacyStatus\":\"private\",\"selfDeclaredMadeForKids\":false}}")
+          UPLOAD_URL=$(grep -i "location:" /tmp/yt_headers.txt | tr -d '\r' | awk '{print $2}')
+          if [ -z "$UPLOAD_URL" ]; then echo "No upload URL"; exit 1; fi
+          RESULT=$(curl -s -X PUT "$UPLOAD_URL" -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: video/mp4" --data-binary @"$LATEST")
+          VID=$(echo $RESULT | node -e "process.stdin.on('data',d=>{try{console.log(JSON.parse(d).id||'?')}catch{console.log('?')}})")
+          echo "Uploaded! https://youtu.be/$VID"
 
       - name: Commit state
         if: success()
@@ -194,9 +221,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tools/social/config/content-library.json 2>/dev/null || true
-          if git diff --staged --quiet; then
-            echo "No changes"
-          else
+          if git diff --staged --quiet; then echo "No changes"; else
             git commit -m "auto: video generated $(date -u +%Y-%m-%d) [skip ci]"
             git push
           fi
