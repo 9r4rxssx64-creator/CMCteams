@@ -398,7 +398,7 @@ function gen(){
   if(ghToken){
     fetch(‘https://api.github.com/repos/9r4rxssx64-creator/CMCteams/actions/workflows/social-publish.yml/dispatches’,{
       method:’POST’,
-      headers:{‘Authorization’:’Bearer ‘+ghToken,’Accept’:’application/vnd.github+json’,’Content-Type’:’application/json’},
+      headers:{‘Authorization’:’token ‘+ghToken,’Accept’:’application/vnd.github+json’,’Content-Type’:’application/json’},
       body:JSON.stringify({ref:’main’,inputs:{niche:niche,format:fmt,publish_platforms:’youtube’}})
     }).then(function(r){
       if(r.status===204){toast(‘Production lancée sur YouTube !’,’ok’)}
@@ -430,17 +430,18 @@ function gen(){
 
 function saveGH(){
   var t=document.getElementById('cfg-gh').value.trim();
-  if(!t||t.length<10){toast('Token invalide','info');return}
+  if(!t||t.length<10||t.indexOf('•')>=0){toast('Colle ton vrai token','info');return}
   localStorage.setItem('kdmc_gh_token',t);
-  document.getElementById('cfg-gh').value='••••••••';
-  document.getElementById('gh-status').textContent='Connecté — le bouton Générer publiera directement sur YouTube';
+  document.getElementById('cfg-gh').value='';
+  document.getElementById('cfg-gh').placeholder='Token enregistré';
+  document.getElementById('gh-status').textContent='Connecté';
   toast('GitHub connecté !','ok');
 }
 
 function loadGH(){
   var t=localStorage.getItem('kdmc_gh_token')||'';
-  if(t){
-    document.getElementById('cfg-gh').value='••••••••';
+  if(t&&t.indexOf('•')<0){
+    document.getElementById('cfg-gh').placeholder='Token enregistré';
     document.getElementById('gh-status').textContent='Connecté';
   }
 }
