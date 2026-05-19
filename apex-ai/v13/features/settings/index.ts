@@ -195,7 +195,7 @@ export function render(rootEl: HTMLElement): void {
     </style>
     <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:680px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header style="margin-bottom:24px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards">
-        <h1 style="margin:0 0 6px;font-size:clamp(26px,4.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
+        <h1 style="margin:0 0 6px;font-size:clamp(26px,5.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
         <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtml(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:var(--ax-gold)">👑 Admin</span>' : ''}</p>
       </header>
 
@@ -238,7 +238,7 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
         <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
-        <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:#f78322;border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:var(--ax-warning);border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
         <div id="ax-cf-diagnostic-results" style="margin-top:8px;font-size:12px"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-functional-test-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35)">🧪 Tester tous les boutons + auto-fix (v13.4.182)</button>
         <div id="ax-functional-test-results" style="margin-top:8px;font-size:12px"></div>
@@ -471,7 +471,7 @@ export function render(rootEl: HTMLElement): void {
       void (async () => {
         const resultsEl = rootEl.querySelector<HTMLDivElement>('#ax-cf-diagnostic-results');
         if (!resultsEl) return;
-        resultsEl.innerHTML = '<div style="color:#f78322">⏳ Test Cloudflare API en cours...</div>';
+        resultsEl.innerHTML = '<div style="color:var(--ax-warning)">⏳ Test Cloudflare API en cours...</div>';
         try {
           const { apexCloudflareVaultDeploy } = await import('../../services/apex-cloudflare-vault-deploy.js');
           const diag = await apexCloudflareVaultDeploy.runDiagnostic();
@@ -482,7 +482,7 @@ export function render(rootEl: HTMLElement): void {
               ${detail ? `<span style="color:rgba(255,255,255,0.5);font-size:11px">${detail}</span>` : ''}
             </div>`;
           let html = '<div style="background:rgba(15,15,25,0.8);border:1px solid rgba(247,131,34,0.3);border-radius:10px;padding:12px;margin-top:10px">';
-          html += '<div style="color:#f78322;font-weight:700;margin-bottom:8px">☁️ Diagnostic Cloudflare</div>';
+          html += '<div style="color:var(--ax-warning);font-weight:700;margin-bottom:8px">☁️ Diagnostic Cloudflare</div>';
           html += row('Token Cloudflare présent', diag.token_present);
           html += row('Token valide (HTTP 200)', diag.token_valid, diag.http_status ? `HTTP ${diag.http_status}` : '');
           html += row('Account ID accessible', !!diag.account_id, diag.account_name ?? diag.account_id ?? '');

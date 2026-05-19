@@ -93,7 +93,9 @@ describe('features/chat — Album & Lightbox', () => {
     it('ouvre modal plein écran avec image', () => {
       const modal = openImageLightbox(root, { url: 'https://x.com/a.jpg', filename: 'a.jpg' });
       expect(modal).toBeTruthy();
-      expect(modal.className).toBe('ax-lightbox');
+      /* v13.4.232 finding P1.10 — ajout .ax-modal-glass pour glassmorphism backdrop-filter */
+      expect(modal.classList.contains('ax-lightbox')).toBe(true);
+      expect(modal.classList.contains('ax-modal-glass')).toBe(true);
       expect(modal.getAttribute('role')).toBe('dialog');
       expect(modal.querySelector('img')?.getAttribute('src')).toBe('https://x.com/a.jpg');
     });

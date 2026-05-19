@@ -10,12 +10,12 @@
 import { escapeHtml } from '../core/escape-html.js';
 
 export interface RechargeActionOptions {
-  rechargeUrl?: string;
-  rotateUrl?: string;
+  rechargeUrl?: string | undefined;
+  rotateUrl?: string | undefined;
   /** Variant compact (inline link, ex: settings) vs full (button, ex: dashboard) */
-  variant?: 'inline' | 'button';
+  variant?: 'inline' | 'button' | undefined;
   /** Label custom (default: "Recharge") */
-  label?: string;
+  label?: string | undefined;
 }
 
 /**

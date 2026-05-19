@@ -1583,7 +1583,7 @@ export function renderToolPills(msg: DisplayMessage): string {
     return (
       `<details class="ax-tool-pills" style="margin:4px 0;">` +
       `<summary style="${pillStyle}cursor:pointer;">▶ ${count} opération${count > 1 ? 's' : ''}</summary>` +
-      `<div style="font-size:11px;color:#888;padding:4px 8px;">${labels}</div>` +
+      `<div style="font-size:11px;color:var(--ax-text-muted);padding:4px 8px;">${labels}</div>` +
       `</details>`
     );
   }
@@ -2556,7 +2556,7 @@ export function render(rootEl: HTMLElement): void {
         };
         recognition.start();
         recognitionActive = true;
-        if (micBtn) micBtn.style.background = 'linear-gradient(135deg,var(--ax-error),#cc2222)';
+        if (micBtn) micBtn.style.background = 'linear-gradient(135deg,var(--ax-error),var(--ax-error))';
         haptic.medium();
         toast.success('🎙 Parle maintenant — re-tap 🎙 pour arrêter');
       } catch (err: unknown) {
@@ -2616,7 +2616,7 @@ export function render(rootEl: HTMLElement): void {
         });
         if (r.ok && wakeBtn) {
           /* Indicateur visuel : icon 👂 verte pulsante. Pas de texte placeholder. */
-          wakeBtn.style.background = 'linear-gradient(135deg,var(--ax-green),#1a9a5a)';
+          wakeBtn.style.background = 'linear-gradient(135deg,var(--ax-green),var(--ax-green))';
           wakeBtn.style.animation = 'ax-wake-pulse 1.8s ease-in-out infinite';
           toast.success('👂 Écoute passive activée — dis "Dis Apex" pour parler', { duration: 4000 });
         } else {

@@ -146,12 +146,14 @@ describe('features/vault visual — renderCredentialCard', () => {
   });
 
   it('affiche les couleurs de status spécifiques', () => {
+    /* v13.4.232 (étape 3 design system) : migration hex → CSS vars
+     * #22cc77 → var(--ax-green), #ffaa00 → var(--ax-warning), #ff5b5b → var(--ax-error) */
     const active = renderCredentialCard(makeDisplay({ status: 'active' }));
     const failing = renderCredentialCard(makeDisplay({ status: 'failing' }));
     const invalid = renderCredentialCard(makeDisplay({ status: 'invalid' }));
-    expect(active).toContain('#22cc77');
-    expect(failing).toContain('#ffaa00');
-    expect(invalid).toContain('#ff5b5b');
+    expect(active).toContain('var(--ax-green)');
+    expect(failing).toContain('var(--ax-warning)');
+    expect(invalid).toContain('var(--ax-error)');
   });
 });
 
