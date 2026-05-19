@@ -1738,3 +1738,18 @@ Pour CHAQUE service manquant, Apex :
 ---
 
 > Si tu vois autre chose qui te demande une action manuelle non listée → screenshot-moi, je trouve l'automation.
+
+## YouTube OAuth — À finir depuis un ORDINATEUR (pas iPhone)
+
+Kevin a créé le projet Google Cloud "KDMC SOCIAL" (ID: kdmc-social) + activé YouTube Data API v3 + créé le client OAuth (Web client 1).
+
+**Il reste** :
+1. Ajouter `desarzens.kevin@gmail.com` comme utilisateur test dans OAuth consent screen
+2. Autoriser l'app YouTube (lien OAuth)
+3. Récupérer le refresh token
+4. Le coller dans GitHub Secrets sous `YOUTUBE_REFRESH_TOKEN`
+
+**Client ID** : `768871435113-09p70spa7k18gia9mibht34p2g2eb9ut.apps.googleusercontent.com`
+**Secrets GitHub déjà ajoutés** : `YOUTUBE_CLIENT_ID` + `YOUTUBE_CLIENT_SECRET` + `GEMINI_API_KEY`
+
+**À faire depuis un ordi** (plus facile que iPhone pour les redirections localhost).
