@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.118';
+const __APEX_CHAT_VERSION__ = 'v1.1.119';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.118</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.119</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.118</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.119</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3529,7 +3529,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.118',
+    version: 'v1.1.119',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5376,9 +5376,9 @@ function renderAuthStep(){
   if(K.authStep === 'phone'){
     host.innerHTML = `
       <label class="label">Numéro de téléphone</label>
-      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel" value="+33672280277">
+      <input id="auth-phone" type="tel" class="input" placeholder="+33 6 12 34 56 78" autocomplete="tel" inputmode="tel">
       <label class="label" style="margin-top:14px">Ton prénom + nom</label>
-      <input id="auth-name" type="text" class="input" placeholder="Ex: Kevin Desarzens" autocomplete="name" value="Kevin Desarzens">
+      <input id="auth-name" type="text" class="input" placeholder="Ex: Marc Dupont" autocomplete="name">
       <button id="btn-auth-phone" type="button" class="btn btn-block" style="margin-top:16px">
         📱 Recevoir le code SMS
       </button>
@@ -8164,14 +8164,120 @@ K._sendVoiceMessage = async function(){
   }
 };
 
+// v1.1.119 Kevin "Frank vient de se connecter, je le vois pas dans contacts" :
+// - K.contacts n'était JAMAIS rempli (lg seulement au boot, jamais update)
+// - renderContacts ignorait K.contacts (toujours empty state)
+// → Fix : fetch /api/admin/all-users si admin, sinon extraire peers depuis convs
+K._fetchContacts = async function(silent){
+  try{
+    let users = [];
+    if(K.user?.is_admin && K.token){
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 8000);
+      let r;
+      try {
+        r = await fetch(API_BASE + '/api/admin/all-users?filter=active&limit=200', {
+          headers: { 'Authorization': 'Bearer ' + K.token },
+          signal: ctrl.signal,
+        });
+      } finally { clearTimeout(tid); }
+      if(r && r.ok){
+        const data = await r.json();
+        users = (data.users || []).filter(u => u.id !== K.user?.id);
+      }
+    }
+    // Complément : peers extraits des convs existantes
+    const seen = new Set(users.map(u => u.id));
+    for(const c of (K.conversations || [])){
+      if(c.peer_id && !seen.has(c.peer_id)){
+        users.push({
+          id: c.peer_id,
+          pseudo: c.pseudo || c.name || c.peer_id.slice(0, 8),
+          display_name: c.name || c.pseudo,
+          last_seen: c.last_msg_ts || 0,
+        });
+        seen.add(c.peer_id);
+      }
+    }
+    K.contacts = users;
+    ls('contacts', users);
+    if(!silent) toast('👥 ' + users.length + ' contact' + (users.length>1?'s':'') + ' chargés', 'ok');
+    if(K.view === 'contacts' && typeof K.render === 'function') K.render();
+    return users;
+  }catch(e){
+    if(!silent) toast('Liste contacts indisponible (offline ?)', 'warn');
+    return K.contacts || [];
+  }
+};
+
+K._startConvWithUser = function(userId, displayName){
+  // Cherche conv existante avec ce peer
+  const existing = (K.conversations || []).find(c => c.peer_id === userId || c.id === userId);
+  if(existing){ K.openConv && K.openConv(existing.id); return; }
+  // Crée conv locale (sync auto au prochain message)
+  const id = 'dm_local_' + Date.now();
+  K.conversations = K.conversations || [];
+  K.conversations.unshift({
+    id, type: 'dm', peer_id: userId,
+    name: displayName || userId,
+    pseudo: displayName || userId,
+    last_msg_ts: Date.now(),
+    created_at: Date.now(),
+    pending_sync: true,
+  });
+  K.messages = K.messages || {};
+  K.messages[id] = [];
+  ls('conversations', K.conversations);
+  toast('💬 Conv ouverte avec ' + (displayName || userId), 'ok');
+  K.openConv && K.openConv(id);
+};
+
 function renderContacts(app){
+  const contacts = K.contacts || lg('contacts', []);
+  if(contacts.length === 0){
+    app.innerHTML = `
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Contacts</h2>
+      <button class="btn btn-out btn-block btn-sm" style="margin-bottom:14px" onclick="K._fetchContacts()">🔄 Rafraîchir la liste</button>
+      <div class="card" style="text-align:center;padding:24px 14px">
+        <div style="font-size:2.5em;margin-bottom:10px">👥</div>
+        <p style="color:var(--ax-text-2);margin:0 0 14px">Aucun contact pour l'instant. ${K.user?.is_admin ? 'Tape "Rafraîchir" pour voir tous les users actifs.' : 'Invite tes amis ou attends une connexion.'}</p>
+        <button class="btn" onclick="K.openInvite()">📤 Inviter des amis</button>
+      </div>
+    `;
+    if(!K._contactsFetchedOnce){
+      K._contactsFetchedOnce = true;
+      setTimeout(() => K._fetchContacts(true), 100);
+    }
+    return;
+  }
+  const now = Date.now();
+  const sorted = contacts.slice().sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
   app.innerHTML = `
-    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Contacts</h2>
-    <div class="card" style="text-align:center;padding:24px 14px">
-      <div style="font-size:2.5em;margin-bottom:10px">👥</div>
-      <p style="color:var(--ax-text-2);margin:0 0 14px">Invite tes amis pour démarrer une conversation</p>
-      <button class="btn" onclick="K.openInvite()">📤 Inviter des amis</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Contacts (${contacts.length})</h2>
+      <button class="btn btn-sm btn-out" onclick="K._fetchContacts()" title="Rafraîchir" aria-label="Rafraîchir">🔄</button>
     </div>
+    <div style="display:grid;gap:6px">
+      ${sorted.map(c => {
+        const isOnline = c.last_seen && (now - c.last_seen) < 5 * 60 * 1000;
+        const lastSeenLabel = !c.last_seen ? '' : isOnline ? '🟢 En ligne' : 'Vu il y a ' + (
+          now - c.last_seen < 3600000 ? Math.round((now - c.last_seen)/60000) + ' min'
+          : now - c.last_seen < 86400000 ? Math.round((now - c.last_seen)/3600000) + 'h'
+          : Math.round((now - c.last_seen)/86400000) + 'j'
+        );
+        const name = c.display_name || c.real_name || c.pseudo || c.id;
+        const initial = (name || '?')[0].toUpperCase();
+        return `<div class="card-row" style="padding:10px;cursor:pointer" onclick="K._startConvWithUser('${esc(c.id)}','${esc(name)}')">
+          <div class="avatar${isOnline ? ' avatar-online' : ''}">${esc(initial)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600">${esc(name)}</div>
+            <div style="font-size:.75em;color:var(--ax-text-3)">${esc(lastSeenLabel)}</div>
+          </div>
+          <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._startCall && K._startCall('${esc(c.id)}','audio')" aria-label="Appel">📞</button>
+        </div>`;
+      }).join('')}
+    </div>
+    <p style="text-align:center;font-size:.72em;color:var(--ax-text-3);margin-top:14px">Tape sur un contact pour démarrer une conv</p>
   `;
 }
 
@@ -8957,7 +9063,7 @@ K._adminFallbackLocalInvites = function(entries){
     return {
       phone: e.phone, name: e.name, pseudo: '',
       magic_url: `${baseUrl}?invite=${token}`,
-      short_url: '', sms: `Salut ${e.name || ''} ! Kevin t'invite sur Apex Chat : ${baseUrl}?invite=${token}`,
+      short_url: '', sms: `Salut ${e.name || ''} ! ${K.user?.real_name || K.user?.pseudo || 'Un ami'} t'invite sur Apex Chat : ${baseUrl}?invite=${token}`,
       ts: Date.now()
     };
   });
@@ -8984,7 +9090,7 @@ K._adminShowBulkResults = function(ok, fail){
 };
 
 K._adminShareInvite = function(phone, name, magicUrl){
-  const smsText = `Salut ${name || ''} ! Kevin t'invite sur Apex Chat (messagerie privée chiffrée). Connexion directe en 1 clic : ${magicUrl}`;
+  const smsText = `Salut ${name || ''} ! ${K.user?.real_name || K.user?.pseudo || 'Un ami'} t'invite sur Apex Chat (messagerie privée chiffrée). Connexion directe en 1 clic : ${magicUrl}`;
   if(navigator.share){
     navigator.share({ title: 'Invitation Apex Chat', text: smsText, url: magicUrl })
       .then(() => toast('✅ Envoyé', 'ok'))
@@ -9927,7 +10033,7 @@ K._sendInvite1Click = function(){
   const token = btoa(phone + ':' + name).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
   const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
   const inviteUrl = `${baseUrl}?invite=${token}`;
-  const smsText = `Salut ${name} ! Kevin t'invite sur Apex Chat (messagerie privee chiffree). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
+  const smsText = `Salut ${name} ! ${K.user?.real_name || K.user?.pseudo || 'Un ami'} t'invite sur Apex Chat (messagerie privee chiffree). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
 
   K._closeModal();
 
@@ -9958,7 +10064,7 @@ K._sendInvite = async function(){
   const baseUrl = location.origin + location.pathname.replace(/[^\/]*$/,'');
   const inviteUrl = `${baseUrl}?invite=${token}`;
 
-  const smsText = `Salut ${name} ! Kevin t'invite sur Apex Chat (messagerie privée chiffrée). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
+  const smsText = `Salut ${name} ! ${K.user?.real_name || K.user?.pseudo || 'Un ami'} t'invite sur Apex Chat (messagerie privée chiffrée). Clique pour entrer (pas besoin de SMS) : ${inviteUrl}`;
 
   // Affiche le lien + bouton pour partager/copier
   K._showModal('📨 Invitation prête', `
