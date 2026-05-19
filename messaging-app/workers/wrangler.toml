@@ -21,6 +21,10 @@ name = "apex-chat-api"
 main = "api-worker.js"
 compatibility_date = "2026-04-27"
 compatibility_flags = ["nodejs_compat"]
+# v1.1.122 fix Kevin "Load failed" : workers_dev=true active l'URL par défaut
+# https://apex-chat-api.<account-subdomain>.workers.dev (sinon Worker déployé
+# mais non joignable car [[routes]] cassé avec zone_name vide).
+workers_dev = true
 
 # Limites runtime
 [limits]
@@ -151,10 +155,10 @@ queue = "apex-chat-memory-lane"
 max_batch_size = 25
 max_batch_timeout = 60
 
-# Routes
-[[routes]]
-pattern = "apex-chat-api.workers.dev/*"
-zone_name = ""
+# Routes — DÉSACTIVÉ v1.1.122 (pattern cassé sans zone_name)
+# Le Worker est servi via workers_dev=true à :
+# https://apex-chat-api.<account-subdomain>.workers.dev
+# Pour ajouter un custom domain, configurer dans CF Dashboard puis remettre ici.
 
 # Workers séparés (déployés via leurs propres wrangler.toml)
 # - workers/push-worker/wrangler.toml
