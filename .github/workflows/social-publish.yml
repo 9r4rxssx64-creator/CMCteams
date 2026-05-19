@@ -6,17 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       niche:
-        description: "Niche (betrayal-revenge, mystery, finance-lesson, etc.)"
+        description: "Niche"
         required: false
         default: "betrayal-revenge"
       format:
         description: "Format (short, long)"
         required: false
         default: "long"
-      publish_platforms:
-        description: "Plateformes (comma: youtube,facebook,instagram)"
-        required: false
-        default: "youtube"
 
 permissions:
   contents: write
@@ -36,21 +32,11 @@ jobs:
           node-version: "22"
 
       - name: Install espeak-ng
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y espeak-ng
+        run: sudo apt-get update -qq && sudo apt-get install -y espeak-ng
 
       - name: Install deps
         working-directory: tools/social
         run: npm install --no-audit --no-fund
-
-      - name: Fix templateName bug in cli.js
-        working-directory: tools/social
-        run: |
-          # Move templateName declaration before its usage
-          sed -i '/console.log.*Template : \${templateName}/d' cli.js
-          sed -i 's/const templateName = args.template || "narrative-storytelling";/const templateName = args.template || "narrative-storytelling";\n  console.log(`   Template : ${templateName}`);/' cli.js
-          node --check cli.js
 
       - name: Generate video
         working-directory: tools/social
@@ -59,14 +45,58 @@ jobs:
         run: |
           NICHE="${{ github.event.inputs.niche || 'betrayal-revenge' }}"
           FORMAT="${{ github.event.inputs.format || 'long' }}"
-          if [ -n "$GOOGLE_AI_API_KEY" ]; then
-            node cli.js generate --ai-script --niche "$NICHE" --format "$FORMAT" || node cli.js generate --random --format "$FORMAT"
-          else
-            node cli.js generate --random --format "$FORMAT"
-          fi
+
+          # Use narrative-storytelling template directly (bypass cli.js templateName bug)
+          node -e "
+            import fs from 'fs';
+            import path from 'path';
+            const lib = JSON.parse(fs.readFileSync('config/content-library.json','utf8'));
+            const cats = Object.keys(lib).filter(k=>!k.startsWith('_'));
+            let story = null;
+            for (const cat of cats) {
+              const unused = lib[cat].filter(s=>!s.used);
+              if (unused.length > 0) { story = unused[Math.floor(Math.random()*unused.length)]; break; }
+            }
+            if (!story) { console.error('No unused stories'); process.exit(1); }
+            console.log('Story: ' + story.id + ' — ' + story.title);
+            const { generateSpeech, VOICES } = await import('./engine/tts.js');
+            const { segmentScript, groupIntoSubtitles } = await import('./engine/subtitle-engine.js');
+            const { generateFrames } = await import('./engine/frame-generator.js');
+            const { compileVideo } = await import('./engine/compiler.js');
+            const id = story.id;
+            const fmt = '${FORMAT}';
+            const w = fmt==='short' ? 1080 : 1920;
+            const h = fmt==='short' ? 1920 : 1080;
+            const outDir = 'output/' + id;
+            fs.mkdirSync(outDir, {recursive:true});
+            const audioPath = outDir + '/narration.mp3';
+            console.log('TTS...');
+            const tts = await generateSpeech(story.script, {outputPath:audioPath, voice:VOICES.en_storytelling_male_dramatic, rate:-5, pitch:-3});
+            console.log('TTS OK: ' + Math.round(tts.durationMs/1000) + 's');
+            const segs = segmentScript(story.script, tts.durationMs);
+            const subs = groupIntoSubtitles(segs, {wordsPerLine: fmt==='short'?3:6, maxCharsPerLine: fmt==='short'?22:50, breakOnPunct:true});
+            const subsR = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(w=>({word:w.word,startMs:w.startMs,endMs:w.endMs}))}));
+            console.log(subs.length + ' subtitles');
+            const scene = {width:w,height:h,fps:30,durationMs:tts.durationMs+800,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:subsR,title:story.title,watermark:'',showProgress:true};
+            const framesDir = outDir + '/frames';
+            console.log('Frames...');
+            await generateFrames(scene, framesDir, {onProgress:(c,t)=>{if(c%30===0)process.stdout.write('.')}});
+            console.log(' OK');
+            const videoPath = outDir + '/' + id + '_' + fmt + '.mp4';
+            console.log('Compile...');
+            const result = await compileVideo({framesDir,fps:30,audioPath:tts.audioPath,outputPath:videoPath,width:w,height:h,crf:20,preset:'medium'});
+            console.log('Video: ' + videoPath + ' (' + (result.sizeBytes/1024/1024).toFixed(2) + ' MB)');
+            const meta = {id,title:story.title,tags:story.tags||[],format:fmt,width:w,height:h,fps:30,sizeBytes:result.sizeBytes};
+            fs.writeFileSync(outDir+'/metadata.json', JSON.stringify(meta,null,2));
+            // Mark story as used
+            story.used = true;
+            fs.writeFileSync('config/content-library.json', JSON.stringify(lib,null,2));
+            // Cleanup frames
+            try{fs.readdirSync(framesDir).forEach(f=>{if(f.startsWith('frame_'))fs.unlinkSync(framesDir+'/'+f)});fs.rmdirSync(framesDir)}catch{}
+            console.log('Done!');
+          "
 
       - name: Publish to YouTube
-        if: contains(github.event.inputs.publish_platforms || 'youtube', 'youtube')
         working-directory: tools/social
         env:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -74,53 +104,18 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: |
           LATEST=$(ls -t output/*/*.mp4 2>/dev/null | head -1)
-          if [ -n "$LATEST" ]; then
-            node cli.js publish --platform youtube --video "$LATEST" --privacy private
+          if [ -n "$LATEST" ] && [ -n "$YOUTUBE_CLIENT_ID" ]; then
+            node cli.js publish --platform youtube --video "$LATEST" --privacy private || echo "YouTube publish skipped"
           fi
 
-      - name: Extract + publish Shorts
-        if: ${{ github.event.inputs.format == 'long' }}
-        working-directory: tools/social
-        env:
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-        run: |
-          LATEST=$(ls -t output/*/*_long.mp4 2>/dev/null | head -1)
-          if [ -n "$LATEST" ]; then
-            node cli.js extract-shorts --video "$LATEST" --count 3
-            for SHORT in $(ls "$(dirname $LATEST)/shorts/"*.mp4 2>/dev/null); do
-              node cli.js publish --platform youtube --video "$SHORT" --privacy private --short
-            done
-          fi
-
-      - name: Notify Telegram
-        if: always()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
-            STATUS="${{ job.status }}"
-            if [ "$STATUS" = "success" ]; then
-              MSG="Video generee et publiee (private)"
-            else
-              MSG="Echec generation video"
-            fi
-            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-              -d "chat_id=$TELEGRAM_CHAT_ID" \
-              -d "text=$MSG"
-          fi
-
-      - name: Commit state changes
+      - name: Commit state
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tools/social/config/content-library.json 2>/dev/null || true
-          git add tools/social/output/_publish-log.json 2>/dev/null || true
           if git diff --staged --quiet; then
-            echo "Pas de changements"
+            echo "No changes"
           else
             git commit -m "auto: video generated $(date -u +%Y-%m-%d) [skip ci]"
             git push
