@@ -5142,7 +5142,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.707";
+var APP_VER="v9.708";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35105,17 +35105,11 @@ function vImport(){
       <select id="impY" class="inp" onchange="renderImportRollbackBanner()" style="font-size:16px;padding:10px">${[2025,2026,2027].map(function(y){return "<option value=\""+y+"\""+(y===A.year?" selected":"")+">"+y+"</option>";}).join("")}</select>
       <select id="impM" class="inp" onchange="renderImportRollbackBanner()" style="font-size:16px;padding:10px">${MFR.map(function(m,i){return "<option value=\""+i+"\""+(i===A.month?" selected":"")+">"+m+"</option>";}).join("")}</select>
     </div>
-    <!-- v9.697 Kevin "V1 n'a pas de V. Si V2/V3 importé, marquer". Optionnel : badge V[N] forcé -->
-    <div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:12px;color:#a0cca0">
-      <span>Version (optionnel) :</span>
-      <select id="impVer" class="inp" style="flex:1;font-size:14px;padding:6px" title="V1 = implicite (pas de badge). Mettre V2/V3 si c'est une version révisée du planning SBM.">
-        <option value="">Auto (V1 implicite)</option>
-        <option value="2">V2 (révision 2)</option>
-        <option value="3">V3 (révision 3)</option>
-        <option value="4">V4</option>
-        <option value="5">V5</option>
-      </select>
-    </div>
+    <!-- v9.708 Kevin "Inutile le choix des versions. Tout auto. MC Teams lit l'import,
+    tout est écrit dessus" — dropdown supprimée. Version 100% auto :
+    1. Filename (MAI 2026 V2.pdf → V2)
+    2. Texte PDF (regex V2, V3, Version 2...)
+    3. Auto-increment si même mois ré-importé -->
   </div>
 
   <!-- Drop PDF (compact, sans texte superflu) -->
@@ -35607,6 +35601,20 @@ function handleFileImport(input){
   var det=_detectMonthFromFilename(file.name);
   if(det.m>=0){var sm=document.getElementById("impM");if(sm)sm.value=String(det.m);}
   if(det.y>0){var sy=document.getElementById("impY");if(sy)sy.value=String(det.y);}
+  // v9.708 Kevin "Inutile le choix des versions. Tout auto. MC Teams lit l'import,
+  // tout est \u00e9crit dessus" : auto-detect version depuis filename.
+  // Patterns reconnus : v2, V2, v 2, version 2, -v2-, _v3_, v2.pdf, 2.pdf en fin
+  try{
+    var _nameU=String(file.name||"").toUpperCase();
+    var _vfn=_nameU.match(/\bV\s*(\d{1,2})\b/)||_nameU.match(/VERSION\s*(\d{1,2})/)||_nameU.match(/[-_\s]V?(\d)\.PDF/);
+    if(_vfn){
+      var _vfnN=parseInt(_vfn[1]);
+      if(_vfnN>=2&&_vfnN<=20){
+        window._cmcImportFilenameVersion=_vfnN;
+        console.log("[v9.708 filename-version] d\u00e9tect\u00e9 V"+_vfnN+" depuis filename "+file.name);
+      }
+    }
+  }catch(_vfe){}
   var isPdf=file.type==="application/pdf"||file.name.toLowerCase().endsWith(".pdf");
   // v9.128 — Vérif taille (évite hang sur gros fichiers)
   if(file.size>50*1024*1024){toast("\u26a0 Fichier trop volumineux (>50 MB)","err");return;}
@@ -35621,6 +35629,26 @@ function handleFileImport(input){
       var allLines=text.split("\n").filter(function(l){return l.trim();});
       var n=allLines.length;
       // v9.150b — Diagnostic cadres : v\u00e9rifier si les noms superviseurs/pit boss sont dans le texte extrait
+      // v9.708 Kevin "Les versions sont écrites tout en haut au milieu, en premier" :
+      // Si filename ne contenait pas V[N], chercher dans les 50 premières lignes du PDF.
+      try{
+        if(!window._cmcImportFilenameVersion){
+          var _headTxt=allLines.slice(0,50).join(" ");
+          var _vm2=_headTxt.match(/\bV\s*(\d{1,2})\b/i)||_headTxt.match(/version\s*(\d{1,2})/i);
+          if(_vm2){
+            var _vnn=parseInt(_vm2[1]);
+            if(_vnn>=2&&_vnn<=20){
+              window._cmcImportFilenameVersion=_vnn;
+              console.log("[v9.708 text-version] V"+_vnn+" détecté dans en-tête PDF");
+            }
+          }
+        }
+        var _vDetected=window._cmcImportFilenameVersion;
+        if(info){
+          var _vBadge=_vDetected?'<span style="display:inline-block;background:linear-gradient(135deg,#c9a227,#ffdc40);color:#000;border-radius:4px;padding:2px 8px;font-weight:800;margin-left:6px">📚 V'+_vDetected+'</span>':'<span style="color:#7a9a80;font-style:italic;margin-left:6px">V1 (auto)</span>';
+          info.innerHTML='<span style="color:#90c8a0">✓ '+esc(file.name)+' analysé ('+n+' lignes)</span>'+_vBadge;
+        }
+      }catch(_vhe){}
       var _cadreNames=["ETTORI","FOUQUE","PLACENTI","DOGLIOLO","MUS ","BOUVIER","JANEL","GARELLI","LANDAU","PETIT "];
       var _cadreFound=[],_cadreNotFound=[];
       var _textUC=text.toUpperCase();
@@ -36702,19 +36730,31 @@ function doImport(){
   // v9.693 Kevin "Il marque mai V1 alors que c'est marqué mai V2 sur l'import" :
   // Détection V[N] depuis le texte PDF source (patterns: "V2", "v2", "mai V2", "mai 2026 V2").
   // v9.697 Kevin "V1 n'a pas de V. Ne pas écrire V1 si c'est une V2 importée".
-  // Priorité 1 : input admin manuel (#impVer) → V2/V3 forcé
-  // Priorité 2 : regex V[N] dans PDF texte (V2, V3...)
-  // Sinon → null (V1 implicite, pas de badge affiché). PAS d'auto-increment.
+  // v9.708 Kevin "Inutile le choix des versions. Tout auto. MC Teams lit l'import,
+  // tout est écrit dessus. Première, deuxième, troisième — auto." :
+  // DÉTECTION VERSION 100% AUTO en cascade :
+  //   1. Filename du fichier (mai-v2.pdf, planning_v3.pdf, etc.)
+  //   2. Regex texte PDF entier (V2, V3, Version 2...)
+  //   3. Auto-increment : si cmc_ref_<key> existe déjà → version+1
+  //   4. Sinon : null (V1 implicite, pas de badge)
   var _prevRef=lg("cmc_ref_"+key,null);
   var _detectedVer=null;
   try{
-    var _verEl=document.getElementById("impVer");
-    var _manualVer=_verEl?parseInt(_verEl.value||"0"):0;
-    if(_manualVer>=2&&_manualVer<=20)_detectedVer=_manualVer;
+    // PRIORITÉ 1 : Filename (capturé dans handleFileImport)
+    if(window._cmcImportFilenameVersion){
+      _detectedVer=window._cmcImportFilenameVersion;
+      window._cmcImportFilenameVersion=null; // consommé
+    }
+    // PRIORITÉ 2 : Regex sur TOUT le texte PDF (pas juste 1500 chars)
     if(!_detectedVer){
-      var _head=String(txt||"").slice(0,1500);
-      var _vm=_head.match(/\bV\s*(\d{1,2})\b/i)||_head.match(/version\s*(\d{1,2})/i);
+      var _vm=String(txt||"").match(/\bV\s*(\d{1,2})\b/i)||String(txt||"").match(/version\s*(\d{1,2})/i);
       if(_vm){var _vn=parseInt(_vm[1]);if(_vn>=2&&_vn<=20)_detectedVer=_vn;}
+    }
+    // PRIORITÉ 3 : Auto-increment si même mois ré-importé
+    if(!_detectedVer && _prevRef && _prevRef.importedAt){
+      var _prevV=(_prevRef.version&&_prevRef.version>=1)?_prevRef.version:1;
+      _detectedVer=_prevV+1;
+      console.log("[v9.708 auto-increment] mois "+key+" déjà importé V"+_prevV+" → nouveau V"+_detectedVer);
     }
   }catch(_vErr){}
   var _importVersion=_detectedVer; // null si V1 implicite (pas de badge)
