@@ -5172,6 +5172,38 @@ function _stripPersistedTeamFamHistory(empsArr){
     console.log("[v9.707 redetect-boot] "+_wiped+" teamHistory entries wiped — re-detection au prochain dc()");
   }catch(_e){console.warn("[v9.707 redetect-boot]",_e);}
 })();
+// v9.710 — Re-trigger forcé du re-detect (Kevin "Tu m'as les vraies équipes, ça ne
+// fonctionne pas. Des équipes de 1 ou 2, pas d'équipe miroir, mon équipe pas en
+// première"). Cause : teamHistory stale d'un import précédent (avant v9.707) →
+// 212 emps "explicit" skip dans algo → ré-affectations bloquées sur vieilles valeurs.
+// Solution : NEW flag cmc_v710_redetect_done → wipe forcé pour les devices ayant
+// déjà fait v9.707 (qui n'aurait pas tourné si flag v707 déjà set par v9.707).
+(function _v710RedetectBoot(){
+  try{
+    if(localStorage.getItem("cmc_v710_redetect_done"))return;
+    var _eRaw=localStorage.getItem("cmc_e");
+    if(!_eRaw){localStorage.setItem("cmc_v710_redetect_done","1");return;}
+    var _emps=JSON.parse(_eRaw);
+    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v710_redetect_done","1");return;}
+    var _wiped=0;
+    _emps.forEach(function(e){
+      if(e&&e.teamHistory){_wiped+=Object.keys(e.teamHistory).length;e.teamHistory={};}
+      if(e&&e.familyHistory){e.familyHistory={};}
+    });
+    localStorage.setItem("cmc_e",JSON.stringify(_emps));
+    localStorage.setItem("cmc_v710_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
+    try{window._cmcLastDetectCacheKey=null;}catch(_){}
+    // Aussi : wipe cmc_team_mirror_* pour forcer re-détection miroir au prochain dc()
+    try{
+      for(var _kk in localStorage){
+        if(localStorage.hasOwnProperty(_kk) && _kk.indexOf("cmc_team_mirror_")===0){
+          localStorage.removeItem(_kk);
+        }
+      }
+    }catch(_){}
+    console.log("[v9.710 redetect-boot] "+_wiped+" teamHistory + tous cmc_team_mirror_* wipés — re-detect+miroir au prochain dc()");
+  }catch(_e){console.warn("[v9.710 redetect-boot]",_e);}
+})();
 var A={
   user:null,
   view:"accueil",
@@ -5264,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.709";
+var APP_VER="v9.710";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
