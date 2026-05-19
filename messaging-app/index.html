@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.121';
+const __APEX_CHAT_VERSION__ = 'v1.1.122';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.121</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.122</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.121</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.122</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3529,7 +3529,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.121',
+    version: 'v1.1.122',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -8276,6 +8276,38 @@ K._fetchContacts = async function(silent){
   }
 };
 
+// v1.1.122 : Guide pas-à-pas import contacts iPhone (UX clarté)
+K._openIphoneImportGuide = function(){
+  K._showModal('📲 Importer tes contacts iPhone', `
+    <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 12px">
+      iOS Safari ne peut pas lire directement tes contacts. Voici le flux en <strong>3 étapes simples</strong> :
+    </p>
+
+    <div style="background:var(--ax-bg-2);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="font-size:.78em;color:var(--ax-gold);font-weight:600;margin-bottom:4px">1️⃣ Ouvre l'app Contacts iPhone</div>
+      <div style="font-size:.85em;color:var(--ax-text-2)">Sélectionne 1 ou plusieurs contacts (long-press → ☑ Sélectionner)</div>
+    </div>
+
+    <div style="background:var(--ax-bg-2);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="font-size:.78em;color:var(--ax-gold);font-weight:600;margin-bottom:4px">2️⃣ Partage en .vcf</div>
+      <div style="font-size:.85em;color:var(--ax-text-2)">Tape <strong>Partager</strong> → choisis <strong>Mail</strong> (vers toi-même) ou <strong>AirDrop</strong>. Ouvre la pièce jointe .vcf reçue → <strong>"Enregistrer dans Fichiers"</strong>.</div>
+    </div>
+
+    <div style="background:var(--ax-bg-2);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="font-size:.78em;color:var(--ax-gold);font-weight:600;margin-bottom:4px">3️⃣ Reviens ici + choisis le .vcf</div>
+      <div style="font-size:.85em;color:var(--ax-text-2)">Tape le bouton ci-dessous → sélectionne le .vcf dans Fichiers</div>
+    </div>
+
+    <button class="btn btn-block" onclick="K._closeModal();document.getElementById('contacts-vcf-input').click()">
+      📁 Choisir le fichier .vcf
+    </button>
+
+    <p style="font-size:.72em;color:var(--ax-text-3);margin-top:14px;text-align:center">
+      💡 Tu peux importer plusieurs fichiers .vcf à la fois (multi-sélection)
+    </p>
+  `);
+};
+
 // v1.1.121 : Import contacts iPhone via .vcf (file input)
 K._importContactsFromVcf = async function(files){
   if(!files || files.length === 0) return;
@@ -8340,13 +8372,13 @@ K._startConvWithUser = function(userId, displayName){
 
 function renderContacts(app){
   const contacts = K.contacts || lg('contacts', []);
-  // v1.1.121 : bouton import vCard iPhone Contacts toujours visible
+  // v1.1.121/122 : bouton import vCard iPhone Contacts + guide pas-à-pas
   const importBlock = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
       <button class="btn btn-out btn-sm" onclick="K._fetchContacts()">🔄 Rafraîchir</button>
-      <button class="btn btn-out btn-sm" onclick="document.getElementById('contacts-vcf-input').click()">📲 Importer iPhone</button>
+      <button class="btn btn-out btn-sm" onclick="K._openIphoneImportGuide()">📲 Importer iPhone</button>
     </div>
-    <input id="contacts-vcf-input" type="file" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none" onchange="K._importContactsFromVcf(this.files)">
+    <input id="contacts-vcf-input" type="file" accept=".vcf,text/vcard,text/x-vcard,*/*" multiple style="display:none" onchange="K._importContactsFromVcf(this.files)">
   `;
   if(contacts.length === 0){
     app.innerHTML = `
@@ -8355,7 +8387,7 @@ function renderContacts(app){
       <div class="card" style="text-align:center;padding:24px 14px">
         <div style="font-size:2.5em;margin-bottom:10px">👥</div>
         <p style="color:var(--ax-text-2);margin:0 0 14px">Aucun contact pour l'instant.</p>
-        <p style="color:var(--ax-text-3);font-size:.85em;margin:0 0 14px">📲 <strong>Astuce iPhone</strong> : ouvre l'app Contacts → sélectionne plusieurs → Partager → choisis Apex Chat ou Mail → ouvre le .vcf → bouton "Importer iPhone" ci-dessus.</p>
+        <p style="color:var(--ax-text-3);font-size:.85em;margin:0 0 14px">📲 Tape <strong>"Importer iPhone"</strong> pour voir le guide pas-à-pas.</p>
         <button class="btn" onclick="K.openInvite()">📤 Inviter des amis (SMS)</button>
       </div>
     `;
@@ -8371,7 +8403,7 @@ function renderContacts(app){
     <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Contacts (${contacts.length})</h2>
       <div style="display:flex;gap:6px">
-        <button class="btn btn-sm btn-out" onclick="document.getElementById('contacts-vcf-input2').click()" title="Importer iPhone (.vcf)" aria-label="Importer">📲</button>
+        <button class="btn btn-sm btn-out" onclick="K._openIphoneImportGuide()" title="Importer iPhone (.vcf)" aria-label="Importer">📲</button>
         <button class="btn btn-sm btn-out" onclick="K._fetchContacts()" title="Rafraîchir" aria-label="Rafraîchir">🔄</button>
       </div>
     </div>
