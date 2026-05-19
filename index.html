@@ -5021,6 +5021,35 @@ function _stripPersistedTeamFamHistory(empsArr){
     },6000);
   }catch(_e){console.warn("[v9.705 TOTAL WIPE]",_e);}
 })();
+// v9.707 Kevin diag mai 2026 — force re-detection avec cells-based family detection.
+// Sur les devices qui ont déjà importé mai V2 sous v9.705/v9.706, teamHistory contient
+// des assignements basés sur emp.family figé (BESSI N en r4 au lieu de 2). Wipe juste
+// teamHistory[*] de cmc_e pour forcer _cmcDetectTeamsByRestPattern à re-run avec la
+// nouvelle logique cells-based (BESSI N codes 'c' → BJ chef → team 2).
+(function _v707RedetectBoot(){
+  try{
+    if(localStorage.getItem("cmc_v707_redetect_done"))return;
+    var _eRaw=localStorage.getItem("cmc_e");
+    if(!_eRaw){localStorage.setItem("cmc_v707_redetect_done","1");return;}
+    var _emps=JSON.parse(_eRaw);
+    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v707_redetect_done","1");return;}
+    var _wiped=0;
+    _emps.forEach(function(e){
+      if(e&&e.teamHistory){
+        _wiped+=Object.keys(e.teamHistory).length;
+        e.teamHistory={};
+      }
+      if(e&&e.familyHistory){
+        e.familyHistory={};
+      }
+    });
+    localStorage.setItem("cmc_e",JSON.stringify(_emps));
+    localStorage.setItem("cmc_v707_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
+    // Reset cache de détection pour que dc() re-run
+    try{window._cmcLastDetectCacheKey=null;}catch(_){}
+    console.log("[v9.707 redetect-boot] "+_wiped+" teamHistory entries wiped — re-detection au prochain dc()");
+  }catch(_e){console.warn("[v9.707 redetect-boot]",_e);}
+})();
 var A={
   user:null,
   view:"accueil",
@@ -5113,7 +5142,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.706";
+var APP_VER="v9.707";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34292,11 +34321,52 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       }
       return null;
     }
-    // v9.703 (Kevin diag "personnes dans mauvaises équipes") :
-    // Utiliser familyForMonth(emp, iy, im) qui respecte familyHistory[key] (PDF section)
-    // au lieu de emp.family figé (DEF_EMP). Ainsi BRASSEUR F détecté "Chefs BJ" dans
-    // PDF mai 2026 retourne "bj" même si DEF_EMP family est "roulettes".
+    // v9.707 Kevin diag mai 2026 "BESSI N en r4 alors que codes 'c' (chef BJ)" :
+    // PRIORITÉ AUX CODES DES CELLULES, pas à emp.family ou section PDF.
+    // Suffixes SBM PDF :
+    //   • code+'c' (ex: 20/5c, 19/4'c, 16/3c, 14/19'c) → BJ chef
+    //   • code+'"' ou '"'' (ex: 20/5", 19/4"', 16/22") → CMC
+    //   • code+'*' (ex: 20/5*, 16/3*) → CDP marker (peut être BJ ou CMC, ambigu)
+    //   • code sans suffixe (ex: 20/5, 19/4, 16/3) → Roulettes
+    // La famille déduite des codes est PLUS FIABLE que la section header parser
+    // qui peut rater les sous-sections multi-lignes (FORMATION imbriquée etc.).
+    function _famFromCells(empCells){
+      if(!empCells||typeof empCells!=="object")return null;
+      var cCount=0, qCount=0, plain=0, total=0;
+      var ABSENCE=["RH","R","CP","AF","M","MAL","AT","PRT","RRT","CL","CDP","EDC","DEPL","DELPT","RTP","RTR","PAT","ABI","SS","CFL","CRH","CDH","HD","CEO","CSC","CSS"];
+      for(var d in empCells){
+        var c=empCells[d];
+        if(!c)continue;
+        var cu=String(c).toUpperCase();
+        if(ABSENCE.indexOf(cu)>=0)continue;
+        total++;
+        // BJ chef : code se termine par 'c' (avec marker * éventuel ou ' avant)
+        // Patterns : 20/5c, 19/4c, 14/19'c, 22/6c, 16/3c
+        if(/c\*?$/.test(c))cCount++;
+        // CMC : code contient '"' (double-quote — signature CMC distincte)
+        // Patterns : 22/6"', 19/4"', 20/5", 19/4", 16/22", 14/19"
+        // (les codes roulettes ont '\'' single seul ou rien, JAMAIS '"')
+        else if(c.indexOf('"')>=0)qCount++;
+        // Roulette : sans suffixe c ou ", peut avoir ' single ou * marker
+        else plain++;
+      }
+      if(total<5)return null;
+      // Dominant family (≥35% du total non-absence)
+      var max=Math.max(cCount,qCount,plain);
+      if(max/total < 0.35)return null;
+      if(cCount===max)return "bj";
+      if(qCount===max)return "cmc";
+      return "roulettes";
+    }
     function _famForDetect(emp){
+      // v9.707 : codes-based PRIORITÉ
+      try{
+        if(emp&&ov&&ov[emp.id]){
+          var cf=_famFromCells(ov[emp.id]);
+          if(cf)return cf;
+        }
+      }catch(_){}
+      // Fallback v9.703 : familyForMonth (PDF section)
       try{
         if(typeof familyForMonth==="function"){
           var f=familyForMonth(emp,iy,im,{strict:true});
