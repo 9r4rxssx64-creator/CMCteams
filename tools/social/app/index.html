@@ -126,7 +126,7 @@ textarea{resize:vertical;min-height:100px}
 <div class="app">
   <div class="header">
     <h1>KDMC Social</h1>
-    <span class="badge">Video Studio</span>
+    <span class="badge" onclick="checkForUpdate();toast('v'+APP_VER+' — Vérification MAJ...','info')">v1.0.1</span>
   </div>
 
   <div class="main" id="main">
@@ -626,6 +626,36 @@ fetch('https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/
     renderCreateForm();
   })
   .catch(function(){});
+
+// === MAJ AUTO FORCÉE (même système que CMCteams) ===
+var APP_VER = "1.0.1";
+var _lastUpdateCheck = 0;
+function checkForUpdate(){
+  if(Date.now()-_lastUpdateCheck<10000)return;
+  _lastUpdateCheck=Date.now();
+  fetch("https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/social/app/index.html?_v="+Date.now(),{cache:"reload",headers:{"Cache-Control":"no-cache, no-store, must-revalidate","Pragma":"no-cache"}})
+  .then(function(r){return r.text()})
+  .then(function(html){
+    var match=html.match(/APP_VER\s*=\s*"([^"]+)"/);
+    if(match&&match[1]&&match[1]!==APP_VER){
+      toast("Mise à jour "+match[1]+" disponible...","info");
+      setTimeout(function(){
+        if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister()})})}
+        caches&&caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})});
+        location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());
+      },2000);
+    }
+  }).catch(function(){});
+}
+checkForUpdate();
+setInterval(checkForUpdate,60000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)checkForUpdate()});
+window.addEventListener("focus",checkForUpdate);
+
+// === SERVICE WORKER (cache offline + skip sur version-check) ===
+if("serviceWorker"in navigator){
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
 </script>
 </body>
 </html>
