@@ -1,8 +1,25 @@
-# Mémo de reprise — Apex v13.4.225 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-18 nuit)
+# Mémo de reprise — Social Video Pipeline v2.1.1 / Apex v13.4.225 (2026-05-19)
 
-## 🎉 SESSION 2026-05-18 nuit — Apex Chat marathon v1.1.99 → v1.1.108
+## À FAIRE (prochaine session)
 
-**10 features livrées en autonomie** sur "Tout auto toujours, Continu" :
+- [ ] Vérifier YouTube Studio demain matin — le cron 10h UTC publiera avec le nouveau workflow curl
+- [ ] Si "invalid_client" persiste : vérifier longueur des secrets dans les logs Actions
+- [ ] Améliorer qualité vidéo (Edge TTS neural quand disponible, musique Pixabay)
+- [ ] Intégrer photo-to-video et video-remix dans l'app KDMC Studio
+
+## ✅ FAIT session 2026-05-19
+
+- ✅ YouTube OAuth complet (projet publié "In production", token permanent)
+- ✅ App KDMC Studio v2.1.1 live (glassmorphism, FR, badge version, MAJ auto)
+- ✅ Workflow vidéo chunked (longues vidéos découpées en morceaux)
+- ✅ Upload YouTube via curl direct (bypass googleapis invalid_client)
+- ✅ Workflow longues vidéos séparé (social-long-video.yml, jobs parallèles)
+- ✅ 45 styles photo-to-video (avatar, cartoon, anime, cyberpunk, etc.)
+- ✅ 13 effets video-remix (ralenti, glitch, noir, vertical TikTok, etc.)
+- ✅ Module free-tools.js (10 outils gratuits, 0€ au lieu de 333€/mois)
+- ✅ Module video-remix.js (trim, caption, musique, effets chaînés)
+- ✅ 51 stories, 78 tests, 18+ commandes CLI
+- ✅ Règle permanente : toutes les apps en français
 
 | Version | Feature | État |
 |---------|---------|------|
