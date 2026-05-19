@@ -88,6 +88,8 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
       const list = listVoices() as readonly VoiceListItem[];
       const filtered = filter === 'all' ? list : list.filter((v) => v.category === filter);
       const activeId = getActiveVoice();
+      /* v13.4.233 finding POST-FIX P2 — retire aria-busy quand liste rendue (skeleton remplacé) */
+      listEl.setAttribute('aria-busy', 'false');
       listEl.innerHTML = filtered
         .map((v) => {
           const isActive = v.id === activeId;
@@ -262,7 +264,13 @@ export function render(rootEl: HTMLElement): void {
           <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="fun" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(255,170,0,0.15);color:var(--ax-warning);border:1px solid rgba(255,170,0,0.3);cursor:pointer">FUN</button>
           <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="thematic" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(160,96,255,0.15);color:var(--ax-purple);border:1px solid rgba(160,96,255,0.3);cursor:pointer">Thématique</button>
         </div>
-        <div id="ax-voice-list" style="max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px"></div>
+        <div id="ax-voice-list" style="max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px" aria-busy="true" aria-live="polite">
+          <div class="ax-voice-skeleton" style="display:flex;flex-direction:column;gap:6px">
+            <div style="height:48px;background:linear-gradient(90deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 100%);background-size:200% 100%;animation:ax-shimmer-loading 1.4s linear infinite;border-radius:8px"></div>
+            <div style="height:48px;background:linear-gradient(90deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 100%);background-size:200% 100%;animation:ax-shimmer-loading 1.4s linear infinite 200ms;border-radius:8px"></div>
+            <div style="height:48px;background:linear-gradient(90deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 100%);background-size:200% 100%;animation:ax-shimmer-loading 1.4s linear infinite 400ms;border-radius:8px"></div>
+          </div>
+        </div>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:250ms">

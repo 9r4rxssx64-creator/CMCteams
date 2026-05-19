@@ -301,7 +301,8 @@ function renderAlerts(alerts: ReadonlyArray<DashboardAlert>): string {
         : a.level === 'warn' ? 'var(--ax-sev-high)' : 'var(--ax-sev-low)';
       const rgbBase = a.level === 'error' ? '255,91,91' : a.level === 'warn' ? '255,153,68' : '106,138,255';
       const icon = a.level === 'error' ? '🚨' : a.level === 'warn' ? '⚠️' : 'ℹ️';
-      const route = a.action_route ? `data-route="${escapeHtml(a.action_route)}"` : '';
+      /* v13.4.233 finding POST-FIX P1 — aria-role + tabindex pour WCAG accessibility */
+      const route = a.action_route ? `data-route="${escapeHtml(a.action_route)}" role="button" tabindex="0" aria-label="${escapeHtml(a.title)} — ouvrir"` : '';
       return `
         <div class="ax-alert-row ax-modernized-card ax-bounce-tap" ${route}
           style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(${rgbBase},.10),rgba(${rgbBase},.04));border:1px solid rgba(${rgbBase},.18);border-left:3px solid ${color};border-radius:12px;margin-bottom:8px;cursor:${a.action_route ? 'pointer' : 'default'};transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards">

@@ -1,4 +1,39 @@
-# Mémo de reprise — Apex v13.4.232 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-19 matin)
+# Mémo de reprise — Apex v13.4.233 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-19 matin)
+
+## 🔬 SESSION 2026-05-19 — Apex v13.4.233 POST-FIX audit honest (score réel mesuré 75/100)
+
+Subagent audit POST-FIX indépendant a mesuré l'écart RÉEL après v232 :
+- 9/15 findings ✅ fixed confirmés
+- 5/15 ⚠️ partiels (recharge dashboard, vault banner, stagger, voice aria, h1)
+- 1/15 ❌ NOT fixed (dashboard severity color)
+- + **12 NOUVEAUX findings POST-FIX**
+
+**Score honest /100** :
+- Design system : 72/100
+- Accessibility : 68/100
+- Architecture : 78/100
+- Performance : 81/100
+- TOTAL : **75/100** (pas 100, mesure honest)
+
+### Fixes v233 (poussent vers 100)
+- ✅ Dashboard renderRechargeAction wired (composant partagé enfin utilisé partout)
+- ✅ Dashboard severity color tokens var(--ax-sev-*) HIG cohérent
+- ✅ Admin "← Chat" 44px + aria-label
+- ✅ Settings h1 5.5vw unifié
+- ✅ Vault empty rescue → .ax-empty-banner class
+- ✅ Shortcut stagger 30+idx*20 (cohérent KPI)
+- ✅ Hex finale migration (#8bb4ff, #4a9eff, #f78322, #cc2222, #1a9a5a, #888, #aaa, #666 → CSS vars)
+- ✅ 4 tests régression updated (intentionnels)
+
+**PR #276 mergée** (commit 80b53dfb)
+
+### Vérifications
+- ✅ TypeScript strict 0 errors
+- ✅ Source v13.4.233 = Deploy v13.4.233
+- ✅ Build Vite 6.44s OK
+- ✅ Anti-erreur #57 préservée
+
+---
 
 ## 🎨 SESSION 2026-05-19 — Apex v13.4.232 UX refonte massive (étape 3-4 design system)
 
