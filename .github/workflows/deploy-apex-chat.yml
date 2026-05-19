@@ -85,31 +85,17 @@ jobs:
         working-directory: messaging-app/workers
         run: |
           set -e
-          # v1.1.127 : API CF directe (robuste vs changements format wrangler)
-          LIST=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
-          D1_ID=$(echo "$LIST" | python3 -c "
-import json, sys
-try:
-    d = json.load(sys.stdin)
-    for db in d.get('result', []):
-        if db.get('name') == 'apex-chat-main':
-            print(db['uuid']); break
-except Exception:
-    pass
-" 2>/dev/null)
+          LIST=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          D1_ID=$(echo "$LIST" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((db["uuid"] for db in d.get("result",[]) if db.get("name")=="apex-chat-main"), ""))' 2>/dev/null || echo "")
           if [ -z "$D1_ID" ]; then
-            CREATE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{"name":"apex-chat-main"}')
-            D1_ID=$(echo "$CREATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['result']['uuid'])" 2>/dev/null)
+            CREATE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" -d '{"name":"apex-chat-main"}')
+            D1_ID=$(echo "$CREATE" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["result"]["uuid"])' 2>/dev/null || echo "")
             echo "::notice::D1 créée: $D1_ID"
           else
             echo "::notice::D1 existe déjà: $D1_ID"
           fi
           if [ -z "$D1_ID" ]; then
-            echo "::error::Impossible d'obtenir D1_ID. Réponse CF :"
+            echo "::error::Impossible d'obtenir D1_ID. Réponse CF:"
             echo "$LIST"
             exit 1
           fi
@@ -134,32 +120,17 @@ except Exception:
         working-directory: messaging-app/workers
         run: |
           set -e
-          # v1.1.127 fix : utilise API CF directe au lieu de parser sortie wrangler
-          # (format de sortie change entre versions wrangler, fragile)
-          LIST=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
-          KV_ID=$(echo "$LIST" | python3 -c "
-import json, sys
-try:
-    d = json.load(sys.stdin)
-    for ns in d.get('result', []):
-        if ns.get('title') == 'apex-chat-api-APEX_CHAT_CACHE' or ns.get('title') == 'APEX_CHAT_CACHE':
-            print(ns['id']); break
-except Exception as e:
-    pass
-" 2>/dev/null)
+          LIST=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          KV_ID=$(echo "$LIST" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((ns["id"] for ns in d.get("result",[]) if ns.get("title") in ("apex-chat-api-APEX_CHAT_CACHE","APEX_CHAT_CACHE")), ""))' 2>/dev/null || echo "")
           if [ -z "$KV_ID" ]; then
-            CREATE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces" \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{"title":"APEX_CHAT_CACHE"}')
-            KV_ID=$(echo "$CREATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['result']['id'])" 2>/dev/null)
+            CREATE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" -d '{"title":"APEX_CHAT_CACHE"}')
+            KV_ID=$(echo "$CREATE" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["result"]["id"])' 2>/dev/null || echo "")
             echo "::notice::KV créé: $KV_ID"
           else
             echo "::notice::KV existe déjà: $KV_ID"
           fi
           if [ -z "$KV_ID" ]; then
-            echo "::error::Impossible d'obtenir KV_ID. Réponse CF :"
+            echo "::error::Impossible d'obtenir KV_ID. Réponse CF:"
             echo "$LIST"
             exit 1
           fi
