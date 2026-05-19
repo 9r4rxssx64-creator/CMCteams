@@ -130,7 +130,20 @@ jobs:
           done
           echo "::notice::5 Queues OK"
 
-      - name: Generate + put secrets
+      - name: Deploy api-worker (first time, creates Worker on CF)
+        working-directory: messaging-app/workers
+        run: |
+          # v1.1.131 : deploy AVANT push secrets (sinon wrangler secret put plante :
+          # le Worker doit exister sur CF avant d'y attacher des secrets).
+          wrangler deploy 2>&1 | tee /tmp/deploy.log
+          if grep -qE "Deployed|Published" /tmp/deploy.log; then
+            echo "::notice::✅ api-worker déployé (Worker maintenant existe sur CF)"
+          else
+            echo "::error::Deploy initial échoué — abort secrets push"
+            exit 1
+          fi
+
+      - name: Generate + put secrets (after Worker exists)
         working-directory: messaging-app/workers
         run: |
           # Secrets crypto auto-générés
@@ -186,17 +199,7 @@ jobs:
           # === Reconnaissance Kevin admin via numéro téléphone E.164 ===
           push_if_set "KEVIN_PHONE_E164" "+33672280277"
 
-          echo "::notice::Secrets configurés (skip silencieux si vide)"
-
-      - name: Deploy api-worker
-        working-directory: messaging-app/workers
-        run: |
-          wrangler deploy 2>&1 | tee /tmp/deploy.log
-          if grep -qE "Deployed|Published" /tmp/deploy.log; then
-            echo "::notice::✅ api-worker déployé"
-          else
-            echo "::warning::Vérifier le déploiement manuellement"
-          fi
+          echo "::notice::Secrets configurés (skip silencieux si vide). Worker prêt à recevoir des requêtes."
 
       - name: Summary
         run: |
