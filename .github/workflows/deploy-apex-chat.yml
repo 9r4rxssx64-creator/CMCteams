@@ -58,13 +58,27 @@ jobs:
 
       - name: Get Account ID
         id: account
+        env:
+          KEVIN_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          ACC=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
-            python3 -c "import json,sys; d=json.load(sys.stdin); print(d['result'][0]['id'])")
+          # v1.1.126 fix : si secret CLOUDFLARE_ACCOUNT_ID dispo, l'utiliser (token
+          # "Edit Cloudflare Workers" n'a pas la permission de lister tous comptes).
+          # Sinon fallback API (avec token "Memberships:Read").
+          if [ -n "$KEVIN_ACCOUNT_ID" ]; then
+            ACC="$KEVIN_ACCOUNT_ID"
+            echo "::notice::Account ID depuis secret CLOUDFLARE_ACCOUNT_ID: $ACC"
+          else
+            ACC=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+              python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',[]); print(r[0]['id']) if r else exit(1)" 2>/dev/null) || {
+              echo "::error::Secret CLOUDFLARE_ACCOUNT_ID manquant ET token sans Memberships:Read"
+              echo "Solution : ajoute secret CLOUDFLARE_ACCOUNT_ID dans Settings > Secrets"
+              exit 1
+            }
+            echo "::notice::Account ID depuis API: $ACC"
+          fi
           echo "id=$ACC" >> $GITHUB_OUTPUT
           echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> $GITHUB_ENV
-          echo "::notice::Account ID: $ACC"
 
       - name: Create D1 database (idempotent)
         id: d1
