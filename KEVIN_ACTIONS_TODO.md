@@ -76,3 +76,20 @@ Objectif : transformer Apex PWA → app native iOS sur Apple App Store.
 - ✅ 5 templates, 9 langues, 10 color schemes
 
 ## RÈGLE PERMANENTE — Toutes les apps en français (Kevin 2026-05-18)
+
+---
+
+## OUTILS GRATUITS À INTÉGRER (liens directs)
+
+| Outil | Gratuit | Usage | Lien |
+|-------|---------|-------|------|
+| Canva | Oui (gratuit) | Thumbnails, visuels | https://www.canva.com |
+| Pixabay Music | Oui | Musique de fond gratuite | https://pixabay.com/music |
+| YouTube Audio Library | Oui | Musique libre de droits | https://www.youtube.com/audiolibrary |
+| Pollinations.ai | Oui (illimité) | Images IA pour backgrounds | https://pollinations.ai |
+| Suno | 50 crédits/jour gratuit | Musique IA | https://suno.com |
+| Opus Clip | 60 min/mois gratuit | Auto-extract Shorts viraux | https://www.opus.pro |
+| TubeBuddy | $2/mois | SEO YouTube, A/B test titres | https://www.tubebuddy.com |
+| Uppbeat | 10/mois gratuit | Musique royalty-free | https://uppbeat.io |
+| OpenRouter | Gratuit (30+ modèles) | Scripts IA alternatif Gemini | https://openrouter.ai |
+| Incompetech | Gratuit (attribution) | 2000+ tracks Kevin MacLeod | https://incompetech.com/music |
