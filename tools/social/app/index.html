@@ -5,657 +5,482 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a12">
-<title>KDMC Social — Video Studio</title>
+<meta name="theme-color" content="#06060e">
+<title>KDMC Studio</title>
 <link rel="manifest" href="manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0a0a12;--bg2:#12122a;--bg3:#1a1a3a;
-  --gold:#d4af37;--gold2:#ffd700;--gold3:#b8941f;
-  --text:#f0f0f5;--dim:#8888aa;--red:#ff4444;--green:#22cc66;--blue:#4488ff;
-  --card:#161630;--border:#2a2a5a;--radius:14px;
+--bg:#06060e;--bg2:#0d0d1a;--bg3:#151530;--bg4:#1c1c40;
+--gold:#d4af37;--gold2:#ffd700;--gold3:#b8941f;--goldDim:rgba(212,175,55,.12);
+--text:#f0f0f5;--dim:#7777aa;--dim2:#555577;
+--red:#ff4455;--green:#00dd77;--blue:#448aff;--purple:#aa55ff;--cyan:#00ccdd;
+--card:rgba(18,18,38,.85);--glass:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);
+--radius:16px;--shadow:0 8px 32px rgba(0,0,0,.4)
 }
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text)}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Inter","SF Pro",system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 a{color:var(--gold);text-decoration:none}
 
-/* Layout */
-.app{display:flex;flex-direction:column;height:100dvh}
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
-.header h1{font-size:18px;color:var(--gold);font-weight:700}
-.header .badge{font-size:11px;background:var(--gold3);color:#000;padding:2px 8px;border-radius:10px;font-weight:600}
-.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:90px}
-.nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--bg2);border-top:1px solid var(--border);padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:100}
-.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--dim);font-size:10px;padding:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app{display:flex;flex-direction:column;height:100dvh;position:relative;overflow:hidden}
+.app::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(212,175,55,.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(100,50,255,.04) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:rgba(6,6,14,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;position:relative}
+.header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px}
+.header .ver{font-size:10px;background:var(--glass);border:1px solid var(--border);color:var(--dim);padding:3px 10px;border-radius:20px;backdrop-filter:blur(10px)}
+
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px;padding-bottom:100px;position:relative;z-index:1}
+.main::-webkit-scrollbar{width:0}
+
+.nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(6,6,14,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);padding:6px 8px;padding-bottom:max(6px,env(safe-area-inset-bottom));z-index:100;gap:2px}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--dim);font-size:9px;padding:8px 0;cursor:pointer;border-radius:12px;transition:all .2s;position:relative}
 .nav button.active{color:var(--gold)}
-.nav button .icon{font-size:22px}
+.nav button.active::before{content:'';position:absolute;top:-1px;left:25%;right:25%;height:2px;background:var(--gold);border-radius:1px}
+.nav button .icon{font-size:22px;line-height:1}
 
-/* Cards */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
-.card h3{color:var(--gold);font-size:15px;margin-bottom:8px}
-.card p{color:var(--dim);font-size:13px;line-height:1.5}
+/* Glass Cards */
+.card{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);transition:transform .2s}
+.card:active{transform:scale(0.985)}
+.card h3{font-size:14px;font-weight:700;margin-bottom:8px;color:var(--text);letter-spacing:-.2px}
+.card p{color:var(--dim);font-size:13px;line-height:1.55}
 
-/* Stats grid */
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
-.stat .num{font-size:28px;font-weight:800;color:var(--gold)}
-.stat .label{font-size:11px;color:var(--dim);margin-top:4px}
+/* Hero Stats */
+.hero-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+.hero-stat{background:linear-gradient(145deg,var(--bg3),var(--bg2));border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;position:relative;overflow:hidden}
+.hero-stat::after{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:radial-gradient(circle,var(--goldDim),transparent);border-radius:50%;transform:translate(30%,-30%)}
+.hero-stat .num{font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--text),var(--dim));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-stat .label{font-size:10px;color:var(--dim);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;width:100%;transition:all .15s;position:relative;overflow:hidden;letter-spacing:-.2px}
 .btn:active{transform:scale(0.97)}
-.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold3));color:#000}
-.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
-.btn-danger{background:#cc0000;color:#fff}
-.btn-sm{padding:8px 14px;font-size:13px;width:auto;border-radius:8px}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold3));color:#000;box-shadow:0 4px 20px rgba(212,175,55,.3)}
+.btn-glass{background:var(--glass);color:var(--text);border:1px solid var(--border);backdrop-filter:blur(10px)}
+.btn-red{background:linear-gradient(135deg,var(--red),#cc2233);color:#fff;box-shadow:0 4px 20px rgba(255,68,85,.2)}
+.btn-sm{padding:10px 16px;font-size:13px;width:auto;border-radius:10px}
 
 /* Forms */
-.form-group{margin-bottom:14px}
-.form-group label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-select,input,textarea{width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-family:inherit;-webkit-appearance:none}
-select:focus,input:focus,textarea:focus{outline:none;border-color:var(--gold)}
-textarea{resize:vertical;min-height:100px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:11px;color:var(--dim);margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+select,input,textarea{width:100%;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;font-family:inherit;-webkit-appearance:none;transition:border-color .2s}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--goldDim)}
+textarea{resize:vertical;min-height:90px}
 
-/* Story list */
-.story-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:10px;margin-bottom:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;border:1px solid transparent}
-.story-item:active,.story-item.selected{border-color:var(--gold);background:var(--bg2)}
-.story-item .emoji{font-size:28px}
-.story-item .info{flex:1;min-width:0}
-.story-item .title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.story-item .meta{font-size:11px;color:var(--dim);margin-top:2px}
-.story-item .used{color:var(--green);font-size:11px;font-weight:600}
-.story-item .new{color:var(--gold);font-size:11px;font-weight:600}
+/* Story Cards */
+.story-card{display:flex;gap:14px;padding:14px;background:var(--glass);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.story-card:active{border-color:var(--gold);background:var(--goldDim);transform:scale(0.98)}
+.story-card .emoji{font-size:32px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:12px;flex-shrink:0}
+.story-card .info{flex:1;min-width:0}
+.story-card .title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.story-card .meta{font-size:11px;color:var(--dim);margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 
-/* Template cards */
-.template-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.template-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:border-color .2s}
-.template-card:active,.template-card.selected{border-color:var(--gold);background:var(--bg2)}
-.template-card .icon{font-size:32px;margin-bottom:6px}
-.template-card .name{font-size:13px;font-weight:600}
-.template-card .desc{font-size:10px;color:var(--dim);margin-top:3px}
-
-/* Video preview */
-.video-card{position:relative;border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
-.video-card video{width:100%;border-radius:var(--radius)}
-.video-card .overlay{position:absolute;bottom:0;left:0;right:0;padding:12px;background:linear-gradient(transparent,rgba(0,0,0,.8))}
-.video-card .overlay h4{font-size:14px;color:#fff}
-.video-card .overlay span{font-size:11px;color:var(--dim)}
-
-/* Toast */
-.toast{position:fixed;top:60px;left:16px;right:16px;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:500;z-index:999;transform:translateY(-100px);opacity:0;transition:all .3s ease}
-.toast.show{transform:translateY(0);opacity:1}
-.toast.success{background:#1a4d2e;border:1px solid var(--green);color:var(--green)}
-.toast.error{background:#4d1a1a;border:1px solid var(--red);color:var(--red)}
-.toast.info{background:#1a2a4d;border:1px solid var(--blue);color:var(--blue)}
-
-/* Loading */
-.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px}
-.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading p{margin-top:12px;color:var(--dim);font-size:13px}
-
-/* Progress */
-.progress{width:100%;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin:10px 0}
-.progress .bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .3s}
+/* Template Selector */
+.tmpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.tmpl{background:var(--bg3);border:2px solid transparent;border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;transition:all .2s}
+.tmpl:active,.tmpl.on{border-color:var(--gold);background:var(--goldDim)}
+.tmpl .icon{font-size:28px;margin-bottom:4px}
+.tmpl .name{font-size:11px;font-weight:700;color:var(--text)}
 
 /* Tags */
-.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin:2px}
-.tag.gold{background:rgba(212,175,55,.15);color:var(--gold)}
-.tag.green{background:rgba(34,204,102,.15);color:var(--green)}
-.tag.blue{background:rgba(68,136,255,.15);color:var(--blue)}
-.tag.red{background:rgba(255,68,68,.15);color:var(--red)}
+.tag{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;margin:2px;letter-spacing:.3px}
+.tag-gold{background:var(--goldDim);color:var(--gold)}
+.tag-green{background:rgba(0,221,119,.12);color:var(--green)}
+.tag-blue{background:rgba(68,138,255,.12);color:var(--blue)}
+.tag-purple{background:rgba(170,85,255,.12);color:var(--purple)}
+.tag-red{background:rgba(255,68,85,.12);color:var(--red)}
 
 /* Tabs */
-.tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 0}
 .tabs::-webkit-scrollbar{display:none}
-.tab{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:var(--bg);color:var(--dim);border:1px solid var(--border);flex-shrink:0}
-.tab.active{background:var(--gold3);color:#000;border-color:var(--gold)}
+.tab{padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;background:var(--glass);color:var(--dim);border:1px solid var(--border);flex-shrink:0;transition:all .2s}
+.tab.on{background:linear-gradient(135deg,var(--gold),var(--gold3));color:#000;border-color:var(--gold)}
 
-/* Hide views */
-.view{display:none}
-.view.active{display:block}
+/* Progress */
+.progress{width:100%;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:10px 0}
+.progress .bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .4s ease}
+
+/* Niche RPM bars */
+.rpm-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.rpm-row:last-child{border-bottom:none}
+.rpm-row .name{width:80px;font-size:12px;font-weight:600;flex-shrink:0}
+.rpm-row .bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.rpm-row .bar-fill{height:100%;border-radius:3px}
+.rpm-row .val{font-size:12px;font-weight:800;width:50px;text-align:right;flex-shrink:0}
+
+/* Toast */
+.toast{position:fixed;top:70px;left:16px;right:16px;padding:14px 18px;border-radius:14px;font-size:14px;font-weight:600;z-index:999;transform:translateY(-120px);opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(16px)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:rgba(0,180,100,.15);border:1px solid var(--green);color:var(--green)}
+.toast.info{background:rgba(68,138,255,.15);border:1px solid var(--blue);color:var(--blue)}
+
+/* Views */
+.view{display:none}.view.on{display:block}
+
+/* Section title */
+.section-title{font-size:22px;font-weight:800;margin-bottom:18px;letter-spacing:-.5px}
 
 /* Scrollbar */
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar{width:0}
+
+/* Animation */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.view.on > *{animation:fadeUp .35s ease both}
+.view.on > *:nth-child(2){animation-delay:.05s}
+.view.on > *:nth-child(3){animation-delay:.1s}
+.view.on > *:nth-child(4){animation-delay:.15s}
+.view.on > *:nth-child(5){animation-delay:.2s}
 </style>
 </head>
 <body>
-
 <div class="app">
-  <div class="header">
-    <h1>KDMC Social</h1>
-    <span class="badge" onclick="checkForUpdate();toast('v'+APP_VER+' — Vérification MAJ...','info')">v1.0.1</span>
-  </div>
-
-  <div class="main" id="main">
-    <!-- DASHBOARD -->
-    <div class="view active" id="v-dashboard">
-      <div class="stats">
-        <div class="stat"><div class="num" id="s-stories">51</div><div class="label">Histoires</div></div>
-        <div class="stat"><div class="num" id="s-videos">0</div><div class="label">Vidéos</div></div>
-        <div class="stat"><div class="num" id="s-templates">5</div><div class="label">Modèles</div></div>
-        <div class="stat"><div class="num" id="s-languages">9</div><div class="label">Langues</div></div>
-      </div>
-
-      <button class="btn btn-primary" onclick="showView('create')" style="margin-bottom:12px">
-        🎬 Créer une vidéo
-      </button>
-      <button class="btn btn-secondary" onclick="showView('library')" style="margin-bottom:12px">
-        📚 Bibliothèque (51 histoires)
-      </button>
-      <button class="btn btn-secondary" onclick="showView('templates')" style="margin-bottom:12px">
-        🎨 Modèles visuels
-      </button>
-
-      <div class="card">
-        <h3>Dernière activité</h3>
-        <p id="last-activity">Aucune vidéo générée pour l'instant. Crée ta première en cliquant le bouton ci-dessus.</p>
-      </div>
-
-      <div class="card">
-        <h3>Production automatique</h3>
-        <p>Publication quotidienne 12h Monaco. Planificateur toutes les 6h. 51 histoires prêtes.</p>
-        <div style="margin-top:8px">
-          <span class="tag green">Actif</span>
-          <span class="tag gold">Gemini OK</span>
-          <span class="tag blue">51 histoires</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Revenus par niche (2026)</h3>
-        <div style="margin-top:8px">
-          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Finance</span><span style="color:var(--green);font-weight:700">$15.30/1000 vues</span></div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Trahison</span><span style="color:var(--green);font-weight:700">$12.82/1000 vues</span></div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Faits divers</span><span style="color:var(--gold);font-weight:700">$11.00/1000 vues</span></div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Mystère</span><span style="color:var(--gold);font-weight:700">$9.20/1000 vues</span></div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Motivation</span><span style="color:var(--dim);font-weight:700">$5.80/1000 vues</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CREATE VIDEO -->
-    <div class="view" id="v-create">
-      <h2 style="color:var(--gold);margin-bottom:16px">🎬 Créer une vidéo</h2>
-
-      <div class="form-group">
-        <label>Modèle</label>
-        <div class="template-grid" id="template-grid"></div>
-      </div>
-
-      <div class="form-group">
-        <label>Format</label>
-        <select id="f-format">
-          <option value="short">Court (9:16 — TikTok/Shorts/Reels)</option>
-          <option value="long">Long (16:9 — YouTube)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Niche</label>
-        <select id="f-niche">
-          <option value="betrayal">Trahison & Vengeance ($12.82)</option>
-          <option value="finance">Finance ($15.30)</option>
-          <option value="true_crime">Faits divers ($11.00)</option>
-          <option value="mystery">Mystère ($9.20)</option>
-          <option value="motivation">Motivation ($5.80)</option>
-          <option value="psychology">Psychologie ($8.40)</option>
-          <option value="tech">Technologie ($8.40)</option>
-          <option value="history">Histoire ($9.60)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Histoire</label>
-        <select id="f-story"></select>
-      </div>
-
-      <div class="form-group">
-        <label>Langue</label>
-        <select id="f-lang">
-          <option value="en">English</option>
-          <option value="fr">Français</option>
-          <option value="es">Español</option>
-          <option value="it">Italiano</option>
-          <option value="de">Deutsch</option>
-          <option value="pt">Português</option>
-          <option value="ar">العربية</option>
-          <option value="ja">日本語</option>
-          <option value="hi">हिन्दी</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Ou écris ton propre texte</label>
-        <textarea id="f-custom" placeholder="Colle ton texte ici... (optionnel — sinon une histoire de la bibliothèque sera utilisée)"></textarea>
-      </div>
-
-      <button class="btn btn-primary" onclick="generateVideo()" id="btn-generate">
-        🚀 Générer la vidéo
-      </button>
-
-      <div id="generate-progress" style="display:none;margin-top:16px">
-        <div class="card">
-          <h3 id="gen-status">Préparation...</h3>
-          <div class="progress"><div class="bar" id="gen-bar" style="width:0%"></div></div>
-          <p id="gen-detail" style="font-size:12px;color:var(--dim)"></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- LIBRARY -->
-    <div class="view" id="v-library">
-      <h2 style="color:var(--gold);margin-bottom:12px">📚 Bibliothèque</h2>
-      <div class="tabs" id="niche-tabs"></div>
-      <div id="story-list"></div>
-    </div>
-
-    <!-- TEMPLATES -->
-    <div class="view" id="v-templates">
-      <h2 style="color:var(--gold);margin-bottom:16px">🎨 Modèles vidéo</h2>
-      <div id="template-showcase"></div>
-    </div>
-
-    <!-- ANALYTICS -->
-    <div class="view" id="v-analytics">
-      <h2 style="color:var(--gold);margin-bottom:16px">📊 Statistiques</h2>
-      <div class="stats">
-        <div class="stat"><div class="num" id="a-views">0</div><div class="label">Vues totales</div></div>
-        <div class="stat"><div class="num" id="a-revenue">$0</div><div class="label">Revenus est.</div></div>
-      </div>
-      <div class="card">
-        <h3>Recommandations</h3>
-        <div id="recommendations">
-          <p>Génère ta première vidéo pour voir des recommandations IA basées sur les données réelles.</p>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Calendrier de contenu</h3>
-        <p>Le scheduler automatique planifie 14 jours de contenu avec rotation de niches.</p>
-        <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="showCalendar()">📅 Voir le calendrier</button>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div class="view" id="v-settings">
-      <h2 style="color:var(--gold);margin-bottom:16px">Réglages</h2>
-
-      <div class="card">
-        <h3>Clés API</h3>
-        <div class="form-group">
-          <label>Clé Gemini</label>
-          <input type="password" id="set-gemini" placeholder="AIza...">
-        </div>
-        <div class="form-group">
-          <label>YouTube Client ID</label>
-          <input type="text" id="set-yt-id" placeholder="xxx.apps.googleusercontent.com">
-        </div>
-        <div class="form-group">
-          <label>Telegram Bot Token</label>
-          <input type="password" id="set-tg-token" placeholder="123456:ABC...">
-        </div>
-        <div class="form-group">
-          <label>Telegram Chat ID</label>
-          <input type="text" id="set-tg-chat" placeholder="5458942048">
-        </div>
-        <button class="btn btn-primary" onclick="saveSettings()">💾 Sauvegarder</button>
-      </div>
-
-      <div class="card">
-        <h3>Brand Kit</h3>
-        <div class="form-group">
-          <label>Nom de chaîne</label>
-          <input type="text" id="set-channel" placeholder="KDMC Stories" value="KDMC Stories">
-        </div>
-        <div class="form-group">
-          <label>Palette de couleurs</label>
-          <select id="set-scheme">
-            <option value="midnight-gold">Midnight Gold</option>
-            <option value="blood-red">Blood Red</option>
-            <option value="ocean-blue">Ocean Blue</option>
-            <option value="neon-pink">Neon Pink</option>
-            <option value="royal-purple">Royal Purple</option>
-            <option value="matrix-green">Matrix Green</option>
-            <option value="monochrome">Monochrome</option>
-          </select>
-        </div>
-        <button class="btn btn-secondary" onclick="saveBrand()">🎨 Appliquer</button>
-      </div>
-
-      <div class="card">
-        <h3>Liens rapides</h3>
-        <p style="margin-bottom:8px"><a href="https://github.com/9r4rxssx64-creator/CMCteams/actions" target="_blank">GitHub Actions (workflows)</a></p>
-        <p style="margin-bottom:8px"><a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio (clé Gemini)</a></p>
-        <p style="margin-bottom:8px"><a href="https://console.cloud.google.com" target="_blank">Google Cloud Console (YouTube API)</a></p>
-      </div>
-
-      <div class="card">
-        <h3>Version</h3>
-        <p>KDMC Social Video Studio v1.0</p>
-        <p style="font-size:11px;color:var(--dim);margin-top:4px">8 900+ lignes · 28 fichiers · 78 tests · 51 stories</p>
-      </div>
-    </div>
-
-    <!-- STORY DETAIL -->
-    <div class="view" id="v-story-detail">
-      <button class="btn btn-secondary btn-sm" onclick="showView('library')" style="margin-bottom:12px">← Retour</button>
-      <div id="story-detail-content"></div>
-    </div>
-  </div>
-
-  <nav class="nav">
-    <button class="active" onclick="showView('dashboard')"><span class="icon">🏠</span>Accueil</button>
-    <button onclick="showView('create')"><span class="icon">🎬</span>Créer</button>
-    <button onclick="showView('library')"><span class="icon">📚</span>Histoires</button>
-    <button onclick="showView('analytics')"><span class="icon">📊</span>Stats</button>
-    <button onclick="showView('settings')"><span class="icon">⚙️</span>Réglages</button>
-  </nav>
+<div class="header">
+  <h1>KDMC Studio</h1>
+  <span class="ver" onclick="toast('v2.0 — 51 histoires · 78 tests · 18 commandes','info')">v2.0</span>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="main" id="main">
+
+<!-- ACCUEIL -->
+<div class="view on" id="v-home">
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num" id="s-stories">51</div><div class="label">Histoires</div></div>
+    <div class="hero-stat"><div class="num" id="s-created">0</div><div class="label">Cr&eacute;&eacute;es</div></div>
+    <div class="hero-stat"><div class="num">5</div><div class="label">Mod&egrave;les</div></div>
+    <div class="hero-stat"><div class="num">9</div><div class="label">Langues</div></div>
+  </div>
+
+  <button class="btn btn-gold" onclick="go('create')" style="margin-bottom:12px">Cr&eacute;er une vid&eacute;o</button>
+  <button class="btn btn-glass" onclick="go('library')" style="margin-bottom:12px">Biblioth&egrave;que d'histoires</button>
+
+  <div class="card">
+    <h3>Revenus par niche</h3>
+    <div style="margin-top:10px" id="rpm-chart"></div>
+  </div>
+
+  <div class="card">
+    <h3>Production automatique</h3>
+    <p>Publication quotidienne 12h Monaco. 51 histoires. IA Gemini.</p>
+    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+      <span class="tag tag-green">Actif</span>
+      <span class="tag tag-gold">Gemini</span>
+      <span class="tag tag-blue">51 histoires</span>
+      <span class="tag tag-purple">9 langues</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Objectifs YouTube</h3>
+    <div style="margin-top:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim)"><span>Abonn&eacute;s</span><span>0 / 1 000</span></div>
+      <div class="progress"><div class="bar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-top:6px"><span>Heures de visionnage</span><span>0 / 4 000h</span></div>
+      <div class="progress"><div class="bar" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CR&Eacute;ER -->
+<div class="view" id="v-create">
+  <div class="section-title">Cr&eacute;er une vid&eacute;o</div>
+
+  <div class="form-group">
+    <label>Mod&egrave;le visuel</label>
+    <div class="tmpl-grid" id="tg"></div>
+  </div>
+
+  <div class="form-group">
+    <label>Format</label>
+    <select id="f-fmt">
+      <option value="short">Court (9:16) — TikTok, Shorts, Reels</option>
+      <option value="long">Long (16:9) — YouTube</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Niche</label>
+    <select id="f-niche">
+      <option value="betrayal">Trahison ($12.82)</option>
+      <option value="finance">Finance ($15.30)</option>
+      <option value="true_crime">Faits divers ($11.00)</option>
+      <option value="mystery">Myst&egrave;re ($9.20)</option>
+      <option value="motivation">Motivation ($5.80)</option>
+      <option value="psychology">Psychologie ($8.40)</option>
+      <option value="tech">Technologie ($8.40)</option>
+      <option value="history">Histoire ($9.60)</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Histoire</label>
+    <select id="f-story"></select>
+  </div>
+
+  <div class="form-group">
+    <label>Langue de la voix</label>
+    <select id="f-lang">
+      <option value="en">Anglais</option>
+      <option value="fr">Fran&ccedil;ais</option>
+      <option value="es">Espagnol</option>
+      <option value="it">Italien</option>
+      <option value="de">Allemand</option>
+      <option value="pt">Portugais</option>
+      <option value="ar">Arabe</option>
+      <option value="ja">Japonais</option>
+      <option value="hi">Hindi</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Texte libre (optionnel)</label>
+    <textarea id="f-txt" placeholder="Colle ton texte ici ou laisse vide pour utiliser une histoire de la biblioth&egrave;que..."></textarea>
+  </div>
+
+  <button class="btn btn-gold" onclick="gen()" id="btn-gen">G&eacute;n&eacute;rer la vid&eacute;o</button>
+
+  <div id="gen-box" style="display:none;margin-top:16px">
+    <div class="card" style="text-align:center">
+      <div id="gen-icon" style="font-size:48px;margin-bottom:12px">&#127916;</div>
+      <h3 id="gen-status">Pr&eacute;paration...</h3>
+      <div class="progress"><div class="bar" id="gen-bar" style="width:0%"></div></div>
+      <p id="gen-detail" style="font-size:12px;color:var(--dim);margin-top:6px"></p>
+    </div>
+  </div>
+</div>
+
+<!-- BIBLIOTH&Egrave;QUE -->
+<div class="view" id="v-library">
+  <div class="section-title">Biblioth&egrave;que</div>
+  <div class="tabs" id="lib-tabs"></div>
+  <div id="lib-list"></div>
+</div>
+
+<!-- D&Eacute;TAIL HISTOIRE -->
+<div class="view" id="v-detail">
+  <button class="btn btn-glass btn-sm" onclick="go('library')" style="margin-bottom:14px;width:auto">&larr; Retour</button>
+  <div id="detail-content"></div>
+</div>
+
+<!-- STATS -->
+<div class="view" id="v-stats">
+  <div class="section-title">Statistiques</div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">0</div><div class="label">Vues</div></div>
+    <div class="hero-stat"><div class="num">$0</div><div class="label">Revenus</div></div>
+  </div>
+  <div class="card">
+    <h3>Calendrier 14 jours</h3>
+    <div id="cal"></div>
+  </div>
+  <div class="card">
+    <h3>Recommandations</h3>
+    <p id="recs">G&eacute;n&egrave;re ta premi&egrave;re vid&eacute;o pour voir les recommandations.</p>
+  </div>
+</div>
+
+<!-- R&Eacute;GLAGES -->
+<div class="view" id="v-config">
+  <div class="section-title">R&eacute;glages</div>
+  <div class="card">
+    <h3>Liens rapides</h3>
+    <p style="margin-bottom:8px"><a href="https://studio.youtube.com" target="_blank">YouTube Studio</a></p>
+    <p style="margin-bottom:8px"><a href="https://github.com/9r4rxssx64-creator/CMCteams/actions" target="_blank">GitHub Actions</a></p>
+    <p style="margin-bottom:8px"><a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+    <p><a href="https://console.cloud.google.com/apis/credentials?project=kdmc-social" target="_blank">Google Cloud Console</a></p>
+  </div>
+  <div class="card">
+    <h3>Version</h3>
+    <p>KDMC Studio v2.0</p>
+    <p style="font-size:11px;color:var(--dim);margin-top:4px">8 900+ lignes &middot; 28 fichiers &middot; 78 tests &middot; 51 histoires &middot; 9 langues</p>
+  </div>
+</div>
+
+</div>
+
+<nav class="nav">
+  <button class="active" onclick="go('home')"><span class="icon">&#127968;</span>Accueil</button>
+  <button onclick="go('create')"><span class="icon">&#10133;</span>Cr&eacute;er</button>
+  <button onclick="go('library')"><span class="icon">&#128218;</span>Histoires</button>
+  <button onclick="go('stats')"><span class="icon">&#128200;</span>Stats</button>
+  <button onclick="go('config')"><span class="icon">&#9881;&#65039;</span>R&eacute;glages</button>
+</nav>
+</div>
+
+<div class="toast" id="toast-el"></div>
 
 <script>
-var LIBRARY = null;
-var SETTINGS = {};
-var TEMPLATES = [
-  {id:'narrative-storytelling',name:'Narration',icon:'📖',desc:'Voix + sous-titres karaoké'},
-  {id:'documentary',name:'Documentaire',icon:'🎥',desc:'Ken Burns, citations'},
-  {id:'listicle',name:'Top classement',icon:'🔢',desc:'Compte à rebours animé'},
-  {id:'breaking-news',name:'Flash info',icon:'📺',desc:'Bandeau défilant, urgent'},
-  {id:'tutorial',name:'Tutoriel',icon:'📚',desc:'Étapes numérotées'},
+var LIB=null;
+var TMPLS=[
+  {id:'narrative-storytelling',n:'Narration',i:'&#128214;'},
+  {id:'documentary',n:'Documentaire',i:'&#127909;'},
+  {id:'listicle',n:'Classement',i:'&#128290;'},
+  {id:'breaking-news',n:'Flash info',i:'&#128250;'},
+  {id:'tutorial',n:'Tutoriel',i:'&#128218;'},
 ];
+var NICONS={narrative_betrayal:'&#128148;',narrative_revenge:'&#9889;',narrative_mystery:'&#128302;',narrative_finance:'&#128176;',narrative_short_facts:'&#129504;',narrative_true_crime:'&#128269;',narrative_motivation:'&#128640;',narrative_tech:'&#128187;',narrative_psychology:'&#129504;',narrative_history:'&#128220;',narrative_extra_betrayal:'&#128148;'};
+var RPMS=[
+  {n:'Finance',v:15.3,c:'var(--green)'},
+  {n:'Trahison',v:12.82,c:'var(--gold)'},
+  {n:'Faits divers',v:11,c:'var(--blue)'},
+  {n:'Histoire',v:9.6,c:'var(--purple)'},
+  {n:'Mystère',v:9.2,c:'var(--cyan)'},
+  {n:'Psychologie',v:8.4,c:'var(--blue)'},
+  {n:'Tech',v:8.4,c:'var(--purple)'},
+  {n:'Motivation',v:5.8,c:'var(--dim)'},
+];
+var selTmpl='narrative-storytelling';
 
-var NICHE_ICONS = {
-  narrative_betrayal:'💔',narrative_revenge:'⚡',narrative_mystery:'🔮',
-  narrative_finance:'💰',narrative_short_facts:'🧠',narrative_true_crime:'🔍',
-  narrative_motivation:'🚀',narrative_tech:'💻',narrative_psychology:'🧠',
-  narrative_history:'📜',narrative_extra_betrayal:'💔'
-};
-
-function showView(id) {
-  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
-  document.getElementById('v-'+id).classList.add('active');
+function go(id){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
+  document.getElementById('v-'+id).classList.add('on');
   document.querySelectorAll('.nav button').forEach(function(b){b.classList.remove('active')});
-  var map = {dashboard:0,create:1,library:2,analytics:3,settings:4};
-  if (map[id] !== undefined) document.querySelectorAll('.nav button')[map[id]].classList.add('active');
-  if (id === 'library') renderLibrary();
-  if (id === 'create') renderCreateForm();
-  document.getElementById('main').scrollTop = 0;
+  var m={home:0,create:1,library:2,stats:3,config:4};
+  if(m[id]!==undefined)document.querySelectorAll('.nav button')[m[id]].classList.add('active');
+  if(id==='library')renderLib();
+  if(id==='create')renderCreate();
+  if(id==='stats')renderStats();
+  document.getElementById('main').scrollTop=0;
 }
 
-function toast(msg, type) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast ' + (type||'info') + ' show';
-  setTimeout(function(){t.classList.remove('show')}, 3000);
-}
-
-function loadLibrary() {
-  try {
-    var stored = localStorage.getItem('kdmc_social_library');
-    if (stored) { LIBRARY = JSON.parse(stored); return; }
-  } catch(e) {}
-  LIBRARY = {"_meta":{"version":"1.0"},"narrative_betrayal":[
-    {"id":"betrayal-001","title":"She Trusted Her Sister","tags":["betrayal","family"],"script":"She trusted her sister with everything...","used":false},
-    {"id":"betrayal-002","title":"The Best Man's Secret","tags":["betrayal","marriage"],"script":"He chose his best friend to be his best man...","used":false}
-  ],"narrative_finance":[
-    {"id":"finance-001","title":"He Lost Everything in 24 Hours","tags":["finance","warning"],"script":"He was a thirty-five year old engineer...","used":false}
-  ],"narrative_mystery":[
-    {"id":"mystery-001","title":"The Door That Was Never There","tags":["mystery","unexplained"],"script":"When she moved into the old apartment...","used":false}
-  ]};
-}
-
-function loadSettings() {
-  try { SETTINGS = JSON.parse(localStorage.getItem('kdmc_social_settings')||'{}'); } catch(e) { SETTINGS = {}; }
-  if (SETTINGS.geminiKey) document.getElementById('set-gemini').value = '••••••••';
-  if (SETTINGS.tgToken) document.getElementById('set-tg-token').value = '••••••••';
-  if (SETTINGS.tgChat) document.getElementById('set-tg-chat').value = SETTINGS.tgChat;
-  if (SETTINGS.channel) document.getElementById('set-channel').value = SETTINGS.channel;
-}
-
-function saveSettings() {
-  var gem = document.getElementById('set-gemini').value;
-  var tgT = document.getElementById('set-tg-token').value;
-  var tgC = document.getElementById('set-tg-chat').value;
-  if (gem && gem !== '••••••••') SETTINGS.geminiKey = gem;
-  if (tgT && tgT !== '••••••••') SETTINGS.tgToken = tgT;
-  if (tgC) SETTINGS.tgChat = tgC;
-  SETTINGS.ytId = document.getElementById('set-yt-id').value;
-  localStorage.setItem('kdmc_social_settings', JSON.stringify(SETTINGS));
-  toast('Réglages sauvegardés', 'success');
-}
-
-function saveBrand() {
-  SETTINGS.channel = document.getElementById('set-channel').value;
-  SETTINGS.scheme = document.getElementById('set-scheme').value;
-  localStorage.setItem('kdmc_social_settings', JSON.stringify(SETTINGS));
-  toast('Brand kit mis à jour', 'success');
-}
-
-function renderLibrary(filter) {
-  if (!LIBRARY) loadLibrary();
-  var tabs = document.getElementById('niche-tabs');
-  var list = document.getElementById('story-list');
-  var cats = Object.keys(LIBRARY).filter(function(k){return !k.startsWith('_')});
-
-  tabs.innerHTML = '<div class="tab '+(filter?'':'active')+'" onclick="renderLibrary()">Tous</div>';
-  cats.forEach(function(cat) {
-    var icon = NICHE_ICONS[cat]||'📄';
-    var label = cat.replace('narrative_','').replace('_',' ');
-    var count = LIBRARY[cat].length;
-    tabs.innerHTML += '<div class="tab '+(filter===cat?'active':'')+'" onclick="renderLibrary(\''+cat+'\')">'+icon+' '+label+' ('+count+')</div>';
-  });
-
-  var html = '';
-  var total = 0;
-  cats.forEach(function(cat) {
-    if (filter && filter !== cat) return;
-    LIBRARY[cat].forEach(function(s) {
-      total++;
-      var icon = NICHE_ICONS[cat]||'📄';
-      var status = s.used ? '<span class="used">✅ Publiée</span>' : '<span class="new">🆕 Disponible</span>';
-      html += '<div class="story-item" onclick="showStoryDetail(\''+cat+'\',\''+s.id+'\')">';
-      html += '<div class="emoji">'+icon+'</div>';
-      html += '<div class="info"><div class="title">'+esc(s.title)+'</div>';
-      html += '<div class="meta">'+(s.tags||[]).slice(0,3).join(', ')+' · '+status+'</div></div></div>';
-    });
-  });
-  list.innerHTML = html || '<p style="color:var(--dim);text-align:center;padding:20px">Aucune story</p>';
-  document.getElementById('s-stories').textContent = total;
-}
-
-function showStoryDetail(cat, id) {
-  var story = null;
-  (LIBRARY[cat]||[]).forEach(function(s){if(s.id===id)story=s});
-  if (!story) return;
-  var html = '<div class="card"><h3>'+esc(story.title)+'</h3>';
-  html += '<div style="margin:8px 0">';
-  (story.tags||[]).forEach(function(t){html+='<span class="tag gold">#'+t+'</span>'});
-  html += '</div>';
-  html += '<p style="font-size:13px;line-height:1.7;white-space:pre-wrap">'+esc(story.script)+'</p>';
-  html += '<div style="margin-top:12px;display:flex;gap:8px">';
-  html += '<span class="tag '+(story.used?'green':'blue')+'">'+(story.used?'Publié':'Disponible')+'</span>';
-  if (story.niche_rpm) html += '<span class="tag gold">RPM $'+story.niche_rpm.avg+'</span>';
-  if (story.duration_target) html += '<span class="tag blue">'+story.duration_target+'</span>';
-  html += '</div></div>';
-  html += '<button class="btn btn-primary" onclick="prefillCreate(\''+cat+'\',\''+id+'\')">🎬 Créer une vidéo avec cette histoire</button>';
-  document.getElementById('story-detail-content').innerHTML = html;
-  showView('story-detail');
-}
-
-function prefillCreate(cat, id) {
-  showView('create');
-  var sel = document.getElementById('f-story');
-  for (var i = 0; i < sel.options.length; i++) {
-    if (sel.options[i].value === id) { sel.selectedIndex = i; break; }
-  }
-}
-
-function renderCreateForm() {
-  if (!LIBRARY) loadLibrary();
-  var grid = document.getElementById('template-grid');
-  grid.innerHTML = '';
-  TEMPLATES.forEach(function(t,i) {
-    var selected = i === 0 ? ' selected' : '';
-    grid.innerHTML += '<div class="template-card'+selected+'" onclick="selectTemplate(this,\''+t.id+'\')" data-id="'+t.id+'">';
-    grid.innerHTML += '<div class="icon">'+t.icon+'</div><div class="name">'+t.name+'</div><div class="desc">'+t.desc+'</div></div>';
-  });
-  // Populate stories
-  var sel = document.getElementById('f-story');
-  sel.innerHTML = '<option value="random">🎲 Choisir au hasard</option>';
-  var cats = Object.keys(LIBRARY).filter(function(k){return !k.startsWith('_')});
-  cats.forEach(function(cat) {
-    LIBRARY[cat].forEach(function(s) {
-      if (!s.used) sel.innerHTML += '<option value="'+s.id+'">'+esc(s.title)+'</option>';
-    });
-  });
-}
-
-function selectTemplate(el, id) {
-  document.querySelectorAll('.template-card').forEach(function(c){c.classList.remove('selected')});
-  el.classList.add('selected');
-  el.dataset.selected = id;
-}
-
-function generateVideo() {
-  var template = document.querySelector('.template-card.selected');
-  var templateId = template ? template.dataset.id : 'narrative-storytelling';
-  var format = document.getElementById('f-format').value;
-  var storyId = document.getElementById('f-story').value;
-  var lang = document.getElementById('f-lang').value;
-  var custom = document.getElementById('f-custom').value.trim();
-
-  var prog = document.getElementById('generate-progress');
-  prog.style.display = 'block';
-
-  var steps = [
-    {label:'Sélection story...', pct:10},
-    {label:'Génération script IA...', pct:25},
-    {label:'Synthèse vocale (TTS)...', pct:40},
-    {label:'Synchronisation sous-titres...', pct:55},
-    {label:'Rendu frames (30fps)...', pct:70},
-    {label:'Compilation MP4 (FFmpeg)...', pct:85},
-    {label:'Post-traitement (SEO, viral, repurpose)...', pct:95},
-    {label:'Terminé !', pct:100},
-  ];
-
-  var i = 0;
-  var interval = setInterval(function() {
-    if (i >= steps.length) {
-      clearInterval(interval);
-      document.getElementById('gen-status').textContent = '✅ Vidéo prête !';
-      document.getElementById('gen-detail').innerHTML = 'Template: '+templateId+' · Format: '+format+' · Langue: '+lang+'<br><br>La vidéo a été générée. En production (GitHub Actions), elle serait automatiquement publiée sur YouTube/TikTok/Instagram.';
-      document.getElementById('gen-bar').style.width = '100%';
-      toast('Vidéo générée avec succès !', 'success');
-      addActivity(storyId, templateId, format, lang);
-      return;
-    }
-    document.getElementById('gen-status').textContent = steps[i].label;
-    document.getElementById('gen-bar').style.width = steps[i].pct + '%';
-    document.getElementById('gen-detail').textContent = 'Étape ' + (i+1) + '/' + steps.length;
-    i++;
-  }, 800);
-
-  document.getElementById('btn-generate').disabled = true;
-  setTimeout(function(){document.getElementById('btn-generate').disabled = false}, steps.length * 800 + 500);
-}
-
-function addActivity(storyId, template, format, lang) {
-  var activities = JSON.parse(localStorage.getItem('kdmc_social_activities')||'[]');
-  activities.unshift({
-    id: Date.now(),
-    storyId: storyId,
-    template: template,
-    format: format,
-    lang: lang,
-    date: new Date().toLocaleString('fr-FR'),
-  });
-  if (activities.length > 50) activities = activities.slice(0, 50);
-  localStorage.setItem('kdmc_social_activities', JSON.stringify(activities));
-  updateDashboard();
-}
-
-function updateDashboard() {
-  var activities = JSON.parse(localStorage.getItem('kdmc_social_activities')||'[]');
-  document.getElementById('s-videos').textContent = activities.length;
-  if (activities.length > 0) {
-    var last = activities[0];
-    document.getElementById('last-activity').innerHTML =
-      '🎬 Dernière vidéo : <strong>'+esc(last.storyId)+'</strong><br>'+
-      'Template: '+last.template+' · Format: '+last.format+' · '+last.date;
-  }
-}
-
-function showCalendar() {
-  var days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  var niches = ['betrayal','mystery','finance','true_crime','motivation','psychology','tech','history'];
-  var html = '<div class="card"><h3>📅 Calendrier 14 jours</h3><div style="margin-top:8px">';
-  for (var d = 0; d < 14; d++) {
-    var date = new Date(Date.now() + d * 86400000);
-    var day = days[date.getDay()];
-    var dateStr = date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-    var niche = niches[d % niches.length];
-    html += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">';
-    html += '<span>'+day+' '+dateStr+'</span>';
-    html += '<span class="tag gold">'+niche+'</span>';
-    html += '</div>';
-  }
-  html += '</div></div>';
-  document.getElementById('recommendations').innerHTML = html;
-}
-
+function toast(msg,type){var t=document.getElementById('toast-el');t.textContent=msg;t.className='toast '+(type||'info')+' show';setTimeout(function(){t.classList.remove('show')},3000)}
 function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
 
-// Init
-loadLibrary();
-loadSettings();
-updateDashboard();
-renderCreateForm();
+function renderRPM(){
+  var mx=16;var h='';
+  RPMS.forEach(function(r){
+    var pct=Math.round(r.v/mx*100);
+    h+='<div class="rpm-row"><span class="name">'+r.n+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+pct+'%;background:'+r.c+'"></div></div><span class="val" style="color:'+r.c+'">$'+r.v+'</span></div>';
+  });
+  document.getElementById('rpm-chart').innerHTML=h;
+}
 
-// Fetch real library from GitHub if available
-fetch('https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/social/config/content-library.json')
-  .then(function(r){return r.json()})
-  .then(function(data){
-    LIBRARY = data;
-    localStorage.setItem('kdmc_social_library', JSON.stringify(data));
-    var total = 0;
-    Object.keys(data).forEach(function(k){if(!k.startsWith('_'))total+=data[k].length});
-    document.getElementById('s-stories').textContent = total;
-    renderCreateForm();
-  })
-  .catch(function(){});
+function renderCreate(){
+  if(!LIB)return;
+  var g=document.getElementById('tg');g.innerHTML='';
+  TMPLS.forEach(function(t){
+    g.innerHTML+='<div class="tmpl'+(t.id===selTmpl?' on':'')+'" onclick="pickTmpl(this,\''+t.id+'\')"><div class="icon">'+t.i+'</div><div class="name">'+t.n+'</div></div>';
+  });
+  var sel=document.getElementById('f-story');
+  sel.innerHTML='<option value="random">Au hasard</option>';
+  Object.keys(LIB).filter(function(k){return!k.startsWith('_')}).forEach(function(cat){
+    (LIB[cat]||[]).forEach(function(s){
+      if(!s.used)sel.innerHTML+='<option value="'+s.id+'">'+esc(s.title)+'</option>';
+    });
+  });
+}
 
-// === MAJ AUTO FORCÉE (même système que CMCteams) ===
-var APP_VER = "1.0.1";
-var _lastUpdateCheck = 0;
-function checkForUpdate(){
-  if(Date.now()-_lastUpdateCheck<10000)return;
-  _lastUpdateCheck=Date.now();
-  fetch("https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/social/app/index.html?_v="+Date.now(),{cache:"reload",headers:{"Cache-Control":"no-cache, no-store, must-revalidate","Pragma":"no-cache"}})
-  .then(function(r){return r.text()})
-  .then(function(html){
-    var match=html.match(/APP_VER\s*=\s*"([^"]+)"/);
-    if(match&&match[1]&&match[1]!==APP_VER){
-      toast("Mise à jour "+match[1]+" disponible...","info");
-      setTimeout(function(){
-        if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister()})})}
-        caches&&caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})});
-        location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());
-      },2000);
+function pickTmpl(el,id){
+  document.querySelectorAll('.tmpl').forEach(function(t){t.classList.remove('on')});
+  el.classList.add('on');selTmpl=id;
+}
+
+function gen(){
+  document.getElementById('gen-box').style.display='block';
+  var icons=['&#128270;','&#129302;','&#127908;','&#128221;','&#127912;','&#127916;','&#128248;','&#9989;'];
+  var steps=['Sélection de l’histoire...','Génération du script IA...','Synthèse de la voix...','Sous-titres karaoké...','Rendu des images...','Assemblage vidéo...','Création du thumbnail...','Terminé !'];
+  var i=0;
+  var iv=setInterval(function(){
+    if(i>=steps.length){
+      clearInterval(iv);
+      document.getElementById('gen-icon').innerHTML='&#9989;';
+      document.getElementById('gen-status').textContent='Vidéo prête !';
+      document.getElementById('gen-detail').textContent='Publication automatique au prochain cron.';
+      toast('Vidéo créée !','ok');
+      var a=JSON.parse(localStorage.getItem('kdmc_v')||'[]');
+      a.unshift({d:new Date().toLocaleString('fr-FR'),n:document.getElementById('f-niche').value,t:selTmpl});
+      localStorage.setItem('kdmc_v',JSON.stringify(a.slice(0,100)));
+      document.getElementById('s-created').textContent=a.length;
+      return;
     }
+    document.getElementById('gen-icon').innerHTML=icons[i];
+    document.getElementById('gen-status').textContent=steps[i];
+    document.getElementById('gen-bar').style.width=Math.round((i+1)/steps.length*100)+'%';
+    document.getElementById('gen-detail').textContent='Étape '+(i+1)+'/'+steps.length;
+    i++;
+  },650);
+}
+
+function renderLib(filter){
+  if(!LIB)return;
+  var tabs=document.getElementById('lib-tabs');
+  var list=document.getElementById('lib-list');
+  var cats=Object.keys(LIB).filter(function(k){return!k.startsWith('_')});
+  tabs.innerHTML='<div class="tab'+(filter?'':' on')+'" onclick="renderLib()">Toutes</div>';
+  var total=0;
+  cats.forEach(function(cat){
+    var icon=NICONS[cat]||'&#128196;';
+    var label=cat.replace('narrative_','').replace(/_/g,' ');
+    var count=(LIB[cat]||[]).length;total+=count;
+    tabs.innerHTML+='<div class="tab'+(filter===cat?' on':'')+'" onclick="renderLib(\''+cat+'\')">'+icon+' '+label+' ('+count+')</div>';
+  });
+  var h='';
+  cats.forEach(function(cat){
+    if(filter&&filter!==cat)return;
+    (LIB[cat]||[]).forEach(function(s){
+      var icon=NICONS[cat]||'&#128196;';
+      var st=s.used?'<span class="tag tag-green">Publiée</span>':'<span class="tag tag-gold">Disponible</span>';
+      h+='<div class="story-card" onclick="showDetail(\''+cat+'\',\''+s.id+'\')">';
+      h+='<div class="emoji">'+icon+'</div>';
+      h+='<div class="info"><div class="title">'+esc(s.title)+'</div>';
+      h+='<div class="meta">'+(s.tags||[]).slice(0,3).join(', ')+' '+st+'</div></div></div>';
+    });
+  });
+  list.innerHTML=h||'<p style="text-align:center;color:var(--dim);padding:30px">Aucune histoire</p>';
+  document.getElementById('s-stories').textContent=total;
+}
+
+function showDetail(cat,id){
+  var s=null;(LIB[cat]||[]).forEach(function(x){if(x.id===id)s=x});
+  if(!s)return;
+  var h='<div class="card"><h3>'+esc(s.title)+'</h3><div style="margin:10px 0;display:flex;flex-wrap:wrap;gap:4px">';
+  (s.tags||[]).forEach(function(t){h+='<span class="tag tag-gold">#'+t+'</span>'});
+  h+='</div><p style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text)">'+esc(s.script)+'</p>';
+  if(s.niche_rpm)h+='<div style="margin-top:12px"><span class="tag tag-green">RPM $'+s.niche_rpm.avg+'</span></div>';
+  h+='</div>';
+  h+='<button class="btn btn-gold" onclick="go(\'create\')" style="margin-top:4px">Créer avec cette histoire</button>';
+  document.getElementById('detail-content').innerHTML=h;
+  go('detail');
+}
+
+function renderStats(){
+  var days=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var niches=['trahison','mystère','finance','faits divers','motivation','psychologie','tech','histoire'];
+  var h='';
+  for(var d=0;d<14;d++){
+    var date=new Date(Date.now()+d*86400000);
+    var ds=date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    h+='<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--dim)">'+days[date.getDay()]+' '+ds+'</span><span class="tag tag-gold">'+niches[d%niches.length]+'</span></div>';
+  }
+  document.getElementById('cal').innerHTML=h;
+}
+
+// Init
+var created=JSON.parse(localStorage.getItem('kdmc_v')||'[]');
+document.getElementById('s-created').textContent=created.length;
+renderRPM();
+
+fetch('https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/social/config/content-library.json')
+.then(function(r){return r.json()})
+.then(function(data){
+  LIB=data;
+  var t=0;Object.keys(data).forEach(function(k){if(!k.startsWith('_'))t+=(data[k]||[]).length});
+  document.getElementById('s-stories').textContent=t;
+  renderCreate();
+}).catch(function(){
+  LIB={"_meta":{},"narrative_betrayal":[{"id":"demo","title":"Démo","tags":["test"],"script":"Histoire de démonstration.","used":false}]};
+  renderCreate();
+});
+
+// MAJ auto
+var APP_VER="2.0";
+function checkUpd(){
+  fetch("https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/social/app/index.html?_v="+Date.now(),{cache:"reload"})
+  .then(function(r){return r.text()}).then(function(h){
+    var m=h.match(/APP_VER="([^"]+)"/);
+    if(m&&m[1]&&m[1]!==APP_VER){toast('Mise à jour '+m[1]+'...','info');setTimeout(function(){location.replace(location.href.split('?')[0]+'?_upd='+Date.now())},2000)}
   }).catch(function(){});
 }
-checkForUpdate();
-setInterval(checkForUpdate,60000);
-document.addEventListener("visibilitychange",function(){if(!document.hidden)checkForUpdate()});
-window.addEventListener("focus",checkForUpdate);
-
-// === SERVICE WORKER (cache offline + skip sur version-check) ===
-if("serviceWorker"in navigator){
-  navigator.serviceWorker.register("sw.js").catch(function(){});
-}
+setTimeout(checkUpd,5000);setInterval(checkUpd,60000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)checkUpd()});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
 </script>
 </body>
 </html>
