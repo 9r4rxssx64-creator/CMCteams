@@ -1573,7 +1573,7 @@ export function renderToolPills(msg: DisplayMessage): string {
   const allDone = msg.toolPills.every((p) => p.status === 'done');
   const pillStyle =
     'padding:4px 8px;background:rgba(201,162,39,0.1);border-radius:8px;' +
-    'font-size:11px;color:var(--ax-gold);display:inline-block;margin:4px 4px 4px 0;';
+    'font-size:11px;color:var(--ax-gold);display:inline-block;margin:8px 8px 8px 0;';
   /* Si tout terminé → résumé compact "▶ N opérations" repliable */
   if (allDone) {
     const count = msg.toolBatchCount ?? msg.toolPills.length;
@@ -1836,7 +1836,7 @@ export function render(rootEl: HTMLElement): void {
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(232,184,48,0.18);
         border-radius: 12px;
-        padding: 12px 14px;
+        padding: 16px;
         animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards;
       }
       .ax-info-card h3 {
