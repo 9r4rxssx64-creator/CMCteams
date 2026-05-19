@@ -82,17 +82,26 @@ jobs:
 
       - name: DIAG token + account match
         run: |
-          # v1.1.130 diagnostic : montre quelles permissions le token a réellement
-          # et si ACCOUNT_ID est cohérent avec le scope du token.
-          echo "=== Token info (premières 10 chars du token utilisé) ==="
+          echo "=== Token prefix ==="
           echo "Token prefix: ${CLOUDFLARE_API_TOKEN:0:10}..."
-          echo "Account ID utilisé: $CLOUDFLARE_ACCOUNT_ID"
+          echo "Account ID: $CLOUDFLARE_ACCOUNT_ID"
           echo ""
-          echo "=== Permissions du token (via /user/tokens/verify détaillé) ==="
-          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+          echo "=== Verify token ==="
+          VERIFY=$(curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "$VERIFY" | python3 -m json.tool || echo "$VERIFY"
+          TOKEN_ID=$(echo "$VERIFY" | grep -oE '"id":"[a-f0-9]+"' | head -1 | cut -d'"' -f4)
+          echo "Token ID: $TOKEN_ID"
+          echo ""
+          echo "=== Full token policies (DEFINITIVE proof of permissions) ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/$TOKEN_ID" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
           echo ""
-          echo "=== Test accès D1 read (devrait réussir si permissions OK) ==="
+          echo "=== Test list Workers (le token a Workers Scripts:Edit?) ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
+          echo ""
+          echo "=== Test D1 list ==="
           curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
 
