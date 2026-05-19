@@ -36,7 +36,7 @@ jobs:
 
       - name: Generate video
         working-directory: tools/social
-        timeout-minutes: 60
+        timeout-minutes: 70
         run: |
           FORMAT="${{ github.event.inputs.format || 'long' }}"
           node --input-type=module -e "
@@ -55,90 +55,86 @@ jobs:
           const fmt = '${FORMAT}';
           const script = story.script;
           const words = script.split(/\s+/);
-          console.log('Story: ' + story.id + ' (' + words.length + ' words, format: ' + fmt + ')');
+          console.log('Story: ' + story.id + ' (' + words.length + ' words)');
 
           const id = story.id;
           const outDir = 'output/' + id;
           fs.mkdirSync(outDir, {recursive:true});
-          const w = fmt==='short' ? 1080 : 1920;
-          const h = fmt==='short' ? 1920 : 1080;
-          const fps = 10; // 10fps render = 3x faster, upscale to 30 in ffmpeg
 
-          // CHUNKED GENERATION: split script into chunks of max 60 words
-          const chunkSize = 60;
+          // Resolution: 960x540 for render speed, upscale to 1920x1080 in final
+          const renderW = fmt==='short' ? 540 : 960;
+          const renderH = fmt==='short' ? 960 : 540;
+          const finalW = fmt==='short' ? 1080 : 1920;
+          const finalH = fmt==='short' ? 1920 : 1080;
+          const fps = 8; // 8fps render, upscale to 30 in ffmpeg
+
+          // Chunks of 80 words max
+          const chunkSize = 80;
           const chunks = [];
           for (let i = 0; i < words.length; i += chunkSize) {
             chunks.push(words.slice(i, i + chunkSize).join(' '));
           }
-          console.log('Chunks: ' + chunks.length + ' (max ' + chunkSize + ' words each)');
+          console.log('Chunks: ' + chunks.length);
 
           const chunkVideos = [];
           for (let c = 0; c < chunks.length; c++) {
             const chunk = chunks[c];
-            const chunkDir = outDir + '/chunk_' + c;
-            fs.mkdirSync(chunkDir, {recursive:true});
-            const wavP = chunkDir + '/audio.wav';
-            const mp3P = chunkDir + '/audio.mp3';
-            const framesD = chunkDir + '/frames';
-            const videoP = chunkDir + '/chunk.mp4';
+            const cd = outDir + '/c' + c;
+            fs.mkdirSync(cd, {recursive:true});
+            const wavP = cd + '/a.wav';
+            const mp3P = cd + '/a.mp3';
+            const fd = cd + '/f';
+            const vp = cd + '/v.mp4';
 
-            console.log('--- Chunk ' + (c+1) + '/' + chunks.length + ' (' + chunk.split(/\s+/).length + ' words) ---');
+            console.log('Chunk ' + (c+1) + '/' + chunks.length + ' (' + chunk.split(/\s+/).length + 'w)');
 
             // TTS
-            const safeText = chunk.replace(/[\\\"]/g,'').slice(0,2000);
-            execSync('espeak-ng -v en -s 150 -p 35 -w ' + wavP + ' \"' + safeText + '\"', {timeout:30000});
-            execSync('ffmpeg -y -i ' + wavP + ' -codec:a libmp3lame -b:a 192k ' + mp3P, {stdio:'pipe', timeout:15000});
+            const safe = chunk.replace(/[\\\\\"]/g,'').slice(0,2500);
+            execSync('espeak-ng -v en -s 160 -p 35 -w ' + wavP + ' \"' + safe + '\"', {timeout:30000});
+            execSync('ffmpeg -y -i ' + wavP + ' -codec:a libmp3lame -b:a 128k ' + mp3P, {stdio:'pipe', timeout:15000});
             try{fs.unlinkSync(wavP)}catch{}
 
-            const audioSize = fs.statSync(mp3P).size;
-            const durMs = Math.round(audioSize / 6000 * 1000);
+            const sz = fs.statSync(mp3P).size;
+            const dur = Math.round(sz / 6000 * 1000);
 
             // Subtitles
             const { segmentScript, groupIntoSubtitles } = await import('./engine/subtitle-engine.js');
-            const segs = segmentScript(chunk, durMs);
-            const subs = groupIntoSubtitles(segs, {wordsPerLine:fmt==='short'?3:5, maxCharsPerLine:40, breakOnPunct:true});
-            const subsR = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(ww=>({word:ww.word,startMs:ww.startMs,endMs:ww.endMs}))}));
+            const segs = segmentScript(chunk, dur);
+            const subs = groupIntoSubtitles(segs, {wordsPerLine:4, maxCharsPerLine:35, breakOnPunct:true});
+            const sr = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(ww=>({word:ww.word,startMs:ww.startMs,endMs:ww.endMs}))}));
 
-            // Frames
-            const scene = {width:w,height:h,fps,durationMs:durMs+300,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:subsR,title:c===0?story.title:'',watermark:'',showProgress:c===chunks.length-1};
+            // Frames at low res + low fps
+            const scene = {width:renderW,height:renderH,fps,durationMs:dur+200,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:sr,title:c===0?story.title:'',watermark:'',showProgress:false};
             const { generateFrames } = await import('./engine/frame-generator.js');
-            await generateFrames(scene, framesD, {onProgress:(cur,tot)=>{if(cur%20===0)process.stdout.write('.')}});
-            process.stdout.write(' OK\\n');
+            await generateFrames(scene, fd, {onProgress:(cur,tot)=>{if(cur%10===0)process.stdout.write('.')}});
+            process.stdout.write(' ');
 
-            // Compile chunk
-            execSync('ffmpeg -y -framerate ' + fps + ' -i ' + framesD + '/frame_%06d.png -i ' + mp3P + ' -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p -r 30 -c:a aac -b:a 128k -shortest -movflags +faststart ' + videoP, {stdio:'pipe', timeout:120000});
-            console.log('Chunk ' + (c+1) + ': ' + (fs.statSync(videoP).size/1024/1024).toFixed(1) + ' MB');
+            // Compile chunk: render res -> final res via ffmpeg scale
+            execSync('ffmpeg -y -framerate ' + fps + ' -i ' + fd + '/frame_%06d.png -i ' + mp3P + ' -map 0:v -map 1:a -vf scale=' + finalW + ':' + finalH + ':flags=lanczos -c:v libx264 -preset ultrafast -crf 28 -pix_fmt yuv420p -r 30 -c:a aac -b:a 128k -shortest -movflags +faststart ' + vp, {stdio:'pipe', timeout:120000});
+            console.log((fs.statSync(vp).size/1024/1024).toFixed(1) + 'MB');
 
-            chunkVideos.push(videoP);
-
+            chunkVideos.push(vp);
             // Cleanup frames immediately
-            try{fs.readdirSync(framesD).forEach(f=>fs.unlinkSync(framesD+'/'+f));fs.rmdirSync(framesD)}catch{}
+            try{fs.readdirSync(fd).forEach(f=>fs.unlinkSync(fd+'/'+f));fs.rmdirSync(fd)}catch{}
           }
 
-          // CONCATENATE all chunks
-          const finalVideo = outDir + '/' + id + '_' + fmt + '.mp4';
+          // Concatenate
+          const final = outDir + '/' + id + '_' + fmt + '.mp4';
           if (chunkVideos.length === 1) {
-            fs.renameSync(chunkVideos[0], finalVideo);
+            fs.renameSync(chunkVideos[0], final);
           } else {
-            const concatFile = outDir + '/concat.txt';
-            fs.writeFileSync(concatFile, chunkVideos.map(v=>\"file '\" + v + \"'\").join('\\n'));
-            console.log('Concatenating ' + chunkVideos.length + ' chunks...');
-            execSync('ffmpeg -y -f concat -safe 0 -i ' + concatFile + ' -c copy ' + finalVideo, {stdio:'pipe', timeout:60000});
-            // Cleanup chunks
+            const cf = outDir + '/concat.txt';
+            fs.writeFileSync(cf, chunkVideos.map(v=>\"file '\" + v + \"'\").join('\\n'));
+            execSync('ffmpeg -y -f concat -safe 0 -i ' + cf + ' -c copy ' + final, {stdio:'pipe', timeout:60000});
             for (const cv of chunkVideos) try{fs.unlinkSync(cv)}catch{}
-            try{fs.unlinkSync(concatFile)}catch{}
+            try{fs.unlinkSync(cf)}catch{}
           }
 
-          const finalSize = fs.statSync(finalVideo).size;
-          console.log('FINAL: ' + finalVideo + ' (' + (finalSize/1024/1024).toFixed(2) + ' MB)');
-
-          // Metadata + mark used
-          fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],format:fmt,width:w,height:h,sizeBytes:finalSize},null,2));
+          console.log('FINAL: ' + (fs.statSync(final).size/1024/1024).toFixed(2) + ' MB');
+          fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],format:fmt,width:finalW,height:finalH,sizeBytes:fs.statSync(final).size},null,2));
           story.used = true;
           fs.writeFileSync('config/content-library.json', JSON.stringify(lib,null,2));
-
-          // Cleanup chunk dirs
-          for (let c = 0; c < chunks.length; c++) try{fs.rmdirSync(outDir+'/chunk_'+c,{recursive:true})}catch{}
+          for (let c = 0; c < chunks.length; c++) try{fs.rmSync(outDir+'/c'+c,{recursive:true,force:true})}catch{}
           console.log('Done!');
           "
 
