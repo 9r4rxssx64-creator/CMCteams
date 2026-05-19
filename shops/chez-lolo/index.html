@@ -290,7 +290,15 @@ if(S.view==="home"||S.view==="products"){document.querySelectorAll(".card").forE
 /* Restore search focus if it was active */
 if(saved.searchVal!==null){var nIn=document.getElementById("searchIn");if(nIn){nIn.focus();try{nIn.setSelectionRange(saved.searchSel,saved.searchSel)}catch(e){}}}
 /* Lazy image loaded class */
-document.querySelectorAll("img[data-lazy]").forEach(function(im){if(im.complete)im.classList.add("loaded");else im.addEventListener("load",function(){im.classList.add("loaded")},{once:true})})}
+document.querySelectorAll("img[data-lazy]").forEach(function(im){if(im.complete)im.classList.add("loaded");else im.addEventListener("load",function(){im.classList.add("loaded")},{once:true})});
+/* JSON-LD Product schema (SEO Google Shopping) */
+injectProductJsonLd()}
+function injectProductJsonLd(){var old=document.getElementById("ldProduct");if(old)old.remove();
+if(S.view!=="product"||!S.vp)return;
+var p=P.find(function(x){return x.id===S.vp});if(!p)return;
+var ld={"@context":"https://schema.org/","@type":"Product",name:p.name,description:p.desc||"",image:p.img||"",sku:p.id,brand:{"@type":"Brand",name:STORE_NAME},offers:{"@type":"Offer",url:location.href.split("#")[0]+"#p="+p.id,priceCurrency:"EUR",price:p.price.toFixed(2),availability:isSoldOut(p)?"https://schema.org/OutOfStock":"https://schema.org/InStock",seller:{"@type":"Organization",name:"KDMC Monaco"}}};
+if(p.rating&&p.reviews){ld.aggregateRating={"@type":"AggregateRating",ratingValue:p.rating,reviewCount:p.reviews}}
+var s=document.createElement("script");s.type="application/ld+json";s.id="ldProduct";s.textContent=JSON.stringify(ld);document.head.appendChild(s)}
 function hdr(){
 var wishN=loadWish().length, ordN=getMyOrders().length;
 return '<div class="hdr"><div class="hdr-inner">'
@@ -476,13 +484,13 @@ function removeCoupon(){S.coupon=null;toast("Code retiré");dc();renderCartPanel
 function vAbout(){return '<div class="section" style="max-width:700px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:16px">À propos de '+esc(STORE_NAME)+'</h1><p style="color:var(--muted);line-height:1.8">'+esc(STORE_NAME)+' est née de l\'amour de la Provence et de ses trésors naturels. Huile d\'olive vierge extra, lavande fine de Haute-Provence, amande douce du Luberon — nous sélectionnons les meilleurs ingrédients du terroir pour des soins cosmétiques authentiques et naturels. Depuis Monaco, Lolo vous fait découvrir la douceur provençale.</p>'
 +'<div class="trust" style="margin-top:32px"><div class="trust-item"><span class="trust-icon">🏆</span>100% Naturel</div><div class="trust-item"><span class="trust-icon">💯</span>Fabriqué en Provence</div><div class="trust-item"><span class="trust-icon">🌍</span>Livraison Monaco & France</div></div></div>'}
 function vContact(){return '<div class="section" style="max-width:500px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:24px">📧 Contactez-nous</h1>'
-+'<div style="margin-bottom:16px"><label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Nom</label><input type="text" style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text)"></div>'
-+'<div style="margin-bottom:16px"><label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Email</label><input type="email" style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text)"></div>'
-+'<div style="margin-bottom:16px"><label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Message</label><textarea rows="5" style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);resize:vertical"></textarea></div>'
-+'<button onclick="toast(\'Message envoyé ! Nous vous répondrons sous 24h.\')" style="width:100%;padding:14px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;border:none;cursor:pointer">📨 Envoyer</button></div>'}
++'<div style="margin-bottom:16px"><label for="ctName" style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Nom</label><input id="ctName" type="text" autocomplete="name" required style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text)"></div>'
++'<div style="margin-bottom:16px"><label for="ctEmail" style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Email</label><input id="ctEmail" type="email" autocomplete="email" required style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text)"></div>'
++'<div style="margin-bottom:16px"><label for="ctMsg" style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Message</label><textarea id="ctMsg" rows="5" required maxlength="2000" style="width:100%;padding:12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);resize:vertical"></textarea></div>'
++'<button onclick="sendContact()" style="width:100%;padding:14px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;border:none;cursor:pointer">📨 Envoyer</button></div>'}
 /* CART LOGIC */
-function loadCart(){S.cart=JSON.parse(localStorage.getItem("kdmc_cart_"+STORE_ID)||"[]")}
-function saveCart(){localStorage.setItem("kdmc_cart_"+STORE_ID,JSON.stringify(S.cart));cartBadge();renderCartPanel()}
+function loadCart(){try{S.cart=JSON.parse(localStorage.getItem("kdmc_cart_"+STORE_ID)||"[]")||[]}catch(e){S.cart=[]}}
+function saveCart(){try{localStorage.setItem("kdmc_cart_"+STORE_ID,JSON.stringify(S.cart))}catch(e){}cartBadge();renderCartPanel()}
 function addCart(id){var p=P.find(function(x){return x.id===id});if(!p)return;
 var ex=S.cart.find(function(x){return x.id===id});
 if(ex){ex.qty++}else{S.cart.push({id:p.id,name:p.name,price:p.price,img:p.img,qty:1})}
@@ -514,8 +522,10 @@ if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service
 e.value=""}
 /* INIT */
 function sendContact(){
-var name=document.querySelector('[type=text]');var email=document.querySelector('[type=email]');var msg=document.querySelector('textarea');
-if(!name||!email||!msg||!email.value)return toast("Remplissez tous les champs","error");
+var name=document.getElementById("ctName"),email=document.getElementById("ctEmail"),msg=document.getElementById("ctMsg");
+if(!name||!email||!msg)return toast("Formulaire introuvable","error");
+if(!name.value.trim()||!email.value.trim()||!msg.value.trim())return toast("Remplissez tous les champs","error");
+if(email.value.indexOf("@")<1)return toast("Email invalide","error");
 if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_contact",{from_name:name.value,from_email:email.value,message:msg.value,store:STORE_NAME}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
 function notifyPayment(total){
 if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_payment",{store:STORE_NAME,amount:fmtP(total),items:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),timestamp:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
@@ -523,7 +533,7 @@ function showPayment(total){
 var m=document.createElement("div");m.id="payModal";
 m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
 m.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;max-width:440px;width:100%;border:1px solid var(--border);max-height:90vh;overflow-y:auto">'
-+'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 style="font-size:22px;font-weight:800">Paiement</h2><span onclick="document.getElementById(\'payModal\').remove()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
++'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 style="font-size:22px;font-weight:800">Paiement</h2><span onclick="closePayModal()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
 +'<div style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:20px;text-align:center"><span style="font-size:14px;color:var(--muted)">Total à payer</span><div style="font-size:32px;font-weight:800;color:var(--p);margin-top:4px">'+fmtP(total)+'</div></div>'
 +'<div style="display:flex;flex-direction:column;gap:12px">'
 +'<a href="https://paypal.me/kdmc/'+total.toFixed(2)+'" onclick="processOrder(\'PayPal\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0070ba22;border:1px solid #0070ba55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🅿️</span><div><div>PayPal</div><div style="font-size:12px;color:var(--muted)">Paiement sécurisé instantané</div></div></a>'
@@ -532,7 +542,11 @@ m.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;
 +'</div>'
 +'<p style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">🔒 Paiement sécurisé · Données protégées · KDMC Monaco</p>'
 +'</div>';
-document.body.appendChild(m);notifyPayment(total);m.onclick=function(e){if(e.target===m)m.remove()}}
+document.body.appendChild(m);notifyPayment(total);m.onclick=function(e){if(e.target===m)closePayModal()};
+m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Paiement");
+document.addEventListener("keydown",_payEscHandler)}
+function _payEscHandler(e){if(e.key==="Escape"){closePayModal()}}
+function closePayModal(){var m=document.getElementById("payModal");if(m)m.remove();document.removeEventListener("keydown",_payEscHandler)}
 function showIBAN(){
 var ib=document.getElementById("ibanBox");if(ib){ib.remove();return}
 var d=document.createElement("div");d.id="ibanBox";d.style.cssText="margin-top:12px;background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)";
@@ -578,8 +592,8 @@ var total=subtotal-discAmt+ship;
 var items=S.cart.map(function(i){return {id:i.id,name:i.name,price:i.price,qty:i.qty}});
 var order={id:orderId,items:items,subtotal:subtotal,discount:discAmt,shipping:ship,total:total,coupon:S.coupon?S.coupon.code:null,method:method,ts:Date.now(),status:"pending"};
 /* Sauvegarder commande */
-var orders=JSON.parse(localStorage.getItem("kdmc_orders_"+STORE_ID)||"[]");
-orders.push(order);localStorage.setItem("kdmc_orders_"+STORE_ID,JSON.stringify(orders));
+var orders;try{orders=JSON.parse(localStorage.getItem("kdmc_orders_"+STORE_ID)||"[]")||[]}catch(e){orders=[]}
+orders.push(order);try{localStorage.setItem("kdmc_orders_"+STORE_ID,JSON.stringify(orders))}catch(e){}
 /* Décrémenter stock */
 items.forEach(function(i){decrementStock(i.id)});
 trackPurchase(orderId,total,items);
@@ -602,8 +616,8 @@ modal.innerHTML='<div style="background:var(--card);border-radius:16px;padding:4
 +'<p style="color:var(--muted);margin-bottom:16px">Numéro : <strong style="color:var(--p);font-family:monospace">'+esc(orderId)+'</strong></p>'
 +'<p style="color:var(--muted);margin-bottom:8px">Total : <strong>'+fmtP(total)+'</strong> via '+esc(method)+'</p>'
 +'<p style="color:var(--muted);font-size:13px;margin-bottom:24px">Un email de confirmation vous sera envoyé.<br>Merci de votre confiance 🫒</p>'
-+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'orders\')" style="padding:12px 24px;background:var(--p);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-right:8px">📜 Mes commandes</button>'
-+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'home\')" style="padding:12px 24px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">Continuer</button>'
++'<button onclick="closePayModal();sv(\'orders\')" style="padding:12px 24px;background:var(--p);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-right:8px">📜 Mes commandes</button>'
++'<button onclick="closePayModal();sv(\'home\')" style="padding:12px 24px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">Continuer</button>'
 +'</div>'}
 return orderId}
 
@@ -739,7 +753,7 @@ toast("Merci pour votre avis ! ⭐");
 dc()}
 
 /* Historique commandes client */
-function getMyOrders(){return JSON.parse(localStorage.getItem("kdmc_orders_"+STORE_ID)||"[]")}
+function getMyOrders(){try{return JSON.parse(localStorage.getItem("kdmc_orders_"+STORE_ID)||"[]")||[]}catch(e){return []}}
 
 loadCart();
 /* Deeplink #p=ID → ouvre directement la fiche produit */
@@ -751,7 +765,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="chez-lolo"
-        data-version="v1.2.0"
+        data-version="v1.2.1"
         data-color="#e8b830"
         defer></script>
 
