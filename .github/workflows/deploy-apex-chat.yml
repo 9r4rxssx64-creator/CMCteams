@@ -153,7 +153,7 @@ jobs:
 
           # === IA failover (optionnels) ===
           push_if_set "OPENROUTER_API_KEY" "${{ secrets.OPENROUTER_API_KEY }}"
-          push_if_set "OPENAI_API_KEY" "${{ secrets.OPENAI_API_KEY }}"
+          push_if_set "OPEN_AI_API_KEY" "${{ secrets.OPEN_AI_API_KEY }}"
           push_if_set "PERPLEXITI_API_KEY" "${{ secrets.PERPLEXITI_API_KEY }}"
 
           # === SMS Vonage ===

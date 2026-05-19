@@ -156,13 +156,13 @@ export async function callGroq(messages, systemPrompt, env, signal) {
 }
 
 export async function callOpenAI(messages, systemPrompt, env, signal) {
-  if (!env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY missing');
+  if (!env.OPEN_AI_API_KEY) throw new Error('OPEN_AI_API_KEY missing');
   const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     signal,
     headers: {
-      'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${env.OPEN_AI_API_KEY}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -200,7 +200,7 @@ export async function callDeepSeek(messages, systemPrompt, env, signal) {
 
 // Perplexity (Kevin a configuré PERPLEXITI_API_KEY avec typo)
 export async function callPerplexity(messages, systemPrompt, env, signal) {
-  const key = env.PERPLEXITI_API_KEY || env.PERPLEXITY_API_KEY;
+  const key = env.PERPLEXITI_API_KEY || env.PERPLEXITI_API_KEY;
   if (!key) throw new Error('PERPLEXITI_API_KEY missing');
   const fullMessages = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -230,8 +230,8 @@ export async function callIAFailover(messages, systemPrompt, env) {
     { name: 'gemini', fn: callGemini, hasKey: !!env.GEMINI_API_KEY },
     { name: 'deepseek', fn: callDeepSeek, hasKey: !!env.DEEPSEEK_API_KEY },
     { name: 'openrouter', fn: callOpenRouter, hasKey: !!env.OPENROUTER_API_KEY },
-    { name: 'perplexity', fn: callPerplexity, hasKey: !!(env.PERPLEXITI_API_KEY || env.PERPLEXITY_API_KEY) },
-    { name: 'openai', fn: callOpenAI, hasKey: !!env.OPENAI_API_KEY }
+    { name: 'perplexity', fn: callPerplexity, hasKey: !!(env.PERPLEXITI_API_KEY || env.PERPLEXITI_API_KEY) },
+    { name: 'openai', fn: callOpenAI, hasKey: !!env.OPEN_AI_API_KEY }
   ];
 
   const available = providers.filter(p => p.hasKey);
