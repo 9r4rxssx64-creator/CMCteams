@@ -195,6 +195,71 @@ Si non aux 4 questions → fix avant push.
 
 ---
 
+## 📚 RÈGLE ABSOLUE — DOCS TEMPS RÉEL TOUJOURS À JOUR (Kevin 2026-05-16)
+
+> **"Mets tous tes documents toujours en temps réel à jour sans jamais rien oublier"** — Kevin 2026-05-16
+
+**Règle absolue, NON-NÉGOCIABLE** — Claude Code priorité 1, Apex priorité 1, tous projets futurs :
+
+### 1. À chaque action significative, mettre à jour DANS LE MÊME COMMIT
+
+OBLIGATOIRE :
+- **CLAUDE.md** : nouvelle règle / lesson / pattern d'erreur (append-only)
+- **KEVIN_INVENTORY.md** : nouveaux fichiers créés + liens GitHub directs
+- **KEVIN_ACTIONS_TODO.md** : actions Kevin en attente (si applicable)
+- **MEMO_RESUME.md** : état session courante (où on en est)
+- **NOTES_USER.md** : infos métier Kevin si découverte (employés, codes, règles métier)
+- **CLAUDE_HANDOFF.json** : communication Apex↔Claude Code (si applicable)
+- **APEX_PROJECTS.md** : status registres projets
+
+### 2. JAMAIS commit sans mise à jour docs
+
+❌ Commit qui ajoute feature → mais CLAUDE.md pas mis à jour
+❌ Nouveau fichier créé → mais KEVIN_INVENTORY.md pas mis à jour
+❌ Lesson apprise → mais CLAUDE.md "Erreurs connues" pas enrichi
+❌ Bug récurrent → mais pas tracé dans MEMO_RESUME ni NOTES_USER
+
+✅ TOUJOURS : chaque commit non-trivial doit aussi toucher 1+ doc concerné
+
+### 3. Workflow de session obligatoire
+
+À CHAQUE début de session Claude Code :
+1. Lire CLAUDE.md (35+ règles permanentes)
+2. Lire NOTES_USER.md (infos métier)
+3. Lire MEMO_RESUME.md (où on en est)
+4. Lire KEVIN_ACTIONS_TODO.md (tâches Kevin pending)
+5. Lire KEVIN_INVENTORY.md (fichiers récents créés)
+
+À CHAQUE fin de session OU batch de modifs cohérent :
+- Update MEMO_RESUME (état courant)
+- Update KEVIN_INVENTORY si nouveaux fichiers
+- Update KEVIN_ACTIONS_TODO si nouvelles actions Kevin
+
+### 4. Sync Apex parité
+
+Apex doit aussi maintenir ses docs persistents :
+- `ax_persistent_memory_<uid>` : facts user
+- `ax_lessons_learned_struct` : lessons cross-session
+- `axMaintainKevinInventory()` : auto-update KEVIN_INVENTORY
+
+### 5. Test mental obligatoire avant CHAQUE commit
+
+> *"Ai-je mis à jour les docs concernés par cette modification ? Si nouveau fichier → KEVIN_INVENTORY ? Si nouvelle règle Kevin → CLAUDE.md ? Si lesson learned → CLAUDE.md erreurs connues ?"*
+
+Si réponse non à 1+ → reprendre AVANT push.
+
+### 6. Pareil pour Apex IA + tous projets
+
+Apex AI doit aussi appliquer cette règle à chaque action significative :
+- `axJournalEntry(actor, title, context, action, result, lesson)` après chaque action
+- Push lessons dans `ax_lessons_learned_struct` Firebase
+- Update CLAUDE.md via apex-execute si découverte cross-app
+
+S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams,
+e-KDMC, Télécommande, CrackPass, Apex Chat, tous projets futurs.
+
+---
+
 ## 🔑 RÈGLE ABSOLUE — NOMS SECRETS GITHUB DOIVENT MATCHER EXACTEMENT (Kevin 2026-05-16)
 
 > **Cause racine bug v13.4.229 : workflow attendait `OPENAI_API_KEY`, Kevin avait stocké `OPEN_AI_API_KEY` (underscore). Secret jamais déployé → Apex ne pouvait pas appeler OpenAI via Worker proxy.**

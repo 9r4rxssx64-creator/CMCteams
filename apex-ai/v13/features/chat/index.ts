@@ -1947,9 +1947,9 @@ export function render(rootEl: HTMLElement): void {
            Boutons en grille auto-fit pour viewport étroit. -->
       <nav class="ax-chat-nav" style="display:flex;flex-wrap:wrap;gap:3px;padding:4px;border-top:1px solid var(--ax-border);background:var(--ax-bg-glass);min-width:0;max-width:100%">
         <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">💬 Chat</button>
+        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
         <button class="ax-btn ax-btn-sm" data-nav-route="dashboard" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">📊 Dash</button>
         ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">⚙️ Admin</button>' : ''}
-        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
         <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔧 Régl.</button>
         <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔑 Clé</button>
         <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:#ff6666">🚪 Déco</button>
