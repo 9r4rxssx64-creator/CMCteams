@@ -397,12 +397,12 @@ export function exportVaultJson(entries: ReadonlyArray<VaultEntry>): string {
  * Card HTML pour un credential (multi-key) — premium look.
  */
 export function renderCredentialCard(c: CredentialDisplay): string {
-  const statusColor = STATUS_COLORS[c.status] ?? '#888';
+  const statusColor = STATUS_COLORS[c.status] ?? 'var(--ax-text-muted)';
   const statusEmoji = STATUS_EMOJIS[c.status] ?? '⚪';
   const previewSafe = (c.preview ?? '').slice(0, 4) + '••••••' + (c.preview ?? '').slice(-4);
   const masked = c.preview ? previewSafe : '••••••';
   const recharge = c.rechargeUrl ?? '';
-  const alias = c.alias ? `<span style="color:#888;font-size:11px">— ${escapeHtml(c.alias)}</span>` : '';
+  const alias = c.alias ? `<span style="color:var(--ax-text-muted);font-size:11px">— ${escapeHtml(c.alias)}</span>` : '';
   const logoTag = c.logoUrl
     ? `<img src="${escapeHtml(c.logoUrl)}" alt="" loading="lazy" decoding="async" style="width:24px;height:24px;border-radius:6px" onerror="this.style.display='none'">`
     : '';
@@ -410,7 +410,7 @@ export function renderCredentialCard(c: CredentialDisplay): string {
   if (c.addedAt) meta.push(`Ajouté ${formatRelativeTime(c.addedAt)}`);
   if (c.lastTestedAt) meta.push(`Testé ${formatRelativeTime(c.lastTestedAt)}`);
   const metaLine = meta.length > 0
-    ? `<div style="display:flex;gap:8px;font-size:11px;color:#888;margin-bottom:10px">${meta.map((m) => `<span>${escapeHtml(m)}</span>`).join('')}</div>`
+    ? `<div style="display:flex;gap:8px;font-size:11px;color:var(--ax-text-muted);margin-bottom:10px">${meta.map((m) => `<span>${escapeHtml(m)}</span>`).join('')}</div>`
     : '';
 
   return `
@@ -422,7 +422,7 @@ export function renderCredentialCard(c: CredentialDisplay): string {
         <strong style="font-size:15px;color:#fff">${escapeHtml(c.serviceName)}</strong>
         ${alias}
       </div>
-      <code style="display:block;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:11px;color:#888;font-family:'SF Mono',Menlo,monospace;letter-spacing:1px">${escapeHtml(masked)}</code>
+      <code style="display:block;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:11px;color:var(--ax-text-muted);font-family:'SF Mono',Menlo,monospace;letter-spacing:1px">${escapeHtml(masked)}</code>
       ${metaLine}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button data-action="test" data-cred-id="${escapeHtml(c.id)}"
@@ -431,9 +431,9 @@ export function renderCredentialCard(c: CredentialDisplay): string {
           style="flex:1;min-width:80px;padding:6px 10px;background:rgba(201,162,39,0.1);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px;${recharge ? '' : 'opacity:0.4;cursor:not-allowed'}">💰 Recharger</button>
         <button data-action="discover-links" data-service="${escapeHtml(c.service)}"
           title="Cherche login/dashboard/billing/api_keys/usage en autonomie"
-          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(74,158,255,0.1);color:#4a9eff;border:1px solid rgba(74,158,255,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🔍 Chercher liens</button>
+          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(74,158,255,0.1);color:var(--ax-blue-bright);border:1px solid rgba(74,158,255,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🔍 Chercher liens</button>
         <button data-action="edit" data-cred-id="${escapeHtml(c.id)}"
-          style="padding:6px 10px;background:rgba(255,255,255,0.05);color:#aaa;border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">✏️</button>
+          style="padding:6px 10px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">✏️</button>
         <button data-action="delete" data-cred-id="${escapeHtml(c.id)}"
           style="padding:6px 10px;background:rgba(255,91,91,0.1);color:var(--ax-error);border:1px solid rgba(255,91,91,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🗑</button>
       </div>
@@ -446,7 +446,7 @@ const STATUS_COLORS: Record<KeyStatus, string> = {
   failing: 'var(--ax-warning)',
   'rate-limited': 'var(--ax-warning)',
   invalid: 'var(--ax-error)',
-  unknown: '#888',
+  unknown: 'var(--ax-text-muted)',
 };
 
 const STATUS_EMOJIS: Record<KeyStatus, string> = {
@@ -566,7 +566,7 @@ export function render(rootEl: HTMLElement): void {
               <button id="ax-vault-test-all" style="padding:8px 14px;background:rgba(201,162,39,0.1);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Tester tout</button>
             </div>
           </div>
-          <div class="ax-vault-stats" style="display:flex;gap:14px;padding:8px 0 0;font-size:12px;color:#aaa;flex-wrap:wrap">
+          <div class="ax-vault-stats" style="display:flex;gap:14px;padding:8px 0 0;font-size:12px;color:var(--ax-text-dim);flex-wrap:wrap">
             <span>📊 ${stats.total} codes</span>
             <span style="color:var(--ax-green)">🟢 ${stats.active} actifs</span>
             <span style="color:var(--ax-warning)">🟡 ${stats.failing} dégradés</span>
@@ -583,13 +583,13 @@ export function render(rootEl: HTMLElement): void {
       <div style="height:14px"></div>
 
       ${(stats.total === 0 || stats.invalid > 0) ? `
-      <section id="ax-vault-empty-rescue" style="background:linear-gradient(135deg,rgba(255,91,91,0.12),rgba(232,184,48,0.08));border:1px solid rgba(255,91,91,0.4);border-radius:14px;padding:14px;margin-bottom:14px">
-        <h3 style="margin:0 0 6px;font-size:14px;color:var(--ax-error);font-weight:700">${stats.total === 0 ? '🆘 Coffre vide — Restauration possible' : `🚨 ${stats.invalid} clé(s) illisible(s) — récupération ou cleanup`}</h3>
-        <p style="margin:0 0 10px;color:rgba(255,255,255,0.78);font-size:12.5px;line-height:1.45">${stats.total === 0 ? "Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection." : "Ces clés ont été chiffrées avec une passphrase historisée perdue (régression v13.3.86 fixée v13.3.88). Soit re-coller les clés une par une, soit supprimer les illisibles."}</p>
+      <section id="ax-vault-empty-rescue" class="ax-empty-banner" style="background:linear-gradient(135deg,rgba(255,91,91,0.10),rgba(232,184,48,0.06));border-color:rgba(255,91,91,0.35)">
+        <h3 class="ax-empty-banner-title">${stats.total === 0 ? '🆘 Coffre vide — Restauration possible' : `🚨 ${stats.invalid} clé(s) illisible(s) — récupération ou cleanup`}</h3>
+        <p class="ax-empty-banner-body">${stats.total === 0 ? "Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection." : "Ces clés ont été chiffrées avec une passphrase historisée perdue (régression v13.3.86 fixée v13.3.88). Soit re-coller les clés une par une, soit supprimer les illisibles."}</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="ax-vault-rescue-fb" data-action="rescue-firebase" style="padding:10px 16px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">🔓 Restaurer depuis Firebase</button>
-          <button id="ax-vault-rescue-all" data-action="rescue-scan-all" style="padding:10px 16px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Scanner toutes sources</button>
-          ${stats.invalid > 0 ? `<button id="ax-vault-cleanup-invalid" data-action="cleanup-invalid" style="padding:10px 16px;background:rgba(255,91,91,0.15);color:var(--ax-error);border:1px solid rgba(255,91,91,0.4);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🗑 Supprimer ${stats.invalid} illisibles</button>` : ''}
+          <button id="ax-vault-rescue-fb" data-action="rescue-firebase" class="ax-btn-health ax-btn-health-primary">🔓 Restaurer depuis Firebase</button>
+          <button id="ax-vault-rescue-all" data-action="rescue-scan-all" class="ax-btn-health ax-btn-health-blue">🔄 Scanner toutes sources</button>
+          ${stats.invalid > 0 ? `<button id="ax-vault-cleanup-invalid" data-action="cleanup-invalid" class="ax-btn-health ax-btn-health-danger">🗑 Supprimer ${stats.invalid} illisibles</button>` : ''}
         </div>
         <div id="ax-vault-rescue-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.7)"></div>
       </section>
@@ -712,13 +712,13 @@ function renderCategories(rootEl: HTMLElement): void {
       <details class="ax-cat" data-cat-id="${escapeHtml(cat.id)}" ${isOpen ? 'open' : ''}
         style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden">
         <summary style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;list-style:none;-webkit-tap-highlight-color:transparent;min-height:44px">
-          <span>${escapeHtml(cat.label)} <span style="color:#888;font-weight:400;font-size:13px">(${credsInCat.length})</span></span>
-          <span class="ax-chevron" style="color:#888;transition:transform 200ms ease-out">▼</span>
+          <span>${escapeHtml(cat.label)} <span style="color:var(--ax-text-muted);font-weight:400;font-size:13px">(${credsInCat.length})</span></span>
+          <span class="ax-chevron" style="color:var(--ax-text-muted);transition:transform 200ms ease-out">▼</span>
         </summary>
         <div style="padding:0 14px 14px;display:grid;grid-template-columns:repeat(auto-fill, minmax(280px,1fr));gap:10px">
           ${credsInCat.map((c) => renderCredentialCard(c)).join('')}
           ${credsInCat.length === 0 ? `
-            <div style="padding:20px;color:#666;text-align:center;grid-column:1/-1;font-size:13px">
+            <div style="padding:20px;color:var(--ax-text-muted);text-align:center;grid-column:1/-1;font-size:13px">
               Aucun code dans cette catégorie<br>
               <button data-action="add-to-cat" data-cat-id="${escapeHtml(cat.id)}"
                 style="margin-top:10px;padding:8px 14px;background:rgba(201,162,39,0.1);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3);border-radius:8px;cursor:pointer;font-size:12px;min-height:36px">
@@ -1301,7 +1301,7 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <h2 style="margin:0;font-size:18px;color:var(--ax-gold)">+ Ajouter une clé</h2>
           <button id="ax-vault-modal-close" aria-label="Fermer"
-            style="background:transparent;border:0;color:#aaa;font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
+            style="background:transparent;border:0;color:var(--ax-text-dim);font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
         </div>
         <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
           Catégorie
@@ -1406,7 +1406,7 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <h2 style="margin:0;font-size:18px;color:var(--ax-gold)">✏️ Modifier ${escapeHtml(entry.service)}</h2>
           <button id="ax-vault-modal-close" aria-label="Fermer"
-            style="background:transparent;border:0;color:#aaa;font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
+            style="background:transparent;border:0;color:var(--ax-text-dim);font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
         </div>
         <p style="color:rgba(255,255,255,0.6);font-size:12px;margin:0 0 12px">Une nouvelle valeur remplacera l'ancienne (chiffrement AES-GCM 256).</p>
         <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
@@ -1421,7 +1421,7 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
         </label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
           <button id="ax-vault-edit-cancel"
-            style="flex:1;min-width:120px;padding:10px;background:rgba(255,255,255,0.04);color:#aaa;border:1px solid rgba(255,255,255,0.1);border-radius:8px;cursor:pointer;font-size:13px;min-height:44px">Annuler</button>
+            style="flex:1;min-width:120px;padding:10px;background:rgba(255,255,255,0.04);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.1);border-radius:8px;cursor:pointer;font-size:13px;min-height:44px">Annuler</button>
           <button id="ax-vault-edit-save"
             style="flex:1;min-width:120px;padding:10px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;min-height:44px">💾 Enregistrer</button>
         </div>

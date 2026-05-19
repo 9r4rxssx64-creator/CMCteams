@@ -227,7 +227,8 @@ describe('features/dashboard — renderServiceHealthCard (Kevin lumière)', () =
     const html = renderServiceHealthCard(items, links);
     expect(html).toContain('💳 Recharge');
     expect(html).toContain('credit-purchases');
-    expect(html).toContain('📊 Usage');
+    /* v13.4.233 (étape 3 design) : Usage renommé "Rotate" dans composant partagé */
+    expect(html).toContain('🔄 Rotate');
   });
 
   it('rend lumière verte sans bouton recharge insistant si green', () => {
@@ -252,8 +253,8 @@ describe('features/dashboard — renderServiceHealthCard (Kevin lumière)', () =
     const html = renderServiceHealthCard(items, links);
     /* Bouton recharge n'apparaît PAS si green (Kevin règle : recharge visible quand action requise) */
     expect(html).not.toContain('💳 Recharge');
-    /* Mais usage reste visible pour audit */
-    expect(html).toContain('📊 Usage');
+    /* v13.4.233 (étape 3 design) : Usage renommé "Rotate" dans renderRechargeAction (parité settings) */
+    expect(html).toContain('🔄 Rotate');
   });
 
   it('échappe HTML dans service name', () => {

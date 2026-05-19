@@ -24,6 +24,7 @@ import { store } from '../../core/store.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
 import { guardFeatureEnabled } from '../../services/feature-guard.js';
 import { haptic } from '../../ui/haptic.js';
+import { renderRechargeAction } from '../../ui/recharge-action.js';
 
 /* Re-export escapeHtml for backward compatibility (tests import from this module). */
 export { escapeHtml };
@@ -273,7 +274,7 @@ function renderShortcutCard(s: DashboardShortcut, idx = 0): string {
   /* Premium shortcut card: glass + lift hover + gold border accent + stagger */
   return `
     <button class="ax-shortcut-card ax-modernized-card ax-bounce-tap" data-route="${escapeHtml(s.route)}"
-      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.55));backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 240ms cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:14px;min-height:72px;overflow:hidden;animation:ax-fade-up 320ms cubic-bezier(0.34,1.56,0.64,1) ${60 + idx * 20}ms backwards;-webkit-tap-highlight-color:transparent">
+      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.55));backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 240ms cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:14px;min-height:72px;overflow:hidden;animation:ax-fade-up 320ms cubic-bezier(0.34,1.56,0.64,1) ${30 + idx * 20}ms backwards;-webkit-tap-highlight-color:transparent">
       <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,${escapeHtml(s.color)},${escapeHtml(s.color)}88);border-radius:14px 0 0 14px"></div>
       <span style="font-size:30px;flex-shrink:0;filter:drop-shadow(0 4px 12px ${escapeHtml(s.color)}40);transition:transform 240ms cubic-bezier(0.34,1.56,0.64,1)" class="ax-shortcut-icon">${escapeHtml(s.icon)}</span>
       <div style="flex:1;min-width:0">
@@ -294,8 +295,11 @@ function renderAlerts(alerts: ReadonlyArray<DashboardAlert>): string {
   }
   return alerts
     .map((a, idx) => {
-      const color = a.level === 'error' ? 'var(--ax-error)' : a.level === 'warn' ? 'var(--ax-warning)' : 'var(--ax-blue)';
-      const rgbBase = a.level === 'error' ? '255,91,91' : a.level === 'warn' ? '255,170,0' : '106,138,255';
+      /* v13.4.233 finding POST-FIX P0.9 — severity mapping HIG cohérent
+       * critical=red, high=orange, medium=yellow, low=blue (parité settings) */
+      const color = a.level === 'error' ? 'var(--ax-sev-critical)'
+        : a.level === 'warn' ? 'var(--ax-sev-high)' : 'var(--ax-sev-low)';
+      const rgbBase = a.level === 'error' ? '255,91,91' : a.level === 'warn' ? '255,153,68' : '106,138,255';
       const icon = a.level === 'error' ? '🚨' : a.level === 'warn' ? '⚠️' : 'ℹ️';
       const route = a.action_route ? `data-route="${escapeHtml(a.action_route)}"` : '';
       return `
@@ -322,7 +326,10 @@ function renderTodos(todos: ReadonlyArray<DashboardTodo>): string {
   }
   return todos
     .map((t, idx) => {
-      const color = t.severity === 'critical' ? 'var(--ax-error)' : t.severity === 'high' ? 'var(--ax-warning)' : 'var(--ax-blue)';
+      /* v13.4.233 finding POST-FIX P0.9 — severity mapping HIG */
+      const color = t.severity === 'critical' ? 'var(--ax-sev-critical)'
+        : t.severity === 'high' ? 'var(--ax-sev-high)'
+        : t.severity === 'medium' ? 'var(--ax-sev-medium)' : 'var(--ax-sev-low)';
       const date = new Date(t.ts_created).toLocaleString('fr-FR');
       return `
         <div class="ax-modernized-card" style="padding:12px 14px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${color};border-radius:10px;margin-bottom:8px;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards">
@@ -374,16 +381,14 @@ export function renderServiceHealthCard(
       const links = rechargeLinks[s.service] ?? { recharge: null, usage: null, apiKeys: null };
       /* Bouton "Recharge directe" visible si yellow/red OU si recharge URL connue. */
       const showRecharge = links.recharge && (s.light === 'yellow' || s.light === 'red' || s.light === 'gray');
-      const rechargeBtn = showRecharge && links.recharge
-        ? `<a class="ax-recharge-btn" href="${escapeHtml(links.recharge)}" target="_blank" rel="noopener noreferrer"
-            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;font-weight:700;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent"
->💳 Recharge</a>`
-        : '';
-      const usageBtn = links.usage
-        ? `<a class="ax-usage-btn" href="${escapeHtml(links.usage)}" target="_blank" rel="noopener noreferrer"
-            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);font-weight:600;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent;border:1px solid rgba(106,138,255,0.3)"
->📊 Usage</a>`
-        : '';
+      /* v13.4.233 finding POST-FIX P0 — composant partagé renderRechargeAction
+       * remplace duplication inline (cohérence avec settings/conso-scan). */
+      const actionsHtml = renderRechargeAction({
+        rechargeUrl: showRecharge ? (links.recharge ?? undefined) : undefined,
+        rotateUrl: links.usage ?? undefined,
+        variant: 'button',
+        label: 'Recharge',
+      });
       return `
         <div class="ax-service-health-row ax-modernized-card"
           style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${color};border-radius:10px;margin-bottom:8px;width:100%;text-align:left;transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards;flex-wrap:wrap">
@@ -396,8 +401,7 @@ export function renderServiceHealthCard(
             </div>
             <span style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">${escapeHtml(label)}</span>
           </button>
-          ${rechargeBtn}
-          ${usageBtn}
+          ${actionsHtml}
         </div>`;
     })
     .join('');
