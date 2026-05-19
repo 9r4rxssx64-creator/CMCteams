@@ -195,6 +195,81 @@ Si non aux 4 questions → fix avant push.
 
 ---
 
+## 🎨 RÈGLE ABSOLUE — UX PROFESSIONNEL EXPERT FUTURISTE ÉPURÉ PRATIQUE (Kevin 2026-05-16)
+
+> **"UX professionnel expert, futuriste, épuré, pratique, va plus loin avec l'aide de tous tes outils, liens, accès etc"** — Kevin 2026-05-16
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex priorité 1, CMCteams priorité 2, tous projets futurs :
+
+### 1. 5 piliers UX obligatoires à CHAQUE création/modification UI
+
+1. **Professionnel** : niveau Stripe/Linear/Notion (pas amateur, pas brouillon, pas placeholder)
+2. **Expert** : utilise les patterns design system éprouvés (8px grid, typography scale, semantic tokens, micro-interactions Apple HIG)
+3. **Futuriste** : glassmorphism subtil (backdrop-filter blur), gradient gold gradient, animations Web Animations API smooth 60fps, haptic feedback iOS, voice-overlay, AI streaming typing
+4. **Épuré** : maximum de WHITESPACE (Apple HIG), pas de surcharge, pas de doublons, hiérarchie claire, max 5-7 items par groupe
+5. **Pratique** : tout accessible en 1-2 taps, touch targets ≥44px Apple HIG, mobile-first 375px iPhone SE, raccourcis clavier sur desktop
+
+### 2. Aller plus loin avec TOUS les outils dispo
+
+À chaque feature UI ajoutée, EXPLORER systématiquement :
+- **Subagents UX** (Explore type) pour audit indépendant
+- **WebFetch/WebSearch** pour références récentes (linear.app, vercel.com, stripe.com design)
+- **Design system Apex existant** (tokens.css 25 vars, components.css patterns)
+- **CSS variables** au lieu de hardcoded (var(--ax-gold) pas #e8b830)
+- **Tailwind utility** quand pertinent (gain DX)
+- **Web Animations API** native (pas anim CSS hardcoded ngga-fluide)
+- **prefers-reduced-motion** + prefers-color-scheme respect
+- **iOS PWA standalone optimisations** : safe-area-inset, display-mode standalone
+
+### 3. Anti-patterns interdits absolus
+
+- ❌ Couleurs hardcodées #e8b830 (utiliser `var(--ax-gold)`)
+- ❌ Padding/margin non multiples de 8 (grid 8px obligatoire)
+- ❌ Touch targets < 44px Apple HIG
+- ❌ Boutons doublons (2 boutons même action 2 endroits)
+- ❌ Wall of text sans hiérarchie typo (h1 → h2 → p clair)
+- ❌ Mur de boutons sans groupement logique
+- ❌ Animations non-smooth (saccade, freeze main thread)
+- ❌ État vide chat → "rien à voir" (proposer suggestions chips)
+- ❌ Toast bloquant > 5s sans action
+
+### 4. Patterns futuristes obligatoires (inspiration Apple Vision Pro / Linear / Stripe 2026)
+
+- **Glassmorphism** : `backdrop-filter: blur(20px) saturate(180%)` sur overlays
+- **Gradient subtle** : pas couleurs flat, utiliser `linear-gradient(135deg, ...)` sur cards/buttons
+- **Spatial dock** : layout en zones (top voice, left context, right artifacts, bottom input)
+- **Micro-interactions** : hover lift `transform: translateY(-2px)`, active press, focus ring gold
+- **Haptic iOS** : `navigator.vibrate(10)` sur touch important (compat iOS limited)
+- **Reduce motion** : `@media (prefers-reduced-motion)` désactive transforms
+- **Dark mode native** : `color-scheme: dark` + tokens cohérents
+
+### 5. Application Apex v13 référence
+
+- features/chat/index.ts : drill-down récursif, chips suggestions, voice overlay
+- ui/markdown.ts : codeblock header + copy button (Linear style)
+- ui/skeleton.ts : skeleton screens pendant chargement (pas blank)
+- ui/voice-overlay.ts : fullscreen modal dictée transparent
+- assets/css/tokens.css : 25 vars sémantiques cohérentes
+- assets/css/components.css : `.ax-codeblock`, `.ax-md-table`, `.ax-ta-*` classes
+
+### 6. Workflow UX à CHAQUE feature
+
+1. Audit subagent UX avant push (Explore)
+2. Test mental "Stripe/Linear/Apple trouverait-il acceptable ?"
+3. Test runtime iPhone 375px iPhone SE + iPad Air 820px
+4. axe-core accessibility checks
+5. Lighthouse mobile score ≥ 90 (Performance + a11y + best-practices + SEO)
+
+### 7. Test mental obligatoire avant CHAQUE commit UI
+
+> *"Cette UI est-elle niveau Stripe/Linear/Apple (1) ? Professionnelle, futuriste, épurée, pratique ? Touch targets ≥44px ? Pas de doublons ? Animations smooth 60fps ? Test iPhone passé ?"*
+
+Si réponse non à 1+ → reprendre AVANT push.
+
+S'applique : Apex priorité absolue, CMCteams, e-KDMC, Télécommande, CrackPass, Apex Chat, tous projets futurs.
+
+---
+
 ## 📚 RÈGLE ABSOLUE — DOCS TEMPS RÉEL TOUJOURS À JOUR (Kevin 2026-05-16)
 
 > **"Mets tous tes documents toujours en temps réel à jour sans jamais rien oublier"** — Kevin 2026-05-16
