@@ -4053,6 +4053,20 @@ function fbApplyData(k,v){
         }
       }
     }catch(_){}
+    // v9.706 — strip empty rows incoming (Firebase peut renvoyer {U001:{}} qui fait
+    // _ovEmpty=false visuellement). Garde uniquement les rows avec ≥1 cellule.
+    try{
+      if(vc&&typeof vc==="object"){
+        Object.keys(vc).forEach(function(k){
+          if(!vc[k]||typeof vc[k]!=="object")return;
+          Object.keys(vc[k]).forEach(function(eid){
+            var r=vc[k][eid];
+            if(!r||typeof r!=="object"||Object.keys(r).length===0)delete vc[k][eid];
+          });
+          if(Object.keys(vc[k]).length===0)delete vc[k];
+        });
+      }
+    }catch(_){}
     A.overrides=vc;
     try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
   }
@@ -4885,10 +4899,33 @@ function _stripPersistedTeamFamHistory(empsArr){
 // cmc_visual_planning_*, cmc_structured_*, cmc_team_mirror_*, cmc_manual_overrides_*,
 // cmc_import_completeness_*, cmc_last_import_type_*, cmc_auto_backup_*, cmc_import_snap_*,
 // cmc_history_*, cmc_snapshot_*, cmc_agent_backup_*.
-// One-shot via flag cmc_v705_total_wiped pour ne pas re-wiper après import légitime.
+// One-shot via flag cmc_v706_total_wiped pour ne pas re-wiper après import légitime.
+// v9.706 : nouveau flag (cmc_v705 ne suffisait pas, leftover cmc_ref_* persistait).
 (function _v705TotalWipe(){
   try{
-    if(localStorage.getItem("cmc_v705_total_wiped"))return; // déjà fait
+    // v9.706 cleanup empty rows même hors total wipe : à chaque boot, strip les entrées
+    // A.overrides[key][eid] avec rows vides {} qui faisaient échouer empty state check.
+    try{
+      var _ovBoot=JSON.parse(localStorage.getItem("cmc_ov")||"{}");
+      if(_ovBoot&&typeof _ovBoot==="object"){
+        var _bootChanged=false;
+        Object.keys(_ovBoot).forEach(function(k){
+          if(!_ovBoot[k]||typeof _ovBoot[k]!=="object")return;
+          Object.keys(_ovBoot[k]).forEach(function(eid){
+            var r=_ovBoot[k][eid];
+            if(!r||typeof r!=="object"||Object.keys(r).length===0){
+              delete _ovBoot[k][eid];_bootChanged=true;
+            }
+          });
+          if(Object.keys(_ovBoot[k]).length===0){delete _ovBoot[k];_bootChanged=true;}
+        });
+        if(_bootChanged){
+          localStorage.setItem("cmc_ov",JSON.stringify(_ovBoot));
+          console.log("[v9.706 cleanup empty rows] cmc_ov nettoyé au boot");
+        }
+      }
+    }catch(_){}
+    if(localStorage.getItem("cmc_v706_total_wiped"))return; // déjà fait
     var _wipedKeys=[];
     // 1. cmc_ov / cmc_ov_meta : ECRASE en {}
     try{
@@ -4934,7 +4971,7 @@ function _stripPersistedTeamFamHistory(empsArr){
       });
     }catch(_){}
     // 5. Mark done
-    try{localStorage.setItem("cmc_v705_total_wiped",JSON.stringify({ts:Date.now(),count:_wipedKeys.length}));}catch(_){}
+    try{localStorage.setItem("cmc_v706_total_wiped",JSON.stringify({ts:Date.now(),count:_wipedKeys.length}));}catch(_){}
     console.log("[v9.705 TOTAL WIPE] "+_wipedKeys.length+" entrées effacées au boot. Memoire repart à zéro.");
     // 6. IndexedDB shadow wipe (déféré car async)
     setTimeout(function(){
@@ -5076,7 +5113,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.705";
+var APP_VER="v9.706";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -8813,7 +8850,13 @@ function gpl(y,m){
 }
 function hasImportedData(y,m){
   var key=""+y+"-"+m;
-  return !!lg("cmc_ref_"+key,null)||(function(){var ov=A.overrides[key]||{};return Object.keys(ov).some(function(eid){return Object.keys(ov[eid]).length>0;});})();
+  // v9.706 Kevin "mai et juin il y a encore... comme s'il y avait un planning importé mais vide" :
+  // STRICT — uniquement basé sur les cellules réelles dans A.overrides[key]. Avant : la
+  // présence de cmc_ref_<key> dans localStorage suffisait pour considérer "imported"
+  // même si A.overrides[key] était vide ou avait des emps avec rows vides {}.
+  // Conséquence : vPlan et vDeparts ne montraient PAS l'empty state "Importer un planning".
+  var ov=A.overrides[key]||{};
+  return Object.keys(ov).some(function(eid){return ov[eid]&&Object.keys(ov[eid]).length>0;});
 }
 // v9.649 (Kevin "Quand V2 du même mois importé elle écrase la V1. Visuel V2 etc dans l'app") :
 // Helper : retourne la version d'import courante pour un mois (v1, v2, v3...).
@@ -23377,7 +23420,12 @@ function vPlan(){
   // v9.646 : éviter scintillement, ne pas afficher empty state tant que Firebase
   // n'a pas fini son load initial (sinon flash vide→complet quand SSE arrive).
   var _key=A.year+"-"+A.month;
-  var _ovEmpty=!A.overrides[_key] || Object.keys(A.overrides[_key]).length===0;
+  // v9.706 Kevin "il y a encore quelque chose, comme planning importé mais vide" :
+  // STRICT check : compte les emps qui ont AU MOINS 1 cellule. Avant : il suffisait
+  // d'avoir des emps avec rows vides {} pour que _ovEmpty=false → empty state masqué.
+  var _ovEmpty=!A.overrides[_key] || Object.keys(A.overrides[_key]).filter(function(eid){
+    return A.overrides[_key][eid] && Object.keys(A.overrides[_key][eid]).length>0;
+  }).length===0;
   if(_ovEmpty && !window._fbInitialLoad){
     return '<div class="page bg-planning"><div style="padding:40px 20px;text-align:center">'
       +'<div style="font-size:60px;margin-bottom:14px">📭</div>'
@@ -23851,7 +23899,11 @@ function vDeparts(){
   // v9.644+646 (Kevin "on change tous d'équipe chaque mois" + "l'app scintille"): empty state si pas de planning
   // Skip empty state pendant load Firebase initial pour éviter flash vide→complet
   var _key=A.year+"-"+A.month;
-  if((!A.overrides[_key] || Object.keys(A.overrides[_key]).length===0) && !window._fbInitialLoad){
+  // v9.706 STRICT check : compte emps avec ≥1 cellule (pas juste keys)
+  var _vdEmpty=!A.overrides[_key] || Object.keys(A.overrides[_key]).filter(function(eid){
+    return A.overrides[_key][eid] && Object.keys(A.overrides[_key][eid]).length>0;
+  }).length===0;
+  if(_vdEmpty && !window._fbInitialLoad){
     return '<div class="page"><div style="padding:40px 20px;text-align:center">'
       +'<div style="font-size:60px;margin-bottom:14px">📭</div>'
       +'<div style="font-size:20px;font-weight:800;color:#c9a227;margin-bottom:8px">Aucun ordre de départ pour '+MFR[A.month]+' '+A.year+'</div>'
