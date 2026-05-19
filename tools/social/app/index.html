@@ -279,11 +279,24 @@ textarea{resize:vertical;min-height:90px}
 <!-- R&Eacute;GLAGES -->
 <div class="view" id="v-config">
   <div class="section-title">R&eacute;glages</div>
+
+  <div class="card">
+    <h3>Connexion GitHub (publication auto)</h3>
+    <p style="margin-bottom:10px">Pour que le bouton "G&eacute;n&eacute;rer" lance la vid&eacute;o directement depuis l'app.</p>
+    <div class="form-group">
+      <label>Token GitHub</label>
+      <input type="password" id="cfg-gh" placeholder="ghp_xxxxx" value="">
+    </div>
+    <button class="btn btn-gold btn-sm" onclick="saveGH()" style="width:100%">Connecter</button>
+    <p style="font-size:11px;color:var(--dim);margin-top:8px" id="gh-status"></p>
+  </div>
+
   <div class="card">
     <h3>Liens rapides</h3>
-    <p style="margin-bottom:8px"><a href="https://studio.youtube.com" target="_blank">YouTube Studio</a></p>
-    <p style="margin-bottom:8px"><a href="https://github.com/9r4rxssx64-creator/CMCteams/actions" target="_blank">GitHub Actions</a></p>
-    <p style="margin-bottom:8px"><a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+    <p style="margin-bottom:8px"><a href="https://studio.youtube.com" target="_blank">YouTube Studio (tes vid&eacute;os)</a></p>
+    <p style="margin-bottom:8px"><a href="https://github.com/9r4rxssx64-creator/CMCteams/actions" target="_blank">GitHub Actions (production)</a></p>
+    <p style="margin-bottom:8px"><a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio (cl&eacute; Gemini)</a></p>
+    <p style="margin-bottom:8px"><a href="https://github.com/settings/tokens" target="_blank">Cr&eacute;er un token GitHub</a></p>
     <p><a href="https://console.cloud.google.com/apis/credentials?project=kdmc-social" target="_blank">Google Cloud Console</a></p>
   </div>
   <div class="card">
@@ -373,29 +386,63 @@ function pickTmpl(el,id){
 }
 
 function gen(){
-  document.getElementById('gen-box').style.display='block';
-  var icons=['&#128270;','&#129302;','&#127908;','&#128221;','&#127912;','&#127916;','&#128248;','&#9989;'];
-  var steps=['Sélection de l’histoire...','Génération du script IA...','Synthèse de la voix...','Sous-titres karaoké...','Rendu des images...','Assemblage vidéo...','Création du thumbnail...','Terminé !'];
+  document.getElementById(‘gen-box’).style.display=’block’;
+  var icons=[‘&#128270;’,’&#129302;’,’&#127908;’,’&#128221;’,’&#127912;’,’&#127916;’,’&#128248;’,’&#9989;’];
+  var steps=[‘Lancement de la production...’,’G&eacute;n&eacute;ration du script IA...’,’Synth&egrave;se de la voix...’,’Sous-titres karaok&eacute;...’,’Rendu des images...’,’Assemblage vid&eacute;o...’,’Publication YouTube...’,’Termin&eacute; !’];
+  var niche=document.getElementById(‘f-niche’).value;
+  var fmt=document.getElementById(‘f-fmt’).value;
   var i=0;
+
+  // D&eacute;clenche GitHub Actions
+  var ghToken=localStorage.getItem(‘kdmc_gh_token’)||’’;
+  if(ghToken){
+    fetch(‘https://api.github.com/repos/9r4rxssx64-creator/CMCteams/actions/workflows/social-publish.yml/dispatches’,{
+      method:’POST’,
+      headers:{‘Authorization’:’Bearer ‘+ghToken,’Accept’:’application/vnd.github+json’,’Content-Type’:’application/json’},
+      body:JSON.stringify({ref:’main’,inputs:{niche:niche,format:fmt,publish_platforms:’youtube’}})
+    }).then(function(r){
+      if(r.status===204){toast(‘Production lancée sur YouTube !’,’ok’)}
+      else{toast(‘Erreur GitHub ‘+r.status+’ — vérifie le token’,’info’)}
+    }).catch(function(){toast(‘Pas de connexion’,’info’)});
+  }
+
   var iv=setInterval(function(){
     if(i>=steps.length){
       clearInterval(iv);
-      document.getElementById('gen-icon').innerHTML='&#9989;';
-      document.getElementById('gen-status').textContent='Vidéo prête !';
-      document.getElementById('gen-detail').textContent='Publication automatique au prochain cron.';
-      toast('Vidéo créée !','ok');
-      var a=JSON.parse(localStorage.getItem('kdmc_v')||'[]');
-      a.unshift({d:new Date().toLocaleString('fr-FR'),n:document.getElementById('f-niche').value,t:selTmpl});
-      localStorage.setItem('kdmc_v',JSON.stringify(a.slice(0,100)));
-      document.getElementById('s-created').textContent=a.length;
+      document.getElementById(‘gen-icon’).innerHTML=’&#9989;’;
+      document.getElementById(‘gen-status’).textContent=’Vidéo en production !’;
+      document.getElementById(‘gen-detail’).innerHTML=ghToken
+        ?’La vidéo sera sur ta chaîne YouTube dans ~10 minutes.<br><a href="https://studio.youtube.com" target="_blank" style="color:var(--gold)">Voir sur YouTube Studio</a>’
+        :’Configure ton token GitHub dans Réglages pour publier automatiquement.’;
+      var a=JSON.parse(localStorage.getItem(‘kdmc_v’)||’[]’);
+      a.unshift({d:new Date().toLocaleString(‘fr-FR’),n:niche,t:selTmpl,f:fmt});
+      localStorage.setItem(‘kdmc_v’,JSON.stringify(a.slice(0,100)));
+      document.getElementById(‘s-created’).textContent=a.length;
       return;
     }
-    document.getElementById('gen-icon').innerHTML=icons[i];
-    document.getElementById('gen-status').textContent=steps[i];
-    document.getElementById('gen-bar').style.width=Math.round((i+1)/steps.length*100)+'%';
-    document.getElementById('gen-detail').textContent='Étape '+(i+1)+'/'+steps.length;
+    document.getElementById(‘gen-icon’).innerHTML=icons[i];
+    document.getElementById(‘gen-status’).textContent=steps[i];
+    document.getElementById(‘gen-bar’).style.width=Math.round((i+1)/steps.length*100)+’%’;
+    document.getElementById(‘gen-detail’).textContent=’Étape ‘+(i+1)+’/’+steps.length;
     i++;
   },650);
+}
+
+function saveGH(){
+  var t=document.getElementById('cfg-gh').value.trim();
+  if(!t||t.length<10){toast('Token invalide','info');return}
+  localStorage.setItem('kdmc_gh_token',t);
+  document.getElementById('cfg-gh').value='••••••••';
+  document.getElementById('gh-status').textContent='Connecté — le bouton Générer publiera directement sur YouTube';
+  toast('GitHub connecté !','ok');
+}
+
+function loadGH(){
+  var t=localStorage.getItem('kdmc_gh_token')||'';
+  if(t){
+    document.getElementById('cfg-gh').value='••••••••';
+    document.getElementById('gh-status').textContent='Connecté';
+  }
 }
 
 function renderLib(filter){
@@ -456,6 +503,7 @@ function renderStats(){
 var created=JSON.parse(localStorage.getItem('kdmc_v')||'[]');
 document.getElementById('s-created').textContent=created.length;
 renderRPM();
+loadGH();
 
 fetch('https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/social/config/content-library.json')
 .then(function(r){return r.json()})
