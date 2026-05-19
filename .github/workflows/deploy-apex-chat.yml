@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - claude/private-messaging-app-jpLl1
+      - 'claude/**'  # v1.1.125 : tout push claude/* avec workers/** déclenche deploy
     paths:
       - 'messaging-app/workers/**'
       - 'messaging-app/d1-migrations/**'
