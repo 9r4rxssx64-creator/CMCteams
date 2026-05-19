@@ -22,12 +22,21 @@
 
 ## À FAIRE (prochaine session)
 
-- [ ] Kevin a sa clé Gemini → vérifier que `GOOGLE_AI_API_KEY` est bien dans GitHub Secrets
-- [ ] Lancer manuellement le workflow `social-publish.yml` pour tester la première vidéo
-- [ ] Si YouTube souhaité : guider Kevin pour OAuth YouTube (15 min)
-- [ ] Si Telegram souhaité : guider Kevin pour créer bot (5 min)
-- [ ] Pipeline complet `claude/test-699LQ` → main : 841 commits non mergés (bot échoue sur conflits)
-- [ ] Tests UX iPhone Safari PWA réel sur 9 nouvelles features Apex Chat
+- [ ] Kevin a un token GitHub Classic → le coller dans l'app KDMC Studio → Réglages → Connecter
+- [ ] Lancer la première vidéo depuis l'app (bouton Générer)
+- [ ] Vérifier la vidéo dans YouTube Studio
+- [ ] Configurer Telegram (optionnel, 5 min)
+- [ ] Pipeline `claude/test-699LQ` → main : sync conflits Apex à résoudre
+
+## ✅ FAIT cette session (2026-05-19)
+
+- ✅ YouTube OAuth complet (projet KDMC SOCIAL + API + client OAuth + refresh token)
+- ✅ 4 secrets GitHub configurés : GEMINI_API_KEY + YOUTUBE_CLIENT_ID + YOUTUBE_CLIENT_SECRET + YOUTUBE_REFRESH_TOKEN
+- ✅ App KDMC Studio v2.1 live sur main (glassmorphism, FR, badge version, MAJ auto, publication YouTube directe)
+- ✅ Backend API Cloudflare Worker prêt (api/worker.js)
+- ✅ 51 stories, 78 tests, 18 commandes CLI
+- ✅ TODO réorganisé par priorité + monétisation YouTube documentée
+- ✅ Règle permanente : toutes les apps en français
 - [ ] Apple Store Apex (TODO MAJEUR — voir KEVIN_ACTIONS_TODO.md)
 - [ ] Règle voix RÉELLEMENT DIFFÉRENTES (gravée sur branche perdue) à repropager dans CLAUDE.md main
 
