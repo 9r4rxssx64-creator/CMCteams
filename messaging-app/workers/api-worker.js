@@ -1,7 +1,7 @@
 /**
  * Apex Chat — API Worker (REST + WebSocket)
  *
- * Last redeploy trigger : 2026-05-19 v1.1.120 (fix URL Worker desarzens-kevin)
+ * Last redeploy trigger : 2026-05-19 v1.1.125 (subdomain 9r4rxssx64 + claude/** trigger)
  *
  * Routes principales :
  *   POST   /api/auth/send-otp        → Firebase Auth Phone (envoie SMS)
