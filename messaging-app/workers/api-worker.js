@@ -1,7 +1,7 @@
 /**
  * Apex Chat — API Worker (REST + WebSocket)
  *
- * Last redeploy trigger : 2026-05-19 v1.1.125 (subdomain 9r4rxssx64 + claude/** trigger)
+ * Last redeploy trigger : 2026-05-19 v1.1.126 (nouveau Cloudflare token Kevin)
  *
  * Routes principales :
  *   POST   /api/auth/send-otp        → Firebase Auth Phone (envoie SMS)
