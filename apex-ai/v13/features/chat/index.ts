@@ -168,7 +168,7 @@ export function openImageLightbox(rootEl: HTMLElement, img: AlbumImage): HTMLEle
     `<button data-action="download" style="${btnStyle}" title="Télécharger">💾 Télécharger</button>` +
     `</div>` +
     `<div class="ax-lb-status" data-status ` +
-    `style="margin-top:14px;color:#c9a227;font-size:12px;min-height:18px;text-align:center"></div>`;
+    `style="margin-top:14px;color:var(--ax-gold-deep);font-size:12px;min-height:18px;text-align:center"></div>`;
 
   document.body.appendChild(modal);
 
@@ -359,7 +359,7 @@ export function pushTransformResult(
   card.dataset['transformType'] = transformType;
   card.innerHTML =
     `<div class="ax-msg-body">` +
-    `<p style="margin:0 0 8px;color:#c9a227;font-size:12px;font-weight:600">` +
+    `<p style="margin:0 0 8px;color:var(--ax-gold-deep);font-size:12px;font-weight:600">` +
     `${getTransformEmoji(transformType)} ${safeType} appliqué sur ${safeName}</p>` +
     media +
     `<div class="ax-transform-actions" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">` +
@@ -2586,7 +2586,7 @@ export function render(rootEl: HTMLElement): void {
       : file.type.includes('zip') || file.type.includes('rar') || file.type.includes('7z') ? '📦'
       : '📎';
     const div = document.createElement('div');
-    div.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:6px;margin-right:6px;font-size:12px;color:#c9a227';
+    div.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:6px;margin-right:6px;font-size:12px;color:var(--ax-gold-deep)';
     /* P0 SECU XSS : escape file.name (vient de file picker = source externe) — textContent OK */
     const truncName = file.name.length > 30 ? `${file.name.slice(0, 30)}...` : file.name;
     const labelSpan = document.createElement('span');
@@ -2597,7 +2597,7 @@ export function render(rootEl: HTMLElement): void {
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.setAttribute('aria-label', `Retirer ${truncName}`);
-    removeBtn.style.cssText = 'background:transparent;border:none;color:#c9a227;cursor:pointer;font-size:14px;padding:0 2px;line-height:1';
+    removeBtn.style.cssText = 'background:transparent;border:none;color:var(--ax-gold-deep);cursor:pointer;font-size:14px;padding:0 2px;line-height:1';
     removeBtn.textContent = '✕';
     removeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -3007,7 +3007,7 @@ export function render(rootEl: HTMLElement): void {
               <li style="margin:4px 0">
                 <span style="color:${r.priority === 'high' ? '#ff6666' : r.priority === 'medium' ? '#ffaa00' : '#a0a4c0'}">●</span>
                 ${escapeHtml(r.action)}
-                ${r.url ? ` <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" style="color:#c9a227">→</a>` : ''}
+                ${r.url ? ` <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" style="color:var(--ax-gold-deep)">→</a>` : ''}
               </li>
             `,
               )
@@ -3018,7 +3018,7 @@ export function render(rootEl: HTMLElement): void {
           content: `
             <div style="display:flex;flex-direction:column;gap:14px">
               <div>
-                <h4 style="margin:0 0 6px;color:#c9a227">Routing IA</h4>
+                <h4 style="margin:0 0 6px;color:var(--ax-gold-deep)">Routing IA</h4>
                 <label style="display:block;margin:6px 0">
                   Mode :
                   <select id="ax-settings-mode" style="margin-left:8px;padding:6px;background:#1a1a2e;color:#fff;border:1px solid #c9a227;border-radius:4px">
@@ -3034,11 +3034,11 @@ export function render(rootEl: HTMLElement): void {
                 </p>
               </div>
               <div>
-                <h4 style="margin:0 0 6px;color:#c9a227">Clés API</h4>
+                <h4 style="margin:0 0 6px;color:var(--ax-gold-deep)">Clés API</h4>
                 <button type="button" class="ax-btn ax-btn-primary" id="ax-settings-paste-key" style="width:100%">🔑 Coller une clé API</button>
               </div>
               <div>
-                <h4 style="margin:0 0 6px;color:#c9a227">Recommandations</h4>
+                <h4 style="margin:0 0 6px;color:var(--ax-gold-deep)">Recommandations</h4>
                 <ul style="margin:0;padding-left:18px;font-size:13px">${recosHtml}</ul>
               </div>
             </div>
@@ -3091,7 +3091,7 @@ export function render(rootEl: HTMLElement): void {
             autofocus spellcheck="false" autocomplete="off"
             autocapitalize="off" autocorrect="off"
             inputmode="text"></textarea>
-          <div id="ax-paste-preview" style="margin-top:8px;padding:8px;background:rgba(201,162,39,0.08);border-radius:6px;font-size:12px;color:#c9a227;display:none">
+          <div id="ax-paste-preview" style="margin-top:8px;padding:8px;background:rgba(201,162,39,0.08);border-radius:6px;font-size:12px;color:var(--ax-gold-deep);display:none">
             <span id="ax-paste-detection"></span>
           </div>
           <p class="ax-muted" style="margin-top:8px">130+ patterns reconnus · 0 stockage des données interdites (CB, seed)</p>
