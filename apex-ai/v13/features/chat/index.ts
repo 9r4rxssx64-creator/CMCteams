@@ -1843,7 +1843,7 @@ export function render(rootEl: HTMLElement): void {
         margin: 0 0 6px;
         font-size: 14px;
         font-weight: 700;
-        color: #e8b830;
+        color: var(--ax-gold);
         letter-spacing: -0.01em;
       }
       .ax-info-card p {
@@ -1864,7 +1864,7 @@ export function render(rootEl: HTMLElement): void {
         border: 1px solid rgba(232,184,48,0.35);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        color: #e8b830;
+        color: var(--ax-gold);
         font-size: 16px;
         cursor: pointer;
         opacity: 0;
