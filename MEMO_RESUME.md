@@ -1,4 +1,74 @@
-# Mémo de reprise — Apex v13.4.225 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-18 nuit)
+# Mémo de reprise — Apex v13.4.232 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-19 matin)
+
+## 🎨 SESSION 2026-05-19 — Apex v13.4.232 UX refonte massive (étape 3-4 design system)
+
+Subagent UX audit indépendant Apex v13 → 15 findings P0/P1/P2 identifiés, tous traités sans régression :
+
+### Design system étendu (tokens.css + components.css)
+- **Severity vars Apple HIG** : `--ax-sev-critical/high/medium/low`
+- **Yellow + orange-bright** tokens manquants
+- **Composants atomiques nouveaux** :
+  - `.ax-page-title` (h1 standardisé `clamp(26px,5.5vw,32px)`)
+  - `.ax-section-title` (h3 15px lisible)
+  - `.ax-voice-btn` (touch 44px garanti)
+  - `.ax-btn-health` + variants `-primary/-eco/-blue/-purple/-danger` (élimine 15+ hex inline admin)
+  - `.ax-sev` + `.ax-sev-critical/high/medium/low`
+  - `.ax-suggestion-chip` (glassmorphism gold glow hover lift)
+  - `.ax-empty-banner` (chat/coffre vide guidé)
+  - `.ax-modal-glass` (lightbox blur 8px Apple HIG)
+  - `.ax-accordion-toggle/chevron` (ARIA expanded)
+  - `.ax-tabs-scroll` (responsive gap mobile)
+  - `.ax-kpi-card` (spring stagger 20ms)
+
+### 15 findings traités (P0/P1/P2)
+
+| # | Priorité | Finding | Fix |
+|---|----------|---------|-----|
+| 1 | P0 | Hex hardcoded admin (15+) | Sed migration vers var(--ax-*) |
+| 2 | P0 | Voice buttons touch | Déjà OK (44px inline) |
+| 3 | P0 | Doublon Recharge dashboard+settings | `ui/recharge-action.ts` composant partagé |
+| 4 | P1 | Empty state chat 10px discret | Banner 18px gold + 3 suggestion chips |
+| 5 | P1 | Vault empty noyé | Déjà OK depuis v231 (titre clair) |
+| 6 | P1 | Admin tabs collées mobile | `.ax-tabs-scroll` responsive |
+| 7 | P1 | h3 admin 13px confondu label | 15px + margin-top 18px |
+| 8 | P1 | KPI stagger 50ms jarring | 20ms + spring `cubic-bezier(0.34,1.56,0.64,1)` |
+| 9 | P0 | Severity #ffaa00 confusion warn+medium | Mapping HIG critical=red, high=orange, medium=yellow, low=blue |
+| 10 | P1 | Lightbox rgba(0,0,0,0.95) opaque | Glassmorphism backdrop-filter blur(8px) |
+| 11 | P0 | Buttons admin 12px×18px oversized | `.ax-btn-health` standardisé 8px/16px |
+| 12 | P1 | Voice aria-label generic | Déjà OK |
+| 13 | P2 | Gold variants scattered | Migration globale sed |
+| 14 | P2 | Accordion sans chevron | `.ax-accordion-chevron` ARIA |
+| 15 | P2 | h1 dashboard vs admin variance | Standardisé `clamp(26px,5.5vw,32px)` |
+
+### Anti-erreurs respectées
+- **#28** Declaration ≠ Deployment : ui/recharge-action.ts WIRED dans settings (1+ usage)
+- **#54** Build sync : `dist/` → `apex-ai-v13/` après chaque build
+- **#57** Nonce CSP : 0 occurrence `APEX_BOOT_NONCE` non-remplacé dans deploy
+- **#59** Pas d'estimation score : audit subagent indépendant, mesures réelles
+
+### Vérifications
+- ✅ TypeScript strict 0 errors
+- ✅ Tests régression 549/555 test files (98.9%), 11656/11671 unit tests
+- ✅ Tests critiques admin+chat 62/62 PASS
+- ✅ Build Vite OK (5.51s, gzipped)
+- ✅ Source v13.4.232 = Deploy v13.4.232 = Package v13.4.232 = SW v13.4.232
+- ✅ PR #274 mergée sur main (commit 6a1cffae)
+
+### Fichiers modifiés (12)
+- `apex-ai/v13/assets/css/tokens.css` (+severity tokens)
+- `apex-ai/v13/assets/css/components.css` (+12 nouvelles classes)
+- `apex-ai/v13/core/bootstrap.ts` (APP_VER bump)
+- `apex-ai/v13/features/admin/index.ts` (health btns class + h3 typo)
+- `apex-ai/v13/features/chat/index.ts` (greeting + chips + lightbox glass)
+- `apex-ai/v13/features/dashboard/index.ts` (KPI spring stagger + h1)
+- `apex-ai/v13/features/settings/index.ts` (recharge dedup + sev mapping)
+- `apex-ai/v13/features/vault/index.ts` (hex migration)
+- `apex-ai/v13/index.html` (APP_VER)
+- `apex-ai/v13/package.json` (version)
+- `apex-ai/v13/sw.js` (CACHE_VERSION)
+- `apex-ai/v13/ui/recharge-action.ts` (**nouveau** composant partagé)
+
+---
 
 ## 🎉 SESSION 2026-05-18 nuit — Apex Chat marathon v1.1.99 → v1.1.108
 

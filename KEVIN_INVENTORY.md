@@ -1,7 +1,27 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-18** (Apex Chat v1.1.41 + Apex v13.4.211 — PR #268 en attente merge)
+> Dernière mise à jour : **2026-05-19** (Apex v13.4.232 UX refonte massive — PR #274 mergée 6a1cffae)
+
+## 🎨 SESSION 2026-05-19 — Apex v13.4.232 (étape 3-4 design system)
+
+**PR #274** : https://github.com/9r4rxssx64-creator/CMCteams/pull/274 — **MERGÉ** ✅ commit `6a1cffae`
+- branche : `fix/apex-v232-ux-refonte`
+- merge target : `main` → GitHub Pages auto-deploy
+
+**Nouveau fichier** :
+- `apex-ai/v13/ui/recharge-action.ts` — composant partagé "Recharge + Rotate" (élimine doublon dashboard+settings)
+  - View : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/ui/recharge-action.ts
+  - Raw : https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/apex-ai/v13/ui/recharge-action.ts
+  - Edit : https://github.com/9r4rxssx64-creator/cmcteams/edit/main/apex-ai/v13/ui/recharge-action.ts
+
+**Design system étendu** :
+- `apex-ai/v13/assets/css/tokens.css` — +severity vars (--ax-sev-critical/high/medium/low) + yellow + orange-bright
+- `apex-ai/v13/assets/css/components.css` — +12 classes atomiques (.ax-page-title, .ax-section-title, .ax-voice-btn, .ax-btn-health* x5, .ax-sev* x4, .ax-suggestion-chip, .ax-empty-banner, .ax-modal-glass, .ax-accordion-toggle, .ax-tabs-scroll, .ax-kpi-card spring)
+
+**15 findings UX traités** (audit subagent indépendant P0/P1/P2) — TS strict 0 errors, 549/555 test files PASS, build Vite OK.
+
+---
 
 ## 🚀 SESSION 2026-05-18 — Apex Chat v1.1.22 → v1.1.41 + Apex v13.4.211 (self-signup)
 
