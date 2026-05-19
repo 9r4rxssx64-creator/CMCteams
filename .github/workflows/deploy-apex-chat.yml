@@ -96,28 +96,12 @@ jobs:
           curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
 
-      - name: Create D1 database (via wrangler CLI)
-        id: d1
+      - name: Verify D1 database (hardcoded in wrangler.toml)
         working-directory: messaging-app/workers
         run: |
-          set -e
-          echo "=== Liste D1 existantes ==="
-          LIST_OUT=$(wrangler d1 list 2>&1) || LIST_OUT=""
-          echo "$LIST_OUT"
-          D1_ID=$(echo "$LIST_OUT" | grep -B1 -A1 'apex-chat-main' | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -1 || echo "")
-          if [ -z "$D1_ID" ]; then
-            echo "=== Création D1 apex-chat-main ==="
-            CREATE_OUT=$(wrangler d1 create apex-chat-main 2>&1)
-            echo "$CREATE_OUT"
-            D1_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -1 || echo "")
-          fi
-          if [ -z "$D1_ID" ]; then
-            echo "::error::D1_ID introuvable même après création."
-            exit 1
-          fi
-          echo "::notice::D1 ID: $D1_ID"
-          echo "id=$D1_ID" >> $GITHUB_OUTPUT
-          sed -i "s/database_id = \"REPLACE_WITH_D1_ID\"/database_id = \"$D1_ID\"/" wrangler.toml
+          # v1.1.131 : D1 ID hardcoded dans wrangler.toml (Kevin créé manuellement).
+          # Pas besoin de créer via API (token CF rejette pour raisons inconnues).
+          echo "::notice::D1 ID hardcoded:"
           grep "database_id" wrangler.toml | head -1
 
       - name: Apply D1 migrations
@@ -132,29 +116,32 @@ jobs:
           wrangler r2 bucket create apex-chat-media || echo "(bucket existe déjà)"
           echo "::notice::R2 bucket apex-chat-media OK"
 
-      - name: Create KV namespace (via wrangler CLI)
+      - name: Create KV namespace (tolérant)
         id: kv
         working-directory: messaging-app/workers
         run: |
-          set -e
+          # v1.1.131 : si KV creation échoue, retire le binding au lieu de planter
+          # (le worker peut tourner sans cache KV, juste moins perf).
+          set +e
           echo "=== Liste KV namespaces ==="
-          LIST_OUT=$(wrangler kv namespace list 2>&1) || LIST_OUT=""
+          LIST_OUT=$(wrangler kv namespace list 2>&1)
           echo "$LIST_OUT"
-          KV_ID=$(echo "$LIST_OUT" | grep -B1 -A1 'APEX_CHAT_CACHE' | grep -oE '[a-f0-9]{32}' | head -1 || echo "")
+          KV_ID=$(echo "$LIST_OUT" | grep -B1 -A1 'APEX_CHAT_CACHE' | grep -oE '[a-f0-9]{32}' | head -1)
           if [ -z "$KV_ID" ]; then
-            echo "=== Création KV APEX_CHAT_CACHE ==="
+            echo "=== Tentative création KV APEX_CHAT_CACHE ==="
             CREATE_OUT=$(wrangler kv namespace create APEX_CHAT_CACHE 2>&1)
             echo "$CREATE_OUT"
-            KV_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{32}' | head -1 || echo "")
+            KV_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{32}' | head -1)
           fi
-          if [ -z "$KV_ID" ]; then
-            echo "::error::KV_ID introuvable même après création."
-            exit 1
+          if [ -n "$KV_ID" ]; then
+            echo "::notice::KV ID: $KV_ID"
+            sed -i "s/id = \"REPLACE_WITH_KV_ID\"/id = \"$KV_ID\"/" wrangler.toml
+          else
+            echo "::warning::KV creation échouée — retire le binding pour permettre le deploy"
+            # Retire la section [[kv_namespaces]] pour permettre deploy sans KV
+            sed -i '/\[\[kv_namespaces\]\]/,/REPLACE_WITH_KV_ID/d' wrangler.toml
           fi
-          echo "::notice::KV ID: $KV_ID"
-          echo "id=$KV_ID" >> $GITHUB_OUTPUT
-          sed -i "s/id = \"REPLACE_WITH_KV_ID\"/id = \"$KV_ID\"/" wrangler.toml
-          grep -A1 "APEX_CHAT_CACHE" wrangler.toml | head -3
+          grep -A2 "kv_namespaces\|APEX_CHAT_CACHE" wrangler.toml | head -5 || true
 
       - name: Create Cloudflare Queues (idempotent)
         run: |

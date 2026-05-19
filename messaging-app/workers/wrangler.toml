@@ -34,7 +34,7 @@ cpu_ms = 30000
 [[d1_databases]]
 binding = "APEX_CHAT_DB"
 database_name = "apex-chat-main"
-database_id = "REPLACE_WITH_D1_ID"   # créé par wrangler d1 create
+database_id = "afee673e-83e9-4ae3-a578-96fabbfdd023"  # apex-chat-main (Kevin créé v1.1.131)
 migrations_dir = "../d1-migrations"
 
 # R2 bucket
