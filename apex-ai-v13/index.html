@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.211">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.232">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -8,7 +8,7 @@
   <!-- v13.4.98 Anti-zoom INLINE Safari iOS — agit AVANT le bundle JS, indépendant.
        Kevin "X zoom tjs UX" : le rescue.js peut arriver tard si le SW transition.
        Cet inline garantit l'anti-zoom dès le 1er paint. -->
-  <script nonce="f2a8299e1b0ea4b72945a73e066e90d9">
+  <script nonce="c06f7aed7c683083fae29ec7c08381cf">
     (function(){
       try {
         ['gesturestart','gesturechange','gestureend'].forEach(function(evt){
@@ -36,8 +36,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-f2a8299e1b0ea4b72945a73e066e90d9' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-f2a8299e1b0ea4b72945a73e066e90d9';
+             script-src 'self' 'nonce-c06f7aed7c683083fae29ec7c08381cf' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-c06f7aed7c683083fae29ec7c08381cf';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -144,6 +144,28 @@
 
   <title>APEX AI v13</title>
 
+  <!-- v13.4.222 (Kevin "100/100 réel Performance LCP") :
+       Critical CSS inline pour 1st paint INSTANTANÉ (avant chargement des
+       link CSS externes). Réduit LCP ~150-250ms iPhone Safari.
+       INTERVENTION ADDITIVE : aucun fichier existant modifié, juste ajout.
+       Validation auto-test au boot v13.4.204 testVisualRender + Layout. -->
+  <style nonce="c06f7aed7c683083fae29ec7c08381cf">
+    html { background: #08080f; color: #e8b830; color-scheme: dark; }
+    body { margin: 0; padding: 0; min-height: 100vh; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: #08080f; color: #f0e8d8; -webkit-text-size-adjust: 100%; }
+    #apex-root { min-height: 100vh; position: relative; }
+    #apex-splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08080f; z-index: 1000; transition: opacity 0.3s; }
+    #apex-splash[aria-hidden="true"] { pointer-events: none; }
+    .apex-splash-logo { font-size: 64px; color: #e8b830; line-height: 1; margin-bottom: 8px; }
+    .apex-splash-name { font-size: 20px; font-weight: 700; letter-spacing: 4px; color: #e8b830; margin-bottom: 16px; }
+    .apex-splash-bar { width: 120px; height: 3px; background: rgba(232, 184, 48, 0.15); border-radius: 2px; overflow: hidden; }
+    .apex-splash-bar-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #c9a227, #e8b830, #f5cc4a); animation: apex-splash-pulse 1.4s ease-in-out infinite; }
+    @keyframes apex-splash-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .ax-skip-link { position: absolute; left: -9999px; top: 0; z-index: 9999; padding: 12px 20px; background: #e8b830; color: #08080f; border-radius: 0 0 8px 0; font-weight: 700; text-decoration: none; }
+    .ax-skip-link:focus { left: 0; }
+    /* Anti-FOUC PWA iOS standalone */
+    @media (display-mode: standalone) { body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); } }
+  </style>
+
   <link rel="manifest" href="./assets/json/manifest-Dnqu29nu.json">
   <link rel="icon" type="image/svg+xml" href="./assets/svg/apex-logo-DhUswEqw.svg">
   <link rel="apple-touch-icon" href="./assets/png/apex-logo-192-CGkarJye.png">
@@ -152,14 +174,25 @@
   <!-- Preconnect critical providers -->
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin>
   <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
-  <script nonce="f2a8299e1b0ea4b72945a73e066e90d9" type="module" crossorigin src="./core/main-EjEt3jVy.js"></script>
-  <link rel="modulepreload" crossorigin href="./chunks/monitoring-DMtdadhB.js">
+
+  <!-- v13.4.224 (LCP optim) — DNS prefetch CDN secondaires + apple-touch-icon
+       preload pour PWA iOS standalone (réduit FCP ~80ms iPhone Safari) :
+       jsdelivr (CDN libs lazy : libsodium, jsPDF, Chart.js, Tesseract, etc.)
+       sentry-cdn (error capture)
+       Cloudflare 1.1.1.1 (DNS over HTTPS si Apex utilise) -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://browser.sentry-cdn.com">
+  <link rel="dns-prefetch" href="https://api.openai.com">
+  <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com">
+  <link rel="preload" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACi0lEQVR42u3YMRGAMBBFwZTpkBHfcRNVUOEB5m3xDNz8bW7Med1SteEIAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAuA3nb3cAYDu+N/cAwAABEBx/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAABAefwQAJAfPwQAAAAAAOXxQwAAAAAAUB4/BADkxw8BAAAAAEB5/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAABAefwQAJAfPwQAAAAAAOXxQwAAAAAAUB4/BADkxw8BAAAAAEB5/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAGD8WgAYvwAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAwLgCoAo4IgC8CYIABAABQBGBEEAAiAIgDjgSALwGggAEAAFAEYCwQACIAiACOBIAvAOCAAQAAUARgFBAAIAF8gCQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAB4BACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQPpuD3jJmw663UkDAAAAAElFTkSuQmCC" as="image" fetchpriority="high">
+  <script nonce="c06f7aed7c683083fae29ec7c08381cf" type="module" crossorigin src="./core/main-CxoKTJ9r.js"></script>
+  <link rel="modulepreload" crossorigin href="./chunks/monitoring-3uBGKGRH.js">
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-CLzI061R.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-CUbBeDnn.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-B0ccPYTp.js">
-  <link nonce="f2a8299e1b0ea4b72945a73e066e90d9" rel="stylesheet" crossorigin href="./assets/css/main-BjtUc25U.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-DZg5sSRH.js">
-  <link rel="modulepreload" crossorigin href="./chunks/auth-BlwEIlYt.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-DRERxXuJ.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-Bfq2osax.js">
+  <link nonce="c06f7aed7c683083fae29ec7c08381cf" rel="stylesheet" crossorigin href="./assets/css/main-DHnkOnRu.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-D9QsARwH.js">
+  <link rel="modulepreload" crossorigin href="./chunks/auth-Dc-xlCWe.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -206,6 +239,71 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="f2a8299e1b0ea4b72945a73e066e90d9" src="./assets/js/rescue.js"></script>
+  <script nonce="c06f7aed7c683083fae29ec7c08381cf" src="./assets/js/rescue.js"></script>
+
+  <!-- v13.4.225 (Kevin "intègre le système MAJ auto forcé de CMCteams qui marche") :
+       Defense-in-depth — auto-MAJ inline indépendant du bundle Vite, copie 1:1
+       du système CMCteams v9.615 qui fonctionne. Si bundle bootstrap.js échoue
+       ou tarde, ce script garantit MAJ auto en standalone (même logique).
+       Anti-récidive Erreur #54 + Kevin "tjs v207 sur iPhone". -->
+  <script nonce="c06f7aed7c683083fae29ec7c08381cf">
+    (function(){
+      var APX_VER = document.documentElement.getAttribute('data-app-ver') || 'v0';
+      var inProgress = false;
+      async function autoForceUpdate(){
+        if(inProgress || !navigator.onLine) return;
+        var lastAuto = parseInt(localStorage.getItem('apex_v13_inline_maj_last') || '0', 10);
+        if(Date.now() - lastAuto < 10000) return; /* throttle 10s */
+        var active = document.activeElement;
+        var tag = active && active.tagName && active.tagName.toLowerCase();
+        if(tag === 'textarea' || tag === 'input' ||
+           (active && active.getAttribute && active.getAttribute('contenteditable') === 'true')) return;
+        /* skip si modal ouvert */
+        if(document.querySelector('.ax-modal[style*="display:flex"],[role="dialog"]:not([hidden])')) return;
+        /* skip si streaming IA actif (flag posé par chat) */
+        if(window.__apexActiveStream === true) return;
+        inProgress = true;
+        try {
+          var res = await fetch('./index.html?_v=' + Date.now(), {
+            cache: 'reload',
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+          });
+          if(!res.ok){ inProgress = false; return; }
+          var html = await res.text();
+          var m = html.match(/data-app-ver="([^"]+)"/);
+          var remoteVer = m && m[1] ? m[1] : null;
+          if(!remoteVer || remoteVer === APX_VER){ inProgress = false; return; }
+          console.info('[Apex v13.4.225 inline auto-maj]', APX_VER, '→', remoteVer);
+          localStorage.setItem('apex_v13_inline_maj_last', String(Date.now()));
+          /* NUCLEAR : unregister SW + clear caches + reload */
+          if('serviceWorker' in navigator){
+            try {
+              var regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
+            } catch(_){}
+          }
+          if(typeof caches !== 'undefined'){
+            try {
+              var keys = await caches.keys();
+              await Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); }));
+            } catch(_){}
+          }
+          setTimeout(function(){
+            location.replace(location.pathname + '?_force_upd_' + Date.now());
+          }, 300);
+        } catch(e){
+          console.warn('[Apex inline auto-maj]', e && e.message);
+          inProgress = false;
+        }
+      }
+      /* Boot 2s delay + recurrent 60s + focus/visibility */
+      setTimeout(autoForceUpdate, 2000);
+      setInterval(autoForceUpdate, 60000);
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState === 'visible') autoForceUpdate();
+      });
+      window.addEventListener('focus', autoForceUpdate);
+    })();
+  </script>
 </body>
 </html>

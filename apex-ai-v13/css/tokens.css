@@ -60,6 +60,14 @@
   --ax-purple: #a060ff;
   --ax-cyan: #4fd6e0;
   --ax-pink: #ff6b9d;
+  --ax-yellow: #ffc944;
+  --ax-orange-bright: #ff9944;
+
+  /* Severity scale (Apple HIG : critical=red, high=orange, medium=yellow, low=blue) */
+  --ax-sev-critical: #ff5b5b;
+  --ax-sev-high: #ff9944;
+  --ax-sev-medium: #ffc944;
+  --ax-sev-low: #6a8aff;
 
   /* Status backgrounds */
   --ax-blue-soft: rgba(106, 138, 255, 0.12);
@@ -67,6 +75,7 @@
   --ax-red-soft: rgba(255, 91, 91, 0.12);
   --ax-orange-soft: rgba(255, 170, 0, 0.12);
   --ax-purple-soft: rgba(160, 96, 255, 0.12);
+  --ax-yellow-soft: rgba(255, 201, 68, 0.12);
 
   /* Glassmorphism premium (Kevin v13 redesign UX premium) */
   --ax-glass: rgba(20, 20, 35, 0.85);
