@@ -176,6 +176,13 @@ async function cmdGenerate(args) {
     process.exit(1);
   }
 
+  const templateName = args.template || "narrative-storytelling";
+  const TEMPLATES = ["narrative-storytelling", "documentary", "listicle", "breaking-news", "tutorial"];
+  if (!TEMPLATES.includes(templateName)) {
+    console.error(`❌ Template inconnu : ${templateName}. Disponibles : ${TEMPLATES.join(", ")}`);
+    process.exit(1);
+  }
+
   console.log(`\n🎬 Génération vidéo`);
   console.log(`   Story    : ${story.id} — "${story.title}"`);
   console.log(`   Tags     : ${(story.tags || []).join(", ")}`);
@@ -183,12 +190,6 @@ async function cmdGenerate(args) {
   console.log(`   Template : ${templateName}`);
   console.log(`   Mots     : ${story.script.split(/\s+/).length}\n`);
 
-  const templateName = args.template || "narrative-storytelling";
-  const TEMPLATES = ["narrative-storytelling", "documentary", "listicle", "breaking-news", "tutorial"];
-  if (!TEMPLATES.includes(templateName)) {
-    console.error(`❌ Template inconnu : ${templateName}. Disponibles : ${TEMPLATES.join(", ")}`);
-    process.exit(1);
-  }
   const template = await import(`./templates/${templateName}.js`);
   const generateFn = template.generate || template.generateNarrativeVideo;
   if (!generateFn) {
