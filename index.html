@@ -3026,6 +3026,128 @@ function cmcCadreBadgeHtml(emp){
 // v9.600 — Toggle migration cadres unifiés (off par défaut, admin Kevin opt-in)
 function cmcIsCadresUnifiedMode(){return lg("cmc_cadres_unified",false)===true;}
 
+// ════════════════════════════════════════════════════════════════════════════
+// v9.709 — REGISTRE SECTEURS (Kevin "Plus tard on intégrera d'autres plannings,
+// d'autres secteurs. Prévoit, ne mélange pas, pas de confusion entre plannings")
+// ════════════════════════════════════════════════════════════════════════════
+//
+// Catalogue extensible des secteurs/types de planning du Casino de Monaco.
+// Pour ajouter un nouveau secteur (slots, poker, restaurant, sécurité…) :
+//   1. Ajouter une entrée dans CMC_SECTORS ci-dessous
+//   2. Définir : id, label, icône, couleur, regex section PDF, marker code, scope wipe
+//   3. Aucune autre modification — le parser + scoped-wipe + UI utilisent ce registre
+//
+// Chaque secteur est ISOLÉ : l'import d'un secteur ne touche jamais les emps
+// d'un autre secteur. Le scoped-wipe respecte la famille de chaque emp.
+//
+var CMC_SECTORS={
+  bj:{
+    id:"bj",
+    label:"Jeux Américains (Black Jack)",
+    icon:"🃏",
+    color:"#c9a227",
+    sectionRegex:/^chefs?\s+black\s*jack|^black\s*jack|^jeux\s+am[eé]r/i,
+    cellCodeMarker:"c",          // codes finissant par 'c' (ex: 20/5c, 14/19'c)
+    wipeScope:"employees",       // groupe non-cadres
+    isCadre:false,
+    pdfFiletype:"V1/V2 employés+chefs"
+  },
+  roulettes:{
+    id:"roulettes",
+    label:"Jeux Européens (Roulettes)",
+    icon:"🎰",
+    color:"#2a9a9a",
+    sectionRegex:/^roulettes?\b/i,
+    cellCodeMarker:null,         // codes plain (20/5, 19/4, 22/6', 19/4")
+    wipeScope:"employees",
+    isCadre:false,
+    pdfFiletype:"V1/V2 employés+chefs"
+  },
+  cmc:{
+    id:"cmc",
+    label:"Carrés de Monte Carlo (CMC)",
+    icon:"🔓",
+    color:"#8a50a8",
+    sectionRegex:/^employ[eé]s?\s+cartes\s*(cmc|am[eé]nag)/i,
+    cellCodeMarker:"\"",         // codes contenant '"' (20/5", 22/6"', 16/22")
+    wipeScope:"employees",
+    isCadre:false,
+    pdfFiletype:"V1/V2 employés+chefs"
+  },
+  baccara:{
+    id:"baccara",
+    label:"Baccara / Punto Banco",
+    icon:"💰",
+    color:"#a85040",
+    sectionRegex:/^(baccar|punto|chef.*baccar|employe.*baccar|croupier.*baccar)/i,
+    cellCodeMarker:null,
+    wipeScope:"employees",
+    isCadre:false,
+    pdfFiletype:"V1/V2 employés+chefs"
+  },
+  cadres:{
+    id:"cadres",
+    label:"Cadres (Pit Boss / Superviseurs / Inspecteurs)",
+    icon:"👑",
+    color:"#c080ff",
+    sectionRegex:/^(pit[\s\-\.]*boss|supervi(?:seur|sor)|inspec?teur|inspector|chef[\s\-]*cadre|resp[\s\.]*cadre)/i,
+    cellCodeMarker:null,
+    wipeScope:"cadres",          // wipe distinct des employés
+    isCadre:true,
+    pdfFiletype:"Pit Boss séparé (NOM 'PLANNING PIT BOSS')"
+  }
+  // ────────────────────────────────────────────────────────────────────────
+  // FUTURS SECTEURS — exemple template (décommenter + ajuster pour activer) :
+  // ────────────────────────────────────────────────────────────────────────
+  // slots:{
+  //   id:"slots", label:"Machines à sous", icon:"🎲", color:"#ff8040",
+  //   sectionRegex:/^(slots|machines?\s+(à|a)\s+sous)/i,
+  //   cellCodeMarker:"s", wipeScope:"slots", isCadre:false,
+  //   pdfFiletype:"Planning slots dédié"
+  // },
+  // poker:{
+  //   id:"poker", label:"Salle de poker", icon:"♠", color:"#444",
+  //   sectionRegex:/^(poker|texas\s*hold)/i,
+  //   cellCodeMarker:"p", wipeScope:"poker", isCadre:false,
+  //   pdfFiletype:"Planning poker dédié"
+  // },
+  // restaurant:{
+  //   id:"restaurant", label:"Restaurant / Bar", icon:"🍽", color:"#5aa080",
+  //   sectionRegex:/^(restaurant|bar|salle|service)/i,
+  //   cellCodeMarker:"R", wipeScope:"restaurant", isCadre:false,
+  //   pdfFiletype:"Planning restaurant dédié"
+  // },
+  // securite:{
+  //   id:"securite", label:"Sécurité", icon:"🛡", color:"#506080",
+  //   sectionRegex:/^(s[eé]curit[eé]|security|surveillance)/i,
+  //   cellCodeMarker:"S", wipeScope:"securite", isCadre:false,
+  //   pdfFiletype:"Planning sécurité dédié"
+  // },
+};
+// Helpers utilitaires
+function cmcSectorById(id){return CMC_SECTORS[id]||null;}
+function cmcSectorByCellCode(code){
+  if(!code)return null;
+  for(var sid in CMC_SECTORS){
+    var s=CMC_SECTORS[sid];
+    if(!s.cellCodeMarker)continue;
+    if(String(code).indexOf(s.cellCodeMarker)>=0)return s;
+  }
+  return null;
+}
+function cmcSectorBySection(line){
+  if(!line)return null;
+  var lU=String(line).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  for(var sid in CMC_SECTORS){
+    var s=CMC_SECTORS[sid];
+    if(s.sectionRegex&&s.sectionRegex.test(lU))return s;
+  }
+  return null;
+}
+function cmcListSectors(){return Object.keys(CMC_SECTORS).map(function(k){return CMC_SECTORS[k];});}
+try{if(typeof window!=="undefined"){window.CMC_SECTORS=CMC_SECTORS;window.cmcSectorById=cmcSectorById;window.cmcListSectors=cmcListSectors;}}catch(_){}
+
+
 var DEF_TEAMS=[
   // BJ Chefs Cartes
   {id:"1", name:"BJ \u00c9q.1", mirrorTeamId:"6",  departureOrder:1,color:"#c9a227"},
@@ -5142,7 +5264,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.708";
+var APP_VER="v9.709";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
