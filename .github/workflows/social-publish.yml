@@ -19,27 +19,19 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
-
-      - name: Install espeak-ng + ffmpeg
-        run: sudo apt-get update -qq && sudo apt-get install -y espeak-ng ffmpeg
-
-      - name: Install deps
-        working-directory: tools/social
-        run: npm install --no-audit --no-fund
+      - run: sudo apt-get update -qq && sudo apt-get install -y espeak-ng ffmpeg
+      - run: cd tools/social && npm install --no-audit --no-fund
 
       - name: Generate video
         working-directory: tools/social
         timeout-minutes: 70
         run: |
           FORMAT="${{ github.event.inputs.format || 'long' }}"
-          node --input-type=module -e "
+          node --input-type=module << 'ENDSCRIPT'
           import fs from 'fs';
           import { execSync } from 'child_process';
 
@@ -52,91 +44,75 @@ jobs:
           }
           if (!story) { console.error('No unused stories'); process.exit(1); }
 
-          const fmt = '${FORMAT}';
-          const script = story.script;
-          const words = script.split(/\s+/);
+          const fmt = process.env.FORMAT || 'long';
+          const words = story.script.split(/\s+/);
           console.log('Story: ' + story.id + ' (' + words.length + ' words)');
 
           const id = story.id;
           const outDir = 'output/' + id;
           fs.mkdirSync(outDir, {recursive:true});
-
-          // Resolution: 960x540 for render speed, upscale to 1920x1080 in final
           const renderW = fmt==='short' ? 540 : 960;
           const renderH = fmt==='short' ? 960 : 540;
           const finalW = fmt==='short' ? 1080 : 1920;
           const finalH = fmt==='short' ? 1920 : 1080;
-          const fps = 8; // 8fps render, upscale to 30 in ffmpeg
-
-          // Chunks of 80 words max
+          const fps = 8;
           const chunkSize = 80;
           const chunks = [];
-          for (let i = 0; i < words.length; i += chunkSize) {
-            chunks.push(words.slice(i, i + chunkSize).join(' '));
-          }
+          for (let i = 0; i < words.length; i += chunkSize) chunks.push(words.slice(i, i + chunkSize).join(' '));
           console.log('Chunks: ' + chunks.length);
 
           const chunkVideos = [];
           for (let c = 0; c < chunks.length; c++) {
             const chunk = chunks[c];
             const cd = outDir + '/c' + c;
-            fs.mkdirSync(cd, {recursive:true});
-            const wavP = cd + '/a.wav';
-            const mp3P = cd + '/a.mp3';
-            const fd = cd + '/f';
-            const vp = cd + '/v.mp4';
-
+            fs.mkdirSync(cd + '/f', {recursive:true});
             console.log('Chunk ' + (c+1) + '/' + chunks.length + ' (' + chunk.split(/\s+/).length + 'w)');
 
-            // TTS
-            const safe = chunk.replace(/[\\\\\"]/g,'').slice(0,2500);
-            execSync('espeak-ng -v en -s 160 -p 35 -w ' + wavP + ' \"' + safe + '\"', {timeout:30000});
-            execSync('ffmpeg -y -i ' + wavP + ' -codec:a libmp3lame -b:a 128k ' + mp3P, {stdio:'pipe', timeout:15000});
-            try{fs.unlinkSync(wavP)}catch{}
+            const safe = chunk.replace(/[\\"]/g, '').slice(0, 2500);
+            execSync('espeak-ng -v en -s 160 -p 35 -w ' + cd + '/a.wav "' + safe + '"', {timeout:30000});
+            execSync('ffmpeg -y -i ' + cd + '/a.wav -codec:a libmp3lame -b:a 128k ' + cd + '/a.mp3', {stdio:'pipe', timeout:15000});
+            try { fs.unlinkSync(cd + '/a.wav'); } catch {}
 
-            const sz = fs.statSync(mp3P).size;
+            const sz = fs.statSync(cd + '/a.mp3').size;
             const dur = Math.round(sz / 6000 * 1000);
 
-            // Subtitles
             const { segmentScript, groupIntoSubtitles } = await import('./engine/subtitle-engine.js');
             const segs = segmentScript(chunk, dur);
             const subs = groupIntoSubtitles(segs, {wordsPerLine:4, maxCharsPerLine:35, breakOnPunct:true});
-            const sr = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(ww=>({word:ww.word,startMs:ww.startMs,endMs:ww.endMs}))}));
+            const sr = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(w=>({word:w.word,startMs:w.startMs,endMs:w.endMs}))}));
 
-            // Frames at low res + low fps
             const scene = {width:renderW,height:renderH,fps,durationMs:dur+200,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:sr,title:c===0?story.title:'',watermark:'',showProgress:false};
             const { generateFrames } = await import('./engine/frame-generator.js');
-            await generateFrames(scene, fd, {onProgress:(cur,tot)=>{if(cur%10===0)process.stdout.write('.')}});
-            process.stdout.write(' ');
+            await generateFrames(scene, cd+'/f', {onProgress:(cur)=>{if(cur%10===0)process.stdout.write('.')}});
 
-            // Compile chunk: render res -> final res via ffmpeg scale
-            execSync('ffmpeg -y -framerate ' + fps + ' -i ' + fd + '/frame_%06d.png -i ' + mp3P + ' -map 0:v -map 1:a -vf scale=' + finalW + ':' + finalH + ':flags=lanczos -c:v libx264 -preset ultrafast -crf 28 -pix_fmt yuv420p -r 30 -c:a aac -b:a 128k -shortest -movflags +faststart ' + vp, {stdio:'pipe', timeout:120000});
-            console.log((fs.statSync(vp).size/1024/1024).toFixed(1) + 'MB');
-
+            const vp = cd + '/v.mp4';
+            execSync('ffmpeg -y -framerate '+fps+' -i '+cd+'/f/frame_%06d.png -i '+cd+'/a.mp3 -map 0:v -map 1:a -vf scale='+finalW+':'+finalH+':flags=lanczos -c:v libx264 -preset ultrafast -crf 26 -pix_fmt yuv420p -r 30 -c:a aac -b:a 128k -shortest -movflags +faststart '+vp, {stdio:'pipe', timeout:180000});
+            console.log(' ' + (fs.statSync(vp).size/1024/1024).toFixed(1) + 'MB');
             chunkVideos.push(vp);
-            // Cleanup frames immediately
-            try{fs.readdirSync(fd).forEach(f=>fs.unlinkSync(fd+'/'+f));fs.rmdirSync(fd)}catch{}
+
+            try { fs.readdirSync(cd+'/f').forEach(f=>fs.unlinkSync(cd+'/f/'+f)); fs.rmdirSync(cd+'/f'); } catch {}
+            try { fs.unlinkSync(cd+'/a.mp3'); } catch {}
           }
 
-          // Concatenate
-          const final = outDir + '/' + id + '_' + fmt + '.mp4';
+          const finalVideo = outDir + '/' + id + '_' + fmt + '.mp4';
           if (chunkVideos.length === 1) {
-            fs.renameSync(chunkVideos[0], final);
+            fs.renameSync(chunkVideos[0], finalVideo);
           } else {
-            const cf = outDir + '/concat.txt';
-            fs.writeFileSync(cf, chunkVideos.map(v=>\"file '\" + v + \"'\").join('\\n'));
-            execSync('ffmpeg -y -f concat -safe 0 -i ' + cf + ' -c copy ' + final, {stdio:'pipe', timeout:60000});
-            for (const cv of chunkVideos) try{fs.unlinkSync(cv)}catch{}
-            try{fs.unlinkSync(cf)}catch{}
+            const concatFile = outDir + '/list.txt';
+            const lines = chunkVideos.map(v => "file '" + v.replace(outDir + '/', '') + "'");
+            fs.writeFileSync(concatFile, lines.join('\n'));
+            execSync('cd ' + outDir + ' && ffmpeg -y -f concat -safe 0 -i list.txt -c copy ' + id + '_' + fmt + '.mp4', {stdio:'pipe', timeout:60000});
+            for (const cv of chunkVideos) try { fs.unlinkSync(cv); } catch {}
+            try { fs.unlinkSync(concatFile); } catch {}
           }
 
-          console.log('FINAL: ' + (fs.statSync(final).size/1024/1024).toFixed(2) + ' MB');
-          fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],format:fmt,width:finalW,height:finalH,sizeBytes:fs.statSync(final).size},null,2));
+          console.log('FINAL: ' + (fs.statSync(finalVideo).size/1024/1024).toFixed(2) + ' MB');
+          fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],format:fmt,width:finalW,height:finalH,sizeBytes:fs.statSync(finalVideo).size},null,2));
           story.used = true;
           fs.writeFileSync('config/content-library.json', JSON.stringify(lib,null,2));
-          for (let c = 0; c < chunks.length; c++) try{fs.rmSync(outDir+'/c'+c,{recursive:true,force:true})}catch{}
+          for (let c = 0; c < chunks.length; c++) try { fs.rmSync(outDir+'/c'+c, {recursive:true, force:true}); } catch {}
           console.log('Done!');
-          "
+          ENDSCRIPT
 
       - name: Publish to YouTube
         working-directory: tools/social
