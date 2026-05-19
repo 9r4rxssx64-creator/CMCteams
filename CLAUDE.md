@@ -195,6 +195,71 @@ Si non aux 4 questions → fix avant push.
 
 ---
 
+## 🔑 RÈGLE ABSOLUE — NOMS SECRETS GITHUB DOIVENT MATCHER EXACTEMENT (Kevin 2026-05-16)
+
+> **Cause racine bug v13.4.229 : workflow attendait `OPENAI_API_KEY`, Kevin avait stocké `OPEN_AI_API_KEY` (underscore). Secret jamais déployé → Apex ne pouvait pas appeler OpenAI via Worker proxy.**
+
+**Règle absolue, NON-NÉGOCIABLE** — tous projets Kevin actuels + futurs (Apex, CMCteams, e-KDMC, Télécommande, CrackPass, Apex Chat, futurs) :
+
+### 1. AVANT toute création/modification workflow GitHub utilisant secrets
+
+OBLIGATOIRE :
+- **Vérifier les noms exacts** des secrets dans le compte GitHub Kevin via `gh secret list` OU demander à Kevin la liste textuelle
+- **Matcher 1:1** le nom du secret dans `${{ secrets.NAME }}` au nom exact stocké
+- **Matcher 1:1** le nom passé au worker/serveur (env var) au nom exact aussi
+- **Matcher 1:1** le nom lu côté worker (`env.NAME`) au nom exact
+
+### 2. Variations connues Kevin (à respecter)
+
+Kevin a parfois des noms NON-standard :
+- `OPEN_AI_API_KEY` (avec underscore, PAS `OPENAI_API_KEY`)
+- `PERPLEXITI_API_KEY` (typo, PAS `PERPLEXITY_API_KEY`)
+- D'autres typos possibles → toujours vérifier la liste réelle
+
+### 3. JAMAIS supposer le nom standard
+
+❌ Si je vois "OpenAI" dans le code, ne PAS écrire `OPENAI_API_KEY` par défaut
+❌ Si je vois "Perplexity", ne PAS écrire `PERPLEXITY_API_KEY` par défaut
+✅ Vérifier le nom EXACT dans les secrets Kevin avant tout commit
+
+### 4. Workflow d'audit secrets à chaque session secrets-related
+
+Au début de toute modification touchant aux secrets :
+```bash
+# Lister les secrets Kevin (ou demander la liste)
+gh secret list 2>&1 | grep -E "API|TOKEN|SECRET|KEY"
+
+# Pour chaque secret utilisé dans le code/workflow, vérifier mapping :
+grep -E "secrets\." .github/workflows/*.yml
+grep -E "env\.[A-Z_]+_(KEY|TOKEN|SECRET)" services/ apex-ai/ src/
+```
+
+### 5. Test mental obligatoire avant push
+
+> *"Le nom du secret dans `${{ secrets.X }}` est-il IDENTIQUE caractère par caractère au nom dans la liste Kevin ? Le nom passé à env: matche-t-il ? Le nom lu côté worker matche-t-il ?"*
+
+Si réponse "je crois" → vérifier d'abord, push ensuite.
+
+### 6. Référence implementation Apex v13.4.229
+
+`.github/workflows/sync-apex-secrets-to-cf-worker.yml` documente le mapping
+3-niveaux qui doit matcher (workflow env → wrangler secret put → worker env.X).
+
+### 7. Liste secrets Kevin connus (mémorisée pour futures sessions)
+
+ANTHROPIC_API_KEY, **OPEN_AI_API_KEY** (underscore), GROQ_API_KEY,
+GEMINI_API_KEY, DEEPSEEK_API_KEY, **PERPLEXITI_API_KEY** (typo),
+TAVILY_API_KEY, PINECONE_API_KEY, TELEGRAM_API_KEY,
+VONAGE_API_KEY, VONAGE_API_SECRET, EMAILJS_PRIVATE_KEY,
+RAILWAY_TOKEN, API_OPEN_LEGO, JWT_SECRET, APEX_ADMIN_PIN_SHA256,
+CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, VAPID_PRIVATE_KEY,
+AGENT_SECRET, AGENT_SECRET_VERCEL.
+
+S'applique : Apex (référence v13.4.229), CMCteams, e-KDMC, Télécommande,
+CrackPass, Apex Chat, tous projets futurs.
+
+---
+
 ## 📧 RÈGLE ABSOLUE — ANTI-SPAM MAILS GITHUB ACTIONS (Kevin 2026-05-16)
 
 > **"Arrête les mails pour moi stp"** — Kevin 2026-05-16 (boîte saturée)
