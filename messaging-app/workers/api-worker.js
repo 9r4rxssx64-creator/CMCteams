@@ -1,7 +1,7 @@
 /**
  * Apex Chat — API Worker (REST + WebSocket)
  *
- * Last redeploy trigger : 2026-05-19 v1.1.130 (token rollé Kevin, valeur GitHub synced)
+ * Last redeploy trigger : 2026-05-19 v1.1.131 (R2 activé Kevin)
  *
  * Routes principales :
  *   POST   /api/auth/send-otp        → Firebase Auth Phone (envoie SMS)
