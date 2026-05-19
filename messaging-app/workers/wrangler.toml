@@ -84,10 +84,10 @@ name = "PRESENCE_DO"
 class_name = "PresenceDO"
 script_name = "apex-chat-api"
 
-# Migration des Durable Objects
+# Migration des Durable Objects (v1.1.132 : new_sqlite_classes pour plan Workers FREE)
 [[migrations]]
 tag = "v1"
-new_classes = ["ConversationDO", "BroadcastDO", "PresenceDO"]
+new_sqlite_classes = ["ConversationDO", "BroadcastDO", "PresenceDO"]
 
 # Variables d'environnement (publiques — utiliser secrets pour clés sensibles)
 [vars]
