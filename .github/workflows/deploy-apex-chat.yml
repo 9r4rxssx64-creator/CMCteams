@@ -80,6 +80,22 @@ jobs:
           echo "id=$ACC" >> $GITHUB_OUTPUT
           echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> $GITHUB_ENV
 
+      - name: DIAG token + account match
+        run: |
+          # v1.1.130 diagnostic : montre quelles permissions le token a réellement
+          # et si ACCOUNT_ID est cohérent avec le scope du token.
+          echo "=== Token info (premières 10 chars du token utilisé) ==="
+          echo "Token prefix: ${CLOUDFLARE_API_TOKEN:0:10}..."
+          echo "Account ID utilisé: $CLOUDFLARE_ACCOUNT_ID"
+          echo ""
+          echo "=== Permissions du token (via /user/tokens/verify détaillé) ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
+          echo ""
+          echo "=== Test accès D1 read (devrait réussir si permissions OK) ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
+
       - name: Create D1 database (idempotent, via API)
         id: d1
         working-directory: messaging-app/workers
