@@ -14,45 +14,226 @@ import fs from 'fs';
 import path from 'path';
 
 const STYLES = {
+  // --- ARTISTIQUE ---
   avatar: {
     name: 'Avatar',
     prompt: 'professional avatar portrait, clean background, high quality, digital art style',
-    icon: '👤',
+    icon: '👤', category: 'artistique',
   },
   cartoon: {
     name: 'Dessin animé',
-    prompt: 'cartoon style, vibrant colors, animated look, Disney Pixar quality',
-    icon: '🎨',
+    prompt: 'cartoon style, vibrant colors, animated look, Disney Pixar quality, 3D render',
+    icon: '🎨', category: 'artistique',
   },
   anime: {
     name: 'Anime',
-    prompt: 'anime style, Japanese animation, detailed, Studio Ghibli quality',
-    icon: '🇯🇵',
+    prompt: 'anime style, Japanese animation, detailed, Studio Ghibli quality, cel shading',
+    icon: '🇯🇵', category: 'artistique',
   },
   painting: {
-    name: 'Peinture',
-    prompt: 'oil painting style, artistic, museum quality, dramatic lighting',
-    icon: '🖼️',
+    name: 'Peinture à l\'huile',
+    prompt: 'oil painting style, artistic, museum quality, dramatic lighting, thick brushstrokes',
+    icon: '🖼️', category: 'artistique',
   },
+  watercolor: {
+    name: 'Aquarelle',
+    prompt: 'watercolor painting, soft colors, flowing paint, artistic, delicate, paper texture',
+    icon: '💧', category: 'artistique',
+  },
+  pencil: {
+    name: 'Dessin crayon',
+    prompt: 'detailed pencil sketch, graphite drawing, realistic shading, paper texture, hand drawn',
+    icon: '✏️', category: 'artistique',
+  },
+  popart: {
+    name: 'Pop Art',
+    prompt: 'pop art style, Andy Warhol inspired, bold colors, halftone dots, comic book aesthetic',
+    icon: '🟡', category: 'artistique',
+  },
+  graffiti: {
+    name: 'Graffiti',
+    prompt: 'street art graffiti style, spray paint, urban wall, bold colors, hip hop aesthetic',
+    icon: '🎤', category: 'artistique',
+  },
+  stainedglass: {
+    name: 'Vitrail',
+    prompt: 'stained glass window style, colorful glass panels, cathedral light, medieval art',
+    icon: '⛪', category: 'artistique',
+  },
+  mosaic: {
+    name: 'Mosaïque',
+    prompt: 'mosaic tile art, small colorful tiles, Roman style, geometric pattern art',
+    icon: '🧩', category: 'artistique',
+  },
+
+  // --- CINÉMA ---
   cinematic: {
     name: 'Cinéma',
-    prompt: 'cinematic shot, dramatic lighting, movie scene, 4K quality',
-    icon: '🎬',
+    prompt: 'cinematic shot, dramatic lighting, movie scene, 4K quality, anamorphic lens',
+    icon: '🎬', category: 'cinema',
   },
-  scene: {
-    name: 'Mise en scène',
-    prompt: '', // Dynamic — user provides the scene description
-    icon: '🌍',
+  noir: {
+    name: 'Film noir',
+    prompt: 'film noir style, black and white, dramatic shadows, 1940s detective movie, rain',
+    icon: '🕵️', category: 'cinema',
   },
+  horror: {
+    name: 'Horreur',
+    prompt: 'horror movie scene, dark atmosphere, fog, creepy lighting, thriller, suspense',
+    icon: '👻', category: 'cinema',
+  },
+  scifi: {
+    name: 'Science-fiction',
+    prompt: 'science fiction scene, futuristic, neon lights, space, cyberpunk, blade runner style',
+    icon: '🚀', category: 'cinema',
+  },
+  western: {
+    name: 'Western',
+    prompt: 'wild west scene, dusty desert, sunset, cowboy aesthetic, Sergio Leone style',
+    icon: '🤠', category: 'cinema',
+  },
+  fantasy: {
+    name: 'Fantasy',
+    prompt: 'high fantasy scene, magical, enchanted forest, dragons, Lord of the Rings style',
+    icon: '🧙', category: 'cinema',
+  },
+  bollywood: {
+    name: 'Bollywood',
+    prompt: 'Bollywood movie style, vibrant colors, dramatic dance pose, Indian cinema, ornate',
+    icon: '💃', category: 'cinema',
+  },
+
+  // --- TENDANCES 2026 ---
+  cyberpunk: {
+    name: 'Cyberpunk',
+    prompt: 'cyberpunk style, neon city, rain, holographic ads, futuristic Tokyo, synthwave',
+    icon: '🌆', category: 'tendance',
+  },
+  vaporwave: {
+    name: 'Vaporwave',
+    prompt: 'vaporwave aesthetic, pink and blue gradients, retro 80s, Greek statues, glitch art',
+    icon: '🌸', category: 'tendance',
+  },
+  lofi: {
+    name: 'Lo-fi',
+    prompt: 'lo-fi aesthetic, cozy room, warm lighting, study girl style, relaxing, soft colors',
+    icon: '☕', category: 'tendance',
+  },
+  glitchcore: {
+    name: 'Glitchcore',
+    prompt: 'glitch art, digital distortion, corrupted image, RGB split, matrix code, experimental',
+    icon: '📺', category: 'tendance',
+  },
+  dreamcore: {
+    name: 'Dreamcore',
+    prompt: 'dreamcore aesthetic, surreal landscape, floating objects, pastel sky, liminal space',
+    icon: '💭', category: 'tendance',
+  },
+  darkacademia: {
+    name: 'Dark Academia',
+    prompt: 'dark academia aesthetic, old library, leather books, candlelight, Oxford university',
+    icon: '📚', category: 'tendance',
+  },
+  cottagecore: {
+    name: 'Cottagecore',
+    prompt: 'cottagecore aesthetic, countryside cottage, wildflowers, golden hour, pastoral',
+    icon: '🌻', category: 'tendance',
+  },
+  minimalist: {
+    name: 'Minimaliste',
+    prompt: 'minimalist design, clean lines, white space, simple geometric shapes, modern',
+    icon: '⬜', category: 'tendance',
+  },
+
+  // --- EFFETS SPÉCIAUX ---
   superhero: {
     name: 'Super-héros',
-    prompt: 'superhero style, epic pose, cape flowing, dramatic sky, Marvel quality',
-    icon: '🦸',
+    prompt: 'superhero style, epic pose, cape flowing, dramatic sky, Marvel quality, lightning',
+    icon: '🦸', category: 'special',
   },
+  zombie: {
+    name: 'Zombie',
+    prompt: 'zombie apocalypse, undead, dark abandoned city, horror, The Walking Dead style',
+    icon: '🧟', category: 'special',
+  },
+  underwater: {
+    name: 'Sous-marin',
+    prompt: 'underwater scene, deep ocean, blue light, coral reef, bubbles, aquatic, serene',
+    icon: '🌊', category: 'special',
+  },
+  space: {
+    name: 'Espace',
+    prompt: 'outer space scene, astronaut, stars, nebula, planet Earth, NASA cinematic',
+    icon: '🌌', category: 'special',
+  },
+  miniature: {
+    name: 'Miniature',
+    prompt: 'tilt shift miniature effect, tiny world, diorama look, toy-like, selective focus',
+    icon: '🔬', category: 'special',
+  },
+  xray: {
+    name: 'Rayon X',
+    prompt: 'x-ray style, skeletal view, medical scan aesthetic, blue tones, transparent',
+    icon: '☠️', category: 'special',
+  },
+  lego: {
+    name: 'LEGO',
+    prompt: 'LEGO brick style, everything made of LEGO blocks, colorful plastic, toy world',
+    icon: '🧱', category: 'special',
+  },
+  claymation: {
+    name: 'Pâte à modeler',
+    prompt: 'claymation style, stop motion, clay figures, Wallace and Gromit quality, handmade',
+    icon: '🎭', category: 'special',
+  },
+  pixelart: {
+    name: 'Pixel Art',
+    prompt: 'pixel art style, 16-bit retro game, blocky pixels, vibrant palette, Nintendo',
+    icon: '👾', category: 'special',
+  },
+  comic: {
+    name: 'Bande dessinée',
+    prompt: 'comic book style, bold outlines, speech bubbles, halftone shading, action panels',
+    icon: '💥', category: 'special',
+  },
+
+  // --- PHOTOS ---
   vintage: {
     name: 'Vintage',
-    prompt: 'vintage photo style, sepia tones, 1950s aesthetic, film grain',
-    icon: '📷',
+    prompt: 'vintage photo style, sepia tones, 1950s aesthetic, film grain, Kodak film',
+    icon: '📷', category: 'photo',
+  },
+  polaroid: {
+    name: 'Polaroid',
+    prompt: 'polaroid instant photo, white border, slightly faded colors, nostalgic, candid',
+    icon: '🖼️', category: 'photo',
+  },
+  hdr: {
+    name: 'HDR Extrême',
+    prompt: 'HDR photography, hyper detailed, extreme dynamic range, vivid colors, sharp',
+    icon: '🔆', category: 'photo',
+  },
+  infrared: {
+    name: 'Infrarouge',
+    prompt: 'infrared photography, false colors, white foliage, red sky, surreal landscape',
+    icon: '🔴', category: 'photo',
+  },
+  drone: {
+    name: 'Vue drone',
+    prompt: 'aerial drone shot, birds eye view, top down perspective, landscape, DJI quality',
+    icon: '🛸', category: 'photo',
+  },
+  macro: {
+    name: 'Macro',
+    prompt: 'macro photography, extreme close-up, shallow depth of field, tiny details, sharp',
+    icon: '🔍', category: 'photo',
+  },
+
+  // --- MISE EN SCÈNE ---
+  scene: {
+    name: 'Mise en scène libre',
+    prompt: '',
+    icon: '🌍', category: 'scene',
   },
 };
 
