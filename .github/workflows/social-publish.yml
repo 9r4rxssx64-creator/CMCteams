@@ -67,29 +67,23 @@ jobs:
             const cd = outDir + '/c' + c;
             fs.mkdirSync(cd + '/f', {recursive:true});
             console.log('Chunk ' + (c+1) + '/' + chunks.length + ' (' + chunk.split(/\s+/).length + 'w)');
-
             const safe = chunk.replace(/[\\"]/g, '').slice(0, 2500);
             execSync('espeak-ng -v en -s 160 -p 35 -w ' + cd + '/a.wav "' + safe + '"', {timeout:30000});
             execSync('ffmpeg -y -i ' + cd + '/a.wav -codec:a libmp3lame -b:a 128k ' + cd + '/a.mp3', {stdio:'pipe', timeout:15000});
             try { fs.unlinkSync(cd + '/a.wav'); } catch {}
-
             const sz = fs.statSync(cd + '/a.mp3').size;
             const dur = Math.round(sz / 6000 * 1000);
-
             const { segmentScript, groupIntoSubtitles } = await import('./engine/subtitle-engine.js');
             const segs = segmentScript(chunk, dur);
             const subs = groupIntoSubtitles(segs, {wordsPerLine:4, maxCharsPerLine:35, breakOnPunct:true});
             const sr = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(w=>({word:w.word,startMs:w.startMs,endMs:w.endMs}))}));
-
             const scene = {width:renderW,height:renderH,fps,durationMs:dur+200,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:sr,title:c===0?story.title:'',watermark:'',showProgress:false};
             const { generateFrames } = await import('./engine/frame-generator.js');
             await generateFrames(scene, cd+'/f', {onProgress:(cur)=>{if(cur%10===0)process.stdout.write('.')}});
-
             const vp = cd + '/v.mp4';
             execSync('ffmpeg -y -framerate '+fps+' -i '+cd+'/f/frame_%06d.png -i '+cd+'/a.mp3 -map 0:v -map 1:a -vf scale='+finalW+':'+finalH+':flags=lanczos -c:v libx264 -preset ultrafast -crf 26 -pix_fmt yuv420p -r 30 -c:a aac -b:a 128k -shortest -movflags +faststart '+vp, {stdio:'pipe', timeout:180000});
             console.log(' ' + (fs.statSync(vp).size/1024/1024).toFixed(1) + 'MB');
             chunkVideos.push(vp);
-
             try { fs.readdirSync(cd+'/f').forEach(f=>fs.unlinkSync(cd+'/f/'+f)); fs.rmdirSync(cd+'/f'); } catch {}
             try { fs.unlinkSync(cd+'/a.mp3'); } catch {}
           }
@@ -114,7 +108,7 @@ jobs:
           console.log('Done!');
           ENDSCRIPT
 
-      - name: Publish to YouTube
+      - name: Upload to YouTube
         working-directory: tools/social
         env:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -122,9 +116,76 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: |
           LATEST=$(ls -t output/*/*.mp4 2>/dev/null | head -1)
-          if [ -n "$LATEST" ] && [ -n "$YOUTUBE_CLIENT_ID" ]; then
-            node cli.js publish --platform youtube --video "$LATEST" --privacy private || echo "YouTube publish skipped"
-          fi
+          if [ -z "$LATEST" ]; then echo "No video found"; exit 0; fi
+          if [ -z "$YOUTUBE_CLIENT_ID" ]; then echo "No YouTube credentials"; exit 0; fi
+          META=$(dirname "$LATEST")/metadata.json
+          TITLE="Story Video"
+          if [ -f "$META" ]; then TITLE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).title||'Story Video')"); fi
+          echo "Uploading: $LATEST ($TITLE)"
+          node --input-type=module << 'YTSCRIPT'
+          import fs from 'fs';
+          import { google } from 'googleapis';
+
+          const clientId = process.env.YOUTUBE_CLIENT_ID;
+          const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
+          const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN;
+
+          const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
+          oauth2.setCredentials({ refresh_token: refreshToken });
+
+          const youtube = google.youtube({ version: 'v3', auth: oauth2 });
+
+          // Find video and metadata
+          const files = fs.readdirSync('output').flatMap(d => {
+            const dir = 'output/' + d;
+            try {
+              return fs.readdirSync(dir).filter(f => f.endsWith('.mp4')).map(f => dir + '/' + f);
+            } catch { return []; }
+          });
+          const videoPath = files.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
+          if (!videoPath) { console.log('No video'); process.exit(0); }
+
+          let title = 'Story Video';
+          let tags = [];
+          const metaPath = videoPath.replace(/\.mp4$/, '').replace(/_[^_]+$/, '') + '/../metadata.json';
+          const metaPath2 = videoPath.replace(/[^/]+\.mp4$/, 'metadata.json');
+          for (const mp of [metaPath2, metaPath]) {
+            try {
+              const meta = JSON.parse(fs.readFileSync(mp, 'utf8'));
+              title = meta.title || title;
+              tags = meta.tags || tags;
+              break;
+            } catch {}
+          }
+
+          console.log('Uploading: ' + title + ' (' + videoPath + ')');
+
+          try {
+            const res = await youtube.videos.insert({
+              part: ['snippet', 'status'],
+              requestBody: {
+                snippet: {
+                  title: title,
+                  description: tags.map(t => '#' + t).join(' ') + '\n\nGenerated by KDMC Studio',
+                  tags: tags,
+                  categoryId: '22',
+                },
+                status: {
+                  privacyStatus: 'private',
+                  selfDeclaredMadeForKids: false,
+                },
+              },
+              media: {
+                body: fs.createReadStream(videoPath),
+              },
+            });
+            console.log('Uploaded! Video ID: ' + res.data.id);
+            console.log('URL: https://youtu.be/' + res.data.id);
+          } catch (err) {
+            console.error('YouTube upload failed: ' + (err.message || err));
+            process.exit(1);
+          }
+          YTSCRIPT
 
       - name: Commit state
         if: success()
