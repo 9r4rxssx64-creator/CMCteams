@@ -1,7 +1,7 @@
 /**
  * Apex Chat — API Worker (REST + WebSocket)
  *
- * Last redeploy trigger : 2026-05-19 v1.1.127 (fresh tokens Kevin + CLOUDFLARE_ACCOUNT_ID secret)
+ * Last redeploy trigger : 2026-05-19 v1.1.128 (full custom token Kevin avec D1+Queues)
  *
  * Routes principales :
  *   POST   /api/auth/send-otp        → Firebase Auth Phone (envoie SMS)
