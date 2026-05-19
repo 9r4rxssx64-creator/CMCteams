@@ -31,8 +31,8 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install espeak-ng
-        run: sudo apt-get update -qq && sudo apt-get install -y espeak-ng
+      - name: Install espeak-ng + ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y espeak-ng ffmpeg
 
       - name: Install deps
         working-directory: tools/social
@@ -40,60 +40,78 @@ jobs:
 
       - name: Generate video
         working-directory: tools/social
-        env:
-          GOOGLE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          NICHE="${{ github.event.inputs.niche || 'betrayal-revenge' }}"
           FORMAT="${{ github.event.inputs.format || 'long' }}"
+          node --input-type=module -e "
+          import fs from 'fs';
+          import { execSync, spawn } from 'child_process';
+          import path from 'path';
 
-          # Use narrative-storytelling template directly (bypass cli.js templateName bug)
-          node -e "
-            import fs from 'fs';
-            import path from 'path';
-            const lib = JSON.parse(fs.readFileSync('config/content-library.json','utf8'));
-            const cats = Object.keys(lib).filter(k=>!k.startsWith('_'));
-            let story = null;
-            for (const cat of cats) {
-              const unused = lib[cat].filter(s=>!s.used);
-              if (unused.length > 0) { story = unused[Math.floor(Math.random()*unused.length)]; break; }
-            }
-            if (!story) { console.error('No unused stories'); process.exit(1); }
-            console.log('Story: ' + story.id + ' — ' + story.title);
-            const { generateSpeech, VOICES } = await import('./engine/tts.js');
-            const { segmentScript, groupIntoSubtitles } = await import('./engine/subtitle-engine.js');
-            const { generateFrames } = await import('./engine/frame-generator.js');
-            const { compileVideo } = await import('./engine/compiler.js');
-            const id = story.id;
-            const fmt = '${FORMAT}';
-            const w = fmt==='short' ? 1080 : 1920;
-            const h = fmt==='short' ? 1920 : 1080;
-            const outDir = 'output/' + id;
-            fs.mkdirSync(outDir, {recursive:true});
-            const audioPath = outDir + '/narration.mp3';
-            console.log('TTS...');
-            const tts = await generateSpeech(story.script, {outputPath:audioPath, voice:VOICES.en_storytelling_male_dramatic, rate:-5, pitch:-3});
-            console.log('TTS OK: ' + Math.round(tts.durationMs/1000) + 's');
-            const segs = segmentScript(story.script, tts.durationMs);
-            const subs = groupIntoSubtitles(segs, {wordsPerLine: fmt==='short'?3:6, maxCharsPerLine: fmt==='short'?22:50, breakOnPunct:true});
-            const subsR = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(w=>({word:w.word,startMs:w.startMs,endMs:w.endMs}))}));
-            console.log(subs.length + ' subtitles');
-            const scene = {width:w,height:h,fps:30,durationMs:tts.durationMs+800,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:subsR,title:story.title,watermark:'',showProgress:true};
-            const framesDir = outDir + '/frames';
-            console.log('Frames...');
-            await generateFrames(scene, framesDir, {onProgress:(c,t)=>{if(c%30===0)process.stdout.write('.')}});
-            console.log(' OK');
-            const videoPath = outDir + '/' + id + '_' + fmt + '.mp4';
-            console.log('Compile...');
-            const result = await compileVideo({framesDir,fps:30,audioPath:tts.audioPath,outputPath:videoPath,width:w,height:h,crf:20,preset:'medium'});
-            console.log('Video: ' + videoPath + ' (' + (result.sizeBytes/1024/1024).toFixed(2) + ' MB)');
-            const meta = {id,title:story.title,tags:story.tags||[],format:fmt,width:w,height:h,fps:30,sizeBytes:result.sizeBytes};
-            fs.writeFileSync(outDir+'/metadata.json', JSON.stringify(meta,null,2));
-            // Mark story as used
-            story.used = true;
-            fs.writeFileSync('config/content-library.json', JSON.stringify(lib,null,2));
-            // Cleanup frames
-            try{fs.readdirSync(framesDir).forEach(f=>{if(f.startsWith('frame_'))fs.unlinkSync(framesDir+'/'+f)});fs.rmdirSync(framesDir)}catch{}
-            console.log('Done!');
+          // 1. Pick random unused story
+          const lib = JSON.parse(fs.readFileSync('config/content-library.json','utf8'));
+          const cats = Object.keys(lib).filter(k=>!k.startsWith('_'));
+          let story = null;
+          for (const cat of cats) {
+            const unused = lib[cat].filter(s=>!s.used);
+            if (unused.length > 0) { story = unused[Math.floor(Math.random()*unused.length)]; break; }
+          }
+          if (!story) { console.error('No unused stories'); process.exit(1); }
+          console.log('Story: ' + story.id + ' — ' + story.title);
+
+          // 2. TTS via espeak-ng (offline, reliable)
+          const id = story.id;
+          const fmt = '${FORMAT}';
+          const outDir = 'output/' + id;
+          fs.mkdirSync(outDir, {recursive:true});
+          const wavPath = outDir + '/narration.wav';
+          const mp3Path = outDir + '/narration.mp3';
+
+          console.log('TTS espeak-ng...');
+          execSync('espeak-ng -v en -s 140 -p 30 -w ' + wavPath + ' \"' + story.script.replace(/\"/g,'') .slice(0,4000) + '\"', {stdio:'inherit', timeout:60000});
+
+          // Convert WAV to MP3
+          console.log('WAV to MP3...');
+          execSync('ffmpeg -y -i ' + wavPath + ' -codec:a libmp3lame -b:a 192k ' + mp3Path, {stdio:'pipe', timeout:30000});
+          fs.unlinkSync(wavPath);
+
+          const audioSize = fs.statSync(mp3Path).size;
+          const durationMs = Math.round(audioSize / 6000 * 1000);
+          console.log('Audio: ' + (audioSize/1024).toFixed(0) + ' KB, ~' + Math.round(durationMs/1000) + 's');
+
+          // 3. Subtitles
+          const { segmentScript, groupIntoSubtitles } = await import('./engine/subtitle-engine.js');
+          const segs = segmentScript(story.script, durationMs);
+          const subs = groupIntoSubtitles(segs, {wordsPerLine: fmt==='short'?3:6, maxCharsPerLine: fmt==='short'?22:50, breakOnPunct:true});
+          const subsR = subs.map(g=>({text:g.text,startMs:g.startMs,endMs:g.endMs,words:g.words.map(w=>({word:w.word,startMs:w.startMs,endMs:w.endMs}))}));
+          console.log(subs.length + ' subtitles');
+
+          // 4. Frames
+          const w = fmt==='short' ? 1080 : 1920;
+          const h = fmt==='short' ? 1920 : 1080;
+          const scene = {width:w,height:h,fps:30,durationMs:durationMs+800,bg:{type:'cinematic'},style:fmt==='short'?'shorts':'narrative',subtitles:subsR,title:story.title,watermark:'',showProgress:true};
+          const framesDir = outDir + '/frames';
+          console.log('Frames...');
+          const { generateFrames } = await import('./engine/frame-generator.js');
+          await generateFrames(scene, framesDir, {onProgress:(c,t)=>{if(c%60===0)process.stdout.write('.')}});
+          console.log(' OK');
+
+          // 5. Compile
+          const videoPath = outDir + '/' + id + '_' + fmt + '.mp4';
+          console.log('Compile...');
+          execSync('ffmpeg -y -framerate 30 -i ' + framesDir + '/frame_%06d.png -i ' + mp3Path + ' -map 0:v -map 1:a -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart ' + videoPath, {stdio:'pipe', timeout:600000});
+          const videoSize = fs.statSync(videoPath).size;
+          console.log('Video: ' + videoPath + ' (' + (videoSize/1024/1024).toFixed(2) + ' MB)');
+
+          // 6. Metadata
+          fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],format:fmt,width:w,height:h,sizeBytes:videoSize},null,2));
+
+          // 7. Mark used
+          story.used = true;
+          fs.writeFileSync('config/content-library.json', JSON.stringify(lib,null,2));
+
+          // 8. Cleanup frames
+          try{fs.readdirSync(framesDir).forEach(f=>{if(f.startsWith('frame_'))fs.unlinkSync(framesDir+'/'+f)});fs.rmdirSync(framesDir)}catch{}
+          console.log('Done!');
           "
 
       - name: Publish to YouTube
