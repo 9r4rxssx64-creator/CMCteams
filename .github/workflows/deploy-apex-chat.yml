@@ -116,32 +116,12 @@ jobs:
           wrangler r2 bucket create apex-chat-media || echo "(bucket existe déjà)"
           echo "::notice::R2 bucket apex-chat-media OK"
 
-      - name: Create KV namespace (tolérant)
-        id: kv
+      - name: Verify KV namespace (hardcoded in wrangler.toml)
         working-directory: messaging-app/workers
         run: |
-          # v1.1.131 : si KV creation échoue, retire le binding au lieu de planter
-          # (le worker peut tourner sans cache KV, juste moins perf).
-          set +e
-          echo "=== Liste KV namespaces ==="
-          LIST_OUT=$(wrangler kv namespace list 2>&1)
-          echo "$LIST_OUT"
-          KV_ID=$(echo "$LIST_OUT" | grep -B1 -A1 'APEX_CHAT_CACHE' | grep -oE '[a-f0-9]{32}' | head -1)
-          if [ -z "$KV_ID" ]; then
-            echo "=== Tentative création KV APEX_CHAT_CACHE ==="
-            CREATE_OUT=$(wrangler kv namespace create APEX_CHAT_CACHE 2>&1)
-            echo "$CREATE_OUT"
-            KV_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{32}' | head -1)
-          fi
-          if [ -n "$KV_ID" ]; then
-            echo "::notice::KV ID: $KV_ID"
-            sed -i "s/id = \"REPLACE_WITH_KV_ID\"/id = \"$KV_ID\"/" wrangler.toml
-          else
-            echo "::warning::KV creation échouée — retire le binding pour permettre le deploy"
-            # Retire la section [[kv_namespaces]] pour permettre deploy sans KV
-            sed -i '/\[\[kv_namespaces\]\]/,/REPLACE_WITH_KV_ID/d' wrangler.toml
-          fi
-          grep -A2 "kv_namespaces\|APEX_CHAT_CACHE" wrangler.toml | head -5 || true
+          # v1.1.131 : KV ID hardcoded dans wrangler.toml (Kevin créé manuellement).
+          echo "::notice::KV ID hardcoded:"
+          grep -A1 "APEX_CHAT_CACHE" wrangler.toml | head -3
 
       - name: Create Cloudflare Queues (idempotent)
         run: |

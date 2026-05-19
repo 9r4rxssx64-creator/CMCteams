@@ -45,7 +45,7 @@ bucket_name = "apex-chat-media"
 # KV namespace cache LRU
 [[kv_namespaces]]
 binding = "APEX_CHAT_CACHE"
-id = "REPLACE_WITH_KV_ID"
+id = "5d46f8fa642a4a5399d90fd00a379ab1"  # APEX_CHAT_CACHE (Kevin créé v1.1.131)
 
 # Queues producers
 [[queues.producers]]
