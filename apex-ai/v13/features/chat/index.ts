@@ -138,8 +138,10 @@ export function openImageLightbox(rootEl: HTMLElement, img: AlbumImage): HTMLEle
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-label', 'Visualisation image');
+  /* v13.4.232 finding P1.10 — glassmorphism lightbox au lieu de noir 95% opaque */
+  modal.classList.add('ax-modal-glass');
   modal.style.cssText =
-    'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.95);' +
+    'position:fixed;inset:0;z-index:99999;' +
     'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
     'padding:env(safe-area-inset-top,20px) 16px env(safe-area-inset-bottom,20px) 16px';
 
@@ -1573,7 +1575,7 @@ export function renderToolPills(msg: DisplayMessage): string {
   const allDone = msg.toolPills.every((p) => p.status === 'done');
   const pillStyle =
     'padding:4px 8px;background:rgba(201,162,39,0.1);border-radius:8px;' +
-    'font-size:11px;color:var(--ax-gold);display:inline-block;margin:8px 8px 8px 0;';
+    'font-size:11px;color:var(--ax-gold);display:inline-block;margin:4px 4px 4px 0;';
   /* Si tout terminé → résumé compact "▶ N opérations" repliable */
   if (allDone) {
     const count = msg.toolBatchCount ?? msg.toolPills.length;
@@ -1783,7 +1785,7 @@ export function render(rootEl: HTMLElement): void {
         margin: 0;
         font-size: 12px;
         font-weight: 700;
-        background: linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);
+        background: linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -1813,30 +1815,61 @@ export function render(rootEl: HTMLElement): void {
       }
       .ax-chat-greeting {
         text-align: center;
-        padding: 8px 16px;
-        font-size: 12px;
-        font-weight: 500;
-        color: rgba(255,255,255,0.78);
+        padding: 18px 16px 10px;
+        font-size: 18px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.95);
         font-family: Georgia, serif;
-        line-height: 1.25;
-        animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards;
+        line-height: 1.35;
+        animation: ax-fade-up 360ms cubic-bezier(0.34,1.56,0.64,1) backwards;
       }
       .ax-chat-greeting::after {
         content: '';
         display: block;
-        width: 24px;
-        height: 1px;
-        background: linear-gradient(90deg,transparent,#e8b830,transparent);
-        margin: 8px auto 0;
-        opacity: 0.5;
+        width: 36px;
+        height: 2px;
+        background: linear-gradient(90deg,transparent,var(--ax-gold),transparent);
+        margin: 10px auto 0;
+        opacity: 0.8;
       }
+      .ax-chat-suggest {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        padding: 4px 16px 16px;
+        animation: ax-fade-up 480ms cubic-bezier(0.34,1.56,0.64,1) 80ms backwards;
+      }
+      .ax-chat-suggest button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 14px;
+        min-height: 44px;
+        background: rgba(20,20,35,0.7);
+        backdrop-filter: blur(12px) saturate(140%);
+        -webkit-backdrop-filter: blur(12px) saturate(140%);
+        border: 1px solid rgba(232,184,48,0.3);
+        border-radius: 9999px;
+        color: rgba(255,255,255,0.92);
+        font-size: 13px;
+        cursor: pointer;
+        transition: transform 180ms cubic-bezier(0.34,1.56,0.64,1), background 180ms ease, box-shadow 180ms ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ax-chat-suggest button:hover {
+        transform: translateY(-2px);
+        background: rgba(232,184,48,0.18);
+        box-shadow: 0 6px 18px rgba(201,162,39,0.25);
+      }
+      .ax-chat-suggest button:active { transform: scale(0.96); }
       .ax-info-card {
         background: linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(232,184,48,0.18);
         border-radius: 12px;
-        padding: 16px;
+        padding: 12px 14px;
         animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards;
       }
       .ax-info-card h3 {
@@ -1904,9 +1937,25 @@ export function render(rootEl: HTMLElement): void {
       </header>
       <div style="position:relative;flex:1;display:flex;flex-direction:column;min-height:0">
       <div class="ax-chat-scroll" role="log" aria-live="polite" aria-atomic="false">
-        ${conversation.length === 0 ? `<div class="ax-chat-greeting">${escapeHtml(greeting)}</div>` : ''}
-        ${/* v13.4.227 (UX audit Kevin) : retiré card "Pas de clé API" doublon —
-            bouton 🔑 Clé dans nav bottom suffit (id ax-paste-key-nav). */ ''}
+        ${
+          conversation.length === 0
+            ? `<div class="ax-chat-greeting">${escapeHtml(greeting)}</div>
+               <div class="ax-chat-suggest" role="group" aria-label="Suggestions de démarrage">
+                 <button type="button" data-suggest="Résume ma journée et propose les 3 tâches prioritaires">📋 Mes priorités du jour</button>
+                 <button type="button" data-suggest="Aide-moi à rédiger un message professionnel">✍️ Rédiger un message</button>
+                 <button type="button" data-suggest="Analyse cette photo">📷 Analyser une photo</button>
+               </div>`
+            : ''
+        }
+        ${!hasKey ? `
+          <div class="ax-info-card ax-modernized-card" style="margin:4px 8px;padding:8px 10px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-size:12px;color:var(--ax-gold);font-weight:600">🔑 Pas de clé API</span>
+              <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;padding:5px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;min-height:32px;-webkit-tap-highlight-color:transparent">📋 Coller</button>
+              <span style="font-size:11px;color:rgba(255,255,255,0.5)">Anthropic / OpenAI / Groq / Gemini</span>
+            </div>
+          </div>
+        ` : ''}
         ${conversation.length === 0 && hasKey ? `
           <div class="ax-chat-chips" role="group" aria-label="Suggestions rapides">
             <button type="button" class="ax-chat-chip" data-chip-text="Aide-moi à mixer une musique">🎚 Mixe une musique</button>
@@ -1930,13 +1979,11 @@ export function render(rootEl: HTMLElement): void {
           autocomplete="off"
           style="flex:1 1 100%;min-width:0;max-width:100%"
         ></textarea>
-        <div class="ax-input-actions" style="display:flex;gap:2px;flex:0 0 auto">
-          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)" style="min-width:36px;width:36px">🎙</button>
-          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="min-width:36px;width:36px">👂</button>
-          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive" style="min-width:36px;width:36px">📎</button>
-          <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none;min-width:36px;width:36px">📷</button>
-        </div>
-        <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer" style="flex:0 0 52px;width:52px;min-width:52px;height:44px;padding:0">↑</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)" style="min-width:36px;width:36px;flex:0 0 36px">🎙</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="min-width:36px;width:36px;flex:0 0 36px">👂</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive" style="min-width:36px;width:36px;flex:0 0 36px">📎</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none;min-width:36px;width:36px;flex:0 0 36px">📷</button>
+        <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer" style="flex:1 1 auto;min-width:44px">↑</button>
         <input type="file" id="ax-chat-file-input" aria-label="Joindre fichiers au message" multiple
           accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
           style="display:none">
@@ -1947,15 +1994,15 @@ export function render(rootEl: HTMLElement): void {
            Boutons en grille auto-fit pour viewport étroit. -->
       <nav class="ax-chat-nav" style="display:flex;flex-wrap:wrap;gap:3px;padding:4px;border-top:1px solid var(--ax-border);background:var(--ax-bg-glass);min-width:0;max-width:100%">
         <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">💬 Chat</button>
-        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700">🔐 Coffre</button>
         <button class="ax-btn ax-btn-sm" data-nav-route="dashboard" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">📊 Dash</button>
         ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">⚙️ Admin</button>' : ''}
+        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;font-weight:700">🔐 Coffre</button>
         <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔧 Régl.</button>
         <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔑 Clé</button>
-        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:#ff6666">🚪 Déco</button>
+        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:var(--ax-error)">🚪 Déco</button>
       </nav>
       <footer style="text-align:center;padding:0 6px calc(env(safe-area-inset-bottom,0px));font-size:8px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.2px;opacity:0.25;line-height:1;height:auto" title="${APP_VER} · DK">
-        <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#22c55e;vertical-align:middle"></span>
+        <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--ax-green);vertical-align:middle"></span>
       </footer>
     </div>
   `);
@@ -1976,6 +2023,22 @@ export function render(rootEl: HTMLElement): void {
       ta.style.height = 'auto';
       ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`;
       /* Place caret à la fin pour les chips type "/web " (espace final). */
+      const len = text.length;
+      try { ta.setSelectionRange(len, len); } catch { /* best-effort */ }
+      haptic.tap();
+    });
+  });
+
+  /* v13.4.232 finding P1.4 — empty state suggestion chips (greeting initial) */
+  rootEl.querySelectorAll<HTMLButtonElement>('.ax-chat-suggest button[data-suggest]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+      if (!ta) return;
+      const text = btn.dataset['suggest'] ?? '';
+      ta.value = text;
+      ta.focus();
+      ta.style.height = 'auto';
+      ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`;
       const len = text.length;
       try { ta.setSelectionRange(len, len); } catch { /* best-effort */ }
       haptic.tap();
@@ -2493,7 +2556,7 @@ export function render(rootEl: HTMLElement): void {
         };
         recognition.start();
         recognitionActive = true;
-        if (micBtn) micBtn.style.background = 'linear-gradient(135deg,#ff4444,#cc2222)';
+        if (micBtn) micBtn.style.background = 'linear-gradient(135deg,var(--ax-error),#cc2222)';
         haptic.medium();
         toast.success('🎙 Parle maintenant — re-tap 🎙 pour arrêter');
       } catch (err: unknown) {
@@ -2553,7 +2616,7 @@ export function render(rootEl: HTMLElement): void {
         });
         if (r.ok && wakeBtn) {
           /* Indicateur visuel : icon 👂 verte pulsante. Pas de texte placeholder. */
-          wakeBtn.style.background = 'linear-gradient(135deg,#22cc77,#1a9a5a)';
+          wakeBtn.style.background = 'linear-gradient(135deg,var(--ax-green),#1a9a5a)';
           wakeBtn.style.animation = 'ax-wake-pulse 1.8s ease-in-out infinite';
           toast.success('👂 Écoute passive activée — dis "Dis Apex" pour parler', { duration: 4000 });
         } else {
@@ -2929,7 +2992,7 @@ export function render(rootEl: HTMLElement): void {
           ${isAdminUser ? '<button class="ax-btn ax-btn-primary" data-menu-nav="sentinels" style="width:100%;text-align:left;padding:14px">🛡 Sentinelles</button>' : ''}
           <button class="ax-btn ax-btn-primary" data-menu-nav="settings" style="width:100%;text-align:left;padding:14px">⚙️ Réglages</button>
           <button class="ax-btn" data-menu-action="paste-key" style="width:100%;text-align:left;padding:14px">🔑 Coller une clé API</button>
-          <button class="ax-btn" data-menu-action="logout" style="width:100%;text-align:left;padding:14px;color:#ff6666">🚪 Déconnexion</button>
+          <button class="ax-btn" data-menu-action="logout" style="width:100%;text-align:left;padding:14px;color:var(--ax-error)">🚪 Déconnexion</button>
         </div>
       `,
       actions: [
@@ -3005,14 +3068,14 @@ export function render(rootEl: HTMLElement): void {
               .map(
                 (r) => `
               <li style="margin:4px 0">
-                <span style="color:${r.priority === 'high' ? '#ff6666' : r.priority === 'medium' ? '#ffaa00' : '#a0a4c0'}">●</span>
+                <span style="color:${r.priority === 'high' ? 'var(--ax-error)' : r.priority === 'medium' ? 'var(--ax-warning)' : 'var(--ax-text-dim)'}">●</span>
                 ${escapeHtml(r.action)}
                 ${r.url ? ` <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" style="color:var(--ax-gold-deep)">→</a>` : ''}
               </li>
             `,
               )
               .join('')
-          : '<li style="color:#22cc77">✅ Tout est configuré au mieux</li>';
+          : '<li style="color:var(--ax-green)">✅ Tout est configuré au mieux</li>';
         const sheet = modalSheet.open({
           title: '⚙️ Paramètres',
           content: `
@@ -3021,14 +3084,14 @@ export function render(rootEl: HTMLElement): void {
                 <h4 style="margin:0 0 6px;color:var(--ax-gold-deep)">Routing IA</h4>
                 <label style="display:block;margin:6px 0">
                   Mode :
-                  <select id="ax-settings-mode" style="margin-left:8px;padding:6px;background:#1a1a2e;color:#fff;border:1px solid #c9a227;border-radius:4px">
+                  <select id="ax-settings-mode" style="margin-left:8px;padding:6px;background:var(--ax-bg-flat);color:#fff;border:1px solid var(--ax-gold-deep);border-radius:4px">
                     <option value="auto" ${status.mode === 'auto' ? 'selected' : ''}>Auto (intelligent)</option>
                     <option value="economy" ${status.mode === 'economy' ? 'selected' : ''}>Économie (gratuit d'abord)</option>
                     <option value="premium" ${status.mode === 'premium' ? 'selected' : ''}>Premium (Anthropic toujours)</option>
                   </select>
                 </label>
-                <p style="margin:6px 0;color:#a0a4c0;font-size:12px">
-                  Anthropic : <span style="color:${status.anthropic_health === 'ok' ? '#22cc77' : status.anthropic_health === 'warn' ? '#ffaa00' : '#ff6666'}">${status.anthropic_health}</span>
+                <p style="margin:6px 0;color:var(--ax-text-dim);font-size:12px">
+                  Anthropic : <span style="color:${status.anthropic_health === 'ok' ? 'var(--ax-green)' : status.anthropic_health === 'warn' ? 'var(--ax-warning)' : 'var(--ax-error)'}">${status.anthropic_health}</span>
                   · Gratuits dispo : ${status.free_providers_available.length}
                   · Payants dispo : ${status.paid_providers_available.length}
                 </p>
@@ -3082,12 +3145,12 @@ export function render(rootEl: HTMLElement): void {
             Apex détecte automatiquement le service (Anthropic, OpenAI, Stripe, GitHub, etc.) et la range au bon endroit.
           </p>
           <button type="button" id="ax-paste-clipboard-btn"
-            style="width:100%;padding:12px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent">
+            style="width:100%;padding:12px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent">
             📋 Coller automatiquement depuis presse-papiers
           </button>
           <textarea id="ax-paste-input" rows="4"
             placeholder="Ou colle ici manuellement (long press → Coller)"
-            style="width:100%;padding:14px;background:#1a1a2e;border:2px solid #c9a227;border-radius:10px;color:#ffffff !important;-webkit-text-fill-color:#ffffff;font-family:'Courier New',monospace;font-size:14px;line-height:1.5;box-sizing:border-box;resize:vertical;min-height:90px"
+            style="width:100%;padding:14px;background:var(--ax-bg-flat);border:2px solid var(--ax-gold-deep);border-radius:10px;color:#ffffff !important;-webkit-text-fill-color:#ffffff;font-family:'Courier New',monospace;font-size:14px;line-height:1.5;box-sizing:border-box;resize:vertical;min-height:90px"
             autofocus spellcheck="false" autocomplete="off"
             autocapitalize="off" autocorrect="off"
             inputmode="text"></textarea>
@@ -3165,12 +3228,12 @@ export function render(rootEl: HTMLElement): void {
                 detectionEl.textContent = `✅ Détecté : ${detected.name} (${trimmed.length} chars)`;
                 preview.style.display = 'block';
                 preview.style.background = 'rgba(34,204,119,0.1)';
-                preview.style.color = '#22cc77';
+                preview.style.color = 'var(--ax-green)';
               } else {
                 detectionEl.textContent = `⚠️ Format inconnu (${trimmed.length} chars, début "${trimmed.slice(0, 15)}...")`;
                 preview.style.display = 'block';
                 preview.style.background = 'rgba(255,170,0,0.1)';
-                preview.style.color = '#ffaa00';
+                preview.style.color = 'var(--ax-warning)';
               }
             }
             toast.success('Clé collée — vérifie + tap "Coller + ranger"');
@@ -3193,18 +3256,18 @@ export function render(rootEl: HTMLElement): void {
             detectionEl.textContent = `✅ Détecté : ${detected.name} (${value.length} chars)`;
             preview.style.display = 'block';
             preview.style.background = 'rgba(34,204,119,0.1)';
-            preview.style.color = '#22cc77';
+            preview.style.color = 'var(--ax-green)';
           } else {
             detectionEl.textContent = `⚠️ Format inconnu (${value.length} chars)`;
             preview.style.display = 'block';
             preview.style.background = 'rgba(255,170,0,0.1)';
-            preview.style.color = '#ffaa00';
+            preview.style.color = 'var(--ax-warning)';
           }
         });
       }, 100);
     });
   };
-  /* v13.4.227 : seul #ax-paste-key-nav reste (card 🔑 Pas de clé API retirée) */
+  attachPasteKey('#ax-paste-key');
   attachPasteKey('#ax-paste-key-nav');
 
   /* Sprint 8 v13.0.69 P0 BUG FIX (Kevin "boutons header/footer marchent pas") :
