@@ -80,25 +80,42 @@ jobs:
           echo "id=$ACC" >> $GITHUB_OUTPUT
           echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> $GITHUB_ENV
 
-      - name: Create D1 database (idempotent)
+      - name: Create D1 database (idempotent, via API)
         id: d1
         working-directory: messaging-app/workers
         run: |
-          set +e
-          # Tente de lister les D1 existantes
-          EXISTING=$(wrangler d1 list 2>&1 | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}[[:space:]]+apex-chat-main' | awk '{print $1}' | head -1)
-          if [ -n "$EXISTING" ]; then
-            D1_ID="$EXISTING"
-            echo "::notice::D1 existe déjà: $D1_ID"
-          else
-            CREATE_OUT=$(wrangler d1 create apex-chat-main 2>&1)
-            echo "$CREATE_OUT"
-            D1_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -1)
+          set -e
+          # v1.1.127 : API CF directe (robuste vs changements format wrangler)
+          LIST=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          D1_ID=$(echo "$LIST" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    for db in d.get('result', []):
+        if db.get('name') == 'apex-chat-main':
+            print(db['uuid']); break
+except Exception:
+    pass
+" 2>/dev/null)
+          if [ -z "$D1_ID" ]; then
+            CREATE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"name":"apex-chat-main"}')
+            D1_ID=$(echo "$CREATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['result']['uuid'])" 2>/dev/null)
             echo "::notice::D1 créée: $D1_ID"
+          else
+            echo "::notice::D1 existe déjà: $D1_ID"
+          fi
+          if [ -z "$D1_ID" ]; then
+            echo "::error::Impossible d'obtenir D1_ID. Réponse CF :"
+            echo "$LIST"
+            exit 1
           fi
           echo "id=$D1_ID" >> $GITHUB_OUTPUT
-          # Inject dans wrangler.toml
-          sed -i "s/database_id = \"REPLACE_WITH_D1_ID\"/database_id = \"$D1_ID\"/" wrangler.toml || true
+          sed -i "s/database_id = \"REPLACE_WITH_D1_ID\"/database_id = \"$D1_ID\"/" wrangler.toml
+          grep "database_id" wrangler.toml | head -1
 
       - name: Apply D1 migrations
         if: github.event.inputs.apply_migrations != 'no'
@@ -112,23 +129,43 @@ jobs:
           wrangler r2 bucket create apex-chat-media || echo "(bucket existe déjà)"
           echo "::notice::R2 bucket apex-chat-media OK"
 
-      - name: Create KV namespace (idempotent)
+      - name: Create KV namespace (idempotent, via API)
         id: kv
         working-directory: messaging-app/workers
         run: |
-          set +e
-          EXISTING=$(wrangler kv namespace list 2>&1 | grep -B1 'APEX_CHAT_CACHE' | grep -oE '"id":[[:space:]]*"[^"]+"' | head -1 | cut -d'"' -f4)
-          if [ -n "$EXISTING" ]; then
-            KV_ID="$EXISTING"
-            echo "::notice::KV existe déjà: $KV_ID"
-          else
-            CREATE_OUT=$(wrangler kv namespace create APEX_CHAT_CACHE 2>&1)
-            echo "$CREATE_OUT"
-            KV_ID=$(echo "$CREATE_OUT" | grep -oE 'id = "[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}' | head -1)
+          set -e
+          # v1.1.127 fix : utilise API CF directe au lieu de parser sortie wrangler
+          # (format de sortie change entre versions wrangler, fragile)
+          LIST=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          KV_ID=$(echo "$LIST" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    for ns in d.get('result', []):
+        if ns.get('title') == 'apex-chat-api-APEX_CHAT_CACHE' or ns.get('title') == 'APEX_CHAT_CACHE':
+            print(ns['id']); break
+except Exception as e:
+    pass
+" 2>/dev/null)
+          if [ -z "$KV_ID" ]; then
+            CREATE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"title":"APEX_CHAT_CACHE"}')
+            KV_ID=$(echo "$CREATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['result']['id'])" 2>/dev/null)
             echo "::notice::KV créé: $KV_ID"
+          else
+            echo "::notice::KV existe déjà: $KV_ID"
+          fi
+          if [ -z "$KV_ID" ]; then
+            echo "::error::Impossible d'obtenir KV_ID. Réponse CF :"
+            echo "$LIST"
+            exit 1
           fi
           echo "id=$KV_ID" >> $GITHUB_OUTPUT
-          sed -i "s/id = \"REPLACE_WITH_KV_ID\"/id = \"$KV_ID\"/" wrangler.toml || true
+          sed -i "s/id = \"REPLACE_WITH_KV_ID\"/id = \"$KV_ID\"/" wrangler.toml
+          grep -A1 "APEX_CHAT_CACHE" wrangler.toml | head -3
 
       - name: Create Cloudflare Queues (idempotent)
         run: |
