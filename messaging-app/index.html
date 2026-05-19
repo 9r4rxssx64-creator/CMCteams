@@ -324,7 +324,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.120';
+const __APEX_CHAT_VERSION__ = 'v1.1.121';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +455,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.120</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.121</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.120</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.121</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3529,7 +3529,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.120',
+    version: 'v1.1.121',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -6768,30 +6768,82 @@ K._sharePayQr = async function(recipient, amount, url){
 K.openProfile = function(){
   if(!K.user){ return toast('Connecte-toi d\'abord', 'err'); }
   const u = K.user;
+  // v1.1.121 : fiche profil étendue (prénom + nom + tel obligatoires, reste optionnel)
   K._showModal('👤 Mon profil', `
     <div style="text-align:center;margin-bottom:14px">
-      <div class="avatar avatar-lg" style="margin:0 auto 8px;width:64px;height:64px;font-size:1.8em">${esc((u.pseudo||'?')[0].toUpperCase())}</div>
-      <div style="color:var(--ax-text-3);font-size:.85em">ID : ${esc(u.id)}</div>
+      <div class="avatar avatar-lg" style="margin:0 auto 8px;width:64px;height:64px;font-size:1.8em">${esc((u.pseudo||u.first_name||'?')[0].toUpperCase())}</div>
+      <div style="color:var(--ax-text-3);font-size:.75em">ID : ${esc(u.id)}</div>
     </div>
-    <label class="label">Pseudo affiché</label>
-    <input id="pf-pseudo" class="input" value="${esc(u.pseudo||'')}" maxlength="40" autocapitalize="words">
-    <label class="label" style="margin-top:14px">Email (optionnel, pour notifs)</label>
-    <input id="pf-email" class="input" type="email" value="${esc(u.email||'')}" placeholder="ex@email.com" autocapitalize="none">
-    <label class="label" style="margin-top:14px">Téléphone WhatsApp (optionnel)</label>
-    <input id="pf-phone" class="input" type="tel" value="${esc(u.phone||'')}" placeholder="+33612345678" inputmode="tel">
+    <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 10px">🔒 Champs <strong>requis</strong> pour les contacts · ✨ optionnels améliorent ton profil</p>
+
+    <label class="label">🔒 Prénom</label>
+    <input id="pf-first" class="input" value="${esc(u.first_name||'')}" maxlength="40" autocapitalize="words" placeholder="Marc">
+    <label class="label" style="margin-top:10px">🔒 Nom</label>
+    <input id="pf-last" class="input" value="${esc(u.last_name||'')}" maxlength="40" autocapitalize="words" placeholder="Dupont">
+    <label class="label" style="margin-top:10px">🔒 Téléphone</label>
+    <input id="pf-phone" class="input" type="tel" value="${esc(u.phone||'')}" placeholder="+33 6 12 34 56 78" inputmode="tel">
+
+    <details style="margin-top:14px;background:var(--ax-bg-2);border-radius:10px;padding:10px">
+      <summary style="cursor:pointer;color:var(--ax-gold);font-size:.9em">✨ Informations optionnelles</summary>
+      <label class="label" style="margin-top:10px">Pseudo affiché</label>
+      <input id="pf-pseudo" class="input" value="${esc(u.pseudo||'')}" maxlength="40" autocapitalize="words" placeholder="@marc">
+      <label class="label" style="margin-top:10px">Email</label>
+      <input id="pf-email" class="input" type="email" value="${esc(u.email||'')}" placeholder="ex@email.com" autocapitalize="none">
+      <label class="label" style="margin-top:10px">Date de naissance</label>
+      <input id="pf-birth" class="input" type="date" value="${esc(u.birth_date||'')}">
+      <label class="label" style="margin-top:10px">Adresse domicile</label>
+      <input id="pf-address" class="input" value="${esc(u.address||'')}" placeholder="12 rue Exemple, 75001 Paris" autocapitalize="words">
+      <label class="label" style="margin-top:10px">Ville</label>
+      <input id="pf-city" class="input" value="${esc(u.city||'')}" placeholder="Paris" autocapitalize="words">
+      <label class="label" style="margin-top:10px">Pays</label>
+      <input id="pf-country" class="input" value="${esc(u.country||'')}" placeholder="France" autocapitalize="words">
+      <label class="label" style="margin-top:10px">Profession</label>
+      <input id="pf-job" class="input" value="${esc(u.job||'')}" placeholder="Développeur" autocapitalize="words">
+      <label class="label" style="margin-top:10px">Bio / présentation</label>
+      <textarea id="pf-bio" class="input" rows="3" maxlength="300" placeholder="Quelques mots sur toi (max 300 car)">${esc(u.bio||'')}</textarea>
+    </details>
+
     <button class="btn btn-block" onclick="K._saveProfile()" style="margin-top:14px">💾 Sauvegarder</button>
   `);
 };
-K._saveProfile = function(){
-  const pseudo = ($('#pf-pseudo')?.value || '').trim();
-  const email = ($('#pf-email')?.value || '').trim();
+K._saveProfile = async function(){
+  const first_name = ($('#pf-first')?.value || '').trim();
+  const last_name = ($('#pf-last')?.value || '').trim();
   const phone = ($('#pf-phone')?.value || '').trim();
-  if(!pseudo || pseudo.length < 2){ return toast('Pseudo trop court', 'err'); }
-  K.user = { ...K.user, pseudo, email, phone };
+  const pseudo = ($('#pf-pseudo')?.value || '').trim() || (first_name + ' ' + last_name).trim();
+  const email = ($('#pf-email')?.value || '').trim();
+  const birth_date = ($('#pf-birth')?.value || '').trim();
+  const address = ($('#pf-address')?.value || '').trim();
+  const city = ($('#pf-city')?.value || '').trim();
+  const country = ($('#pf-country')?.value || '').trim();
+  const job = ($('#pf-job')?.value || '').trim();
+  const bio = ($('#pf-bio')?.value || '').trim();
+  // Validation : 3 champs obligatoires
+  if(!first_name || first_name.length < 2) return toast('Prénom requis (min 2 car)', 'err');
+  if(!last_name || last_name.length < 2) return toast('Nom requis (min 2 car)', 'err');
+  if(!phone || !/^\+?\d[\d\s.-]{7,18}$/.test(phone)) return toast('Téléphone invalide', 'err');
+  const real_name = first_name + ' ' + last_name;
+  const display_name = real_name;
+  K.user = { ...K.user, first_name, last_name, real_name, display_name, pseudo, email, phone, birth_date, address, city, country, job, bio };
   ls('user', K.user);
-  toast('Profil sauvegardé', 'ok');
+  toast('✅ Profil sauvegardé', 'ok');
   K._closeModal();
-  if(K.view === 'settings') K.sv('settings'); // re-render
+  // Sync vers Worker (best-effort, ignore offline)
+  try{
+    if(K.token && typeof API_BASE !== 'undefined'){
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 6000);
+      try {
+        await fetch(API_BASE + '/api/users/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+          body: JSON.stringify({ display_name, bio, real_name, phone, email, address, city, country, job, birth_date }),
+          signal: ctrl.signal,
+        });
+      } finally { clearTimeout(tid); }
+    }
+  }catch(_){}
+  if(K.view === 'settings') K.sv('settings');
 };
 
 // ============================================================================
@@ -8171,6 +8223,7 @@ K._sendVoiceMessage = async function(){
 K._fetchContacts = async function(silent){
   try{
     let users = [];
+    let diagInfo = '';
     if(K.user?.is_admin && K.token){
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 8000);
@@ -8180,10 +8233,15 @@ K._fetchContacts = async function(silent){
           headers: { 'Authorization': 'Bearer ' + K.token },
           signal: ctrl.signal,
         });
+      } catch(fetchErr) {
+        // v1.1.121 : diag détaillé au lieu de "offline" générique
+        diagInfo = 'fetch fail: ' + (fetchErr.name === 'AbortError' ? 'timeout 8s' : (fetchErr.message || fetchErr.name || 'network'));
       } finally { clearTimeout(tid); }
       if(r && r.ok){
-        const data = await r.json();
+        const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
+      } else if(r){
+        diagInfo = 'Worker HTTP ' + r.status + (r.statusText ? ' ' + r.statusText : '');
       }
     }
     // Complément : peers extraits des convs existantes
@@ -8201,13 +8259,61 @@ K._fetchContacts = async function(silent){
     }
     K.contacts = users;
     ls('contacts', users);
-    if(!silent) toast('👥 ' + users.length + ' contact' + (users.length>1?'s':'') + ' chargés', 'ok');
+    if(!silent){
+      if(users.length > 0){
+        toast('👥 ' + users.length + ' contact' + (users.length>1?'s':'') + ' chargés', 'ok');
+      } else if(diagInfo){
+        toast('⚠️ Serveur : ' + diagInfo + ' — utilise peers convs uniquement', 'warn', 6000);
+      } else {
+        toast('📭 0 contact (aucune conv encore)', 'info');
+      }
+    }
     if(K.view === 'contacts' && typeof K.render === 'function') K.render();
     return users;
   }catch(e){
-    if(!silent) toast('Liste contacts indisponible (offline ?)', 'warn');
+    if(!silent) toast('❌ Erreur contacts : ' + (e?.message || e?.name || 'inconnu'), 'warn', 6000);
     return K.contacts || [];
   }
+};
+
+// v1.1.121 : Import contacts iPhone via .vcf (file input)
+K._importContactsFromVcf = async function(files){
+  if(!files || files.length === 0) return;
+  let imported = [];
+  for(const f of files){
+    try{
+      const text = await f.text();
+      const cards = K._parseVcf ? K._parseVcf(text) : [];
+      imported = imported.concat(cards);
+    }catch(e){ console.warn('vcf parse fail', e); }
+  }
+  if(imported.length === 0){
+    toast('Aucun contact valide dans le .vcf', 'warn');
+    return;
+  }
+  // Merge dans K.contacts (avatar local seulement, pas de sync Worker)
+  const existing = K.contacts || lg('contacts', []);
+  const existingPhones = new Set(existing.map(c => (c.phone || '').replace(/\D/g, '')));
+  let added = 0;
+  for(const c of imported){
+    const phone = (c.phone || '').replace(/\D/g, '');
+    if(!phone || existingPhones.has(phone)) continue;
+    existing.push({
+      id: 'local_' + phone,
+      pseudo: c.name,
+      display_name: c.name,
+      real_name: c.name,
+      phone: c.phone,
+      _local_only: true,
+      last_seen: 0,
+    });
+    existingPhones.add(phone);
+    added++;
+  }
+  K.contacts = existing;
+  ls('contacts', existing);
+  toast('📲 ' + added + ' contact' + (added>1?'s':'') + ' importé' + (added>1?'s':'') + (added < imported.length ? ' (' + (imported.length - added) + ' déjà présents)' : ''), 'ok', 4000);
+  if(K.view === 'contacts' && typeof K.render === 'function') K.render();
 };
 
 K._startConvWithUser = function(userId, displayName){
@@ -8234,14 +8340,23 @@ K._startConvWithUser = function(userId, displayName){
 
 function renderContacts(app){
   const contacts = K.contacts || lg('contacts', []);
+  // v1.1.121 : bouton import vCard iPhone Contacts toujours visible
+  const importBlock = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+      <button class="btn btn-out btn-sm" onclick="K._fetchContacts()">🔄 Rafraîchir</button>
+      <button class="btn btn-out btn-sm" onclick="document.getElementById('contacts-vcf-input').click()">📲 Importer iPhone</button>
+    </div>
+    <input id="contacts-vcf-input" type="file" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none" onchange="K._importContactsFromVcf(this.files)">
+  `;
   if(contacts.length === 0){
     app.innerHTML = `
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Contacts</h2>
-      <button class="btn btn-out btn-block btn-sm" style="margin-bottom:14px" onclick="K._fetchContacts()">🔄 Rafraîchir la liste</button>
+      ${importBlock}
       <div class="card" style="text-align:center;padding:24px 14px">
         <div style="font-size:2.5em;margin-bottom:10px">👥</div>
-        <p style="color:var(--ax-text-2);margin:0 0 14px">Aucun contact pour l'instant. ${K.user?.is_admin ? 'Tape "Rafraîchir" pour voir tous les users actifs.' : 'Invite tes amis ou attends une connexion.'}</p>
-        <button class="btn" onclick="K.openInvite()">📤 Inviter des amis</button>
+        <p style="color:var(--ax-text-2);margin:0 0 14px">Aucun contact pour l'instant.</p>
+        <p style="color:var(--ax-text-3);font-size:.85em;margin:0 0 14px">📲 <strong>Astuce iPhone</strong> : ouvre l'app Contacts → sélectionne plusieurs → Partager → choisis Apex Chat ou Mail → ouvre le .vcf → bouton "Importer iPhone" ci-dessus.</p>
+        <button class="btn" onclick="K.openInvite()">📤 Inviter des amis (SMS)</button>
       </div>
     `;
     if(!K._contactsFetchedOnce){
@@ -8255,8 +8370,12 @@ function renderContacts(app){
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
       <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0">Contacts (${contacts.length})</h2>
-      <button class="btn btn-sm btn-out" onclick="K._fetchContacts()" title="Rafraîchir" aria-label="Rafraîchir">🔄</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-out" onclick="document.getElementById('contacts-vcf-input2').click()" title="Importer iPhone (.vcf)" aria-label="Importer">📲</button>
+        <button class="btn btn-sm btn-out" onclick="K._fetchContacts()" title="Rafraîchir" aria-label="Rafraîchir">🔄</button>
+      </div>
     </div>
+    <input id="contacts-vcf-input2" type="file" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none" onchange="K._importContactsFromVcf(this.files)">
     <div style="display:grid;gap:6px">
       ${sorted.map(c => {
         const isOnline = c.last_seen && (now - c.last_seen) < 5 * 60 * 1000;
