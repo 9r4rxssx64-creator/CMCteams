@@ -173,56 +173,24 @@ function renderPendingTab(): string {
 }
 
 function renderHealthTab(): string {
+  /* v13.4.232 (subagent UX P0.1 + P0.11) — Migration vers .ax-btn-health classes :
+   * élimine 15+ hex hardcoded inline, padding standardisé 8/16px, touch 44px garanti. */
   return `
     <div class="ax-admin-section" data-scrollable="true">
       <h2>État de santé</h2>
       <p class="ax-muted">Codes vault · Liens dashboards · Sentinelles 24/7 · Connecteurs MCP · Vault drift. Tout testé en autonomie.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
-        <button class="ax-btn ax-btn-primary" data-nav-route="admin-health-dashboard"
-                style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          📊 Voir dashboard santé live
-        </button>
-        <button class="ax-btn" data-nav-route="admin-credentials-status"
-                style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🔑 Credentials
-        </button>
-        <button class="ax-btn" data-nav-route="admin-all-secrets"
-                style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🔐 Mes Secrets
-        </button>
-        <button class="ax-btn" data-nav-route="admin-yury-plugins"
-                style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🚀 Plugins Yury
-        </button>
-        <button class="ax-btn" data-nav-route="admin-shubham-skills"
-                style="background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);padding:12px 18px;border-radius:24px;font-weight:600;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🎬 Shubham Skills
-        </button>
-        <button class="ax-btn" data-nav-route="admin-autonomous"
-                style="background:linear-gradient(135deg,rgba(60,200,80,0.18),rgba(232,184,48,0.12));color:#3c8;border:1px solid rgba(60,200,80,0.3);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🤖 Mode Autonome
-        </button>
-        <button class="ax-btn" data-nav-route="skills-2026"
-                style="background:linear-gradient(135deg,rgba(59,130,246,0.18),rgba(168,85,247,0.12));color:#8bb4ff;border:1px solid rgba(59,130,246,0.3);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🎯 Skills 2026
-        </button>
-        <button class="ax-btn" data-nav-route="mcp-servers"
-                style="background:linear-gradient(135deg,rgba(168,85,247,0.18),rgba(217,70,239,0.12));color:#c8a6ff;border:1px solid rgba(168,85,247,0.3);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🔌 MCP Servers
-        </button>
-        <button class="ax-btn" data-nav-route="runtime-tests"
-                style="background:linear-gradient(135deg,rgba(16,185,129,0.22),rgba(34,197,94,0.14));color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          🧪 Tester TOUT (live)
-        </button>
-        <button class="ax-btn" data-nav-route="apex-audits-live"
-                style="background:linear-gradient(135deg,rgba(106,138,255,0.22),rgba(180,90,200,0.14));color:#8bb4ff;border:1px solid rgba(106,138,255,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent">
-          📊 Audits Apex (historique)
-        </button>
-        <button class="ax-btn" data-nav-route="audit-log-viewer"
-                style="background:linear-gradient(135deg,rgba(232,184,48,0.22),rgba(201,162,39,0.14));color:#e8b830;border:1px solid rgba(232,184,48,0.4);padding:12px 18px;border-radius:24px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent"
-                title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">
-          🔒 Audit Log Viewer
-        </button>
+        <button class="ax-btn-health ax-btn-health-primary" data-nav-route="admin-health-dashboard">📊 Voir dashboard santé live</button>
+        <button class="ax-btn-health" data-nav-route="admin-credentials-status">🔑 Credentials</button>
+        <button class="ax-btn-health" data-nav-route="admin-all-secrets">🔐 Mes Secrets</button>
+        <button class="ax-btn-health" data-nav-route="admin-yury-plugins">🚀 Plugins Yury</button>
+        <button class="ax-btn-health" data-nav-route="admin-shubham-skills">🎬 Shubham Skills</button>
+        <button class="ax-btn-health ax-btn-health-eco" data-nav-route="admin-autonomous">🤖 Mode Autonome</button>
+        <button class="ax-btn-health ax-btn-health-blue" data-nav-route="skills-2026">🎯 Skills 2026</button>
+        <button class="ax-btn-health ax-btn-health-purple" data-nav-route="mcp-servers">🔌 MCP Servers</button>
+        <button class="ax-btn-health ax-btn-health-eco" data-nav-route="runtime-tests">🧪 Tester TOUT (live)</button>
+        <button class="ax-btn-health ax-btn-health-blue" data-nav-route="apex-audits-live">📊 Audits Apex (historique)</button>
+        <button class="ax-btn-health" data-nav-route="audit-log-viewer" title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">🔒 Audit Log Viewer</button>
       </div>
       <div id="ax-admin-health-mount" style="margin-top:14px"></div>
       <div id="ax-admin-audits-summary" style="margin-top:14px"></div>
@@ -310,7 +278,7 @@ function renderTabs(): string {
         const isActive = activeTab === id;
         /* CRITIQUE iPhone : flex:0 0 auto force pas de shrink, white-space:nowrap garde label */
         const baseStyle = 'flex:0 0 auto;white-space:nowrap;min-height:44px;padding:10px 14px;font-size:13px;line-height:1.2;border-radius:22px;cursor:pointer;transition:all 200ms cubic-bezier(0.16,1,0.3,1);border:1px solid;-webkit-tap-highlight-color:transparent;font-weight:600;letter-spacing:-0.01em;display:inline-flex;align-items:center;gap:4px;scroll-snap-align:start';
-        const activeStyle = 'background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border-color:transparent;box-shadow:0 4px 16px rgba(232,184,48,0.25),0 1px 3px rgba(0,0,0,0.2)';
+        const activeStyle = 'background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border-color:transparent;box-shadow:0 4px 16px rgba(232,184,48,0.25),0 1px 3px rgba(0,0,0,0.2)';
         const inactiveStyle = 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.08)';
         return `
         <button class="ax-tab ax-bounce-tap ${isActive ? 'ax-tab-active' : ''}" data-tab="${id}" style="${baseStyle};${isActive ? activeStyle : inactiveStyle}">${label}</button>
@@ -443,8 +411,8 @@ async function mountLazyAdminView(rootEl: HTMLElement): Promise<void> {
       const lastFuncDate = stats.lastFunctionalTs
         ? new Date(stats.lastFunctionalTs).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
         : 'jamais';
-      const bugColor = stats.recentBugs > 0 ? '#ff5b5b' : '#22cc77';
-      const escColor = stats.recentEscalations > 0 ? '#ffaa66' : '#22cc77';
+      const bugColor = stats.recentBugs > 0 ? 'var(--ax-error)' : 'var(--ax-green)';
+      const escColor = stats.recentEscalations > 0 ? 'var(--ax-sev-high)' : 'var(--ax-green)';
       mountAudits.innerHTML = `
         <div class="ax-bounce-tap" data-nav-route="apex-audits-live" style="background:linear-gradient(135deg,rgba(106,138,255,0.10),rgba(180,90,200,0.06));border:1px solid rgba(106,138,255,0.3);border-radius:12px;padding:14px;cursor:pointer">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
@@ -908,12 +876,14 @@ export function render(rootEl: HTMLElement): void {
         letter-spacing: -0.015em;
       }
       .ax-admin-content h3 {
-        margin: 14px 0 8px;
-        font-size: 13px;
-        color: #e8b830;
+        /* v13.4.232 finding P1.7 — hiérarchie typo nette : h3 15px > label 13px,
+         * breathing room 18px vs 14px. Plus de confusion h3 vs labels. */
+        margin: 18px 0 8px;
+        font-size: 15px;
+        color: var(--ax-gold);
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        font-weight: 700;
+        font-weight: 600;
       }
       .ax-admin-content .ax-info-card {
         background: rgba(255,255,255,0.03);
@@ -935,7 +905,7 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-admin ax-modernized-card" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10">
         <div style="min-width:0;flex:1">
-          <h1 style="margin:0;font-size:clamp(20px,5vw,28px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">👑 Centre Admin</h1>
+          <h1 style="margin:0;font-size:clamp(26px,5.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">👑 Centre Admin</h1>
           <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:11px">Kevin · accès illimité</p>
         </div>
         <button class="ax-btn ax-btn-sm ax-bounce-tap" data-nav-route="chat" style="flex-shrink:0;padding:9px 16px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all 180ms;white-space:nowrap">← Chat</button>

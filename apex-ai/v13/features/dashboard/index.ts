@@ -87,14 +87,14 @@ export interface ServiceHealthLight {
 }
 
 const SHORTCUTS: ReadonlyArray<DashboardShortcut> = [
-  { id: 'chat', icon: '💬', label: 'Chat', description: 'Conversation IA', route: 'chat', color: '#5aa8ff' },
-  { id: 'vault', icon: '🔐', label: 'Coffre', description: 'Clés API & secrets', route: 'vault', color: '#c9a227' },
-  { id: 'browser', icon: '🌐', label: 'Browser', description: 'Naviguer & embed', route: 'browser', color: '#22cc77' },
-  { id: 'studios', icon: '🎨', label: 'Studios', description: 'Créatif (musique/vidéo)', route: 'studios', color: '#a878ff' },
-  { id: 'pro', icon: '🎓', label: 'Pro', description: 'Modules expert', route: 'pro', color: '#ff6b9d' },
-  { id: 'self-diag', icon: '🩺', label: 'Audit', description: 'Auto-diagnostic', route: 'self-diag', color: '#38d8c8' },
-  { id: 'settings', icon: '⚙️', label: 'Réglages', description: 'Configurer Apex', route: 'settings', color: '#a0a4c0' },
-  { id: 'rgpd', icon: '🛡', label: 'RGPD', description: 'Mes données', route: 'rgpd', color: '#e8b830' },
+  { id: 'chat', icon: '💬', label: 'Chat', description: 'Conversation IA', route: 'chat', color: 'var(--ax-blue-bright)' },
+  { id: 'vault', icon: '🔐', label: 'Coffre', description: 'Clés API & secrets', route: 'vault', color: 'var(--ax-gold-deep)' },
+  { id: 'browser', icon: '🌐', label: 'Browser', description: 'Naviguer & embed', route: 'browser', color: 'var(--ax-green)' },
+  { id: 'studios', icon: '🎨', label: 'Studios', description: 'Créatif (musique/vidéo)', route: 'studios', color: 'var(--ax-purple)' },
+  { id: 'pro', icon: '🎓', label: 'Pro', description: 'Modules expert', route: 'pro', color: 'var(--ax-pink)' },
+  { id: 'self-diag', icon: '🩺', label: 'Audit', description: 'Auto-diagnostic', route: 'self-diag', color: 'var(--ax-cyan)' },
+  { id: 'settings', icon: '⚙️', label: 'Réglages', description: 'Configurer Apex', route: 'settings', color: 'var(--ax-text-dim)' },
+  { id: 'rgpd', icon: '🛡', label: 'RGPD', description: 'Mes données', route: 'rgpd', color: 'var(--ax-gold)' },
 ];
 
 /**
@@ -142,11 +142,11 @@ export async function computeKpis(): Promise<DashboardKpi[]> {
   } catch { /* skip */ }
 
   return [
-    { id: 'messages', icon: '💬', label: 'Messages 24h', value: messagesCount, color: '#5aa8ff', route: 'chat' },
-    { id: 'tokens', icon: '🔢', label: 'Tokens 24h', value: tokensConsumed.toLocaleString('fr-FR'), color: '#c9a227', route: 'self-diag' },
-    { id: 'projects', icon: '📦', label: 'Projets actifs', value: projectsActive, color: '#22cc77', route: 'admin' },
-    { id: 'sentinels', icon: '🛡', label: 'Sentinelles OK', value: `${sentinelsOk}/${sentinelsTotal}`, color: sentinelsOk === sentinelsTotal ? '#22cc77' : '#ffaa00', route: 'sentinels' },
-    { id: 'todos', icon: '📋', label: 'Todos en attente', value: todosPending, color: todosPending > 0 ? '#ff5858' : '#22cc77', route: 'self-diag' },
+    { id: 'messages', icon: '💬', label: 'Messages 24h', value: messagesCount, color: 'var(--ax-blue-bright)', route: 'chat' },
+    { id: 'tokens', icon: '🔢', label: 'Tokens 24h', value: tokensConsumed.toLocaleString('fr-FR'), color: 'var(--ax-gold-deep)', route: 'self-diag' },
+    { id: 'projects', icon: '📦', label: 'Projets actifs', value: projectsActive, color: 'var(--ax-green)', route: 'admin' },
+    { id: 'sentinels', icon: '🛡', label: 'Sentinelles OK', value: `${sentinelsOk}/${sentinelsTotal}`, color: sentinelsOk === sentinelsTotal ? 'var(--ax-green)' : 'var(--ax-warning)', route: 'sentinels' },
+    { id: 'todos', icon: '📋', label: 'Todos en attente', value: todosPending, color: todosPending > 0 ? 'var(--ax-error)' : 'var(--ax-green)', route: 'self-diag' },
   ];
 }
 
@@ -260,7 +260,7 @@ function renderKpiCard(kpi: DashboardKpi, idx = 0): string {
   /* Premium KPI card: glassmorphism + hover lift + stagger animation + gold accent on hover */
   return `
     <button class="ax-kpi-card ax-modernized-card ax-bounce-tap" data-route="${escapeHtml(kpi.route)}"
-      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.85),rgba(14,14,28,0.75));backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 280ms cubic-bezier(0.34,1.56,0.64,1);overflow:hidden;min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) ${50 + idx * 40}ms backwards;-webkit-tap-highlight-color:transparent">
+      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.85),rgba(14,14,28,0.75));backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 280ms cubic-bezier(0.34,1.56,0.64,1);overflow:hidden;min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;animation:ax-fade-up 320ms cubic-bezier(0.34,1.56,0.64,1) ${30 + idx * 20}ms backwards;-webkit-tap-highlight-color:transparent">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${escapeHtml(kpi.color)},transparent);border-radius:16px 16px 0 0;opacity:0.85"></div>
       <div style="position:absolute;inset:0;background:radial-gradient(circle at top right,${escapeHtml(kpi.color)}11,transparent 60%);pointer-events:none"></div>
       <div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 8px ${escapeHtml(kpi.color)}40)">${escapeHtml(kpi.icon)}</div>
@@ -273,7 +273,7 @@ function renderShortcutCard(s: DashboardShortcut, idx = 0): string {
   /* Premium shortcut card: glass + lift hover + gold border accent + stagger */
   return `
     <button class="ax-shortcut-card ax-modernized-card ax-bounce-tap" data-route="${escapeHtml(s.route)}"
-      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.55));backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 240ms cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:14px;min-height:72px;overflow:hidden;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${80 + idx * 35}ms backwards;-webkit-tap-highlight-color:transparent">
+      style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.55));backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 240ms cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:14px;min-height:72px;overflow:hidden;animation:ax-fade-up 320ms cubic-bezier(0.34,1.56,0.64,1) ${60 + idx * 20}ms backwards;-webkit-tap-highlight-color:transparent">
       <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,${escapeHtml(s.color)},${escapeHtml(s.color)}88);border-radius:14px 0 0 14px"></div>
       <span style="font-size:30px;flex-shrink:0;filter:drop-shadow(0 4px 12px ${escapeHtml(s.color)}40);transition:transform 240ms cubic-bezier(0.34,1.56,0.64,1)" class="ax-shortcut-icon">${escapeHtml(s.icon)}</span>
       <div style="flex:1;min-width:0">
@@ -294,7 +294,7 @@ function renderAlerts(alerts: ReadonlyArray<DashboardAlert>): string {
   }
   return alerts
     .map((a, idx) => {
-      const color = a.level === 'error' ? '#ff5b5b' : a.level === 'warn' ? '#ffaa00' : '#6a8aff';
+      const color = a.level === 'error' ? 'var(--ax-error)' : a.level === 'warn' ? 'var(--ax-warning)' : 'var(--ax-blue)';
       const rgbBase = a.level === 'error' ? '255,91,91' : a.level === 'warn' ? '255,170,0' : '106,138,255';
       const icon = a.level === 'error' ? '🚨' : a.level === 'warn' ? '⚠️' : 'ℹ️';
       const route = a.action_route ? `data-route="${escapeHtml(a.action_route)}"` : '';
@@ -322,7 +322,7 @@ function renderTodos(todos: ReadonlyArray<DashboardTodo>): string {
   }
   return todos
     .map((t, idx) => {
-      const color = t.severity === 'critical' ? '#ff5b5b' : t.severity === 'high' ? '#ffaa00' : '#6a8aff';
+      const color = t.severity === 'critical' ? 'var(--ax-error)' : t.severity === 'high' ? 'var(--ax-warning)' : 'var(--ax-blue)';
       const date = new Date(t.ts_created).toLocaleString('fr-FR');
       return `
         <div class="ax-modernized-card" style="padding:12px 14px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${color};border-radius:10px;margin-bottom:8px;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards">
@@ -351,14 +351,14 @@ export function renderServiceHealthCard(
   if (items.length === 0) {
     return `
       <div class="ax-modernized-card" style="padding:14px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
-        <div style="font-size:13px;color:rgba(255,255,255,0.55)">Aucune clé API encore configurée. Va dans le <strong style="color:#c9a227">Coffre</strong> pour ajouter tes premières clés.</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.55)">Aucune clé API encore configurée. Va dans le <strong style="color:var(--ax-gold-deep)">Coffre</strong> pour ajouter tes premières clés.</div>
       </div>`;
   }
   const lightColor: Record<ServiceHealthLight['light'], string> = {
-    green: '#22cc77',
-    yellow: '#ffaa00',
-    red: '#ff5b5b',
-    gray: '#666b80',
+    green: 'var(--ax-green)',
+    yellow: 'var(--ax-warning)',
+    red: 'var(--ax-error)',
+    gray: 'var(--ax-text-muted)',
   };
   const lightLabel: Record<ServiceHealthLight['light'], string> = {
     green: 'OK',
@@ -376,12 +376,12 @@ export function renderServiceHealthCard(
       const showRecharge = links.recharge && (s.light === 'yellow' || s.light === 'red' || s.light === 'gray');
       const rechargeBtn = showRecharge && links.recharge
         ? `<a class="ax-recharge-btn" href="${escapeHtml(links.recharge)}" target="_blank" rel="noopener noreferrer"
-            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;font-weight:700;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent"
+            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;font-weight:700;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent"
 >💳 Recharge</a>`
         : '';
       const usageBtn = links.usage
         ? `<a class="ax-usage-btn" href="${escapeHtml(links.usage)}" target="_blank" rel="noopener noreferrer"
-            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(106,138,255,0.15);color:#6a8aff;font-weight:600;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent;border:1px solid rgba(106,138,255,0.3)"
+            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);font-weight:600;font-size:11px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;-webkit-tap-highlight-color:transparent;border:1px solid rgba(106,138,255,0.3)"
 >📊 Usage</a>`
         : '';
       return `
@@ -467,7 +467,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
     </style>
     <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header style="margin-bottom:32px;animation:ax-fade-up 400ms cubic-bezier(0.16,1,0.3,1) backwards">
-        <h1 style="margin:0 0 6px;font-size:clamp(28px,5vw,36px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.1">${escapeHtml(greeting)}</h1>
+        <h1 style="margin:0 0 6px;font-size:clamp(26px,5.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.1">${escapeHtml(greeting)}</h1>
         <p style="color:rgba(255,255,255,0.55);margin:0;font-size:15px;font-weight:400;letter-spacing:-0.005em">Voici ton dashboard Apex.</p>
       </header>
 
@@ -482,21 +482,21 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">🔔</span> Alertes ${alerts.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,91,91,0.15);color:#ff5b5b;border-radius:24px;font-size:11px;font-weight:700">${alerts.length}</span>` : ''}
+          <span style="font-size:14px;-webkit-text-fill-color:initial">🔔</span> Alertes ${alerts.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,91,91,0.15);color:var(--ax-error);border-radius:24px;font-size:11px;font-weight:700">${alerts.length}</span>` : ''}
         </h2>
         ${renderAlerts(alerts)}
       </section>
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">🚥</span> Statut services IA ${serviceHealth.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:#6a8aff;border-radius:24px;font-size:11px;font-weight:700">${serviceHealth.length}</span>` : ''}
+          <span style="font-size:14px;-webkit-text-fill-color:initial">🚥</span> Statut services IA ${serviceHealth.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border-radius:24px;font-size:11px;font-weight:700">${serviceHealth.length}</span>` : ''}
         </h2>
         ${renderServiceHealthCard(serviceHealth, rechargeLinks)}
       </section>
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">📋</span> Todos ${todos.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,170,0,0.15);color:#ffaa00;border-radius:24px;font-size:11px;font-weight:700">${todos.length}</span>` : ''}
+          <span style="font-size:14px;-webkit-text-fill-color:initial">📋</span> Todos ${todos.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,170,0,0.15);color:var(--ax-warning);border-radius:24px;font-size:11px;font-weight:700">${todos.length}</span>` : ''}
         </h2>
         ${renderTodos(todos)}
       </section>
@@ -518,18 +518,18 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px">
             <div style="display:flex;flex-direction:column;gap:6px">
               <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Provider santé</div>
-              <div style="font-size:18px;font-weight:700;color:#22cc77;display:flex;align-items:center;gap:8px;letter-spacing:-0.01em">
-                <span style="display:inline-block;width:8px;height:8px;background:#22cc77;border-radius:50%;box-shadow:0 0 12px #22cc77"></span>
+              <div style="font-size:18px;font-weight:700;color:var(--ax-green);display:flex;align-items:center;gap:8px;letter-spacing:-0.01em">
+                <span style="display:inline-block;width:8px;height:8px;background:var(--ax-green);border-radius:50%;box-shadow:0 0 12px var(--ax-green)"></span>
                 Anthropic OK
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
               <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Latence dernière req</div>
-              <div style="font-size:18px;font-weight:700;color:#6a8aff;letter-spacing:-0.01em;font-feature-settings:'tnum'">~ 1.2s</div>
+              <div style="font-size:18px;font-weight:700;color:var(--ax-blue);letter-spacing:-0.01em;font-feature-settings:'tnum'">~ 1.2s</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
               <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Tokens 7j (estimé)</div>
-              <div style="font-size:18px;font-weight:700;color:#e8b830;letter-spacing:-0.01em;font-feature-settings:'tnum'">${escapeHtml(((kpis.find((k) => k.id === 'tokens')?.value ?? 0).toString()))}</div>
+              <div style="font-size:18px;font-weight:700;color:var(--ax-gold);letter-spacing:-0.01em;font-feature-settings:'tnum'">${escapeHtml(((kpis.find((k) => k.id === 'tokens')?.value ?? 0).toString()))}</div>
             </div>
           </div>
         </div>

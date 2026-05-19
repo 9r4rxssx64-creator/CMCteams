@@ -8,6 +8,7 @@ import { createCleanupScope, type CleanupScope } from '../../core/listener-clean
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { cspStyleHelper } from '../../services/csp-style-helper.js';
+import { renderRechargeAction } from '../../ui/recharge-action.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeSettingsScope: CleanupScope | null = null;
@@ -99,11 +100,11 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
             <div class="ax-voice-item" data-voice-id="${escapeHtml(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
               <span style="font-size:18px">${emoji}</span>
               <div style="flex:1;min-width:0">
-                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.name)}${isActive ? ' <span style="color:#e8b830;font-size:11px">★ active</span>' : ''}</div>
+                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.name)}${isActive ? ' <span style="color:var(--ax-gold);font-size:11px">★ active</span>' : ''}</div>
                 <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.category)}${desc ? ' · ' + desc : ''}</div>
               </div>
-              <button class="ax-voice-test-btn" data-test-voice="${escapeHtml(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtml(v.name)}" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
-              <button class="ax-voice-set-btn" data-set-voice="${escapeHtml(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtml(v.name)} par défaut" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
+              <button class="ax-voice-test-btn" data-test-voice="${escapeHtml(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtml(v.name)}" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(34,204,119,0.15);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
+              <button class="ax-voice-set-btn" data-set-voice="${escapeHtml(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtml(v.name)} par défaut" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(232,184,48,0.15);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
             </div>
           `;
         })
@@ -194,22 +195,22 @@ export function render(rootEl: HTMLElement): void {
     </style>
     <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:680px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header style="margin-bottom:24px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards">
-        <h1 style="margin:0 0 6px;font-size:clamp(26px,4.5vw,32px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
-        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtml(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:#e8b830">👑 Admin</span>' : ''}</p>
+        <h1 style="margin:0 0 6px;font-size:clamp(26px,4.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
+        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtml(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:var(--ax-gold)">👑 Admin</span>' : ''}</p>
       </header>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:60ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔑</span> Clés API</h2>
         <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">Gère tes clés API (Anthropic, OpenAI, Stripe, etc.) dans le Coffre sécurisé.</p>
-        <button class="ax-btn ax-btn-primary" data-nav-route="vault" style="${btnFullWidthStyle};background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none">🔐 Ouvrir le Coffre</button>
+        <button class="ax-btn ax-btn-primary" data-nav-route="vault" style="${btnFullWidthStyle};background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none">🔐 Ouvrir le Coffre</button>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:100ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🎨</span> Apparence</h2>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px">
           <span style="color:rgba(255,255,255,0.7);font-size:14px">Thème actuel</span>
-          <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(232,184,48,0.12);color:#e8b830;border-radius:24px;font-size:12px;font-weight:700;letter-spacing:0.04em">
-            <span style="width:8px;height:8px;background:#e8b830;border-radius:50%;box-shadow:0 0 10px #e8b830"></span> DARK
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(232,184,48,0.12);color:var(--ax-gold);border-radius:24px;font-size:12px;font-weight:700;letter-spacing:0.04em">
+            <span style="width:8px;height:8px;background:var(--ax-gold);border-radius:50%;box-shadow:0 0 10px var(--ax-gold)"></span> DARK
           </span>
         </div>
       </section>
@@ -217,7 +218,7 @@ export function render(rootEl: HTMLElement): void {
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:140ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔔</span> Notifications</h2>
         <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">Active les notifications push pour rester informé en temps réel.</p>
-        <button class="ax-btn ax-btn-secondary" id="ax-settings-notif-test" style="${btnFullWidthStyle};background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3)">🔔 Tester notification push</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-settings-notif-test" style="${btnFullWidthStyle};background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.3)">🔔 Tester notification push</button>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:180ms">
@@ -226,7 +227,7 @@ export function render(rootEl: HTMLElement): void {
           Backup mémoire vers Notion / GitHub Gist / Firebase. Tokens lus depuis le Coffre.
         </p>
         <div id="ax-memory-bridge-status" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="${btnFullWidthStyle};background:rgba(160,96,255,0.15);color:#a060ff;border:1px solid rgba(160,96,255,0.3)">🔄 Sync maintenant</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="${btnFullWidthStyle};background:rgba(160,96,255,0.15);color:var(--ax-purple);border:1px solid rgba(160,96,255,0.3)">🔄 Sync maintenant</button>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:220ms">
@@ -234,14 +235,14 @@ export function render(rootEl: HTMLElement): void {
         <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
           Apex surveille ta conso et détecte si une clé est utilisée anormalement (potentielle compromission).
         </p>
-        <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
         <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:#c9a227;border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
         <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:#f78322;border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
         <div id="ax-cf-diagnostic-results" style="margin-top:8px;font-size:12px"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-functional-test-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.35)">🧪 Tester tous les boutons + auto-fix (v13.4.182)</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-functional-test-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35)">🧪 Tester tous les boutons + auto-fix (v13.4.182)</button>
         <div id="ax-functional-test-results" style="margin-top:8px;font-size:12px"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-layout-inspect-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(180,90,200,0.15);color:#c97aff;border:1px solid rgba(180,90,200,0.35)">📐 Scanner la vue actuelle (overflow, boutons cachés)</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-layout-inspect-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(180,90,200,0.15);color:var(--ax-purple);border:1px solid rgba(180,90,200,0.35)">📐 Scanner la vue actuelle (overflow, boutons cachés)</button>
         <div id="ax-layout-inspect-results" style="margin-top:8px;font-size:12px"></div>
       </section>
 
@@ -256,10 +257,10 @@ export function render(rootEl: HTMLElement): void {
         </label>
         <div id="ax-voice-current" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace">Voix active : ...</div>
         <div id="ax-voice-categories" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="all" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3);cursor:pointer">Tous</button>
-          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="pro" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(106,138,255,0.15);color:#6a8aff;border:1px solid rgba(106,138,255,0.3);cursor:pointer">PRO</button>
-          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="fun" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(255,170,0,0.15);color:#ffaa00;border:1px solid rgba(255,170,0,0.3);cursor:pointer">FUN</button>
-          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="thematic" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(160,96,255,0.15);color:#a060ff;border:1px solid rgba(160,96,255,0.3);cursor:pointer">Thématique</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="all" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(232,184,48,0.15);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.3);cursor:pointer">Tous</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="pro" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.3);cursor:pointer">PRO</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="fun" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(255,170,0,0.15);color:var(--ax-warning);border:1px solid rgba(255,170,0,0.3);cursor:pointer">FUN</button>
+          <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="thematic" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(160,96,255,0.15);color:var(--ax-purple);border:1px solid rgba(160,96,255,0.3);cursor:pointer">Thématique</button>
         </div>
         <div id="ax-voice-list" style="max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px"></div>
       </section>
@@ -282,15 +283,15 @@ export function render(rootEl: HTMLElement): void {
           Si Apex reste bloqué sur une ancienne version malgré le reload (bug Safari iOS PWA cache), force le reset complet : Service Worker + caches + reload propre vers la dernière version.
         </p>
         <div id="ax-force-update-status" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-force-update-btn" style="${btnFullWidthStyle};background:rgba(232,184,48,0.15);color:#e8b830;border:1px solid rgba(232,184,48,0.3)">🔄 Force reset PWA + reload</button>
+        <button class="ax-btn ax-btn-secondary" id="ax-force-update-btn" style="${btnFullWidthStyle};background:rgba(232,184,48,0.15);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.3)">🔄 Force reset PWA + reload</button>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:280ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔐</span> Compte</h2>
-        <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="${btnFullWidthStyle};background:rgba(255,91,91,0.15);color:#ff5b5b;border:1px solid rgba(255,91,91,0.3)">🚪 Se déconnecter</button>
+        <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="${btnFullWidthStyle};background:rgba(255,91,91,0.15);color:var(--ax-error);border:1px solid rgba(255,91,91,0.3)">🚪 Se déconnecter</button>
       </section>
 
-      <p style="margin-top:32px;text-align:center"><a href="#chat" style="color:#e8b830;text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2);transition:all 200ms">← Retour chat</a></p>
+      <p style="margin-top:32px;text-align:center"><a href="#chat" style="color:var(--ax-gold);text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2);transition:all 200ms">← Retour chat</a></p>
     </div>
   `);
   /* Wire memory-bridge section : status read-only + sync button */
@@ -335,19 +336,25 @@ export function render(rootEl: HTMLElement): void {
         const out = rootEl.querySelector<HTMLDivElement>('#ax-conso-results');
         if (!out) return;
         out.innerHTML = reports.map((r) => {
-          const color = r.severity === 'critical' ? '#ff4444'
-            : r.severity === 'high' ? '#ff8844'
-            : r.severity === 'medium' ? '#ffaa00'
-            : r.severity === 'low' ? '#88aaff' : '#22cc77';
+          /* v13.4.232 finding P0.9 — severity color mapping Apple HIG :
+           * critical=red, high=orange-bright, medium=yellow, low=blue */
+          const color = r.severity === 'critical' ? 'var(--ax-sev-critical)'
+            : r.severity === 'high' ? 'var(--ax-sev-high)'
+            : r.severity === 'medium' ? 'var(--ax-sev-medium)'
+            : r.severity === 'low' ? 'var(--ax-sev-low)' : 'var(--ax-green)';
+          const sevClass = r.severity === 'critical' ? 'ax-sev-critical'
+            : r.severity === 'high' ? 'ax-sev-high'
+            : r.severity === 'medium' ? 'ax-sev-medium'
+            : r.severity === 'low' ? 'ax-sev-low' : 'ax-sev-low';
           const icon = r.severity === 'critical' ? '🚨'
             : r.severity === 'high' ? '⚠️'
             : r.severity === 'medium' ? '🟡'
             : r.severity === 'low' ? '🔵' : '✅';
           return `<div style="background:rgba(255,255,255,0.03);border-left:3px solid ${color};padding:8px 12px;margin-top:6px;border-radius:4px">
-            <strong style="color:${color}">${icon} ${r.service}</strong>
+            <strong style="color:${color}">${icon} ${r.service}</strong> <span class="ax-sev ${sevClass}">${r.severity}</span>
             <div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${r.reason}</div>
             <div style="font-size:11px;margin-top:4px">${r.recommended_action}</div>
-            ${r.recharge_url ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><a href="${r.recharge_url}" target="_blank" rel="noopener" style="color:#c9a227;font-size:11px">💳 Recharge →</a> <a href="${r.rotate_url}" target="_blank" rel="noopener" style="color:#c9a227;font-size:11px">🔄 Rotate →</a></div>` : ''}
+            ${renderRechargeAction({ rechargeUrl: r.recharge_url, rotateUrl: r.rotate_url, variant: 'inline' })}
           </div>`;
         }).join('');
       } catch (err: unknown) {
@@ -379,7 +386,7 @@ export function render(rootEl: HTMLElement): void {
       void (async () => {
         const resultsEl = rootEl.querySelector<HTMLDivElement>('#ax-functional-test-results');
         if (!resultsEl) return;
-        resultsEl.innerHTML = '<div style="color:#6a8aff">⏳ Test des boutons en cours (jusqu\'à 40 boutons, ~30s)...</div>';
+        resultsEl.innerHTML = '<div style="color:var(--ax-blue)">⏳ Test des boutons en cours (jusqu\'à 40 boutons, ~30s)...</div>';
         try {
           const { apexFunctionalTester } = await import('../../services/apex-functional-tester.js');
           const { reportsHistory } = await import('../../services/apex-reports-history.js');
@@ -394,23 +401,23 @@ export function render(rootEl: HTMLElement): void {
             .slice(0, 5)
             .map(
               (d) =>
-                `<li style="color:#ffaa66;font-size:11px">${escapeHtml(d.label || '(no label)')} → ${escapeHtml(d.status)}</li>`,
+                `<li style="color:var(--ax-sev-high);font-size:11px">${escapeHtml(d.label || '(no label)')} → ${escapeHtml(d.status)}</li>`,
             )
             .join('');
           const appliedSafe = out.fixes.applied.map((f) => escapeHtml(String(f))).join(', ');
           resultsEl.innerHTML = `
             <div style="background:rgba(106,138,255,0.08);border:1px solid rgba(106,138,255,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
               <div style="font-weight:700;margin-bottom:6px">🧪 Test fonctionnel terminé</div>
-              <div>Testés : <b>${out.before.tested}</b>/${out.before.totalButtons} · OK : <b style="color:#22cc77">${out.before.ok} (${okPct}%)</b> · No-response : <b style="color:#ffaa66">${out.before.noResponse}</b> · Erreurs : <b style="color:#ff5b5b">${out.before.errors}</b> · Skipped : ${out.before.skipped}${improveStr}</div>
-              ${out.fixes.applied.length ? `<div style="margin-top:6px;color:#c9a227">🔧 Auto-fix appliqué : ${appliedSafe}</div>` : ''}
-              ${out.fixes.escalated ? '<div style="margin-top:6px;color:#ff5b5b">⚠ Escaladé à Claude Code (ax_claude_todo)</div>' : ''}
+              <div>Testés : <b>${out.before.tested}</b>/${out.before.totalButtons} · OK : <b style="color:var(--ax-green)">${out.before.ok} (${okPct}%)</b> · No-response : <b style="color:var(--ax-sev-high)">${out.before.noResponse}</b> · Erreurs : <b style="color:var(--ax-error)">${out.before.errors}</b> · Skipped : ${out.before.skipped}${improveStr}</div>
+              ${out.fixes.applied.length ? `<div style="margin-top:6px;color:var(--ax-gold-deep)">🔧 Auto-fix appliqué : ${appliedSafe}</div>` : ''}
+              ${out.fixes.escalated ? '<div style="margin-top:6px;color:var(--ax-error)">⚠ Escaladé à Claude Code (ax_claude_todo)</div>' : ''}
               ${sampleBugs ? `<ul style="margin:6px 0 0 16px;padding:0">${sampleBugs}</ul>` : ''}
               <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">→ Historique complet dans Admin (Apex Audits Live)</div>
             </div>
           `;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur test : ${escapeHtml(msg)}</div>`;
+          resultsEl.innerHTML = `<div style="color:var(--ax-error)">❌ Erreur test : ${escapeHtml(msg)}</div>`;
         }
       })();
     });
@@ -423,25 +430,25 @@ export function render(rootEl: HTMLElement): void {
       void (async () => {
         const resultsEl = rootEl.querySelector<HTMLDivElement>('#ax-layout-inspect-results');
         if (!resultsEl) return;
-        resultsEl.innerHTML = '<div style="color:#c97aff">⏳ Scan layout...</div>';
+        resultsEl.innerHTML = '<div style="color:var(--ax-purple)">⏳ Scan layout...</div>';
         try {
           const { apexLayoutInspector } = await import('../../services/apex-layout-inspector.js');
           const { reportsHistory } = await import('../../services/apex-reports-history.js');
           const r = apexLayoutInspector.scanDom();
           reportsHistory.recordLayout(r);
           const sampleHidden = r.hiddenButtons.slice(0, 5).map(
-            (b) => `<li style="color:#ffaa66;font-size:11px">"${b.label}" → ${b.reason}</li>`
+            (b) => `<li style="color:var(--ax-sev-high);font-size:11px">"${b.label}" → ${b.reason}</li>`
           ).join('');
           const sampleOverflow = r.overflowingElements.slice(0, 5).map(
-            (e) => `<li style="color:#ff5b5b;font-size:11px">${e.tag} (+${e.overflowBy}px)</li>`
+            (e) => `<li style="color:var(--ax-error);font-size:11px">${e.tag} (+${e.overflowBy}px)</li>`
           ).join('');
           resultsEl.innerHTML = `
             <div style="background:rgba(180,90,200,0.08);border:1px solid rgba(180,90,200,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
               <div style="font-weight:700;margin-bottom:6px">📐 Layout scan</div>
               <div>Viewport : ${r.viewport.width}×${r.viewport.height} · Document : ${r.documentScroll.width}px</div>
-              <div>Overflow horizontal : <b style="color:${r.hasHorizontalOverflow ? '#ff5b5b' : '#22cc77'}">${r.hasHorizontalOverflow ? 'OUI' : 'NON'}</b> · Boutons cachés : <b style="color:${r.hiddenButtons.length ? '#ffaa66' : '#22cc77'}">${r.hiddenButtons.length}</b> · Touch < 44px : ${r.smallTouchTargets.length}</div>
-              ${sampleHidden ? `<div style="margin-top:6px;color:#c9a227">Boutons cachés:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleHidden}</ul>` : ''}
-              ${sampleOverflow ? `<div style="margin-top:6px;color:#c9a227">Éléments overflow:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleOverflow}</ul>` : ''}
+              <div>Overflow horizontal : <b style="color:${r.hasHorizontalOverflow ? 'var(--ax-error)' : 'var(--ax-green)'}">${r.hasHorizontalOverflow ? 'OUI' : 'NON'}</b> · Boutons cachés : <b style="color:${r.hiddenButtons.length ? 'var(--ax-sev-high)' : 'var(--ax-green)'}">${r.hiddenButtons.length}</b> · Touch < 44px : ${r.smallTouchTargets.length}</div>
+              ${sampleHidden ? `<div style="margin-top:6px;color:var(--ax-gold-deep)">Boutons cachés:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleHidden}</ul>` : ''}
+              ${sampleOverflow ? `<div style="margin-top:6px;color:var(--ax-gold-deep)">Éléments overflow:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleOverflow}</ul>` : ''}
               <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">→ Historique complet dans Admin (Apex Audits Live)</div>
             </div>
           `;
@@ -449,7 +456,7 @@ export function render(rootEl: HTMLElement): void {
           const msg = err instanceof Error ? err.message : String(err);
           /* v13.4.187 audit XSS gap #1 closure : escape même les Error.message
            * internes (peut contenir données user-controlled via stack traces). */
-          resultsEl.innerHTML = `<div style="color:#ff5b5b">❌ Erreur scan : ${escapeHtml(msg)}</div>`;
+          resultsEl.innerHTML = `<div style="color:var(--ax-error)">❌ Erreur scan : ${escapeHtml(msg)}</div>`;
         }
       })();
     });
@@ -470,7 +477,7 @@ export function render(rootEl: HTMLElement): void {
           const diag = await apexCloudflareVaultDeploy.runDiagnostic();
           const row = (label: string, ok: boolean, detail?: string): string => `
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px">
-              <span style="color:${ok ? '#22cc77' : '#ff5b5b'};font-weight:700">${ok ? '✅' : '❌'}</span>
+              <span style="color:${ok ? 'var(--ax-green)' : 'var(--ax-error)'};font-weight:700">${ok ? '✅' : '❌'}</span>
               <span style="flex:1;color:rgba(255,255,255,0.85)">${label}</span>
               ${detail ? `<span style="color:rgba(255,255,255,0.5);font-size:11px">${detail}</span>` : ''}
             </div>`;
@@ -483,10 +490,10 @@ export function render(rootEl: HTMLElement): void {
           html += row('Permission Workers (auto-deploy futur)', diag.workers_permission);
           html += row('Namespace apex-vault-kevin existe', diag.namespace_exists);
           if (diag.error_reason) {
-            html += `<div style="margin-top:10px;padding:8px;background:rgba(255,91,91,0.1);border-left:3px solid #ff5b5b;color:#ff5b5b;font-size:12px;border-radius:4px">${diag.error_reason}</div>`;
+            html += `<div style="margin-top:10px;padding:8px;background:rgba(255,91,91,0.1);border-left:3px solid var(--ax-error);color:var(--ax-error);font-size:12px;border-radius:4px">${diag.error_reason}</div>`;
           }
           if (diag.fix_url) {
-            html += `<div style="margin-top:8px"><a href="${diag.fix_url}" target="_blank" rel="noopener" style="color:#6a8aff;font-size:12px">🔗 Fix : ${diag.fix_url}</a></div>`;
+            html += `<div style="margin-top:8px"><a href="${diag.fix_url}" target="_blank" rel="noopener" style="color:var(--ax-blue);font-size:12px">🔗 Fix : ${diag.fix_url}</a></div>`;
           }
           html += '</div>';
           resultsEl.innerHTML = html;
@@ -496,7 +503,7 @@ export function render(rootEl: HTMLElement): void {
           /* v13.4.133 audit-grade : DOM API (msg pourrait contenir HTML user-controlled) */
           resultsEl.textContent = '';
           const errDiv = document.createElement('div');
-          errDiv.style.color = '#ff5b5b';
+          errDiv.style.color = 'var(--ax-error)';
           errDiv.textContent = `❌ Erreur : ${msg.slice(0, 100)}`;
           resultsEl.append(errDiv);
         }
