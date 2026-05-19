@@ -34,7 +34,6 @@ jobs:
           node --input-type=module << 'ENDSCRIPT'
           import fs from 'fs';
           import { execSync } from 'child_process';
-
           const lib = JSON.parse(fs.readFileSync('config/content-library.json','utf8'));
           const cats = Object.keys(lib).filter(k=>!k.startsWith('_'));
           let story = null;
@@ -43,11 +42,9 @@ jobs:
             if (unused.length > 0) { story = unused[Math.floor(Math.random()*unused.length)]; break; }
           }
           if (!story) { console.error('No unused stories'); process.exit(1); }
-
           const fmt = process.env.FORMAT || 'long';
           const words = story.script.split(/\s+/);
           console.log('Story: ' + story.id + ' (' + words.length + ' words)');
-
           const id = story.id;
           const outDir = 'output/' + id;
           fs.mkdirSync(outDir, {recursive:true});
@@ -60,7 +57,6 @@ jobs:
           const chunks = [];
           for (let i = 0; i < words.length; i += chunkSize) chunks.push(words.slice(i, i + chunkSize).join(' '));
           console.log('Chunks: ' + chunks.length);
-
           const chunkVideos = [];
           for (let c = 0; c < chunks.length; c++) {
             const chunk = chunks[c];
@@ -87,7 +83,6 @@ jobs:
             try { fs.readdirSync(cd+'/f').forEach(f=>fs.unlinkSync(cd+'/f/'+f)); fs.rmdirSync(cd+'/f'); } catch {}
             try { fs.unlinkSync(cd+'/a.mp3'); } catch {}
           }
-
           const finalVideo = outDir + '/' + id + '_' + fmt + '.mp4';
           if (chunkVideos.length === 1) {
             fs.renameSync(chunkVideos[0], finalVideo);
@@ -99,7 +94,6 @@ jobs:
             for (const cv of chunkVideos) try { fs.unlinkSync(cv); } catch {}
             try { fs.unlinkSync(concatFile); } catch {}
           }
-
           console.log('FINAL: ' + (fs.statSync(finalVideo).size/1024/1024).toFixed(2) + ' MB');
           fs.writeFileSync(outDir+'/metadata.json', JSON.stringify({id,title:story.title,tags:story.tags||[],format:fmt,width:finalW,height:finalH,sizeBytes:fs.statSync(finalVideo).size},null,2));
           story.used = true;
@@ -108,84 +102,91 @@ jobs:
           console.log('Done!');
           ENDSCRIPT
 
-      - name: Upload to YouTube
-        working-directory: tools/social
+      - name: Upload to YouTube via curl
         env:
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        working-directory: tools/social
         run: |
           LATEST=$(ls -t output/*/*.mp4 2>/dev/null | head -1)
-          if [ -z "$LATEST" ]; then echo "No video found"; exit 0; fi
-          if [ -z "$YOUTUBE_CLIENT_ID" ]; then echo "No YouTube credentials"; exit 0; fi
+          if [ -z "$LATEST" ]; then echo "No video"; exit 0; fi
+          if [ -z "$YT_CLIENT_ID" ]; then echo "No YouTube creds"; exit 0; fi
+
+          # Debug: show lengths (not values)
+          echo "Client ID length: ${#YT_CLIENT_ID}"
+          echo "Client Secret length: ${#YT_CLIENT_SECRET}"
+          echo "Refresh Token length: ${#YT_REFRESH_TOKEN}"
+
+          # Step 1: Get access token via curl
+          echo "Getting access token..."
+          RESPONSE=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
+            -d "client_id=${YT_CLIENT_ID}" \
+            -d "client_secret=${YT_CLIENT_SECRET}" \
+            -d "refresh_token=${YT_REFRESH_TOKEN}" \
+            -d "grant_type=refresh_token")
+
+          echo "Token response: $(echo $RESPONSE | head -c 100)..."
+
+          ACCESS_TOKEN=$(echo $RESPONSE | node -e "process.stdin.on('data',d=>{try{console.log(JSON.parse(d).access_token||'')}catch{console.log('')}})")
+
+          if [ -z "$ACCESS_TOKEN" ]; then
+            echo "Failed to get access token"
+            echo "Full response: $RESPONSE"
+            exit 1
+          fi
+
+          echo "Access token obtained (${#ACCESS_TOKEN} chars)"
+
+          # Step 2: Get title from metadata
           META=$(dirname "$LATEST")/metadata.json
           TITLE="Story Video"
-          if [ -f "$META" ]; then TITLE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).title||'Story Video')"); fi
-          echo "Uploading: $LATEST ($TITLE)"
-          node --input-type=module << 'YTSCRIPT'
-          import fs from 'fs';
-          import { google } from 'googleapis';
+          TAGS=""
+          if [ -f "$META" ]; then
+            TITLE=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).title)}catch{console.log('Story Video')}")
+            TAGS=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('$META','utf8')).tags.map(t=>'#'+t).join(' '))}catch{console.log('')}")
+          fi
+          echo "Title: $TITLE"
 
-          const clientId = process.env.YOUTUBE_CLIENT_ID;
-          const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
-          const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN;
-
-          const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
-          oauth2.setCredentials({ refresh_token: refreshToken });
-
-          const youtube = google.youtube({ version: 'v3', auth: oauth2 });
-
-          // Find video and metadata
-          const files = fs.readdirSync('output').flatMap(d => {
-            const dir = 'output/' + d;
-            try {
-              return fs.readdirSync(dir).filter(f => f.endsWith('.mp4')).map(f => dir + '/' + f);
-            } catch { return []; }
-          });
-          const videoPath = files.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
-          if (!videoPath) { console.log('No video'); process.exit(0); }
-
-          let title = 'Story Video';
-          let tags = [];
-          const metaPath = videoPath.replace(/\.mp4$/, '').replace(/_[^_]+$/, '') + '/../metadata.json';
-          const metaPath2 = videoPath.replace(/[^/]+\.mp4$/, 'metadata.json');
-          for (const mp of [metaPath2, metaPath]) {
-            try {
-              const meta = JSON.parse(fs.readFileSync(mp, 'utf8'));
-              title = meta.title || title;
-              tags = meta.tags || tags;
-              break;
-            } catch {}
-          }
-
-          console.log('Uploading: ' + title + ' (' + videoPath + ')');
-
-          try {
-            const res = await youtube.videos.insert({
-              part: ['snippet', 'status'],
-              requestBody: {
-                snippet: {
-                  title: title,
-                  description: tags.map(t => '#' + t).join(' ') + '\n\nGenerated by KDMC Studio',
-                  tags: tags,
-                  categoryId: '22',
-                },
-                status: {
-                  privacyStatus: 'private',
-                  selfDeclaredMadeForKids: false,
-                },
+          # Step 3: Upload via YouTube resumable upload API
+          echo "Initiating upload..."
+          UPLOAD_URL=$(curl -s -X POST \
+            "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -D /tmp/upload_headers.txt \
+            -d "{
+              \"snippet\": {
+                \"title\": \"$TITLE\",
+                \"description\": \"$TAGS\n\nGenerated by KDMC Studio\",
+                \"categoryId\": \"22\"
               },
-              media: {
-                body: fs.createReadStream(videoPath),
-              },
-            });
-            console.log('Uploaded! Video ID: ' + res.data.id);
-            console.log('URL: https://youtu.be/' + res.data.id);
-          } catch (err) {
-            console.error('YouTube upload failed: ' + (err.message || err));
-            process.exit(1);
-          }
-          YTSCRIPT
+              \"status\": {
+                \"privacyStatus\": \"private\",
+                \"selfDeclaredMadeForKids\": false
+              }
+            }")
+
+          LOCATION=$(grep -i "location:" /tmp/upload_headers.txt | tr -d '\r' | awk '{print $2}')
+
+          if [ -z "$LOCATION" ]; then
+            echo "Failed to get upload URL"
+            echo "Response: $UPLOAD_URL"
+            exit 1
+          fi
+
+          echo "Upload URL obtained"
+
+          # Step 4: Upload the video file
+          echo "Uploading video..."
+          RESULT=$(curl -s -X PUT "$LOCATION" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: video/mp4" \
+            --data-binary @"$LATEST")
+
+          VIDEO_ID=$(echo $RESULT | node -e "process.stdin.on('data',d=>{try{console.log(JSON.parse(d).id||'?')}catch{console.log('?')}})")
+          echo "Uploaded! Video ID: $VIDEO_ID"
+          echo "URL: https://youtu.be/$VIDEO_ID"
 
       - name: Commit state
         if: success()
