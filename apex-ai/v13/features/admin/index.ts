@@ -276,12 +276,9 @@ function renderTabs(): string {
     .map(
       ([id, label]) => {
         const isActive = activeTab === id;
-        /* CRITIQUE iPhone : flex:0 0 auto force pas de shrink, white-space:nowrap garde label */
-        const baseStyle = 'flex:0 0 auto;white-space:nowrap;min-height:44px;padding:10px 14px;font-size:13px;line-height:1.2;border-radius:22px;cursor:pointer;transition:all 200ms cubic-bezier(0.16,1,0.3,1);border:1px solid;-webkit-tap-highlight-color:transparent;font-weight:600;letter-spacing:-0.01em;display:inline-flex;align-items:center;gap:4px;scroll-snap-align:start';
-        const activeStyle = 'background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border-color:transparent;box-shadow:0 4px 16px rgba(232,184,48,0.25),0 1px 3px rgba(0,0,0,0.2)';
-        const inactiveStyle = 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.08)';
+        /* v13.4.235 : styles inline → classe .ax-tab-pill (DRY, components.css). */
         return `
-        <button class="ax-tab ax-bounce-tap ${isActive ? 'ax-tab-active' : ''}" data-tab="${id}" style="${baseStyle};${isActive ? activeStyle : inactiveStyle}">${label}</button>
+        <button class="ax-tab ax-tab-pill ax-bounce-tap${isActive ? ' is-active ax-tab-active' : ''}" data-tab="${id}" aria-pressed="${isActive ? 'true' : 'false'}">${label}</button>
       `;
       },
     )

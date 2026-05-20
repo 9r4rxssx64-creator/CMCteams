@@ -201,6 +201,9 @@ describe('auto-fix everywhere (Kevin v13.3.79+)', () => {
       'csp-violation-watch', /* requires manual intervention */
       'service-knowledge-watch', /* a déjà autoFix wired */
       'apex-self-correct-watch', /* IS la cascade self-correct, runCycle interne */
+      'multi-branch-coordinator-watch', /* escalade GitHub issue, pas de fix client */
+      'auto-test-runner-watch', /* runner tests → escalade ax_claude_todo, fix DANS le runner */
+      'github-notifications-clean-watch', /* nettoyage notifs = l'action elle-même, pas de fix séparé */
     ]);
     const noAutoFixFound = list.filter((s) => !s.autoFix && !noAutoFixOk.has(s.id));
     /* Aucune sentinelle critique ne devrait être sans autoFix maintenant */

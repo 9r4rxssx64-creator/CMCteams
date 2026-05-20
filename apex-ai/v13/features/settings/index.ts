@@ -95,18 +95,15 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
           const isActive = v.id === activeId;
           const emoji = v.emoji ?? (v.category === 'pro' ? '🎙️' : v.category === 'fun' ? '🎉' : '🎨');
           const desc = v.description ? escapeHtml(v.description) : '';
-          const activeBg = isActive
-            ? 'background:rgba(232,184,48,0.15);border-color:rgba(232,184,48,0.45)'
-            : 'background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.06)';
           return `
-            <div class="ax-voice-item" data-voice-id="${escapeHtml(v.id)}" style="display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:6px;border:1px solid;border-radius:8px;${activeBg}">
+            <div class="ax-voice-item${isActive ? ' is-active' : ''}" data-voice-id="${escapeHtml(v.id)}">
               <span style="font-size:18px">${emoji}</span>
               <div style="flex:1;min-width:0">
-                <div style="color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.name)}${isActive ? ' <span style="color:var(--ax-gold);font-size:11px">★ active</span>' : ''}</div>
-                <div style="color:rgba(255,255,255,0.5);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(v.category)}${desc ? ' · ' + desc : ''}</div>
+                <div class="ax-voice-item__name">${escapeHtml(v.name)}${isActive ? ' <span style="color:var(--ax-gold);font-size:11px">★ active</span>' : ''}</div>
+                <div class="ax-voice-item__meta">${escapeHtml(v.category)}${desc ? ' · ' + desc : ''}</div>
               </div>
-              <button class="ax-voice-test-btn" data-test-voice="${escapeHtml(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtml(v.name)}" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(34,204,119,0.15);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3);cursor:pointer;font-size:14px">▶</button>
-              <button class="ax-voice-set-btn" data-set-voice="${escapeHtml(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtml(v.name)} par défaut" style="min-width:44px;min-height:44px;width:44px;height:44px;border-radius:8px;background:rgba(232,184,48,0.15);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.3);cursor:pointer;font-size:14px">★</button>
+              <button class="ax-voice-item__action ax-voice-item__action--test" data-test-voice="${escapeHtml(v.id)}" title="Tester cette voix" aria-label="Tester ${escapeHtml(v.name)}">▶</button>
+              <button class="ax-voice-item__action ax-voice-item__action--set" data-set-voice="${escapeHtml(v.id)}" title="Définir comme voix par défaut" aria-label="Définir ${escapeHtml(v.name)} par défaut">★</button>
             </div>
           `;
         })
