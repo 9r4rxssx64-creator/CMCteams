@@ -107,22 +107,10 @@ jobs:
           OUTDIR="tools/social/output/${STORY_ID}_$(date +%Y%m%d)"
           mkdir -p "$OUTDIR"
 
-          # === 2. Generate TTS with Piper (neural) → gTTS → espeak fallback ===
+          # === 2. Generate TTS (edge-tts neural → gTTS → espeak fallback) ===
           echo ""
           echo "🎙 Step 2: Text-to-Speech (neural voice)..."
 
-          # Split into chunks of ~200 words for better TTS
-          CHUNK_DIR="$OUTDIR/chunks"
-          mkdir -p "$CHUNK_DIR"
-
-          python3 << 'PYEOF'
-          import os, sys, subprocess, json
-
-          script = json.loads(os.environ.get("STORY_JSON_ESCAPED", sys.argv[1] if len(sys.argv) > 1 else ""))
-          text = script if isinstance(script, str) else ""
-          PYEOF
-
-          # Simpler: write script to file, then process
           echo "$STORY_SCRIPT" > "$OUTDIR/script.txt"
 
           # Try edge-tts first (Microsoft neural voice — best quality)
@@ -132,10 +120,11 @@ jobs:
           # Pick dramatic male voice for storytelling
           EDGE_VOICE="en-US-GuyNeural"
 
-          if edge-tts --text "$(cat "$OUTDIR/script.txt")" --voice "$EDGE_VOICE" --rate="-5%" --pitch="-2Hz" --write-media "$NARRATION_MP3" 2>/dev/null; then
+          EDGE_SUBS="$OUTDIR/edge_subs.vtt"
+          if edge-tts -f "$OUTDIR/script.txt" -v "$EDGE_VOICE" --rate="-5%" --pitch="-2Hz" --write-media "$NARRATION_MP3" --write-subtitles "$EDGE_SUBS" 2>/dev/null; then
             if [ -f "$NARRATION_MP3" ] && [ $(stat -c%s "$NARRATION_MP3" 2>/dev/null || echo 0) -gt 5000 ]; then
               TTS_BACKEND="edge-tts"
-              echo "   ✅ Edge TTS neural voice OK"
+              echo "   ✅ Edge TTS neural voice OK (with subtitles)"
             fi
           fi
 
@@ -286,11 +275,54 @@ jobs:
             echo "   ⚠️ No music available"
           fi
 
-          # === 5. Generate ASS subtitles with word-level animation ===
+          # === 5. Generate subtitles ===
           echo ""
-          echo "📝 Step 5: Animated subtitles..."
+          echo "📝 Step 5: Subtitles..."
 
           ASS_FILE="$OUTDIR/subtitles.ass"
+
+          # Convert edge-tts VTT to ASS if available
+          if [ -f "$EDGE_SUBS" ] && [ "$TTS_BACKEND" = "edge-tts" ]; then
+            echo "   Converting edge-tts VTT → ASS..."
+            python3 - "$EDGE_SUBS" "$ASS_FILE" << 'VTT2ASS'
+          import re, sys
+
+          vtt_path, ass_path = sys.argv[1], sys.argv[2]
+          vtt = open(vtt_path).read()
+          cues = []
+          for block in vtt.split("\n\n"):
+            lines = block.strip().split("\n")
+            for i, line in enumerate(lines):
+              m = re.match(r'(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})', line)
+              if m:
+                g = [int(x) for x in m.groups()]
+                start = g[0]*3600000 + g[1]*60000 + g[2]*1000 + g[3]
+                end = g[4]*3600000 + g[5]*60000 + g[6]*1000 + g[7]
+                text = " ".join(lines[i+1:]).strip() if i+1 < len(lines) else ""
+                if text: cues.append((start, end, text))
+
+          def ms_ass(ms):
+            h=int(ms//3600000); m=int((ms%3600000)//60000); s=int((ms%60000)//1000); cs=int((ms%1000)//10)
+            return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
+
+          header = "[Script Info]\nTitle: KDMC Stories\nScriptType: v4.00+\nWrapStyle: 0\nScaledBorderAndShadow: yes\nPlayResX: 1920\nPlayResY: 1080\n\n"
+          header += "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+          header += "Style: Main,Arial,68,&H00FFFFFF,&H0000D4FF,&H00000000,&H96000000,-1,0,0,0,100,100,1,0,1,3,2,2,40,40,80,1\n\n"
+          header += "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+
+          events = ""
+          for s, e, t in cues:
+            events += f"Dialogue: 0,{ms_ass(s)},{ms_ass(e)},Main,,0,0,0,,{t}\n"
+
+          with open(ass_path, "w") as f: f.write(header + events)
+          print(f"   Converted {len(cues)} cues from edge-tts VTT")
+          VTT2ASS
+          else
+            echo "   Generating subtitles from timing..."
+          fi
+
+          # Fallback: generate ASS from word timing estimate
+          if [ ! -f "$ASS_FILE" ] || [ $(stat -c%s "$ASS_FILE" 2>/dev/null || echo 0) -lt 100 ]; then
           python3 << SUBEOF
           import re, math
 
@@ -357,6 +389,7 @@ jobs:
 
           print(f"   ✅ {len(lines)} subtitle lines generated")
           SUBEOF
+          fi
 
           # === 6. Compose final video ===
           echo ""
