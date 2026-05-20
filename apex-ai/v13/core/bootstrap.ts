@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.239';
+export const APP_VER = 'v13.4.240';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -450,61 +450,61 @@ async function bootstrap(): Promise<void> {
   ctx.isAdmin = await auth.isAdmin().catch(() => false);
   store.set('isAdmin', ctx.isAdmin);
 
-  /* 8. Router init + routes lazy-load */
+  /* 8. Router init + routes lazy-load
+   * v13.4.240 (chantier 3 organisation Kevin 2026-05-20) — 80 routes
+   * regroupées par catégorie. L'ordre n'affecte pas le runtime ; ce
+   * classement sert la lisibilité/maintenance. Doublons détectés par
+   * router.getDuplicateRoutes() (check audit `architecture-routes`). */
+
+  /* ═══════════ AUTH & ENTRÉE (7) ═══════════ */
   router.register('landing', { loader: () => import('@features/landing/index.js') });
   router.register('login', { loader: () => import('@features/landing/index.js') });
-  router.register('chat', { loader: () => import('@features/chat/index.js'), requiresAuth: true });
-  /* v13.3.41 (mission INNOVATION-COMM) : onboarding 5 steps premier login */
+  router.register('signup', { loader: () => import('@features/signup/index.js') });
+  router.register('waiting-approval', { loader: () => import('@features/waiting-approval/index.js') });
+  router.register('signup-approval', { loader: () => import('@features/signup-approval/index.js'), requiresAdmin: true });
   router.register('onboarding', { loader: () => import('@features/onboarding/index.js'), requiresAuth: true });
-  router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
-  router.register('credentials', { loader: () => import('@features/credentials-registry/index.js'), requiresAdmin: true });
-  /* v13.4.47 Kevin "Le visuel ? Optimise tout" — dashboard centralisé tout-en-un.
-   * v13.4.238 fix doublon route : était register('dashboard') → écrasé par la
-   * route 'dashboard' (features/dashboard) plus bas. Renommé 'dashboard-perso'
-   * pour rendre la vue récap personnelle (clés/liens/devices/mémoire) accessible. */
+  router.register('legal', { loader: () => import('@features/legal/index.js') });
+
+  /* ═══════════ CŒUR (3) ═══════════ */
+  router.register('chat', { loader: () => import('@features/chat/index.js'), requiresAuth: true });
+  router.register('dashboard', { loader: () => import('@features/dashboard/index.js'), requiresAuth: true });
+  /* dashboard-perso : vue récap (clés/liens/devices/mémoire). v13.4.238 :
+   * renommé depuis 'dashboard' qui faisait doublon → était inaccessible. */
   router.register('dashboard-perso', { loader: () => import('@features/dashboard-personnel/index.js'), requiresAuth: true });
-  router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
-  router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  /* Sprint 2 P0 : routes manquantes (orphelines features) */
-  router.register('settings', { loader: () => import('@features/settings/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  router.register('sentinels', { loader: () => import('@features/sentinels/index.js'), requiresAdmin: true, skeleton: 'admin-table' });
+
+  /* ═══════════ OUTILS UTILISATEUR (19) ═══════════ */
   router.register('browser', { loader: () => import('@features/browser/index.js'), requiresAuth: true });
   router.register('crypto', { loader: () => import('@features/crypto/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('domotique', { loader: () => import('@features/domotique/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  /* Sprint 3 NEW : Télécommande Universelle (UNIVERSAL_REMOTE.md, intègre device-control) */
   router.register('remote', { loader: () => import('@features/remote/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  /* Sprint port v12 (Kevin 2026-05-04) : 4 features critiques manquantes */
   router.register('notes', { loader: () => import('@features/notes/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true, skeleton: 'vault-cards' });
   router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('archive', { loader: () => import('@features/archive/index.js'), requiresAuth: true, skeleton: 'admin-table' });
-  /* Sprint v13.3.25 (Kevin 2026-05-07) : Cross-platform device capabilities dashboard */
   router.register('device', { loader: () => import('@features/device-capabilities/index.js'), requiresAuth: true });
-  /* Sprint v13.3.27 (Kevin 2026-05-07) : Vue Knowledge — mémoire long-terme + cross-user admin */
   router.register('knowledge', { loader: () => import('@features/knowledge/index.js'), requiresAuth: true });
-  /* v13.4.239 (audit architecture Kevin 2026-05-20) — 5 features finies mais
-   * JAMAIS câblées (Declaration ≠ Deployment, erreur #28). Routes ajoutées : */
+  router.register('knowledge-bank', { loader: () => import('@features/knowledge-bank/index.js'), requiresAuth: true });
   router.register('geolocation', { loader: () => import('@features/geo/index.js'), requiresAuth: true });
-  router.register('innovation', { loader: () => import('@features/innovation/index.js'), requiresAdmin: true });
   router.register('marketplace', { loader: () => import('@features/meta-marketplace/index.js'), requiresAuth: true });
-  router.register('plugins', { loader: () => import('@features/plugins/index.js'), requiresAdmin: true });
-  router.register('admin-toggles', { loader: () => import('@features/admin-toggles/index.js'), requiresAdmin: true });
-  /* Sprint port v12 (Kevin 2026-05-04) : 5 studios créatifs critiques */
+  router.register('apex-toolbox', { loader: () => import('@features/apex-toolbox/index.js'), requiresAuth: true });
+  router.register('voice-bio', { loader: () => import('@features/voice-bio/index.js'), requiresAuth: true });
+  router.register('settings', { loader: () => import('@features/settings/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('laurence', { loader: () => import('@features/laurence/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+
+  /* ═══════════ STUDIOS CRÉATIFS (22) ═══════════ */
+  router.register('studios', { loader: () => import('@features/studios/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-music', { loader: () => import('@features/studios/music/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-video', { loader: () => import('@features/studios/video/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-cv', { loader: () => import('@features/studios/cv/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('studio-invoice', { loader: () => import('@features/studios/invoice/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('studio-contract', { loader: () => import('@features/studios/contract/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  /* Sprint port v12 (Kevin 2026-05-04) : 5 studios MAX (logo, presentation, prefecture, clip, photo) */
   router.register('studio-logo', { loader: () => import('@features/studios/logo/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-presentation', { loader: () => import('@features/studios/presentation/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-prefecture', { loader: () => import('@features/studios/prefecture/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('studio-clip', { loader: () => import('@features/studios/clip/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-photo', { loader: () => import('@features/studios/photo/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
-  /* Sprint Kevin 2026-05-08 : 7 studios manquants complétés */
   router.register('studio-architecture', { loader: () => import('@features/studios/architecture/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-plant', { loader: () => import('@features/studios/plant/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('studio-geo', { loader: () => import('@features/studios/geo/index.js'), requiresAuth: true, skeleton: 'feature-list' });
@@ -512,60 +512,42 @@ async function bootstrap(): Promise<void> {
   router.register('studio-lunar', { loader: () => import('@features/studios/lunar/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('studio-pet', { loader: () => import('@features/studios/pet/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('studio-scan', { loader: () => import('@features/studios/scan/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  /* Sprint port v12 (Kevin 2026-05-04) : 3 modules pro MAX (business, education, certifications) */
-  router.register('pro-business', { loader: () => import('@features/pro/modules/business/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  router.register('pro-education', { loader: () => import('@features/pro/modules/education/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  router.register('pro-certifications', { loader: () => import('@features/pro/modules/certifications/index.js'), requiresAuth: true, skeleton: 'feature-list' });
-  /* Sprint port v12.785 P0 critical (Kevin 2026-05-04) : 5 vues admin/audit/coffre */
-  router.register('dashboard', { loader: () => import('@features/dashboard/index.js'), requiresAuth: true });
-  router.register('vault', { loader: () => import('@features/vault/index.js'), requiresAdmin: true });
-  router.register('knowledge-bank', { loader: () => import('@features/knowledge-bank/index.js'), requiresAuth: true });
-  router.register('apex-toolbox', { loader: () => import('@features/apex-toolbox/index.js'), requiresAuth: true });
-  router.register('self-diag', { loader: () => import('@features/self-diag/index.js'), requiresAuth: true });
-  /* Sprint 9 Kevin v13.0.77+ — Auto-Backup admin (règle "ne jamais rien perdre") */
-  router.register('admin-backup', { loader: () => import('@features/admin-backup/index.js'), requiresAdmin: true });
-  /* v13.3.33 Kevin 2026-05-07 — Smart IA Router multi-critères (latence/quota/qualité/uptime) */
-  router.register('smart-router', { loader: () => import('@features/smart-router/index.js'), requiresAdmin: true });
-  /* v13.3.43 Kevin 2026-05-07 — Voice Bio reconnaissance vocale exclusive user */
-  router.register('voice-bio', { loader: () => import('@features/voice-bio/index.js'), requiresAuth: true });
-  /* v13.3.51 Kevin 2026-05-07 — Broadlink Setup (vision device + IR control) */
-  router.register('broadlink-setup', { loader: () => import('@features/broadlink-setup/index.js'), requiresAdmin: true });
-  /* v13.3.52 Kevin 2026-05-07 — IoT Providers framework (eWeLink/Tuya/Hue/Sonos/HA + custom) */
-  router.register('iot-providers', { loader: () => import('@features/iot-providers/index.js'), requiresAdmin: true });
-  /* v13.3.53 (Kevin 2026-05-07 23h55) : Multi-Source Extract History — admin only */
-  router.register('multi-source-history', { loader: () => import('@features/multi-source-history/index.js'), requiresAdmin: true });
-  /* v13.3.67 (Kevin 2026-05-08 02h) : Self-signup clients + WhatsApp validation */
-  router.register('signup', { loader: () => import('@features/signup/index.js') });
-  router.register('waiting-approval', { loader: () => import('@features/waiting-approval/index.js') });
-  router.register('signup-approval', { loader: () => import('@features/signup-approval/index.js'), requiresAdmin: true });
-  /* v13.3.67 : Vue Legal (déjà créée mais pas registered) */
-  router.register('legal', { loader: () => import('@features/legal/index.js') });
-  /* Kevin 2026-05-08 : Vue admin-credentials-status (cible click notif "credentials manquants") */
-  router.register('admin-credentials-status', { loader: () => import('@features/admin/credentials-status/index.js'), requiresAdmin: true });
-  /* Kevin 2026-05-08 v13.3.82 : Vue admin-rgpd (UI explicite pour rgpd.liftRestriction) */
-  router.register('admin-rgpd', { loader: () => import('@features/admin/rgpd-admin/index.js'), requiresAdmin: true });
-  /* Kevin 2026-05-09 v13.3.99 P0.4 : Vue admin "Mes Secrets" — dossier tous secrets en 1 endroit */
-  router.register('admin-all-secrets', { loader: () => import('@features/admin/all-secrets/index.js'), requiresAdmin: true });
-  /* Kevin 2026-05-09 v13.4.0 P0 : Vue admin "Dashboard santé live" — auto-test exhaustif (codes/liens/sentinelles/MCP/vault) */
-  router.register('admin-health-dashboard', { loader: () => import('@features/admin/health-dashboard/index.js'), requiresAdmin: true });
-  /* Kevin 2026-05-09 v13.4.2 : Vue admin "Yury Plugins" — 5 services applicatifs (security-review, code-review, frontend-design, superpowers, gstack-roles) */
-  router.register('admin-yury-plugins', { loader: () => import('@features/admin/yury-plugins/index.js'), requiresAdmin: true });
-  /* Kevin 2026-05-09 v13.4.3 : Vue admin "Shubham Skills" — 5 services TikTok (hyperframes, agent-browser, marketing-psy, impeccable-design, ios-simulator) */
-  router.register('admin-shubham-skills', { loader: () => import('@features/admin/shubham-skills/index.js'), requiresAdmin: true });
-  /* Kevin 2026-05-10 v13.4.5 : Vue admin "Mode Autonome" — session-driven (Apex bosse seul jusqu'à fin/quota) */
-  router.register('admin-autonomous', { loader: () => import('@features/admin/autonomous/index.js'), requiresAdmin: true });
-  /* Kevin 2026-05-14 v13.4.10 : Vues admin Skills 2026 + MCP servers (intégration skills/MCP) */
-  router.register('mcp-servers', { loader: () => import('@features/admin/mcp-servers/index.js'), requiresAdmin: true });
-  router.register('skills-2026', { loader: () => import('@features/admin/skills-2026/index.js'), requiresAdmin: true });
-  /* v13.4.12 — 4 Studios UI dédiés (Docx/Pptx/Xlsx/Pdf) — utilisables sans chat IA */
   router.register('studio-docx', { loader: () => import('@features/studios/docx/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-pptx', { loader: () => import('@features/studios/pptx/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-xlsx', { loader: () => import('@features/studios/xlsx/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-pdf', { loader: () => import('@features/studios/pdf/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
-  /* v13.4.13 — Vue runtime-tests (Apex teste TOUT en réel browser) */
+
+  /* ═══════════ MODULES PRO (4) ═══════════ */
+  router.register('pro', { loader: () => import('@features/pro/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('pro-business', { loader: () => import('@features/pro/modules/business/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('pro-education', { loader: () => import('@features/pro/modules/education/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('pro-certifications', { loader: () => import('@features/pro/modules/certifications/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+
+  /* ═══════════ ADMIN & MONITORING (25) ═══════════ */
+  router.register('admin', { loader: () => import('@features/admin/index.js'), requiresAdmin: true });
+  router.register('admin-toggles', { loader: () => import('@features/admin-toggles/index.js'), requiresAdmin: true });
+  router.register('credentials', { loader: () => import('@features/credentials-registry/index.js'), requiresAdmin: true });
+  router.register('vault', { loader: () => import('@features/vault/index.js'), requiresAdmin: true });
+  router.register('innovation', { loader: () => import('@features/innovation/index.js'), requiresAdmin: true });
+  router.register('plugins', { loader: () => import('@features/plugins/index.js'), requiresAdmin: true });
+  router.register('sentinels', { loader: () => import('@features/sentinels/index.js'), requiresAdmin: true, skeleton: 'admin-table' });
+  router.register('self-diag', { loader: () => import('@features/self-diag/index.js'), requiresAuth: true });
+  router.register('admin-backup', { loader: () => import('@features/admin-backup/index.js'), requiresAdmin: true });
+  router.register('smart-router', { loader: () => import('@features/smart-router/index.js'), requiresAdmin: true });
+  router.register('broadlink-setup', { loader: () => import('@features/broadlink-setup/index.js'), requiresAdmin: true });
+  router.register('iot-providers', { loader: () => import('@features/iot-providers/index.js'), requiresAdmin: true });
+  router.register('multi-source-history', { loader: () => import('@features/multi-source-history/index.js'), requiresAdmin: true });
+  router.register('admin-credentials-status', { loader: () => import('@features/admin/credentials-status/index.js'), requiresAdmin: true });
+  router.register('admin-rgpd', { loader: () => import('@features/admin/rgpd-admin/index.js'), requiresAdmin: true });
+  router.register('admin-all-secrets', { loader: () => import('@features/admin/all-secrets/index.js'), requiresAdmin: true });
+  router.register('admin-health-dashboard', { loader: () => import('@features/admin/health-dashboard/index.js'), requiresAdmin: true });
+  router.register('admin-yury-plugins', { loader: () => import('@features/admin/yury-plugins/index.js'), requiresAdmin: true });
+  router.register('admin-shubham-skills', { loader: () => import('@features/admin/shubham-skills/index.js'), requiresAdmin: true });
+  router.register('admin-autonomous', { loader: () => import('@features/admin/autonomous/index.js'), requiresAdmin: true });
+  router.register('mcp-servers', { loader: () => import('@features/admin/mcp-servers/index.js'), requiresAdmin: true });
+  router.register('skills-2026', { loader: () => import('@features/admin/skills-2026/index.js'), requiresAdmin: true });
   router.register('runtime-tests', { loader: () => import('@features/admin/runtime-tests/index.js'), requiresAdmin: true });
   router.register('apex-audits-live', { loader: () => import('@features/admin/apex-audits-live/index.js'), requiresAdmin: true });
-  /* v13.4.211 — Audit Log Viewer (Kevin "100/100 réel", gap audit subagent) */
   router.register('audit-log-viewer', { loader: () => import('@features/admin/audit-log-viewer/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
