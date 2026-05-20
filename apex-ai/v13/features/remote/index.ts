@@ -171,13 +171,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         ${DEVICE_CARDS.map((d) => `
           <div class="ax-remote-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-              <span style="font-size:28px">${d.emoji}</span>
+              <span class="ax-gs-201">${d.emoji}</span>
               <div>
                 <strong style="color:#c9a227">${d.name}</strong>
                 <div class="ax-gs-2">via ${d.capability}</div>
               </div>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <div class="ax-gs-247">
               ${d.actions.map((a) => `
                 <button class="ax-btn ax-btn-sm" data-remote-device="${d.id}" data-remote-action="${a.id}"
                   style="font-size:12px;padding:6px 10px">${a.label}</button>
@@ -203,7 +203,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         <h2 style="margin:0 0 8px;font-size:16px">🌐 Scan réseau LAN (80+ devices)</h2>
         <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Discover Hue Bridge, Sonos, Plex, NAS, caméras IP, imprimantes, IoT...</p>
         <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-lan" style="width:100%">🔍 Scanner mon réseau WiFi</button>
-        <div id="ax-remote-lan-results" style="margin-top:12px"></div>
+        <div id="ax-remote-lan-results" class="ax-gs-248"></div>
       </div>
 
       <div class="ax-gs-73">
@@ -213,7 +213,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-badge" ${!hasNFC ? 'disabled' : ''}>📲 Scanner badge</button>
           <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-remote-list-badges">📋 Mes badges</button>
         </div>
-        <div id="ax-remote-badges-list" style="margin-top:12px"></div>
+        <div id="ax-remote-badges-list" class="ax-gs-248"></div>
       </div>
 
       <div class="ax-gs-73">
@@ -228,7 +228,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         <div id="ax-remote-emulator-status" style="margin-top:12px;font-size:12px;color:var(--ax-text-dim)"></div>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
 

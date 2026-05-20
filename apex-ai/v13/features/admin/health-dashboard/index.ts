@@ -78,7 +78,7 @@ function renderGlobalHeader(report: FullHealthReport | null): string {
   return `
     <div class="ax-health-header" style="background:${bgGradient};border:1px solid ${headerColor}33;border-radius:14px;padding:20px;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <div style="font-size:36px">${headerEmoji}</div>
+        <div class="ax-gs-192">${headerEmoji}</div>
         <div class="ax-gs-11">
           <h2 style="margin:0;font-size:18px;color:${headerColor};font-weight:800;letter-spacing:-0.01em">${escapeHtml(headerLabel)}</h2>
           <p style="margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:13px">

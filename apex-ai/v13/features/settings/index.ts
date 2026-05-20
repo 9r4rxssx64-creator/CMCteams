@@ -235,14 +235,14 @@ export function render(rootEl: HTMLElement): void {
           Apex surveille ta conso et détecte si une clé est utilisée anormalement (potentielle compromission).
         </p>
         <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
-        <div id="ax-conso-results" style="margin-top:12px;font-size:13px"></div>
+        <div id="ax-conso-results" class="ax-gs-196"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
         <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:var(--ax-warning);border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
-        <div id="ax-cf-diagnostic-results" style="margin-top:8px;font-size:12px"></div>
+        <div id="ax-cf-diagnostic-results" class="ax-gs-249"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-functional-test-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35)">🧪 Tester tous les boutons + auto-fix (v13.4.182)</button>
-        <div id="ax-functional-test-results" style="margin-top:8px;font-size:12px"></div>
+        <div id="ax-functional-test-results" class="ax-gs-249"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-layout-inspect-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(180,90,200,0.15);color:var(--ax-purple);border:1px solid rgba(180,90,200,0.35)">📐 Scanner la vue actuelle (overflow, boutons cachés)</button>
-        <div id="ax-layout-inspect-results" style="margin-top:8px;font-size:12px"></div>
+        <div id="ax-layout-inspect-results" class="ax-gs-249"></div>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
@@ -296,7 +296,7 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn ax-btn-danger" id="ax-settings-logout" style="${btnFullWidthStyle};background:rgba(255,91,91,0.15);color:var(--ax-error);border:1px solid rgba(255,91,91,0.3)">🚪 Se déconnecter</button>
       </section>
 
-      <p style="margin-top:32px;text-align:center"><a href="#chat" style="color:var(--ax-gold);text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2);transition:all 200ms">← Retour chat</a></p>
+      <p class="ax-gs-235"><a href="#chat" style="color:var(--ax-gold);text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2);transition:all 200ms">← Retour chat</a></p>
     </div>
   `);
   /* Wire memory-bridge section : status read-only + sync button */
@@ -406,14 +406,14 @@ export function render(rootEl: HTMLElement): void {
             .slice(0, 5)
             .map(
               (d) =>
-                `<li style="color:var(--ax-sev-high);font-size:11px">${escapeHtml(d.label || '(no label)')} → ${escapeHtml(d.status)}</li>`,
+                `<li class="ax-gs-250">${escapeHtml(d.label || '(no label)')} → ${escapeHtml(d.status)}</li>`,
             )
             .join('');
           const appliedSafe = out.fixes.applied.map((f) => escapeHtml(String(f))).join(', ');
           resultsEl.innerHTML = `
             <div style="background:rgba(106,138,255,0.08);border:1px solid rgba(106,138,255,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
               <div class="ax-gs-166">🧪 Test fonctionnel terminé</div>
-              <div>Testés : <b>${out.before.tested}</b>/${out.before.totalButtons} · OK : <b style="color:var(--ax-green)">${out.before.ok} (${okPct}%)</b> · No-response : <b style="color:var(--ax-sev-high)">${out.before.noResponse}</b> · Erreurs : <b style="color:var(--ax-error)">${out.before.errors}</b> · Skipped : ${out.before.skipped}${improveStr}</div>
+              <div>Testés : <b>${out.before.tested}</b>/${out.before.totalButtons} · OK : <b class="ax-gs-222">${out.before.ok} (${okPct}%)</b> · No-response : <b style="color:var(--ax-sev-high)">${out.before.noResponse}</b> · Erreurs : <b style="color:var(--ax-error)">${out.before.errors}</b> · Skipped : ${out.before.skipped}${improveStr}</div>
               ${out.fixes.applied.length ? `<div class="ax-gs-75">🔧 Auto-fix appliqué : ${appliedSafe}</div>` : ''}
               ${out.fixes.escalated ? '<div style="margin-top:6px;color:var(--ax-error)">⚠ Escaladé à Claude Code (ax_claude_todo)</div>' : ''}
               ${sampleBugs ? `<ul style="margin:6px 0 0 16px;padding:0">${sampleBugs}</ul>` : ''}
@@ -442,7 +442,7 @@ export function render(rootEl: HTMLElement): void {
           const r = apexLayoutInspector.scanDom();
           reportsHistory.recordLayout(r);
           const sampleHidden = r.hiddenButtons.slice(0, 5).map(
-            (b) => `<li style="color:var(--ax-sev-high);font-size:11px">"${b.label}" → ${b.reason}</li>`
+            (b) => `<li class="ax-gs-250">"${b.label}" → ${b.reason}</li>`
           ).join('');
           const sampleOverflow = r.overflowingElements.slice(0, 5).map(
             (e) => `<li style="color:var(--ax-error);font-size:11px">${e.tag} (+${e.overflowBy}px)</li>`

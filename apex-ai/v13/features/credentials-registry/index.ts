@@ -133,12 +133,12 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
     : report.recommendations.map((r) => `<li style="margin:8px 0;color:#ffaa00">${escapeHtml(r)}</li>`).join('');
 
   const credentialsList = sorted.length === 0
-    ? '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucun credential dans cette catégorie</p>'
+    ? '<p class="ax-gs-213">Aucun credential dans cette catégorie</p>'
     : sorted.map((e) => renderEntry(e)).join('');
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:960px;margin:0 auto">
-      <header style="margin-bottom:24px">
+      <header class="ax-gs-180">
         <h1 style="margin:0 0 8px;color:#c9a227">🔐 Coffre — Audit credentials</h1>
         <p style="color:var(--ax-text-dim);margin:0;font-size:13px">
           ${report.total_patterns} patterns reconnus · ${report.configured_count} configurés ·
@@ -171,7 +171,7 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
       </div>
 
       <!-- Filtres catégorie -->
-      <div style="margin-bottom:20px">
+      <div class="ax-gs-181">
         <h3 style="margin:0 0 8px;color:var(--ax-text-dim);font-size:13px;text-transform:uppercase;letter-spacing:0.5px">
           Filtrer par catégorie
         </h3>
@@ -194,9 +194,9 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
 function renderEntry(e: CredentialAuditEntry): string {
   const status = STATUS_COLORS[e.status];
   const persistedIcons = [
-    e.persisted.local ? '<span title="localStorage" style="color:#22cc77">💾</span>' : '<span title="pas en local" style="color:#666">·</span>',
-    e.persisted.idb ? '<span title="IndexedDB shadow" style="color:#22cc77">🗄️</span>' : '<span title="pas en IDB" style="color:#666">·</span>',
-    e.persisted.firebase ? '<span title="Firebase backup" style="color:#22cc77">☁️</span>' : '<span title="pas en Firebase" style="color:#666">·</span>',
+    e.persisted.local ? '<span title="localStorage" class="ax-gs-205">💾</span>' : '<span title="pas en local" class="ax-gs-224">·</span>',
+    e.persisted.idb ? '<span title="IndexedDB shadow" class="ax-gs-205">🗄️</span>' : '<span title="pas en IDB" class="ax-gs-224">·</span>',
+    e.persisted.firebase ? '<span title="Firebase backup" class="ax-gs-205">☁️</span>' : '<span title="pas en Firebase" class="ax-gs-224">·</span>',
   ].join(' ');
 
   return `
@@ -210,12 +210,12 @@ function renderEntry(e: CredentialAuditEntry): string {
               ${escapeHtml(e.category)}
             </span>
           </div>
-          <code style="font-size:11px;color:var(--ax-text-dim);font-family:monospace">${escapeHtml(e.storage_key)}</code>
+          <code class="ax-gs-190">${escapeHtml(e.storage_key)}</code>
         </div>
         <div class="ax-gs-83">
           <span style="color:${status.color};font-size:13px">${status.icon} ${status.label}</span>
           ${e.encrypted ? '<span style="color:#22cc77;font-size:11px" title="AES-GCM-256">🔒</span>' : ''}
-          <span style="font-size:11px">${persistedIcons}</span>
+          <span class="ax-gs-225">${persistedIcons}</span>
           <code style="font-family:monospace;font-size:11px;color:var(--ax-text-dim);background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px">${escapeHtml(e.preview)}</code>
         </div>
       </div>
@@ -401,8 +401,8 @@ function attachHandlers(rootEl: HTMLElement): void {
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">Chiffré</td><td>${entry.encrypted ? '🔒 AES-GCM-256' : '⚠️ Non chiffré'}</td></tr>
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">Configuré</td><td>${entry.configured ? '✅ Oui' : '⚪ Non'}</td></tr>
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">Aperçu</td><td><code>${escapeHtml(entry.preview)}</code></td></tr>
-                  ${entry.dashboard_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Dashboard</td><td><a href="${escapeHtml(entry.dashboard_url)}" target="_blank" rel="noopener" style="color:#c9a227">${escapeHtml(entry.dashboard_url)}</a></td></tr>` : ''}
-                  ${entry.billing_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Billing</td><td><a href="${escapeHtml(entry.billing_url)}" target="_blank" rel="noopener" style="color:#c9a227">${escapeHtml(entry.billing_url)}</a></td></tr>` : ''}
+                  ${entry.dashboard_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Dashboard</td><td><a href="${escapeHtml(entry.dashboard_url)}" target="_blank" rel="noopener" class="ax-gs-198">${escapeHtml(entry.dashboard_url)}</a></td></tr>` : ''}
+                  ${entry.billing_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Billing</td><td><a href="${escapeHtml(entry.billing_url)}" target="_blank" rel="noopener" class="ax-gs-198">${escapeHtml(entry.billing_url)}</a></td></tr>` : ''}
                 </table>
                 ${entry.status_detail ? `<p style="margin:12px 0 0;color:#ff6b6b;font-size:12px">⚠️ ${escapeHtml(entry.status_detail)}</p>` : ''}
               </div>

@@ -95,9 +95,9 @@ function renderCard(plugin: PluginCard): string {
 
   return `
     <article class="ax-yury-card" data-plugin-id="${escapeHtml(plugin.id)}" style="background:linear-gradient(135deg,rgba(20,20,35,0.85),rgba(14,14,28,0.65));border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;transition:transform 200ms cubic-bezier(0.16,1,0.3,1)">
-      <header style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <header class="ax-gs-204">
         <div class="ax-gs-120">
-          <span style="font-size:28px" aria-hidden="true">${escapeHtml(plugin.emoji)}</span>
+          <span class="ax-gs-201" aria-hidden="true">${escapeHtml(plugin.emoji)}</span>
           <h3 style="margin:0;font-size:16px;color:#fff;font-weight:700;letter-spacing:-0.015em">${escapeHtml(plugin.name)}</h3>
         </div>
         ${statusBadge}
@@ -114,14 +114,14 @@ function renderPage(): string {
   const cards = PLUGINS.map(renderCard).join('');
   return `
     <div class="ax-yury-plugins" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1100px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
-      <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
+      <header class="ax-gs-202">
         <div>
           <h1 style="margin:0;font-size:clamp(22px,5.5vw,30px);font-weight:700;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.15">🚀 Yury Plugins (équivalents Apex)</h1>
           <p style="margin:6px 0 0;color:rgba(255,255,255,0.55);font-size:12px">5 services applicatifs natifs PWA, pas Claude Code</p>
         </div>
         <button class="ax-btn ax-bounce-tap" data-back-admin style="flex-shrink:0;padding:9px 16px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;white-space:nowrap" aria-label="Retour Admin">← Admin</button>
       </header>
-      <div class="ax-yury-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="ax-yury-grid ax-gs-203">
         ${cards}
       </div>
     </div>
@@ -139,7 +139,7 @@ async function launchSecurityReview(): Promise<void> {
           <span>${escapeHtml(f.msg)}</span>
           ${f.fix ? `<p style="color:rgba(255,255,255,0.55);font-size:12px;margin:4px 0 0">Fix : ${escapeHtml(f.fix)}</p>` : ''}
         </li>`).join('')
-      : '<li style="color:#22cc77">🟢 Aucune vulnérabilité détectée.</li>';
+      : '<li class="ax-gs-205">🟢 Aucune vulnérabilité détectée.</li>';
     modalSheet.open({
       title: `🔒 Security Review — Score ${report.score}/100`,
       content: `
@@ -209,7 +209,7 @@ async function launchFrontendDesign(): Promise<void> {
             Généré en ${Math.round(output.durationMs)}ms · framework ${escapeHtml(output.framework)}
           </p>
           <iframe sandbox="allow-scripts" srcdoc="${safeSrcdoc}" style="width:100%;height:300px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:#fff" aria-label="Aperçu du composant généré"></iframe>
-          <details style="margin-top:14px">
+          <details class="ax-gs-187">
             <summary style="cursor:pointer;color:#e8b830;font-weight:600">Voir le code</summary>
             <pre style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.85);padding:12px;border-radius:10px;font-size:11px;white-space:pre-wrap;max-height:30vh;overflow:auto;margin-top:8px"><strong>HTML:</strong>\n${escapeHtml(output.html)}\n\n<strong>CSS:</strong>\n${escapeHtml(output.css)}\n\n<strong>JS:</strong>\n${escapeHtml(output.js)}</pre>
           </details>
@@ -318,7 +318,7 @@ export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div class="ax-empty" style="padding:40px 20px;text-align:center;color:rgba(255,255,255,0.6)">
+      <div class="ax-empty ax-gs-188">
         <h2>Accès réservé</h2>
         <p>Cette section est réservée à l'admin Kevin.</p>
       </div>

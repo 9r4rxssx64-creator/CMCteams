@@ -1333,7 +1333,7 @@ export function render(root: HTMLElement): void {
         <h3 style="color:#ffb56b;margin:0 0 10px">📖 Recettes (${AX_CUISINE.recettes.length})</h3>
         <input id="cuiQ" type="text" placeholder="Rechercher (poulet, italie, dessert, gluten...)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Recherche recette">
         <button id="cuiSearchBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#ff8c42,#ffb56b);color:#000;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Rechercher</button>
-        <div id="cuiSearchResult" style="margin-top:10px;font-size:13px"></div>
+        <div id="cuiSearchResult" class="ax-gs-241"></div>
       </div>
       <div class="ax-gs-4">
         <h3 style="color:#ffb56b;margin:0 0 10px">⏱ Temps de cuisson (${Object.keys(AX_CUISINE.cuissons).length})</h3>
@@ -1371,7 +1371,7 @@ export function render(root: HTMLElement): void {
         .slice(0, 20)
         .map(
           (r) =>
-            `<div style="padding:10px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;margin:6px 0;background:rgba(0,0,0,0.2)"><strong>${escapeHtml(r.nom)}</strong> &middot; ${escapeHtml(r.temps)} &middot; <em>${escapeHtml(r.difficulte)}</em>${r.calories ? ` &middot; 🔥 ${r.calories} kcal` : ''}${r.origine ? ` &middot; 🌍 ${escapeHtml(r.origine)}` : ''}<br><small style="color:#aaa">📦 ${r.ingredients.map(escapeHtml).join(', ')}</small>${r.allergenes ? `<br><small style="color:#e74c3c">⚠ ${r.allergenes.map(escapeHtml).join(', ')}</small>` : ''}${r.vin_accord ? `<br><small style="color:#c9a227">🍷 ${escapeHtml(r.vin_accord)}</small>` : ''}</div>`
+            `<div style="padding:10px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;margin:6px 0;background:rgba(0,0,0,0.2)"><strong>${escapeHtml(r.nom)}</strong> &middot; ${escapeHtml(r.temps)} &middot; <em>${escapeHtml(r.difficulte)}</em>${r.calories ? ` &middot; 🔥 ${r.calories} kcal` : ''}${r.origine ? ` &middot; 🌍 ${escapeHtml(r.origine)}` : ''}<br><small class="ax-gs-216">📦 ${r.ingredients.map(escapeHtml).join(', ')}</small>${r.allergenes ? `<br><small style="color:#e74c3c">⚠ ${r.allergenes.map(escapeHtml).join(', ')}</small>` : ''}${r.vin_accord ? `<br><small class="ax-gs-198">🍷 ${escapeHtml(r.vin_accord)}</small>` : ''}</div>`
         )
         .join('');
     });

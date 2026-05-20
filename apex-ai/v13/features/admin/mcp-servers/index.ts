@@ -100,7 +100,7 @@ export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-gs-59">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🔌 MCP Servers</h1>
-      <p style="color:#94a3b8;margin-bottom:24px">
+      <p class="ax-gs-194">
         Model Context Protocol servers connectés à Apex. ${servers.length} server${servers.length > 1 ? 's' : ''} enregistré${servers.length > 1 ? 's' : ''}.
       </p>
 
@@ -115,7 +115,7 @@ export function render(rootEl: HTMLElement): void {
           : ''
       }
 
-      <div style="margin-bottom:24px">
+      <div class="ax-gs-180">
         ${serversList || '<p style="color:#94a3b8">Aucun server MCP enregistré.</p>'}
       </div>
 

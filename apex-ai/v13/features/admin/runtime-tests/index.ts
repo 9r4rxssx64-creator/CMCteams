@@ -62,7 +62,7 @@ export function render(rootEl: HTMLElement): void {
           <span>⚠️ ${report.summary.warnings}</span>
           <span>⏭ ${report.summary.skipped}</span>
         </div>
-        <details style="margin-top:8px">
+        <details class="ax-gs-186">
           <summary style="cursor:pointer;color:#cbd5e1;font-size:13px;padding:6px 0">📋 Voir détails (${report.results.length} tests)</summary>
           <div class="ax-gs-114">
             ${report.results.map((r: RuntimeTestResult) => `
@@ -87,7 +87,7 @@ export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-gs-115">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🧪 Runtime Tests — Apex teste TOUT</h1>
-      <p style="color:#94a3b8;margin-bottom:20px">
+      <p class="ax-gs-199">
         Exécute tous les skills 2026 + MCP + sentinelles en runtime browser <strong>RÉEL</strong>
         (CDN load → lib exec → blob téléchargeable).
       </p>
@@ -122,8 +122,8 @@ export function render(rootEl: HTMLElement): void {
       <div class="ax-gs-116">
         💡 <strong>Note Kevin :</strong> Ces tests sont <strong>RÉELS</strong> (CDN chargés, libs exécutées,
         blobs créés). Le bouton ⬇️ DL télécharge le fichier produit pendant le test pour vérification visuelle.
-        Voir aussi <a href="?view=skills-2026" style="color:#3b82f6">🎯 Skills 2026</a> et
-        <a href="?view=mcp-servers" style="color:#3b82f6">🔌 MCP Servers</a>.
+        Voir aussi <a href="?view=skills-2026" class="ax-gs-200">🎯 Skills 2026</a> et
+        <a href="?view=mcp-servers" class="ax-gs-200">🔌 MCP Servers</a>.
       </div>
     </div>
   `;

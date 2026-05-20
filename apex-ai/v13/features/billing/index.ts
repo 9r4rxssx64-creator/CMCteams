@@ -250,20 +250,20 @@ export function render(rootEl: HTMLElement): void {
     .map((cat) => {
       const cards = groups[cat].map((s) => `
         <article class="ax-billing-card" data-service-id="${escapeHtml(s.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:8px">
-          <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <header class="ax-gs-214">
             <strong style="color:#c9a227">${s.emoji} ${escapeHtml(s.name)}</strong>
             ${s.has_credit_api ? '<span class="ax-badge" style="background:rgba(34,204,119,0.15);color:#22cc77;padding:2px 6px;border-radius:4px;font-size:11px">crédit API</span>' : ''}
           </header>
           <div class="ax-gs-7">
             <a href="${escapeHtml(s.dashboard_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-primary" style="font-size:12px;padding:6px 10px">Dashboard</a>
-            <a href="${escapeHtml(s.billing_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-secondary" style="font-size:12px;padding:6px 10px">💳 Recharger</a>
-            ${s.docs_url ? `<a href="${escapeHtml(s.docs_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn" style="font-size:12px;padding:6px 10px">📚 Docs</a>` : ''}
-            ${s.status_url ? `<a href="${escapeHtml(s.status_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn" style="font-size:12px;padding:6px 10px">📡 Statut</a>` : ''}
+            <a href="${escapeHtml(s.billing_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-secondary ax-gs-215">💳 Recharger</a>
+            ${s.docs_url ? `<a href="${escapeHtml(s.docs_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-gs-215">📚 Docs</a>` : ''}
+            ${s.status_url ? `<a href="${escapeHtml(s.status_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-gs-215">📡 Statut</a>` : ''}
           </div>
         </article>
       `).join('');
       return `
-        <section style="margin-bottom:20px">
+        <section class="ax-gs-181">
           <h2 style="color:#c9a227;font-size:15px;margin:8px 0">${CATEGORY_LABELS[cat]}</h2>
           ${cards}
         </section>
@@ -272,7 +272,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">💳 Comptes & Factures</h1>
         ${isAdmin ? '<span style="color:#c9a227;font-size:11px">👑 admin</span>' : ''}
       </header>
@@ -281,7 +281,7 @@ export function render(rootEl: HTMLElement): void {
       </p>
       ${categoriesHtml}
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   logger.info('billing', 'view rendered', { total: stats.total });

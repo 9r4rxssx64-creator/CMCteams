@@ -1097,12 +1097,12 @@ export function render(root: HTMLElement): void {
     .map((k) => {
       const u = AX_MEDICAL_FR.urgences[k];
       if (!u) return '';
-      return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><strong>${escapeHtml(k)}</strong><br><span style="color:#ff5858">${escapeHtml(u.action)}</span>${u.risque ? `<br><small>Risque: ${escapeHtml(u.risque)}</small>` : ''}${u.details ? `<br><small style="color:#999">${escapeHtml(u.details)}</small>` : ''}</div>`;
+      return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><strong>${escapeHtml(k)}</strong><br><span class="ax-gs-245">${escapeHtml(u.action)}</span>${u.risque ? `<br><small>Risque: ${escapeHtml(u.risque)}</small>` : ''}${u.details ? `<br><small class="ax-gs-246">${escapeHtml(u.details)}</small>` : ''}</div>`;
     })
     .join('');
 
   const vaccinsHtml = Object.keys(AX_MEDICAL_FR.vaccins_adulte)
-    .map((v) => `<div style="margin:4px 0"><strong style="color:#ff8080">${escapeHtml(v)}</strong> : ${escapeHtml(AX_MEDICAL_FR.vaccins_adulte[v] ?? '')}</div>`)
+    .map((v) => `<div class="ax-gs-220"><strong style="color:#ff8080">${escapeHtml(v)}</strong> : ${escapeHtml(AX_MEDICAL_FR.vaccins_adulte[v] ?? '')}</div>`)
     .join('');
 
   const sourcesHtml = Object.keys(AX_MEDICAL_FR.sources)
@@ -1129,14 +1129,14 @@ export function render(root: HTMLElement): void {
           <option value="homme">Homme</option><option value="femme">Femme</option>
         </select>
         <button id="medCalcBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#ff5858,#ff8080);color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Calculer</button>
-        <div id="medResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
+        <div id="medResult" class="ax-gs-242"></div>
       </div>
 
       <div class="ax-gs-4">
         <h3 style="color:#ff8080;margin:0 0 10px">💊 Info médicament (${Object.keys(AX_MEDICAL_FR.otc).length} OTC)</h3>
         <input id="medMed" type="text" placeholder="Doliprane, Ibuprofène, Aspirine..." style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Nom médicament">
         <button id="medLookupBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:rgba(255,88,88,0.2);color:#ff8080;border:1px solid #ff5858;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Rechercher</button>
-        <div id="medMedResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
+        <div id="medMedResult" class="ax-gs-242"></div>
       </div>
 
       <div class="ax-gs-158">
@@ -1202,8 +1202,8 @@ export function render(root: HTMLElement): void {
       if (info.interactions) r += `<br>⚠ Interactions : ${info.interactions.map(escapeHtml).join(', ')}`;
       if (info.grossesse) r += `<br>🤰 Grossesse : ${escapeHtml(info.grossesse)}`;
       if (info.danger_overdose ?? info.overdose) r += `<br>☠ Overdose : ${escapeHtml(info.danger_overdose ?? info.overdose ?? '')}`;
-      if (info.vidal_url) r += `<br><a href="${escapeHtml(info.vidal_url)}" target="_blank" rel="noopener" style="color:#5aa8ff">→ Vidal complet</a>`;
-      if (info.note) r += `<br><em style="color:#999">${escapeHtml(info.note)}</em>`;
+      if (info.vidal_url) r += `<br><a href="${escapeHtml(info.vidal_url)}" target="_blank" rel="noopener" class="ax-gs-244">→ Vidal complet</a>`;
+      if (info.note) r += `<br><em class="ax-gs-246">${escapeHtml(info.note)}</em>`;
       out.innerHTML = r;
     });
   }

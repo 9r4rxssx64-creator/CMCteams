@@ -215,7 +215,7 @@ function renderViewModal(backup: Backup): string {
     <div id="ax-backup-modal" role="dialog" aria-modal="true"
       style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px">
       <div style="max-width:600px;width:100%;background:#0a0a14;border:1px solid rgba(201,162,39,0.4);border-radius:14px;overflow:hidden">
-        <header style="padding:14px;border-bottom:1px solid rgba(201,162,39,0.3);display:flex;justify-content:space-between;align-items:center">
+        <header class="ax-gs-206">
           <h3 style="margin:0;color:#c9a227;font-size:15px">🔍 ${escapeHtml(backup.id)}</h3>
           <button data-action="modal-close"
             style="padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#999;border-radius:6px;cursor:pointer">✕</button>
@@ -237,7 +237,7 @@ function renderImportModal(): string {
     <div id="ax-backup-modal" role="dialog" aria-modal="true"
       style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px">
       <div style="max-width:520px;width:100%;background:#0a0a14;border:1px solid rgba(201,162,39,0.4);border-radius:14px;overflow:hidden">
-        <header style="padding:14px;border-bottom:1px solid rgba(201,162,39,0.3);display:flex;justify-content:space-between;align-items:center">
+        <header class="ax-gs-206">
           <h3 style="margin:0;color:#c9a227;font-size:15px">📥 Importer un Coffre</h3>
           <button data-action="modal-close"
             style="padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#999;border-radius:6px;cursor:pointer">✕</button>
@@ -270,7 +270,7 @@ export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div class="ax-empty" style="padding:40px;text-align:center;color:#999">
+      <div class="ax-empty ax-gs-207">
         <h2 style="color:#c9a227">Accès réservé</h2>
         <p>Cette section est réservée à l'admin Kevin.</p>
       </div>

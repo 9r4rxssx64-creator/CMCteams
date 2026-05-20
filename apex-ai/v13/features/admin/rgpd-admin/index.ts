@@ -95,7 +95,7 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
 
     rootEl.innerHTML = `
       <div class="ax-gs-95">
-        <header style="margin-bottom:24px">
+        <header class="ax-gs-180">
           <h1 style="margin:0 0 6px;color:#c9a227">🛡 RGPD — Restrictions actives</h1>
           <p style="color:var(--ax-text-dim);font-size:13px;margin:0">
             Art. 18 RGPD — droit de limitation du traitement.

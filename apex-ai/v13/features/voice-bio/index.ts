@@ -232,7 +232,7 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
     .map((p) => {
       const conf = p.confidence_score ?? 0;
       return `
-        <tr style="border-top:1px solid rgba(255,255,255,0.05)">
+        <tr class="ax-gs-261">
           <td style="padding:8px 6px;color:#fff;font-weight:600">${escapeHtml(p.uid)}${p.uid === ADMIN_ID ? ' 👑' : ''}</td>
           <td style="padding:8px 6px;color:#aaa">${p.samples_count}</td>
           <td style="padding:8px 6px;color:${conf >= 0.85 ? '#22c55e' : conf >= 0.5 ? '#ffa500' : '#ff6666'}">${formatPct(conf)}</td>
@@ -245,7 +245,7 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
 
   const unknownList = recentUnknown
     .map((u) => `
-      <tr style="border-top:1px solid rgba(255,255,255,0.05)">
+      <tr class="ax-gs-261">
         <td style="padding:6px;color:#aaa;font-size:11px">${formatDate(u.ts)}</td>
         <td style="padding:6px;color:#ff6666">${formatPct(u.score)}</td>
         <td style="padding:6px;color:#aaa">${u.pitch} Hz</td>
@@ -280,7 +280,7 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
       <div class="ax-gs-78">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
-            <tr style="color:#888;font-size:11px;text-transform:uppercase">
+            <tr class="ax-gs-262">
               <th style="padding:8px 6px;text-align:left">User ID</th>
               <th style="padding:8px 6px;text-align:left">Samples</th>
               <th style="padding:8px 6px;text-align:left">Confidence</th>
@@ -296,7 +296,7 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
       <div class="ax-gs-78">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
-            <tr style="color:#888;font-size:11px;text-transform:uppercase">
+            <tr class="ax-gs-262">
               <th style="padding:6px;text-align:left">Date</th>
               <th style="padding:6px;text-align:left">Score similarity</th>
               <th style="padding:6px;text-align:left">Pitch</th>

@@ -877,7 +877,7 @@ export function render(rootEl: HTMLElement): void {
       const fullySigned = c.parties.every((p) => p.signature && p.signedAt > 0);
       return `
         <div class="ax-contract-card" data-contract-id="${escapeHtml(c.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
-          <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <header class="ax-gs-214">
             <strong style="color:#c9a227">${escapeHtml(c.number)}</strong>
             <span style="font-size:12px;color:${valid.ok ? '#4caf50' : '#ff9800'}">${valid.ok ? '✓ Complet' : `⚠ ${valid.errors.length} manquant(s)`}</span>
           </header>
@@ -893,11 +893,11 @@ export function render(rootEl: HTMLElement): void {
         </div>
       `;
     }).join('')
-    : '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucun contrat. Crée le premier !</p>';
+    : '<p class="ax-gs-213">Aucun contrat. Crée le premier !</p>';
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">📋 Studio Contrat Pro</h1>
         <span class="ax-gs-3">${contracts.length} contrat${contracts.length > 1 ? 's' : ''}</span>
       </header>
@@ -914,7 +914,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div id="ax-contracts-list">${contractsHtml}</div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attachHandlers(rootEl, uid);

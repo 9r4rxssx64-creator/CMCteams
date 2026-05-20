@@ -61,7 +61,7 @@ async function renderRows(): Promise<string> {
       return `
         <tr data-api="${cap.id}">
           <td>${escapeHtml(cap.label)}</td>
-          <td class="ax-muted" style="font-size:12px">${escapeHtml(cap.description)}</td>
+          <td class="ax-muted ax-gs-189">${escapeHtml(cap.description)}</td>
           <td>${statusBadge(cap.status)}</td>
           <td>
             <label class="ax-toggle">

@@ -113,7 +113,7 @@ function renderActiveSession(s: AutonomousSession | null): string {
         <button class="ax-btn" data-action="force-tick" style="min-height:44px;padding:10px 18px;border-radius:22px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);font-weight:600;cursor:pointer">⚡ Forcer tick</button>
       </div>
 
-      <details style="margin-top:8px">
+      <details class="ax-gs-186">
         <summary style="cursor:pointer;font-weight:600;color:rgba(255,255,255,0.75);padding:8px 0;font-size:13px">📜 Logs récents (${s.logs.length})</summary>
         <div style="max-height:260px;overflow-y:auto;background:rgba(0,0,0,0.35);border-radius:10px;padding:10px;margin-top:6px;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.5">
           ${s.logs
@@ -128,13 +128,13 @@ function renderActiveSession(s: AutonomousSession | null): string {
         </div>
       </details>
 
-      <details style="margin-top:8px">
+      <details class="ax-gs-186">
         <summary style="cursor:pointer;font-weight:600;color:rgba(255,255,255,0.75);padding:8px 0;font-size:13px">📋 Queue (${s.taskQueue.length}) + Faites (${s.tasksCompleted.length})</summary>
         <div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px;margin-top:6px">
           <h4 style="margin:0 0 6px;font-size:12px;color:rgba(255,255,255,0.7)">À faire</h4>
           ${
             s.taskQueue.length === 0
-              ? '<em style="color:rgba(255,255,255,0.5);font-size:12px">queue vide</em>'
+              ? '<em class="ax-gs-183">queue vide</em>'
               : s.taskQueue
                   .map(
                     (t) =>
@@ -151,7 +151,7 @@ function renderActiveSession(s: AutonomousSession | null): string {
               const color = t.status === 'done' ? 'rgba(200,255,200,0.85)' : '#f66';
               return `<div style="padding:6px 8px;background:rgba(0,0,0,0.2);border-radius:6px;margin-bottom:4px;font-size:12px;color:${color}">${icon} ${escapeHtml(t.description.slice(0, 180))}</div>`;
             })
-            .join('') || '<em style="color:rgba(255,255,255,0.5);font-size:12px">aucune</em>'}
+            .join('') || '<em class="ax-gs-183">aucune</em>'}
         </div>
       </details>
     </div>
@@ -179,7 +179,7 @@ function renderHistory(): string {
     })
     .join('');
   return `
-    <details style="margin-top:14px" open>
+    <details class="ax-gs-187" open>
       <summary style="cursor:pointer;font-weight:600;color:rgba(255,255,255,0.85);padding:10px 0;font-size:14px">📚 Historique (${hist.length})</summary>
       <div style="overflow-x:auto;background:rgba(0,0,0,0.25);border-radius:12px;margin-top:6px">
         <table style="width:100%;border-collapse:collapse;font-size:12px;color:rgba(255,255,255,0.85)">
@@ -276,7 +276,7 @@ export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div class="ax-empty" style="padding:40px 20px;text-align:center;color:rgba(255,255,255,0.6)">
+      <div class="ax-empty ax-gs-188">
         <h2>Accès réservé</h2>
         <p>Cette section est réservée à l'admin Kevin.</p>
       </div>

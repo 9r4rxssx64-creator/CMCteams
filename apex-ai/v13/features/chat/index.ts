@@ -3147,21 +3147,21 @@ export function render(rootEl: HTMLElement): void {
           ? recos
               .map(
                 (r) => `
-              <li style="margin:4px 0">
+              <li class="ax-gs-220">
                 <span style="color:${r.priority === 'high' ? 'var(--ax-error)' : r.priority === 'medium' ? 'var(--ax-warning)' : 'var(--ax-text-dim)'}">●</span>
                 ${escapeHtml(r.action)}
-                ${r.url ? ` <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" style="color:var(--ax-gold-deep)">→</a>` : ''}
+                ${r.url ? ` <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" class="ax-gs-221">→</a>` : ''}
               </li>
             `,
               )
               .join('')
-          : '<li style="color:var(--ax-green)">✅ Tout est configuré au mieux</li>';
+          : '<li class="ax-gs-222">✅ Tout est configuré au mieux</li>';
         const sheet = modalSheet.open({
           title: '⚙️ Paramètres',
           content: `
             <div style="display:flex;flex-direction:column;gap:14px">
               <div>
-                <h4 style="margin:0 0 6px;color:var(--ax-gold-deep)">Routing IA</h4>
+                <h4 class="ax-gs-223">Routing IA</h4>
                 <label style="display:block;margin:6px 0">
                   Mode :
                   <select id="ax-settings-mode" style="margin-left:8px;padding:6px;background:var(--ax-bg-flat);color:#fff;border:1px solid var(--ax-gold-deep);border-radius:4px">
@@ -3177,11 +3177,11 @@ export function render(rootEl: HTMLElement): void {
                 </p>
               </div>
               <div>
-                <h4 style="margin:0 0 6px;color:var(--ax-gold-deep)">Clés API</h4>
+                <h4 class="ax-gs-223">Clés API</h4>
                 <button type="button" class="ax-btn ax-btn-primary" id="ax-settings-paste-key" style="width:100%">🔑 Coller une clé API</button>
               </div>
               <div>
-                <h4 style="margin:0 0 6px;color:var(--ax-gold-deep)">Recommandations</h4>
+                <h4 class="ax-gs-223">Recommandations</h4>
                 <ul style="margin:0;padding-left:18px;font-size:13px">${recosHtml}</ul>
               </div>
             </div>
@@ -3237,7 +3237,7 @@ export function render(rootEl: HTMLElement): void {
           <div id="ax-paste-preview" style="margin-top:8px;padding:8px;background:rgba(201,162,39,0.08);border-radius:6px;font-size:12px;color:var(--ax-gold-deep);display:none">
             <span id="ax-paste-detection"></span>
           </div>
-          <p class="ax-muted" style="margin-top:8px">130+ patterns reconnus · 0 stockage des données interdites (CB, seed)</p>
+          <p class="ax-muted ax-gs-186">130+ patterns reconnus · 0 stockage des données interdites (CB, seed)</p>
         `,
         actions: [
           {

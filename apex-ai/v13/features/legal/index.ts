@@ -331,7 +331,7 @@ export function render(rootEl: HTMLElement): void {
       .ax-legal-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0; }
     </style>
     <div style="max-width:880px;margin:0 auto;padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px">
-      <header style="margin-bottom:24px">
+      <header class="ax-gs-180">
         <h1 style="margin:0 0 6px;font-size:clamp(24px,4.5vw,30px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚖️ Documents légaux</h1>
         <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Conformité RGPD + EU + France/Monaco</p>
       </header>
@@ -342,7 +342,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div id="ax-legal-content" class="ax-legal-content"></div>
 
-      <p style="margin-top:32px;text-align:center">
+      <p class="ax-gs-235">
         <a href="#chat" style="color:#e8b830;text-decoration:none;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(232,184,48,0.08);border-radius:24px;border:1px solid rgba(232,184,48,0.2)">← Retour</a>
       </p>
     </div>

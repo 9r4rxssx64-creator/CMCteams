@@ -86,7 +86,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </tbody>
       </table>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
 

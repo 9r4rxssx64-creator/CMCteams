@@ -192,8 +192,8 @@ function renderHealthTab(): string {
         <button class="ax-btn-health ax-btn-health-blue" data-nav-route="apex-audits-live">📊 Audits Apex (historique)</button>
         <button class="ax-btn-health" data-nav-route="audit-log-viewer" title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">🔒 Audit Log Viewer</button>
       </div>
-      <div id="ax-admin-health-mount" style="margin-top:14px"></div>
-      <div id="ax-admin-audits-summary" style="margin-top:14px"></div>
+      <div id="ax-admin-health-mount" class="ax-gs-187"></div>
+      <div id="ax-admin-audits-summary" class="ax-gs-187"></div>
     </div>
   `;
 }
@@ -816,7 +816,7 @@ async function handleCreateUser(rootEl: HTMLElement): Promise<void> {
   resultEl.innerHTML = `
     <div class="ax-success">
       Compte créé : <strong>${escapeHtml(name)}</strong> (${tier})
-      <p>Lien d'invitation : <input type="text" aria-label="Lien d'invitation à copier" readonly value="${result.inviteLink ?? ''}" data-action="select-all" style="width:100%"></p>
+      <p>Lien d'invitation : <input type="text" aria-label="Lien d'invitation à copier" readonly value="${result.inviteLink ?? ''}" data-action="select-all" class="ax-gs-193"></p>
       ${waLink}
     </div>
   `;

@@ -648,7 +648,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">📄 Studio CV Pro</h1>
         <span class="ax-gs-3">Complétude ${completeness}% · ATS ${ats.score}/100</span>
       </header>
@@ -694,7 +694,7 @@ export function render(rootEl: HTMLElement): void {
         <button class="ax-btn" id="ax-cv-clear" style="min-height:44px;color:#ff6666">🗑 Réinitialiser</button>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attachHandlers(rootEl, uid);

@@ -158,7 +158,7 @@ function renderScoreCard(report: AuditReport): string {
 
 function renderAxesGrid(report: AuditReport): string {
   return `
-    <section style="margin-bottom:16px">
+    <section class="ax-gs-217">
       <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📊 Scores par axe (/20)</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
         ${(Object.keys(AXES_META) as AuditAxis[]).map((axis) => {
@@ -251,7 +251,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
-      <header style="margin-bottom:20px">
+      <header class="ax-gs-181">
         <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">🩺 Auto-diagnostic Apex</h1>
         <p style="color:#a0a4c0;margin:0;font-size:13px">
           Apex se teste lui-même : sécurité, perf, UX, tests, architecture, AI safety. Audit subagent indépendant.
@@ -276,7 +276,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         ${renderScoreCard(activeReport)}
         ${renderAxesGrid(activeReport)}
 
-        <section style="margin-bottom:24px">
+        <section class="ax-gs-180">
           <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">⚠ Findings (${activeReport.findings.length})</h3>
           <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">
             ${(['p0_critical', 'p1_high', 'p2_medium', 'p3_low', 'info'] as Severity[]).map((sev) => `
@@ -290,7 +290,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           ${renderFindings(activeReport.findings)}
         </section>
 
-        <section style="margin-bottom:24px">
+        <section class="ax-gs-180">
           <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📋 Prochaines étapes</h3>
           <ul style="list-style:disc;padding-left:24px;color:#a0a4c0;font-size:12px;line-height:1.6">
             ${activeReport.next_steps.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}
@@ -303,7 +303,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </div>
       `}
 
-      <section style="margin-bottom:24px">
+      <section class="ax-gs-180">
         <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">🛡 Sentinelles 24/7</h3>
         <div style="background:rgba(20,20,35,0.6);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:14px">
           <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px">
@@ -315,7 +315,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </div>
       </section>
 
-      <section style="margin-bottom:24px">
+      <section class="ax-gs-180">
         <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📚 Lessons learned (${lessons.length})</h3>
         ${renderLessons(lessons)}
       </section>

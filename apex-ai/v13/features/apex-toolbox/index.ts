@@ -127,7 +127,7 @@ function renderCapabilityRow(c: Capability): string {
     : '';
   return `
     <li style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:10px;margin-bottom:6px;border-left:3px solid ${color}">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div class="ax-gs-204">
         <div class="ax-gs-6">
           <strong style="color:#fff;font-size:13px">${icon} ${escapeHtml(c.emoji)} ${escapeHtml(c.label)}</strong>
           <p style="margin:2px 0 0;color:#a0a4c0;font-size:11px">${escapeHtml(c.description)}</p>
@@ -161,7 +161,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
-      <header style="margin-bottom:20px">
+      <header class="ax-gs-181">
         <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">🧰 Apex Toolbox</h1>
         <p style="color:#a0a4c0;margin:0;font-size:13px">
           ${stats.total} tools IA disponibles · ${allCaps.length} capabilities device · Tier user : <strong style="color:${escapeHtml(TIER_META[userTier].color)}">${escapeHtml(TIER_META[userTier].label)}</strong>
@@ -211,17 +211,17 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           </select>
         </section>
 
-        <section style="margin-bottom:24px">
+        <section class="ax-gs-180">
           <ul style="list-style:none;padding:0;margin:0">
-            ${filtered.length > 0 ? filtered.map(renderToolRow).join('') : '<li style="text-align:center;padding:30px;color:#888">Aucun tool pour ces filtres.</li>'}
+            ${filtered.length > 0 ? filtered.map(renderToolRow).join('') : '<li class="ax-gs-209">Aucun tool pour ces filtres.</li>'}
           </ul>
         </section>
       ` : `
-        <section style="margin-bottom:24px">
+        <section class="ax-gs-180">
           <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📱 Capabilities device</h3>
           <p style="color:#a0a4c0;font-size:12px;margin:0 0 12px">Matrice des capacités matérielles + permissions accordées par l'utilisateur.</p>
           <ul style="list-style:none;padding:0;margin:0">
-            ${allCaps.length > 0 ? allCaps.map(renderCapabilityRow).join('') : '<li style="text-align:center;padding:30px;color:#888">Aucune capability détectée.</li>'}
+            ${allCaps.length > 0 ? allCaps.map(renderCapabilityRow).join('') : '<li class="ax-gs-209">Aucune capability détectée.</li>'}
           </ul>
         </section>
       `}

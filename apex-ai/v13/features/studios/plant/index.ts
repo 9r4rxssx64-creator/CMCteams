@@ -122,7 +122,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🌱 Studio Plantes</h1>
         <span class="ax-gs-3">${PLANTS.length} plantes · Mois ${currentMonth}</span>
       </header>
@@ -135,10 +135,10 @@ export function render(rootEl: HTMLElement): void {
 
       <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Que planter ce mois (${currentMonth}) ?</h2>
-        <div id="ax-plant-month" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        <div id="ax-plant-month" class="ax-gs-247"></div>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attach(rootEl, currentMonth);

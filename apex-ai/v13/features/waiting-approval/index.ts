@@ -71,7 +71,7 @@ function renderState(rootEl: HTMLElement): void {
         <div style="max-width:480px;text-align:center;color:#fff">
           <h1 style="color:#c9a227">Aucune demande en cours</h1>
           <p style="color:var(--ax-text-dim,#aaa)">Tu n'as pas de demande d'inscription en attente.</p>
-          <button id="wa-back" class="ax-btn ax-btn-primary" style="margin-top:16px">← Retour à la connexion</button>
+          <button id="wa-back" class="ax-btn ax-btn-primary ax-gs-211">← Retour à la connexion</button>
         </div>
       </div>
     `;

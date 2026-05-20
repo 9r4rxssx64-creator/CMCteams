@@ -205,7 +205,7 @@ export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-gs-59">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🎯 Skills 2026 — Apex IA</h1>
-      <p style="color:#94a3b8;margin-bottom:24px">
+      <p class="ax-gs-194">
         ${SKILLS_2026.length} skills actifs. Apex IA les utilise <strong>systématiquement</strong> sans demander confirmation.
       </p>
 
@@ -225,7 +225,7 @@ export function render(rootEl: HTMLElement): void {
       <div class="ax-gs-116">
         💡 <strong>Note Kevin :</strong> Tous ces skills sont auto-invoqués par Apex IA selon
         l'intent détecté dans le chat user. Aucune action manuelle Kevin requise.
-        Voir <a href="?view=mcp-servers" style="color:#3b82f6">🔌 MCP Servers</a> pour
+        Voir <a href="?view=mcp-servers" class="ax-gs-200">🔌 MCP Servers</a> pour
         gérer les serveurs MCP.
       </div>
     </div>

@@ -174,7 +174,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">📷 Studio Scan</h1>
         <span class="ax-gs-3">OCR · QR · Barcode</span>
       </header>
@@ -183,7 +183,7 @@ export function render(rootEl: HTMLElement): void {
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Scanner une image</h2>
         <input type="file" id="ax-scan-file" aria-label="Sélectionner ou prendre une photo à scanner" accept="image/*" capture="environment" style="display:none">
         <button class="ax-btn ax-btn-primary" id="ax-scan-pick" style="width:100%;min-height:44px">📷 Choisir / prendre photo</button>
-        <div id="ax-scan-preview" style="margin-top:12px"></div>
+        <div id="ax-scan-preview" class="ax-gs-248"></div>
         <div id="ax-scan-status" style="margin-top:8px;color:var(--ax-text-dim);font-size:13px"></div>
       </div>
 
@@ -205,7 +205,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <p style="font-size:11px;color:#666;text-align:center">${supportsBarcode ? 'BarcodeDetector natif disponible.' : 'BarcodeDetector non supporté ce navigateur — texte uniquement.'}</p>
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   renderHistory(rootEl);

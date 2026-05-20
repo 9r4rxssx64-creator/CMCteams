@@ -346,7 +346,7 @@ function renderTimeline(layoutHistory: LayoutHistoryEntry[], funcHistory: Functi
           <div style="display:flex;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border-left:3px solid ${ev.color};border-radius:6px;margin-bottom:4px;font-size:12px">
             <div class="ax-gs-87">${ev.emoji}</div>
             <div class="ax-gs-6">
-              <div class="ax-gs-86"><b>${ev.type}</b> <span style="color:rgba(255,255,255,0.6)">${escapeHtml(ev.view)}</span></div>
+              <div class="ax-gs-86"><b>${ev.type}</b> <span class="ax-gs-182">${escapeHtml(ev.view)}</span></div>
               <div class="ax-gs-55">${ev.summary}</div>
             </div>
             <div style="text-align:right;flex-shrink:0">
@@ -416,7 +416,7 @@ function renderTrends(layoutHistory: LayoutHistoryEntry[], funcHistory: Function
     <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:14px">
       <div style="font-weight:700;color:#c9a227;margin-bottom:10px">🏆 Top vues problématiques</div>
       ${topViews.length === 0
-        ? '<div style="color:rgba(255,255,255,0.5);font-size:12px">Aucune vue avec issues récurrentes. 🎉</div>'
+        ? '<div class="ax-gs-183">Aucune vue avec issues récurrentes. 🎉</div>'
         : topViews.map(([view, data]) => `
             <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px">
               <span style="color:${data.meta.color};font-weight:600">${data.meta.emoji} ${escapeHtml(view)}</span>

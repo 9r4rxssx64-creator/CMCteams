@@ -385,7 +385,7 @@ export function render(root: HTMLElement): void {
   const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
   if (!guardFeatureEnabled('pro.business', root, uid)) return;
   const html = `
-    <div class="ax-card" style="padding:16px">
+    <div class="ax-card ax-gs-197">
       <h2 style="margin:0 0 8px;color:#c9a227">💼 Business Pro</h2>
       <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${KPIS.length} KPIs · ${BUSINESS_PLAN_SECTIONS.length} sections business plan · ${PRICING_STRATEGIES.length} stratégies pricing · SWOT/BCG.</p>
       <h3 style="color:#79c0ff;font-size:15px">KPIs Finance</h3>
