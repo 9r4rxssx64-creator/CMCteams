@@ -1,4 +1,17 @@
-# Mémo de reprise — Apex v13.4.237 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+# Mémo de reprise — Apex v13.4.240 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+
+## 🏛 SESSION 2026-05-20 (soir 2) — Architecture Apex v13 (audit + chantiers)
+
+Audit architecture (Kevin "l'architecture est primordiale") → organisation 42/100.
+2 règles CLAUDE.md ajoutées : "Architecture auditée EN PREMIER" + "Fais l'audit = audit le plus puissant (8 axes)".
+
+- **v13.4.238** : doublon route `dashboard` corrigé → `dashboard-perso` (vue récap rendue accessible)
+- **v13.4.239** : 5 features orphelines câblées (geo→geolocation, innovation, meta-marketplace→marketplace, plugins, admin-toggles). Étaient finies mais inaccessibles (Declaration ≠ Deployment). Router instrumenté (détecte doublons) + check `architecture-routes` dans l'audit Apex.
+- **v13.4.240 — CHANTIER 3 FAIT** : 80 routes regroupées en 6 sections (auth/cœur/outils/studios/pro/admin). Vérifié 80=80, 0 doublon.
+
+Chantiers RESTANTS (session fraîche dédiée — plan détaillé dans KEVIN_ACTIONS_TODO.md) :
+- Chantier 1 : restructurer 172 services/ en dossiers domaines
+- Chantier 2 : extraire ~1063 styles inline → classes CSS
 
 ## 🔑 SESSION 2026-05-20 (soir) — Vercel agent fix + audit credentials
 

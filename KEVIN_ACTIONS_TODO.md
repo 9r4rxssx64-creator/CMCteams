@@ -8,6 +8,7 @@
 - v13.4.238 : doublon route `dashboard` corrigé → `dashboard-perso`
 - v13.4.239 : 5 features orphelines câblées (geo/innovation/marketplace/plugins/admin-toggles)
 - v13.4.239 : router instrumenté (détecte doublons) + check `architecture-routes` dans l'audit Apex
+- v13.4.240 : **CHANTIER 3 FAIT** — 80 routes regroupées en 6 sections (auth/cœur/outils/studios/pro/admin)
 
 ### ⏳ PLAN D'EXÉCUTION — 3 chantiers (session fraîche dédiée)
 
@@ -34,13 +35,11 @@
 - ⚠️ Risque régression visuelle → tester le rendu après CHAQUE feature
 - Commencer par `vault` (95, plus petit) pour roder la méthode, finir par `admin`
 
-**CHANTIER 3 — Regrouper les 75 routes par catégorie**
-- Réordonner les `router.register()` dans `bootstrap.ts` avec commentaires de
-  section : `/* === AUTH === */`, `/* === MÉTIER === */`, `/* === ADMIN === */`,
-  `/* === STUDIOS === */`, `/* === MONITORING === */`
-- Risque quasi nul (l'ordre n'affecte pas le runtime) — à faire en dernier
-- Bonus : ajouter un CI gate "features sans route" (scan `features/*/index.ts`
-  vs `router.register`) pour ne plus jamais avoir de feature orpheline
+**CHANTIER 3 — ✅ FAIT (v13.4.240)**
+- 80 routes regroupées en 6 sections dans `bootstrap.ts` (auth/cœur/outils/
+  studios/pro/admin) — vérifié 80=80, 0 doublon.
+- Reste optionnel : CI gate "features sans route" (scan `features/*/index.ts`
+  vs `router.register`) pour ne plus jamais avoir de feature orpheline.
 
 ### Décision Kevin (info)
 Les 5 features orphelines étaient des features FINIES oubliées (pas du code mort)

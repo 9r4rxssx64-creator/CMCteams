@@ -1,7 +1,18 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-20 soir** (Vercel agent fix #286 + proxy secrets étendu #290 + Apex v237 visuel #285)
+> Dernière mise à jour : **2026-05-20 soir** (Architecture Apex v238→v240 : routes câblées + regroupées)
+
+## 🏛 SESSION 2026-05-20 soir 2 — Architecture Apex v13
+
+- **PR #295** v13.4.238 : doublon route `dashboard` corrigé
+- **PR #296** v13.4.239 : 5 features orphelines câblées + audit architecture
+- **PR #297** v13.4.240 : 80 routes regroupées en 6 sections
+- 2 règles CLAUDE.md : architecture auditée en premier + audit le plus puissant
+- Chantiers 1 (services) + 2 (inline styles) planifiés (KEVIN_ACTIONS_TODO.md)
+
+---
+
 
 ## 🔑 SESSION 2026-05-20 soir — Vercel + credentials + visuel
 
