@@ -144,30 +144,22 @@ jobs:
             const title = isImmediate
               ? `[APEX-IMMEDIATE] ${report.critical_total} critique(s) — escalation directe`
               : `[AUTO] ${report.critical_total} escalades critiques + ${report.pending_total} pending`;
-            const body = `## 🚨 Escalade ${isImmediate ? '**IMMÉDIATE**' : 'auto'} depuis Apex AI
-
-**Trigger** : ${isImmediate ? '`repository_dispatch` (Apex push direct)' : '`cron */5min`'}
-**Total pending** : ${report.pending_total}
-**Critique** : ${report.critical_total}
-
-### Top 5 récurrents
-${report.top_recurrent.map(([r, c]) => `- (${c}x) ${r}`).join('\n') || '_aucun_'}
-
-### Items critiques (top 10)
-\`\`\`json
-${JSON.stringify(report.critical_items, null, 2)}
-\`\`\`
-
-### Dispatch payload (si trigger Apex direct)
-\`\`\`json
-${JSON.stringify(report.dispatch_payload || {}, null, 2)}
-\`\`\`
-
----
-**Action requise** : Claude Code investigue + fix + écrit dans \`/apex/ax_handoff_journal\` (Apex auto-resolve).
-Source Firebase : \`/apex/ax_claude_todo\`
-Workflow : \`.github/workflows/claude-todo-watcher.yml\`
-`;
+            const body = [
+              '## 🚨 Escalade ' + (isImmediate ? '**IMMÉDIATE**' : 'auto') + ' depuis Apex AI', '',
+              '**Trigger** : ' + (isImmediate ? '`repository_dispatch` (Apex push direct)' : '`cron */5min`'),
+              '**Total pending** : ' + report.pending_total,
+              '**Critique** : ' + report.critical_total, '',
+              '### Top 5 récurrents',
+              (report.top_recurrent.map(([r, c]) => '- (' + c + 'x) ' + r).join('\n') || '_aucun_'), '',
+              '### Items critiques (top 10)',
+              '```json', JSON.stringify(report.critical_items, null, 2), '```', '',
+              '### Dispatch payload (si trigger Apex direct)',
+              '```json', JSON.stringify(report.dispatch_payload || {}, null, 2), '```', '',
+              '---',
+              '**Action requise** : Claude Code investigue + fix + écrit dans `/apex/ax_handoff_journal` (Apex auto-resolve).',
+              'Source Firebase : `/apex/ax_claude_todo`',
+              'Workflow : `.github/workflows/claude-todo-watcher.yml`',
+            ].join('\n');
 
             // Évite spam : max 5 issues open (au lieu de 3 — plus tolérant avec cron 5min)
             const existing = await github.rest.issues.listForRepo({
