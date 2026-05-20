@@ -61,7 +61,8 @@
 html,body{margin:0;padding:0;background:var(--ax-bg);color:var(--ax-text);
   font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
-  height:100%;overscroll-behavior-y:none}
+  height:100%;overscroll-behavior-y:none;
+  max-width:100vw;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
 a{color:var(--ax-blue);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -324,7 +325,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.124';
+const __APEX_CHAT_VERSION__ = 'v1.1.133';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -455,7 +456,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.124</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.133</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -469,7 +470,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.124</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.133</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3529,7 +3530,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.124',
+    version: 'v1.1.133',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4158,7 +4159,7 @@ K._storyPendingImg = null;
 K._publishStory = function(){
   K._showModal('📸 Publier un statut', `
     <p style="color:var(--ax-text-2);font-size:.88em;margin:0 0 10px">Visible 24h. S'auto-supprime après.</p>
-    <textarea id="story-text" rows="3" placeholder="Quoi de neuf ?" maxlength="500" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:15px;resize:vertical"></textarea>
+    <textarea id="story-text" rows="3" placeholder="Quoi de neuf ?" maxlength="500" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px;resize:vertical"></textarea>
     <input type="file" id="story-img-input" accept="image/*" style="display:none" onchange="K._storyImageSelected(this.files[0])">
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn btn-out" style="flex:1" onclick="document.getElementById('story-img-input').click()">📷 Photo</button>
@@ -4557,7 +4558,7 @@ K._openScheduleMenu = function(){
       <button class="btn btn-out btn-sm" onclick="K._showCustomScheduleInput()">📅 Personnalisé</button>
     </div>
     <div id="custom-schedule-wrapper" style="display:none;margin-top:10px">
-      <input type="datetime-local" id="custom-schedule-input" min="${fmt(now)}" style="width:100%;padding:10px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;color:var(--ax-text);font-size:15px">
+      <input type="datetime-local" id="custom-schedule-input" min="${fmt(now)}" style="width:100%;padding:10px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;color:var(--ax-text);font-size:16px">
       <button class="btn btn-block" style="margin-top:8px" onclick="K._scheduleCustom()">✅ Programmer</button>
     </div>
     <p style="text-align:center;color:var(--ax-text-3);font-size:.7em;margin-top:14px">
@@ -5563,18 +5564,43 @@ K._handleAuthPseudo = async function(){
   const pseudo = $('#auth-pseudo').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
   if(!/^[a-z0-9_-]{3,20}$/.test(pseudo)) return toast('Pseudo 3-20 lettres/chiffres', 'err');
 
-  // === Bypass admin : login local direct sans appel worker ===
+  // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    const localUser = {
-      id: 'kdmc_admin',
-      pseudo,
+    // v1.1.133 : appel Worker /api/auth/verify-otp avec otp='000000' pour
+    // obtenir un VRAI JWT admin (sinon le Worker rejette le token local 403).
+    let realToken = null, realUser = null;
+    try{
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 8000);
+      let r;
+      try {
+        r = await fetch(API_BASE + '/api/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: K.authData.phone, name: K.authData.name, pseudo, otp: '000000' }),
+          signal: ctrl.signal,
+        });
+      } finally { clearTimeout(tid); }
+      if(r && r.ok){
+        const data = await r.json().catch(() => ({}));
+        if(data.ok && data.token){ realToken = data.token; realUser = data.user; }
+      }
+    }catch(e){ /* worker offline → fallback local */ }
+    const adminUser = {
+      id: (realUser && realUser.id) || 'kdmc_admin',
+      pseudo: (realUser && realUser.pseudo) || pseudo,
       real_name: K.authData.name,
       phone: K.authData.phone,
       is_admin: true,
       created_at: Date.now()
     };
-    K.login(localUser, 'local-admin-' + Date.now());
-    toast('👑 Bienvenue Kevin admin', 'ok', 2500);
+    if(realToken){
+      K.login(adminUser, realToken);
+      toast('👑 Kevin admin — connecté au serveur', 'ok', 2500);
+    } else {
+      K.login(adminUser, 'local-admin-' + Date.now());
+      toast('👑 Kevin admin (mode local — serveur injoignable)', 'warn', 3000);
+    }
     return;
   }
 
@@ -5773,7 +5799,7 @@ function renderChats(app){
            placeholder="🔍 Rechercher conversation, msg, brouillon..."
            value="${esc(K._convSearchQuery || '')}"
            oninput="K._convSearchInput(this.value)"
-           style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px 12px;color:var(--ax-text);font-size:15px;margin-bottom:12px">
+           style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px 12px;color:var(--ax-text);font-size:16px;margin-bottom:12px">
     ${q.length > 0 ? `<p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">📂 ${convs.length} résultat${convs.length>1?'s':''} pour "<strong>${esc(q)}</strong>"</p>` : ''}
     ${(() => {
       const allLabels = K._getLabels();
@@ -7655,7 +7681,7 @@ K._openEditMsg = function(msgId){
   if(!K._canEditMsg(m)){ toast('Édition expirée (max 15 min) ou type non-text', 'warn'); return; }
   K._showModal('✏️ Modifier le message', `
     <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 8px">Tu peux modifier ton message pendant 15 min après envoi.</p>
-    <textarea id="edit-msg-input" rows="4" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:15px;resize:vertical">${esc(m.text)}</textarea>
+    <textarea id="edit-msg-input" rows="4" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px;resize:vertical">${esc(m.text)}</textarea>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="btn btn-out" style="flex:1" onclick="K._closeModal()">↩ Annuler</button>
       <button class="btn" style="flex:2" onclick="K._saveEditMsg('${esc(msgId)}')">💾 Enregistrer</button>
@@ -8156,7 +8182,7 @@ K._showVoicePreview = function(payload){
       <audio id="voice-preview-audio" src="${payload.audioUrl}" controls style="width:100%;margin-bottom:12px;border-radius:10px"></audio>
     </div>
     <label style="display:block;color:var(--ax-text-2);font-size:.85em;margin-bottom:4px">Transcription (modifiable) :</label>
-    <textarea id="voice-preview-text" rows="3" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:15px;resize:vertical">${esc(payload.text)}</textarea>
+    <textarea id="voice-preview-text" rows="3" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px;resize:vertical">${esc(payload.text)}</textarea>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-out" style="flex:1" onclick="K._cancelVoicePreview()">↩ Annuler</button>
       <button class="btn" style="flex:2" onclick="K._sendVoiceMessage()">📤 Envoyer message vocal</button>
