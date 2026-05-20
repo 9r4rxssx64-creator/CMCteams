@@ -43,42 +43,42 @@ export function render(rootEl: HTMLElement): void {
   function full(): void {
     rootEl.innerHTML = `
       <div class="ax-gs-59">
-        <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📊 Studio PowerPoint</h1>
+        <h1 class="ax-gs-289">📊 Studio PowerPoint</h1>
         <p class="ax-gs-199">Génère un .pptx téléchargeable avec slides personnalisés.</p>
 
-        <label style="display:block;margin-bottom:12px">
+        <label class="ax-gs-473">
           <span class="ax-gs-15">Modèle</span>
-          <select id="pptx-template" style="width:100%;padding:12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:15px">
+          <select id="pptx-template" class="ax-gs-464">
             ${TEMPLATES.map((t) => `<option value="${t.id}">${t.emoji} ${escapeHtml(t.label)}</option>`).join('')}
           </select>
         </label>
 
-        <label style="display:block;margin-bottom:12px">
+        <label class="ax-gs-473">
           <span class="ax-gs-15">Titre</span>
-          <input id="pptx-title" type="text" placeholder="Mon pitch Apex" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+          <input id="pptx-title" type="text" placeholder="Mon pitch Apex" class="ax-gs-463">
         </label>
 
-        <label style="display:block;margin-bottom:12px">
+        <label class="ax-gs-473">
           <span class="ax-gs-15">Auteur</span>
-          <input id="pptx-author" type="text" placeholder="Kevin DESARZENS" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+          <input id="pptx-author" type="text" placeholder="Kevin DESARZENS" class="ax-gs-463">
         </label>
 
-        <label style="display:block;margin-bottom:16px">
+        <label class="ax-gs-403">
           <span class="ax-gs-15">Mode</span>
-          <select id="pptx-mode" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+          <select id="pptx-mode" class="ax-gs-463">
             <option value="pro">⚙️ Pro (sobre, business)</option>
             <option value="fun">🎉 Fun (couleurs vives)</option>
           </select>
         </label>
 
-        <h3 style="font-size:16px;color:#f1f5f9;margin-bottom:12px">Slides (${slidesState.length})</h3>
+        <h3 class="ax-gs-294">Slides (${slidesState.length})</h3>
         <div id="pptx-slides">${renderSlideRows()}</div>
 
         <button id="pptx-add-slide" style="width:100%;padding:10px;background:#3b82f6;color:#fff;border:0;border-radius:8px;font-size:14px;cursor:pointer;margin-bottom:16px;min-height:44px">
           ➕ Ajouter slide
         </button>
 
-        <button id="pptx-generate" style="width:100%;padding:14px;background:#10b981;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px">
+        <button id="pptx-generate" class="ax-gs-465">
           ⬇️ Générer le .pptx
         </button>
 
@@ -129,8 +129,8 @@ export function render(rootEl: HTMLElement): void {
         if (result.success) {
           resEl.innerHTML = `
             <div class="ax-gs-47">
-              <p style="color:#10b981;font-size:14px;margin-bottom:12px">✅ ${escapeHtml(result.filename)} (${result.slideCount} slides, ${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
-              <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇️ Télécharger</a>
+              <p class="ax-gs-466">✅ ${escapeHtml(result.filename)} (${result.slideCount} slides, ${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
+              <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" class="ax-gs-467">⬇️ Télécharger</a>
             </div>`;
           toast.success(`✅ ${result.filename}`);
         } else {

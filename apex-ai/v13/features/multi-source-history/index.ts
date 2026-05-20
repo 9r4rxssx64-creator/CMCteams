@@ -36,7 +36,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div class="ax-gs-21">
-        <h2 style="color:#c9a227">Accès admin uniquement</h2>
+        <h2 class="ax-gs-266">Accès admin uniquement</h2>
         <p>Multi-Source History — Kevin admin.</p>
       </div>
     `;
@@ -83,8 +83,8 @@ function renderHTML(
 
       <!-- Refresh / clear actions -->
       <div class="ax-gs-65">
-        <button id="ax-msh-refresh" class="ax-btn ax-btn-sm" style="padding:8px 14px">🔄 Refresh</button>
-        <button id="ax-msh-refresh-services" class="ax-btn ax-btn-sm" style="padding:8px 14px">📚 Re-étudier services</button>
+        <button id="ax-msh-refresh" class="ax-btn ax-btn-sm ax-gs-366">🔄 Refresh</button>
+        <button id="ax-msh-refresh-services" class="ax-btn ax-btn-sm ax-gs-366">📚 Re-étudier services</button>
         <button id="ax-msh-clear" class="ax-btn ax-btn-sm" style="padding:8px 14px;background:rgba(255,107,107,0.2);color:#ff6b6b">🗑️ Vider historique</button>
       </div>
 
@@ -93,7 +93,7 @@ function renderHTML(
         ${history.length === 0
           ? `<div style="padding:40px;text-align:center;color:#999;border:1px dashed #444;border-radius:8px">
                <p>Aucune source analysée pour le moment.</p>
-               <p style="font-size:12px;margin-top:8px">Colle une image / un texte avec credentials dans le chat → analyse multi-source automatique.</p>
+               <p class="ax-gs-397">Colle une image / un texte avec credentials dans le chat → analyse multi-source automatique.</p>
              </div>`
           : history.map((r, idx) => renderResult(r, idx)).join('')}
       </div>
@@ -138,14 +138,14 @@ function renderResult(r: MultiSourceResult, idx: number): string {
             ⚠️ ${r.errors.length} erreur(s):<br>${r.errors.map(escapeHtml).join('<br>')}
           </div>
         ` : ''}
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <table class="ax-gs-392">
           <thead>
             <tr style="background:rgba(0,0,0,0.3);text-align:left">
-              <th style="padding:6px 8px">Type</th>
-              <th style="padding:6px 8px">Service</th>
-              <th style="padding:6px 8px">Valeur (masquée)</th>
-              <th style="padding:6px 8px">Confiance</th>
-              <th style="padding:6px 8px">Test</th>
+              <th class="ax-gs-267">Type</th>
+              <th class="ax-gs-267">Service</th>
+              <th class="ax-gs-267">Valeur (masquée)</th>
+              <th class="ax-gs-267">Confiance</th>
+              <th class="ax-gs-267">Test</th>
             </tr>
           </thead>
           <tbody>
@@ -183,10 +183,10 @@ function renderItem(it: ExtractedItem): string {
   return `
     <tr class="ax-gs-232">
       <td style="padding:6px 8px;color:${typeColor};font-weight:600">${escapeHtml(it.type)}</td>
-      <td style="padding:6px 8px">${escapeHtml(it.service ?? '—')}${forbiddenBadge}</td>
+      <td class="ax-gs-267">${escapeHtml(it.service ?? '—')}${forbiddenBadge}</td>
       <td style="padding:6px 8px;font-family:monospace;color:#aaa">${escapeHtml(it.value.slice(0, 32))}${it.value.length > 32 ? '…' : ''}</td>
-      <td style="padding:6px 8px">${Math.round(it.confidence * 100)}%</td>
-      <td style="padding:6px 8px">${testCell}</td>
+      <td class="ax-gs-267">${Math.round(it.confidence * 100)}%</td>
+      <td class="ax-gs-267">${testCell}</td>
     </tr>
   `;
 }

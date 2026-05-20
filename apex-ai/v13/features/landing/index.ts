@@ -88,7 +88,7 @@ export function render(rootEl: HTMLElement): void {
         <div class="ax-landing-card">
           <h1 class="ax-landing-logo">APEX</h1>
           <p class="ax-muted ax-gs-187">Service temporairement fermé par l'administrateur.</p>
-          <p class="ax-muted" style="font-size:12px;margin-top:8px">Si tu es admin Kevin, rafraîchis pour bypass.</p>
+          <p class="ax-muted ax-gs-397">Si tu es admin Kevin, rafraîchis pour bypass.</p>
         </div>
       </div>
     `;
@@ -130,7 +130,7 @@ export function render(rootEl: HTMLElement): void {
         </button>
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06);text-align:center">
           <p style="color:var(--ax-text-dim,#888);font-size:12px;margin:0 0 6px">Pas encore de compte ?</p>
-          <button type="button" id="login-go-signup" class="ax-btn ax-btn-secondary ax-btn-block" style="font-size:13px">📝 Créer mon compte</button>
+          <button type="button" id="login-go-signup" class="ax-btn ax-btn-secondary ax-btn-block ax-gs-398">📝 Créer mon compte</button>
         </div>
         <p class="ax-landing-footer ax-muted">
           🔒 Local-first · End-to-end · Zero tracking

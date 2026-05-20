@@ -22,36 +22,36 @@ const TEMPLATES = [
 export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-gs-169">
-      <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📑 Studio PDF</h1>
+      <h1 class="ax-gs-289">📑 Studio PDF</h1>
       <p class="ax-gs-199">Génère un PDF pro téléchargeable.</p>
 
-      <label style="display:block;margin-bottom:16px">
+      <label class="ax-gs-403">
         <span class="ax-gs-15">Type de document</span>
-        <select id="pdf-template" style="width:100%;padding:12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:15px">
+        <select id="pdf-template" class="ax-gs-464">
           ${TEMPLATES.map((t) => `<option value="${t.id}">${t.emoji} ${escapeHtml(t.label)}</option>`).join('')}
         </select>
       </label>
 
       <div class="ax-gs-113">
-        <label style="display:block;margin-bottom:10px">
+        <label class="ax-gs-472">
           <span class="ax-gs-16">N° / Référence</span>
-          <input id="pdf-number" type="text" placeholder="F-2026-001" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+          <input id="pdf-number" type="text" placeholder="F-2026-001" class="ax-gs-463">
         </label>
-        <label style="display:block;margin-bottom:10px">
+        <label class="ax-gs-472">
           <span class="ax-gs-16">Client / Destinataire</span>
-          <input id="pdf-client" type="text" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+          <input id="pdf-client" type="text" class="ax-gs-463">
         </label>
-        <label style="display:block;margin-bottom:10px">
+        <label class="ax-gs-472">
           <span class="ax-gs-16">Adresse client</span>
-          <input id="pdf-address" type="text" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+          <input id="pdf-address" type="text" class="ax-gs-463">
         </label>
-        <label style="display:block;margin-bottom:10px">
+        <label class="ax-gs-472">
           <span class="ax-gs-16">Lignes (1 par ligne : "description | qty | prix HT")</span>
-          <textarea id="pdf-items" rows="4" placeholder="Service A | 1 | 500&#10;Service B | 2 | 250" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px;resize:vertical"></textarea>
+          <textarea id="pdf-items" rows="4" placeholder="Service A | 1 | 500&#10;Service B | 2 | 250" class="ax-gs-462"></textarea>
         </label>
-        <label style="display:block;margin-bottom:10px">
+        <label class="ax-gs-472">
           <span class="ax-gs-16">Watermark (optionnel)</span>
-          <select id="pdf-watermark" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+          <select id="pdf-watermark" class="ax-gs-463">
             <option value="">Aucun</option>
             <option value="BROUILLON">BROUILLON</option>
             <option value="CONFIDENTIEL">CONFIDENTIEL</option>
@@ -59,7 +59,7 @@ export function render(rootEl: HTMLElement): void {
         </label>
       </div>
 
-      <button id="pdf-generate" style="width:100%;padding:14px;background:#10b981;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px">
+      <button id="pdf-generate" class="ax-gs-465">
         ⬇️ Générer le PDF
       </button>
 
@@ -109,8 +109,8 @@ export function render(rootEl: HTMLElement): void {
       if (result.success) {
         resEl.innerHTML = `
           <div class="ax-gs-47">
-            <p style="color:#10b981;font-size:14px;margin-bottom:12px">✅ ${escapeHtml(result.filename)} (${result.pageCount} page${result.pageCount > 1 ? 's' : ''}, ${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
-            <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇️ Télécharger</a>
+            <p class="ax-gs-466">✅ ${escapeHtml(result.filename)} (${result.pageCount} page${result.pageCount > 1 ? 's' : ''}, ${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
+            <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" class="ax-gs-467">⬇️ Télécharger</a>
           </div>`;
         toast.success(`✅ ${result.filename}`);
       } else {

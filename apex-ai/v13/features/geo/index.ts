@@ -64,7 +64,7 @@ function formatFavorites(favs: FavoriteLocation[]): string {
             <span class="ax-gs-136"> · ${escapeHtml(f.type ?? 'other')}</span>
             <div class="ax-gs-8">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</div>
           </div>
-          <button class="ax-btn ax-btn-danger" data-action="remove-fav" data-fav-id="${escapeHtml(f.id)}" style="min-height:36px;padding:6px 10px;font-size:11px">Supprimer</button>
+          <button class="ax-btn ax-btn-danger ax-gs-380" data-action="remove-fav" data-fav-id="${escapeHtml(f.id)}">Supprimer</button>
         </div>
       `,
     )
@@ -111,8 +111,8 @@ export function render(rootEl: HTMLElement): void {
     ? `
         <div class="ax-gs-129">
           <a href="https://www.google.com/maps?q=${last.latitude},${last.longitude}" target="_blank" rel="noopener" class="ax-btn ax-btn-outline ax-gs-230">🗺 Google Maps</a>
-          <button class="ax-btn ax-btn-outline" data-action="refresh-position" style="min-height:44px;padding:10px 14px">↻ Actualiser</button>
-          <button class="ax-btn ax-btn-outline" data-action="share-position" style="min-height:44px;padding:10px 14px">📤 Partager</button>
+          <button class="ax-btn ax-btn-outline ax-gs-381" data-action="refresh-position">↻ Actualiser</button>
+          <button class="ax-btn ax-btn-outline ax-gs-381" data-action="share-position">📤 Partager</button>
         </div>
       `
     : `<button class="ax-btn ax-btn-primary" data-action="refresh-position" style="margin-top:10px;min-height:44px">📍 Obtenir ma position</button>`;
@@ -140,7 +140,7 @@ export function render(rootEl: HTMLElement): void {
                 <strong>${escapeHtml(f.name)}</strong>
                 <div class="ax-gs-8">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)} · rayon ${f.radius}m</div>
               </div>
-              <button class="ax-btn ax-btn-danger" data-action="remove-fence" data-fence-id="${escapeHtml(f.id)}" style="min-height:36px;padding:6px 10px;font-size:11px">Supprimer</button>
+              <button class="ax-btn ax-btn-danger ax-gs-380" data-action="remove-fence" data-fence-id="${escapeHtml(f.id)}">Supprimer</button>
             </div>
           `,
         )
@@ -148,50 +148,50 @@ export function render(rootEl: HTMLElement): void {
     : '<div class="ax-gs-5">Aucune zone définie. Ajoutez votre position courante comme zone.</div>';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
         <h1 style="margin:0;background:linear-gradient(135deg,#c9a227,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">📍 Géolocalisation</h1>
         <span class="ax-gs-3">${favs.length} favoris · ${fences.length} zones</span>
       </header>
 
-      <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
-        <h3 style="margin:0 0 8px 0;color:#c9a227">Position actuelle</h3>
+      <div class="ax-card ax-gs-382">
+        <h3 class="ax-gs-383">Position actuelle</h3>
         ${positionHtml}
         ${positionActions}
       </div>
 
-      <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
-        <h3 style="margin:0 0 8px 0;color:#c9a227">Suivi continu</h3>
+      <div class="ax-card ax-gs-382">
+        <h3 class="ax-gs-383">Suivi continu</h3>
         <div style="font-size:12px;color:var(--ax-text-dim);margin-bottom:8px">Met à jour automatiquement la position et détecte entrées/sorties des zones définies.</div>
         <button class="ax-btn ${tracking ? 'ax-btn-danger' : 'ax-btn-primary'}" data-action="toggle-tracking" style="min-height:44px;width:100%">${tracking ? '⏹ Arrêter le suivi' : '▶ Démarrer le suivi continu'}</button>
       </div>
 
-      <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-card ax-gs-382">
         <header class="ax-gs-214">
-          <h3 style="margin:0;color:#c9a227">Lieux favoris</h3>
-          <button class="ax-btn ax-btn-primary" data-action="add-fav" style="min-height:36px;padding:6px 12px;font-size:12px">+ Ajouter ici</button>
+          <h3 class="ax-gs-333">Lieux favoris</h3>
+          <button class="ax-btn ax-btn-primary ax-gs-384" data-action="add-fav">+ Ajouter ici</button>
         </header>
         ${formatFavorites(favs)}
       </div>
 
-      <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-card ax-gs-382">
         <header class="ax-gs-214">
-          <h3 style="margin:0;color:#c9a227">Zones (geofences)</h3>
-          <button class="ax-btn ax-btn-primary" data-action="add-fence" style="min-height:36px;padding:6px 12px;font-size:12px">+ Créer une zone</button>
+          <h3 class="ax-gs-333">Zones (geofences)</h3>
+          <button class="ax-btn ax-btn-primary ax-gs-384" data-action="add-fence">+ Créer une zone</button>
         </header>
         ${fencesHtml}
       </div>
 
-      <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-card ax-gs-382">
         <header class="ax-gs-214">
-          <h3 style="margin:0;color:#c9a227">Météo locale 7 jours</h3>
-          <button class="ax-btn ax-btn-outline" data-action="load-weather" style="min-height:36px;padding:6px 12px;font-size:12px">Charger</button>
+          <h3 class="ax-gs-333">Météo locale 7 jours</h3>
+          <button class="ax-btn ax-btn-outline ax-gs-384" data-action="load-weather">Charger</button>
         </header>
         <div id="ax-geo-weather"><div class="ax-gs-5">Cliquez "Charger" pour afficher la météo Open-Meteo gratuite.</div></div>
       </div>
 
-      <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
-        <h3 style="margin:0 0 8px 0;color:#c9a227">Historique — 30 derniers points</h3>
+      <div class="ax-card ax-gs-382">
+        <h3 class="ax-gs-383">Historique — 30 derniers points</h3>
         ${historyHtml}
       </div>
 

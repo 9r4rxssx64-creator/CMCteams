@@ -196,7 +196,7 @@ function renderItemsList(report: FullHealthReport): string {
   const truncated = filtered.length > 200 ? `<p style="color:rgba(255,255,255,0.4);font-size:11px;text-align:center;padding:8px">… ${filtered.length - 200} items supplémentaires (filtre pour voir)</p>` : '';
 
   return `
-    <ul style="list-style:none;padding:0;margin:0">${rows}</ul>
+    <ul class="ax-gs-286">${rows}</ul>
     ${truncated}
   `;
 }
@@ -217,7 +217,7 @@ function renderAlternatives(report: FullHealthReport): string {
   return `
     <div style="background:rgba(232,184,48,0.06);border:1px solid rgba(232,184,48,0.15);border-radius:12px;padding:14px;margin-top:12px">
       <h3 style="margin:0 0 10px;color:#e8b830;font-size:13px;text-transform:uppercase;letter-spacing:0.08em">💡 Alternatives proposées</h3>
-      <ul style="list-style:none;padding:0;margin:0">${rows}</ul>
+      <ul class="ax-gs-286">${rows}</ul>
     </div>
   `;
 }
@@ -225,7 +225,7 @@ function renderAlternatives(report: FullHealthReport): string {
 function renderProgress(progress: ProgressUpdate): string {
   const pct = Math.round((progress.current / progress.total) * 100);
   return `
-    <div id="ax-health-progress" style="background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.2);border-radius:12px;padding:16px;margin-bottom:16px">
+    <div id="ax-health-progress" class="ax-gs-287">
       <div class="ax-gs-103">
         <span class="ax-gs-17">⏳</span>
         <div class="ax-gs-26">
@@ -435,7 +435,7 @@ function showAllRulesModal(rootEl: HTMLElement): void {
           .join('')}
       </ul>
       <div class="ax-gs-105">Erreurs documentées (${errors.length})</div>
-      <ul id="ax-errors-list" style="list-style:none;padding:0;margin:0">
+      <ul id="ax-errors-list" class="ax-gs-286">
         ${errors
           .map((e) => {
             const tag = e.applied ? '✅' : '⚠️';
@@ -525,7 +525,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div style="padding:40px;text-align:center;color:rgba(255,255,255,0.5)">
-        <h2 style="color:#c9a227">Accès admin uniquement</h2>
+        <h2 class="ax-gs-266">Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>
     `;
@@ -542,7 +542,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       <header style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06)">
         <div class="ax-gs-106">
           <h1 style="margin:0;font-size:clamp(20px,5vw,26px);font-weight:700;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.02em">📊 Santé Live</h1>
-          <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:11px">Codes · Liens · Sentinelles · MCP · Vault — auto-test exhaustif</p>
+          <p class="ax-gs-288">Codes · Liens · Sentinelles · MCP · Vault — auto-test exhaustif</p>
         </div>
         <button id="btn-back-admin" style="flex-shrink:0;padding:8px 14px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:22px;font-size:13px;font-weight:600;cursor:pointer;min-height:38px;-webkit-tap-highlight-color:transparent">← Admin</button>
       </header>

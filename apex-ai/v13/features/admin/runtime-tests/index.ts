@@ -86,7 +86,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-gs-115">
-      <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🧪 Runtime Tests — Apex teste TOUT</h1>
+      <h1 class="ax-gs-289">🧪 Runtime Tests — Apex teste TOUT</h1>
       <p class="ax-gs-199">
         Exécute tous les skills 2026 + MCP + sentinelles en runtime browser <strong>RÉEL</strong>
         (CDN load → lib exec → blob téléchargeable).
@@ -104,7 +104,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div id="test-results">
-        ${lastReport ? `<h3 style="font-size:16px;color:#f1f5f9;margin-bottom:12px">Dernier rapport</h3>${renderReport(lastReport)}` : '<p style="color:#94a3b8;text-align:center;padding:30px;background:#0f172a;border-radius:12px">Aucun test runtime exécuté. Clique sur le bouton ci-dessus pour démarrer.</p>'}
+        ${lastReport ? `<h3 class="ax-gs-294">Dernier rapport</h3>${renderReport(lastReport)}` : '<p style="color:#94a3b8;text-align:center;padding:30px;background:#0f172a;border-radius:12px">Aucun test runtime exécuté. Clique sur le bouton ci-dessus pour démarrer.</p>'}
       </div>
 
       ${history.length > 1 ? `

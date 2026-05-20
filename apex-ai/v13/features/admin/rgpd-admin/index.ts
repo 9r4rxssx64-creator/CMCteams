@@ -96,8 +96,8 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
     rootEl.innerHTML = `
       <div class="ax-gs-95">
         <header class="ax-gs-180">
-          <h1 style="margin:0 0 6px;color:#c9a227">🛡 RGPD — Restrictions actives</h1>
-          <p style="color:var(--ax-text-dim);font-size:13px;margin:0">
+          <h1 class="ax-gs-281">🛡 RGPD — Restrictions actives</h1>
+          <p class="ax-gs-282">
             Art. 18 RGPD — droit de limitation du traitement.
             Les users en restriction ne peuvent plus que lire leurs données (pas de modif/AI/sync).
           </p>
@@ -119,15 +119,15 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
         </div>
 
         <div class="ax-gs-100">
-          <button id="ax-rgpd-refresh" class="ax-btn" aria-label="Rafraîchir la liste des restrictions" style="padding:8px 14px;font-size:13px">🔄 Rafraîchir</button>
+          <button id="ax-rgpd-refresh" class="ax-btn ax-gs-283" aria-label="Rafraîchir la liste des restrictions">🔄 Rafraîchir</button>
         </div>
 
         <section>
-          <h2 style="font-size:16px;color:#ff6b6b;margin:0 0 10px">⛔ Users restreints (${restricted.length})</h2>
+          <h2 class="ax-gs-285">⛔ Users restreints (${restricted.length})</h2>
           <div id="ax-rgpd-list">${tableHtml}</div>
         </section>
 
-        <p style="text-align:center;color:#666;font-size:11px;margin-top:24px">
+        <p class="ax-gs-265">
           🔒 Lift restriction = audit log immutable (rgpd.restrict.lifted) + reprise normale du traitement
         </p>
       </div>
@@ -187,7 +187,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div class="ax-gs-21">
-        <h2 style="color:#c9a227">Accès admin uniquement</h2>
+        <h2 class="ax-gs-266">Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>
     `;

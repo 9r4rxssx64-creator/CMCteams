@@ -204,7 +204,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-gs-59">
-      <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🎯 Skills 2026 — Apex IA</h1>
+      <h1 class="ax-gs-289">🎯 Skills 2026 — Apex IA</h1>
       <p class="ax-gs-194">
         ${SKILLS_2026.length} skills actifs. Apex IA les utilise <strong>systématiquement</strong> sans demander confirmation.
       </p>

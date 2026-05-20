@@ -571,13 +571,13 @@ export function buildBlockedOverlay(url: string): string {
     <p style="color:#999;font-size:12px;margin:0 0 16px 0">Le site envoie <code class="ax-gs-198">X-Frame-Options</code> qui bloque l'affichage. Voici 4 façons de le voir quand même :</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <button data-fallback="archive" data-fallback-url="${archive}"
-        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📚 Archive</button>
+        class="ax-gs-345">📚 Archive</button>
       <button data-fallback="reader" data-fallback-url="${reader}"
-        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📖 Lecture</button>
+        class="ax-gs-345">📖 Lecture</button>
       <button data-fallback="gcache" data-fallback-url="${gcache}"
-        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔍 Cache</button>
+        class="ax-gs-345">🔍 Cache</button>
       <button data-fallback="safari" data-fallback-url="${safe}"
-        style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🌐 Safari</button>
+        class="ax-gs-345">🌐 Safari</button>
     </div>
     <button data-fallback="dismiss"
       style="margin-top:8px;padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#bbb;border-radius:6px;cursor:pointer;font-size:12px">Fermer</button>
@@ -827,8 +827,8 @@ export function render(rootEl: HTMLElement): void {
         <aside id="ax-browser-sidebar" style="width:280px;background:linear-gradient(135deg,rgba(15,15,25,0.98),rgba(10,10,20,0.95));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,0.06);overflow-y:auto;display:none;flex-direction:column">
           <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.06);padding:6px;gap:4px">
             <button data-sidebar-tab="bookmarks" class="active ax-bounce-tap" style="flex:1;padding:10px;background:linear-gradient(135deg,rgba(232,184,48,0.18),rgba(201,162,39,0.1));border:1px solid rgba(232,184,48,0.3);color:#e8b830;cursor:pointer;font-size:12px;border-radius:8px;font-weight:600;-webkit-tap-highlight-color:transparent;min-height:40px;transition:all 160ms">⭐ Favoris</button>
-            <button data-sidebar-tab="history" class="ax-bounce-tap" style="flex:1;padding:10px;background:transparent;border:1px solid transparent;color:rgba(255,255,255,0.55);cursor:pointer;font-size:12px;border-radius:8px;-webkit-tap-highlight-color:transparent;min-height:40px;transition:all 160ms">🕒 Historique</button>
-            <button data-sidebar-tab="ai" class="ax-bounce-tap" style="flex:1;padding:10px;background:transparent;border:1px solid transparent;color:rgba(255,255,255,0.55);cursor:pointer;font-size:12px;border-radius:8px;-webkit-tap-highlight-color:transparent;min-height:40px;transition:all 160ms">🤖 IA</button>
+            <button data-sidebar-tab="history" class="ax-bounce-tap ax-gs-346">🕒 Historique</button>
+            <button data-sidebar-tab="ai" class="ax-bounce-tap ax-gs-346">🤖 IA</button>
           </div>
           <div id="ax-sidebar-content" style="flex:1;padding:10px;overflow-y:auto"></div>
         </aside>
@@ -1278,7 +1278,7 @@ function handleAction(action: string, ctx: ActionContext): void {
             <div class="ax-gs-27">
               <h3 style="color:#c9a227;font-size:14px;margin:0 0 8px 0">📑 Sommaire</h3>
               <p style="color:#999;font-size:11px;margin:0 0 8px 0">${stats.wordCount} mots • ${stats.readingTimeMin} min de lecture</p>
-              <ul style="list-style:none;padding:0;margin:0">
+              <ul class="ax-gs-286">
                 ${stats.toc.map((h) => `
                   <li style="padding:4px 0;padding-left:${(h.level - 1) * 12}px;color:#fff;font-size:${14 - h.level}px;border-bottom:1px solid rgba(201,162,39,0.1)">
                     ${escapeHtml(h.text)}
@@ -1317,11 +1317,11 @@ function renderSidebar(rootEl: HTMLElement, tab: string): void {
   if (tab === 'bookmarks') {
     const list = bookmarksStore.load();
     content.innerHTML = list.length === 0
-      ? '<p style="color:var(--ax-text-dim,#999);text-align:center;padding:14px;font-size:13px">Aucun favori. Clique ☆ pour ajouter.</p>'
+      ? '<p class="ax-gs-347">Aucun favori. Clique ☆ pour ajouter.</p>'
       : list
           .map(
             (b) => `
-            <div data-nav-url="${escapeHtml(b.url)}" style="padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(201,162,39,0.1)">
+            <div data-nav-url="${escapeHtml(b.url)}" class="ax-gs-348">
               <img src="${escapeHtml(b.favicon)}" alt="" loading="lazy" decoding="async" style="width:16px;height:16px" onerror="this.style.display='none'">
               <span class="ax-gs-125">${escapeHtml(b.title)}</span>
               <span data-bookmark-remove="${escapeHtml(b.id)}" style="opacity:0.5;cursor:pointer;color:#ff6666;font-size:11px">✕</span>
@@ -1336,11 +1336,11 @@ function renderSidebar(rootEl: HTMLElement, tab: string): void {
         <button data-action="clear-history" style="padding:4px 8px;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6666;border-radius:4px;cursor:pointer;font-size:11px">Effacer</button>
       </div>
       ${entries.length === 0
-        ? '<p style="color:var(--ax-text-dim,#999);text-align:center;padding:14px;font-size:13px">Aucun historique.</p>'
+        ? '<p class="ax-gs-347">Aucun historique.</p>'
         : entries
             .map(
               (h) => `
-              <div data-nav-url="${escapeHtml(h.url)}" style="padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(201,162,39,0.1)">
+              <div data-nav-url="${escapeHtml(h.url)}" class="ax-gs-348">
                 <span class="ax-gs-87">🕒</span>
                 <span class="ax-gs-125">${escapeHtml(h.title)}</span>
               </div>`,

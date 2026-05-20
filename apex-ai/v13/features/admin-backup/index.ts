@@ -113,18 +113,18 @@ function renderStats(stats: BackupStats): string {
 
 function renderHeader(): string {
   return `
-    <header style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:14px;background:rgba(20,20,35,0.95);border-bottom:1px solid rgba(201,162,39,0.3);position:sticky;top:0;z-index:10">
-      <h1 style="margin:0;color:#c9a227;font-size:18px;flex:1;min-width:160px">💾 Backups Auto 24/7</h1>
+    <header class="ax-gs-313">
+      <h1 class="ax-gs-314">💾 Backups Auto 24/7</h1>
       <button class="ax-btn" data-action="snapshot-now"
         style="padding:8px 14px;background:#c9a227;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;min-height:40px">
         💾 Snapshot maintenant
       </button>
-      <button class="ax-btn" data-action="export-config"
-        style="padding:8px 14px;background:transparent;border:1px solid rgba(201,162,39,0.4);color:#c9a227;border-radius:6px;cursor:pointer;font-size:12px;min-height:40px">
+      <button class="ax-btn ax-gs-315" data-action="export-config"
+       >
         📤 Exporter Coffre
       </button>
-      <button class="ax-btn" data-action="import-config"
-        style="padding:8px 14px;background:transparent;border:1px solid rgba(201,162,39,0.4);color:#c9a227;border-radius:6px;cursor:pointer;font-size:12px;min-height:40px">
+      <button class="ax-btn ax-gs-315" data-action="import-config"
+       >
         📥 Importer Coffre
       </button>
       <button class="ax-btn" data-action="cleanup-now"
@@ -144,10 +144,10 @@ function renderBackupRow(b: Backup): string {
   return `
     <tr data-backup-id="${safeId}" style="border-bottom:1px solid rgba(201,162,39,0.1)">
       <td style="padding:10px;color:#fff;font-size:13px">${escapeHtml(date)}</td>
-      <td style="padding:10px">${renderTypeBadge(safeType)}</td>
+      <td class="ax-gs-316">${renderTypeBadge(safeType)}</td>
       <td style="padding:10px;color:#999;font-size:12px">${escapeHtml(size)}</td>
       <td style="padding:10px;color:#666;font-size:11px;font-family:monospace">${escapeHtml(hashShort)}…</td>
-      <td style="padding:10px;text-align:right">
+      <td class="ax-gs-317">
         <button data-view="${safeId}"
           style="padding:6px 10px;background:transparent;border:1px solid rgba(201,162,39,0.3);color:#c9a227;border-radius:4px;cursor:pointer;font-size:11px;margin-right:4px"
           title="Voir contenu">🔍</button>
@@ -176,10 +176,10 @@ function renderBackupList(backups: readonly Backup[]): string {
       <table style="width:100%;border-collapse:collapse">
         <thead>
           <tr style="background:rgba(201,162,39,0.08);border-bottom:1px solid rgba(201,162,39,0.3)">
-            <th style="padding:10px;text-align:left;color:#c9a227;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">Date</th>
-            <th style="padding:10px;text-align:left;color:#c9a227;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">Type</th>
-            <th style="padding:10px;text-align:left;color:#c9a227;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">Taille</th>
-            <th style="padding:10px;text-align:left;color:#c9a227;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">Hash</th>
+            <th class="ax-gs-318">Date</th>
+            <th class="ax-gs-318">Type</th>
+            <th class="ax-gs-318">Taille</th>
+            <th class="ax-gs-318">Hash</th>
             <th style="padding:10px;text-align:right;color:#c9a227;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">Actions</th>
           </tr>
         </thead>
@@ -216,15 +216,15 @@ function renderViewModal(backup: Backup): string {
       style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px">
       <div style="max-width:600px;width:100%;background:#0a0a14;border:1px solid rgba(201,162,39,0.4);border-radius:14px;overflow:hidden">
         <header class="ax-gs-206">
-          <h3 style="margin:0;color:#c9a227;font-size:15px">🔍 ${escapeHtml(backup.id)}</h3>
+          <h3 class="ax-gs-319">🔍 ${escapeHtml(backup.id)}</h3>
           <button data-action="modal-close"
-            style="padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#999;border-radius:6px;cursor:pointer">✕</button>
+            class="ax-gs-320">✕</button>
         </header>
         <div style="max-height:60vh;overflow-y:auto;padding:14px">
           <pre style="margin:0;color:#a0a4c0;font-size:12px;white-space:pre-wrap;font-family:monospace">${escapeHtml(summaryJson)}</pre>
           <p style="margin-top:14px;color:#666;font-size:11px">Le contenu chiffré n'est jamais affiché en clair pour ta sécurité.</p>
         </div>
-        <footer style="padding:10px 14px;background:rgba(201,162,39,0.05);font-size:11px;color:#888;text-align:center">
+        <footer class="ax-gs-321">
           Hash SHA-256 : ${escapeHtml(backup.hash)}
         </footer>
       </div>
@@ -238,9 +238,9 @@ function renderImportModal(): string {
       style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px">
       <div style="max-width:520px;width:100%;background:#0a0a14;border:1px solid rgba(201,162,39,0.4);border-radius:14px;overflow:hidden">
         <header class="ax-gs-206">
-          <h3 style="margin:0;color:#c9a227;font-size:15px">📥 Importer un Coffre</h3>
+          <h3 class="ax-gs-319">📥 Importer un Coffre</h3>
           <button data-action="modal-close"
-            style="padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#999;border-radius:6px;cursor:pointer">✕</button>
+            class="ax-gs-320">✕</button>
         </header>
         <div style="padding:14px">
           <p style="color:#a0a4c0;font-size:13px;margin-top:0">Colle le contenu du fichier coffre exporté précédemment :</p>
@@ -271,7 +271,7 @@ export function render(rootEl: HTMLElement): void {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div class="ax-empty ax-gs-207">
-        <h2 style="color:#c9a227">Accès réservé</h2>
+        <h2 class="ax-gs-266">Accès réservé</h2>
         <p>Cette section est réservée à l'admin Kevin.</p>
       </div>
     `;
@@ -288,7 +288,7 @@ export function render(rootEl: HTMLElement): void {
   const backups = autoBackup.list();
 
   rootEl.innerHTML = `
-    <div class="ax-admin-backup" style="background:#0a0a14;color:#fff;min-height:100vh;font-family:system-ui,-apple-system,sans-serif">
+    <div class="ax-admin-backup ax-gs-322">
       ${renderHeader()}
       <main style="padding:14px;max-width:1000px;margin:0 auto">
         ${renderStats(stats)}

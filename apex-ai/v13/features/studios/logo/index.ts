@@ -604,8 +604,8 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-card ax-gs-197">
-      <h2 style="margin:0 0 8px;color:#c9a227">🎨 Studio Logo Pro</h2>
-      <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${TEMPLATES.length}+ templates · ${PRESET_PALETTES.length} palettes · ${allGoogleFonts().length} fonts · Export SVG/PNG/PDF + ${MOCKUPS.length} mockups.</p>
+      <h2 class="ax-gs-365">🎨 Studio Logo Pro</h2>
+      <p class="ax-gs-417">${TEMPLATES.length}+ templates · ${PRESET_PALETTES.length} palettes · ${allGoogleFonts().length} fonts · Export SVG/PNG/PDF + ${MOCKUPS.length} mockups.</p>
       <div class="ax-gs-30">
         <button id="ax-logo-new" class="ax-btn ax-btn-primary">+ Nouveau logo</button>
         <button id="ax-logo-templates" class="ax-btn">📚 Voir templates</button>
@@ -613,7 +613,7 @@ export function render(rootEl: HTMLElement): void {
       <div id="ax-logo-list" class="ax-gs-258">
         ${logos.length === 0
           ? '<p class="ax-gs-255">Aucun logo encore. Crée le premier !</p>'
-          : logos.map((l) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(l.name)}</strong><br><small class="ax-gs-240">${escapeHtml(l.template)}</small></div>`).join('')}
+          : logos.map((l) => `<div class="ax-gs-46"><strong class="ax-gs-327">${escapeHtml(l.name)}</strong><br><small class="ax-gs-240">${escapeHtml(l.template)}</small></div>`).join('')}
       </div>
     </div>
   `;

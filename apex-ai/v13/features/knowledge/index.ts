@@ -145,7 +145,7 @@ async function loadMyFacts(rootEl: HTMLElement, user: UserCtx | null): Promise<v
     `).join('');
     container.innerHTML = `
       <p>${mine.length} fact(s) mémorisé(s) (top 100 affichés) — clic ligne pour drilldown</p>
-      <table class="ax-table" style="width:100%;font-size:0.9em;">
+      <table class="ax-table ax-gs-394">
         <thead><tr><th>Catégorie</th><th>Fact</th><th>Importance</th><th>Âge</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -170,13 +170,13 @@ async function loadMyFacts(rootEl: HTMLElement, user: UserCtx | null): Promise<v
             title: `🧠 Fact ${escapeHtml(f.category)}`,
             content: () => `
               <div class="ax-gs-27">
-                <table style="width:100%;font-size:13px">
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Catégorie</td><td>${escapeHtml(f.category)}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Texte</td><td>${escapeHtml(f.text)}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Importance</td><td>${f.importance}/100</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Scope (user)</td><td><code>${escapeHtml(f.scope ?? 'global')}</code></td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Source</td><td>${escapeHtml(f.source ?? '—')}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Créé</td><td>${fmtDate(f.ts)} (${fmtAge(f.ts)})</td></tr>
+                <table class="ax-gs-291">
+                  <tr><td class="ax-gs-367">Catégorie</td><td>${escapeHtml(f.category)}</td></tr>
+                  <tr><td class="ax-gs-367">Texte</td><td>${escapeHtml(f.text)}</td></tr>
+                  <tr><td class="ax-gs-367">Importance</td><td>${f.importance}/100</td></tr>
+                  <tr><td class="ax-gs-367">Scope (user)</td><td><code>${escapeHtml(f.scope ?? 'global')}</code></td></tr>
+                  <tr><td class="ax-gs-367">Source</td><td>${escapeHtml(f.source ?? '—')}</td></tr>
+                  <tr><td class="ax-gs-367">Créé</td><td>${fmtDate(f.ts)} (${fmtAge(f.ts)})</td></tr>
                 </table>
               </div>
             `,
@@ -293,7 +293,7 @@ async function loadDocs(rootEl: HTMLElement): Promise<void> {
     `;
   }).join('');
   container.innerHTML = `
-    <table class="ax-table" style="width:100%;font-size:0.9em;">
+    <table class="ax-table ax-gs-394">
       <thead><tr><th>Doc</th><th>Taille</th><th>Âge</th><th>Last fetch</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>

@@ -678,11 +678,11 @@ export function render(root: HTMLElement): void {
   root.innerHTML = `
     <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#5aa8ff,#3a85e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">🌐 Traducteur Pro</h2>
-      <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">${Object.keys(AX_LANGS).length} langues &middot; détection auto &middot; mode interprète &middot; ${Object.keys(GLOSSAIRES).length} glossaires métier &middot; cache 1000</p>
+      <p class="ax-gs-421">${Object.keys(AX_LANGS).length} langues &middot; détection auto &middot; mode interprète &middot; ${Object.keys(GLOSSAIRES).length} glossaires métier &middot; cache 1000</p>
 
       <div class="ax-gs-4">
         <label style="font-size:12px;color:var(--ax-text-dim,#999);display:block;margin-bottom:6px">Langue cible :</label>
-        <select id="trTgt" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Langue cible">${optionsHtml}</select>
+        <select id="trTgt" class="ax-gs-423" aria-label="Langue cible">${optionsHtml}</select>
       </div>
 
       <div class="ax-gs-4">
@@ -690,12 +690,12 @@ export function render(root: HTMLElement): void {
         <button id="trDoBtn" type="button" style="width:100%;margin-top:8px;padding:13px;background:linear-gradient(135deg,#5aa8ff,#3a85e0);color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:48px">🌐 Traduire</button>
         <div id="trOut" style="margin-top:12px;padding:14px;background:rgba(90,168,255,0.08);border-radius:10px;border:1px solid rgba(90,168,255,0.3);min-height:60px;font-size:15px;line-height:1.6;color:#cde7ff"></div>
         <div style="display:flex;gap:8px;margin-top:8px">
-          <button id="trCopyBtn" type="button" style="flex:1;padding:11px;background:rgba(255,255,255,0.05);color:#eee;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;cursor:pointer;min-height:44px">📋 Copier</button>
-          <button id="trSpeakBtn" type="button" style="flex:1;padding:11px;background:rgba(255,255,255,0.05);color:#eee;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;cursor:pointer;min-height:44px">🔊 Lire</button>
-          <button id="trClearCacheBtn" type="button" style="flex:1;padding:11px;background:rgba(255,255,255,0.05);color:#eee;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;cursor:pointer;min-height:44px">🗑 Cache</button>
+          <button id="trCopyBtn" type="button" class="ax-gs-431">📋 Copier</button>
+          <button id="trSpeakBtn" type="button" class="ax-gs-431">🔊 Lire</button>
+          <button id="trClearCacheBtn" type="button" class="ax-gs-431">🗑 Cache</button>
         </div>
       </div>
-      <p style="margin-top:14px;text-align:center;font-size:11px;color:#666">Sources : DeepL &middot; Google Translate &middot; ISO 639-1</p>
+      <p class="ax-gs-428">Sources : DeepL &middot; Google Translate &middot; ISO 639-1</p>
     </div>
   `;
 

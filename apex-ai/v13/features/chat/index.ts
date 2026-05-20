@@ -475,20 +475,20 @@ async function proposeBroadlinkSetup(
     title: '🔌 Compte Broadlink détecté',
     content:
       `<div class="ax-gs-126">` +
-      `<p style="margin:0 0 12px"><strong>Apex a reconnu un compte Broadlink dans ton image.</strong></p>` +
-      `<p style="margin:0 0 12px;color:var(--ax-text-muted);font-size:14px">${escapeHtml(summary)}</p>` +
-      (result.email ? `<p style="margin:0 0 8px;font-size:14px">📧 <strong>Email</strong> : ${escapeHtml(result.email)}</p>` : '') +
+      `<p class="ax-gs-353"><strong>Apex a reconnu un compte Broadlink dans ton image.</strong></p>` +
+      `<p class="ax-gs-354">${escapeHtml(summary)}</p>` +
+      (result.email ? `<p class="ax-gs-355">📧 <strong>Email</strong> : ${escapeHtml(result.email)}</p>` : '') +
       (devicesCount > 0
-        ? `<p style="margin:0 0 8px;font-size:14px">📱 <strong>Devices</strong> :</p>` +
+        ? `<p class="ax-gs-355">📱 <strong>Devices</strong> :</p>` +
           `<ul style="margin:0 0 12px;padding-left:20px;font-size:13px;color:var(--ax-text-muted)">` +
           (result.devices ?? []).slice(0, 5).map((d) => `<li>${escapeHtml(d.name ?? d.id ?? '?')}${d.mac ? ` <code>${escapeHtml(d.mac)}</code>` : ''}</li>`).join('') +
           `</ul>`
         : '') +
       `<div class="ax-gs-127">` +
       (hasToken
-        ? `<button class="ax-btn ax-btn-primary" id="ax-bl-setup-token" style="width:100%;padding:14px;font-weight:700">⚡ Configurer Broadlink (1-clic)</button>`
-        : `<button class="ax-btn ax-btn-primary" id="ax-bl-login" style="width:100%;padding:14px;font-weight:700">🔑 Me connecter à Broadlink</button>`) +
-      `<button class="ax-btn" id="ax-bl-open-setup" style="width:100%;padding:12px">⚙️ Ouvrir vue Configuration Broadlink</button>` +
+        ? `<button class="ax-btn ax-btn-primary ax-gs-356" id="ax-bl-setup-token">⚡ Configurer Broadlink (1-clic)</button>`
+        : `<button class="ax-btn ax-btn-primary ax-gs-356" id="ax-bl-login">🔑 Me connecter à Broadlink</button>`) +
+      `<button class="ax-btn ax-gs-357" id="ax-bl-open-setup">⚙️ Ouvrir vue Configuration Broadlink</button>` +
       `<button class="ax-btn" id="ax-bl-cancel" style="width:100%;padding:10px;color:var(--ax-text-muted)">Annuler</button>` +
       `</div>` +
       `</div>`,
@@ -557,12 +557,12 @@ async function proposeSmartTVSetup(
     title: '📺 Smart TV détectée',
     content:
       `<div class="ax-gs-126">` +
-      `<p style="margin:0 0 12px"><strong>Apex a reconnu une Smart TV dans ton image.</strong></p>` +
-      `<p style="margin:0 0 12px;color:var(--ax-text-muted);font-size:14px">${escapeHtml(summary || 'Infos limitées')}</p>` +
+      `<p class="ax-gs-353"><strong>Apex a reconnu une Smart TV dans ton image.</strong></p>` +
+      `<p class="ax-gs-354">${escapeHtml(summary || 'Infos limitées')}</p>` +
       `<p style="margin:0 0 12px;font-size:13px;color:var(--ax-text-muted)">Pour la piloter, Apex utilise ton hub Broadlink (RM Pro / RM Mini). Si pas configuré, configure d'abord ton compte Broadlink.</p>` +
       `<div class="ax-gs-127">` +
-      `<button class="ax-btn ax-btn-primary" id="ax-tv-setup-bl" style="width:100%;padding:14px;font-weight:700">🔌 Configurer Broadlink pour piloter</button>` +
-      `<button class="ax-btn" id="ax-tv-saved" style="width:100%;padding:12px">💾 OK, infos TV sauvegardées</button>` +
+      `<button class="ax-btn ax-btn-primary ax-gs-356" id="ax-tv-setup-bl">🔌 Configurer Broadlink pour piloter</button>` +
+      `<button class="ax-btn ax-gs-357" id="ax-tv-saved">💾 OK, infos TV sauvegardées</button>` +
       `</div>` +
       `</div>`,
   });
@@ -1170,7 +1170,7 @@ async function handlePlanCommand(rootEl: HTMLElement, objective: string): Promis
       const { modalSheet: ms } = await import('../../ui/modal-sheet.js');
       ms.open({
         title: '🗺 Plan validé ?',
-        content: `<div style="font-family:system-ui;padding:12px"><p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">${escapeHtml(plan.summary || plan.objective)}</p><pre style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.85);padding:12px;border-radius:10px;font-size:12px;white-space:pre-wrap;max-height:40vh;overflow-y:auto">${escapeHtml(stepsTxt)}</pre></div>`,
+        content: `<div style="font-family:system-ui;padding:12px"><p class="ax-gs-303">${escapeHtml(plan.summary || plan.objective)}</p><pre class="ax-gs-312">${escapeHtml(stepsTxt)}</pre></div>`,
         actions: [
           { label: 'Annuler', variant: 'ghost', onClick: () => { planMode.revoke(); ms.closeAll(); } },
           { label: '✅ Plan validé', variant: 'primary', onClick: () => ms.closeAll() },
@@ -2046,14 +2046,14 @@ export function render(rootEl: HTMLElement): void {
           autocomplete="off"
           style="flex:1 1 100%;min-width:0;max-width:100%"
         ></textarea>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)" style="min-width:36px;width:36px;flex:0 0 36px">🎙</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="min-width:36px;width:36px;flex:0 0 36px">👂</button>
-        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive" style="min-width:36px;width:36px;flex:0 0 36px">📎</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact ax-gs-358" id="ax-chat-mic" aria-label="Dictée vocale" title="Dictée vocale (Web Speech)">🎙</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact ax-gs-358" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif">👂</button>
+        <button type="button" class="ax-btn ax-btn-icon ax-icon-compact ax-gs-358" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive">📎</button>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none;min-width:36px;width:36px;flex:0 0 36px">📷</button>
         <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer" style="flex:0 0 56px;width:56px;min-width:56px;height:44px;padding:0;margin-left:auto">↑</button>
         <input type="file" id="ax-chat-file-input" aria-label="Joindre fichiers au message" multiple
           accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
-          style="display:none">
+          class="ax-gs-359">
       </form>
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
       <!-- v13.4.237 — Tab bar premium iOS-style : icône + label, glassmorphism,
@@ -3050,28 +3050,28 @@ export function render(rootEl: HTMLElement): void {
       title: '☰ Menu',
       content: `
         <div class="ax-gs-123">
-          <button class="ax-btn ax-btn-primary" data-menu-nav="chat" style="width:100%;text-align:left;padding:14px">💬 Chat</button>
-          ${isAdminUser ? '<button class="ax-btn ax-btn-primary" data-menu-nav="admin" style="width:100%;text-align:left;padding:14px">👑 Centre Admin</button>' : ''}
-          <button class="ax-btn ax-btn-primary" data-menu-nav="studios" style="width:100%;text-align:left;padding:14px">🎨 Studios</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="studio-music" style="width:100%;text-align:left;padding:14px">🎚 Mix Musique</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="studio-video" style="width:100%;text-align:left;padding:14px">🎬 Vidéo</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="studio-cv" style="width:100%;text-align:left;padding:14px">📄 CV</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="studio-invoice" style="width:100%;text-align:left;padding:14px">🧾 Facture</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="studio-contract" style="width:100%;text-align:left;padding:14px">📋 Contrat</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="pro" style="width:100%;text-align:left;padding:14px">💼 Pro</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="remote" style="width:100%;text-align:left;padding:14px">📡 Télécommande</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="browser" style="width:100%;text-align:left;padding:14px">🌐 Browser</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="domotique" style="width:100%;text-align:left;padding:14px">🏠 Domotique</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="workflow" style="width:100%;text-align:left;padding:14px">⚡ Workflows</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="crypto" style="width:100%;text-align:left;padding:14px">₿ Crypto</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="notes" style="width:100%;text-align:left;padding:14px">📝 Bloc-notes</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="calendar" style="width:100%;text-align:left;padding:14px">📅 Calendrier</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="calculators" style="width:100%;text-align:left;padding:14px">🧮 Calculatrices</button>
-          <button class="ax-btn ax-btn-primary" data-menu-nav="archive" style="width:100%;text-align:left;padding:14px">🗄 Archive</button>
-          ${isAdminUser ? '<button class="ax-btn ax-btn-primary" data-menu-nav="billing" style="width:100%;text-align:left;padding:14px">💳 Comptes &amp; Factures</button>' : ''}
-          ${isAdminUser ? '<button class="ax-btn ax-btn-primary" data-menu-nav="sentinels" style="width:100%;text-align:left;padding:14px">🛡 Sentinelles</button>' : ''}
-          <button class="ax-btn ax-btn-primary" data-menu-nav="settings" style="width:100%;text-align:left;padding:14px">⚙️ Réglages</button>
-          <button class="ax-btn" data-menu-action="paste-key" style="width:100%;text-align:left;padding:14px">🔑 Coller une clé API</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="chat">💬 Chat</button>
+          ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="admin">👑 Centre Admin</button>' : ''}
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studios">🎨 Studios</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-music">🎚 Mix Musique</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-video">🎬 Vidéo</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-cv">📄 CV</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-invoice">🧾 Facture</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-contract">📋 Contrat</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="pro">💼 Pro</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="remote">📡 Télécommande</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="browser">🌐 Browser</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="domotique">🏠 Domotique</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="workflow">⚡ Workflows</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="crypto">₿ Crypto</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="notes">📝 Bloc-notes</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="calendar">📅 Calendrier</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="calculators">🧮 Calculatrices</button>
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="archive">🗄 Archive</button>
+          ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="billing">💳 Comptes &amp; Factures</button>' : ''}
+          ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="sentinels">🛡 Sentinelles</button>' : ''}
+          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="settings">⚙️ Réglages</button>
+          <button class="ax-btn ax-gs-360" data-menu-action="paste-key">🔑 Coller une clé API</button>
           <button class="ax-btn" data-menu-action="logout" style="width:100%;text-align:left;padding:14px;color:var(--ax-error)">🚪 Déconnexion</button>
         </div>
       `,
@@ -3178,11 +3178,11 @@ export function render(rootEl: HTMLElement): void {
               </div>
               <div>
                 <h4 class="ax-gs-223">Clés API</h4>
-                <button type="button" class="ax-btn ax-btn-primary" id="ax-settings-paste-key" style="width:100%">🔑 Coller une clé API</button>
+                <button type="button" class="ax-btn ax-btn-primary ax-gs-361" id="ax-settings-paste-key">🔑 Coller une clé API</button>
               </div>
               <div>
                 <h4 class="ax-gs-223">Recommandations</h4>
-                <ul style="margin:0;padding-left:18px;font-size:13px">${recosHtml}</ul>
+                <ul class="ax-gs-362">${recosHtml}</ul>
               </div>
             </div>
           `,
@@ -3221,7 +3221,7 @@ export function render(rootEl: HTMLElement): void {
       const sheet = modalSheet.open({
         title: '🔑 Coller ta clé API',
         content: `
-          <p style="margin:0 0 12px;color:var(--ax-text-dim)">
+          <p class="ax-gs-363">
             Apex détecte automatiquement le service (Anthropic, OpenAI, Stripe, GitHub, etc.) et la range au bon endroit.
           </p>
           <button type="button" id="ax-paste-clipboard-btn"

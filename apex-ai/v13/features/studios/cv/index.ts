@@ -647,51 +647,51 @@ export function render(rootEl: HTMLElement): void {
   `).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">📄 Studio CV Pro</h1>
+        <h1 class="ax-gs-333">📄 Studio CV Pro</h1>
         <span class="ax-gs-3">Complétude ${completeness}% · ATS ${ats.score}/100</span>
       </header>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Template (${TEMPLATES.length} disponibles)</h2>
+        <h2 class="ax-gs-452">Template (${TEMPLATES.length} disponibles)</h2>
         <div class="ax-gs-157">${templatesHtml}</div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Identité</h2>
-        <input type="text" id="ax-cv-prenom" aria-label="Prénom CV" placeholder="Prénom" maxlength="100" value="${escapeHtml(cv.identite.prenom)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="text" id="ax-cv-nom" aria-label="Nom CV" placeholder="Nom" maxlength="100" value="${escapeHtml(cv.identite.nom)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="text" id="ax-cv-titre" aria-label="Titre professionnel CV" placeholder="Titre (ex: Développeur Full-Stack)" maxlength="200" value="${escapeHtml(cv.identite.titre)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="email" id="ax-cv-email" aria-label="Email CV" placeholder="Email" maxlength="200" value="${escapeHtml(cv.identite.email)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="tel" id="ax-cv-tel" aria-label="Téléphone CV" placeholder="Téléphone" maxlength="50" value="${escapeHtml(cv.identite.telephone)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="url" id="ax-cv-linkedin" aria-label="URL LinkedIn CV" placeholder="LinkedIn URL" maxlength="300" value="${escapeHtml(cv.identite.linkedin)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <h2 class="ax-gs-452">Identité</h2>
+        <input type="text" id="ax-cv-prenom" aria-label="Prénom CV" placeholder="Prénom" maxlength="100" value="${escapeHtml(cv.identite.prenom)}" class="ax-gs-455">
+        <input type="text" id="ax-cv-nom" aria-label="Nom CV" placeholder="Nom" maxlength="100" value="${escapeHtml(cv.identite.nom)}" class="ax-gs-455">
+        <input type="text" id="ax-cv-titre" aria-label="Titre professionnel CV" placeholder="Titre (ex: Développeur Full-Stack)" maxlength="200" value="${escapeHtml(cv.identite.titre)}" class="ax-gs-455">
+        <input type="email" id="ax-cv-email" aria-label="Email CV" placeholder="Email" maxlength="200" value="${escapeHtml(cv.identite.email)}" class="ax-gs-455">
+        <input type="tel" id="ax-cv-tel" aria-label="Téléphone CV" placeholder="Téléphone" maxlength="50" value="${escapeHtml(cv.identite.telephone)}" class="ax-gs-455">
+        <input type="url" id="ax-cv-linkedin" aria-label="URL LinkedIn CV" placeholder="LinkedIn URL" maxlength="300" value="${escapeHtml(cv.identite.linkedin)}" class="ax-gs-455">
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Expériences (${cv.experiences.length}/${MAX_EXPERIENCES})</h2>
-        <button class="ax-btn ax-btn-primary" id="ax-cv-add-exp" style="min-height:44px">➕ Ajouter une expérience</button>
+        <h2 class="ax-gs-452">Expériences (${cv.experiences.length}/${MAX_EXPERIENCES})</h2>
+        <button class="ax-btn ax-btn-primary ax-gs-401" id="ax-cv-add-exp">➕ Ajouter une expérience</button>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Formations (${cv.formations.length}/${MAX_FORMATIONS})</h2>
-        <button class="ax-btn ax-btn-primary" id="ax-cv-add-form" style="min-height:44px">➕ Ajouter une formation</button>
+        <h2 class="ax-gs-452">Formations (${cv.formations.length}/${MAX_FORMATIONS})</h2>
+        <button class="ax-btn ax-btn-primary ax-gs-401" id="ax-cv-add-form">➕ Ajouter une formation</button>
       </div>
 
       <div style="background:rgba(33,150,243,0.05);border:1px solid rgba(33,150,243,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#2196f3">🤖 Outils Pro</h2>
         <div class="ax-gs-7">
-          <button class="ax-btn" id="ax-cv-cover-letter" style="min-height:44px">✉ Lettre motivation</button>
-          <button class="ax-btn" id="ax-cv-match-offer" style="min-height:44px">🎯 Match offre</button>
-          <button class="ax-btn" id="ax-cv-interview" style="min-height:44px">🎤 Simulateur entretien</button>
+          <button class="ax-btn ax-gs-401" id="ax-cv-cover-letter">✉ Lettre motivation</button>
+          <button class="ax-btn ax-gs-401" id="ax-cv-match-offer">🎯 Match offre</button>
+          <button class="ax-btn ax-gs-401" id="ax-cv-interview">🎤 Simulateur entretien</button>
         </div>
       </div>
 
       <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button class="ax-btn ax-btn-primary" data-export="pdf" style="min-height:44px">💾 Exporter PDF</button>
-        <button class="ax-btn" data-export="docx" style="min-height:44px">📝 Exporter DOCX</button>
-        <button class="ax-btn" data-export="txt-ats" style="min-height:44px">🤖 Export ATS</button>
-        <button class="ax-btn" id="ax-cv-clear" style="min-height:44px;color:#ff6666">🗑 Réinitialiser</button>
+        <button class="ax-btn ax-btn-primary ax-gs-401" data-export="pdf">💾 Exporter PDF</button>
+        <button class="ax-btn ax-gs-401" data-export="docx">📝 Exporter DOCX</button>
+        <button class="ax-btn ax-gs-401" data-export="txt-ats">🤖 Export ATS</button>
+        <button class="ax-btn ax-gs-460" id="ax-cv-clear">🗑 Réinitialiser</button>
       </div>
 
       <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>

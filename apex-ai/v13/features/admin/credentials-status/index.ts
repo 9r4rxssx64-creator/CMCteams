@@ -55,7 +55,7 @@ function renderRecoverableRow(e: MissingEntry): string {
     <article style="background:rgba(255,255,255,0.02);border:1px solid rgba(34,204,119,0.2);border-radius:10px;padding:12px;margin-bottom:6px">
       <div class="ax-gs-93">
         <div class="ax-gs-11">
-          <strong style="color:#22cc77">${escapeHtml(e.service_name)}</strong>
+          <strong class="ax-gs-279">${escapeHtml(e.service_name)}</strong>
           <span class="ax-gs-94">${escapeHtml(e.category)}</span>
           <br>
           <code class="ax-gs-190">${escapeHtml(e.storage_key)}</code>
@@ -79,8 +79,8 @@ function renderAbsentRow(e: MissingEntry): string {
           <code class="ax-gs-190">${escapeHtml(e.storage_key)}</code>
         </div>
         <div class="ax-gs-20">
-          ${e.dashboard_url ? `<a href="${escapeHtml(e.dashboard_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">🔗 Dashboard</a>` : ''}
-          ${e.billing_url ? `<a href="${escapeHtml(e.billing_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">💰 Recharger</a>` : ''}
+          ${e.dashboard_url ? `<a href="${escapeHtml(e.dashboard_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm ax-gs-280">🔗 Dashboard</a>` : ''}
+          ${e.billing_url ? `<a href="${escapeHtml(e.billing_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm ax-gs-280">💰 Recharger</a>` : ''}
         </div>
       </div>
     </article>
@@ -113,8 +113,8 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
     rootEl.innerHTML = `
       <div class="ax-gs-95">
         <header class="ax-gs-180">
-          <h1 style="margin:0 0 6px;color:#c9a227">🔐 Credentials Status</h1>
-          <p style="color:var(--ax-text-dim);font-size:13px;margin:0">
+          <h1 class="ax-gs-281">🔐 Credentials Status</h1>
+          <p class="ax-gs-282">
             Apex restaure automatiquement les clés depuis IDB / Firebase / alias avant de te demander.
           </p>
         </header>
@@ -135,7 +135,7 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
         </div>
 
         <div class="ax-gs-100">
-          <button id="ax-cs-refresh" class="ax-btn" style="padding:8px 14px;font-size:13px">🔄 Re-scanner</button>
+          <button id="ax-cs-refresh" class="ax-btn ax-gs-283">🔄 Re-scanner</button>
           <button id="ax-cs-restore-all" class="ax-btn" style="padding:8px 14px;font-size:13px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.4);font-weight:600"${audit.recoverable.length === 0 ? ' disabled' : ''}>
             🔓 Restaurer toutes (${audit.recoverable.length})
           </button>
@@ -143,21 +143,21 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
 
         <section class="ax-gs-180">
           <h2 style="font-size:16px;color:#22cc77;margin:0 0 10px">🔓 Restorables (${audit.recoverable.length})</h2>
-          <p style="color:var(--ax-text-dim);font-size:12px;margin:0 0 10px">
+          <p class="ax-gs-284">
             Clés trouvables ailleurs (alias localStorage, IDB shadow, Firebase backup, pattern detection). Apex peut les restaurer SANS te demander.
           </p>
           <div id="ax-cs-recoverable">${recoverableHtml}</div>
         </section>
 
         <section>
-          <h2 style="font-size:16px;color:#ff6b6b;margin:0 0 10px">⚠️ Truly absent (${audit.truly_absent.length})</h2>
-          <p style="color:var(--ax-text-dim);font-size:12px;margin:0 0 10px">
+          <h2 class="ax-gs-285">⚠️ Truly absent (${audit.truly_absent.length})</h2>
+          <p class="ax-gs-284">
             Aucune trace dans aucune source. Tu dois recoller la clé une fois — ouvre le dashboard et copie ta clé.
           </p>
           <div id="ax-cs-absent">${absentHtml}</div>
         </section>
 
-        <p style="text-align:center;color:#666;font-size:11px;margin-top:24px">
+        <p class="ax-gs-265">
           🔒 Audit ${new Date(audit.ts).toLocaleString('fr-FR')} · Sentinelle auto-restore-watch tourne toutes les 30 min
         </p>
       </div>
@@ -219,7 +219,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div class="ax-gs-21">
-        <h2 style="color:#c9a227">Accès admin uniquement</h2>
+        <h2 class="ax-gs-266">Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>
     `;

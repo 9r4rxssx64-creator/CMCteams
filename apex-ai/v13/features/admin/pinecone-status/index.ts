@@ -55,12 +55,12 @@ function renderStatusCard(s: PineconeStatus): string {
         <h3 style="margin:0;font-size:1.1em">🌲 Pinecone Vector Store</h3>
         ${statusBadge(s)}
       </div>
-      <table style="width:100%;font-size:13px">
+      <table class="ax-gs-291">
         <tr><td style="padding:4px 8px;color:var(--ax-text-dim);width:40%">Index</td><td><code>${escapeHtml(s.index_name)}</code></td></tr>
-        <tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Vectors</td><td>${s.vector_count.toLocaleString('fr-FR')}</td></tr>
-        <tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Last sync</td><td>${escapeHtml(fmtAge(s.last_sync_ts))}</td></tr>
-        <tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Cache (5 min)</td><td>${s.cache_size} entrées</td></tr>
-        ${s.error ? `<tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Dernière erreur</td><td><span class="ax-gs-18">${escapeHtml(s.error)}</span></td></tr>` : ''}
+        <tr><td class="ax-gs-292">Vectors</td><td>${s.vector_count.toLocaleString('fr-FR')}</td></tr>
+        <tr><td class="ax-gs-292">Last sync</td><td>${escapeHtml(fmtAge(s.last_sync_ts))}</td></tr>
+        <tr><td class="ax-gs-292">Cache (5 min)</td><td>${s.cache_size} entrées</td></tr>
+        ${s.error ? `<tr><td class="ax-gs-292">Dernière erreur</td><td><span class="ax-gs-18">${escapeHtml(s.error)}</span></td></tr>` : ''}
       </table>
       ${
         !s.configured
@@ -85,7 +85,7 @@ function renderStatusCard(s: PineconeStatus): string {
 function renderActionsCard(): string {
   return `
     <div class="ax-card ax-gs-195">
-      <h3 style="margin:0 0 12px;font-size:1.05em">Actions</h3>
+      <h3 class="ax-gs-293">Actions</h3>
       <div class="ax-gs-7">
         <button class="ax-btn" id="btn-test" type="button">🧪 Tester connexion</button>
         <button class="ax-btn" id="btn-reload" type="button">🔄 Recharger clé</button>
@@ -98,7 +98,7 @@ function renderActionsCard(): string {
 function renderInfoCard(): string {
   return `
     <div class="ax-card ax-gs-197">
-      <h3 style="margin:0 0 12px;font-size:1.05em">À propos</h3>
+      <h3 class="ax-gs-293">À propos</h3>
       <ul style="margin:0;padding-left:20px;font-size:13px;line-height:1.6">
         <li>Pinecone est <strong>optionnel</strong>. Sans clé, Apex utilise localStorage avec ranking par importance.</li>
         <li>Embedding via <strong>NVIDIA llama-text-embed-v2</strong> (hosted Pinecone, pas besoin OpenAI).</li>

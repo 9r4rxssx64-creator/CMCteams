@@ -121,20 +121,20 @@ export function render(rootEl: HTMLElement): void {
   const currentMonth = new Date().getMonth() + 1;
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
+    <div class="ax-page ax-gs-451">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🌱 Studio Plantes</h1>
+        <h1 class="ax-gs-333">🌱 Studio Plantes</h1>
         <span class="ax-gs-3">${PLANTS.length} plantes · Mois ${currentMonth}</span>
       </header>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Recherche plante</h2>
-        <input type="text" id="ax-plant-search" aria-label="Rechercher une plante par nom commun ou latin" placeholder="Nom commun, latin ou alias…" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <h2 class="ax-gs-452">Recherche plante</h2>
+        <input type="text" id="ax-plant-search" aria-label="Rechercher une plante par nom commun ou latin" placeholder="Nom commun, latin ou alias…" autocomplete="off" class="ax-gs-453">
         <div id="ax-plant-results" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Que planter ce mois (${currentMonth}) ?</h2>
+        <h2 class="ax-gs-452">Que planter ce mois (${currentMonth}) ?</h2>
         <div id="ax-plant-month" class="ax-gs-247"></div>
       </div>
 

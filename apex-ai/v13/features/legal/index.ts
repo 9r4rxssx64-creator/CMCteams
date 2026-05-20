@@ -333,7 +333,7 @@ export function render(rootEl: HTMLElement): void {
     <div style="max-width:880px;margin:0 auto;padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px">
       <header class="ax-gs-180">
         <h1 style="margin:0 0 6px;font-size:clamp(24px,4.5vw,30px);font-weight:700;background:linear-gradient(135deg,#c9a227 0%,#e8b830 50%,#f5cc4a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚖️ Documents légaux</h1>
-        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Conformité RGPD + EU + France/Monaco</p>
+        <p class="ax-gs-399">Conformité RGPD + EU + France/Monaco</p>
       </header>
 
       <div id="ax-legal-tabs" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">

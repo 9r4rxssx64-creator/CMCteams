@@ -47,7 +47,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin()) {
     rootEl.innerHTML = `
       <div class="ax-gs-62">
-        <h2 style="color:#c9a227">🔌 IoT Providers</h2>
+        <h2 class="ax-gs-266">🔌 IoT Providers</h2>
         <p>🔒 Cette section est réservée à l'admin Kevin.</p>
       </div>
     `;
@@ -56,7 +56,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* Loading state */
   rootEl.innerHTML = `
     <div class="ax-gs-62">
-      <h2 style="color:#c9a227">🔌 IoT Providers</h2>
+      <h2 class="ax-gs-266">🔌 IoT Providers</h2>
       <p>Chargement des providers et devices…</p>
     </div>
   `;
@@ -89,26 +89,26 @@ function renderUI(statuses: ProviderStatusRow[], devices: IoTDevice[]): string {
         ${installedCount}/${totalCount} providers connectés · ${devices.length} devices détectés cross-provider
       </p>
 
-      <section style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
-        <h2 style="color:#c9a227;font-size:16px;margin:0 0 12px">⚙️ Providers disponibles</h2>
+      <section class="ax-gs-390">
+        <h2 class="ax-gs-391">⚙️ Providers disponibles</h2>
         <div id="iot-providers-grid">
           ${statuses.map((s) => renderProviderCard(s)).join('')}
         </div>
       </section>
 
-      <section style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
-        <h2 style="color:#c9a227;font-size:16px;margin:0 0 12px">📡 Devices détectés (cross-provider)</h2>
+      <section class="ax-gs-390">
+        <h2 class="ax-gs-391">📡 Devices détectés (cross-provider)</h2>
         ${devices.length === 0
           ? `<p style="color:#888;text-align:center;padding:24px">Aucun device détecté. Installe un provider pour commencer.</p>`
-          : `<table style="width:100%;border-collapse:collapse;font-size:13px">
+          : `<table class="ax-gs-392">
               <thead>
                 <tr style="text-align:left;border-bottom:1px solid #333">
-                  <th style="padding:8px">Status</th>
-                  <th style="padding:8px">Provider</th>
-                  <th style="padding:8px">Nom</th>
-                  <th style="padding:8px">Type</th>
-                  <th style="padding:8px">Capacités</th>
-                  <th style="padding:8px">Actions</th>
+                  <th class="ax-gs-393">Status</th>
+                  <th class="ax-gs-393">Provider</th>
+                  <th class="ax-gs-393">Nom</th>
+                  <th class="ax-gs-393">Type</th>
+                  <th class="ax-gs-393">Capacités</th>
+                  <th class="ax-gs-393">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -117,8 +117,8 @@ function renderUI(statuses: ProviderStatusRow[], devices: IoTDevice[]): string {
             </table>`}
       </section>
 
-      <section style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
-        <h2 style="color:#c9a227;font-size:16px;margin:0 0 12px">🛠 Outils admin</h2>
+      <section class="ax-gs-390">
+        <h2 class="ax-gs-391">🛠 Outils admin</h2>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <button class="iot-btn" data-action="refresh-all">🔄 Refresh status</button>
           <button class="iot-btn" data-action="show-proxy">🌐 Configurer CORS proxy</button>
@@ -127,7 +127,7 @@ function renderUI(statuses: ProviderStatusRow[], devices: IoTDevice[]): string {
       </section>
 
       <section style="background:#1a1a1a;border-radius:12px;padding:16px">
-        <h2 style="color:#c9a227;font-size:16px;margin:0 0 12px">🤖 Apex auto-install</h2>
+        <h2 class="ax-gs-391">🤖 Apex auto-install</h2>
         <p style="color:#aaa;font-size:13px;margin:0 0 8px">
           Apex IA peut installer un provider en autonomie quand tu lui donnes tes credentials dans le chat.<br>
           Exemples :
@@ -202,12 +202,12 @@ function renderDeviceRow(d: IoTDevice): string {
   const onlineDot = d.online ? '🟢' : '⚪';
   return `
     <tr class="ax-gs-232">
-      <td style="padding:8px">${onlineDot}</td>
+      <td class="ax-gs-393">${onlineDot}</td>
       <td style="padding:8px;color:#c9a227">${escapeHtml(d.provider)}</td>
       <td style="padding:8px;color:#fff">${escapeHtml(d.name)}</td>
       <td style="padding:8px;color:#aaa">${escapeHtml(d.type)}</td>
       <td style="padding:8px;color:#888;font-size:11px">${escapeHtml((d.capabilities ?? []).join(', '))}</td>
-      <td style="padding:8px">
+      <td class="ax-gs-393">
         <button class="iot-btn secondary" data-action="device-on" data-provider-id="${escapeHtml(d.provider)}" data-device-id="${escapeHtml(d.device_id)}" title="Toggle ON">▶</button>
       </td>
     </tr>

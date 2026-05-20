@@ -249,13 +249,13 @@ export function render(rootEl: HTMLElement): void {
     .filter((cat) => groups[cat].length > 0)
     .map((cat) => {
       const cards = groups[cat].map((s) => `
-        <article class="ax-billing-card" data-service-id="${escapeHtml(s.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:8px">
+        <article class="ax-billing-card ax-gs-338" data-service-id="${escapeHtml(s.id)}">
           <header class="ax-gs-214">
-            <strong style="color:#c9a227">${s.emoji} ${escapeHtml(s.name)}</strong>
+            <strong class="ax-gs-266">${s.emoji} ${escapeHtml(s.name)}</strong>
             ${s.has_credit_api ? '<span class="ax-badge" style="background:rgba(34,204,119,0.15);color:#22cc77;padding:2px 6px;border-radius:4px;font-size:11px">crédit API</span>' : ''}
           </header>
           <div class="ax-gs-7">
-            <a href="${escapeHtml(s.dashboard_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-primary" style="font-size:12px;padding:6px 10px">Dashboard</a>
+            <a href="${escapeHtml(s.dashboard_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-primary ax-gs-339">Dashboard</a>
             <a href="${escapeHtml(s.billing_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-secondary ax-gs-215">💳 Recharger</a>
             ${s.docs_url ? `<a href="${escapeHtml(s.docs_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-gs-215">📚 Docs</a>` : ''}
             ${s.status_url ? `<a href="${escapeHtml(s.status_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-gs-215">📡 Statut</a>` : ''}
@@ -271,12 +271,12 @@ export function render(rootEl: HTMLElement): void {
     }).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">💳 Comptes & Factures</h1>
+        <h1 class="ax-gs-333">💳 Comptes & Factures</h1>
         ${isAdmin ? '<span style="color:#c9a227;font-size:11px">👑 admin</span>' : ''}
       </header>
-      <p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:16px">
+      <p class="ax-gs-334">
         ${stats.total} services · ${stats.categories} catégories · ${stats.with_credit_api} avec crédit API live
       </p>
       ${categoriesHtml}

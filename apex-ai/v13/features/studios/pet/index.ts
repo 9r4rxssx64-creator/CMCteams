@@ -164,7 +164,7 @@ export function render(rootEl: HTMLElement): void {
     <div style="background:rgba(255,255,255,0.03);border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:8px">
       <div class="ax-gs-77">
         <span class="ax-gs-172">${s.emoji}</span>
-        <strong style="color:#c9a227">${escapeHtml(s.name)}</strong>
+        <strong class="ax-gs-266">${escapeHtml(s.name)}</strong>
       </div>
       ${s.vaccinations.length > 0 ? `<div style="font-size:12px;color:#ddd;margin-bottom:4px"><strong>💉 Vaccins :</strong> ${s.vaccinations.map((v) => escapeHtml(v)).join(', ')}</div>` : ''}
       <div style="font-size:11px;color:#ff8866"><strong>⚠ Urgence véto si :</strong> ${s.red_flags.slice(0, 3).map((r) => escapeHtml(r)).join(' · ')}</div>
@@ -172,39 +172,39 @@ export function render(rootEl: HTMLElement): void {
   `).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
+    <div class="ax-page ax-gs-451">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🐾 Studio Animaux</h1>
+        <h1 class="ax-gs-333">🐾 Studio Animaux</h1>
         <span class="ax-gs-3">${PET_SPECIES.length} espèces</span>
       </header>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Ration alimentaire</h2>
-        <select id="ax-pet-species" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">${speciesOpts}</select>
-        <input type="number" id="ax-pet-weight" aria-label="Poids de l'animal en kilogrammes" placeholder="Poids (kg)" min="0.001" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <select id="ax-pet-activity" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
+        <h2 class="ax-gs-452">Ration alimentaire</h2>
+        <select id="ax-pet-species" class="ax-gs-455">${speciesOpts}</select>
+        <input type="number" id="ax-pet-weight" aria-label="Poids de l'animal en kilogrammes" placeholder="Poids (kg)" min="0.001" step="0.01" class="ax-gs-455">
+        <select id="ax-pet-activity" class="ax-gs-455">
           <option value="sedentaire">Sédentaire</option>
           <option value="normal" selected>Normal</option>
           <option value="actif">Actif</option>
           <option value="tres-actif">Très actif</option>
         </select>
-        <button class="ax-btn ax-btn-primary" id="ax-pet-calc" style="min-height:44px">Calculer ration</button>
+        <button class="ax-btn ax-btn-primary ax-gs-401" id="ax-pet-calc">Calculer ration</button>
         <div id="ax-pet-out" style="margin-top:12px;color:#c9a227;font-size:14px"></div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Âge humain équivalent</h2>
-        <input type="number" id="ax-pet-age" aria-label="Âge de l'animal en années" placeholder="Âge animal (années)" min="0" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <button class="ax-btn ax-btn-primary" id="ax-pet-age-btn" style="min-height:44px">Convertir</button>
+        <h2 class="ax-gs-452">Âge humain équivalent</h2>
+        <input type="number" id="ax-pet-age" aria-label="Âge de l'animal en années" placeholder="Âge animal (années)" min="0" step="0.1" class="ax-gs-455">
+        <button class="ax-btn ax-btn-primary ax-gs-401" id="ax-pet-age-btn">Convertir</button>
         <div id="ax-pet-age-out" class="ax-gs-253"></div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Espèces — vaccins & alertes</h2>
+        <h2 class="ax-gs-452">Espèces — vaccins & alertes</h2>
         ${speciesCardsHtml}
       </div>
 
-      <p style="font-size:11px;color:#666;text-align:center">Conseils indicatifs. Pour décision médicale, consulter un vétérinaire.</p>
+      <p class="ax-gs-469">Conseils indicatifs. Pour décision médicale, consulter un vétérinaire.</p>
       <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;

@@ -234,9 +234,9 @@ function renderRow(row: SecretRow): string {
           </div>
         </div>
         <div class="ax-gs-20">
-          <button class="ax-btn ax-sec-reveal" data-id="${idAttr}" aria-label="Voir 5s la valeur" style="padding:6px 10px;font-size:12px;min-height:36px">👁</button>
-          <button class="ax-btn ax-sec-copy" data-id="${idAttr}" aria-label="Copier dans presse-papier" style="padding:6px 10px;font-size:12px;min-height:36px">📋</button>
-          ${row.source === 'generic' ? `<button class="ax-btn ax-sec-rename" data-id="${idAttr}" aria-label="Renommer" style="padding:6px 10px;font-size:12px;min-height:36px">✏️</button>` : ''}
+          <button class="ax-btn ax-sec-reveal ax-gs-263" data-id="${idAttr}" aria-label="Voir 5s la valeur">👁</button>
+          <button class="ax-btn ax-sec-copy ax-gs-263" data-id="${idAttr}" aria-label="Copier dans presse-papier">📋</button>
+          ${row.source === 'generic' ? `<button class="ax-btn ax-sec-rename ax-gs-263" data-id="${idAttr}" aria-label="Renommer">✏️</button>` : ''}
           <button class="ax-btn ax-sec-delete" data-id="${idAttr}" aria-label="Supprimer" style="padding:6px 10px;font-size:12px;min-height:36px;color:#ff6b6b">🗑</button>
         </div>
       </div>
@@ -302,7 +302,7 @@ async function refresh(rootEl: HTMLElement, opts?: { search?: string; cat?: stri
     <div style="padding:20px;max-width:1000px;margin:0 auto">
       <header class="ax-gs-181">
         <div class="ax-gs-83">
-          <button id="ax-sec-back" class="ax-btn" aria-label="Retour chat" style="padding:6px 10px;font-size:12px;min-height:36px">← Chat</button>
+          <button id="ax-sec-back" class="ax-btn ax-gs-263" aria-label="Retour chat">← Chat</button>
           <h1 style="margin:0;color:#c9a227;font-size:20px">🔐 Mes Secrets — Dossier admin</h1>
         </div>
         <p style="color:var(--ax-text-dim);font-size:12px;margin:8px 0 0">
@@ -332,8 +332,8 @@ async function refresh(rootEl: HTMLElement, opts?: { search?: string; cat?: stri
 
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
         <input id="ax-sec-search" type="search" placeholder="🔎 Rechercher (nom, service, alias…)" value="${escapeHtml(search)}" style="flex:1;min-width:200px;padding:10px 12px;font-size:13px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--ax-text)" aria-label="Rechercher un secret" />
-        <button id="ax-sec-export" class="ax-btn" aria-label="Exporter JSON chiffré" style="padding:8px 14px;font-size:12px;min-height:40px">📤 Export JSON chiffré</button>
-        <button id="ax-sec-refresh" class="ax-btn" aria-label="Rafraîchir" style="padding:8px 14px;font-size:12px;min-height:40px">🔄</button>
+        <button id="ax-sec-export" class="ax-btn ax-gs-264" aria-label="Exporter JSON chiffré">📤 Export JSON chiffré</button>
+        <button id="ax-sec-refresh" class="ax-btn ax-gs-264" aria-label="Rafraîchir">🔄</button>
       </div>
 
       <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap" role="tablist" aria-label="Filtre catégorie">${filterChips}</div>
@@ -344,7 +344,7 @@ async function refresh(rootEl: HTMLElement, opts?: { search?: string; cat?: stri
           : orderedCats.map((c) => renderCategorySection(c, groups[c] ?? [])).join('')}
       </div>
 
-      <p style="text-align:center;color:#666;font-size:11px;margin-top:24px">
+      <p class="ax-gs-265">
         🔒 Reveal = audit log immutable. Suppression = backup 30j (restaurable).
       </p>
     </div>
@@ -574,7 +574,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div class="ax-gs-21">
-        <h2 style="color:#c9a227">🔒 Accès admin uniquement</h2>
+        <h2 class="ax-gs-266">🔒 Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>
     `;

@@ -764,15 +764,15 @@ export function render(rootEl: HTMLElement): void {
 
   const tracksHtml = tracks.length > 0
     ? tracks.map((t) => `
-        <div class="ax-mix-track" data-track-id="${escapeHtml(t.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div class="ax-mix-track ax-gs-400" data-track-id="${escapeHtml(t.id)}">
           <div class="ax-gs-22">
-            <strong style="color:#c9a227">${escapeHtml(t.name)}</strong>
+            <strong class="ax-gs-266">${escapeHtml(t.name)}</strong>
             <button class="ax-btn ax-btn-sm" data-action="remove-track" data-track-id="${escapeHtml(t.id)}" style="font-size:11px;padding:4px 8px;color:#ff6666;min-height:32px">Supprimer</button>
           </div>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Volume <input type="range" aria-label="Volume de la piste" min="0" max="100" value="${Math.round(t.volume * 100)}" data-action="volume" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Panoramique <input type="range" aria-label="Panoramique gauche-droite" min="-100" max="100" value="${Math.round(t.pan * 100)}" data-action="pan" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Pitch (demi-tons) <input type="range" aria-label="Pitch en demi-tons" min="-12" max="12" value="${t.pitchSemitones}" data-action="pitch" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Reverb <input type="range" aria-label="Niveau de reverb" min="0" max="100" value="${Math.round(t.effects.reverbWet * 100)}" data-action="reverb" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
+          <label class="ax-gs-470">Volume <input type="range" aria-label="Volume de la piste" min="0" max="100" value="${Math.round(t.volume * 100)}" data-action="volume" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
+          <label class="ax-gs-471">Panoramique <input type="range" aria-label="Panoramique gauche-droite" min="-100" max="100" value="${Math.round(t.pan * 100)}" data-action="pan" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
+          <label class="ax-gs-471">Pitch (demi-tons) <input type="range" aria-label="Pitch en demi-tons" min="-12" max="12" value="${t.pitchSemitones}" data-action="pitch" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
+          <label class="ax-gs-471">Reverb <input type="range" aria-label="Niveau de reverb" min="0" max="100" value="${Math.round(t.effects.reverbWet * 100)}" data-action="reverb" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
           <div class="ax-gs-80">
             <button class="ax-btn ax-btn-sm" data-action="mute" data-track-id="${escapeHtml(t.id)}" style="min-height:36px;${t.muted ? 'background:#ff6666;color:#fff' : ''}">${t.muted ? '🔇 Muet' : '🔊 Audible'}</button>
             <button class="ax-btn ax-btn-sm" data-action="solo" data-track-id="${escapeHtml(t.id)}" style="min-height:36px;${t.solo ? 'background:#c9a227;color:#000' : ''}">${t.solo ? '⭐ Solo' : 'Solo'}</button>
@@ -782,22 +782,22 @@ export function render(rootEl: HTMLElement): void {
     : '<p class="ax-gs-213">Aucune piste. Ajoute ta première !</p>';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🎚 Studio Mix Pro</h1>
+        <h1 class="ax-gs-333">🎚 Studio Mix Pro</h1>
         <span class="ax-gs-3">${tracks.length}/${MAX_TRACKS} pistes · LUFS ${lufsTarget}</span>
       </header>
 
       <div class="ax-gs-1">
-        <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Mixe 2 à ${MAX_TRACKS} pistes audio. EQ 5 bandes, reverb, delay, chorus, flanger, phaser, distortion, pitch shift, time stretch, sidechain, auto-tune. Export WAV/MP3/FLAC/OGG.</p>
+        <p class="ax-gs-468">Mixe 2 à ${MAX_TRACKS} pistes audio. EQ 5 bandes, reverb, delay, chorus, flanger, phaser, distortion, pitch shift, time stretch, sidechain, auto-tune. Export WAV/MP3/FLAC/OGG.</p>
         <div class="ax-gs-7">
-          <button class="ax-btn ax-btn-primary" id="ax-mix-add-track" style="min-height:44px">➕ Ajouter une piste</button>
-          <input type="file" id="ax-mix-upload" aria-label="Importer fichiers audio" accept="audio/*" multiple style="display:none">
-          <button class="ax-btn" id="ax-mix-upload-btn" style="min-height:44px">📂 Importer fichiers</button>
-          <button class="ax-btn" id="ax-mix-tempo-sync" style="min-height:44px">🎵 Sync BPM auto</button>
-          <button class="ax-btn" id="ax-mix-export-wav" style="min-height:44px">💾 Export WAV</button>
-          <button class="ax-btn" id="ax-mix-export-mp3" style="min-height:44px">💾 Export MP3</button>
-          <button class="ax-btn" id="ax-mix-clear" style="min-height:44px;color:#ff6666">🗑 Tout effacer</button>
+          <button class="ax-btn ax-btn-primary ax-gs-401" id="ax-mix-add-track">➕ Ajouter une piste</button>
+          <input type="file" id="ax-mix-upload" aria-label="Importer fichiers audio" accept="audio/*" multiple class="ax-gs-359">
+          <button class="ax-btn ax-gs-401" id="ax-mix-upload-btn">📂 Importer fichiers</button>
+          <button class="ax-btn ax-gs-401" id="ax-mix-tempo-sync">🎵 Sync BPM auto</button>
+          <button class="ax-btn ax-gs-401" id="ax-mix-export-wav">💾 Export WAV</button>
+          <button class="ax-btn ax-gs-401" id="ax-mix-export-mp3">💾 Export MP3</button>
+          <button class="ax-btn ax-gs-460" id="ax-mix-clear">🗑 Tout effacer</button>
         </div>
       </div>
 

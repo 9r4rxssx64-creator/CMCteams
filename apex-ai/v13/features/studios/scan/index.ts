@@ -173,38 +173,38 @@ export function render(rootEl: HTMLElement): void {
   const supportsBarcode = typeof w.BarcodeDetector !== 'undefined';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
+    <div class="ax-page ax-gs-451">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">📷 Studio Scan</h1>
+        <h1 class="ax-gs-333">📷 Studio Scan</h1>
         <span class="ax-gs-3">OCR · QR · Barcode</span>
       </header>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Scanner une image</h2>
-        <input type="file" id="ax-scan-file" aria-label="Sélectionner ou prendre une photo à scanner" accept="image/*" capture="environment" style="display:none">
-        <button class="ax-btn ax-btn-primary" id="ax-scan-pick" style="width:100%;min-height:44px">📷 Choisir / prendre photo</button>
+        <h2 class="ax-gs-452">Scanner une image</h2>
+        <input type="file" id="ax-scan-file" aria-label="Sélectionner ou prendre une photo à scanner" accept="image/*" capture="environment" class="ax-gs-359">
+        <button class="ax-btn ax-btn-primary ax-gs-352" id="ax-scan-pick">📷 Choisir / prendre photo</button>
         <div id="ax-scan-preview" class="ax-gs-248"></div>
         <div id="ax-scan-status" style="margin-top:8px;color:var(--ax-text-dim);font-size:13px"></div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Coller du texte</h2>
+        <h2 class="ax-gs-452">Coller du texte</h2>
         <textarea id="ax-scan-text" placeholder="Colle un texte (email, code, IBAN, URL…)" rows="4" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px"></textarea>
-        <button class="ax-btn ax-btn-primary" id="ax-scan-text-btn" style="margin-top:8px;min-height:44px">🔍 Analyser</button>
+        <button class="ax-btn ax-btn-primary ax-gs-454" id="ax-scan-text-btn">🔍 Analyser</button>
       </div>
 
       <div id="ax-scan-results" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px;display:none">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Détections</h2>
+        <h2 class="ax-gs-452">Détections</h2>
         <div id="ax-scan-detections"></div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Historique (${loadHistory().length}/${HISTORY_MAX})</h2>
+        <h2 class="ax-gs-452">Historique (${loadHistory().length}/${HISTORY_MAX})</h2>
         <div id="ax-scan-history"></div>
-        <button class="ax-btn" id="ax-scan-clear-history" style="margin-top:8px;min-height:44px">🗑 Vider</button>
+        <button class="ax-btn ax-gs-454" id="ax-scan-clear-history">🗑 Vider</button>
       </div>
 
-      <p style="font-size:11px;color:#666;text-align:center">${supportsBarcode ? 'BarcodeDetector natif disponible.' : 'BarcodeDetector non supporté ce navigateur — texte uniquement.'}</p>
+      <p class="ax-gs-469">${supportsBarcode ? 'BarcodeDetector natif disponible.' : 'BarcodeDetector non supporté ce navigateur — texte uniquement.'}</p>
       <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
@@ -241,7 +241,7 @@ function renderDetections(rootEl: HTMLElement, raw: string, type: ScanType): voi
     list.innerHTML = `
       <div style="color:var(--ax-text-dim);font-size:13px;margin-bottom:8px">Texte brut :</div>
       <pre style="background:#0a0a14;padding:10px;border-radius:6px;color:#ddd;white-space:pre-wrap;word-break:break-all;font-size:13px">${escapeHtml(raw)}</pre>
-      <button class="ax-btn ax-scan-copy" data-copy="${escapeHtml(raw)}" style="margin-top:8px;min-height:44px">📋 Copier</button>
+      <button class="ax-btn ax-scan-copy ax-gs-454" data-copy="${escapeHtml(raw)}">📋 Copier</button>
     `;
   } else {
     list.innerHTML = detections.map((d) => `

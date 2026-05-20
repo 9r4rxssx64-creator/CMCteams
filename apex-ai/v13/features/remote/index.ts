@@ -150,8 +150,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:800px;margin:0 auto">
-      <h1 style="margin:0 0 8px;color:#c9a227">📡 Télécommande Universelle</h1>
-      <p style="color:var(--ax-text-dim);margin:0 0 16px;font-size:14px">
+      <h1 class="ax-gs-365">📡 Télécommande Universelle</h1>
+      <p class="ax-gs-377">
         Pilote tous tes objets connectés depuis Apex.
         ${env.isiOS ? '📱 iOS' : env.isAndroid ? '🤖 Android' : '🖥 Desktop'} ·
         ${supported.length} capabilities ·
@@ -173,14 +173,14 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
               <span class="ax-gs-201">${d.emoji}</span>
               <div>
-                <strong style="color:#c9a227">${d.name}</strong>
+                <strong class="ax-gs-266">${d.name}</strong>
                 <div class="ax-gs-2">via ${d.capability}</div>
               </div>
             </div>
             <div class="ax-gs-247">
               ${d.actions.map((a) => `
-                <button class="ax-btn ax-btn-sm" data-remote-device="${d.id}" data-remote-action="${a.id}"
-                  style="font-size:12px;padding:6px 10px">${a.label}</button>
+                <button class="ax-btn ax-btn-sm ax-gs-339" data-remote-device="${d.id}" data-remote-action="${a.id}"
+                 >${a.label}</button>
               `).join('')}
             </div>
           </div>
@@ -188,7 +188,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </div>
 
       <div style="margin-top:24px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
-        <h2 style="margin:0 0 8px;font-size:16px">⚙️ Outils avancés</h2>
+        <h2 class="ax-gs-432">⚙️ Outils avancés</h2>
         <div class="ax-gs-161">
           <button class="ax-btn ax-btn-sm" id="ax-remote-scan-bt" ${!hasBluetooth ? 'disabled' : ''}>🔵 Scanner Bluetooth</button>
           <button class="ax-btn ax-btn-sm" id="ax-remote-scan-nfc" ${!hasNFC ? 'disabled' : ''}>📲 Lire tag NFC</button>
@@ -200,15 +200,15 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </div>
 
       <div class="ax-gs-73">
-        <h2 style="margin:0 0 8px;font-size:16px">🌐 Scan réseau LAN (80+ devices)</h2>
-        <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Discover Hue Bridge, Sonos, Plex, NAS, caméras IP, imprimantes, IoT...</p>
-        <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-lan" style="width:100%">🔍 Scanner mon réseau WiFi</button>
+        <h2 class="ax-gs-432">🌐 Scan réseau LAN (80+ devices)</h2>
+        <p class="ax-gs-433">Discover Hue Bridge, Sonos, Plex, NAS, caméras IP, imprimantes, IoT...</p>
+        <button class="ax-btn ax-btn-primary ax-btn-sm ax-gs-361" id="ax-remote-scan-lan">🔍 Scanner mon réseau WiFi</button>
         <div id="ax-remote-lan-results" class="ax-gs-248"></div>
       </div>
 
       <div class="ax-gs-73">
-        <h2 style="margin:0 0 8px;font-size:16px">🪪 Badge NFC/RFID (60+ formats)</h2>
-        <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Carte travail, transport, café, accès. NDEF/MIFARE/HID/Vigik...</p>
+        <h2 class="ax-gs-432">🪪 Badge NFC/RFID (60+ formats)</h2>
+        <p class="ax-gs-433">Carte travail, transport, café, accès. NDEF/MIFARE/HID/Vigik...</p>
         <div class="ax-gs-162">
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-badge" ${!hasNFC ? 'disabled' : ''}>📲 Scanner badge</button>
           <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-remote-list-badges">📋 Mes badges</button>
@@ -217,8 +217,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </div>
 
       <div class="ax-gs-73">
-        <h2 style="margin:0 0 8px;font-size:16px">📡 Émulateurs hardware (18 supportés)</h2>
-        <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Flipper Zero (USB+BLE), Proxmark3, Chameleon, ACR122U, OMNIKEY...</p>
+        <h2 class="ax-gs-432">📡 Émulateurs hardware (18 supportés)</h2>
+        <p class="ax-gs-433">Flipper Zero (USB+BLE), Proxmark3, Chameleon, ACR122U, OMNIKEY...</p>
         <div class="ax-gs-162">
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-flipper-usb">🐬 Flipper USB</button>
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-flipper-ble">📶 Flipper BLE</button>
@@ -333,10 +333,10 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         ${result.devices.map((d) => `
           <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
             <div>
-              <strong style="color:#c9a227">${escapeHtml(d.service)}</strong>
+              <strong class="ax-gs-266">${escapeHtml(d.service)}</strong>
               <div class="ax-gs-2">${escapeHtml(d.ip)}:${escapeHtml(d.port)} ${d.vendor ? '· ' + escapeHtml(d.vendor) : ''}</div>
             </div>
-            <button class="ax-btn ax-btn-sm" data-lan-ip="${escapeHtml(d.ip)}" data-lan-port="${escapeHtml(d.port)}" style="padding:4px 8px;font-size:11px">Ouvrir →</button>
+            <button class="ax-btn ax-btn-sm ax-gs-389" data-lan-ip="${escapeHtml(d.ip)}" data-lan-port="${escapeHtml(d.port)}">Ouvrir →</button>
           </div>
         `).join('')}
       `;
@@ -379,7 +379,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       }
       out.innerHTML = list.map((b) => `
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px">
-          <strong style="color:#c9a227">${b.label ?? b.format}</strong>
+          <strong class="ax-gs-266">${b.label ?? b.format}</strong>
           <div class="ax-gs-2">UID: ${b.uid ?? 'n/a'} · ${new Date(b.scanned_at).toLocaleString()}</div>
         </div>
       `).join('');

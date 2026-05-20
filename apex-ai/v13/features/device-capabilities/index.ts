@@ -127,15 +127,15 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const networkColor = networkQuality === 'high' ? '#22cc77' : networkQuality === 'medium' ? '#ffaa00' : '#ff8c42';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:900px;margin:0 auto">
-      <h1 style="margin:0 0 8px;color:#c9a227">📱 Mes capacités device</h1>
-      <p style="color:var(--ax-text-dim);margin:0 0 16px;font-size:14px">
+    <div class="ax-page ax-gs-376">
+      <h1 class="ax-gs-365">📱 Mes capacités device</h1>
+      <p class="ax-gs-377">
         ${activeCount} fonctionnalités actives sur ${countTotalFeatures()} possibles.
       </p>
 
       <!-- IDENTITÉ -->
       <div class="ax-gs-42">
-        <h2 style="margin:0 0 12px;font-size:16px;color:#c9a227">🔍 Identité</h2>
+        <h2 class="ax-gs-378">🔍 Identité</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;font-size:13px">
           ${row('OS', `${osFlag(caps.os)} ${escapeHtml(caps.os)} ${caps.os_version ? escapeHtml(caps.os_version) : ''}`)}
           ${row('Browser', `${escapeHtml(caps.browser)} ${caps.browser_version ? escapeHtml(caps.browser_version) : ''}`)}
@@ -154,7 +154,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <!-- RÉSEAU -->
       <div class="ax-gs-42">
-        <h2 style="margin:0 0 12px;font-size:16px;color:#c9a227">🌐 Réseau</h2>
+        <h2 class="ax-gs-378">🌐 Réseau</h2>
         <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px">
           <span>${caps.isOnline ? '🟢 En ligne' : '🔴 Hors ligne'}</span>
           <span>Type : <strong style="color:${networkColor}">${escapeHtml(caps.effectiveType)}</strong></span>
@@ -190,7 +190,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <!-- ACTIONS -->
       <div class="ax-gs-42">
-        <h2 style="margin:0 0 12px;font-size:16px;color:#c9a227">🚀 Actions</h2>
+        <h2 class="ax-gs-378">🚀 Actions</h2>
         <div class="ax-gs-7">
           <button class="ax-btn ax-btn-primary" id="ax-dev-perm-all" type="button">🔓 Demander toutes permissions</button>
           <button class="ax-btn ax-btn-secondary" id="ax-dev-test-share" type="button">📤 Tester partage</button>

@@ -126,7 +126,7 @@ export function render(rootEl: HTMLElement): void {
   if (!guardFeatureEnabled('studio.building', rootEl, uid)) return;
 
   const dtusHtml = DTU_REFS.map((d) => `
-    <li style="margin-bottom:6px;font-size:13px"><strong style="color:#c9a227">${escapeHtml(d.num)}</strong> — ${escapeHtml(d.titre)} <span class="ax-gs-10">[${escapeHtml(d.domaine)}]</span></li>
+    <li style="margin-bottom:6px;font-size:13px"><strong class="ax-gs-266">${escapeHtml(d.num)}</strong> — ${escapeHtml(d.titre)} <span class="ax-gs-10">[${escapeHtml(d.domaine)}]</span></li>
   `).join('');
 
   const dimsHtml = STANDARD_DIMS.map((d) => `
@@ -138,32 +138,32 @@ export function render(rootEl: HTMLElement): void {
   `).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
+    <div class="ax-page ax-gs-451">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🏢 Studio Bâtiment</h1>
+        <h1 class="ax-gs-333">🏢 Studio Bâtiment</h1>
         <span class="ax-gs-3">DTU · normes · métré</span>
       </header>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Métré rapide pièce</h2>
-        <input type="number" id="ax-bld-l" aria-label="Longueur de la pièce en mètres" placeholder="Longueur (m)" min="0.1" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="number" id="ax-bld-w" aria-label="Largeur de la pièce en mètres" placeholder="Largeur (m)" min="0.1" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="number" id="ax-bld-h" aria-label="Hauteur sous plafond en mètres" placeholder="Hauteur (m)" min="0.1" step="0.01" value="2.5" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <input type="text" id="ax-bld-name" aria-label="Nom de la pièce" placeholder="Nom pièce (ex : Salon)" maxlength="40" value="Pièce" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <button class="ax-btn ax-btn-primary" id="ax-bld-go" style="min-height:44px">Calculer + plan</button>
+        <h2 class="ax-gs-452">Métré rapide pièce</h2>
+        <input type="number" id="ax-bld-l" aria-label="Longueur de la pièce en mètres" placeholder="Longueur (m)" min="0.1" step="0.01" class="ax-gs-455">
+        <input type="number" id="ax-bld-w" aria-label="Largeur de la pièce en mètres" placeholder="Largeur (m)" min="0.1" step="0.01" class="ax-gs-455">
+        <input type="number" id="ax-bld-h" aria-label="Hauteur sous plafond en mètres" placeholder="Hauteur (m)" min="0.1" step="0.01" value="2.5" class="ax-gs-455">
+        <input type="text" id="ax-bld-name" aria-label="Nom de la pièce" placeholder="Nom pièce (ex : Salon)" maxlength="40" value="Pièce" class="ax-gs-455">
+        <button class="ax-btn ax-btn-primary ax-gs-401" id="ax-bld-go">Calculer + plan</button>
         <div id="ax-bld-out" class="ax-gs-248"></div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Dimensions standards</h2>
+        <h2 class="ax-gs-452">Dimensions standards</h2>
         <table style="width:100%;border-collapse:collapse;font-size:12px;color:#fff">
-          <thead><tr style="border-bottom:2px solid #c9a227"><th style="text-align:left;padding:6px 10px">Élément</th><th style="text-align:left;padding:6px 10px">Dimensions</th><th style="text-align:left;padding:6px 10px">Norme</th></tr></thead>
+          <thead><tr style="border-bottom:2px solid #c9a227"><th class="ax-gs-457">Élément</th><th class="ax-gs-457">Dimensions</th><th class="ax-gs-457">Norme</th></tr></thead>
           <tbody>${dimsHtml}</tbody>
         </table>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">DTU principaux</h2>
+        <h2 class="ax-gs-452">DTU principaux</h2>
         <ul style="margin:0;padding-left:18px;color:#ddd">${dtusHtml}</ul>
       </div>
 
@@ -191,7 +191,7 @@ function attach(rootEl: HTMLElement): void {
     }
     out.innerHTML = `
       ${svgPlanView(l, w, name)}
-      <pre style="margin-top:8px;color:#c9a227;white-space:pre-wrap;font-size:13px">Surface : ${m.surface_m2} m²
+      <pre class="ax-gs-456">Surface : ${m.surface_m2} m²
 Périmètre : ${m.perimetre_m} m
 Volume : ${m.volume_m3} m³
 Plinthes : ${m.plinthe_ml} mL</pre>

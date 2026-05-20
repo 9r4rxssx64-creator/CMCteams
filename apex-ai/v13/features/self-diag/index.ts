@@ -159,7 +159,7 @@ function renderScoreCard(report: AuditReport): string {
 function renderAxesGrid(report: AuditReport): string {
   return `
     <section class="ax-gs-217">
-      <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📊 Scores par axe (/20)</h3>
+      <h3 class="ax-gs-326">📊 Scores par axe (/20)</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
         ${(Object.keys(AXES_META) as AuditAxis[]).map((axis) => {
           const data = report.axes[axis];
@@ -212,12 +212,12 @@ function renderLessons(lessons: ReadonlyArray<LessonLearned>): string {
       return `
         <div style="padding:8px 10px;background:rgba(20,20,35,0.5);border-radius:8px;margin-bottom:4px;border-left:3px solid ${sevColor}">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap">
-            <strong style="color:#fff;font-size:12px">${escapeHtml(l.title)}</strong>
+            <strong class="ax-gs-395">${escapeHtml(l.title)}</strong>
             <span style="background:rgba(168,120,255,.1);color:#a878ff;font-size:10px;padding:1px 5px;border-radius:4px">${escapeHtml(l.category)}</span>
             ${l.resolved ? '<span style="color:#22cc77;font-size:10px">✅ Résolu</span>' : ''}
             <span class="ax-gs-163">${escapeHtml(date)}</span>
           </div>
-          <p style="margin:2px 0 0;color:#a0a4c0;font-size:11px;line-height:1.4">${escapeHtml(l.text.slice(0, 200))}${l.text.length > 200 ? '...' : ''}</p>
+          <p class="ax-gs-396">${escapeHtml(l.text.slice(0, 200))}${l.text.length > 200 ? '...' : ''}</p>
         </div>`;
     })
     .join('');
@@ -250,10 +250,10 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const sentPending = sentinelsList.filter((s) => !s.lastResult).length;
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
+    <div class="ax-page ax-gs-268">
       <header class="ax-gs-181">
-        <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">🩺 Auto-diagnostic Apex</h1>
-        <p style="color:#a0a4c0;margin:0;font-size:13px">
+        <h1 class="ax-gs-324">🩺 Auto-diagnostic Apex</h1>
+        <p class="ax-gs-325">
           Apex se teste lui-même : sécurité, perf, UX, tests, architecture, AI safety. Audit subagent indépendant.
         </p>
       </header>
@@ -277,7 +277,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         ${renderAxesGrid(activeReport)}
 
         <section class="ax-gs-180">
-          <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">⚠ Findings (${activeReport.findings.length})</h3>
+          <h3 class="ax-gs-326">⚠ Findings (${activeReport.findings.length})</h3>
           <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">
             ${(['p0_critical', 'p1_high', 'p2_medium', 'p3_low', 'info'] as Severity[]).map((sev) => `
               <button class="ax-diag-sev-btn ${activeSeverityFilter === sev ? 'ax-tab-active' : ''}"
@@ -291,7 +291,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </section>
 
         <section class="ax-gs-180">
-          <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📋 Prochaines étapes</h3>
+          <h3 class="ax-gs-326">📋 Prochaines étapes</h3>
           <ul style="list-style:disc;padding-left:24px;color:#a0a4c0;font-size:12px;line-height:1.6">
             ${activeReport.next_steps.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}
           </ul>
@@ -304,11 +304,11 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       `}
 
       <section class="ax-gs-180">
-        <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">🛡 Sentinelles 24/7</h3>
+        <h3 class="ax-gs-326">🛡 Sentinelles 24/7</h3>
         <div style="background:rgba(20,20,35,0.6);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:14px">
           <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px">
-            <span><strong style="color:#22cc77">${sentOk}</strong> OK</span>
-            <span><strong style="color:#ffaa00">${sentWarn}</strong> WARN</span>
+            <span><strong class="ax-gs-279">${sentOk}</strong> OK</span>
+            <span><strong class="ax-gs-328">${sentWarn}</strong> WARN</span>
             <span><strong style="color:#888">${sentPending}</strong> PENDING</span>
             <a href="#sentinels" style="color:#c9a227;font-size:11px;margin-left:auto">→ Voir détail</a>
           </div>
@@ -316,11 +316,11 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </section>
 
       <section class="ax-gs-180">
-        <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📚 Lessons learned (${lessons.length})</h3>
+        <h3 class="ax-gs-326">📚 Lessons learned (${lessons.length})</h3>
         ${renderLessons(lessons)}
       </section>
 
-      <p style="text-align:center;color:#666;font-size:11px">🩺 Self-Diag v13 · 6 axes · Pondération 25/20/15/15/15/10</p>
+      <p class="ax-gs-331">🩺 Self-Diag v13 · 6 axes · Pondération 25/20/15/15/15/10</p>
     </div>
   `;
 

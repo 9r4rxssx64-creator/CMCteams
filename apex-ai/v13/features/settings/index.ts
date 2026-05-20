@@ -195,12 +195,12 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:24px 16px max(24px, env(safe-area-inset-bottom)) 16px;max-width:680px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header style="margin-bottom:24px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) backwards">
         <h1 style="margin:0 0 6px;font-size:clamp(26px,5.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em">⚙️ Réglages</h1>
-        <p style="color:rgba(255,255,255,0.55);margin:0;font-size:14px">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtml(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:var(--ax-gold)">👑 Admin</span>' : ''}</p>
+        <p class="ax-gs-399">Utilisateur : <strong style="color:rgba(255,255,255,0.9)">${escapeHtml(user?.name ?? 'inconnu')}</strong> ${isAdmin ? '<span style="color:var(--ax-gold)">👑 Admin</span>' : ''}</p>
       </header>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:60ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔑</span> Clés API</h2>
-        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">Gère tes clés API (Anthropic, OpenAI, Stripe, etc.) dans le Coffre sécurisé.</p>
+        <p class="ax-gs-437">Gère tes clés API (Anthropic, OpenAI, Stripe, etc.) dans le Coffre sécurisé.</p>
         <button class="ax-btn ax-btn-primary" data-nav-route="vault" style="${btnFullWidthStyle};background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none">🔐 Ouvrir le Coffre</button>
       </section>
 
@@ -216,7 +216,7 @@ export function render(rootEl: HTMLElement): void {
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:140ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔔</span> Notifications</h2>
-        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">Active les notifications push pour rester informé en temps réel.</p>
+        <p class="ax-gs-437">Active les notifications push pour rester informé en temps réel.</p>
         <button class="ax-btn ax-btn-secondary" id="ax-settings-notif-test" style="${btnFullWidthStyle};background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.3)">🔔 Tester notification push</button>
       </section>
 
@@ -225,13 +225,13 @@ export function render(rootEl: HTMLElement): void {
         <p style="margin:0 0 10px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
           Backup mémoire vers Notion / GitHub Gist / Firebase. Tokens lus depuis le Coffre.
         </p>
-        <div id="ax-memory-bridge-status" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace"></div>
+        <div id="ax-memory-bridge-status" class="ax-gs-438"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="${btnFullWidthStyle};background:rgba(160,96,255,0.15);color:var(--ax-purple);border:1px solid rgba(160,96,255,0.3)">🔄 Sync maintenant</button>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:220ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">📊</span> Conso API temps réel</h2>
-        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+        <p class="ax-gs-437">
           Apex surveille ta conso et détecte si une clé est utilisée anormalement (potentielle compromission).
         </p>
         <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
@@ -247,14 +247,14 @@ export function render(rootEl: HTMLElement): void {
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔊</span> Voix &amp; Lecture</h2>
-        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+        <p class="ax-gs-437">
           Apex peut lire ses réponses à voix haute. Choisis ta voix préférée parmi 60+ (PRO, FUN, Thématique).
         </p>
         <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:10px;cursor:pointer">
           <span class="ax-gs-164">Lire automatiquement les réponses</span>
-          <input type="checkbox" id="ax-settings-auto-read" aria-label="Lire automatiquement les réponses à voix haute" style="width:20px;height:20px;cursor:pointer">
+          <input type="checkbox" id="ax-settings-auto-read" aria-label="Lire automatiquement les réponses à voix haute" class="ax-gs-439">
         </label>
-        <div id="ax-voice-current" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace">Voix active : ...</div>
+        <div id="ax-voice-current" class="ax-gs-438">Voix active : ...</div>
         <div id="ax-voice-categories" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
           <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="all" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(232,184,48,0.15);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.3);cursor:pointer">Tous</button>
           <button class="ax-btn ax-btn-secondary ax-voice-cat-btn" data-cat="pro" style="padding:6px 12px;font-size:12px;border-radius:14px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.3);cursor:pointer">PRO</button>
@@ -272,22 +272,22 @@ export function render(rootEl: HTMLElement): void {
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:250ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🧰</span> Suggestions outils</h2>
-        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+        <p class="ax-gs-437">
           Quand Apex détecte un outil pertinent dans tes messages (Studio Music, Finance Pro, etc.), il l'affiche directement dans le chat en plus du toast.
         </p>
         <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.03);border-radius:10px;cursor:pointer">
           <span style="color:rgba(255,255,255,0.85);font-size:14px">Cards outils dans le chat</span>
-          <input type="checkbox" id="ax-settings-tools-auto-embed" aria-label="Afficher cards outils dans le chat" style="width:20px;height:20px;cursor:pointer">
+          <input type="checkbox" id="ax-settings-tools-auto-embed" aria-label="Afficher cards outils dans le chat" class="ax-gs-439">
         </label>
         <p style="margin:8px 0 0;color:rgba(255,255,255,0.4);font-size:12px;line-height:1.4">Décoche pour n'avoir que le toast (5s) sans card permanente. Le bouton ✕ sur chaque card permet aussi de la fermer.</p>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:260ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🔄</span> Mise à jour</h2>
-        <p style="margin:0 0 14px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
+        <p class="ax-gs-437">
           Si Apex reste bloqué sur une ancienne version malgré le reload (bug Safari iOS PWA cache), force le reset complet : Service Worker + caches + reload propre vers la dernière version.
         </p>
-        <div id="ax-force-update-status" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace"></div>
+        <div id="ax-force-update-status" class="ax-gs-438"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-force-update-btn" style="${btnFullWidthStyle};background:rgba(232,184,48,0.15);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.3)">🔄 Force reset PWA + reload</button>
       </section>
 
@@ -452,8 +452,8 @@ export function render(rootEl: HTMLElement): void {
               <div class="ax-gs-166">📐 Layout scan</div>
               <div>Viewport : ${r.viewport.width}×${r.viewport.height} · Document : ${r.documentScroll.width}px</div>
               <div>Overflow horizontal : <b style="color:${r.hasHorizontalOverflow ? 'var(--ax-error)' : 'var(--ax-green)'}">${r.hasHorizontalOverflow ? 'OUI' : 'NON'}</b> · Boutons cachés : <b style="color:${r.hiddenButtons.length ? 'var(--ax-sev-high)' : 'var(--ax-green)'}">${r.hiddenButtons.length}</b> · Touch < 44px : ${r.smallTouchTargets.length}</div>
-              ${sampleHidden ? `<div class="ax-gs-75">Boutons cachés:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleHidden}</ul>` : ''}
-              ${sampleOverflow ? `<div class="ax-gs-75">Éléments overflow:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleOverflow}</ul>` : ''}
+              ${sampleHidden ? `<div class="ax-gs-75">Boutons cachés:</div><ul class="ax-gs-440">${sampleHidden}</ul>` : ''}
+              ${sampleOverflow ? `<div class="ax-gs-75">Éléments overflow:</div><ul class="ax-gs-440">${sampleOverflow}</ul>` : ''}
               <div class="ax-gs-167">→ Historique complet dans Admin (Apex Audits Live)</div>
             </div>
           `;
