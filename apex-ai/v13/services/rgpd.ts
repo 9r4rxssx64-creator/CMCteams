@@ -202,7 +202,7 @@ class RGPD {
     /* 2. Firebase cascade — DELETE serveur réel via REST */
     let firebaseDeleted = false;
     try {
-      const fbUrl = localStorage.getItem('apex_v13_fb_url') ?? 'https://kdmc-clients-default-rtdb.firebaseio.com';
+      const fbUrl = localStorage.getItem('apex_v13_fb_url') ?? 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
       /* Path utilisateur dans schéma préservé v12.785 : /apex/users/<uid> */
       const paths = [`/apex/users/${encodeURIComponent(uid)}`, `/apex/persistent_memory/${encodeURIComponent(uid)}`, `/apex/lessons/${encodeURIComponent(uid)}`];
       let allOk = true;
@@ -246,7 +246,7 @@ class RGPD {
     let firebaseVerified = false;
     if (firebaseDeleted) {
       try {
-        const fbUrl = localStorage.getItem('apex_v13_fb_url') ?? 'https://kdmc-clients-default-rtdb.firebaseio.com';
+        const fbUrl = localStorage.getItem('apex_v13_fb_url') ?? 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
         const verifyPaths = [`/apex/users/${encodeURIComponent(uid)}`, `/apex/persistent_memory/${encodeURIComponent(uid)}`, `/apex/lessons/${encodeURIComponent(uid)}`];
         let allEmpty = true;
         for (const p of verifyPaths) {

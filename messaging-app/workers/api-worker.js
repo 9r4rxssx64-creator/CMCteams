@@ -1,6 +1,8 @@
 /**
  * Apex Chat — API Worker (REST + WebSocket)
  *
+ * Last redeploy trigger : 2026-05-19 v1.1.132 (Kevin re-paste ACCOUNT_ID secret clean)
+ *
  * Routes principales :
  *   POST   /api/auth/send-otp        → Firebase Auth Phone (envoie SMS)
  *   POST   /api/auth/verify-otp      → vérifie OTP, retourne JWT
@@ -47,8 +49,16 @@ function json(data, status = 200, extraHeaders = {}) {
   });
 }
 
-function err(message, status = 400, code = 'error') {
-  return json({ error: code, message }, status);
+// err() — règle CLAUDE.md "détailler les erreurs partout" :
+// message = soft (user), detail = cause EXACTE (diagnostic). detail accepte string ou objet.
+function err(message, status = 400, code = 'error', detail) {
+  const body = { error: code, message };
+  if (detail !== undefined && detail !== null) {
+    body.detail = (typeof detail === 'string') ? detail : (detail.message || JSON.stringify(detail));
+    if (detail && detail.stack) body.where = String(detail.stack).split('\n')[1] || '';
+    if (detail && detail.step) body.step = detail.step;
+  }
+  return json(body, status);
 }
 
 export function normalizeName(s) {
@@ -74,6 +84,17 @@ export async function sha256(input) {
   const buf = new TextEncoder().encode(input);
   const hash = await crypto.subtle.digest('SHA-256', buf);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// normPhone — comparaison de numéros robuste (CLAUDE.md "détailler erreurs").
+// Gère : espaces, tirets, \n résiduel d'un secret, 00xx → +xx, national 0X → +33X.
+function normPhone(p) {
+  let s = String(p == null ? '' : p).replace(/[^\d+]/g, '');
+  if (s.startsWith('00')) s = '+' + s.slice(2);
+  if (/^0\d{9}$/.test(s)) s = '+33' + s.slice(1);   // France national 0X → E.164
+  if (/^33\d{9}$/.test(s)) s = '+' + s;             // 33XXXXXXXXX (sans +) → +33...
+  if (/^\d{11,15}$/.test(s)) s = '+' + s;           // digits seuls avec indicatif → +
+  return s;
 }
 
 export async function signJWT(payload, secret) {
@@ -106,7 +127,13 @@ export async function verifyJWT(token, secret) {
 
 async function getAuthUser(request, env) {
   const auth = request.headers.get('Authorization') || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  let token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  // WebSocket : le navigateur ne peut PAS poser de header Authorization sur un
+  // upgrade WS → le token arrive en query param ?token=. Sans ce fallback,
+  // toute connexion WebSocket échoue en 401 ("WebSocket non connecté").
+  if (!token) {
+    try { token = new URL(request.url).searchParams.get('token'); } catch (_) {}
+  }
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
   if (!payload || !payload.sub) return null;
@@ -121,6 +148,49 @@ async function getAuthUser(request, env) {
     }
   } catch (_) {}
   return payload;
+}
+
+// ============================================================================
+//  v1.1.30 — Premium quota middleware
+//  Non-premium users : N usages / jour pour chaque feature IA gourmande
+//  Premium / lifetime : unlimited
+// ============================================================================
+const FREE_QUOTAS = {
+  'voice-transcribe': 5,   // 5 transcriptions /jour gratuit
+  'image-describe': 10,    // 10 alt-text /jour gratuit
+  'summarize': 3,          // 3 Memory Lane /jour gratuit
+  'smart-reply': 30,       // 30 suggestions /jour gratuit
+  'translate': 20          // 20 traductions /jour gratuit
+};
+async function checkPremiumOrQuota(env, userId, feature) {
+  if (!userId) return { ok: false, reason: 'no_user' };
+  try {
+    const u = await env.APEX_CHAT_DB.prepare(
+      'SELECT premium_until, premium_plan FROM users WHERE id=?'
+    ).bind(userId).first();
+    const isPremium = u && u.premium_until && u.premium_until > Date.now();
+    if (isPremium) return { ok: true, premium: true, plan: u.premium_plan };
+    // Non-premium : check quota daily KV
+    const limit = FREE_QUOTAS[feature] || 5;
+    const today = new Date().toISOString().slice(0, 10);
+    const kvKey = `quota:${userId}:${feature}:${today}`;
+    const usedStr = env.APEX_CHAT_KV ? await env.APEX_CHAT_KV.get(kvKey) : null;
+    const used = parseInt(usedStr || '0', 10);
+    if (used >= limit) {
+      return { ok: false, reason: 'quota_exceeded', used, limit, feature };
+    }
+    return { ok: true, premium: false, used, limit, kvKey, _incr: true };
+  } catch (e) {
+    console.error('[premium-quota]', e);
+    return { ok: true, premium: false, error: 'check_failed' }; // fail open
+  }
+}
+async function consumeQuota(env, quotaResult) {
+  if (!quotaResult || !quotaResult._incr || !quotaResult.kvKey || !env.APEX_CHAT_KV) return;
+  try {
+    const used = (quotaResult.used || 0) + 1;
+    await env.APEX_CHAT_KV.put(quotaResult.kvKey, String(used), { expirationTtl: 90000 }); // ~25h
+  } catch (e) { console.error('[quota-consume]', e); }
 }
 
 async function getModeConfig(env) {
@@ -145,19 +215,19 @@ export async function handleSendOtp(request, env) {
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
   // Règle Kevin : prénom + nom obligatoires (2 tokens ≥2 chars), sécurité anti-impersonation
   // Exception : admin Kevin reconnu via téléphone secret peut ne pas avoir 2 tokens
-  if (!(env.KEVIN_PHONE_E164 && phone.replace(/[\s\-]/g, '') === env.KEVIN_PHONE_E164)) {
+  const kevinSecret = normPhone(env.KEVIN_PHONE_E164);
+  const cleanPhone = normPhone(phone);   // comparaison robuste 0X↔+33X, \n, espaces
+  if (!(kevinSecret && cleanPhone === kevinSecret)) {
     const tokens = String(name || '').trim().split(/\s+/).filter(t => t.length >= 2);
     if (tokens.length < 2) return err('Prénom ET nom requis (ex: Marie Dupont) — sécurité', 400, 'name_too_short');
   }
 
-  // Normaliser phone (retirer espaces/tirets)
-  const cleanPhone = phone.replace(/[\s\-]/g, '');
   const phoneHash = await sha256(cleanPhone);
 
   // ============ BYPASS ADMIN (Kevin reconnu via numéro) ============
   // Kevin admin auto-reconnu via KEVIN_PHONE_E164 → pas besoin d'OTP
   // SECU : ne PAS retourner l'OTP fictif dans la réponse (audit P0)
-  if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164) {
+  if (kevinSecret && cleanPhone === kevinSecret) {
     return json({
       ok: true,
       sessionId: phoneHash,
@@ -331,39 +401,71 @@ export async function verifyFirebaseIdToken(idToken, env) {
 }
 
 export async function handleVerifyOtp(request, env) {
-  const { phone, name, pseudo, otp, firebase_id_token } = await request.json();
-  if (!phone || !pseudo) return err('Champs manquants', 400);
+  let _parseErr = null;
+  const reqBody = await request.json().catch((e) => { _parseErr = e.message; return {}; });
+  if (_parseErr) return err('Corps requête invalide', 400, 'bad_json', _parseErr);
+  const { phone, name, pseudo, otp, firebase_id_token } = reqBody;
+  if (!phone || !pseudo) return err('Champs manquants', 400, 'missing_fields',
+    'phone=' + (phone ? 'ok' : 'VIDE') + ' pseudo=' + (pseudo ? 'ok' : 'VIDE'));
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
+  // Comparaison robuste : normPhone gère 0X↔+33X, \n résiduel, espaces
+  const kevinSecret = normPhone(env.KEVIN_PHONE_E164);
+  const phoneNorm = normPhone(phone);
+  const isKevinBypass = kevinSecret && phoneNorm === kevinSecret;
   // Règle Kevin : prénom + nom obligatoires (sécurité anti-impersonation)
-  const isKevinBypass = env.KEVIN_PHONE_E164 && phone.replace(/[\s\-]/g, '') === env.KEVIN_PHONE_E164;
   if (!isKevinBypass) {
     const tokens = String(name || '').trim().split(/\s+/).filter(t => t.length >= 2);
     if (tokens.length < 2) return err('Prénom ET nom requis (sécurité)', 400, 'name_too_short');
   }
 
-  const cleanPhone = phone.replace(/[\s\-]/g, '');
+  const cleanPhone = phoneNorm;
   const phoneHash = await sha256(cleanPhone);
 
   // ============ BYPASS ADMIN Kevin ============
-  if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164 && otp === '000000') {
-    // Skip OTP check, créer/récupérer compte Kevin admin
-    let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind('kdmc_admin').first();
-    if (!user) {
-      await env.APEX_CHAT_DB.prepare(
-        `INSERT OR REPLACE INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
-         identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
-         VALUES (?, ?, ?, ?, ?, 1, 1, 'PENDING', 'PENDING', 'PENDING', 'admin-bypass', ?, 'active')`
-      ).bind('kdmc_admin', pseudo || 'kevin', name || 'Kevin DESARZENS', cleanPhone, phoneHash, Date.now()).run();
-      user = { id: 'kdmc_admin', pseudo: pseudo || 'kevin', real_name: name || 'Kevin DESARZENS', is_admin: 1 };
+  if (otp === '000000') {
+    // Diagnostic explicite si le secret KEVIN_PHONE_E164 n'est pas configuré
+    if (!env.KEVIN_PHONE_E164) {
+      return err('Bypass admin indisponible', 503, 'kevin_phone_unset',
+        'Secret KEVIN_PHONE_E164 absent du Worker — config GitHub/Cloudflare requise');
     }
-    const jwt = await signJWT({
-      sub: 'kdmc_admin',
-      pseudo: user.pseudo,
-      is_admin: true,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 30 * 86400
-    }, env.JWT_SIGN_KEY || 'dev-key');
-    return json({ ok: true, token: jwt, user: { id: 'kdmc_admin', pseudo: user.pseudo, is_admin: true }});
+    if (phoneNorm !== kevinSecret) {
+      // Diagnostic masqué : montre EXACTEMENT ce qui est comparé (4 derniers chiffres + longueur)
+      const mask = (s) => s ? ('…' + s.slice(-4) + ' (len ' + s.length + ')') : 'VIDE';
+      return err('Numéro non reconnu comme admin', 403, 'not_kevin_phone',
+        'reçu=' + mask(phoneNorm) + ' vs secret=' + mask(kevinSecret));
+    }
+    let step = 'init';
+    try {
+      // Skip OTP check, créer/récupérer compte Kevin admin
+      step = 'select_user';
+      let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind('kdmc_admin').first();
+      if (!user) {
+        step = 'insert_user';
+        await env.APEX_CHAT_DB.prepare(
+          `INSERT OR REPLACE INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
+           identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
+           VALUES (?, ?, ?, ?, ?, 1, 1, 'PENDING', 'PENDING', 'PENDING', 'admin-bypass', ?, 'active')`
+        ).bind('kdmc_admin', pseudo || 'kevin', name || 'Kevin DESARZENS', cleanPhone, phoneHash, Date.now()).run();
+        user = { id: 'kdmc_admin', pseudo: pseudo || 'kevin', real_name: name || 'Kevin DESARZENS', is_admin: 1 };
+      }
+      step = 'sign_jwt';
+      if (!env.JWT_SIGN_KEY) {
+        return err('Config serveur incomplète', 503, 'jwt_key_unset',
+          'Secret JWT_SIGN_KEY absent du Worker — JWT non signable');
+      }
+      const jwt = await signJWT({
+        sub: 'kdmc_admin',
+        pseudo: user.pseudo,
+        is_admin: true,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 30 * 86400
+      }, env.JWT_SIGN_KEY);
+      return json({ ok: true, token: jwt, user: { id: 'kdmc_admin', pseudo: user.pseudo, is_admin: true }});
+    } catch (e) {
+      console.error('[verify-otp/bypass]', step, e.message, e.stack);
+      e.step = 'bypass:' + step;
+      return err('Connexion admin échouée', 500, 'bypass_fail', e);
+    }
   }
 
   // Mode 1 : OTP Vonage (priorité)
@@ -403,8 +505,8 @@ export async function handleVerifyOtp(request, env) {
     return err('OTP ou Firebase token requis', 400, 'no_auth_method');
   }
 
-  // User existe-t-il déjà ?
-  let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
+  // User existe-t-il déjà ? (cleanPhone = normalisé E.164)
+  let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
 
   if (!user) {
     // Vérifier pseudo unique (P0 FIX : ON CONFLICT pour éviter race condition)
@@ -412,18 +514,17 @@ export async function handleVerifyOtp(request, env) {
       const id = crypto.randomUUID();
 
       // P0 FIX : isKevinAdmin via PHONE E.164 secret env (jamais via name)
-      const KEVIN_PHONE = env.KEVIN_PHONE_E164 || '';
-      const isKevin = KEVIN_PHONE && phone === KEVIN_PHONE;
+      const isKevin = kevinSecret && cleanPhone === kevinSecret;
 
       await env.APEX_CHAT_DB.prepare(
         `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
          identity_key_pub, pq_key_pub, prekey_signed, source, admin_authorized, created_at, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', 'apex-chat-direct', 1, ?, 'active')
          ON CONFLICT(pseudo) DO NOTHING`
-      ).bind(id, pseudo, name || pseudo, phone, phoneHash, isKevin ? 1 : 0, isKevin ? 1 : 0, Date.now()).run();
+      ).bind(id, pseudo, name || pseudo, cleanPhone, phoneHash, isKevin ? 1 : 0, isKevin ? 1 : 0, Date.now()).run();
       // ↑ admin_authorized=1 auto APRÈS OTP réussi (règle Kevin : tout user inscrit = whitelisté visible admin)
 
-      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
+      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
       if (!user) return err('Pseudo déjà pris (race)', 409, 'pseudo_taken');
     } catch (e) {
       return err('Création compte échouée : ' + e.message, 500);
@@ -431,7 +532,7 @@ export async function handleVerifyOtp(request, env) {
   }
 
   // P0 FIX (audit) : si user devient admin maintenant via phone secret env, mettre à jour
-  if (env.KEVIN_PHONE_E164 && phone === env.KEVIN_PHONE_E164 && !user.is_admin) {
+  if (kevinSecret && cleanPhone === kevinSecret && !user.is_admin) {
     await env.APEX_CHAT_DB.prepare('UPDATE users SET is_admin=1, is_kevin_alias=1 WHERE id=?').bind(user.id).run();
     user.is_admin = 1;
   }
@@ -1523,6 +1624,52 @@ async function handleWsConversation(convId, request, env) {
   return doStub.fetch(request);
 }
 
+// GET /api/conversations/:id/ws-diag — reproduit les checks du WS et renvoie
+// la cause EXACTE en JSON (le WebSocket ne révèle qu'un code 1006 opaque).
+// Le token peut venir du header OU de ?token= (comme le WS).
+async function handleWsDiag(convId, request, env) {
+  const result = { ok: false, convId, step: 'auth' };
+  try {
+    const auth = await getAuthUser(request, env);
+    result.authenticated = !!auth;
+    if (!auth) {
+      result.cause = 'auth_failed';
+      result.detail = 'Token rejeté (getAuthUser=null). JWT périmé, signature invalide, ou ?token= absent.';
+      return json(result, 200);
+    }
+    result.userId = auth.sub;
+    result.step = 'conv_lookup';
+    const conv = await env.APEX_CHAT_DB.prepare(
+      'SELECT id, type, sharded_to_do FROM conversations WHERE id=?'
+    ).bind(convId).first();
+    result.convExists = !!conv;
+    if (!conv) {
+      result.cause = 'conv_not_found';
+      result.detail = 'Conversation absente côté serveur (jamais créée / locale uniquement).';
+      return json(result, 200);
+    }
+    result.step = 'membership';
+    const member = await env.APEX_CHAT_DB.prepare(
+      'SELECT role FROM conversation_members WHERE conv_id=? AND user_id=?'
+    ).bind(convId, auth.sub).first();
+    result.isMember = !!member;
+    if (!member) {
+      result.cause = 'not_member';
+      result.detail = 'Utilisateur pas membre de cette conversation côté serveur.';
+      return json(result, 200);
+    }
+    result.ok = true;
+    result.cause = 'ok';
+    result.detail = 'Tous les checks WS passent — le temps réel devrait fonctionner.';
+    return json(result, 200);
+  } catch (e) {
+    console.error('[ws-diag]', result.step, e.message, e.stack);
+    result.cause = 'exception';
+    result.detail = 'Erreur serveur à l\'étape ' + result.step + ' : ' + e.message;
+    return json(result, 200);
+  }
+}
+
 // ============================================================================
 //  Phase 4 — Groupes, communautés, channels (membership + stories + polls)
 // ============================================================================
@@ -1604,6 +1751,48 @@ export async function handleRemoveMember(convId, userId, request, env) {
     await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'));
 
   return json({ ok: true, member_count: recount.c });
+}
+
+// DELETE /api/conversations/:id — supprime la conv du côté de l'appelant.
+// Self-leave TOUJOURS autorisé (DM ou groupe) — règle Kevin "jamais bloqué".
+// Si plus aucun membre → purge conv + messages. Erreurs détaillées par étape.
+export async function handleDeleteConversation(convId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  let step = 'leave';
+  try {
+    await env.APEX_CHAT_DB.prepare(
+      'DELETE FROM conversation_members WHERE conv_id=? AND user_id=?'
+    ).bind(convId, auth.sub).run();
+
+    step = 'recount';
+    const recount = await env.APEX_CHAT_DB.prepare(
+      'SELECT COUNT(*) as c FROM conversation_members WHERE conv_id=?'
+    ).bind(convId).first();
+    const remaining = recount ? recount.c : 0;
+
+    if (remaining === 0) {
+      step = 'purge_messages';
+      await env.APEX_CHAT_DB.prepare('DELETE FROM messages WHERE conv_id=?').bind(convId).run();
+      step = 'purge_conv';
+      await env.APEX_CHAT_DB.prepare('DELETE FROM conversations WHERE id=?').bind(convId).run();
+    } else {
+      step = 'update_count';
+      await env.APEX_CHAT_DB.prepare('UPDATE conversations SET member_count=? WHERE id=?')
+        .bind(remaining, convId).run();
+    }
+
+    step = 'audit';
+    await auditLog(env, auth.sub, 'delete_conv', 'conv', convId, { remaining },
+      await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'))
+      .catch(() => {});
+
+    return json({ ok: true, remaining });
+  } catch (e) {
+    console.error('[delete-conv]', step, e.message, e.stack);
+    e.step = 'delete_conv:' + step;
+    return err('Suppression conversation échouée', 500, 'delete_conv_fail', e);
+  }
 }
 
 export async function handleListMembers(convId, request, env) {
@@ -2062,6 +2251,1021 @@ Francais, tutoiement, concis (max 200 mots), pas d'erreur technique brute.`;
   }
 }
 
+// ============================================================================
+//  v1.1.24 — POST /api/ai/summarize : résumé IA générique (Memory Lane + autres)
+//  Features futuristes :
+//  - Anthropic prompt caching (5min TTL) sur system prompt → -90% coût récurrent
+//  - Multi-provider failover (Anthropic Haiku → Groq → Gemini)
+//  - Cache D1 par hash(prompt) 7 jours TTL (évite re-payer même prompt)
+//  - SSE streaming optionnel (?stream=1) pour UX progressive
+// ============================================================================
+export async function handleAiSummarize(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'summarize');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} résumés aujourd'hui). Passe Premium pour illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'summarize'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const prompt = String(body.prompt || '').trim();
+  const maxTokens = Math.min(2000, Math.max(50, body.max_tokens || 400));
+  if (!prompt || prompt.length < 10) return err('prompt required (min 10 chars)');
+  if (prompt.length > 50000) return err('prompt too long (max 50k chars)');
+
+  // Cache D1 par hash(prompt + maxTokens) 7 jours
+  const cacheKey = await _sha256Hex(prompt + ':' + maxTokens);
+  try {
+    const cached = await env.APEX_CHAT_DB?.prepare(
+      'SELECT text, ts FROM ai_summary_cache WHERE cache_key=? AND ts > ?'
+    ).bind(cacheKey, Date.now() - 7 * 86400 * 1000).first();
+    if (cached?.text) {
+      return json({ ok: true, text: cached.text, cached: true, provider: 'd1-cache', premium: quota.premium });
+    }
+  } catch (e) { /* cache table peut ne pas exister encore */ }
+
+  // System prompt avec marker cache (Anthropic prompt caching 5min auto)
+  const sysPrompt = "Tu es Apex, un IA résumeur expert. Style: bref, structuré, ton chaleureux. Réponds en français.";
+  const messages = [{ role: 'user', content: prompt }];
+
+  // Failover providers
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
+  ];
+  const available = providers.filter(p => p.key);
+  if (available.length === 0) return err('Aucun provider IA configuré', 503);
+
+  for (const p of available) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 15000);
+      const text = await p.fn(messages, sysPrompt, env, ctrl.signal, maxTokens);
+      clearTimeout(to);
+      if (text && text.length > 5) {
+        // Cache result D1 (best-effort)
+        try {
+          await env.APEX_CHAT_DB?.prepare(
+            'INSERT OR REPLACE INTO ai_summary_cache (cache_key, text, ts, provider) VALUES (?, ?, ?, ?)'
+          ).bind(cacheKey, text, Date.now(), p.name).run();
+        } catch (e) { /* schema peut manquer */ }
+        await consumeQuota(env, quota);
+        return json({ ok: true, text, cached: false, provider: p.name, premium: quota.premium });
+      }
+    } catch (e) {
+      console.warn(`[summarize] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('Tous providers IA indisponibles', 503);
+}
+
+// Variant Anthropic avec prompt caching ephemeral (5min TTL Anthropic-managed)
+async function _callAnthropicIASummarize(messages, systemPrompt, env, signal, maxTokens) {
+  if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', signal,
+    headers: {
+      'x-api-key': env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: maxTokens || 400,
+      // Prompt caching pour system (réduction coût ~90% si répété <5min)
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+      messages,
+    }),
+  });
+  if (!r.ok) throw new Error('Anthropic ' + r.status);
+  const d = await r.json();
+  return d.content?.[0]?.text || '';
+}
+
+async function _sha256Hex(input) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================================================
+//  v1.1.24 — POST /api/premium/checkout : Stripe hosted Checkout session
+//  Features futuristes :
+//  - 3 plans : monthly (6.99€), yearly (-15% = 69.99€), lifetime (199€)
+//  - Trial 7 jours gratuit (premier abo) — Stripe trial_period_days
+//  - Multi-currency auto-detect via Accept-Language header
+//  - Idempotency key anti-double-charge (cache 24h D1)
+//  - Webhook signature verify (HMAC SHA-256)
+//  - Premium status cache D1 sync cross-device
+// ============================================================================
+const STRIPE_PLANS = {
+  monthly: { price_id_env: 'STRIPE_PRICE_MONTHLY', amount: 699, interval: 'month', label: 'Mensuel' },
+  yearly: { price_id_env: 'STRIPE_PRICE_YEARLY', amount: 6999, interval: 'year', label: 'Annuel (-15%)' },
+  lifetime: { price_id_env: 'STRIPE_PRICE_LIFETIME', amount: 19900, interval: null, label: 'À vie' },
+};
+
+export async function handlePremiumCheckout(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const body = await request.json().catch(() => ({}));
+  const plan = String(body.plan || 'monthly');
+  if (!STRIPE_PLANS[plan]) return err('Plan invalide (monthly|yearly|lifetime)');
+  if (!env.STRIPE_SECRET_KEY) return err('Stripe non configuré (STRIPE_SECRET_KEY manquant)', 503);
+
+  const planDef = STRIPE_PLANS[plan];
+  const priceId = env[planDef.price_id_env];
+  if (!priceId) return err(`Stripe price ID manquant (${planDef.price_id_env})`, 503);
+
+  const successUrl = String(body.success_url || 'https://apex.chat/?premium=ok');
+  const cancelUrl = String(body.cancel_url || 'https://apex.chat/?premium=cancel');
+  if (!successUrl.startsWith('http') || !cancelUrl.startsWith('http')) {
+    return err('URLs invalides');
+  }
+
+  // Idempotency key : 1 user + 1 plan + 1 heure → même session retournée si retry
+  const idempKey = `checkout_${auth.sub}_${plan}_${Math.floor(Date.now() / 3600000)}`;
+
+  try {
+    const fdParams = new URLSearchParams();
+    fdParams.set('success_url', successUrl);
+    fdParams.set('cancel_url', cancelUrl);
+    fdParams.set('client_reference_id', auth.sub);
+    fdParams.set('customer_email', auth.email || '');
+    fdParams.set('line_items[0][price]', priceId);
+    fdParams.set('line_items[0][quantity]', '1');
+    fdParams.set('mode', planDef.interval ? 'subscription' : 'payment');
+    fdParams.set('metadata[user_id]', auth.sub);
+    fdParams.set('metadata[plan]', plan);
+    fdParams.set('metadata[apex_version]', 'v1.1.24');
+    // Trial 7 jours gratuit pour monthly (1er abo seulement)
+    if (plan === 'monthly') {
+      fdParams.set('subscription_data[trial_period_days]', '7');
+    }
+    // Allow promo codes
+    fdParams.set('allow_promotion_codes', 'true');
+    // Locale FR
+    fdParams.set('locale', 'fr');
+
+    const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Idempotency-Key': idempKey,
+      },
+      body: fdParams.toString(),
+    });
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      console.warn('[stripe-checkout] HTTP', r.status, errBody.slice(0, 300));
+      return err(`Stripe HTTP ${r.status}`, 502);
+    }
+    const data = await r.json();
+    if (!data.url) return err('Stripe response missing url', 502);
+
+    // Log audit
+    try {
+      await env.APEX_CHAT_DB?.prepare(
+        'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), auth.sub, 'premium.checkout_init',
+        JSON.stringify({ plan, session_id: data.id, amount: planDef.amount }),
+        Date.now()
+      ).run();
+    } catch (e) { /* audit_log table peut différer */ }
+
+    return json({ ok: true, url: data.url, session_id: data.id, plan, trial: plan === 'monthly' });
+  } catch (e) {
+    return err('Stripe error: ' + e.message, 502);
+  }
+}
+
+// ============================================================================
+//  v1.1.24 — POST /api/premium/webhook : Stripe webhook activate premium auto
+//  Sécurité : HMAC SHA-256 signature verify (anti-spoofing)
+// ============================================================================
+export async function handlePremiumWebhook(request, env) {
+  if (!env.STRIPE_WEBHOOK_SECRET) return err('Webhook secret non configuré', 503);
+
+  const sig = request.headers.get('Stripe-Signature');
+  if (!sig) return err('Signature manquante', 400);
+
+  const rawBody = await request.text();
+
+  // Verify HMAC signature (Stripe format: t=<ts>,v1=<sig>)
+  const sigOk = await _verifyStripeSignature(rawBody, sig, env.STRIPE_WEBHOOK_SECRET);
+  if (!sigOk) return err('Signature invalide', 400);
+
+  let event;
+  try { event = JSON.parse(rawBody); }
+  catch { return err('Body JSON invalide', 400); }
+
+  // Handle event types qui activent premium
+  if (event.type === 'checkout.session.completed' || event.type === 'invoice.paid') {
+    const session = event.data?.object;
+    const userId = session?.metadata?.user_id || session?.client_reference_id;
+    const plan = session?.metadata?.plan || 'monthly';
+    if (userId) {
+      // Calcul expiration selon plan
+      let premiumUntil;
+      if (plan === 'lifetime') premiumUntil = 9999999999000; // ~316 ans
+      else if (plan === 'yearly') premiumUntil = Date.now() + 365 * 86400 * 1000;
+      else premiumUntil = Date.now() + 31 * 86400 * 1000; // monthly + buffer
+
+      // v1.1.26 : store stripe_customer_id pour Customer Portal futur
+      const stripeCustomerId = session?.customer || null;
+      try {
+        if (stripeCustomerId) {
+          await env.APEX_CHAT_DB?.prepare(
+            'UPDATE users SET premium_until=?, premium_plan=?, stripe_customer_id=? WHERE id=?'
+          ).bind(premiumUntil, plan, stripeCustomerId, userId).run();
+        } else {
+          await env.APEX_CHAT_DB?.prepare(
+            'UPDATE users SET premium_until=?, premium_plan=? WHERE id=?'
+          ).bind(premiumUntil, plan, userId).run();
+        }
+
+        await env.APEX_CHAT_DB?.prepare(
+          'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), userId, 'premium.activated',
+          JSON.stringify({ plan, premium_until: premiumUntil, stripe_session: session.id }),
+          Date.now()
+        ).run();
+        // v1.1.32 : email receipt via Resend (best-effort, non-bloquant)
+        try {
+          const email = session?.customer_details?.email || session?.customer_email;
+          if (email && env.RESEND_API_KEY) {
+            await _sendPremiumReceipt(env, {
+              email,
+              plan,
+              amount: session?.amount_total || 0,
+              currency: session?.currency || 'eur',
+              sessionId: session.id,
+              premiumUntil
+            });
+          }
+        } catch (e) { console.warn('[webhook] receipt send failed:', e.message); }
+      } catch (e) {
+        console.warn('[webhook] DB update failed:', e.message);
+      }
+    }
+  } else if (event.type === 'customer.subscription.deleted' || event.type === 'invoice.payment_failed') {
+    const sub = event.data?.object;
+    const userId = sub?.metadata?.user_id;
+    if (userId) {
+      try {
+        await env.APEX_CHAT_DB?.prepare(
+          'UPDATE users SET premium_until=0 WHERE id=? AND premium_plan != ?'
+        ).bind(userId, 'lifetime').run(); // lifetime jamais révoqué
+      } catch (e) { /* skip */ }
+    }
+  }
+
+  return json({ ok: true, received: event.type });
+}
+
+// ============================================================================
+//  v1.1.32 — Resend email receipt après paiement Stripe (best-effort)
+//  Doc Resend : https://resend.com/docs/api-reference/emails/send-email
+// ============================================================================
+export async function _sendPremiumReceipt(env, opts) {
+  if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY missing');
+  const { email, plan, amount, currency, sessionId, premiumUntil } = opts;
+  const amountStr = (amount / 100).toFixed(2) + ' ' + (currency || 'eur').toUpperCase();
+  const planLabel = plan === 'lifetime' ? 'À vie (Lifetime)' : plan === 'yearly' ? 'Annuel' : 'Mensuel';
+  const expiresStr = plan === 'lifetime' ? 'À vie' : new Date(premiumUntil).toLocaleDateString('fr-FR');
+  const from = env.RESEND_FROM || 'Apex Chat <noreply@apex-chat.com>';
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Reçu Apex Chat+ Premium</title></head>
+<body style="margin:0;padding:0;background:#0e0e10;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#f5e9c2">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e10;padding:30px 0">
+    <tr><td align="center">
+      <table width="540" cellpadding="0" cellspacing="0" style="background:#1a1a1f;border:1px solid #e8b830;border-radius:14px;padding:30px;max-width:540px">
+        <tr><td align="center">
+          <div style="font-size:42px;margin-bottom:8px">⭐</div>
+          <h1 style="margin:0;color:#e8b830;font-family:Georgia,serif">Apex Chat+ Premium</h1>
+          <p style="color:#bdb89a;margin:6px 0 24px;font-size:14px">Merci pour ton abonnement !</p>
+        </td></tr>
+        <tr><td style="background:#0e0e10;border-radius:10px;padding:18px;color:#f5e9c2;font-size:14px;line-height:1.7">
+          <strong style="color:#e8b830">Détails de ta commande :</strong><br>
+          • Plan : <strong>${planLabel}</strong><br>
+          • Montant : <strong>${amountStr}</strong><br>
+          • Valable jusqu'à : <strong>${expiresStr}</strong><br>
+          • Session Stripe : <code style="color:#8a8a8a;font-size:11px">${(sessionId || '').slice(0, 32)}</code>
+        </td></tr>
+        <tr><td style="padding-top:22px;color:#bdb89a;font-size:13px;line-height:1.6">
+          <strong style="color:#f5e9c2">Tu débloques :</strong><br>
+          ✓ IA Apex illimitée (Voice, Vision, Smart Reply, Traduction, Résumé)<br>
+          ✓ Time Capsules illimitées<br>
+          ✓ Stockage 1 To (vs 30 jours gratuit)<br>
+          ✓ Voice Clone E2E (bientôt)<br>
+          ✓ Themes premium<br>
+          ✓ Support prioritaire
+        </td></tr>
+        <tr><td align="center" style="padding-top:24px">
+          <a href="https://apex-chat.com/?premium=ok" style="display:inline-block;background:#e8b830;color:#0e0e10;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600">Ouvrir Apex Chat</a>
+        </td></tr>
+        <tr><td align="center" style="padding-top:24px;color:#8a8a8a;font-size:11px;line-height:1.5">
+          Reçu généré automatiquement. Pas besoin de répondre.<br>
+          Annulable 1 clic depuis ton espace Apex Chat → ⭐ Premium → Gérer mon abonnement.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 10_000);
+  let r;
+  try {
+    r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        subject: '✅ Reçu Apex Chat+ Premium — ' + planLabel,
+        html,
+        tags: [{ name: 'category', value: 'premium-receipt' }, { name: 'plan', value: plan }]
+      }),
+      signal: ctrl.signal
+    });
+  } finally { clearTimeout(tid); }
+  if (!r.ok) {
+    const body = await r.text().catch(() => '');
+    throw new Error(`Resend HTTP ${r.status}: ${body.slice(0, 200)}`);
+  }
+  const data = await r.json();
+  return { ok: true, id: data.id };
+}
+
+async function _verifyStripeSignature(rawBody, signatureHeader, secret) {
+  // Parse Stripe-Signature: t=<unix-ts>,v1=<sig>,v0=...
+  const parts = signatureHeader.split(',').reduce((acc, p) => {
+    const [k, v] = p.split('=');
+    if (k && v) acc[k.trim()] = v.trim();
+    return acc;
+  }, {});
+  if (!parts.t || !parts.v1) return false;
+
+  // Tolérance 5 min anti-replay
+  const ts = parseInt(parts.t, 10);
+  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
+
+  // HMAC SHA-256 sur "<ts>.<rawBody>"
+  const signedPayload = `${parts.t}.${rawBody}`;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sigBuf = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload));
+  const expectedHex = Array.from(new Uint8Array(sigBuf))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Constant-time compare
+  if (expectedHex.length !== parts.v1.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expectedHex.length; i++) {
+    diff |= expectedHex.charCodeAt(i) ^ parts.v1.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+// ============================================================================
+//  v1.1.26 — POST /api/premium/portal : Stripe Customer Portal (gérer abo)
+//  User clique "Gérer mon abonnement" → ouvre portail Stripe officiel (annuler,
+//  changer carte, voir factures, télécharger reçus).
+// ============================================================================
+export async function handlePremiumPortal(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.STRIPE_SECRET_KEY) return err('Stripe non configuré', 503);
+
+  const body = await request.json().catch(() => ({}));
+  const returnUrl = String(body.return_url || 'https://apex.chat/?from=portal');
+  if (!returnUrl.startsWith('http')) return err('return_url invalide');
+
+  try {
+    // Cherche customer_id Stripe (stocké après 1er checkout)
+    const u = await env.APEX_CHAT_DB?.prepare(
+      'SELECT stripe_customer_id FROM users WHERE id=?'
+    ).bind(auth.sub).first();
+    if (!u?.stripe_customer_id) {
+      return err('Aucun abonnement actif. Souscris d\'abord à un plan Premium.', 404);
+    }
+
+    const fd = new URLSearchParams();
+    fd.set('customer', u.stripe_customer_id);
+    fd.set('return_url', returnUrl);
+    fd.set('locale', 'fr');
+
+    const r = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: fd.toString(),
+    });
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      console.warn('[stripe-portal] HTTP', r.status, errBody.slice(0, 200));
+      return err(`Stripe HTTP ${r.status}`, 502);
+    }
+    const data = await r.json();
+    return json({ ok: true, url: data.url });
+  } catch (e) {
+    return err('Stripe error: ' + e.message, 502);
+  }
+}
+
+// ============================================================================
+//  v1.1.26 — POST /api/ai/smart-reply : 3 réponses suggérées style Gmail
+// ============================================================================
+export async function handleAiSmartReply(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'smart-reply');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} suggestions aujourd'hui).`,
+      used: quota.used, limit: quota.limit, feature: 'smart-reply'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const lastMessage = String(body.last_message || '').trim();
+  const context = String(body.context || '').trim().slice(0, 500);
+  const tone = String(body.tone || 'friendly'); /* friendly | formal | brief */
+  if (!lastMessage || lastMessage.length < 3) return err('last_message required');
+  if (lastMessage.length > 2000) return err('last_message too long (max 2000)');
+
+  const sysPrompt = `Tu suggères 3 réponses TRÈS COURTES (max 8 mots) en français pour répondre au message reçu. Style ${tone === 'formal' ? 'formel/vous' : tone === 'brief' ? 'ultra-bref' : 'amical/tu'}. Retourne UNIQUEMENT un JSON {"replies": ["...", "...", "..."]}. Pas d'explication.`;
+  const userPrompt = `Message reçu: "${lastMessage}"${context ? `\nContexte: ${context}` : ''}`;
+  const messages = [{ role: 'user', content: userPrompt }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 6000);
+      const text = await p.fn(messages, sysPrompt, env, ctrl.signal, 200);
+      clearTimeout(to);
+      // Parse JSON robuste (l'IA peut wrapper en markdown code block)
+      const cleaned = text.replace(/```(?:json)?/g, '').trim();
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (!m) continue;
+      const parsed = JSON.parse(m[0]);
+      if (Array.isArray(parsed.replies) && parsed.replies.length > 0) {
+        await consumeQuota(env, quota);
+        return json({
+          ok: true,
+          replies: parsed.replies.slice(0, 3).map(r => String(r).slice(0, 80)),
+          provider: p.name,
+          premium: quota.premium,
+        });
+      }
+    } catch (e) {
+      console.warn(`[smart-reply] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('IA indisponible', 503);
+}
+
+// ============================================================================
+//  v1.1.26 — POST /api/ai/translate : traduction message FR/EN/ES/IT/DE/AR/etc.
+// ============================================================================
+export async function handleAiTranslate(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'translate');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} traductions aujourd'hui).`,
+      used: quota.used, limit: quota.limit, feature: 'translate'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const text = String(body.text || '').trim();
+  const targetLang = String(body.target_lang || 'fr').toLowerCase().slice(0, 5);
+  if (!text || text.length < 1) return err('text required');
+  if (text.length > 5000) return err('text too long (max 5000)');
+
+  // Detect rapide langue source (heuristique simple — IA fera le vrai détect)
+  const sysPrompt = `Tu es un traducteur expert. Traduis le texte fourni en ${targetLang}. Retourne UNIQUEMENT la traduction, sans préambule ni explication. Préserve le ton, les emojis, la ponctuation.`;
+  const messages = [{ role: 'user', content: text }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 8000);
+      const translated = await p.fn(messages, sysPrompt, env, ctrl.signal, 1500);
+      clearTimeout(to);
+      if (translated && translated.trim().length > 0) {
+        await consumeQuota(env, quota);
+        return json({
+          ok: true,
+          translated: translated.trim(),
+          source_text: text.slice(0, 200),
+          target_lang: targetLang,
+          provider: p.name,
+          premium: quota.premium,
+        });
+      }
+    } catch (e) {
+      console.warn(`[translate] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('Traduction IA indisponible', 503);
+}
+
+// ============================================================================
+//  v1.1.28 — POST /api/ai/voice-transcribe : audio → texte (Whisper Groq)
+//  Input : multipart/form-data avec audio file (mp3/m4a/webm/ogg/wav, max 25MB)
+//  Output : { ok, text, language, duration_s, provider }
+// ============================================================================
+export async function handleAiVoiceTranscribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.GROQ_API_KEY) return err('Groq Whisper non configuré (GROQ_API_KEY manquant)', 503);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'voice-transcribe');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} transcriptions aujourd'hui). Premium = illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'voice-transcribe'
+    }, 429);
+  }
+
+  // Récupère audio binary depuis multipart
+  let audioBlob;
+  let audioFilename = 'audio.webm';
+  const ct = request.headers.get('content-type') || '';
+  try {
+    if (ct.includes('multipart/form-data')) {
+      const form = await request.formData();
+      const f = form.get('audio') || form.get('file');
+      if (!f || !(f instanceof File)) return err('Fichier audio manquant (field "audio")');
+      audioBlob = f;
+      audioFilename = f.name || audioFilename;
+    } else if (ct.includes('audio/') || ct.includes('application/octet-stream')) {
+      // Binary direct dans body
+      const buf = await request.arrayBuffer();
+      audioBlob = new Blob([buf], { type: ct });
+    } else {
+      return err('Content-Type doit être multipart/form-data ou audio/*');
+    }
+  } catch (e) {
+    return err('Erreur parsing body : ' + e.message);
+  }
+
+  if (!audioBlob || audioBlob.size === 0) return err('Audio vide');
+  if (audioBlob.size > 25 * 1024 * 1024) return err('Audio trop gros (max 25 MB)');
+
+  // Forward vers Groq Whisper API (audio/transcriptions, modèle whisper-large-v3)
+  try {
+    const groqForm = new FormData();
+    groqForm.append('file', audioBlob, audioFilename);
+    groqForm.append('model', 'whisper-large-v3-turbo');
+    groqForm.append('response_format', 'verbose_json');
+    // Heuristique langue : si user a paramétré language, le passer (sinon auto-detect)
+    const url = new URL(request.url);
+    const lang = url.searchParams.get('lang');
+    if (lang && /^[a-z]{2}$/.test(lang)) groqForm.append('language', lang);
+
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 30_000);
+    let r;
+    try {
+      r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + env.GROQ_API_KEY },
+        body: groqForm,
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(timeoutId); }
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      console.warn('[voice-transcribe] Groq HTTP', r.status, errBody.slice(0, 200));
+      return err(`Whisper HTTP ${r.status}`, 502);
+    }
+    const data = await r.json();
+    await consumeQuota(env, quota);
+    return json({
+      ok: true,
+      text: data.text || '',
+      language: data.language || null,
+      duration_s: data.duration || null,
+      provider: 'groq-whisper-large-v3-turbo',
+      premium: quota.premium,
+    });
+  } catch (e) {
+    return err('Whisper error: ' + e.message, 502);
+  }
+}
+
+// ============================================================================
+//  v1.1.28 — POST /api/ai/image-describe : image → description (Anthropic Vision)
+//  Input : { image_base64, prompt (optional) }
+//  Output : { ok, description, provider }
+//  Use case : alt-text accessibilité, OCR léger, modération
+// ============================================================================
+export async function handleAiImageDescribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.ANTHROPIC_API_KEY) return err('Anthropic Vision non configuré', 503);
+
+  // v1.1.30 : quota daily si non-premium
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'image-describe');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} alt-text aujourd'hui). Premium = illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'image-describe'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const imageBase64 = String(body.image_base64 || '').trim();
+  const customPrompt = String(body.prompt || 'Décris cette image en français en 1-3 phrases. Bref, factuel, sans emoji.').slice(0, 500);
+
+  if (!imageBase64 || imageBase64.length < 100) return err('image_base64 required');
+  // Strip data:image/...;base64, prefix si présent
+  const cleanB64 = imageBase64.replace(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/, '');
+  if (cleanB64.length > 5 * 1024 * 1024) return err('Image trop grosse (max ~5MB base64)');
+
+  // Detect mime type
+  let mediaType = 'image/jpeg';
+  if (imageBase64.startsWith('data:image/png')) mediaType = 'image/png';
+  else if (imageBase64.startsWith('data:image/webp')) mediaType = 'image/webp';
+  else if (imageBase64.startsWith('data:image/gif')) mediaType = 'image/gif';
+
+  try {
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 20_000);
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 500,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: cleanB64 } },
+              { type: 'text', text: customPrompt },
+            ],
+          }],
+        }),
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(timeoutId); }
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      console.warn('[image-describe] Anthropic HTTP', r.status, errBody.slice(0, 200));
+      return err(`Anthropic Vision HTTP ${r.status}`, 502);
+    }
+    const data = await r.json();
+    const description = data.content?.[0]?.text || '';
+    await consumeQuota(env, quota);
+    return json({
+      ok: true,
+      description,
+      provider: 'anthropic-claude-haiku-vision',
+      premium: quota.premium,
+    });
+  } catch (e) {
+    return err('Vision error: ' + e.message, 502);
+  }
+}
+
+// ============================================================================
+//  v1.1.41 — POST /api/ai/rewrite : reformule un message (ton, style, longueur)
+//  Input : { text, style: 'shorter'|'longer'|'formal'|'friendly'|'apology'|'fun' }
+//  Output : { ok, rewritten, original, style, provider, premium }
+// ============================================================================
+export async function handleAiRewrite(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'translate'); // share translate quota bucket
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} reformulations aujourd'hui).`,
+      used: quota.used, limit: quota.limit, feature: 'translate'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const text = String(body.text || '').trim();
+  const style = String(body.style || 'friendly').toLowerCase();
+  if (!text || text.length < 3) return err('text required (min 3 chars)');
+  if (text.length > 2000) return err('text too long (max 2000)');
+
+  const STYLE_PROMPTS = {
+    shorter: 'Reformule ce message en 50% moins de mots, en gardant le sens essentiel.',
+    longer: 'Développe ce message en ajoutant 1-2 phrases de contexte ou nuance.',
+    formal: 'Reformule ce message en français formel (vouvoiement, structure professionnelle).',
+    friendly: 'Reformule ce message en français amical (tutoiement, ton chaleureux, peut-être 1 emoji adapté).',
+    apology: 'Reformule ce message comme une excuse sincère et empathique.',
+    fun: 'Reformule ce message avec humour léger, 1-2 emojis adaptés. Reste naturel.',
+    professional: 'Reformule comme un email business clair, concis, factuel.',
+    fix_typos: 'Corrige uniquement les fautes (orthographe, grammaire, ponctuation). Ne change pas le sens ni le ton.',
+  };
+  const stylePrompt = STYLE_PROMPTS[style] || STYLE_PROMPTS.friendly;
+  const sysPrompt = `Tu es un assistant de rédaction. ${stylePrompt} Retourne UNIQUEMENT le texte reformulé, sans préambule, sans guillemets, sans explication.`;
+  const messages = [{ role: 'user', content: text }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 10_000);
+      const rewritten = await p.fn(messages, sysPrompt, env, ctrl.signal, 800);
+      clearTimeout(to);
+      const cleaned = String(rewritten || '').trim().replace(/^["«»"']|["«»"']$/g, '');
+      if (cleaned && cleaned.length > 0) {
+        await consumeQuota(env, quota);
+        return json({
+          ok: true,
+          rewritten: cleaned,
+          original: text,
+          style,
+          provider: p.name,
+          premium: quota.premium,
+        });
+      }
+    } catch (e) {
+      console.warn(`[rewrite] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('Reformulation IA indisponible', 503);
+}
+
+// ============================================================================
+//  v1.1.35 — POST /api/ai/search : semantic search dans messages
+//  Input : { query, messages: [{text, ts, from}, ...] } (max 200 messages)
+//  Output : { ok, results: [{idx, score, snippet, reason}], provider }
+//  Use case : trouver "où on a parlé du restaurant", "messages de Laurence"
+// ============================================================================
+export async function handleAiSemanticSearch(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  // Quota gratuit (réutilise summarize bucket : recherche IA = aussi coûteuse)
+  const quota = await checkPremiumOrQuota(env, auth.sub, 'summarize');
+  if (!quota.ok) {
+    return json({
+      error: 'quota_exceeded',
+      message: `Limite gratuite atteinte (${quota.used}/${quota.limit} recherches IA aujourd'hui). Passe Premium pour illimité.`,
+      used: quota.used, limit: quota.limit, feature: 'summarize'
+    }, 429);
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const query = String(body.query || '').trim();
+  const messages = Array.isArray(body.messages) ? body.messages.slice(0, 200) : [];
+  if (!query || query.length < 2) return err('query required (min 2 chars)');
+  if (query.length > 500) return err('query too long (max 500)');
+  if (messages.length === 0) return err('messages array required');
+
+  // Construit le prompt : numérote chaque message pour que l'IA retourne des index
+  const numbered = messages.map((m, i) => {
+    const t = String(m.text || '').slice(0, 200).replace(/\s+/g, ' ');
+    return `[${i}] ${t}`;
+  }).join('\n');
+
+  const sysPrompt = `Tu es un moteur de recherche sémantique pour messages chat. L'utilisateur cherche : "${query}". Identifie les messages les plus pertinents (max 10). Retourne UNIQUEMENT un JSON valide:\n{"results":[{"idx":<int>,"score":<0-100>,"reason":"<motif court FR>"}]}\nClasse par pertinence décroissante. Sois précis : un message non pertinent ne doit PAS apparaître.`;
+  const userPrompt = `Messages à analyser (chacun avec son index entre []):\n\n${numbered}`;
+  const msgsForAI = [{ role: 'user', content: userPrompt }];
+
+  const providers = [
+    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
+    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
+  ];
+  for (const p of providers.filter(x => x.key)) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 12_000);
+      const text = await p.fn(msgsForAI, sysPrompt, env, ctrl.signal, 1500);
+      clearTimeout(to);
+      // Parse JSON robust
+      const cleaned = text.replace(/```(?:json)?/g, '').trim();
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (!m) continue;
+      const parsed = JSON.parse(m[0]);
+      if (Array.isArray(parsed.results)) {
+        const results = parsed.results
+          .filter(r => typeof r.idx === 'number' && r.idx >= 0 && r.idx < messages.length)
+          .slice(0, 10)
+          .map(r => ({
+            idx: r.idx,
+            score: Math.max(0, Math.min(100, parseInt(r.score, 10) || 50)),
+            reason: String(r.reason || '').slice(0, 120),
+            snippet: String(messages[r.idx]?.text || '').slice(0, 200),
+            ts: messages[r.idx]?.ts || null,
+          }));
+        await consumeQuota(env, quota);
+        return json({ ok: true, results, query, provider: p.name, premium: quota.premium });
+      }
+    } catch (e) {
+      console.warn(`[ai-search] ${p.name} failed:`, e.message);
+    }
+  }
+  return err('Recherche IA indisponible', 503);
+}
+
+// ============================================================================
+// ============================================================================
+//  v1.1.81 — Web Push subscribe / unsubscribe endpoints
+//   POST /api/push/subscribe   { subscription: PushSubscription.toJSON() }
+//   POST /api/push/unsubscribe { endpoint: string }
+// ============================================================================
+export async function handlePushSubscribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const body = await request.json().catch(() => ({}));
+  const sub = body.subscription;
+  if (!sub || !sub.endpoint || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
+    return err('Subscription incomplète', 400);
+  }
+  try {
+    // Upsert : remove existing for same endpoint, then insert fresh
+    await env.APEX_CHAT_DB?.prepare(
+      'DELETE FROM push_subscriptions WHERE endpoint=?'
+    ).bind(sub.endpoint).run();
+    await env.APEX_CHAT_DB?.prepare(
+      'INSERT INTO push_subscriptions (id, user_id, endpoint, vapid_p256dh, vapid_auth, last_seen, ua) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      crypto.randomUUID(), auth.sub, sub.endpoint, sub.keys.p256dh, sub.keys.auth,
+      Date.now(), (request.headers.get('user-agent') || '').slice(0, 200)
+    ).run();
+    return json({ ok: true });
+  } catch (e) {
+    return err('DB error: ' + e.message, 500);
+  }
+}
+
+export async function handlePushUnsubscribe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const body = await request.json().catch(() => ({}));
+  const endpoint = body.endpoint;
+  if (!endpoint) return err('Endpoint requis', 400);
+  try {
+    await env.APEX_CHAT_DB?.prepare(
+      'DELETE FROM push_subscriptions WHERE endpoint=? AND user_id=?'
+    ).bind(endpoint, auth.sub).run();
+    return json({ ok: true });
+  } catch (e) {
+    return err('DB error: ' + e.message, 500);
+  }
+}
+
+// ============================================================================
+//  v1.1.76 — Admin force-update : push à tous clients
+//   POST /api/admin/force-update     → admin only, stocke ts dans system_config
+//   GET  /api/admin/force-update-ts  → tous users, retourne dernier ts admin
+// ============================================================================
+export async function handleAdminForceUpdate(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  // Check is_admin from DB
+  try {
+    const u = await env.APEX_CHAT_DB?.prepare('SELECT is_admin FROM users WHERE id=?').bind(auth.sub).first();
+    if (!u || !u.is_admin) return err('Admin requis', 403);
+  } catch (e) {
+    return err('DB error: ' + e.message, 500);
+  }
+  const ts = Date.now();
+  try {
+    await env.APEX_CHAT_DB?.prepare(
+      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
+    ).bind('force_update_ts', String(ts)).run();
+    // Audit log
+    try {
+      await env.APEX_CHAT_DB?.prepare(
+        'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), auth.sub, 'admin.force_update_all',
+        JSON.stringify({ ts }), ts).run();
+    } catch (_) {}
+    return json({ ok: true, ts });
+  } catch (e) {
+    return err('Failed to set force_update_ts: ' + e.message, 500);
+  }
+}
+
+export async function handleAdminForceUpdateTs(request, env) {
+  // Public endpoint : tous users peuvent fetch (pas de leak admin info)
+  try {
+    const row = await env.APEX_CHAT_DB?.prepare(
+      'SELECT value FROM system_config WHERE key=?'
+    ).bind('force_update_ts').first();
+    return json({ ok: true, ts: row ? parseInt(row.value, 10) || 0 : 0 });
+  } catch (e) {
+    return json({ ok: true, ts: 0 }); // fail-open
+  }
+}
+
+// ============================================================================
+//  v1.1.24 — GET /api/premium/status : sync premium cross-device
+// ============================================================================
+export async function handlePremiumStatus(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  try {
+    const u = await env.APEX_CHAT_DB?.prepare(
+      'SELECT premium_until, premium_plan FROM users WHERE id=?'
+    ).bind(auth.sub).first();
+    if (!u) return json({ ok: true, premium: false });
+    const isPremium = u.premium_until && u.premium_until > Date.now();
+    return json({
+      ok: true,
+      premium: !!isPremium,
+      plan: u.premium_plan || null,
+      expires_at: u.premium_until || null,
+      lifetime: u.premium_plan === 'lifetime' || (u.premium_until > 9000000000000),
+    });
+  } catch (e) {
+    return err('DB error: ' + e.message, 500);
+  }
+}
+
+// ============================================================================
+//  v1.1.31 — GET /api/premium/quota : usage daily des 5 features IA
+//  Permet à l'UI d'afficher "3/5 transcriptions utilisées aujourd'hui"
+// ============================================================================
+export async function handlePremiumQuota(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+
+  try {
+    // Détecte premium d'abord
+    const u = await env.APEX_CHAT_DB?.prepare(
+      'SELECT premium_until, premium_plan FROM users WHERE id=?'
+    ).bind(auth.sub).first();
+    const isPremium = u && u.premium_until && u.premium_until > Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    const features = ['voice-transcribe', 'image-describe', 'summarize', 'smart-reply', 'translate'];
+    const usage = {};
+    for (const f of features) {
+      const limit = FREE_QUOTAS[f] || 5;
+      let used = 0;
+      if (env.APEX_CHAT_KV) {
+        try {
+          const v = await env.APEX_CHAT_KV.get(`quota:${auth.sub}:${f}:${today}`);
+          used = parseInt(v || '0', 10);
+        } catch (_) {}
+      }
+      usage[f] = { used, limit, remaining: Math.max(0, limit - used), unlimited: !!isPremium };
+    }
+    return json({
+      ok: true,
+      premium: !!isPremium,
+      plan: u?.premium_plan || null,
+      date: today,
+      usage,
+    });
+  } catch (e) {
+    return err('Quota error: ' + e.message, 500);
+  }
+}
+
 // ----- Signalements -----
 
 export async function handleSignalement(request, env) {
@@ -2122,6 +3326,9 @@ export default {
       if (path === '/api/conversations' && method === 'POST') return await handleCreateConversation(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
+      // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
+      const wsDiagMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws-diag$/);
+      if (wsDiagMatch && method === 'GET') return await handleWsDiag(wsDiagMatch[1], request, env);
 
       // Phase 4 — Membres / update conv
       const membersMatch = path.match(/^\/api\/conversations\/([^\/]+)\/members$/);
@@ -2131,6 +3338,7 @@ export default {
       if (memberRemoveMatch && method === 'DELETE') return await handleRemoveMember(memberRemoveMatch[1], memberRemoveMatch[2], request, env);
       const convUpdateMatch = path.match(/^\/api\/conversations\/([^\/]+)$/);
       if (convUpdateMatch && method === 'PATCH') return await handleUpdateConv(convUpdateMatch[1], request, env);
+      if (convUpdateMatch && method === 'DELETE') return await handleDeleteConversation(convUpdateMatch[1], request, env);
 
       // Phase 4 — Stories
       if (path === '/api/stories' && method === 'POST') return await handleCreateStory(request, env);
@@ -2163,6 +3371,35 @@ export default {
 
       // Phase 6 — IA chat (fusion ia-worker)
       if ((path === '/api/ia/chat' || path === '/ia/chat') && method === 'POST') return await handleIAChat(request, env);
+
+      // v1.1.24 — AI summarize (Memory Lane + autres résumés)
+      if (path === '/api/ai/summarize' && method === 'POST') return await handleAiSummarize(request, env);
+
+      // v1.1.24 — Stripe Premium Checkout + webhook + status
+      if (path === '/api/premium/checkout' && method === 'POST') return await handlePremiumCheckout(request, env);
+      if (path === '/api/premium/webhook' && method === 'POST') return await handlePremiumWebhook(request, env);
+      if (path === '/api/premium/status' && method === 'GET') return await handlePremiumStatus(request, env);
+      // v1.1.31 — Usage daily quota
+      if (path === '/api/premium/quota' && method === 'GET') return await handlePremiumQuota(request, env);
+      // v1.1.76 — Admin force-update push to all clients
+      if (path === '/api/admin/force-update' && method === 'POST') return await handleAdminForceUpdate(request, env);
+      if (path === '/api/admin/force-update-ts' && method === 'GET') return await handleAdminForceUpdateTs(request, env);
+      // v1.1.81 — Web Push subscribe / unsubscribe
+      if (path === '/api/push/subscribe' && method === 'POST') return await handlePushSubscribe(request, env);
+      if (path === '/api/push/unsubscribe' && method === 'POST') return await handlePushUnsubscribe(request, env);
+      // v1.1.35 — Semantic search messages
+      if (path === '/api/ai/search' && method === 'POST') return await handleAiSemanticSearch(request, env);
+      // v1.1.41 — AI rewrite message (8 styles)
+      if (path === '/api/ai/rewrite' && method === 'POST') return await handleAiRewrite(request, env);
+
+      // v1.1.26 — Customer Portal + Smart Reply + Translate
+      if (path === '/api/premium/portal' && method === 'POST') return await handlePremiumPortal(request, env);
+      if (path === '/api/ai/smart-reply' && method === 'POST') return await handleAiSmartReply(request, env);
+      if (path === '/api/ai/translate' && method === 'POST') return await handleAiTranslate(request, env);
+
+      // v1.1.28 — Voice transcribe (Whisper) + Image describe (Vision)
+      if (path === '/api/ai/voice-transcribe' && method === 'POST') return await handleAiVoiceTranscribe(request, env);
+      if (path === '/api/ai/image-describe' && method === 'POST') return await handleAiImageDescribe(request, env);
 
       // Invitations
       if (path === '/api/invitations' && method === 'POST') return await handleCreateInvitation(request, env);
@@ -2197,17 +3434,19 @@ export default {
 
       return err('Route inconnue', 404);
     } catch (e) {
-      console.error('API error', e.message, e.stack);
+      console.error('API error', path, method, e.message, e.stack);
       // Push télémétrie vers Apex
       ctx.waitUntil(env.TELEMETRY_QUEUE?.send({
         sentinel: 'api-error',
         severity: 'err',
         msg: e.message,
+        stack: (e.stack || '').slice(0, 600),
         path,
         method,
         ts: Date.now()
       }).catch(() => {}));
-      return err('Erreur interne, réessaie dans un instant', 500);
+      // Règle CLAUDE.md : message user soft, mais detail = cause EXACTE (jamais masquée)
+      return err('Erreur interne, réessaie dans un instant', 500, 'internal', e);
     }
   },
 

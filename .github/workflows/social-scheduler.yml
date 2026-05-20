@@ -65,7 +65,7 @@ jobs:
         if: steps.action.outputs.action == 'process'
         working-directory: tools/social
         env:
-          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
@@ -86,7 +86,7 @@ jobs:
         if: steps.action.outputs.action == 'generate-batch'
         working-directory: tools/social
         env:
-          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           COUNT="${{ github.event.inputs.count || '1' }}"
           for i in $(seq 1 $COUNT); do

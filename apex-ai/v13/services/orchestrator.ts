@@ -129,8 +129,62 @@ class Orchestrator {
     return TOOLS_HTML;
   }
 
-  async cmcRead(): Promise<unknown> {
-    return firebase.read<unknown>('cmcteams');
+  /**
+   * v13.4.201 (Kevin 2026-05-16 "Apex consomme") :
+   * cmcRead acceptait aucun param → retournait TOUT /cmcteams (50KB+) à chaque
+   * appel IA → tokens cramés. Désormais accepte scope filtré pour ne lire que
+   * la portion utile.
+   *
+   * @param opts.scope - 'all' (legacy, déconseillé), 'employees', 'teams',
+   *                     'overrides', 'planning_month', 'planning_user',
+   *                     'motd', 'audit', 'last_import_health'
+   * @param opts.user_uid - id employé (pour scope planning_user)
+   * @param opts.year - année (pour scope planning_month + planning_user)
+   * @param opts.month - mois 1-12 (pour scope planning_month + planning_user)
+   * @param opts.day - jour optionnel pour focus 1 jour
+   */
+  async cmcRead(opts?: {
+    scope?: 'all' | 'employees' | 'teams' | 'overrides' | 'planning_month' | 'planning_user' | 'motd' | 'audit' | 'last_import_health';
+    user_uid?: string;
+    year?: number;
+    month?: number;
+    day?: number;
+  }): Promise<unknown> {
+    const scope = opts?.scope ?? 'last_import_health';
+    if (scope === 'all') {
+      /* Garde-fou : 'all' déprécié — log warning pour traquer usages */
+      logger.warn('orchestrator', 'cmcRead(scope=all) déconseillé — préfère un scope filtré pour économiser tokens IA');
+      return firebase.read<unknown>('cmcteams');
+    }
+    if (scope === 'employees') return firebase.read<unknown>('cmcteams/cmc_e');
+    if (scope === 'teams') return firebase.read<unknown>('cmcteams/cmc_t');
+    if (scope === 'motd') return firebase.read<unknown>('cmcteams/cmc_motd');
+    if (scope === 'audit') return firebase.read<unknown>('cmcteams/cmc_audit');
+    if (scope === 'last_import_health') return this.cmcLastImportHealth();
+    if (scope === 'overrides') {
+      if (typeof opts?.year === 'number' && typeof opts.month === 'number') {
+        return firebase.read<unknown>(`cmcteams/cmc_ov/${opts.year}-${opts.month}`);
+      }
+      return firebase.read<unknown>('cmcteams/cmc_ov');
+    }
+    if (scope === 'planning_month' && typeof opts?.year === 'number' && typeof opts.month === 'number') {
+      return firebase.read<unknown>(`cmcteams/cmc_ov/${opts.year}-${opts.month}`);
+    }
+    if (scope === 'planning_user' && opts?.user_uid && typeof opts.year === 'number' && typeof opts.month === 'number') {
+      const monthData = await firebase.read<Record<string, unknown>>(`cmcteams/cmc_ov/${opts.year}-${opts.month}`);
+      if (!monthData || typeof monthData !== 'object') return null;
+      const userKey = opts.user_uid;
+      const result: Record<string, unknown> = {};
+      for (const [dayKey, cellData] of Object.entries(monthData)) {
+        if (dayKey.startsWith(`${userKey}_`)) {
+          const dayNum = Number(dayKey.split('_')[1]);
+          if (typeof opts.day === 'number' && opts.day !== dayNum) continue;
+          result[String(dayNum)] = cellData;
+        }
+      }
+      return { user_uid: userKey, year: opts.year, month: opts.month, days: result };
+    }
+    return { error: 'invalid_scope_or_missing_params', scope, opts };
   }
 
   async kdmcStats(): Promise<unknown> {

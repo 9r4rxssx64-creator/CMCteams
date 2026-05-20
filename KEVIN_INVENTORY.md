@@ -1,7 +1,125 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-14** (Apex v13.4.42 — Tout déployé sur main, prod live)
+> Dernière mise à jour : **2026-05-20** (Apex v13.4.235 — 4 PR mergées session UX, score 90.5/100)
+
+## 🏆 SESSION 2026-05-20 — Apex v13.4.234→235 (suite UX vers 100/100)
+
+**PR mergées** :
+- #277 : v13.4.234 WCAG a11y + skeleton voice (commit dd758bfa)
+- #279 : v13.4.235 extraction styles inline DRY + tests fixes (commit 1ae2a805)
+
+**Session complète v232→v235** : 4 PR (#274/#276/#277/#279), 27 findings UX,
+51+ hex → CSS vars, 14 classes atomiques, composant `ui/recharge-action.ts`,
+5/6 tests fails fixés. Score honest mesuré 75 → 90.5/100.
+
+---
+
+## 🔬 SESSION 2026-05-19 — Apex v13.4.233 POST-FIX audit honest (suite v232)
+
+**PR #276** : https://github.com/9r4rxssx64-creator/CMCteams/pull/276 — **MERGÉ** ✅ commit `80b53dfb`
+- branche : `fix/apex-v233-post-audit`
+- score réel mesuré : **75/100** (pas 100 — mesure honest sans estimation)
+
+12 nouveaux findings POST-FIX identifiés par subagent audit indépendant.
+Fixes prioritaires P0/P1 appliqués : dashboard recharge component + severity tokens HIG + admin 44px + settings h1 unified + vault empty banner class + shortcut stagger + 4 tests régression updated.
+
+---
+
+## 🎨 SESSION 2026-05-19 — Apex v13.4.232 (étape 3-4 design system)
+
+**PR #274** : https://github.com/9r4rxssx64-creator/CMCteams/pull/274 — **MERGÉ** ✅ commit `6a1cffae`
+- branche : `fix/apex-v232-ux-refonte`
+- merge target : `main` → GitHub Pages auto-deploy
+
+**Nouveau fichier** :
+- `apex-ai/v13/ui/recharge-action.ts` — composant partagé "Recharge + Rotate" (élimine doublon dashboard+settings)
+  - View : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/ui/recharge-action.ts
+  - Raw : https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/apex-ai/v13/ui/recharge-action.ts
+  - Edit : https://github.com/9r4rxssx64-creator/cmcteams/edit/main/apex-ai/v13/ui/recharge-action.ts
+
+**Design system étendu** :
+- `apex-ai/v13/assets/css/tokens.css` — +severity vars (--ax-sev-critical/high/medium/low) + yellow + orange-bright
+- `apex-ai/v13/assets/css/components.css` — +12 classes atomiques (.ax-page-title, .ax-section-title, .ax-voice-btn, .ax-btn-health* x5, .ax-sev* x4, .ax-suggestion-chip, .ax-empty-banner, .ax-modal-glass, .ax-accordion-toggle, .ax-tabs-scroll, .ax-kpi-card spring)
+
+**15 findings UX traités** (audit subagent indépendant P0/P1/P2) — TS strict 0 errors, 549/555 test files PASS, build Vite OK.
+
+---
+
+## 🚀 SESSION 2026-05-18 — Apex Chat v1.1.22 → v1.1.41 + Apex v13.4.211 (self-signup)
+
+**PR #268** : https://github.com/9r4rxssx64-creator/CMCteams/pull/268 — **24 commits stackés**
+- branche : `claude/continue-perfection-work-5C2eH`
+- merge target : `main` → GitHub Pages auto-deploy
+- tests : **750/750 PASS** vitest (21 fichiers) + **469 tests** Apex IA v13
+
+### Apex IA v13.4.211 (self-signup direct — Laurence se connecte auto)
+- `apex-ai/v13/services/signup.ts` : `selfSignupDirect()` méthode (~120 lignes)
+- `apex-ai/v13/features/signup/index.ts` : PIN field, WhatsApp optionnel, redirect 'chat'
+- `apex-ai/v13/tests/unit/signup.test.ts` : +10 tests selfSignupDirect
+- Laurence + nouveaux users : remplissent fiche + PIN → connexion auto immédiate (fini OTP/SMS/Kevin manuel)
+
+### Apex Chat backend Cloudflare Workers (12 endpoints AI/Premium)
+- `messaging-app/workers/api-worker.js` : +1100 lignes nouvelles
+- `messaging-app/d1-migrations/0004_premium_ai_cache.sql` : schéma complet
+- `messaging-app/tests/unit/api-worker-premium-ai.test.js` : **85 tests** Premium AI
+
+| Endpoint | Use case | Quota gratuit |
+|---|---|---|
+| `POST /api/ai/summarize` | Memory Lane + Insights IA | 3/jour |
+| `POST /api/ai/smart-reply` | 3 suggestions Gmail-style | 30/jour |
+| `POST /api/ai/translate` | 6 langues FR/EN/ES/IT/DE/AR | 20/jour |
+| `POST /api/ai/voice-transcribe` | Whisper Groq audio→texte (25MB) | 5/jour |
+| `POST /api/ai/image-describe` | Anthropic Vision alt-text (5MB) | 10/jour |
+| `POST /api/ai/search` | Semantic search dans messages | 3/jour (partage summarize) |
+| `POST /api/ai/rewrite` | Reformuler 8 styles | 20/jour (partage translate) |
+| `POST /api/premium/checkout` | Stripe 3 plans (6.99€/59.99€/199€) | — |
+| `POST /api/premium/webhook` | HMAC + anti-replay + Resend receipt auto | — |
+| `POST /api/premium/portal` | Customer Portal Stripe | — |
+| `GET /api/premium/status` | Sync premium cross-device | — |
+| `GET /api/premium/quota` | Usage daily par feature pour UI | — |
+
+Premium = illimité partout. Fail-open si KV indispo (pas de blocage user).
+
+### Apex Chat client features (messaging-app/index.html)
+- 🎙️ Voice messages : record + transcribe Whisper + preview modal + playback `<audio>`
+- 📷 Image upload : alt-text auto Vision IA pour accessibilité
+- 🔍 AI semantic search dans chat-header
+- ⏰ Messages programmés (presets 1h/20h/9h + custom datetime, list dans Réglages)
+- 📊 Insights IA : stats hebdo locales + résumé Claude anonymisé
+- ❤️ Emoji reactions (long-press 500ms iOS + vibrate haptique 15ms)
+- ✓✓ Read receipts WhatsApp-style (gris=livré, bleu=lu par peer)
+- 🌐 Auto-détection langue 9 codes (en/es/it/de/pt/ar/ru/zh/ja) + chip "traduire"
+- 🛡 Safety number E2E vérification (style Signal, SHA-256 → 60 digits)
+- Premium modal enrichi : 3 plans + usage daily quota + Customer Portal
+
+### MAJ AUTO FORCÉE iOS PWA hardening (réponse Kevin "Maj force auto oublie pas même PWA iOS")
+- `messaging-app/lib/sw-handlers.js` : skip-intercept `?_v=`, `?_forceupd=`, `?_force_upd_`
+- `messaging-app/index.html` : `cache:'reload'` + headers `no-cache, no-store, must-revalidate` + `Pragma: no-cache`
+- CACHE_VERSION sync v1.1.41 partout (lib/sw-handlers.js était stale v1.1.22 = +19 versions drift = root cause "ça ne marche pas iOS")
+- 4 tests régression skip-intercept ajoutés (44/44 PASS sw handlers)
+
+### Liens GitHub directs session 2026-05-18
+- PR : https://github.com/9r4rxssx64-creator/CMCteams/pull/268
+- branche : https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/continue-perfection-work-5C2eH
+- index.html (Apex Chat) : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/index.html
+- api-worker : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/workers/api-worker.js
+- tests Premium AI : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/tests/unit/api-worker-premium-ai.test.js
+- D1 migration : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/d1-migrations/0004_premium_ai_cache.sql
+- sw-handlers : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/lib/sw-handlers.js
+
+### ⏳ Action Kevin (déploiement Apex Chat backend Cloudflare Workers)
+- [ ] Configurer secrets Cloudflare Workers wrangler :
+  - `ANTHROPIC_API_KEY` ✅ (déjà existant probablement)
+  - `GROQ_API_KEY` ✅ (déjà existant)
+  - `STRIPE_SECRET_KEY` + `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_YEARLY` + `STRIPE_PRICE_LIFETIME` + `STRIPE_WEBHOOK_SECRET`
+  - `RESEND_API_KEY` (resend.com → API Keys, free tier 100 emails/jour, payant ~$20/mois si volume)
+- [ ] D1 migration sur prod : `wrangler d1 migrations apply apex-chat-db --remote --file d1-migrations/0004_premium_ai_cache.sql`
+- [ ] Configurer KV binding `APEX_CHAT_KV` dans wrangler.toml (quota daily store)
+- [ ] Merger PR #268 sur main → déploiement auto GitHub Pages Apex Chat
+- [ ] Tester sur iPhone : self-signup Laurence + features chat (voice/image/réactions)
+
+---
 
 ## 🎯 SESSION FINALE (v13.4.42 sur main) — Tout en prod
 

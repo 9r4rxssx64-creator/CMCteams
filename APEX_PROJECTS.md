@@ -95,7 +95,7 @@ Rapport persisté `ax_runtime_test_last` + historique 20 runs.
 | 4 | `socialvideo` | **Social Video Pipeline** | 🟠 Dév Phase 3 | v0.3 | `tools/social/` |
 | 5 | `remote` | **Télécommande Universelle** | 🟢 Production | v1.2 | dans Apex AI |
 | 6 | `crackpass` | **CrackPass / Vault** | 🟢 Production | v1.1 | dans Apex AI |
-| 7 | `ekdmc` | **e-KDMC** (e-commerce 5 boutiques) | 🟠 Dév v0.3 | v0.3 | `_PROJECTS_KDMC/e-KDMC/` |
+| 7 | `ekdmc` | **e-KDMC** (e-commerce 5 boutiques + CHEZ LOLO) | 🟢 Production | v1.10 | `shops/` + `_PROJECTS_KDMC/e-KDMC/` |
 
 ### ⚙️ Outils, Infrastructure & Vues (PAS PROJETS, à NE PAS lister dans vProjects)
 > ⚠️ **RÈGLE PERMANENTE Kevin 2026-04-30** : ne JAMAIS ajouter ces items dans `vProjects()` ni dans `AX_PROJECTS_REGISTRY`. Ce sont des outils/vues/infra, pas des projets autonomes.
@@ -202,24 +202,31 @@ Si auto-fix exhausted :
 - ⏳ Frontend index.html + connexion workers
 - ⏳ Auth Firebase Phone Provider (SMS OTP 6 chiffres)
 
-### e-KDMC (v0.3 — récupéré depuis branche claude/ecommerce-automation-platform-Gprjk 2026-05-01)
-**Localisation** : `_PROJECTS_KDMC/e-KDMC/` (22 fichiers, 800 KB)
+### e-KDMC (v1.10 — EN PRODUCTION depuis 2026-05-18)
+**Localisation** : `shops/` (déployé live) + `_PROJECTS_KDMC/e-KDMC/` (docs/fonctions)
 **Composants livrés** :
-- ✅ 5 boutiques SPA (Digital Vault, Tech Hub, Glow Wellness, Pawsome, EcoCraft)
-  * `stores/<slug>/index.html` + `stores/<slug>/products.json` (~100 produits/boutique)
-- ✅ Dashboard admin (`dashboard/index.html`) — gestion centralisée 5 boutiques
+- ✅ 5 boutiques SPA live — 500 produits total, descriptions uniques, photos Unsplash
+  * `shops/chez-lolo/` — CHEZ LOLO (ex Glow Wellness, thème provençal olive/crème)
+  * `shops/tech-hub/` — Tech Hub (gadgets & accessoires)
+  * `shops/ecocraft/` — EcoCraft (éco-responsable)
+  * `shops/digital-vault/` — Digital Vault (produits numériques)
+  * `shops/pawsome/` — Pawsome (animaux)
+- ✅ Portail `shops/index.html` — accès centralisé aux 5 boutiques
+- ✅ Dashboard admin `shops/dashboard/` — 6 vues (orders, products, customers, analytics, finance, settings)
+- ✅ Paiement multi : PayPal + Revolut @kdmc + IBAN (modal checkout luxe)
+- ✅ UX luxe : Playfair Display serif, animations fadeUp, glassmorphism, ombres profondes
+- ✅ Pages légales : `shops/legal/` (CGV, Mentions, Confidentialité)
+- ✅ URLs courtes Vercel : `shops/vercel.json` (/lolo, /tech, /eco, /digital, /pets)
 - ✅ Functions serverless :
-  * `functions/stripe-webhook.js` — handler paiements
-  * `functions/email-trigger.js` — Brevo (300 emails/jour gratuit)
-  * `functions/invoice-generate.js` — facturation auto PDF
-- ✅ Agent automation (`automation/agent/index.js`) — workflow 24/7
-- ✅ CSS/JS partagé (`_shared/css/kdmc-components.css` + `_shared/js/kdmc-core.js`)
-- ✅ Tools scripts (`tools/scripts/generate-products.js` + `generate-store.js`)
-- ⏳ Action Kevin requise (TODO_KEVIN.md) :
-  * Compte Stripe (mode test) + clés `pk_test_xxx` + `sk_test_xxx`
-  * Compte Brevo (300 emails/jour gratuit)
-  * Compte Netlify pour déploiement
-  * Domaines pour chaque boutique (~10-15€/an chacun)
+  * `functions/stripe-webhook.js` — handler paiements (signature vérifiée)
+  * `functions/email-trigger.js` — 6 templates Brevo
+  * `functions/invoice-generate.js` — facturation auto PDF Monaco
+- ✅ Agent automation (`automation/agent/index.js`) — 7 fonctions 24/7
+- ⏳ Action Kevin (voir `TODO_KEVIN.md`) :
+  * Déployer sur Vercel pour URLs courtes (2 min)
+  * Acheter domaine `kdmc.shop` (~12€/an)
+  * Configurer notifications WhatsApp paiement
+  * Connecter Stripe pour CB
   * Projet Firebase dédié e-KDMC séparé de CMCteams
 
 ### Social Video Pipeline (v0.3 Phase 3)

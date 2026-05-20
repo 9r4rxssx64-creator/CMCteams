@@ -21,16 +21,19 @@ name = "apex-chat-api"
 main = "api-worker.js"
 compatibility_date = "2026-04-27"
 compatibility_flags = ["nodejs_compat"]
+# v1.1.122 fix Kevin "Load failed" : workers_dev=true active l'URL par défaut
+# https://apex-chat-api.<account-subdomain>.workers.dev (sinon Worker déployé
+# mais non joignable car [[routes]] cassé avec zone_name vide).
+workers_dev = true
 
-# Limites runtime
-[limits]
-cpu_ms = 30000
+# Limites runtime — [limits] cpu_ms retiré v1.1.132 (non supporté plan Workers FREE)
+# Le plan FREE applique un CPU limit fixe automatique.
 
 # D1 database
 [[d1_databases]]
 binding = "APEX_CHAT_DB"
 database_name = "apex-chat-main"
-database_id = "REPLACE_WITH_D1_ID"   # créé par wrangler d1 create
+database_id = "afee673e-83e9-4ae3-a578-96fabbfdd023"  # apex-chat-main (Kevin créé v1.1.131)
 migrations_dir = "../d1-migrations"
 
 # R2 bucket
@@ -41,7 +44,7 @@ bucket_name = "apex-chat-media"
 # KV namespace cache LRU
 [[kv_namespaces]]
 binding = "APEX_CHAT_CACHE"
-id = "REPLACE_WITH_KV_ID"
+id = "5d46f8fa642a4a5399d90fd00a379ab1"  # APEX_CHAT_CACHE (Kevin créé v1.1.131)
 
 # Queues producers
 [[queues.producers]]
@@ -80,10 +83,10 @@ name = "PRESENCE_DO"
 class_name = "PresenceDO"
 script_name = "apex-chat-api"
 
-# Migration des Durable Objects
+# Migration des Durable Objects (v1.1.132 : new_sqlite_classes pour plan Workers FREE)
 [[migrations]]
 tag = "v1"
-new_classes = ["ConversationDO", "BroadcastDO", "PresenceDO"]
+new_sqlite_classes = ["ConversationDO", "BroadcastDO", "PresenceDO"]
 
 # Variables d'environnement (publiques — utiliser secrets pour clés sensibles)
 [vars]
@@ -151,10 +154,10 @@ queue = "apex-chat-memory-lane"
 max_batch_size = 25
 max_batch_timeout = 60
 
-# Routes
-[[routes]]
-pattern = "apex-chat-api.workers.dev/*"
-zone_name = ""
+# Routes — DÉSACTIVÉ v1.1.122 (pattern cassé sans zone_name)
+# Le Worker est servi via workers_dev=true à :
+# https://apex-chat-api.<account-subdomain>.workers.dev
+# Pour ajouter un custom domain, configurer dans CF Dashboard puis remettre ici.
 
 # Workers séparés (déployés via leurs propres wrangler.toml)
 # - workers/push-worker/wrangler.toml

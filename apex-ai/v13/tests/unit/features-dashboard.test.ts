@@ -49,7 +49,9 @@ describe('features/dashboard — computeKpis', () => {
     const kpis = await computeKpis();
     for (const k of kpis) {
       expect(k.route).toBeTruthy();
-      expect(k.color).toMatch(/^#[0-9a-f]{6}$/i);
+      /* v13.4.232 (étape 3 design system) : couleurs migrées hex → CSS vars.
+       * Accepte hex OU var(--ax-*) — les KPI utilisent désormais les tokens. */
+      expect(k.color).toMatch(/^(#[0-9a-f]{6}|var\(--ax-[\w-]+\))$/i);
       expect(k.label.length).toBeGreaterThan(0);
     }
   });
@@ -227,7 +229,8 @@ describe('features/dashboard — renderServiceHealthCard (Kevin lumière)', () =
     const html = renderServiceHealthCard(items, links);
     expect(html).toContain('💳 Recharge');
     expect(html).toContain('credit-purchases');
-    expect(html).toContain('📊 Usage');
+    /* v13.4.233 (étape 3 design) : Usage renommé "Rotate" dans composant partagé */
+    expect(html).toContain('🔄 Rotate');
   });
 
   it('rend lumière verte sans bouton recharge insistant si green', () => {
@@ -252,8 +255,8 @@ describe('features/dashboard — renderServiceHealthCard (Kevin lumière)', () =
     const html = renderServiceHealthCard(items, links);
     /* Bouton recharge n'apparaît PAS si green (Kevin règle : recharge visible quand action requise) */
     expect(html).not.toContain('💳 Recharge');
-    /* Mais usage reste visible pour audit */
-    expect(html).toContain('📊 Usage');
+    /* v13.4.233 (étape 3 design) : Usage renommé "Rotate" dans renderRechargeAction (parité settings) */
+    expect(html).toContain('🔄 Rotate');
   });
 
   it('échappe HTML dans service name', () => {

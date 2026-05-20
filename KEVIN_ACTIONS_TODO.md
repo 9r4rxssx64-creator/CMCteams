@@ -1,5 +1,59 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🎬 PIPELINE VIDÉO SOCIAL — Activer la publication auto (2026-05-18)
+
+> Pipeline 100% codé et mergé dans main. Il manque UNIQUEMENT tes clés API pour que tout tourne en autonomie.
+
+### Étape 1 — Clé Google AI (5 min, GRATUIT) → scripts IA fonctionnent
+
+1. Ouvre : https://aistudio.google.com/apikey
+2. Clique **"Create API Key"**
+3. Copie la clé
+4. Va sur : https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions
+5. Clique **"New repository secret"**
+6. Nom : `GOOGLE_AI_API_KEY` / Valeur : colle ta clé
+7. Clique **"Add secret"**
+
+**Résultat** : le pipeline peut générer des scripts IA automatiquement.
+
+### Étape 2 — YouTube (15 min) → publication automatique
+
+Guide complet : https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/social/docs/setup-youtube.md
+
+Résumé :
+1. Va sur https://console.cloud.google.com
+2. Crée un projet → active "YouTube Data API v3"
+3. Crée des identifiants OAuth 2.0
+4. Ajoute 3 secrets GitHub :
+   - `YOUTUBE_CLIENT_ID`
+   - `YOUTUBE_CLIENT_SECRET`
+   - `YOUTUBE_REFRESH_TOKEN` (obtenu via le flow OAuth)
+
+**Résultat** : chaque jour à 12h, une vidéo est générée et publiée sur ta chaîne YouTube (en mode "private" pour validation).
+
+### Étape 3 — Telegram (5 min) → notifications sur ton téléphone
+
+1. Ouvre Telegram, cherche **@BotFather**
+2. Tape `/newbot`, choisis un nom
+3. Copie le **token** qu'il te donne
+4. Envoie un message à ton bot, puis ouvre : `https://api.telegram.org/bot<TON_TOKEN>/getUpdates`
+5. Copie le `chat_id` dans la réponse
+6. Ajoute 2 secrets GitHub :
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+
+**Résultat** : tu reçois une notification Telegram à chaque vidéo générée avec aperçu.
+
+### Ce qui tourne DÉJÀ sans rien faire
+
+- `social-publish.yml` : cron quotidien 12h UTC (génère 1 vidéo/jour)
+- `social-scheduler.yml` : cron 6h (scheduler intelligent multi-plateforme)
+- 51 stories prêtes dans la bibliothèque
+- 78 tests automatisés
+- 18 commandes CLI
+
+---
+
 ## 🍎 TODO MAJEUR — PASSER APEX SUR APPLE STORE (Kevin 2026-05-15 05h35)
 
 > **"Ajoute au mémo de passer lapp sur Apple Store ensuite en m'expliquant plus tard"** — Kevin 2026-05-15

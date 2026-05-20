@@ -2640,5 +2640,107 @@ export function registerCoreSentinels(): void {
     },
   });
 
-  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (26 active + apex-self-correct + global-health méta)`);
+  /* v13.4.205 (Kevin 2026-05-16 "Toutes branches Claude Code coordonnées") :
+   * Multi-branch coordinator — poll GitHub API branches claude/* + détecte
+   * conflits (fichiers touchés par 2+ branches) + overlaps + branches stale.
+   * Persiste status Firebase ax_multi_branch_status pour partage cross-session.
+   * Toute nouvelle branche Kevin créée est auto-détectée au prochain cycle. */
+  sentinels.register({
+    id: 'multi-branch-coordinator-watch',
+    name: 'Multi-Branch Coordinator Claude Code',
+    desc: "Poll GitHub branches claude/* + détecte conflits/overlaps/stale + push Firebase shared. 10min interval.",
+    intervalMs: 10 * 60 * 1000, /* 10min */
+    check: async () => {
+      try {
+        const { apexMultiBranchCoordinator } = await import('./apex-multi-branch-coordinator.js');
+        const r = await apexMultiBranchCoordinator.runCoordinationCycle();
+        if (!r.ok) {
+          if (r.error === 'admin_only' || r.error === 'no_github_token') {
+            return { ok: true, msg: 'skipped (' + r.error + ')' };
+          }
+          return { ok: false, msg: 'coordinator error: ' + r.error };
+        }
+        const hasConflicts = r.conflicts.files_overlapping.length > 0;
+        return {
+          ok: !hasConflicts,
+          msg: `${r.branches.length} branches actives, ${r.conflicts.files_overlapping.length} fichiers en conflit, ${r.conflicts.branches_unmerged_old.length} branches non mergées anciennes`,
+          details: {
+            total_branches: r.branches.length,
+            overlapping_files: r.conflicts.files_overlapping.length,
+            stale_branches: r.conflicts.branches_stale.length,
+            unmerged_old: r.conflicts.branches_unmerged_old.length,
+            recommendations: r.recommendations.slice(0, 3),
+          },
+        };
+      } catch (err) {
+        return { ok: false, msg: 'sentinel error: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  /* v13.4.204 (Kevin 2026-05-16 "Apex fait tous les tests runtime autonome") :
+   * Wire auto-test-runner.runAll() en sentinelle 12h. Le service existait
+   * (orphelin v13.4.x) avec 6+ tests : memory, persistent_memory, vault,
+   * ai-router, firebase, store etc. Maintenant tourne en autonomie sans
+   * intervention Kevin. Si fails > 0 → record session learning + log warning.
+   * Résultats persistés dans apex_v13_auto_test_log (50 derniers). */
+  sentinels.register({
+    id: 'auto-test-runner-watch',
+    name: 'Auto-test runtime Apex',
+    desc: "Lance auto-test-runner toutes les 12h : memory, vault, ai-router, persistent-memory, firebase, store. Apex teste lui-même en autonomie sans Kevin.",
+    intervalMs: 12 * 60 * 60 * 1000, /* 12h */
+    check: async () => {
+      try {
+        const { autoTestRunner } = await import('./auto-test-runner.js');
+        const summary = await autoTestRunner.runAll();
+        const msg = `${summary.passed}/${summary.total} pass · ${summary.failed} fail · ${summary.skipped} skip (${summary.durationMs}ms)`;
+        if (summary.failed > 0) {
+          return {
+            ok: false,
+            msg,
+            details: {
+              failed_tests: summary.results.filter((r) => r.status === 'fail').map((r) => r.name),
+              duration_ms: summary.durationMs,
+            },
+          };
+        }
+        return { ok: true, msg, details: { duration_ms: summary.durationMs } };
+      } catch (err) {
+        return { ok: false, msg: 'auto-test-runner error: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  /* v13.4.204 — github-notifications-clean (déjà v13.4.203, gardé tel quel) */
+  sentinels.register({
+    id: 'github-notifications-clean-watch',
+    name: 'GitHub Actions noise auto-clean',
+    desc: "Nettoie automatiquement les notifications GitHub Actions de Kevin (unsubscribe threads + mark all read). 6h interval.",
+    intervalMs: 6 * 60 * 60 * 1000, /* 6h */
+    check: async () => {
+      try {
+        const { apexGithubNotifications } = await import('./apex-github-notifications.js');
+        const r = await apexGithubNotifications.cleanActionsNotifications();
+        if (!r.ok) {
+          if (r.error === 'admin_only' || r.error === 'no_github_token_in_vault') {
+            return { ok: true, msg: 'skipped (' + r.error + ')' };
+          }
+          return { ok: false, msg: 'clean failed: ' + (r.error ?? 'unknown') };
+        }
+        return {
+          ok: true,
+          msg: `Cleared ${r.notifications_cleared ?? 0} notifs, unsubscribed ${r.actions_threads_unsubscribed ?? 0} Actions threads`,
+          details: {
+            notifications_before: r.notifications_before,
+            notifications_cleared: r.notifications_cleared,
+            actions_threads_unsubscribed: r.actions_threads_unsubscribed,
+          },
+        };
+      } catch (err) {
+        return { ok: false, msg: 'sentinel error: ' + (err instanceof Error ? err.message : String(err)) };
+      }
+    },
+  });
+
+  logger.info('sentinels', `Registered ${sentinels.list().length} sentinels (28 active + auto-test-runner + github-clean + apex-self-correct + global-health méta)`);
 }

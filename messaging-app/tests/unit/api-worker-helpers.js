@@ -100,6 +100,7 @@ export const ENV = (overrides = {}) => ({
   APEX_CHAT_ADMIN_PHONE_E164: '+33672280277',
   APEX_CHAT_DB: makeDB(),
   APEX_CHAT_CACHE: makeKV(),
+  APEX_CHAT_KV: makeKV(),            // v1.1.30 — quota daily store
   APEX_CHAT_MEDIA: makeR2(),
   TELEMETRY_QUEUE: makeQueue(),
   PUSH_QUEUE: makeQueue(),

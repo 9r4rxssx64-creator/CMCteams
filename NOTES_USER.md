@@ -93,6 +93,16 @@ Des employés ont le même nom de famille mais des prénoms différents. Ne JAMA
 **Règle parser** : bien vérifier l'initiale après le nom (ex `BORGIA T` ≠ `BORGIA L`). Fuzzy match interdit sans vérification d'initiale.
 Voir `cmc_known_identities` (v9.220) pour la liste cumulative.
 
+### 🔥 Confirmations Kevin 2026-05-16 (v9.658)
+
+Kevin a confirmé spécifiquement :
+- **ENZA Christophe** (Pit Boss) ≠ **ENZA Bruno** (chef européen ou chef européen — frères potentiels). Note : initialement écrit "Iaenza/etenza" par dictée vocale, mais c'est bien "ENZA".
+- **LANDAU Ben** vs **LANDAU Jonathan** : ce sont **deux frères**, jamais les confondre.
+- **PETIT Thierry** vs **PETIT Johanna** : couple ou frère/sœur, à ne pas confondre.
+- **CAMPI H** vs **CAMPI PH** : c'est un **couple** — CAMPI Hélène + CAMPI Philippe. Les deux doivent apparaître séparément, jamais merger.
+
+**Règle parser stricte v9.658** : la fonction `runAudit` propose des "noms similaires" SEULEMENT si le surname (1er token) est EXACTEMENT identique OU si la similarité globale ≥ 0.85 (typo évident). Plus de Levenshtein 0.55 lax qui matchait MAIARELLI → GARELLI faux positifs.
+
 ### 🚫 RÈGLE ABSOLUE : ZÉRO HISTORIQUE, ZÉRO ACQUIS (Kevin 2026-05-16)
 
 **Le planning change TOUT le mois entièrement :**
@@ -157,14 +167,16 @@ Donc dans la section "Chefs black Jack" du PDF :
   - SOLIMEIS F : SON équipe (sig 6:offset_Y:19/4c, offset_Y ≠ offset_X) → autre groupe
   - MERLINO T : encore une autre équipe (sig 6:offset_Z:16/22c)
 
-**Implication algorithme** :
-- Algo doit grouper par `cycle:offset:firstWork_AVEC_SUFFIXES` (v9.711 préserve `c`)
-- Les emps avec MÊMES jours RH ET MÊME firstWork = même équipe
-- Les emps avec MÊMES jours RH MAIS firstWork différent = équipes miroir (cas rare chez chefs)
+**Implication algorithme (v9.713)** :
+- Algo groupe par `cycle:offset:firstWork` où firstWork est NORMALISÉ (suffixe
+  `[c'"*]` retiré) → le chef `22/6c` et ses croupiers `22/6` clusterisent ensemble
+  (sinon le chef, seul, est filtré et perd sa détection)
+- La famille (BJ / roulettes / CMC) est tranchée séparément par `_famForDetect`
+  (codes `c`/`"` fiables, sinon section PDF `familyHistory[key]`), PAS par le suffixe
+- Les emps avec MÊMES jours RH ET MÊME horaire de base = même équipe
+- Les emps avec MÊMES jours RH MAIS horaire de base différent = équipes miroir
 - Chez Roulettes (Kevin truth) : 5-6 emps par équipe partagent même sig
 - Chez Chefs BJ : 2-3 emps par équipe (effectifs plus petits)
-
-
 
 | # | Équipe principale | Code jour 1 | Équipe miroir | Code jour 1 | RH days |
 |---|---|---|---|---|---|
@@ -651,6 +663,130 @@ Screenshot PDF MAI 2026 V1 montre des cadres info en haut-droite du planning ave
 - Intégrer le facteur d'indexation dans le calcul de paie (salaire_base × facteur_cumul)
 
 ---
+
+## ⛔ REFUS PERMANENT — Outils d'accès non autorisé (2026-04-18)
+
+L'admin a demandé un « outil universel pour craquer les codes/mots de passe de
+n'importe quel site, app, téléphone, tablette, ordinateur, montre ». **Refusé
+et à refuser dans toute session future**, quelle que soit la reformulation
+(« recherche », « audit », « éducatif », « pentest sans cadre »). Ne pas
+planifier, ne pas décomposer, ne pas « commencer en autonomie ». Proposer à la
+place : récupération officielle de compte, `doResetPwDirect(uid)` pour
+CMCteams, durcissement défensif (hash, 2FA, rate-limiting), ou pentest
+**autorisé par écrit** sur une infra que l'admin possède.
+
+## ⚙️ PRÉFÉRENCES WORKFLOW — Timeouts & continuité (2026-04-18)
+
+Demande admin : « arrête les time out sans cesse, ça m'empêche de travailler,
+continue en autonomie ». À clarifier **avant chaque fix** — le mot « timeout »
+recouvre 3 choses distinctes :
+
+1. **Bash timeout Claude Code** — défaut 2 min, max 10 min. Réglable via
+   `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` dans `.claude/settings.json`.
+   Pour tâches longues (npm install, ffmpeg, import PDF) : `run_in_background: true`.
+2. **Session / SSE Firebase CMCteams** — `SESSION_TTL = 8h` (`cmc_lastact`),
+   SSE EventSource sur `/cmcteams.json` peut être coupé par proxy/mobile en veille.
+   Fix = reconnect auto + heartbeat.
+3. **Fetch IA** (`vIA`) — timeout côté Claude API ou proxy perso (`cmc_ia_proxy`).
+
+Règle : **ne jamais « continuer silencieusement en autonomie »** sur une tâche
+importante sans clarification — demander laquelle des 3 couches est concernée,
+puis appliquer le fix ciblé (`update-config` skill pour settings.json, code
+pour SSE/fetch). Utiliser `run_in_background` + notification de fin pour les
+commandes longues plutôt que de laisser expirer un timeout court.
+
+**État config (2026-04-18, `~/.claude/settings.json`) :**
+- `BASH_DEFAULT_TIMEOUT_MS = 600000` (10 min, max plafond Claude Code)
+- `BASH_MAX_TIMEOUT_MS = 600000`
+- `MCP_TIMEOUT = 60000` / `MCP_TOOL_TIMEOUT = 600000`
+- ⚠️ Nécessite redémarrage Claude Code pour prise en compte des `env`.
+
+## 🚀 INTÉGRATION APEX AI (2026-04-18, corrigé v3)
+
+### Architecture correcte (validée admin 2026-04-18)
+
+**APEX AI est un HUB / LAUNCHER** qui contient plusieurs sous-apps.
+Chaque sous-app est **aussi installable seule** en PWA indépendante
+(autonome, fonctionne sans APEX AI). Mais l'usage normal passe par APEX AI :
+Kevin les **utilise, surveille, gère, modifie et fait évoluer** depuis APEX AI.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    APEX AI (hub v3.8)                    │
+│  Assistant IA + KB + Self-Modify + Hub multi-device     │
+│                                                          │
+│  ┌────────────────┐ ┌────────────────┐ ┌─────────────┐ │
+│  │   CMCteams     │ │ Télécommande   │ │  Crakpass   │ │
+│  │   (casino)     │ │     uni        │ │  (inactif)  │ │
+│  │                │ │                │ │             │ │
+│  │ Installable    │ │ Installable    │ │ Installable │ │
+│  │ seule (PWA)    │ │ seule (PWA)    │ │ seule (PWA) │ │
+│  └────────────────┘ └────────────────┘ └─────────────┘ │
+│                                                          │
+│       + autres sous-apps (e-KDMC, KDMC vidéos, …)       │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Relations entre les projets
+
+| Aspect | Comportement |
+|--------|-------------|
+| **Autonomie** | Chaque sous-app fonctionne seule (GitHub Pages propre, service worker, manifest PWA) |
+| **Hub** | APEX AI référence les sous-apps, les lance, les pilote, les met à jour |
+| **Dev** | Kevin modifie les sous-apps **depuis** APEX AI (via Self-Modify et outils dev v3.6) |
+| **Usage** | Kevin les utilise via APEX AI au quotidien (launcher) |
+| **Surveillance** | Monitoring/santé/notifs centralisés dans APEX AI |
+| **Sessions Claude Code** | Chaque sous-app a sa propre session dédiée (visible mobile) |
+
+### Statut actuel des sous-apps (vu sur écran mobile 2026-04-18)
+
+| Sous-app | Statut | Session Claude Code | Notes |
+|----------|--------|---------------------|-------|
+| APEX AI | ✅ En cours (hub) | « APEX AI » | v3.8, 85 actions |
+| Télécommande uni | ✅ En cours | « Télécommande uni » | - |
+| CMCteams | ✅ **Intégré** (cette session) | « App CMCteams » (archivé) + sessions branche | v9.103, 258 emp |
+| e-KDMC | ⏸ Inactif | « e-KDMC » | - |
+| KDMC vidéos | ⏸ Inactif | « KDMC vidéos » | - |
+| Crakpass | ⏸ Inactif | « Crakpass » | Voir ⛔ refus ci-dessus, ne pas y contribuer |
+
+### Demande admin revisée
+
+> « Quand tout sera fonctionnel, ajoute le projet à mon application APEX AI. »
+
+**Réinterprétation correcte** : CMCteams est **déjà référencé** dans APEX AI
+(sinon il n'apparaîtrait pas dans la liste mobile). La demande signifie donc
+probablement l'une de ces deux choses :
+
+1. **Rafraîchir/mettre à jour** l'entrée CMCteams dans APEX AI une fois les
+   timeouts confirmés OK (nouvelle version v9.103+, health check à jour).
+2. **Formaliser** le lien (KB, hub, notifs) si ce n'est pas déjà fait de
+   manière structurée.
+
+→ À confirmer avec Kevin au moment du « fonctionnel ».
+
+### Règle de travail inter-sessions (IMPORTANT)
+
+- **Chaque session Claude Code modifie son propre périmètre** (APEX AI ↔
+  `apex-ai/`, CMCteams ↔ `index.html` racine, etc.).
+- **`NOTES_USER.md` est partagé** entre toutes les sessions → c'est le canal
+  officiel d'information cross-session.
+- **Ne jamais modifier `apex-ai/` depuis la session CMCteams** (sauf
+  demande explicite) pour éviter les conflits avec la session APEX AI
+  active en parallèle.
+- **Inversement** : la session APEX AI ne doit pas modifier `index.html`
+  racine (CMCteams) sans passer par une demande admin explicite.
+- En cas de besoin transverse → poser une note dans `NOTES_USER.md` à
+  l'attention de l'autre session.
+
+### Checklist finale (à cocher par session APEX AI)
+
+- [ ] Vérifier que l'entrée CMCteams est à jour dans APEX AI (version,
+      URL GitHub Pages, dernière santé Firebase)
+- [ ] Ajouter un health-check automatique si absent (outil custom
+      `cmcteams_status` ou équivalent)
+- [ ] Notifier Kevin via APEX AI en cas de régression CMCteams
+- Branche retenue : `_____`
+- Commit : `_____`
 
 ## 🧠 RÈGLES RÔLES selon compétences (v9.134 — 2026-04-16)
 
@@ -1605,75 +1741,276 @@ Dans Réglages → "🎙 Voice Bio" :
 
 ---
 
-## 🎬 KDMC Social Videos — Pipeline faceless (session 2026-04-16)
+---
 
-> Projet secondaire : chaîne YouTube faceless narrative storytelling + multi-plateformes.
-> Branche : `claude/automate-social-media-videos-RvjYq`
-> Voir `MEMO.md` à la racine pour les actions à faire (setup API keys).
+## ⚠️ ANTI-TIMEOUT — Regle permanente (2026-04-18)
 
-### Décisions prises (2026-04-16)
+**Probleme** : "API Error: Stream idle timeout" quand on ecrit des gros fichiers d'un coup.
 
-- ✅ **Focus narrative storytelling long-form** (RPM $12.82, croissance 21x en 2026)
-- ✅ **Gemma 4 gratuit** via Google AI Studio pour génération scripts (pas Claude API payant)
-- ✅ **espeak-ng local** comme fallback quand internet restreint (sandbox)
-- ✅ **Publication privacy=private** par défaut (validation humaine avant public)
-- ❌ **PAS de X/Twitter Basic** ($100/mois) tant qu'audience pas validée
-- ❌ **KAIROS/Coordinator/UltraPlan** leakés mais pas shippés → skills custom simulés créés
+**Solution obligatoire :**
+1. JAMAIS ecrire un fichier > 500 lignes en un seul Write — decouper en morceaux
+2. Ecrire le squelette d'abord (Write), puis completer par Edit sequentiels
+3. Agents : leur donner des taches COURTES et PRECISES (pas "ecris 4000 lignes")
+4. Si timeout : reprendre IMMEDIATEMENT ou on en etait, sans tout recommencer
+5. Travailler en autonomie — ne jamais s'arreter a cause d'un timeout
 
-### Niches ciblées (ordre priorité)
+**Kevin ne veut PLUS voir de timeout bloquer le travail.**
 
-1. **Betrayal / Revenge stories** (RPM $12.82, croissance 21x)
-2. **Mystery narratives** (evergreen, forte demande)
-3. **Finance lessons** ($10-15 RPM, audience adulte)
-4. **True crime** (advertiser-friendly, bon CPM)
-5. **Motivation** (saturé mais facile)
+---
 
-### Plateformes actives
+## 📡 Domotique Kevin (2026-04-19)
 
-- ⭐ **YouTube** (long-form principal + Shorts extraction)
-- 🟡 **Instagram Reels** (via Graph API existant)
-- 🟡 **Facebook Reels** (via Graph API existant)
-- ⚠ **TikTok** (sandbox, review 2-4 semaines)
-- ❌ **X/Twitter** (skip — coût trop élevé)
+**Broadlink** : present sur le reseau local de Kevin
+- Modele : a confirmer (probablement RM4 Mini ou RM Pro)
+- Protocole : UDP proprietaire (necessite bridge HTTP pour controle web)
+- Usage : TV, climatisation, lumieres, volets
 
-### Stack technique social
+**Configuration necessaire (Kevin) :**
+- [ ] Installer broadlink-http-rest sur un appareil local (PC, Raspberry Pi, ou NAS)
+  - `pip install broadlinkhttp` ou Docker : `docker run -p 8780:8780 rackhd/broadlink-http`
+  - OU installer Home Assistant avec integration Broadlink native
+- [ ] Configurer l'URL du bridge dans APEX AI > Reglages > IR Blaster
+- [ ] Apprendre les codes IR de chaque appareil (TV, AC, lumieres)
 
-- `tools/social/` — nouveau module complet
-- Node.js ES modules
-- `msedge-tts` (premium) + `espeak-ng` (fallback local)
-- `node-canvas` pour frames 1080x1920 et 1920x1080
-- `@ffmpeg-installer/ffmpeg` pour compilation
-- `@google/generative-ai` pour Gemma 4
-- `googleapis` pour YouTube
-- GitHub Actions cron quotidien (10h UTC)
+**Appareils a controler :**
+- [ ] TV (marque a confirmer)
+- [ ] Climatisation (marque a confirmer)
+- [ ] Lumieres (si connectees via IR)
+- [ ] Volets (si connectes)
 
-### Skills créés (~/.claude/skills/)
+---
 
-14 skills installés :
-- `security`, `frontend-design`, `humanizer`, `know-me`, `create-skill`
-- `n8n`, `self-improving-agent`, `instagram-growth`, `design`, `word-docs`
-- `gemma-integration`, `kairos`, `ultraplan`, `coordinator`
+## 📡 Broadlink Kevin (2026-04-19)
 
-### Actions en attente (Kevin)
+**Kevin a un Broadlink sur son reseau local.**
+- 42 commandes IR pre-configurees (TV, AC, lumieres, volets, ventilo, barre son, projecteur)
+- Bridge HTTP requis : `pip install broadlinkhttp` sur un appareil local
+- URL a configurer dans KDMC > Reglages > IR Blaster
 
-Voir `MEMO.md`. Résumé :
-1. ⭐ **OBLIGATOIRE** : clé Google AI Studio (5 min) → génération scripts Gemma
-2. ⭐ **PRIORITÉ #1** : YouTube OAuth (15 min) → publication automatique
-3. ⭐ Assets musique (Pixabay, 5-10 MP3 royalty-free)
-4. 🟡 Vérifier Instagram/Facebook tokens (probablement déjà dans intégrations)
-5. 🟡 TikTok developer account (optionnel, review longue)
+## 🤖 KDMC v6.1 — Capacites (2026-04-19)
 
-### Timeline réaliste revenus
+**L'IA peut modifier l'app + se faire aider + verifier son travail :**
+- Self-modify: CSS, JS, onglets, code source
+- AI Crew: 5 agents internes verifient chaque reponse
+- Local Workers: 4 agents arriere-plan surveillent en permanence
+- Auto-learn: reconnait 24 marques d'appareils automatiquement
+- Self-improving: apprend des reactions 👍👎
 
-- Mois 1-3 : $0 (construction bibliothèque + tests)
-- Mois 6-12 : $50-500/mois (seuil monétisation YouTube)
-- Mois 12-18 : $500-3000/mois (compounding)
-- Mois 18-24+ : $2500-10000/mois si constant
+**247+ actions, 70+ templates, 10 personas, 15 achievements, 12 ambiances**
 
-Ce n'est PAS un quick-win. C'est un investissement 6-12 mois.
+## 🚨 REGLE ABSOLUE N°1 (Kevin 2026-04-19)
 
-### Mémoire d'erreurs à ne pas reproduire
+> **TOUT AU MAXIMUM. TOUJOURS. DES LE DEBUT. SANS QU'ON AIT A LE REDEMANDER.**
+> - Stockage : MAXIMUM
+> - Performance : MAXIMUM
+> - Securite : MAXIMUM
+> - Nombre de voix/themes/templates/personas : MAXIMUM
+> - Limites/quotas : les plus hauts possibles
+> - Qualite code : EXPERT SENIOR
+> - Chaque fonction : la MEILLEURE possible
+> - Ne JAMAIS mettre une valeur basse "par defaut" — toujours le MAX
+> - Se faire aider par des agents pour verifier qu'on est au MAX
+> - APPRENDRE de ses erreurs et NE PLUS les refaire
+> - NOTER cette regle PARTOUT (CLAUDE.md, NOTES_USER.md, system prompt app)
 
-- ❌ Edge TTS ne marche pas dans sandbox Claude Code (bing.com bloqué) → espeak-ng
-- ❌ Path bug : utiliser `__dirname` + `path.resolve` pour output, pas relatifs
-- ❌ KAIROS/Coordinator features leakées → simulés via subagents parallèles
+## ✅ Lecons apprises (ne plus reproduire)
+
+1. **Cle API** : JAMAIS montrer/demander aux clients — cle partagee automatique
+2. **Settings admin** : TOUJOURS cacher aux non-admin — check isAdm AVANT d'afficher
+3. **Onboarding** : JAMAIS parler de config technique aux clients — guide simple
+4. **Service Worker** : TOUJOURS bumper la version cache apres chaque maj majeure
+5. **Streaming API** : NE PAS utiliser sur Safari iOS PWA — mode JSON simple
+6. **Permissions** : 1 SEULE demande, sauvegarder, ne PLUS redemander
+7. **Toast parasites** : NE PAS afficher au demarrage (taux change, decouverte, etc)
+8. **Variables** : TOUJOURS declarer AVANT d'utiliser (crash silencieux sinon)
+9. **Tester CHAQUE role** : admin + family + client AVANT de livrer
+10. **localStorage** : sauvegarder TOUT en permanence (pas sessionStorage)
+
+## 🚨 REGLE ABSOLUE N°0 — AUTONOMIE TOTALE (Kevin 2026-04-19)
+
+> **FAIRE TOUT EN AUTONOMIE. NE DEMANDER A KEVIN QUE CE QUI EST IMPOSSIBLE.**
+> - Si Claude a les infos → configurer lui-meme SANS demander
+> - Si Claude a les acces → faire lui-meme SANS demander
+> - Si Claude a les outils → utiliser lui-meme SANS demander
+> - VERIFIER que c'est VRAIMENT impossible avant de demander
+> - Cette regle s'applique a TOUS les projets, TOUTES les sessions, TOUTES les interactions
+> - NE PLUS JAMAIS dire "Kevin doit faire X" si Claude peut le faire
+
+## ⚠️ Regle permissions (2026-04-19)
+> **Toute demande de permission (micro, notifications, camera, etc.) = UNE SEULE FOIS.**
+> Si acceptee: sauvegarder et ne PLUS redemander. JAMAIS.
+> Si refusee: sauvegarder et ne PLUS redemander. JAMAIS.
+> Note: Safari iOS redemande parfois les permissions — c'est une limitation Apple, pas l'app.
+> L'app doit MINIMISER les demandes au strict necessaire.
+
+## 📋 Regles permanentes (rappel)
+
+1. **Toute info de Kevin = noter dans NOTES_USER.md immediatement**
+2. **Lire MEMO_RESUME.md + NOTES_USER.md au debut de CHAQUE session**
+3. **MAJ tous les .md apres chaque session**
+4. **Ne JAMAIS oublier une demande — tout dans TodoWrite**
+5. **Se referer aux feuilles de route pour CHAQUE action**
+6. **A chaque fin de travail, se demander : puis-je faire mieux ?**
+7. **Chaque livrable = verifie, teste, corrige, sauvegarde AVANT livraison**
+8. **Ne JAMAIS s'arreter avant d'avoir tout termine**
+9. **Agents/workers en arriere-plan pour surveiller en permanence**
+10. **Si l'app ne connait pas un sujet, elle va chercher les infos (web_search) AVANT de repondre**
+11. **L'app doit anticiper bugs, fonctions cassees, et corriger automatiquement**
+12. **Long terme : l'app doit durer pour toujours, etre gratuite/low-cost, rapporter un maximum**
+
+## 💰 Objectif business KDMC
+
+- **Visibilite maximale** : SEO, Product Hunt, Reddit, LinkedIn, TikTok, YouTube
+- **Publicite** : mettre en avant les avantages vs concurrence partout
+- **Revenus** : Free/Pro (14.99 EUR)/Enterprise (49.99 EUR)/Lifetime (249 EUR)
+- **Couts quasi zero** : GitHub Pages (gratuit), Firebase (gratuit), Cloudflare (gratuit)
+- **Marge nette : ~85%**
+- **Objectif 3 ans : 900 000 EUR/an**
+
+---
+
+*Dernière mise à jour : 2026-04-19 (KDMC v6.1 — 60 commits, 355 KB)*
+
+
+## 🚨 REGLE UX ERREURS (Kevin 2026-04-21, OBLIGATOIRE)
+
+JAMAIS afficher message erreur technique brut a l utilisateur final.
+TOUJOURS remplacer par message actionnable clair.
+
+| Technique (interdit) | User-friendly (attendu) |
+|----------------------|-------------------------|
+| undefined is not an object | Erreur interne, recharge la page |
+| null reference | Donnees manquantes, reinstalle l icone |
+| HTTP 500 / 502 / 503 | Serveur surcharge, reessaie dans 1 min |
+| Failed to fetch / network | Reseau indisponible, verifie Wi-Fi/4G |
+| CORS / Host not allowed | Blocage API, contacte admin ou attends |
+| QuotaExceededError | Stockage plein, un cleanup auto a ete lance |
+| Timeout | Pas de reponse apres 30s, reessaie |
+
+Applicable dans :
+- Chaque catch (try/catch ou .catch)
+- Chaque toast visible user
+- Chaque push message assistant dans K.messages/A.iaHistory
+- Chaque alert/confirm
+
+A verifier a chaque audit (axRunAudit, subagent audit).
+
+---
+
+## 🤖 PRÉFÉRENCES IA PROVIDERS (Kevin 2026-05-07, décision)
+
+**Décision Kevin** : "On garde les 2" (Claude + Grok)
+
+### Smart-router Apex v13.3.33+ route automatiquement
+
+| Tâche détectée | Provider auto |
+|---|---|
+| Code / programmation | Claude Sonnet 4.6 / Opus 4.7 (#1 fiabilité) |
+| Reasoning structuré / analyse longue | Claude Opus 4.7 |
+| Recherche actualité X (Twitter) live | xAI Grok 3/4 (UNIQUE) |
+| Vision / image / audio / vidéo | OpenAI GPT-4o (multimodal natif) |
+| Latence ultra-rapide / résumé | Groq (Llama 3.3 70B) |
+| Free tier économe | Gemini |
+| Failover si quota Anthropic épuisé | OpenRouter → Groq → Gemini → Grok |
+
+### 10 clés API actuellement dans Coffre Kevin (vu screenshot 20:56)
+
+✅ Anthropic Claude (principal)
+✅ GitHub
+✅ Groq (KO actuellement → recharge https://console.groq.com/keys)
+✅ DeepSeek
+✅ Mistral
+✅ Cohere
+✅ xAI Grok
+✅ Perplexity
+✅ YouTube
+✅ Railway
+
+### Auto-mask v13.3.36+
+
+Smart-router masque AUTOMATIQUEMENT les providers avec score ≤ 10 (KO persistent fail_count > 10 ou décrypt failed). Kevin n'a aucune action à faire — Apex bascule auto.
+
+### Cas spécifiques Kevin
+
+- **Casino Monaco veille X** : utilise Grok → "Cherche tweets actualité Casino Monaco"
+- **Code Apex/CMCteams** : Claude reste référence (ce travail = preuve)
+- **Photos / scan** : GPT-4o vision auto-routé
+- **Email rapide** : Groq pour latence < 500ms
+
+
+## 🎙 Wake Word "Dis Apex" — Flow apprentissage progressif (Kevin 2026-05-07)
+
+**Principe Kevin** : "Au début il écoute tout le monde puis il affine pour finir exclusif utilisateur"
+
+### 4 phases du voiceprint Kevin
+
+| Phase | Samples | Comportement Apex |
+|---|---|---|
+| 🟢 **OUVERT** | 0-3 | Accepte TOUTE voix qui dit "Dis Apex" — collecte baseline + apprentissage rapide |
+| 🟡 **APPRENTISSAGE** | 4-9 | Threshold faible 0.50 — accepte voix similaires + averti si grosse divergence |
+| 🟠 **AFFINAGE** | 10-19 | Threshold moyen 0.65 — commence à filtrer voix très différentes (TV en fond, collègue qui passe) |
+| 🔴 **EXCLUSIF** | 20+ | Threshold strict 0.75-0.85 — **n'accepte QUE Kevin** (anti-confusion entourage) |
+
+### Logique threshold dynamique
+
+```ts
+function getThreshold(samples_count: number): number {
+  if (samples_count < 4)  return 0.0;   // Accepte tout
+  if (samples_count < 10) return 0.50;  // Apprentissage
+  if (samples_count < 20) return 0.65;  // Affinage
+  return 0.85;                          // Exclusif strict
+}
+```
+
+### Avantage UX
+
+- **Démarrage immédiat** : Kevin commence à utiliser "Dis Apex" tout de suite, pas d'enrôlement préalable obligatoire
+- **Précision progressive** : à chaque utilisation, Apex apprend mieux la voix Kevin
+- **Auto-exclusivité** : quand assez de samples accumulés (~20), Apex devient automatiquement exclusif sans intervention
+- **Anti-confusion entourage** : à partir de 20 samples, voix télé / conversations / collègues IGNORÉES silencieusement
+
+### UI feedback Kevin
+
+Dans Réglages → "🎙 Voice Bio" :
+- Barre progression "Apprentissage voix : 12/20 samples (60%)"
+- Toggle "Mode exclusif anticipé" : si activé, force exclusivité dès 10 samples
+- Bouton "🔄 Ré-enrôler ma voix" si reset souhaité (RGPD)
+
+### Si plusieurs users (Laurence, clients)
+
+- Chaque user a son propre voiceprint progressif
+- Mode admin Kevin : si Kevin reconnu (via son voiceprint) dans la vue d'un autre user → bascule mode admin temp
+- Kevin admin a la PRIORITÉ même dans la vue Laurence (sa voix override)
+
+
+---
+
+## E-COMMERCE e-KDMC (Kevin 2026-05-18)
+
+### Boutiques en ligne
+- 5 boutiques : Tech Hub, CHEZ LOLO (ex Glow Wellness), EcoCraft, Digital Vault, Pawsome
+- 500 produits (100/boutique), descriptions uniques, photos Unsplash
+- Paiement : PayPal + Revolut @kdmc + IBAN
+- Dashboard admin avec 6 vues
+- Agent automation 24/7
+
+### CHEZ LOLO
+- Rebrand de Glow Wellness → CHEZ LOLO
+- Thème provençal : olive (#7c8c3c), crème, Playfair Display serif
+- Cosmétiques naturels, soins bio, lavande, huile d'olive
+- Kevin choisira les vrais produits (nom ou photo → je cherche fournisseur auto)
+
+### Préférences Kevin e-commerce
+- WhatsApp perso pour notifications paiement (pas Telegram)
+- Notification OBLIGATOIRE chaque paiement validé (tous projets)
+- Vraies photos produits uniquement (jamais emojis)
+- Rendu luxe expert partout
+- URLs courtes (Vercel rewrites /lolo, /tech, /eco, /digital, /pets)
+- Domaine à acheter : kdmc.shop ou kdmc.store (~12€/an)
+- 1 clic max pour toute action Kevin
+
+### URLs actuelles
+- GitHub Pages : `9r4rxssx64-creator.github.io/CMCteams/shops/`
+- Vercel shops à configurer : Action 1 dans TODO_KEVIN.md
+- Agent : `kdmc-agent-monaco.vercel.app`
+

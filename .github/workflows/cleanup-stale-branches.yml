@@ -28,6 +28,12 @@ on:
   push:
     branches: [main]
     paths: ['.github/workflows/cleanup-stale-branches.yml']
+  # Kevin 2026-05-20 "branches propres autonome" : le push de l'auto-merge bot
+  # utilise GITHUB_TOKEN → ne déclenche pas les workflows push. workflow_run
+  # se déclenche APRÈS chaque auto-merge → cleanup vraiment automatique.
+  workflow_run:
+    workflows: ["Auto-merge Claude branches into main"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -40,7 +46,7 @@ jobs:
   cleanup-merged:
     name: Delete merged claude/* branches
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 4 * * *' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    if: github.event.schedule == '0 4 * * *' || github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'workflow_run'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,10 +82,23 @@ jobs:
           # Kevin 2026-05-16 :
           # - "Et de loque cette branche elle bug claude/continue-perfection-work-46Oic"
           # - "Celle là aussi debug claude/continue-perfection-work-T47uI"
+          # Kevin 2026-05-20 — rangement branches : 4 projets renommés en
+          # project/* + archive/* (anciens noms claude/* à supprimer, le
+          # nouveau nom a déjà été créé pointant sur le même commit).
           # Si la branche n'existe pas → ignore silencieusement (push --delete OK).
+          # Kevin 2026-05-20 — 4 branches apex-chat mergées dans main mais non
+          # détectées par git branch -r --merged (merge --no-ff auto-merge bot).
           EXPLICIT=$(printf "%s\n" \
             "claude/continue-perfection-work-46Oic" \
-            "claude/continue-perfection-work-T47uI")
+            "claude/continue-perfection-work-T47uI" \
+            "claude/iphone-device-remote-control-Nam26" \
+            "claude/universal-password-cracker-o2mbo" \
+            "claude/ecommerce-automation-platform-Gprjk" \
+            "claude/evaluate-resources-shZBa" \
+            "claude/apex-chat-deploy-acctid" \
+            "claude/apex-chat-migrations" \
+            "claude/apex-chat-v133-merge" \
+            "claude/apex-chat-v134-merge")
           echo "$EXPLICIT"
 
           # Combine + dedupe

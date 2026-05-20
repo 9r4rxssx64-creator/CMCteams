@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - claude/private-messaging-app-jpLl1
+      - 'claude/**'  # v1.1.125 : tout push claude/* avec workers/** déclenche deploy
     paths:
       - 'messaging-app/workers/**'
       - 'messaging-app/d1-migrations/**'
@@ -58,39 +58,75 @@ jobs:
 
       - name: Get Account ID
         id: account
+        env:
+          KEVIN_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          ACC=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
-            python3 -c "import json,sys; d=json.load(sys.stdin); print(d['result'][0]['id'])")
+          # v1.1.126 fix : si secret CLOUDFLARE_ACCOUNT_ID dispo, l'utiliser (token
+          # "Edit Cloudflare Workers" n'a pas la permission de lister tous comptes).
+          # Sinon fallback API (avec token "Memberships:Read").
+          if [ -n "$KEVIN_ACCOUNT_ID" ]; then
+            ACC="$KEVIN_ACCOUNT_ID"
+            echo "::notice::Account ID depuis secret CLOUDFLARE_ACCOUNT_ID: $ACC"
+          else
+            ACC=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+              python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',[]); print(r[0]['id']) if r else exit(1)" 2>/dev/null) || {
+              echo "::error::Secret CLOUDFLARE_ACCOUNT_ID manquant ET token sans Memberships:Read"
+              echo "Solution : ajoute secret CLOUDFLARE_ACCOUNT_ID dans Settings > Secrets"
+              exit 1
+            }
+            echo "::notice::Account ID depuis API: $ACC"
+          fi
           echo "id=$ACC" >> $GITHUB_OUTPUT
           echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> $GITHUB_ENV
-          echo "::notice::Account ID: $ACC"
 
-      - name: Create D1 database (idempotent)
-        id: d1
+      - name: DIAG token + account match
+        run: |
+          echo "=== Token prefix ==="
+          echo "Token prefix: ${CLOUDFLARE_API_TOKEN:0:10}..."
+          echo "Account ID: $CLOUDFLARE_ACCOUNT_ID"
+          echo ""
+          echo "=== Verify token ==="
+          VERIFY=$(curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "$VERIFY" | python3 -m json.tool || echo "$VERIFY"
+          TOKEN_ID=$(echo "$VERIFY" | grep -oE '"id":"[a-f0-9]+"' | head -1 | cut -d'"' -f4)
+          echo "Token ID: $TOKEN_ID"
+          echo ""
+          echo "=== Full token policies (DEFINITIVE proof of permissions) ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/$TOKEN_ID" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
+          echo ""
+          echo "=== Test list Workers (le token a Workers Scripts:Edit?) ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
+          echo ""
+          echo "=== Test D1 list ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
+
+      - name: Verify D1 database (hardcoded in wrangler.toml)
         working-directory: messaging-app/workers
         run: |
-          set +e
-          # Tente de lister les D1 existantes
-          EXISTING=$(wrangler d1 list 2>&1 | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}[[:space:]]+apex-chat-main' | awk '{print $1}' | head -1)
-          if [ -n "$EXISTING" ]; then
-            D1_ID="$EXISTING"
-            echo "::notice::D1 existe déjà: $D1_ID"
-          else
-            CREATE_OUT=$(wrangler d1 create apex-chat-main 2>&1)
-            echo "$CREATE_OUT"
-            D1_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -1)
-            echo "::notice::D1 créée: $D1_ID"
-          fi
-          echo "id=$D1_ID" >> $GITHUB_OUTPUT
-          # Inject dans wrangler.toml
-          sed -i "s/database_id = \"REPLACE_WITH_D1_ID\"/database_id = \"$D1_ID\"/" wrangler.toml || true
+          # v1.1.131 : D1 ID hardcoded dans wrangler.toml (Kevin créé manuellement).
+          # Pas besoin de créer via API (token CF rejette pour raisons inconnues).
+          echo "::notice::D1 ID hardcoded:"
+          grep "database_id" wrangler.toml | head -1
 
-      - name: Apply D1 migrations
+      - name: Apply D1 migrations (toutes — glob auto)
         if: github.event.inputs.apply_migrations != 'no'
         working-directory: messaging-app/workers
         run: |
-          wrangler d1 execute apex-chat-main --file=../d1-migrations/0001_init.sql --remote || true
+          # v1.1.135 : glob auto de TOUTES les migrations (toute nouvelle 000N reprise auto).
+          # Les CREATE TABLE IF NOT EXISTS sont idempotents.
+          for mig in $(ls ../d1-migrations/0*.sql | sort); do
+            if [ -f "$mig" ]; then
+              echo "=== Migration: $mig ==="
+              wrangler d1 execute apex-chat-main --file="$mig" --remote 2>&1 | tail -8 || echo "::warning::$mig partiel (peut être déjà appliqué)"
+            fi
+          done
+          echo "=== Vérif tables créées ==="
+          wrangler d1 execute apex-chat-main --remote --command "SELECT name FROM sqlite_master WHERE type='table'" 2>&1 | tail -20
           echo "::notice::Migrations D1 appliquées"
 
       - name: Create R2 bucket (idempotent)
@@ -98,23 +134,12 @@ jobs:
           wrangler r2 bucket create apex-chat-media || echo "(bucket existe déjà)"
           echo "::notice::R2 bucket apex-chat-media OK"
 
-      - name: Create KV namespace (idempotent)
-        id: kv
+      - name: Verify KV namespace (hardcoded in wrangler.toml)
         working-directory: messaging-app/workers
         run: |
-          set +e
-          EXISTING=$(wrangler kv namespace list 2>&1 | grep -B1 'APEX_CHAT_CACHE' | grep -oE '"id":[[:space:]]*"[^"]+"' | head -1 | cut -d'"' -f4)
-          if [ -n "$EXISTING" ]; then
-            KV_ID="$EXISTING"
-            echo "::notice::KV existe déjà: $KV_ID"
-          else
-            CREATE_OUT=$(wrangler kv namespace create APEX_CHAT_CACHE 2>&1)
-            echo "$CREATE_OUT"
-            KV_ID=$(echo "$CREATE_OUT" | grep -oE 'id = "[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}' | head -1)
-            echo "::notice::KV créé: $KV_ID"
-          fi
-          echo "id=$KV_ID" >> $GITHUB_OUTPUT
-          sed -i "s/id = \"REPLACE_WITH_KV_ID\"/id = \"$KV_ID\"/" wrangler.toml || true
+          # v1.1.131 : KV ID hardcoded dans wrangler.toml (Kevin créé manuellement).
+          echo "::notice::KV ID hardcoded:"
+          grep -A1 "APEX_CHAT_CACHE" wrangler.toml | head -3
 
       - name: Create Cloudflare Queues (idempotent)
         run: |
@@ -123,24 +148,50 @@ jobs:
           done
           echo "::notice::5 Queues OK"
 
-      - name: Generate + put secrets
+      - name: Deploy api-worker (official Cloudflare action)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'messaging-app/workers'
+          command: deploy
+
+      - name: Generate + put secrets (after Worker exists)
         working-directory: messaging-app/workers
         run: |
-          # Secrets crypto auto-générés
-          JWT_SIGN_KEY=$(openssl rand -hex 64)
-          APEX_CHAT_ADMIN_TOKEN=$(openssl rand -hex 32)
-          APEX_HANDOFF_TOKEN=$(openssl rand -hex 32)
+          # Liste des secrets déjà présents sur le Worker (évite régénération destructrice)
+          EXISTING=$(wrangler secret list 2>/dev/null || echo '[]')
+          has_secret() { echo "$EXISTING" | grep -q "\"$1\""; }
 
-          echo "$JWT_SIGN_KEY" | wrangler secret put JWT_SIGN_KEY
-          echo "$APEX_CHAT_ADMIN_TOKEN" | wrangler secret put APEX_CHAT_ADMIN_TOKEN
-          echo "$APEX_HANDOFF_TOKEN" | wrangler secret put APEX_HANDOFF_TOKEN
+          # printf '%s' (PAS echo) : echo ajoute un \n qui corrompt les secrets
+          # comparés caractère par caractère (ex KEVIN_PHONE_E164 → "+33...\n" ne matche jamais)
+          put_secret() { printf '%s' "$2" | wrangler secret put "$1"; }
 
-          # Helper : push secret seulement si valeur définie
+          # JWT_SIGN_KEY : STABLE entre déploiements (régénérer invaliderait tous les JWT existants).
+          # Généré une seule fois, conservé tant qu'il existe sur le Worker.
+          if has_secret "JWT_SIGN_KEY"; then
+            echo "::notice::JWT_SIGN_KEY déjà présent — conservé (pas de régénération)"
+          else
+            put_secret "JWT_SIGN_KEY" "$(openssl rand -hex 64)"
+            echo "::notice::JWT_SIGN_KEY généré (première fois)"
+          fi
+          if has_secret "APEX_CHAT_ADMIN_TOKEN"; then
+            echo "::notice::APEX_CHAT_ADMIN_TOKEN déjà présent — conservé"
+          else
+            put_secret "APEX_CHAT_ADMIN_TOKEN" "$(openssl rand -hex 32)"
+          fi
+          if has_secret "APEX_HANDOFF_TOKEN"; then
+            echo "::notice::APEX_HANDOFF_TOKEN déjà présent — conservé"
+          else
+            put_secret "APEX_HANDOFF_TOKEN" "$(openssl rand -hex 32)"
+          fi
+
+          # Helper : push secret seulement si valeur définie (printf, jamais echo)
           push_if_set() {
             local name=$1
             local value=$2
             if [ -n "$value" ]; then
-              echo "$value" | wrangler secret put "$name"
+              put_secret "$name" "$value"
               echo "::notice::✓ $name configuré"
             fi
           }
@@ -153,7 +204,7 @@ jobs:
 
           # === IA failover (optionnels) ===
           push_if_set "OPENROUTER_API_KEY" "${{ secrets.OPENROUTER_API_KEY }}"
-          push_if_set "OPENAI_API_KEY" "${{ secrets.OPENAI_API_KEY }}"
+          push_if_set "OPEN_AI_API_KEY" "${{ secrets.OPEN_AI_API_KEY }}"
           push_if_set "PERPLEXITI_API_KEY" "${{ secrets.PERPLEXITI_API_KEY }}"
 
           # === SMS Vonage ===
@@ -179,17 +230,7 @@ jobs:
           # === Reconnaissance Kevin admin via numéro téléphone E.164 ===
           push_if_set "KEVIN_PHONE_E164" "+33672280277"
 
-          echo "::notice::Secrets configurés (skip silencieux si vide)"
-
-      - name: Deploy api-worker
-        working-directory: messaging-app/workers
-        run: |
-          wrangler deploy 2>&1 | tee /tmp/deploy.log
-          if grep -qE "Deployed|Published" /tmp/deploy.log; then
-            echo "::notice::✅ api-worker déployé"
-          else
-            echo "::warning::Vérifier le déploiement manuellement"
-          fi
+          echo "::notice::Secrets configurés (skip silencieux si vide). Worker prêt à recevoir des requêtes."
 
       - name: Summary
         run: |

@@ -19,7 +19,7 @@
 import { events } from '../core/events.js';
 import { logger } from '../core/logger.js';
 
-const FB_DEFAULT = 'https://kdmc-clients-default-rtdb.firebaseio.com';
+const FB_DEFAULT = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
 
 /**
  * v13.3.x Kevin 2026-05-08 — Auto-reconnect robuste Firebase.

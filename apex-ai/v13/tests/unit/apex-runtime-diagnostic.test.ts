@@ -29,8 +29,7 @@ describe('apex-runtime-diagnostic (v13.4.143 coverage)', () => {
       const r = await apexRuntimeDiagnostic.runAll();
       expect(r).toBeDefined();
       expect(r.ts).toBeTypeOf('number');
-      /* Version = celle gérée par le service (v13.4.99 quand ajouté, peut évoluer).
-       * Test vérifie juste le FORMAT, pas une valeur figée — sinon casse à chaque bump APP_VER. */
+      /* v13.4.232 : test robuste à futurs bumps version (était hardcoded 13.4.99) */
       expect(r.version).toMatch(/^\d+\.\d+\.\d+/);
       expect(Array.isArray(r.checks)).toBe(true);
       expect(r.checks.length).toBeGreaterThanOrEqual(8);

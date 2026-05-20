@@ -35,18 +35,29 @@
 | Broadlink IR | ✅ Configuré | domotique |
 | Home Assistant | ✅ URL locale | `ax_ha_url` |
 
-## 📊 ÉTAT DES PROJETS (live — MAJ 2026-05-04)
+## 📊 ÉTAT DES PROJETS (live — MAJ 2026-05-18)
 
 | Projet | Version | État | Notes |
 |--------|---------|------|-------|
-| **CMCteams** | v9.593 | Production | 258 employés, planning casino Monaco |
+| **CMCteams** | v9.658 | Production | 258 employés, planning casino Monaco, parser SBM V2 |
 | **Apex AI v12** | v12.785 | Production stable | Live https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/ |
-| **Apex AI v13** | v13.0.77 | Canary (claude/test-699LQ) | TS strict + Vite 6 + 4463+ tests, parité v12 ~85% |
-| **e-KDMC** | v0.3 | Dev | 5 boutiques + dashboard + functions, en attente Stripe/Brevo Kevin |
-| **Apex Chat** | v0.2 | Dev Mode A | messaging-app/, 8 fichiers à adapter |
+| **Apex AI v13** | **v13.4.225** | Production prête | TS strict + Vite 6 + 469 tests, parité v12 ~95%, self-signup direct + auto-MAJ inline copie CMCteams |
+| **e-KDMC** | v1.14 | Dev | 5 boutiques + dashboard + functions + automation + SEO 25/25 |
+| **Apex Chat** | **v1.1.108** | Production prête | 750+ tests vitest verts, Cloudflare Workers + D1 + DO, 9 endpoints AI/Premium, **Phase 1-9 LIVE** + 10 features auto v1.1.99→108 |
 | **Social Video** | v0.3 | Dev Phase 3 | Recovery branche RvjYq, en attente tokens |
 | **Remote** | Intégré Apex | Production | IR/TV/HA/MQTT |
 | **CrackPass** | Intégré Apex | Production | Gén/test MDP |
+
+### Apex Chat v1.1.22 → v1.1.41 (session 2026-05-18 PR #268)
+- ✅ Phase 1-9 toutes LIVE (Phase 5 calls réels WebRTC, Phase 7b Memory Lane IA, Phase 9 Stripe LIVE)
+- ✅ Backend Cloudflare Workers : 9 endpoints (summarize/checkout/webhook/status/portal/smart-reply/translate/voice-transcribe/image-describe/quota/search/rewrite)
+- ✅ D1 schema 0004 : premium_plan, stripe_customer_id, ai_summary_cache, audit_log
+- ✅ Quota daily middleware Premium (voice 5/jour, image 10, summarize 3, smart-reply 30, translate 20 — illimité Premium)
+- ✅ Resend email receipts automatiques après Stripe success
+- ✅ AI features client : Voice Whisper · Image Vision alt-text · Smart Reply chips · Translate inline · Memory Lane résumé · Semantic search · Insights IA · Rewrite 8 styles
+- ✅ UI hardening : voice preview modal · emoji reactions long-press iOS · scheduled messages · read receipts ✓✓ bleu · auto-detect langue · safety number Signal-style
+- ✅ MAJ AUTO FORCÉE iOS PWA hardening (Kevin règle absolue) : SW skip-intercept `?_v=`, `cache:'reload'`, CACHE_VERSION sync partout
+- ✅ Tests : 750/750 PASS (21 fichiers), 30+ tests nouveaux ajoutés cette session
 
 ## 🏆 RÈGLES PERMANENTES KEVIN AJOUTÉES (2026-05-04 PM)
 

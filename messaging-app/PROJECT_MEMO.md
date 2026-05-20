@@ -4,8 +4,23 @@
 
 > Mémoire vivante de TOUTES les décisions Kevin pour ce projet.
 > À lire au début de chaque session. Mis à jour en continu.
-> Branche : `claude/private-messaging-app-jpLl1`
+> Branche actuelle : `claude/continue-perfection-work-5C2eH` (PR #268)
 > Repo : `9r4rxssx64-creator/cmcteams` — dossier `messaging-app/`
+
+## 📊 ÉTAT v1.1.41 (2026-05-18) — Production-ready Phase 1-9 LIVE
+
+- **Version** : v1.1.41 (passée de v0.2 en ~3 mois)
+- **Tests** : 750/750 PASS vitest (21 fichiers)
+- **Phases livrées** : 1 (auth) · 2 (E2E PQXDH) · 3 (chat DM/groupes/réactions/replies) · 4 (WebRTC audio/vidéo) · 5 (admin) · 6 (IA user) · 7 (Memory Lane IA) · 8 (intelligence) · 9 (Stripe premium)
+- **Backend** : Cloudflare Workers + D1 + Durable Objects + KV + R2
+- **9+ endpoints API** (summarize/translate/smart-reply/voice/image/search/rewrite/checkout/webhook/portal/status/quota)
+- **Monétisation** : Stripe LIVE (3 plans 6.99€/59.99€/199€), quota daily middleware, Resend email receipts auto
+- **Sécurité** : E2E PQXDH active, safety number Signal-style, HMAC webhook + anti-replay
+- **MAJ auto forcée iOS PWA** : SW skip-intercept `?_v=`, `cache:'reload'`, CACHE_VERSION sync (règle Kevin absolue)
+
+Voir KEVIN_INVENTORY.md section "SESSION 2026-05-18" pour détails complets + action Kevin déploiement.
+
+---
 
 ---
 
