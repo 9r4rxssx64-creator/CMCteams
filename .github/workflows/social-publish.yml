@@ -9,10 +9,6 @@ on:
         description: "Niche"
         required: false
         default: "betrayal"
-      format:
-        description: "Format"
-        required: false
-        default: "long"
 
 permissions:
   contents: write
@@ -27,413 +23,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg espeak-ng curl jq
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg espeak-ng
       - run: pip install edge-tts gtts
 
       - name: "🎬 Generate Pro Video"
         env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: |
-          set -e
-          NICHE="${{ github.event.inputs.niche || 'betrayal' }}"
-          FORMAT="${{ github.event.inputs.format || 'long' }}"
-          LIBRARY="tools/social/config/content-library.json"
+          python3 tools/social/generate_video.py \
+            tools/social/config/content-library.json \
+            tools/social/output \
+            "${{ github.event.inputs.niche || 'betrayal' }}"
 
-          echo "============================================"
-          echo "🎬 KDMC Studio — Pro Video Pipeline v3"
-          echo "   Niche: $NICHE | Format: $FORMAT"
-          echo "============================================"
-
-          # ═══════════════════════════════════════════
-          # STEP 1: Pick story from library
-          # ═══════════════════════════════════════════
-          STORY_JSON=$(python3 << PICKEOF
-          import json, random, sys
-          lib = json.load(open("$LIBRARY"))
-          niche = "$NICHE"
-          cands = []
-          for cat, stories in lib.items():
-            if cat.startswith("_") or not isinstance(stories, list): continue
-            for s in stories:
-              if s.get("used"): continue
-              if niche in cat or niche in " ".join(s.get("tags",[])):
-                cands.append(s)
-          if not cands:
-            for cat, stories in lib.items():
-              if cat.startswith("_") or not isinstance(stories, list): continue
-              for s in stories:
-                if not s.get("used"): cands.append(s)
-          if not cands: print("ERROR", file=sys.stderr); sys.exit(1)
-          print(json.dumps(random.choice(cands[:5])))
-          PICKEOF
-          )
-
-          STORY_ID=$(echo "$STORY_JSON" | jq -r '.id')
-          STORY_TITLE=$(echo "$STORY_JSON" | jq -r '.title')
-          STORY_SCRIPT=$(echo "$STORY_JSON" | jq -r '.script')
-          STORY_TAGS=$(echo "$STORY_JSON" | jq -r '.tags | join(",")')
-          OUTDIR="tools/social/output/${STORY_ID}_$(date +%Y%m%d)"
-          mkdir -p "$OUTDIR"
-
-          echo "📖 $STORY_ID — $STORY_TITLE"
-          echo "   $(echo "$STORY_SCRIPT" | wc -w) words"
-
-          # ═══════════════════════════════════════════
-          # STEP 2: TTS — edge-tts neural voice
-          # ═══════════════════════════════════════════
-          echo ""
-          echo "🎙 Step 2: Neural voice..."
-          echo "$STORY_SCRIPT" > "$OUTDIR/script.txt"
-          NARRATION="$OUTDIR/narration.mp3"
-          VTT_FILE="$OUTDIR/subs.vtt"
-          TTS_OK=false
-
-          # Try edge-tts (Microsoft neural — best quality)
-          if edge-tts -f "$OUTDIR/script.txt" -v en-US-GuyNeural --rate="-5%" --pitch="-2Hz" \
-             --write-media "$NARRATION" --write-subtitles "$VTT_FILE" 2>/dev/null; then
-            if [ -f "$NARRATION" ] && [ $(stat -c%s "$NARRATION") -gt 5000 ]; then
-              TTS_OK=true
-              echo "   ✅ Edge TTS neural OK"
-            fi
-          fi
-
-          # Fallback: gTTS
-          if [ "$TTS_OK" = "false" ]; then
-            echo "   Trying gTTS..."
-            python3 -c "from gtts import gTTS; gTTS(open('$OUTDIR/script.txt').read(), lang='en').save('$NARRATION')" 2>/dev/null
-            if [ -f "$NARRATION" ] && [ $(stat -c%s "$NARRATION") -gt 5000 ]; then
-              TTS_OK=true; echo "   ✅ gTTS OK"
-            fi
-          fi
-
-          # Last resort: espeak
-          if [ "$TTS_OK" = "false" ]; then
-            echo "   ⚠️ espeak fallback..."
-            espeak-ng -v en -s 155 -p 40 -w "$OUTDIR/tmp.wav" -f "$OUTDIR/script.txt"
-            ffmpeg -y -i "$OUTDIR/tmp.wav" -codec:a libmp3lame -b:a 192k "$NARRATION" 2>/dev/null
-            rm -f "$OUTDIR/tmp.wav"
-          fi
-
-          DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$NARRATION" | cut -d. -f1)
-          echo "   Duration: ${DURATION}s"
-
-          # ═══════════════════════════════════════════
-          # STEP 3: Download MULTIPLE video clips from Pexels
-          #   → Scene changes every 10-15 seconds
-          # ═══════════════════════════════════════════
-          echo ""
-          echo "🎥 Step 3: Stock video scenes..."
-          CLIPS_DIR="$OUTDIR/clips"
-          mkdir -p "$CLIPS_DIR"
-          NUM_CLIPS=0
-
-          # Search queries by niche (multiple queries for variety)
-          declare -A QUERIES
-          QUERIES[betrayal]="dark room shadows,woman looking away sad,man alone rain,broken glass dramatic"
-          QUERIES[revenge]="courtroom dramatic,person walking away,fire burning night,justice scales"
-          QUERIES[mystery]="fog forest night,detective searching,dark alley rain,old door opening"
-          QUERIES[finance]="stock market screens,luxury car city,money cash counting,office skyscraper"
-          QUERIES[motivation]="sunrise mountain hiking,athlete running,ocean waves crashing,person standing cliff"
-          QUERIES[true_crime]="police lights night,evidence board,fingerprint close up,city streets dark"
-          QUERIES[psychology]="brain scan medical,person mirror reflection,maze aerial view,eyes close up"
-          QUERIES[tech]="server room lights,code on screen,robot hand,circuit board close up"
-          QUERIES[history]="ancient ruins,old map compass,castle dramatic sky,archaeological dig"
-
-          SEARCH_LIST="${QUERIES[$NICHE]:-${QUERIES[betrayal]}}"
-
-          if [ -n "$PEXELS_API_KEY" ]; then
-            IFS=',' read -ra TERMS <<< "$SEARCH_LIST"
-            for TERM in "${TERMS[@]}"; do
-              TERM=$(echo "$TERM" | xargs) # trim whitespace
-              echo "   Searching: '$TERM'..."
-
-              RESP=$(curl -sS -H "Authorization: $PEXELS_API_KEY" \
-                "https://api.pexels.com/videos/search?query=$(echo "$TERM" | tr ' ' '+')&per_page=3&size=medium&orientation=landscape" 2>/dev/null || echo "")
-
-              if [ -n "$RESP" ]; then
-                # Extract video URLs (pick one random HD clip)
-                VURL=$(echo "$RESP" | python3 -c "
-          import json,sys,random
-          try:
-            d=json.load(sys.stdin)
-            vids=d.get('videos',[])
-            if vids:
-              v=random.choice(vids)
-              files=[f for f in v.get('video_files',[]) if 720<=f.get('height',0)<=1080]
-              if not files: files=v.get('video_files',[])
-              if files: print(sorted(files,key=lambda x:x.get('height',0),reverse=True)[0]['link'])
-          except: pass
-          " 2>/dev/null)
-
-                if [ -n "$VURL" ]; then
-                  CLIP_FILE="$CLIPS_DIR/clip_${NUM_CLIPS}.mp4"
-                  curl -sL -o "$CLIP_FILE" "$VURL" 2>/dev/null
-                  if [ -f "$CLIP_FILE" ] && [ $(stat -c%s "$CLIP_FILE") -gt 50000 ]; then
-                    NUM_CLIPS=$((NUM_CLIPS + 1))
-                    echo "   ✅ Clip $NUM_CLIPS: $(du -h "$CLIP_FILE" | cut -f1)"
-                  else
-                    rm -f "$CLIP_FILE"
-                  fi
-                fi
-              fi
-              # Small delay to respect rate limits
-              sleep 1
-            done
-          fi
-
-          echo "   Total clips: $NUM_CLIPS"
-
-          # Fallback: generate clips from AI images with Ken Burns
-          if [ "$NUM_CLIPS" -lt 2 ]; then
-            echo "   Generating AI image backgrounds..."
-            declare -A IMG_PROMPTS
-            IMG_PROMPTS[0]="dark moody cinematic room dramatic shadows 4K"
-            IMG_PROMPTS[1]="foggy city streets at night dramatic lighting cinematic 4K"
-            IMG_PROMPTS[2]="dark ocean waves crashing rocks dramatic sky cinematic 4K"
-            IMG_PROMPTS[3]="abandoned building interior dramatic light rays cinematic 4K"
-
-            for i in 0 1 2 3; do
-              if [ "$NUM_CLIPS" -ge 4 ]; then break; fi
-              IMG="$CLIPS_DIR/img_${i}.jpg"
-              curl -sL -o "$IMG" "https://image.pollinations.ai/prompt/$(python3 -c "import urllib.parse;print(urllib.parse.quote('${IMG_PROMPTS[$i]}'))")?width=1920&height=1080&nologo=true&seed=$((RANDOM + i))" 2>/dev/null
-              if [ -f "$IMG" ] && [ $(stat -c%s "$IMG") -gt 5000 ]; then
-                CLIP_FILE="$CLIPS_DIR/clip_${NUM_CLIPS}.mp4"
-                # Ken Burns zoom + slow pan
-                ZOOM_DIR=$((RANDOM % 2))
-                if [ "$ZOOM_DIR" -eq 0 ]; then
-                  ZOOM="zoompan=z='min(zoom+0.0015,1.4)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=375:s=1920x1080:fps=25"
-                else
-                  ZOOM="zoompan=z='if(lte(zoom,1.0),1.001,min(zoom+0.001,1.3))':x='iw/4':y='ih/4':d=375:s=1920x1080:fps=25"
-                fi
-                ffmpeg -y -loop 1 -i "$IMG" -vf "$ZOOM,format=yuv420p" -t 15 \
-                  -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p "$CLIP_FILE" 2>/dev/null
-                if [ -f "$CLIP_FILE" ] && [ $(stat -c%s "$CLIP_FILE") -gt 10000 ]; then
-                  NUM_CLIPS=$((NUM_CLIPS + 1))
-                  echo "   ✅ AI clip $NUM_CLIPS (Ken Burns)"
-                fi
-                rm -f "$IMG"
-              fi
-            done
-          fi
-
-          # ═══════════════════════════════════════════
-          # STEP 4: Prepare background video
-          #   → Concatenate clips, loop to match audio duration
-          # ═══════════════════════════════════════════
-          echo ""
-          echo "🎞 Step 4: Background video assembly..."
-
-          BG_VIDEO="$OUTDIR/background.mp4"
-
-          if [ "$NUM_CLIPS" -ge 1 ]; then
-            # Normalize all clips to same resolution + codec
-            NORM_LIST=""
-            for i in $(seq 0 $((NUM_CLIPS - 1))); do
-              CLIP="$CLIPS_DIR/clip_${i}.mp4"
-              NORM="$CLIPS_DIR/norm_${i}.mp4"
-              ffmpeg -y -i "$CLIP" \
-                -vf "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1" \
-                -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -r 25 -an \
-                -t 15 "$NORM" 2>/dev/null
-              if [ -f "$NORM" ]; then
-                echo "file 'norm_${i}.mp4'" >> "$CLIPS_DIR/concat.txt"
-              fi
-            done
-
-            # Concatenate all clips
-            CONCAT_RAW="$OUTDIR/concat_raw.mp4"
-            ffmpeg -y -f concat -safe 0 -i "$CLIPS_DIR/concat.txt" \
-              -c copy "$CONCAT_RAW" 2>/dev/null
-
-            # Loop to match audio duration + add cinematic color grading
-            ffmpeg -y -stream_loop -1 -i "$CONCAT_RAW" \
-              -t "$DURATION" \
-              -vf "eq=brightness=-0.06:contrast=1.1:saturation=0.8,unsharp=3:3:0.3" \
-              -c:v libx264 -preset fast -crf 22 -pix_fmt yuv420p -r 25 -an \
-              "$BG_VIDEO" 2>/dev/null
-            echo "   ✅ Background: ${NUM_CLIPS} scenes, ${DURATION}s total"
-          else
-            # Absolute fallback: animated dark gradient
-            echo "   Using dark gradient fallback..."
-            ffmpeg -y -f lavfi -i "color=c=0x080818:s=1920x1080:d=$DURATION:r=25" \
-              -vf "drawtext=text='':fontcolor=white" \
-              -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p "$BG_VIDEO" 2>/dev/null
-          fi
-
-          # ═══════════════════════════════════════════
-          # STEP 5: Generate ASS subtitles
-          # ═══════════════════════════════════════════
-          echo ""
-          echo "📝 Step 5: Subtitles..."
-          ASS_FILE="$OUTDIR/subs.ass"
-
-          python3 - "$VTT_FILE" "$ASS_FILE" "$OUTDIR/script.txt" "$DURATION" << 'SUBPY'
-          import re, sys, os
-
-          vtt_file, ass_file, script_file, dur_str = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-          duration = int(dur_str)
-
-          def ms2ass(ms):
-            h=int(ms//3600000); m=int((ms%3600000)//60000); s=int((ms%60000)//1000); c=int((ms%1000)//10)
-            return f"{h}:{m:02d}:{s:02d}.{c:02d}"
-
-          cues = []
-
-          # Try VTT from edge-tts first (has word-level timing)
-          if os.path.exists(vtt_file) and os.path.getsize(vtt_file) > 50:
-            vtt = open(vtt_file).read()
-            for block in vtt.split("\n\n"):
-              lines = block.strip().split("\n")
-              for i, line in enumerate(lines):
-                m = re.match(r'(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})', line)
-                if m:
-                  g = [int(x) for x in m.groups()]
-                  start = g[0]*3600000+g[1]*60000+g[2]*1000+g[3]
-                  end = g[4]*3600000+g[5]*60000+g[6]*1000+g[7]
-                  text = " ".join(lines[i+1:]).strip()
-                  if text: cues.append((start, end, text))
-
-          # Fallback: estimate timing from word count
-          if not cues:
-            text = open(script_file).read().strip()
-            words = text.split()
-            ms_per_word = (duration * 1000) / max(len(words), 1)
-            WPL = 6
-            for i in range(0, len(words), WPL):
-              chunk = words[i:i+WPL]
-              s = int(i * ms_per_word)
-              e = int(min((i+len(chunk)) * ms_per_word, duration*1000))
-              cues.append((s, e, " ".join(chunk)))
-
-          # Write ASS
-          header = """[Script Info]
-          Title: KDMC Stories
-          ScriptType: v4.00+
-          WrapStyle: 0
-          ScaledBorderAndShadow: yes
-          PlayResX: 1920
-          PlayResY: 1080
-
-          [V4+ Styles]
-          Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-          Style: Main,Arial,70,&H00FFFFFF,&H0000D4FF,&H00000000,&HA0000000,-1,0,0,0,100,100,1,0,1,4,3,2,60,60,60,1
-
-          [Events]
-          Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-          """
-
-          events = ""
-          for s, e, t in cues:
-            events += f"Dialogue: 0,{ms2ass(s)},{ms2ass(e)},Main,,0,0,0,,{t}\n"
-
-          with open(ass_file, "w") as f:
-            # Remove leading whitespace from heredoc indentation
-            clean = "\n".join(line.lstrip() for line in header.split("\n"))
-            f.write(clean + events)
-          print(f"   ✅ {len(cues)} subtitle lines")
-          SUBPY
-
-          # ═══════════════════════════════════════════
-          # STEP 6: Download background music
-          # ═══════════════════════════════════════════
-          echo ""
-          echo "🎵 Step 6: Music..."
-          MUSIC="$OUTDIR/music.mp3"
-          declare -A MUSIC_URLS
-          MUSIC_URLS[betrayal]="https://cdn.pixabay.com/audio/2024/11/29/audio_d4b72f7f3c.mp3"
-          MUSIC_URLS[revenge]="https://cdn.pixabay.com/audio/2024/11/29/audio_d4b72f7f3c.mp3"
-          MUSIC_URLS[mystery]="https://cdn.pixabay.com/audio/2024/10/08/audio_ad5aa4ef65.mp3"
-          MUSIC_URLS[finance]="https://cdn.pixabay.com/audio/2024/07/23/audio_b60a4dc0fd.mp3"
-          MUSIC_URLS[motivation]="https://cdn.pixabay.com/audio/2024/07/23/audio_b60a4dc0fd.mp3"
-          MUSIC_URLS[true_crime]="https://cdn.pixabay.com/audio/2024/08/15/audio_93f3a04c37.mp3"
-          MUSIC_URLS[psychology]="https://cdn.pixabay.com/audio/2024/10/08/audio_ad5aa4ef65.mp3"
-          MUSIC_URLS[tech]="https://cdn.pixabay.com/audio/2024/09/19/audio_84e32a9d7b.mp3"
-          MUSIC_URLS[history]="https://cdn.pixabay.com/audio/2024/09/19/audio_84e32a9d7b.mp3"
-          MURL="${MUSIC_URLS[$NICHE]:-${MUSIC_URLS[betrayal]}}"
-          curl -sL -o "$MUSIC" "$MURL" 2>/dev/null
-          HAS_MUSIC=false
-          if [ -f "$MUSIC" ] && [ $(stat -c%s "$MUSIC") -gt 10000 ]; then
-            HAS_MUSIC=true; echo "   ✅ Music OK"
-          else echo "   ⚠️ No music"; fi
-
-          # ═══════════════════════════════════════════
-          # STEP 7: Final composition (FFmpeg)
-          # ═══════════════════════════════════════════
-          echo ""
-          echo "🎬 Step 7: Final composition..."
-          FINAL="$OUTDIR/${STORY_ID}_${FORMAT}.mp4"
-
-          if [ "$HAS_MUSIC" = "true" ]; then
-            ffmpeg -y -i "$BG_VIDEO" -i "$NARRATION" -i "$MUSIC" \
-              -filter_complex "
-                [0:v]ass=${ASS_FILE}[vout];
-                [2:a]volume=0.08,afade=t=in:st=0:d=3,afade=t=out:st=$((DURATION-4)):d=4[m];
-                [1:a]volume=1.6[v];
-                [v][m]amix=inputs=2:duration=first:dropout_transition=3[aout]
-              " \
-              -map "[vout]" -map "[aout]" \
-              -c:v libx264 -preset medium -crf 21 -pix_fmt yuv420p \
-              -c:a aac -b:a 192k -ar 44100 \
-              -shortest -movflags +faststart \
-              "$FINAL" 2>/dev/null
-          else
-            ffmpeg -y -i "$BG_VIDEO" -i "$NARRATION" \
-              -filter_complex "[0:v]ass=${ASS_FILE}[vout]" \
-              -map "[vout]" -map 1:a \
-              -c:v libx264 -preset medium -crf 21 -pix_fmt yuv420p \
-              -c:a aac -b:a 192k \
-              -shortest -movflags +faststart \
-              "$FINAL" 2>/dev/null
-          fi
-
-          # Verify
-          if [ ! -f "$FINAL" ] || [ $(stat -c%s "$FINAL") -lt 100000 ]; then
-            echo "⚠️ ASS failed, trying without subtitles..."
-            if [ "$HAS_MUSIC" = "true" ]; then
-              ffmpeg -y -i "$BG_VIDEO" -i "$NARRATION" -i "$MUSIC" \
-                -filter_complex "[2:a]volume=0.08[m];[1:a][m]amix=inputs=2:duration=first[a]" \
-                -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 128k -shortest -movflags +faststart \
-                "$FINAL" 2>/dev/null
-            else
-              ffmpeg -y -i "$BG_VIDEO" -i "$NARRATION" \
-                -map 0:v -map 1:a -c:v copy -c:a aac -b:a 128k -shortest -movflags +faststart \
-                "$FINAL" 2>/dev/null
-            fi
-          fi
-
-          echo ""
-          echo "============================================"
-          echo "✅ VIDEO COMPLETE"
-          echo "   File:   $FINAL"
-          echo "   Size:   $(du -h "$FINAL" | cut -f1)"
-          echo "   Length: ${DURATION}s"
-          echo "   Scenes: $NUM_CLIPS video clips"
-          echo "============================================"
-
-          # Save metadata
-          TAGS_JSON=$(echo "$STORY_TAGS" | tr ',' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/,$//')
-          cat > "$OUTDIR/metadata.json" << METAEOF
-          {"id":"$STORY_ID","title":"$(echo "$STORY_TITLE" | sed 's/"/\\"/g')","tags":[$TAGS_JSON],"format":"$FORMAT","width":1920,"height":1080,"duration":$DURATION,"scenes":$NUM_CLIPS}
-          METAEOF
-
+          # Export video path for upload step
+          FINAL=$(ls -t tools/social/output/*/*.mp4 2>/dev/null | head -1)
+          META=$(dirname "$FINAL")/metadata.json
           echo "FINAL=$FINAL" >> $GITHUB_ENV
-          echo "STORY_ID=$STORY_ID" >> $GITHUB_ENV
-          echo "STORY_TITLE=$STORY_TITLE" >> $GITHUB_ENV
-          echo "STORY_TAGS=$STORY_TAGS" >> $GITHUB_ENV
-
-          # Mark used
-          python3 -c "
-          import json
-          lib=json.load(open('$LIBRARY'))
-          for c,ss in lib.items():
-            if c.startswith('_') or not isinstance(ss,list): continue
-            for s in ss:
-              if s.get('id')=='$STORY_ID': s['used']=True
-          json.dump(lib,open('$LIBRARY','w'),indent=2,ensure_ascii=False)
-          "
-
-          # Cleanup temp files
-          rm -rf "$CLIPS_DIR" "$BG_VIDEO" "$NARRATION" "$MUSIC" "$VTT_FILE" "$ASS_FILE" "$OUTDIR/concat_raw.mp4" "$OUTDIR/script.txt" 2>/dev/null || true
+          echo "TITLE=$(python3 -c "import json;print(json.load(open('$META')).get('title','Story'))")" >> $GITHUB_ENV
+          echo "TAGS=$(python3 -c "import json;print(','.join(json.load(open('$META')).get('tags',[])))")" >> $GITHUB_ENV
+          echo "STORY_ID=$(python3 -c "import json;print(json.load(open('$META')).get('id','unknown'))")" >> $GITHUB_ENV
 
       - name: "📤 Upload to YouTube"
         if: success()
@@ -446,7 +54,6 @@ jobs:
           if [ -z "$FINAL" ] || [ ! -f "$FINAL" ]; then echo "No video"; exit 0; fi
           if [ -z "$YT_CID" ] || [ -z "$YT_RT" ]; then echo "No YT creds"; exit 0; fi
 
-          # Get access token
           AT=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
             -d "client_id=$(echo -n $YT_CID)" \
             -d "client_secret=$(echo -n $YT_CS)" \
@@ -454,26 +61,21 @@ jobs:
             -d "grant_type=refresh_token" | jq -r '.access_token // empty')
           if [ -z "$AT" ]; then echo "Token failed"; exit 1; fi
 
-          TITLE="${{ env.STORY_TITLE }}"
-          TAGS="${{ env.STORY_TAGS }}"
+          TITLE="${{ env.TITLE }}"
+          TAGS="${{ env.TAGS }}"
           HASHTAGS=$(echo "$TAGS" | tr ',' '\n' | sed 's/^/#/' | tr '\n' ' ')
-          DESC="$TITLE\n\n${HASHTAGS}\n\nSubscribe for daily stories.\nGenerated by KDMC Studio"
 
           echo "📤 Uploading: $TITLE"
-
-          # Resumable upload
           LOCATION=$(curl -s -D - -o /dev/null -X POST \
             "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status" \
             -H "Authorization: Bearer $AT" \
             -H "Content-Type: application/json" \
-            -d "{\"snippet\":{\"title\":\"$(echo "$TITLE" | sed 's/"/\\"/g' | head -c 95)\",\"description\":\"$(echo -e "$DESC" | sed 's/"/\\"/g' | head -c 4000)\",\"categoryId\":\"24\",\"tags\":[$(echo "$TAGS" | tr ',' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/,$//')]},\"status\":{\"privacyStatus\":\"private\",\"selfDeclaredMadeForKids\":false}}" \
+            -d "{\"snippet\":{\"title\":\"$(echo "$TITLE" | sed 's/"/\\"/g' | head -c 95)\",\"description\":\"${HASHTAGS}\n\nSubscribe for daily stories.\nGenerated by KDMC Studio\",\"categoryId\":\"24\",\"tags\":[$(echo "$TAGS" | tr ',' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/,$//')]},\"status\":{\"privacyStatus\":\"private\",\"selfDeclaredMadeForKids\":false}}" \
             2>/dev/null | grep -i "^location:" | tr -d '\r' | sed 's/^[Ll]ocation: //')
 
           if [ -n "$LOCATION" ]; then
             VID=$(curl -s -X PUT "$LOCATION" -H "Authorization: Bearer $AT" -H "Content-Type: video/mp4" --data-binary @"$FINAL" | jq -r '.id // empty')
-            if [ -n "$VID" ]; then
-              echo "✅ https://youtu.be/$VID"
-            else echo "⚠️ Upload response unclear"; fi
+            [ -n "$VID" ] && echo "✅ https://youtu.be/$VID" || echo "⚠️ Upload unclear"
           else echo "⚠️ No upload URL"; fi
 
       - name: "💾 Commit"
