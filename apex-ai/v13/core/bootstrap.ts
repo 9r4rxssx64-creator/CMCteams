@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.238';
+export const APP_VER = 'v13.4.239';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -485,6 +485,13 @@ async function bootstrap(): Promise<void> {
   router.register('device', { loader: () => import('@features/device-capabilities/index.js'), requiresAuth: true });
   /* Sprint v13.3.27 (Kevin 2026-05-07) : Vue Knowledge — mémoire long-terme + cross-user admin */
   router.register('knowledge', { loader: () => import('@features/knowledge/index.js'), requiresAuth: true });
+  /* v13.4.239 (audit architecture Kevin 2026-05-20) — 5 features finies mais
+   * JAMAIS câblées (Declaration ≠ Deployment, erreur #28). Routes ajoutées : */
+  router.register('geolocation', { loader: () => import('@features/geo/index.js'), requiresAuth: true });
+  router.register('innovation', { loader: () => import('@features/innovation/index.js'), requiresAdmin: true });
+  router.register('marketplace', { loader: () => import('@features/meta-marketplace/index.js'), requiresAuth: true });
+  router.register('plugins', { loader: () => import('@features/plugins/index.js'), requiresAdmin: true });
+  router.register('admin-toggles', { loader: () => import('@features/admin-toggles/index.js'), requiresAdmin: true });
   /* Sprint port v12 (Kevin 2026-05-04) : 5 studios créatifs critiques */
   router.register('studio-music', { loader: () => import('@features/studios/music/index.js'), requiresAuth: true, skeleton: 'studio-grid' });
   router.register('studio-video', { loader: () => import('@features/studios/video/index.js'), requiresAuth: true, skeleton: 'studio-grid' });

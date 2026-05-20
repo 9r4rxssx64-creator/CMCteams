@@ -18,6 +18,7 @@
 
 import { APP_VER } from '../core/bootstrap.js';
 import { logger } from '../core/logger.js';
+import { router } from '../core/router.js';
 
 export interface DiagnosticResult {
   ts: number;
@@ -71,6 +72,9 @@ class ApexRuntimeDiagnostic {
     /* 8. Sentinelles : combien run / pending */
     checks.push(await this.checkSentinels());
 
+    /* 9. Architecture — routes (Kevin 2026-05-20 "architecture primordiale") */
+    checks.push(this.checkArchitecture());
+
     const okCount = checks.filter((c) => c.ok).length;
     const failCount = checks.length - okCount;
     const result: DiagnosticResult = {
@@ -87,6 +91,30 @@ class ApexRuntimeDiagnostic {
       localStorage.setItem('apex_v13_runtime_diag_last', JSON.stringify(result));
     } catch { /* ignore */ }
     return result;
+  }
+
+  /**
+   * v13.4.239 (Kevin "architecture primordiale, prioritaire") — Audit
+   * architecture des routes : détecte les doublons (register() 2× même nom
+   * → vue écrasée/inaccessible). C'est ce check qui aurait attrapé le
+   * doublon `dashboard`. Étendre ici tout nouveau check structurel.
+   */
+  private checkArchitecture(): DiagnosticCheck {
+    try {
+      const dups = router.getDuplicateRoutes();
+      const count = router.getRouteCount();
+      const ok = dups.length === 0;
+      return {
+        id: 'architecture-routes',
+        label: 'Architecture — routes',
+        ok,
+        detail: ok
+          ? `${count} routes enregistrées, 0 doublon`
+          : `⚠ ${dups.length} route(s) en doublon (vue écrasée) : ${dups.join(', ')}`,
+      };
+    } catch (err) {
+      return { id: 'architecture-routes', label: 'Architecture — routes', ok: false, detail: `error: ${String(err)}` };
+    }
   }
 
   /** Anti-zoom : test si le listener gesturestart est bien attaché */
