@@ -44,8 +44,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'apex-ai/v13/package-lock.json'
+          # Pas de `cache: npm` : apex-ai/v13/ n'a pas de package-lock.json,
+          # setup-node échouait ("paths not resolved") -> deploy jamais exécuté.
 
       - name: Install deps
         working-directory: apex-ai/v13
@@ -88,10 +88,6 @@ jobs:
           fi
           # Extraire APP_VER pour message commit
           APP_VER=$(grep "data-app-ver" apex-ai-v13/index.html | sed 's/.*data-app-ver="\([^"]*\)".*/\1/')
-          git commit -m "Auto-deploy Apex ${APP_VER} build → apex-ai-v13/
-
-Triggered by push to apex-ai/v13/. GitHub Pages will serve this immediately.
-
-Resolves Kevin issue 2026-05-08 21h00 'Apex ne veut pas se mettre à jour'.
-Source apex-ai/v13/ → build dist/ → deployed apex-ai-v13/ entièrement automatisé."
+          git commit -m "Auto-deploy Apex ${APP_VER} build → apex-ai-v13/ [skip ci]" \
+            -m "Source apex-ai/v13/ → build dist/ → deployed apex-ai-v13/ (auto)."
           git push origin main

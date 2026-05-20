@@ -32,8 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: apex-ai/v13/package-lock.json
 
       - name: npm audit (high+critical only)
         working-directory: apex-ai/v13
