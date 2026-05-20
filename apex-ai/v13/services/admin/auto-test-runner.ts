@@ -50,7 +50,57 @@ const LOG_KEY = 'ax_auto_test_log';
 const MAX_LOGS = 50;
 const LAST_RUN_KEY = 'ax_auto_test_last_run';
 
+/** Timeout par test (ms). Au-delà → le test est considéré bloqué (fail propre). */
+const TEST_TIMEOUT_MS = 10_000;
+
 class AutoTestRunner {
+  /**
+   * v13.4.243 (FIX "le test des fonctions qui se bloque") — Garde-fou anti-hang.
+   *
+   * Avant : `runAll()` faisait `Promise.all([...14 tests])`. Si UN SEUL test
+   * ne se résolvait jamais (import bloqué, click handler suspendu dans
+   * apex-functional-tester, crypto qui hang…), `Promise.all` ne se résolvait
+   * JAMAIS → toute la suite restait bloquée indéfiniment, UI figée sur
+   * « test en cours… ».
+   *
+   * Maintenant : chaque test court contre un timeout. S'il dépasse
+   * TEST_TIMEOUT_MS → fail propre `timeout` (avec l'id correct pour que
+   * l'auto-fix / escalade sache quel test cibler). Un test bloqué ne peut
+   * plus jamais geler les 13 autres.
+   */
+  private async withTimeout(
+    id: string,
+    name: string,
+    fn: () => Promise<TestResult>,
+  ): Promise<TestResult> {
+    const start = performance.now();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<TestResult>((resolve) => {
+      timer = setTimeout(() => {
+        resolve({
+          id,
+          name,
+          status: 'fail',
+          durationMs: Math.round(performance.now() - start),
+          error: `timeout > ${TEST_TIMEOUT_MS}ms (test bloqué)`,
+        });
+      }, TEST_TIMEOUT_MS);
+    });
+    try {
+      return await Promise.race([fn(), timeout]);
+    } catch (err: unknown) {
+      return {
+        id,
+        name,
+        status: 'fail',
+        durationMs: Math.round(performance.now() - start),
+        error: err instanceof Error ? err.message : 'unknown',
+      };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
   /* ============== Tests individuels (read-only safe) ============== */
 
   private async testMemoryLoad(): Promise<TestResult> {
@@ -487,23 +537,39 @@ class AutoTestRunner {
     const start = performance.now();
     logger.info('auto-test', 'Run start (v13.4.204 expanded suite)');
 
-    const results: TestResult[] = await Promise.all([
-      this.testMemoryLoad(),
-      this.testPersistentMemory(),
-      this.testVault(),
-      this.testAiRouter(),
-      this.testFeatureToggles(),
-      this.testStorage(),
-      this.testNetwork(),
+    /* v13.4.243 : chaque test wrappé dans withTimeout (anti-hang).
+     * allSettled + withTimeout → la suite se termine TOUJOURS, même si un
+     * test individuel se bloque. */
+    const settled = await Promise.allSettled([
+      this.withTimeout('t_memory', 'Memory load', () => this.testMemoryLoad()),
+      this.withTimeout('t_pmem', 'Persistent memory', () => this.testPersistentMemory()),
+      this.withTimeout('t_vault', 'Vault decrypt health', () => this.testVault()),
+      this.withTimeout('t_ai', 'AI Router', () => this.testAiRouter()),
+      this.withTimeout('t_toggles', 'Feature toggles', () => this.testFeatureToggles()),
+      this.withTimeout('t_storage', 'localStorage R/W', () => this.testStorage()),
+      this.withTimeout('t_net', 'Network online', () => this.testNetwork()),
       /* v13.4.204 : 6 nouveaux tests intégrant toutes les fonctions Apex */
-      this.testToolsRegistry(),
-      this.testSentinels(),
-      this.testRouter(),
-      this.testStore(),
-      this.testVisualRender(),
-      this.testLayoutNoOverflow(),
-      this.testFunctional(),
+      this.withTimeout('t_tools', 'Tools registry', () => this.testToolsRegistry()),
+      this.withTimeout('t_sentinels', 'Sentinelles 24/7', () => this.testSentinels()),
+      this.withTimeout('t_router', 'Router routes', () => this.testRouter()),
+      this.withTimeout('t_store', 'Store reactive (set/get)', () => this.testStore()),
+      this.withTimeout('t_visual', 'Visual render (DOM + nav)', () => this.testVisualRender()),
+      this.withTimeout('t_layout', 'Layout pas de scroll horizontal', () => this.testLayoutNoOverflow()),
+      this.withTimeout('t_functional', 'Functional tester (boutons UI)', () => this.testFunctional()),
     ]);
+    /* withTimeout résout toujours → un rejected ici est anormal (mais on le
+     * mappe quand même en fail pour ne jamais perdre une ligne de résultat). */
+    const results: TestResult[] = settled.map((s, i) =>
+      s.status === 'fulfilled'
+        ? s.value
+        : {
+            id: `t_unknown_${i}`,
+            name: `Test #${i}`,
+            status: 'fail' as const,
+            durationMs: 0,
+            error: s.reason instanceof Error ? s.reason.message : 'rejected',
+          },
+    );
 
     const summary: TestRunSummary = {
       ts: Date.now(),

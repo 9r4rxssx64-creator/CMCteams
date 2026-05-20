@@ -1,4 +1,24 @@
-# Mémo de reprise — Apex v13.4.240 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+# Mémo de reprise — Apex v13.4.243 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+
+## 🔧 SESSION 2026-05-20 (soir 3) — Fix Firebase backup KO + auto-test qui se bloque (v13.4.243)
+
+Branche `claude/fix-firebase-backup-tests-oTgtn`. 2 bugs corrigés (cf. CLAUDE.md erreurs #60 et #61) :
+
+- **Firebase backup vault KO** : `firebase.write()` rejetait silencieusement les paths
+  `vault_backup/<uid>/<key>` (absents de FB_FIX) → le backup vault n'écrivait JAMAIS
+  rien dans Firebase. Fix : `shouldSync()` accepte le préfixe `vault_backup/` +
+  `applyRemoteChange()` ignore ce sous-arbre. (`services/storage/firebase.ts`)
+- **Auto-test qui se bloque** : `autoTestRunner.runAll()` faisait `Promise.all` sans
+  timeout par test → un seul test bloqué figeait toute la suite à vie.
+  `autoTestEverything` : await réseau sans timeout + verrou `_running` jamais relâché.
+  Fix : `withTimeout()`/`raceTimeout()` sur chaque test + `_running` dans un `finally`.
+  (`services/admin/auto-test-runner.ts`, `services/admin/auto-test-everything.ts`)
+- **Tests** : 18 tests `auto-test-everything-deep.test.ts` cassés depuis le chantier 1
+  (mocks pointant les anciens paths plats `services/<x>.js`) → mocks réalignés sur
+  les paths domaines. Régression `firebase.test.ts` pour le fix vault_backup.
+- Vérifié : `tsc --noEmit` clean, `vite build` OK, 78 tests firebase+auto-test verts.
+
+
 
 ## 🏛 SESSION 2026-05-20 (soir 2) — Architecture Apex v13 (audit + chantiers)
 

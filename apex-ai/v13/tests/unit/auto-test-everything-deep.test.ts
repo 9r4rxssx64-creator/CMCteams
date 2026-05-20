@@ -15,7 +15,11 @@ vi.mock('../../core/logger.js', () => ({
 const healthCheckAllMock = vi.fn();
 const listAllMock = vi.fn();
 const listKeysMock = vi.fn();
-vi.mock('../../services/multi-key-vault.js', () => ({
+/* v13.4.243 : paths alignés sur la restructure services/ en domaines
+ * (chantier 1). Les anciens paths plats `../../services/<x>.js` ne
+ * correspondaient plus aux imports réels de auto-test-everything.ts →
+ * les mocks ne s'appliquaient pas → 18 tests cassés. */
+vi.mock('../../services/vault/multi-key-vault.js', () => ({
   multiKeyVault: {
     healthCheckAll: () => healthCheckAllMock(),
     listAll: () => listAllMock(),
@@ -26,7 +30,7 @@ vi.mock('../../services/multi-key-vault.js', () => ({
 const retestAllMock = vi.fn();
 const linksListMock = vi.fn();
 const testAliveMock = vi.fn();
-vi.mock('../../services/links-registry.js', () => ({
+vi.mock('../../services/integrations/links-registry.js', () => ({
   linksRegistry: {
     retestAll: () => retestAllMock(),
     list: () => linksListMock(),
@@ -36,7 +40,7 @@ vi.mock('../../services/links-registry.js', () => ({
 
 const sentinelsListMock = vi.fn();
 const sentinelsRunOneMock = vi.fn();
-vi.mock('../../services/sentinels-registry.js', () => ({
+vi.mock('../../services/sentinels/sentinels-registry.js', () => ({
   sentinelsRegistry: {
     list: () => sentinelsListMock(),
     runOne: (id: string) => sentinelsRunOneMock(id),
@@ -44,12 +48,12 @@ vi.mock('../../services/sentinels-registry.js', () => ({
 }));
 
 const connectorsListConfiguredMock = vi.fn();
-vi.mock('../../services/direct-connectors-registry.js', () => ({
+vi.mock('../../services/integrations/direct-connectors-registry.js', () => ({
   directConnectors: { listConfigured: () => connectorsListConfiguredMock() },
 }));
 
 const vaultDeepScanMock = vi.fn();
-vi.mock('../../services/vault-deep-recovery.js', () => ({
+vi.mock('../../services/vault/vault-deep-recovery.js', () => ({
   vaultDeepRecovery: { scanAndRestoreAll: () => vaultDeepScanMock() },
 }));
 

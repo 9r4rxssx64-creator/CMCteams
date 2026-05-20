@@ -73,6 +73,41 @@ export interface ProgressUpdate {
 type ProgressCallback = (u: ProgressUpdate) => void;
 
 /**
+ * v13.4.243 (FIX "le test qui se bloque") — Garde-fou anti-hang.
+ *
+ * Une opération réseau (ping clé API, HEAD lien, runOne sentinelle) sans
+ * timeout peut ne JAMAIS se résoudre → la phase reste bloquée → tout le
+ * run se fige ET le verrou `_running` reste `true` indéfiniment, ce qui
+ * bloque DÉFINITIVEMENT tous les runs suivants.
+ *
+ * `raceTimeout` fait courir la promesse contre un timeout : au-delà de
+ * `ms`, elle rejette proprement (l'appelant la traite comme un échec et
+ * continue) au lieu de figer la suite.
+ */
+function raceTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`timeout > ${ms}ms (${label} bloqué)`));
+    }, ms);
+    p.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (err: unknown) => {
+        clearTimeout(timer);
+        reject(err instanceof Error ? err : new Error(String(err)));
+      },
+    );
+  });
+}
+
+/** Timeout d'une phase entière (codes / liens / vault). */
+const PHASE_TIMEOUT_MS = 30_000;
+/** Timeout d'un test unitaire (1 sentinelle). */
+const ITEM_TIMEOUT_MS = 12_000;
+
+/**
  * Patterns alternatifs pour un service donné.
  * Si le dashboard officiel est mort, tente ces alternatives ordonnées.
  */
@@ -98,6 +133,18 @@ class AutoTestEverything {
       if (this._lastReport) return this._lastReport;
     }
     this._running = true;
+    /* v13.4.243 (FIX "le test qui se bloque") : try/finally → le verrou
+     * `_running` est TOUJOURS relâché, même si une phase throw de façon
+     * inattendue. Sans ça, un seul run planté verrouillait À VIE tous les
+     * runs suivants (isRunning() restait true pour toujours). */
+    try {
+      return await this._runFullHealthCheck(progressCb);
+    } finally {
+      this._running = false;
+    }
+  }
+
+  private async _runFullHealthCheck(progressCb?: ProgressCallback): Promise<FullHealthReport> {
     const startTs = Date.now();
     const items: TestItem[] = [];
     const errors: string[] = [];
@@ -107,7 +154,7 @@ class AutoTestEverything {
     progressCb?.({ phase: 'codes', current: 0, total: 5, message: 'Test des clés API…' });
     let codesResult = { tested: 0, recovered: 0, stillDown: 0 };
     try {
-      codesResult = await multiKeyVault.healthCheckAll();
+      codesResult = await raceTimeout(multiKeyVault.healthCheckAll(), PHASE_TIMEOUT_MS, 'codes');
       const services = Array.from(new Set(multiKeyVault.listAll().map((k) => k.service)));
       for (const svc of services) {
         const keys = multiKeyVault.listKeys(svc, true);
@@ -131,7 +178,7 @@ class AutoTestEverything {
     progressCb?.({ phase: 'links', current: 1, total: 5, message: 'Test des liens dashboards/billing…' });
     let linksResult = { tested: 0, alive: 0, dead: 0 };
     try {
-      linksResult = await linksRegistry.retestAll();
+      linksResult = await raceTimeout(linksRegistry.retestAll(), PHASE_TIMEOUT_MS, 'links');
       const allLinks = linksRegistry.list();
       for (const link of allLinks) {
         items.push({
@@ -172,7 +219,7 @@ class AutoTestEverything {
       const enabled = sentinels.filter((s) => s.enabled);
       for (const s of enabled) {
         try {
-          const r = await sentinelsRegistry.runOne(s.id);
+          const r = await raceTimeout(sentinelsRegistry.runOne(s.id), ITEM_TIMEOUT_MS, `sentinel:${s.id}`);
           const status: TestStatus = r.status === 'ok' ? 'ok' : r.status === 'warn' ? 'warn' : 'error';
           if (status === 'ok') sentinelsResult.ok++;
           else if (status === 'warn') sentinelsResult.warn++;
@@ -205,7 +252,7 @@ class AutoTestEverything {
     progressCb?.({ phase: 'connectors', current: 3, total: 5, message: 'Test des connecteurs configurés…' });
     let connectorsResult = { configured: 0, tested: 0, failed: 0 };
     try {
-      const configured = await directConnectors.listConfigured();
+      const configured = await raceTimeout(directConnectors.listConfigured(), PHASE_TIMEOUT_MS, 'connectors');
       connectorsResult.configured = configured.length;
       /* Limit to 10 connecteurs testés ping (éviter dépasser quota gratuit) */
       const toTest = configured.slice(0, 10);
@@ -229,7 +276,7 @@ class AutoTestEverything {
     progressCb?.({ phase: 'vault', current: 4, total: 5, message: 'Vault drift scan…' });
     let vaultResult = { restored: 0, reclassified: 0 };
     try {
-      const r = await vaultDeepRecovery.scanAndRestoreAll();
+      const r = await raceTimeout(vaultDeepRecovery.scanAndRestoreAll(), PHASE_TIMEOUT_MS, 'vault');
       vaultResult.restored = r.restored;
       vaultResult.reclassified = r.reclassified;
       items.push({
@@ -276,7 +323,6 @@ class AutoTestEverything {
       errors,
     };
     this._lastReport = report;
-    this._running = false;
     logger.info('auto-test', 'runFullHealthCheck done', {
       status: globalStatus,
       scorePct: globalScorePct,
@@ -298,6 +344,15 @@ class AutoTestEverything {
     }
     if (report.failedItems.length === 0) return report;
     this._running = true;
+    /* v13.4.243 : try/finally → `_running` toujours relâché (cf. runFullHealthCheck). */
+    try {
+      return await this._retryFailedItems(report, maxRetries);
+    } finally {
+      this._running = false;
+    }
+  }
+
+  private async _retryFailedItems(report: FullHealthReport, maxRetries: number): Promise<FullHealthReport> {
     const updated = { ...report, items: [...report.items] };
     const stillFailed: TestItem[] = [];
     const backoffs = [500, 1500, 3500];
@@ -311,22 +366,22 @@ class AutoTestEverything {
         }
         try {
           if (item.category === 'codes' && item.label) {
-            await multiKeyVault.healthCheckAll();
+            await raceTimeout(multiKeyVault.healthCheckAll(), PHASE_TIMEOUT_MS, 'retry:codes');
             const keys = multiKeyVault.listKeys(item.label, true);
             const active = keys.filter((k) => k.status === 'active').length;
             success = active > 0;
             lastMessage = `${active}/${keys.length} actives (retry ${attempt + 1})`;
           } else if (item.category === 'links' && item.label) {
-            const r = await linksRegistry.testAlive(item.label);
+            const r = await raceTimeout(linksRegistry.testAlive(item.label), ITEM_TIMEOUT_MS, 'retry:links');
             success = r.dashboard || r.api_keys || r.billing;
             lastMessage = success ? 'Récupéré au retry' : 'Lien toujours KO';
           } else if (item.category === 'sentinels') {
             const id = item.id.replace(/^sentinel:/, '');
-            const r = await sentinelsRegistry.runOne(id);
+            const r = await raceTimeout(sentinelsRegistry.runOne(id), ITEM_TIMEOUT_MS, `retry:${id}`);
             success = r.status === 'ok' || r.status === 'warn';
             lastMessage = r.message;
           } else if (item.category === 'vault') {
-            const r = await vaultDeepRecovery.scanAndRestoreAll();
+            const r = await raceTimeout(vaultDeepRecovery.scanAndRestoreAll(), PHASE_TIMEOUT_MS, 'retry:vault');
             success = r.details.errors.length === 0;
             lastMessage = `${r.restored} restored (retry ${attempt + 1})`;
           }
@@ -371,7 +426,6 @@ class AutoTestEverything {
     }
 
     this._lastReport = updated;
-    this._running = false;
     logger.info('auto-test', 'retryFailedItems done', {
       retried: report.failedItems.length,
       recovered: report.failedItems.length - stillFailed.length,
