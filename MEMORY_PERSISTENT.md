@@ -35,6 +35,61 @@
 | Broadlink IR | ✅ Configuré | domotique |
 | Home Assistant | ✅ URL locale | `ax_ha_url` |
 
+## 🔑 REGISTRE CREDENTIALS — mapping service → secret → projet → dashboard (MAJ 2026-05-20)
+
+> **Aucune valeur de clé ici** — uniquement les noms de secrets et les liens.
+> Les vraies clés vivent dans : GitHub Secrets (chiffrés) → Cloudflare Worker
+> `apex-secrets-proxy` (server-side) → jamais dans le code.
+> Page secrets : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions
+
+### Providers IA — proxy `apex-secrets-proxy` (Apex passe par /provider/*)
+
+| Service | Secret GitHub | Câblé proxy | Dashboard / recharge |
+|---------|---------------|-------------|----------------------|
+| Anthropic | `ANTHROPIC_API_KEY` | ✅ | https://platform.claude.com/settings/billing |
+| OpenAI | `OPEN_AI_API_KEY` *(underscore)* | ✅ | https://platform.openai.com/account/billing |
+| Groq | `GROQ_API_KEY` | ✅ | https://console.groq.com/keys |
+| Gemini | `GEMINI_API_KEY` | ✅ | https://aistudio.google.com/apikey |
+| DeepSeek | `DEEPSEEK_API_KEY` | ✅ | https://platform.deepseek.com |
+| Perplexity | `PERPLEXITI_API_KEY` *(typo Kevin)* | ✅ | https://www.perplexity.ai/settings/api |
+| xAI Grok | `XAI_API_KEY` | ⏳ secret à créer | https://console.x.ai |
+| Mistral | `MISTRAL_API_KEY` | ⏳ secret à créer | https://console.mistral.ai |
+| Cohere | `COHERE_API_KEY` | ⏳ secret à créer | https://dashboard.cohere.com |
+| Together | `TOGETHER_API_KEY` | ⏳ secret à créer | https://api.together.xyz/settings/api-keys |
+
+### Recherche / mémoire / data
+
+| Service | Secret GitHub | Câblé proxy | Dashboard |
+|---------|---------------|-------------|-----------|
+| Tavily | `TAVILY_API_KEY` | ✅ | https://app.tavily.com |
+| Pinecone | `PINECONE_API_KEY` | ✅ | https://app.pinecone.io (index `apex-memory`) |
+| Finnhub | `FINNHUB_API_KEY` | ⏳ secret à créer | https://finnhub.io/dashboard |
+| OpenLegi | `API_OPEN_LEGO` | ✅ | https://mcp.openlegi.fr |
+
+### Infra / notifs / auth
+
+| Service | Secret GitHub | Usage | Dashboard |
+|---------|---------------|-------|-----------|
+| Cloudflare | `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` | Workers, proxy | https://dash.cloudflare.com |
+| Telegram | `TELEGRAM_API_KEY` | notifs Apex + agent | bot @Kdmc_kevind_2026_bot |
+| EmailJS | `EMAILJS_PRIVATE_KEY` | emails | https://dashboard.emailjs.com |
+| Railway | `RAILWAY_TOKEN` | hosting backend | https://railway.app |
+| Vonage | `VONAGE_API_KEY` + `VONAGE_API_SECRET` | SMS | https://dashboard.nexmo.com |
+| JWT | `JWT_SECRET` | signature tokens | — interne |
+| VAPID | `VAPID_PRIVATE_KEY` | push notifications | — interne |
+| Apex admin PIN | `APEX_ADMIN_PIN_SHA256` | auth proxy | — interne |
+
+### Projet `kdmc-agent-monaco` (Vercel — env Vercel séparé, PAS GitHub Secrets)
+
+| Variable env Vercel | Usage |
+|---------------------|-------|
+| `ANTHROPIC_API_KEY` | agent Claude autonome |
+| `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | notifs rapports |
+| `AGENT_SECRET` | protège endpoint `/api/cron` |
+| `SENTRY_DSN` | monitoring (optionnel — agent tourne sans) |
+
+URLs : agent `https://kdmc-agent-monaco.vercel.app` · santé `/api/health` · code `tools/agent/`
+
 ## 📊 ÉTAT DES PROJETS (live — MAJ 2026-05-18)
 
 | Projet | Version | État | Notes |
