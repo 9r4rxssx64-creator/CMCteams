@@ -1,7 +1,18 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-20** (Apex v13.4.235 — 4 PR mergées session UX, score 90.5/100)
+> Dernière mise à jour : **2026-05-20 soir** (Vercel agent fix #286 + proxy secrets étendu #290 + Apex v237 visuel #285)
+
+## 🔑 SESSION 2026-05-20 soir — Vercel + credentials + visuel
+
+- **PR #286** : fix build Vercel `kdmc-agent-monaco` (@sentry/node manquant) — `tools/agent/`
+- **PR #290** : proxy `apex-secrets-proxy` étendu (xAI, Mistral, Cohere, Together, Finnhub)
+- **PR #285** : Apex v13.4.237 refonte visuelle (tab bar premium, greeting gold, bouton send)
+- `MEMORY_PERSISTENT.md` : registre credentials complet (service→secret→projet→dashboard)
+- `KEVIN_ACTIONS_TODO.md` : 5 secrets GitHub à créer (XAI/MISTRAL/COHERE/TOGETHER/FINNHUB_API_KEY)
+
+---
+
 
 ## 🏆 SESSION 2026-05-20 — Apex v13.4.234→235 (suite UX vers 100/100)
 

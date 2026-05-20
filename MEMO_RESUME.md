@@ -1,4 +1,22 @@
-# Mémo de reprise — Apex v13.4.235 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+# Mémo de reprise — Apex v13.4.237 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+
+## 🔑 SESSION 2026-05-20 (soir) — Vercel agent fix + audit credentials
+
+### Déploiement Vercel `kdmc-agent-monaco` réparé (PR #286)
+- Cause : `tools/agent/lib/sentry.js` importe `@sentry/node` mais absent de package.json → build fail 2j
+- Fix : `@sentry/node ^8.0.0` ajouté + `vercel.json` ignoreCommand anti-spam mail
+- Agent = projet `tools/agent/` — cron autonome 24/7 (backup 3h, health/burnout/conflits 8h, rapport hebdo lundi 9h), notifs Telegram
+
+### Audit credentials + proxy étendu (PR #290)
+- Proxy `apex-secrets-proxy` étendu : +5 providers (xAI, Mistral, Cohere, Together, Finnhub)
+- `push_if_set` skip propre si secret absent → 503 not configured, rien cassé
+- Registre credentials complet ajouté à `MEMORY_PERSISTENT.md` (service→secret→projet→dashboard, AUCUNE valeur)
+- 5 secrets GitHub à créer notés dans `KEVIN_ACTIONS_TODO.md` : XAI/MISTRAL/COHERE/TOGETHER/FINNHUB_API_KEY
+
+### Apex v13.4.237 — refonte visuelle concrète (PR #285)
+- Kevin "je ne vois pas de différence" → v232-236 = refactoring invisible
+- v237 VISIBLE : bouton Envoyer compact (était pilule géante), greeting gold gradient,
+  nav bottom → tab bar premium iOS (icône+label, glassmorphism, touch 52px), input bar glassmorphism
 
 ## 🏆 SESSION 2026-05-20 — Apex v13.4.234→235 (vers 100/100 honest)
 
