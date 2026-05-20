@@ -328,7 +328,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.145';
+const __APEX_CHAT_VERSION__ = 'v1.1.146';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -374,7 +374,7 @@ if('serviceWorker' in navigator){
   }).catch(_=>{});
 
   // === Sentinelle remote version (compare APP_VER local vs remote) ===
-  // v1.1.145 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
+  // v1.1.146 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.145</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.146</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -483,7 +483,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.145</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.146</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1235,7 +1235,7 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
-            // v1.1.145 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            // v1.1.146 : ne pas effacer le nom local si le serveur ne le renvoie pas
             name: c.name || localById[c.id]?.name,
             pseudo: c.pseudo || localById[c.id]?.pseudo,
             peer_id: c.peer_id || localById[c.id]?.peer_id,
@@ -1246,7 +1246,7 @@ K._refreshConvs = async function(){
             bg_id: localById[c.id]?.bg_id,
             peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
           }));
-          // v1.1.145 : applique les tombstones — conv supprimées ne réapparaissent jamais.
+          // v1.1.146 : applique les tombstones — conv supprimées ne réapparaissent jamais.
           // Retente le delete serveur tant que le serveur les renvoie.
           if(K._deletedConvIds && K._deletedConvIds.length){
             const serverIds = new Set(K.conversations.map(c => c.id));
@@ -1270,7 +1270,7 @@ K._refreshConvs = async function(){
   toast('🔄 Rafraîchi', 'ok', 1500);
 };
 
-// v1.1.145 : nom affichable d'une conversation. Si le serveur ne renvoie
+// v1.1.146 : nom affichable d'une conversation. Si le serveur ne renvoie
 // pas name/pseudo (DM chiffré), on résout le correspondant via peer_id
 // dans les contacts chargés, puis members_detail. Évite le "Sans nom".
 K._convName = function(c){
@@ -1287,7 +1287,7 @@ K._convName = function(c){
   return 'Sans nom';
 };
 
-// v1.1.145 : tombstones de conversations supprimées.
+// v1.1.146 : tombstones de conversations supprimées.
 // Une conv supprimée ne doit JAMAIS réapparaître, même si le serveur la
 // renvoie encore (delete serveur différé/échoué). Le refresh retente le
 // delete serveur tant que la conv est tombstonée.
@@ -3392,7 +3392,7 @@ K._openConvActionsMenu = function(convId, ev){
   `);
 };
 
-// v1.1.145 : suppression conversation. Local-first (jamais bloqué) +
+// v1.1.146 : suppression conversation. Local-first (jamais bloqué) +
 // best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
 K._deleteConv = async function(convId){
   const conv = (K.conversations || []).find(c => c.id === convId);
@@ -3631,7 +3631,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.145',
+    version: 'v1.1.146',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5667,7 +5667,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.145 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.146 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5686,7 +5686,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.145 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.146 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -5810,7 +5810,7 @@ K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
   K.render();
-  // v1.1.145 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
+  // v1.1.146 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
   try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_){}
 };
 
@@ -6217,7 +6217,7 @@ K._sendMsg = async function(){
 // ============================================================================
 //  WebSocket client (Phase 3)
 // ============================================================================
-// v1.1.145 : ré-authentification admin auto. Le token JWT peut périmer après
+// v1.1.146 : ré-authentification admin auto. Le token JWT peut périmer après
 // un redéploiement du Worker (clé de signature). Au lieu d'un blocage silencieux
 // "Mode local", l'app re-login Kevin via le bypass admin → token frais → réouvre WS.
 K._reauthAdmin = async function(reopenConvId, cause){
@@ -6260,7 +6260,7 @@ K._reauthAdmin = async function(reopenConvId, cause){
   }
 };
 
-// v1.1.145 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
+// v1.1.146 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
 // /ws-diag rejoue les checks serveur et renvoie la cause exacte → on agit dessus.
 K._wsDiagnose = async function(convId){
   if(K._wsDiagRunning) return;
@@ -6697,7 +6697,7 @@ K._call = async function(type, convId){
       K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
       $('#call-status').textContent = '📞 Appel en cours...';
     } else {
-      // v1.1.145 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
+      // v1.1.146 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
       const cs = $('#call-status'); if(cs) cs.textContent = '🛜 Connexion temps réel…';
       K._openWs(convId);
       setTimeout(() => {
@@ -6715,6 +6715,12 @@ K._call = async function(type, convId){
     toast('Impossible de démarrer l\'appel : ' + e.message, 'err');
     K._endCall();
   }
+};
+
+// v1.1.146 : alias — les boutons 📞/📹 des contacts appellent _startCall(convId, type).
+// La vraie fonction est _call(type, convId) → on adapte l'ordre des arguments.
+K._startCall = function(convId, type){
+  return K._call(type || 'audio', convId);
 };
 
 K._endCall = function(){
@@ -6952,9 +6958,88 @@ K.openMiniApps = function(){
   `);
 };
 
+// v1.1.146 : mini-apps INTÉGRÉES dans Apex Chat (avant : window.open vers une
+// page apex-ai/ vide de 80 octets → page blanche). Utilisent l'IA du Worker.
 K._openStudio = function(name){
-  const apexBase = 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/';
-  window.open(apexBase + '#studio=' + name, '_blank');
+  if(name === 'traducteur') return K._openTranslator();
+  return K._openAiStudio(name);
+};
+
+K._openTranslator = function(){
+  K._showModal('🌐 Traducteur', `
+    <label class="label">Texte à traduire</label>
+    <textarea id="tr-text" rows="3" placeholder="Tape ou colle ton texte…" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px;resize:vertical"></textarea>
+    <label class="label" style="margin-top:10px">Traduire vers</label>
+    <select id="tr-lang" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px">
+      <option value="en">Anglais</option>
+      <option value="fr">Français</option>
+      <option value="it">Italien</option>
+      <option value="es">Espagnol</option>
+      <option value="de">Allemand</option>
+      <option value="pt">Portugais</option>
+      <option value="ar">Arabe</option>
+      <option value="ru">Russe</option>
+      <option value="zh">Chinois</option>
+    </select>
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._doTranslate()">🌐 Traduire</button>
+    <div id="tr-result" style="margin-top:14px"></div>
+  `);
+  setTimeout(() => { const i = document.getElementById('tr-text'); if(i) i.focus(); }, 100);
+};
+
+K._doTranslate = async function(){
+  const text = (document.getElementById('tr-text')?.value || '').trim();
+  const lang = document.getElementById('tr-lang')?.value || 'en';
+  const out = document.getElementById('tr-result');
+  if(!text){ toast('Tape un texte à traduire', 'err'); return; }
+  if(out) out.innerHTML = '<p style="color:var(--ax-text-3)">⏳ Traduction…</p>';
+  try{
+    const r = await K._api('POST', '/api/ai/translate', { text, target_lang: lang });
+    if(r && r.ok && r.translated){
+      out.innerHTML = '<div class="card" style="padding:12px">'
+        + '<div id="tr-out-text" style="white-space:pre-wrap">' + esc(r.translated) + '</div>'
+        + '<button class="btn btn-out btn-sm" style="margin-top:10px" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById(\'tr-out-text\').textContent);toast(\'📋 Copié\',\'ok\')">📋 Copier</button>'
+        + '</div>';
+    } else {
+      out.innerHTML = '<p style="color:var(--ax-err)">' + esc((r && (r.detail || r.message)) || 'Traduction indisponible') + '</p>';
+    }
+  }catch(e){
+    out.innerHTML = '<p style="color:var(--ax-err)">' + esc((e && (e.apiDetail || e.message)) || 'Erreur réseau') + '</p>';
+  }
+};
+
+K._openAiStudio = function(name){
+  const cfg = {
+    cuisine: { icon:'🍳', title:'Cuisine', ph:'Une recette, une cuisson, une substitution…', role:'un chef cuisinier expert' },
+    medical: { icon:'🩺', title:'Médical', ph:'Une question santé générale…', role:'un assistant santé donnant des informations générales (jamais un diagnostic ; recommande de consulter un médecin si besoin)' },
+    finance: { icon:'💰', title:'Finance', ph:'Une question budget, impôts, épargne…', role:'un conseiller financier pédagogue' },
+    legal:   { icon:'⚖', title:'Légal', ph:'Une question juridique générale…', role:'un juriste pédagogue donnant des informations générales (jamais un avis juridique formel)' }
+  }[name] || { icon:'✨', title:'Assistant', ph:'Ta question…', role:'un assistant expert' };
+  K._aiStudioRole = cfg.role;
+  K._showModal(cfg.icon + ' ' + cfg.title, `
+    <textarea id="as-q" rows="3" placeholder="${esc(cfg.ph)}" style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px;resize:vertical"></textarea>
+    <button class="btn btn-block" style="margin-top:12px" onclick="K._askAiStudio()">${cfg.icon} Demander</button>
+    <div id="as-result" style="margin-top:14px"></div>
+  `);
+  setTimeout(() => { const i = document.getElementById('as-q'); if(i) i.focus(); }, 100);
+};
+
+K._askAiStudio = async function(){
+  const q = (document.getElementById('as-q')?.value || '').trim();
+  const out = document.getElementById('as-result');
+  if(q.length < 3){ toast('Pose ta question', 'err'); return; }
+  if(out) out.innerHTML = '<p style="color:var(--ax-text-3)">⏳ Apex réfléchit…</p>';
+  const prompt = 'Tu es ' + (K._aiStudioRole || 'un assistant expert') + '. Réponds en français, clair et concis (max 8 lignes), à cette demande : ' + q;
+  try{
+    const r = await K._api('POST', '/api/ai/summarize', { prompt, max_tokens: 600 });
+    if(r && r.ok && r.text){
+      out.innerHTML = '<div class="card" style="padding:12px"><div style="white-space:pre-wrap">' + esc(r.text) + '</div></div>';
+    } else {
+      out.innerHTML = '<p style="color:var(--ax-err)">' + esc((r && (r.detail || r.message)) || 'Assistant indisponible') + '</p>';
+    }
+  }catch(e){
+    out.innerHTML = '<p style="color:var(--ax-err)">' + esc((e && (e.apiDetail || e.message)) || 'Erreur réseau') + '</p>';
+  }
 };
 
 K._openPayQr = function(){
@@ -8534,7 +8619,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.145 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.146 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -8556,7 +8641,7 @@ K._fetchContacts = async function(silent){
         seen.add(c.peer_id);
       }
     }
-    // v1.1.145 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
+    // v1.1.146 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
     // les écraser avec la liste serveur (cause du "j'ai perdu un contact" Yannou).
     const _prevContacts = K.contacts || lg('contacts', []);
     const _srvIds = new Set(users.map(u => u.id));
@@ -8633,7 +8718,7 @@ K._saveNewContact = function(){
   if(K.view === 'contacts' && typeof K.render === 'function') K.render();
 };
 
-// v1.1.145 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
+// v1.1.146 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
 K._startConvWithUser = async function(userId, displayName){
   const existing = (K.conversations || []).find(c => c.peer_id === userId || c.id === userId);
@@ -8670,7 +8755,7 @@ K._startConvWithUser = async function(userId, displayName){
   K.openConv && K.openConv(conv.id);
 };
 
-// v1.1.145 : promeut une conv locale (dm_local_) en conv serveur réelle.
+// v1.1.146 : promeut une conv locale (dm_local_) en conv serveur réelle.
 // Crée la conv côté serveur, migre messages + id local → id serveur.
 K._promoteConvToServer = async function(localConvId){
   const conv = (K.conversations || []).find(c => c.id === localConvId);
@@ -10255,7 +10340,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.145 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.146 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);
@@ -10910,7 +10995,7 @@ async function _boot(){
     // Charger état persisté
     K.conversations = lg('conversations', []);
     K.contacts = lg('contacts', []);
-    // v1.1.145 : tombstones — conv supprimées qui ne doivent jamais réapparaître
+    // v1.1.146 : tombstones — conv supprimées qui ne doivent jamais réapparaître
     K._deletedConvIds = lg('deleted_convs', []);
     if(K._deletedConvIds.length){
       K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
