@@ -5323,7 +5323,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.724";
+var APP_VER="v9.725";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34778,7 +34778,13 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
           if(!emp.teamHistory)emp.teamHistory={};
           if(!emp.familyHistory)emp.familyHistory={};
           emp.teamHistory[key]=teamId;
-          emp.familyHistory[key]=fm;
+          // v9.725 (Kevin "BJ affiché sous Jeux européens") — n'écrit la famille
+          // que si le parser de grille (v9.655, source FIABLE = en-tête de section
+          // PDF "Roulettes"/"Chefs black Jack"/"Employés cartes CMC") ne l'a PAS
+          // déjà posée. Avant : pdf-column ÉCRASAIT toujours avec un `fm` issu du
+          // curseur fragile des listes de noms (1ʳᵉ moitié du PDF) désaligné sur
+          // les colonnes statut M/CP → équipe BJ classée roulettes.
+          if(!emp.familyHistory[key])emp.familyHistory[key]=fm;
           teamsAssigned++;
         }
       }
