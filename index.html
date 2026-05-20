@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.718";
+var APP_VER="v9.719";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34473,6 +34473,302 @@ function empAutoSaveProfil(){
 // - Préserve teamHistory si parser explicite a écrit (V1 juin numéro équipe)
 // - Skip emps avec <2 RH (pas assez pour cycle)
 // - Skip groupes <2 emps (vrai groupe min 2 personnes)
+// v9.719 — Détection équipes par COLONNE PDF (méthode fiable, lit la structure
+// du PDF au lieu de déduire par jours de repos).
+//
+// Structure PDF (texte brut, séparateur = tabulation \t) :
+//  • Sections : "Roulettes", "Chefs black Jack", "Chefs black Jack/Responsable
+//    de Table", "Employés cartes CMC", "Employés cartes aménagement".
+//  • Dans une section, un BLOC de rotation commence par une ligne d'EN-TÊTE
+//    de colonnes : motif répété <nombre> <code> du au. Ex :
+//    5 20/5 du au  5 19/4 du au  6 16/22 du au  5 14/19 du au  4 RH du au  4 R du au
+//    → <nombre> = NB d'employés de la colonne, <code> = horaire jour 1.
+//  • Une vraie en-tête de rotation a ≥3 quadruplets dont les codes sont des
+//    horaires (\d{1,2}/\d{1,2}) ou RH/R. Les quadruplets avec codes d'ABSENCE
+//    (M, CP…) = encadrés statut → IGNORÉS.
+//  • Après l'en-tête : lignes d'employés. Chaque entrée = <codePoste> <NOM Init> [*] 1 31.
+//  • Curseur de colonnes : chaque entrée d'une ligne remplit la i-ème colonne
+//    OUVERTE (members.length < count). Colonnes fermées sautées. Entrées en
+//    trop (au-delà des colonnes ouvertes) = statut → ignorées.
+//  • Chaque colonne = une ÉQUIPE. Famille = section. Bloc 1 col N ⇌ bloc 2 col N = miroir.
+function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
+  try{
+    if(!srcText||typeof srcText!=="string"||srcText.length<20){return{ok:false,reason:"no_src"};}
+    var key=iy+"-"+im;
+    if(!A||!Array.isArray(A.employees)){return{ok:false,reason:"no_employees"};}
+    // ── Helpers ──
+    function _norm(s){
+      try{return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();}
+      catch(_){return String(s||"").toUpperCase().replace(/\s+/g," ").trim();}
+    }
+    // codes horaires : \d{1,2}/\d{1,2} (avec suffixes ' " c * .) ou RH / R
+    function _isScheduleCode(c){
+      if(!c)return false;
+      var cu=String(c).toUpperCase().replace(/[\s]/g,"");
+      if(cu==="RH"||cu==="R")return true;
+      // base \d{1,2}/\d{1,2} avant suffixes
+      return /^\d{1,2}\/\d{1,2}/.test(cu);
+    }
+    // codes d'absence (encadrés statut, jamais une colonne de rotation)
+    var ABSENCE_CODES={M:1,CP:1,AF:1,MAL:1,AT:1,PAT:1,ABI:1,ABS:1,SS:1,CFL:1,
+      CRH:1,CDP:1,CDH:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DP:1,CL:1,CEO:1,CSC:1,
+      CSS:1,HD:1,HC:1,FL:1,DEPL:1,DELPT:1,FORMATION:1,SEMINAIRE:1,RECUP:1};
+    function _isAbsenceCode(c){
+      if(!c)return false;
+      return !!ABSENCE_CODES[String(c).toUpperCase().replace(/[\s]/g,"")];
+    }
+    // headers de section
+    function _sectionFamily(line){
+      var n=_norm(line);
+      if(!n)return null;
+      if(/^ROULETTES?\b/.test(n))return "roulettes";
+      if(/^CHEFS? BLACK ?JACK/.test(n))return "bj";
+      if(/^EMPLOYES? CARTES? CMC/.test(n))return "cmc";
+      if(/^EMPLOYES? CARTES? AMENAGEMENT/.test(n))return "cmc";
+      if(/^EMPLOYES? CARTES?\b/.test(n))return "cmc";
+      return null;
+    }
+    // Parse une ligne en tokens (séparateur tab, puis espaces multiples en repli)
+    function _tokens(line){
+      var raw=line.indexOf("\t")>=0?line.split("\t"):line.split(/ {2,}/);
+      var out=[];
+      for(var i=0;i<raw.length;i++){
+        var t=String(raw[i]||"").trim();
+        if(t)out.push(t);
+      }
+      return out;
+    }
+    // Détecte si une ligne est une EN-TÊTE de rotation. Retourne [{count,code}] ou null.
+    // Motif : <nombre> <code> "du" "au" répété ≥3 fois, codes = horaires.
+    function _parseRotationHeader(tokens){
+      var cols=[];
+      var i=0;
+      var sawValid=false;
+      while(i<tokens.length){
+        var t0=tokens[i];
+        // un nombre 1-2 chiffres
+        if(/^\d{1,2}$/.test(t0) && i+3<tokens.length){
+          var code=tokens[i+1];
+          var w1=String(tokens[i+2]||"").toLowerCase().replace(/[^a-z]/g,"");
+          var w2=String(tokens[i+3]||"").toLowerCase().replace(/[^a-z]/g,"");
+          if((w1==="du"&&w2==="au")){
+            // quadruplet trouvé
+            if(_isScheduleCode(code)){
+              cols.push({count:parseInt(t0,10),code:code,members:[]});
+              sawValid=true;
+              i+=4;continue;
+            }else if(_isAbsenceCode(code)){
+              // encadré statut imbriqué : on stoppe le header ici
+              break;
+            }else{
+              // code inconnu : on saute le quadruplet sans le compter comme colonne
+              i+=4;continue;
+            }
+          }
+        }
+        // token étoile "*" toléré en fin
+        if(t0==="*"){i++;continue;}
+        i++;
+      }
+      // une vraie en-tête de rotation : ≥3 colonnes valides
+      if(sawValid && cols.length>=3)return cols;
+      return null;
+    }
+    // Extrait les entrées employé d'une ligne. Une entrée = <codePoste> <NOM Init>.
+    // codePoste : tokens de lettres/+/. (ex BRTP+E, BRTP+E., BRE, .BRTCP+KE, BT, B).
+    // NOM : token alpha (peut contenir {{REDNAME}} → retiré), suivi initiale, puis 1 31.
+    function _isPosteCode(t){
+      if(!t)return false;
+      var s=String(t).replace(/\{\{REDNAME\}\}/gi,"");
+      // uniquement lettres BRTPCKE + + . (pas de chiffres, pas d'espace)
+      if(/^[.]?[BRTPCKE+]{1,12}[.]?$/i.test(s) && /[BRTPCKE]/i.test(s))return true;
+      return false;
+    }
+    function _extractEntries(tokens){
+      var entries=[];
+      var i=0;
+      while(i<tokens.length){
+        var t=tokens[i];
+        if(_isPosteCode(t)){
+          // le token suivant = nom (peut être "NOM Initiale" collé OU "NOM" puis initiale)
+          if(i+1<tokens.length){
+            var nameTok=String(tokens[i+1]||"").replace(/\{\{REDNAME\}\}/gi,"").trim();
+            // retirer un éventuel * accolé
+            nameTok=nameTok.replace(/\*/g,"").trim();
+            // si nameTok est juste un mot et le suivant une initiale séparée
+            var nm=nameTok;
+            var consumed=2;
+            // cas "NOM" "I" (initiale isolée)
+            if(i+2<tokens.length && /^[A-Za-zÀ-ÿ'\-]{2,}$/.test(nameTok) && /^[A-Za-zÀ-ÿ]\.?$/.test(String(tokens[i+2]||"").replace(/\*/g,""))){
+              nm=nameTok+" "+String(tokens[i+2]).replace(/\*/g,"").trim();
+              consumed=3;
+            }
+            if(nm && /[A-Za-zÀ-ÿ]/.test(nm) && nm.length>=2){
+              entries.push({poste:t,name:nm});
+            }
+            i+=consumed;continue;
+          }
+        }
+        i++;
+      }
+      return entries;
+    }
+    // ── Parcours des lignes ──
+    var lines=srcText.split(/\r?\n/);
+    var curFamily=null;
+    var blocks=[]; // {family, cols:[{count,code,members:[name...]}]}
+    var curBlock=null;
+    function _closeBlock(){
+      if(curBlock&&curBlock.cols.length){blocks.push(curBlock);}
+      curBlock=null;
+    }
+    function _blockFull(b){
+      if(!b)return false;
+      for(var c=0;c<b.cols.length;c++){
+        if(b.cols[c].members.length<b.cols[c].count)return false;
+      }
+      return true;
+    }
+    for(var li=0;li<lines.length;li++){
+      var line=lines[li];
+      if(!line||!line.trim())continue;
+      // 1. Header de section ?
+      var fam=_sectionFamily(line);
+      if(fam){
+        _closeBlock();
+        curFamily=fam;
+        continue;
+      }
+      var toks=_tokens(line);
+      if(!toks.length)continue;
+      // 2. En-tête de rotation ?
+      var hdr=_parseRotationHeader(toks);
+      if(hdr){
+        _closeBlock();
+        curBlock={family:curFamily||"roulettes",cols:hdr,suspect:false};
+        continue;
+      }
+      // 3. Ligne d'employés (uniquement si un bloc est ouvert)
+      if(curBlock){
+        if(_blockFull(curBlock)){_closeBlock();continue;}
+        var ents=_extractEntries(toks);
+        if(!ents.length)continue;
+        // curseur : affecte chaque entrée à la i-ème colonne OUVERTE
+        var ei=0;
+        for(var ci=0;ci<curBlock.cols.length && ei<ents.length;ci++){
+          var col=curBlock.cols[ci];
+          if(col.members.length>=col.count)continue; // colonne fermée → saut
+          col.members.push(ents[ei].name);
+          ei++;
+        }
+        // entrées au-delà (ei..) = encadrés statut → ignorées
+        if(_blockFull(curBlock))_closeBlock();
+      }
+    }
+    _closeBlock();
+    if(!blocks.length){return{ok:false,reason:"no_block"};}
+    // Garde-fou : marquer suspects les blocs dont le total placé ≠ total count
+    for(var bi=0;bi<blocks.length;bi++){
+      var b=blocks[bi];
+      var sumCount=0,sumPlaced=0;
+      for(var k=0;k<b.cols.length;k++){
+        sumCount+=b.cols[k].count;
+        sumPlaced+=b.cols[k].members.length;
+      }
+      b.suspect=(sumPlaced!==sumCount);
+    }
+    // ── Index des employés par nom normalisé (NOM + initiale) ──
+    var empByName={};
+    for(var en=0;en<A.employees.length;en++){
+      var e=A.employees[en];
+      if(!e||!e.name)continue;
+      empByName[_norm(e.name)]=e;
+    }
+    function _matchEmp(name){
+      var n=_norm(name);
+      if(empByName[n])return empByName[n];
+      // tolérance : nom employé peut avoir un mot de plus/moins → match si tous
+      // les tokens du nom PDF sont inclus dans un nom employé (et ≥2 tokens)
+      var pt=n.split(" ").filter(Boolean);
+      if(pt.length<2)return null;
+      for(var nm in empByName){
+        var et=nm.split(" ").filter(Boolean);
+        var allIn=true;
+        for(var p=0;p<pt.length;p++){if(et.indexOf(pt[p])<0){allIn=false;break;}}
+        if(allIn && et.length<=pt.length+1)return empByName[nm];
+      }
+      return null;
+    }
+    // ── Affectation teamId par famille ──
+    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
+    var teamsAssigned=0,colsTotal=0,unmatched=0,suspectBlocks=0;
+    // Pour les miroirs : retenir teamId par (family, colIndex, blockOrder)
+    var famBlockOrder={};
+    var mirrorTrack={}; // family → [ [teamIdBloc1col0, ...], [teamIdBloc2col0,...] ]
+    for(var bb=0;bb<blocks.length;bb++){
+      var blk=blocks[bb];
+      if(blk.suspect){suspectBlocks++;continue;}
+      var fm=blk.family||"roulettes";
+      if(fm==="cadres")continue;
+      famBlockOrder[fm]=(famBlockOrder[fm]||0);
+      var blockIdx=famBlockOrder[fm];
+      famBlockOrder[fm]++;
+      if(!mirrorTrack[fm])mirrorTrack[fm]=[];
+      mirrorTrack[fm][blockIdx]=[];
+      for(var cc=0;cc<blk.cols.length;cc++){
+        var column=blk.cols[cc];
+        colsTotal++;
+        famCounters[fm]=(famCounters[fm]||0)+1;
+        var nn=famCounters[fm];
+        var teamId=fm==="roulettes"?("r"+nn):fm==="cmc"?("c"+nn):String(nn);
+        mirrorTrack[fm][blockIdx][cc]=teamId;
+        for(var mm=0;mm<column.members.length;mm++){
+          var emp=_matchEmp(column.members[mm]);
+          if(!emp){unmatched++;continue;}
+          if(!emp.teamHistory)emp.teamHistory={};
+          if(!emp.familyHistory)emp.familyHistory={};
+          emp.teamHistory[key]=teamId;
+          emp.familyHistory[key]=fm;
+          teamsAssigned++;
+        }
+      }
+    }
+    // ── Miroirs : bloc 0 col N ⇌ bloc 1 col N (même famille) ──
+    var mirrors=lg("cmc_team_mirror_"+key,{})||{};
+    for(var fmK in mirrorTrack){
+      var bl=mirrorTrack[fmK];
+      if(bl.length>=2 && bl[0] && bl[1]){
+        var lenM=Math.min(bl[0].length,bl[1].length);
+        for(var mc=0;mc<lenM;mc++){
+          var a=bl[0][mc],b2=bl[1][mc];
+          if(a&&b2&&a!==b2){mirrors[a]=b2;mirrors[b2]=a;}
+        }
+      }
+    }
+    if(Object.keys(mirrors).length){
+      try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
+    }
+    // ── Persistance ──
+    if(teamsAssigned>0){
+      try{ls("cmc_e",A.employees);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+    }
+    var rep={ok:teamsAssigned>0,teamsAssigned:teamsAssigned,columns:colsTotal,
+      blocks:blocks.length,suspectBlocks:suspectBlocks,unmatched:unmatched,
+      mirrors:Object.keys(mirrors).length/2};
+    try{if(typeof _audit==="function")_audit("teams_detected_by_pdf_column_v719",
+      (A.user&&A.user.id)||AID,key,
+      rep.teamsAssigned+" emps / "+rep.columns+" colonnes / "+rep.suspectBlocks+" blocs suspects",
+      JSON.stringify(rep));}catch(_){}
+    try{console.log("[v9.719 detectTeamsPdfCol] "+rep.teamsAssigned+" emps assignés, "+rep.columns+" colonnes, "+rep.blocks+" blocs ("+rep.suspectBlocks+" suspects), "+rep.unmatched+" noms non-matchés, "+rep.mirrors+" paires miroir");}catch(_){}
+    if(teamsAssigned===0)return{ok:false,reason:"no_match",report:rep};
+    return rep;
+  }catch(e){
+    try{console.warn("[v9.719 detectTeamsPdfCol]",e&&e.message);}catch(_){}
+    return{ok:false,reason:"exception",error:e&&e.message};
+  }
+}
+
 function _cmcDetectTeamsByRestPattern(iy,im){
   try{
     var key=iy+"-"+im;
@@ -34712,7 +35008,22 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
-    // v9.648 — Détection auto équipes par pattern RH avant validation
+    // v9.719 — Détection équipes par COLONNE PDF (méthode fiable) D'ABORD.
+    // Lit le texte source via cmc_import_src_<key> (objet {txt:...} ou string)
+    // avec fallback window._lastImportText.
+    try{
+      var _srcEntry=lg("cmc_import_src_"+key,null);
+      var _srcTxt="";
+      if(_srcEntry){
+        if(typeof _srcEntry==="string")_srcTxt=_srcEntry;
+        else if(_srcEntry.txt)_srcTxt=_srcEntry.txt;
+        else if(_srcEntry.text)_srcTxt=_srcEntry.text;
+      }
+      if(!_srcTxt && window._lastImportText)_srcTxt=window._lastImportText;
+      if(_srcTxt)_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
+    }catch(_pdcErr){console.warn("[v9.719 pdf-column]",_pdcErr&&_pdcErr.message);}
+    // v9.648 — Détection auto équipes par pattern RH (filet de sécurité hybride :
+    // SKIP les emps ayant déjà teamHistory[key] → complète seulement les non-couverts)
     try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
     var totalActive=A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length;
     if(totalActive===0)return;
