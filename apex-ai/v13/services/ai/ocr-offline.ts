@@ -148,7 +148,7 @@ class OcrOfflineService {
           return;
         }
         const w = new Worker(
-          new URL('../workers/ocr.worker.ts', import.meta.url),
+          new URL('../../workers/ocr.worker.ts', import.meta.url),
           { type: 'module' },
         );
         let readyTimer: ReturnType<typeof setTimeout> | null = null;
