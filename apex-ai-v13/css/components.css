@@ -1416,3 +1416,87 @@
 .ax-kpi-card {
   animation: ax-fade-up-spring 320ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
+
+/* v13.4.235 (audit POST-FIX — extraction styles inline → classes CSS, DRY) */
+
+/* Voice item row (settings) — remplace style inline répété 60+ fois */
+.ax-voice-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ax-s-2);
+  padding: var(--ax-s-3);
+  margin-bottom: var(--ax-s-1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--ax-r-sm);
+  background: rgba(255, 255, 255, 0.03);
+  transition: background var(--ax-d-fast) var(--ax-ease), border-color var(--ax-d-fast) var(--ax-ease);
+}
+.ax-voice-item.is-active {
+  background: var(--ax-gold-soft);
+  border-color: var(--ax-border-gold);
+}
+.ax-voice-item__name {
+  color: var(--ax-text);
+  font-size: var(--ax-text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ax-voice-item__meta {
+  color: var(--ax-text-muted);
+  font-size: var(--ax-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ax-voice-item__action {
+  min-width: var(--ax-touch-min);
+  min-height: var(--ax-touch-min);
+  width: var(--ax-touch-min);
+  height: var(--ax-touch-min);
+  border-radius: var(--ax-r-sm);
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform var(--ax-d-fast) var(--ax-ease);
+}
+.ax-voice-item__action:active { transform: scale(0.94); }
+.ax-voice-item__action--test {
+  background: var(--ax-green-soft);
+  color: var(--ax-green);
+  border: 1px solid rgba(34, 204, 119, 0.3);
+}
+.ax-voice-item__action--set {
+  background: var(--ax-gold-soft);
+  color: var(--ax-gold);
+  border: 1px solid var(--ax-border-gold);
+}
+
+/* Admin tab pill — remplace baseStyle inline (admin/index.ts renderTabs) */
+.ax-tab-pill {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: var(--ax-touch-min);
+  padding: var(--ax-s-2) var(--ax-s-3);
+  font-size: var(--ax-text-sm);
+  line-height: var(--ax-lh-tight);
+  border-radius: var(--ax-r-full);
+  cursor: pointer;
+  transition: background var(--ax-d-fast) var(--ax-ease-out), color var(--ax-d-fast) var(--ax-ease-out), box-shadow var(--ax-d-fast) var(--ax-ease-out);
+  border: 1px solid var(--ax-border);
+  -webkit-tap-highlight-color: transparent;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ax-s-1);
+  scroll-snap-align: start;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ax-text-dim);
+}
+.ax-tab-pill.is-active {
+  background: var(--ax-gold-gradient);
+  color: #000;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(232, 184, 48, 0.25), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
