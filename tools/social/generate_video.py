@@ -463,8 +463,18 @@ def main():
     base_outdir = sys.argv[2]
     niche = sys.argv[3] if len(sys.argv) > 3 else "betrayal"
 
-    # Pick story
+    # Pick story — merge viral stories + regular library
     lib = json.load(open(library_path))
+    viral_path = os.path.join(os.path.dirname(library_path), "viral-stories.json")
+    all_libs = {library_path: lib}
+    if os.path.exists(viral_path):
+        vlib = json.load(open(viral_path))
+        all_libs[viral_path] = vlib
+        for cat, stories in vlib.items():
+            if cat.startswith("_") or not isinstance(stories, list):
+                continue
+            lib[f"v_{cat}"] = stories
+
     candidates = []
     for cat, stories in lib.items():
         if cat.startswith("_") or not isinstance(stories, list):
@@ -563,15 +573,19 @@ def main():
     with open(os.path.join(outdir, "metadata.json"), "w") as f:
         json.dump(meta, f, indent=2)
 
-    # Mark as used
-    for cat, stories in lib.items():
-        if cat.startswith("_") or not isinstance(stories, list):
-            continue
-        for s in stories:
-            if s.get("id") == story_id:
-                s["used"] = True
-    with open(library_path, "w") as f:
-        json.dump(lib, f, indent=2, ensure_ascii=False)
+    # Mark as used in both library files
+    for fpath, flib in all_libs.items():
+        modified = False
+        for cat, stories in flib.items():
+            if cat.startswith("_") or not isinstance(stories, list):
+                continue
+            for s in stories:
+                if s.get("id") == story_id:
+                    s["used"] = True
+                    modified = True
+        if modified:
+            with open(fpath, "w") as f:
+                json.dump(flib, f, indent=2, ensure_ascii=False)
 
     # Cleanup temp
     for f in [bg_video, narration, vtt_file, ass_file]:
