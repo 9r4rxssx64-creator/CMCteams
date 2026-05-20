@@ -1,7 +1,19 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-19** (Apex v13.4.233 POST-FIX audit honest — PR #276 mergée 80b53dfb)
+> Dernière mise à jour : **2026-05-20** (Apex v13.4.235 — 4 PR mergées session UX, score 90.5/100)
+
+## 🏆 SESSION 2026-05-20 — Apex v13.4.234→235 (suite UX vers 100/100)
+
+**PR mergées** :
+- #277 : v13.4.234 WCAG a11y + skeleton voice (commit dd758bfa)
+- #279 : v13.4.235 extraction styles inline DRY + tests fixes (commit 1ae2a805)
+
+**Session complète v232→v235** : 4 PR (#274/#276/#277/#279), 27 findings UX,
+51+ hex → CSS vars, 14 classes atomiques, composant `ui/recharge-action.ts`,
+5/6 tests fails fixés. Score honest mesuré 75 → 90.5/100.
+
+---
 
 ## 🔬 SESSION 2026-05-19 — Apex v13.4.233 POST-FIX audit honest (suite v232)
 

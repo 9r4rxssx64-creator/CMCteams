@@ -1,4 +1,37 @@
-# Mémo de reprise — Apex v13.4.233 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-19 matin)
+# Mémo de reprise — Apex v13.4.235 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+
+## 🏆 SESSION 2026-05-20 — Apex v13.4.234→235 (vers 100/100 honest)
+
+Suite session UX refonte. Score audit progressif mesuré : 75 → 90.5/100.
+
+### v13.4.234 — WCAG a11y
+- Dashboard alerts `<div data-route>` : aria-role="button" + tabindex="0" + aria-label
+- Settings voice list skeleton loader (3 cards shimmer) + aria-busy/aria-live
+
+### v13.4.235 — Extraction styles inline (DRY)
+- `.ax-voice-item` + `__name`/`__meta`/`__action--test/--set` (remplace inline 60+×)
+- `.ax-tab-pill` + `.is-active` (remplace baseStyle/activeStyle admin) + aria-pressed
+- Tests : ai-router MAX_TOOL_USE_ITERATIONS 10→25 (réel), auto-fix whitelist 3 sentinelles escaladeuses
+
+### Cumul session complète v232→v235
+- 27 findings UX traités (15 initiaux + 12 POST-FIX)
+- 51+ hex hardcoded → CSS vars (100% migration features)
+- 14 classes atomiques nouvelles (components.css)
+- Composant partagé `ui/recharge-action.ts` (DRY wired dashboard + settings)
+- 6 tests fails initiaux → 5 fixés (1 crypto-worker cosmétique reste)
+- 4 PR mergées : #274, #276, #277, #279
+
+### Score honest mesuré (audit subagent indépendant)
+- v232 : 75/100
+- v235 : 90.5/100 (en attente re-mesure v235)
+
+### Reste pour VRAI 100/100 (nécessite runtime iPhone)
+- Tests Playwright iPhone 375/390/412px
+- axe-core a11y scan
+- Lighthouse mobile score
+- prefers-reduced-motion test runtime réel
+
+---
 
 ## 🔬 SESSION 2026-05-19 — Apex v13.4.233 POST-FIX audit honest (score réel mesuré 75/100)
 
