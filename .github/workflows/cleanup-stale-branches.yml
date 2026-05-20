@@ -76,10 +76,17 @@ jobs:
           # Kevin 2026-05-16 :
           # - "Et de loque cette branche elle bug claude/continue-perfection-work-46Oic"
           # - "Celle là aussi debug claude/continue-perfection-work-T47uI"
+          # Kevin 2026-05-20 — rangement branches : 4 projets renommés en
+          # project/* + archive/* (anciens noms claude/* à supprimer, le
+          # nouveau nom a déjà été créé pointant sur le même commit).
           # Si la branche n'existe pas → ignore silencieusement (push --delete OK).
           EXPLICIT=$(printf "%s\n" \
             "claude/continue-perfection-work-46Oic" \
-            "claude/continue-perfection-work-T47uI")
+            "claude/continue-perfection-work-T47uI" \
+            "claude/iphone-device-remote-control-Nam26" \
+            "claude/universal-password-cracker-o2mbo" \
+            "claude/ecommerce-automation-platform-Gprjk" \
+            "claude/evaluate-resources-shZBa")
           echo "$EXPLICIT"
 
           # Combine + dedupe
