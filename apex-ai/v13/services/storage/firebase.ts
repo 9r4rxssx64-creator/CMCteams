@@ -521,6 +521,12 @@ class Firebase {
   }
 
   shouldSync(key: string): boolean {
+    /* v13.4.243 (FIX Firebase backup KO) : les paths `vault_backup/<uid>/<key>`
+     * (vault-firebase-backup.ts) NE sont PAS dans FB_FIX — c'est volontaire,
+     * ce path dédié survit même si la whitelist FB_FIX change (cf. l. 228).
+     * Sans cette exception, firebase.write() les rejetait silencieusement →
+     * le backup vault n'écrivait JAMAIS rien → listAll() toujours vide → KO. */
+    if (key.startsWith('vault_backup/')) return true;
     return FB_FIX.includes(key);
   }
 
@@ -775,6 +781,10 @@ class Firebase {
     const key = path.replace(/^\//, '').split('/')[0];
     if (!key) return;
     if (this.isLocalOnly(key)) return;
+    /* v13.4.243 : `vault_backup` est un sous-arbre dédié backup chiffré
+     * (vault-firebase-backup.ts). Ne PAS le rapatrier comme une clé localStorage
+     * top-level — il est lu à la demande via vaultFirebaseBackup.listAll/fetch. */
+    if (key === 'vault_backup') return;
     if (data === null) {
       const existing = localStorage.getItem(key);
       if (existing) {
