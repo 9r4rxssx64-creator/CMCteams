@@ -1,5 +1,31 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🏗 CHANTIER ORGANISATION APEX v13 — audit architecture 42/100 (2026-05-20)
+
+> Audit architecture : le cosmétique (design system, visuel) est fait, mais
+> l'organisation du code est à 42/100. État réel et plan ci-dessous.
+
+### ✅ Fait (v13.4.238)
+- Doublon route `dashboard` corrigé → `dashboard-perso` (vue récap rendue accessible)
+
+### ⏳ Décision Kevin requise
+**5 features sans route** (`geo`, `innovation`, `meta-marketplace`, `plugins`,
+`admin-toggles`) — soit les câbler (donner une route), soit les retirer.
+→ Sont-elles des features finies oubliées, ou du WIP/code mort ?
+
+### ⏳ Gros chantiers refactoring (sessions dédiées — PAS faits)
+1. **172 fichiers `services/` à plat** → restructurer en dossiers domaines
+   (`ai/`, `auth/`, `vault/`, `admin/`, `observability/`, `integrations/`).
+   Risque : casse tous les imports → migration progressive + tests par étape.
+2. **~1063 styles inline** (admin 666, chat 123, vault 95...) → extraire en
+   classes CSS. Gros volume, risque régression visuelle si fait en masse.
+3. **75 routes en vrac** → regrouper par catégorie (auth / métier / admin / studios).
+
+Refactoring profond, pas du cosmétique. Non faisable en 1 session sans risque.
+À planifier par étapes.
+
+---
+
 ## ✅ FAIT — Secrets GitHub 5 providers IA/data (2026-05-20)
 
 > **TERMINÉ** — Kevin a créé les 5 secrets (`XAI_API_KEY`, `MISTRAL_API_KEY`,
