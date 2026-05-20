@@ -193,7 +193,7 @@
         "avg": 15
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     }
   ],
   "narrative_revenge": [
