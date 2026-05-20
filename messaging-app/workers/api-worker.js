@@ -86,6 +86,17 @@ export async function sha256(input) {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// normPhone — comparaison de numéros robuste (CLAUDE.md "détailler erreurs").
+// Gère : espaces, tirets, \n résiduel d'un secret, 00xx → +xx, national 0X → +33X.
+function normPhone(p) {
+  let s = String(p == null ? '' : p).replace(/[^\d+]/g, '');
+  if (s.startsWith('00')) s = '+' + s.slice(2);
+  if (/^0\d{9}$/.test(s)) s = '+33' + s.slice(1);   // France national 0X → E.164
+  if (/^33\d{9}$/.test(s)) s = '+' + s;             // 33XXXXXXXXX (sans +) → +33...
+  if (/^\d{11,15}$/.test(s)) s = '+' + s;           // digits seuls avec indicatif → +
+  return s;
+}
+
 export async function signJWT(payload, secret) {
   const header = { alg: 'HS256', typ: 'JWT' };
   const enc = (o) => btoa(JSON.stringify(o)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -198,19 +209,19 @@ export async function handleSendOtp(request, env) {
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
   // Règle Kevin : prénom + nom obligatoires (2 tokens ≥2 chars), sécurité anti-impersonation
   // Exception : admin Kevin reconnu via téléphone secret peut ne pas avoir 2 tokens
-  if (!(env.KEVIN_PHONE_E164 && phone.replace(/[\s\-]/g, '') === env.KEVIN_PHONE_E164)) {
+  const kevinSecret = normPhone(env.KEVIN_PHONE_E164);
+  const cleanPhone = normPhone(phone);   // comparaison robuste 0X↔+33X, \n, espaces
+  if (!(kevinSecret && cleanPhone === kevinSecret)) {
     const tokens = String(name || '').trim().split(/\s+/).filter(t => t.length >= 2);
     if (tokens.length < 2) return err('Prénom ET nom requis (ex: Marie Dupont) — sécurité', 400, 'name_too_short');
   }
 
-  // Normaliser phone (retirer espaces/tirets)
-  const cleanPhone = phone.replace(/[\s\-]/g, '');
   const phoneHash = await sha256(cleanPhone);
 
   // ============ BYPASS ADMIN (Kevin reconnu via numéro) ============
   // Kevin admin auto-reconnu via KEVIN_PHONE_E164 → pas besoin d'OTP
   // SECU : ne PAS retourner l'OTP fictif dans la réponse (audit P0)
-  if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164) {
+  if (kevinSecret && cleanPhone === kevinSecret) {
     return json({
       ok: true,
       sessionId: phoneHash,
@@ -391,14 +402,17 @@ export async function handleVerifyOtp(request, env) {
   if (!phone || !pseudo) return err('Champs manquants', 400, 'missing_fields',
     'phone=' + (phone ? 'ok' : 'VIDE') + ' pseudo=' + (pseudo ? 'ok' : 'VIDE'));
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
+  // Comparaison robuste : normPhone gère 0X↔+33X, \n résiduel, espaces
+  const kevinSecret = normPhone(env.KEVIN_PHONE_E164);
+  const phoneNorm = normPhone(phone);
+  const isKevinBypass = kevinSecret && phoneNorm === kevinSecret;
   // Règle Kevin : prénom + nom obligatoires (sécurité anti-impersonation)
-  const isKevinBypass = env.KEVIN_PHONE_E164 && phone.replace(/[\s\-]/g, '') === env.KEVIN_PHONE_E164;
   if (!isKevinBypass) {
     const tokens = String(name || '').trim().split(/\s+/).filter(t => t.length >= 2);
     if (tokens.length < 2) return err('Prénom ET nom requis (sécurité)', 400, 'name_too_short');
   }
 
-  const cleanPhone = phone.replace(/[\s\-]/g, '');
+  const cleanPhone = phoneNorm;
   const phoneHash = await sha256(cleanPhone);
 
   // ============ BYPASS ADMIN Kevin ============
@@ -408,9 +422,11 @@ export async function handleVerifyOtp(request, env) {
       return err('Bypass admin indisponible', 503, 'kevin_phone_unset',
         'Secret KEVIN_PHONE_E164 absent du Worker — config GitHub/Cloudflare requise');
     }
-    if (cleanPhone !== env.KEVIN_PHONE_E164) {
+    if (phoneNorm !== kevinSecret) {
+      // Diagnostic masqué : montre EXACTEMENT ce qui est comparé (4 derniers chiffres + longueur)
+      const mask = (s) => s ? ('…' + s.slice(-4) + ' (len ' + s.length + ')') : 'VIDE';
       return err('Numéro non reconnu comme admin', 403, 'not_kevin_phone',
-        'cleanPhone reçu ne correspond pas au secret KEVIN_PHONE_E164');
+        'reçu=' + mask(phoneNorm) + ' vs secret=' + mask(kevinSecret));
     }
     let step = 'init';
     try {
@@ -483,8 +499,8 @@ export async function handleVerifyOtp(request, env) {
     return err('OTP ou Firebase token requis', 400, 'no_auth_method');
   }
 
-  // User existe-t-il déjà ?
-  let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
+  // User existe-t-il déjà ? (cleanPhone = normalisé E.164)
+  let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
 
   if (!user) {
     // Vérifier pseudo unique (P0 FIX : ON CONFLICT pour éviter race condition)
@@ -492,18 +508,17 @@ export async function handleVerifyOtp(request, env) {
       const id = crypto.randomUUID();
 
       // P0 FIX : isKevinAdmin via PHONE E.164 secret env (jamais via name)
-      const KEVIN_PHONE = env.KEVIN_PHONE_E164 || '';
-      const isKevin = KEVIN_PHONE && phone === KEVIN_PHONE;
+      const isKevin = kevinSecret && cleanPhone === kevinSecret;
 
       await env.APEX_CHAT_DB.prepare(
         `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
          identity_key_pub, pq_key_pub, prekey_signed, source, admin_authorized, created_at, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', 'apex-chat-direct', 1, ?, 'active')
          ON CONFLICT(pseudo) DO NOTHING`
-      ).bind(id, pseudo, name || pseudo, phone, phoneHash, isKevin ? 1 : 0, isKevin ? 1 : 0, Date.now()).run();
+      ).bind(id, pseudo, name || pseudo, cleanPhone, phoneHash, isKevin ? 1 : 0, isKevin ? 1 : 0, Date.now()).run();
       // ↑ admin_authorized=1 auto APRÈS OTP réussi (règle Kevin : tout user inscrit = whitelisté visible admin)
 
-      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(phone).first();
+      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
       if (!user) return err('Pseudo déjà pris (race)', 409, 'pseudo_taken');
     } catch (e) {
       return err('Création compte échouée : ' + e.message, 500);
@@ -511,7 +526,7 @@ export async function handleVerifyOtp(request, env) {
   }
 
   // P0 FIX (audit) : si user devient admin maintenant via phone secret env, mettre à jour
-  if (env.KEVIN_PHONE_E164 && phone === env.KEVIN_PHONE_E164 && !user.is_admin) {
+  if (kevinSecret && cleanPhone === kevinSecret && !user.is_admin) {
     await env.APEX_CHAT_DB.prepare('UPDATE users SET is_admin=1, is_kevin_alias=1 WHERE id=?').bind(user.id).run();
     user.is_admin = 1;
   }
