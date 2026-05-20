@@ -169,7 +169,7 @@ async function loadMyFacts(rootEl: HTMLElement, user: UserCtx | null): Promise<v
             id: `fact-${idx}`,
             title: `🧠 Fact ${escapeHtml(f.category)}`,
             content: () => `
-              <div style="padding:8px">
+              <div class="ax-gs-27">
                 <table style="width:100%;font-size:13px">
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">Catégorie</td><td>${escapeHtml(f.category)}</td></tr>
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">Texte</td><td>${escapeHtml(f.text)}</td></tr>

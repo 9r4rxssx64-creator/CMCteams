@@ -540,7 +540,7 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🗄 Archive</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${stats.total} élément${stats.total > 1 ? 's' : ''}</span>
+        <span class="ax-gs-3">${stats.total} élément${stats.total > 1 ? 's' : ''}</span>
       </header>
 
       <p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:16px">

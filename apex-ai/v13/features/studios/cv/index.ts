@@ -639,10 +639,10 @@ export function render(rootEl: HTMLElement): void {
 
   const templatesHtml = TEMPLATES.map((t) => `
     <button class="ax-btn ax-cv-template" data-template="${escapeHtml(t.id)}" style="padding:10px;background:${cv?.template === t.id ? 'rgba(201,162,39,0.2)' : 'rgba(201,162,39,0.05)'};border:1px solid rgba(201,162,39,0.3);border-radius:8px;cursor:pointer;min-height:60px;text-align:left">
-      <div style="font-size:18px">${t.emoji}</div>
-      <div style="font-weight:700;color:#c9a227;font-size:13px">${escapeHtml(t.label)}</div>
-      <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(t.description)}</div>
-      <div style="font-size:10px;color:#888;margin-top:4px">ATS: ${t.atsScore}/100</div>
+      <div class="ax-gs-17">${t.emoji}</div>
+      <div class="ax-gs-79">${escapeHtml(t.label)}</div>
+      <div class="ax-gs-2">${escapeHtml(t.description)}</div>
+      <div class="ax-gs-82">ATS: ${t.atsScore}/100</div>
     </button>
   `).join('');
 
@@ -650,15 +650,15 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">📄 Studio CV Pro</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">Complétude ${completeness}% · ATS ${ats.score}/100</span>
+        <span class="ax-gs-3">Complétude ${completeness}% · ATS ${ats.score}/100</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Template (${TEMPLATES.length} disponibles)</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${templatesHtml}</div>
+        <div class="ax-gs-157">${templatesHtml}</div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Identité</h2>
         <input type="text" id="ax-cv-prenom" aria-label="Prénom CV" placeholder="Prénom" maxlength="100" value="${escapeHtml(cv.identite.prenom)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <input type="text" id="ax-cv-nom" aria-label="Nom CV" placeholder="Nom" maxlength="100" value="${escapeHtml(cv.identite.nom)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
@@ -668,19 +668,19 @@ export function render(rootEl: HTMLElement): void {
         <input type="url" id="ax-cv-linkedin" aria-label="URL LinkedIn CV" placeholder="LinkedIn URL" maxlength="300" value="${escapeHtml(cv.identite.linkedin)}" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Expériences (${cv.experiences.length}/${MAX_EXPERIENCES})</h2>
         <button class="ax-btn ax-btn-primary" id="ax-cv-add-exp" style="min-height:44px">➕ Ajouter une expérience</button>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Formations (${cv.formations.length}/${MAX_FORMATIONS})</h2>
         <button class="ax-btn ax-btn-primary" id="ax-cv-add-form" style="min-height:44px">➕ Ajouter une formation</button>
       </div>
 
       <div style="background:rgba(33,150,243,0.05);border:1px solid rgba(33,150,243,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#2196f3">🤖 Outils Pro</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="ax-gs-7">
           <button class="ax-btn" id="ax-cv-cover-letter" style="min-height:44px">✉ Lettre motivation</button>
           <button class="ax-btn" id="ax-cv-match-offer" style="min-height:44px">🎯 Match offre</button>
           <button class="ax-btn" id="ax-cv-interview" style="min-height:44px">🎤 Simulateur entretien</button>

@@ -1275,7 +1275,7 @@ function handleAction(action: string, ctx: ActionContext): void {
         if (sidebarEl && sidebarContent) {
           sidebarEl.style.display = 'flex';
           sidebarContent.innerHTML = `
-            <div style="padding:8px">
+            <div class="ax-gs-27">
               <h3 style="color:#c9a227;font-size:14px;margin:0 0 8px 0">📑 Sommaire</h3>
               <p style="color:#999;font-size:11px;margin:0 0 8px 0">${stats.wordCount} mots • ${stats.readingTimeMin} min de lecture</p>
               <ul style="list-style:none;padding:0;margin:0">
@@ -1323,7 +1323,7 @@ function renderSidebar(rootEl: HTMLElement, tab: string): void {
             (b) => `
             <div data-nav-url="${escapeHtml(b.url)}" style="padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(201,162,39,0.1)">
               <img src="${escapeHtml(b.favicon)}" alt="" loading="lazy" decoding="async" style="width:16px;height:16px" onerror="this.style.display='none'">
-              <span style="flex:1;color:#fff;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(b.title)}</span>
+              <span class="ax-gs-125">${escapeHtml(b.title)}</span>
               <span data-bookmark-remove="${escapeHtml(b.id)}" style="opacity:0.5;cursor:pointer;color:#ff6666;font-size:11px">✕</span>
             </div>`,
           )
@@ -1341,15 +1341,15 @@ function renderSidebar(rootEl: HTMLElement, tab: string): void {
             .map(
               (h) => `
               <div data-nav-url="${escapeHtml(h.url)}" style="padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(201,162,39,0.1)">
-                <span style="font-size:14px">🕒</span>
-                <span style="flex:1;color:#fff;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(h.title)}</span>
+                <span class="ax-gs-87">🕒</span>
+                <span class="ax-gs-125">${escapeHtml(h.title)}</span>
               </div>`,
             )
             .join('')}
     `;
   } else if (tab === 'ai') {
     content.innerHTML = `
-      <div style="padding:8px">
+      <div class="ax-gs-27">
         <p style="color:#c9a227;font-size:13px;margin:0 0 12px 0">🤖 Apex IA Search</p>
         <p style="color:var(--ax-text-dim,#999);font-size:12px;margin:0 0 12px 0">Tape <code style="color:#c9a227">?</code> dans la barre URL suivi de ta question pour interroger Apex.</p>
         <p style="color:var(--ax-text-dim,#999);font-size:12px;margin:0">Exemples :</p>

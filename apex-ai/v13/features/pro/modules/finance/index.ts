@@ -740,7 +740,7 @@ export function render(root: HTMLElement): void {
   `;
 
   root.innerHTML = `
-    <div style="padding:16px;max-width:900px;margin:0 auto;color:var(--ax-text,#eee)">
+    <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#4cd080,#7adda1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">💰 Finance Pro</h2>
       <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">IR FR 2026 &middot; IS &middot; TVA &middot; PFU &middot; PV immo/mobilier &middot; succession &middot; pension &middot; net/brut &middot; Monaco</p>
 
@@ -771,7 +771,7 @@ export function render(root: HTMLElement): void {
         <div id="finPVResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border-left:4px solid #ff5858;border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-158">
         <h3 style="color:#ff5858;margin:0 0 10px">₿ Plus-value mobilière (crypto / actions)</h3>
         <input id="finPVM_v" type="number" placeholder="Prix vente (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Prix vente mobilier">
         <input id="finPVM_a" type="number" placeholder="Prix achat (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Prix achat mobilier">
@@ -784,7 +784,7 @@ export function render(root: HTMLElement): void {
         <div style="font-size:13px;line-height:2">${monacoHtml}</div>
       </div>
 
-      <div style="margin-top:18px;padding:14px;background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.3);border-radius:10px;font-size:12px;color:#ffd699;text-align:center">
+      <div class="ax-gs-159">
         ⚠️ <strong>Information indicative uniquement</strong>. Pour décision patrimoniale importante, consulter un expert-comptable, notaire ou avocat fiscaliste.
       </div>
       <p style="margin-top:14px;text-align:center;font-size:11px;color:#666">Sources : Impôts.gouv &middot; Service-public.fr &middot; Légimonaco &middot; CGI Art 150 / Art 200 A &middot; BOFiP</p>
@@ -859,7 +859,7 @@ export function render(root: HTMLElement): void {
       `💸 IR (12,8%) : ${escapeHtml(String(c.ir))} €<br>` +
       `💸 PS (17,2%) : ${escapeHtml(String(c.ps))} €<br>` +
       `💰 <strong>Total PFU : ${escapeHtml(String(c.total))} €</strong><br>` +
-      `<span style="color:#888;font-size:12px">${escapeHtml(c.formule ?? '')}</span>`;
+      `<span class="ax-gs-121">${escapeHtml(c.formule ?? '')}</span>`;
   });
 
   logger.info('finance-pro', 'rendered');

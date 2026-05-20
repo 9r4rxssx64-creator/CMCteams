@@ -128,7 +128,7 @@ function renderToggleRow(f: FeatureToggle): string {
   const stateClass = enabled ? 'ax-toggle-on' : 'ax-toggle-off';
   return `
     <div class="ax-toggle-row" data-feature="${safeId}" style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(201,162,39,0.1)">
-      <div style="flex:1;min-width:0">
+      <div class="ax-gs-6">
         <div style="color:#fff;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeDesc}</div>
         <code style="color:#888;font-size:11px">${safeId}</code>
       </div>
@@ -187,7 +187,7 @@ function renderHeader(): string {
   return `
     <header style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:14px;background:rgba(20,20,35,0.95);border-bottom:1px solid rgba(201,162,39,0.3);position:sticky;top:0;z-index:10">
       <h1 style="margin:0;color:#c9a227;font-size:18px;flex:1;min-width:160px">🔘 Toggles ON/OFF</h1>
-      <span style="color:#888;font-size:12px">${stats.enabledGlobal}/${stats.total} actifs · ${stats.users} users</span>
+      <span class="ax-gs-121">${stats.enabledGlobal}/${stats.total} actifs · ${stats.users} users</span>
       <input type="search" id="ax-toggles-search" aria-label="Rechercher une feature dans les toggles" placeholder="Rechercher feature..." value="${escapeHtml(currentSearchQuery)}"
         style="padding:6px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(201,162,39,0.3);color:#fff;border-radius:6px;font-size:13px;min-width:160px">
       ${renderUserPicker()}

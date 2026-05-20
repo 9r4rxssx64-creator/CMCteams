@@ -530,12 +530,12 @@ export function render(rootEl: HTMLElement): void {
       <h2 style="margin:0 0 8px;color:#c9a227">🏛️ Studio Préfecture</h2>
       <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${DEMARCHES.length} démarches FR + MC · ${LETTER_TEMPLATES.length} templates lettres officielles · refs Légifrance + Légimonaco.</p>
       <h3 style="color:#79c0ff;font-size:15px">Démarches France (${demarchesByCountry('fr').length})</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:16px">
-        ${demarchesByCountry('fr').map((d) => `<div style="border:1px solid #2a2f48;border-radius:8px;padding:10px;background:#13162a;font-size:13px">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small style="color:#6a6f8a">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
+      <div class="ax-gs-173">
+        ${demarchesByCountry('fr').map((d) => `<div class="ax-gs-33">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small style="color:#6a6f8a">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Démarches Monaco (${demarchesByCountry('mc').length})</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:16px">
-        ${demarchesByCountry('mc').map((d) => `<div style="border:1px solid #2a2f48;border-radius:8px;padding:10px;background:#13162a;font-size:13px">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small style="color:#6a6f8a">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
+      <div class="ax-gs-173">
+        ${demarchesByCountry('mc').map((d) => `<div class="ax-gs-33">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small style="color:#6a6f8a">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Mes dossiers (${dossiers.length})</h3>
       ${dossiers.length === 0

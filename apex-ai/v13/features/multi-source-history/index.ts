@@ -35,7 +35,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#999">
+      <div class="ax-gs-21">
         <h2 style="color:#c9a227">Accès admin uniquement</h2>
         <p>Multi-Source History — Kevin admin.</p>
       </div>
@@ -82,7 +82,7 @@ function renderHTML(
       </div>
 
       <!-- Refresh / clear actions -->
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="ax-gs-65">
         <button id="ax-msh-refresh" class="ax-btn ax-btn-sm" style="padding:8px 14px">🔄 Refresh</button>
         <button id="ax-msh-refresh-services" class="ax-btn ax-btn-sm" style="padding:8px 14px">📚 Re-étudier services</button>
         <button id="ax-msh-clear" class="ax-btn ax-btn-sm" style="padding:8px 14px;background:rgba(255,107,107,0.2);color:#ff6b6b">🗑️ Vider historique</button>
@@ -116,7 +116,7 @@ function renderResult(r: MultiSourceResult, idx: number): string {
   return `
     <details style="background:rgba(255,255,255,0.03);border:1px solid #333;border-radius:8px;margin-bottom:10px;padding:12px">
       <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:18px">${typeIcon}</span>
+        <span class="ax-gs-17">${typeIcon}</span>
         <span style="color:#c9a227;font-weight:600">${escapeHtml(r.source_type.toUpperCase())}</span>
         <span style="color:#666;font-size:12px">${escapeHtml(date)}</span>
         <span style="margin-left:auto;font-size:13px;color:#aaa">
@@ -172,9 +172,9 @@ function renderItem(it: ExtractedItem): string {
 
   const testCell = it.test_result
     ? it.test_result.ok
-      ? `<span style="color:#22cc77">🟢 OK${it.test_result.latency_ms ? ` (${it.test_result.latency_ms}ms)` : ''}</span>`
+      ? `<span class="ax-gs-14">🟢 OK${it.test_result.latency_ms ? ` (${it.test_result.latency_ms}ms)` : ''}</span>`
       : `<span style="color:#ff6b6b">🔴 ${escapeHtml(it.test_result.error ?? 'fail')}</span>`
-    : '<span style="color:#666">—</span>';
+    : '<span class="ax-gs-64">—</span>';
 
   const forbiddenBadge = it.forbidden
     ? '<span style="color:#ff6b6b;font-size:10px;margin-left:4px;background:rgba(255,107,107,0.1);padding:2px 4px;border-radius:3px">🚫 FORBIDDEN</span>'

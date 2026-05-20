@@ -775,9 +775,9 @@ export function render(rootEl: HTMLElement): void {
   const clipsHtml = clips.length > 0
     ? clips.map((c, i) => `
         <div class="ax-video-clip" data-clip-id="${escapeHtml(c.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="ax-gs-22">
             <strong style="color:#c9a227">#${i + 1} · ${escapeHtml(c.name)}</strong>
-            <span style="font-size:12px;color:var(--ax-text-dim)">${formatDuration((c.end - c.start) / Math.max(0.25, c.speed))}</span>
+            <span class="ax-gs-5">${formatDuration((c.end - c.start) / Math.max(0.25, c.speed))}</span>
           </div>
           <input type="text" aria-label="Sous-titre du clip" placeholder="Caption (sous-titre)…" maxlength="200" value="${escapeHtml(c.caption)}" data-action="caption" data-clip-id="${escapeHtml(c.id)}" style="width:100%;padding:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;margin-bottom:6px;min-height:36px">
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
@@ -812,12 +812,12 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🎬 Studio Vidéo Pro</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${clips.length}/${MAX_CLIPS} clips · ${formatDuration(total)} · ${escapeHtml(aspect)}</span>
+        <span class="ax-gs-3">${clips.length}/${MAX_CLIPS} clips · ${formatDuration(total)} · ${escapeHtml(aspect)}</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Timeline ${MAX_CLIPS} clips, ${formatDuration(MAX_TOTAL_DURATION_S)} total. Cuts, transitions, captions ${SUPPORTED_LANGS.length} langues, LUTs cinéma, color grading 3-way, chroma key, stabilization, vertical TikTok auto.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="ax-gs-7">
           <input type="file" id="ax-video-upload" aria-label="Importer fichiers vidéo" accept="video/*" multiple style="display:none">
           <button class="ax-btn ax-btn-primary" id="ax-video-upload-btn" style="min-height:44px">📂 Importer vidéos</button>
           <button class="ax-btn" data-aspect="9:16" style="min-height:44px">📱 TikTok 9:16</button>

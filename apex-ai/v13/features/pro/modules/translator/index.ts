@@ -676,16 +676,16 @@ export function render(root: HTMLElement): void {
     .join('');
 
   root.innerHTML = `
-    <div style="padding:16px;max-width:900px;margin:0 auto;color:var(--ax-text,#eee)">
+    <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#5aa8ff,#3a85e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">🌐 Traducteur Pro</h2>
       <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">${Object.keys(AX_LANGS).length} langues &middot; détection auto &middot; mode interprète &middot; ${Object.keys(GLOSSAIRES).length} glossaires métier &middot; cache 1000</p>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <label style="font-size:12px;color:var(--ax-text-dim,#999);display:block;margin-bottom:6px">Langue cible :</label>
         <select id="trTgt" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Langue cible">${optionsHtml}</select>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <textarea id="trIn" placeholder="Texte à traduire..." style="width:100%;min-height:120px;padding:11px;font-size:15px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;resize:vertical" aria-label="Texte à traduire"></textarea>
         <button id="trDoBtn" type="button" style="width:100%;margin-top:8px;padding:13px;background:linear-gradient(135deg,#5aa8ff,#3a85e0);color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:48px">🌐 Traduire</button>
         <div id="trOut" style="margin-top:12px;padding:14px;background:rgba(90,168,255,0.08);border-radius:10px;border:1px solid rgba(90,168,255,0.3);min-height:60px;font-size:15px;line-height:1.6;color:#cde7ff"></div>

@@ -35,7 +35,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!rootEl) return;
   if (!isAdmin()) {
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#888;font-family:system-ui,-apple-system,sans-serif">
+      <div class="ax-gs-62">
         <h2 style="color:#c9a227">🔌 Broadlink Setup</h2>
         <p>🔒 Cette section est réservée à l'admin Kevin.</p>
       </div>
@@ -87,7 +87,7 @@ function renderUI(
           Saisis ton email + password Broadlink (compte mobile app). Apex récupère automatiquement le token.
           <br/>📷 <strong>Astuce</strong> : tu peux aussi coller un screenshot du compte dans le chat — Apex extrait token + devices via Vision.
         </p>
-        <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="ax-gs-123">
           <input type="email" id="ax-bl-email" aria-label="Email du compte Broadlink" placeholder="email@example.com"
             value="${escapeHtml(status.email ?? '')}"
             style="padding:12px;border-radius:8px;border:1px solid rgba(201,162,39,0.3);background:rgba(0,0,0,0.4);color:#fff;font-size:14px;min-height:44px"
@@ -141,10 +141,10 @@ function renderDevicesSection(devices: BroadlinkDevice[]): string {
     .map(
       (d) => `
         <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(0,0,0,0.25);border-radius:8px;margin-bottom:6px;flex-wrap:wrap">
-          <span style="font-size:18px">${typeIcon(d.type)}</span>
+          <span class="ax-gs-17">${typeIcon(d.type)}</span>
           <div style="flex:1;min-width:140px">
             <div style="font-weight:600">${escapeHtml(d.name)}</div>
-            <div style="font-size:11px;color:#888">${escapeHtml(d.type)} · <code>${escapeHtml(d.mac)}</code></div>
+            <div class="ax-gs-124">${escapeHtml(d.type)} · <code>${escapeHtml(d.mac)}</code></div>
           </div>
           <span style="font-size:11px;padding:2px 8px;border-radius:8px;${d.online ? 'background:#0a4d2c;color:#4ade80' : 'background:#4a1a1a;color:#f87171'}">${d.online ? '🟢 online' : '🔴 offline'}</span>
           ${d.type === 'rm'

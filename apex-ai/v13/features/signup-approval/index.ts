@@ -81,8 +81,8 @@ function renderCard(r: SignupRequest, withActions: boolean): string {
   return `
     <div style="background:rgba(20,20,35,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px" data-signup-id="${escapeHtml(r.id)}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="ax-gs-11">
+          <div class="ax-gs-77">
             <strong style="color:#fff;font-size:15px">${escapeHtml(fullName)}</strong>
             <span style="background:${statusBadge.color}20;color:${statusBadge.color};padding:2px 8px;border-radius:4px;font-size:11px">${statusBadge.label}</span>
           </div>
@@ -92,7 +92,7 @@ function renderCard(r: SignupRequest, withActions: boolean): string {
             <div>💎 Plan: <strong style="color:#c9a227">${escapeHtml(r.plan)}</strong></div>
             <div>📅 ${escapeHtml(date)}</div>
             ${withActions ? `<div style="font-family:'Courier New',monospace;color:#c9a227;font-size:11px">🔑 OTP: ${escapeHtml(r.otp)}</div>` : ''}
-            ${r.rejectReason ? `<div style="color:#ef4444">Raison: ${escapeHtml(r.rejectReason)}</div>` : ''}
+            ${r.rejectReason ? `<div class="ax-gs-110">Raison: ${escapeHtml(r.rejectReason)}</div>` : ''}
           </div>
         </div>
         ${withActions ? `

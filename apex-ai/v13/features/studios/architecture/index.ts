@@ -212,17 +212,17 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🏗 Studio Architecture</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">RE2020 + calculs construction</span>
+        <span class="ax-gs-3">RE2020 + calculs construction</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Surface habitable (loi Boutin)</h2>
         <input type="number" id="ax-archi-surface" aria-label="Surface brute en mètres carrés" placeholder="Surface brute (m²)" min="1" step="0.01" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-archi-surface-btn" style="margin-top:8px;min-height:44px">Calculer</button>
         <div id="ax-archi-surface-out" style="margin-top:8px;color:#c9a227"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Béton (proportions)</h2>
         <input type="number" id="ax-archi-vol" aria-label="Volume de béton en mètres cubes" placeholder="Volume (m³)" min="0.01" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <select id="ax-archi-dosage" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">${dosagesHtml}</select>
@@ -230,7 +230,7 @@ export function render(rootEl: HTMLElement): void {
         <pre id="ax-archi-beton-out" style="margin-top:8px;color:#c9a227;white-space:pre-wrap;font-size:13px"></pre>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Peinture (litres pour pièce)</h2>
         <input type="number" id="ax-archi-l" aria-label="Longueur de la pièce en mètres" placeholder="Longueur (m)" min="0.5" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <input type="number" id="ax-archi-w" aria-label="Largeur de la pièce en mètres" placeholder="Largeur (m)" min="0.5" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
@@ -239,13 +239,13 @@ export function render(rootEl: HTMLElement): void {
         <pre id="ax-archi-paint-out" style="margin-top:8px;color:#c9a227;white-space:pre-wrap;font-size:13px"></pre>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">RE2020 — Zone climatique</h2>
         <select id="ax-archi-zone" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">${zonesHtml}</select>
         <div id="ax-archi-zone-out" style="margin-top:8px;color:#c9a227;font-size:13px"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Normes PMR (loi 2005-102)</h2>
         <ul style="margin:0;padding-left:18px;color:var(--ax-text-dim);font-size:13px">
           ${PMR_NORMS.map((n) => `<li><strong style="color:#c9a227">${escapeHtml(n.label)} :</strong> ≥ ${n.min_value_cm} cm — ${escapeHtml(n.description)}</li>`).join('')}

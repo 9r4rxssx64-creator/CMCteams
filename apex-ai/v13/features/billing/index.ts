@@ -254,7 +254,7 @@ export function render(rootEl: HTMLElement): void {
             <strong style="color:#c9a227">${s.emoji} ${escapeHtml(s.name)}</strong>
             ${s.has_credit_api ? '<span class="ax-badge" style="background:rgba(34,204,119,0.15);color:#22cc77;padding:2px 6px;border-radius:4px;font-size:11px">crédit API</span>' : ''}
           </header>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="ax-gs-7">
             <a href="${escapeHtml(s.dashboard_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-primary" style="font-size:12px;padding:6px 10px">Dashboard</a>
             <a href="${escapeHtml(s.billing_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn ax-btn-secondary" style="font-size:12px;padding:6px 10px">💳 Recharger</a>
             ${s.docs_url ? `<a href="${escapeHtml(s.docs_url)}" target="_blank" rel="noopener noreferrer" class="ax-btn" style="font-size:12px;padding:6px 10px">📚 Docs</a>` : ''}

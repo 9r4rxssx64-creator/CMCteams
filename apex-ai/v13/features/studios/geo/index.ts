@@ -149,11 +149,11 @@ export function render(rootEl: HTMLElement): void {
     const dist = haversineKm(MONACO_REF, p);
     return `
       <div style="background:rgba(255,255,255,0.03);border:1px solid #333;border-radius:8px;padding:10px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:22px">${p.emoji}</span>
-          <div style="flex:1">
-            <div style="font-weight:700;color:#c9a227;font-size:13px">${escapeHtml(p.name)}</div>
-            <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(p.category)} · ${dist} km du centre</div>
+        <div class="ax-gs-103">
+          <span class="ax-gs-170">${p.emoji}</span>
+          <div class="ax-gs-26">
+            <div class="ax-gs-79">${escapeHtml(p.name)}</div>
+            <div class="ax-gs-2">${escapeHtml(p.category)} · ${dist} km du centre</div>
           </div>
           <a href="${escapeHtml(appleMapsUrl(p, p.name))}" target="_blank" rel="noopener" style="color:#c9a227;text-decoration:none;font-size:18px" title="Apple Maps">🗺</a>
         </div>
@@ -165,17 +165,17 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🗺 Studio Géo</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">Géocodage + distances</span>
+        <span class="ax-gs-3">Géocodage + distances</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Adresse → coordonnées</h2>
         <input type="text" id="ax-geo-addr" aria-label="Adresse à géocoder" placeholder="ex : Place du Casino, Monaco" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-geo-go" style="margin-top:8px;min-height:44px">Géocoder</button>
         <div id="ax-geo-out" style="margin-top:12px;color:#c9a227;font-size:13px"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Lieux remarquables Monaco</h2>
         <div style="display:grid;grid-template-columns:1fr;gap:6px">${poisHtml}</div>
       </div>

@@ -708,9 +708,9 @@ export function render(rootEl: HTMLElement): void {
             <span style="font-size:12px;color:${isOverdue ? '#ff6666' : 'var(--ax-text-dim)'}">${escapeHtml(inv.date)}${isOverdue ? ' ⚠ EN RETARD' : ''}</span>
           </header>
           <div style="font-size:13px;color:var(--ax-text-dim);margin-bottom:6px">Client : ${escapeHtml(inv.client.nom || '—')} · ${escapeHtml(inv.country)} · ${escapeHtml(inv.currency)}</div>
-          <div style="font-size:13px">Total HT : <strong>${formatCurrency(tot.ht, inv.currency)}</strong> · TVA : ${formatCurrency(tot.tva, inv.currency)} · TTC : <strong style="color:#c9a227">${formatCurrency(tot.ttc, inv.currency)}</strong></div>
+          <div class="ax-gs-160">Total HT : <strong>${formatCurrency(tot.ht, inv.currency)}</strong> · TVA : ${formatCurrency(tot.tva, inv.currency)} · TTC : <strong style="color:#c9a227">${formatCurrency(tot.ttc, inv.currency)}</strong></div>
           ${inv.recurrence !== 'none' ? `<div style="font-size:12px;color:#2196f3;margin-top:4px">🔁 Récurrence ${escapeHtml(inv.recurrence)}</div>` : ''}
-          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <div class="ax-gs-80">
             <button class="ax-btn ax-btn-sm" data-action="export-pdf" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">💾 PDF</button>
             <button class="ax-btn ax-btn-sm" data-action="export-facturx" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">📄 FACTUR-X</button>
             ${inv.recurrence !== 'none' ? `<button class="ax-btn ax-btn-sm" data-action="generate-recurrence" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">🔁 Générer suivante</button>` : ''}
@@ -726,12 +726,12 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🧾 Studio Facture Pro</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${invoices.length} doc${invoices.length > 1 ? 's' : ''}${overdue.length > 0 ? ` · ⚠ ${overdue.length} en retard` : ''}</span>
+        <span class="ax-gs-3">${invoices.length} doc${invoices.length > 1 ? 's' : ''}${overdue.length > 0 ? ` · ⚠ ${overdue.length} en retard` : ''}</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Devis, factures, relances, acomptes, soldes, avoirs. Multi-devise (EUR/USD/GBP/CHF/MAD), TVA 9 pays, FACTUR-X (norme EU 2026), récurrence auto, relance auto J+15/30/45.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="ax-gs-7">
           <button class="ax-btn ax-btn-primary" data-create="devis" style="min-height:44px">📋 Nouveau devis</button>
           <button class="ax-btn ax-btn-primary" data-create="facture" style="min-height:44px">🧾 Nouvelle facture</button>
           <button class="ax-btn" data-create="acompte" style="min-height:44px">💵 Acompte</button>

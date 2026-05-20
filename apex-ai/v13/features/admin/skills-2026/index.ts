@@ -172,7 +172,7 @@ const SKILLS_2026: SkillInfo[] = [
 export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
-    rootEl.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8">🔒 Réservé admin Kevin</div>`;
+    rootEl.innerHTML = `<div class="ax-gs-37">🔒 Réservé admin Kevin</div>`;
     return;
   }
 
@@ -185,9 +185,9 @@ export function render(rootEl: HTMLElement): void {
     return `
       <div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:14px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:16px;font-weight:600;color:#f1f5f9">${skill.emoji} ${escapeHtml(skill.name)}</div>
-            <div style="font-size:12px;color:#94a3b8;margin-top:2px">${escapeHtml(skill.description)}</div>
+          <div class="ax-gs-6">
+            <div class="ax-gs-108">${skill.emoji} ${escapeHtml(skill.name)}</div>
+            <div class="ax-gs-109">${escapeHtml(skill.description)}</div>
             <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
               <code style="background:#1e293b;padding:2px 6px;border-radius:4px;font-size:11px;color:#cbd5e1">${escapeHtml(skill.tool)}</code>
               <span style="font-size:11px;color:${tierColor};font-weight:600;text-transform:uppercase">${escapeHtml(skill.tier)}</span>
@@ -203,7 +203,7 @@ export function render(rootEl: HTMLElement): void {
   }).join('');
 
   rootEl.innerHTML = `
-    <div style="max-width:760px;margin:0 auto;padding:20px">
+    <div class="ax-gs-59">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🎯 Skills 2026 — Apex IA</h1>
       <p style="color:#94a3b8;margin-bottom:24px">
         ${SKILLS_2026.length} skills actifs. Apex IA les utilise <strong>systématiquement</strong> sans demander confirmation.
@@ -211,18 +211,18 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:24px">
         <div style="background:#0f172a;border-left:4px solid ${skillsCdnReport?.severity === 'ok' ? '#10b981' : '#f59e0b'};padding:12px 16px;border-radius:8px">
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">CDN Libs</div>
-          <div style="font-size:14px;color:#f1f5f9">${skillsCdnReport ? escapeHtml(skillsCdnReport.message) : 'Pas encore audité'}</div>
+          <div class="ax-gs-117">CDN Libs</div>
+          <div class="ax-gs-118">${skillsCdnReport ? escapeHtml(skillsCdnReport.message) : 'Pas encore audité'}</div>
         </div>
         <div style="background:#0f172a;border-left:4px solid ${mcpReport?.severity === 'ok' ? '#10b981' : '#f59e0b'};padding:12px 16px;border-radius:8px">
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">MCP Servers</div>
-          <div style="font-size:14px;color:#f1f5f9">${mcpReport ? escapeHtml(mcpReport.message) : 'Pas encore audité'}</div>
+          <div class="ax-gs-117">MCP Servers</div>
+          <div class="ax-gs-118">${mcpReport ? escapeHtml(mcpReport.message) : 'Pas encore audité'}</div>
         </div>
       </div>
 
       <div>${skillsList}</div>
 
-      <div style="margin-top:24px;padding:16px;background:#0f172a;border-radius:8px;font-size:12px;color:#94a3b8;line-height:1.6">
+      <div class="ax-gs-116">
         💡 <strong>Note Kevin :</strong> Tous ces skills sont auto-invoqués par Apex IA selon
         l'intent détecté dans le chat user. Aucune action manuelle Kevin requise.
         Voir <a href="?view=mcp-servers" style="color:#3b82f6">🔌 MCP Servers</a> pour

@@ -173,25 +173,25 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🌙 Studio Jardin Lunaire</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">Biodynamie</span>
+        <span class="ax-gs-3">Biodynamie</span>
       </header>
 
       <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px;text-align:center">
-        <div style="font-size:64px">${info.emoji}</div>
+        <div class="ax-gs-171">${info.emoji}</div>
         <h2 style="margin:6px 0;color:#c9a227">${escapeHtml(info.phase_label)}</h2>
-        <div style="color:var(--ax-text-dim);font-size:13px">
+        <div class="ax-gs-3">
           Âge ${info.age_days} jours · Illumination ${info.illumination_pct}% · ${info.rising ? '⬆ Montante' : '⬇ Descendante'}
         </div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Conseils du jour</h2>
         <ul style="margin:0;padding-left:18px;color:#ddd;font-size:14px;line-height:1.8">
           ${advice.map((a) => `<li>${escapeHtml(a)}</li>`).join('')}
         </ul>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Prochaines phases</h2>
         <div style="font-size:13px;color:#ddd;line-height:1.7">
           🌕 Prochaine pleine lune : <strong style="color:#c9a227">${fmt(nextFull)}</strong><br>
@@ -199,17 +199,17 @@ export function render(rootEl: HTMLElement): void {
         </div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">7 jours à venir</h2>
-        <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="ax-gs-29">
           ${week.map((w) => `
             <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:6px">
-              <span style="font-size:22px">${w.info.emoji}</span>
-              <div style="flex:1">
+              <span class="ax-gs-170">${w.info.emoji}</span>
+              <div class="ax-gs-26">
                 <div style="color:#c9a227;font-weight:700;font-size:13px">${fmt(w.date)}</div>
-                <div style="color:var(--ax-text-dim);font-size:11px">${escapeHtml(w.advice)}</div>
+                <div class="ax-gs-136">${escapeHtml(w.advice)}</div>
               </div>
-              <span style="font-size:11px;color:#888">${w.info.illumination_pct}%</span>
+              <span class="ax-gs-124">${w.info.illumination_pct}%</span>
             </div>
           `).join('')}
         </div>

@@ -277,7 +277,7 @@ function renderShortcutCard(s: DashboardShortcut, idx = 0): string {
       style="position:relative;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.55));backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 240ms cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:14px;min-height:72px;overflow:hidden;animation:ax-fade-up 320ms cubic-bezier(0.34,1.56,0.64,1) ${30 + idx * 20}ms backwards;-webkit-tap-highlight-color:transparent">
       <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,${escapeHtml(s.color)},${escapeHtml(s.color)}88);border-radius:14px 0 0 14px"></div>
       <span style="font-size:30px;flex-shrink:0;filter:drop-shadow(0 4px 12px ${escapeHtml(s.color)}40);transition:transform 240ms cubic-bezier(0.34,1.56,0.64,1)" class="ax-shortcut-icon">${escapeHtml(s.icon)}</span>
-      <div style="flex:1;min-width:0">
+      <div class="ax-gs-6">
         <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.01em;line-height:1.3">${escapeHtml(s.label)}</div>
         <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.4;margin-top:2px">${escapeHtml(s.description)}</div>
       </div>
@@ -288,9 +288,9 @@ function renderShortcutCard(s: DashboardShortcut, idx = 0): string {
 function renderAlerts(alerts: ReadonlyArray<DashboardAlert>): string {
   if (alerts.length === 0) {
     return `
-      <div style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,rgba(34,204,119,0.08),rgba(34,204,119,0.03));border:1px solid rgba(34,204,119,0.15);border-radius:12px">
-        <span style="font-size:20px;filter:drop-shadow(0 2px 6px rgba(34,204,119,0.4))">✅</span>
-        <span style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:500">Aucune alerte. Tout fonctionne.</span>
+      <div class="ax-gs-132">
+        <span class="ax-gs-133">✅</span>
+        <span class="ax-gs-134">Aucune alerte. Tout fonctionne.</span>
       </div>`;
   }
   return alerts
@@ -307,9 +307,9 @@ function renderAlerts(alerts: ReadonlyArray<DashboardAlert>): string {
         <div class="ax-alert-row ax-modernized-card ax-bounce-tap" ${route}
           style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(${rgbBase},.10),rgba(${rgbBase},.04));border:1px solid rgba(${rgbBase},.18);border-left:3px solid ${color};border-radius:12px;margin-bottom:8px;cursor:${a.action_route ? 'pointer' : 'default'};transition:all 200ms cubic-bezier(0.16,1,0.3,1);animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${60 + idx * 50}ms backwards">
           <span style="font-size:20px;flex-shrink:0;filter:drop-shadow(0 2px 6px ${color}55)">${icon}</span>
-          <div style="flex:1;min-width:0">
+          <div class="ax-gs-6">
             <div style="font-size:14px;font-weight:600;color:${color};letter-spacing:-0.01em">${escapeHtml(a.title)}</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">${escapeHtml(a.description)}</div>
+            <div class="ax-gs-119">${escapeHtml(a.description)}</div>
           </div>
           ${a.action_route ? `<span style="color:${color};font-size:18px;opacity:0.7">→</span>` : ''}
         </div>`;
@@ -320,9 +320,9 @@ function renderAlerts(alerts: ReadonlyArray<DashboardAlert>): string {
 function renderTodos(todos: ReadonlyArray<DashboardTodo>): string {
   if (todos.length === 0) {
     return `
-      <div style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,rgba(34,204,119,0.08),rgba(34,204,119,0.03));border:1px solid rgba(34,204,119,0.15);border-radius:12px">
-        <span style="font-size:20px;filter:drop-shadow(0 2px 6px rgba(34,204,119,0.4))">🎉</span>
-        <span style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:500">Aucun todo en attente.</span>
+      <div class="ax-gs-132">
+        <span class="ax-gs-133">🎉</span>
+        <span class="ax-gs-134">Aucun todo en attente.</span>
       </div>`;
   }
   return todos
@@ -396,7 +396,7 @@ export function renderServiceHealthCard(
           <button class="ax-service-health-main ax-bounce-tap" data-route="vault" data-service="${escapeHtml(s.service)}"
             style="display:flex;align-items:center;gap:12px;background:transparent;border:0;color:inherit;flex:1;min-width:200px;cursor:pointer;text-align:left;padding:0;-webkit-tap-highlight-color:transparent">
             <span aria-hidden="true" style="display:inline-block;width:12px;height:12px;background:${color};border-radius:50%;box-shadow:0 0 12px ${color};flex-shrink:0"></span>
-            <div style="flex:1;min-width:0">
+            <div class="ax-gs-6">
               <div style="font-size:14px;font-weight:600;color:#fff;text-transform:capitalize">${escapeHtml(s.service)}</div>
               <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">${escapeHtml(stats)}</div>
             </div>
@@ -478,7 +478,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">📊</span> Indicateurs clés
+          <span class="ax-gs-19">📊</span> Indicateurs clés
         </h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
           ${kpis.map((k, i) => renderKpiCard(k, i)).join('')}
@@ -487,53 +487,53 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">🔔</span> Alertes ${alerts.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,91,91,0.15);color:var(--ax-error);border-radius:24px;font-size:11px;font-weight:700">${alerts.length}</span>` : ''}
+          <span class="ax-gs-19">🔔</span> Alertes ${alerts.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,91,91,0.15);color:var(--ax-error);border-radius:24px;font-size:11px;font-weight:700">${alerts.length}</span>` : ''}
         </h2>
         ${renderAlerts(alerts)}
       </section>
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">🚥</span> Statut services IA ${serviceHealth.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border-radius:24px;font-size:11px;font-weight:700">${serviceHealth.length}</span>` : ''}
+          <span class="ax-gs-19">🚥</span> Statut services IA ${serviceHealth.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border-radius:24px;font-size:11px;font-weight:700">${serviceHealth.length}</span>` : ''}
         </h2>
         ${renderServiceHealthCard(serviceHealth, rechargeLinks)}
       </section>
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">📋</span> Todos ${todos.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,170,0,0.15);color:var(--ax-warning);border-radius:24px;font-size:11px;font-weight:700">${todos.length}</span>` : ''}
+          <span class="ax-gs-19">📋</span> Todos ${todos.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,170,0,0.15);color:var(--ax-warning);border-radius:24px;font-size:11px;font-weight:700">${todos.length}</span>` : ''}
         </h2>
         ${renderTodos(todos)}
       </section>
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">🚀</span> Raccourcis
+          <span class="ax-gs-19">🚀</span> Raccourcis
         </h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+        <div class="ax-gs-89">
           ${SHORTCUTS.map((s, i) => renderShortcutCard(s, i)).join('')}
         </div>
       </section>
 
       <section style="margin-bottom:32px">
         <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
-          <span style="font-size:14px;-webkit-text-fill-color:initial">📈</span> Stats live
+          <span class="ax-gs-19">📈</span> Stats live
         </h2>
         <div class="ax-modernized-card" style="background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) 200ms backwards">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px">
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Provider santé</div>
+            <div class="ax-gs-29">
+              <div class="ax-gs-63">Provider santé</div>
               <div style="font-size:18px;font-weight:700;color:var(--ax-green);display:flex;align-items:center;gap:8px;letter-spacing:-0.01em">
                 <span style="display:inline-block;width:8px;height:8px;background:var(--ax-green);border-radius:50%;box-shadow:0 0 12px var(--ax-green)"></span>
                 Anthropic OK
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Latence dernière req</div>
+            <div class="ax-gs-29">
+              <div class="ax-gs-63">Latence dernière req</div>
               <div style="font-size:18px;font-weight:700;color:var(--ax-blue);letter-spacing:-0.01em;font-feature-settings:'tnum'">~ 1.2s</div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Tokens 7j (estimé)</div>
+            <div class="ax-gs-29">
+              <div class="ax-gs-63">Tokens 7j (estimé)</div>
               <div style="font-size:18px;font-weight:700;color:var(--ax-gold);letter-spacing:-0.01em;font-feature-settings:'tnum'">${escapeHtml(((kpis.find((k) => k.id === 'tokens')?.value ?? 0).toString()))}</div>
             </div>
           </div>

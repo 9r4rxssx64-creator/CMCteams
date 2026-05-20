@@ -133,23 +133,23 @@ function renderScoreCard(report: AuditReport): string {
           <div style="font-size:64px;font-weight:900;color:${color};line-height:1;font-family:Georgia,serif">${report.total_score}</div>
           <div style="font-size:12px;color:#a0a4c0;margin-top:4px">/ 100</div>
         </div>
-        <div style="flex:1;min-width:200px">
+        <div class="ax-gs-11">
           <div style="font-size:24px;font-weight:700;color:${color}">Note ${escapeHtml(grade)}</div>
           <div style="font-size:12px;color:#a0a4c0;margin-top:2px">${escapeHtml(new Date(report.ts).toLocaleString('fr-FR'))}</div>
           <div style="font-size:11px;color:#888;margin-top:4px">Durée audit : ${report.duration_ms}ms</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="ax-gs-7">
           <div style="background:rgba(34,204,119,.1);padding:8px 12px;border-radius:8px;text-align:center">
             <div style="font-size:18px;font-weight:700;color:#22cc77">${report.auto_fixed_count}</div>
-            <div style="font-size:10px;color:#a0a4c0">Auto-fixed</div>
+            <div class="ax-gs-74">Auto-fixed</div>
           </div>
           <div style="background:rgba(168,120,255,.1);padding:8px 12px;border-radius:8px;text-align:center">
             <div style="font-size:18px;font-weight:700;color:#a878ff">${report.escalated_count}</div>
-            <div style="font-size:10px;color:#a0a4c0">Escaladés</div>
+            <div class="ax-gs-74">Escaladés</div>
           </div>
           <div style="background:rgba(255,88,88,.1);padding:8px 12px;border-radius:8px;text-align:center">
             <div style="font-size:18px;font-weight:700;color:#ff5858">${report.total_findings}</div>
-            <div style="font-size:10px;color:#a0a4c0">Findings</div>
+            <div class="ax-gs-74">Findings</div>
           </div>
         </div>
       </div>
@@ -187,10 +187,10 @@ function renderFindings(findings: ReadonlyArray<Finding>): string {
       const status = f.auto_fix_success ? '✅ Auto-fixed' : f.escalated_to_claude ? '📤 Escaladé Claude' : '🚨 À traiter';
       return `
         <div style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:12px;margin-bottom:6px;border-left:3px solid ${meta.color}">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+          <div class="ax-gs-122">
             <span style="background:rgba(${f.severity === 'p0_critical' ? '255,88,88' : f.severity === 'p1_high' ? '255,140,66' : '255,170,0'},.15);color:${meta.color};font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700">${meta.icon} ${escapeHtml(meta.label)}</span>
-            <span style="background:rgba(168,120,255,.1);color:#a878ff;font-size:10px;padding:2px 6px;border-radius:4px">${escapeHtml(f.axis)}</span>
-            <span style="font-size:10px;color:#888;margin-left:auto">${escapeHtml(status)}</span>
+            <span class="ax-gs-138">${escapeHtml(f.axis)}</span>
+            <span class="ax-gs-163">${escapeHtml(status)}</span>
           </div>
           <strong style="color:#fff;font-size:13px;display:block">${escapeHtml(f.title)}</strong>
           <p style="margin:4px 0 0;color:#a0a4c0;font-size:11px;line-height:1.4">${escapeHtml(f.description)}</p>
@@ -215,7 +215,7 @@ function renderLessons(lessons: ReadonlyArray<LessonLearned>): string {
             <strong style="color:#fff;font-size:12px">${escapeHtml(l.title)}</strong>
             <span style="background:rgba(168,120,255,.1);color:#a878ff;font-size:10px;padding:1px 5px;border-radius:4px">${escapeHtml(l.category)}</span>
             ${l.resolved ? '<span style="color:#22cc77;font-size:10px">✅ Résolu</span>' : ''}
-            <span style="font-size:10px;color:#888;margin-left:auto">${escapeHtml(date)}</span>
+            <span class="ax-gs-163">${escapeHtml(date)}</span>
           </div>
           <p style="margin:2px 0 0;color:#a0a4c0;font-size:11px;line-height:1.4">${escapeHtml(l.text.slice(0, 200))}${l.text.length > 200 ? '...' : ''}</p>
         </div>`;

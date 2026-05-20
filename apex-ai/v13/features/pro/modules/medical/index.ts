@@ -1116,11 +1116,11 @@ export function render(root: HTMLElement): void {
     .join('');
 
   root.innerHTML = `
-    <div style="padding:16px;max-width:900px;margin:0 auto;color:var(--ax-text,#eee)">
+    <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#ff5858,#ff8080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">⚕ Medical Pro</h2>
       <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">${Object.keys(AX_MEDICAL_FR.otc).length} OTC &middot; IMC + IMG + métabolisme &middot; ${Object.keys(AX_MEDICAL_FR.urgences).length} urgences SAMU &middot; ${Object.keys(AX_MEDICAL_FR.vaccins_adulte).length} vaccins &middot; FAST AVC &middot; SCORE CV</p>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#ff8080;margin:0 0 10px">📊 IMC + Métabolisme de base</h3>
         <input id="medP" type="number" placeholder="Poids (kg)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Poids kg">
         <input id="medT" type="number" placeholder="Taille (cm, ex 175)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Taille cm">
@@ -1132,26 +1132,26 @@ export function render(root: HTMLElement): void {
         <div id="medResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#ff8080;margin:0 0 10px">💊 Info médicament (${Object.keys(AX_MEDICAL_FR.otc).length} OTC)</h3>
         <input id="medMed" type="text" placeholder="Doliprane, Ibuprofène, Aspirine..." style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Nom médicament">
         <button id="medLookupBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:rgba(255,88,88,0.2);color:#ff8080;border:1px solid #ff5858;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Rechercher</button>
         <div id="medMedResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border-left:4px solid #ff5858;border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-158">
         <h3 style="color:#ff5858;margin:0 0 10px">🚨 Urgences (15 SAMU / 18 / 112)</h3>
         <div style="font-size:13px;line-height:1.6;max-height:280px;overflow-y:auto">${urgencesHtml}</div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#ff8080;margin:0 0 10px">💉 Calendrier vaccinal adulte</h3>
         <div style="font-size:12px;line-height:1.7">${vaccinsHtml}</div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#ff8080;margin:0 0 10px">🔗 Sources officielles : Vidal &middot; ANSM &middot; HAS &middot; Ameli</h3>
-        <div style="font-size:13px">${sourcesHtml}</div>
+        <div class="ax-gs-160">${sourcesHtml}</div>
       </div>
 
       <div class="ax-disclaimer" data-disclaimer="medical" style="margin-top:18px;padding:14px;background:rgba(255,88,88,0.08);border:1px solid rgba(255,88,88,0.3);border-radius:10px;font-size:12px;color:#ffaaaa;text-align:center">

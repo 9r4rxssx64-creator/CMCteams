@@ -80,21 +80,21 @@ function renderActiveSession(s: AutonomousSession | null): string {
       <p style="margin:0 0 12px;color:rgba(255,255,255,0.85);font-size:14px;line-height:1.5">${escapeHtml(s.initialObjective.slice(0, 400))}</p>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px">
-        <div style="padding:10px;background:rgba(0,0,0,0.25);border-radius:10px">
+        <div class="ax-gs-38">
           <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Durée</p>
           <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#e8b830">${ageMin} min</p>
         </div>
-        <div style="padding:10px;background:rgba(0,0,0,0.25);border-radius:10px">
+        <div class="ax-gs-38">
           <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Itérations</p>
           <p style="margin:4px 0 0;font-size:18px;font-weight:700">${s.iterations}/${maxIter}</p>
-          <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;overflow:hidden"><div style="width:${iterPct}%;background:#e8b830;height:100%"></div></div>
+          <div class="ax-gs-90"><div style="width:${iterPct}%;background:#e8b830;height:100%"></div></div>
         </div>
-        <div style="padding:10px;background:rgba(0,0,0,0.25);border-radius:10px">
+        <div class="ax-gs-38">
           <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Tokens</p>
           <p style="margin:4px 0 0;font-size:18px;font-weight:700">${s.tokensConsumed}</p>
-          <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;overflow:hidden"><div style="width:${tokensPct}%;background:${tokensPct > 80 ? '#c50' : '#3cc'};height:100%"></div></div>
+          <div class="ax-gs-90"><div style="width:${tokensPct}%;background:${tokensPct > 80 ? '#c50' : '#3cc'};height:100%"></div></div>
         </div>
-        <div style="padding:10px;background:rgba(0,0,0,0.25);border-radius:10px">
+        <div class="ax-gs-38">
           <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Tâches</p>
           <p style="margin:4px 0 0;font-size:18px;font-weight:700">✅ ${done} <span style="font-size:13px;color:#c33">❌ ${fail}</span></p>
           <p style="margin:2px 0 0;font-size:11px;color:rgba(255,255,255,0.55)">📋 ${s.taskQueue.length} en queue</p>
@@ -122,7 +122,7 @@ function renderActiveSession(s: AutonomousSession | null): string {
             .map((l) => {
               const t = new Date(l.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               const color = l.level === 'error' ? '#f66' : l.level === 'warn' ? '#fc6' : 'rgba(200,220,200,0.85)';
-              return `<div style="color:${color};margin-bottom:2px"><span style="color:rgba(255,255,255,0.4)">${t}</span> ${escapeHtml(l.msg)}</div>`;
+              return `<div style="color:${color};margin-bottom:2px"><span class="ax-gs-91">${t}</span> ${escapeHtml(l.msg)}</div>`;
             })
             .join('') || '<em style="color:rgba(255,255,255,0.5)">aucun log</em>'}
         </div>

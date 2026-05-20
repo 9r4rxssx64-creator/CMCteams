@@ -489,16 +489,16 @@ export function render(root: HTMLElement): void {
       <h2 style="margin:0 0 8px;color:#c9a227">🏆 Certifications Pro</h2>
       <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${CERTIFICATIONS.length} certifications · ${SAMPLE_QUESTIONS.length}+ questions samples · vocabulaire · stratégies · liens officiels.</p>
       <h3 style="color:#79c0ff;font-size:15px">Langues</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">
-        ${certsByCategory('language').map((c) => `<div style="border:1px solid #2a2f48;border-radius:8px;padding:10px;background:#13162a;font-size:13px">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
+      <div class="ax-gs-156">
+        ${certsByCategory('language').map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Tech & Cloud</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">
-        ${certsByCategory('tech').map((c) => `<div style="border:1px solid #2a2f48;border-radius:8px;padding:10px;background:#13162a;font-size:13px">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
+      <div class="ax-gs-156">
+        ${certsByCategory('tech').map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Project / Business / Finance</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
-        ${[...certsByCategory('project'), ...certsByCategory('business'), ...certsByCategory('finance')].map((c) => `<div style="border:1px solid #2a2f48;border-radius:8px;padding:10px;background:#13162a;font-size:13px">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)}</small></div>`).join('')}
+        ${[...certsByCategory('project'), ...certsByCategory('business'), ...certsByCategory('finance')].map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)}</small></div>`).join('')}
       </div>
     </div>
   `;

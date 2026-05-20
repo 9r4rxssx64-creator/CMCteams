@@ -60,11 +60,11 @@ function renderStatusCard(s: PineconeStatus): string {
         <tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Vectors</td><td>${s.vector_count.toLocaleString('fr-FR')}</td></tr>
         <tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Last sync</td><td>${escapeHtml(fmtAge(s.last_sync_ts))}</td></tr>
         <tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Cache (5 min)</td><td>${s.cache_size} entrées</td></tr>
-        ${s.error ? `<tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Dernière erreur</td><td><span style="color:#c00">${escapeHtml(s.error)}</span></td></tr>` : ''}
+        ${s.error ? `<tr><td style="padding:4px 8px;color:var(--ax-text-dim)">Dernière erreur</td><td><span class="ax-gs-18">${escapeHtml(s.error)}</span></td></tr>` : ''}
       </table>
       ${
         !s.configured
-          ? `<div style="margin-top:12px;padding:10px;background:rgba(201,162,39,0.08);border-left:3px solid #c9a227;font-size:13px">
+          ? `<div class="ax-gs-111">
                <strong>Pinecone non configuré.</strong><br>
                Pour activer le RAG vectoriel, configure <code>ax_pinecone_key</code> dans le Coffre.<br>
                Mode actuel : fallback localStorage (ranking par importance) — fonctionne sans dégrader l'app.
@@ -73,7 +73,7 @@ function renderStatusCard(s: PineconeStatus): string {
       }
       ${
         s.fallback_active && s.configured
-          ? `<div style="margin-top:12px;padding:10px;background:rgba(201,162,39,0.08);border-left:3px solid #c9a227;font-size:13px">
+          ? `<div class="ax-gs-111">
                <strong>Fallback actif :</strong> Pinecone configuré mais inaccessible.
                Apex utilise localStorage facts ranking. Vérifie la clé et la connexion réseau.
              </div>`
@@ -86,7 +86,7 @@ function renderActionsCard(): string {
   return `
     <div class="ax-card" style="padding:16px;margin-bottom:16px">
       <h3 style="margin:0 0 12px;font-size:1.05em">Actions</h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="ax-gs-7">
         <button class="ax-btn" id="btn-test" type="button">🧪 Tester connexion</button>
         <button class="ax-btn" id="btn-reload" type="button">🔄 Recharger clé</button>
         <button class="ax-btn" id="btn-resync" type="button">📤 Resync depuis facts</button>
@@ -137,14 +137,14 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       try {
         const r = await pineconeStore.testConnection();
         if (r.ok) {
-          setResult(`<span style="color:#0d8a3e">✅ Connexion OK (${r.latencyMs} ms)</span>`);
+          setResult(`<span class="ax-gs-60">✅ Connexion OK (${r.latencyMs} ms)</span>`);
           toast.show('Pinecone OK', 'success');
         } else {
-          setResult(`<span style="color:#c00">❌ ${escapeHtml(r.error ?? 'inconnu')}</span>`);
+          setResult(`<span class="ax-gs-18">❌ ${escapeHtml(r.error ?? 'inconnu')}</span>`);
           toast.show('Pinecone KO : ' + (r.error ?? ''), 'warn');
         }
       } catch (err: unknown) {
-        setResult(`<span style="color:#c00">Erreur: ${escapeHtml(String(err))}</span>`);
+        setResult(`<span class="ax-gs-18">Erreur: ${escapeHtml(String(err))}</span>`);
       }
     };
     btnTest.addEventListener('click', handler);
@@ -161,12 +161,12 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         const newStatus = await pineconeStore.getStatus();
         setResult(
           ok
-            ? `<span style="color:#0d8a3e">✅ Clé rechargée (${newStatus.vector_count} vectors)</span>`
+            ? `<span class="ax-gs-60">✅ Clé rechargée (${newStatus.vector_count} vectors)</span>`
             : `<span style="color:#c9a227">⚠ Reload partiel : ${escapeHtml(newStatus.error ?? 'fallback actif')}</span>`,
         );
         await render(rootEl); /* re-render avec nouveau status */
       } catch (err: unknown) {
-        setResult(`<span style="color:#c00">Erreur: ${escapeHtml(String(err))}</span>`);
+        setResult(`<span class="ax-gs-18">Erreur: ${escapeHtml(String(err))}</span>`);
       }
     };
     btnReload.addEventListener('click', handler);
@@ -183,13 +183,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       try {
         const r = await pineconeStore.resyncFromLocalFacts();
         if (r.ok) {
-          setResult(`<span style="color:#0d8a3e">✅ ${r.synced} facts synchronisés</span>`);
+          setResult(`<span class="ax-gs-60">✅ ${r.synced} facts synchronisés</span>`);
           toast.show(`${r.synced} facts → Pinecone`, 'success');
         } else {
-          setResult(`<span style="color:#c00">❌ ${escapeHtml(r.error ?? '')} (${r.synced} synced avant erreur)</span>`);
+          setResult(`<span class="ax-gs-18">❌ ${escapeHtml(r.error ?? '')} (${r.synced} synced avant erreur)</span>`);
         }
       } catch (err: unknown) {
-        setResult(`<span style="color:#c00">Erreur: ${escapeHtml(String(err))}</span>`);
+        setResult(`<span class="ax-gs-18">Erreur: ${escapeHtml(String(err))}</span>`);
         logger.error('pinecone-status', 'resync error', { err });
       }
     };

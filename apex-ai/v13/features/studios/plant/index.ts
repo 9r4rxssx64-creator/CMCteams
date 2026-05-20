@@ -124,16 +124,16 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🌱 Studio Plantes</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${PLANTS.length} plantes · Mois ${currentMonth}</span>
+        <span class="ax-gs-3">${PLANTS.length} plantes · Mois ${currentMonth}</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Recherche plante</h2>
         <input type="text" id="ax-plant-search" aria-label="Rechercher une plante par nom commun ou latin" placeholder="Nom commun, latin ou alias…" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <div id="ax-plant-results" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Que planter ce mois (${currentMonth}) ?</h2>
         <div id="ax-plant-month" style="display:flex;flex-wrap:wrap;gap:6px"></div>
       </div>
@@ -149,15 +149,15 @@ function renderPlantCard(p: Plant, month: number): string {
   const lightLabel = ({ 'plein-soleil': '☀ Plein soleil', 'mi-ombre': '🌤 Mi-ombre', 'ombre': '🌑 Ombre', 'lumiere-vive-indirecte': '💡 Lumière vive indirecte' })[p.light];
   return `
     <div style="background:rgba(255,255,255,0.03);border:1px solid #333;border-radius:8px;padding:12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:24px">${p.emoji}</span>
+      <div class="ax-gs-77">
+        <span class="ax-gs-172">${p.emoji}</span>
         <div>
           <div style="font-weight:700;color:#c9a227">${escapeHtml(p.nom_commun)}</div>
           <div style="font-size:11px;color:var(--ax-text-dim);font-style:italic">${escapeHtml(p.nom_latin)}</div>
         </div>
         <span style="margin-left:auto;font-size:11px;color:#888">Difficulté ${'★'.repeat(p.difficulty)}${'☆'.repeat(5 - p.difficulty)}</span>
       </div>
-      <div style="font-size:12px;color:var(--ax-text-dim)">
+      <div class="ax-gs-5">
         💧 Arrosage : tous les ${freq}j · ${lightLabel} · ${p.temperature_min_c}–${p.temperature_max_c}°C
       </div>
       ${p.toxicity !== 'aucune' ? `<div style="font-size:11px;color:#ff8866;margin-top:4px">⚠ ${escapeHtml(p.toxicity_note)}</div>` : ''}
@@ -173,7 +173,7 @@ function attach(rootEl: HTMLElement, currentMonth: number): void {
     activeScope.bind(input, 'input', () => {
       const found = findPlant(input.value);
       results.innerHTML = found.length === 0
-        ? '<div style="color:var(--ax-text-dim);font-size:13px">Aucune plante trouvée. Essaye "tomate", "monstera", "lavande"…</div>'
+        ? '<div class="ax-gs-3">Aucune plante trouvée. Essaye "tomate", "monstera", "lavande"…</div>'
         : found.map((p) => renderPlantCard(p, currentMonth)).join('');
       if (found.length > 0) haptic.tap();
     });
@@ -183,7 +183,7 @@ function attach(rootEl: HTMLElement, currentMonth: number): void {
   if (monthDiv) {
     const list = plantsForMonth(currentMonth);
     monthDiv.innerHTML = list.length === 0
-      ? '<div style="color:var(--ax-text-dim);font-size:13px">Aucune plantation idéale ce mois.</div>'
+      ? '<div class="ax-gs-3">Aucune plantation idéale ce mois.</div>'
       : list.map((p) => `<span style="background:rgba(201,162,39,0.15);border:1px solid rgba(201,162,39,0.4);color:#c9a227;padding:4px 10px;border-radius:14px;font-size:12px">${p.emoji} ${escapeHtml(p.nom_commun)}</span>`).join('');
   }
 

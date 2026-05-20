@@ -162,8 +162,8 @@ export function render(rootEl: HTMLElement): void {
   const speciesOpts = PET_SPECIES.map((s) => `<option value="${s.id}">${s.emoji} ${escapeHtml(s.name)}</option>`).join('');
   const speciesCardsHtml = PET_SPECIES.map((s) => `
     <div style="background:rgba(255,255,255,0.03);border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:24px">${s.emoji}</span>
+      <div class="ax-gs-77">
+        <span class="ax-gs-172">${s.emoji}</span>
         <strong style="color:#c9a227">${escapeHtml(s.name)}</strong>
       </div>
       ${s.vaccinations.length > 0 ? `<div style="font-size:12px;color:#ddd;margin-bottom:4px"><strong>💉 Vaccins :</strong> ${s.vaccinations.map((v) => escapeHtml(v)).join(', ')}</div>` : ''}
@@ -175,10 +175,10 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🐾 Studio Animaux</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${PET_SPECIES.length} espèces</span>
+        <span class="ax-gs-3">${PET_SPECIES.length} espèces</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Ration alimentaire</h2>
         <select id="ax-pet-species" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">${speciesOpts}</select>
         <input type="number" id="ax-pet-weight" aria-label="Poids de l'animal en kilogrammes" placeholder="Poids (kg)" min="0.001" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
@@ -192,14 +192,14 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-pet-out" style="margin-top:12px;color:#c9a227;font-size:14px"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Âge humain équivalent</h2>
         <input type="number" id="ax-pet-age" aria-label="Âge de l'animal en années" placeholder="Âge animal (années)" min="0" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-pet-age-btn" style="min-height:44px">Convertir</button>
         <div id="ax-pet-age-out" style="margin-top:8px;color:#c9a227"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Espèces — vaccins & alertes</h2>
         ${speciesCardsHtml}
       </div>
@@ -226,7 +226,7 @@ function attach(rootEl: HTMLElement): void {
         return;
       }
       const info = PET_SPECIES.find((s) => s.id === sp);
-      out.innerHTML = `Ration journalière estimée : <strong>${cal} kcal</strong> ${info ? `(${info.emoji} ${escapeHtml(info.name)} · ${w} kg · ${escapeHtml(a)})` : ''}<br><span style="font-size:12px;color:var(--ax-text-dim)">Diviser en 2-3 repas. Adapter selon avis véto.</span>`;
+      out.innerHTML = `Ration journalière estimée : <strong>${cal} kcal</strong> ${info ? `(${info.emoji} ${escapeHtml(info.name)} · ${w} kg · ${escapeHtml(a)})` : ''}<br><span class="ax-gs-5">Diviser en 2-3 repas. Adapter selon avis véto.</span>`;
     });
   }
 

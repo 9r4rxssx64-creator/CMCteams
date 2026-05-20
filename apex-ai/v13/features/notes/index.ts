@@ -185,7 +185,7 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">📝 Bloc-notes</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${notes.length} note${notes.length > 1 ? 's' : ''}</span>
+        <span class="ax-gs-3">${notes.length} note${notes.length > 1 ? 's' : ''}</span>
       </header>
 
       <form id="ax-notes-form" class="ax-form" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">

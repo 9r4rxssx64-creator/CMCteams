@@ -251,12 +251,12 @@ function renderCategoryTabs(): string {
 
 function renderEntry(e: KbEntry): string {
   const tagsHtml = e.tags && e.tags.length > 0
-    ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${e.tags.map((t) => `<span style="background:rgba(168,120,255,.1);color:#a878ff;font-size:10px;padding:2px 6px;border-radius:4px">${escapeHtml(t)}</span>`).join('')}</div>`
+    ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${e.tags.map((t) => `<span class="ax-gs-138">${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
   return `
     <li class="ax-kb-entry" style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:12px;margin-bottom:8px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-        <div style="flex:1;min-width:0">
+        <div class="ax-gs-6">
           <h4 style="margin:0 0 6px;color:#c9a227;font-size:13px">${escapeHtml(e.title)}</h4>
           <p style="margin:0;color:#fff;font-size:12px;line-height:1.5">${escapeHtml(e.content)}</p>
           ${tagsHtml}

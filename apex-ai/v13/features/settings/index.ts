@@ -97,8 +97,8 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
           const desc = v.description ? escapeHtml(v.description) : '';
           return `
             <div class="ax-voice-item${isActive ? ' is-active' : ''}" data-voice-id="${escapeHtml(v.id)}">
-              <span style="font-size:18px">${emoji}</span>
-              <div style="flex:1;min-width:0">
+              <span class="ax-gs-17">${emoji}</span>
+              <div class="ax-gs-6">
                 <div class="ax-voice-item__name">${escapeHtml(v.name)}${isActive ? ' <span style="color:var(--ax-gold);font-size:11px">★ active</span>' : ''}</div>
                 <div class="ax-voice-item__meta">${escapeHtml(v.category)}${desc ? ' · ' + desc : ''}</div>
               </div>
@@ -207,7 +207,7 @@ export function render(rootEl: HTMLElement): void {
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:100ms">
         <h2 style="${sectionHeaderStyle}"><span style="${iconBadgeStyle}">🎨</span> Apparence</h2>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px">
-          <span style="color:rgba(255,255,255,0.7);font-size:14px">Thème actuel</span>
+          <span class="ax-gs-164">Thème actuel</span>
           <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(232,184,48,0.12);color:var(--ax-gold);border-radius:24px;font-size:12px;font-weight:700;letter-spacing:0.04em">
             <span style="width:8px;height:8px;background:var(--ax-gold);border-radius:50%;box-shadow:0 0 10px var(--ax-gold)"></span> DARK
           </span>
@@ -251,7 +251,7 @@ export function render(rootEl: HTMLElement): void {
           Apex peut lire ses réponses à voix haute. Choisis ta voix préférée parmi 60+ (PRO, FUN, Thématique).
         </p>
         <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:10px;cursor:pointer">
-          <span style="color:rgba(255,255,255,0.7);font-size:14px">Lire automatiquement les réponses</span>
+          <span class="ax-gs-164">Lire automatiquement les réponses</span>
           <input type="checkbox" id="ax-settings-auto-read" aria-label="Lire automatiquement les réponses à voix haute" style="width:20px;height:20px;cursor:pointer">
         </label>
         <div id="ax-voice-current" style="margin:10px 0;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.6);font-family:ui-monospace,'SF Mono',Menlo,monospace">Voix active : ...</div>
@@ -357,7 +357,7 @@ export function render(rootEl: HTMLElement): void {
             : r.severity === 'low' ? '🔵' : '✅';
           return `<div style="background:rgba(255,255,255,0.03);border-left:3px solid ${color};padding:8px 12px;margin-top:6px;border-radius:4px">
             <strong style="color:${color}">${icon} ${r.service}</strong> <span class="ax-sev ${sevClass}">${r.severity}</span>
-            <div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${r.reason}</div>
+            <div class="ax-gs-165">${r.reason}</div>
             <div style="font-size:11px;margin-top:4px">${r.recommended_action}</div>
             ${renderRechargeAction({ rechargeUrl: r.recharge_url, rotateUrl: r.rotate_url, variant: 'inline' })}
           </div>`;
@@ -412,17 +412,17 @@ export function render(rootEl: HTMLElement): void {
           const appliedSafe = out.fixes.applied.map((f) => escapeHtml(String(f))).join(', ');
           resultsEl.innerHTML = `
             <div style="background:rgba(106,138,255,0.08);border:1px solid rgba(106,138,255,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
-              <div style="font-weight:700;margin-bottom:6px">🧪 Test fonctionnel terminé</div>
+              <div class="ax-gs-166">🧪 Test fonctionnel terminé</div>
               <div>Testés : <b>${out.before.tested}</b>/${out.before.totalButtons} · OK : <b style="color:var(--ax-green)">${out.before.ok} (${okPct}%)</b> · No-response : <b style="color:var(--ax-sev-high)">${out.before.noResponse}</b> · Erreurs : <b style="color:var(--ax-error)">${out.before.errors}</b> · Skipped : ${out.before.skipped}${improveStr}</div>
-              ${out.fixes.applied.length ? `<div style="margin-top:6px;color:var(--ax-gold-deep)">🔧 Auto-fix appliqué : ${appliedSafe}</div>` : ''}
+              ${out.fixes.applied.length ? `<div class="ax-gs-75">🔧 Auto-fix appliqué : ${appliedSafe}</div>` : ''}
               ${out.fixes.escalated ? '<div style="margin-top:6px;color:var(--ax-error)">⚠ Escaladé à Claude Code (ax_claude_todo)</div>' : ''}
               ${sampleBugs ? `<ul style="margin:6px 0 0 16px;padding:0">${sampleBugs}</ul>` : ''}
-              <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">→ Historique complet dans Admin (Apex Audits Live)</div>
+              <div class="ax-gs-167">→ Historique complet dans Admin (Apex Audits Live)</div>
             </div>
           `;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          resultsEl.innerHTML = `<div style="color:var(--ax-error)">❌ Erreur test : ${escapeHtml(msg)}</div>`;
+          resultsEl.innerHTML = `<div class="ax-gs-76">❌ Erreur test : ${escapeHtml(msg)}</div>`;
         }
       })();
     });
@@ -449,19 +449,19 @@ export function render(rootEl: HTMLElement): void {
           ).join('');
           resultsEl.innerHTML = `
             <div style="background:rgba(180,90,200,0.08);border:1px solid rgba(180,90,200,0.3);border-radius:8px;padding:10px;color:#fff;font-size:12px">
-              <div style="font-weight:700;margin-bottom:6px">📐 Layout scan</div>
+              <div class="ax-gs-166">📐 Layout scan</div>
               <div>Viewport : ${r.viewport.width}×${r.viewport.height} · Document : ${r.documentScroll.width}px</div>
               <div>Overflow horizontal : <b style="color:${r.hasHorizontalOverflow ? 'var(--ax-error)' : 'var(--ax-green)'}">${r.hasHorizontalOverflow ? 'OUI' : 'NON'}</b> · Boutons cachés : <b style="color:${r.hiddenButtons.length ? 'var(--ax-sev-high)' : 'var(--ax-green)'}">${r.hiddenButtons.length}</b> · Touch < 44px : ${r.smallTouchTargets.length}</div>
-              ${sampleHidden ? `<div style="margin-top:6px;color:var(--ax-gold-deep)">Boutons cachés:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleHidden}</ul>` : ''}
-              ${sampleOverflow ? `<div style="margin-top:6px;color:var(--ax-gold-deep)">Éléments overflow:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleOverflow}</ul>` : ''}
-              <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5)">→ Historique complet dans Admin (Apex Audits Live)</div>
+              ${sampleHidden ? `<div class="ax-gs-75">Boutons cachés:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleHidden}</ul>` : ''}
+              ${sampleOverflow ? `<div class="ax-gs-75">Éléments overflow:</div><ul style="margin:2px 0 0 16px;padding:0">${sampleOverflow}</ul>` : ''}
+              <div class="ax-gs-167">→ Historique complet dans Admin (Apex Audits Live)</div>
             </div>
           `;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           /* v13.4.187 audit XSS gap #1 closure : escape même les Error.message
            * internes (peut contenir données user-controlled via stack traces). */
-          resultsEl.innerHTML = `<div style="color:var(--ax-error)">❌ Erreur scan : ${escapeHtml(msg)}</div>`;
+          resultsEl.innerHTML = `<div class="ax-gs-76">❌ Erreur scan : ${escapeHtml(msg)}</div>`;
         }
       })();
     });
@@ -476,7 +476,7 @@ export function render(rootEl: HTMLElement): void {
       void (async () => {
         const resultsEl = rootEl.querySelector<HTMLDivElement>('#ax-cf-diagnostic-results');
         if (!resultsEl) return;
-        resultsEl.innerHTML = '<div style="color:var(--ax-warning)">⏳ Test Cloudflare API en cours...</div>';
+        resultsEl.innerHTML = '<div class="ax-gs-168">⏳ Test Cloudflare API en cours...</div>';
         try {
           const { apexCloudflareVaultDeploy } = await import('../../services/vault/apex-cloudflare-vault-deploy.js');
           const diag = await apexCloudflareVaultDeploy.runDiagnostic();
@@ -484,7 +484,7 @@ export function render(rootEl: HTMLElement): void {
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px">
               <span style="color:${ok ? 'var(--ax-green)' : 'var(--ax-error)'};font-weight:700">${ok ? '✅' : '❌'}</span>
               <span style="flex:1;color:rgba(255,255,255,0.85)">${label}</span>
-              ${detail ? `<span style="color:rgba(255,255,255,0.5);font-size:11px">${detail}</span>` : ''}
+              ${detail ? `<span class="ax-gs-107">${detail}</span>` : ''}
             </div>`;
           let html = '<div style="background:rgba(15,15,25,0.8);border:1px solid rgba(247,131,34,0.3);border-radius:10px;padding:12px;margin-top:10px">';
           html += '<div style="color:var(--ax-warning);font-weight:700;margin-bottom:8px">☁️ Diagnostic Cloudflare</div>';
@@ -498,7 +498,7 @@ export function render(rootEl: HTMLElement): void {
             html += `<div style="margin-top:10px;padding:8px;background:rgba(255,91,91,0.1);border-left:3px solid var(--ax-error);color:var(--ax-error);font-size:12px;border-radius:4px">${diag.error_reason}</div>`;
           }
           if (diag.fix_url) {
-            html += `<div style="margin-top:8px"><a href="${diag.fix_url}" target="_blank" rel="noopener" style="color:var(--ax-blue);font-size:12px">🔗 Fix : ${diag.fix_url}</a></div>`;
+            html += `<div class="ax-gs-114"><a href="${diag.fix_url}" target="_blank" rel="noopener" style="color:var(--ax-blue);font-size:12px">🔗 Fix : ${diag.fix_url}</a></div>`;
           }
           html += '</div>';
           resultsEl.innerHTML = html;

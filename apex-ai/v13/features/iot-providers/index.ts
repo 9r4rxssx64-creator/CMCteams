@@ -46,7 +46,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!rootEl) return;
   if (!isAdmin()) {
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#888;font-family:system-ui,-apple-system,sans-serif">
+      <div class="ax-gs-62">
         <h2 style="color:#c9a227">🔌 IoT Providers</h2>
         <p>🔒 Cette section est réservée à l'admin Kevin.</p>
       </div>
@@ -55,7 +55,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   }
   /* Loading state */
   rootEl.innerHTML = `
-    <div style="padding:40px;text-align:center;color:#888;font-family:system-ui,-apple-system,sans-serif">
+    <div class="ax-gs-62">
       <h2 style="color:#c9a227">🔌 IoT Providers</h2>
       <p>Chargement des providers et devices…</p>
     </div>
@@ -186,7 +186,7 @@ function renderProviderCard(row: ProviderStatusRow): string {
         <p class="iot-desc">${escapeHtml(provider.description ?? '')}</p>
         <span class="iot-status-badge ${badgeClass}">${badgeText}</span>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="ax-gs-29">
         <button class="iot-btn" data-action="install" data-provider-id="${escapeHtml(provider.id)}">
           ${installed ? '↻ Reconfig' : '＋ Installer'}
         </button>

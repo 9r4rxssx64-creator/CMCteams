@@ -417,14 +417,14 @@ export function renderCredentialCard(c: CredentialDisplay): string {
     <div class="ax-cred-card" data-cred-id="${escapeHtml(c.id)}" data-service="${escapeHtml(c.service)}"
       style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;transition:all 200ms ease-out;position:relative;display:flex;flex-direction:column;gap:8px">
       <div style="position:absolute;top:14px;right:14px;width:10px;height:10px;border-radius:50%;background:${escapeHtml(statusColor)};box-shadow:0 0 8px ${escapeHtml(statusColor)}" title="${escapeHtml(statusEmoji)} ${escapeHtml(c.status)}"></div>
-      <div style="display:flex;align-items:center;gap:10px">
+      <div class="ax-gs-120">
         ${logoTag}
         <strong style="font-size:15px;color:#fff">${escapeHtml(c.serviceName)}</strong>
         ${alias}
       </div>
       <code style="display:block;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:11px;color:var(--ax-text-muted);font-family:'SF Mono',Menlo,monospace;letter-spacing:1px">${escapeHtml(masked)}</code>
       ${metaLine}
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="ax-gs-20">
         <button data-action="test" data-cred-id="${escapeHtml(c.id)}" aria-label="Tester la clé ${escapeHtml(c.service)}"
           style="flex:1;min-width:80px;padding:6px 10px;background:rgba(34,204,119,0.1);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">🔄 Test</button>
         <button data-action="recharge" data-service="${escapeHtml(c.service)}" data-recharge-url="${escapeHtml(recharge)}" ${recharge ? '' : 'disabled'} aria-label="Recharger ${escapeHtml(c.service)}"
@@ -561,7 +561,7 @@ export function render(rootEl: HTMLElement): void {
         <header style="padding:12px 0">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
             <h1 class="ax-vault-h1" style="margin:0;font-size:24px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;transition:font-size 200ms ease">🔐 Coffre Codes</h1>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="ax-gs-7">
               <button id="ax-vault-add-manual" style="padding:8px 14px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px">+ Ajouter</button>
               <button id="ax-vault-test-all" style="padding:8px 14px;background:rgba(201,162,39,0.1);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3);border-radius:10px;cursor:pointer;font-size:13px;min-height:40px">🔄 Tester tout</button>
             </div>
@@ -569,8 +569,8 @@ export function render(rootEl: HTMLElement): void {
           <div class="ax-vault-stats" style="display:flex;gap:14px;padding:8px 0 0;font-size:12px;color:var(--ax-text-dim);flex-wrap:wrap">
             <span>📊 ${stats.total} codes</span>
             <span style="color:var(--ax-green)">🟢 ${stats.active} actifs</span>
-            <span style="color:var(--ax-warning)">🟡 ${stats.failing} dégradés</span>
-            <span style="color:var(--ax-error)">🔴 ${stats.invalid} invalides</span>
+            <span class="ax-gs-168">🟡 ${stats.failing} dégradés</span>
+            <span class="ax-gs-76">🔴 ${stats.invalid} invalides</span>
           </div>
         </header>
 
@@ -586,7 +586,7 @@ export function render(rootEl: HTMLElement): void {
       <section id="ax-vault-empty-rescue" class="ax-empty-banner" style="background:linear-gradient(135deg,rgba(255,91,91,0.10),rgba(232,184,48,0.06));border-color:rgba(255,91,91,0.35)">
         <h3 class="ax-empty-banner-title">${stats.total === 0 ? '🆘 Coffre vide — Restauration possible' : `🚨 ${stats.invalid} clé(s) illisible(s) — récupération ou cleanup`}</h3>
         <p class="ax-empty-banner-body">${stats.total === 0 ? "Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection." : "Ces clés ont été chiffrées avec une passphrase historisée perdue (régression v13.3.86 fixée v13.3.88). Soit re-coller les clés une par une, soit supprimer les illisibles."}</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="ax-gs-7">
           <button id="ax-vault-rescue-fb" data-action="rescue-firebase" class="ax-btn-health ax-btn-health-primary">🔓 Restaurer depuis Firebase</button>
           <button id="ax-vault-rescue-all" data-action="rescue-scan-all" class="ax-btn-health ax-btn-health-blue">🔄 Scanner toutes sources</button>
           ${stats.invalid > 0 ? `<button id="ax-vault-cleanup-invalid" data-action="cleanup-invalid" class="ax-btn-health ax-btn-health-danger">🗑 Supprimer ${stats.invalid} illisibles</button>` : ''}
@@ -614,7 +614,7 @@ export function render(rootEl: HTMLElement): void {
       <section style="margin-top:18px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px">
         <h3 style="margin:0 0 10px;color:var(--ax-gold);font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">💾 Backup & Restore</h3>
         <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">⚠️ Sauvegarde TES clés AVANT tout reinstall PWA. Firebase rules require auth = ton backup auto Firebase ne marche pas.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="ax-gs-7">
           <button id="ax-vault-export"
             style="padding:10px 16px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.3);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📥 Exporter (JSON)</button>
           <button id="ax-vault-import"
@@ -809,7 +809,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         }
       } catch (err: unknown) {
         logger.warn('feature-vault', 'rescueFb failed', { err });
-        if (result) result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:var(--ax-error);border-radius:8px">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
+        if (result) result.innerHTML = `<div class="ax-gs-48">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
         toast.error('Erreur lecture Firebase backup');
         haptic.error();
       }
@@ -841,7 +841,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         }
       } catch (err: unknown) {
         logger.warn('feature-vault', 'rescueAll failed', { err });
-        if (result) result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:var(--ax-error);border-radius:8px">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
+        if (result) result.innerHTML = `<div class="ax-gs-48">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
         toast.error('Erreur scan multi-sources');
         haptic.error();
       }
@@ -924,7 +924,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         }
         const text = await navigator.clipboard.readText();
         if (!text) {
-          if (result) result.innerHTML = `<div style="padding:8px;background:rgba(240,192,32,.1);color:var(--ax-gold);border-radius:8px">⚠ Presse-papier vide</div>`;
+          if (result) result.innerHTML = `<div class="ax-gs-174">⚠ Presse-papier vide</div>`;
           return;
         }
         ta.value = text;
@@ -936,7 +936,7 @@ function attachHandlers(rootEl: HTMLElement): void {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'unknown';
         toast.error(`Clipboard refusé : ${msg}. Utilise long-press → Coller manuellement.`);
-        if (result) result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:var(--ax-error);border-radius:8px">⚠ Permission refusée. Long-press dans le champ → Coller.</div>`;
+        if (result) result.innerHTML = `<div class="ax-gs-48">⚠ Permission refusée. Long-press dans le champ → Coller.</div>`;
       }
     })();
   });
@@ -952,7 +952,7 @@ function attachHandlers(rootEl: HTMLElement): void {
       /* v13.4.6 fix bug : on capture ta.value AVANT de le vider */
       const valueToProcess = ta.value.trim();
       if (!valueToProcess) {
-        result.innerHTML = `<div style="padding:8px;background:rgba(240,192,32,.1);color:var(--ax-gold);border-radius:8px">⚠ Colle quelque chose d'abord</div>`;
+        result.innerHTML = `<div class="ax-gs-174">⚠ Colle quelque chose d'abord</div>`;
         return;
       }
       const r = await autoDetectAndStore(valueToProcess);
@@ -975,7 +975,7 @@ function attachHandlers(rootEl: HTMLElement): void {
       } else {
         haptic.error();
         toast.error(r.reason);
-        result.innerHTML = `<div style="padding:8px;background:rgba(255,88,88,.1);color:var(--ax-error);border-radius:8px">⚠ ${escapeHtml(r.reason)}</div>`;
+        result.innerHTML = `<div class="ax-gs-48">⚠ ${escapeHtml(r.reason)}</div>`;
       }
     })();
   });
@@ -1298,7 +1298,7 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
     <div role="dialog" aria-modal="true" aria-label="Ajouter une clé"
       style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
       <div style="background:var(--ax-bg-flat);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="ax-gs-175">
           <h2 style="margin:0;font-size:18px;color:var(--ax-gold)">+ Ajouter une clé</h2>
           <button id="ax-vault-modal-close" aria-label="Fermer"
             style="background:transparent;border:0;color:var(--ax-text-dim);font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
@@ -1324,7 +1324,7 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
           <textarea id="ax-vault-add-value" placeholder="Colle la clé ici"
             style="width:100%;margin-top:4px;padding:10px;background:rgba(0,0,0,0.4);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;min-height:80px;font-family:'SF Mono',Menlo,monospace;box-sizing:border-box;-webkit-appearance:none;resize:vertical"></textarea>
         </label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <div class="ax-gs-176">
           <button id="ax-vault-add-detect"
             style="flex:1;min-width:140px;padding:10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.3);border-radius:8px;cursor:pointer;font-size:13px;min-height:44px">🔍 Détecter automatiquement</button>
           <button id="ax-vault-add-save"
@@ -1403,7 +1403,7 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
     <div role="dialog" aria-modal="true" aria-label="Modifier une clé"
       style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
       <div style="background:var(--ax-bg-flat);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;max-width:440px;width:100%">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="ax-gs-175">
           <h2 style="margin:0;font-size:18px;color:var(--ax-gold)">✏️ Modifier ${escapeHtml(entry.service)}</h2>
           <button id="ax-vault-modal-close" aria-label="Fermer"
             style="background:transparent;border:0;color:var(--ax-text-dim);font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
@@ -1419,7 +1419,7 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
           <input type="text" id="ax-vault-edit-alias" aria-label="Alias optionnel" value="${escapeHtml(entry.alias ?? '')}"
             style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px;box-sizing:border-box;-webkit-appearance:none">
         </label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <div class="ax-gs-176">
           <button id="ax-vault-edit-cancel"
             style="flex:1;min-width:120px;padding:10px;background:rgba(255,255,255,0.04);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.1);border-radius:8px;cursor:pointer;font-size:13px;min-height:44px">Annuler</button>
           <button id="ax-vault-edit-save"

@@ -104,8 +104,8 @@ function renderToolRow(t: ApexTool): string {
     <li class="ax-tool-row" data-tool-name="${escapeHtml(t.name)}"
       style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid ${escapeHtml(tier.color)}">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+        <div class="ax-gs-11">
+          <div class="ax-gs-122">
             <code style="color:#fff;font-weight:700;font-size:13px;background:rgba(0,0,0,.3);padding:2px 8px;border-radius:4px">${escapeHtml(t.name)}</code>
             <span style="background:rgba(${t.minTier === 'admin' ? '201,162,39' : t.minTier === 'family' ? '168,120,255' : '90,168,255'},.15);color:${escapeHtml(tier.color)};font-size:10px;padding:2px 6px;border-radius:4px">${escapeHtml(tier.label)}</span>
             <span style="background:rgba(${t.impactLevel === 'A' ? '34,204,119' : t.impactLevel === 'B' ? '255,170,0' : '255,88,88'},.15);color:${escapeHtml(impact.color)};font-size:10px;padding:2px 6px;border-radius:4px">${impact.icon} ${escapeHtml(impact.label)}</span>
@@ -128,7 +128,7 @@ function renderCapabilityRow(c: Capability): string {
   return `
     <li style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:10px;margin-bottom:6px;border-left:3px solid ${color}">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="flex:1;min-width:0">
+        <div class="ax-gs-6">
           <strong style="color:#fff;font-size:13px">${icon} ${escapeHtml(c.emoji)} ${escapeHtml(c.label)}</strong>
           <p style="margin:2px 0 0;color:#a0a4c0;font-size:11px">${escapeHtml(c.description)}</p>
           ${examplesHtml}

@@ -57,32 +57,32 @@ export function render(rootEl: HTMLElement): void {
         <form id="signup-form" novalidate style="display:grid;gap:14px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <label>
-              <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Prénom *</span>
+              <span class="ax-gs-35">Prénom *</span>
               <input type="text" id="signup-prenom" aria-label="Prénom" required minlength="2" autocomplete="given-name"
                 style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
                 placeholder="Marc">
             </label>
             <label>
-              <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Nom *</span>
+              <span class="ax-gs-35">Nom *</span>
               <input type="text" id="signup-nom" aria-label="Nom de famille" required minlength="2" autocomplete="family-name"
                 style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
                 placeholder="Dupont">
             </label>
           </div>
           <label>
-            <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Email *</span>
+            <span class="ax-gs-35">Email *</span>
             <input type="email" id="signup-email" aria-label="Adresse email" required autocomplete="email" inputmode="email"
               style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
               placeholder="marc@example.com">
           </label>
           <label>
-            <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">Téléphone WhatsApp (format +33xxx)</span>
+            <span class="ax-gs-35">Téléphone WhatsApp (format +33xxx)</span>
             <input type="tel" id="signup-whatsapp" aria-label="Numéro WhatsApp avec indicatif pays" autocomplete="tel" inputmode="tel" pattern="^\\+\\d{6,15}$"
               style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
               placeholder="+33612345678">
           </label>
           <label>
-            <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:4px">🔑 Ton code d'accès * (min 4 chiffres)</span>
+            <span class="ax-gs-35">🔑 Ton code d'accès * (min 4 chiffres)</span>
             <input type="password" id="signup-pin" aria-label="Code PIN personnel pour te connecter" required minlength="4" maxlength="20" inputmode="numeric" autocomplete="new-password"
               style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px;letter-spacing:4px"
               placeholder="••••">
@@ -95,7 +95,7 @@ export function render(rootEl: HTMLElement): void {
               ${PLANS.map((p, i) => `
                 <label style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer">
                   <input type="radio" name="signup-plan" aria-label="Plan ${escapeHtml(p.label)}" value="${p.id}" ${i === 0 ? 'checked' : ''} style="accent-color:#c9a227">
-                  <div style="flex:1">
+                  <div class="ax-gs-26">
                     <div style="display:flex;justify-content:space-between;align-items:center">
                       <strong style="color:#fff;font-size:14px">${escapeHtml(p.label)}</strong>
                       <span style="color:#c9a227;font-size:13px">${escapeHtml(p.price)}</span>

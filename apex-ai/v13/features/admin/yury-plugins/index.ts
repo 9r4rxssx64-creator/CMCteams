@@ -96,7 +96,7 @@ function renderCard(plugin: PluginCard): string {
   return `
     <article class="ax-yury-card" data-plugin-id="${escapeHtml(plugin.id)}" style="background:linear-gradient(135deg,rgba(20,20,35,0.85),rgba(14,14,28,0.65));border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;transition:transform 200ms cubic-bezier(0.16,1,0.3,1)">
       <header style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div class="ax-gs-120">
           <span style="font-size:28px" aria-hidden="true">${escapeHtml(plugin.emoji)}</span>
           <h3 style="margin:0;font-size:16px;color:#fff;font-weight:700;letter-spacing:-0.015em">${escapeHtml(plugin.name)}</h3>
         </div>
@@ -143,7 +143,7 @@ async function launchSecurityReview(): Promise<void> {
     modalSheet.open({
       title: `🔒 Security Review — Score ${report.score}/100`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:14px">
             ${report.passedChecks}/${report.totalChecks} checks passés · ${report.findings.length} findings · ${Math.round(report.durationMs)}ms
           </p>
@@ -174,7 +174,7 @@ async function launchCodeReview(): Promise<void> {
     modalSheet.open({
       title: `👥 Code Review — Score ${report.finalScore}/100`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:14px">
             ${report.totalFindings} findings · ${report.criticalFindings} critical · ${Math.round(report.durationMs)}ms
           </p>
@@ -204,7 +204,7 @@ async function launchFrontendDesign(): Promise<void> {
     modalSheet.open({
       title: `🎨 Frontend Design — ${output.framework}`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">
             Généré en ${Math.round(output.durationMs)}ms · framework ${escapeHtml(output.framework)}
           </p>
@@ -234,7 +234,7 @@ async function launchSuperpowers(): Promise<void> {
     modalSheet.open({
       title: `⚡ Superpowers — ${escapeHtml(taskName)}`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">
             Session ${escapeHtml(sessionId)} · step actuel : <strong>${escapeHtml(session?.currentStep ?? '-')}</strong>
           </p>
@@ -268,7 +268,7 @@ async function launchGStackRoles(): Promise<void> {
     modalSheet.open({
       title: `🏛 GStack Pipeline — ${result.roles.filter((r) => r.ok).length}/7 OK`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:14px">
             ${Math.round(result.totalDurationMs / 1000)}s total
           </p>

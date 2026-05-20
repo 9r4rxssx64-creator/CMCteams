@@ -52,11 +52,11 @@ function renderStatsHeader(): string {
   const stats = apexMetaMarketplace.getStats();
   return `
     <div class="meta-mkt-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px;padding:12px;background:rgba(255,255,255,.04);border-radius:10px;">
-      <div><div style="opacity:.7;font-size:.85em">Marketplaces</div><div style="font-size:1.5em;font-weight:600">${stats.providers}</div></div>
-      <div><div style="opacity:.7;font-size:.85em">PWA-compatible</div><div style="font-size:1.5em;font-weight:600;color:#22cc77">${stats.pwa_compatible}</div></div>
-      <div><div style="opacity:.7;font-size:.85em">Clés API requises</div><div style="font-size:1.5em;font-weight:600">${stats.require_api_key}</div></div>
-      <div><div style="opacity:.7;font-size:.85em">Clés configurées</div><div style="font-size:1.5em;font-weight:600;color:#f0c020">${stats.api_keys_configured}/${stats.require_api_key}</div></div>
-      <div><div style="opacity:.7;font-size:.85em">Installs total</div><div style="font-size:1.5em;font-weight:600">${stats.installs_total}</div></div>
+      <div><div class="ax-gs-32">Marketplaces</div><div class="ax-gs-66">${stats.providers}</div></div>
+      <div><div class="ax-gs-32">PWA-compatible</div><div style="font-size:1.5em;font-weight:600;color:#22cc77">${stats.pwa_compatible}</div></div>
+      <div><div class="ax-gs-32">Clés API requises</div><div class="ax-gs-66">${stats.require_api_key}</div></div>
+      <div><div class="ax-gs-32">Clés configurées</div><div style="font-size:1.5em;font-weight:600;color:#f0c020">${stats.api_keys_configured}/${stats.require_api_key}</div></div>
+      <div><div class="ax-gs-32">Installs total</div><div class="ax-gs-66">${stats.installs_total}</div></div>
     </div>
   `;
 }
@@ -102,7 +102,7 @@ function renderItemCard(item: MarketplaceItem): string {
   return `
     <div class="meta-mkt-card" style="padding:12px;border:1px solid #333;border-radius:8px;background:rgba(255,255,255,.03);">
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;">
-        <div style="flex:1;min-width:0">
+        <div class="ax-gs-6">
           <div style="font-weight:600;font-size:1em;word-break:break-word">${escapeHtml(item.name)}</div>
           ${provider ? `<div style="margin-top:2px">${renderProviderBadge(provider)}</div>` : ''}
         </div>
@@ -111,7 +111,7 @@ function renderItemCard(item: MarketplaceItem): string {
       <div style="margin-top:6px;opacity:.85;font-size:.85em;line-height:1.4">${escapeHtml(item.description.slice(0, 200))}</div>
       <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:10px;font-size:.8em;opacity:.75">
         ${stars} ${downloads} ${price}
-        ${item.category ? `<span style="color:#9aa">#${escapeHtml(item.category)}</span>` : ''}
+        ${item.category ? `<span class="ax-gs-139">#${escapeHtml(item.category)}</span>` : ''}
         <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener" style="color:#6cf">Ouvrir →</a>
       </div>
     </div>
@@ -141,7 +141,7 @@ function renderProvidersList(category: MarketplaceCategory | null): string {
 
 function renderResults(items: MarketplaceItem[]): string {
   if (items.length === 0) {
-    return '<div style="padding:24px;text-align:center;opacity:.7">Aucun résultat. Essaie une autre query ou catégorie.</div>';
+    return '<div class="ax-gs-140">Aucun résultat. Essaie une autre query ou catégorie.</div>';
   }
   return `
     <div class="meta-mkt-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
@@ -172,13 +172,13 @@ function renderShell(): string {
         Search unifié dans <strong>${META_MARKETPLACE_CATALOG.length}+ marketplaces</strong> du monde — IA, code, GitHub, plugins, automation, SaaS, cloud, APIs, datasets, anthropic.
       </div>
       ${renderStatsHeader()}
-      <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div class="ax-gs-67">
         <input id="meta-mkt-search" type="search" aria-label="Recherche dans les marketplaces" placeholder="Cherche dans 30+ marketplaces (ex: stable diffusion, react, postgres)..." value="${escapeHtml(state.query)}" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#1a1a2a;color:#fff;font-size:1em">
         <button id="meta-mkt-search-btn" style="padding:10px 16px;border-radius:8px;border:1px solid #6cf;background:rgba(102,204,255,.1);color:#6cf;cursor:pointer">Search</button>
       </div>
       ${renderCategoryChips(state.category)}
       <div id="meta-mkt-content">
-        ${state.loading ? '<div style="padding:24px;text-align:center;opacity:.7">⏳ Recherche en parallèle...</div>' : state.results.length > 0 ? renderResults(state.results) : renderProvidersList(state.category)}
+        ${state.loading ? '<div class="ax-gs-140">⏳ Recherche en parallèle...</div>' : state.results.length > 0 ? renderResults(state.results) : renderProvidersList(state.category)}
       </div>
     </div>
   `;
