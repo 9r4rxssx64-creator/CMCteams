@@ -201,7 +201,7 @@ function renderProviderCard(row: ProviderStatusRow): string {
 function renderDeviceRow(d: IoTDevice): string {
   const onlineDot = d.online ? '🟢' : '⚪';
   return `
-    <tr style="border-bottom:1px solid #2a2a2a">
+    <tr class="ax-gs-232">
       <td style="padding:8px">${onlineDot}</td>
       <td style="padding:8px;color:#c9a227">${escapeHtml(d.provider)}</td>
       <td style="padding:8px;color:#fff">${escapeHtml(d.name)}</td>
@@ -248,7 +248,7 @@ async function handleInstall(providerId: string, rootEl: HTMLElement): Promise<v
       <div class="iot-modal">
         <h3>${escapeHtml(provider.icon ?? '🔌')} Installer ${escapeHtml(provider.name)}</h3>
         <p style="color:#aaa;font-size:13px;margin:0 0 12px">${escapeHtml(provider.description ?? '')}</p>
-        <p style="color:#888;font-size:12px">Console : <a href="${escapeHtml(provider.console_url)}" target="_blank" rel="noopener" style="color:#c9a227">${escapeHtml(provider.console_url)}</a></p>
+        <p style="color:#888;font-size:12px">Console : <a href="${escapeHtml(provider.console_url)}" target="_blank" rel="noopener" class="ax-gs-198">${escapeHtml(provider.console_url)}</a></p>
         <form id="iot-install-form" autocomplete="off">
           ${fields.map((f) => `
             <label>${escapeHtml(f.label)}${f.required ? ' *' : ''}</label>

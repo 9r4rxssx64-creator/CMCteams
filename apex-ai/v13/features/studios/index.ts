@@ -138,19 +138,19 @@ export const studiosHub = new StudiosHub();
 export function render(root: HTMLElement): void {
   const cards = STUDIOS.map((s) => `
     <div class="ax-studio-card" data-studio="${escapeAttr(s.id)}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;transition:transform 0.15s">
-      <div class="ax-studio-card-emoji" style="font-size:36px">${escapeHtml(s.emoji)}</div>
-      <div class="ax-studio-card-label" style="font-weight:700;color:#c9a227;margin-top:8px">${escapeHtml(s.label)}</div>
-      <div class="ax-studio-card-desc" style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">${escapeHtml(s.description)}</div>
+      <div class="ax-studio-card-emoji ax-gs-192">${escapeHtml(s.emoji)}</div>
+      <div class="ax-studio-card-label ax-gs-238">${escapeHtml(s.label)}</div>
+      <div class="ax-studio-card-desc ax-gs-239">${escapeHtml(s.description)}</div>
       ${s.premium ? '<span class="ax-badge-premium" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-top:8px;display:inline-block">PRO</span>' : ''}
     </div>
   `).join('');
   root.innerHTML = `
     <div class="ax-studios-hub" style="padding:16px;max-width:900px;margin:0 auto">
       <h1 style="color:#c9a227">🎨 Studios créatifs</h1>
-      <p class="ax-subtitle" style="color:var(--ax-text-dim)">${STUDIOS.length} studios pour créer, monter, designer</p>
+      <p class="ax-subtitle ax-gs-226">${STUDIOS.length} studios pour créer, monter, designer</p>
       <div class="ax-studios-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px">${cards}</div>
-      <div id="ax-studio-detail" style="margin-top:24px"></div>
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <div id="ax-studio-detail" class="ax-gs-218"></div>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   /* Studios créatifs réels disponibles (route vers feature dédiée) */

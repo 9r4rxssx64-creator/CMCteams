@@ -91,12 +91,12 @@ export function render(rootEl: HTMLElement): void {
 
           <div>
             <span style="display:block;color:#c9a227;font-size:12px;margin-bottom:8px">Plan souhaité *</span>
-            <div id="signup-plans" style="display:grid;gap:8px">
+            <div id="signup-plans" class="ax-gs-251">
               ${PLANS.map((p, i) => `
                 <label style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer">
                   <input type="radio" name="signup-plan" aria-label="Plan ${escapeHtml(p.label)}" value="${p.id}" ${i === 0 ? 'checked' : ''} style="accent-color:#c9a227">
                   <div class="ax-gs-26">
-                    <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div class="ax-gs-219">
                       <strong style="color:#fff;font-size:14px">${escapeHtml(p.label)}</strong>
                       <span style="color:#c9a227;font-size:13px">${escapeHtml(p.price)}</span>
                     </div>
@@ -109,22 +109,22 @@ export function render(rootEl: HTMLElement): void {
 
           <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;display:grid;gap:8px">
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--ax-text-dim,#aaa)">
-              <input type="checkbox" id="signup-cgu" aria-label="Accepter CGU et politique de confidentialité" required style="margin-top:2px;accent-color:#c9a227">
+              <input type="checkbox" id="signup-cgu" aria-label="Accepter CGU et politique de confidentialité" required class="ax-gs-252">
               <span>J'accepte les <a href="#" id="signup-link-cgu" style="color:#c9a227;text-decoration:underline">CGU</a> et la <a href="#" id="signup-link-privacy" style="color:#c9a227;text-decoration:underline">Politique de confidentialité</a></span>
             </label>
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--ax-text-dim,#aaa)">
-              <input type="checkbox" id="signup-rgpd" aria-label="Autoriser le traitement des données RGPD" required style="margin-top:2px;accent-color:#c9a227">
+              <input type="checkbox" id="signup-rgpd" aria-label="Autoriser le traitement des données RGPD" required class="ax-gs-252">
               <span>J'autorise le traitement de mes données pour la création + gestion de mon compte Apex (RGPD Art. 6.1.b contrat)</span>
             </label>
           </div>
 
-          <button type="submit" id="signup-submit" class="ax-btn ax-btn-primary ax-btn-block" style="margin-top:8px">
+          <button type="submit" id="signup-submit" class="ax-btn ax-btn-primary ax-btn-block ax-gs-186">
             <span class="ax-btn-label">🚀 Créer mon compte et me connecter</span>
-            <span class="ax-spinner" aria-hidden="true" style="display:none"></span>
+            <span class="ax-spinner ax-gs-234" aria-hidden="true"></span>
           </button>
         </form>
 
-        <div id="signup-error" aria-live="polite" aria-atomic="true" style="margin-top:12px"></div>
+        <div id="signup-error" aria-live="polite" aria-atomic="true" class="ax-gs-248"></div>
 
         <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)">
           <p style="color:var(--ax-text-dim,#888);font-size:12px;margin:0 0 8px">Déjà un compte ?</p>

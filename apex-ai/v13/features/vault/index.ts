@@ -484,7 +484,7 @@ export function render(rootEl: HTMLElement): void {
   activeVaultScope = createCleanupScope('vault');
   const isAdmin = store.get('isAdmin') as boolean | undefined;
   if (!isAdmin) {
-    rootEl.innerHTML = `<div style="padding:40px;text-align:center"><h2 style="color:var(--ax-gold-deep)">🔒 Coffre admin</h2><p style="color:var(--ax-text-dim)">Cette section est réservée à l'admin Kevin.</p></div>`;
+    rootEl.innerHTML = `<div style="padding:40px;text-align:center"><h2 style="color:var(--ax-gold-deep)">🔒 Coffre admin</h2><p class="ax-gs-226">Cette section est réservée à l'admin Kevin.</p></div>`;
     return;
   }
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
@@ -568,7 +568,7 @@ export function render(rootEl: HTMLElement): void {
           </div>
           <div class="ax-vault-stats" style="display:flex;gap:14px;padding:8px 0 0;font-size:12px;color:var(--ax-text-dim);flex-wrap:wrap">
             <span>📊 ${stats.total} codes</span>
-            <span style="color:var(--ax-green)">🟢 ${stats.active} actifs</span>
+            <span class="ax-gs-222">🟢 ${stats.active} actifs</span>
             <span class="ax-gs-168">🟡 ${stats.failing} dégradés</span>
             <span class="ax-gs-76">🔴 ${stats.invalid} invalides</span>
           </div>
@@ -606,7 +606,7 @@ export function render(rootEl: HTMLElement): void {
           <button id="ax-vault-paste-btn" type="button"
             style="padding:10px 20px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔍 Détecter & stocker</button>
         </div>
-        <div id="ax-vault-paste-result" style="margin-top:8px;font-size:12px"></div>
+        <div id="ax-vault-paste-result" class="ax-gs-249"></div>
       </section>
 
       <div id="ax-vault-categories" style="display:flex;flex-direction:column;gap:12px"></div>

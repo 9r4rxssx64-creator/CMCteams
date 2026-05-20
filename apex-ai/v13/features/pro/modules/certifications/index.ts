@@ -485,20 +485,20 @@ export function render(root: HTMLElement): void {
   const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
   if (!guardFeatureEnabled('pro.certifications', root, uid)) return;
   root.innerHTML = `
-    <div class="ax-card" style="padding:16px">
+    <div class="ax-card ax-gs-197">
       <h2 style="margin:0 0 8px;color:#c9a227">🏆 Certifications Pro</h2>
       <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${CERTIFICATIONS.length} certifications · ${SAMPLE_QUESTIONS.length}+ questions samples · vocabulaire · stratégies · liens officiels.</p>
       <h3 style="color:#79c0ff;font-size:15px">Langues</h3>
       <div class="ax-gs-156">
-        ${certsByCategory('language').map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
+        ${certsByCategory('language').map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small class="ax-gs-240">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Tech & Cloud</h3>
       <div class="ax-gs-156">
-        ${certsByCategory('tech').map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
+        ${certsByCategory('tech').map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small class="ax-gs-240">${escapeHtml(c.organism)} · ${escapeHtml(c.cost)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Project / Business / Finance</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
-        ${[...certsByCategory('project'), ...certsByCategory('business'), ...certsByCategory('finance')].map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small style="color:#6a6f8a">${escapeHtml(c.organism)}</small></div>`).join('')}
+        ${[...certsByCategory('project'), ...certsByCategory('business'), ...certsByCategory('finance')].map((c) => `<div class="ax-gs-33">${c.emoji} <strong style="color:#fff">${escapeHtml(c.shortName)}</strong><br><small class="ax-gs-240">${escapeHtml(c.organism)}</small></div>`).join('')}
       </div>
     </div>
   `;

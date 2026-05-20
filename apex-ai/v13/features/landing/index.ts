@@ -87,7 +87,7 @@ export function render(rootEl: HTMLElement): void {
       <div class="ax-landing">
         <div class="ax-landing-card">
           <h1 class="ax-landing-logo">APEX</h1>
-          <p class="ax-muted" style="margin-top:14px">Service temporairement fermé par l'administrateur.</p>
+          <p class="ax-muted ax-gs-187">Service temporairement fermé par l'administrateur.</p>
           <p class="ax-muted" style="font-size:12px;margin-top:8px">Si tu es admin Kevin, rafraîchis pour bypass.</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ export function render(rootEl: HTMLElement): void {
           </label>
           <button type="submit" id="login-submit" class="ax-btn ax-btn-primary ax-btn-block">
             <span class="ax-btn-label">Se connecter</span>
-            <span class="ax-spinner" aria-hidden="true" style="display:none"></span>
+            <span class="ax-spinner ax-gs-234" aria-hidden="true"></span>
           </button>
         </form>
         <div id="login-error" aria-live="polite" aria-atomic="true"></div>

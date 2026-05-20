@@ -210,7 +210,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🏗 Studio Architecture</h1>
         <span class="ax-gs-3">RE2020 + calculs construction</span>
       </header>
@@ -219,7 +219,7 @@ export function render(rootEl: HTMLElement): void {
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Surface habitable (loi Boutin)</h2>
         <input type="number" id="ax-archi-surface" aria-label="Surface brute en mètres carrés" placeholder="Surface brute (m²)" min="1" step="0.01" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-archi-surface-btn" style="margin-top:8px;min-height:44px">Calculer</button>
-        <div id="ax-archi-surface-out" style="margin-top:8px;color:#c9a227"></div>
+        <div id="ax-archi-surface-out" class="ax-gs-253"></div>
       </div>
 
       <div class="ax-gs-1">
@@ -252,7 +252,7 @@ export function render(rootEl: HTMLElement): void {
         </ul>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attach(rootEl);

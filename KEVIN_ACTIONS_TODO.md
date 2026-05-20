@@ -30,26 +30,26 @@
   déplacement. Build complet à confirmer par la CI GitHub Actions.
 - `check-imports.cjs` conservé : réutilisable comme gate CI (cf. chantier 3).
 
-**🟡 CHANTIER 2 — Extraire les styles inline → classes CSS — tranche sûre FAITE**
-- ✅ FAIT (2026-05-20) — tranche prouvée sans régression :
-  - **672 occurrences** de `style=` extraites en **179 classes `.ax-gs-*`**
-    (`assets/css/components.css`), via `scripts/extract-inline-styles.cjs`.
-  - Périmètre = `<div>/<span>` à attribut `style` UNIQUE. Un tel élément n'est
-    ciblable que par `div`/`span`/`*` (spécificité ≤1) → une classe (spéc. 10)
-    gagne toujours → rendu identique, **garanti par la cascade CSS** (preuve,
-    pas estimation). Exclus : `position:fixed/absolute` (sélecteurs
-    `[style*="position:…"]` existants) et styles avec interpolation `${…}`.
-  - Vérif : 179 classes définies = 179 utilisées, 0 orpheline ; accolades CSS
-    équilibrées ; aucun test asservi à un style inline.
-- ⏳ RESTE (session avec build+navigateur — risque visuel réel) :
-  - styles uniques (non répétés), éléments AVEC classe/id, et surtout les
-    `<input>/<textarea>/<select>/<button>/<a>` — `base.css:382` a des règles
-    `input[type=…]` de spécificité **11** > classe **10** : extraction à
-    l'aveugle = régression. Exige diff visuel par feature.
-  - Bloqueur sandbox : `npm install` échoue (registre limité) → pas de
-    `tsc`/`vite build` ni navigateur ici. La CI GitHub Actions build à chaque
-    push (vérif compile auto). Vérif visuelle → Apex (`apex-layout-inspector`)
-    en runtime sur device, ou coup d'œil Kevin (1 clic).
+**🟢 CHANTIER 2 — Styles inline → classes CSS — 2 tranches faites (1001 occ)**
+- ✅ Tranche A (2026-05-20) — `<div>/<span>` à attribut `style` unique :
+  **672 occurrences → 179 classes `.ax-gs-*`**. Régression impossible (élément
+  ciblable seulement par `div`/`span`/`*`, spéc. ≤1 < classe 10).
+- ✅ Tranche B (2026-05-20) — éléments à classe/tag/form, **cascade-vérifiée** :
+  **329 occurrences → 83 classes** (`ax-gs-180+`), via
+  `scripts/extract-inline-styles-2.cjs`. Méthode : un style n'est extrait que
+  si AUCUNE de ses propriétés n'entre en conflit avec une règle CSS qui
+  battrait la classe dans la cascade (règle normale spéc. ≥11 dans
+  tokens/base/components, ou ≥10 dans les fichiers chargés après). Les
+  `!important` battent l'ancien inline ET la nouvelle classe pareil → jamais
+  dangereux. Analyse conservatrice (ascendants/pseudo-classes supposés
+  satisfaits). 425 règles dangereuses indexées sur les 9 CSS.
+  Vérif : 262 classes définies = 262 utilisées, 0 orpheline, 0 double `class=`.
+- ⏳ RESTE : **907 occurrences** avec conflit de cascade PROUVÉ → extraction =
+  régression visuelle réelle. Ne PEUT PAS être fait à l'aveugle. Exige une
+  session avec build+navigateur (diff visuel) OU vérif runtime Apex
+  (`apex-layout-inspector`). Périmètre honnête : ces 907 restent inline.
+- Note : `tsc`/`vite build` non lançables dans le sandbox (registre npm
+  cassé) → la CI GitHub vérifie le build au merge `main`.
 
 **CHANTIER 3 — ✅ FAIT (v13.4.240)**
 - 80 routes regroupées en 6 sections dans `bootstrap.ts` (auth/cœur/outils/

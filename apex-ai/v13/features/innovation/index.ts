@@ -117,7 +117,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </div>
 
       ${pending.length === 0
-        ? `<p style="text-align:center;color:var(--ax-text-dim);padding:32px">Aucune update en attente. Lance un scan pour vérifier.</p>`
+        ? `<p class="ax-gs-231">Aucune update en attente. Lance un scan pour vérifier.</p>`
         : [...byCat.entries()]
             .map(([cat, list]) => `
               <h2 style="margin:24px 0 8px;color:#c9a227;font-size:16px">${CATEGORY_LABELS[cat]} (${list.length})</h2>
@@ -133,7 +133,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
                 </thead>
                 <tbody>
                   ${list.map((u) => `
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                    <tr class="ax-gs-184">
                       <td style="padding:8px;font-size:12px"><strong>${escapeHtml(u.name)}</strong>${u.details ? `<div class="ax-gs-8">${escapeHtml(u.details)}</div>` : ''}</td>
                       <td style="padding:8px;font-size:11px;color:var(--ax-text-dim)">${escapeHtml(u.currentVersion ?? '—')} → ${escapeHtml(u.latestVersion ?? '—')}</td>
                       <td style="padding:8px;font-size:11px;color:#22cc77">${escapeHtml(formatGain(u))}</td>

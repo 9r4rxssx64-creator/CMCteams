@@ -568,7 +568,7 @@ export function buildBlockedOverlay(url: string): string {
     <div style="font-size:48px;margin-bottom:12px">🛡️</div>
     <h2 style="color:#c9a227;font-size:18px;margin:0 0 8px 0">Ce site refuse l'embed iframe</h2>
     <p style="color:#bbb;font-size:13px;margin:0 0 20px 0;word-break:break-all">${safe}</p>
-    <p style="color:#999;font-size:12px;margin:0 0 16px 0">Le site envoie <code style="color:#c9a227">X-Frame-Options</code> qui bloque l'affichage. Voici 4 façons de le voir quand même :</p>
+    <p style="color:#999;font-size:12px;margin:0 0 16px 0">Le site envoie <code class="ax-gs-198">X-Frame-Options</code> qui bloque l'affichage. Voici 4 façons de le voir quand même :</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <button data-fallback="archive" data-fallback-url="${archive}"
         style="padding:14px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📚 Archive</button>
@@ -1351,7 +1351,7 @@ function renderSidebar(rootEl: HTMLElement, tab: string): void {
     content.innerHTML = `
       <div class="ax-gs-27">
         <p style="color:#c9a227;font-size:13px;margin:0 0 12px 0">🤖 Apex IA Search</p>
-        <p style="color:var(--ax-text-dim,#999);font-size:12px;margin:0 0 12px 0">Tape <code style="color:#c9a227">?</code> dans la barre URL suivi de ta question pour interroger Apex.</p>
+        <p style="color:var(--ax-text-dim,#999);font-size:12px;margin:0 0 12px 0">Tape <code class="ax-gs-198">?</code> dans la barre URL suivi de ta question pour interroger Apex.</p>
         <p style="color:var(--ax-text-dim,#999);font-size:12px;margin:0">Exemples :</p>
         <ul style="color:var(--ax-text-dim,#999);font-size:12px;padding-left:16px">
           <li>?résume cette page</li>

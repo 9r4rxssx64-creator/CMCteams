@@ -186,7 +186,7 @@ async function loadMyFacts(rootEl: HTMLElement, user: UserCtx | null): Promise<v
       });
     });
   } catch (err: unknown) {
-    container.innerHTML = `<em style="color:#c00;">Erreur chargement : ${escapeHtml(String(err))}</em>`;
+    container.innerHTML = `<em class="ax-gs-233">Erreur chargement : ${escapeHtml(String(err))}</em>`;
   }
 }
 
@@ -227,7 +227,7 @@ async function loadCrossUser(rootEl: HTMLElement): Promise<void> {
     rowsWrap.innerHTML = rows.join(''); /* rows escape déjà via escapeHtml */
     container.append(rowsWrap);
   } catch (err: unknown) {
-    container.innerHTML = `<em style="color:#c00;">Erreur : ${escapeHtml(String(err))}</em>`;
+    container.innerHTML = `<em class="ax-gs-233">Erreur : ${escapeHtml(String(err))}</em>`;
   }
 }
 
@@ -267,7 +267,7 @@ async function loadLessons(rootEl: HTMLElement): Promise<void> {
     ulL.innerHTML = rows.join('');
     container.append(ulL);
   } catch (err: unknown) {
-    container.innerHTML = `<em style="color:#c00;">Erreur : ${escapeHtml(String(err))}</em>`;
+    container.innerHTML = `<em class="ax-gs-233">Erreur : ${escapeHtml(String(err))}</em>`;
   }
 }
 
@@ -334,7 +334,7 @@ async function loadAudit(rootEl: HTMLElement): Promise<void> {
       </details>
     `;
   } catch (err: unknown) {
-    container.innerHTML = `<em style="color:#c00;">Erreur : ${escapeHtml(String(err))}</em>`;
+    container.innerHTML = `<em class="ax-gs-233">Erreur : ${escapeHtml(String(err))}</em>`;
   }
 }
 

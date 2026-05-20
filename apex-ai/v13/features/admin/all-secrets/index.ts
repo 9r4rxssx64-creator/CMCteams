@@ -247,7 +247,7 @@ function renderRow(row: SecretRow): string {
 function renderCategorySection(catId: string, rows: SecretRow[]): string {
   const label = CATEGORY_LABELS[catId] ?? `📁 ${catId}`;
   return `
-    <section style="margin-bottom:24px">
+    <section class="ax-gs-180">
       <h2 style="font-size:15px;color:#c9a227;margin:0 0 10px;display:flex;align-items:center;gap:8px">
         ${escapeHtml(label)}
         <span style="background:rgba(201,162,39,0.15);color:#c9a227;font-size:11px;padding:2px 8px;border-radius:8px">${rows.length}</span>
@@ -300,7 +300,7 @@ async function refresh(rootEl: HTMLElement, opts?: { search?: string; cat?: stri
 
   rootEl.innerHTML = `
     <div style="padding:20px;max-width:1000px;margin:0 auto">
-      <header style="margin-bottom:20px">
+      <header class="ax-gs-181">
         <div class="ax-gs-83">
           <button id="ax-sec-back" class="ax-btn" aria-label="Retour chat" style="padding:6px 10px;font-size:12px;min-height:36px">← Chat</button>
           <h1 style="margin:0;color:#c9a227;font-size:20px">🔐 Mes Secrets — Dossier admin</h1>

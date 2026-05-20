@@ -104,7 +104,7 @@ export function render(rootEl: HTMLElement): void {
     rootEl.innerHTML = `
       <div class="ax-gs-169">
         <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📄 Studio Word — Document .docx</h1>
-        <p style="color:#94a3b8;margin-bottom:20px">Génère un document Word téléchargeable. 100% client-side, aucune donnée envoyée serveur.</p>
+        <p class="ax-gs-199">Génère un document Word téléchargeable. 100% client-side, aucune donnée envoyée serveur.</p>
 
         <label style="display:block;margin-bottom:16px">
           <span class="ax-gs-15">Choisir un modèle</span>
@@ -121,7 +121,7 @@ export function render(rootEl: HTMLElement): void {
           ⬇️ Générer le .docx
         </button>
 
-        <div id="docx-result" style="margin-top:20px"></div>
+        <div id="docx-result" class="ax-gs-256"></div>
       </div>
     `;
 
@@ -158,7 +158,7 @@ export function render(rootEl: HTMLElement): void {
             </div>`;
           toast.success(`✅ ${result.filename}`);
         } else {
-          resEl.innerHTML = `<p style="color:#ef4444">❌ ${escapeHtml(result.error ?? 'Erreur inconnue')}</p>`;
+          resEl.innerHTML = `<p class="ax-gs-257">❌ ${escapeHtml(result.error ?? 'Erreur inconnue')}</p>`;
           toast.error(`❌ ${result.error ?? 'Erreur'}`);
         }
       } catch (err) {

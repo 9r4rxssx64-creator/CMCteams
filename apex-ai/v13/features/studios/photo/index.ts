@@ -543,16 +543,16 @@ export function render(rootEl: HTMLElement): void {
   const list = photoStudioStore.list(uid);
 
   rootEl.innerHTML = `
-    <div class="ax-card" style="padding:16px">
+    <div class="ax-card ax-gs-197">
       <h2 style="margin:0 0 8px;color:#c9a227">📷 Studio Photo</h2>
       <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">Retouche · ${FILTERS.length} filtres · Stickers · Texte · OCR · QR · Background remove · Upscale 4x.</p>
       <div class="ax-gs-30">
         <button id="ax-photo-new" class="ax-btn ax-btn-primary">+ Nouvelle photo</button>
       </div>
-      <div id="ax-photo-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+      <div id="ax-photo-list" class="ax-gs-258">
         ${list.length === 0
-          ? '<p style="color:#6a6f8a;grid-column:1/-1;text-align:center;padding:20px">Aucune photo. Importe la première !</p>'
-          : list.map((p) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(p.name)}</strong><br><small style="color:#6a6f8a">${p.width}x${p.height} · ${escapeHtml(p.filter)}</small></div>`).join('')}
+          ? '<p class="ax-gs-255">Aucune photo. Importe la première !</p>'
+          : list.map((p) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.width}x${p.height} · ${escapeHtml(p.filter)}</small></div>`).join('')}
       </div>
     </div>
   `;

@@ -163,7 +163,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🗺 Studio Géo</h1>
         <span class="ax-gs-3">Géocodage + distances</span>
       </header>
@@ -181,7 +181,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <p style="font-size:11px;color:#666;text-align:center;margin-top:12px">© OpenStreetMap contributors</p>
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attach(rootEl);
@@ -215,7 +215,7 @@ function attach(rootEl: HTMLElement): void {
           DMS : <code>${escapeHtml(ddToDms(res.lat, true))} · ${escapeHtml(ddToDms(res.lon, false))}</code><br>
           Distance Monaco : <strong>${dist} km</strong> (${(dist / 1.609).toFixed(1)} mi)<br>
           <a href="${escapeHtml(appleMapsUrl(res, addr))}" target="_blank" rel="noopener" style="color:#c9a227;margin-right:12px">🗺 Apple Maps</a>
-          <a href="${escapeHtml(googleMapsUrl(res))}" target="_blank" rel="noopener" style="color:#c9a227">🗺 Google Maps</a>
+          <a href="${escapeHtml(googleMapsUrl(res))}" target="_blank" rel="noopener" class="ax-gs-198">🗺 Google Maps</a>
         </div>
       `;
       haptic.success();

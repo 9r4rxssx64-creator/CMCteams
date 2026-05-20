@@ -285,14 +285,14 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
-      <header style="margin-bottom:20px">
+      <header class="ax-gs-181">
         <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">📚 Base de connaissances</h1>
         <p style="color:#a0a4c0;margin:0;font-size:13px">
           ${stats.categories} catégories · ${stats.entries} entrées · injectées dans le system prompt IA Apex
         </p>
       </header>
 
-      <section style="margin-bottom:16px">
+      <section class="ax-gs-217">
         <input id="ax-kb-search" type="text" aria-label="Rechercher dans la banque de connaissances" placeholder="🔍 Rechercher dans toutes les catégories (3+ chars pour global)" value="${escapeHtml(searchQuery)}"
           style="width:100%;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-size:13px">
       </section>
@@ -316,13 +316,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </section>
       ` : ''}
 
-      <section style="margin-bottom:16px">
+      <section class="ax-gs-217">
         <div style="background:rgba(20,20,35,0.6);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:14px;margin-bottom:12px">
           <h2 style="margin:0 0 4px;color:#fff;font-size:18px">${escapeHtml(currentCategory.icon)} ${escapeHtml(currentCategory.label)}</h2>
           <p style="margin:0;color:#a0a4c0;font-size:12px">${escapeHtml(currentCategory.description)}</p>
         </div>
         <ul style="list-style:none;padding:0;margin:0">
-          ${filtered.length > 0 ? filtered.map(renderEntry).join('') : '<li style="text-align:center;padding:30px;color:#888">Aucune entrée pour cette recherche.</li>'}
+          ${filtered.length > 0 ? filtered.map(renderEntry).join('') : '<li class="ax-gs-209">Aucune entrée pour cette recherche.</li>'}
         </ul>
       </section>
 

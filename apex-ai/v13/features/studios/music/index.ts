@@ -769,21 +769,21 @@ export function render(rootEl: HTMLElement): void {
             <strong style="color:#c9a227">${escapeHtml(t.name)}</strong>
             <button class="ax-btn ax-btn-sm" data-action="remove-track" data-track-id="${escapeHtml(t.id)}" style="font-size:11px;padding:4px 8px;color:#ff6666;min-height:32px">Supprimer</button>
           </div>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Volume <input type="range" aria-label="Volume de la piste" min="0" max="100" value="${Math.round(t.volume * 100)}" data-action="volume" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Panoramique <input type="range" aria-label="Panoramique gauche-droite" min="-100" max="100" value="${Math.round(t.pan * 100)}" data-action="pan" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Pitch (demi-tons) <input type="range" aria-label="Pitch en demi-tons" min="-12" max="12" value="${t.pitchSemitones}" data-action="pitch" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Reverb <input type="range" aria-label="Niveau de reverb" min="0" max="100" value="${Math.round(t.effects.reverbWet * 100)}" data-action="reverb" data-track-id="${escapeHtml(t.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Volume <input type="range" aria-label="Volume de la piste" min="0" max="100" value="${Math.round(t.volume * 100)}" data-action="volume" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Panoramique <input type="range" aria-label="Panoramique gauche-droite" min="-100" max="100" value="${Math.round(t.pan * 100)}" data-action="pan" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Pitch (demi-tons) <input type="range" aria-label="Pitch en demi-tons" min="-12" max="12" value="${t.pitchSemitones}" data-action="pitch" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim);margin-top:6px">Reverb <input type="range" aria-label="Niveau de reverb" min="0" max="100" value="${Math.round(t.effects.reverbWet * 100)}" data-action="reverb" data-track-id="${escapeHtml(t.id)}" class="ax-gs-259"></label>
           <div class="ax-gs-80">
             <button class="ax-btn ax-btn-sm" data-action="mute" data-track-id="${escapeHtml(t.id)}" style="min-height:36px;${t.muted ? 'background:#ff6666;color:#fff' : ''}">${t.muted ? '🔇 Muet' : '🔊 Audible'}</button>
             <button class="ax-btn ax-btn-sm" data-action="solo" data-track-id="${escapeHtml(t.id)}" style="min-height:36px;${t.solo ? 'background:#c9a227;color:#000' : ''}">${t.solo ? '⭐ Solo' : 'Solo'}</button>
           </div>
         </div>
       `).join('')
-    : '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucune piste. Ajoute ta première !</p>';
+    : '<p class="ax-gs-213">Aucune piste. Ajoute ta première !</p>';
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🎚 Studio Mix Pro</h1>
         <span class="ax-gs-3">${tracks.length}/${MAX_TRACKS} pistes · LUFS ${lufsTarget}</span>
       </header>
@@ -803,7 +803,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div id="ax-mix-tracks">${tracksHtml}</div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attachHandlers(rootEl, uid);

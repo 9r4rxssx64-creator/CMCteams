@@ -58,7 +58,7 @@ function renderRecoverableRow(e: MissingEntry): string {
           <strong style="color:#22cc77">${escapeHtml(e.service_name)}</strong>
           <span class="ax-gs-94">${escapeHtml(e.category)}</span>
           <br>
-          <code style="font-size:11px;color:var(--ax-text-dim);font-family:monospace">${escapeHtml(e.storage_key)}</code>
+          <code class="ax-gs-190">${escapeHtml(e.storage_key)}</code>
         </div>
         <div style="font-size:12px;color:${src.color}">
           ${src.icon} ${escapeHtml(src.label)}${e.alias_source ? ` <code style="font-size:10px;background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px">${escapeHtml(e.alias_source)}</code>` : ''}
@@ -76,7 +76,7 @@ function renderAbsentRow(e: MissingEntry): string {
           <strong style="color:#ff6b6b">${escapeHtml(e.service_name)}</strong>
           <span class="ax-gs-94">${escapeHtml(e.category)}</span>
           <br>
-          <code style="font-size:11px;color:var(--ax-text-dim);font-family:monospace">${escapeHtml(e.storage_key)}</code>
+          <code class="ax-gs-190">${escapeHtml(e.storage_key)}</code>
         </div>
         <div class="ax-gs-20">
           ${e.dashboard_url ? `<a href="${escapeHtml(e.dashboard_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">🔗 Dashboard</a>` : ''}
@@ -100,11 +100,11 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
 
     const recoverableHtml = audit.recoverable.length > 0
       ? audit.recoverable.map(renderRecoverableRow).join('')
-      : `<p style="color:var(--ax-text-dim);text-align:center;padding:20px">✅ Aucune clé restorable (toutes les clés présentes ou réellement absentes)</p>`;
+      : `<p class="ax-gs-191">✅ Aucune clé restorable (toutes les clés présentes ou réellement absentes)</p>`;
 
     const absentHtml = audit.truly_absent.length > 0
       ? audit.truly_absent.map(renderAbsentRow).join('')
-      : `<p style="color:var(--ax-text-dim);text-align:center;padding:20px">🎉 Aucune clé absente — tu as tout configuré</p>`;
+      : `<p class="ax-gs-191">🎉 Aucune clé absente — tu as tout configuré</p>`;
 
     const presentPct = stats.total_patterns > 0
       ? Math.round((stats.present_count / stats.total_patterns) * 100)
@@ -112,7 +112,7 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
 
     rootEl.innerHTML = `
       <div class="ax-gs-95">
-        <header style="margin-bottom:24px">
+        <header class="ax-gs-180">
           <h1 style="margin:0 0 6px;color:#c9a227">🔐 Credentials Status</h1>
           <p style="color:var(--ax-text-dim);font-size:13px;margin:0">
             Apex restaure automatiquement les clés depuis IDB / Firebase / alias avant de te demander.
@@ -141,7 +141,7 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
           </button>
         </div>
 
-        <section style="margin-bottom:24px">
+        <section class="ax-gs-180">
           <h2 style="font-size:16px;color:#22cc77;margin:0 0 10px">🔓 Restorables (${audit.recoverable.length})</h2>
           <p style="color:var(--ax-text-dim);font-size:12px;margin:0 0 10px">
             Clés trouvables ailleurs (alias localStorage, IDB shadow, Firebase backup, pattern detection). Apex peut les restaurer SANS te demander.

@@ -530,7 +530,7 @@ export function render(rootEl: HTMLElement): void {
         </header>
         <p style="margin:4px 0 0;color:var(--ax-text-dim);font-size:12px">
           ${count === 0 ? 'Vide' : `${count} élément${count > 1 ? 's' : ''}`}
-          ${link ? ` · <a href="${escapeHtml(link)}" style="color:#c9a227">voir source</a>` : ''}
+          ${link ? ` · <a href="${escapeHtml(link)}" class="ax-gs-198">voir source</a>` : ''}
         </p>
       </article>
     `;
@@ -538,7 +538,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🗄 Archive</h1>
         <span class="ax-gs-3">${stats.total} élément${stats.total > 1 ? 's' : ''}</span>
       </header>
@@ -555,7 +555,7 @@ export function render(rootEl: HTMLElement): void {
         ${cards}
       </div>
 
-      <div id="ax-archive-list" style="margin-top:16px"></div>
+      <div id="ax-archive-list" class="ax-gs-211"></div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:16px;border-top:1px solid rgba(201,162,39,0.2)">
         <button id="ax-archive-export-json" class="ax-btn ax-btn-primary" style="font-size:12px;padding:8px 12px">📥 Export JSON</button>
@@ -563,7 +563,7 @@ export function render(rootEl: HTMLElement): void {
         <button id="ax-archive-purge" class="ax-btn" style="font-size:12px;padding:8px 12px;color:#ff6666">🧹 Purger > 90 jours</button>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   attachHandlers(rootEl, uid);
@@ -572,7 +572,7 @@ export function render(rootEl: HTMLElement): void {
 
 function renderItemList(items: readonly ArchiveItem[]): string {
   if (items.length === 0) {
-    return '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucun élément.</p>';
+    return '<p class="ax-gs-213">Aucun élément.</p>';
   }
   return items.slice(0, 100).map((it) => {
     const meta = CATEGORY_META[it.category];

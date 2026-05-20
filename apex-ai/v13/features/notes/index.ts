@@ -168,7 +168,7 @@ export function render(rootEl: HTMLElement): void {
   const cards = notes.length > 0
     ? notes.map((n) => `
         <article class="ax-note-card" data-note-id="${escapeHtml(n.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
-          <header style="display:flex;justify-content:space-between;align-items:center">
+          <header class="ax-gs-219">
             <h3 style="margin:0;color:#c9a227;font-size:15px">${escapeHtml(n.title)}</h3>
             <span style="font-size:18px;cursor:pointer" data-action="favorite" data-note-id="${escapeHtml(n.id)}" title="Favoris">${n.favorite ? '⭐' : '☆'}</span>
           </header>
@@ -179,11 +179,11 @@ export function render(rootEl: HTMLElement): void {
           </footer>
         </article>
       `).join('')
-    : '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucune note. Crée ta première !</p>';
+    : '<p class="ax-gs-213">Aucune note. Crée ta première !</p>';
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">📝 Bloc-notes</h1>
         <span class="ax-gs-3">${notes.length} note${notes.length > 1 ? 's' : ''}</span>
       </header>
@@ -205,7 +205,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div id="ax-notes-list">${cards}</div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   attachHandlers(rootEl, uid);
@@ -248,7 +248,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
               <p style="margin:8px 0;color:var(--ax-text-dim);font-size:13px">${escapeHtml(n.content.slice(0, 240))}</p>
             </article>
           `).join('')
-        : '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucun résultat</p>';
+        : '<p class="ax-gs-213">Aucun résultat</p>';
     });
   }
 

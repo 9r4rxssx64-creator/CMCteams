@@ -365,17 +365,17 @@ export function render(rootEl: HTMLElement): void {
   const list = presentationStudioStore.list(uid);
 
   rootEl.innerHTML = `
-    <div class="ax-card" style="padding:16px">
+    <div class="ax-card ax-gs-197">
       <h2 style="margin:0 0 8px;color:#c9a227">📊 Studio Présentation</h2>
       <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${LAYOUTS.length} layouts · ${THEMES.length} thèmes · Animations · Transitions · Export PPTX/PDF/HTML.</p>
       <div class="ax-gs-30">
         <button id="ax-pres-new" class="ax-btn ax-btn-primary">+ Nouvelle présentation</button>
         <button id="ax-pres-templates" class="ax-btn">📚 Voir layouts</button>
       </div>
-      <div id="ax-pres-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+      <div id="ax-pres-list" class="ax-gs-254">
         ${list.length === 0
-          ? '<p style="color:#6a6f8a;grid-column:1/-1;text-align:center;padding:20px">Aucune présentation. Crée la première !</p>'
-          : list.map((p) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(p.name)}</strong><br><small style="color:#6a6f8a">${p.slides.length} slides · ${escapeHtml(p.theme)}</small></div>`).join('')}
+          ? '<p class="ax-gs-255">Aucune présentation. Crée la première !</p>'
+          : list.map((p) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.slides.length} slides · ${escapeHtml(p.theme)}</small></div>`).join('')}
       </div>
     </div>
   `;

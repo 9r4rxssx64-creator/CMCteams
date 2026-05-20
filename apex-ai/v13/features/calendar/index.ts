@@ -154,7 +154,7 @@ export function render(rootEl: HTMLElement): void {
   const eventsHtml = upcoming.length > 0
     ? upcoming.map((e) => `
         <article class="ax-cal-event" data-event-id="${escapeHtml(e.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:8px">
-          <header style="display:flex;justify-content:space-between;align-items:center">
+          <header class="ax-gs-219">
             <strong style="color:#c9a227">${escapeHtml(e.title)}</strong>
             <button class="ax-btn ax-btn-sm" data-action="delete-event" data-event-id="${escapeHtml(e.id)}" style="font-size:11px;padding:4px 8px;color:#ff6666">Supprimer</button>
           </header>
@@ -165,11 +165,11 @@ export function render(rootEl: HTMLElement): void {
           ${e.notes ? `<p style="margin:6px 0;color:var(--ax-text-dim);font-size:12px;white-space:pre-wrap">${escapeHtml(e.notes)}</p>` : ''}
         </article>
       `).join('')
-    : '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucun événement à venir</p>';
+    : '<p class="ax-gs-213">Aucun événement à venir</p>';
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">📅 Calendrier</h1>
         <span class="ax-gs-3">${calendarStore.count(uid)} évt total</span>
       </header>
@@ -193,7 +193,7 @@ export function render(rootEl: HTMLElement): void {
       <h2 style="color:#c9a227;font-size:16px;margin:16px 0 8px">⏰ 30 prochains jours</h2>
       <div id="ax-cal-list">${eventsHtml}</div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   attachHandlers(rootEl, uid);

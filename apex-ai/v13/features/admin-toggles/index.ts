@@ -130,7 +130,7 @@ function renderToggleRow(f: FeatureToggle): string {
     <div class="ax-toggle-row" data-feature="${safeId}" style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(201,162,39,0.1)">
       <div class="ax-gs-6">
         <div style="color:#fff;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeDesc}</div>
-        <code style="color:#888;font-size:11px">${safeId}</code>
+        <code class="ax-gs-208">${safeId}</code>
       </div>
       <button class="${stateClass}" data-toggle="${safeId}"
         style="min-width:64px;min-height:32px;padding:4px 12px;border:1px solid ${enabled ? '#c9a227' : 'rgba(255,255,255,0.2)'};background:${enabled ? '#c9a227' : 'transparent'};color:${enabled ? '#000' : '#999'};border-radius:16px;cursor:pointer;font-weight:600;font-size:12px"
@@ -158,7 +158,7 @@ function renderCategorySection(cat: FeatureCategory, list: readonly FeatureToggl
     <section data-category="${escapeHtml(cat)}" style="background:rgba(20,20,35,0.5);border:1px solid rgba(201,162,39,0.2);border-radius:12px;margin-bottom:14px;overflow:hidden">
       <header style="padding:10px 14px;background:rgba(201,162,39,0.08);border-bottom:1px solid rgba(201,162,39,0.2);display:flex;align-items:center;justify-content:space-between">
         <h2 style="margin:0;color:#c9a227;font-size:14px">${label}</h2>
-        <span style="color:#888;font-size:11px">${enabledCount}/${list.length} actifs</span>
+        <span class="ax-gs-208">${enabledCount}/${list.length} actifs</span>
       </header>
       <div>${list.map(renderToggleRow).join('')}</div>
     </section>
@@ -225,7 +225,7 @@ function renderPerUserModal(featureId: string): string {
     <div id="ax-toggles-modal" role="dialog" aria-modal="true" aria-labelledby="ax-toggles-modal-title"
       style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px">
       <div style="max-width:480px;width:100%;background:#0a0a14;border:1px solid rgba(201,162,39,0.4);border-radius:14px;overflow:hidden">
-        <header style="padding:14px;border-bottom:1px solid rgba(201,162,39,0.3);display:flex;justify-content:space-between;align-items:center">
+        <header class="ax-gs-206">
           <h3 id="ax-toggles-modal-title" style="margin:0;color:#c9a227;font-size:15px">👤 Per-user : ${escapeHtml(feature.description)}</h3>
           <button data-action="modal-close" style="padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#999;border-radius:6px;cursor:pointer">✕</button>
         </header>
@@ -256,7 +256,7 @@ export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div class="ax-empty" style="padding:40px;text-align:center;color:#999">
+      <div class="ax-empty ax-gs-207">
         <h2 style="color:#c9a227">Accès réservé</h2>
         <p>Cette section est réservée à l'admin Kevin.</p>
       </div>

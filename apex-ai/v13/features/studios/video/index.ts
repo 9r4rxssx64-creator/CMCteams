@@ -802,15 +802,15 @@ export function render(rootEl: HTMLElement): void {
               <option value="noir" ${c.colorGrading.lutPreset === 'noir' ? 'selected' : ''}>Noir contrasté</option>
             </select>
           </div>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Vitesse ×${c.speed.toFixed(2)} <input type="range" aria-label="Vitesse de lecture du clip" min="25" max="400" value="${Math.round(c.speed * 100)}" data-action="speed" data-clip-id="${escapeHtml(c.id)}" style="width:100%;min-height:32px"></label>
+          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Vitesse ×${c.speed.toFixed(2)} <input type="range" aria-label="Vitesse de lecture du clip" min="25" max="400" value="${Math.round(c.speed * 100)}" data-action="speed" data-clip-id="${escapeHtml(c.id)}" class="ax-gs-259"></label>
           <button class="ax-btn ax-btn-sm" data-action="remove-clip" data-clip-id="${escapeHtml(c.id)}" style="margin-top:8px;font-size:11px;padding:6px 10px;color:#ff6666;min-height:36px">Supprimer</button>
         </div>
       `).join('')
-    : '<p style="color:var(--ax-text-dim);text-align:center;padding:24px">Aucun clip. Importe ta première vidéo !</p>';
+    : '<p class="ax-gs-213">Aucun clip. Importe ta première vidéo !</p>';
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🎬 Studio Vidéo Pro</h1>
         <span class="ax-gs-3">${clips.length}/${MAX_CLIPS} clips · ${formatDuration(total)} · ${escapeHtml(aspect)}</span>
       </header>
@@ -830,7 +830,7 @@ export function render(rootEl: HTMLElement): void {
 
       <div id="ax-video-clips">${clipsHtml}</div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attachHandlers(rootEl, uid);

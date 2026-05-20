@@ -201,7 +201,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         <div id="ax-dev-action-result" style="margin-top:12px;font-size:13px;color:var(--ax-text-dim)"></div>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
 

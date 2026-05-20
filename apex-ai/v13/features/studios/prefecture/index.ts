@@ -526,20 +526,20 @@ export function render(rootEl: HTMLElement): void {
   const dossiers = prefectureStudioStore.list(uid);
 
   rootEl.innerHTML = `
-    <div class="ax-card" style="padding:16px">
+    <div class="ax-card ax-gs-197">
       <h2 style="margin:0 0 8px;color:#c9a227">🏛️ Studio Préfecture</h2>
       <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${DEMARCHES.length} démarches FR + MC · ${LETTER_TEMPLATES.length} templates lettres officielles · refs Légifrance + Légimonaco.</p>
       <h3 style="color:#79c0ff;font-size:15px">Démarches France (${demarchesByCountry('fr').length})</h3>
       <div class="ax-gs-173">
-        ${demarchesByCountry('fr').map((d) => `<div class="ax-gs-33">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small style="color:#6a6f8a">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
+        ${demarchesByCountry('fr').map((d) => `<div class="ax-gs-33">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small class="ax-gs-240">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Démarches Monaco (${demarchesByCountry('mc').length})</h3>
       <div class="ax-gs-173">
-        ${demarchesByCountry('mc').map((d) => `<div class="ax-gs-33">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small style="color:#6a6f8a">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
+        ${demarchesByCountry('mc').map((d) => `<div class="ax-gs-33">${d.emoji} <strong style="color:#fff">${escapeHtml(d.label)}</strong><br><small class="ax-gs-240">${escapeHtml(d.delaiMoyen)} · ${escapeHtml(d.cout)}</small></div>`).join('')}
       </div>
       <h3 style="color:#79c0ff;font-size:15px">Mes dossiers (${dossiers.length})</h3>
       ${dossiers.length === 0
-        ? '<p style="color:#6a6f8a">Aucun dossier en cours.</p>'
+        ? '<p class="ax-gs-240">Aucun dossier en cours.</p>'
         : `<div>${dossiers.map((d) => { const dem = findDemarche(d.demarcheId); return `<div style="padding:10px;background:#13162a;border-radius:8px;margin-bottom:6px"><strong>${escapeHtml(dem?.label ?? d.demarcheId)}</strong> · ${escapeHtml(d.status)} · ${calcCompleteness(d)}% complet</div>`; }).join('')}</div>`}
     </div>
   `;

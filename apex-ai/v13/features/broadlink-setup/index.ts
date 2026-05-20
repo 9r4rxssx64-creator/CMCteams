@@ -133,7 +133,7 @@ function renderDevicesSection(devices: BroadlinkDevice[]): string {
     return `
       <section style="margin:20px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px">
         <h3 style="margin-top:0;color:#c9a227;font-size:16px">📱 Devices liés au compte</h3>
-        <p style="color:#aaa">Aucun device chargé. Clique <button class="ax-btn ax-btn-sm" id="ax-bl-refresh-empty" style="margin-left:6px;padding:4px 10px;border-radius:6px;background:rgba(201,162,39,0.2);color:#c9a227;border:1px solid #c9a227;cursor:pointer">🔄 Refresh</button>.</p>
+        <p class="ax-gs-216">Aucun device chargé. Clique <button class="ax-btn ax-btn-sm" id="ax-bl-refresh-empty" style="margin-left:6px;padding:4px 10px;border-radius:6px;background:rgba(201,162,39,0.2);color:#c9a227;border:1px solid #c9a227;cursor:pointer">🔄 Refresh</button>.</p>
       </section>
     `;
   }

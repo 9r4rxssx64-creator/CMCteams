@@ -23,7 +23,7 @@ export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-gs-169">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📑 Studio PDF</h1>
-      <p style="color:#94a3b8;margin-bottom:20px">Génère un PDF pro téléchargeable.</p>
+      <p class="ax-gs-199">Génère un PDF pro téléchargeable.</p>
 
       <label style="display:block;margin-bottom:16px">
         <span class="ax-gs-15">Type de document</span>
@@ -63,7 +63,7 @@ export function render(rootEl: HTMLElement): void {
         ⬇️ Générer le PDF
       </button>
 
-      <div id="pdf-result" style="margin-top:20px"></div>
+      <div id="pdf-result" class="ax-gs-256"></div>
     </div>
   `;
 
@@ -114,7 +114,7 @@ export function render(rootEl: HTMLElement): void {
           </div>`;
         toast.success(`✅ ${result.filename}`);
       } else {
-        resEl.innerHTML = `<p style="color:#ef4444">❌ ${escapeHtml(result.error ?? 'Erreur')}</p>`;
+        resEl.innerHTML = `<p class="ax-gs-257">❌ ${escapeHtml(result.error ?? 'Erreur')}</p>`;
         toast.error(`❌ ${result.error ?? 'Erreur'}`);
       }
     } catch (err) {

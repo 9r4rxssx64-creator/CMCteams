@@ -110,7 +110,7 @@ export function render(rootEl: HTMLElement): void {
   const positionActions = last
     ? `
         <div class="ax-gs-129">
-          <a href="https://www.google.com/maps?q=${last.latitude},${last.longitude}" target="_blank" rel="noopener" class="ax-btn ax-btn-outline" style="min-height:44px;padding:10px 14px">🗺 Google Maps</a>
+          <a href="https://www.google.com/maps?q=${last.latitude},${last.longitude}" target="_blank" rel="noopener" class="ax-btn ax-btn-outline ax-gs-230">🗺 Google Maps</a>
           <button class="ax-btn ax-btn-outline" data-action="refresh-position" style="min-height:44px;padding:10px 14px">↻ Actualiser</button>
           <button class="ax-btn ax-btn-outline" data-action="share-position" style="min-height:44px;padding:10px 14px">📤 Partager</button>
         </div>
@@ -149,7 +149,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;background:linear-gradient(135deg,#c9a227,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">📍 Géolocalisation</h1>
         <span class="ax-gs-3">${favs.length} favoris · ${fences.length} zones</span>
       </header>
@@ -167,7 +167,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
-        <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <header class="ax-gs-214">
           <h3 style="margin:0;color:#c9a227">Lieux favoris</h3>
           <button class="ax-btn ax-btn-primary" data-action="add-fav" style="min-height:36px;padding:6px 12px;font-size:12px">+ Ajouter ici</button>
         </header>
@@ -175,7 +175,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
-        <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <header class="ax-gs-214">
           <h3 style="margin:0;color:#c9a227">Zones (geofences)</h3>
           <button class="ax-btn ax-btn-primary" data-action="add-fence" style="min-height:36px;padding:6px 12px;font-size:12px">+ Créer une zone</button>
         </header>
@@ -183,7 +183,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
-        <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <header class="ax-gs-214">
           <h3 style="margin:0;color:#c9a227">Météo locale 7 jours</h3>
           <button class="ax-btn ax-btn-outline" data-action="load-weather" style="min-height:36px;padding:6px 12px;font-size:12px">Charger</button>
         </header>
@@ -200,7 +200,7 @@ export function render(rootEl: HTMLElement): void {
         Données privées. Aucune sync Firebase (privacy P0).
       </p>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   attachHandlers(rootEl);

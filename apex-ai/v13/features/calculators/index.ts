@@ -241,16 +241,16 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
-      <header style="margin-bottom:16px">
+      <header class="ax-gs-217">
         <h1 style="margin:0;color:#c9a227">🧮 Calculatrices & Convertisseurs</h1>
         <p style="color:var(--ax-text-dim);font-size:13px;margin:4px 0 0">${CALCULATORS.length} outils ${[...new Set(CALCULATORS.map((c) => c.category))].length} catégories</p>
       </header>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">${cards}</div>
 
-      <div id="ax-calc-detail" style="margin-top:24px"></div>
+      <div id="ax-calc-detail" class="ax-gs-218"></div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   attachHandlers(rootEl);

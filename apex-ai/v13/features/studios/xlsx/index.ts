@@ -13,7 +13,7 @@ export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-gs-115">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📈 Studio Excel — Tableau .xlsx</h1>
-      <p style="color:#94a3b8;margin-bottom:20px">Génère un tableau Excel multi-feuilles. Colle données CSV ou saisis manuellement.</p>
+      <p class="ax-gs-199">Génère un tableau Excel multi-feuilles. Colle données CSV ou saisis manuellement.</p>
 
       <label style="display:block;margin-bottom:12px">
         <span class="ax-gs-15">Nom fichier</span>
@@ -34,14 +34,14 @@ Courses,0,400</textarea>
       </label>
 
       <label style="display:block;margin-bottom:16px">
-        <input type="checkbox" id="xlsx-freeze" checked> <span style="color:#cbd5e1;font-size:13px">Figer la 1ère ligne (headers)</span>
+        <input type="checkbox" id="xlsx-freeze" checked> <span class="ax-gs-260">Figer la 1ère ligne (headers)</span>
       </label>
 
       <button id="xlsx-generate" style="width:100%;padding:14px;background:#10b981;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px">
         ⬇️ Générer le .xlsx
       </button>
 
-      <div id="xlsx-result" style="margin-top:20px"></div>
+      <div id="xlsx-result" class="ax-gs-256"></div>
     </div>
   `;
 
@@ -92,7 +92,7 @@ Courses,0,400</textarea>
           </div>`;
         toast.success(`✅ ${result.filename}`);
       } else {
-        resEl.innerHTML = `<p style="color:#ef4444">❌ ${escapeHtml(result.error ?? 'Erreur')}</p>`;
+        resEl.innerHTML = `<p class="ax-gs-257">❌ ${escapeHtml(result.error ?? 'Erreur')}</p>`;
         toast.error(`❌ ${result.error ?? 'Erreur'}`);
       }
     } catch (err) {

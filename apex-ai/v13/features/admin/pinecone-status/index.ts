@@ -50,7 +50,7 @@ function statusBadge(s: PineconeStatus): string {
 
 function renderStatusCard(s: PineconeStatus): string {
   return `
-    <div class="ax-card" style="padding:16px;margin-bottom:16px">
+    <div class="ax-card ax-gs-195">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <h3 style="margin:0;font-size:1.1em">🌲 Pinecone Vector Store</h3>
         ${statusBadge(s)}
@@ -84,20 +84,20 @@ function renderStatusCard(s: PineconeStatus): string {
 
 function renderActionsCard(): string {
   return `
-    <div class="ax-card" style="padding:16px;margin-bottom:16px">
+    <div class="ax-card ax-gs-195">
       <h3 style="margin:0 0 12px;font-size:1.05em">Actions</h3>
       <div class="ax-gs-7">
         <button class="ax-btn" id="btn-test" type="button">🧪 Tester connexion</button>
         <button class="ax-btn" id="btn-reload" type="button">🔄 Recharger clé</button>
         <button class="ax-btn" id="btn-resync" type="button">📤 Resync depuis facts</button>
       </div>
-      <div id="action-result" style="margin-top:12px;font-size:13px"></div>
+      <div id="action-result" class="ax-gs-196"></div>
     </div>`;
 }
 
 function renderInfoCard(): string {
   return `
-    <div class="ax-card" style="padding:16px">
+    <div class="ax-card ax-gs-197">
       <h3 style="margin:0 0 12px;font-size:1.05em">À propos</h3>
       <ul style="margin:0;padding-left:20px;font-size:13px;line-height:1.6">
         <li>Pinecone est <strong>optionnel</strong>. Sans clé, Apex utilise localStorage avec ranking par importance.</li>
@@ -162,7 +162,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         setResult(
           ok
             ? `<span class="ax-gs-60">✅ Clé rechargée (${newStatus.vector_count} vectors)</span>`
-            : `<span style="color:#c9a227">⚠ Reload partiel : ${escapeHtml(newStatus.error ?? 'fallback actif')}</span>`,
+            : `<span class="ax-gs-198">⚠ Reload partiel : ${escapeHtml(newStatus.error ?? 'fallback actif')}</span>`,
         );
         await render(rootEl); /* re-render avec nouveau status */
       } catch (err: unknown) {

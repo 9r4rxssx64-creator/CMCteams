@@ -14,32 +14,32 @@ export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:600px;margin:0 auto">
       <h1 style="margin:0 0 16px;color:#c9a227">🏠 Domotique</h1>
-      <p style="color:var(--ax-text-dim)">Pilote tes objets connectés depuis Apex.</p>
+      <p class="ax-gs-226">Pilote tes objets connectés depuis Apex.</p>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
         <div class="ax-gs-43">
           <div class="ax-gs-28">💡</div>
-          <strong style="display:block;margin-top:8px">Lumières</strong>
+          <strong class="ax-gs-229">Lumières</strong>
           <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Configurer</button>
         </div>
         <div class="ax-gs-43">
           <div class="ax-gs-28">🌡️</div>
-          <strong style="display:block;margin-top:8px">Thermostat</strong>
+          <strong class="ax-gs-229">Thermostat</strong>
           <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Configurer</button>
         </div>
         <div class="ax-gs-43">
           <div class="ax-gs-28">📺</div>
-          <strong style="display:block;margin-top:8px">TV</strong>
+          <strong class="ax-gs-229">TV</strong>
           <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Télécommande</button>
         </div>
         <div class="ax-gs-43">
           <div class="ax-gs-28">🔒</div>
-          <strong style="display:block;margin-top:8px">Sécurité</strong>
+          <strong class="ax-gs-229">Sécurité</strong>
           <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Caméras</button>
         </div>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#chat" style="color:#c9a227">← Retour chat</a></p>
+      <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
   `;
   logger.info('feature-domotique', 'rendered');

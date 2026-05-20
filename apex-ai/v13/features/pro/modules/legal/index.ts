@@ -502,7 +502,7 @@ export function render(root: HTMLElement): void {
     .map((k) => {
       const t = AX_LEGAL_FR.templates[k];
       if (!t) return '';
-      return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px"><strong>${escapeHtml(t.titre)}</strong>${t.ref_legales ? `<br><small style="color:#888">${escapeHtml(t.ref_legales)}</small>` : ''}</div>`;
+      return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px"><strong>${escapeHtml(t.titre)}</strong>${t.ref_legales ? `<br><small class="ax-gs-243">${escapeHtml(t.ref_legales)}</small>` : ''}</div>`;
     })
     .join('');
 
@@ -515,7 +515,7 @@ export function render(root: HTMLElement): void {
         <h3 style="color:#c9a227;margin:0 0 10px">🔎 Recherche article / code</h3>
         <input id="legalQ" type="text" placeholder="Ex: code civil, article 1240, RGPD..." style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Recherche juridique">
         <button id="legalSearchBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Rechercher sur Légifrance</button>
-        <div id="legalResult" style="margin-top:10px;font-size:13px"></div>
+        <div id="legalResult" class="ax-gs-241"></div>
       </div>
 
       <div class="ax-gs-4">
@@ -555,7 +555,7 @@ export function render(root: HTMLElement): void {
     const out = root.querySelector<HTMLDivElement>('#legalResult');
     if (!out || !q) return;
     const url = legalLookup(q);
-    out.innerHTML = `🔗 <a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:#5aa8ff">${escapeHtml(url)}</a>`;
+    out.innerHTML = `🔗 <a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="ax-gs-244">${escapeHtml(url)}</a>`;
   });
 
   logger.info('legal-pro', 'rendered');

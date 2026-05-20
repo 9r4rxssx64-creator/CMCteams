@@ -139,7 +139,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🏢 Studio Bâtiment</h1>
         <span class="ax-gs-3">DTU · normes · métré</span>
       </header>
@@ -151,7 +151,7 @@ export function render(rootEl: HTMLElement): void {
         <input type="number" id="ax-bld-h" aria-label="Hauteur sous plafond en mètres" placeholder="Hauteur (m)" min="0.1" step="0.01" value="2.5" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <input type="text" id="ax-bld-name" aria-label="Nom de la pièce" placeholder="Nom pièce (ex : Salon)" maxlength="40" value="Pièce" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-bld-go" style="min-height:44px">Calculer + plan</button>
-        <div id="ax-bld-out" style="margin-top:12px"></div>
+        <div id="ax-bld-out" class="ax-gs-248"></div>
       </div>
 
       <div class="ax-gs-1">
@@ -167,7 +167,7 @@ export function render(rootEl: HTMLElement): void {
         <ul style="margin:0;padding-left:18px;color:#ddd">${dtusHtml}</ul>
       </div>
 
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attach(rootEl);

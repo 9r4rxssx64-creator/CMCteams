@@ -82,7 +82,7 @@ function renderEntry(e: AuditEntry): string {
     ? `<button class="ax-btn-glass" data-audit-details='${escapeHtml(JSON.stringify(e.details ?? {}))}' style="font-size:10px;padding:2px 6px">${detailsCount} fields</button>`
     : '';
   return `
-    <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+    <tr class="ax-gs-184">
       <td style="padding:6px 8px;font-family:monospace;font-size:11px;color:rgba(255,255,255,0.6)">${escapeHtml(fmtDate(e.ts))}</td>
       <td style="padding:6px 8px;font-weight:600;color:#e8b830">${escapeHtml(e.action)}</td>
       <td style="padding:6px 8px;color:rgba(255,255,255,0.85)">${escapeHtml(e.actor)}</td>
@@ -106,7 +106,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         ${stats.total} entries total, ${filtered.length} affichées après filtres.
       </p>
 
-      <div class="ax-card-elevated" style="padding:14px;margin-bottom:16px">
+      <div class="ax-card-elevated ax-gs-185">
         <h3 style="margin:0 0 10px;color:#fff;font-size:14px">📊 Stats</h3>
         <div class="ax-gs-89">
           <div>
@@ -125,7 +125,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </div>
       </div>
 
-      <div class="ax-card-elevated" style="padding:14px;margin-bottom:16px">
+      <div class="ax-card-elevated ax-gs-185">
         <h3 style="margin:0 0 10px;color:#fff;font-size:14px">🔍 Filtres</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
           <input class="ax-input" id="audit-filter-action" placeholder="Filtrer action…" value="${escapeHtml(state.action)}" style="font-size:12px">

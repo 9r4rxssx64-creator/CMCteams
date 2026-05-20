@@ -86,7 +86,7 @@ function renderCard(skill: SkillCard): string {
   return `
     <article class="ax-shubham-card" data-skill-id="${escapeHtml(skill.id)}" style="background:linear-gradient(135deg,rgba(20,20,35,0.85),rgba(14,14,28,0.65));border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;transition:transform 200ms cubic-bezier(0.16,1,0.3,1)">
       <header style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:28px" aria-hidden="true">${escapeHtml(skill.emoji)}</span>
+        <span class="ax-gs-201" aria-hidden="true">${escapeHtml(skill.emoji)}</span>
         <h3 style="margin:0;font-size:16px;color:#fff;font-weight:700;letter-spacing:-0.015em">${escapeHtml(skill.name)}</h3>
       </header>
       <p style="margin:0;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">${escapeHtml(skill.description)}</p>
@@ -101,14 +101,14 @@ function renderPage(): string {
   const cards = SKILLS.map(renderCard).join('');
   return `
     <div class="ax-shubham-skills" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1100px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
-      <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
+      <header class="ax-gs-202">
         <div>
           <h1 style="margin:0;font-size:clamp(22px,5.5vw,30px);font-weight:700;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.15">🎬 Shubham Skills (équivalents Apex)</h1>
           <p style="margin:6px 0 0;color:rgba(255,255,255,0.55);font-size:12px">5 services TikTok IRL — natifs PWA, pas Claude Code</p>
         </div>
         <button class="ax-btn ax-bounce-tap" data-back-admin style="flex-shrink:0;padding:9px 16px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;white-space:nowrap" aria-label="Retour Admin">← Admin</button>
       </header>
-      <div class="ax-shubham-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="ax-shubham-grid ax-gs-203">
         ${cards}
       </div>
     </div>
@@ -292,7 +292,7 @@ export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin');
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div class="ax-empty" style="padding:40px 20px;text-align:center;color:rgba(255,255,255,0.6)">
+      <div class="ax-empty ax-gs-188">
         <h2>Accès réservé</h2>
         <p>Cette section est réservée à l'admin Kevin.</p>
       </div>

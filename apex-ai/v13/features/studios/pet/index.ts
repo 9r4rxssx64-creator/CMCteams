@@ -173,7 +173,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <header class="ax-gs-210">
         <h1 style="margin:0;color:#c9a227">🐾 Studio Animaux</h1>
         <span class="ax-gs-3">${PET_SPECIES.length} espèces</span>
       </header>
@@ -196,7 +196,7 @@ export function render(rootEl: HTMLElement): void {
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Âge humain équivalent</h2>
         <input type="number" id="ax-pet-age" aria-label="Âge de l'animal en années" placeholder="Âge animal (années)" min="0" step="0.1" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <button class="ax-btn ax-btn-primary" id="ax-pet-age-btn" style="min-height:44px">Convertir</button>
-        <div id="ax-pet-age-out" style="margin-top:8px;color:#c9a227"></div>
+        <div id="ax-pet-age-out" class="ax-gs-253"></div>
       </div>
 
       <div class="ax-gs-1">
@@ -205,7 +205,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <p style="font-size:11px;color:#666;text-align:center">Conseils indicatifs. Pour décision médicale, consulter un vétérinaire.</p>
-      <p style="margin-top:24px;text-align:center"><a href="#studios" style="color:#c9a227">← Retour studios</a></p>
+      <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;
   attach(rootEl);

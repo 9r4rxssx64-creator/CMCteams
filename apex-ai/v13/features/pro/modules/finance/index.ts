@@ -749,7 +749,7 @@ export function render(root: HTMLElement): void {
         <input id="finRev" type="number" placeholder="Revenu imposable (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Revenu imposable">
         <input id="finParts" type="number" placeholder="Parts fiscales (1, 1.5, 2...)" value="1" step="0.5" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Parts fiscales">
         <button id="finCalcIRBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#4cd080,#7adda1);color:#000;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Calculer IR</button>
-        <div id="finIRResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
+        <div id="finIRResult" class="ax-gs-242"></div>
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border-left:4px solid #5aa8ff;border-radius:12px;padding:14px;margin-bottom:12px">
@@ -758,7 +758,7 @@ export function render(root: HTMLElement): void {
         <input id="finTaux" type="number" placeholder="Taux annuel (%, ex 3.5)" value="3.5" step="0.1" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Taux annuel">
         <input id="finDuree" type="number" placeholder="Durée (années)" value="25" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Durée">
         <button id="finCalcCreditBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:rgba(90,168,255,0.2);color:#5aa8ff;border:1px solid #5aa8ff;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Calculer mensualité</button>
-        <div id="finCreditResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
+        <div id="finCreditResult" class="ax-gs-242"></div>
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border-left:4px solid #4cd080;border-radius:12px;padding:14px;margin-bottom:12px">
@@ -768,7 +768,7 @@ export function render(root: HTMLElement): void {
         <input id="finDuree2" type="number" placeholder="Années de détention" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Années de détention">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 0;cursor:pointer"><input type="checkbox" id="finRP" aria-label="Cocher si résidence principale exonérée" style="width:18px;height:18px"> Résidence principale (exonérée)</label>
         <button id="finCalcPVBtn" type="button" style="width:100%;margin-top:6px;padding:12px;background:rgba(76,208,128,0.2);color:#4cd080;border:1px solid #4cd080;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Calculer PV</button>
-        <div id="finPVResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
+        <div id="finPVResult" class="ax-gs-242"></div>
       </div>
 
       <div class="ax-gs-158">
@@ -776,7 +776,7 @@ export function render(root: HTMLElement): void {
         <input id="finPVM_v" type="number" placeholder="Prix vente (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Prix vente mobilier">
         <input id="finPVM_a" type="number" placeholder="Prix achat (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Prix achat mobilier">
         <button id="finCalcPVMBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:rgba(255,88,88,0.2);color:#ff8080;border:1px solid #ff5858;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Calculer PFU 30%</button>
-        <div id="finPVMResult" style="margin-top:10px;font-size:13px;line-height:1.7"></div>
+        <div id="finPVMResult" class="ax-gs-242"></div>
       </div>
 
       <div style="background:linear-gradient(135deg,rgba(232,184,48,0.08),transparent);border-left:4px solid #c9a227;border-radius:12px;padding:14px;margin-bottom:12px">

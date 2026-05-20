@@ -173,7 +173,7 @@ function renderItem(it: ExtractedItem): string {
   const testCell = it.test_result
     ? it.test_result.ok
       ? `<span class="ax-gs-14">🟢 OK${it.test_result.latency_ms ? ` (${it.test_result.latency_ms}ms)` : ''}</span>`
-      : `<span style="color:#ff6b6b">🔴 ${escapeHtml(it.test_result.error ?? 'fail')}</span>`
+      : `<span class="ax-gs-236">🔴 ${escapeHtml(it.test_result.error ?? 'fail')}</span>`
     : '<span class="ax-gs-64">—</span>';
 
   const forbiddenBadge = it.forbidden
@@ -181,7 +181,7 @@ function renderItem(it: ExtractedItem): string {
     : '';
 
   return `
-    <tr style="border-bottom:1px solid #2a2a2a">
+    <tr class="ax-gs-232">
       <td style="padding:6px 8px;color:${typeColor};font-weight:600">${escapeHtml(it.type)}</td>
       <td style="padding:6px 8px">${escapeHtml(it.service ?? '—')}${forbiddenBadge}</td>
       <td style="padding:6px 8px;font-family:monospace;color:#aaa">${escapeHtml(it.value.slice(0, 32))}${it.value.length > 32 ? '…' : ''}</td>

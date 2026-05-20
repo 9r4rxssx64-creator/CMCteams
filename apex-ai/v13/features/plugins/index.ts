@@ -239,7 +239,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       <h2 style="margin:16px 0 8px;color:#c9a227;font-size:16px">${plugins.length} plugins</h2>
 
       ${plugins.length === 0
-        ? `<p style="text-align:center;color:var(--ax-text-dim);padding:32px">Aucun plugin ne correspond aux filtres.</p>`
+        ? `<p class="ax-gs-231">Aucun plugin ne correspond aux filtres.</p>`
         : `<div class="ax-gs-147">
              ${plugins.map((p) => renderCard(p, apexPluginsMarketplace.getStatusOf(p.id))).join('')}
            </div>`
@@ -465,7 +465,7 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
       <h2 style="margin:16px 0 8px;color:#c9a227;font-size:16px">${sorted.length} outils</h2>
 
       ${sorted.length === 0
-        ? `<p style="text-align:center;color:var(--ax-text-dim);padding:32px">Aucun outil ne correspond aux filtres.</p>`
+        ? `<p class="ax-gs-231">Aucun outil ne correspond aux filtres.</p>`
         : `<div class="ax-gs-147">
              ${sorted.slice(0, 200).map((t) => renderExtendedCard(t, installedSet.has(t.id))).join('')}
            </div>`
@@ -588,7 +588,7 @@ function renderExtendedCard(t: ApexExtendedTool, isInstalled: boolean): string {
         ${installAction}
       </div>
       <div class="ax-gs-154">
-        <a href="#" class="ax-ext-link" data-url="${escapeHtml(t.source_url)}" style="font-size:10px;color:#7aa3ff">→ ${escapeHtml(t.source_url.slice(0, 60))}${t.source_url.length > 60 ? '…' : ''}</a>
+        <a href="#" class="ax-ext-link ax-gs-237" data-url="${escapeHtml(t.source_url)}">→ ${escapeHtml(t.source_url.slice(0, 60))}${t.source_url.length > 60 ? '…' : ''}</a>
       </div>
     </div>
   `;
@@ -656,7 +656,7 @@ function renderCard(p: ApexPluginManifest, status: string): string {
       ${oauthNote}
       ${toolsList}
       <div class="ax-gs-154">
-        <a href="#" class="ax-plg-link" data-url="${escapeHtml(p.url)}" style="font-size:10px;color:#7aa3ff">→ ${escapeHtml(p.url.slice(0, 60))}${p.url.length > 60 ? '…' : ''}</a>
+        <a href="#" class="ax-plg-link ax-gs-237" data-url="${escapeHtml(p.url)}">→ ${escapeHtml(p.url.slice(0, 60))}${p.url.length > 60 ? '…' : ''}</a>
       </div>
     </div>
   `;
