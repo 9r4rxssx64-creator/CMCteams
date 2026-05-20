@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.715";
+var APP_VER="v9.716";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -14963,7 +14963,14 @@ function agentsStart(){
   // + cmc_comments_* + cmc_visual_planning_* + cmc_structured_* + cmc_team_mirror_*.
   // Garde uniquement mois courant et mois futur immédiat.
   try{
-    var _curY=A.year, _curM=A.month;
+    // v9.716 Kevin "il a encore la mémoire d'avril dans Départs" :
+    // Avant, _curMo se basait sur A.month (mois AFFICHÉ). Si Kevin navigue sur
+    // avril, A.month=3 → avril n'est jamais < _curMo → jamais effacé → vDeparts
+    // avril montre encore des équipes. FIX : se baser sur la DATE RÉELLE — tout
+    // mois strictement avant le mois calendaire courant est effacé, peu importe
+    // la navigation. (Règle absolue Kevin : zéro mémoire des mois passés.)
+    var _nowD=new Date();
+    var _curY=_nowD.getFullYear(), _curM=_nowD.getMonth();
     var _curMo=_curY*12+_curM;
     var _wipedPast=0;
     // 1. A.overrides : supprimer mois antérieurs
@@ -15013,7 +15020,16 @@ function agentsStart(){
         try{fbWrite("cmc_ov",A.overrides);}catch(_){}
         try{fbWrite("cmc_e",A.employees);}catch(_){}
       }
-      console.log("[v9.704 auto-cleanup past months] "+_wipedPast+" mois antérieurs effacés (avant "+MFR[_curM]+" "+_curY+")");
+      // v9.716 — synchroniser AUSSI le shadow IndexedDB. Sans ça, l'IDB gardait
+      // l'ancien cmc_ov (avec avril) et cmcRestoreFromAll pouvait le ré-injecter.
+      try{
+        if(typeof cmcIdbSet==="function"){
+          cmcIdbSet("cmc_ov",A.overrides);
+          cmcIdbSet("cmc_ov_meta",A.overrides_meta||{});
+          cmcIdbSet("cmc_e",A.employees);
+        }
+      }catch(_){}
+      console.log("[v9.716 auto-cleanup past months] "+_wipedPast+" mois antérieurs effacés (avant "+MFR[_curM]+" "+_curY+")");
     }
   }catch(_cleanupErr){}
   // v9.703 Kevin diag "personnes dans mauvaises équipes" — re-trigger wipe pour
