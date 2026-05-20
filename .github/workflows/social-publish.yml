@@ -18,7 +18,7 @@ permissions:
   contents: write
 
 env:
-  PIPER_VOICE: "en_US-hfc_male-medium"
+  TTS_VOICE: "en-US-GuyNeural"
 
 jobs:
   generate-and-publish:
@@ -39,15 +39,11 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg espeak-ng curl jq
 
-      - name: Install Piper TTS (neural voice)
+      - name: Install TTS engines (edge-tts neural + gTTS fallback)
         run: |
-          pip install piper-tts
-          # Pre-download voice model so it's cached
-          echo "Testing Piper..."
-          echo "Hello world" | piper --model "$PIPER_VOICE" --output_file /tmp/test_piper.wav 2>/dev/null && echo "✅ Piper OK" || echo "⚠️ Piper failed, will use gTTS fallback"
-
-      - name: Install gTTS fallback
-        run: pip install gtts
+          pip install edge-tts gtts
+          echo "Testing edge-tts..."
+          edge-tts --text "Test" --voice en-US-GuyNeural --write-media /tmp/test_edge.mp3 2>/dev/null && echo "✅ edge-tts OK" || echo "⚠️ edge-tts failed, will use gTTS"
 
       - name: Install Node deps
         working-directory: tools/social
@@ -129,43 +125,39 @@ jobs:
           # Simpler: write script to file, then process
           echo "$STORY_SCRIPT" > "$OUTDIR/script.txt"
 
-          # Try Piper TTS first (neural quality)
+          # Try edge-tts first (Microsoft neural voice — best quality)
           TTS_BACKEND="unknown"
-          AUDIO_FILE="$OUTDIR/narration.wav"
+          NARRATION_MP3="$OUTDIR/narration.mp3"
 
-          if echo "Test sentence" | piper --model "$PIPER_VOICE" --output_file /tmp/piper_test.wav 2>/dev/null; then
-            echo "   Using Piper TTS (neural voice)..."
-            cat "$OUTDIR/script.txt" | piper --model "$PIPER_VOICE" --output_file "$AUDIO_FILE" 2>/dev/null
-            if [ -f "$AUDIO_FILE" ] && [ $(stat -f%z "$AUDIO_FILE" 2>/dev/null || stat -c%s "$AUDIO_FILE") -gt 1000 ]; then
-              TTS_BACKEND="piper"
-              echo "   ✅ Piper TTS OK"
+          # Pick dramatic male voice for storytelling
+          EDGE_VOICE="en-US-GuyNeural"
+
+          if edge-tts --text "$(cat "$OUTDIR/script.txt")" --voice "$EDGE_VOICE" --rate="-5%" --pitch="-2Hz" --write-media "$NARRATION_MP3" 2>/dev/null; then
+            if [ -f "$NARRATION_MP3" ] && [ $(stat -c%s "$NARRATION_MP3" 2>/dev/null || echo 0) -gt 5000 ]; then
+              TTS_BACKEND="edge-tts"
+              echo "   ✅ Edge TTS neural voice OK"
             fi
           fi
 
           # Fallback: gTTS (Google Translate — natural but less dramatic)
           if [ "$TTS_BACKEND" = "unknown" ]; then
-            echo "   Piper failed, trying gTTS (Google Translate)..."
+            echo "   Edge TTS failed, trying gTTS (Google Translate)..."
             python3 -c "
           from gtts import gTTS
           text = open('$OUTDIR/script.txt').read()
           tts = gTTS(text=text, lang='en', slow=False)
-          tts.save('$OUTDIR/narration.mp3')
+          tts.save('$NARRATION_MP3')
           print('OK')
-          " && TTS_BACKEND="gtts" && echo "   ✅ gTTS OK" || true
+          " 2>/dev/null && TTS_BACKEND="gtts" && echo "   ✅ gTTS OK" || true
           fi
 
           # Fallback: espeak-ng (last resort — robotic)
           if [ "$TTS_BACKEND" = "unknown" ]; then
             echo "   ⚠️ Using espeak-ng (robotic fallback)..."
-            espeak-ng -v en -s 155 -p 40 -w "$AUDIO_FILE" -f "$OUTDIR/script.txt"
+            espeak-ng -v en -s 155 -p 40 -w "$OUTDIR/narration.wav" -f "$OUTDIR/script.txt"
+            ffmpeg -y -i "$OUTDIR/narration.wav" -codec:a libmp3lame -b:a 192k -ar 44100 "$NARRATION_MP3" 2>/dev/null
+            rm -f "$OUTDIR/narration.wav"
             TTS_BACKEND="espeak"
-          fi
-
-          # Convert to MP3 if WAV
-          NARRATION_MP3="$OUTDIR/narration.mp3"
-          if [ "$TTS_BACKEND" = "piper" ] || [ "$TTS_BACKEND" = "espeak" ]; then
-            ffmpeg -y -i "$AUDIO_FILE" -codec:a libmp3lame -b:a 192k -ar 44100 "$NARRATION_MP3" 2>/dev/null
-            rm -f "$AUDIO_FILE"
           fi
 
           # Get audio duration
