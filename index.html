@@ -5323,7 +5323,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.722";
+var APP_VER="v9.723";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37705,16 +37705,33 @@ function doImport(){
         A.employees.filter(function(x){return isEmpActive(x,iy,im)&&x!==_simBF;}).forEach(function(x){
           var sc=_strSim(eName,x.name);if(sc>_sim2F)_sim2F=sc;
         });
-        if(_simBFS-_sim2F>=0.1)_fe=_simBF;
+        // v9.723 (Kevin) — guard homonymes : refuser un match bigram si nom de
+        // famille identique mais INITIALE différente. LANDAU B ≠ LANDAU J,
+        // ENZA B ≠ ENZA C, SEGGIARO G ≠ SEGGIARO J — ce sont des personnes
+        // distinctes (souvent des frères). Le bigram 0.85 les confondait.
+        var _tP=eName.split(/\s+/),_bP=_simBF.name.split(/\s+/);
+        var _tSur=_tP.slice(0,-1).join(" ").toUpperCase(),_bSur=_bP.slice(0,-1).join(" ").toUpperCase();
+        var _tIni=(_tP[_tP.length-1]||"").toUpperCase(),_bIni=(_bP[_bP.length-1]||"").toUpperCase();
+        var _diffHomonym=_tSur===_bSur&&_tIni.length<=2&&_bIni.length<=2&&_tIni!==_bIni;
+        if(_simBFS-_sim2F>=0.1&&!_diffHomonym)_fe=_simBF;
+        else if(_diffHomonym)console.warn("[import homonyme] "+eName+" ≠ "+_simBF.name+" (initiale différente, match refusé)");
       }
     }
-    if(!_fe){
-      // v9.126 — Fallback cadres : match par nom de famille si prénom différent
+    if(!_fe && importFamily==="cadres"){
+      // v9.126 — Fallback cadres : match par nom de famille.
+      // v9.723 (Kevin "LANDAU B chef → LANDAU J cadre, ce sont 2 frères") :
+      // (1) STRICTEMENT réservé à un import cadres — un import V1 (employés/chefs)
+      //     ne doit JAMAIS assigner un horaire à un cadre.
+      // (2) L'INITIALE doit correspondre : LANDAU B ≠ LANDAU J, ENZA B ≠ ENZA C.
+      var _spn=eName.split(/\s+/);
+      var _surnameP=_spn[0];
+      var _initP=(_spn[_spn.length-1]||"").toUpperCase().charAt(0);
       var _cadreMatch=A.employees.find(function(x){
         if(x.family!=="cadres")return false;
-        var _surnameP=eName.split(/\s+/)[0];
-        var _surnameDef=x.name.split(/\s+/)[0];
-        return _surnameP===_surnameDef;
+        var _xp=x.name.split(/\s+/);
+        if(_xp[0]!==_surnameP)return false;
+        var _initD=(_xp[_xp.length-1]||"").toUpperCase().charAt(0);
+        return !_initP||!_initD||_initP===_initD; // initiale doit matcher si présente
       });
       if(_cadreMatch){_fe=_cadreMatch;}
     }
