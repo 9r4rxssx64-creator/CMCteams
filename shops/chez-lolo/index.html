@@ -635,7 +635,7 @@ document.body.appendChild(ab)}
 
 /* Wishlist / Favoris */
 function loadWish(){try{return JSON.parse(localStorage.getItem("kdmc_wish_"+STORE_ID)||"[]")}catch(e){return []}}
-function saveWish(w){localStorage.setItem("kdmc_wish_"+STORE_ID,JSON.stringify(w))}
+function saveWish(w){try{localStorage.setItem("kdmc_wish_"+STORE_ID,JSON.stringify(w))}catch(e){}}
 function toggleWish(id){
 var w=loadWish();var idx=w.indexOf(id);
 if(idx>=0){w.splice(idx,1);toast("Retiré des favoris")}
@@ -649,7 +649,7 @@ function loadRecent(){try{return JSON.parse(localStorage.getItem("kdmc_recent_"+
 function pushRecent(id){
 var r=loadRecent().filter(function(x){return x!==id});
 r.unshift(id);r=r.slice(0,8);
-localStorage.setItem("kdmc_recent_"+STORE_ID,JSON.stringify(r))}
+try{localStorage.setItem("kdmc_recent_"+STORE_ID,JSON.stringify(r))}catch(e){}}
 /* Reviews helpers */
 function loadReviews(pid){try{var all=JSON.parse(localStorage.getItem("kdmc_reviews_"+STORE_ID)||"[]");return pid?all.filter(function(r){return r.pid===pid}):all}catch(e){return []}}
 function _pickStar(n){var el=document.getElementById("revStars");if(!el)return;el.dataset.r=n;el.querySelectorAll("span").forEach(function(s,i){s.classList.toggle("on",i<n)})}
@@ -681,7 +681,9 @@ var p=P.find(function(x){return x.id===pid});if(!p||!p.img)return;
 var ov=document.createElement("div");
 ov.style.cssText="position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out";
 ov.innerHTML='<img src="'+esc(p.img)+'" alt="'+esc(p.name)+'" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:12px">';
-ov.onclick=function(){ov.remove()};
+function _zClose(){ov.remove();document.removeEventListener("keydown",_zEsc)}
+function _zEsc(e){if(e.key==="Escape")_zClose()}
+ov.onclick=_zClose;document.addEventListener("keydown",_zEsc);
 document.body.appendChild(ov)}
 /* Vue Wishlist */
 function vWishlist(){
@@ -728,10 +730,11 @@ dc();renderCartPanel()}
 
 /* Analytics simple (localStorage) */
 function trackEvent(evt,data){
-var log=JSON.parse(localStorage.getItem("kdmc_analytics_"+STORE_ID)||"[]");
+try{
+var log=JSON.parse(localStorage.getItem("kdmc_analytics_"+STORE_ID)||"[]")||[];
 log.push({evt:evt,data:data||{},ts:Date.now()});
 if(log.length>500)log=log.slice(-500);
-localStorage.setItem("kdmc_analytics_"+STORE_ID,JSON.stringify(log))}
+localStorage.setItem("kdmc_analytics_"+STORE_ID,JSON.stringify(log))}catch(e){}}
 
 /* Track page views */
 trackEvent("pageview",{page:location.pathname});
@@ -746,9 +749,10 @@ text=(text||"").trim();
 if(!text)return toast("Merci d'écrire un commentaire","error");
 if(text.length<5)return toast("Votre avis est trop court","error");
 var r=Math.max(1,Math.min(5,rating|0));
-var reviews=JSON.parse(localStorage.getItem("kdmc_reviews_"+STORE_ID)||"[]");
+try{
+var reviews=JSON.parse(localStorage.getItem("kdmc_reviews_"+STORE_ID)||"[]")||[];
 reviews.push({pid:productId,rating:r,text:text,author:"Client vérifié",ts:Date.now()});
-localStorage.setItem("kdmc_reviews_"+STORE_ID,JSON.stringify(reviews));
+localStorage.setItem("kdmc_reviews_"+STORE_ID,JSON.stringify(reviews))}catch(e){return toast("Stockage indisponible (mode privé ?)","error")}
 toast("Merci pour votre avis ! ⭐");
 dc()}
 
@@ -765,7 +769,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="chez-lolo"
-        data-version="v1.2.1"
+        data-version="v1.2.2"
         data-color="#e8b830"
         defer></script>
 
