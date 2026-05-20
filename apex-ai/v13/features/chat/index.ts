@@ -1815,22 +1815,28 @@ export function render(rootEl: HTMLElement): void {
       }
       .ax-chat-greeting {
         text-align: center;
-        padding: 18px 16px 10px;
-        font-size: 18px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.95);
+        padding: 28px 20px 14px;
+        font-size: clamp(22px, 6vw, 30px);
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--ax-gold-deep) 0%, var(--ax-gold) 45%, var(--ax-gold-bright) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
         font-family: Georgia, serif;
-        line-height: 1.35;
-        animation: ax-fade-up 360ms cubic-bezier(0.34,1.56,0.64,1) backwards;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+        animation: ax-fade-up 420ms cubic-bezier(0.34,1.56,0.64,1) backwards;
       }
       .ax-chat-greeting::after {
         content: '';
         display: block;
-        width: 36px;
-        height: 2px;
+        width: 48px;
+        height: 3px;
+        border-radius: 2px;
         background: linear-gradient(90deg,transparent,var(--ax-gold),transparent);
-        margin: 10px auto 0;
-        opacity: 0.8;
+        margin: 14px auto 0;
+        opacity: 0.9;
+        box-shadow: 0 0 16px rgba(232,184,48,0.5);
       }
       .ax-chat-suggest {
         display: flex;
@@ -1863,6 +1869,67 @@ export function render(rootEl: HTMLElement): void {
         box-shadow: 0 6px 18px rgba(201,162,39,0.25);
       }
       .ax-chat-suggest button:active { transform: scale(0.96); }
+      /* v13.4.237 — Tab bar premium iOS-style (Kevin "UX futuriste épuré") */
+      .ax-tabbar {
+        display: flex;
+        gap: 2px;
+        padding: 6px 6px calc(6px + env(safe-area-inset-bottom,0px));
+        border-top: 1px solid rgba(232,184,48,0.12);
+        background: linear-gradient(180deg, rgba(14,14,24,0.92), rgba(8,8,15,0.98));
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        min-width: 0;
+        max-width: 100%;
+      }
+      .ax-tabbar__item {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-height: 52px;
+        padding: 6px 2px;
+        border: none;
+        border-radius: 14px;
+        background: transparent;
+        color: var(--ax-text-muted);
+        cursor: pointer;
+        transition: background 200ms var(--ax-ease-out), color 200ms var(--ax-ease-out), transform 160ms var(--ax-ease-spring);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ax-tabbar__item:active { transform: scale(0.90); }
+      .ax-tabbar__ico {
+        font-size: 19px;
+        line-height: 1;
+        transition: transform 200ms var(--ax-ease-spring);
+      }
+      .ax-tabbar__lbl {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+      .ax-tabbar__item--accent {
+        color: var(--ax-gold);
+      }
+      .ax-tabbar__item--accent .ax-tabbar__ico {
+        filter: drop-shadow(0 0 8px rgba(232,184,48,0.55));
+      }
+      .ax-tabbar__item--accent.is-on,
+      .ax-tabbar__item.is-on {
+        background: linear-gradient(135deg, rgba(232,184,48,0.20), rgba(201,162,39,0.10));
+        color: var(--ax-gold-bright);
+      }
+      .ax-tabbar__item.is-on .ax-tabbar__ico { transform: translateY(-1px) scale(1.08); }
+      .ax-tabbar__item--danger { color: var(--ax-red); }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-tabbar__item, .ax-tabbar__ico { transition: none !important; }
+      }
       .ax-info-card {
         background: linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));
         backdrop-filter: blur(16px);
@@ -1983,23 +2050,36 @@ export function render(rootEl: HTMLElement): void {
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-wake" aria-label="Activer Dis Apex" title="Wake word 'Dis Apex' actif/inactif" style="min-width:36px;width:36px;flex:0 0 36px">👂</button>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-attach" aria-label="Joindre fichier" title="Photo, vidéo, document, archive" style="min-width:36px;width:36px;flex:0 0 36px">📎</button>
         <button type="button" class="ax-btn ax-btn-icon ax-icon-compact" id="ax-chat-camera" aria-label="Ouvrir caméra" title="Caméra (photo, scan, QR, vidéo)" style="display:none;min-width:36px;width:36px;flex:0 0 36px">📷</button>
-        <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer" style="flex:1 1 auto;min-width:44px">↑</button>
+        <button type="submit" class="ax-btn ax-btn-primary ax-chat-send" aria-label="Envoyer" style="flex:0 0 56px;width:56px;min-width:56px;height:44px;padding:0;margin-left:auto">↑</button>
         <input type="file" id="ax-chat-file-input" aria-label="Joindre fichiers au message" multiple
           accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.zip,.rar,.7z,.docx,.xlsx,.pptx"
           style="display:none">
       </form>
       <div id="ax-chat-attachments" style="display:none;padding:8px;border-top:1px solid var(--ax-border);background:rgba(201,162,39,0.05);overflow-x:auto;white-space:nowrap"></div>
-      <!-- v13.4.187 fix Kevin "Clé+Déco coupés portrait iPhone" : flex-wrap
-           au lieu d'overflow-x:auto (Kevin ne savait pas qu'il fallait swiper).
-           Boutons en grille auto-fit pour viewport étroit. -->
-      <nav class="ax-chat-nav" style="display:flex;flex-wrap:wrap;gap:3px;padding:4px;border-top:1px solid var(--ax-border);background:var(--ax-bg-glass);min-width:0;max-width:100%">
-        <button class="ax-btn ax-btn-sm" data-nav-route="chat" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">💬 Chat</button>
-        <button class="ax-btn ax-btn-sm" data-nav-route="dashboard" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">📊 Dash</button>
-        ${isAdmin ? '<button class="ax-btn ax-btn-sm" data-nav-route="admin" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">⚙️ Admin</button>' : ''}
-        <button class="ax-btn ax-btn-sm" data-nav-route="vault" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;font-weight:700">🔐 Coffre</button>
-        <button class="ax-btn ax-btn-sm" data-nav-route="settings" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔧 Régl.</button>
-        <button class="ax-btn ax-btn-sm" id="ax-paste-key-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px">🔑 Clé</button>
-        <button class="ax-btn ax-btn-sm" id="ax-logout-nav" style="flex:1 1 auto;min-width:0;white-space:nowrap;min-height:30px;padding:4px 8px;font-size:11px;color:var(--ax-error)">🚪 Déco</button>
+      <!-- v13.4.237 — Tab bar premium iOS-style : icône + label, glassmorphism,
+           touch 52px Apple HIG, active state gold (Kevin "UX futuriste épuré"). -->
+      <nav class="ax-tabbar ax-chat-nav" aria-label="Navigation principale">
+        <button class="ax-tabbar__item is-on" data-nav-route="chat" aria-label="Chat" aria-current="page">
+          <span class="ax-tabbar__ico">💬</span><span class="ax-tabbar__lbl">Chat</span>
+        </button>
+        <button class="ax-tabbar__item" data-nav-route="dashboard" aria-label="Tableau de bord">
+          <span class="ax-tabbar__ico">📊</span><span class="ax-tabbar__lbl">Dash</span>
+        </button>
+        ${isAdmin ? `<button class="ax-tabbar__item" data-nav-route="admin" aria-label="Centre admin">
+          <span class="ax-tabbar__ico">⚙️</span><span class="ax-tabbar__lbl">Admin</span>
+        </button>` : ''}
+        <button class="ax-tabbar__item ax-tabbar__item--accent" data-nav-route="vault" aria-label="Coffre clés API">
+          <span class="ax-tabbar__ico">🔐</span><span class="ax-tabbar__lbl">Coffre</span>
+        </button>
+        <button class="ax-tabbar__item" data-nav-route="settings" aria-label="Réglages">
+          <span class="ax-tabbar__ico">🔧</span><span class="ax-tabbar__lbl">Régl.</span>
+        </button>
+        <button class="ax-tabbar__item" id="ax-paste-key-nav" aria-label="Coller une clé API">
+          <span class="ax-tabbar__ico">🔑</span><span class="ax-tabbar__lbl">Clé</span>
+        </button>
+        <button class="ax-tabbar__item ax-tabbar__item--danger" id="ax-logout-nav" aria-label="Déconnexion">
+          <span class="ax-tabbar__ico">🚪</span><span class="ax-tabbar__lbl">Déco</span>
+        </button>
       </nav>
       <footer style="text-align:center;padding:0 6px calc(env(safe-area-inset-bottom,0px));font-size:8px;color:var(--ax-text-muted);background:var(--ax-bg);flex-shrink:0;letter-spacing:0.2px;opacity:0.25;line-height:1;height:auto" title="${APP_VER} · DK">
         <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--ax-green);vertical-align:middle"></span>

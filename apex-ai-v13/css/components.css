@@ -389,14 +389,14 @@
   gap: var(--ax-s-2);
   /* v13.4.44 fix Kevin "bouton envoyer jaune inaccessible" iPhone PWA :
    * safe-area-inset-bottom empêche le bouton d'être caché derrière home indicator iOS. */
-  padding: var(--ax-s-2) var(--ax-s-3) max(var(--ax-s-2), env(safe-area-inset-bottom, 0px)) var(--ax-s-3);
-  border-top: 1px solid var(--ax-border);
-  background: var(--ax-bg-glass);
-  backdrop-filter: var(--ax-blur);
+  padding: var(--ax-s-3) var(--ax-s-3) var(--ax-s-3) var(--ax-s-3);
+  /* v13.4.237 — input bar premium : glassmorphism renforcé + accent gold subtil */
+  border-top: 1px solid rgba(232, 184, 48, 0.14);
+  background: linear-gradient(180deg, rgba(20, 20, 35, 0.78), rgba(14, 14, 24, 0.92));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   align-items: flex-end;
   flex-shrink: 0;
-  /* v13.3.85 Kevin "tu trouves ton affichage réussi ?" → revert v13.3.84
-   * align-items:center qui cassait le flex layout iOS Safari PWA. */
 }
 
 /* v13.4.44 fix Kevin "bouton envoyer jaune inaccessible" :
@@ -412,8 +412,9 @@
   flex: 1;
   resize: none;
   padding: var(--ax-s-3) var(--ax-s-4);
-  background: var(--ax-bg-input);
-  border: 1px solid var(--ax-border);
+  /* v13.4.237 — textarea premium : fond plus profond + bordure focus gold */
+  background: rgba(8, 8, 15, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: var(--ax-r-md);
   color: var(--ax-text);
   font-size: max(16px, var(--ax-text-base));
@@ -421,6 +422,12 @@
   max-height: 200px;
   min-height: 44px;
   line-height: var(--ax-lh-normal);
+  transition: border-color 200ms var(--ax-ease-out), box-shadow 200ms var(--ax-ease-out);
+}
+.ax-chat-input textarea:focus {
+  outline: none;
+  border-color: var(--ax-border-gold);
+  box-shadow: 0 0 0 3px rgba(232, 184, 48, 0.12);
 }
 
 /* v13.4.3 Kevin 2026-05-09 — UX final compact (TikTok 2 vidéos) :
