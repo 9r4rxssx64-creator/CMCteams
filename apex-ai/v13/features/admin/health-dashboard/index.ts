@@ -79,7 +79,7 @@ function renderGlobalHeader(report: FullHealthReport | null): string {
     <div class="ax-health-header" style="background:${bgGradient};border:1px solid ${headerColor}33;border-radius:14px;padding:20px;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
         <div style="font-size:36px">${headerEmoji}</div>
-        <div style="flex:1;min-width:200px">
+        <div class="ax-gs-11">
           <h2 style="margin:0;font-size:18px;color:${headerColor};font-weight:800;letter-spacing:-0.01em">${escapeHtml(headerLabel)}</h2>
           <p style="margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:13px">
             <strong>${report.globalScorePct}%</strong> opérationnel ·
@@ -91,7 +91,7 @@ function renderGlobalHeader(report: FullHealthReport | null): string {
             Testé il y a ${Math.max(1, Math.round((Date.now() - report.ts) / 1000))}s · Durée ${Math.round(report.durationMs / 1000)}s
           </p>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div class="ax-gs-20">
           <button id="btn-run-full-test" class="ax-btn ax-btn-primary" style="background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:10px 16px;border-radius:22px;font-weight:700;cursor:pointer;font-size:13px;min-height:40px;-webkit-tap-highlight-color:transparent">
             🔄 Re-tester
           </button>
@@ -183,7 +183,7 @@ function renderItemsList(report: FullHealthReport): string {
       return `
         <li class="ax-health-item" data-item-id="${safeId}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01);border-radius:6px;margin-bottom:4px">
           <span style="font-size:16px;flex-shrink:0">${s.emoji}</span>
-          <div style="flex:1;min-width:0">
+          <div class="ax-gs-6">
             <div style="font-size:13px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(item.label)}</div>
             <div style="font-size:11px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(item.message ?? '—')}${escapeHtml(dur)}${escapeHtml(retry)}</div>
           </div>
@@ -207,9 +207,9 @@ function renderAlternatives(report: FullHealthReport): string {
     .map(
       (a) => `
         <li style="padding:10px;background:rgba(232,184,48,0.05);border:1px solid rgba(232,184,48,0.2);border-radius:8px;margin-bottom:6px">
-          <div style="font-size:13px;color:#e8b830;font-weight:700">${escapeHtml(a.service)}</div>
+          <div class="ax-gs-102">${escapeHtml(a.service)}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5);text-decoration:line-through">${escapeHtml(a.original)}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.85)">→ ${escapeHtml(a.alternative)} <span style="color:rgba(255,255,255,0.4)">(${escapeHtml(a.reason)})</span></div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.85)">→ ${escapeHtml(a.alternative)} <span class="ax-gs-91">(${escapeHtml(a.reason)})</span></div>
         </li>
       `,
     )
@@ -226,10 +226,10 @@ function renderProgress(progress: ProgressUpdate): string {
   const pct = Math.round((progress.current / progress.total) * 100);
   return `
     <div id="ax-health-progress" style="background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.2);border-radius:12px;padding:16px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:18px">⏳</span>
-        <div style="flex:1">
-          <div style="font-size:13px;color:#e8b830;font-weight:700">${escapeHtml(progress.message)}</div>
+      <div class="ax-gs-103">
+        <span class="ax-gs-17">⏳</span>
+        <div class="ax-gs-26">
+          <div class="ax-gs-102">${escapeHtml(progress.message)}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.55)">Phase ${progress.current}/${progress.total} (${pct}%)</div>
         </div>
       </div>
@@ -324,24 +324,24 @@ function renderConformityCard(): string {
     <div style="background:linear-gradient(135deg,rgba(201,162,39,0.08),rgba(201,162,39,0.02));border:1px solid rgba(201,162,39,0.2);border-radius:14px;padding:14px;margin-bottom:12px">
       <h3 style="margin:0 0 10px;color:#e8b830;font-size:13px;text-transform:uppercase;letter-spacing:0.05em">📚 Conformité CLAUDE.md</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px">
-        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
-          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Règles injectées</div>
-          <div style="font-size:18px;color:#fff;font-weight:700;margin-top:2px">${counts.rules}/50</div>
+        <div class="ax-gs-39">
+          <div class="ax-gs-40">Règles injectées</div>
+          <div class="ax-gs-104">${counts.rules}/50</div>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
-          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Erreurs appliquées</div>
-          <div style="font-size:18px;color:#fff;font-weight:700;margin-top:2px">${counts.errorsApplied}/${counts.errorsTotal}</div>
+        <div class="ax-gs-39">
+          <div class="ax-gs-40">Erreurs appliquées</div>
+          <div class="ax-gs-104">${counts.errorsApplied}/${counts.errorsTotal}</div>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
-          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Audits 24h</div>
+        <div class="ax-gs-39">
+          <div class="ax-gs-40">Audits 24h</div>
           <div style="font-size:18px;color:${passColor};font-weight:700;margin-top:2px">${passPct}% OK</div>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px">
-          <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em">Régressions 24h</div>
+        <div class="ax-gs-39">
+          <div class="ax-gs-40">Régressions 24h</div>
           <div style="font-size:18px;color:${regStats.failuresLast24h === 0 ? '#22cc77' : '#ff5566'};font-weight:700;margin-top:2px">${regStats.failuresLast24h}</div>
         </div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="ax-gs-20">
         <button id="btn-test-noregression" style="padding:8px 12px;background:rgba(34,204,119,0.12);color:#22cc77;border:1px solid rgba(34,204,119,0.3);border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">🧪 Re-tester non-régression</button>
         <button id="btn-show-rules" style="padding:8px 12px;background:rgba(201,162,39,0.12);color:#e8b830;border:1px solid rgba(201,162,39,0.3);border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">📚 Voir toutes règles</button>
         <button id="btn-audit-injection" style="padding:8px 12px;background:rgba(77,158,255,0.12);color:#4d9eff;border:1px solid rgba(77,158,255,0.3);border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">🔍 Auditer injection</button>
@@ -423,25 +423,25 @@ function showAllRulesModal(rootEl: HTMLElement): void {
         <button id="ax-rules-close" style="background:rgba(255,255,255,0.06);color:#fff;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
       </header>
       <input id="ax-rules-search" type="text" placeholder="Recherche…" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#fff;font-size:14px;margin-bottom:12px" />
-      <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin:8px 0">Règles (${rules.length})</div>
+      <div class="ax-gs-105">Règles (${rules.length})</div>
       <ul id="ax-rules-list" style="list-style:none;padding:0;margin:0 0 16px">
         ${rules
           .map((r, i) => {
             const sev = r.severity === 'critical' ? '🔴' : r.severity === 'high' ? '🟡' : '🟢';
             const safeTitle = r.title.replace(/[<>]/g, '');
             const safeQuote = (r.quote || '').replace(/[<>]/g, '').slice(0, 160);
-            return `<li class="ax-rule-row" data-keyword="${safeTitle.toLowerCase()} ${safeQuote.toLowerCase()}" style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px">${sev} <strong>${i + 1}. ${safeTitle.slice(0, 100)}</strong>${safeQuote ? `<div style="color:rgba(255,255,255,0.55);font-size:11px;margin-top:2px">« ${safeQuote} »</div>` : ''}</li>`;
+            return `<li class="ax-rule-row" data-keyword="${safeTitle.toLowerCase()} ${safeQuote.toLowerCase()}" style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px">${sev} <strong>${i + 1}. ${safeTitle.slice(0, 100)}</strong>${safeQuote ? `<div class="ax-gs-55">« ${safeQuote} »</div>` : ''}</li>`;
           })
           .join('')}
       </ul>
-      <div style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin:8px 0">Erreurs documentées (${errors.length})</div>
+      <div class="ax-gs-105">Erreurs documentées (${errors.length})</div>
       <ul id="ax-errors-list" style="list-style:none;padding:0;margin:0">
         ${errors
           .map((e) => {
             const tag = e.applied ? '✅' : '⚠️';
             const safeTitle = e.title.replace(/[<>]/g, '').slice(0, 100);
             const safeLesson = (e.lesson || '').replace(/[<>]/g, '').slice(0, 200);
-            return `<li class="ax-err-row" data-keyword="${safeTitle.toLowerCase()} ${safeLesson.toLowerCase()}" style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px">${tag} <strong>#${e.num} ${safeTitle}</strong>${safeLesson ? `<div style="color:rgba(255,255,255,0.55);font-size:11px;margin-top:2px">${safeLesson}</div>` : ''}</li>`;
+            return `<li class="ax-err-row" data-keyword="${safeTitle.toLowerCase()} ${safeLesson.toLowerCase()}" style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px">${tag} <strong>#${e.num} ${safeTitle}</strong>${safeLesson ? `<div class="ax-gs-55">${safeLesson}</div>` : ''}</li>`;
           })
           .join('')}
       </ul>
@@ -540,7 +540,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   rootEl.innerHTML = `
     <div style="padding:max(20px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <div style="min-width:0;flex:1">
+        <div class="ax-gs-106">
           <h1 style="margin:0;font-size:clamp(20px,5vw,26px);font-weight:700;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.02em">📊 Santé Live</h1>
           <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:11px">Codes · Liens · Sentinelles · MCP · Vault — auto-test exhaustif</p>
         </div>

@@ -53,10 +53,10 @@ function renderRecoverableRow(e: MissingEntry): string {
   const src = e.recoverable_from ? SOURCE_LABELS[e.recoverable_from] : { icon: '❓', label: '—', color: '#aaa' };
   return `
     <article style="background:rgba(255,255,255,0.02);border:1px solid rgba(34,204,119,0.2);border-radius:10px;padding:12px;margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div style="flex:1;min-width:200px">
+      <div class="ax-gs-93">
+        <div class="ax-gs-11">
           <strong style="color:#22cc77">${escapeHtml(e.service_name)}</strong>
-          <span style="font-size:11px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);margin-left:8px">${escapeHtml(e.category)}</span>
+          <span class="ax-gs-94">${escapeHtml(e.category)}</span>
           <br>
           <code style="font-size:11px;color:var(--ax-text-dim);font-family:monospace">${escapeHtml(e.storage_key)}</code>
         </div>
@@ -71,14 +71,14 @@ function renderRecoverableRow(e: MissingEntry): string {
 function renderAbsentRow(e: MissingEntry): string {
   return `
     <article style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,107,107,0.2);border-radius:10px;padding:12px;margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div style="flex:1;min-width:200px">
+      <div class="ax-gs-93">
+        <div class="ax-gs-11">
           <strong style="color:#ff6b6b">${escapeHtml(e.service_name)}</strong>
-          <span style="font-size:11px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);margin-left:8px">${escapeHtml(e.category)}</span>
+          <span class="ax-gs-94">${escapeHtml(e.category)}</span>
           <br>
           <code style="font-size:11px;color:var(--ax-text-dim);font-family:monospace">${escapeHtml(e.storage_key)}</code>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div class="ax-gs-20">
           ${e.dashboard_url ? `<a href="${escapeHtml(e.dashboard_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">🔗 Dashboard</a>` : ''}
           ${e.billing_url ? `<a href="${escapeHtml(e.billing_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">💰 Recharger</a>` : ''}
         </div>
@@ -89,7 +89,7 @@ function renderAbsentRow(e: MissingEntry): string {
 
 async function refresh(rootEl: HTMLElement): Promise<void> {
   rootEl.innerHTML = `
-    <div style="padding:40px;text-align:center;color:var(--ax-text-dim)">
+    <div class="ax-gs-57">
       <p>🔍 Audit credentials en cours…</p>
     </div>
   `;
@@ -111,7 +111,7 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
       : 0;
 
     rootEl.innerHTML = `
-      <div style="padding:20px;max-width:900px;margin:0 auto">
+      <div class="ax-gs-95">
         <header style="margin-bottom:24px">
           <h1 style="margin:0 0 6px;color:#c9a227">🔐 Credentials Status</h1>
           <p style="color:var(--ax-text-dim);font-size:13px;margin:0">
@@ -119,22 +119,22 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
           </p>
         </header>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+        <div class="ax-gs-96">
           <div style="background:rgba(34,204,119,0.1);border:1px solid rgba(34,204,119,0.3);border-radius:10px;padding:14px">
             <div style="font-size:24px;color:#22cc77;font-weight:600">${stats.present_count}/${stats.total_patterns}</div>
-            <div style="font-size:12px;color:var(--ax-text-dim)">Présentes localement (${presentPct}%)</div>
+            <div class="ax-gs-5">Présentes localement (${presentPct}%)</div>
           </div>
-          <div style="background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:10px;padding:14px">
-            <div style="font-size:24px;color:#c9a227;font-weight:600">${stats.recoverable_count}</div>
-            <div style="font-size:12px;color:var(--ax-text-dim)">Restorables auto</div>
+          <div class="ax-gs-97">
+            <div class="ax-gs-98">${stats.recoverable_count}</div>
+            <div class="ax-gs-5">Restorables auto</div>
           </div>
-          <div style="background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:14px">
-            <div style="font-size:24px;color:#ff6b6b;font-weight:600">${stats.truly_absent_count}</div>
-            <div style="font-size:12px;color:var(--ax-text-dim)">À coller manuellement</div>
+          <div class="ax-gs-99">
+            <div class="ax-gs-58">${stats.truly_absent_count}</div>
+            <div class="ax-gs-5">À coller manuellement</div>
           </div>
         </div>
 
-        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <div class="ax-gs-100">
           <button id="ax-cs-refresh" class="ax-btn" style="padding:8px 14px;font-size:13px">🔄 Re-scanner</button>
           <button id="ax-cs-restore-all" class="ax-btn" style="padding:8px 14px;font-size:13px;background:rgba(34,204,119,0.15);color:#22cc77;border:1px solid rgba(34,204,119,0.4);font-weight:600"${audit.recoverable.length === 0 ? ' disabled' : ''}>
             🔓 Restaurer toutes (${audit.recoverable.length})
@@ -167,7 +167,7 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
   } catch (err: unknown) {
     logger.error('credentials-status', 'refresh failed', { err });
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#ff6b6b">
+      <div class="ax-gs-101">
         <p>❌ Audit échoué : ${escapeHtml(String(err).slice(0, 200))}</p>
       </div>
     `;
@@ -218,7 +218,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#999">
+      <div class="ax-gs-21">
         <h2 style="color:#c9a227">Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>

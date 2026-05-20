@@ -197,7 +197,7 @@ class VoiceDiagnostic {
           .webkitSpeechRecognition;
       if (!SRClass) {
         out.innerHTML =
-          '<div style="color:#ff5b5b">❌ SpeechRecognition non supporté. Sur iOS PWA : ouvre dans Safari classique.</div>';
+          '<div class="ax-gs-13">❌ SpeechRecognition non supporté. Sur iOS PWA : ouvre dans Safari classique.</div>';
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -222,15 +222,15 @@ class VoiceDiagnostic {
         for (let i = 0; i < ev.results.length; i++) {
           transcript += ev.results[i]?.[0]?.transcript ?? '';
         }
-        out.innerHTML = `<div style="color:#22cc77">📝 Transcription : <strong>${escapeHtml(transcript)}</strong></div>`;
+        out.innerHTML = `<div class="ax-gs-14">📝 Transcription : <strong>${escapeHtml(transcript)}</strong></div>`;
       };
       rec.onerror = (e: Event): void => {
         const ev = e as Event & { error: string };
-        out.innerHTML = `<div style="color:#ff5b5b">⚠️ Erreur : ${escapeHtml(ev.error ?? 'inconnu')}</div>`;
+        out.innerHTML = `<div class="ax-gs-13">⚠️ Erreur : ${escapeHtml(ev.error ?? 'inconnu')}</div>`;
       };
       rec.onend = (): void => {
         if (!transcript) {
-          out.innerHTML = '<div style="color:#ffaa00">🔇 Aucune voix captée. Réessaie.</div>';
+          out.innerHTML = '<div class="ax-gs-61">🔇 Aucune voix captée. Réessaie.</div>';
         }
       };
       rec.start();
@@ -243,7 +243,7 @@ class VoiceDiagnostic {
       }, 3500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      out.innerHTML = `<div style="color:#ff5b5b">🚫 ${escapeHtml(msg)}</div>`;
+      out.innerHTML = `<div class="ax-gs-13">🚫 ${escapeHtml(msg)}</div>`;
     }
   }
 }
@@ -284,7 +284,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           return `
             <div style="padding:10px 14px;background:rgba(255,255,255,0.03);border-left:3px solid ${color};border-radius:8px">
               <div style="font-weight:600;font-size:13.5px;color:${color}">${escapeHtml(r.status)}</div>
-              <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">${escapeHtml(r.category)}</div>
+              <div class="ax-gs-119">${escapeHtml(r.category)}</div>
               ${r.detail ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.45);margin-top:4px;font-family:ui-monospace,monospace">${escapeHtml(r.detail)}</div>` : ''}
             </div>
           `;

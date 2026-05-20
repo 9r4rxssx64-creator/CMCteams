@@ -91,19 +91,19 @@ function renderStats(stats: BackupStats): string {
   return `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;padding:14px;background:rgba(20,20,35,0.5);border:1px solid rgba(201,162,39,0.2);border-radius:12px;margin-bottom:14px">
       <div>
-        <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">Backups</div>
+        <div class="ax-gs-41">Backups</div>
         <div style="color:#c9a227;font-size:24px;font-weight:700">${stats.total_backups}</div>
       </div>
       <div>
-        <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">Taille totale</div>
+        <div class="ax-gs-41">Taille totale</div>
         <div style="color:#fff;font-size:18px;font-weight:600">${formatBytes(stats.total_size_bytes)}</div>
       </div>
       <div>
-        <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">Dernière backup</div>
+        <div class="ax-gs-41">Dernière backup</div>
         <div style="color:${lastAgeColor};font-size:18px;font-weight:600">${lastAge}</div>
       </div>
       <div>
-        <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">Intégrité</div>
+        <div class="ax-gs-41">Intégrité</div>
         <div style="color:${integrityColor};font-size:18px;font-weight:600">${integrityLabel}</div>
       </div>
     </div>

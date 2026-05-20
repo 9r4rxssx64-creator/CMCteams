@@ -62,7 +62,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#999">
+      <div class="ax-gs-21">
         <h2 style="color:#c9a227">Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>
@@ -76,7 +76,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   /* Loading state */
   rootEl.innerHTML = `
-    <div style="padding:40px;text-align:center;color:var(--ax-text-dim)">
+    <div class="ax-gs-57">
       <p>🔍 Audit credentials en cours...</p>
     </div>
   `;
@@ -149,14 +149,14 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
       <!-- Security Score Card -->
       <div style="background:linear-gradient(135deg,rgba(201,162,39,0.1),rgba(201,162,39,0.02));
                   border:1px solid rgba(201,162,39,0.3);border-radius:14px;padding:20px;margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div class="ax-gs-112">
           <div>
-            <div style="font-size:13px;color:var(--ax-text-dim)">Score sécurité credentials</div>
+            <div class="ax-gs-128">Score sécurité credentials</div>
             <div style="font-size:42px;font-weight:700;color:${scoreColor};line-height:1">
               ${score.toFixed(0)}<span style="font-size:20px;color:var(--ax-text-dim)">/100</span>
             </div>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="ax-gs-7">
             <button id="ax-cred-refresh" class="ax-btn ax-btn-outline" style="padding:8px 14px">🔄 Refresh audit</button>
             <button id="ax-cred-test-channels" class="ax-btn ax-btn-outline" style="padding:8px 14px">📡 Test alertes</button>
           </div>
@@ -203,7 +203,7 @@ function renderEntry(e: CredentialAuditEntry): string {
     <article data-cred-detail="${escapeHtml(e.storage_key)}" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);
                     border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
-        <div style="flex:1;min-width:200px">
+        <div class="ax-gs-11">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
             <strong style="color:#c9a227">${escapeHtml(e.service_name)}</strong>
             <span style="font-size:11px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim)">
@@ -212,7 +212,7 @@ function renderEntry(e: CredentialAuditEntry): string {
           </div>
           <code style="font-size:11px;color:var(--ax-text-dim);font-family:monospace">${escapeHtml(e.storage_key)}</code>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="ax-gs-83">
           <span style="color:${status.color};font-size:13px">${status.icon} ${status.label}</span>
           ${e.encrypted ? '<span style="color:#22cc77;font-size:11px" title="AES-GCM-256">🔒</span>' : ''}
           <span style="font-size:11px">${persistedIcons}</span>
@@ -220,7 +220,7 @@ function renderEntry(e: CredentialAuditEntry): string {
         </div>
       </div>
       ${e.status_detail ? `<p style="margin:6px 0 0;color:#ff6b6b;font-size:11px">⚠️ ${escapeHtml(e.status_detail)}</p>` : ''}
-      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      <div class="ax-gs-129">
         ${e.status === 'decrypt_failed' ? `<button class="ax-btn ax-btn-sm" data-recover="${escapeHtml(e.storage_key)}" data-service="${escapeHtml(e.service_name)}" style="font-size:11px;padding:4px 10px;background:rgba(255,170,0,0.2);color:#ffaa00;border:1px solid rgba(255,170,0,0.4);font-weight:600">🔓 Récupérer cette clé</button>` : ''}
         ${e.configured ? `<button class="ax-btn ax-btn-sm" data-test="${escapeHtml(e.storage_key)}" style="font-size:11px;padding:4px 10px">🧪 Tester</button>` : ''}
         ${e.dashboard_url ? `<a href="${escapeHtml(e.dashboard_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">🔗 Dashboard</a>` : ''}
@@ -392,7 +392,7 @@ function attachHandlers(rootEl: HTMLElement): void {
           content: () => {
             const status = STATUS_COLORS[entry.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.unknown;
             return `
-              <div style="padding:8px">
+              <div class="ax-gs-27">
                 <table style="width:100%;font-size:13px">
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">Service</td><td>${escapeHtml(entry.service_name)}</td></tr>
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">Storage key</td><td><code>${escapeHtml(entry.storage_key)}</code></td></tr>

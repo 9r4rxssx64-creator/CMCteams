@@ -126,7 +126,7 @@ async function launchHyperFrames(): Promise<void> {
     modalSheet.open({
       title: `🎞 HyperFrames — ${comp.frames} frames`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">
             ${comp.frames} frames · ${Math.round(comp.duration)}ms · généré en ${comp.durationMs}ms
           </p>
@@ -159,7 +159,7 @@ async function launchAgentBrowser(): Promise<void> {
     modalSheet.open({
       title: `🌐 Agent Browser — ${r.actions.length} actions`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">
             ${r.fetchOk ? '✅ DOM récupéré' : '⚠️ CORS bloqué — fallback'} · ${r.domSize} chars · ${r.durationMs}ms
           </p>
@@ -191,7 +191,7 @@ async function launchMarketingPsy(): Promise<void> {
     modalSheet.open({
       title: `🧠 Marketing Psy — ${out.trigger}`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.55);font-size:11px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.05em">Copy générée</p>
           <pre style="background:rgba(232,184,48,0.08);color:#fff;padding:14px;border-radius:10px;font-size:14px;white-space:pre-wrap;border-left:3px solid #e8b830">${escapeHtml(out.copy)}</pre>
           <p style="color:rgba(255,255,255,0.55);font-size:11px;margin:14px 0 6px;text-transform:uppercase;letter-spacing:0.05em">Pourquoi ça marche</p>
@@ -229,7 +229,7 @@ async function launchImpeccableDesign(): Promise<void> {
     modalSheet.open({
       title: `✨ Impeccable Design — ${r.command}`,
       content: `
-        <div style="font-family:system-ui;padding:14px 4px">
+        <div class="ax-gs-12">
           <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">
             ${r.changes.length} changement(s) · ${r.durationMs}ms
           </p>

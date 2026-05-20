@@ -126,7 +126,7 @@ export function render(rootEl: HTMLElement): void {
   if (!guardFeatureEnabled('studio.building', rootEl, uid)) return;
 
   const dtusHtml = DTU_REFS.map((d) => `
-    <li style="margin-bottom:6px;font-size:13px"><strong style="color:#c9a227">${escapeHtml(d.num)}</strong> — ${escapeHtml(d.titre)} <span style="color:var(--ax-text-dim)">[${escapeHtml(d.domaine)}]</span></li>
+    <li style="margin-bottom:6px;font-size:13px"><strong style="color:#c9a227">${escapeHtml(d.num)}</strong> — ${escapeHtml(d.titre)} <span class="ax-gs-10">[${escapeHtml(d.domaine)}]</span></li>
   `).join('');
 
   const dimsHtml = STANDARD_DIMS.map((d) => `
@@ -141,10 +141,10 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">🏢 Studio Bâtiment</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">DTU · normes · métré</span>
+        <span class="ax-gs-3">DTU · normes · métré</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Métré rapide pièce</h2>
         <input type="number" id="ax-bld-l" aria-label="Longueur de la pièce en mètres" placeholder="Longueur (m)" min="0.1" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
         <input type="number" id="ax-bld-w" aria-label="Largeur de la pièce en mètres" placeholder="Largeur (m)" min="0.1" step="0.01" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
@@ -154,7 +154,7 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-bld-out" style="margin-top:12px"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Dimensions standards</h2>
         <table style="width:100%;border-collapse:collapse;font-size:12px;color:#fff">
           <thead><tr style="border-bottom:2px solid #c9a227"><th style="text-align:left;padding:6px 10px">Élément</th><th style="text-align:left;padding:6px 10px">Dimensions</th><th style="text-align:left;padding:6px 10px">Norme</th></tr></thead>
@@ -162,7 +162,7 @@ export function render(rootEl: HTMLElement): void {
         </table>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">DTU principaux</h2>
         <ul style="margin:0;padding-left:18px;color:#ddd">${dtusHtml}</ul>
       </div>

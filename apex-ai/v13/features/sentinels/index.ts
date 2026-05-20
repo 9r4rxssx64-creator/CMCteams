@@ -36,15 +36,15 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       <h1 style="margin:0 0 8px;color:#c9a227">🛡 Sentinelles 24/7</h1>
       <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:14px">
         ${list.length} watchers (${status.running} active) ·
-        <span style="color:#22cc77">✅ ${okCount} OK</span> ·
-        <span style="color:#ffaa00">⚠️ ${warnCount} WARN</span> ·
-        <span style="color:#888">⏳ ${pendingCount} PENDING</span>
+        <span class="ax-gs-14">✅ ${okCount} OK</span> ·
+        <span class="ax-gs-61">⚠️ ${warnCount} WARN</span> ·
+        <span class="ax-gs-25">⏳ ${pendingCount} PENDING</span>
       </p>
       <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:12px">
         📊 Métriques : ${metrics.totalRuns} runs · avg ${metrics.avgDurationMs}ms · auto-fix ${metrics.totalAutoFixSuccess}✅ / ${metrics.totalAutoFixFailures}❌
       </p>
 
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="ax-gs-65">
         <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-sent-run-all">▶️ Run all maintenant</button>
         <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-sent-refresh">🔄 Rafraîchir</button>
       </div>
@@ -70,7 +70,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
               <tr style="border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer" class="ax-sent-row" data-sent-id="${s.id}">
                 <td style="padding:10px;font-size:13px">
                   <strong>${escapeHtml(s.name)}</strong>
-                  <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(s.desc)}</div>
+                  <div class="ax-gs-2">${escapeHtml(s.desc)}</div>
                 </td>
                 <td style="padding:10px;font-size:12px;color:var(--ax-text-dim)">${intervalLabel}</td>
                 <td style="padding:10px;font-size:12px">
@@ -152,7 +152,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             const lastMsg = sent.lastResult?.msg ?? '—';
             const lastTs = sent.lastResult ? new Date(sent.lastResult.ts).toLocaleString('fr-FR') : '—';
             return `
-              <div style="padding:8px">
+              <div class="ax-gs-27">
                 <p style="margin:0 0 12px;color:var(--ax-text-dim)">${escapeHtml(sent.desc)}</p>
                 <table style="width:100%;font-size:13px">
                   <tr><td style="padding:4px;color:var(--ax-text-dim)">ID</td><td><code>${escapeHtml(sent.id)}</code></td></tr>

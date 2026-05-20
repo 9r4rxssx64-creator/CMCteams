@@ -174,7 +174,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
               <span style="font-size:28px">${d.emoji}</span>
               <div>
                 <strong style="color:#c9a227">${d.name}</strong>
-                <div style="font-size:11px;color:var(--ax-text-dim)">via ${d.capability}</div>
+                <div class="ax-gs-2">via ${d.capability}</div>
               </div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -189,7 +189,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <div style="margin-top:24px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
         <h2 style="margin:0 0 8px;font-size:16px">⚙️ Outils avancés</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+        <div class="ax-gs-161">
           <button class="ax-btn ax-btn-sm" id="ax-remote-scan-bt" ${!hasBluetooth ? 'disabled' : ''}>🔵 Scanner Bluetooth</button>
           <button class="ax-btn ax-btn-sm" id="ax-remote-scan-nfc" ${!hasNFC ? 'disabled' : ''}>📲 Lire tag NFC</button>
           <button class="ax-btn ax-btn-sm" id="ax-remote-write-nfc" ${!hasNFC ? 'disabled' : ''}>✍️ Écrire tag NFC</button>
@@ -199,27 +199,27 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </div>
       </div>
 
-      <div style="margin-top:16px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
+      <div class="ax-gs-73">
         <h2 style="margin:0 0 8px;font-size:16px">🌐 Scan réseau LAN (80+ devices)</h2>
         <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Discover Hue Bridge, Sonos, Plex, NAS, caméras IP, imprimantes, IoT...</p>
         <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-lan" style="width:100%">🔍 Scanner mon réseau WiFi</button>
         <div id="ax-remote-lan-results" style="margin-top:12px"></div>
       </div>
 
-      <div style="margin-top:16px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
+      <div class="ax-gs-73">
         <h2 style="margin:0 0 8px;font-size:16px">🪪 Badge NFC/RFID (60+ formats)</h2>
         <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Carte travail, transport, café, accès. NDEF/MIFARE/HID/Vigik...</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="ax-gs-162">
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-scan-badge" ${!hasNFC ? 'disabled' : ''}>📲 Scanner badge</button>
           <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-remote-list-badges">📋 Mes badges</button>
         </div>
         <div id="ax-remote-badges-list" style="margin-top:12px"></div>
       </div>
 
-      <div style="margin-top:16px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px">
+      <div class="ax-gs-73">
         <h2 style="margin:0 0 8px;font-size:16px">📡 Émulateurs hardware (18 supportés)</h2>
         <p style="margin:0 0 12px;color:var(--ax-text-dim);font-size:13px">Flipper Zero (USB+BLE), Proxmark3, Chameleon, ACR122U, OMNIKEY...</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="ax-gs-162">
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-flipper-usb">🐬 Flipper USB</button>
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-flipper-ble">📶 Flipper BLE</button>
           <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-remote-proxmark">🔬 Proxmark3</button>
@@ -334,7 +334,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
             <div>
               <strong style="color:#c9a227">${escapeHtml(d.service)}</strong>
-              <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(d.ip)}:${escapeHtml(d.port)} ${d.vendor ? '· ' + escapeHtml(d.vendor) : ''}</div>
+              <div class="ax-gs-2">${escapeHtml(d.ip)}:${escapeHtml(d.port)} ${d.vendor ? '· ' + escapeHtml(d.vendor) : ''}</div>
             </div>
             <button class="ax-btn ax-btn-sm" data-lan-ip="${escapeHtml(d.ip)}" data-lan-port="${escapeHtml(d.port)}" style="padding:4px 8px;font-size:11px">Ouvrir →</button>
           </div>
@@ -380,7 +380,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       out.innerHTML = list.map((b) => `
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px">
           <strong style="color:#c9a227">${b.label ?? b.format}</strong>
-          <div style="font-size:11px;color:var(--ax-text-dim)">UID: ${b.uid ?? 'n/a'} · ${new Date(b.scanned_at).toLocaleString()}</div>
+          <div class="ax-gs-2">UID: ${b.uid ?? 'n/a'} · ${new Date(b.scanned_at).toLocaleString()}</div>
         </div>
       `).join('');
     })();

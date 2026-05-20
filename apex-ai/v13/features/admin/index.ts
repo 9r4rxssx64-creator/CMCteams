@@ -414,11 +414,11 @@ async function mountLazyAdminView(rootEl: HTMLElement): Promise<void> {
         <div class="ax-bounce-tap" data-nav-route="apex-audits-live" style="background:linear-gradient(135deg,rgba(106,138,255,0.10),rgba(180,90,200,0.06));border:1px solid rgba(106,138,255,0.3);border-radius:12px;padding:14px;cursor:pointer">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
             <h3 style="margin:0;color:var(--ax-blue-bright);font-size:14px;font-weight:700">📊 Apex Audits Live</h3>
-            <span style="color:rgba(255,255,255,0.5);font-size:11px">Tap → historique complet →</span>
+            <span class="ax-gs-107">Tap → historique complet →</span>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;font-size:12px;color:rgba(255,255,255,0.85)">
-            <div>📐 Layout : <b>${stats.layoutCount}</b> scans<br><span style="font-size:11px;color:rgba(255,255,255,0.5)">${lastLayoutDate}</span></div>
-            <div>🧪 Fonctionnel : <b>${stats.functionalCount}</b> tests<br><span style="font-size:11px;color:rgba(255,255,255,0.5)">${lastFuncDate}</span></div>
+            <div>📐 Layout : <b>${stats.layoutCount}</b> scans<br><span class="ax-gs-23">${lastLayoutDate}</span></div>
+            <div>🧪 Fonctionnel : <b>${stats.functionalCount}</b> tests<br><span class="ax-gs-23">${lastFuncDate}</span></div>
             <div>🐛 Bugs 24h : <b style="color:${bugColor}">${stats.recentBugs}</b></div>
             <div>📤 Escaladés 24h : <b style="color:${escColor}">${stats.recentEscalations}</b></div>
           </div>
@@ -901,7 +901,7 @@ export function render(rootEl: HTMLElement): void {
     </style>
     <div class="ax-admin ax-modernized-card" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
       <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10">
-        <div style="min-width:0;flex:1">
+        <div class="ax-gs-106">
           <h1 style="margin:0;font-size:clamp(26px,5.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">👑 Centre Admin</h1>
           <p style="margin:2px 0 0;color:rgba(255,255,255,0.5);font-size:11px">Kevin · accès illimité</p>
         </div>

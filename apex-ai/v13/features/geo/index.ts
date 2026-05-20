@@ -39,30 +39,30 @@ function formatPosition(p: GeoPosition): string {
   const lat = p.latitude.toFixed(6);
   const lng = p.longitude.toFixed(6);
   let extra = '';
-  if (p.altitude !== null && p.altitude !== undefined) extra += `<br><span style="color:var(--ax-text-dim)">Altitude:</span> ${Math.round(p.altitude)}m`;
-  if (p.speed !== null && p.speed !== undefined && p.speed > 0) extra += `<br><span style="color:var(--ax-text-dim)">Vitesse:</span> ${Math.round(p.speed * 3.6)} km/h`;
+  if (p.altitude !== null && p.altitude !== undefined) extra += `<br><span class="ax-gs-10">Altitude:</span> ${Math.round(p.altitude)}m`;
+  if (p.speed !== null && p.speed !== undefined && p.speed > 0) extra += `<br><span class="ax-gs-10">Vitesse:</span> ${Math.round(p.speed * 3.6)} km/h`;
   return `
     <div style="font-size:13px;line-height:1.6">
       <strong>GPS</strong> · précision <span style="color:${prec.color}">${prec.label}</span> (${Math.round(p.accuracy)}m)<br>
-      <span style="color:var(--ax-text-dim)">Lat:</span> ${lat}<br>
-      <span style="color:var(--ax-text-dim)">Lng:</span> ${lng}${extra}<br>
-      <span style="color:var(--ax-text-dim)">Mise à jour:</span> ${new Date(p.timestamp).toLocaleString('fr-FR')}
+      <span class="ax-gs-10">Lat:</span> ${lat}<br>
+      <span class="ax-gs-10">Lng:</span> ${lng}${extra}<br>
+      <span class="ax-gs-10">Mise à jour:</span> ${new Date(p.timestamp).toLocaleString('fr-FR')}
     </div>
   `;
 }
 
 function formatFavorites(favs: FavoriteLocation[]): string {
   if (!favs.length) {
-    return '<div style="font-size:12px;color:var(--ax-text-dim)">Aucun lieu favori. Cliquez "Ajouter ma position" pour en créer un.</div>';
+    return '<div class="ax-gs-5">Aucun lieu favori. Cliquez "Ajouter ma position" pour en créer un.</div>';
   }
   return favs
     .map(
       (f) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--ax-border)">
+        <div class="ax-gs-135">
           <div>
             <strong>${escapeHtml(f.name)}</strong>
-            <span style="color:var(--ax-text-dim);font-size:11px"> · ${escapeHtml(f.type ?? 'other')}</span>
-            <div style="font-size:10px;color:var(--ax-text-dim)">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</div>
+            <span class="ax-gs-136"> · ${escapeHtml(f.type ?? 'other')}</span>
+            <div class="ax-gs-8">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</div>
           </div>
           <button class="ax-btn ax-btn-danger" data-action="remove-fav" data-fav-id="${escapeHtml(f.id)}" style="min-height:36px;padding:6px 10px;font-size:11px">Supprimer</button>
         </div>
@@ -80,7 +80,7 @@ function formatWeather(w: LocalWeather): string {
       return `
         <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--ax-border)">
           <span>${escapeHtml(day)}</span>
-          <span style="color:var(--ax-text-dim)">${escapeHtml(d.condition)}</span>
+          <span class="ax-gs-10">${escapeHtml(d.condition)}</span>
           <span><strong>${Math.round(d.tempMin)}°</strong> / ${Math.round(d.tempMax)}°</span>
         </div>
       `;
@@ -105,11 +105,11 @@ export function render(rootEl: HTMLElement): void {
 
   const positionHtml = last
     ? formatPosition(last)
-    : '<div style="font-size:12px;color:var(--ax-text-dim)">Aucune position enregistrée</div>';
+    : '<div class="ax-gs-5">Aucune position enregistrée</div>';
 
   const positionActions = last
     ? `
-        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <div class="ax-gs-129">
           <a href="https://www.google.com/maps?q=${last.latitude},${last.longitude}" target="_blank" rel="noopener" class="ax-btn ax-btn-outline" style="min-height:44px;padding:10px 14px">🗺 Google Maps</a>
           <button class="ax-btn ax-btn-outline" data-action="refresh-position" style="min-height:44px;padding:10px 14px">↻ Actualiser</button>
           <button class="ax-btn ax-btn-outline" data-action="share-position" style="min-height:44px;padding:10px 14px">📤 Partager</button>
@@ -123,35 +123,35 @@ export function render(rootEl: HTMLElement): void {
         .map(
           (p) => `
             <div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--ax-border);display:flex;justify-content:space-between;gap:8px">
-              <span>${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)} <span style="color:var(--ax-text-dim)">(${Math.round(p.accuracy)}m)</span></span>
-              <span style="color:var(--ax-text-dim)">${new Date(p.timestamp).toLocaleTimeString('fr-FR')}</span>
+              <span>${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)} <span class="ax-gs-10">(${Math.round(p.accuracy)}m)</span></span>
+              <span class="ax-gs-10">${new Date(p.timestamp).toLocaleTimeString('fr-FR')}</span>
             </div>
           `,
         )
         .join('')
-    : '<div style="font-size:12px;color:var(--ax-text-dim)">Aucun historique</div>';
+    : '<div class="ax-gs-5">Aucun historique</div>';
 
   const fencesHtml = fences.length
     ? fences
         .map(
           (f) => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--ax-border)">
+            <div class="ax-gs-135">
               <div>
                 <strong>${escapeHtml(f.name)}</strong>
-                <div style="font-size:10px;color:var(--ax-text-dim)">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)} · rayon ${f.radius}m</div>
+                <div class="ax-gs-8">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)} · rayon ${f.radius}m</div>
               </div>
               <button class="ax-btn ax-btn-danger" data-action="remove-fence" data-fence-id="${escapeHtml(f.id)}" style="min-height:36px;padding:6px 10px;font-size:11px">Supprimer</button>
             </div>
           `,
         )
         .join('')
-    : '<div style="font-size:12px;color:var(--ax-text-dim)">Aucune zone définie. Ajoutez votre position courante comme zone.</div>';
+    : '<div class="ax-gs-5">Aucune zone définie. Ajoutez votre position courante comme zone.</div>';
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;background:linear-gradient(135deg,#c9a227,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">📍 Géolocalisation</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${favs.length} favoris · ${fences.length} zones</span>
+        <span class="ax-gs-3">${favs.length} favoris · ${fences.length} zones</span>
       </header>
 
       <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
@@ -187,7 +187,7 @@ export function render(rootEl: HTMLElement): void {
           <h3 style="margin:0;color:#c9a227">Météo locale 7 jours</h3>
           <button class="ax-btn ax-btn-outline" data-action="load-weather" style="min-height:36px;padding:6px 12px;font-size:12px">Charger</button>
         </header>
-        <div id="ax-geo-weather"><div style="font-size:12px;color:var(--ax-text-dim)">Cliquez "Charger" pour afficher la météo Open-Meteo gratuite.</div></div>
+        <div id="ax-geo-weather"><div class="ax-gs-5">Cliquez "Charger" pour afficher la météo Open-Meteo gratuite.</div></div>
       </div>
 
       <div class="ax-card" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
@@ -268,7 +268,7 @@ function attachHandlers(rootEl: HTMLElement): void {
     } else if (action === 'load-weather') {
       const target = rootEl.querySelector<HTMLElement>('#ax-geo-weather');
       if (!target) return;
-      target.innerHTML = '<div style="font-size:12px;color:var(--ax-text-dim)">Chargement…</div>';
+      target.innerHTML = '<div class="ax-gs-5">Chargement…</div>';
       const known = geolocation.getLastKnownPosition();
       const promise = known
         ? geolocation.getLocalWeather(known.latitude, known.longitude)

@@ -58,10 +58,10 @@ function fmtRelativeTime(ts: number): string {
 }
 
 function statusDot(stats: ProviderStats | null): string {
-  if (!stats || stats.last_ping_ts === 0) return '<span style="color:#666">⚪</span>';
-  if (!stats.last_ping_ok) return '<span style="color:#ff5b5b">🔴</span>';
-  if (stats.latency_avg_ms > 3000) return '<span style="color:#f0c020">🟡</span>';
-  return '<span style="color:#22cc77">🟢</span>';
+  if (!stats || stats.last_ping_ts === 0) return '<span class="ax-gs-64">⚪</span>';
+  if (!stats.last_ping_ok) return '<span class="ax-gs-13">🔴</span>';
+  if (stats.latency_avg_ms > 3000) return '<span class="ax-gs-44">🟡</span>';
+  return '<span class="ax-gs-14">🟢</span>';
 }
 
 function scoreColor(score: number): string {
@@ -119,29 +119,29 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             </div>
             <div style="text-align:right">
               <div style="font-size:36px;font-weight:bold;color:${scoreColor(best.score.total)}">${best.score.total}<span style="font-size:16px;color:var(--ax-text-dim)">/100</span></div>
-              <div style="font-size:11px;color:var(--ax-text-dim)">${statusDot(bestStats)} ${bestStats ? fmtRelativeTime(bestStats.last_ping_ts) : 'pas de ping'}</div>
+              <div class="ax-gs-2">${statusDot(bestStats)} ${bestStats ? fmtRelativeTime(bestStats.last_ping_ts) : 'pas de ping'}</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px">
-            <div style="background:rgba(0,0,0,0.3);padding:8px;border-radius:6px">
-              <div style="font-size:10px;color:var(--ax-text-dim)">⚡ Latence (40%)</div>
-              <div style="font-size:13px;color:#fff">${best.score.latency_pts}pts</div>
-              <div style="font-size:10px;color:var(--ax-text-dim)">${bestStats ? fmtLatency(bestStats.latency_avg_ms) : '—'} avg</div>
+            <div class="ax-gs-45">
+              <div class="ax-gs-8">⚡ Latence (40%)</div>
+              <div class="ax-gs-31">${best.score.latency_pts}pts</div>
+              <div class="ax-gs-8">${bestStats ? fmtLatency(bestStats.latency_avg_ms) : '—'} avg</div>
             </div>
-            <div style="background:rgba(0,0,0,0.3);padding:8px;border-radius:6px">
-              <div style="font-size:10px;color:var(--ax-text-dim)">💰 Quota (30%)</div>
-              <div style="font-size:13px;color:#fff">${best.score.quota_pts}pts</div>
-              <div style="font-size:10px;color:var(--ax-text-dim)">${bestStats ? fmtQuota(bestStats.quota_remaining_pct) : '—'}</div>
+            <div class="ax-gs-45">
+              <div class="ax-gs-8">💰 Quota (30%)</div>
+              <div class="ax-gs-31">${best.score.quota_pts}pts</div>
+              <div class="ax-gs-8">${bestStats ? fmtQuota(bestStats.quota_remaining_pct) : '—'}</div>
             </div>
-            <div style="background:rgba(0,0,0,0.3);padding:8px;border-radius:6px">
-              <div style="font-size:10px;color:var(--ax-text-dim)">✅ Qualité (20%)</div>
-              <div style="font-size:13px;color:#fff">${best.score.quality_pts}pts</div>
-              <div style="font-size:10px;color:var(--ax-text-dim)">${bestStats ? Math.round(bestStats.success_rate * 100) : 0}% success</div>
+            <div class="ax-gs-45">
+              <div class="ax-gs-8">✅ Qualité (20%)</div>
+              <div class="ax-gs-31">${best.score.quality_pts}pts</div>
+              <div class="ax-gs-8">${bestStats ? Math.round(bestStats.success_rate * 100) : 0}% success</div>
             </div>
-            <div style="background:rgba(0,0,0,0.3);padding:8px;border-radius:6px">
-              <div style="font-size:10px;color:var(--ax-text-dim)">📡 Uptime (10%)</div>
-              <div style="font-size:13px;color:#fff">${best.score.uptime_pts}pts</div>
-              <div style="font-size:10px;color:var(--ax-text-dim)">${bestStats ? Math.round(bestStats.uptime_24h * 100) : 0}% / 24h</div>
+            <div class="ax-gs-45">
+              <div class="ax-gs-8">📡 Uptime (10%)</div>
+              <div class="ax-gs-31">${best.score.uptime_pts}pts</div>
+              <div class="ax-gs-8">${bestStats ? Math.round(bestStats.uptime_24h * 100) : 0}% / 24h</div>
             </div>
           </div>
         </div>
@@ -162,8 +162,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             ${recos.map((r) => `
               <li style="margin-bottom:4px">
                 Bascule ${PROVIDER_ICONS[r.from]} <strong>${escapeHtml(r.from)}</strong> → ${PROVIDER_ICONS[r.to]} <strong>${escapeHtml(r.to)}</strong>
-                <span style="color:#22cc77">économie ${r.savings_pct}%</span>
-                <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(r.reason)}</div>
+                <span class="ax-gs-14">économie ${r.savings_pct}%</span>
+                <div class="ax-gs-2">${escapeHtml(r.reason)}</div>
               </li>
             `).join('')}
           </ul>
@@ -172,7 +172,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <!-- Tableau tous providers -->
       <h2 style="margin:18px 0 8px;color:#c9a227;font-size:16px">Tous les providers (${allProviders.length})</h2>
-      <div style="overflow-x:auto">
+      <div class="ax-gs-78">
         <table style="width:100%;border-collapse:collapse;background:rgba(20,20,35,0.5);border-radius:12px;overflow:hidden">
           <thead>
             <tr style="background:rgba(201,162,39,0.1)">

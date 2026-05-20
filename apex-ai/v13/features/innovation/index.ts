@@ -53,11 +53,11 @@ function formatGain(update: TechUpdate): string {
 
 function recoBadge(reco: TechUpdate['recommendation']): string {
   const map: Record<TechUpdate['recommendation'], string> = {
-    'upgrade-asap': '<span style="color:#22cc77">⚡ ASAP</span>',
-    'upgrade-soon': '<span style="color:#f0c020">⏳ SOON</span>',
-    monitor: '<span style="color:#888">👀 MONITOR</span>',
-    skip: '<span style="color:#666">— SKIP</span>',
-    'breaking-changes': '<span style="color:#ff5b5b">⚠ BREAKING</span>',
+    'upgrade-asap': '<span class="ax-gs-14">⚡ ASAP</span>',
+    'upgrade-soon': '<span class="ax-gs-44">⏳ SOON</span>',
+    monitor: '<span class="ax-gs-25">👀 MONITOR</span>',
+    skip: '<span class="ax-gs-64">— SKIP</span>',
+    'breaking-changes': '<span class="ax-gs-13">⚠ BREAKING</span>',
   };
   return map[reco];
 }
@@ -88,29 +88,29 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </p>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:16px">
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Dernier scan</div>
-          <div style="font-size:13px;color:#fff">${escapeHtml(lastScanLabel)}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Dernier scan</div>
+          <div class="ax-gs-31">${escapeHtml(lastScanLabel)}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Total détecté</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Total détecté</div>
           <div style="font-size:18px;color:#c9a227">${stats.totalUpdatesDetected}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">7 derniers jours</div>
-          <div style="font-size:18px;color:#22cc77">${stats.lastWeek}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">7 derniers jours</div>
+          <div class="ax-gs-137">${stats.lastWeek}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Auto-appliqués</div>
-          <div style="font-size:18px;color:#22cc77">${stats.appliedCount}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Auto-appliqués</div>
+          <div class="ax-gs-137">${stats.appliedCount}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Skipped</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Skipped</div>
           <div style="font-size:18px;color:#888">${stats.skippedCount}</div>
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="ax-gs-65">
         <button class="ax-btn ax-btn-primary ax-btn-sm" id="ax-inno-scan">🔄 Scanner maintenant</button>
         <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-inno-refresh">↻ Rafraîchir</button>
         <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-inno-reset">🗑 Reset historique</button>
@@ -134,7 +134,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
                 <tbody>
                   ${list.map((u) => `
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-                      <td style="padding:8px;font-size:12px"><strong>${escapeHtml(u.name)}</strong>${u.details ? `<div style="font-size:10px;color:var(--ax-text-dim)">${escapeHtml(u.details)}</div>` : ''}</td>
+                      <td style="padding:8px;font-size:12px"><strong>${escapeHtml(u.name)}</strong>${u.details ? `<div class="ax-gs-8">${escapeHtml(u.details)}</div>` : ''}</td>
                       <td style="padding:8px;font-size:11px;color:var(--ax-text-dim)">${escapeHtml(u.currentVersion ?? '—')} → ${escapeHtml(u.latestVersion ?? '—')}</td>
                       <td style="padding:8px;font-size:11px;color:#22cc77">${escapeHtml(formatGain(u))}</td>
                       <td style="padding:8px;font-size:11px">${recoBadge(u.recommendation)}</td>

@@ -862,9 +862,9 @@ export function render(rootEl: HTMLElement): void {
 
   const templatesHtml = TEMPLATES.map((t) => `
     <button class="ax-btn ax-contract-tpl" data-create="${escapeHtml(t.id)}" style="padding:10px;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:8px;cursor:pointer;min-height:60px;text-align:left;width:100%">
-      <div style="font-size:18px">${t.emoji}</div>
-      <div style="font-weight:700;color:#c9a227;font-size:13px">${escapeHtml(t.label)}</div>
-      <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(t.description)}</div>
+      <div class="ax-gs-17">${t.emoji}</div>
+      <div class="ax-gs-79">${escapeHtml(t.label)}</div>
+      <div class="ax-gs-2">${escapeHtml(t.description)}</div>
       ${t.requiresRGPD ? '<div style="font-size:10px;color:#2196f3;margin-top:4px">🔐 RGPD requis</div>' : ''}
     </button>
   `).join('');
@@ -881,11 +881,11 @@ export function render(rootEl: HTMLElement): void {
             <strong style="color:#c9a227">${escapeHtml(c.number)}</strong>
             <span style="font-size:12px;color:${valid.ok ? '#4caf50' : '#ff9800'}">${valid.ok ? '✓ Complet' : `⚠ ${valid.errors.length} manquant(s)`}</span>
           </header>
-          <div style="font-size:13px;color:var(--ax-text-dim)">${tpl?.emoji ?? ''} ${escapeHtml(tpl?.label ?? c.template)} · ${escapeHtml(c.lang.toUpperCase())}</div>
-          <div style="font-size:12px;color:var(--ax-text-dim);margin-top:4px">Date : ${escapeHtml(c.date)} · ${c.parties.length} partie${c.parties.length > 1 ? 's' : ''}</div>
+          <div class="ax-gs-128">${tpl?.emoji ?? ''} ${escapeHtml(tpl?.label ?? c.template)} · ${escapeHtml(c.lang.toUpperCase())}</div>
+          <div class="ax-gs-165">Date : ${escapeHtml(c.date)} · ${c.parties.length} partie${c.parties.length > 1 ? 's' : ''}</div>
           ${tpl?.requiresRGPD ? `<div style="font-size:11px;margin-top:4px;color:${rgpd.compliant ? '#4caf50' : '#ff9800'}">${rgpd.compliant ? '🔐 RGPD ✓' : '⚠ RGPD non conforme'}</div>` : ''}
           ${fullySigned ? '<div style="font-size:11px;margin-top:4px;color:#4caf50">✍ Signé par toutes les parties</div>' : ''}
-          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <div class="ax-gs-80">
             <button class="ax-btn ax-btn-sm" data-action="export-pdf" data-contract-id="${escapeHtml(c.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">💾 Exporter PDF</button>
             <button class="ax-btn ax-btn-sm" data-action="preview-text" data-contract-id="${escapeHtml(c.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">👁 Preview</button>
             <button class="ax-btn ax-btn-sm" data-action="remove" data-contract-id="${escapeHtml(c.id)}" style="font-size:11px;padding:6px 10px;color:#ff6666;min-height:36px">Supprimer</button>
@@ -899,17 +899,17 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">📋 Studio Contrat Pro</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">${contracts.length} contrat${contracts.length > 1 ? 's' : ''}</span>
+        <span class="ax-gs-3">${contracts.length} contrat${contracts.length > 1 ? 's' : ''}</span>
       </header>
 
       <div style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.4);border-radius:8px;padding:10px;margin-bottom:16px;font-size:12px;color:#ffa726">
         ⚠️ Information indicative. Pour décision importante, consulter un avocat.
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Choisir un modèle (${TEMPLATES.length} disponibles)</h2>
         <p style="margin:0 0 10px 0;font-size:12px;color:var(--ax-text-dim)">${OPTIONAL_CLAUSES.length} clauses optionnelles · 5 langues · Signature électronique SHA-256 · Vérif RGPD</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">${templatesHtml}</div>
+        <div class="ax-gs-161">${templatesHtml}</div>
       </div>
 
       <div id="ax-contracts-list">${contractsHtml}</div>

@@ -190,7 +190,7 @@ export function render(root: HTMLElement): void {
         if (detail) {
           detail.innerHTML = `
             <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:24px;text-align:center">
-              <div style="font-size:64px">${escapeHtml(studio.emoji)}</div>
+              <div class="ax-gs-171">${escapeHtml(studio.emoji)}</div>
               <h2 style="color:#c9a227;margin:8px 0">${escapeHtml(studio.label)}</h2>
               <p style="color:var(--ax-text-dim);margin:0">${escapeHtml(studio.description)}</p>
               <p style="margin-top:16px;font-size:13px;color:#888">Studio en cours de développement (Sprint 5).</p>

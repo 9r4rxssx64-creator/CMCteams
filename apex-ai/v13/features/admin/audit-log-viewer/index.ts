@@ -108,19 +108,19 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       <div class="ax-card-elevated" style="padding:14px;margin-bottom:16px">
         <h3 style="margin:0 0 10px;color:#fff;font-size:14px">📊 Stats</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+        <div class="ax-gs-89">
           <div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px">Top actions</div>
-            ${stats.topActions.map((a) => `<div style="font-size:12px"><b>${escapeHtml(a.action)}</b>: ${a.count}</div>`).join('') || '<em>—</em>'}
+            <div class="ax-gs-56">Top actions</div>
+            ${stats.topActions.map((a) => `<div class="ax-gs-24"><b>${escapeHtml(a.action)}</b>: ${a.count}</div>`).join('') || '<em>—</em>'}
           </div>
           <div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px">Top actors</div>
-            ${stats.topActors.map((a) => `<div style="font-size:12px"><b>${escapeHtml(a.actor)}</b>: ${a.count}</div>`).join('') || '<em>—</em>'}
+            <div class="ax-gs-56">Top actors</div>
+            ${stats.topActors.map((a) => `<div class="ax-gs-24"><b>${escapeHtml(a.actor)}</b>: ${a.count}</div>`).join('') || '<em>—</em>'}
           </div>
           <div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px">Période</div>
-            <div style="font-size:12px">Plus ancien : ${stats.oldest_ts ? escapeHtml(fmtDate(stats.oldest_ts)) : '—'}</div>
-            <div style="font-size:12px">Plus récent : ${stats.newest_ts ? escapeHtml(fmtDate(stats.newest_ts)) : '—'}</div>
+            <div class="ax-gs-56">Période</div>
+            <div class="ax-gs-24">Plus ancien : ${stats.oldest_ts ? escapeHtml(fmtDate(stats.oldest_ts)) : '—'}</div>
+            <div class="ax-gs-24">Plus récent : ${stats.newest_ts ? escapeHtml(fmtDate(stats.newest_ts)) : '—'}</div>
           </div>
         </div>
       </div>

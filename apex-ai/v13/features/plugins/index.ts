@@ -39,16 +39,16 @@ export function dispose(): void {
 }
 
 const VALUE_BADGE: Record<ApexPluginManifest['estimated_value'], string> = {
-  critical: '<span style="color:#ff5b5b">🔥 CRITICAL</span>',
-  high: '<span style="color:#22cc77">⭐ HIGH</span>',
-  medium: '<span style="color:#f0c020">○ MEDIUM</span>',
-  low: '<span style="color:#888">— LOW</span>',
+  critical: '<span class="ax-gs-13">🔥 CRITICAL</span>',
+  high: '<span class="ax-gs-14">⭐ HIGH</span>',
+  medium: '<span class="ax-gs-44">○ MEDIUM</span>',
+  low: '<span class="ax-gs-25">— LOW</span>',
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  installed: '<span style="color:#22cc77">🟢 Installé</span>',
-  available: '<span style="color:#9aa">⚪ Disponible</span>',
-  'unsupported-pwa': '<span style="color:#ff5b5b">🔴 Non-PWA</span>',
+  installed: '<span class="ax-gs-14">🟢 Installé</span>',
+  available: '<span class="ax-gs-139">⚪ Disponible</span>',
+  'unsupported-pwa': '<span class="ax-gs-13">🔴 Non-PWA</span>',
   planned: '<span style="color:#aa8">🟡 Planifié</span>',
 };
 
@@ -140,9 +140,9 @@ const EXTENDED_COMPAT_LABELS: Record<ApexCompatibility, string> = {
 };
 
 const EXTENDED_VALUE_BADGE: Record<AutoImprovementValue, string> = {
-  high: '<span style="color:#22cc77">⭐ HIGH</span>',
-  medium: '<span style="color:#f0c020">○ MEDIUM</span>',
-  low: '<span style="color:#888">— LOW</span>',
+  high: '<span class="ax-gs-14">⭐ HIGH</span>',
+  medium: '<span class="ax-gs-44">○ MEDIUM</span>',
+  low: '<span class="ax-gs-25">— LOW</span>',
 };
 
 export async function render(rootEl: HTMLElement): Promise<void> {
@@ -174,7 +174,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
       <h1 style="margin:0 0 8px;color:#c9a227">🔌 Marketplace Plugins Apex</h1>
-      <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div class="ax-gs-67">
         <button id="ax-plg-tab-marketplace" class="ax-btn" style="padding:6px 12px;background:#c9a227;color:#000;font-weight:600;border:none;border-radius:6px;font-size:12px;cursor:pointer">📦 Marketplace</button>
         <button id="ax-plg-tab-extended" class="ax-btn" style="padding:6px 12px;background:rgba(20,20,35,0.7);color:#fff;border:1px solid #444;border-radius:6px;font-size:12px;cursor:pointer">🌐 Extended Catalog (${APEX_EXTENDED_CATALOG.length}+)</button>
       </div>
@@ -182,25 +182,25 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         ${stats.totalCatalog} plugins recensés (Anthropic Claude / MCP servers / community / apex-internal).
         <strong style="color:#22cc77">${stats.totalInstalled} installés</strong>
         · ${stats.totalAvailable} dispo PWA
-        · <span style="color:#ff5b5b">${stats.totalUnsupportedPwa} non-PWA</span>.
+        · <span class="ax-gs-13">${stats.totalUnsupportedPwa} non-PWA</span>.
       </p>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:16px">
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Catalog</div>
-          <div style="font-size:20px;color:#c9a227">${stats.totalCatalog}</div>
+      <div class="ax-gs-141">
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Catalog</div>
+          <div class="ax-gs-142">${stats.totalCatalog}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Installés</div>
-          <div style="font-size:20px;color:#22cc77">${stats.totalInstalled}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Installés</div>
+          <div class="ax-gs-143">${stats.totalInstalled}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Disponibles</div>
-          <div style="font-size:20px;color:#fff">${stats.totalAvailable}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Disponibles</div>
+          <div class="ax-gs-144">${stats.totalAvailable}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Non-PWA</div>
-          <div style="font-size:20px;color:#ff5b5b">${stats.totalUnsupportedPwa}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Non-PWA</div>
+          <div class="ax-gs-145">${stats.totalUnsupportedPwa}</div>
         </div>
       </div>
 
@@ -211,7 +211,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
            </div>`
         : ''}
 
-      <div style="display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap;align-items:center">
+      <div class="ax-gs-146">
         <label for="ax-plg-search" class="sr-only">Rechercher un plugin par nom, tag ou description</label>
         <input id="ax-plg-search" placeholder="🔍 Rechercher (nom, tag, description)" aria-label="Rechercher un plugin par nom, tag ou description" value="${escapeHtml(uiState.search)}"
           style="flex:1 1 240px;background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
@@ -240,7 +240,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       ${plugins.length === 0
         ? `<p style="text-align:center;color:var(--ax-text-dim);padding:32px">Aucun plugin ne correspond aux filtres.</p>`
-        : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px">
+        : `<div class="ax-gs-147">
              ${plugins.map((p) => renderCard(p, apexPluginsMarketplace.getStatusOf(p.id))).join('')}
            </div>`
       }
@@ -398,7 +398,7 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
       <h1 style="margin:0 0 8px;color:#c9a227">🌐 Extended Catalog Apex</h1>
-      <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div class="ax-gs-67">
         <button id="ax-plg-tab-marketplace" class="ax-btn" style="padding:6px 12px;background:rgba(20,20,35,0.7);color:#fff;border:1px solid #444;border-radius:6px;font-size:12px;cursor:pointer">📦 Marketplace</button>
         <button id="ax-plg-tab-extended" class="ax-btn" style="padding:6px 12px;background:#c9a227;color:#000;font-weight:600;border:none;border-radius:6px;font-size:12px;cursor:pointer">🌐 Extended Catalog (${totalCatalog})</button>
       </div>
@@ -406,29 +406,29 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
         ${totalCatalog} outils recensés (MCP / Claude skills/hooks/commands / agent frameworks / PWA APIs / GitHub Actions).
         <strong style="color:#22cc77">${totalInstalled} auto-installés</strong>
         · ${pwaCompat} PWA-compatibles
-        · <span style="color:#ff5b5b">${totalSkipped} skipped</span>.
+        · <span class="ax-gs-13">${totalSkipped} skipped</span>.
       </p>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:16px">
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Total Catalog</div>
-          <div style="font-size:20px;color:#c9a227">${totalCatalog}</div>
+      <div class="ax-gs-141">
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Total Catalog</div>
+          <div class="ax-gs-142">${totalCatalog}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">PWA-compatible</div>
-          <div style="font-size:20px;color:#22cc77">${pwaCompat}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">PWA-compatible</div>
+          <div class="ax-gs-143">${pwaCompat}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Auto-installés</div>
-          <div style="font-size:20px;color:#fff">${totalInstalled}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Auto-installés</div>
+          <div class="ax-gs-144">${totalInstalled}</div>
         </div>
-        <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:8px">
-          <div style="font-size:11px;color:var(--ax-text-dim)">Skipped</div>
-          <div style="font-size:20px;color:#ff5b5b">${totalSkipped}</div>
+        <div class="ax-gs-9">
+          <div class="ax-gs-2">Skipped</div>
+          <div class="ax-gs-145">${totalSkipped}</div>
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap;align-items:center">
+      <div class="ax-gs-146">
         <label for="ax-ext-search" class="sr-only">Rechercher un outil étendu par nom, description ou catégorie</label>
         <input id="ax-ext-search" placeholder="🔍 Rechercher (nom, description, catégorie)" aria-label="Rechercher un outil étendu par nom, description ou catégorie" value="${escapeHtml(uiState.search)}"
           style="flex:1 1 240px;background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
@@ -466,7 +466,7 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
 
       ${sorted.length === 0
         ? `<p style="text-align:center;color:var(--ax-text-dim);padding:32px">Aucun outil ne correspond aux filtres.</p>`
-        : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px">
+        : `<div class="ax-gs-147">
              ${sorted.slice(0, 200).map((t) => renderExtendedCard(t, installedSet.has(t.id))).join('')}
            </div>`
       }
@@ -565,29 +565,29 @@ function renderExtendedCard(t: ApexExtendedTool, isInstalled: boolean): string {
   const installAction = isInstalled
     ? `<span style="font-size:10px;color:#22cc77">🟢 Installé</span>`
     : t.apex_compatibility === 'native-only' || t.apex_compatibility === 'node-required'
-      ? `<span style="font-size:10px;color:var(--ax-text-dim)">${compatBadge}</span>`
+      ? `<span class="ax-gs-8">${compatBadge}</span>`
       : `<button class="ax-btn ax-ext-install" data-id="${escapeHtml(t.id)}" style="padding:4px 8px;font-size:11px;background:#2c5a2c;color:#fff;border:none;border-radius:4px;cursor:pointer">⬇ Auto-install</button>`;
 
   return `
-    <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.05)">
-      <div style="display:flex;justify-content:space-between;align-items:start;gap:6px;margin-bottom:6px">
-        <div style="flex:1;min-width:0">
+    <div class="ax-gs-148">
+      <div class="ax-gs-149">
+        <div class="ax-gs-6">
           <div style="font-size:14px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(t.name)}${stars}</div>
-          <div style="display:flex;gap:4px;align-items:center;margin-top:2px;flex-wrap:wrap">
-            <span style="font-size:9px;color:var(--ax-text-dim)">${typeBadge}</span>
+          <div class="ax-gs-150">
+            <span class="ax-gs-151">${typeBadge}</span>
           </div>
         </div>
         <div style="font-size:10px;white-space:nowrap">${compatBadge}</div>
       </div>
-      <div style="font-size:11px;color:var(--ax-text-dim);min-height:32px;margin-bottom:6px">${escapeHtml(t.description)}</div>
+      <div class="ax-gs-152">${escapeHtml(t.description)}</div>
       <div style="font-size:9px;color:var(--ax-text-dim);margin-bottom:6px">
         ${t.categories.map((c) => `<span style="background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:3px;margin-right:2px">${escapeHtml(c)}</span>`).join('')}
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:6px">
+      <div class="ax-gs-153">
         <div>${valueBadge}</div>
         ${installAction}
       </div>
-      <div style="margin-top:6px">
+      <div class="ax-gs-154">
         <a href="#" class="ax-ext-link" data-url="${escapeHtml(t.source_url)}" style="font-size:10px;color:#7aa3ff">→ ${escapeHtml(t.source_url.slice(0, 60))}${t.source_url.length > 60 ? '…' : ''}</a>
       </div>
     </div>
@@ -616,7 +616,7 @@ function renderCard(p: ApexPluginManifest, status: string): string {
   if (isInstalled && !isInternal) {
     actionHtml = `<button class="ax-btn ax-plg-uninstall" data-id="${escapeHtml(p.id)}" style="padding:4px 8px;font-size:11px;background:#5a2c2c;color:#fff">🗑 Désinstaller</button>`;
   } else if (isInstalled && isInternal) {
-    actionHtml = `<span style="font-size:10px;color:var(--ax-text-dim)">Plugin natif (non-désinstallable)</span>`;
+    actionHtml = `<span class="ax-gs-8">Plugin natif (non-désinstallable)</span>`;
   } else if (isUnsupported) {
     actionHtml = `<span style="font-size:10px;color:#ff5b5b">Non-PWA</span>`;
   } else {
@@ -636,26 +636,26 @@ function renderCard(p: ApexPluginManifest, status: string): string {
     : '';
 
   return `
-    <div style="background:rgba(20,20,35,0.5);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.05)">
-      <div style="display:flex;justify-content:space-between;align-items:start;gap:6px;margin-bottom:6px">
-        <div style="flex:1">
-          <div style="font-size:14px;color:#fff;font-weight:600">${escapeHtml(p.name)}</div>
-          <div style="display:flex;gap:4px;align-items:center;margin-top:2px;flex-wrap:wrap">
+    <div class="ax-gs-148">
+      <div class="ax-gs-149">
+        <div class="ax-gs-26">
+          <div class="ax-gs-155">${escapeHtml(p.name)}</div>
+          <div class="ax-gs-150">
             ${sourceBadge}
-            <span style="font-size:9px;color:var(--ax-text-dim)">${CATEGORY_LABELS[p.category]}</span>
+            <span class="ax-gs-151">${CATEGORY_LABELS[p.category]}</span>
           </div>
         </div>
         <div style="font-size:10px">${statusBadge}</div>
       </div>
-      <div style="font-size:11px;color:var(--ax-text-dim);min-height:32px;margin-bottom:6px">${escapeHtml(p.description)}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:6px">
+      <div class="ax-gs-152">${escapeHtml(p.description)}</div>
+      <div class="ax-gs-153">
         <div>${valueBadge}</div>
         ${actionHtml}
       </div>
       ${apiKeyNote}
       ${oauthNote}
       ${toolsList}
-      <div style="margin-top:6px">
+      <div class="ax-gs-154">
         <a href="#" class="ax-plg-link" data-url="${escapeHtml(p.url)}" style="font-size:10px;color:#7aa3ff">→ ${escapeHtml(p.url.slice(0, 60))}${p.url.length > 60 ? '…' : ''}</a>
       </div>
     </div>

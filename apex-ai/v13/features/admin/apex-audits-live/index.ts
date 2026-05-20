@@ -161,35 +161,35 @@ function renderOverview(layoutHistory: LayoutHistoryEntry[], funcHistory: Functi
   return `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
       <div style="background:linear-gradient(135deg,rgba(180,90,200,0.10),rgba(180,90,200,0.04));border:1px solid rgba(180,90,200,0.25);border-radius:14px;padding:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="ax-gs-22">
           <span style="font-weight:700;color:#c97aff">📐 Layout</span>
           ${sparkline(last14Layout, '#c97aff')}
         </div>
-        <div style="font-size:24px;font-weight:800;color:#fff">${stats.layoutCount}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5)">scans · dernier ${lastLayoutDate}</div>
+        <div class="ax-gs-84">${stats.layoutCount}</div>
+        <div class="ax-gs-23">scans · dernier ${lastLayoutDate}</div>
         ${sevBar(sevLayout, layoutHistory.length)}
       </div>
 
       <div style="background:linear-gradient(135deg,rgba(106,138,255,0.10),rgba(106,138,255,0.04));border:1px solid rgba(106,138,255,0.25);border-radius:14px;padding:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="ax-gs-22">
           <span style="font-weight:700;color:#8bb4ff">🧪 Fonctionnel</span>
           ${sparkline(last14Func, '#8bb4ff')}
         </div>
-        <div style="font-size:24px;font-weight:800;color:#fff">${stats.functionalCount}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5)">tests · dernier ${lastFuncDate}</div>
+        <div class="ax-gs-84">${stats.functionalCount}</div>
+        <div class="ax-gs-23">tests · dernier ${lastFuncDate}</div>
         ${sevBar(sevFunc, funcHistory.length)}
       </div>
 
       <div style="background:linear-gradient(135deg,rgba(255,91,91,0.10),rgba(255,91,91,0.04));border:1px solid rgba(255,91,91,0.25);border-radius:14px;padding:14px">
         <div style="font-weight:700;color:#ff5b5b;margin-bottom:8px">🐛 Bugs 24h</div>
         <div style="font-size:32px;font-weight:800;color:${stats.recentBugs > 0 ? '#ff5b5b' : '#22cc77'}">${stats.recentBugs}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">détectés sur 24 dernières heures</div>
+        <div class="ax-gs-85">détectés sur 24 dernières heures</div>
       </div>
 
       <div style="background:linear-gradient(135deg,rgba(255,170,102,0.10),rgba(255,170,102,0.04));border:1px solid rgba(255,170,102,0.25);border-radius:14px;padding:14px">
         <div style="font-weight:700;color:#ffaa66;margin-bottom:8px">📤 Escaladés Claude Code 24h</div>
         <div style="font-size:32px;font-weight:800;color:${stats.recentEscalations > 0 ? '#ffaa66' : '#22cc77'}">${stats.recentEscalations}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">via ax_claude_todo Firebase</div>
+        <div class="ax-gs-85">via ax_claude_todo Firebase</div>
       </div>
     </div>
   `;
@@ -247,7 +247,7 @@ function renderByView(layoutHistory: LayoutHistoryEntry[], funcHistory: Function
         </div>
       `;
     })
-    .join('') || '<div style="color:rgba(255,255,255,0.5);font-size:12px;padding:24px;text-align:center">Aucune vue auditée encore.</div>';
+    .join('') || '<div class="ax-gs-54">Aucune vue auditée encore.</div>';
 }
 
 function renderBySeverity(layoutHistory: LayoutHistoryEntry[], funcHistory: FunctionalHistoryEntry[]): string {
@@ -292,10 +292,10 @@ function renderBySeverity(layoutHistory: LayoutHistoryEntry[], funcHistory: Func
         </div>
         ${items.map((it) => `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px;flex-wrap:wrap;gap:6px">
-            <div style="flex:1;min-width:0">
+            <div class="ax-gs-6">
               <span style="color:${it.color};font-weight:600">${it.type}</span>
               <span style="color:rgba(255,255,255,0.5);margin:0 6px">·</span>
-              <span style="color:#fff">${it.view}</span>
+              <span class="ax-gs-86">${it.view}</span>
               <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:2px">${it.summary}</div>
             </div>
             <div style="color:rgba(255,255,255,0.5);font-size:11px;font-family:monospace">${formatTs(it.ts)}</div>
@@ -303,7 +303,7 @@ function renderBySeverity(layoutHistory: LayoutHistoryEntry[], funcHistory: Func
         `).join('')}
       </div>
     `;
-  }).join('') || '<div style="color:rgba(255,255,255,0.5);font-size:12px;padding:24px;text-align:center">Aucun audit historisé.</div>';
+  }).join('') || '<div class="ax-gs-54">Aucun audit historisé.</div>';
 }
 
 function renderTimeline(layoutHistory: LayoutHistoryEntry[], funcHistory: FunctionalHistoryEntry[]): string {
@@ -333,7 +333,7 @@ function renderTimeline(layoutHistory: LayoutHistoryEntry[], funcHistory: Functi
   });
   const days = Object.entries(byDay).sort((a, b) => b[1].ts - a[1].ts);
   if (days.length === 0) {
-    return '<div style="color:rgba(255,255,255,0.5);font-size:12px;padding:24px;text-align:center">Pas encore d\'événement.</div>';
+    return '<div class="ax-gs-54">Pas encore d\'événement.</div>';
   }
   return days.map(([key, d], idx) => `
     <div style="margin-bottom:14px;animation:ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) ${idx * 60}ms backwards">
@@ -344,10 +344,10 @@ function renderTimeline(layoutHistory: LayoutHistoryEntry[], funcHistory: Functi
         const sevMeta = SEVERITY_META[ev.sev];
         return `
           <div style="display:flex;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border-left:3px solid ${ev.color};border-radius:6px;margin-bottom:4px;font-size:12px">
-            <div style="font-size:14px">${ev.emoji}</div>
-            <div style="flex:1;min-width:0">
-              <div style="color:#fff"><b>${ev.type}</b> <span style="color:rgba(255,255,255,0.6)">${escapeHtml(ev.view)}</span></div>
-              <div style="color:rgba(255,255,255,0.55);font-size:11px;margin-top:2px">${ev.summary}</div>
+            <div class="ax-gs-87">${ev.emoji}</div>
+            <div class="ax-gs-6">
+              <div class="ax-gs-86"><b>${ev.type}</b> <span style="color:rgba(255,255,255,0.6)">${escapeHtml(ev.view)}</span></div>
+              <div class="ax-gs-55">${ev.summary}</div>
             </div>
             <div style="text-align:right;flex-shrink:0">
               <div style="background:${sevMeta.bg};color:${sevMeta.color};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${sevMeta.emoji} ${sevMeta.label}</div>
@@ -394,22 +394,22 @@ function renderTrends(layoutHistory: LayoutHistoryEntry[], funcHistory: Function
       <div style="background:linear-gradient(135deg,rgba(255,91,91,0.08),rgba(255,91,91,0.02));border:1px solid rgba(255,91,91,0.25);border-radius:14px;padding:14px">
         <div style="font-weight:700;color:#ff5b5b;margin-bottom:6px">📈 Overflow horizontal (30 derniers)</div>
         ${sparkline(overflowSeries, '#ff5b5b', 240, 40)}
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px">Total : ${overflowSeries.filter((v) => v === 1).length}/30</div>
+        <div class="ax-gs-36">Total : ${overflowSeries.filter((v) => v === 1).length}/30</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(255,170,102,0.08),rgba(255,170,102,0.02));border:1px solid rgba(255,170,102,0.25);border-radius:14px;padding:14px">
         <div style="font-weight:700;color:#ffaa66;margin-bottom:6px">📈 Boutons cachés (30 derniers)</div>
         ${sparkline(hiddenSeries, '#ffaa66', 240, 40)}
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px">Max : ${Math.max(0, ...hiddenSeries)}</div>
+        <div class="ax-gs-36">Max : ${Math.max(0, ...hiddenSeries)}</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(34,204,119,0.08),rgba(34,204,119,0.02));border:1px solid rgba(34,204,119,0.25);border-radius:14px;padding:14px">
         <div style="font-weight:700;color:#22cc77;margin-bottom:6px">📈 OK rate fonctionnel (30 derniers)</div>
         ${sparkline(okRateSeries, '#22cc77', 240, 40)}
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px">Moyenne : ${okRateSeries.length ? Math.round((okRateSeries.reduce((a, b) => a + b, 0) / okRateSeries.length) * 100) : 0}%</div>
+        <div class="ax-gs-36">Moyenne : ${okRateSeries.length ? Math.round((okRateSeries.reduce((a, b) => a + b, 0) / okRateSeries.length) * 100) : 0}%</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(106,138,255,0.08),rgba(106,138,255,0.02));border:1px solid rgba(106,138,255,0.25);border-radius:14px;padding:14px">
         <div style="font-weight:700;color:#8bb4ff;margin-bottom:6px">📈 Erreurs (30 derniers)</div>
         ${sparkline(errorsSeries, '#8bb4ff', 240, 40)}
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px">Total : ${errorsSeries.reduce((a, b) => a + b, 0)}</div>
+        <div class="ax-gs-36">Total : ${errorsSeries.reduce((a, b) => a + b, 0)}</div>
       </div>
     </div>
 
@@ -432,7 +432,7 @@ let activeTab = 'overview';
 export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
-    rootEl.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8">🔒 Réservé admin Kevin</div>`;
+    rootEl.innerHTML = `<div class="ax-gs-37">🔒 Réservé admin Kevin</div>`;
     return;
   }
 
@@ -458,7 +458,7 @@ export function render(rootEl: HTMLElement): void {
           <h1 style="margin:0;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:22px;letter-spacing:-0.02em">📊 Apex Audits Live</h1>
           <div style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:2px">Classification intelligente · par fonction · par sévérité · par thème</div>
         </div>
-        <div style="display:flex;gap:6px">
+        <div class="ax-gs-88">
           <button id="ax-audits-run-functional" class="ax-btn" style="padding:6px 10px;background:rgba(106,138,255,0.12);color:#8bb4ff;border:1px solid rgba(106,138,255,0.3);border-radius:18px;cursor:pointer;font-size:11px;min-height:34px">🧪 Tester</button>
           <button id="ax-audits-run-layout" class="ax-btn" style="padding:6px 10px;background:rgba(180,90,200,0.12);color:#c97aff;border:1px solid rgba(180,90,200,0.3);border-radius:18px;cursor:pointer;font-size:11px;min-height:34px">📐 Scan</button>
           <button id="ax-audits-clear" class="ax-btn" style="padding:6px 10px;background:rgba(255,91,91,0.08);color:#ff5b5b;border:1px solid rgba(255,91,91,0.25);border-radius:18px;cursor:pointer;font-size:11px;min-height:34px">🗑</button>

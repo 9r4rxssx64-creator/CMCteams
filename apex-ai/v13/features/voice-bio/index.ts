@@ -95,7 +95,7 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
 
   if (!print) {
     return `
-      <div style="background:rgba(20,20,35,0.5);border:1px solid rgba(201,162,39,0.2);border-radius:12px;padding:18px;margin-bottom:14px">
+      <div class="ax-gs-81">
         <h3 style="color:#c9a227;margin-top:0;margin-bottom:10px">🎙 Mon empreinte vocale</h3>
         <p style="color:#aaa;line-height:1.5">
           Apex apprend ta voix automatiquement au fur et à mesure des conversations.
@@ -141,7 +141,7 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
   const phaseBlock = `
     <div style="background:rgba(15,15,28,0.5);border:1px solid ${phaseColor}33;border-radius:10px;padding:14px;margin:14px 0">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-        <div style="font-size:14px;color:#fff;font-weight:600">Apprentissage voix : ${samples}/${20} samples (${progressPct}%)</div>
+        <div class="ax-gs-155">Apprentissage voix : ${samples}/${20} samples (${progressPct}%)</div>
         <div style="background:${phaseColor}22;border:1px solid ${phaseColor}55;color:${phaseColor};font-size:12px;font-weight:700;padding:4px 10px;border-radius:14px">${escapeHtml(phaseDetails.label)}</div>
       </div>
       <div style="background:rgba(40,40,55,0.5);border-radius:8px;height:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.05)">
@@ -157,25 +157,25 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
   `;
 
   return `
-    <div style="background:rgba(20,20,35,0.5);border:1px solid rgba(201,162,39,0.2);border-radius:12px;padding:18px;margin-bottom:14px">
+    <div class="ax-gs-81">
       <h3 style="color:#c9a227;margin-top:0;margin-bottom:14px">🎙 Mon empreinte vocale</h3>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:16px">
+      <div class="ax-gs-177">
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Échantillons</div>
-          <div style="color:#fff;font-size:22px;font-weight:700">${samples} <span style="font-size:13px;color:#888">/ 20</span></div>
+          <div class="ax-gs-49">Échantillons</div>
+          <div class="ax-gs-50">${samples} <span style="font-size:13px;color:#888">/ 20</span></div>
         </div>
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Score moyen</div>
-          <div style="color:#fff;font-size:22px;font-weight:700">${formatPct(print.match_score_avg)}</div>
+          <div class="ax-gs-49">Score moyen</div>
+          <div class="ax-gs-50">${formatPct(print.match_score_avg)}</div>
         </div>
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Dernière reconnaissance</div>
-          <div style="color:#fff;font-size:14px;font-weight:600">${formatDate(print.last_match)}</div>
+          <div class="ax-gs-49">Dernière reconnaissance</div>
+          <div class="ax-gs-178">${formatDate(print.last_match)}</div>
         </div>
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Enrôlée le</div>
-          <div style="color:#fff;font-size:14px;font-weight:600">${formatDate(print.enrolled_at)}</div>
+          <div class="ax-gs-49">Enrôlée le</div>
+          <div class="ax-gs-178">${formatDate(print.enrolled_at)}</div>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
       </div>
     </div>
 
-    <div style="background:rgba(20,20,35,0.5);border:1px solid rgba(201,162,39,0.2);border-radius:12px;padding:18px;margin-bottom:14px">
+    <div class="ax-gs-81">
       <h3 style="color:#c9a227;margin-top:0;margin-bottom:10px">🔒 Mode exclusif</h3>
       <p style="color:#ccc;font-size:13px;line-height:1.5">
         Quand activé, Apex n'écoute QUE ta voix pour "Dis Apex". Ignore silencieusement
@@ -206,11 +206,11 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
       </p>
       <label style="display:flex;align-items:center;gap:10px;margin-top:10px;cursor:pointer">
         <input type="checkbox" id="ax-vbio-exclusive" aria-label="Activer mode reconnaissance vocale exclusive" ${exclusive ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
-        <span style="color:#fff;font-weight:600">Mode exclusif activé (recommandé)</span>
+        <span class="ax-gs-179">Mode exclusif activé (recommandé)</span>
       </label>
       <label style="display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;padding:10px 12px;background:rgba(34,197,94,0.06);border:1px dashed rgba(34,197,94,0.25);border-radius:8px">
         <input type="checkbox" id="ax-vbio-exclusive-anticipated" aria-label="Mode exclusif anticipé après 10 samples" ${anticipated ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
-        <span style="color:#fff;font-weight:600">⚡ Mode exclusif anticipé</span>
+        <span class="ax-gs-179">⚡ Mode exclusif anticipé</span>
       </label>
       <p style="color:#888;font-size:12px;line-height:1.4;margin:6px 0 0 32px">
         Si ON, Apex passe en phase exclusive (seuil 85%) dès 10 samples au lieu d'attendre 20.
@@ -257,27 +257,27 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
     <div style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,165,0,0.2);border-radius:12px;padding:18px;margin-bottom:14px">
       <h3 style="color:#ffa500;margin-top:0;margin-bottom:10px">👑 Vue admin Kevin</h3>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:16px">
+      <div class="ax-gs-177">
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase">Voix enrôlées</div>
+          <div class="ax-gs-51">Voix enrôlées</div>
           <div style="color:#ffa500;font-size:22px;font-weight:700">${stats.enrolled_count}</div>
         </div>
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase">Total samples</div>
-          <div style="color:#fff;font-size:22px;font-weight:700">${stats.total_samples}</div>
+          <div class="ax-gs-51">Total samples</div>
+          <div class="ax-gs-50">${stats.total_samples}</div>
         </div>
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase">Score moyen global</div>
-          <div style="color:#fff;font-size:22px;font-weight:700">${formatPct(stats.avg_match_score)}</div>
+          <div class="ax-gs-51">Score moyen global</div>
+          <div class="ax-gs-50">${formatPct(stats.avg_match_score)}</div>
         </div>
         <div>
-          <div style="color:#888;font-size:11px;text-transform:uppercase">Tentatives ignorées</div>
+          <div class="ax-gs-51">Tentatives ignorées</div>
           <div style="color:#ff6666;font-size:22px;font-weight:700">${unknown.length}</div>
         </div>
       </div>
 
       <h4 style="color:#c9a227;margin:14px 0 8px">Voix enrôlées</h4>
-      <div style="overflow-x:auto">
+      <div class="ax-gs-78">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
             <tr style="color:#888;font-size:11px;text-transform:uppercase">
@@ -293,7 +293,7 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
       </div>
 
       <h4 style="color:#c9a227;margin:18px 0 8px">Tentatives non reconnues (10 dernières)</h4>
-      <div style="overflow-x:auto">
+      <div class="ax-gs-78">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
             <tr style="color:#888;font-size:11px;text-transform:uppercase">

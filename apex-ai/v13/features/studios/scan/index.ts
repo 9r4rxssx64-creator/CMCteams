@@ -176,10 +176,10 @@ export function render(rootEl: HTMLElement): void {
     <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
       <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h1 style="margin:0;color:#c9a227">📷 Studio Scan</h1>
-        <span style="color:var(--ax-text-dim);font-size:13px">OCR · QR · Barcode</span>
+        <span class="ax-gs-3">OCR · QR · Barcode</span>
       </header>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Scanner une image</h2>
         <input type="file" id="ax-scan-file" aria-label="Sélectionner ou prendre une photo à scanner" accept="image/*" capture="environment" style="display:none">
         <button class="ax-btn ax-btn-primary" id="ax-scan-pick" style="width:100%;min-height:44px">📷 Choisir / prendre photo</button>
@@ -187,7 +187,7 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-scan-status" style="margin-top:8px;color:var(--ax-text-dim);font-size:13px"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Coller du texte</h2>
         <textarea id="ax-scan-text" placeholder="Colle un texte (email, code, IBAN, URL…)" rows="4" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px"></textarea>
         <button class="ax-btn ax-btn-primary" id="ax-scan-text-btn" style="margin-top:8px;min-height:44px">🔍 Analyser</button>
@@ -198,7 +198,7 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-scan-detections"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div class="ax-gs-1">
         <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Historique (${loadHistory().length}/${HISTORY_MAX})</h2>
         <div id="ax-scan-history"></div>
         <button class="ax-btn" id="ax-scan-clear-history" style="margin-top:8px;min-height:44px">🗑 Vider</button>
@@ -217,14 +217,14 @@ function renderHistory(rootEl: HTMLElement): void {
   if (!div) return;
   const list = loadHistory();
   if (list.length === 0) {
-    div.innerHTML = '<div style="color:var(--ax-text-dim);font-size:13px">Aucun scan pour l\'instant.</div>';
+    div.innerHTML = '<div class="ax-gs-3">Aucun scan pour l\'instant.</div>';
     return;
   }
   div.innerHTML = list.slice().reverse().map((e) => {
     const dt = new Date(e.ts).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
     return `
       <div style="background:rgba(255,255,255,0.03);border:1px solid #333;border-radius:6px;padding:8px;margin-bottom:6px">
-        <div style="font-size:11px;color:var(--ax-text-dim)">${escapeHtml(dt)} · ${escapeHtml(e.type)}</div>
+        <div class="ax-gs-2">${escapeHtml(dt)} · ${escapeHtml(e.type)}</div>
         <div style="font-size:13px;color:#c9a227;margin-top:4px;word-break:break-all">${escapeHtml(e.raw.slice(0, 200))}${e.raw.length > 200 ? '…' : ''}</div>
       </div>
     `;

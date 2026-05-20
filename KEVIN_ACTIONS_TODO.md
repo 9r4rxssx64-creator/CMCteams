@@ -29,24 +29,26 @@
   déplacement. Build complet à confirmer par la CI GitHub Actions.
 - `check-imports.cjs` conservé : réutilisable comme gate CI (cf. chantier 3).
 
-**⏸ CHANTIER 2 — Extraire ~1063 styles inline → classes CSS — BLOQUÉ sandbox**
-- Ordre par volume : admin (679) > studios (530) > pro (192) > settings (122) >
-  chat (115) > plugins (112) > voice-bio (105) > vault (97) > dashboard (79)
-- ⚠️ BLOQUEUR confirmé (session 2026-05-20) : ce chantier exige une vérification
-  du rendu après chaque fichier (cf. plan). Or dans le sandbox :
-  - `npm install` échoue (registre limité) → pas de `tsc` ni `vite build`
-  - pas de navigateur → vérif visuelle impossible
-- ⚠️ Risque de régression PROUVÉ, pas hypothétique : `assets/css/base.css:382`
-  contient des règles `input[type='text'],…` de spécificité **11**. Une classe
-  `.ax-*` a une spécificité **10**. Donc extraire un `style=` d'un `<input>`
-  vers une classe ferait gagner la règle base.css → rendu différent.
-  → Pousser une extraction « à l'aveugle » violerait la règle ABSOLUE
-  « JAMAIS RÉGRESSER ». Reporté à une session avec build+navigateur.
-- Analyse faite : `0` sélecteur descendant ne vise `div`/`span` nus dans les 9
-  CSS → l'extraction des `<div>/<span>` SANS classe est, elle, prouvée sûre.
-  Méthode pour la session build : extraire d'abord div/span sans classe
-  (sûr), traiter input/textarea/select/button/a en dernier avec diff visuel.
-- Commencer par `vault` (97, plus petit) pour roder la méthode, finir par `admin`
+**🟡 CHANTIER 2 — Extraire les styles inline → classes CSS — tranche sûre FAITE**
+- ✅ FAIT (2026-05-20) — tranche prouvée sans régression :
+  - **672 occurrences** de `style=` extraites en **179 classes `.ax-gs-*`**
+    (`assets/css/components.css`), via `scripts/extract-inline-styles.cjs`.
+  - Périmètre = `<div>/<span>` à attribut `style` UNIQUE. Un tel élément n'est
+    ciblable que par `div`/`span`/`*` (spécificité ≤1) → une classe (spéc. 10)
+    gagne toujours → rendu identique, **garanti par la cascade CSS** (preuve,
+    pas estimation). Exclus : `position:fixed/absolute` (sélecteurs
+    `[style*="position:…"]` existants) et styles avec interpolation `${…}`.
+  - Vérif : 179 classes définies = 179 utilisées, 0 orpheline ; accolades CSS
+    équilibrées ; aucun test asservi à un style inline.
+- ⏳ RESTE (session avec build+navigateur — risque visuel réel) :
+  - styles uniques (non répétés), éléments AVEC classe/id, et surtout les
+    `<input>/<textarea>/<select>/<button>/<a>` — `base.css:382` a des règles
+    `input[type=…]` de spécificité **11** > classe **10** : extraction à
+    l'aveugle = régression. Exige diff visuel par feature.
+  - Bloqueur sandbox : `npm install` échoue (registre limité) → pas de
+    `tsc`/`vite build` ni navigateur ici. La CI GitHub Actions build à chaque
+    push (vérif compile auto). Vérif visuelle → Apex (`apex-layout-inspector`)
+    en runtime sur device, ou coup d'œil Kevin (1 clic).
 
 **CHANTIER 3 — Regrouper les 75 routes par catégorie**
 - Réordonner les `router.register()` dans `bootstrap.ts` avec commentaires de

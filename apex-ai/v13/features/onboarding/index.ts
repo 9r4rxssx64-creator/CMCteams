@@ -112,7 +112,7 @@ function renderCurrentStep(rootEl: HTMLElement): void {
 function renderHeader(): string {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="display:flex;gap:6px">
+      <div class="ax-gs-88">
         ${Array.from({ length: TOTAL_STEPS }, (_, i) => `
           <div style="width:32px;height:4px;border-radius:2px;background:${i + 1 <= currentStep ? '#c9a227' : 'rgba(255,255,255,0.15)'};transition:background 0.3s"></div>
         `).join('')}
@@ -146,17 +146,17 @@ function renderStep(step: number): string {
           Pour utiliser toutes les capacités d'Apex, autorise :
         </p>
         <div style="display:grid;gap:10px;margin-bottom:20px">
-          <div style="padding:12px;background:rgba(0,0,0,0.2);border-radius:10px">
+          <div class="ax-gs-68">
             <strong style="color:#fff;font-size:14px">🔔 Notifications</strong>
-            <div style="color:var(--ax-text-dim,#888);font-size:12px;margin-top:4px">Alertes urgentes (sentinelles, messages)</div>
+            <div class="ax-gs-69">Alertes urgentes (sentinelles, messages)</div>
           </div>
-          <div style="padding:12px;background:rgba(0,0,0,0.2);border-radius:10px">
+          <div class="ax-gs-68">
             <strong style="color:#fff;font-size:14px">🎙 Microphone</strong>
-            <div style="color:var(--ax-text-dim,#888);font-size:12px;margin-top:4px">Dictée vocale + wake word "Dis Apex"</div>
+            <div class="ax-gs-69">Dictée vocale + wake word "Dis Apex"</div>
           </div>
-          <div style="padding:12px;background:rgba(0,0,0,0.2);border-radius:10px">
+          <div class="ax-gs-68">
             <strong style="color:#fff;font-size:14px">📷 Caméra</strong>
-            <div style="color:var(--ax-text-dim,#888);font-size:12px;margin-top:4px">Scan QR / OCR / Vision IA</div>
+            <div class="ax-gs-69">Scan QR / OCR / Vision IA</div>
           </div>
         </div>
         <button id="ax-onboarding-grant-perms" class="ax-btn ax-btn-primary ax-btn-block" style="margin-bottom:8px">Autoriser tout</button>
@@ -194,21 +194,21 @@ function renderStep(step: number): string {
             border:1px solid ${state.mode === 'serious' ? '#c9a227' : 'rgba(255,255,255,0.1)'};
             border-radius:12px;cursor:pointer;color:#fff;text-align:left">
             <strong style="font-size:16px">⚙️ Sérieux (par défaut)</strong>
-            <div style="font-size:12px;color:var(--ax-text-dim,#aaa);margin-top:4px">Réponses pro, sources officielles, expertise</div>
+            <div class="ax-gs-70">Réponses pro, sources officielles, expertise</div>
           </button>
           <button class="ax-mode-choice" data-mode="fun" style="
             padding:16px;background:${state.mode === 'fun' ? 'rgba(201,162,39,0.2)' : 'rgba(0,0,0,0.2)'};
             border:1px solid ${state.mode === 'fun' ? '#c9a227' : 'rgba(255,255,255,0.1)'};
             border-radius:12px;cursor:pointer;color:#fff;text-align:left">
             <strong style="font-size:16px">🎉 Fun (par défaut)</strong>
-            <div style="font-size:12px;color:var(--ax-text-dim,#aaa);margin-top:4px">Voix rigolotes, blagues, memes</div>
+            <div class="ax-gs-70">Voix rigolotes, blagues, memes</div>
           </button>
           <button class="ax-mode-choice" data-mode="both" style="
             padding:16px;background:${state.mode === 'both' ? 'rgba(201,162,39,0.2)' : 'rgba(0,0,0,0.2)'};
             border:1px solid ${state.mode === 'both' ? '#c9a227' : 'rgba(255,255,255,0.1)'};
             border-radius:12px;cursor:pointer;color:#fff;text-align:left">
             <strong style="font-size:16px">🌈 Les deux (recommandé)</strong>
-            <div style="font-size:12px;color:var(--ax-text-dim,#aaa);margin-top:4px">Toggle dans chaque outil. Surprise mode 🎲 dispo.</div>
+            <div class="ax-gs-70">Toggle dans chaque outil. Surprise mode 🎲 dispo.</div>
           </button>
         </div>
       `;
@@ -219,17 +219,17 @@ function renderStep(step: number): string {
           3 zones clés à connaître :
         </p>
         <div style="display:grid;gap:12px;margin-bottom:20px">
-          <div style="padding:14px;background:rgba(0,0,0,0.25);border-radius:12px;border-left:3px solid #c9a227">
+          <div class="ax-gs-71">
             <strong style="color:#fff;font-size:15px">💬 Chat</strong>
-            <div style="color:var(--ax-text-dim,#aaa);font-size:13px;margin-top:4px">Pose une question, demande un studio, dicte. Apex sort l'outil adapté automatiquement.</div>
+            <div class="ax-gs-72">Pose une question, demande un studio, dicte. Apex sort l'outil adapté automatiquement.</div>
           </div>
-          <div style="padding:14px;background:rgba(0,0,0,0.25);border-radius:12px;border-left:3px solid #c9a227">
+          <div class="ax-gs-71">
             <strong style="color:#fff;font-size:15px">🔐 Coffre</strong>
-            <div style="color:var(--ax-text-dim,#aaa);font-size:13px;margin-top:4px">Tes clés API, tokens, paiements. Chiffrement AES-GCM 256.</div>
+            <div class="ax-gs-72">Tes clés API, tokens, paiements. Chiffrement AES-GCM 256.</div>
           </div>
-          <div style="padding:14px;background:rgba(0,0,0,0.25);border-radius:12px;border-left:3px solid #c9a227">
+          <div class="ax-gs-71">
             <strong style="color:#fff;font-size:15px">🎨 Studios</strong>
-            <div style="color:var(--ax-text-dim,#aaa);font-size:13px;margin-top:4px">15 studios créatifs (musique, vidéo, archi, etc.). Apparaissent dans le chat selon le contexte.</div>
+            <div class="ax-gs-72">15 studios créatifs (musique, vidéo, archi, etc.). Apparaissent dans le chat selon le contexte.</div>
           </div>
         </div>
         <p style="color:var(--ax-text-dim,#888);font-size:12px;margin:0;text-align:center">

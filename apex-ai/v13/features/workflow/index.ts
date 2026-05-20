@@ -16,13 +16,13 @@ export function render(rootEl: HTMLElement): void {
       <h1 style="margin:0 0 16px;color:#c9a227">⚡ Workflows</h1>
       <p style="color:var(--ax-text-dim)">Automatise tes tâches récurrentes (IF this THEN that).</p>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:16px">
+      <div class="ax-gs-130">
         <h2 style="margin:0 0 12px;font-size:16px">Workflows actifs</h2>
         <p style="color:var(--ax-text-dim);font-size:14px;margin:0">Aucun workflow configuré pour le moment.</p>
         <button class="ax-btn ax-btn-primary" style="width:100%;margin-top:12px">+ Nouveau workflow</button>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;margin-top:12px">
+      <div class="ax-gs-131">
         <h2 style="margin:0 0 12px;font-size:16px">Templates pré-configurés</h2>
         <div style="display:grid;gap:8px">
           <button class="ax-btn ax-btn-sm" style="text-align:left;padding:12px">📧 Email reçu → notification</button>

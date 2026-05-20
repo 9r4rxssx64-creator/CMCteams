@@ -211,7 +211,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div style="max-width:900px;margin:0 auto;padding:16px 12px;color:#f1f5f9">
-      <div style="margin-bottom:16px">
+      <div class="ax-gs-30">
         <h1 style="font-size:22px;margin:0 0 4px;font-weight:700;color:#f1f5f9">
           🗂 Dashboard ${escapeHtml(userName)}
         </h1>
@@ -251,7 +251,7 @@ export function render(rootEl: HTMLElement): void {
       ${isAdmin ? `
         <div style="margin-top:20px;padding:14px;background:#0f172a;border:1px solid #c9a22733;border-radius:12px">
           <h2 style="font-size:14px;margin:0 0 8px;color:#c9a227">⚙️ Admin actions rapides</h2>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="ax-gs-7">
             <button data-route="admin-all-secrets" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">🔐 All Secrets</button>
             <button data-route="credentials" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">📦 Credentials</button>
             <button data-route="device" type="button" style="background:#1e293b;border:1px solid #c9a22755;color:#c9a227;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;min-height:36px;touch-action:manipulation">📱 Devices</button>

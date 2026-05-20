@@ -225,15 +225,15 @@ function renderRow(row: SecretRow): string {
   return `
     <article style="background:rgba(255,255,255,0.02);border:1px solid rgba(201,162,39,0.18);border-radius:10px;padding:12px;margin-bottom:8px" data-secret-id="${idAttr}">
       <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px">
-        <div style="flex:1;min-width:200px">
+        <div class="ax-gs-11">
           <div style="font-weight:600;color:#c9a227;font-size:14px">${labelEsc}</div>
           <div style="font-family:monospace;font-size:12px;color:var(--ax-text-dim);margin-top:4px" class="ax-sec-preview">${masked}</div>
-          <div style="font-size:10px;color:#888;margin-top:4px">
+          <div class="ax-gs-82">
             ${row.addedAt ? `Ajouté ${escapeHtml(added)}` : ''}
             ${row.lastUsedAt ? ` · Utilisé ${escapeHtml(used)}` : ''}
           </div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div class="ax-gs-20">
           <button class="ax-btn ax-sec-reveal" data-id="${idAttr}" aria-label="Voir 5s la valeur" style="padding:6px 10px;font-size:12px;min-height:36px">👁</button>
           <button class="ax-btn ax-sec-copy" data-id="${idAttr}" aria-label="Copier dans presse-papier" style="padding:6px 10px;font-size:12px;min-height:36px">📋</button>
           ${row.source === 'generic' ? `<button class="ax-btn ax-sec-rename" data-id="${idAttr}" aria-label="Renommer" style="padding:6px 10px;font-size:12px;min-height:36px">✏️</button>` : ''}
@@ -301,7 +301,7 @@ async function refresh(rootEl: HTMLElement, opts?: { search?: string; cat?: stri
   rootEl.innerHTML = `
     <div style="padding:20px;max-width:1000px;margin:0 auto">
       <header style="margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="ax-gs-83">
           <button id="ax-sec-back" class="ax-btn" aria-label="Retour chat" style="padding:6px 10px;font-size:12px;min-height:36px">← Chat</button>
           <h1 style="margin:0;color:#c9a227;font-size:20px">🔐 Mes Secrets — Dossier admin</h1>
         </div>
@@ -314,19 +314,19 @@ async function refresh(rootEl: HTMLElement, opts?: { search?: string; cat?: stri
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px">
         <div style="background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:10px;padding:12px">
           <div style="font-size:22px;color:#c9a227;font-weight:600">${rows.length}</div>
-          <div style="font-size:11px;color:var(--ax-text-dim)">Total secrets</div>
+          <div class="ax-gs-2">Total secrets</div>
         </div>
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px">
-          <div style="font-size:22px;font-weight:600">${totalMK}</div>
-          <div style="font-size:11px;color:var(--ax-text-dim)">Multi-key vault</div>
+        <div class="ax-gs-52">
+          <div class="ax-gs-53">${totalMK}</div>
+          <div class="ax-gs-2">Multi-key vault</div>
         </div>
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px">
-          <div style="font-size:22px;font-weight:600">${totalLegacy}</div>
-          <div style="font-size:11px;color:var(--ax-text-dim)">Legacy (ax_*)</div>
+        <div class="ax-gs-52">
+          <div class="ax-gs-53">${totalLegacy}</div>
+          <div class="ax-gs-2">Legacy (ax_*)</div>
         </div>
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px">
-          <div style="font-size:22px;font-weight:600">${totalGN}</div>
-          <div style="font-size:11px;color:var(--ax-text-dim)">Génériques</div>
+        <div class="ax-gs-52">
+          <div class="ax-gs-53">${totalGN}</div>
+          <div class="ax-gs-2">Génériques</div>
         </div>
       </div>
 
@@ -573,7 +573,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#999">
+      <div class="ax-gs-21">
         <h2 style="color:#c9a227">🔒 Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>

@@ -94,20 +94,20 @@ export function render(rootEl: HTMLElement): void {
     return template.fields
       .map((f) =>
         f.type === 'textarea'
-          ? `<label style="display:block;margin-bottom:8px"><span style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">${escapeHtml(f.label)}</span><textarea data-field="${escapeHtml(f.key)}" rows="3" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px;resize:vertical"></textarea></label>`
-          : `<label style="display:block;margin-bottom:8px"><span style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">${escapeHtml(f.label)}</span><input data-field="${escapeHtml(f.key)}" type="text" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px"></label>`,
+          ? `<label style="display:block;margin-bottom:8px"><span class="ax-gs-16">${escapeHtml(f.label)}</span><textarea data-field="${escapeHtml(f.key)}" rows="3" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px;resize:vertical"></textarea></label>`
+          : `<label style="display:block;margin-bottom:8px"><span class="ax-gs-16">${escapeHtml(f.label)}</span><input data-field="${escapeHtml(f.key)}" type="text" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px"></label>`,
       )
       .join('');
   }
 
   function fullRender(template: typeof TEMPLATES_META[number]): void {
     rootEl.innerHTML = `
-      <div style="max-width:720px;margin:0 auto;padding:20px">
+      <div class="ax-gs-169">
         <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📄 Studio Word — Document .docx</h1>
         <p style="color:#94a3b8;margin-bottom:20px">Génère un document Word téléchargeable. 100% client-side, aucune donnée envoyée serveur.</p>
 
         <label style="display:block;margin-bottom:16px">
-          <span style="font-size:13px;color:#cbd5e1;display:block;margin-bottom:6px;font-weight:600">Choisir un modèle</span>
+          <span class="ax-gs-15">Choisir un modèle</span>
           <select id="docx-template-select" style="width:100%;padding:12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:15px">
             ${TEMPLATES_META.map((t) => `<option value="${t.id}" ${t.id === template.id ? 'selected' : ''}>${t.emoji} ${escapeHtml(t.label)}</option>`).join('')}
           </select>
@@ -152,7 +152,7 @@ export function render(rootEl: HTMLElement): void {
         if (!resEl) return;
         if (result.success) {
           resEl.innerHTML = `
-            <div style="background:#0f172a;border:1px solid #10b981;border-radius:12px;padding:16px;text-align:center">
+            <div class="ax-gs-47">
               <p style="color:#10b981;font-size:14px;margin-bottom:12px">✅ ${escapeHtml(result.filename)} (${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
               <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇️ Télécharger</a>
             </div>`;

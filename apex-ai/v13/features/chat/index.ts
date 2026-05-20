@@ -474,7 +474,7 @@ async function proposeBroadlinkSetup(
   const sheet = modalSheet.open({
     title: '🔌 Compte Broadlink détecté',
     content:
-      `<div style="padding:8px 0;color:var(--ax-text)">` +
+      `<div class="ax-gs-126">` +
       `<p style="margin:0 0 12px"><strong>Apex a reconnu un compte Broadlink dans ton image.</strong></p>` +
       `<p style="margin:0 0 12px;color:var(--ax-text-muted);font-size:14px">${escapeHtml(summary)}</p>` +
       (result.email ? `<p style="margin:0 0 8px;font-size:14px">📧 <strong>Email</strong> : ${escapeHtml(result.email)}</p>` : '') +
@@ -484,7 +484,7 @@ async function proposeBroadlinkSetup(
           (result.devices ?? []).slice(0, 5).map((d) => `<li>${escapeHtml(d.name ?? d.id ?? '?')}${d.mac ? ` <code>${escapeHtml(d.mac)}</code>` : ''}</li>`).join('') +
           `</ul>`
         : '') +
-      `<div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">` +
+      `<div class="ax-gs-127">` +
       (hasToken
         ? `<button class="ax-btn ax-btn-primary" id="ax-bl-setup-token" style="width:100%;padding:14px;font-weight:700">⚡ Configurer Broadlink (1-clic)</button>`
         : `<button class="ax-btn ax-btn-primary" id="ax-bl-login" style="width:100%;padding:14px;font-weight:700">🔑 Me connecter à Broadlink</button>`) +
@@ -556,11 +556,11 @@ async function proposeSmartTVSetup(
   const sheet = modalSheet.open({
     title: '📺 Smart TV détectée',
     content:
-      `<div style="padding:8px 0;color:var(--ax-text)">` +
+      `<div class="ax-gs-126">` +
       `<p style="margin:0 0 12px"><strong>Apex a reconnu une Smart TV dans ton image.</strong></p>` +
       `<p style="margin:0 0 12px;color:var(--ax-text-muted);font-size:14px">${escapeHtml(summary || 'Infos limitées')}</p>` +
       `<p style="margin:0 0 12px;font-size:13px;color:var(--ax-text-muted)">Pour la piloter, Apex utilise ton hub Broadlink (RM Pro / RM Mini). Si pas configuré, configure d'abord ton compte Broadlink.</p>` +
-      `<div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">` +
+      `<div class="ax-gs-127">` +
       `<button class="ax-btn ax-btn-primary" id="ax-tv-setup-bl" style="width:100%;padding:14px;font-weight:700">🔌 Configurer Broadlink pour piloter</button>` +
       `<button class="ax-btn" id="ax-tv-saved" style="width:100%;padding:12px">💾 OK, infos TV sauvegardées</button>` +
       `</div>` +
@@ -2019,7 +2019,7 @@ export function render(rootEl: HTMLElement): void {
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
               <span style="font-size:12px;color:var(--ax-gold);font-weight:600">🔑 Pas de clé API</span>
               <button class="ax-btn ax-btn-primary" id="ax-paste-key" style="background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;padding:5px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;min-height:32px;-webkit-tap-highlight-color:transparent">📋 Coller</button>
-              <span style="font-size:11px;color:rgba(255,255,255,0.5)">Anthropic / OpenAI / Groq / Gemini</span>
+              <span class="ax-gs-23">Anthropic / OpenAI / Groq / Gemini</span>
             </div>
           </div>
         ` : ''}
@@ -3049,7 +3049,7 @@ export function render(rootEl: HTMLElement): void {
     const sheet = modalSheet.open({
       title: '☰ Menu',
       content: `
-        <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="ax-gs-123">
           <button class="ax-btn ax-btn-primary" data-menu-nav="chat" style="width:100%;text-align:left;padding:14px">💬 Chat</button>
           ${isAdminUser ? '<button class="ax-btn ax-btn-primary" data-menu-nav="admin" style="width:100%;text-align:left;padding:14px">👑 Centre Admin</button>' : ''}
           <button class="ax-btn ax-btn-primary" data-menu-nav="studios" style="width:100%;text-align:left;padding:14px">🎨 Studios</button>

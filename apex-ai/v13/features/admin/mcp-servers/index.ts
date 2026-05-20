@@ -31,7 +31,7 @@ function statusBadge(status: string): string {
 export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
-    rootEl.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8">🔒 Réservé admin Kevin</div>`;
+    rootEl.innerHTML = `<div class="ax-gs-37">🔒 Réservé admin Kevin</div>`;
     return;
   }
 
@@ -49,8 +49,8 @@ export function render(rootEl: HTMLElement): void {
         <div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
             <div>
-              <div style="font-size:16px;font-weight:600;color:#f1f5f9">${escapeHtml(s.name)}</div>
-              <div style="font-size:12px;color:#94a3b8;margin-top:2px">${escapeHtml(s.id)}</div>
+              <div class="ax-gs-108">${escapeHtml(s.name)}</div>
+              <div class="ax-gs-109">${escapeHtml(s.id)}</div>
             </div>
             ${statusBadge(s.status)}
           </div>
@@ -60,9 +60,9 @@ export function render(rootEl: HTMLElement): void {
           <div style="display:flex;gap:12px;font-size:12px;color:#94a3b8;flex-wrap:wrap;margin-bottom:12px">
             <span>🔧 ${toolsCount} tools</span>
             <span>⏱ ${escapeHtml(lastCheckStr)}</span>
-            ${s.errorCount > 0 ? `<span style="color:#ef4444">❌ ${s.errorCount} erreurs</span>` : ''}
+            ${s.errorCount > 0 ? `<span class="ax-gs-110">❌ ${s.errorCount} erreurs</span>` : ''}
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="ax-gs-7">
             <button
               data-mcp-test="${escapeHtml(s.id)}"
               style="padding:8px 14px;background:#3b82f6;color:#fff;border:0;border-radius:8px;font-size:13px;cursor:pointer;min-height:36px">
@@ -98,7 +98,7 @@ export function render(rootEl: HTMLElement): void {
     .join('');
 
   rootEl.innerHTML = `
-    <div style="max-width:760px;margin:0 auto;padding:20px">
+    <div class="ax-gs-59">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🔌 MCP Servers</h1>
       <p style="color:#94a3b8;margin-bottom:24px">
         Model Context Protocol servers connectés à Apex. ${servers.length} server${servers.length > 1 ? 's' : ''} enregistré${servers.length > 1 ? 's' : ''}.

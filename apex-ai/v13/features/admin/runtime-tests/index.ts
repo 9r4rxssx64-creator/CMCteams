@@ -37,7 +37,7 @@ function statusColor(status: string): string {
 export function render(rootEl: HTMLElement): void {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
-    rootEl.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8">🔒 Réservé admin Kevin</div>`;
+    rootEl.innerHTML = `<div class="ax-gs-37">🔒 Réservé admin Kevin</div>`;
     return;
   }
 
@@ -46,7 +46,7 @@ export function render(rootEl: HTMLElement): void {
 
   function renderReport(report: RuntimeTestReport): string {
     return `
-      <div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:16px">
+      <div class="ax-gs-113">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <div>
             <strong style="color:#f1f5f9;font-size:16px">${report.summary.passed}/${report.summary.total} passed</strong>
@@ -64,11 +64,11 @@ export function render(rootEl: HTMLElement): void {
         </div>
         <details style="margin-top:8px">
           <summary style="cursor:pointer;color:#cbd5e1;font-size:13px;padding:6px 0">📋 Voir détails (${report.results.length} tests)</summary>
-          <div style="margin-top:8px">
+          <div class="ax-gs-114">
             ${report.results.map((r: RuntimeTestResult) => `
               <div style="background:#1e293b;padding:10px;border-radius:6px;margin-bottom:6px;border-left:3px solid ${statusColor(r.status)}">
                 <div style="display:flex;justify-content:space-between;gap:8px">
-                  <div style="flex:1;min-width:0">
+                  <div class="ax-gs-6">
                     <div style="color:#f1f5f9;font-size:13px;font-weight:600">${statusEmoji(r.status)} ${escapeHtml(r.name)}</div>
                     <div style="color:#94a3b8;font-size:11px;margin-top:2px">${escapeHtml(r.category)} • ${r.durationMs}ms</div>
                     ${r.error ? `<div style="color:#ef4444;font-size:11px;margin-top:4px">❌ ${escapeHtml(r.error)}</div>` : ''}
@@ -85,7 +85,7 @@ export function render(rootEl: HTMLElement): void {
   }
 
   rootEl.innerHTML = `
-    <div style="max-width:800px;margin:0 auto;padding:20px">
+    <div class="ax-gs-115">
       <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🧪 Runtime Tests — Apex teste TOUT</h1>
       <p style="color:#94a3b8;margin-bottom:20px">
         Exécute tous les skills 2026 + MCP + sentinelles en runtime browser <strong>RÉEL</strong>
@@ -119,7 +119,7 @@ export function render(rootEl: HTMLElement): void {
         </div>
       ` : ''}
 
-      <div style="margin-top:24px;padding:16px;background:#0f172a;border-radius:8px;font-size:12px;color:#94a3b8;line-height:1.6">
+      <div class="ax-gs-116">
         💡 <strong>Note Kevin :</strong> Ces tests sont <strong>RÉELS</strong> (CDN chargés, libs exécutées,
         blobs créés). Le bouton ⬇️ DL télécharge le fichier produit pendant le test pour vérification visuelle.
         Voir aussi <a href="?view=skills-2026" style="color:#3b82f6">🎯 Skills 2026</a> et

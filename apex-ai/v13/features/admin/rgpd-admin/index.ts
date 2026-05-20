@@ -57,8 +57,8 @@ function renderRestrictedRow(entry: { uid: string; scopes: string[]; ts: number 
 
   return `
     <article style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,107,107,0.25);border-radius:10px;padding:14px;margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-        <div style="flex:1;min-width:200px">
+      <div class="ax-gs-112">
+        <div class="ax-gs-11">
           <strong style="color:#ff6b6b;font-size:14px">${escapeHtml(entry.uid)}</strong>
           <div style="margin-top:6px;font-size:12px;color:var(--ax-text-dim)">
             Scopes : ${scopesLabel}
@@ -82,7 +82,7 @@ function renderRestrictedRow(entry: { uid: string; scopes: string[]; ts: number 
 
 async function refresh(rootEl: HTMLElement): Promise<void> {
   rootEl.innerHTML = `
-    <div style="padding:40px;text-align:center;color:var(--ax-text-dim)">
+    <div class="ax-gs-57">
       <p>🔍 Chargement restrictions RGPD…</p>
     </div>
   `;
@@ -91,10 +91,10 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
     const restricted = rgpd.listRestrictedUsers();
     const tableHtml = restricted.length > 0
       ? restricted.map(renderRestrictedRow).join('')
-      : `<p style="color:var(--ax-text-dim);text-align:center;padding:40px">✅ Aucune restriction RGPD active.<br><span style="font-size:12px">Tous les users peuvent traiter leurs données librement.</span></p>`;
+      : `<p style="color:var(--ax-text-dim);text-align:center;padding:40px">✅ Aucune restriction RGPD active.<br><span class="ax-gs-24">Tous les users peuvent traiter leurs données librement.</span></p>`;
 
     rootEl.innerHTML = `
-      <div style="padding:20px;max-width:900px;margin:0 auto">
+      <div class="ax-gs-95">
         <header style="margin-bottom:24px">
           <h1 style="margin:0 0 6px;color:#c9a227">🛡 RGPD — Restrictions actives</h1>
           <p style="color:var(--ax-text-dim);font-size:13px;margin:0">
@@ -103,22 +103,22 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
           </p>
         </header>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
-          <div style="background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:14px">
-            <div style="font-size:24px;color:#ff6b6b;font-weight:600">${restricted.length}</div>
-            <div style="font-size:12px;color:var(--ax-text-dim)">Restrictions actives</div>
+        <div class="ax-gs-96">
+          <div class="ax-gs-99">
+            <div class="ax-gs-58">${restricted.length}</div>
+            <div class="ax-gs-5">Restrictions actives</div>
           </div>
           <div style="background:rgba(255,107,107,0.05);border:1px solid rgba(255,107,107,0.15);border-radius:10px;padding:14px">
-            <div style="font-size:24px;color:#ff6b6b;font-weight:600">${restricted.filter((r) => r.scopes.includes('*')).length}</div>
-            <div style="font-size:12px;color:var(--ax-text-dim)">Globales (tous scopes)</div>
+            <div class="ax-gs-58">${restricted.filter((r) => r.scopes.includes('*')).length}</div>
+            <div class="ax-gs-5">Globales (tous scopes)</div>
           </div>
-          <div style="background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.3);border-radius:10px;padding:14px">
-            <div style="font-size:24px;color:#c9a227;font-weight:600">${restricted.filter((r) => !r.scopes.includes('*')).length}</div>
-            <div style="font-size:12px;color:var(--ax-text-dim)">Granulaires</div>
+          <div class="ax-gs-97">
+            <div class="ax-gs-98">${restricted.filter((r) => !r.scopes.includes('*')).length}</div>
+            <div class="ax-gs-5">Granulaires</div>
           </div>
         </div>
 
-        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <div class="ax-gs-100">
           <button id="ax-rgpd-refresh" class="ax-btn" aria-label="Rafraîchir la liste des restrictions" style="padding:8px 14px;font-size:13px">🔄 Rafraîchir</button>
         </div>
 
@@ -137,7 +137,7 @@ async function refresh(rootEl: HTMLElement): Promise<void> {
   } catch (err: unknown) {
     logger.error('rgpd-admin', 'refresh failed', { err });
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#ff6b6b">
+      <div class="ax-gs-101">
         <p>❌ Chargement échoué : ${escapeHtml(String(err).slice(0, 200))}</p>
       </div>
     `;
@@ -186,7 +186,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const isAdmin = store.get('isAdmin') === true;
   if (!isAdmin) {
     rootEl.innerHTML = `
-      <div style="padding:40px;text-align:center;color:#999">
+      <div class="ax-gs-21">
         <h2 style="color:#c9a227">Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>

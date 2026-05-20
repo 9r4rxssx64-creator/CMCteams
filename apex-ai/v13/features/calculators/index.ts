@@ -233,7 +233,7 @@ export function render(rootEl: HTMLElement): void {
   if (!guardFeatureEnabled('module.calculators', rootEl, uid)) return;
   const cards = CALCULATORS.map((c) => `
     <div class="ax-calc-card" data-calc-id="${escapeHtml(c.id)}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;text-align:center">
-      <div style="font-size:32px">${c.emoji}</div>
+      <div class="ax-gs-28">${c.emoji}</div>
       <div style="font-weight:700;color:#c9a227;margin-top:6px;font-size:14px">${escapeHtml(c.label)}</div>
       <div style="font-size:11px;color:var(--ax-text-dim);margin-top:4px">${escapeHtml(c.description)}</div>
     </div>

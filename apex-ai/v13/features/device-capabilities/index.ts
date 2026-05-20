@@ -134,7 +134,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </p>
 
       <!-- IDENTITÉ -->
-      <div style="background:rgba(20,20,35,0.5);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid rgba(201,162,39,0.2)">
+      <div class="ax-gs-42">
         <h2 style="margin:0 0 12px;font-size:16px;color:#c9a227">🔍 Identité</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;font-size:13px">
           ${row('OS', `${osFlag(caps.os)} ${escapeHtml(caps.os)} ${caps.os_version ? escapeHtml(caps.os_version) : ''}`)}
@@ -153,13 +153,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </div>
 
       <!-- RÉSEAU -->
-      <div style="background:rgba(20,20,35,0.5);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid rgba(201,162,39,0.2)">
+      <div class="ax-gs-42">
         <h2 style="margin:0 0 12px;font-size:16px;color:#c9a227">🌐 Réseau</h2>
         <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px">
           <span>${caps.isOnline ? '🟢 En ligne' : '🔴 Hors ligne'}</span>
           <span>Type : <strong style="color:${networkColor}">${escapeHtml(caps.effectiveType)}</strong></span>
           <span>Qualité : <strong style="color:${networkColor}">${networkQuality}</strong></span>
-          ${caps.saveData ? '<span style="color:#ffaa00">💾 Save-Data ON</span>' : ''}
+          ${caps.saveData ? '<span class="ax-gs-61">💾 Save-Data ON</span>' : ''}
           ${caps.downlink > 0 ? `<span>Débit : ${caps.downlink} Mbps</span>` : ''}
           ${caps.rtt > 0 ? `<span>RTT : ${caps.rtt}ms</span>` : ''}
         </div>
@@ -173,7 +173,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         <div style="background:rgba(255,140,66,0.1);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid rgba(255,140,66,0.3)">
           <h2 style="margin:0 0 12px;font-size:16px;color:#ff8c42">❌ Non disponibles (${unavailable.length})</h2>
           <ul style="margin:0;padding-left:20px;font-size:13px;line-height:1.7">
-            ${unavailable.map((u) => `<li><strong>${escapeHtml(u.feature)}</strong> — <span style="color:var(--ax-text-dim)">${escapeHtml(u.reason)}</span></li>`).join('')}
+            ${unavailable.map((u) => `<li><strong>${escapeHtml(u.feature)}</strong> — <span class="ax-gs-10">${escapeHtml(u.reason)}</span></li>`).join('')}
           </ul>
         </div>
       ` : ''}
@@ -189,9 +189,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       ` : ''}
 
       <!-- ACTIONS -->
-      <div style="background:rgba(20,20,35,0.5);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid rgba(201,162,39,0.2)">
+      <div class="ax-gs-42">
         <h2 style="margin:0 0 12px;font-size:16px;color:#c9a227">🚀 Actions</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="ax-gs-7">
           <button class="ax-btn ax-btn-primary" id="ax-dev-perm-all" type="button">🔓 Demander toutes permissions</button>
           <button class="ax-btn ax-btn-secondary" id="ax-dev-test-share" type="button">📤 Tester partage</button>
           <button class="ax-btn ax-btn-secondary" id="ax-dev-test-vibrate" type="button">📳 Tester vibration</button>
@@ -226,7 +226,7 @@ function featureGroup(g: { title: string; emoji: string; keys: (keyof DeviceCapa
     return `<li style="padding:4px 0;color:${color}"><span style="display:inline-block;min-width:24px">${icon}</span> ${escapeHtml(label)}</li>`;
   }).join('');
   return `
-    <div style="background:rgba(20,20,35,0.5);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid rgba(201,162,39,0.2)">
+    <div class="ax-gs-42">
       <h2 style="margin:0 0 8px;font-size:15px;color:#c9a227">${g.emoji} ${escapeHtml(g.title)}</h2>
       <ul style="list-style:none;padding:0;margin:0;font-size:13px;columns:2;column-gap:16px">
         ${items}

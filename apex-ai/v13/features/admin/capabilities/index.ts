@@ -21,16 +21,16 @@ import { toast } from '../../../ui/toast.js';
 function statusBadge(status: PwaCapabilityInfo['status']): string {
   switch (status) {
     case 'permission_granted':
-      return '<span style="color:#4caf50">🟢 Accordée</span>';
+      return '<span class="ax-gs-92">🟢 Accordée</span>';
     case 'permission_denied':
       return '<span style="color:#f44336">🔴 Refusée</span>';
     case 'permission_required':
       return '<span style="color:#ff9800">🟡 À demander</span>';
     case 'supported':
-      return '<span style="color:#4caf50">🟢 Supportée</span>';
+      return '<span class="ax-gs-92">🟢 Supportée</span>';
     case 'unsupported':
     default:
-      return '<span style="color:#888">⚫ Non supportée</span>';
+      return '<span class="ax-gs-25">⚫ Non supportée</span>';
   }
 }
 

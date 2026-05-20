@@ -507,43 +507,43 @@ export function render(root: HTMLElement): void {
     .join('');
 
   root.innerHTML = `
-    <div style="padding:16px;max-width:900px;margin:0 auto;color:var(--ax-text,#eee)">
+    <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">⚖ Bibliothèque juridique FR + Monaco</h2>
       <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">${Object.keys(AX_LEGAL_FR.codes).length} codes &middot; ${Object.keys(AX_LEGAL_FR.jurisprudence).length} jurisprudences &middot; ${Object.keys(AX_LEGAL_FR.templates).length} templates lettres &middot; calculs (indemnité, prescription, congés)</p>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#c9a227;margin:0 0 10px">🔎 Recherche article / code</h3>
         <input id="legalQ" type="text" placeholder="Ex: code civil, article 1240, RGPD..." style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Recherche juridique">
         <button id="legalSearchBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Rechercher sur Légifrance</button>
         <div id="legalResult" style="margin-top:10px;font-size:13px"></div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#c9a227;margin:0 0 10px">📚 Codes français (${Object.keys(AX_LEGAL_FR.codes).length})</h3>
         <div style="max-height:340px;overflow-y:auto">${codesHtml}</div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#c9a227;margin:0 0 10px">⚖ Jurisprudence (${Object.keys(AX_LEGAL_FR.jurisprudence).length})</h3>
         ${jurisHtml}
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#c9a227;margin:0 0 10px">📝 Templates lettres officielles (${Object.keys(AX_LEGAL_FR.templates).length})</h3>
         <div style="max-height:300px;overflow-y:auto">${templatesHtml}</div>
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#c9a227;margin:0 0 10px">🇲🇨 Monaco</h3>
         ${monacoHtml}
       </div>
 
-      <div style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="ax-gs-4">
         <h3 style="color:#c9a227;margin:0 0 10px">🏛 Organismes officiels (${Object.keys(AX_LEGAL_FR.organismes).length})</h3>
         ${orgsHtml}
       </div>
 
-      <div style="margin-top:18px;padding:14px;background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.3);border-radius:10px;font-size:12px;color:#ffd699;text-align:center">
+      <div class="ax-gs-159">
         ⚠️ <strong>Information indicative uniquement</strong>. Pour décision juridique importante, consulter un avocat ou notaire qualifié.
       </div>
       <p style="margin-top:14px;text-align:center;font-size:11px;color:#666">Sources : Légifrance &middot; Légimonaco &middot; Cour de cassation &middot; Conseil d'État &middot; CJUE &middot; CEDH</p>
