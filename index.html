@@ -5323,7 +5323,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.723";
+var APP_VER="v9.724";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -15097,6 +15097,23 @@ function agentsStart(){
       }
     }
   }catch(_v717err){}
+  // v9.724 Kevin "Efface tout l'historique, vraiment partout" (2026-05-20) :
+  // Le flag cmc_v717_purge_done est déjà posé sur le device de Kevin → le bloc
+  // v717 ne re-tourne plus. NEW flag cmc_v724_purge_done → re-déclenche le wipe
+  // TOTAL une fois : A.overrides tous mois, teamHistory, familyHistory, snapshots
+  // cmc_history_*, IDB shadow, nodes Firebase, logs. App 100% vierge, re-import requis.
+  // Garde-fou : ne pose le flag QUE si le wipe a réellement tourné (admin présent).
+  try{
+    if(!lg("cmc_v724_purge_done",false) && A.user && A.user.id===AID){
+      if(typeof cmcWipeAllPlanningMemory==="function"){
+        var _w724=cmcWipeAllPlanningMemory(true);
+        if(_w724){
+          ls("cmc_v724_purge_done",{ts:Date.now(),stats:_w724});
+          console.log("[v9.724 purge total] historique effacé partout — re-import requis");
+        }
+      }
+    }
+  }catch(_v724err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
