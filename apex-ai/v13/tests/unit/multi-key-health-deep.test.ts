@@ -34,11 +34,11 @@ vi.mock('../../services/audit-log.js', () => ({
   auditLog: { record: vi.fn(async () => {}) },
 }));
 
-import { multiKeyHealth } from '../../services/multi-key-health.js';
-import { multiKeyVault } from '../../services/multi-key-vault.js';
-import { aiKeyRotation } from '../../services/ai-key-rotation.js';
-import { sentinels } from '../../services/sentinels.js';
-import { auditLog } from '../../services/audit-log.js';
+import { multiKeyHealth } from '../../services/ai/multi-key-health.js';
+import { multiKeyVault } from '../../services/vault/multi-key-vault.js';
+import { aiKeyRotation } from '../../services/ai/ai-key-rotation.js';
+import { sentinels } from '../../services/sentinels/sentinels.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

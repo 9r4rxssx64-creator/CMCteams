@@ -18,7 +18,7 @@ import {
   checkMicrophonePermission,
   getVoiceLog,
   clearVoiceLog,
-} from '../../services/voice-print.js';
+} from '../../services/ai/voice-print.js';
 
 interface FakeRecResult {
   0: { transcript: string };

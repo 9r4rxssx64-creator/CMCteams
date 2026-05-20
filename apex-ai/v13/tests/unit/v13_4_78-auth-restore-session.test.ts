@@ -12,7 +12,7 @@
  * Anti-régression #45 (RECIDIVE) + #28 (DECLARATION ≠ DEPLOYMENT).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auth } from '../../services/auth.js';
+import { auth } from '../../services/auth/auth.js';
 import { store } from '../../core/store.js';
 
 describe('v13.4.78 auth.restoreSession — Kevin admin reconnu après reload', () => {

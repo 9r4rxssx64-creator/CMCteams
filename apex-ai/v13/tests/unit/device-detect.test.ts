@@ -13,7 +13,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { deviceDetect } from '../../services/device-detect.js';
+import { deviceDetect } from '../../services/integrations/device-detect.js';
 
 /** Helper : mock UA + force re-detect cache (invalide cache au prochain detect()) */
 function mockUA(ua: string, platform = '', extra: Partial<Navigator> = {}): void {

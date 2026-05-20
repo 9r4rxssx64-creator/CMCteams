@@ -10,7 +10,7 @@ import {
   autoImprovement,
   AUTO_INSTALL_GAIN_THRESHOLD,
   AUTO_INSTALL_CONFIDENCE,
-} from '../../services/auto-improvement.js';
+} from '../../services/sentinels/auto-improvement.js';
 
 const STATE_KEY = 'apex_v13_auto_improvement_state';
 

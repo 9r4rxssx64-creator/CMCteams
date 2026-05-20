@@ -24,7 +24,7 @@ import {
   guardFeatureEnabled,
   guardSentinelEnabled,
   guardToolEnabled,
-} from '../../services/feature-guard.js';
+} from '../../services/auth/feature-guard.js';
 
 beforeEach(() => {
   isFeatureEnabledMock.mockReset();

@@ -2,9 +2,9 @@
  * Tests voices-registry + smart-tools-suggester + voice-print (Jet 8.1 ULTRA).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { voicesRegistry } from '../../services/voices-registry.js';
-import { smartToolsSuggester } from '../../services/smart-tools-suggester.js';
-import { voicePrint } from '../../services/voice-print.js';
+import { voicesRegistry } from '../../services/ai/voices-registry.js';
+import { smartToolsSuggester } from '../../services/ai/smart-tools-suggester.js';
+import { voicePrint } from '../../services/ai/voice-print.js';
 
 describe('Voices Registry (50+ voix diversifiées Kevin)', () => {
   describe('catalogue diversifié (anti-monotonie)', () => {

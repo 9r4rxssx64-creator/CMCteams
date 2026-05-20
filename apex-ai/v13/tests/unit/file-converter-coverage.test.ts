@@ -2,7 +2,7 @@
  * file-converter coverage extension (58→90%+).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { fileConverter } from '../../services/file-converter.js';
+import { fileConverter } from '../../services/core-svc/file-converter.js';
 
 describe('File Converter coverage extension', () => {
   beforeEach(() => {

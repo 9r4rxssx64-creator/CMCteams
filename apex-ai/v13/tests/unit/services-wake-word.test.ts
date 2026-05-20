@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { wakeWord } from '../../services/wake-word.js';
+import { wakeWord } from '../../services/ai/wake-word.js';
 
 /* ------------------------------------------------------------------------ */
 /* Mock SpeechRecognition pour happy-dom                                     */

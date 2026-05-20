@@ -18,7 +18,7 @@ describe('voices-registry — speak + branches', () => {
   });
 
   it('speak sans text → fail', async () => {
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const r = await voicesRegistry.speak('');
     expect(r.ok).toBe(false);
     expect(r.reason).toBe('text required');
@@ -40,7 +40,7 @@ describe('voices-registry — speak + branches', () => {
       voice: unknown = null;
       constructor(t: string) { this.text = t; }
     });
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const r = await voicesRegistry.speak('Bonjour');
     expect(r.ok).toBe(true);
     expect(speakMock).toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe('voices-registry — speak + branches', () => {
       text = ''; lang = ''; pitch = 1; rate = 1; voice: unknown = null;
       constructor(t: string) { this.text = t; }
     });
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const r = await voicesRegistry.speak('Hi', 'pro_neutral_fr');
     expect(r.ok).toBe(true);
   });
@@ -63,7 +63,7 @@ describe('voices-registry — speak + branches', () => {
       text = ''; lang = ''; pitch = 1; rate = 1; voice: unknown = null;
       constructor(t: string) { this.text = t; }
     });
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     voicesRegistry.setUserPreference('user1', 'pro_neutral_fr');
     const r = await voicesRegistry.speak('Hi', undefined, { uid: 'user1' });
     expect(r.ok).toBe(true);
@@ -75,7 +75,7 @@ describe('voices-registry — speak + branches', () => {
       text = ''; lang = ''; pitch = 1; rate = 1; voice: unknown = null;
       constructor(t: string) { this.text = t; }
     });
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     /* trouve une voix avec effects, ex: theme_helium pitch high */
     const voices = voicesRegistry.list();
     const withEffects = voices.find((v) => v.effects?.pitch || v.effects?.rate);
@@ -90,13 +90,13 @@ describe('voices-registry — speak + branches', () => {
     vi.stubGlobal('SpeechSynthesisUtterance', class {
       constructor() { throw new Error('Not supported'); }
     });
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const r = await voicesRegistry.speak('Hello');
     expect(r.ok).toBe(false);
   });
 
   it('byContext sad/happy/urgent/casual/pro/kids/halloween/christmas', async () => {
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const ctxs: Array<'sad' | 'happy' | 'urgent' | 'casual' | 'pro' | 'kids' | 'halloween' | 'christmas'> = [
       'sad', 'happy', 'urgent', 'casual', 'pro', 'kids', 'halloween', 'christmas',
     ];
@@ -108,7 +108,7 @@ describe('voices-registry — speak + branches', () => {
   });
 
   it('randomVoice avec catégorie + sans', async () => {
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const v1 = voicesRegistry.randomVoice('pro');
     expect(v1).toBeDefined();
     const v2 = voicesRegistry.randomVoice();
@@ -116,7 +116,7 @@ describe('voices-registry — speak + branches', () => {
   });
 
   it('surpriseMe varies — exécute 3 branches', async () => {
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     /* mock Math.random pour forcer 3 branches */
     const spy = vi.spyOn(Math, 'random').mockReturnValueOnce(0.1).mockReturnValueOnce(0.5).mockReturnValueOnce(0.9);
     voicesRegistry.surpriseMe();
@@ -126,25 +126,25 @@ describe('voices-registry — speak + branches', () => {
   });
 
   it('getUserPreference quand pref n existe pas', async () => {
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const v = voicesRegistry.getUserPreference('non-existant-uid');
     expect(v).toBeNull();
   });
 
   it('stop sans erreur', async () => {
     vi.stubGlobal('speechSynthesis', { cancel: vi.fn() });
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     voicesRegistry.stop();
   });
 
   it('stop avec speechSynthesis.cancel throws → ignore', async () => {
     vi.stubGlobal('speechSynthesis', { cancel: () => { throw new Error('boom'); } });
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     voicesRegistry.stop();
   });
 
   it('auditDiversity warnings si registry incomplet', async () => {
-    const { voicesRegistry } = await import('../../services/voices-registry.js');
+    const { voicesRegistry } = await import('../../services/ai/voices-registry.js');
     const audit = voicesRegistry.auditDiversity();
     expect(typeof audit.healthy).toBe('boolean');
     expect(typeof audit.total).toBe('number');
@@ -159,7 +159,7 @@ describe('storage-compressor — branches edge cases', () => {
 
   it('set quota throws à l écriture', async () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota'); });
-    const { storageCompressor } = await import('../../services/storage-compressor.js');
+    const { storageCompressor } = await import('../../services/storage/storage-compressor.js');
     const r = await storageCompressor.set('k', 'small');
     expect(typeof r.ok).toBe('boolean');
     setItem.mockRestore();
@@ -167,7 +167,7 @@ describe('storage-compressor — branches edge cases', () => {
 
   it('set big avec quota throws à compress + fallback fail', async () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota full'); });
-    const { storageCompressor } = await import('../../services/storage-compressor.js');
+    const { storageCompressor } = await import('../../services/storage/storage-compressor.js');
     const big = 'x'.repeat(2000);
     const r = await storageCompressor.set('big', big);
     /* peut être ok ou pas selon que la compression a réduit la taille */
@@ -179,20 +179,20 @@ describe('storage-compressor — branches edge cases', () => {
     const big = JSON.stringify(Array.from({ length: 100 }, (_, i) => `x${i}-padding-padding-padding`));
     localStorage.setItem('big1', big);
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => { throw new Error('Quota'); });
-    const { storageCompressor } = await import('../../services/storage-compressor.js');
+    const { storageCompressor } = await import('../../services/storage/storage-compressor.js');
     const r = await storageCompressor.migrateAllToCompressed();
     expect(r.migrated).toBeGreaterThanOrEqual(0);
     setItem.mockRestore();
   });
 
   it('quota status returns valid severity', async () => {
-    const { storageCompressor } = await import('../../services/storage-compressor.js');
+    const { storageCompressor } = await import('../../services/storage/storage-compressor.js');
     const status = storageCompressor.getQuotaStatus();
     expect(['ok', 'warn', 'critical']).toContain(status.severity);
   });
 
   it('compresses string longer than threshold', async () => {
-    const { storageCompressor } = await import('../../services/storage-compressor.js');
+    const { storageCompressor } = await import('../../services/storage/storage-compressor.js');
     const huge = 'x'.repeat(5000);
     const r = await storageCompressor.set('huge', huge);
     expect(r.ok).toBe(true);
@@ -204,7 +204,7 @@ describe('storage-compressor — branches edge cases', () => {
 
   it('get with corrupted __LZ__ value returns default', async () => {
     localStorage.setItem('corrupt', '__LZ__invalid');
-    const { storageCompressor } = await import('../../services/storage-compressor.js');
+    const { storageCompressor } = await import('../../services/storage/storage-compressor.js');
     const v = await storageCompressor.get('corrupt', 'fallback');
     /* peut être null ou une chaine partielle décodée — on accepte tout */
     expect(v !== undefined).toBe(true);
@@ -218,7 +218,7 @@ describe('secret-scanner — branches', () => {
 
   it('scan avec value vide → skip', async () => {
     localStorage.setItem('empty_key', '');
-    const { secretScanner } = await import('../../services/secret-scanner.js');
+    const { secretScanner } = await import('../../services/vault/secret-scanner.js');
     const leaks = await secretScanner.scan();
     /* vide n'est pas un secret */
     expect(leaks.find((l) => l.storage_key === 'empty_key')).toBeUndefined();
@@ -227,16 +227,16 @@ describe('secret-scanner — branches', () => {
   it('scan détecte différentes severities', async () => {
     localStorage.setItem('ax_anthropic_key', 'sk-ant-api03-' + 'X'.repeat(95));
     localStorage.setItem('ax_stripe_key', 'sk_live_' + 'A'.repeat(50));
-    const { secretScanner } = await import('../../services/secret-scanner.js');
+    const { secretScanner } = await import('../../services/vault/secret-scanner.js');
     const leaks = await secretScanner.scan();
     expect(leaks.length).toBeGreaterThan(0);
   });
 
   it('autoMigrate avec encrypt throws → failed++', async () => {
     localStorage.setItem('ax_anthropic_key', 'sk-ant-api03-' + 'M'.repeat(95));
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const enc = vi.spyOn(vault, 'encryptAuto').mockRejectedValue(new Error('Encrypt fail'));
-    const { secretScanner } = await import('../../services/secret-scanner.js');
+    const { secretScanner } = await import('../../services/vault/secret-scanner.js');
     const r = await secretScanner.autoMigrate();
     expect(r.failed + r.migrated).toBeGreaterThanOrEqual(0);
     enc.mockRestore();
@@ -252,7 +252,7 @@ describe('secret-scanner — branches', () => {
       if (calls > 5 && k === 'ax_anthropic_key') return null;
       return origGet.call(this, k);
     };
-    const { secretScanner } = await import('../../services/secret-scanner.js');
+    const { secretScanner } = await import('../../services/vault/secret-scanner.js');
     const r = await secretScanner.autoMigrate();
     expect(r.migrated + r.failed).toBeGreaterThanOrEqual(0);
     Storage.prototype.getItem = origGet;
@@ -260,7 +260,7 @@ describe('secret-scanner — branches', () => {
 
   it('getStats structure correct avec leaks', async () => {
     localStorage.setItem('ax_test_key_xyz', 'sk-ant-api03-' + 'A'.repeat(95));
-    const { secretScanner } = await import('../../services/secret-scanner.js');
+    const { secretScanner } = await import('../../services/vault/secret-scanner.js');
     const stats = await secretScanner.getStats();
     expect(stats.total_keys_scanned).toBeGreaterThan(0);
     expect(typeof stats.last_scan_ts).toBe('number');
@@ -277,19 +277,19 @@ describe('vault — branches edge', () => {
   });
 
   it('readKey returns empty string si plaintext vide', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const v = await vault.readKey('inexistant');
     expect(v).toBe('');
   });
 
   it('readMasked returns empty si non config', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const v = await vault.readMasked('inexistant');
     expect(v).toBe('');
   });
 
   it('getKeyStatus différents états', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     expect(vault.getKeyStatus('inexistant')).toBe('empty');
     localStorage.setItem('plain_key', 'sk-something');
     expect(vault.getKeyStatus('plain_key')).toBe('plaintext_legacy');
@@ -298,26 +298,26 @@ describe('vault — branches edge', () => {
   });
 
   it('detectFull retourne null si pas de pattern', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const r = vault.detectFull('not_a_credential_xyz');
     expect(r).toBeNull();
   });
 
   it('detectPattern (legacy) retourne null', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const r = vault.detectPattern('not_a_credential_xyz');
     expect(r).toBeNull();
   });
 
   it('autoStore valeur vide → fail', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const r = await vault.autoStore('   ');
     expect(r.ok).toBe(false);
     expect(r.reason).toContain('vide');
   });
 
   it('autoStore format inconnu → tente resolver', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const r = await vault.autoStore('xxx-totally-random-string-no-pattern');
     /* peut résoudre ou pas selon resolver — on accepte tout retour */
     expect(typeof r.ok).toBe('boolean');
@@ -327,7 +327,7 @@ describe('vault — branches edge', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => ({
       ok: true, status: 200, json: async () => ({}), text: async () => '',
     } as Response));
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const fakeKey = 'sk-ant-api03-' + 'V'.repeat(95);
     const r = await vault.autoStore(fakeKey);
     expect(typeof r.ok).toBe('boolean');
@@ -337,20 +337,20 @@ describe('vault — branches edge', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => ({
       ok: false, status: 401,
     } as Response));
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const fakeKey = 'sk-' + 'A'.repeat(50);
     await vault.autoStore(fakeKey);
   });
 
   it('autoTest fetch throws → false', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => { throw new Error('Network'); });
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const fakeKey = 'sk-' + 'A'.repeat(50);
     await vault.autoStore(fakeKey);
   });
 
   it('encrypt/decrypt round-trip avec passphrase', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     vault.setPassphrase('test-pass-12345');
     const enc = await vault.encrypt('secret', 'test-pass-12345');
     expect(enc.startsWith('AXENC1:')).toBe(true);
@@ -359,20 +359,20 @@ describe('vault — branches edge', () => {
   });
 
   it('decrypt avec wrong passphrase → null', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const enc = await vault.encrypt('secret', 'pass1');
     const dec = await vault.decrypt(enc, 'wrong-pass');
     expect(dec).toBeNull();
   });
 
   it('decryptAuto avec invalid cipher → null', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const r = await vault.decryptAuto('NOT_AXENC1_PREFIX');
     expect(r).toBeNull();
   });
 
   it('maskKey court vs long', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     expect(vault.maskKey('xx').length).toBeGreaterThan(0);
     expect(vault.maskKey('sk-ant-api03-very-long-key-here-1234567890')).toContain('***');
   });
@@ -389,41 +389,41 @@ describe('voice-print — branches', () => {
   });
 
   it('listPrints vide initialement', async () => {
-    const { voicePrint } = await import('../../services/voice-print.js');
+    const { voicePrint } = await import('../../services/ai/voice-print.js');
     const list = voicePrint.listPrints();
     expect(Array.isArray(list)).toBe(true);
   });
 
   it('deletePrint inexistant', async () => {
-    const { voicePrint } = await import('../../services/voice-print.js');
+    const { voicePrint } = await import('../../services/ai/voice-print.js');
     const ok = voicePrint.deletePrint('nonexistent');
     expect(typeof ok).toBe('boolean');
   });
 
   it('isSupported returns boolean', async () => {
-    const { voicePrint } = await import('../../services/voice-print.js');
+    const { voicePrint } = await import('../../services/ai/voice-print.js');
     expect(typeof voicePrint.isSupported()).toBe('boolean');
   });
 
   it('getThreshold + setThreshold', async () => {
-    const { voicePrint } = await import('../../services/voice-print.js');
+    const { voicePrint } = await import('../../services/ai/voice-print.js');
     voicePrint.setThreshold(0.7);
     expect(voicePrint.getThreshold()).toBe(0.7);
   });
 
   it('isListening false initially', async () => {
-    const { voicePrint } = await import('../../services/voice-print.js');
+    const { voicePrint } = await import('../../services/ai/voice-print.js');
     expect(typeof voicePrint.isListening()).toBe('boolean');
   });
 
   it('getStats structure', async () => {
-    const { voicePrint } = await import('../../services/voice-print.js');
+    const { voicePrint } = await import('../../services/ai/voice-print.js');
     const stats = voicePrint.getStats();
     expect(typeof stats.enrolled_count).toBe('number');
   });
 
   it('stopWakeWord no-op', async () => {
-    const { voicePrint } = await import('../../services/voice-print.js');
+    const { voicePrint } = await import('../../services/ai/voice-print.js');
     voicePrint.stopWakeWord();
   });
 });
@@ -441,7 +441,7 @@ describe('smart-camera — branches', () => {
   it('detectCapabilities sans navigator.mediaDevices', async () => {
     const orig = navigator.mediaDevices;
     Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true });
-    const { smartCamera } = await import('../../services/smart-camera.js');
+    const { smartCamera } = await import('../../services/ai/smart-camera.js');
     const caps = await smartCamera.detectCapabilities();
     expect(caps.available).toBe(false);
     Object.defineProperty(navigator, 'mediaDevices', { value: orig, configurable: true });
@@ -456,7 +456,7 @@ describe('smart-camera — branches', () => {
       value: { getUserMedia: vi.fn(), enumerateDevices: enumDevices },
       configurable: true,
     });
-    const { smartCamera } = await import('../../services/smart-camera.js');
+    const { smartCamera } = await import('../../services/ai/smart-camera.js');
     const caps = await smartCamera.detectCapabilities();
     expect(caps.available).toBe(true);
     expect(caps.facing_modes.length).toBeGreaterThanOrEqual(1);
@@ -468,7 +468,7 @@ describe('smart-camera — branches', () => {
       value: { getUserMedia: vi.fn(), enumerateDevices: vi.fn(async () => { throw new Error('boom'); }) },
       configurable: true,
     });
-    const { smartCamera } = await import('../../services/smart-camera.js');
+    const { smartCamera } = await import('../../services/ai/smart-camera.js');
     const caps = await smartCamera.detectCapabilities();
     expect(typeof caps.available).toBe('boolean');
     delete (navigator as unknown as { mediaDevices?: unknown }).mediaDevices;
@@ -476,14 +476,14 @@ describe('smart-camera — branches', () => {
 
   it('captureSingle sans stream → fail', async () => {
     /* sans mediaDevices, openStream fail */
-    const { smartCamera } = await import('../../services/smart-camera.js');
+    const { smartCamera } = await import('../../services/ai/smart-camera.js');
     const r = await smartCamera.captureSingle();
     expect(typeof r.ok).toBe('boolean');
   });
 
   it('detectCapabilities BarcodeDetector mock', async () => {
     vi.stubGlobal('BarcodeDetector', class {});
-    const { smartCamera } = await import('../../services/smart-camera.js');
+    const { smartCamera } = await import('../../services/ai/smart-camera.js');
     const caps = await smartCamera.detectCapabilities();
     expect(typeof caps.has_barcode_detector).toBe('boolean');
   });
@@ -499,7 +499,7 @@ describe('telemetry — branches', () => {
   });
 
   it('pushIncoming + processIncoming basic', async () => {
-    const { telemetry } = await import('../../services/telemetry.js');
+    const { telemetry } = await import('../../services/observability/telemetry.js');
     telemetry.pushIncoming({
       kind: 'info',
       msg: 'test',
@@ -513,7 +513,7 @@ describe('telemetry — branches', () => {
   });
 
   it('pushIncoming kind=err', async () => {
-    const { telemetry } = await import('../../services/telemetry.js');
+    const { telemetry } = await import('../../services/observability/telemetry.js');
     telemetry.pushIncoming({
       kind: 'err',
       msg: 'erreur test',
@@ -526,7 +526,7 @@ describe('telemetry — branches', () => {
   });
 
   it('pushIncoming kind=warn', async () => {
-    const { telemetry } = await import('../../services/telemetry.js');
+    const { telemetry } = await import('../../services/observability/telemetry.js');
     telemetry.pushIncoming({
       kind: 'warn',
       msg: 'avertissement',
@@ -545,19 +545,19 @@ describe('apex-self-audit — branches', () => {
   });
 
   it('runFullAudit basic', async () => {
-    const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
     const r = await apexSelfAudit.runFullAudit(false);
     expect(r).toBeDefined();
   });
 
   it('runFullAudit brutal mode', async () => {
-    const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
     const r = await apexSelfAudit.runFullAudit(true);
     expect(r).toBeDefined();
   });
 
   it('formatReportMarkdown structure', async () => {
-    const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
     const r = await apexSelfAudit.runFullAudit(false);
     const md = apexSelfAudit.formatReportMarkdown(r);
     expect(typeof md).toBe('string');
@@ -571,7 +571,7 @@ describe('persistent-memory-store — branches', () => {
   });
 
   it('add + list', async () => {
-    const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+    const { persistentMemory: persistentMemoryStore } = await import('../../services/storage/persistent-memory-store.js');
     await persistentMemoryStore.add({
       category: 'preference',
       text: 'fait test',
@@ -583,7 +583,7 @@ describe('persistent-memory-store — branches', () => {
   });
 
   it('topForPrompt', async () => {
-    const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+    const { persistentMemory: persistentMemoryStore } = await import('../../services/storage/persistent-memory-store.js');
     await persistentMemoryStore.add({
       category: 'preference',
       text: 'fact 1',
@@ -595,19 +595,19 @@ describe('persistent-memory-store — branches', () => {
   });
 
   it('formatForPrompt', async () => {
-    const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+    const { persistentMemory: persistentMemoryStore } = await import('../../services/storage/persistent-memory-store.js');
     const formatted = await persistentMemoryStore.formatForPrompt('global', 5);
     expect(typeof formatted).toBe('string');
   });
 
   it('remove inexistant', async () => {
-    const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+    const { persistentMemory: persistentMemoryStore } = await import('../../services/storage/persistent-memory-store.js');
     const ok = await persistentMemoryStore.remove('nonexistent_id');
     expect(typeof ok).toBe('boolean');
   });
 
   it('getStats', async () => {
-    const { persistentMemory: persistentMemoryStore } = await import('../../services/persistent-memory-store.js');
+    const { persistentMemory: persistentMemoryStore } = await import('../../services/storage/persistent-memory-store.js');
     const stats = await persistentMemoryStore.getStats();
     expect(typeof stats.total).toBe('number');
   });
@@ -615,7 +615,7 @@ describe('persistent-memory-store — branches', () => {
 
 describe('file-converter — branches', () => {
   it('detectFormat extensions', async () => {
-    const { fileConverter } = await import('../../services/file-converter.js');
+    const { fileConverter } = await import('../../services/core-svc/file-converter.js');
     expect(fileConverter.detectFormat('photo.jpg').format).toBe('jpg');
     expect(fileConverter.detectFormat('audio.mp3').format).toBe('mp3');
     expect(fileConverter.detectFormat('doc.pdf').format).toBe('pdf');
@@ -624,14 +624,14 @@ describe('file-converter — branches', () => {
   });
 
   it('classifyPath', async () => {
-    const { fileConverter } = await import('../../services/file-converter.js');
+    const { fileConverter } = await import('../../services/core-svc/file-converter.js');
     const path = fileConverter.classifyPath('test.jpg', 'image', new Date('2026-05-04').getTime());
     expect(typeof path).toBe('string');
     expect(path.toLowerCase()).toMatch(/image|photo/);
   });
 
   it('hashSha256 retourne hex string', async () => {
-    const { fileConverter } = await import('../../services/file-converter.js');
+    const { fileConverter } = await import('../../services/core-svc/file-converter.js');
     const blob = new Blob(['hello']);
     const hash = await fileConverter.hashSha256(blob);
     expect(typeof hash).toBe('string');

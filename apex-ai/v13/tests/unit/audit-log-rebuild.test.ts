@@ -7,7 +7,7 @@
  * tous les hashes à partir du break.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auditLog } from '../../services/audit-log.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('audit-log rebuildChainFrom + autoRepair (Kevin v13.3.36 P0)', () => {
   beforeEach(() => {

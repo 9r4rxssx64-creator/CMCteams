@@ -25,8 +25,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { auditLog } from '../../services/audit-log.js';
-import { autoBackup, type Backup } from '../../services/auto-backup.js';
+import { auditLog } from '../../services/observability/audit-log.js';
+import { autoBackup, type Backup } from '../../services/storage/auto-backup.js';
 
 describe('services/auto-backup', () => {
   beforeEach(() => {

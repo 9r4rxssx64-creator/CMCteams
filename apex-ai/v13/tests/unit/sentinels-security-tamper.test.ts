@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sentinels, registerCoreSentinels } from '../../services/sentinels.js';
-import { auditLog } from '../../services/audit-log.js';
+import { sentinels, registerCoreSentinels } from '../../services/sentinels/sentinels.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('sentinels security-watch tamper v13.3.24', () => {
   beforeEach(() => {
@@ -65,7 +65,7 @@ describe('sentinels security-watch tamper v13.3.24', () => {
   });
 
   it('v13.3.70 : sentinelAutoRepair.securityRebuildChain répare manuellement (UI button)', async () => {
-    const { sentinelAutoRepair } = await import('../../services/sentinel-auto-repair.js');
+    const { sentinelAutoRepair } = await import('../../services/sentinels/sentinel-auto-repair.js');
     auditLog.init();
     await auditLog.record('test.a');
     await auditLog.record('test.b');

@@ -11,7 +11,7 @@
  * - Mode exclusif anticipé : force exclusif dès 10 samples
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { voicePrint, type VoiceFingerprint } from '../../services/voice-print.js';
+import { voicePrint, type VoiceFingerprint } from '../../services/ai/voice-print.js';
 
 function makeFakeAudioBuffer(samples: number[], sampleRate = 16000): AudioBuffer {
   const data = new Float32Array(samples);

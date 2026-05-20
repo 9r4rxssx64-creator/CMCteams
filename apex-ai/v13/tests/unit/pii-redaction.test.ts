@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { redactPII, redactMessageContent } from '../../services/pii-redaction.js';
+import { redactPII, redactMessageContent } from '../../services/vault/pii-redaction.js';
 
 describe('redactPII', () => {
   it('redacte les emails', () => {

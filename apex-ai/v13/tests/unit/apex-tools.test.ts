@@ -4,8 +4,8 @@
  * project_status, memory_recall/add, search_latest_tools.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { apexTools } from '../../services/apex-tools.js';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexTools } from '../../services/core-svc/apex-tools.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 describe('Apex Tools Registry (Jet 8 path Apex IA full power)', () => {
   beforeEach(() => {

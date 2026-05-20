@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { exportVaultJson } from '../../features/vault/index.js';
-import { apexVaultImport } from '../../services/apex-vault-import.js';
+import { apexVaultImport } from '../../services/vault/apex-vault-import.js';
 import type { VaultEntry } from '../../features/vault/index.js';
 
 /* Mock vault.setKey + vault.decryptAuto pour ne pas dépendre du flow PIN admin */

@@ -9,7 +9,7 @@
  *  - setWorkerUrl override storage
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apexSecretsProxy } from '../../services/apex-secrets-proxy-client.js';
+import { apexSecretsProxy } from '../../services/integrations/apex-secrets-proxy-client.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
@@ -113,7 +113,7 @@ describe('apex-secrets-proxy-client (v13.4.129 Kevin)', () => {
     });
 
     it('throw si PIN admin absent du vault', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       vi.mocked(vault.readKey).mockResolvedValue(null);
       await expect(
         apexSecretsProxy.proxyFetch('anthropic', '/v1/messages'),

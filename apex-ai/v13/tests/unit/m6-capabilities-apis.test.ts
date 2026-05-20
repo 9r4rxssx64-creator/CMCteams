@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { pwaCapabilities } from '../../services/pwa-capabilities.js';
+import { pwaCapabilities } from '../../services/core-svc/pwa-capabilities.js';
 
 describe('M6 — PWA capabilities registry', () => {
   beforeEach(() => {

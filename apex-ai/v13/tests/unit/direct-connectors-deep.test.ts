@@ -15,8 +15,8 @@ vi.mock('../../services/vault.js', () => ({
   vault: { readKey: vi.fn() },
 }));
 
-import { directConnectors, DIRECT_CONNECTORS } from '../../services/direct-connectors-registry.js';
-import { vault } from '../../services/vault.js';
+import { directConnectors, DIRECT_CONNECTORS } from '../../services/integrations/direct-connectors-registry.js';
+import { vault } from '../../services/vault/vault.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

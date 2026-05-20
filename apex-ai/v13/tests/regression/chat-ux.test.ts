@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { voicesRegistry } from '../../services/voices-registry.js';
+import { voicesRegistry } from '../../services/ai/voices-registry.js';
 
 describe('REGRESSION UX — chat header compact (v13.3.72)', () => {
   it("REGRESSION v13.3.72 — features/chat/index.ts contient le code FAB scroll-to-bottom", async () => {

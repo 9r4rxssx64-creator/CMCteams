@@ -12,10 +12,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ADMIN_ID } from '../../core/bootstrap.js';
 import { events } from '../../core/events.js';
 import { store } from '../../core/store.js';
-import { adminCommands, type AdminCommand } from '../../services/admin-commands.js';
-import { adminCommandsListener } from '../../services/admin-commands-listener.js';
-import { apexTools } from '../../services/apex-tools.js';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { adminCommands, type AdminCommand } from '../../services/admin/admin-commands.js';
+import { adminCommandsListener } from '../../services/admin/admin-commands-listener.js';
+import { apexTools } from '../../services/core-svc/apex-tools.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 const FB_KEY = 'ax_admin_commands_pending';
 

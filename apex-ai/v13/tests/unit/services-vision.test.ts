@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { vision } from '../../services/vision.js';
+import { vision } from '../../services/ai/vision.js';
 
 /* Helper : crée un Blob image fake avec la taille et le type voulus */
 function makeBlob(sizeBytes: number, type = 'image/jpeg'): Blob {

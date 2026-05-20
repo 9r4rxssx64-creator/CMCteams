@@ -3,7 +3,7 @@
  * Cible : pushIncoming, processIncoming, tryAutoFix, escalateToClaudeCode, AUTOFIX_WHITELIST.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { telemetry } from '../../services/telemetry.js';
+import { telemetry } from '../../services/observability/telemetry.js';
 
 describe('Telemetry coverage extension', () => {
   beforeEach(() => {

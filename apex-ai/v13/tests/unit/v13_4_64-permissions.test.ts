@@ -8,7 +8,7 @@
  * famille = AUCUNE règle externe". → vérifier admin TOUJOURS auto sur tout.
  */
 import { describe, it, expect } from 'vitest';
-import { permissions } from '../../services/permissions.js';
+import { permissions } from '../../services/auth/permissions.js';
 
 describe('v13.4.64 permissions — API publique', () => {
   it("singleton défini + 4 méthodes attendues", () => {

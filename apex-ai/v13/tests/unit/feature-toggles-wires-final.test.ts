@@ -19,8 +19,8 @@ import { join, resolve } from 'node:path';
 
 import { describe, it, expect } from 'vitest';
 
-import { featureToggles } from '../../services/feature-toggles.js';
-import { SENTINEL_TOGGLE_IDS_COVERED } from '../../services/sentinels.js';
+import { featureToggles } from '../../services/auth/feature-toggles.js';
+import { SENTINEL_TOGGLE_IDS_COVERED } from '../../services/sentinels/sentinels.js';
 
 const ROOT = resolve(__dirname, '..', '..');
 const SCAN_DIRS = ['services', 'features', 'core', 'ui', 'workers'];

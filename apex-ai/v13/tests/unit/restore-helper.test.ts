@@ -21,7 +21,7 @@ const { mockRealtimeBackup, mockAuditLog } = vi.hoisted(() => ({
 vi.mock('../../services/realtime-backup.js', () => ({ realtimeBackup: mockRealtimeBackup }));
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { restoreHelper } from '../../services/restore-helper.js';
+import { restoreHelper } from '../../services/storage/restore-helper.js';
 
 const fakeSnap = (id: string, kind: string, data: unknown): {
   id: string; kind: string; ts: number; data: unknown; size_bytes: number; hash?: string;

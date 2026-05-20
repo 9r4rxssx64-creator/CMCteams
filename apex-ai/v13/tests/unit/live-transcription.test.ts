@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { liveTranscription } from '../../services/live-transcription.js';
+import { liveTranscription } from '../../services/ai/live-transcription.js';
 
 interface FakeRec {
   continuous: boolean;

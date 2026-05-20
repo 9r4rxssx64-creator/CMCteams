@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../../core/logger.js';
-import { auditLog } from '../audit-log.js';
+import { auditLog } from '../observability/audit-log.js';
 
 const XLSX_CDN = 'https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';
 

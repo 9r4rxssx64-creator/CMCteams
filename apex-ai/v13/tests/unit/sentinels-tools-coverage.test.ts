@@ -9,9 +9,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { capabilities } from '../../services/capabilities.js';
-import { sentinels } from '../../services/sentinels.js';
-import { sentinelsRegistry, bootstrapSentinelsRegistry } from '../../services/sentinels-registry.js';
+import { capabilities } from '../../services/core-svc/capabilities.js';
+import { sentinels } from '../../services/sentinels/sentinels.js';
+import { sentinelsRegistry, bootstrapSentinelsRegistry } from '../../services/sentinels/sentinels-registry.js';
 
 describe('tools-watch coverage v13.3.24', () => {
   beforeEach(() => {

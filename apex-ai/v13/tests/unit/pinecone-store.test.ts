@@ -53,7 +53,7 @@ describe('PineconeStore — fallback gracieux', () => {
   });
 
   it('init() sans clé → fallback actif, pas de crash', async () => {
-    const { pineconeStore } = await import('../../services/pinecone-store.js');
+    const { pineconeStore } = await import('../../services/storage/pinecone-store.js');
     const ok = await pineconeStore.init();
     expect(ok).toBe(false);
     const status = await pineconeStore.getStatus();
@@ -68,7 +68,7 @@ describe('PineconeStore — fallback gracieux', () => {
       { id: 'f2', text: 'Allergie fruits de mer', importance: 95, category: 'profile', scope: 'kevin' },
       { id: 'f3', text: 'Casino game blackjack', importance: 30, category: 'facts', scope: 'kevin' },
     ];
-    const { pineconeStore } = await import('../../services/pinecone-store.js');
+    const { pineconeStore } = await import('../../services/storage/pinecone-store.js');
     const matches = await pineconeStore.query({ text: 'Monaco', topK: 2 });
     expect(Array.isArray(matches)).toBe(true);
     expect(matches.length).toBeGreaterThanOrEqual(1);
@@ -87,7 +87,7 @@ describe('PineconeStore — fallback gracieux', () => {
       return new Response('{}', { status: 200 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const { pineconeStore } = await import('../../services/pinecone-store.js');
+    const { pineconeStore } = await import('../../services/storage/pinecone-store.js');
     const ok = await pineconeStore.init();
     expect(ok).toBe(true);
     const status = await pineconeStore.getStatus();
@@ -111,7 +111,7 @@ describe('PineconeStore — fallback gracieux', () => {
       return new Response('{}', { status: 404 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const { pineconeStore } = await import('../../services/pinecone-store.js');
+    const { pineconeStore } = await import('../../services/storage/pinecone-store.js');
     const r = await pineconeStore.upsertVectors([
       { id: 'v1', values: [0.1, 0.2, 0.3], metadata: { cat: 'test' } },
       { id: 'v2', values: [0.4, 0.5, 0.6] },
@@ -143,7 +143,7 @@ describe('PineconeStore — fallback gracieux', () => {
       return new Response('{}', { status: 404 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const { pineconeStore } = await import('../../services/pinecone-store.js');
+    const { pineconeStore } = await import('../../services/storage/pinecone-store.js');
     /* Force re-init pour prendre en compte la clé mockée */
     await pineconeStore.reload();
     const r = await pineconeStore.resyncFromLocalFacts();
@@ -165,7 +165,7 @@ describe('PineconeStore — fallback gracieux', () => {
       throw new Error('network down');
     });
     vi.stubGlobal('fetch', fetchMock);
-    const { pineconeStore } = await import('../../services/pinecone-store.js');
+    const { pineconeStore } = await import('../../services/storage/pinecone-store.js');
     await pineconeStore.reload();
     const matches = await pineconeStore.query({ text: 'important', topK: 5 });
     expect(matches.length).toBeGreaterThanOrEqual(1);

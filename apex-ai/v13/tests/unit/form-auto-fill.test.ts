@@ -40,7 +40,7 @@ import {
   isWritableKey,
   listPendingAutofills,
   listWritableKeys,
-} from '../../services/form-auto-fill.js';
+} from '../../services/core-svc/form-auto-fill.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

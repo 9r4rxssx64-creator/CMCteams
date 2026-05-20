@@ -2,16 +2,16 @@
  * Boost final coverage tous services <80% (Tests 19→20).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { pushAutoInit } from '../../services/push-auto-init.js';
-import { smartToolsSuggester } from '../../services/smart-tools-suggester.js';
-import { tokensDashboard } from '../../services/tokens-dashboard.js';
-import { externalIntegrations } from '../../services/external-integrations.js';
-import { aiSafety } from '../../services/ai-safety.js';
-import { ads } from '../../services/ads.js';
-import { businessIntelligence } from '../../services/business-intelligence.js';
-import { financialDashboard } from '../../services/financial-dashboard.js';
-import { consumptionMonitor } from '../../services/consumption-monitor.js';
-import { commerce } from '../../services/commerce.js';
+import { pushAutoInit } from '../../services/integrations/push-auto-init.js';
+import { smartToolsSuggester } from '../../services/ai/smart-tools-suggester.js';
+import { tokensDashboard } from '../../services/observability/tokens-dashboard.js';
+import { externalIntegrations } from '../../services/integrations/external-integrations.js';
+import { aiSafety } from '../../services/ai/ai-safety.js';
+import { ads } from '../../services/integrations/ads.js';
+import { businessIntelligence } from '../../services/observability/business-intelligence.js';
+import { financialDashboard } from '../../services/observability/financial-dashboard.js';
+import { consumptionMonitor } from '../../services/observability/consumption-monitor.js';
+import { commerce } from '../../services/integrations/commerce.js';
 
 describe('Coverage final push (services restants vers 95%+)', () => {
   beforeEach(() => {

@@ -31,7 +31,7 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 
 /* Re-export escapeHtml for backward compatibility (tests import from this module). */
 export { escapeHtml };

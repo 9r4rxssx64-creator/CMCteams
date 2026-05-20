@@ -14,7 +14,7 @@ import {
   pushPlanningToCmc,
   detectAndPushIfPlanning,
   _internals,
-} from '../../services/cmc-planning-bridge.js';
+} from '../../services/integrations/cmc-planning-bridge.js';
 import { store } from '../../core/store.js';
 
 const REAL_SBM_PIT_BOSS_TEXT = `

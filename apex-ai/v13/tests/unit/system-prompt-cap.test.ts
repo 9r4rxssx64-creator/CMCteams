@@ -14,7 +14,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { memory } from '../../core/memory.js';
-import { aiRouter } from '../../services/ai-router.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
 
 const KEVIN = { id: 'kdmc_admin', name: 'Kevin DESARZENS' };
 

@@ -16,7 +16,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { broadlinkBridge } from '../../services/broadlink-bridge.js';
+import { broadlinkBridge } from '../../services/integrations/broadlink-bridge.js';
 
 const STORAGE_KEYS = [
   'ax_broadlink_token',

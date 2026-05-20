@@ -17,7 +17,7 @@ import {
   ALL_PROVIDERS_LOGICAL,
   MIN_HEALTHY_PROVIDERS,
   aiRouter,
-} from '../../services/ai-router.js';
+} from '../../services/ai/ai-router.js';
 
 describe('v13.4.50 estimateTokens — heuristique ratio chars/token', () => {
   it("texte vide → 0 tokens", () => {

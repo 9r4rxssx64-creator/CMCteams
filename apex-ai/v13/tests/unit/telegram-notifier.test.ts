@@ -4,7 +4,7 @@
  * Module : services/telegram-notifier.ts (155 stmts, était 0% coverage).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { telegramNotifier } from '../../services/telegram-notifier.js';
+import { telegramNotifier } from '../../services/integrations/telegram-notifier.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

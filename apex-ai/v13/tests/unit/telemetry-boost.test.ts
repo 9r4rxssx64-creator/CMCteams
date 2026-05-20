@@ -3,7 +3,7 @@
  * Couvre processIncoming, tryAutoFix, escalateToClaudeCode (méthodes critiques).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { telemetry, type TelemetryEntry } from '../../services/telemetry.js';
+import { telemetry, type TelemetryEntry } from '../../services/observability/telemetry.js';
 
 describe('Telemetry coverage boost (P1 audit)', () => {
   beforeEach(() => {

@@ -13,8 +13,8 @@
  */
 
 import { store } from '../../core/store.js';
-import { consumptionMonitor } from '../../services/consumption-monitor.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { consumptionMonitor } from '../../services/observability/consumption-monitor.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 
 /**
  * Génère HTML carte service consumption (live counter).

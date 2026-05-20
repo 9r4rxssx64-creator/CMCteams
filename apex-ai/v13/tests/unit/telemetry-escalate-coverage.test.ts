@@ -8,8 +8,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { firebase } from '../../services/firebase.js';
-import { telemetry, type TelemetryEntry, type ClaudeTodo } from '../../services/telemetry.js';
+import { firebase } from '../../services/storage/firebase.js';
+import { telemetry, type TelemetryEntry, type ClaudeTodo } from '../../services/observability/telemetry.js';
 
 describe('telemetry escalateToClaudeCode coverage', () => {
   beforeEach(() => {

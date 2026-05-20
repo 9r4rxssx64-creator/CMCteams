@@ -9,7 +9,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { apexRuntimeDiagnostic } from '../../services/apex-runtime-diagnostic.js';
+import { apexRuntimeDiagnostic } from '../../services/admin/apex-runtime-diagnostic.js';
 
 describe('apex-runtime-diagnostic (v13.4.143 coverage)', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CREDENTIAL_PATTERNS, detectAllCredentials } from '../../services/credential-patterns';
+import { CREDENTIAL_PATTERNS, detectAllCredentials } from '../../services/vault/credential-patterns';
 
 describe('credential-patterns storageKey distinct (v13.4.6)', () => {
   it('aucun storageKey dupliqué (sauf __FORBIDDEN_SEED__)', () => {

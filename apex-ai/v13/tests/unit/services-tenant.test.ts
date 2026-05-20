@@ -15,8 +15,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { auditLog } from '../../services/audit-log.js';
-import { tenantManager, type TenantPlan } from '../../services/tenant.js';
+import { auditLog } from '../../services/observability/audit-log.js';
+import { tenantManager, type TenantPlan } from '../../services/auth/tenant.js';
 
 const ADMIN = 'kdmc_admin';
 

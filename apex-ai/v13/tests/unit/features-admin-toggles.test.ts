@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { store } from '../../core/store.js';
 import { _resetState, render } from '../../features/admin-toggles/index.js';
-import { featureToggles } from '../../services/feature-toggles.js';
+import { featureToggles } from '../../services/auth/feature-toggles.js';
 
 function makeRoot(): HTMLElement {
   const el = document.createElement('div');

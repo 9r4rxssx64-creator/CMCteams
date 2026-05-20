@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sentinels, registerCoreSentinels } from '../../services/sentinels.js';
+import { sentinels, registerCoreSentinels } from '../../services/sentinels/sentinels.js';
 
 describe('sentinels coverage push 56% → 90%+', () => {
   beforeEach(() => {

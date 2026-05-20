@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('vault additional coverage', () => {
   beforeEach(() => {
@@ -257,7 +257,7 @@ describe('vault additional coverage', () => {
        * Test : si AUSSI Firebase fail (offline réaliste), retour ok=false. */
       vi.spyOn(crypto.subtle, 'encrypt').mockRejectedValue(new Error('encrypt failed'));
       /* Mock firebase.write pour reject — simule offline */
-      const fbMod = await import('../../services/firebase.js');
+      const fbMod = await import('../../services/storage/firebase.js');
       vi.spyOn(fbMod.firebase, 'write').mockRejectedValue(new Error('offline'));
       const r = await vault.setKey('ax_fail_key', 'value');
       expect(r.ok).toBe(false);

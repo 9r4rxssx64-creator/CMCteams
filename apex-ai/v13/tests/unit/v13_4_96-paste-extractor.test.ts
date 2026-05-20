@@ -5,7 +5,7 @@
  * Fix : extracteur multi-type sur tout paste (URLs/handles/emails/IBAN/phone/etc).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { apexPasteExtractor } from '../../services/apex-paste-extractor.js';
+import { apexPasteExtractor } from '../../services/admin/apex-paste-extractor.js';
 
 describe('v13.4.96 apexPasteExtractor.extract()', () => {
   beforeEach(() => {

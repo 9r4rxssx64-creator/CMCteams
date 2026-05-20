@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { firebaseQueue } from '../../services/firebase-queue.js';
+import { firebaseQueue } from '../../services/storage/firebase-queue.js';
 
 describe('firebase-queue deep tests Jet 7.9', () => {
   beforeEach(() => {

@@ -2,7 +2,7 @@
  * P1 TESTS (audit v13.3.0) : sentry-bridge.ts coverage 62.53% → 80%+.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sentryBridge } from '../../services/sentry-bridge.js';
+import { sentryBridge } from '../../services/observability/sentry-bridge.js';
 
 describe('Sentry Bridge boost (P1 audit)', () => {
   beforeEach(() => {

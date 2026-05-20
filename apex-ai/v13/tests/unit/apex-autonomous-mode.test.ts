@@ -55,9 +55,9 @@ vi.mock('../../services/push-notifications.js', () => ({
 }));
 
 /* Import APRÈS les mocks pour qu'ils soient appliqués */
-async function importFresh(): Promise<typeof import('../../services/apex-autonomous-mode.js')> {
+async function importFresh(): Promise<typeof import('../../services/admin/apex-autonomous-mode.js')> {
   vi.resetModules();
-  return (await import('../../services/apex-autonomous-mode.js')) as unknown as typeof import('../../services/apex-autonomous-mode.js');
+  return (await import('../../services/admin/apex-autonomous-mode.js')) as unknown as typeof import('../../services/admin/apex-autonomous-mode.js');
 }
 
 describe('apex-autonomous-mode v13.4.5', () => {
@@ -208,7 +208,7 @@ describe('autonomous-watch v13.4.5', () => {
 
   it('start() est idempotent et getStats() reflète l\'état', async () => {
     vi.resetModules();
-    const { autonomousWatch } = await import('../../services/autonomous-watch.js');
+    const { autonomousWatch } = await import('../../services/sentinels/autonomous-watch.js');
     autonomousWatch.start();
     autonomousWatch.start(); /* double start safe */
     const stats = autonomousWatch.getStats();
@@ -220,7 +220,7 @@ describe('autonomous-watch v13.4.5', () => {
 
   it('forceTick() délègue à apexAutonomousMode.tick()', async () => {
     vi.resetModules();
-    const { autonomousWatch } = await import('../../services/autonomous-watch.js');
+    const { autonomousWatch } = await import('../../services/sentinels/autonomous-watch.js');
     const before = autonomousWatch.getStats().tickCount;
     await autonomousWatch.forceTick();
     const after = autonomousWatch.getStats().tickCount;

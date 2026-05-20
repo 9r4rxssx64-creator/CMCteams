@@ -9,7 +9,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { sequentialThinking } from '../../services/sequential-thinking.js';
+import { sequentialThinking } from '../../services/ai/sequential-thinking.js';
 
 describe('sequential-thinking deep (v13.4.157)', () => {
   beforeEach(async () => {

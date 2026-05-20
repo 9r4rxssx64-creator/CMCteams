@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { badgeCloner } from '../../services/badge-cloner.js';
+import { badgeCloner } from '../../services/integrations/badge-cloner.js';
 
 const STORAGE_KEY = 'apex_v13_badges_scanned';
 

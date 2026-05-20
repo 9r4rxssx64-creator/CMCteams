@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { render } from '../../features/sentinels/index.js';
-import { bootstrapSentinelsRegistry, sentinelsRegistry } from '../../services/sentinels-registry.js';
+import { bootstrapSentinelsRegistry, sentinelsRegistry } from '../../services/sentinels/sentinels-registry.js';
 
 describe('features/sentinels — UI render', () => {
   let root: HTMLDivElement;
@@ -68,7 +68,7 @@ describe('features/sentinels — UI render', () => {
 
   it('escape XSS : noms sentinelles encodés', async () => {
     /* Ajout d'une sentinelle avec caractères spéciaux pour vérifier escape */
-    const { sentinels } = await import('../../services/sentinels.js');
+    const { sentinels } = await import('../../services/sentinels/sentinels.js');
     sentinels.register({
       id: 'xss-test-sentinel',
       name: '<script>alert(1)</script>',

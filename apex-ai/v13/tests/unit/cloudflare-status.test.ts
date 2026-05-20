@@ -11,7 +11,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cloudflareStatus, recordHttp503, recordHttpOk, init } from '../../services/cloudflare-status.js';
+import { cloudflareStatus, recordHttp503, recordHttpOk, init } from '../../services/observability/cloudflare-status.js';
 
 const BANNER_ID = 'apex-cloudflare-infra-banner';
 const KEY = 'apex_v13_last_cloudflare_503_ts';

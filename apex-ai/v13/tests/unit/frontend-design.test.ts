@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { frontendDesign } from '../../services/frontend-design.js';
+import { frontendDesign } from '../../services/core-svc/frontend-design.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

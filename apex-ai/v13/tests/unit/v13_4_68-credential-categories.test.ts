@@ -11,7 +11,7 @@ import {
   RECOMMENDED_KEYS,
   getCriticality,
   computeStats,
-} from '../../services/credential-categories.js';
+} from '../../services/vault/credential-categories.js';
 
 describe('v13.4.68 credential-categories — constants exposées', () => {
   it("ESSENTIAL_KEYS array non-vide ≤ 8", () => {

@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 /* Helpers privés exposés pour tests via cast unknown.
    On ne change pas le contrat public — on teste l'effet observable. */

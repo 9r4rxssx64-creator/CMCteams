@@ -16,8 +16,8 @@
  * "Si warning correction automatique et autonome. Toujours."
  */
 
-import { agentWatches, type AgentReport, type AgentSeverity } from '../services/agent-watches.js';
-import { auditLog } from '../services/audit-log.js';
+import { agentWatches, type AgentReport, type AgentSeverity } from '../services/sentinels/agent-watches.js';
+import { auditLog } from '../services/observability/audit-log.js';
 
 import { logger } from './logger.js';
 

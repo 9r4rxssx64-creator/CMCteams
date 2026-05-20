@@ -5,7 +5,7 @@
  * Kevin règle "rien perdu jamais" — cross-device sync robuste.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { firebaseQueue } from '../../services/firebase-queue.js';
+import { firebaseQueue } from '../../services/storage/firebase-queue.js';
 
 describe('v13.4.60 firebase-queue — offline persistence', () => {
   beforeEach(() => {

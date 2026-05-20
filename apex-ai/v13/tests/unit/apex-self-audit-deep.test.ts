@@ -64,14 +64,14 @@ vi.mock('../../services/context-loader.js', () => ({
   contextLoader: { load: vi.fn(async () => ({ rules: ['rule1'] })) },
 }));
 
-import { apexSelfAudit } from '../../services/apex-self-audit.js';
-import { vault } from '../../services/vault.js';
-import { secretScanner } from '../../services/secret-scanner.js';
-import { storageCompressor } from '../../services/storage-compressor.js';
-import { sentinels } from '../../services/sentinels.js';
-import { lifecycle } from '../../services/service-lifecycle.js';
-import { aiRoutingPolicy } from '../../services/ai-routing-policy.js';
-import { soc2 } from '../../services/soc2-compliance.js';
+import { apexSelfAudit } from '../../services/admin/apex-self-audit.js';
+import { vault } from '../../services/vault/vault.js';
+import { secretScanner } from '../../services/vault/secret-scanner.js';
+import { storageCompressor } from '../../services/storage/storage-compressor.js';
+import { sentinels } from '../../services/sentinels/sentinels.js';
+import { lifecycle } from '../../services/core-svc/service-lifecycle.js';
+import { aiRoutingPolicy } from '../../services/ai/ai-routing-policy.js';
+import { soc2 } from '../../services/auth/soc2-compliance.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

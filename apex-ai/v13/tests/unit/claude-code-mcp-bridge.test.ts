@@ -16,8 +16,8 @@ vi.mock('../../services/claude-bridge.js', () => ({
   },
 }));
 
-import { claudeCodeMCPBridge, MCP_CATALOG } from '../../services/claude-code-mcp-bridge.js';
-import { claudeBridge } from '../../services/claude-bridge.js';
+import { claudeCodeMCPBridge, MCP_CATALOG } from '../../services/ai/claude-code-mcp-bridge.js';
+import { claudeBridge } from '../../services/ai/claude-bridge.js';
 
 describe('claude-code-mcp-bridge (v13.4.140 coverage)', () => {
   beforeEach(() => {

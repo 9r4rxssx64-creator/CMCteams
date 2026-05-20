@@ -7,7 +7,7 @@
  * pour modules), tester Fuse.js direct.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { search } from '../../services/search.js';
+import { search } from '../../services/integrations/search.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

@@ -18,7 +18,7 @@
  * Animations CSS : count-up, pulse, sparkline draw, heatmap fade-in.
  */
 
-import { financialDashboard, type FinancialServiceLine } from '../../services/financial-dashboard.js';
+import { financialDashboard, type FinancialServiceLine } from '../../services/observability/financial-dashboard.js';
 
 const CATEGORY_LABELS: Record<FinancialServiceLine['category'], string> = {
   ai: '🧠 Intelligence Artificielle',

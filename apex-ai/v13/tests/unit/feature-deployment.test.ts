@@ -3,7 +3,7 @@
  * Tests minutieux qualité expert — pas rapide.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { featureDeployment } from '../../services/feature-deployment.js';
+import { featureDeployment } from '../../services/auth/feature-deployment.js';
 
 describe('Feature Deployment (boutons admin + AI modes)', () => {
   beforeEach(() => {

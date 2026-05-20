@@ -2,7 +2,7 @@
  * Tests self-healing.ts (Kevin "auto-géré, auto-corrige, pas problème mémoire").
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { selfHealing } from '../../services/self-healing.js';
+import { selfHealing } from '../../services/sentinels/self-healing.js';
 
 describe('Self-Healing (auto-gestion mémoire + corrections)', () => {
   beforeEach(() => {

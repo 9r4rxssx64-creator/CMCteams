@@ -2,7 +2,7 @@
  * Tests push-notifications.ts (anti-théâtre : prouver wiring + rate limit + persist).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { pushNotifications } from '../../services/push-notifications.js';
+import { pushNotifications } from '../../services/integrations/push-notifications.js';
 
 describe('Push Notifications (anti-théâtre)', () => {
   beforeEach(() => {

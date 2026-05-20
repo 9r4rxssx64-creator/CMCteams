@@ -53,7 +53,7 @@ vi.mock('../../services/vault-deep-recovery.js', () => ({
   vaultDeepRecovery: { scanAndRestoreAll: () => vaultDeepScanMock() },
 }));
 
-import { autoTestEverything } from '../../services/auto-test-everything.js';
+import { autoTestEverything } from '../../services/admin/auto-test-everything.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

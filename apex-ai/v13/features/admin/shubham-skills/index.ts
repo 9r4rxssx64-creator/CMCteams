@@ -20,11 +20,11 @@ import { createCleanupScope, type CleanupScope } from '../../../core/listener-cl
 import { logger } from '../../../core/logger.js';
 import { router } from '../../../core/router.js';
 import { store } from '../../../core/store.js';
-import { agentBrowser, type AgentBrowserResult } from '../../../services/agent-browser.js';
-import { hyperframes, type HyperFrameComposition } from '../../../services/hyperframes.js';
-import { impeccableDesign, type ImpeccableResult } from '../../../services/impeccable-design.js';
-import { iosSimulator } from '../../../services/ios-simulator.js';
-import { marketingPsy, type MarketingOutput, type CialdiniTrigger } from '../../../services/marketing-psy.js';
+import { agentBrowser, type AgentBrowserResult } from '../../../services/integrations/agent-browser.js';
+import { hyperframes, type HyperFrameComposition } from '../../../services/core-svc/hyperframes.js';
+import { impeccableDesign, type ImpeccableResult } from '../../../services/core-svc/impeccable-design.js';
+import { iosSimulator } from '../../../services/integrations/ios-simulator.js';
+import { marketingPsy, type MarketingOutput, type CialdiniTrigger } from '../../../services/integrations/marketing-psy.js';
 import { haptic } from '../../../ui/haptic.js';
 import { modalSheet } from '../../../ui/modal-sheet.js';
 import { toast } from '../../../ui/toast.js';

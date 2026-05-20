@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { telemetry } from '../../services/telemetry.js';
+import { telemetry } from '../../services/observability/telemetry.js';
 
 describe('telemetry service', () => {
   beforeEach(() => {

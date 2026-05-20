@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { autoUltraReset } from '../../services/auto-ultra-reset.js';
+import { autoUltraReset } from '../../services/storage/auto-ultra-reset.js';
 
 describe('auto-ultra-reset deep (v13.4.158)', () => {
   beforeEach(() => {

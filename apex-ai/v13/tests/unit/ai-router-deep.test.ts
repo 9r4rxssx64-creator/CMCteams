@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { aiRouter } from '../../services/ai-router.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
 
 describe('ai-router deep tests (Jet 7.9)', () => {
   beforeEach(() => {

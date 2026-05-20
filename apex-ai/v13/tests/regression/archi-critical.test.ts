@@ -12,8 +12,8 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { featureToggles } from '../../services/feature-toggles.js';
-import { voicesRegistry } from '../../services/voices-registry.js';
+import { featureToggles } from '../../services/auth/feature-toggles.js';
+import { voicesRegistry } from '../../services/ai/voices-registry.js';
 
 describe('REGRESSION ARCHI — feature-toggles 117 (Sprint 9 Kevin v13.0.21)', () => {
   it('REGRESSION CRITIQUE — au moins 117 toggles wired (cf. CLAUDE.md "117/117 toggles")', () => {

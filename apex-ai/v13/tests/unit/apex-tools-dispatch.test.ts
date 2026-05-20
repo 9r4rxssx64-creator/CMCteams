@@ -6,7 +6,7 @@
  *         + dispatch whitelist anti eval.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 describe('Apex Tools Dispatch (P0 coverage 37→70%)', () => {
   beforeEach(() => {

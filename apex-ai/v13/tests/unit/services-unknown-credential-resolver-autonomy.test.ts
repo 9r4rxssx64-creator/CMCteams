@@ -11,7 +11,7 @@
  * - discoverUrlsForService (UI admin)
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { unknownCredentialResolver } from '../../services/unknown-credential-resolver.js';
+import { unknownCredentialResolver } from '../../services/vault/unknown-credential-resolver.js';
 
 describe('unknown-credential-resolver — Autonomie web search + HEAD validation', () => {
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('unknown-credential-resolver — Autonomie web search + HEAD validation
   describe('Web search via Brave (vault key)', () => {
     it('utilise Brave search si clé vault dispo', async () => {
       /* Stub vault.readKey → ax_brave_key returns "fake-brave-key" */
-      const vaultMod = await import('../../services/vault.js');
+      const vaultMod = await import('../../services/vault/vault.js');
       vi.spyOn(vaultMod.vault, 'readKey').mockImplementation(async (k: string) => {
         if (k === 'ax_brave_key') return 'fake-brave-key';
         return '';
@@ -53,7 +53,7 @@ describe('unknown-credential-resolver — Autonomie web search + HEAD validation
 
   describe('Web search via Tavily (vault fallback)', () => {
     it('utilise Tavily si Brave absent', async () => {
-      const vaultMod = await import('../../services/vault.js');
+      const vaultMod = await import('../../services/vault/vault.js');
       vi.spyOn(vaultMod.vault, 'readKey').mockImplementation(async (k: string) => {
         if (k === 'ax_tavily_key') return 'fake-tavily';
         return '';
@@ -78,7 +78,7 @@ describe('unknown-credential-resolver — Autonomie web search + HEAD validation
 
   describe('DuckDuckGo HTML scrape fallback', () => {
     it('parse résultats DDG HTML quand Brave + Tavily KO', async () => {
-      const vaultMod = await import('../../services/vault.js');
+      const vaultMod = await import('../../services/vault/vault.js');
       vi.spyOn(vaultMod.vault, 'readKey').mockResolvedValue('');
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
         const url = String(input);
@@ -95,7 +95,7 @@ describe('unknown-credential-resolver — Autonomie web search + HEAD validation
     });
 
     it('fallback regex simple si format DDG change', async () => {
-      const vaultMod = await import('../../services/vault.js');
+      const vaultMod = await import('../../services/vault/vault.js');
       vi.spyOn(vaultMod.vault, 'readKey').mockResolvedValue('');
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
         const url = String(input);
@@ -113,7 +113,7 @@ describe('unknown-credential-resolver — Autonomie web search + HEAD validation
     });
 
     it('DDG ok: false → null fallback générique', async () => {
-      const vaultMod = await import('../../services/vault.js');
+      const vaultMod = await import('../../services/vault/vault.js');
       vi.spyOn(vaultMod.vault, 'readKey').mockResolvedValue('');
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
         const url = String(input);
@@ -133,7 +133,7 @@ describe('unknown-credential-resolver — Autonomie web search + HEAD validation
 
   describe('HEAD validation URLs candidates', () => {
     it('confidence high si ≥2 URLs alive', async () => {
-      const vaultMod = await import('../../services/vault.js');
+      const vaultMod = await import('../../services/vault/vault.js');
       vi.spyOn(vaultMod.vault, 'readKey').mockResolvedValue('');
       let ddgCalls = 0;
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init?: RequestInit) => {
@@ -160,7 +160,7 @@ describe('unknown-credential-resolver — Autonomie web search + HEAD validation
     });
 
     it('confidence low si 0 URL alive', async () => {
-      const vaultMod = await import('../../services/vault.js');
+      const vaultMod = await import('../../services/vault/vault.js');
       vi.spyOn(vaultMod.vault, 'readKey').mockResolvedValue('');
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init?: RequestInit) => {
         const url = String(input);

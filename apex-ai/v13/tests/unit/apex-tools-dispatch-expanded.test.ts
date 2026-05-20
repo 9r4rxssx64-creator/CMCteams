@@ -3,7 +3,7 @@
  * Couvre les ~150 cases du dispatch + helpers privés (via execute admin).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 describe('apex-tools-dispatch expanded coverage', () => {
   beforeEach(() => {

@@ -3,7 +3,7 @@
  * Vérifie flux complet PIN per-user Laurence (Erreur #37 anti-régression).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { auth } from '../../services/auth';
+import { auth } from '../../services/auth/auth';
 
 describe('v13.4.8 — Laurence login flow + PIN per-user (anti-régression Erreur #37)', () => {
   beforeEach(() => {

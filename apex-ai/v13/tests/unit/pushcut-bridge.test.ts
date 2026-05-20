@@ -17,7 +17,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { pushcutBridge } from '../../services/pushcut-bridge.js';
+import { pushcutBridge } from '../../services/integrations/pushcut-bridge.js';
 
 const VALID_WEBHOOK = 'https://api.pushcut.io/v1/notifications/abc123';
 const STORAGE_KEYS = [

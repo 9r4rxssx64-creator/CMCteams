@@ -11,7 +11,7 @@
  *  - Anti-régression #44 (HARD LOGOUT préserve XP/streak/profil)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { auth } from '../../services/auth.js';
+import { auth } from '../../services/auth/auth.js';
 import { store } from '../../core/store.js';
 
 describe('v13.4.20 auth.login — premier login + PIN setup', () => {

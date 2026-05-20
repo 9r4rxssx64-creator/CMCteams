@@ -15,7 +15,7 @@
 import { escapeHtml } from '../../../core/escape-html.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
-import { skillsWatch } from '../../../services/skills-watch.js';
+import { skillsWatch } from '../../../services/sentinels/skills-watch.js';
 import { toast } from '../../../ui/toast.js';
 
 interface SkillInfo {
@@ -239,7 +239,7 @@ export function render(rootEl: HTMLElement): void {
       if (!skill) return;
       toast.info(`🧪 Test ${skill.tool}...`);
       try {
-        const { apexToolsDispatch } = await import('../../../services/apex-tools-dispatch.js');
+        const { apexToolsDispatch } = await import('../../../services/core-svc/apex-tools-dispatch.js');
         const result = await apexToolsDispatch.execute(skill.tool, skill.testParams, 'admin');
         const success = (result as { success?: boolean })?.success;
         if (success) {

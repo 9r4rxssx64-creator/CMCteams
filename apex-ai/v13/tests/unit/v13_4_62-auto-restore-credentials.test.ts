@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import {
   autoRestoreCredentials,
   ALIAS_GROUPS_EXPORT,
-} from '../../services/auto-restore-credentials.js';
+} from '../../services/vault/auto-restore-credentials.js';
 
 describe('v13.4.62 auto-restore-credentials — API publique', () => {
   it("singleton défini avec 4 méthodes attendues", () => {

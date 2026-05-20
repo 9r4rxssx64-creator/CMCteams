@@ -9,8 +9,8 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { credentialsRotationWatch } from '../../services/credentials-rotation-watch.js';
-import { multiKeyVault } from '../../services/multi-key-vault.js';
+import { credentialsRotationWatch } from '../../services/sentinels/credentials-rotation-watch.js';
+import { multiKeyVault } from '../../services/vault/multi-key-vault.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

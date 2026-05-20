@@ -17,7 +17,7 @@ const { mockSentinels, mockVault } = vi.hoisted(() => ({
 vi.mock('../../services/sentinels.js', () => ({ sentinels: mockSentinels }));
 vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
 
-import { registerKevinStackSentinels } from '../../services/apex-kevin-stack-sentinels.js';
+import { registerKevinStackSentinels } from '../../services/sentinels/apex-kevin-stack-sentinels.js';
 
 describe('apex-kevin-stack-sentinels (v13.4.149 coverage)', () => {
   beforeEach(() => {

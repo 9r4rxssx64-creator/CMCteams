@@ -2,7 +2,7 @@
  * Tests business-intelligence.ts (rapports auto + KPIs + insights).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { businessIntelligence } from '../../services/business-intelligence.js';
+import { businessIntelligence } from '../../services/observability/business-intelligence.js';
 
 describe('Business Intelligence (rapports auto)', () => {
   beforeEach(() => {

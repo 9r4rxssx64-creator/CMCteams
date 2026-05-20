@@ -20,7 +20,7 @@ vi.mock('../../services/feature-toggles.js', () => ({
   isFeatureEnabled: (id: string): boolean => mockFeatureToggles.isEnabled(id),
 }));
 
-import { pineconeStore } from '../../services/pinecone-store.js';
+import { pineconeStore } from '../../services/storage/pinecone-store.js';
 
 describe('pinecone-store deep (v13.4.152)', () => {
   beforeEach(() => {

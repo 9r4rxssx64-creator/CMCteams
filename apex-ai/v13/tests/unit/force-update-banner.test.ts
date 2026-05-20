@@ -14,7 +14,7 @@ vi.mock('../../core/bootstrap.js', () => ({
   ADMIN_ID: 'kdmc_admin',
 }));
 
-import { forceUpdateBanner } from '../../services/force-update-banner.js';
+import { forceUpdateBanner } from '../../services/core-svc/force-update-banner.js';
 
 describe('force-update-banner (v13.4.159 coverage)', () => {
   beforeEach(() => {

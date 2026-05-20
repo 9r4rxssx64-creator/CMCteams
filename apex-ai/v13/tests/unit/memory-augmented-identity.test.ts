@@ -16,7 +16,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { memory } from '../../core/memory.js';
 import { buildIdentitySection, APEX_IDENTITY } from '../../core/apex-identity.js';
-import { persistentMemory } from '../../services/persistent-memory-store.js';
+import { persistentMemory } from '../../services/storage/persistent-memory-store.js';
 
 describe('Mission Kevin 2026-05-08 — Mémoire augmentée identité', () => {
   beforeEach(() => {

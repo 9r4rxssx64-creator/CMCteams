@@ -22,7 +22,7 @@ import {
   summarizeResults,
   type PreflightCheck,
   type PreflightResult,
-} from '../../services/preflight.js';
+} from '../../services/core-svc/preflight.js';
 
 /* ============================================================
  * Helpers

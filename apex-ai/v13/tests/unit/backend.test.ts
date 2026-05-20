@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { backend } from '../../services/backend.js';
+import { backend } from '../../services/integrations/backend.js';
 
 describe('backend client (tests Jet 6.5)', () => {
   beforeEach(() => {

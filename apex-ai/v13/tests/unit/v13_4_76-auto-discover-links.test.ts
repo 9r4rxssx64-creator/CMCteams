@@ -6,7 +6,7 @@
  * nouveau credential".
  */
 import { describe, it, expect } from 'vitest';
-import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
+import { autoDiscoverLinks } from '../../services/integrations/auto-discover-links.js';
 
 describe('v13.4.76 auto-discover-links — API publique', () => {
   it("singleton défini avec méthodes attendues", () => {

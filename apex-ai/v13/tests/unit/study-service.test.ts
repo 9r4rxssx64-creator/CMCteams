@@ -2,7 +2,7 @@
  * Tests unitaires study-service (v13.3.53).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { studyService } from '../../services/study-service.js';
+import { studyService } from '../../services/integrations/study-service.js';
 
 describe('study-service', () => {
   beforeEach(() => {

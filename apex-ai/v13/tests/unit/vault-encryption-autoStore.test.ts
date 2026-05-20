@@ -4,7 +4,7 @@
  * Fix v13.0.12 : encryptAuto + decryptAuto via device-bound passphrase fallback.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('Vault autoStore encryption (P0 sécu fix)', () => {
   beforeEach(() => {

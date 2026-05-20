@@ -8,8 +8,8 @@ import {
   sentinelsRegistry,
   bootstrapSentinelsRegistry,
   type SentinelResult,
-} from '../../services/sentinels-registry.js';
-import { sentinels as legacy } from '../../services/sentinels.js';
+} from '../../services/sentinels/sentinels-registry.js';
+import { sentinels as legacy } from '../../services/sentinels/sentinels.js';
 
 const ESCALATION_KEY = 'ax_claude_todo';
 
@@ -378,7 +378,7 @@ describe('services/sentinels-registry — Boost MAX 18+', () => {
      * l'escalation pure (sans autoFix recovery), on utilise error-watch qui
      * lit `observability.getBuffer()` — on injecte un critical pending. */
     async function injectCriticalEvent(): Promise<void> {
-      const { observability } = await import('../../services/observability.js');
+      const { observability } = await import('../../services/observability/observability.js');
       observability.capture('critical', 'test.escalation', 'fake critical event');
     }
 
@@ -466,7 +466,7 @@ describe('services/sentinels-registry — Boost MAX 18+', () => {
       /* Sprint 13.3.17 : compliance-watch ne fail QUE si user logged-in.
        * Pour valider l'adaptation legacy ok=false→error, on utilise error-watch
        * avec un critical pending (pas d'autoFix → status reste error). */
-      const { observability } = await import('../../services/observability.js');
+      const { observability } = await import('../../services/observability/observability.js');
       observability.capture('critical', 'test.adapt', 'force fail');
       sentinelsRegistry.startAll();
       const r = await sentinelsRegistry.runOne('error-watch');

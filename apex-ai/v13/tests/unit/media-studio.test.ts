@@ -2,7 +2,7 @@
  * Tests media-studio.ts (génération vidéo + image + avatar BD).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { mediaStudio } from '../../services/media-studio.js';
+import { mediaStudio } from '../../services/core-svc/media-studio.js';
 
 describe('Media Studio (vidéo + image + avatar autonomie Kevin)', () => {
   beforeEach(() => {

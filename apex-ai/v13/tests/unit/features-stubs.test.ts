@@ -112,7 +112,7 @@ describe('features stubs render coverage', () => {
     it('render → DOM contient grid 4 catégories', async () => {
       /* module.domotique est defaultEnabled:false dans le registry — il faut
          l'activer pour que le render() ne court-circuite pas (guardFeatureEnabled). */
-      const { featureToggles } = await import('../../services/feature-toggles.js');
+      const { featureToggles } = await import('../../services/auth/feature-toggles.js');
       featureToggles.setGlobal('module.domotique', true);
       const mod = await import('../../features/domotique/index.js');
       mod.render(root);
@@ -143,7 +143,7 @@ describe('features stubs render coverage', () => {
     });
 
     it('render produit cards pour chaque sentinelle', async () => {
-      const { sentinels } = await import('../../services/sentinels.js');
+      const { sentinels } = await import('../../services/sentinels/sentinels.js');
       const list = sentinels.list();
       const mod = await import('../../features/sentinels/index.js');
       await mod.render(root);

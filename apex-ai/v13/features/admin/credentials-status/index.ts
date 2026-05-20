@@ -28,7 +28,7 @@ import {
   type AuditMissingResult,
   type MissingEntry,
   type RestoreSource,
-} from '../../../services/auto-restore-credentials.js';
+} from '../../../services/vault/auto-restore-credentials.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 

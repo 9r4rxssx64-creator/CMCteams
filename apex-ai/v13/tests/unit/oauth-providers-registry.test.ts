@@ -13,8 +13,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { oauthProvidersRegistry } from '../../services/oauth-providers-registry.js';
-import { vault } from '../../services/vault.js';
+import { oauthProvidersRegistry } from '../../services/integrations/oauth-providers-registry.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('oauth-providers-registry (13 providers)', () => {
   beforeEach(() => {

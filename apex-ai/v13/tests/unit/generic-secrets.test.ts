@@ -4,8 +4,8 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { genericSecrets, __test_helpers } from '../../services/generic-secrets.js';
-import { vault } from '../../services/vault.js';
+import { genericSecrets, __test_helpers } from '../../services/vault/generic-secrets.js';
+import { vault } from '../../services/vault/vault.js';
 
 const { STORAGE_KEY, TRASH_KEY } = __test_helpers;
 

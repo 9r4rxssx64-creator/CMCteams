@@ -2,7 +2,7 @@
  * Tests auth-gate.ts (Kevin "personne ne se connecte à ma place + clients pas accès sans forfait").
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { authGate } from '../../services/auth-gate.js';
+import { authGate } from '../../services/auth/auth-gate.js';
 import { store } from '../../core/store.js';
 
 describe('Auth Gate (validation accès clients + admin protection + SSO)', () => {

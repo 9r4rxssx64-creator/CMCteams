@@ -20,9 +20,9 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { vault } from '../../services/vault.js';
-import { vaultFirebaseBackup } from '../../services/vault-firebase-backup.js';
-import { firebase } from '../../services/firebase.js';
+import { vault } from '../../services/vault/vault.js';
+import { vaultFirebaseBackup } from '../../services/vault/vault-firebase-backup.js';
+import { firebase } from '../../services/storage/firebase.js';
 
 describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
   beforeEach(() => {

@@ -21,7 +21,7 @@
 import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { broadlinkBridge, type BroadlinkDevice } from '../../services/broadlink-bridge.js';
+import { broadlinkBridge, type BroadlinkDevice } from '../../services/integrations/broadlink-bridge.js';
 import { toast } from '../../ui/toast.js';
 
 const ADMIN_ID = 'kdmc_admin';

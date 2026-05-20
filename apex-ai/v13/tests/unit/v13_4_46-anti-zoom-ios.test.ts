@@ -8,7 +8,7 @@
  * programmatique visualViewport).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { antiZoomIOS } from '../../services/anti-zoom-ios.js';
+import { antiZoomIOS } from '../../services/core-svc/anti-zoom-ios.js';
 
 describe('v13.4.46 antiZoomIOS.install — listeners + reset', () => {
   beforeEach(() => {

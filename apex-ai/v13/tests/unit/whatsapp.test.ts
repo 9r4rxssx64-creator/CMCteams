@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { whatsapp } from '../../services/whatsapp.js';
+import { whatsapp } from '../../services/integrations/whatsapp.js';
 
 describe('whatsapp service (tests Jet 6.5)', () => {
   beforeEach(() => {

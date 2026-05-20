@@ -13,8 +13,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { logRedaction, LogRedactionWrapper } from '../../services/log-redaction-wrapper.js';
-import { auditLog } from '../../services/audit-log.js';
+import { logRedaction, LogRedactionWrapper } from '../../services/observability/log-redaction-wrapper.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('REGRESSION SECU — logRedaction patterns (OWASP ASVS L2 V7.1.1)', () => {
   beforeEach(() => {

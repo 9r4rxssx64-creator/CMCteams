@@ -8,10 +8,10 @@
  * Stratégie : mock vault.readKey + mock fetch pour chaque API externe.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 async function setupVaultMock(keys: Record<string, string>): Promise<void> {
-  const vaultMod = await import('../../services/vault.js');
+  const vaultMod = await import('../../services/vault/vault.js');
   vi.spyOn(vaultMod.vault, 'readKey').mockImplementation(async (k: string) => keys[k] ?? '');
 }
 

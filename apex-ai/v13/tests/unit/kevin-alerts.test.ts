@@ -3,7 +3,7 @@
  * Helper centralisé alertes Kevin (Telegram → Discord → Browser Push → Audit).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { kevinAlerts } from '../../services/kevin-alerts.js';
+import { kevinAlerts } from '../../services/admin/kevin-alerts.js';
 
 describe('Kevin Alerts (P1 audit autonomie)', () => {
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('Kevin Alerts (P1 audit autonomie)', () => {
   });
 
   it('alertKevin Telegram succès si tokens configurés (mock fetch 200)', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_telegram_token', '123456789:fake_token');
     await vault.setKey('ax_telegram_chat_id', '987654321');
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
@@ -40,7 +40,7 @@ describe('Kevin Alerts (P1 audit autonomie)', () => {
   });
 
   it('alertKevin fallback Discord si Telegram fail', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_telegram_token', '123:fake');
     await vault.setKey('ax_telegram_chat_id', '456');
     await vault.setKey('ax_discord_webhook_url', 'https://discord.com/api/webhooks/123/abc');
@@ -57,7 +57,7 @@ describe('Kevin Alerts (P1 audit autonomie)', () => {
   });
 
   it('alertKevin formate severity emoji + markdown', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_telegram_token', '123:fake');
     await vault.setKey('ax_telegram_chat_id', '456');
     let capturedBody: string | undefined;
@@ -80,7 +80,7 @@ describe('Kevin Alerts (P1 audit autonomie)', () => {
   });
 
   it('Discord refuse webhook URL non discord.com', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     /* Telegram pas configuré → essaie Discord directement */
     await vault.setKey('ax_discord_webhook_url', 'https://evil.example.com/webhook');
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"ok":true}', { status: 200 }));

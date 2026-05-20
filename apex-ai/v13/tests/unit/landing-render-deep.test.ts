@@ -28,8 +28,8 @@ vi.mock('../../ui/haptic.js', () => ({
 
 import { render, dispose } from '../../features/landing/index.js';
 import { router } from '../../core/router.js';
-import { auth } from '../../services/auth.js';
-import { isFeatureEnabled } from '../../services/feature-toggles.js';
+import { auth } from '../../services/auth/auth.js';
+import { isFeatureEnabled } from '../../services/auth/feature-toggles.js';
 import { toast } from '../../ui/toast.js';
 
 let root: HTMLDivElement;

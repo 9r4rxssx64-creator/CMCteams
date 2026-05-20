@@ -21,7 +21,7 @@ import { escapeHtml } from '../../../core/escape-html.js';
 export { escapeHtml }; /* re-export pour tests + parité historique */
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
-import { guardFeatureEnabled } from '../../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../../services/auth/feature-guard.js';
 
 export type DemarcheCountry = 'fr' | 'mc';
 export type DemarcheCategory = 'identite' | 'etranger' | 'famille' | 'pro' | 'logement' | 'sante' | 'fiscal' | 'permis';

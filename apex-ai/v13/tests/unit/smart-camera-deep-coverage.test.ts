@@ -4,7 +4,7 @@
  * MediaRecorder lifecycle, scanQrLive success, captureFrame error paths.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { smartCamera } from '../../services/smart-camera.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
 
 interface FakeTrack {
   stop: () => void;

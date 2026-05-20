@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { vault, CREDENTIAL_PATTERNS } from '../../services/vault.js';
+import { vault, CREDENTIAL_PATTERNS } from '../../services/vault/vault.js';
 
 describe('vault final coverage', () => {
   beforeEach(() => {

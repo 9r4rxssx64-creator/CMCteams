@@ -21,13 +21,13 @@
 import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import {
   iotRegistry,
   type IoTProvider,
   type IoTConnectionResult,
   type IoTDevice,
-} from '../../services/iot-providers-registry.js';
+} from '../../services/integrations/iot-providers-registry.js';
 import { toast } from '../../ui/toast.js';
 
 const ADMIN_ID = 'kdmc_admin';

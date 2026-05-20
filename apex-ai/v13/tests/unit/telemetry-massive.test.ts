@@ -4,7 +4,7 @@
  * pushIncoming cap 200, Firebase write integration, error paths.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { telemetry, type TelemetryEntry, type ClaudeTodo } from '../../services/telemetry.js';
+import { telemetry, type TelemetryEntry, type ClaudeTodo } from '../../services/observability/telemetry.js';
 
 describe('telemetry massive coverage Jet 8 final', () => {
   beforeEach(() => {
@@ -217,7 +217,7 @@ describe('telemetry massive coverage Jet 8 final', () => {
 
   describe('Firebase integration via firebase.write', () => {
     it('pushIncoming appelle firebase.write avec ax_telemetry_in key', async () => {
-      const { firebase } = await import('../../services/firebase.js');
+      const { firebase } = await import('../../services/storage/firebase.js');
       const writeSpy = vi.spyOn(firebase, 'write').mockResolvedValue(undefined);
       telemetry.pushIncoming({
         kind: 'err',

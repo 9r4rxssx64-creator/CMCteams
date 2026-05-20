@@ -3,7 +3,7 @@
  * Vérifie wiring 30+ services au boot.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { bootstrapServices } from '../../services/services-bootstrap.js';
+import { bootstrapServices } from '../../services/core-svc/services-bootstrap.js';
 
 describe('Services Bootstrap (Architecture wired services)', () => {
   beforeEach(() => {

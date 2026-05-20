@@ -13,7 +13,7 @@
  * Tests : type ExecutionParams accepte target_branch optionnel.
  */
 import { describe, it, expect } from 'vitest';
-import type { ExecutionParams } from '../../services/apex-execute.js';
+import type { ExecutionParams } from '../../services/admin/apex-execute.js';
 
 describe('v13.4.38 ExecutionParams.target_branch (Kevin "accès branche")', () => {
   it("ExecutionParams accepte target_branch optionnel", () => {

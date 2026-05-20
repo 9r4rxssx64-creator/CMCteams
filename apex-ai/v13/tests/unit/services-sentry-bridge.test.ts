@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { sentryBridge } from '../../services/sentry-bridge.js';
+import { sentryBridge } from '../../services/observability/sentry-bridge.js';
 
 describe('SentryBridge — runtime monitoring', () => {
   beforeEach(() => {

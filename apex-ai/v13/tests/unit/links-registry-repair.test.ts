@@ -12,7 +12,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { linksRegistry } from '../../services/links-registry.js';
+import { linksRegistry } from '../../services/integrations/links-registry.js';
 
 describe('links-registry C2 repair() — JSON parse safety', () => {
   beforeEach(() => {

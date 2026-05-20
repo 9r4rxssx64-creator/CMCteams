@@ -5,7 +5,7 @@
  * Stockage central : apex_v13_multi_keys (PRESERVE_KEY_PREFIXES auto-reset).
  */
 import { describe, it, expect } from 'vitest';
-import { multiKeyVault } from '../../services/multi-key-vault.js';
+import { multiKeyVault } from '../../services/vault/multi-key-vault.js';
 
 describe('v13.4.61 multi-key-vault — coffre central API', () => {
   it("singleton défini + méthodes attendues", () => {

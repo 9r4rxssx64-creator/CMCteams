@@ -5,7 +5,7 @@
  * de Claude Code et que Kevin veut éliminer pour toujours.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { auditHonestyWatch } from '../../services/audit-honesty-watch.js';
+import { auditHonestyWatch } from '../../services/sentinels/audit-honesty-watch.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

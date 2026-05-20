@@ -18,7 +18,7 @@ import {
   getThresholdForUser,
   type VoiceFingerprint,
   type VoicePhase,
-} from '../../services/voice-print.js';
+} from '../../services/ai/voice-print.js';
 
 const ADMIN_UID = 'kdmc_admin';
 

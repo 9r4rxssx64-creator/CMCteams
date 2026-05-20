@@ -3,7 +3,7 @@
  * Bridge bidirectionnel Apex ↔ Claude Code.
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { claudeBridge } from '../../services/claude-bridge.js';
+import { claudeBridge } from '../../services/ai/claude-bridge.js';
 import { events } from '../../core/events.js';
 
 describe('claude-bridge (P0 coverage)', () => {

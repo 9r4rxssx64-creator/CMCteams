@@ -22,7 +22,7 @@ describe('rules-injection-watch v13.4.4', () => {
         syncMetaFilesAtBoot: vi.fn().mockResolvedValue({}),
       },
     }));
-    const { rulesInjectionWatch } = await import('../../services/rules-injection-watch.js');
+    const { rulesInjectionWatch } = await import('../../services/sentinels/rules-injection-watch.js');
     const r = await rulesInjectionWatch.audit();
     expect(r.ok).toBe(true);
     expect(r.missing).toHaveLength(0);
@@ -39,7 +39,7 @@ describe('rules-injection-watch v13.4.4', () => {
         syncMetaFilesAtBoot: refreshSpy,
       },
     }));
-    const { rulesInjectionWatch } = await import('../../services/rules-injection-watch.js');
+    const { rulesInjectionWatch } = await import('../../services/sentinels/rules-injection-watch.js');
     const r = await rulesInjectionWatch.audit();
     expect(r.ok).toBe(false);
     expect(r.missing.length).toBeGreaterThan(0);
@@ -54,7 +54,7 @@ describe('rules-injection-watch v13.4.4', () => {
         syncMetaFilesAtBoot: vi.fn().mockResolvedValue({}),
       },
     }));
-    const { rulesInjectionWatch } = await import('../../services/rules-injection-watch.js');
+    const { rulesInjectionWatch } = await import('../../services/sentinels/rules-injection-watch.js');
     await rulesInjectionWatch.audit();
     const audits = rulesInjectionWatch.getRecentAudits(5);
     expect(audits.length).toBeGreaterThanOrEqual(1);

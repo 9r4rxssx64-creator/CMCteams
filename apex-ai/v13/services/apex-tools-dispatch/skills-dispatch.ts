@@ -6,7 +6,7 @@
  */
 
 import { logger } from '../../core/logger.js';
-import { mcpClient } from '../mcp-client.js';
+import { mcpClient } from '../ai/mcp-client.js';
 import { docxGenerator, type DocxGenerateInput } from '../skills/docx-generator.js';
 import { pdfGenerator, type PdfGenerateInput } from '../skills/pdf-generator.js';
 import { pptxGenerator, type PptxGenerateInput } from '../skills/pptx-generator.js';
@@ -220,7 +220,7 @@ ${
 
     /* Audit log */
     try {
-      const { auditLog } = await import('../audit-log.js');
+      const { auditLog } = await import('../observability/audit-log.js');
       await auditLog.record('skill.factory.created', {
         details: { name, description, when_to_use: whenToUse },
       });
@@ -247,7 +247,7 @@ export async function dispatchSecurityReview(params: Record<string, unknown>): P
   logger.info('skill.security-review', 'invoked', { scope });
   try {
     /* Brancher sur apex-self-audit existant (audit OWASP/CWE complet) */
-    const { apexSelfAudit } = await import('../apex-self-audit.js');
+    const { apexSelfAudit } = await import('../admin/apex-self-audit.js');
     const brutal = scope === 'full';
     const report = await apexSelfAudit.runFullAudit(brutal);
     return {
@@ -270,7 +270,7 @@ export async function dispatchCodeReview(params: Record<string, unknown>): Promi
   logger.info('skill.code-review', 'invoked', { files, commitsToAnalyze });
   try {
     /* Brancher sur apex-self-audit (audit complet inclus compliance + bug detection) */
-    const { apexSelfAudit } = await import('../apex-self-audit.js');
+    const { apexSelfAudit } = await import('../admin/apex-self-audit.js');
     const report = await apexSelfAudit.runFullAudit(false);
     return {
       success: true,

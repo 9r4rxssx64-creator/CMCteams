@@ -6,7 +6,7 @@
  * Tests qu'Apex peut désormais ÉCRIRE des fichiers réellement (pas juste afficher).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
   beforeEach(() => {
@@ -29,7 +29,7 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
 
     it('refuse content vide (anti-écrasement accidentel)', async () => {
       /* Mock token via setKey direct */
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token_for_test');
       const r = await apexToolsDispatch.execute('create_or_update_file', {
         path: 'test/empty.ts',
@@ -41,7 +41,7 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     });
 
     it('refuse si path manquant', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
       const r = await apexToolsDispatch.execute('create_or_update_file', {
         content: 'export const x = 1;',
@@ -52,7 +52,7 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     });
 
     it('crée fichier nouveau via fetch mock 201 Created', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
       const fetchSpy = vi.spyOn(globalThis, 'fetch')
         /* 1er fetch = check existing → 404 (pas de fichier) */
@@ -77,7 +77,7 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     });
 
     it('update fichier existant via SHA récupéré', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
       vi.spyOn(globalThis, 'fetch')
         /* 1er fetch = check existing → 200 avec SHA */
@@ -99,7 +99,7 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
 
   describe('delete_repo_file', () => {
     it('refuse sans confirm:true', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
       const r = await apexToolsDispatch.execute('delete_repo_file', {
         path: 'test/file.ts',
@@ -110,7 +110,7 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     });
 
     it('supprime avec confirm:true + fetch 200', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
       vi.spyOn(globalThis, 'fetch')
         .mockResolvedValueOnce(new Response(JSON.stringify({ sha: 'sha_to_delete' }), { status: 200 }))
@@ -128,7 +128,7 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
 
   describe('via execute_task_on_service direct (fallback)', () => {
     it('execute_task_on_service { service:github, task:create_or_update_file } fonctionne', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
       vi.spyOn(globalThis, 'fetch')
         .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))

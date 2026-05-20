@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { impeccableDesign, IMPECCABLE_COMMANDS } from '../../services/impeccable-design.js';
+import { impeccableDesign, IMPECCABLE_COMMANDS } from '../../services/core-svc/impeccable-design.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

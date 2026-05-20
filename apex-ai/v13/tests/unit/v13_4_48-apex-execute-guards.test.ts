@@ -14,7 +14,7 @@
  * - Confirmation Kevin requise pour task sensibles (release_version, etc.)
  */
 import { describe, it, expect } from 'vitest';
-import { apexExecute } from '../../services/apex-execute.js';
+import { apexExecute } from '../../services/admin/apex-execute.js';
 
 describe('v13.4.48 apex-execute guards — Forbidden tasks', () => {
   it("listForbiddenTasks contient force_push (audit Kevin règle 'JAMAIS push main direct')", () => {

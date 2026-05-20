@@ -9,7 +9,7 @@
  * maskKey, detectPattern, getKeyStatus, encryptAuto/decryptAuto.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 const TEST_PASSPHRASE = 'test_secure_passphrase_2026_kevin';
 const ALT_PASSPHRASE = 'completely_different_pp_xyz123';

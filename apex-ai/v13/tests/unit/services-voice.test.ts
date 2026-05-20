@@ -30,8 +30,8 @@ import {
   speak,
   stopAll,
   surpriseMe,
-} from '../../services/voice.js';
-import type { Voice, VoiceEffect } from '../../services/voice.js';
+} from '../../services/ai/voice.js';
+import type { Voice, VoiceEffect } from '../../services/ai/voice.js';
 
 /* ============================================================================
  * Helpers

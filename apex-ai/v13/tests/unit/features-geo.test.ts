@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, escapeHtml } from '../../features/geo/index.js';
-import { geolocation } from '../../services/geolocation.js';
+import { geolocation } from '../../services/integrations/geolocation.js';
 
 describe('features/geo — escapeHtml', () => {
   it('échappe caractères dangereux', () => {

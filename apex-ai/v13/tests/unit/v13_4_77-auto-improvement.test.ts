@@ -10,7 +10,7 @@ import {
   autoImprovement,
   AUTO_INSTALL_CONFIDENCE,
   AUTO_INSTALL_GAIN_THRESHOLD,
-} from '../../services/auto-improvement.js';
+} from '../../services/sentinels/auto-improvement.js';
 
 describe('v13.4.77 auto-improvement — API publique', () => {
   it("singleton défini avec méthodes attendues", () => {

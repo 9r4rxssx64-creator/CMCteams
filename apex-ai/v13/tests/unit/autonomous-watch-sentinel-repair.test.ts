@@ -24,9 +24,9 @@ const { mockAuditLog, mockFirebase } = vi.hoisted(() => ({
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 vi.mock('../../services/firebase.js', () => ({ firebase: mockFirebase }));
 
-import { autonomousWatch } from '../../services/autonomous-watch.js';
-import { sentinelAutoRepair } from '../../services/sentinel-auto-repair.js';
-import { apexAutonomousMode } from '../../services/apex-autonomous-mode.js';
+import { autonomousWatch } from '../../services/sentinels/autonomous-watch.js';
+import { sentinelAutoRepair } from '../../services/sentinels/sentinel-auto-repair.js';
+import { apexAutonomousMode } from '../../services/admin/apex-autonomous-mode.js';
 
 describe('services/autonomous-watch', () => {
   beforeEach(() => {

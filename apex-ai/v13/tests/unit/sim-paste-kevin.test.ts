@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectAllCredentials, detectCredential } from '../../services/credential-patterns.js';
+import { detectAllCredentials, detectCredential } from '../../services/vault/credential-patterns.js';
 
 describe('SIMULATION KEVIN — paste mixte de toutes ses clés réelles', () => {
   it('Kevin colle un bloc multi-clés → détection correcte de chaque service distinct', () => {

@@ -22,7 +22,7 @@ import {
   BUILTIN_PROVIDERS,
   iotRegistry,
   type IoTProvider,
-} from '../../services/iot-providers-registry.js';
+} from '../../services/integrations/iot-providers-registry.js';
 
 const STORAGE_KEYS_TO_CLEAN = [
   'ax_iot_custom_providers',

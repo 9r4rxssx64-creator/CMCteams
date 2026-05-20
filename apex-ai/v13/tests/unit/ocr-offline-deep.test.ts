@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { ocrOffline } from '../../services/ocr-offline.js';
+import { ocrOffline } from '../../services/ai/ocr-offline.js';
 import { logger } from '../../core/logger.js';
 
 let savedWorker: typeof Worker | undefined;

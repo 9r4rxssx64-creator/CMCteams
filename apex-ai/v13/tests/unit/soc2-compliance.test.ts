@@ -10,7 +10,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { soc2, type SOC2Event } from '../../services/soc2-compliance.js';
+import { soc2, type SOC2Event } from '../../services/auth/soc2-compliance.js';
 
 const STORAGE_KEY = 'apex_v13_soc2_log';
 

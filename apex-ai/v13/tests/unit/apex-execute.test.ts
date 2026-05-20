@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { apexExecute } from '../../services/apex-execute.js';
+import { apexExecute } from '../../services/admin/apex-execute.js';
 
 describe('apex-execute (P0 coverage)', () => {
   beforeEach(() => {

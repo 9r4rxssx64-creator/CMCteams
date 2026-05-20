@@ -5,7 +5,7 @@
  * Test surface API publique sans appeler les sub-tests intensifs.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runtimeTester } from '../../services/apex-runtime-tester.js';
+import { runtimeTester } from '../../services/admin/apex-runtime-tester.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

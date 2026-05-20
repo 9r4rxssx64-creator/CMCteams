@@ -129,7 +129,7 @@ class HudDebug {
 
     let aiOk = false;
     try {
-      const { aiRouter } = await import('../services/ai-router.js');
+      const { aiRouter } = await import('../services/ai/ai-router.js');
       aiOk = aiRouter.hasAnyKey();
     } catch { /* ignore */ }
 
@@ -154,11 +154,11 @@ class HudDebug {
       body += `[MEMORY]\nFacts: ${memory.getFacts().length}\nLessons: ${memory.getLessons().length}\n\n`;
     } catch { /* ignore */ }
     try {
-      const { aiRouter } = await import('../services/ai-router.js');
+      const { aiRouter } = await import('../services/ai/ai-router.js');
       body += `[AI]\nHasKey: ${aiRouter.hasAnyKey()}\n\n`;
     } catch { /* ignore */ }
     try {
-      const { autoTestRunner } = await import('../services/auto-test-runner.js');
+      const { autoTestRunner } = await import('../services/admin/auto-test-runner.js');
       const last = autoTestRunner.getLastRun();
       if (last) {
         body += `[LAST TEST]\n${last.passed}/${last.total} passed (${last.durationMs}ms)\n\n`;

@@ -11,7 +11,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { voiceOverlay } from '../../services/voice-overlay.js';
+import { voiceOverlay } from '../../services/ai/voice-overlay.js';
 
 const OVERLAY_ID = 'apex-voice-overlay';
 const STYLES_ID = 'apex-voice-overlay-styles';

@@ -10,7 +10,7 @@
  *  - lock anti-double-run via _running
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { autoTestEverything } from '../../services/auto-test-everything.js';
+import { autoTestEverything } from '../../services/admin/auto-test-everything.js';
 
 describe('auto-test-everything', () => {
   beforeEach(() => {

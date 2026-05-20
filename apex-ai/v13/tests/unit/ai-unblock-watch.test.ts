@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { aiUnblockWatch, type UnblockProviderId } from '../../services/ai-unblock-watch.js';
+import { aiUnblockWatch, type UnblockProviderId } from '../../services/sentinels/ai-unblock-watch.js';
 
 function mockResponse(status: number): Response {
   return new Response(null, { status });

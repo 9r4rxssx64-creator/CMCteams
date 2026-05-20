@@ -17,7 +17,7 @@ import {
   testAndAutoFix,
   testButtonsInView,
   type FunctionalTestReport,
-} from '../../services/apex-functional-tester.js';
+} from '../../services/admin/apex-functional-tester.js';
 
 /* Mock router.dispatch (dynamic import dans autoFix) */
 vi.mock('../../core/router.js', () => ({

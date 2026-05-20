@@ -2,9 +2,9 @@
  * Tests ads.ts + subscription-tiers.ts (Kevin demande pubs + forfaits enrichis).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ads } from '../../services/ads.js';
-import { subscriptionTiers } from '../../services/subscription-tiers.js';
-import { commerce } from '../../services/commerce.js';
+import { ads } from '../../services/integrations/ads.js';
+import { subscriptionTiers } from '../../services/auth/subscription-tiers.js';
+import { commerce } from '../../services/integrations/commerce.js';
 
 describe('Ads Service (publicités contextuelles tier-based)', () => {
   beforeEach(() => {

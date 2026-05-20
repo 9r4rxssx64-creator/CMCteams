@@ -13,9 +13,9 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { apexTools } from '../../services/apex-tools.js';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
-import { sequentialThinking } from '../../services/sequential-thinking.js';
+import { apexTools } from '../../services/core-svc/apex-tools.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
+import { sequentialThinking } from '../../services/ai/sequential-thinking.js';
 
 describe('Sequential Thinking MCP', () => {
   beforeEach(async () => {

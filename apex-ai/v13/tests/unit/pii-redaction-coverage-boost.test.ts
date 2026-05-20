@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { redactPII, redactMessageContent } from '../../services/pii-redaction.js';
+import { redactPII, redactMessageContent } from '../../services/vault/pii-redaction.js';
 
 describe('pii-redaction coverage boost', () => {
   beforeEach(() => {

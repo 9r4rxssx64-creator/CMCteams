@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { iosSimulator } from '../../services/ios-simulator.js';
+import { iosSimulator } from '../../services/integrations/ios-simulator.js';
 
 describe('iOS Simulator (Shubham Skill)', () => {
   beforeEach(() => {

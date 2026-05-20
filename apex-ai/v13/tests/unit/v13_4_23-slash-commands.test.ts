@@ -12,7 +12,7 @@ import {
   filterCommands,
   helpText,
   SLASH_COMMANDS,
-} from '../../services/slash-commands.js';
+} from '../../services/admin/slash-commands.js';
 
 describe('v13.4.23 parseSlashCommand — détection & parsing', () => {
   it("texte normal SANS slash → isSlash false", () => {

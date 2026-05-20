@@ -19,7 +19,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { lanScanIOS } from '../../services/lan-scan-ios.js';
+import { lanScanIOS } from '../../services/integrations/lan-scan-ios.js';
 
 describe('lan-scan-ios — WebRTC + Shortcut + Worker + heuristique', () => {
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe('lan-scan-ios — WebRTC + Shortcut + Worker + heuristique', () => {
 
   describe('scanViaShortcut', () => {
     it('parse résultat JSON array de devices', async () => {
-      const { iosShortcuts } = await import('../../services/ios-shortcuts.js');
+      const { iosShortcuts } = await import('../../services/integrations/ios-shortcuts.js');
       vi.spyOn(iosShortcuts, 'scanWiFi').mockResolvedValue({
         ok: true,
         launched: true,
@@ -100,7 +100,7 @@ describe('lan-scan-ios — WebRTC + Shortcut + Worker + heuristique', () => {
     });
 
     it('fallback CSV si pas JSON', async () => {
-      const { iosShortcuts } = await import('../../services/ios-shortcuts.js');
+      const { iosShortcuts } = await import('../../services/integrations/ios-shortcuts.js');
       vi.spyOn(iosShortcuts, 'scanWiFi').mockResolvedValue({
         ok: true,
         launched: true,
@@ -113,7 +113,7 @@ describe('lan-scan-ios — WebRTC + Shortcut + Worker + heuristique', () => {
     });
 
     it('retourne [] si shortcut fail', async () => {
-      const { iosShortcuts } = await import('../../services/ios-shortcuts.js');
+      const { iosShortcuts } = await import('../../services/integrations/ios-shortcuts.js');
       vi.spyOn(iosShortcuts, 'scanWiFi').mockResolvedValue({
         ok: false,
         launched: false,
@@ -246,7 +246,7 @@ describe('lan-scan-ios — WebRTC + Shortcut + Worker + heuristique', () => {
 
   describe('scanViaPushcut', () => {
     it('retourne [] si pas de webhook configuré', async () => {
-      const { pushcutBridge } = await import('../../services/pushcut-bridge.js');
+      const { pushcutBridge } = await import('../../services/integrations/pushcut-bridge.js');
       await pushcutBridge.reset();
       const r = await lanScanIOS.scanViaPushcut();
       expect(r).toEqual([]);

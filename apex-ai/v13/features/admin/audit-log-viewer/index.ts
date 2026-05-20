@@ -14,7 +14,7 @@
  * Admin only via guard auth.isAdminSync() dans bootstrap.ts router.
  */
 import { escapeHtml } from '../../../core/escape-html.js';
-import { auditLog, type AuditEntry } from '../../../services/audit-log.js';
+import { auditLog, type AuditEntry } from '../../../services/observability/audit-log.js';
 import { toast } from '../../../ui/toast.js';
 
 interface Filters {

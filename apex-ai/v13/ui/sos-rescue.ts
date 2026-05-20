@@ -157,7 +157,7 @@ class SosRescue {
     /* 2. AI providers — refresh + ping */
     total += 1;
     try {
-      const { aiRouter } = await import('../services/ai-router.js');
+      const { aiRouter } = await import('../services/ai/ai-router.js');
       if (aiRouter.hasAnyKey()) healed += 1;
       else errors.push('Aucune clé IA configurée');
     } catch (e) { errors.push(`AI: ${String(e).slice(0, 30)}`); }
@@ -174,7 +174,7 @@ class SosRescue {
     /* 4. Vault credentials — restore depuis IDB + verify */
     total += 1;
     try {
-      const { vault } = await import('../services/vault.js');
+      const { vault } = await import('../services/vault/vault.js');
       const audit = await vault.auditDecryptHealth?.().catch(() => null);
       if (audit && audit.ok > 0) healed += 1;
       else if (audit) errors.push(`Vault: ${audit.failed}/${audit.total} decrypt fail`);
@@ -184,7 +184,7 @@ class SosRescue {
     /* 5. Sentinelles — check status */
     total += 1;
     try {
-      const { sentinelsRegistry } = await import('../services/sentinels-registry.js');
+      const { sentinelsRegistry } = await import('../services/sentinels/sentinels-registry.js');
       const status = (sentinelsRegistry as { getStatus?: () => unknown }).getStatus?.();
       if (status !== undefined) healed += 1;
       else healed += 1; /* méthode pas dispo, considère OK */
@@ -193,7 +193,7 @@ class SosRescue {
     /* 6. Auto-test runner — quick smoke */
     total += 1;
     try {
-      const { autoTestRunner } = await import('../services/auto-test-runner.js');
+      const { autoTestRunner } = await import('../services/admin/auto-test-runner.js');
       void autoTestRunner.runAll?.().catch(() => { /* ignore */ });
       healed += 1;
     } catch (e) { errors.push(`AutoTest: ${String(e).slice(0, 30)}`); }
@@ -211,7 +211,7 @@ class SosRescue {
      * chaque SOS run alors qu'un auto-reconnect était déjà en cours. */
     total += 1;
     try {
-      const { firebase } = await import('../services/firebase.js');
+      const { firebase } = await import('../services/storage/firebase.js');
       const fb = firebase as {
         isConnected?: () => boolean;
         getConnectionState?: () => 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED' | 'OFFLINE';
@@ -260,7 +260,7 @@ class SosRescue {
     /* 10. Pipeline temps-réel — claudeBridge ping */
     total += 1;
     try {
-      const { claudeBridge } = await import('../services/claude-bridge.js');
+      const { claudeBridge } = await import('../services/ai/claude-bridge.js');
       const stats = claudeBridge.getStats?.();
       if (stats !== undefined) healed += 1;
       else healed += 1;
@@ -303,7 +303,7 @@ class SosRescue {
     logger.info('sos-rescue', 'openDiagnostic');
     let body = '';
     try {
-      const { aiRouter } = await import('../services/ai-router.js');
+      const { aiRouter } = await import('../services/ai/ai-router.js');
       body += `🤖 AI Router : ${aiRouter.hasAnyKey() ? 'OK (clé présente)' : '⚠️ aucune clé'}\n`;
     } catch { body += '🤖 AI Router : ❌ erreur\n'; }
     body += `🌐 Network : ${navigator.onLine ? '🟢 online' : '🔴 offline'}\n`;
@@ -312,7 +312,7 @@ class SosRescue {
       body += `🧠 Memory facts : ${memory.getFacts().length}\n`;
     } catch { /* ignore */ }
     try {
-      const { autoTestRunner } = await import('../services/auto-test-runner.js');
+      const { autoTestRunner } = await import('../services/admin/auto-test-runner.js');
       const last = autoTestRunner.getLastRun();
       if (last) {
         body += `🧪 Last test run : ${last.passed}/${last.total} passed\n`;
@@ -334,7 +334,7 @@ class SosRescue {
       });
       setTimeout(() => {
         document.getElementById('sos-test')?.addEventListener('click', () => {
-          void import('../services/auto-test-runner.js').then((m) => m.autoTestRunner.runAll());
+          void import('../services/admin/auto-test-runner.js').then((m) => m.autoTestRunner.runAll());
         });
         document.getElementById('sos-reload')?.addEventListener('click', () => {
           window.location.reload();
@@ -361,7 +361,7 @@ class SosRescue {
         color = '#dc2626'; /* red */
         critical = true;
       } else {
-        const { aiRouter } = await import('../services/ai-router.js');
+        const { aiRouter } = await import('../services/ai/ai-router.js');
         if (!aiRouter.hasAnyKey()) {
           color = '#eab308'; /* yellow */
         }

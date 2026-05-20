@@ -34,7 +34,7 @@ vi.mock('../../core/events.js', () => ({
 vi.mock('../../services/firebase.js', () => ({ firebase: mockFirebase }));
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { adminCommandsListener } from '../../services/admin-commands-listener.js';
+import { adminCommandsListener } from '../../services/admin/admin-commands-listener.js';
 
 describe('admin-commands-listener deep (v13.4.160)', () => {
   beforeEach(() => {

@@ -3,7 +3,7 @@
  * Cible : passer de 54% à 75%+ coverage.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { smartCamera } from '../../services/smart-camera.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
 
 interface FakeStream {
   getTracks: () => Array<{ stop: () => void; kind: string; getCapabilities: () => Record<string, unknown>; applyConstraints: () => Promise<void> }>;

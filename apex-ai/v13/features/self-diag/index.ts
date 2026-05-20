@@ -21,7 +21,7 @@ import { escapeHtml } from '../../core/escape-html.js';
 export { escapeHtml }; /* re-export pour tests + parité historique */
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
-import { type AuditAxis, type AuditReport, type Finding, type Severity } from '../../services/apex-self-audit.js';
+import { type AuditAxis, type AuditReport, type Finding, type Severity } from '../../services/admin/apex-self-audit.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -230,7 +230,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* Try to load last report from service */
   if (!activeReport) {
     try {
-      const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+      const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
       activeReport = apexSelfAudit.getLastReport();
     } catch (err: unknown) {
       logger.warn('feature-self-diag', 'load last report failed', { err });
@@ -242,7 +242,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* Lazy-load sentinels for status counts */
   let sentinelsList: ReadonlyArray<{ id: string; name: string; lastResult?: { ok: boolean; msg: string; ts: number } }> = [];
   try {
-    const { sentinels } = await import('../../services/sentinels.js');
+    const { sentinels } = await import('../../services/sentinels/sentinels.js');
     sentinelsList = sentinels.list();
   } catch { /* skip */ }
   const sentOk = sentinelsList.filter((s) => s.lastResult?.ok).length;
@@ -353,7 +353,7 @@ function attachDiagHandlers(rootEl: HTMLElement): void {
         haptic.tap();
         if (!activeReport) return;
         try {
-          const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+          const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
           const md = apexSelfAudit.formatReportMarkdown(activeReport);
           const blob = new Blob([md], { type: 'text/markdown' });
           const url = URL.createObjectURL(blob);
@@ -389,7 +389,7 @@ async function runAudit(rootEl: HTMLElement, brutal: boolean): Promise<void> {
   toast.info(brutal ? '🔥 Audit brutal en cours...' : '🔍 Audit en cours...');
   void render(rootEl);
   try {
-    const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
     const report = await apexSelfAudit.runFullAudit(brutal);
     activeReport = report;
     haptic.success();

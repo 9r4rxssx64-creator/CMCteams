@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import {
   sentinels,
   SENTINEL_TOGGLE_IDS_COVERED,
-} from '../../services/sentinels.ts';
+} from '../../services/sentinels/sentinels.ts';
 
 describe('v13.4.53 sentinels registry', () => {
   it("singleton défini avec méthodes attendues", () => {

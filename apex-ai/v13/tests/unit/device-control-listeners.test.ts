@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { deviceControl } from '../../services/device-control.js';
+import { deviceControl } from '../../services/integrations/device-control.js';
 
 interface FakeSensorLike {
   illuminance?: number;

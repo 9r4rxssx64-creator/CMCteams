@@ -11,7 +11,7 @@ import {
   scoreGrade,
   type LessonLearned,
 } from '../../features/self-diag/index.js';
-import type { Finding } from '../../services/apex-self-audit.js';
+import type { Finding } from '../../services/admin/apex-self-audit.js';
 
 const FAKE_FINDINGS: ReadonlyArray<Finding> = [
   { id: 'f1', axis: 'security', severity: 'p0_critical', title: 'Crit', description: 'd1', ts: 1 },
@@ -176,14 +176,14 @@ describe('features/self-diag — apex-self-audit service intégration', () => {
   });
 
   it('service apex-self-audit se charge', async () => {
-    const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
     expect(apexSelfAudit).toBeTruthy();
     expect(typeof apexSelfAudit.runFullAudit).toBe('function');
     expect(typeof apexSelfAudit.getLastReport).toBe('function');
   });
 
   it('getLastReport retourne null si jamais audité', async () => {
-    const { apexSelfAudit } = await import('../../services/apex-self-audit.js');
+    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
     expect(apexSelfAudit.getLastReport()).toBeNull();
   });
 });

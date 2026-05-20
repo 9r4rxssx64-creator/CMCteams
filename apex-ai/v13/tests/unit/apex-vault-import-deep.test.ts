@@ -18,8 +18,8 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { apexVaultImport } from '../../services/apex-vault-import.js';
-import { vault } from '../../services/vault.js';
+import { apexVaultImport } from '../../services/vault/apex-vault-import.js';
+import { vault } from '../../services/vault/vault.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

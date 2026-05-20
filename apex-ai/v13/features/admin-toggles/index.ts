@@ -23,7 +23,7 @@ import {
   featureToggles,
   type FeatureCategory,
   type FeatureToggle,
-} from '../../services/feature-toggles.js';
+} from '../../services/auth/feature-toggles.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 

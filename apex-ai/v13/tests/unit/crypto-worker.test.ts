@@ -121,10 +121,10 @@ class MockCryptoWorker {
 
 const originalWorker = globalThis.Worker;
 
-async function freshClient(): Promise<typeof import('../../services/crypto-worker-client.js')> {
+async function freshClient(): Promise<typeof import('../../services/storage/crypto-worker-client.js')> {
   /* Reset module cache pour reprendre singleton à zéro */
   vi.resetModules();
-  return import('../../services/crypto-worker-client.js');
+  return import('../../services/storage/crypto-worker-client.js');
 }
 
 describe('crypto-worker-client', () => {

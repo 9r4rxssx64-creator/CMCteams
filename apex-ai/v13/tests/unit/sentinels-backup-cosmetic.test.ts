@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { sentinels, registerCoreSentinels } from '../../services/sentinels.js';
+import { sentinels, registerCoreSentinels } from '../../services/sentinels/sentinels.js';
 
 describe('sentinels backup-watch cosmetic v13.3.24', () => {
   beforeEach(() => {

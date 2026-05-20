@@ -11,7 +11,7 @@ vi.mock('../../services/pii-redaction.js', () => ({
   redactPII: vi.fn((s: string) => ({ redacted: s.replace(/\d{16}/g, 'XXXX'), pii_count: 0 })),
 }));
 
-import { sentryBridge } from '../../services/sentry-bridge.js';
+import { sentryBridge } from '../../services/observability/sentry-bridge.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

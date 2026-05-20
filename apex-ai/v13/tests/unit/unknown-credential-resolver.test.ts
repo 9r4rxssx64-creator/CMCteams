@@ -2,7 +2,7 @@
  * Tests unknown-credential-resolver.ts (46.96% → 90%+).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { unknownCredentialResolver } from '../../services/unknown-credential-resolver.js';
+import { unknownCredentialResolver } from '../../services/vault/unknown-credential-resolver.js';
 
 describe('unknown-credential-resolver (P0 coverage)', () => {
   beforeEach(() => {

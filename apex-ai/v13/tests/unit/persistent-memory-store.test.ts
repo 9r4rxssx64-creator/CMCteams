@@ -3,7 +3,7 @@
  * Mémoire JSON cross-session avec dédupe Levenshtein + IDB shadow.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { persistentMemory } from '../../services/persistent-memory-store.js';
+import { persistentMemory } from '../../services/storage/persistent-memory-store.js';
 
 describe('persistent-memory-store (P0 coverage)', () => {
   beforeEach(() => {

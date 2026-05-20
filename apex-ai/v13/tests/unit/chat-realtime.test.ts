@@ -2,7 +2,7 @@
  * Tests chat-realtime.ts (Apex Chat = WhatsApp-like Kevin).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { chatRealtime } from '../../services/chat-realtime.js';
+import { chatRealtime } from '../../services/ai/chat-realtime.js';
 
 describe('Chat Realtime (DM + groupes + calls WebRTC)', () => {
   beforeEach(() => {

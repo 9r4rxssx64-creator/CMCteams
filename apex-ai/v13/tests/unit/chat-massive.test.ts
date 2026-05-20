@@ -39,7 +39,7 @@ describe('chat features massive coverage Jet 8 final', () => {
     });
 
     it('paste-key annuler → sheet close (no autoStore call)', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       const autoStoreSpy = vi.spyOn(vault, 'autoStore').mockResolvedValue({ ok: false, reason: 'should not call' });
       const { render } = await import('../../features/chat/index.js');
       render(root);
@@ -54,7 +54,7 @@ describe('chat features massive coverage Jet 8 final', () => {
     });
 
     it('paste-key valide → sheet close + autoStore + toast success', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       vi.spyOn(vault, 'autoStore').mockResolvedValue({
         ok: true,
         valid: true,
@@ -75,7 +75,7 @@ describe('chat features massive coverage Jet 8 final', () => {
     });
 
     it('paste-key vide → toast warn (no autoStore)', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       const autoSpy = vi.spyOn(vault, 'autoStore');
       const { render } = await import('../../features/chat/index.js');
       render(root);
@@ -93,7 +93,7 @@ describe('chat features massive coverage Jet 8 final', () => {
     });
 
     it('paste-key forbidden (CB pattern) → toast error', async () => {
-      const { vault } = await import('../../services/vault.js');
+      const { vault } = await import('../../services/vault/vault.js');
       vi.spyOn(vault, 'autoStore').mockResolvedValue({
         ok: false,
         forbidden: true,
@@ -127,7 +127,7 @@ describe('chat features massive coverage Jet 8 final', () => {
     });
 
     it('logout annuler → sheet close (no auth.logout call)', async () => {
-      const { auth } = await import('../../services/auth.js');
+      const { auth } = await import('../../services/auth/auth.js');
       const logoutSpy = vi.spyOn(auth, 'logout');
       const { render } = await import('../../features/chat/index.js');
       render(root);
@@ -141,7 +141,7 @@ describe('chat features massive coverage Jet 8 final', () => {
     });
 
     it('logout confirm → auth.logout appelé + redirect landing', async () => {
-      const { auth } = await import('../../services/auth.js');
+      const { auth } = await import('../../services/auth/auth.js');
       const logoutSpy = vi.spyOn(auth, 'logout').mockImplementation(() => undefined);
       const { render } = await import('../../features/chat/index.js');
       render(root);

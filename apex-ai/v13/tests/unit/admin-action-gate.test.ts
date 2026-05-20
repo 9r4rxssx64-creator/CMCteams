@@ -3,7 +3,7 @@
  * Wrap actions sensibles avec WebAuthn verify obligatoire (fallback PIN).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { adminActionGate } from '../../services/admin-action-gate.js';
+import { adminActionGate } from '../../services/auth/admin-action-gate.js';
 
 describe('Admin Action Gate (P0 sécu — WebAuthn obligatoire actions sensibles)', () => {
   beforeEach(() => {

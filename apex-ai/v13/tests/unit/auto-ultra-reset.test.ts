@@ -94,7 +94,7 @@ afterEach(() => {
 
 describe('autoUltraReset.assessConditions()', () => {
   it('retourne score 0 quand tout est OK', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     const a = await autoUltraReset.assessConditions();
     expect(a.score).toBe(0);
     expect(a.shouldTrigger).toBe(false);
@@ -102,7 +102,7 @@ describe('autoUltraReset.assessConditions()', () => {
   });
 
   it('détecte score >= 6 quand state_incoherent + bugs_persistent + cache_stale', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     /* state_incoherent : Kevin manquant (3pts) */
     neverForgetGetLastRunMock.mockReturnValue({
       checks: [{ id: 'kevin_present', passed: false, severity: 'critical' }],
@@ -124,7 +124,7 @@ describe('autoUltraReset.assessConditions()', () => {
   });
 
   it('détecte localStorage_corrupt si JSON parse fail sur clé critique', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     localStorage.setItem('apex_v13_user', '{this is not json'); /* corrupt */
     const a = await autoUltraReset.assessConditions();
     const corrupt = a.conditions.find((c) => c.id === 'localStorage_corrupt');
@@ -133,7 +133,7 @@ describe('autoUltraReset.assessConditions()', () => {
   });
 
   it('Auto-fixed sentinelles ne comptent PAS comme bugs persistants', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     sentinelsListMock.mockReturnValue([
       { id: 's1', lastResult: { ok: false, msg: 'Auto-fixed: replayed flush' } },
       { id: 's2', lastResult: { ok: false, msg: 'Auto-fixed: snapshot' } },
@@ -148,7 +148,7 @@ describe('autoUltraReset.assessConditions()', () => {
 
 describe('autoUltraReset.triggerAutoReset()', () => {
   it('respecte le throttle 24h (skip si trigger < 24h)', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     /* Stamp un trigger récent (1h ago) */
     localStorage.setItem('apex_v13_auto_reset_last_ts', String(Date.now() - 60 * 60 * 1000));
     const r = await autoUltraReset.triggerAutoReset();
@@ -167,7 +167,7 @@ describe('autoUltraReset.triggerAutoReset()', () => {
   });
 
   it('appelle Firebase backup AVANT le clear (ordre vérifié)', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     autoUltraReset.resetThrottle();
     /* Pas de fake timers ici car location.replace est wrappé dans setTimeout 5s
      * et happy-dom ne réagit pas à location.replace en test (pas de navigation réelle) */
@@ -192,7 +192,7 @@ describe('autoUltraReset.triggerAutoReset()', () => {
   });
 
   it('opt-in force: bypasse le throttle', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     /* Récent trigger */
     localStorage.setItem('apex_v13_auto_reset_last_ts', String(Date.now() - 60 * 60 * 1000));
     const r = await autoUltraReset.triggerAutoReset({ force: true });
@@ -204,7 +204,7 @@ describe('autoUltraReset.triggerAutoReset()', () => {
 
 describe('autoUltraReset.restoreAfterReset()', () => {
   it('skip si pas de query param ?_auto_reset=1', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     /* URL sans flag */
     window.history.replaceState(null, '', '/apex-ai-v13/');
     const r = await autoUltraReset.restoreAfterReset();
@@ -214,7 +214,7 @@ describe('autoUltraReset.restoreAfterReset()', () => {
   });
 
   it('appelle vaultFirebaseBackup.restoreAllFromFirebaseBackup si ?_auto_reset=1', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     window.history.replaceState(null, '', '/apex-ai-v13/?_auto_reset=1&_t=12345');
     const r = await autoUltraReset.restoreAfterReset();
     expect(r.detected).toBe(true);
@@ -239,7 +239,7 @@ describe('autoUltraReset.restoreAfterReset()', () => {
   });
 
   it('cleanup query param de l\'URL après restore (history.replaceState)', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     window.history.replaceState(null, '', '/apex-ai-v13/?_auto_reset=1&_t=99');
     expect(window.location.search).toContain('_auto_reset');
     await autoUltraReset.restoreAfterReset();
@@ -249,7 +249,7 @@ describe('autoUltraReset.restoreAfterReset()', () => {
 
 describe('autoUltraReset — anti-loop helpers', () => {
   it('recordReloadAttempt incrémente le compteur localStorage', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     autoUltraReset.recordReloadAttempt();
     autoUltraReset.recordReloadAttempt();
     expect(localStorage.getItem('apex_v13_auto_reset_reload_attempts')).toBe('2');
@@ -257,7 +257,7 @@ describe('autoUltraReset — anti-loop helpers', () => {
   });
 
   it('cache_stale détecté si stale > 30min ET reloads >= 2', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     /* Simule stale depuis 31min + 2 reloads tentés */
     localStorage.setItem('apex_v13_auto_reset_stale_since', String(Date.now() - 31 * 60 * 1000));
     localStorage.setItem('apex_v13_auto_reset_reload_attempts', '2');
@@ -268,7 +268,7 @@ describe('autoUltraReset — anti-loop helpers', () => {
   });
 
   it('isPostResetReload retourne true seulement si flag URL', async () => {
-    const { autoUltraReset } = await import('../../services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('../../services/storage/auto-ultra-reset.js');
     window.history.replaceState(null, '', '/apex-ai-v13/');
     expect(autoUltraReset.isPostResetReload()).toBe(false);
     window.history.replaceState(null, '', '/apex-ai-v13/?_auto_reset=1');

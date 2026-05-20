@@ -15,7 +15,7 @@
  */
 
 import { escapeHtml } from '../../../core/escape-html.js';
-import { pwaCapabilities, type PwaApiId, type PwaCapabilityInfo } from '../../../services/pwa-capabilities.js';
+import { pwaCapabilities, type PwaApiId, type PwaCapabilityInfo } from '../../../services/core-svc/pwa-capabilities.js';
 import { toast } from '../../../ui/toast.js';
 
 function statusBadge(status: PwaCapabilityInfo['status']): string {

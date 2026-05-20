@@ -2,9 +2,9 @@
  * Tests smart-camera + voices speak + chat suggestion wiring (anti-théâtre).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { smartCamera } from '../../services/smart-camera.js';
-import { voicesRegistry } from '../../services/voices-registry.js';
-import { visionRecognition } from '../../services/vision-recognition.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
+import { voicesRegistry } from '../../services/ai/voices-registry.js';
+import { visionRecognition } from '../../services/ai/vision-recognition.js';
 
 describe('Smart Camera (multi-compétence Kevin)', () => {
   beforeEach(() => {

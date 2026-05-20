@@ -22,7 +22,7 @@ describe('no-regression-watch v13.4.4', () => {
       json: async () => ({ commit: { sha: 'abcdef1234567890' } }),
     } as unknown as Response);
 
-    const { noRegressionWatch } = await import('../../services/no-regression-watch.js');
+    const { noRegressionWatch } = await import('../../services/sentinels/no-regression-watch.js');
     const snap = await noRegressionWatch.snapshotBeforeBatch('test-batch', 'main');
     expect(snap.label).toBe('test-batch');
     expect(snap.branch).toBe('main');
@@ -34,14 +34,14 @@ describe('no-regression-watch v13.4.4', () => {
 
   it('snapshotBeforeBatch tolère réseau down (sha=null)', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('network down'));
-    const { noRegressionWatch } = await import('../../services/no-regression-watch.js');
+    const { noRegressionWatch } = await import('../../services/sentinels/no-regression-watch.js');
     const snap = await noRegressionWatch.snapshotBeforeBatch('offline-batch');
     expect(snap.sha).toBe(null);
     expect(snap.remote).toBe('unknown');
   });
 
   it('checkAll renvoie report avec 5 tests', async () => {
-    const { noRegressionWatch } = await import('../../services/no-regression-watch.js');
+    const { noRegressionWatch } = await import('../../services/sentinels/no-regression-watch.js');
     const r = await noRegressionWatch.checkAll();
     expect(r.totalChecks).toBe(5);
     expect(r.results).toHaveLength(5);

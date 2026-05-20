@@ -3,7 +3,7 @@
  * Couvre Sentry sink, DLQ overflow, flush timer, lazy init.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { observability } from '../../services/observability.js';
+import { observability } from '../../services/observability/observability.js';
 
 describe('observability deep tests', () => {
   beforeEach(() => {

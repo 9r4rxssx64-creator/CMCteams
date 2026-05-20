@@ -14,8 +14,8 @@ import {
   remoteControl,
   hiveMind,
   webScrapper,
-} from '../../services/apex-orchestration-skills.js';
-import { skillCreator } from '../../services/apex-extra-skills.js';
+} from '../../services/core-svc/apex-orchestration-skills.js';
+import { skillCreator } from '../../services/core-svc/apex-extra-skills.js';
 
 describe('v13.4.92 HiveMind.executeTask (wire crew-experts)', () => {
   it("executeTask() existe maintenant", () => {

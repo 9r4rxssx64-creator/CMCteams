@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { rulesEngine } from '../../services/rules-engine.js';
+import { rulesEngine } from '../../services/core-svc/rules-engine.js';
 
 vi.mock('../../core/memory.js', () => {
   const mockClaudeMd = `

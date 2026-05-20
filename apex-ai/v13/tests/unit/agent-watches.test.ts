@@ -3,7 +3,7 @@
  * Anti-théâtre : prouve que les 8 agents fonctionnent réellement.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { agentWatches } from '../../services/agent-watches.js';
+import { agentWatches } from '../../services/sentinels/agent-watches.js';
 
 describe('Agent Watches (8 agents nommés P0 CLAUDE.md)', () => {
   beforeEach(() => {

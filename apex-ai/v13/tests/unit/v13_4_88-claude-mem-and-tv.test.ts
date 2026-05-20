@@ -5,8 +5,8 @@
  * Va plus loin. Soit créatif novateur futuriste" + "Oublie rien".
  */
 import { describe, it, expect } from 'vitest';
-import { claudeMemBridge } from '../../services/claude-mem-bridge.js';
-import { apexTV } from '../../services/apex-tv.js';
+import { claudeMemBridge } from '../../services/ai/claude-mem-bridge.js';
+import { apexTV } from '../../services/integrations/apex-tv.js';
 
 describe('v13.4.88 claude-mem-bridge — parité claude-mem npm', () => {
   it("singleton défini avec API attendue", () => {

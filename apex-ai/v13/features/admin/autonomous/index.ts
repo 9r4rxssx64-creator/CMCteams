@@ -21,8 +21,8 @@ import {
   apexAutonomousMode,
   type AutonomousSession,
   type AutonomousStatus,
-} from '../../../services/apex-autonomous-mode.js';
-import { autonomousWatch } from '../../../services/autonomous-watch.js';
+} from '../../../services/admin/apex-autonomous-mode.js';
+import { autonomousWatch } from '../../../services/sentinels/autonomous-watch.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 

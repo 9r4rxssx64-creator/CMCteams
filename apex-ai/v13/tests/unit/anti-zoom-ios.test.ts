@@ -13,7 +13,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { antiZoomIOS } from '../../services/anti-zoom-ios.js';
+import { antiZoomIOS } from '../../services/core-svc/anti-zoom-ios.js';
 
 beforeEach(() => {
   vi.useFakeTimers();

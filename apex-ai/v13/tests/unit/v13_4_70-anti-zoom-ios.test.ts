@@ -5,7 +5,7 @@
  * Critique UX iOS Safari : gesturestart bloqué, multi-touch bloqué, double-tap bloqué.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { antiZoomIOS } from '../../services/anti-zoom-ios.js';
+import { antiZoomIOS } from '../../services/core-svc/anti-zoom-ios.js';
 
 describe('v13.4.70 anti-zoom-ios — API publique', () => {
   afterEach(() => {

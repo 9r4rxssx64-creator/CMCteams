@@ -6,7 +6,7 @@
  * openclaw exclu PROBE_PROVIDERS (placeholder fake, fix v13.3.87 P1.11).
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { aiProvidersHealth } from '../../services/ai-providers-health.js';
+import { aiProvidersHealth } from '../../services/ai/ai-providers-health.js';
 
 describe('v13.4.71 ai-providers-health — API publique', () => {
   afterEach(() => {

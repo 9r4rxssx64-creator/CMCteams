@@ -24,7 +24,7 @@ import {
   listE2ERequests,
   getLastE2EResult,
   _internals,
-} from '../../services/apex-e2e-trigger.js';
+} from '../../services/admin/apex-e2e-trigger.js';
 
 describe('apex-e2e-trigger (v13.4.140 coverage)', () => {
   beforeEach(() => {

@@ -12,7 +12,7 @@
  */
 
 import { logger } from '../../core/logger.js';
-import { auditLog } from '../audit-log.js';
+import { auditLog } from '../observability/audit-log.js';
 
 const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
 

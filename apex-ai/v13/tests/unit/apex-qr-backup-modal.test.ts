@@ -4,7 +4,7 @@
  * Module : services/apex-qr-backup.ts coverage push pour la branche showQrBackupModal.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apexQrBackup } from '../../services/apex-qr-backup.js';
+import { apexQrBackup } from '../../services/vault/apex-qr-backup.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

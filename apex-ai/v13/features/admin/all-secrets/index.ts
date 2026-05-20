@@ -41,11 +41,11 @@ import { createCleanupScope, type CleanupScope } from '../../../core/listener-cl
 import { logger } from '../../../core/logger.js';
 import { router } from '../../../core/router.js';
 import { store } from '../../../core/store.js';
-import { auditLog } from '../../../services/audit-log.js';
-import { CREDENTIAL_PATTERNS } from '../../../services/credential-patterns.js';
-import { genericSecrets, type GenericSecret } from '../../../services/generic-secrets.js';
-import { multiKeyVault, type KeyEntry } from '../../../services/multi-key-vault.js';
-import { vault } from '../../../services/vault.js';
+import { auditLog } from '../../../services/observability/audit-log.js';
+import { CREDENTIAL_PATTERNS } from '../../../services/vault/credential-patterns.js';
+import { genericSecrets, type GenericSecret } from '../../../services/vault/generic-secrets.js';
+import { multiKeyVault, type KeyEntry } from '../../../services/vault/multi-key-vault.js';
+import { vault } from '../../../services/vault/vault.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 

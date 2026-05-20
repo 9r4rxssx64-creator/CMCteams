@@ -26,7 +26,7 @@ import {
   searchJetBrains,
   type SearchHelpers,
 } from '../../services/apex-meta-marketplace/search-handlers.js';
-import type { MarketplaceProvider } from '../../services/apex-meta-marketplace-types.js';
+import type { MarketplaceProvider } from '../../services/core-svc/apex-meta-marketplace-types.js';
 
 const fakeProvider: MarketplaceProvider = {
   id: 'test',

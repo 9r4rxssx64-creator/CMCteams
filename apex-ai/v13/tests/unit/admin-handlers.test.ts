@@ -4,8 +4,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { store } from '../../core/store.js';
-import { auth } from '../../services/auth.js';
-import { whatsapp } from '../../services/whatsapp.js';
+import { auth } from '../../services/auth/auth.js';
+import { whatsapp } from '../../services/integrations/whatsapp.js';
 
 describe('admin handlers deep tests Jet 8', () => {
   let root: HTMLElement;
@@ -208,7 +208,7 @@ describe('admin handlers deep tests Jet 8', () => {
       localStorage.clear();
       /* Configurer numéro Kevin pour les tests WhatsApp */
       localStorage.setItem('ax_kevin_whatsapp_phone', '+33687654321');
-      const { auth } = await import('../../services/auth.js');
+      const { auth } = await import('../../services/auth/auth.js');
       const { store } = await import('../../core/store.js');
       store.init({ appVer: 'v13.0.0' });
       const r = await auth.createUser({ name: 'Kevin DESARZENS', tier: 'admin', initialPin: '111111' });
@@ -220,8 +220,8 @@ describe('admin handlers deep tests Jet 8', () => {
     });
 
     it('createUser avec whatsappPhone valide → request inviteLink + otp', async () => {
-      const { auth } = await import('../../services/auth.js');
-      const { whatsapp } = await import('../../services/whatsapp.js');
+      const { auth } = await import('../../services/auth/auth.js');
+      const { whatsapp } = await import('../../services/integrations/whatsapp.js');
       const r = await auth.createUser({
         name: 'Friend Test',
         tier: 'family',
@@ -246,7 +246,7 @@ describe('admin handlers deep tests Jet 8', () => {
     });
 
     it('whatsapp.confirm avec OTP wrong → ok=false + uid undefined', async () => {
-      const { whatsapp } = await import('../../services/whatsapp.js');
+      const { whatsapp } = await import('../../services/integrations/whatsapp.js');
       const result = whatsapp.confirm('999999_invalid');
       /* Vraie assertion : refuse OTP qui n'existe pas — uid pas retourné */
       expect(result.ok).toBe(false);
@@ -254,8 +254,8 @@ describe('admin handlers deep tests Jet 8', () => {
     });
 
     it('whatsapp.confirm replay attack après confirm → rejette 2nd', async () => {
-      const { auth } = await import('../../services/auth.js');
-      const { whatsapp } = await import('../../services/whatsapp.js');
+      const { auth } = await import('../../services/auth/auth.js');
+      const { whatsapp } = await import('../../services/integrations/whatsapp.js');
       const r = await auth.createUser({ name: 'Replay', tier: 'family', whatsappPhone: '+33611111111' });
       const conf = await whatsapp.requestConfirmation({
         uid: r.uid!,

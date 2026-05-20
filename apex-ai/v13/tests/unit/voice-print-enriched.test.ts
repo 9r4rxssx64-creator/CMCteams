@@ -3,7 +3,7 @@
  * Pousse coverage voice-print pour P0 audit gaps voiceprint.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { voicePrint } from '../../services/voice-print.js';
+import { voicePrint } from '../../services/ai/voice-print.js';
 
 /**
  * Crée un AudioBuffer simulé pour tests (Float32Array fake samples).

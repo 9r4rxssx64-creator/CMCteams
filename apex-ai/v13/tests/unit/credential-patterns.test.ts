@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectCredential, CREDENTIAL_PATTERNS } from '../../services/credential-patterns.js';
+import { detectCredential, CREDENTIAL_PATTERNS } from '../../services/vault/credential-patterns.js';
 
 describe('credential-patterns', () => {
   it('catalogue ≥ 40 patterns', () => {

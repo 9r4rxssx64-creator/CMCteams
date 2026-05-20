@@ -9,7 +9,7 @@
  * - maybeAddToMultiKeyVault : ajoute dans multi-key-vault parallèle
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('Vault deep coverage (méthodes privées via side effects)', () => {
   beforeEach(() => {

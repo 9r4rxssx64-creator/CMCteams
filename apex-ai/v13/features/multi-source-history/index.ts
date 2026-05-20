@@ -19,8 +19,8 @@ import {
   multiSourceAnalyze,
   type MultiSourceResult,
   type ExtractedItem,
-} from '../../services/multi-source-analyze.js';
-import { studyService } from '../../services/study-service.js';
+} from '../../services/ai/multi-source-analyze.js';
+import { studyService } from '../../services/integrations/study-service.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 

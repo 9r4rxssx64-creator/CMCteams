@@ -9,7 +9,7 @@ import {
   filterCommands,
   helpText,
   SLASH_COMMANDS,
-} from '../../services/slash-commands.js';
+} from '../../services/admin/slash-commands.js';
 
 describe('services/slash-commands', () => {
   describe('SLASH_COMMANDS catalogue', () => {

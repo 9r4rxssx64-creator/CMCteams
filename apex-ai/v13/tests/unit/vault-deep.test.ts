@@ -2,7 +2,7 @@
  * Tests profonds vault.ts (Jet 7.5 — coverage 59% → 90%+).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('vault deep tests', () => {
   beforeEach(() => {

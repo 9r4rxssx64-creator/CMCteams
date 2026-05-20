@@ -2,7 +2,7 @@
  * Tests tokens-dashboard.ts (path 100/100 — visuel conso tokens demandé Kevin).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { tokensDashboard } from '../../services/tokens-dashboard.js';
+import { tokensDashboard } from '../../services/observability/tokens-dashboard.js';
 
 describe('Tokens Dashboard (visuel conso API Kevin)', () => {
   beforeEach(() => {

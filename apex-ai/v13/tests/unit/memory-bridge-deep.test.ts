@@ -16,7 +16,7 @@ const { mockVault } = vi.hoisted(() => ({
 
 vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
 
-import { memoryBridge } from '../../services/memory-bridge.js';
+import { memoryBridge } from '../../services/storage/memory-bridge.js';
 
 describe('memory-bridge deep (v13.4.155)', () => {
   beforeEach(() => {

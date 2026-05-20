@@ -18,7 +18,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { store } from '../../core/store.js';
 import { _resetState, render } from '../../features/admin-backup/index.js';
-import { autoBackup } from '../../services/auto-backup.js';
+import { autoBackup } from '../../services/storage/auto-backup.js';
 
 function makeRoot(): HTMLElement {
   const el = document.createElement('div');

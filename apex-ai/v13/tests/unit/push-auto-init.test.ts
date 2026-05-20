@@ -3,7 +3,7 @@
  * Anti-théâtre : prouve que init au boot fonctionne, détecte iOS PWA, gère permissions.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { pushAutoInit } from '../../services/push-auto-init.js';
+import { pushAutoInit } from '../../services/integrations/push-auto-init.js';
 
 describe('Push Auto-Init (autonome iOS+Android app fermée)', () => {
   let origUserAgent: string;

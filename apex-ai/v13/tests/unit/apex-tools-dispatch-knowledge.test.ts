@@ -9,9 +9,9 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
-import { vault } from '../../services/vault.js';
+import { apexKnowledgeBase } from '../../services/admin/apex-knowledge-base.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('apex-tools-dispatch — knowledge base cases', () => {
   beforeEach(() => {

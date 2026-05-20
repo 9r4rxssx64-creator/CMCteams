@@ -3,7 +3,7 @@
  * Auto-split from services/apex-tools-dispatch.ts (refactor 2026-05-08).
  */
 
-import { firebase } from '../firebase.js';
+import { firebase } from '../storage/firebase.js';
 
 export function jsonValidate(json: string): {
   valid: boolean;

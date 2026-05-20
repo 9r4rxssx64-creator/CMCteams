@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { webauthn } from '../../services/webauthn.js';
+import { webauthn } from '../../services/auth/webauthn.js';
 
 describe('webauthn deep tests (Jet 7.9 — 24% → 90%+)', () => {
   beforeEach(() => {

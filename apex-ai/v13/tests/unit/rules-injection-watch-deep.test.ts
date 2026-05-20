@@ -26,7 +26,7 @@ vi.mock('../../services/rules-engine.js', () => ({
   rulesEngine: { list: () => rulesListMock() },
 }));
 
-import { rulesInjectionWatch } from '../../services/rules-injection-watch.js';
+import { rulesInjectionWatch } from '../../services/sentinels/rules-injection-watch.js';
 
 const AUDIT_KEY = 'apex_v13_rules_injection_audit';
 const FAIL_KEY = 'apex_v13_rules_injection_fail_count';

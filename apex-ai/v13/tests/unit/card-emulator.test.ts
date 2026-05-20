@@ -4,8 +4,8 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { badgeCloner } from '../../services/badge-cloner.js';
-import { cardEmulator } from '../../services/card-emulator.js';
+import { badgeCloner } from '../../services/integrations/badge-cloner.js';
+import { cardEmulator } from '../../services/integrations/card-emulator.js';
 
 describe('card-emulator — listSupported / capabilities', () => {
   it('listSupported retourne le catalogue 18+', () => {

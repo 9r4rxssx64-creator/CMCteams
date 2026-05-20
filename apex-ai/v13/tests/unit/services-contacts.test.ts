@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { contacts } from '../../services/contacts.js';
+import { contacts } from '../../services/integrations/contacts.js';
 
 describe('Contacts (carnet d\'adresses)', () => {
   beforeEach(() => {

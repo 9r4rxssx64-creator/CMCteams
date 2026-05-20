@@ -5,11 +5,11 @@
  * teste tout toujours"
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { apexCredentialAssociator } from '../../services/apex-credential-associator.js';
+import { apexCredentialAssociator } from '../../services/vault/apex-credential-associator.js';
 import {
   isServiceSupported,
   listSupportedServices,
-} from '../../services/apex-credential-tester.js';
+} from '../../services/vault/apex-credential-tester.js';
 
 describe('v13.4.100 apexCredentialAssociator', () => {
   beforeEach(() => {

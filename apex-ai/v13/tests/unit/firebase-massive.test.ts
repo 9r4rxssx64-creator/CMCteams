@@ -2,7 +2,7 @@
  * Mock fetch SSE pour init/connected, write avec idempotency persisted, queue flush, applyRemoteChange.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { firebase, FB_FIX, FB_LOCAL } from '../../services/firebase.js';
+import { firebase, FB_FIX, FB_LOCAL } from '../../services/storage/firebase.js';
 
 describe('firebase massive coverage Jet 8', () => {
   beforeEach(() => {

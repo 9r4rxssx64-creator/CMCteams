@@ -17,7 +17,7 @@ const { mockAuditLog, mockClaudeBridge } = vi.hoisted(() => ({
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 vi.mock('../../services/claude-bridge.js', () => ({ claudeBridge: mockClaudeBridge }));
 
-import { cspMonitor } from '../../services/csp-monitor.js';
+import { cspMonitor } from '../../services/observability/csp-monitor.js';
 
 function fakeViolation(opts: { directive?: string; blockedURI?: string; sourceFile?: string }): SecurityPolicyViolationEvent {
   return {

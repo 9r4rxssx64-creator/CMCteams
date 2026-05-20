@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { innovationWatch, type TechUpdate } from '../../services/innovation-watch.js';
+import { innovationWatch, type TechUpdate } from '../../services/sentinels/innovation-watch.js';
 
 const STORAGE_KEY = 'apex_v13_innovation_updates';
 const STATS_KEY = 'apex_v13_innovation_stats';

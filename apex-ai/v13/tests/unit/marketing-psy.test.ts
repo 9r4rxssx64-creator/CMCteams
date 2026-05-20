@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { marketingPsy } from '../../services/marketing-psy.js';
+import { marketingPsy } from '../../services/integrations/marketing-psy.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

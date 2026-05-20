@@ -2,7 +2,7 @@
  * Tests predictive-engine.ts (ML local pour anticipation user — innovation futuriste).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { predictiveEngine } from '../../services/predictive-engine.js';
+import { predictiveEngine } from '../../services/ai/predictive-engine.js';
 
 describe('Predictive Engine (anticipation user actions)', () => {
   beforeEach(() => {

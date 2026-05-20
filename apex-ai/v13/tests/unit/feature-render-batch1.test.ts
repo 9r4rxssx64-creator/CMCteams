@@ -154,13 +154,13 @@ import {
   dispose as disposeInnovation,
 } from '../../features/innovation/index.js';
 
-import { signup } from '../../services/signup.js';
+import { signup } from '../../services/auth/signup.js';
 import { router } from '../../core/router.js';
 import { toast } from '../../ui/toast.js';
-import { rgpd } from '../../services/rgpd.js';
-import { multiSourceAnalyze } from '../../services/multi-source-analyze.js';
-import { studyService } from '../../services/study-service.js';
-import { innovationWatch } from '../../services/innovation-watch.js';
+import { rgpd } from '../../services/auth/rgpd.js';
+import { multiSourceAnalyze } from '../../services/ai/multi-source-analyze.js';
+import { studyService } from '../../services/integrations/study-service.js';
+import { innovationWatch } from '../../services/sentinels/innovation-watch.js';
 import { store } from '../../core/store.js';
 
 /* ============================================================

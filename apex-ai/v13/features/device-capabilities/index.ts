@@ -23,8 +23,8 @@ import { escapeHtml } from '../../core/escape-html.js';
 export { escapeHtml }; /* re-export pour tests + parité historique */
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
-import { crossPlatform } from '../../services/cross-platform.js';
-import { deviceDetect, type DeviceCapabilities } from '../../services/device-detect.js';
+import { crossPlatform } from '../../services/core-svc/cross-platform.js';
+import { deviceDetect, type DeviceCapabilities } from '../../services/integrations/device-detect.js';
 import { toast } from '../../ui/toast.js';
 
 let activeScope: CleanupScope | null = null;

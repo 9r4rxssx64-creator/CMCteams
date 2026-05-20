@@ -16,8 +16,8 @@ import {
   aiKeyRotation,
   classifyError,
   type RotationProvider,
-} from '../../services/ai-key-rotation.js';
-import { multiKeyVault } from '../../services/multi-key-vault.js';
+} from '../../services/ai/ai-key-rotation.js';
+import { multiKeyVault } from '../../services/vault/multi-key-vault.js';
 
 /* Helper : Mock fetch retourne un Response avec status donné */
 function mockFetchStatus(status: number): Promise<Response> {
@@ -170,7 +170,7 @@ describe('ai-key-rotation — orchestrateur rotation clés API multi-provider', 
       const segments = ['sk', 'ant', 'api' + '03', 'X'.repeat(50)];
       const newKey = segments.join('-');
       /* sanity check : le pattern detectCredential doit matcher cette construction */
-      const { detectCredential } = await import('../../services/credential-patterns.js');
+      const { detectCredential } = await import('../../services/vault/credential-patterns.js');
       expect(detectCredential(newKey)?.storageKey).toBe('ax_anthropic_key');
       const result = await aiKeyRotation.onPasteDetect(newKey);
 

@@ -6,7 +6,7 @@
  * Playwright iOS Simulator workflow).
  */
 import { describe, it, expect } from 'vitest';
-import { apexAutoServiceFinder } from '../../services/apex-auto-service-finder.js';
+import { apexAutoServiceFinder } from '../../services/integrations/apex-auto-service-finder.js';
 
 describe('v13.4.110 apexAutoServiceFinder', () => {
   it("findServiceForToken refuse token trop court", async () => {

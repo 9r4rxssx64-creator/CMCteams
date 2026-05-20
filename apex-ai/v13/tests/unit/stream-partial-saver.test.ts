@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { streamPartialSaver } from '../../services/stream-partial-saver.js';
+import { streamPartialSaver } from '../../services/ai/stream-partial-saver.js';
 
 const KEY = 'apex_v13_streaming_partial';
 

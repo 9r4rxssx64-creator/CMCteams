@@ -3,7 +3,7 @@
  * Mock fetch pour valider write/read/idempotency comportement réel.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { firebase, FB_FIX, FB_LOCAL } from '../../services/firebase.js';
+import { firebase, FB_FIX, FB_LOCAL } from '../../services/storage/firebase.js';
 
 describe('firebase service', () => {
   beforeEach(() => {

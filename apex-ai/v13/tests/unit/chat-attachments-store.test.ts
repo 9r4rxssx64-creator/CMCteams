@@ -12,7 +12,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { chatAttachmentsStore } from '../../services/chat-attachments-store.js';
+import { chatAttachmentsStore } from '../../services/ai/chat-attachments-store.js';
 
 function makeAtt(mime = 'image/png', name = 'photo.png', base64 = 'aGVsbG8='): {
   mime: string;

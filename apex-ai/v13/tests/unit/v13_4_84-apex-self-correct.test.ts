@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import {
   apexSelfCorrect,
   DEFAULT_DETECTION_WINDOW,
-} from '../../services/apex-self-correct.js';
+} from '../../services/admin/apex-self-correct.js';
 
 describe('v13.4.84 apex-self-correct — API publique', () => {
   it("singleton défini avec méthodes attendues", () => {

@@ -19,13 +19,13 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { featureToggles } from '../../services/feature-toggles.js';
+import { featureToggles } from '../../services/auth/feature-toggles.js';
 import {
   guardFeatureEnabled,
   guardSentinelEnabled,
   guardFeatureBoot,
   guardToolEnabled,
-} from '../../services/feature-guard.js';
+} from '../../services/auth/feature-guard.js';
 
 describe('feature-guard helpers', () => {
   beforeEach(() => {

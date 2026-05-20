@@ -12,9 +12,9 @@ import {
   pushPlanningToCmc,
   detectAndPushIfPlanning,
   _internals,
-} from '../../services/cmc-planning-bridge.js';
-import { firebase } from '../../services/firebase.js';
-import { auth } from '../../services/auth.js';
+} from '../../services/integrations/cmc-planning-bridge.js';
+import { firebase } from '../../services/storage/firebase.js';
+import { auth } from '../../services/auth/auth.js';
 
 describe('cmc-planning-bridge', () => {
   beforeEach(() => {

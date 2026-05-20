@@ -21,7 +21,7 @@ import {
   axEnableUSB,
   axEnableWakeLock,
   pwaCapabilities,
-} from '../../services/pwa-capabilities.js';
+} from '../../services/core-svc/pwa-capabilities.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

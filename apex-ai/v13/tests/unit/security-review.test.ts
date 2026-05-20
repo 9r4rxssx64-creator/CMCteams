@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { securityReview } from '../../services/security-review.js';
+import { securityReview } from '../../services/admin/security-review.js';
 
 describe('Security Review (Yury Plugin équivalent)', () => {
   beforeEach(() => {

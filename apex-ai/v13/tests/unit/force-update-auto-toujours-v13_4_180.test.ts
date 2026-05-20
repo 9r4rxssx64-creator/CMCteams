@@ -28,7 +28,7 @@ vi.mock('../../services/auto-backup.js', () => ({
   },
 }));
 
-import { forceUpdateBanner } from '../../services/force-update-banner.js';
+import { forceUpdateBanner } from '../../services/core-svc/force-update-banner.js';
 
 beforeEach(() => {
   localStorage.clear();

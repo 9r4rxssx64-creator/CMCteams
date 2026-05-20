@@ -2,7 +2,7 @@
  * Tests session-logger.ts (39.66% → 95%+).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sessionLogger } from '../../services/session-logger.js';
+import { sessionLogger } from '../../services/auth/session-logger.js';
 
 describe('session-logger (P0 coverage)', () => {
   beforeEach(() => {

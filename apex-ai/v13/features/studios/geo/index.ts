@@ -19,7 +19,7 @@ export { escapeHtml }; /* re-export pour tests + parité historique */
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
-import { guardFeatureEnabled } from '../../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../../services/auth/feature-guard.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 

@@ -14,14 +14,14 @@
  * @see TODO Kevin v13.3.87 — refactor en tests unitaires significatifs.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { telemetry } from '../../services/telemetry.js';
-import { pushNotifications } from '../../services/push-notifications.js';
-import { smartCamera } from '../../services/smart-camera.js';
-import { deviceContext } from '../../services/device-context.js';
-import { visionRecognition } from '../../services/vision-recognition.js';
-import { voicePrint } from '../../services/voice-print.js';
-import { sentinels } from '../../services/sentinels.js';
-import { chatRealtime } from '../../services/chat-realtime.js';
+import { telemetry } from '../../services/observability/telemetry.js';
+import { pushNotifications } from '../../services/integrations/push-notifications.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
+import { deviceContext } from '../../services/integrations/device-context.js';
+import { visionRecognition } from '../../services/ai/vision-recognition.js';
+import { voicePrint } from '../../services/ai/voice-print.js';
+import { sentinels } from '../../services/sentinels/sentinels.js';
+import { chatRealtime } from '../../services/ai/chat-realtime.js';
 
 describe('Coverage boost batch (services < 80%)', () => {
   beforeEach(() => {

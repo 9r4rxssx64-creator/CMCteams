@@ -3,7 +3,7 @@
  * Couvre askConsent flow + paths edge.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { deviceContext } from '../../services/device-context.js';
+import { deviceContext } from '../../services/integrations/device-context.js';
 
 describe('Device Context coverage extension', () => {
   beforeEach(() => {

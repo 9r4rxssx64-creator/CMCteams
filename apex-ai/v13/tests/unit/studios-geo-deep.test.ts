@@ -32,7 +32,7 @@ import {
   MONACO_REF,
   POIS_MONACO,
 } from '../../features/studios/geo/index.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 import { toast } from '../../ui/toast.js';
 import { haptic } from '../../ui/haptic.js';
 
