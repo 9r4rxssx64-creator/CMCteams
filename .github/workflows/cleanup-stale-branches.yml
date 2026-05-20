@@ -28,6 +28,12 @@ on:
   push:
     branches: [main]
     paths: ['.github/workflows/cleanup-stale-branches.yml']
+  # Kevin 2026-05-20 "branches propres autonome" : le push de l'auto-merge bot
+  # utilise GITHUB_TOKEN → ne déclenche pas les workflows push. workflow_run
+  # se déclenche APRÈS chaque auto-merge → cleanup vraiment automatique.
+  workflow_run:
+    workflows: ["Auto-merge Claude branches into main"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -40,7 +46,7 @@ jobs:
   cleanup-merged:
     name: Delete merged claude/* branches
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 4 * * *' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    if: github.event.schedule == '0 4 * * *' || github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'workflow_run'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
