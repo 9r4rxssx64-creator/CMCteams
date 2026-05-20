@@ -5178,20 +5178,20 @@ function _stripPersistedTeamFamHistory(empsArr){
 // 212 emps "explicit" skip dans algo → ré-affectations bloquées sur vieilles valeurs.
 // Solution : NEW flag cmc_v710_redetect_done → wipe forcé pour les devices ayant
 // déjà fait v9.707 (qui n'aurait pas tourné si flag v707 déjà set par v9.707).
-(function _v713RedetectBoot(){
+(function _v714RedetectBoot(){
   try{
-    if(localStorage.getItem("cmc_v713_redetect_done"))return;
+    if(localStorage.getItem("cmc_v714_redetect_done"))return;
     var _eRaw=localStorage.getItem("cmc_e");
-    if(!_eRaw){localStorage.setItem("cmc_v713_redetect_done","1");return;}
+    if(!_eRaw){localStorage.setItem("cmc_v714_redetect_done","1");return;}
     var _emps=JSON.parse(_eRaw);
-    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v713_redetect_done","1");return;}
+    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v714_redetect_done","1");return;}
     var _wiped=0;
     _emps.forEach(function(e){
       if(e&&e.teamHistory){_wiped+=Object.keys(e.teamHistory).length;e.teamHistory={};}
       if(e&&e.familyHistory){e.familyHistory={};}
     });
     localStorage.setItem("cmc_e",JSON.stringify(_emps));
-    localStorage.setItem("cmc_v713_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
+    localStorage.setItem("cmc_v714_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
     try{window._cmcLastDetectCacheKey=null;}catch(_){}
     // Aussi : wipe cmc_team_mirror_* pour forcer re-détection miroir au prochain dc()
     try{
@@ -5201,7 +5201,7 @@ function _stripPersistedTeamFamHistory(empsArr){
         }
       }
     }catch(_){}
-    console.log("[v9.713 redetect-boot] "+_wiped+" teamHistory + miroirs wipés — algo v9.713 (famille section PDF + sig normalisé chef/croupier) au prochain dc()");
+    console.log("[v9.714 redetect-boot] "+_wiped+" teamHistory + miroirs wipés — algo v9.714 (parser grille préserve le 'c' chef) au prochain dc()");
   }catch(_e){console.warn("[v9.711 redetect-boot]",_e);}
 })();
 var A={
@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.713";
+var APP_VER="v9.714";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -38027,11 +38027,30 @@ function doImport(){
       code=code.replace(/CDP$/,"*");
       // Normaliser espace manquant entre heure et slash : "16/ 3"→"16/3", "20 /5"→"20/5"
       code=code.replace(/(\d)\s*\/\s*(\d)/g,"$1/$2");
-      // Normaliser codes CMC : "' → ' (conserve marqueur convention), puis strip C/quotes
+      // v9.714 Kevin diag mai 2026 — NE PLUS stripper le 'C' (chef BJ) dans la
+      // grille jour-par-jour. v9.712 avait corrigé _applyCodeArr (parser entête)
+      // mais CE parser (grille des codes quotidiens, source réelle des cellules)
+      // appliquait encore replace(/[C"']+$/,"") → 22/6C devenait 22/6 → tous les
+      // chefs BJ détectés comme roulettes. Fix identique v9.712 : préserver le
+      // 'c', cloner l'entrée CODES de base (même horaire/couleur) + flag chef.
       if(!CODES[code]){
         var c2=code.replace(/"'/g,"'");
         if(c2!==code&&CODES[c2]){code=c2;}
-        else{c2=(c2!==code?c2:code).replace(/[C"']+$/,"");if(c2&&CODES[c2])code=c2;}
+        else{
+          // Strip UNIQUEMENT "':; (artefacts) — PAS le C (marqueur chef)
+          var c2s=(c2!==code?c2:code).replace(/["':;]+$/,"");
+          if(c2s&&CODES[c2s]){code=c2s;}
+          else{
+            var _chefBase=code.replace(/C+$/,"");
+            if(_chefBase!==code&&CODES[_chefBase]){
+              var _chefCode=_chefBase+"c";
+              if(!CODES[_chefCode]){
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefBase],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+              }
+              code=_chefCode;
+            }
+          }
+        }
       }
       // Alias codes courants mal formatés dans certains exports PDF
       if(!CODES[code]){
