@@ -301,6 +301,14 @@ export function mountMetaMarketplace(target: HTMLElement): { unmount: () => void
 }
 
 /**
+ * v13.4.239 — Export `render` standard pour compat router (RouteLoader attend
+ * `render`). Wrappe mountMetaMarketplace. Câblage route `marketplace`.
+ */
+export function render(root: HTMLElement): void {
+  mountMetaMarketplace(root);
+}
+
+/**
  * Réinitialise l'état (utile pour tests).
  */
 export function resetMetaMarketplaceFeature(): void {

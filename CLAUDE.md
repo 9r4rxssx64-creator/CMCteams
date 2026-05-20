@@ -4,6 +4,113 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-16 (Ape
 
 ---
 
+## 🏛 RÈGLE ABSOLUE — ARCHITECTURE AUDITÉE EN PREMIER, AVANT TOUT (Kevin 2026-05-20, ABSOLUE)
+
+> **"Comment ça se fait qu'avec tous les audits, les vérifications, tu es passé à côté de grosses choses comme l'architecture ? L'architecture dans chaque projet doit être primordiale, prioritaire pour le bon fonctionnement des applications."** — Kevin 2026-05-20
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire** — Apex, CMCteams, Apex Chat, e-KDMC, tous projets.
+
+### Cause de l'erreur (à ne JAMAIS reproduire)
+
+Session 2026-05-20 : 6+ audits lancés sur l'UX/cosmétique (couleurs, boutons,
+glassmorphism), AUCUN sur l'architecture. Résultat : passé à côté de 5 features
+non-câblées (routes manquantes), 1 doublon de route (`dashboard` écrasé),
+172 services à plat sans organisation, ~1063 styles inline. Tout ça était là
+depuis le début. **On décore la maison sans vérifier les fondations.**
+
+### 1. Audit ARCHITECTURE obligatoire AVANT tout audit cosmétique
+
+Pour tout projet, à chaque session de revue/amélioration, le PREMIER audit
+est l'architecture — JAMAIS l'UX/design en premier :
+- **Routes** : doublons (même nom enregistré 2×), routes mortes, routes orphelines
+- **Modules/features déclarés mais non câblés** (Declaration ≠ Deployment, erreur #28)
+- **Organisation fichiers** : dossiers par domaine vs vrac à plat
+- **Doublons de code** : 2 implémentations de la même chose
+- **Dette technique mesurable** : inline styles, fichiers > 15K lignes, imports cassés
+- **Cohérence imports** : alias résolus, pas d'import vers fichier inexistant
+
+### 2. L'architecture est PRIMORDIALE pour le fonctionnement
+
+Une feature non-câblée = code mort invisible. Un doublon de route = vue
+inaccessible. Un service mal rangé = bug de maintenance. L'architecture
+détermine si l'app FONCTIONNE, pas juste si elle est jolie. Priorité 1.
+
+### 3. Ordre obligatoire d'une session d'amélioration
+
+1. Audit architecture (routes, câblage, organisation, doublons, dette)
+2. Fix des problèmes structurels P0 (routes cassées, features orphelines)
+3. SEULEMENT APRÈS : audit + amélioration UX/cosmétique
+
+### 4. Test mental obligatoire avant chaque audit
+
+> *"Est-ce que j'audite les FONDATIONS (routes, câblage, organisation) ou
+> seulement la PEINTURE (couleurs, animations) ? Si je n'ai pas encore
+> vérifié que chaque feature est routée et que rien n'est en doublon,
+> je n'ai pas le droit de passer au cosmétique."*
+
+### 5. Sentinelle / CI gate
+
+CI gate "architecture" : détecte routes doublon, features `index.ts` sans
+`router.register` correspondant, imports cassés. Échoue le build si drift.
+
+S'applique : Apex (priorité absolue), CMCteams, Apex Chat, e-KDMC, tous projets futurs.
+
+---
+
+## 🔍 RÈGLE ABSOLUE — "FAIS L'AUDIT" = AUDIT LE PLUS PUISSANT, SANS RIEN RATER (Kevin 2026-05-20, ABSOLUE)
+
+> **"Quand je dis 'fais l'audit' de CMCteams, de Remote, peu importe, il doit comprendre de faire l'audit le plus puissant, le plus poussé, le plus complet, le plus détaillé. À chaque fois. Partout. Sans rien rater : ni architecture, ni end-to-end, ni fonctionnalités, ni fluidité (que l'app ne saute pas, ne scintille pas), que les fonctions et les boutons fonctionnent et atterrissent au bon endroit. Va plus loin. Tout autonome."** — Kevin 2026-05-20
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex, CMCteams, Remote, Apex Chat, e-KDMC, tous projets.
+
+### Déclencheur
+
+Dès que Kevin dit « fais l'audit », « audit », « audite X », « fais ton audit »
+— quel que soit le projet — déclencher l'audit le PLUS COMPLET, jamais une
+version partielle ou rapide.
+
+### Les 8 axes obligatoires d'un audit complet (aucun ne doit manquer)
+
+1. **Architecture** — routes (doublons, orphelines, mortes), features non
+   câblées (Declaration ≠ Deployment), organisation modules, imports cassés,
+   doublons de code. (cf. règle ARCHITECTURE AUDITÉE EN PREMIER)
+2. **End-to-end** — chaque parcours utilisateur réel testé du début à la fin
+   (login → action → résultat → persistance → reload).
+3. **Fonctionnalités** — chaque fonction fait ce qu'elle doit, chaque feature
+   accessible et opérationnelle.
+4. **Boutons & navigation** — chaque bouton réagit, exécute la bonne action,
+   et atterrit au BON endroit (pas de route cassée, pas de vue blanche).
+5. **Fluidité** — l'app ne saute pas, ne scintille pas, ne freeze pas ;
+   animations 60fps, pas de reflow massif, pas de layout shift (CLS).
+6. **Sécurité** — XSS, secrets exposés, CSP, guards admin, auth.
+7. **Performance** — bundle, LCP/INP/CLS, intervals zombies, memory leaks.
+8. **UX / accessibilité** — touch targets ≥44px, contraste, aria, mobile 375px.
+
+### Autonome + mesuré
+
+- Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
+- Scores RÉELS mesurés (jamais estimés — cf. règle JAMAIS ESTIMER).
+- Findings priorisés P0/P1/P2 + actions concrètes.
+- Audit POST-FIX systématique (mesurer l'écart réel après correction).
+
+### Intégration Apex
+
+L'audit interne Apex (`apex-runtime-diagnostic`, `auto-test-runner`,
+`apex-self-audit`) DOIT couvrir les 8 axes. Le check `architecture-routes`
+(routes doublon) ajouté v13.4.239 en est le premier maillon — à enrichir
+en continu avec les autres axes.
+
+### Test mental obligatoire
+
+> *"Mon audit couvre-t-il les 8 axes ? Si j'ai vérifié les couleurs mais pas
+> que chaque bouton atterrit au bon endroit, ni que l'app ne scintille pas,
+> ni que l'architecture est saine — alors ce n'est PAS un audit, c'est un
+> coup d'œil. Reprendre."*
+
+S'applique : Apex (priorité absolue), CMCteams, Remote, Apex Chat, e-KDMC, tous projets.
+
+---
+
 ## 🌿 RÈGLE ABSOLUE — COORDINATION MULTI-SESSIONS CLAUDE CODE (Kevin 2026-05-16, ABSOLUE)
 
 > **"Toutes branches Claude code connectées. Pas de double travail, pas de confusion, pas de conflit, pas de régression. Même les futures branches couplées automatiquement. Va plus loin."** — Kevin 2026-05-16

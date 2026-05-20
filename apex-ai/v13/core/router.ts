@@ -32,9 +32,26 @@ class Router {
   private currentRoute = '';
   private rootEl: HTMLElement | null = null;
   private initialized = false;
+  /* v13.4.239 (audit architecture Kevin 2026-05-20) — trace les doublons de
+   * route. Avant : register() écrasait silencieusement → le doublon `dashboard`
+   * rendait une vue inaccessible sans alerte. Maintenant détecté + auditable. */
+  private duplicates: string[] = [];
 
   register(name: string, def: RouteDef): void {
+    if (this.routes.has(name)) {
+      this.duplicates.push(name);
+    }
     this.routes.set(name, def);
+  }
+
+  /** Audit architecture : routes en doublon (register() appelé 2× même nom). */
+  getDuplicateRoutes(): readonly string[] {
+    return [...new Set(this.duplicates)];
+  }
+
+  /** Audit architecture : nombre total de routes enregistrées. */
+  getRouteCount(): number {
+    return this.routes.size;
   }
 
   init(): void {
