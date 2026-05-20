@@ -113,11 +113,20 @@ jobs:
           echo "::notice::D1 ID hardcoded:"
           grep "database_id" wrangler.toml | head -1
 
-      - name: Apply D1 migrations
+      - name: Apply D1 migrations (toutes, 0001→0004)
         if: github.event.inputs.apply_migrations != 'no'
         working-directory: messaging-app/workers
         run: |
-          wrangler d1 execute apex-chat-main --file=../d1-migrations/0001_init.sql --remote || true
+          # v1.1.134 : applique TOUTES les migrations (avant : juste 0001).
+          # Les CREATE TABLE IF NOT EXISTS sont idempotents.
+          for mig in ../d1-migrations/0001_init.sql ../d1-migrations/0002_admin_features.sql ../d1-migrations/0003_finalize.sql ../d1-migrations/0004_premium_ai_cache.sql; do
+            if [ -f "$mig" ]; then
+              echo "=== Migration: $mig ==="
+              wrangler d1 execute apex-chat-main --file="$mig" --remote 2>&1 | tail -8 || echo "::warning::$mig partiel (peut être déjà appliqué)"
+            fi
+          done
+          echo "=== Vérif tables créées ==="
+          wrangler d1 execute apex-chat-main --remote --command "SELECT name FROM sqlite_master WHERE type='table'" 2>&1 | tail -20
           echo "::notice::Migrations D1 appliquées"
 
       - name: Create R2 bucket (idempotent)
