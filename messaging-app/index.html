@@ -182,8 +182,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
   font-size:.78em;padding:5px 12px;border-radius:14px;max-width:90%}
 .chat-input{position:sticky;bottom:0;padding:8px 12px calc(var(--ax-safe-bottom) + 8px);
-  background:var(--ax-bg);border-top:1px solid var(--ax-border);display:flex;align-items:flex-end;gap:8px}
-.chat-input textarea{flex:1;min-height:44px;max-height:120px;resize:none;background:var(--ax-bg-2);
+  background:var(--ax-bg);border-top:1px solid var(--ax-border);display:flex;flex-direction:column;gap:6px}
+.chat-attach-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chat-attach-row::-webkit-scrollbar{display:none}
+.chat-input-row{display:flex;align-items:flex-end;gap:8px}
+.chat-input textarea{flex:1;min-width:0;min-height:44px;max-height:120px;resize:none;background:var(--ax-bg-2);
   border:1px solid var(--ax-border);border-radius:22px;padding:10px 14px;color:var(--ax-text);font-size:16px}
 .chat-send{width:44px;height:44px;border-radius:50%;background:var(--ax-gold);color:var(--ax-bg);
   font-size:1.2em;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700}
@@ -325,7 +328,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.138';
+const __APEX_CHAT_VERSION__ = 'v1.1.139';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -456,7 +459,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.138</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.139</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -470,7 +473,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.138</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.139</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1222,7 +1225,7 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
-            // v1.1.138 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            // v1.1.139 : ne pas effacer le nom local si le serveur ne le renvoie pas
             name: c.name || localById[c.id]?.name,
             pseudo: c.pseudo || localById[c.id]?.pseudo,
             peer_id: c.peer_id || localById[c.id]?.peer_id,
@@ -1233,7 +1236,7 @@ K._refreshConvs = async function(){
             bg_id: localById[c.id]?.bg_id,
             peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
           }));
-          // v1.1.138 : applique les tombstones — conv supprimées ne réapparaissent jamais.
+          // v1.1.139 : applique les tombstones — conv supprimées ne réapparaissent jamais.
           // Retente le delete serveur tant que le serveur les renvoie.
           if(K._deletedConvIds && K._deletedConvIds.length){
             const serverIds = new Set(K.conversations.map(c => c.id));
@@ -1257,7 +1260,7 @@ K._refreshConvs = async function(){
   toast('🔄 Rafraîchi', 'ok', 1500);
 };
 
-// v1.1.138 : nom affichable d'une conversation. Si le serveur ne renvoie
+// v1.1.139 : nom affichable d'une conversation. Si le serveur ne renvoie
 // pas name/pseudo (DM chiffré), on résout le correspondant via peer_id
 // dans les contacts chargés, puis members_detail. Évite le "Sans nom".
 K._convName = function(c){
@@ -1274,7 +1277,7 @@ K._convName = function(c){
   return 'Sans nom';
 };
 
-// v1.1.138 : tombstones de conversations supprimées.
+// v1.1.139 : tombstones de conversations supprimées.
 // Une conv supprimée ne doit JAMAIS réapparaître, même si le serveur la
 // renvoie encore (delete serveur différé/échoué). Le refresh retente le
 // delete serveur tant que la conv est tombstonée.
@@ -3379,7 +3382,7 @@ K._openConvActionsMenu = function(convId, ev){
   `);
 };
 
-// v1.1.138 : suppression conversation. Local-first (jamais bloqué) +
+// v1.1.139 : suppression conversation. Local-first (jamais bloqué) +
 // best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
 K._deleteConv = async function(convId){
   const conv = (K.conversations || []).find(c => c.id === convId);
@@ -3618,7 +3621,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.138',
+    version: 'v1.1.139',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5654,7 +5657,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.138 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.139 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5673,7 +5676,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.138 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.139 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -6037,16 +6040,20 @@ function renderChat(app){
     </div>
     <div id="smart-reply-chips" style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;overflow-x:auto"></div>
     <div class="chat-input">
-      <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
-      <button class="chat-attach" onclick="document.getElementById('chat-img-input').click()" aria-label="Envoyer une image" title="Envoyer une image">📷</button>
-      <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
-      <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
-      <button class="chat-attach" onclick="K._openPollComposer()" aria-label="Créer sondage" title="Sondage / vote">📊</button>
-      <button class="chat-attach" onclick="K._openLocationShare()" aria-label="Partager position" title="Position GPS">📍</button>
-      <button class="chat-attach" onclick="K._openContactCardComposer()" aria-label="Partager un contact" title="Carte de contact">📇</button>
+      <div class="chat-attach-row">
+        <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
+        <button class="chat-attach" onclick="document.getElementById('chat-img-input').click()" aria-label="Envoyer une image" title="Envoyer une image">📷</button>
+        <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
+        <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
+        <button class="chat-attach" onclick="K._openPollComposer()" aria-label="Créer sondage" title="Sondage / vote">📊</button>
+        <button class="chat-attach" onclick="K._openLocationShare()" aria-label="Partager position" title="Position GPS">📍</button>
+        <button class="chat-attach" onclick="K._openContactCardComposer()" aria-label="Partager un contact" title="Carte de contact">📇</button>
+      </div>
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
-      <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft();K._autoResize&&K._autoResize(this)">${esc(K._loadDraft(conv.id) || '')}</textarea>
-      <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
+      <div class="chat-input-row">
+        <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft();K._autoResize&&K._autoResize(this)">${esc(K._loadDraft(conv.id) || '')}</textarea>
+        <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
+      </div>
     </div>
   `;
   setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();K._applyConvBackground&&K._applyConvBackground();}, 50);
@@ -8365,7 +8372,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.138 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.139 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -10025,7 +10032,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.138 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.139 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);
@@ -10680,7 +10687,7 @@ async function _boot(){
     // Charger état persisté
     K.conversations = lg('conversations', []);
     K.contacts = lg('contacts', []);
-    // v1.1.138 : tombstones — conv supprimées qui ne doivent jamais réapparaître
+    // v1.1.139 : tombstones — conv supprimées qui ne doivent jamais réapparaître
     K._deletedConvIds = lg('deleted_convs', []);
     if(K._deletedConvIds.length){
       K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
