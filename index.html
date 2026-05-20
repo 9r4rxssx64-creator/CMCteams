@@ -5178,20 +5178,20 @@ function _stripPersistedTeamFamHistory(empsArr){
 // 212 emps "explicit" skip dans algo → ré-affectations bloquées sur vieilles valeurs.
 // Solution : NEW flag cmc_v710_redetect_done → wipe forcé pour les devices ayant
 // déjà fait v9.707 (qui n'aurait pas tourné si flag v707 déjà set par v9.707).
-(function _v711RedetectBoot(){
+(function _v713RedetectBoot(){
   try{
-    if(localStorage.getItem("cmc_v711_redetect_done"))return;
+    if(localStorage.getItem("cmc_v713_redetect_done"))return;
     var _eRaw=localStorage.getItem("cmc_e");
-    if(!_eRaw){localStorage.setItem("cmc_v710_redetect_done","1");return;}
+    if(!_eRaw){localStorage.setItem("cmc_v713_redetect_done","1");return;}
     var _emps=JSON.parse(_eRaw);
-    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v710_redetect_done","1");return;}
+    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v713_redetect_done","1");return;}
     var _wiped=0;
     _emps.forEach(function(e){
       if(e&&e.teamHistory){_wiped+=Object.keys(e.teamHistory).length;e.teamHistory={};}
       if(e&&e.familyHistory){e.familyHistory={};}
     });
     localStorage.setItem("cmc_e",JSON.stringify(_emps));
-    localStorage.setItem("cmc_v711_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
+    localStorage.setItem("cmc_v713_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
     try{window._cmcLastDetectCacheKey=null;}catch(_){}
     // Aussi : wipe cmc_team_mirror_* pour forcer re-détection miroir au prochain dc()
     try{
@@ -5201,7 +5201,7 @@ function _stripPersistedTeamFamHistory(empsArr){
         }
       }
     }catch(_){}
-    console.log("[v9.711 redetect-boot] "+_wiped+" teamHistory + miroirs wipés — algo v9.711 (sig preservé + merge codeSet) au prochain dc()");
+    console.log("[v9.713 redetect-boot] "+_wiped+" teamHistory + miroirs wipés — algo v9.713 (famille section PDF + sig normalisé chef/croupier) au prochain dc()");
   }catch(_e){console.warn("[v9.711 redetect-boot]",_e);}
 })();
 var A={
@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.711";
+var APP_VER="v9.713";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34513,20 +34513,23 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       return "roulettes";
     }
     function _famForDetect(emp){
-      // v9.707 : codes-based PRIORITÉ
-      try{
-        if(emp&&ov&&ov[emp.id]){
-          var cf=_famFromCells(ov[emp.id]);
-          if(cf)return cf;
-        }
-      }catch(_){}
-      // Fallback v9.703 : familyForMonth (PDF section)
+      // v9.713 Kevin diag mai 2026 — 'bj' (chef code suffixe 'c') et 'cmc'
+      // (suffixe '"') sont des signaux FIABLES depuis les codes. 'roulettes'
+      // (codes plain) est AMBIGU : un croupier BJ a EXACTEMENT les mêmes codes
+      // plain qu'un croupier roulette (22/6, 20/5, 19/4…). Seul le CHEF porte 'c'.
+      // → Pour 'roulettes'/plain, NE PAS trancher sur les codes : déférer à la
+      // section PDF (familyHistory[key] = colonne d'import) qui connaît la vérité.
+      var cf=null;
+      try{ if(emp&&ov&&ov[emp.id]) cf=_famFromCells(ov[emp.id]); }catch(_){}
+      if(cf==="bj"||cf==="cmc")return cf;
+      // Section PDF (familyHistory[key]) — tranche BJ croupier vs roulette croupier
       try{
         if(typeof familyForMonth==="function"){
           var f=familyForMonth(emp,iy,im,{strict:true});
           if(f)return f;
         }
       }catch(_){}
+      if(cf)return cf; // 'roulettes' codes-based — dernier recours avant DEF_EMP
       return emp.family||"bj";
     }
     Object.keys(ov).forEach(function(eid){
@@ -34549,15 +34552,17 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       var offset=(rhDays[0]-1)%cycle;
       // v9.654 : signature inclut PREMIER CODE TRAVAIL (distingue miroir)
       var firstWork=_firstWorkCode(r)||"?";
-      // v9.711 Kevin diag mai 2026 "10 équipes pour 23 emps" — NE PLUS normaliser 'c' :
-      // Avant : sig "6:1:14/19" mélangeait BJ chefs (codes 14/19c) + roulettes (14/19)
-      // + CMC (14/19") car le 'c' était stripé. 46 emps mixed-family dans 1 sig.
-      // Après : sig préserve TOUS les suffixes ('c', '"', ''', '*') → distingue
-      // automatiquement BJ chef vs roulettes vs CMC dans la signature elle-même.
-      var firstWorkPreserved=firstWork; // garde 'c'/"/'/'/*
-      var sig=cycle+":"+offset+":"+firstWorkPreserved;
+      // v9.713 Kevin diag mai 2026 — NORMALISER le suffixe ('c'/'"'/'\''/'*') pour
+      // la signature. Le CHEF d'une équipe BJ porte '22/6c', ses croupiers '22/6' :
+      // sans normalisation ils tombent dans 2 signatures → le chef se retrouve seul
+      // (groupe de 1, filtré par length>=2) → PERD sa détection d'équipe. La famille
+      // (BJ/roulette/CMC) est tranchée par _famForDetect + le split post-groupe par
+      // famille, PAS par le suffixe de signature. Les paires miroir diffèrent par
+      // l'HORAIRE DE BASE (20/5 vs 22/6), pas par le suffixe → normalisation sûre.
+      var firstWorkSig=firstWork.replace(/[c'"*]+$/i,"")||firstWork;
+      var sig=cycle+":"+offset+":"+firstWorkSig;
       if(!empSigs[sig])empSigs[sig]=[];
-      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,firstWork:firstWorkPreserved,family:_empFam}); // v9.711 firstWork préservé (suffixes c/'/"/* conservés)
+      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,firstWork:firstWorkSig,family:_empFam}); // v9.713 firstWork normalisé (chef + croupiers clusterisent)
       detectableEmps.push(eid);
     });
     var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=2;}); // v9.650 : 3→2
@@ -37212,7 +37217,32 @@ function doImport(){
       _ac=_ac.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");_ac=_ac.replace(/CDP$/,"*");
       _ac=_ac.replace(/(\d)\s*\/\s*(\d)/g,"$1/$2");
       // v9.122 — Accepter aussi les variantes avec : ou ; ou multiples ''/"" en suffixe (pit boss PDF)
-      if(!CODES[_ac]){var _c9=_ac.replace(/"'/g,"'");if(_c9!==_ac&&CODES[_c9])_ac=_c9;else{_c9=(_c9!==_ac?_c9:_ac).replace(/[C"':;]+$/,"");if(_c9&&CODES[_c9])_ac=_c9;}}
+      // v9.712 Kevin diag mai 2026 — NE PLUS stripper le 'C' (chef BJ) :
+      // Avant /[C"':;]+$/ enlevait le C → "22/6C" devenait "22/6" → tous les chefs
+      // BJ détectés comme roulettes (codes plain) → 22 équipes roulettes au lieu de
+      // BJ/Roul/CMC distinctes. Kevin "toutes les valeurs des plannings ont de
+      // l'importance". Le 'c' final = code CHEF, doit être PRÉSERVÉ.
+      if(!CODES[_ac]){
+        var _c9=_ac.replace(/"'/g,"'");
+        if(_c9!==_ac&&CODES[_c9]){_ac=_c9;}
+        else{
+          // Strip UNIQUEMENT "':; (artefacts PDF) — PAS le C (marqueur chef)
+          var _c9s=(_c9!==_ac?_c9:_ac).replace(/["':;]+$/,"");
+          if(_c9s&&CODES[_c9s]){_ac=_c9s;}
+          else{
+            // v9.712 — code chef "Xc" : si base X valide → préserver suffixe 'c',
+            // cloner l'entrée CODES de base (même horaire/couleur) + flag chef.
+            var _chefBase=_ac.replace(/C+$/,"");
+            if(_chefBase!==_ac&&CODES[_chefBase]){
+              var _chefCode=_chefBase+"c";
+              if(!CODES[_chefCode]){
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefBase],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+              }
+              _ac=_chefCode;
+            }
+          }
+        }
+      }
       if(!CODES[_ac]){var _cAl={"RHE":"RH","RHO":"RH","REPO":"R","REPOS":"R","CONGE":"CP","MALADIE":"M","FORMATION":"AF","RECUP":"RRT","PRET":"PRT","PATRIMOINE":"PAT","20H5":"20/5","19H4":"19/4","16H3":"16/3","16H22":"16/22","22H6":"22/6","14H19":"14/19"};if(_cAl[_ac])_ac=_cAl[_ac];}
       // v9.140 — Auto-apprentissage codes inconnus au lieu de les ignorer
       // v9.372 — P0 : résoudre variante * ou CDP_MAP AVANT le check CODES (évite skip silencieux)
