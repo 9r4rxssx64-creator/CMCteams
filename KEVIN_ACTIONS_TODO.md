@@ -1,5 +1,39 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🧩 SKILLS & COMMANDES CLAUDE CODE — vues TikTok (2026-05-20)
+
+> Kevin a partagé des contenus TikTok présentant 5 skills + 5 commandes Claude
+> Code. Tri honnête fait — état réel ci-dessous.
+
+### 5 skills présentés
+| Skill TikTok | Statut dans `.claude/skills/` |
+|---|---|
+| Marketing (23 agents) | ✅ équivalent `apex-marketing-psy.md` |
+| UI/UX Pro Max (50+) | ✅ équivalents `apex-frontend-design.md` + `apex-impeccable-design.md` |
+| Video editor (Remotion) | ✅ équivalents `apex-video-use.md` + `apex-hyperframes.md` |
+| Context Engineering | ✅ équivalent `apex-context-mode.md` |
+| **Stop Slop** (kills AI tells) | ✅ **CRÉÉ 2026-05-20** → `.claude/skills/stop-slop.md` |
+
+→ Les 4 premiers existaient déjà sous d'autres noms. Stop Slop ajouté.
+→ Optionnel session fraîche : comparer le contenu réel des repos GitHub
+  (hardikpandya/stop-slop, etc.) et enrichir si écart, SANS inventer.
+
+### 5 commandes présentées — dépendent du CLI Claude Code
+| Commande | Nature |
+|---|---|
+| `/ultrareview` | Commande Claude Code native (review cloud multi-agents) — déjà dispo |
+| `/less-permission-prompts` | = skill `fewer-permission-prompts` (déjà dans Claude Code) |
+| `/effort xhigh` | Réglage CLI Claude Code (reasoning effort) — natif |
+| `/tui fullscreen` | Réglage CLI Claude Code (terminal UI) — natif |
+| `/recap` | Commande CLI Claude Code — native |
+
+→ Ces commandes sont des features du **CLI Claude Code**, pas des fichiers à
+  créer dans le repo. Elles existent nativement ou pas — rien à « intégrer ».
+→ `.claude/commands/` (custom commands repo) reste vide — à remplir seulement
+  si Kevin veut des commandes custom spécifiques au projet.
+
+---
+
 ## 🏗 CHANTIER ORGANISATION APEX v13 — audit architecture 42/100 (2026-05-20)
 
 > Audit architecture : le cosmétique est fait, l'organisation du code à 42/100.
