@@ -359,7 +359,7 @@ export function renderServiceHealthCard(
   if (items.length === 0) {
     return `
       <div class="ax-modernized-card" style="padding:14px 16px;background:linear-gradient(135deg,rgba(20,20,35,0.6),rgba(14,14,28,0.4));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
-        <div class="ax-gs-227">Aucune clé API encore configurée. Va dans le <strong style="color:var(--ax-gold-deep)">Coffre</strong> pour ajouter tes premières clés.</div>
+        <div class="ax-gs-227">Aucune clé API encore configurée. Va dans le <strong class="ax-gs-372">Coffre</strong> pour ajouter tes premières clés.</div>
       </div>`;
   }
   const lightColor: Record<ServiceHealthLight['light'], string> = {
@@ -477,7 +477,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </header>
 
       <section class="ax-gs-228">
-        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
+        <h2 class="ax-gs-373">
           <span class="ax-gs-19">📊</span> Indicateurs clés
         </h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
@@ -486,28 +486,28 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </section>
 
       <section class="ax-gs-228">
-        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
+        <h2 class="ax-gs-374">
           <span class="ax-gs-19">🔔</span> Alertes ${alerts.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,91,91,0.15);color:var(--ax-error);border-radius:24px;font-size:11px;font-weight:700">${alerts.length}</span>` : ''}
         </h2>
         ${renderAlerts(alerts)}
       </section>
 
       <section class="ax-gs-228">
-        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
+        <h2 class="ax-gs-374">
           <span class="ax-gs-19">🚥</span> Statut services IA ${serviceHealth.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border-radius:24px;font-size:11px;font-weight:700">${serviceHealth.length}</span>` : ''}
         </h2>
         ${renderServiceHealthCard(serviceHealth, rechargeLinks)}
       </section>
 
       <section class="ax-gs-228">
-        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:8px">
+        <h2 class="ax-gs-374">
           <span class="ax-gs-19">📋</span> Todos ${todos.length > 0 ? `<span style="display:inline-block;padding:2px 10px;background:rgba(255,170,0,0.15);color:var(--ax-warning);border-radius:24px;font-size:11px;font-weight:700">${todos.length}</span>` : ''}
         </h2>
         ${renderTodos(todos)}
       </section>
 
       <section class="ax-gs-228">
-        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
+        <h2 class="ax-gs-373">
           <span class="ax-gs-19">🚀</span> Raccourcis
         </h2>
         <div class="ax-gs-89">
@@ -516,7 +516,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </section>
 
       <section class="ax-gs-228">
-        <h2 style="font-size:12px;color:rgba(232,184,48,0.85);margin:0 0 14px;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;display:flex;align-items:center;gap:6px">
+        <h2 class="ax-gs-373">
           <span class="ax-gs-19">📈</span> Stats live
         </h2>
         <div class="ax-modernized-card" style="background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;animation:ax-fade-up 360ms cubic-bezier(0.16,1,0.3,1) 200ms backwards">

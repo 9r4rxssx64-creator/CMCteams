@@ -97,7 +97,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
 function renderCurrentStep(rootEl: HTMLElement): void {
   const html = `
-    <div class="ax-onboarding" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#08080f 0%,#181820 100%)">
+    <div class="ax-onboarding ax-gs-402">
       <div class="ax-onboarding-card" style="max-width:540px;width:100%;background:rgba(20,20,35,0.85);backdrop-filter:blur(20px);border:1px solid rgba(201,162,39,0.3);border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
         ${renderHeader()}
         ${renderStep(currentStep)}
@@ -131,7 +131,7 @@ function renderStep(step: number): string {
         <p style="color:var(--ax-text-dim,#aaa);margin:0 0 24px;font-size:15px;line-height:1.6">
           Apex est ton assistant IA personnel. Configurons-le ensemble en moins de 2 min.
         </p>
-        <label style="display:block;margin-bottom:16px">
+        <label class="ax-gs-403">
           <span style="display:block;color:#c9a227;font-size:13px;margin-bottom:6px">Comment dois-je t'appeler ?</span>
           <input type="text" id="ax-onboarding-name" aria-label="Ton prénom" value="${escapeHtml(state.name)}" placeholder="Ton prénom" style="width:100%;padding:12px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:10px;color:#fff;font-size:15px">
         </label>
@@ -141,21 +141,21 @@ function renderStep(step: number): string {
       `;
     case 2:
       return `
-        <h1 style="margin:0 0 8px;color:#c9a227;font-size:24px">🔓 Permissions device</h1>
-        <p style="color:var(--ax-text-dim,#aaa);margin:0 0 16px;font-size:14px">
+        <h1 class="ax-gs-404">🔓 Permissions device</h1>
+        <p class="ax-gs-405">
           Pour utiliser toutes les capacités d'Apex, autorise :
         </p>
         <div style="display:grid;gap:10px;margin-bottom:20px">
           <div class="ax-gs-68">
-            <strong style="color:#fff;font-size:14px">🔔 Notifications</strong>
+            <strong class="ax-gs-406">🔔 Notifications</strong>
             <div class="ax-gs-69">Alertes urgentes (sentinelles, messages)</div>
           </div>
           <div class="ax-gs-68">
-            <strong style="color:#fff;font-size:14px">🎙 Microphone</strong>
+            <strong class="ax-gs-406">🎙 Microphone</strong>
             <div class="ax-gs-69">Dictée vocale + wake word "Dis Apex"</div>
           </div>
           <div class="ax-gs-68">
-            <strong style="color:#fff;font-size:14px">📷 Caméra</strong>
+            <strong class="ax-gs-406">📷 Caméra</strong>
             <div class="ax-gs-69">Scan QR / OCR / Vision IA</div>
           </div>
         </div>
@@ -166,8 +166,8 @@ function renderStep(step: number): string {
       `;
     case 3:
       return `
-        <h1 style="margin:0 0 8px;color:#c9a227;font-size:24px">✨ Tes compétences IA</h1>
-        <p style="color:var(--ax-text-dim,#aaa);margin:0 0 16px;font-size:14px">
+        <h1 class="ax-gs-404">✨ Tes compétences IA</h1>
+        <p class="ax-gs-405">
           Active les modules qui t'intéressent (réversible) :
         </p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px" id="ax-onboarding-capabilities">
@@ -184,8 +184,8 @@ function renderStep(step: number): string {
       `;
     case 4:
       return `
-        <h1 style="margin:0 0 8px;color:#c9a227;font-size:24px">🎭 Sérieux ou Fun ?</h1>
-        <p style="color:var(--ax-text-dim,#aaa);margin:0 0 20px;font-size:14px">
+        <h1 class="ax-gs-404">🎭 Sérieux ou Fun ?</h1>
+        <p class="ax-gs-407">
           Mode dual : pro + ludique partout. Choisis ton défaut :
         </p>
         <div style="display:grid;gap:12px;margin-bottom:16px">
@@ -193,42 +193,42 @@ function renderStep(step: number): string {
             padding:16px;background:${state.mode === 'serious' ? 'rgba(201,162,39,0.2)' : 'rgba(0,0,0,0.2)'};
             border:1px solid ${state.mode === 'serious' ? '#c9a227' : 'rgba(255,255,255,0.1)'};
             border-radius:12px;cursor:pointer;color:#fff;text-align:left">
-            <strong style="font-size:16px">⚙️ Sérieux (par défaut)</strong>
+            <strong class="ax-gs-408">⚙️ Sérieux (par défaut)</strong>
             <div class="ax-gs-70">Réponses pro, sources officielles, expertise</div>
           </button>
           <button class="ax-mode-choice" data-mode="fun" style="
             padding:16px;background:${state.mode === 'fun' ? 'rgba(201,162,39,0.2)' : 'rgba(0,0,0,0.2)'};
             border:1px solid ${state.mode === 'fun' ? '#c9a227' : 'rgba(255,255,255,0.1)'};
             border-radius:12px;cursor:pointer;color:#fff;text-align:left">
-            <strong style="font-size:16px">🎉 Fun (par défaut)</strong>
+            <strong class="ax-gs-408">🎉 Fun (par défaut)</strong>
             <div class="ax-gs-70">Voix rigolotes, blagues, memes</div>
           </button>
           <button class="ax-mode-choice" data-mode="both" style="
             padding:16px;background:${state.mode === 'both' ? 'rgba(201,162,39,0.2)' : 'rgba(0,0,0,0.2)'};
             border:1px solid ${state.mode === 'both' ? '#c9a227' : 'rgba(255,255,255,0.1)'};
             border-radius:12px;cursor:pointer;color:#fff;text-align:left">
-            <strong style="font-size:16px">🌈 Les deux (recommandé)</strong>
+            <strong class="ax-gs-408">🌈 Les deux (recommandé)</strong>
             <div class="ax-gs-70">Toggle dans chaque outil. Surprise mode 🎲 dispo.</div>
           </button>
         </div>
       `;
     case 5:
       return `
-        <h1 style="margin:0 0 8px;color:#c9a227;font-size:24px">🚀 Tour rapide</h1>
-        <p style="color:var(--ax-text-dim,#aaa);margin:0 0 20px;font-size:14px">
+        <h1 class="ax-gs-404">🚀 Tour rapide</h1>
+        <p class="ax-gs-407">
           3 zones clés à connaître :
         </p>
         <div style="display:grid;gap:12px;margin-bottom:20px">
           <div class="ax-gs-71">
-            <strong style="color:#fff;font-size:15px">💬 Chat</strong>
+            <strong class="ax-gs-409">💬 Chat</strong>
             <div class="ax-gs-72">Pose une question, demande un studio, dicte. Apex sort l'outil adapté automatiquement.</div>
           </div>
           <div class="ax-gs-71">
-            <strong style="color:#fff;font-size:15px">🔐 Coffre</strong>
+            <strong class="ax-gs-409">🔐 Coffre</strong>
             <div class="ax-gs-72">Tes clés API, tokens, paiements. Chiffrement AES-GCM 256.</div>
           </div>
           <div class="ax-gs-71">
-            <strong style="color:#fff;font-size:15px">🎨 Studios</strong>
+            <strong class="ax-gs-409">🎨 Studios</strong>
             <div class="ax-gs-72">15 studios créatifs (musique, vidéo, archi, etc.). Apparaissent dans le chat selon le contexte.</div>
           </div>
         </div>

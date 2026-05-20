@@ -185,16 +185,16 @@ function renderUserPicker(): string {
 function renderHeader(): string {
   const stats = featureToggles.getStats();
   return `
-    <header style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:14px;background:rgba(20,20,35,0.95);border-bottom:1px solid rgba(201,162,39,0.3);position:sticky;top:0;z-index:10">
-      <h1 style="margin:0;color:#c9a227;font-size:18px;flex:1;min-width:160px">🔘 Toggles ON/OFF</h1>
+    <header class="ax-gs-313">
+      <h1 class="ax-gs-314">🔘 Toggles ON/OFF</h1>
       <span class="ax-gs-121">${stats.enabledGlobal}/${stats.total} actifs · ${stats.users} users</span>
       <input type="search" id="ax-toggles-search" aria-label="Rechercher une feature dans les toggles" placeholder="Rechercher feature..." value="${escapeHtml(currentSearchQuery)}"
         style="padding:6px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(201,162,39,0.3);color:#fff;border-radius:6px;font-size:13px;min-width:160px">
       ${renderUserPicker()}
       <button class="ax-btn" data-action="enable-all" style="padding:6px 12px;background:rgba(201,162,39,0.15);border:1px solid #c9a227;color:#c9a227;border-radius:6px;cursor:pointer;font-size:12px">Tout activer</button>
       <button class="ax-btn" data-action="disable-all" style="padding:6px 12px;background:rgba(255,100,100,0.1);border:1px solid #ff6666;color:#ff6666;border-radius:6px;cursor:pointer;font-size:12px">Tout désactiver</button>
-      <button class="ax-btn" data-action="reset-defaults" style="padding:6px 12px;background:transparent;border:1px solid rgba(201,162,39,0.3);color:#c9a227;border-radius:6px;cursor:pointer;font-size:12px">Reset défauts</button>
-      <button class="ax-btn" data-action="export-config" style="padding:6px 12px;background:transparent;border:1px solid rgba(201,162,39,0.3);color:#c9a227;border-radius:6px;cursor:pointer;font-size:12px">📤 Export</button>
+      <button class="ax-btn ax-gs-323" data-action="reset-defaults">Reset défauts</button>
+      <button class="ax-btn ax-gs-323" data-action="export-config">📤 Export</button>
     </header>
   `;
 }
@@ -226,11 +226,11 @@ function renderPerUserModal(featureId: string): string {
       style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px">
       <div style="max-width:480px;width:100%;background:#0a0a14;border:1px solid rgba(201,162,39,0.4);border-radius:14px;overflow:hidden">
         <header class="ax-gs-206">
-          <h3 id="ax-toggles-modal-title" style="margin:0;color:#c9a227;font-size:15px">👤 Per-user : ${escapeHtml(feature.description)}</h3>
-          <button data-action="modal-close" style="padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#999;border-radius:6px;cursor:pointer">✕</button>
+          <h3 id="ax-toggles-modal-title" class="ax-gs-319">👤 Per-user : ${escapeHtml(feature.description)}</h3>
+          <button data-action="modal-close" class="ax-gs-320">✕</button>
         </header>
         <div style="max-height:60vh;overflow-y:auto">${rows || '<p style="padding:20px;color:#888;text-align:center">Aucun utilisateur connu.</p>'}</div>
-        <footer style="padding:10px 14px;background:rgba(201,162,39,0.05);font-size:11px;color:#888;text-align:center">
+        <footer class="ax-gs-321">
           Per-user override > Global > Default
         </footer>
       </div>
@@ -257,7 +257,7 @@ export function render(rootEl: HTMLElement): void {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div class="ax-empty ax-gs-207">
-        <h2 style="color:#c9a227">Accès réservé</h2>
+        <h2 class="ax-gs-266">Accès réservé</h2>
         <p>Cette section est réservée à l'admin Kevin.</p>
       </div>
     `;
@@ -279,7 +279,7 @@ export function render(rootEl: HTMLElement): void {
     : '';
 
   rootEl.innerHTML = `
-    <div class="ax-admin-toggles" style="background:#0a0a14;color:#fff;min-height:100vh;font-family:system-ui,-apple-system,sans-serif">
+    <div class="ax-admin-toggles ax-gs-322">
       ${renderHeader()}
       ${filterBanner}
       <main style="padding:14px;max-width:900px;margin:0 auto">

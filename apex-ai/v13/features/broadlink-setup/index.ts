@@ -36,7 +36,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin()) {
     rootEl.innerHTML = `
       <div class="ax-gs-62">
-        <h2 style="color:#c9a227">🔌 Broadlink Setup</h2>
+        <h2 class="ax-gs-266">🔌 Broadlink Setup</h2>
         <p>🔒 Cette section est réservée à l'admin Kevin.</p>
       </div>
     `;
@@ -63,17 +63,17 @@ function renderUI(
       <h2 style="color:#c9a227;margin-top:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         🔌 Broadlink Setup ${statusBadge}
       </h2>
-      <p style="color:#aaa;line-height:1.5;font-size:14px">
+      <p class="ax-gs-340">
         Pilote tes devices Broadlink (Smart TV via RM Pro/Mini, prises SP, hub MP1) directement depuis Apex.
         Token chiffré AES-GCM-256 dans le Coffre. Cross-device via Firebase backup.
       </p>
 
       <!-- Section 1 : Status compte -->
       <section style="margin:20px 0;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.2);border-radius:12px;padding:18px">
-        <h3 style="margin-top:0;color:#c9a227;font-size:16px">📋 Statut du compte</h3>
+        <h3 class="ax-gs-341">📋 Statut du compte</h3>
         ${status.configured
-          ? `<p style="margin:6px 0">📧 Email : <strong>${escapeHtml(status.email ?? '(non visible)')}</strong></p>
-             <p style="margin:6px 0">📱 Devices détectés : <strong>${status.deviceCount}</strong></p>
+          ? `<p class="ax-gs-342">📧 Email : <strong>${escapeHtml(status.email ?? '(non visible)')}</strong></p>
+             <p class="ax-gs-342">📱 Devices détectés : <strong>${status.deviceCount}</strong></p>
              ${status.proxyUrl ? `<p style="margin:6px 0;font-size:12px;color:#888">🌐 Proxy : <code>${escapeHtml(status.proxyUrl)}</code></p>` : ''}
              <button class="ax-btn" id="ax-bl-reset" style="margin-top:12px;padding:10px 16px;background:#4a1a1a;color:#f87171;border:1px solid #f87171;border-radius:8px;cursor:pointer">🗑 Déconnecter / Reset</button>`
           : `<p style="margin:6px 0;color:#aaa">Pas encore configuré. Login ci-dessous OU colle photo compte Broadlink dans le chat (Apex extrait automatiquement le token).</p>`
@@ -81,8 +81,8 @@ function renderUI(
       </section>
 
       <!-- Section 2 : Login -->
-      <section style="margin:20px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px">
-        <h3 style="margin-top:0;color:#c9a227;font-size:16px">🔑 Connexion compte Broadlink</h3>
+      <section class="ax-gs-343">
+        <h3 class="ax-gs-341">🔑 Connexion compte Broadlink</h3>
         <p style="font-size:13px;color:#aaa;margin-bottom:12px">
           Saisis ton email + password Broadlink (compte mobile app). Apex récupère automatiquement le token.
           <br/>📷 <strong>Astuce</strong> : tu peux aussi coller un screenshot du compte dans le chat — Apex extrait token + devices via Vision.
@@ -90,11 +90,11 @@ function renderUI(
         <div class="ax-gs-123">
           <input type="email" id="ax-bl-email" aria-label="Email du compte Broadlink" placeholder="email@example.com"
             value="${escapeHtml(status.email ?? '')}"
-            style="padding:12px;border-radius:8px;border:1px solid rgba(201,162,39,0.3);background:rgba(0,0,0,0.4);color:#fff;font-size:14px;min-height:44px"
+            class="ax-gs-344"
             autocomplete="email" autocapitalize="off" autocorrect="off"
           />
           <input type="password" id="ax-bl-password" aria-label="Mot de passe du compte Broadlink" placeholder="Mot de passe Broadlink"
-            style="padding:12px;border-radius:8px;border:1px solid rgba(201,162,39,0.3);background:rgba(0,0,0,0.4);color:#fff;font-size:14px;min-height:44px"
+            class="ax-gs-344"
             autocomplete="current-password"
           />
           <button class="ax-btn ax-btn-primary" id="ax-bl-login-btn"
@@ -109,7 +109,7 @@ function renderUI(
 
       <!-- Section 4 : Settings avancés -->
       <section style="margin:20px 0;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px">
-        <h3 style="margin-top:0;color:#c9a227;font-size:16px">⚙️ Avancé</h3>
+        <h3 class="ax-gs-341">⚙️ Avancé</h3>
         <p style="font-size:13px;color:#aaa">Si CORS bloque l'API Broadlink directe (Safari iOS PWA), configure un proxy Cloudflare Worker :</p>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="url" id="ax-bl-proxy-url" aria-label="URL du proxy Cloudflare Worker Broadlink" placeholder="https://apex-broadlink-proxy.workers.dev"
@@ -131,8 +131,8 @@ function renderUI(
 function renderDevicesSection(devices: BroadlinkDevice[]): string {
   if (devices.length === 0) {
     return `
-      <section style="margin:20px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px">
-        <h3 style="margin-top:0;color:#c9a227;font-size:16px">📱 Devices liés au compte</h3>
+      <section class="ax-gs-343">
+        <h3 class="ax-gs-341">📱 Devices liés au compte</h3>
         <p class="ax-gs-216">Aucun device chargé. Clique <button class="ax-btn ax-btn-sm" id="ax-bl-refresh-empty" style="margin-left:6px;padding:4px 10px;border-radius:6px;background:rgba(201,162,39,0.2);color:#c9a227;border:1px solid #c9a227;cursor:pointer">🔄 Refresh</button>.</p>
       </section>
     `;
@@ -155,7 +155,7 @@ function renderDevicesSection(devices: BroadlinkDevice[]): string {
     )
     .join('');
   return `
-    <section style="margin:20px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px">
+    <section class="ax-gs-343">
       <h3 style="margin-top:0;color:#c9a227;font-size:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         📱 Devices liés (${devices.length})
         <button class="ax-btn ax-btn-sm" id="ax-bl-refresh" style="padding:6px 12px;border-radius:6px;background:rgba(201,162,39,0.2);color:#c9a227;border:1px solid #c9a227;cursor:pointer">🔄 Refresh</button>

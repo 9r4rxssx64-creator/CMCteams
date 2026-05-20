@@ -153,10 +153,10 @@ export function render(rootEl: HTMLElement): void {
 
   const eventsHtml = upcoming.length > 0
     ? upcoming.map((e) => `
-        <article class="ax-cal-event" data-event-id="${escapeHtml(e.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:8px">
+        <article class="ax-cal-event ax-gs-338" data-event-id="${escapeHtml(e.id)}">
           <header class="ax-gs-219">
-            <strong style="color:#c9a227">${escapeHtml(e.title)}</strong>
-            <button class="ax-btn ax-btn-sm" data-action="delete-event" data-event-id="${escapeHtml(e.id)}" style="font-size:11px;padding:4px 8px;color:#ff6666">Supprimer</button>
+            <strong class="ax-gs-266">${escapeHtml(e.title)}</strong>
+            <button class="ax-btn ax-btn-sm ax-gs-349" data-action="delete-event" data-event-id="${escapeHtml(e.id)}">Supprimer</button>
           </header>
           <p style="margin:6px 0;color:var(--ax-text-dim);font-size:13px">
             📅 ${escapeHtml(e.date)}${e.time ? ' à ' + escapeHtml(e.time) : ''}
@@ -168,15 +168,15 @@ export function render(rootEl: HTMLElement): void {
     : '<p class="ax-gs-213">Aucun événement à venir</p>';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">📅 Calendrier</h1>
+        <h1 class="ax-gs-333">📅 Calendrier</h1>
         <span class="ax-gs-3">${calendarStore.count(uid)} évt total</span>
       </header>
 
-      <form id="ax-cal-form" class="ax-form" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <form id="ax-cal-form" class="ax-form ax-gs-350">
         <label for="ax-cal-title" class="sr-only">Titre de l'événement</label>
-        <input type="text" id="ax-cal-title" placeholder="Titre événement…" aria-label="Titre de l'événement" maxlength="200" autocomplete="off" required style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+        <input type="text" id="ax-cal-title" placeholder="Titre événement…" aria-label="Titre de l'événement" maxlength="200" autocomplete="off" required class="ax-gs-351">
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <label for="ax-cal-date" class="sr-only">Date de l'événement</label>
           <input type="date" id="ax-cal-date" aria-label="Date de l'événement" required style="flex:1;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
@@ -184,10 +184,10 @@ export function render(rootEl: HTMLElement): void {
           <input type="time" id="ax-cal-time" aria-label="Heure de l'événement" style="width:120px;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
         </div>
         <label for="ax-cal-location" class="sr-only">Lieu de l'événement</label>
-        <input type="text" id="ax-cal-location" placeholder="Lieu (optionnel)…" aria-label="Lieu de l'événement (optionnel)" maxlength="200" autocomplete="off" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+        <input type="text" id="ax-cal-location" placeholder="Lieu (optionnel)…" aria-label="Lieu de l'événement (optionnel)" maxlength="200" autocomplete="off" class="ax-gs-351">
         <label for="ax-cal-notes" class="sr-only">Notes additionnelles</label>
         <textarea id="ax-cal-notes" placeholder="Notes (optionnel)…" aria-label="Notes additionnelles (optionnel)" rows="2" maxlength="5000" style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;resize:vertical"></textarea>
-        <button type="submit" class="ax-btn ax-btn-primary" style="width:100%;min-height:44px">Ajouter événement</button>
+        <button type="submit" class="ax-btn ax-btn-primary ax-gs-352">Ajouter événement</button>
       </form>
 
       <h2 style="color:#c9a227;font-size:16px;margin:16px 0 8px">⏰ 30 prochains jours</h2>

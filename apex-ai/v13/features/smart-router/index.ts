@@ -96,9 +96,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   allStats.sort((a, b) => b.score.total - a.score.total);
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
-      <h1 style="margin:0 0 8px;color:#c9a227">🎯 Smart IA Router</h1>
-      <p style="color:var(--ax-text-dim);margin:0 0 16px;font-size:14px">
+    <div class="ax-page ax-gs-268">
+      <h1 class="ax-gs-365">🎯 Smart IA Router</h1>
+      <p class="ax-gs-377">
         Sélection automatique du meilleur provider — latence (40%) · quota (30%) · qualité (20%) · uptime (10%).
       </p>
 
@@ -173,36 +173,36 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       <!-- Tableau tous providers -->
       <h2 style="margin:18px 0 8px;color:#c9a227;font-size:16px">Tous les providers (${allProviders.length})</h2>
       <div class="ax-gs-78">
-        <table style="width:100%;border-collapse:collapse;background:rgba(20,20,35,0.5);border-radius:12px;overflow:hidden">
+        <table class="ax-gs-434">
           <thead>
-            <tr style="background:rgba(201,162,39,0.1)">
-              <th style="padding:10px;text-align:left;font-size:11px;color:#c9a227">Status</th>
-              <th style="padding:10px;text-align:left;font-size:11px;color:#c9a227">Provider</th>
-              <th style="padding:10px;text-align:right;font-size:11px;color:#c9a227">Score</th>
-              <th style="padding:10px;text-align:right;font-size:11px;color:#c9a227">Latence avg</th>
-              <th style="padding:10px;text-align:right;font-size:11px;color:#c9a227">p95</th>
-              <th style="padding:10px;text-align:right;font-size:11px;color:#c9a227">Success</th>
-              <th style="padding:10px;text-align:right;font-size:11px;color:#c9a227">Quota</th>
-              <th style="padding:10px;text-align:right;font-size:11px;color:#c9a227">Coût/M</th>
-              <th style="padding:10px;text-align:right;font-size:11px;color:#c9a227">Last ping</th>
+            <tr class="ax-gs-387">
+              <th class="ax-gs-447">Status</th>
+              <th class="ax-gs-447">Provider</th>
+              <th class="ax-gs-448">Score</th>
+              <th class="ax-gs-448">Latence avg</th>
+              <th class="ax-gs-448">p95</th>
+              <th class="ax-gs-448">Success</th>
+              <th class="ax-gs-448">Quota</th>
+              <th class="ax-gs-448">Coût/M</th>
+              <th class="ax-gs-448">Last ping</th>
               <th style="padding:10px;text-align:center;font-size:11px;color:#c9a227">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${allStats.map(({ provider, stats, score }) => `
               <tr style="border-bottom:1px solid rgba(255,255,255,0.05)${provider === best?.provider ? ';background:rgba(34,204,119,0.05)' : ''}">
-                <td style="padding:10px">${statusDot(stats)}</td>
-                <td style="padding:10px;font-size:13px"><strong>${PROVIDER_ICONS[provider]} ${escapeHtml(provider)}</strong></td>
-                <td style="padding:10px;text-align:right">
+                <td class="ax-gs-316">${statusDot(stats)}</td>
+                <td class="ax-gs-436"><strong>${PROVIDER_ICONS[provider]} ${escapeHtml(provider)}</strong></td>
+                <td class="ax-gs-317">
                   <span style="color:${scoreColor(score.total)};font-weight:bold;font-size:14px">${score.total}</span>
                   <span style="color:var(--ax-text-dim);font-size:10px">/100</span>
                 </td>
-                <td style="padding:10px;text-align:right;font-size:12px">${fmtLatency(stats?.latency_avg_ms ?? -1)}</td>
-                <td style="padding:10px;text-align:right;font-size:11px;color:var(--ax-text-dim)">${fmtLatency(stats?.latency_p95_ms ?? -1)}</td>
-                <td style="padding:10px;text-align:right;font-size:12px">${stats ? Math.round(stats.success_rate * 100) : 0}%</td>
-                <td style="padding:10px;text-align:right;font-size:12px">${fmtQuota(stats?.quota_remaining_pct ?? -1)}</td>
-                <td style="padding:10px;text-align:right;font-size:11px;color:var(--ax-text-dim)">$${smartRouter.getPricing(provider)}</td>
-                <td style="padding:10px;text-align:right;font-size:11px;color:var(--ax-text-dim)">${stats ? fmtRelativeTime(stats.last_ping_ts) : 'jamais'}</td>
+                <td class="ax-gs-449">${fmtLatency(stats?.latency_avg_ms ?? -1)}</td>
+                <td class="ax-gs-450">${fmtLatency(stats?.latency_p95_ms ?? -1)}</td>
+                <td class="ax-gs-449">${stats ? Math.round(stats.success_rate * 100) : 0}%</td>
+                <td class="ax-gs-449">${fmtQuota(stats?.quota_remaining_pct ?? -1)}</td>
+                <td class="ax-gs-450">$${smartRouter.getPricing(provider)}</td>
+                <td class="ax-gs-450">${stats ? fmtRelativeTime(stats.last_ping_ts) : 'jamais'}</td>
                 <td style="padding:10px;text-align:center">
                   <button class="ax-btn ax-btn-sm ax-sr-force" data-provider="${escapeHtml(provider)}" style="padding:4px 8px;font-size:10px;background:#c9a227;color:#000" title="Forcer ce provider">📌</button>
                 </td>

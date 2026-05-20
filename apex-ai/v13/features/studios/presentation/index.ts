@@ -366,8 +366,8 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-card ax-gs-197">
-      <h2 style="margin:0 0 8px;color:#c9a227">📊 Studio Présentation</h2>
-      <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${LAYOUTS.length} layouts · ${THEMES.length} thèmes · Animations · Transitions · Export PPTX/PDF/HTML.</p>
+      <h2 class="ax-gs-365">📊 Studio Présentation</h2>
+      <p class="ax-gs-417">${LAYOUTS.length} layouts · ${THEMES.length} thèmes · Animations · Transitions · Export PPTX/PDF/HTML.</p>
       <div class="ax-gs-30">
         <button id="ax-pres-new" class="ax-btn ax-btn-primary">+ Nouvelle présentation</button>
         <button id="ax-pres-templates" class="ax-btn">📚 Voir layouts</button>
@@ -375,7 +375,7 @@ export function render(rootEl: HTMLElement): void {
       <div id="ax-pres-list" class="ax-gs-254">
         ${list.length === 0
           ? '<p class="ax-gs-255">Aucune présentation. Crée la première !</p>'
-          : list.map((p) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.slides.length} slides · ${escapeHtml(p.theme)}</small></div>`).join('')}
+          : list.map((p) => `<div class="ax-gs-46"><strong class="ax-gs-327">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.slides.length} slides · ${escapeHtml(p.theme)}</small></div>`).join('')}
       </div>
     </div>
   `;

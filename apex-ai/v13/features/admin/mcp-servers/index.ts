@@ -99,7 +99,7 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-gs-59">
-      <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">🔌 MCP Servers</h1>
+      <h1 class="ax-gs-289">🔌 MCP Servers</h1>
       <p class="ax-gs-194">
         Model Context Protocol servers connectés à Apex. ${servers.length} server${servers.length > 1 ? 's' : ''} enregistré${servers.length > 1 ? 's' : ''}.
       </p>
@@ -121,9 +121,9 @@ export function render(rootEl: HTMLElement): void {
 
       <div style="background:#0f172a;border:1px dashed #334155;border-radius:12px;padding:16px;margin-top:24px">
         <h3 style="font-size:16px;margin-bottom:12px;color:#f1f5f9">➕ Ajouter un MCP server custom</h3>
-        <input id="mcp-new-id" placeholder="ID (kebab-case)" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;margin-bottom:8px;font-size:14px">
-        <input id="mcp-new-name" placeholder="Nom affiché" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;margin-bottom:8px;font-size:14px">
-        <input id="mcp-new-url" placeholder="URL MCP (https://...)" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;margin-bottom:8px;font-size:14px">
+        <input id="mcp-new-id" placeholder="ID (kebab-case)" class="ax-gs-290">
+        <input id="mcp-new-name" placeholder="Nom affiché" class="ax-gs-290">
+        <input id="mcp-new-url" placeholder="URL MCP (https://...)" class="ax-gs-290">
         <input id="mcp-new-token-key" placeholder="Clé Vault (optionnel, ex: my_server_token)" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;margin-bottom:12px;font-size:14px">
         <button id="mcp-new-submit" style="padding:10px 18px;background:#10b981;color:#fff;border:0;border-radius:8px;font-size:14px;cursor:pointer;min-height:40px">
           ➕ Enregistrer le server

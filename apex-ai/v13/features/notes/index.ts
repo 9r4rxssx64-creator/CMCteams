@@ -167,41 +167,41 @@ export function render(rootEl: HTMLElement): void {
 
   const cards = notes.length > 0
     ? notes.map((n) => `
-        <article class="ax-note-card" data-note-id="${escapeHtml(n.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
+        <article class="ax-note-card ax-gs-400" data-note-id="${escapeHtml(n.id)}">
           <header class="ax-gs-219">
-            <h3 style="margin:0;color:#c9a227;font-size:15px">${escapeHtml(n.title)}</h3>
+            <h3 class="ax-gs-319">${escapeHtml(n.title)}</h3>
             <span style="font-size:18px;cursor:pointer" data-action="favorite" data-note-id="${escapeHtml(n.id)}" title="Favoris">${n.favorite ? '⭐' : '☆'}</span>
           </header>
           <p style="margin:8px 0;color:var(--ax-text-dim);font-size:13px;white-space:pre-wrap">${escapeHtml(n.content.slice(0, 240))}${n.content.length > 240 ? '…' : ''}</p>
           <footer style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#888">
             <span>${new Date(n.ts_updated).toLocaleString('fr-FR')}</span>
-            <button class="ax-btn ax-btn-sm" data-action="delete" data-note-id="${escapeHtml(n.id)}" style="font-size:11px;padding:4px 8px;color:#ff6666">Supprimer</button>
+            <button class="ax-btn ax-btn-sm ax-gs-349" data-action="delete" data-note-id="${escapeHtml(n.id)}">Supprimer</button>
           </footer>
         </article>
       `).join('')
     : '<p class="ax-gs-213">Aucune note. Crée ta première !</p>';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">📝 Bloc-notes</h1>
+        <h1 class="ax-gs-333">📝 Bloc-notes</h1>
         <span class="ax-gs-3">${notes.length} note${notes.length > 1 ? 's' : ''}</span>
       </header>
 
-      <form id="ax-notes-form" class="ax-form" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <form id="ax-notes-form" class="ax-form ax-gs-350">
         <label for="ax-notes-title" class="sr-only">Titre de la note</label>
-        <input type="text" id="ax-notes-title" placeholder="Titre…" aria-label="Titre de la note" maxlength="200" autocomplete="off" required style="width:100%;padding:10px;margin-bottom:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+        <input type="text" id="ax-notes-title" placeholder="Titre…" aria-label="Titre de la note" maxlength="200" autocomplete="off" required class="ax-gs-351">
         <label for="ax-notes-content" class="sr-only">Contenu de la note</label>
         <textarea id="ax-notes-content" placeholder="Contenu…" aria-label="Contenu de la note" rows="3" maxlength="50000" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;resize:vertical"></textarea>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
           <label for="ax-notes-tags" class="sr-only">Tags (séparés par des virgules)</label>
           <input type="text" id="ax-notes-tags" placeholder="tags séparés par des virgules" aria-label="Tags de la note séparés par des virgules" autocomplete="off" maxlength="100" style="flex:1;padding:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;margin-right:8px">
-          <button type="submit" class="ax-btn ax-btn-primary" style="min-height:44px">Ajouter</button>
+          <button type="submit" class="ax-btn ax-btn-primary ax-gs-401">Ajouter</button>
         </div>
       </form>
 
       <label for="ax-notes-search" class="sr-only">Rechercher une note</label>
-      <input type="text" id="ax-notes-search" placeholder="🔍 Rechercher…" aria-label="Rechercher dans les notes" autocomplete="off" maxlength="100" style="width:100%;padding:10px;margin-bottom:16px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+      <input type="text" id="ax-notes-search" placeholder="🔍 Rechercher…" aria-label="Rechercher dans les notes" autocomplete="off" maxlength="100" class="ax-gs-335">
 
       <div id="ax-notes-list">${cards}</div>
 
@@ -243,8 +243,8 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
       if (!listEl) return;
       listEl.innerHTML = notes.length > 0
         ? notes.map((n) => `
-            <article class="ax-note-card" data-note-id="${escapeHtml(n.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
-              <h3 style="margin:0;color:#c9a227;font-size:15px">${escapeHtml(n.title)}</h3>
+            <article class="ax-note-card ax-gs-400" data-note-id="${escapeHtml(n.id)}">
+              <h3 class="ax-gs-319">${escapeHtml(n.title)}</h3>
               <p style="margin:8px 0;color:var(--ax-text-dim);font-size:13px">${escapeHtml(n.content.slice(0, 240))}</p>
             </article>
           `).join('')

@@ -81,22 +81,22 @@ function renderActiveSession(s: AutonomousSession | null): string {
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px">
         <div class="ax-gs-38">
-          <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Durée</p>
+          <p class="ax-gs-273">Durée</p>
           <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#e8b830">${ageMin} min</p>
         </div>
         <div class="ax-gs-38">
-          <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Itérations</p>
-          <p style="margin:4px 0 0;font-size:18px;font-weight:700">${s.iterations}/${maxIter}</p>
+          <p class="ax-gs-273">Itérations</p>
+          <p class="ax-gs-274">${s.iterations}/${maxIter}</p>
           <div class="ax-gs-90"><div style="width:${iterPct}%;background:#e8b830;height:100%"></div></div>
         </div>
         <div class="ax-gs-38">
-          <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Tokens</p>
-          <p style="margin:4px 0 0;font-size:18px;font-weight:700">${s.tokensConsumed}</p>
+          <p class="ax-gs-273">Tokens</p>
+          <p class="ax-gs-274">${s.tokensConsumed}</p>
           <div class="ax-gs-90"><div style="width:${tokensPct}%;background:${tokensPct > 80 ? '#c50' : '#3cc'};height:100%"></div></div>
         </div>
         <div class="ax-gs-38">
-          <p style="margin:0;font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.5);letter-spacing:0.5px">Tâches</p>
-          <p style="margin:4px 0 0;font-size:18px;font-weight:700">✅ ${done} <span style="font-size:13px;color:#c33">❌ ${fail}</span></p>
+          <p class="ax-gs-273">Tâches</p>
+          <p class="ax-gs-274">✅ ${done} <span style="font-size:13px;color:#c33">❌ ${fail}</span></p>
           <p style="margin:2px 0 0;font-size:11px;color:rgba(255,255,255,0.55)">📋 ${s.taskQueue.length} en queue</p>
         </div>
       </div>
@@ -114,7 +114,7 @@ function renderActiveSession(s: AutonomousSession | null): string {
       </div>
 
       <details class="ax-gs-186">
-        <summary style="cursor:pointer;font-weight:600;color:rgba(255,255,255,0.75);padding:8px 0;font-size:13px">📜 Logs récents (${s.logs.length})</summary>
+        <summary class="ax-gs-275">📜 Logs récents (${s.logs.length})</summary>
         <div style="max-height:260px;overflow-y:auto;background:rgba(0,0,0,0.35);border-radius:10px;padding:10px;margin-top:6px;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.5">
           ${s.logs
             .slice(-15)
@@ -129,7 +129,7 @@ function renderActiveSession(s: AutonomousSession | null): string {
       </details>
 
       <details class="ax-gs-186">
-        <summary style="cursor:pointer;font-weight:600;color:rgba(255,255,255,0.75);padding:8px 0;font-size:13px">📋 Queue (${s.taskQueue.length}) + Faites (${s.tasksCompleted.length})</summary>
+        <summary class="ax-gs-275">📋 Queue (${s.taskQueue.length}) + Faites (${s.tasksCompleted.length})</summary>
         <div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px;margin-top:6px">
           <h4 style="margin:0 0 6px;font-size:12px;color:rgba(255,255,255,0.7)">À faire</h4>
           ${
@@ -169,12 +169,12 @@ function renderHistory(): string {
       const dur = h.endedAt ? Math.round((h.endedAt - h.startedAt) / 60000) : null;
       const doneN = h.tasksCompleted.filter((t) => t.status === 'done').length;
       return `<tr>
-        <td style="padding:8px 6px">${statusBadge(h.status)}</td>
+        <td class="ax-gs-276">${statusBadge(h.status)}</td>
         <td style="padding:8px 6px;font-size:12px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(h.initialObjective.slice(0, 120))}</td>
         <td style="padding:8px 6px;font-size:11px;color:rgba(255,255,255,0.6)">il y a ${ageHrs}h</td>
-        <td style="padding:8px 6px;font-size:11px;text-align:right">${doneN}/${h.iterations}</td>
-        <td style="padding:8px 6px;font-size:11px;text-align:right">${h.tokensConsumed}</td>
-        <td style="padding:8px 6px;font-size:11px;text-align:right">${dur ?? '–'} min</td>
+        <td class="ax-gs-277">${doneN}/${h.iterations}</td>
+        <td class="ax-gs-277">${h.tokensConsumed}</td>
+        <td class="ax-gs-277">${dur ?? '–'} min</td>
       </tr>`;
     })
     .join('');
@@ -185,12 +185,12 @@ function renderHistory(): string {
         <table style="width:100%;border-collapse:collapse;font-size:12px;color:rgba(255,255,255,0.85)">
           <thead>
             <tr style="text-align:left;background:rgba(255,255,255,0.04)">
-              <th style="padding:8px 6px">Statut</th>
-              <th style="padding:8px 6px">Objectif</th>
-              <th style="padding:8px 6px">Quand</th>
-              <th style="padding:8px 6px;text-align:right">Fait</th>
-              <th style="padding:8px 6px;text-align:right">Tokens</th>
-              <th style="padding:8px 6px;text-align:right">Durée</th>
+              <th class="ax-gs-276">Statut</th>
+              <th class="ax-gs-276">Objectif</th>
+              <th class="ax-gs-276">Quand</th>
+              <th class="ax-gs-278">Fait</th>
+              <th class="ax-gs-278">Tokens</th>
+              <th class="ax-gs-278">Durée</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>

@@ -386,18 +386,18 @@ export function render(root: HTMLElement): void {
   if (!guardFeatureEnabled('pro.business', root, uid)) return;
   const html = `
     <div class="ax-card ax-gs-197">
-      <h2 style="margin:0 0 8px;color:#c9a227">💼 Business Pro</h2>
-      <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${KPIS.length} KPIs · ${BUSINESS_PLAN_SECTIONS.length} sections business plan · ${PRICING_STRATEGIES.length} stratégies pricing · SWOT/BCG.</p>
-      <h3 style="color:#79c0ff;font-size:15px">KPIs Finance</h3>
-      <ul style="font-size:13px;color:#ddd">
+      <h2 class="ax-gs-365">💼 Business Pro</h2>
+      <p class="ax-gs-417">${KPIS.length} KPIs · ${BUSINESS_PLAN_SECTIONS.length} sections business plan · ${PRICING_STRATEGIES.length} stratégies pricing · SWOT/BCG.</p>
+      <h3 class="ax-gs-418">KPIs Finance</h3>
+      <ul class="ax-gs-419">
         ${kpisByCategory('finance').slice(0, 8).map((k) => `<li>${k.emoji} <strong>${escapeHtml(k.label)}</strong> — ${escapeHtml(k.formula)}</li>`).join('')}
       </ul>
-      <h3 style="color:#79c0ff;font-size:15px;margin-top:16px">KPIs Marketing</h3>
-      <ul style="font-size:13px;color:#ddd">
+      <h3 class="ax-gs-420">KPIs Marketing</h3>
+      <ul class="ax-gs-419">
         ${kpisByCategory('marketing').slice(0, 6).map((k) => `<li>${k.emoji} <strong>${escapeHtml(k.label)}</strong> — ${escapeHtml(k.benchmark ?? k.formula)}</li>`).join('')}
       </ul>
-      <h3 style="color:#79c0ff;font-size:15px;margin-top:16px">Pricing Strategies</h3>
-      <ul style="font-size:13px;color:#ddd">
+      <h3 class="ax-gs-420">Pricing Strategies</h3>
+      <ul class="ax-gs-419">
         ${PRICING_STRATEGIES.slice(0, 6).map((p) => `<li><strong>${escapeHtml(p.label)}</strong> — ${escapeHtml(p.description)}</li>`).join('')}
       </ul>
     </div>

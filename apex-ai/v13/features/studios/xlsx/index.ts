@@ -12,20 +12,20 @@ import { toast } from '../../../ui/toast.js';
 export function render(rootEl: HTMLElement): void {
   rootEl.innerHTML = `
     <div class="ax-gs-115">
-      <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📈 Studio Excel — Tableau .xlsx</h1>
+      <h1 class="ax-gs-289">📈 Studio Excel — Tableau .xlsx</h1>
       <p class="ax-gs-199">Génère un tableau Excel multi-feuilles. Colle données CSV ou saisis manuellement.</p>
 
-      <label style="display:block;margin-bottom:12px">
+      <label class="ax-gs-473">
         <span class="ax-gs-15">Nom fichier</span>
-        <input id="xlsx-filename" type="text" value="tableau.xlsx" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+        <input id="xlsx-filename" type="text" value="tableau.xlsx" class="ax-gs-463">
       </label>
 
-      <label style="display:block;margin-bottom:12px">
+      <label class="ax-gs-473">
         <span class="ax-gs-15">Nom de la feuille</span>
-        <input id="xlsx-sheetname" type="text" value="Sheet1" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px">
+        <input id="xlsx-sheetname" type="text" value="Sheet1" class="ax-gs-463">
       </label>
 
-      <label style="display:block;margin-bottom:12px">
+      <label class="ax-gs-473">
         <span class="ax-gs-15">Données (CSV, 1ère ligne = headers)</span>
         <textarea id="xlsx-data" rows="10" placeholder="Catégorie,Recettes,Dépenses&#10;Salaire,4500,0&#10;Loyer,0,1200&#10;Courses,0,400" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;font-family:monospace;resize:vertical">Catégorie,Recettes,Dépenses
 Salaire,4500,0
@@ -33,11 +33,11 @@ Loyer,0,1200
 Courses,0,400</textarea>
       </label>
 
-      <label style="display:block;margin-bottom:16px">
+      <label class="ax-gs-403">
         <input type="checkbox" id="xlsx-freeze" checked> <span class="ax-gs-260">Figer la 1ère ligne (headers)</span>
       </label>
 
-      <button id="xlsx-generate" style="width:100%;padding:14px;background:#10b981;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px">
+      <button id="xlsx-generate" class="ax-gs-465">
         ⬇️ Générer le .xlsx
       </button>
 
@@ -87,8 +87,8 @@ Courses,0,400</textarea>
       if (result.success) {
         resEl.innerHTML = `
           <div class="ax-gs-47">
-            <p style="color:#10b981;font-size:14px;margin-bottom:12px">✅ ${escapeHtml(result.filename)} (${result.sheetCount} feuille, ${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
-            <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇️ Télécharger</a>
+            <p class="ax-gs-466">✅ ${escapeHtml(result.filename)} (${result.sheetCount} feuille, ${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
+            <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" class="ax-gs-467">⬇️ Télécharger</a>
           </div>`;
         toast.success(`✅ ${result.filename}`);
       } else {

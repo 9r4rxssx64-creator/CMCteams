@@ -82,8 +82,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   rootEl.innerHTML = `
     <div class="ax-page" style="padding:16px;max-width:1000px;margin:0 auto">
-      <h1 style="margin:0 0 8px;color:#c9a227">💡 Innovation Watch</h1>
-      <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:14px">
+      <h1 class="ax-gs-365">💡 Innovation Watch</h1>
+      <p class="ax-gs-385">
         Veille technologique 24/7 — npm / IA providers / HuggingFace / GitHub.
       </p>
 
@@ -120,14 +120,14 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         ? `<p class="ax-gs-231">Aucune update en attente. Lance un scan pour vérifier.</p>`
         : [...byCat.entries()]
             .map(([cat, list]) => `
-              <h2 style="margin:24px 0 8px;color:#c9a227;font-size:16px">${CATEGORY_LABELS[cat]} (${list.length})</h2>
+              <h2 class="ax-gs-386">${CATEGORY_LABELS[cat]} (${list.length})</h2>
               <table style="width:100%;border-collapse:collapse;background:rgba(20,20,35,0.5);border-radius:12px;overflow:hidden;margin-bottom:8px">
                 <thead>
-                  <tr style="background:rgba(201,162,39,0.1)">
-                    <th style="padding:8px;text-align:left;font-size:11px;color:#c9a227">Nom</th>
-                    <th style="padding:8px;text-align:left;font-size:11px;color:#c9a227">Versions</th>
-                    <th style="padding:8px;text-align:left;font-size:11px;color:#c9a227">Gain</th>
-                    <th style="padding:8px;text-align:left;font-size:11px;color:#c9a227">Reco</th>
+                  <tr class="ax-gs-387">
+                    <th class="ax-gs-388">Nom</th>
+                    <th class="ax-gs-388">Versions</th>
+                    <th class="ax-gs-388">Gain</th>
+                    <th class="ax-gs-388">Reco</th>
                     <th style="padding:8px;text-align:right;font-size:11px;color:#c9a227">Action</th>
                   </tr>
                 </thead>
@@ -140,7 +140,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
                       <td style="padding:8px;font-size:11px">${recoBadge(u.recommendation)}</td>
                       <td style="padding:8px;text-align:right">
                         <button class="ax-btn ax-btn-sm ax-inno-apply" data-id="${escapeHtml(u.id)}" style="padding:4px 8px;font-size:11px;background:#22cc77">Apply</button>
-                        <button class="ax-btn ax-btn-sm ax-inno-skip" data-id="${escapeHtml(u.id)}" style="padding:4px 8px;font-size:11px">Skip</button>
+                        <button class="ax-btn ax-btn-sm ax-inno-skip ax-gs-389" data-id="${escapeHtml(u.id)}">Skip</button>
                       </td>
                     </tr>
                   `).join('')}

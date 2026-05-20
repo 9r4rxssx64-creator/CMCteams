@@ -544,15 +544,15 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-card ax-gs-197">
-      <h2 style="margin:0 0 8px;color:#c9a227">📷 Studio Photo</h2>
-      <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">Retouche · ${FILTERS.length} filtres · Stickers · Texte · OCR · QR · Background remove · Upscale 4x.</p>
+      <h2 class="ax-gs-365">📷 Studio Photo</h2>
+      <p class="ax-gs-417">Retouche · ${FILTERS.length} filtres · Stickers · Texte · OCR · QR · Background remove · Upscale 4x.</p>
       <div class="ax-gs-30">
         <button id="ax-photo-new" class="ax-btn ax-btn-primary">+ Nouvelle photo</button>
       </div>
       <div id="ax-photo-list" class="ax-gs-258">
         ${list.length === 0
           ? '<p class="ax-gs-255">Aucune photo. Importe la première !</p>'
-          : list.map((p) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.width}x${p.height} · ${escapeHtml(p.filter)}</small></div>`).join('')}
+          : list.map((p) => `<div class="ax-gs-46"><strong class="ax-gs-327">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.width}x${p.height} · ${escapeHtml(p.filter)}</small></div>`).join('')}
       </div>
     </div>
   `;

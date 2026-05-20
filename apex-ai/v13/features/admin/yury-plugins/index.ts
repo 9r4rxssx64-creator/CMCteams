@@ -94,16 +94,16 @@ function renderCard(plugin: PluginCard): string {
     : '<span style="background:rgba(232,184,48,0.15);color:#e8b830;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;letter-spacing:0.02em">⚙️ Config</span>';
 
   return `
-    <article class="ax-yury-card" data-plugin-id="${escapeHtml(plugin.id)}" style="background:linear-gradient(135deg,rgba(20,20,35,0.85),rgba(14,14,28,0.65));border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;transition:transform 200ms cubic-bezier(0.16,1,0.3,1)">
+    <article class="ax-yury-card ax-gs-295" data-plugin-id="${escapeHtml(plugin.id)}">
       <header class="ax-gs-204">
         <div class="ax-gs-120">
           <span class="ax-gs-201" aria-hidden="true">${escapeHtml(plugin.emoji)}</span>
-          <h3 style="margin:0;font-size:16px;color:#fff;font-weight:700;letter-spacing:-0.015em">${escapeHtml(plugin.name)}</h3>
+          <h3 class="ax-gs-296">${escapeHtml(plugin.name)}</h3>
         </div>
         ${statusBadge}
       </header>
-      <p style="margin:0;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">${escapeHtml(plugin.description)}</p>
-      <button class="ax-btn ax-bounce-tap" data-launch="${escapeHtml(plugin.id)}" aria-label="Lancer ${escapeHtml(plugin.name)}" style="margin-top:6px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;padding:11px 18px;border-radius:22px;font-weight:700;cursor:pointer;font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent;transition:all 180ms cubic-bezier(0.16,1,0.3,1)">
+      <p class="ax-gs-297">${escapeHtml(plugin.description)}</p>
+      <button class="ax-btn ax-bounce-tap ax-gs-298" data-launch="${escapeHtml(plugin.id)}" aria-label="Lancer ${escapeHtml(plugin.name)}">
         ${escapeHtml(plugin.buttonLabel)}
       </button>
     </article>
@@ -113,13 +113,13 @@ function renderCard(plugin: PluginCard): string {
 function renderPage(): string {
   const cards = PLUGINS.map(renderCard).join('');
   return `
-    <div class="ax-yury-plugins" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1100px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+    <div class="ax-yury-plugins ax-gs-299">
       <header class="ax-gs-202">
         <div>
-          <h1 style="margin:0;font-size:clamp(22px,5.5vw,30px);font-weight:700;background:linear-gradient(135deg,#c9a227,#e8b830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.15">🚀 Yury Plugins (équivalents Apex)</h1>
-          <p style="margin:6px 0 0;color:rgba(255,255,255,0.55);font-size:12px">5 services applicatifs natifs PWA, pas Claude Code</p>
+          <h1 class="ax-gs-300">🚀 Yury Plugins (équivalents Apex)</h1>
+          <p class="ax-gs-301">5 services applicatifs natifs PWA, pas Claude Code</p>
         </div>
-        <button class="ax-btn ax-bounce-tap" data-back-admin style="flex-shrink:0;padding:9px 16px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:40px;white-space:nowrap" aria-label="Retour Admin">← Admin</button>
+        <button class="ax-btn ax-bounce-tap ax-gs-302" data-back-admin aria-label="Retour Admin">← Admin</button>
       </header>
       <div class="ax-yury-grid ax-gs-203">
         ${cards}
@@ -134,20 +134,20 @@ async function launchSecurityReview(): Promise<void> {
     const report: ScanReport = await securityReview.runFullScan();
     const findings = report.findings.length > 0
       ? report.findings.map((f) => `
-        <li style="background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:10px;margin-bottom:6px">
+        <li class="ax-gs-304">
           <strong style="color:${f.severity === 'critical' ? '#ff5566' : f.severity === 'high' ? '#ffaa44' : '#e8b830'}">[${escapeHtml(f.severity)}]</strong>
           <span>${escapeHtml(f.msg)}</span>
-          ${f.fix ? `<p style="color:rgba(255,255,255,0.55);font-size:12px;margin:4px 0 0">Fix : ${escapeHtml(f.fix)}</p>` : ''}
+          ${f.fix ? `<p class="ax-gs-306">Fix : ${escapeHtml(f.fix)}</p>` : ''}
         </li>`).join('')
       : '<li class="ax-gs-205">🟢 Aucune vulnérabilité détectée.</li>';
     modalSheet.open({
       title: `🔒 Security Review — Score ${report.score}/100`,
       content: `
         <div class="ax-gs-12">
-          <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:14px">
+          <p class="ax-gs-311">
             ${report.passedChecks}/${report.totalChecks} checks passés · ${report.findings.length} findings · ${Math.round(report.durationMs)}ms
           </p>
-          <ul style="list-style:none;padding:0;margin:0;max-height:50vh;overflow-y:auto">${findings}</ul>
+          <ul class="ax-gs-307">${findings}</ul>
         </div>
       `,
       actions: [{ label: 'Fermer', variant: 'ghost', onClick: () => modalSheet.closeAll() }],
@@ -167,21 +167,21 @@ async function launchCodeReview(): Promise<void> {
       diff: diff || '+const test = "demo";\n-const old = "removed";',
     });
     const agentsList = report.agents.map((a) => `
-      <li style="background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:10px;margin-bottom:6px">
+      <li class="ax-gs-304">
         <strong>[${escapeHtml(a.role)}]</strong> · ${escapeHtml(a.provider)} · confidence ${a.confidence}/100
-        <p style="color:rgba(255,255,255,0.55);font-size:12px;margin:4px 0 0">${a.findings.length} finding(s)</p>
+        <p class="ax-gs-306">${a.findings.length} finding(s)</p>
       </li>`).join('');
     modalSheet.open({
       title: `👥 Code Review — Score ${report.finalScore}/100`,
       content: `
         <div class="ax-gs-12">
-          <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:14px">
+          <p class="ax-gs-311">
             ${report.totalFindings} findings · ${report.criticalFindings} critical · ${Math.round(report.durationMs)}ms
           </p>
-          <h3 style="font-size:13px;color:#e8b830;text-transform:uppercase;margin:0 0 8px">Agents</h3>
+          <h3 class="ax-gs-308">Agents</h3>
           <ul style="list-style:none;padding:0;margin:0 0 14px">${agentsList}</ul>
-          <h3 style="font-size:13px;color:#e8b830;text-transform:uppercase;margin:0 0 8px">Consensus</h3>
-          <pre style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.85);padding:12px;border-radius:10px;font-size:12px;white-space:pre-wrap;max-height:30vh;overflow-y:auto">${escapeHtml(report.consensus)}</pre>
+          <h3 class="ax-gs-308">Consensus</h3>
+          <pre class="ax-gs-309">${escapeHtml(report.consensus)}</pre>
         </div>
       `,
       actions: [{ label: 'Fermer', variant: 'ghost', onClick: () => modalSheet.closeAll() }],
@@ -205,7 +205,7 @@ async function launchFrontendDesign(): Promise<void> {
       title: `🎨 Frontend Design — ${output.framework}`,
       content: `
         <div class="ax-gs-12">
-          <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">
+          <p class="ax-gs-303">
             Généré en ${Math.round(output.durationMs)}ms · framework ${escapeHtml(output.framework)}
           </p>
           <iframe sandbox="allow-scripts" srcdoc="${safeSrcdoc}" style="width:100%;height:300px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:#fff" aria-label="Aperçu du composant généré"></iframe>
@@ -235,11 +235,11 @@ async function launchSuperpowers(): Promise<void> {
       title: `⚡ Superpowers — ${escapeHtml(taskName)}`,
       content: `
         <div class="ax-gs-12">
-          <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:10px">
+          <p class="ax-gs-303">
             Session ${escapeHtml(sessionId)} · step actuel : <strong>${escapeHtml(session?.currentStep ?? '-')}</strong>
           </p>
-          <h3 style="font-size:13px;color:#e8b830;text-transform:uppercase;margin:0 0 8px">Output ${escapeHtml(stepOutput?.step ?? '?')}</h3>
-          <pre style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.85);padding:12px;border-radius:10px;font-size:12px;white-space:pre-wrap;max-height:40vh;overflow-y:auto">${escapeHtml(stepOutput?.output ?? '(pas de sortie)')}</pre>
+          <h3 class="ax-gs-308">Output ${escapeHtml(stepOutput?.step ?? '?')}</h3>
+          <pre class="ax-gs-312">${escapeHtml(stepOutput?.output ?? '(pas de sortie)')}</pre>
           <p style="color:rgba(255,255,255,0.55);font-size:12px;margin-top:10px">
             Re-lance la vue pour avancer au step suivant.
           </p>
@@ -260,16 +260,16 @@ async function launchGStackRoles(): Promise<void> {
   try {
     const result: PipelineResult = await gstackRoles.runFullPipeline(task);
     const rolesList = result.roles.map((r) => `
-      <li style="background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:10px;margin-bottom:6px">
+      <li class="ax-gs-304">
         <strong style="color:${r.ok ? '#22cc77' : '#ff5566'}">[${escapeHtml(r.role)}]</strong>
         ${r.ok ? '✅' : '❌'} · ${Math.round(r.durationMs)}ms
-        <p style="color:rgba(255,255,255,0.55);font-size:12px;margin:4px 0 0">${escapeHtml(r.output.slice(0, 200))}...</p>
+        <p class="ax-gs-306">${escapeHtml(r.output.slice(0, 200))}...</p>
       </li>`).join('');
     modalSheet.open({
       title: `🏛 GStack Pipeline — ${result.roles.filter((r) => r.ok).length}/7 OK`,
       content: `
         <div class="ax-gs-12">
-          <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:14px">
+          <p class="ax-gs-311">
             ${Math.round(result.totalDurationMs / 1000)}s total
           </p>
           <ul style="list-style:none;padding:0;margin:0 0 14px;max-height:50vh;overflow-y:auto">${rolesList}</ul>

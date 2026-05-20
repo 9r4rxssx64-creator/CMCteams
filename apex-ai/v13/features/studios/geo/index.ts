@@ -162,21 +162,21 @@ export function render(rootEl: HTMLElement): void {
   }).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
+    <div class="ax-page ax-gs-451">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🗺 Studio Géo</h1>
+        <h1 class="ax-gs-333">🗺 Studio Géo</h1>
         <span class="ax-gs-3">Géocodage + distances</span>
       </header>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Adresse → coordonnées</h2>
-        <input type="text" id="ax-geo-addr" aria-label="Adresse à géocoder" placeholder="ex : Place du Casino, Monaco" autocomplete="off" style="width:100%;padding:10px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:44px">
-        <button class="ax-btn ax-btn-primary" id="ax-geo-go" style="margin-top:8px;min-height:44px">Géocoder</button>
+        <h2 class="ax-gs-452">Adresse → coordonnées</h2>
+        <input type="text" id="ax-geo-addr" aria-label="Adresse à géocoder" placeholder="ex : Place du Casino, Monaco" autocomplete="off" class="ax-gs-453">
+        <button class="ax-btn ax-btn-primary ax-gs-454" id="ax-geo-go">Géocoder</button>
         <div id="ax-geo-out" style="margin-top:12px;color:#c9a227;font-size:13px"></div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Lieux remarquables Monaco</h2>
+        <h2 class="ax-gs-452">Lieux remarquables Monaco</h2>
         <div style="display:grid;grid-template-columns:1fr;gap:6px">${poisHtml}</div>
       </div>
 

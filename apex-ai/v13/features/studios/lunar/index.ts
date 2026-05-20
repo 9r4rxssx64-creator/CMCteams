@@ -170,9 +170,9 @@ export function render(rootEl: HTMLElement): void {
   const fmt = (d: Date): string => d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:780px;margin:0 auto">
+    <div class="ax-page ax-gs-451">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🌙 Studio Jardin Lunaire</h1>
+        <h1 class="ax-gs-333">🌙 Studio Jardin Lunaire</h1>
         <span class="ax-gs-3">Biodynamie</span>
       </header>
 
@@ -185,22 +185,22 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Conseils du jour</h2>
+        <h2 class="ax-gs-452">Conseils du jour</h2>
         <ul style="margin:0;padding-left:18px;color:#ddd;font-size:14px;line-height:1.8">
           ${advice.map((a) => `<li>${escapeHtml(a)}</li>`).join('')}
         </ul>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Prochaines phases</h2>
+        <h2 class="ax-gs-452">Prochaines phases</h2>
         <div style="font-size:13px;color:#ddd;line-height:1.7">
-          🌕 Prochaine pleine lune : <strong style="color:#c9a227">${fmt(nextFull)}</strong><br>
-          🌑 Prochaine nouvelle lune : <strong style="color:#c9a227">${fmt(nextNew)}</strong>
+          🌕 Prochaine pleine lune : <strong class="ax-gs-266">${fmt(nextFull)}</strong><br>
+          🌑 Prochaine nouvelle lune : <strong class="ax-gs-266">${fmt(nextNew)}</strong>
         </div>
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">7 jours à venir</h2>
+        <h2 class="ax-gs-452">7 jours à venir</h2>
         <div class="ax-gs-29">
           ${week.map((w) => `
             <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:6px">
@@ -215,7 +215,7 @@ export function render(rootEl: HTMLElement): void {
         </div>
       </div>
 
-      <p style="font-size:11px;color:#666;text-align:center">Précision algo ±1 jour. Pour usage agricole strict consulter calendrier biodynamique officiel.</p>
+      <p class="ax-gs-469">Précision algo ±1 jour. Pour usage agricole strict consulter calendrier biodynamique officiel.</p>
       <p class="ax-gs-212"><a href="#studios" class="ax-gs-198">← Retour studios</a></p>
     </div>
   `;

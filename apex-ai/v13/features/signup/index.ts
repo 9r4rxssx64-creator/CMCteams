@@ -47,11 +47,11 @@ export function render(rootEl: HTMLElement): void {
   activeScope = createCleanupScope('signup');
 
   rootEl.innerHTML = `
-    <div class="ax-signup" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#08080f 0%,#181820 100%)">
-      <div class="ax-signup-card" style="max-width:560px;width:100%;background:rgba(20,20,35,0.92);backdrop-filter:blur(20px);border:1px solid rgba(201,162,39,0.3);border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+    <div class="ax-signup ax-gs-402">
+      <div class="ax-signup-card ax-gs-441">
         <div style="text-align:center;margin-bottom:24px">
-          <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">📝 Créer mon compte Apex</h1>
-          <p style="color:var(--ax-text-dim,#aaa);margin:0;font-size:14px">Inscription instantanée · Choisis ton code · Connecté auto</p>
+          <h1 class="ax-gs-324">📝 Créer mon compte Apex</h1>
+          <p class="ax-gs-442">Inscription instantanée · Choisis ton code · Connecté auto</p>
         </div>
 
         <form id="signup-form" novalidate style="display:grid;gap:14px">
@@ -59,26 +59,26 @@ export function render(rootEl: HTMLElement): void {
             <label>
               <span class="ax-gs-35">Prénom *</span>
               <input type="text" id="signup-prenom" aria-label="Prénom" required minlength="2" autocomplete="given-name"
-                style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
+                class="ax-gs-443"
                 placeholder="Marc">
             </label>
             <label>
               <span class="ax-gs-35">Nom *</span>
               <input type="text" id="signup-nom" aria-label="Nom de famille" required minlength="2" autocomplete="family-name"
-                style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
+                class="ax-gs-443"
                 placeholder="Dupont">
             </label>
           </div>
           <label>
             <span class="ax-gs-35">Email *</span>
             <input type="email" id="signup-email" aria-label="Adresse email" required autocomplete="email" inputmode="email"
-              style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
+              class="ax-gs-443"
               placeholder="marc@example.com">
           </label>
           <label>
             <span class="ax-gs-35">Téléphone WhatsApp (format +33xxx)</span>
             <input type="tel" id="signup-whatsapp" aria-label="Numéro WhatsApp avec indicatif pays" autocomplete="tel" inputmode="tel" pattern="^\\+\\d{6,15}$"
-              style="width:100%;padding:11px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,162,39,0.3);border-radius:8px;color:#fff;font-size:14px"
+              class="ax-gs-443"
               placeholder="+33612345678">
           </label>
           <label>
@@ -97,7 +97,7 @@ export function render(rootEl: HTMLElement): void {
                   <input type="radio" name="signup-plan" aria-label="Plan ${escapeHtml(p.label)}" value="${p.id}" ${i === 0 ? 'checked' : ''} style="accent-color:#c9a227">
                   <div class="ax-gs-26">
                     <div class="ax-gs-219">
-                      <strong style="color:#fff;font-size:14px">${escapeHtml(p.label)}</strong>
+                      <strong class="ax-gs-406">${escapeHtml(p.label)}</strong>
                       <span style="color:#c9a227;font-size:13px">${escapeHtml(p.price)}</span>
                     </div>
                     <div style="color:var(--ax-text-dim,#888);font-size:11px;margin-top:2px">${escapeHtml(p.features.join(' · '))}</div>
@@ -108,11 +108,11 @@ export function render(rootEl: HTMLElement): void {
           </div>
 
           <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;display:grid;gap:8px">
-            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--ax-text-dim,#aaa)">
+            <label class="ax-gs-444">
               <input type="checkbox" id="signup-cgu" aria-label="Accepter CGU et politique de confidentialité" required class="ax-gs-252">
-              <span>J'accepte les <a href="#" id="signup-link-cgu" style="color:#c9a227;text-decoration:underline">CGU</a> et la <a href="#" id="signup-link-privacy" style="color:#c9a227;text-decoration:underline">Politique de confidentialité</a></span>
+              <span>J'accepte les <a href="#" id="signup-link-cgu" class="ax-gs-445">CGU</a> et la <a href="#" id="signup-link-privacy" class="ax-gs-445">Politique de confidentialité</a></span>
             </label>
-            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--ax-text-dim,#aaa)">
+            <label class="ax-gs-444">
               <input type="checkbox" id="signup-rgpd" aria-label="Autoriser le traitement des données RGPD" required class="ax-gs-252">
               <span>J'autorise le traitement de mes données pour la création + gestion de mon compte Apex (RGPD Art. 6.1.b contrat)</span>
             </label>
@@ -128,7 +128,7 @@ export function render(rootEl: HTMLElement): void {
 
         <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)">
           <p style="color:var(--ax-text-dim,#888);font-size:12px;margin:0 0 8px">Déjà un compte ?</p>
-          <button type="button" id="signup-go-login" class="ax-btn ax-btn-ghost" style="font-size:13px">← Retour à la connexion</button>
+          <button type="button" id="signup-go-login" class="ax-btn ax-btn-ghost ax-gs-398">← Retour à la connexion</button>
         </div>
       </div>
     </div>

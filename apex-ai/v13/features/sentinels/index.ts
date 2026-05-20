@@ -32,9 +32,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const pendingCount = list.filter((s) => !s.lastResult).length;
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:900px;margin:0 auto">
-      <h1 style="margin:0 0 8px;color:#c9a227">🛡 Sentinelles 24/7</h1>
-      <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:14px">
+    <div class="ax-page ax-gs-376">
+      <h1 class="ax-gs-365">🛡 Sentinelles 24/7</h1>
+      <p class="ax-gs-385">
         ${list.length} watchers (${status.running} active) ·
         <span class="ax-gs-14">✅ ${okCount} OK</span> ·
         <span class="ax-gs-61">⚠️ ${warnCount} WARN</span> ·
@@ -49,12 +49,12 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         <button class="ax-btn ax-btn-secondary ax-btn-sm" id="ax-sent-refresh">🔄 Rafraîchir</button>
       </div>
 
-      <table style="width:100%;border-collapse:collapse;background:rgba(20,20,35,0.5);border-radius:12px;overflow:hidden">
+      <table class="ax-gs-434">
         <thead>
-          <tr style="background:rgba(201,162,39,0.1)">
-            <th style="padding:10px;text-align:left;font-size:12px;color:#c9a227;border-bottom:1px solid rgba(201,162,39,0.3)">Sentinel</th>
-            <th style="padding:10px;text-align:left;font-size:12px;color:#c9a227;border-bottom:1px solid rgba(201,162,39,0.3)">Interval</th>
-            <th style="padding:10px;text-align:left;font-size:12px;color:#c9a227;border-bottom:1px solid rgba(201,162,39,0.3)">Last result</th>
+          <tr class="ax-gs-387">
+            <th class="ax-gs-435">Sentinel</th>
+            <th class="ax-gs-435">Interval</th>
+            <th class="ax-gs-435">Last result</th>
             <th style="padding:10px;text-align:right;font-size:12px;color:#c9a227;border-bottom:1px solid rgba(201,162,39,0.3)">Action</th>
           </tr>
         </thead>
@@ -68,7 +68,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             const ageMin = s.lastResult ? Math.round((Date.now() - s.lastResult.ts) / 60000) : null;
             return `
               <tr style="border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer" class="ax-sent-row" data-sent-id="${s.id}">
-                <td style="padding:10px;font-size:13px">
+                <td class="ax-gs-436">
                   <strong>${escapeHtml(s.name)}</strong>
                   <div class="ax-gs-2">${escapeHtml(s.desc)}</div>
                 </td>
@@ -77,7 +77,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
                   ${status} <span style="color:${s.lastResult?.ok ? '#22cc77' : s.lastResult ? '#ffaa00' : '#888'}">${escapeHtml(msg.slice(0, 60))}</span>
                   ${ageMin !== null ? `<div style="font-size:10px;color:#888">il y a ${ageMin}min</div>` : ''}
                 </td>
-                <td style="padding:10px;text-align:right">
+                <td class="ax-gs-317">
                   <button class="ax-btn ax-btn-sm ax-sent-run" data-sent-id="${s.id}" style="padding:4px 10px;font-size:11px" aria-label="Exécuter sentinelle">▶️</button>
                 </td>
               </tr>
@@ -153,13 +153,13 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             const lastTs = sent.lastResult ? new Date(sent.lastResult.ts).toLocaleString('fr-FR') : '—';
             return `
               <div class="ax-gs-27">
-                <p style="margin:0 0 12px;color:var(--ax-text-dim)">${escapeHtml(sent.desc)}</p>
-                <table style="width:100%;font-size:13px">
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">ID</td><td><code>${escapeHtml(sent.id)}</code></td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Interval</td><td>${Math.round(sent.intervalMs / 1000)}s</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Dernier statut</td><td>${lastOk === undefined ? '⏳ Pending' : lastOk ? '✅ OK' : '⚠️ WARN'}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Dernier message</td><td>${escapeHtml(lastMsg)}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Dernière exec</td><td>${escapeHtml(lastTs)}</td></tr>
+                <p class="ax-gs-363">${escapeHtml(sent.desc)}</p>
+                <table class="ax-gs-291">
+                  <tr><td class="ax-gs-367">ID</td><td><code>${escapeHtml(sent.id)}</code></td></tr>
+                  <tr><td class="ax-gs-367">Interval</td><td>${Math.round(sent.intervalMs / 1000)}s</td></tr>
+                  <tr><td class="ax-gs-367">Dernier statut</td><td>${lastOk === undefined ? '⏳ Pending' : lastOk ? '✅ OK' : '⚠️ WARN'}</td></tr>
+                  <tr><td class="ax-gs-367">Dernier message</td><td>${escapeHtml(lastMsg)}</td></tr>
+                  <tr><td class="ax-gs-367">Dernière exec</td><td>${escapeHtml(lastTs)}</td></tr>
                 </table>
               </div>
             `;

@@ -96,7 +96,7 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
   if (!print) {
     return `
       <div class="ax-gs-81">
-        <h3 style="color:#c9a227;margin-top:0;margin-bottom:10px">🎙 Mon empreinte vocale</h3>
+        <h3 class="ax-gs-480">🎙 Mon empreinte vocale</h3>
         <p style="color:#aaa;line-height:1.5">
           Apex apprend ta voix automatiquement au fur et à mesure des conversations.
           Au début il écoute tout le monde puis affine pour finir exclusif à toi.
@@ -199,17 +199,17 @@ function renderUserSection(user: { id: string; name?: string; isAdmin: boolean }
     </div>
 
     <div class="ax-gs-81">
-      <h3 style="color:#c9a227;margin-top:0;margin-bottom:10px">🔒 Mode exclusif</h3>
-      <p style="color:#ccc;font-size:13px;line-height:1.5">
+      <h3 class="ax-gs-480">🔒 Mode exclusif</h3>
+      <p class="ax-gs-481">
         Quand activé, Apex n'écoute QUE ta voix pour "Dis Apex". Ignore silencieusement
         les autres voix (entourage, bruit ambient) — anti-confusion.
       </p>
       <label style="display:flex;align-items:center;gap:10px;margin-top:10px;cursor:pointer">
-        <input type="checkbox" id="ax-vbio-exclusive" aria-label="Activer mode reconnaissance vocale exclusive" ${exclusive ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
+        <input type="checkbox" id="ax-vbio-exclusive" aria-label="Activer mode reconnaissance vocale exclusive" ${exclusive ? 'checked' : ''} class="ax-gs-439" />
         <span class="ax-gs-179">Mode exclusif activé (recommandé)</span>
       </label>
       <label style="display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;padding:10px 12px;background:rgba(34,197,94,0.06);border:1px dashed rgba(34,197,94,0.25);border-radius:8px">
-        <input type="checkbox" id="ax-vbio-exclusive-anticipated" aria-label="Mode exclusif anticipé après 10 samples" ${anticipated ? 'checked' : ''} style="width:20px;height:20px;cursor:pointer" />
+        <input type="checkbox" id="ax-vbio-exclusive-anticipated" aria-label="Mode exclusif anticipé après 10 samples" ${anticipated ? 'checked' : ''} class="ax-gs-439" />
         <span class="ax-gs-179">⚡ Mode exclusif anticipé</span>
       </label>
       <p style="color:#888;font-size:12px;line-height:1.4;margin:6px 0 0 32px">
@@ -237,7 +237,7 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
           <td style="padding:8px 6px;color:#aaa">${p.samples_count}</td>
           <td style="padding:8px 6px;color:${conf >= 0.85 ? '#22c55e' : conf >= 0.5 ? '#ffa500' : '#ff6666'}">${formatPct(conf)}</td>
           <td style="padding:8px 6px;color:#aaa;font-size:11px">${formatDate(p.last_match)}</td>
-          <td style="padding:8px 6px"><button data-uid="${escapeHtml(p.uid)}" class="ax-vbio-admin-del" style="padding:4px 10px;background:rgba(255,102,102,0.15);color:#ff6666;border:1px solid rgba(255,102,102,0.3);border-radius:5px;font-size:11px;cursor:pointer">🗑</button></td>
+          <td class="ax-gs-276"><button data-uid="${escapeHtml(p.uid)}" class="ax-vbio-admin-del" style="padding:4px 10px;background:rgba(255,102,102,0.15);color:#ff6666;border:1px solid rgba(255,102,102,0.3);border-radius:5px;font-size:11px;cursor:pointer">🗑</button></td>
         </tr>
       `;
     })
@@ -248,10 +248,10 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
       <tr class="ax-gs-261">
         <td style="padding:6px;color:#aaa;font-size:11px">${formatDate(u.ts)}</td>
         <td style="padding:6px;color:#ff6666">${formatPct(u.score)}</td>
-        <td style="padding:6px;color:#aaa">${u.pitch} Hz</td>
-        <td style="padding:6px;color:#aaa">${u.energy.toFixed(2)}</td>
+        <td class="ax-gs-482">${u.pitch} Hz</td>
+        <td class="ax-gs-482">${u.energy.toFixed(2)}</td>
       </tr>
-    `).join('') || '<tr><td colspan="4" style="padding:14px;color:#666;text-align:center">Aucune tentative non reconnue récente</td></tr>';
+    `).join('') || '<tr><td colspan="4" class="ax-gs-483">Aucune tentative non reconnue récente</td></tr>';
 
   return `
     <div style="background:rgba(20,20,35,0.5);border:1px solid rgba(255,165,0,0.2);border-radius:12px;padding:18px;margin-bottom:14px">
@@ -278,29 +278,29 @@ function renderAdminSection(currentUser: { id: string; isAdmin: boolean }): stri
 
       <h4 style="color:#c9a227;margin:14px 0 8px">Voix enrôlées</h4>
       <div class="ax-gs-78">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <table class="ax-gs-271">
           <thead>
             <tr class="ax-gs-262">
-              <th style="padding:8px 6px;text-align:left">User ID</th>
-              <th style="padding:8px 6px;text-align:left">Samples</th>
-              <th style="padding:8px 6px;text-align:left">Confidence</th>
-              <th style="padding:8px 6px;text-align:left">Dernière reco</th>
-              <th style="padding:8px 6px;text-align:left">Actions</th>
+              <th class="ax-gs-484">User ID</th>
+              <th class="ax-gs-484">Samples</th>
+              <th class="ax-gs-484">Confidence</th>
+              <th class="ax-gs-484">Dernière reco</th>
+              <th class="ax-gs-484">Actions</th>
             </tr>
           </thead>
-          <tbody>${printsList || '<tr><td colspan="5" style="padding:14px;color:#666;text-align:center">Aucune voix enrôlée</td></tr>'}</tbody>
+          <tbody>${printsList || '<tr><td colspan="5" class="ax-gs-483">Aucune voix enrôlée</td></tr>'}</tbody>
         </table>
       </div>
 
       <h4 style="color:#c9a227;margin:18px 0 8px">Tentatives non reconnues (10 dernières)</h4>
       <div class="ax-gs-78">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <table class="ax-gs-271">
           <thead>
             <tr class="ax-gs-262">
-              <th style="padding:6px;text-align:left">Date</th>
-              <th style="padding:6px;text-align:left">Score similarity</th>
-              <th style="padding:6px;text-align:left">Pitch</th>
-              <th style="padding:6px;text-align:left">Energie</th>
+              <th class="ax-gs-485">Date</th>
+              <th class="ax-gs-485">Score similarity</th>
+              <th class="ax-gs-485">Pitch</th>
+              <th class="ax-gs-485">Energie</th>
             </tr>
           </thead>
           <tbody>${unknownList}</tbody>
@@ -323,8 +323,8 @@ function renderEnrollModal(): string {
   return `
     <div id="ax-vbio-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px">
       <div style="background:#161620;border:1px solid rgba(201,162,39,0.3);border-radius:14px;max-width:480px;width:100%;padding:22px">
-        <h3 style="color:#c9a227;margin-top:0">🎙 Enrôlement vocal</h3>
-        <p style="color:#ccc;font-size:13px;line-height:1.5">
+        <h3 class="ax-gs-486">🎙 Enrôlement vocal</h3>
+        <p class="ax-gs-481">
           Je vais enregistrer 3 échantillons de ta voix (3 secondes chacun).
           Lis cette phrase chaque fois :
         </p>
@@ -476,8 +476,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   const html = `
     <div style="max-width:780px;margin:0 auto;padding:18px;font-family:system-ui,-apple-system,sans-serif">
-      <h2 style="color:#c9a227;margin-top:0">🎙 Voice Bio — Reconnaissance vocale exclusive</h2>
-      <p style="color:#aaa;line-height:1.5;font-size:14px">
+      <h2 class="ax-gs-486">🎙 Voice Bio — Reconnaissance vocale exclusive</h2>
+      <p class="ax-gs-340">
         Apex apprend à reconnaître ta voix au fur et à mesure des messages vocaux que tu lui envoies.
         Plus tu parles, plus la fiabilité augmente (jusqu'à 20 samples pour 100%).
         Quand le mode exclusif est ON, Apex ignore silencieusement les voix qui ne sont pas la tienne.

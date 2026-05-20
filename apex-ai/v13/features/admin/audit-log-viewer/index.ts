@@ -87,7 +87,7 @@ function renderEntry(e: AuditEntry): string {
       <td style="padding:6px 8px;font-weight:600;color:#e8b830">${escapeHtml(e.action)}</td>
       <td style="padding:6px 8px;color:rgba(255,255,255,0.85)">${escapeHtml(e.actor)}</td>
       <td style="padding:6px 8px;font-size:12px">${target}</td>
-      <td style="padding:6px 8px">${detailsBtn}</td>
+      <td class="ax-gs-267">${detailsBtn}</td>
     </tr>
   `;
 }
@@ -99,7 +99,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const stats = computeStats(allEntries);
 
   const html = `
-    <div style="padding:16px;max-width:1100px;margin:0 auto">
+    <div class="ax-gs-268">
       <h2 style="margin:0 0 16px;color:#e8b830;font-size:20px">🔒 Audit Log Viewer</h2>
       <p style="color:rgba(255,255,255,0.6);font-size:13px;margin:0 0 16px">
         Toutes les actions sensibles (admin, vault, AI, settings) sont loggées avec chain hash tamper detection.
@@ -107,7 +107,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </p>
 
       <div class="ax-card-elevated ax-gs-185">
-        <h3 style="margin:0 0 10px;color:#fff;font-size:14px">📊 Stats</h3>
+        <h3 class="ax-gs-269">📊 Stats</h3>
         <div class="ax-gs-89">
           <div>
             <div class="ax-gs-56">Top actions</div>
@@ -126,24 +126,24 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </div>
 
       <div class="ax-card-elevated ax-gs-185">
-        <h3 style="margin:0 0 10px;color:#fff;font-size:14px">🔍 Filtres</h3>
+        <h3 class="ax-gs-269">🔍 Filtres</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
-          <input class="ax-input" id="audit-filter-action" placeholder="Filtrer action…" value="${escapeHtml(state.action)}" style="font-size:12px">
-          <input class="ax-input" id="audit-filter-actor" placeholder="Filtrer actor…" value="${escapeHtml(state.actor)}" style="font-size:12px">
-          <input class="ax-input" id="audit-filter-search" placeholder="Recherche target/details…" value="${escapeHtml(state.search)}" style="font-size:12px">
+          <input class="ax-input ax-gs-270" id="audit-filter-action" placeholder="Filtrer action…" value="${escapeHtml(state.action)}">
+          <input class="ax-input ax-gs-270" id="audit-filter-actor" placeholder="Filtrer actor…" value="${escapeHtml(state.actor)}">
+          <input class="ax-input ax-gs-270" id="audit-filter-search" placeholder="Recherche target/details…" value="${escapeHtml(state.search)}">
           <button class="ax-btn-glass-gold" id="audit-filter-reset">Reset</button>
         </div>
       </div>
 
       <div class="ax-card-elevated" style="padding:0;overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <table class="ax-gs-271">
           <thead>
             <tr style="background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.1)">
-              <th style="text-align:left;padding:8px 8px;font-size:11px;color:rgba(255,255,255,0.7)">Date</th>
-              <th style="text-align:left;padding:8px 8px;font-size:11px;color:rgba(255,255,255,0.7)">Action</th>
-              <th style="text-align:left;padding:8px 8px;font-size:11px;color:rgba(255,255,255,0.7)">Actor</th>
-              <th style="text-align:left;padding:8px 8px;font-size:11px;color:rgba(255,255,255,0.7)">Target</th>
-              <th style="text-align:left;padding:8px 8px;font-size:11px;color:rgba(255,255,255,0.7)">Details</th>
+              <th class="ax-gs-272">Date</th>
+              <th class="ax-gs-272">Action</th>
+              <th class="ax-gs-272">Actor</th>
+              <th class="ax-gs-272">Target</th>
+              <th class="ax-gs-272">Details</th>
             </tr>
           </thead>
           <tbody>

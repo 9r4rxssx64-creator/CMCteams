@@ -172,15 +172,15 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const recommended = apexPluginsMarketplace.recommendForUser({ minValue: 'high', max: 6 });
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
-      <h1 style="margin:0 0 8px;color:#c9a227">🔌 Marketplace Plugins Apex</h1>
+    <div class="ax-page ax-gs-268">
+      <h1 class="ax-gs-365">🔌 Marketplace Plugins Apex</h1>
       <div class="ax-gs-67">
-        <button id="ax-plg-tab-marketplace" class="ax-btn" style="padding:6px 12px;background:#c9a227;color:#000;font-weight:600;border:none;border-radius:6px;font-size:12px;cursor:pointer">📦 Marketplace</button>
-        <button id="ax-plg-tab-extended" class="ax-btn" style="padding:6px 12px;background:rgba(20,20,35,0.7);color:#fff;border:1px solid #444;border-radius:6px;font-size:12px;cursor:pointer">🌐 Extended Catalog (${APEX_EXTENDED_CATALOG.length}+)</button>
+        <button id="ax-plg-tab-marketplace" class="ax-btn ax-gs-410">📦 Marketplace</button>
+        <button id="ax-plg-tab-extended" class="ax-btn ax-gs-411">🌐 Extended Catalog (${APEX_EXTENDED_CATALOG.length}+)</button>
       </div>
-      <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:14px">
+      <p class="ax-gs-385">
         ${stats.totalCatalog} plugins recensés (Anthropic Claude / MCP servers / community / apex-internal).
-        <strong style="color:#22cc77">${stats.totalInstalled} installés</strong>
+        <strong class="ax-gs-279">${stats.totalInstalled} installés</strong>
         · ${stats.totalAvailable} dispo PWA
         · <span class="ax-gs-13">${stats.totalUnsupportedPwa} non-PWA</span>.
       </p>
@@ -205,7 +205,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       </div>
 
       ${recommended.length > 0
-        ? `<h2 style="margin:24px 0 8px;color:#c9a227;font-size:16px">⭐ Recommandés pour Kevin</h2>
+        ? `<h2 class="ax-gs-386">⭐ Recommandés pour Kevin</h2>
            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-bottom:16px">
              ${recommended.map((p) => renderCard(p, apexPluginsMarketplace.getStatusOf(p.id))).join('')}
            </div>`
@@ -214,16 +214,16 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       <div class="ax-gs-146">
         <label for="ax-plg-search" class="sr-only">Rechercher un plugin par nom, tag ou description</label>
         <input id="ax-plg-search" placeholder="🔍 Rechercher (nom, tag, description)" aria-label="Rechercher un plugin par nom, tag ou description" value="${escapeHtml(uiState.search)}"
-          style="flex:1 1 240px;background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+          class="ax-gs-412">
 
         <label for="ax-plg-cat" class="sr-only">Filtrer par catégorie</label>
-        <select id="ax-plg-cat" aria-label="Filtrer les plugins par catégorie" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <select id="ax-plg-cat" aria-label="Filtrer les plugins par catégorie" class="ax-gs-413">
           <option value="all">Toutes catégories</option>
           ${categories.map((c) => `<option value="${escapeHtml(c)}" ${uiState.categoryFilter === c ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('')}
         </select>
 
         <label for="ax-plg-status" class="sr-only">Filtrer par statut</label>
-        <select id="ax-plg-status" aria-label="Filtrer les plugins par statut" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <select id="ax-plg-status" aria-label="Filtrer les plugins par statut" class="ax-gs-413">
           <option value="all" ${uiState.statusFilter === 'all' ? 'selected' : ''}>Tous statuts</option>
           <option value="installed" ${uiState.statusFilter === 'installed' ? 'selected' : ''}>🟢 Installés</option>
           <option value="available" ${uiState.statusFilter === 'available' ? 'selected' : ''}>⚪ Disponibles</option>
@@ -231,12 +231,12 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           <option value="planned" ${uiState.statusFilter === 'planned' ? 'selected' : ''}>🟡 Planifié</option>
         </select>
 
-        <label style="font-size:12px;color:var(--ax-text-dim);display:flex;align-items:center;gap:4px;cursor:pointer">
+        <label class="ax-gs-414">
           <input id="ax-plg-pwa-only" type="checkbox" aria-label="Filtrer plugins PWA uniquement" ${uiState.pwaOnly ? 'checked' : ''}> PWA seulement
         </label>
       </div>
 
-      <h2 style="margin:16px 0 8px;color:#c9a227;font-size:16px">${plugins.length} plugins</h2>
+      <h2 class="ax-gs-415">${plugins.length} plugins</h2>
 
       ${plugins.length === 0
         ? `<p class="ax-gs-231">Aucun plugin ne correspond aux filtres.</p>`
@@ -396,15 +396,15 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
   ).length;
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
-      <h1 style="margin:0 0 8px;color:#c9a227">🌐 Extended Catalog Apex</h1>
+    <div class="ax-page ax-gs-268">
+      <h1 class="ax-gs-365">🌐 Extended Catalog Apex</h1>
       <div class="ax-gs-67">
-        <button id="ax-plg-tab-marketplace" class="ax-btn" style="padding:6px 12px;background:rgba(20,20,35,0.7);color:#fff;border:1px solid #444;border-radius:6px;font-size:12px;cursor:pointer">📦 Marketplace</button>
-        <button id="ax-plg-tab-extended" class="ax-btn" style="padding:6px 12px;background:#c9a227;color:#000;font-weight:600;border:none;border-radius:6px;font-size:12px;cursor:pointer">🌐 Extended Catalog (${totalCatalog})</button>
+        <button id="ax-plg-tab-marketplace" class="ax-btn ax-gs-411">📦 Marketplace</button>
+        <button id="ax-plg-tab-extended" class="ax-btn ax-gs-410">🌐 Extended Catalog (${totalCatalog})</button>
       </div>
-      <p style="color:var(--ax-text-dim);margin:0 0 12px;font-size:14px">
+      <p class="ax-gs-385">
         ${totalCatalog} outils recensés (MCP / Claude skills/hooks/commands / agent frameworks / PWA APIs / GitHub Actions).
-        <strong style="color:#22cc77">${totalInstalled} auto-installés</strong>
+        <strong class="ax-gs-279">${totalInstalled} auto-installés</strong>
         · ${pwaCompat} PWA-compatibles
         · <span class="ax-gs-13">${totalSkipped} skipped</span>.
       </p>
@@ -431,38 +431,38 @@ async function renderExtended(rootEl: HTMLElement): Promise<void> {
       <div class="ax-gs-146">
         <label for="ax-ext-search" class="sr-only">Rechercher un outil étendu par nom, description ou catégorie</label>
         <input id="ax-ext-search" placeholder="🔍 Rechercher (nom, description, catégorie)" aria-label="Rechercher un outil étendu par nom, description ou catégorie" value="${escapeHtml(uiState.search)}"
-          style="flex:1 1 240px;background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+          class="ax-gs-412">
 
         <label for="ax-ext-type" class="sr-only">Filtrer par type d'outil</label>
-        <select id="ax-ext-type" aria-label="Filtrer par type d'outil" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <select id="ax-ext-type" aria-label="Filtrer par type d'outil" class="ax-gs-413">
           <option value="all" ${uiState.extendedTypeFilter === 'all' ? 'selected' : ''}>Tous types</option>
           ${(Object.keys(EXTENDED_TYPE_LABELS) as ApexExtendedToolType[]).map((t) => `<option value="${t}" ${uiState.extendedTypeFilter === t ? 'selected' : ''}>${EXTENDED_TYPE_LABELS[t]}</option>`).join('')}
         </select>
 
-        <select id="ax-ext-compat" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <select id="ax-ext-compat" class="ax-gs-413">
           <option value="all" ${uiState.extendedCompatFilter === 'all' ? 'selected' : ''}>Toutes compat</option>
           ${(Object.keys(EXTENDED_COMPAT_LABELS) as ApexCompatibility[]).map((c) => `<option value="${c}" ${uiState.extendedCompatFilter === c ? 'selected' : ''}>${EXTENDED_COMPAT_LABELS[c]}</option>`).join('')}
         </select>
 
-        <select id="ax-ext-value" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <select id="ax-ext-value" class="ax-gs-413">
           <option value="all" ${uiState.extendedValueFilter === 'all' ? 'selected' : ''}>Toutes valeurs</option>
           <option value="high" ${uiState.extendedValueFilter === 'high' ? 'selected' : ''}>⭐ HIGH</option>
           <option value="medium" ${uiState.extendedValueFilter === 'medium' ? 'selected' : ''}>○ MEDIUM</option>
           <option value="low" ${uiState.extendedValueFilter === 'low' ? 'selected' : ''}>— LOW</option>
         </select>
 
-        <select id="ax-ext-sort" style="background:rgba(20,20,35,0.7);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px">
+        <select id="ax-ext-sort" class="ax-gs-413">
           <option value="value" ${uiState.extendedSortBy === 'value' ? 'selected' : ''}>Tri : Valeur ↓</option>
           <option value="stars" ${uiState.extendedSortBy === 'stars' ? 'selected' : ''}>Tri : Stars ↓</option>
           <option value="name" ${uiState.extendedSortBy === 'name' ? 'selected' : ''}>Tri : Nom A-Z</option>
         </select>
 
-        <label style="font-size:12px;color:var(--ax-text-dim);display:flex;align-items:center;gap:4px;cursor:pointer">
+        <label class="ax-gs-414">
           <input id="ax-ext-pwa-only" type="checkbox" aria-label="Filtrer outils PWA uniquement" ${uiState.pwaOnly ? 'checked' : ''}> PWA seulement
         </label>
       </div>
 
-      <h2 style="margin:16px 0 8px;color:#c9a227;font-size:16px">${sorted.length} outils</h2>
+      <h2 class="ax-gs-415">${sorted.length} outils</h2>
 
       ${sorted.length === 0
         ? `<p class="ax-gs-231">Aucun outil ne correspond aux filtres.</p>`

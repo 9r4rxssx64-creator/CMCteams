@@ -876,9 +876,9 @@ export function render(rootEl: HTMLElement): void {
       const rgpd = checkRGPDCompliance(c);
       const fullySigned = c.parties.every((p) => p.signature && p.signedAt > 0);
       return `
-        <div class="ax-contract-card" data-contract-id="${escapeHtml(c.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div class="ax-contract-card ax-gs-400" data-contract-id="${escapeHtml(c.id)}">
           <header class="ax-gs-214">
-            <strong style="color:#c9a227">${escapeHtml(c.number)}</strong>
+            <strong class="ax-gs-266">${escapeHtml(c.number)}</strong>
             <span style="font-size:12px;color:${valid.ok ? '#4caf50' : '#ff9800'}">${valid.ok ? '✓ Complet' : `⚠ ${valid.errors.length} manquant(s)`}</span>
           </header>
           <div class="ax-gs-128">${tpl?.emoji ?? ''} ${escapeHtml(tpl?.label ?? c.template)} · ${escapeHtml(c.lang.toUpperCase())}</div>
@@ -886,9 +886,9 @@ export function render(rootEl: HTMLElement): void {
           ${tpl?.requiresRGPD ? `<div style="font-size:11px;margin-top:4px;color:${rgpd.compliant ? '#4caf50' : '#ff9800'}">${rgpd.compliant ? '🔐 RGPD ✓' : '⚠ RGPD non conforme'}</div>` : ''}
           ${fullySigned ? '<div style="font-size:11px;margin-top:4px;color:#4caf50">✍ Signé par toutes les parties</div>' : ''}
           <div class="ax-gs-80">
-            <button class="ax-btn ax-btn-sm" data-action="export-pdf" data-contract-id="${escapeHtml(c.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">💾 Exporter PDF</button>
-            <button class="ax-btn ax-btn-sm" data-action="preview-text" data-contract-id="${escapeHtml(c.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">👁 Preview</button>
-            <button class="ax-btn ax-btn-sm" data-action="remove" data-contract-id="${escapeHtml(c.id)}" style="font-size:11px;padding:6px 10px;color:#ff6666;min-height:36px">Supprimer</button>
+            <button class="ax-btn ax-btn-sm ax-gs-458" data-action="export-pdf" data-contract-id="${escapeHtml(c.id)}">💾 Exporter PDF</button>
+            <button class="ax-btn ax-btn-sm ax-gs-458" data-action="preview-text" data-contract-id="${escapeHtml(c.id)}">👁 Preview</button>
+            <button class="ax-btn ax-btn-sm ax-gs-459" data-action="remove" data-contract-id="${escapeHtml(c.id)}">Supprimer</button>
           </div>
         </div>
       `;
@@ -896,9 +896,9 @@ export function render(rootEl: HTMLElement): void {
     : '<p class="ax-gs-213">Aucun contrat. Crée le premier !</p>';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">📋 Studio Contrat Pro</h1>
+        <h1 class="ax-gs-333">📋 Studio Contrat Pro</h1>
         <span class="ax-gs-3">${contracts.length} contrat${contracts.length > 1 ? 's' : ''}</span>
       </header>
 
@@ -907,7 +907,7 @@ export function render(rootEl: HTMLElement): void {
       </div>
 
       <div class="ax-gs-1">
-        <h2 style="margin:0 0 10px 0;font-size:15px;color:#c9a227">Choisir un modèle (${TEMPLATES.length} disponibles)</h2>
+        <h2 class="ax-gs-452">Choisir un modèle (${TEMPLATES.length} disponibles)</h2>
         <p style="margin:0 0 10px 0;font-size:12px;color:var(--ax-text-dim)">${OPTIONAL_CLAUSES.length} clauses optionnelles · 5 langues · Signature électronique SHA-256 · Vérif RGPD</p>
         <div class="ax-gs-161">${templatesHtml}</div>
       </div>

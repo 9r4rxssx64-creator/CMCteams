@@ -774,14 +774,14 @@ export function render(rootEl: HTMLElement): void {
 
   const clipsHtml = clips.length > 0
     ? clips.map((c, i) => `
-        <div class="ax-video-clip" data-clip-id="${escapeHtml(c.id)}" style="background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div class="ax-video-clip ax-gs-400" data-clip-id="${escapeHtml(c.id)}">
           <div class="ax-gs-22">
-            <strong style="color:#c9a227">#${i + 1} · ${escapeHtml(c.name)}</strong>
+            <strong class="ax-gs-266">#${i + 1} · ${escapeHtml(c.name)}</strong>
             <span class="ax-gs-5">${formatDuration((c.end - c.start) / Math.max(0.25, c.speed))}</span>
           </div>
           <input type="text" aria-label="Sous-titre du clip" placeholder="Caption (sous-titre)…" maxlength="200" value="${escapeHtml(c.caption)}" data-action="caption" data-clip-id="${escapeHtml(c.id)}" style="width:100%;padding:8px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;margin-bottom:6px;min-height:36px">
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-            <select data-action="transition" data-clip-id="${escapeHtml(c.id)}" style="flex:1;padding:6px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:36px">
+            <select data-action="transition" data-clip-id="${escapeHtml(c.id)}" class="ax-gs-474">
               <option value="cut" ${c.transition === 'cut' ? 'selected' : ''}>Coupe</option>
               <option value="fade" ${c.transition === 'fade' ? 'selected' : ''}>Fondu</option>
               <option value="slide" ${c.transition === 'slide' ? 'selected' : ''}>Glissé</option>
@@ -790,7 +790,7 @@ export function render(rootEl: HTMLElement): void {
               <option value="zoom" ${c.transition === 'zoom' ? 'selected' : ''}>Zoom</option>
               <option value="none" ${c.transition === 'none' ? 'selected' : ''}>Aucune</option>
             </select>
-            <select data-action="lut" data-clip-id="${escapeHtml(c.id)}" style="flex:1;padding:6px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px;min-height:36px">
+            <select data-action="lut" data-clip-id="${escapeHtml(c.id)}" class="ax-gs-474">
               <option value="none" ${c.colorGrading.lutPreset === 'none' ? 'selected' : ''}>Pas de LUT</option>
               <option value="cinema" ${c.colorGrading.lutPreset === 'cinema' ? 'selected' : ''}>Cinéma</option>
               <option value="vintage" ${c.colorGrading.lutPreset === 'vintage' ? 'selected' : ''}>Vintage</option>
@@ -802,29 +802,29 @@ export function render(rootEl: HTMLElement): void {
               <option value="noir" ${c.colorGrading.lutPreset === 'noir' ? 'selected' : ''}>Noir contrasté</option>
             </select>
           </div>
-          <label style="display:block;font-size:12px;color:var(--ax-text-dim)">Vitesse ×${c.speed.toFixed(2)} <input type="range" aria-label="Vitesse de lecture du clip" min="25" max="400" value="${Math.round(c.speed * 100)}" data-action="speed" data-clip-id="${escapeHtml(c.id)}" class="ax-gs-259"></label>
+          <label class="ax-gs-470">Vitesse ×${c.speed.toFixed(2)} <input type="range" aria-label="Vitesse de lecture du clip" min="25" max="400" value="${Math.round(c.speed * 100)}" data-action="speed" data-clip-id="${escapeHtml(c.id)}" class="ax-gs-259"></label>
           <button class="ax-btn ax-btn-sm" data-action="remove-clip" data-clip-id="${escapeHtml(c.id)}" style="margin-top:8px;font-size:11px;padding:6px 10px;color:#ff6666;min-height:36px">Supprimer</button>
         </div>
       `).join('')
     : '<p class="ax-gs-213">Aucun clip. Importe ta première vidéo !</p>';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🎬 Studio Vidéo Pro</h1>
+        <h1 class="ax-gs-333">🎬 Studio Vidéo Pro</h1>
         <span class="ax-gs-3">${clips.length}/${MAX_CLIPS} clips · ${formatDuration(total)} · ${escapeHtml(aspect)}</span>
       </header>
 
       <div class="ax-gs-1">
-        <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Timeline ${MAX_CLIPS} clips, ${formatDuration(MAX_TOTAL_DURATION_S)} total. Cuts, transitions, captions ${SUPPORTED_LANGS.length} langues, LUTs cinéma, color grading 3-way, chroma key, stabilization, vertical TikTok auto.</p>
+        <p class="ax-gs-468">Timeline ${MAX_CLIPS} clips, ${formatDuration(MAX_TOTAL_DURATION_S)} total. Cuts, transitions, captions ${SUPPORTED_LANGS.length} langues, LUTs cinéma, color grading 3-way, chroma key, stabilization, vertical TikTok auto.</p>
         <div class="ax-gs-7">
-          <input type="file" id="ax-video-upload" aria-label="Importer fichiers vidéo" accept="video/*" multiple style="display:none">
-          <button class="ax-btn ax-btn-primary" id="ax-video-upload-btn" style="min-height:44px">📂 Importer vidéos</button>
-          <button class="ax-btn" data-aspect="9:16" style="min-height:44px">📱 TikTok 9:16</button>
-          <button class="ax-btn" data-aspect="16:9" style="min-height:44px">▶ YouTube 16:9</button>
-          <button class="ax-btn" data-aspect="1:1" style="min-height:44px">⬛ IG 1:1</button>
-          <button class="ax-btn" id="ax-video-export" style="min-height:44px">💾 Export MP4</button>
-          <button class="ax-btn" id="ax-video-clear" style="min-height:44px;color:#ff6666">🗑 Tout effacer</button>
+          <input type="file" id="ax-video-upload" aria-label="Importer fichiers vidéo" accept="video/*" multiple class="ax-gs-359">
+          <button class="ax-btn ax-btn-primary ax-gs-401" id="ax-video-upload-btn">📂 Importer vidéos</button>
+          <button class="ax-btn ax-gs-401" data-aspect="9:16">📱 TikTok 9:16</button>
+          <button class="ax-btn ax-gs-401" data-aspect="16:9">▶ YouTube 16:9</button>
+          <button class="ax-btn ax-gs-401" data-aspect="1:1">⬛ IG 1:1</button>
+          <button class="ax-btn ax-gs-401" id="ax-video-export">💾 Export MP4</button>
+          <button class="ax-btn ax-gs-460" id="ax-video-clear">🗑 Tout effacer</button>
         </div>
       </div>
 

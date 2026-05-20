@@ -537,19 +537,19 @@ export function render(rootEl: HTMLElement): void {
   }).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🗄 Archive</h1>
+        <h1 class="ax-gs-333">🗄 Archive</h1>
         <span class="ax-gs-3">${stats.total} élément${stats.total > 1 ? 's' : ''}</span>
       </header>
 
-      <p style="color:var(--ax-text-dim);font-size:13px;margin-bottom:16px">
+      <p class="ax-gs-334">
         Historique de tout ce qui est archivé : projets, factures, notes, événements passés, backups, audits, handoff, lessons learned.
       </p>
 
       <label for="ax-archive-search" class="sr-only">Rechercher dans l'archive</label>
       <input type="search" id="ax-archive-search" placeholder="🔍 Rechercher dans l'archive…" aria-label="Rechercher dans l'archive" autocomplete="off" maxlength="100"
-        style="width:100%;padding:10px;margin-bottom:16px;background:#0a0a14;border:1px solid #333;color:#fff;border-radius:6px">
+        class="ax-gs-335">
 
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px">
         ${cards}
@@ -558,8 +558,8 @@ export function render(rootEl: HTMLElement): void {
       <div id="ax-archive-list" class="ax-gs-211"></div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:16px;border-top:1px solid rgba(201,162,39,0.2)">
-        <button id="ax-archive-export-json" class="ax-btn ax-btn-primary" style="font-size:12px;padding:8px 12px">📥 Export JSON</button>
-        <button id="ax-archive-export-csv" class="ax-btn ax-btn-secondary" style="font-size:12px;padding:8px 12px">📥 Export CSV</button>
+        <button id="ax-archive-export-json" class="ax-btn ax-btn-primary ax-gs-336">📥 Export JSON</button>
+        <button id="ax-archive-export-csv" class="ax-btn ax-btn-secondary ax-gs-336">📥 Export CSV</button>
         <button id="ax-archive-purge" class="ax-btn" style="font-size:12px;padding:8px 12px;color:#ff6666">🧹 Purger > 90 jours</button>
       </div>
 
@@ -603,7 +603,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
       if (!cat || !isValidCategory(cat) || !listEl) return;
       const items = archiveHub.listByCategory(uid, cat);
       listEl.innerHTML = `
-        <h2 style="color:#c9a227;font-size:15px;margin:8px 0 12px">${CATEGORY_META[cat].emoji} ${escapeHtml(CATEGORY_META[cat].label)} (${items.length})</h2>
+        <h2 class="ax-gs-337">${CATEGORY_META[cat].emoji} ${escapeHtml(CATEGORY_META[cat].label)} (${items.length})</h2>
         ${renderItemList(items)}
       `;
       attachItemHandlers(rootEl, uid);
@@ -623,7 +623,7 @@ function attachHandlers(rootEl: HTMLElement, uid: string): void {
       }
       const items = archiveHub.search(uid, q);
       listEl.innerHTML = `
-        <h2 style="color:#c9a227;font-size:15px;margin:8px 0 12px">🔍 Résultats : ${items.length}</h2>
+        <h2 class="ax-gs-337">🔍 Résultats : ${items.length}</h2>
         ${renderItemList(items)}
       `;
       attachItemHandlers(rootEl, uid);

@@ -240,9 +240,9 @@ export function render(rootEl: HTMLElement): void {
   `).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-217">
-        <h1 style="margin:0;color:#c9a227">🧮 Calculatrices & Convertisseurs</h1>
+        <h1 class="ax-gs-333">🧮 Calculatrices & Convertisseurs</h1>
         <p style="color:var(--ax-text-dim);font-size:13px;margin:4px 0 0">${CALCULATORS.length} outils ${[...new Set(CALCULATORS.map((c) => c.category))].length} catégories</p>
       </header>
 

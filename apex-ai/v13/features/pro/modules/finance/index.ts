@@ -742,52 +742,52 @@ export function render(root: HTMLElement): void {
   root.innerHTML = `
     <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#4cd080,#7adda1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">💰 Finance Pro</h2>
-      <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">IR FR 2026 &middot; IS &middot; TVA &middot; PFU &middot; PV immo/mobilier &middot; succession &middot; pension &middot; net/brut &middot; Monaco</p>
+      <p class="ax-gs-421">IR FR 2026 &middot; IS &middot; TVA &middot; PFU &middot; PV immo/mobilier &middot; succession &middot; pension &middot; net/brut &middot; Monaco</p>
 
       <div style="background:rgba(201,162,39,0.05);border-left:4px solid #c9a227;border-radius:12px;padding:14px;margin-bottom:12px">
-        <h3 style="color:#c9a227;margin:0 0 10px">📊 Calcul IR France 2026</h3>
-        <input id="finRev" type="number" placeholder="Revenu imposable (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Revenu imposable">
-        <input id="finParts" type="number" placeholder="Parts fiscales (1, 1.5, 2...)" value="1" step="0.5" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Parts fiscales">
+        <h3 class="ax-gs-424">📊 Calcul IR France 2026</h3>
+        <input id="finRev" type="number" placeholder="Revenu imposable (EUR)" class="ax-gs-425" aria-label="Revenu imposable">
+        <input id="finParts" type="number" placeholder="Parts fiscales (1, 1.5, 2...)" value="1" step="0.5" class="ax-gs-423" aria-label="Parts fiscales">
         <button id="finCalcIRBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#4cd080,#7adda1);color:#000;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Calculer IR</button>
         <div id="finIRResult" class="ax-gs-242"></div>
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border-left:4px solid #5aa8ff;border-radius:12px;padding:14px;margin-bottom:12px">
         <h3 style="color:#5aa8ff;margin:0 0 10px">🏠 Crédit immobilier</h3>
-        <input id="finMontant" type="number" placeholder="Montant (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Montant emprunt">
-        <input id="finTaux" type="number" placeholder="Taux annuel (%, ex 3.5)" value="3.5" step="0.1" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Taux annuel">
-        <input id="finDuree" type="number" placeholder="Durée (années)" value="25" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Durée">
+        <input id="finMontant" type="number" placeholder="Montant (EUR)" class="ax-gs-425" aria-label="Montant emprunt">
+        <input id="finTaux" type="number" placeholder="Taux annuel (%, ex 3.5)" value="3.5" step="0.1" class="ax-gs-425" aria-label="Taux annuel">
+        <input id="finDuree" type="number" placeholder="Durée (années)" value="25" class="ax-gs-423" aria-label="Durée">
         <button id="finCalcCreditBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:rgba(90,168,255,0.2);color:#5aa8ff;border:1px solid #5aa8ff;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Calculer mensualité</button>
         <div id="finCreditResult" class="ax-gs-242"></div>
       </div>
 
       <div style="background:rgba(201,162,39,0.05);border-left:4px solid #4cd080;border-radius:12px;padding:14px;margin-bottom:12px">
         <h3 style="color:#4cd080;margin:0 0 10px">📈 Plus-value immobilière</h3>
-        <input id="finPVente" type="number" placeholder="Prix vente (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Prix vente">
-        <input id="finPAchat" type="number" placeholder="Prix achat (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Prix achat">
-        <input id="finDuree2" type="number" placeholder="Années de détention" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Années de détention">
+        <input id="finPVente" type="number" placeholder="Prix vente (EUR)" class="ax-gs-425" aria-label="Prix vente">
+        <input id="finPAchat" type="number" placeholder="Prix achat (EUR)" class="ax-gs-425" aria-label="Prix achat">
+        <input id="finDuree2" type="number" placeholder="Années de détention" class="ax-gs-425" aria-label="Années de détention">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 0;cursor:pointer"><input type="checkbox" id="finRP" aria-label="Cocher si résidence principale exonérée" style="width:18px;height:18px"> Résidence principale (exonérée)</label>
         <button id="finCalcPVBtn" type="button" style="width:100%;margin-top:6px;padding:12px;background:rgba(76,208,128,0.2);color:#4cd080;border:1px solid #4cd080;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Calculer PV</button>
         <div id="finPVResult" class="ax-gs-242"></div>
       </div>
 
       <div class="ax-gs-158">
-        <h3 style="color:#ff5858;margin:0 0 10px">₿ Plus-value mobilière (crypto / actions)</h3>
-        <input id="finPVM_v" type="number" placeholder="Prix vente (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Prix vente mobilier">
-        <input id="finPVM_a" type="number" placeholder="Prix achat (EUR)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Prix achat mobilier">
-        <button id="finCalcPVMBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:rgba(255,88,88,0.2);color:#ff8080;border:1px solid #ff5858;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Calculer PFU 30%</button>
+        <h3 class="ax-gs-426">₿ Plus-value mobilière (crypto / actions)</h3>
+        <input id="finPVM_v" type="number" placeholder="Prix vente (EUR)" class="ax-gs-425" aria-label="Prix vente mobilier">
+        <input id="finPVM_a" type="number" placeholder="Prix achat (EUR)" class="ax-gs-423" aria-label="Prix achat mobilier">
+        <button id="finCalcPVMBtn" type="button" class="ax-gs-427">Calculer PFU 30%</button>
         <div id="finPVMResult" class="ax-gs-242"></div>
       </div>
 
       <div style="background:linear-gradient(135deg,rgba(232,184,48,0.08),transparent);border-left:4px solid #c9a227;border-radius:12px;padding:14px;margin-bottom:12px">
-        <h3 style="color:#c9a227;margin:0 0 10px">🇲🇨 Monaco — Avantages fiscaux</h3>
+        <h3 class="ax-gs-424">🇲🇨 Monaco — Avantages fiscaux</h3>
         <div style="font-size:13px;line-height:2">${monacoHtml}</div>
       </div>
 
       <div class="ax-gs-159">
         ⚠️ <strong>Information indicative uniquement</strong>. Pour décision patrimoniale importante, consulter un expert-comptable, notaire ou avocat fiscaliste.
       </div>
-      <p style="margin-top:14px;text-align:center;font-size:11px;color:#666">Sources : Impôts.gouv &middot; Service-public.fr &middot; Légimonaco &middot; CGI Art 150 / Art 200 A &middot; BOFiP</p>
+      <p class="ax-gs-428">Sources : Impôts.gouv &middot; Service-public.fr &middot; Légimonaco &middot; CGI Art 150 / Art 200 A &middot; BOFiP</p>
     </div>
   `;
 

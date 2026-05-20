@@ -63,7 +63,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   if (!isAdmin) {
     rootEl.innerHTML = `
       <div class="ax-gs-21">
-        <h2 style="color:#c9a227">Accès admin uniquement</h2>
+        <h2 class="ax-gs-266">Accès admin uniquement</h2>
         <p>Cette section est réservée à Kevin.</p>
       </div>
     `;
@@ -137,9 +137,9 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
     : sorted.map((e) => renderEntry(e)).join('');
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:960px;margin:0 auto">
+    <div class="ax-page ax-gs-364">
       <header class="ax-gs-180">
-        <h1 style="margin:0 0 8px;color:#c9a227">🔐 Coffre — Audit credentials</h1>
+        <h1 class="ax-gs-365">🔐 Coffre — Audit credentials</h1>
         <p style="color:var(--ax-text-dim);margin:0;font-size:13px">
           ${report.total_patterns} patterns reconnus · ${report.configured_count} configurés ·
           ${report.encrypted_count} chiffrés AES-GCM-256 · ${report.firebase_backup_count} backup Firebase
@@ -157,8 +157,8 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
             </div>
           </div>
           <div class="ax-gs-7">
-            <button id="ax-cred-refresh" class="ax-btn ax-btn-outline" style="padding:8px 14px">🔄 Refresh audit</button>
-            <button id="ax-cred-test-channels" class="ax-btn ax-btn-outline" style="padding:8px 14px">📡 Test alertes</button>
+            <button id="ax-cred-refresh" class="ax-btn ax-btn-outline ax-gs-366">🔄 Refresh audit</button>
+            <button id="ax-cred-test-channels" class="ax-btn ax-btn-outline ax-gs-366">📡 Test alertes</button>
           </div>
         </div>
       </div>
@@ -167,7 +167,7 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
       <div style="background:rgba(255,170,0,0.05);border:1px solid rgba(255,170,0,0.2);
                   border-radius:12px;padding:16px;margin-bottom:20px">
         <h3 style="margin:0 0 12px;color:#ffaa00;font-size:15px">💡 Recommandations</h3>
-        <ul style="margin:0;padding-left:18px;font-size:13px">${recommendations}</ul>
+        <ul class="ax-gs-362">${recommendations}</ul>
       </div>
 
       <!-- Filtres catégorie -->
@@ -181,7 +181,7 @@ function renderReport(rootEl: HTMLElement, report: CredentialsAuditReport): void
       <!-- Liste credentials -->
       <div id="ax-cred-list">${credentialsList}</div>
 
-      <p style="text-align:center;color:#666;font-size:11px;margin-top:24px">
+      <p class="ax-gs-265">
         🔒 Coffre Apex v13 · AES-GCM-256 + PBKDF2 200k · Triple persistence (local+IDB+Firebase)
       </p>
     </div>
@@ -205,7 +205,7 @@ function renderEntry(e: CredentialAuditEntry): string {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
         <div class="ax-gs-11">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <strong style="color:#c9a227">${escapeHtml(e.service_name)}</strong>
+            <strong class="ax-gs-266">${escapeHtml(e.service_name)}</strong>
             <span style="font-size:11px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim)">
               ${escapeHtml(e.category)}
             </span>
@@ -223,8 +223,8 @@ function renderEntry(e: CredentialAuditEntry): string {
       <div class="ax-gs-129">
         ${e.status === 'decrypt_failed' ? `<button class="ax-btn ax-btn-sm" data-recover="${escapeHtml(e.storage_key)}" data-service="${escapeHtml(e.service_name)}" style="font-size:11px;padding:4px 10px;background:rgba(255,170,0,0.2);color:#ffaa00;border:1px solid rgba(255,170,0,0.4);font-weight:600">🔓 Récupérer cette clé</button>` : ''}
         ${e.configured ? `<button class="ax-btn ax-btn-sm" data-test="${escapeHtml(e.storage_key)}" style="font-size:11px;padding:4px 10px">🧪 Tester</button>` : ''}
-        ${e.dashboard_url ? `<a href="${escapeHtml(e.dashboard_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">🔗 Dashboard</a>` : ''}
-        ${e.billing_url ? `<a href="${escapeHtml(e.billing_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm" style="font-size:11px;padding:4px 10px;text-decoration:none">💰 Recharger</a>` : ''}
+        ${e.dashboard_url ? `<a href="${escapeHtml(e.dashboard_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm ax-gs-280">🔗 Dashboard</a>` : ''}
+        ${e.billing_url ? `<a href="${escapeHtml(e.billing_url)}" target="_blank" rel="noopener" class="ax-btn ax-btn-sm ax-gs-280">💰 Recharger</a>` : ''}
       </div>
     </article>
   `;
@@ -242,7 +242,7 @@ function openRecoverModal(rootEl: HTMLElement, storageKey: string, serviceName: 
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   modal.innerHTML = `
     <div style="background:#1a1a2e;border:1px solid rgba(201,162,39,0.4);border-radius:14px;padding:24px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
-      <h3 style="margin:0 0 8px;color:#c9a227">🔓 Récupérer ${escapeHtml(serviceName)}</h3>
+      <h3 class="ax-gs-365">🔓 Récupérer ${escapeHtml(serviceName)}</h3>
       <p style="color:var(--ax-text-dim);font-size:13px;margin:0 0 16px">
         Clé chiffrée présente mais illisible (passphrase a changé). Recolle ta clé pour qu'Apex la re-chiffre avec la passphrase courante.
       </p>
@@ -393,16 +393,16 @@ function attachHandlers(rootEl: HTMLElement): void {
             const status = STATUS_COLORS[entry.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.unknown;
             return `
               <div class="ax-gs-27">
-                <table style="width:100%;font-size:13px">
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Service</td><td>${escapeHtml(entry.service_name)}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Storage key</td><td><code>${escapeHtml(entry.storage_key)}</code></td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Catégorie</td><td>${escapeHtml(entry.category)}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Statut</td><td style="color:${status.color}">${status.icon} ${status.label}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Chiffré</td><td>${entry.encrypted ? '🔒 AES-GCM-256' : '⚠️ Non chiffré'}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Configuré</td><td>${entry.configured ? '✅ Oui' : '⚪ Non'}</td></tr>
-                  <tr><td style="padding:4px;color:var(--ax-text-dim)">Aperçu</td><td><code>${escapeHtml(entry.preview)}</code></td></tr>
-                  ${entry.dashboard_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Dashboard</td><td><a href="${escapeHtml(entry.dashboard_url)}" target="_blank" rel="noopener" class="ax-gs-198">${escapeHtml(entry.dashboard_url)}</a></td></tr>` : ''}
-                  ${entry.billing_url ? `<tr><td style="padding:4px;color:var(--ax-text-dim)">Billing</td><td><a href="${escapeHtml(entry.billing_url)}" target="_blank" rel="noopener" class="ax-gs-198">${escapeHtml(entry.billing_url)}</a></td></tr>` : ''}
+                <table class="ax-gs-291">
+                  <tr><td class="ax-gs-367">Service</td><td>${escapeHtml(entry.service_name)}</td></tr>
+                  <tr><td class="ax-gs-367">Storage key</td><td><code>${escapeHtml(entry.storage_key)}</code></td></tr>
+                  <tr><td class="ax-gs-367">Catégorie</td><td>${escapeHtml(entry.category)}</td></tr>
+                  <tr><td class="ax-gs-367">Statut</td><td style="color:${status.color}">${status.icon} ${status.label}</td></tr>
+                  <tr><td class="ax-gs-367">Chiffré</td><td>${entry.encrypted ? '🔒 AES-GCM-256' : '⚠️ Non chiffré'}</td></tr>
+                  <tr><td class="ax-gs-367">Configuré</td><td>${entry.configured ? '✅ Oui' : '⚪ Non'}</td></tr>
+                  <tr><td class="ax-gs-367">Aperçu</td><td><code>${escapeHtml(entry.preview)}</code></td></tr>
+                  ${entry.dashboard_url ? `<tr><td class="ax-gs-367">Dashboard</td><td><a href="${escapeHtml(entry.dashboard_url)}" target="_blank" rel="noopener" class="ax-gs-198">${escapeHtml(entry.dashboard_url)}</a></td></tr>` : ''}
+                  ${entry.billing_url ? `<tr><td class="ax-gs-367">Billing</td><td><a href="${escapeHtml(entry.billing_url)}" target="_blank" rel="noopener" class="ax-gs-198">${escapeHtml(entry.billing_url)}</a></td></tr>` : ''}
                 </table>
                 ${entry.status_detail ? `<p style="margin:12px 0 0;color:#ff6b6b;font-size:12px">⚠️ ${escapeHtml(entry.status_detail)}</p>` : ''}
               </div>

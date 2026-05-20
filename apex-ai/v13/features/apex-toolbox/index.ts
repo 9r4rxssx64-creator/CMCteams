@@ -160,10 +160,10 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const allCaps = capabilities.list();
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
+    <div class="ax-page ax-gs-268">
       <header class="ax-gs-181">
-        <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">🧰 Apex Toolbox</h1>
-        <p style="color:#a0a4c0;margin:0;font-size:13px">
+        <h1 class="ax-gs-324">🧰 Apex Toolbox</h1>
+        <p class="ax-gs-325">
           ${stats.total} tools IA disponibles · ${allCaps.length} capabilities device · Tier user : <strong style="color:${escapeHtml(TIER_META[userTier].color)}">${escapeHtml(TIER_META[userTier].label)}</strong>
         </p>
       </header>
@@ -181,21 +181,21 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
       ${activeTab === 'tools' ? `
         <section style="margin-bottom:16px;background:rgba(20,20,35,0.6);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:14px">
-          <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📊 Stats</h3>
+          <h3 class="ax-gs-326">📊 Stats</h3>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;font-size:12px">
-            <div><strong style="color:#fff">Total</strong> : ${stats.total}</div>
-            <div><strong style="color:#c9a227">Admin</strong> : ${stats.by_tier['admin'] ?? 0}</div>
+            <div><strong class="ax-gs-327">Total</strong> : ${stats.total}</div>
+            <div><strong class="ax-gs-266">Admin</strong> : ${stats.by_tier['admin'] ?? 0}</div>
             <div><strong style="color:#5aa8ff">Pro</strong> : ${stats.by_tier['client_pro'] ?? 0}</div>
-            <div><strong style="color:#22cc77">Auto (A)</strong> : ${stats.by_impact['A'] ?? 0}</div>
-            <div><strong style="color:#ffaa00">Notify (B)</strong> : ${stats.by_impact['B'] ?? 0}</div>
-            <div><strong style="color:#ff5858">Validate (C)</strong> : ${stats.by_impact['C'] ?? 0}</div>
+            <div><strong class="ax-gs-279">Auto (A)</strong> : ${stats.by_impact['A'] ?? 0}</div>
+            <div><strong class="ax-gs-328">Notify (B)</strong> : ${stats.by_impact['B'] ?? 0}</div>
+            <div><strong class="ax-gs-329">Validate (C)</strong> : ${stats.by_impact['C'] ?? 0}</div>
           </div>
         </section>
 
         <section style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <input id="ax-tb-search" type="text" aria-label="Rechercher un outil" placeholder="🔍 Rechercher tool..." value="${escapeHtml(activeFilter.query ?? '')}"
             style="flex:1;min-width:200px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;font-size:13px">
-          <select id="ax-tb-tier" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;font-size:12px">
+          <select id="ax-tb-tier" class="ax-gs-330">
             <option value="all" ${activeFilter.tier === 'all' ? 'selected' : ''}>Tous tiers</option>
             <option value="admin" ${activeFilter.tier === 'admin' ? 'selected' : ''}>Admin</option>
             <option value="laurence" ${activeFilter.tier === 'laurence' ? 'selected' : ''}>Laurence</option>
@@ -203,7 +203,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
             <option value="client_pro" ${activeFilter.tier === 'client_pro' ? 'selected' : ''}>Pro</option>
             <option value="client_free" ${activeFilter.tier === 'client_free' ? 'selected' : ''}>Free</option>
           </select>
-          <select id="ax-tb-impact" style="background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;font-size:12px">
+          <select id="ax-tb-impact" class="ax-gs-330">
             <option value="all" ${activeFilter.impactLevel === 'all' ? 'selected' : ''}>Tous impacts</option>
             <option value="A" ${activeFilter.impactLevel === 'A' ? 'selected' : ''}>A (auto)</option>
             <option value="B" ${activeFilter.impactLevel === 'B' ? 'selected' : ''}>B (notify)</option>
@@ -212,21 +212,21 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         </section>
 
         <section class="ax-gs-180">
-          <ul style="list-style:none;padding:0;margin:0">
+          <ul class="ax-gs-286">
             ${filtered.length > 0 ? filtered.map(renderToolRow).join('') : '<li class="ax-gs-209">Aucun tool pour ces filtres.</li>'}
           </ul>
         </section>
       ` : `
         <section class="ax-gs-180">
-          <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px;text-transform:uppercase">📱 Capabilities device</h3>
+          <h3 class="ax-gs-326">📱 Capabilities device</h3>
           <p style="color:#a0a4c0;font-size:12px;margin:0 0 12px">Matrice des capacités matérielles + permissions accordées par l'utilisateur.</p>
-          <ul style="list-style:none;padding:0;margin:0">
+          <ul class="ax-gs-286">
             ${allCaps.length > 0 ? allCaps.map(renderCapabilityRow).join('') : '<li class="ax-gs-209">Aucune capability détectée.</li>'}
           </ul>
         </section>
       `}
 
-      <p style="text-align:center;color:#666;font-size:11px">🧰 Toolbox v13 · ${stats.total} tools registered</p>
+      <p class="ax-gs-331">🧰 Toolbox v13 · ${stats.total} tools registered</p>
     </div>
   `;
 

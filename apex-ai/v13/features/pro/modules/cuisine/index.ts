@@ -1328,28 +1328,28 @@ export function render(root: HTMLElement): void {
   root.innerHTML = `
     <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#ff8c42,#ffb56b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">🍳 Cuisine Pro</h2>
-      <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">${AX_CUISINE.recettes.length} recettes &middot; ${Object.keys(AX_CUISINE.cuissons).length} cuissons &middot; 14 allergènes INCO &middot; macros + IG &middot; sommellerie</p>
+      <p class="ax-gs-421">${AX_CUISINE.recettes.length} recettes &middot; ${Object.keys(AX_CUISINE.cuissons).length} cuissons &middot; 14 allergènes INCO &middot; macros + IG &middot; sommellerie</p>
       <div class="ax-gs-4">
-        <h3 style="color:#ffb56b;margin:0 0 10px">📖 Recettes (${AX_CUISINE.recettes.length})</h3>
-        <input id="cuiQ" type="text" placeholder="Rechercher (poulet, italie, dessert, gluten...)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Recherche recette">
+        <h3 class="ax-gs-422">📖 Recettes (${AX_CUISINE.recettes.length})</h3>
+        <input id="cuiQ" type="text" placeholder="Rechercher (poulet, italie, dessert, gluten...)" class="ax-gs-423" aria-label="Recherche recette">
         <button id="cuiSearchBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#ff8c42,#ffb56b);color:#000;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Rechercher</button>
         <div id="cuiSearchResult" class="ax-gs-241"></div>
       </div>
       <div class="ax-gs-4">
-        <h3 style="color:#ffb56b;margin:0 0 10px">⏱ Temps de cuisson (${Object.keys(AX_CUISINE.cuissons).length})</h3>
+        <h3 class="ax-gs-422">⏱ Temps de cuisson (${Object.keys(AX_CUISINE.cuissons).length})</h3>
         <div style="font-size:12px;line-height:1.7;max-height:260px;overflow-y:auto">${cuissonsHtml}</div>
       </div>
       <div class="ax-gs-4">
-        <h3 style="color:#ffb56b;margin:0 0 10px">📐 Conversions cuisine (${Object.keys(AX_CUISINE.conversions).length})</h3>
+        <h3 class="ax-gs-422">📐 Conversions cuisine (${Object.keys(AX_CUISINE.conversions).length})</h3>
         <div style="font-size:13px;line-height:1.8;max-height:200px;overflow-y:auto">${conversionsHtml}</div>
       </div>
       <div class="ax-gs-4">
-        <h3 style="color:#ffb56b;margin:0 0 10px">⚠ 14 allergènes UE (INCO)</h3>
+        <h3 class="ax-gs-422">⚠ 14 allergènes UE (INCO)</h3>
         <p style="font-size:11px;color:#888;margin:0 0 8px">Source : Règlement (UE) 1169/2011 (information consommateur)</p>
         <div>${allergenesHtml}</div>
       </div>
       <div class="ax-gs-4">
-        <h3 style="color:#ffb56b;margin:0 0 10px">🥗 Régimes alimentaires (${AX_CUISINE.regimes.length})</h3>
+        <h3 class="ax-gs-422">🥗 Régimes alimentaires (${AX_CUISINE.regimes.length})</h3>
         <div>${regimesHtml}</div>
       </div>
       <p style="margin-top:18px;text-align:center;font-size:11px;color:#666">Sources : Règlement INCO 1169/2011 &middot; ANSES &middot; CIQUAL</p>

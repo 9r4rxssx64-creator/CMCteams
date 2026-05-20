@@ -252,7 +252,7 @@ export const proModulesHub = new ProModulesHub();
  */
 export function render(root: HTMLElement): void {
   const cards = PRO_MODULES.map((m) => `
-    <div class="ax-pro-card" data-module="${m.id}" style="cursor:pointer;background:rgba(201,162,39,0.05);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:16px;transition:transform 0.15s">
+    <div class="ax-pro-card ax-gs-416" data-module="${m.id}">
       <div class="ax-pro-card-emoji ax-gs-192">${m.emoji}</div>
       <div class="ax-pro-card-label ax-gs-238">${m.label}</div>
       <div class="ax-pro-card-desc ax-gs-239">${m.description}</div>
@@ -262,8 +262,8 @@ export function render(root: HTMLElement): void {
     </div>
   `).join('');
   root.innerHTML = `
-    <div class="ax-pro-hub" style="padding:16px;max-width:900px;margin:0 auto">
-      <h1 style="color:#c9a227">💼 Modules Pro Expert</h1>
+    <div class="ax-pro-hub ax-gs-376">
+      <h1 class="ax-gs-266">💼 Modules Pro Expert</h1>
       <p class="ax-subtitle ax-gs-226">${PRO_MODULES.length} modules avec sources autoritaires</p>
       <div class="ax-pro-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:16px">${cards}</div>
       <div id="ax-pro-detail" class="ax-gs-218"></div>

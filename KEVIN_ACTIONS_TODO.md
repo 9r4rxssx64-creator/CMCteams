@@ -30,26 +30,27 @@
   déplacement. Build complet à confirmer par la CI GitHub Actions.
 - `check-imports.cjs` conservé : réutilisable comme gate CI (cf. chantier 3).
 
-**🟢 CHANTIER 2 — Styles inline → classes CSS — 2 tranches faites (1001 occ)**
-- ✅ Tranche A (2026-05-20) — `<div>/<span>` à attribut `style` unique :
-  **672 occurrences → 179 classes `.ax-gs-*`**. Régression impossible (élément
-  ciblable seulement par `div`/`span`/`*`, spéc. ≤1 < classe 10).
-- ✅ Tranche B (2026-05-20) — éléments à classe/tag/form, **cascade-vérifiée** :
-  **329 occurrences → 83 classes** (`ax-gs-180+`), via
-  `scripts/extract-inline-styles-2.cjs`. Méthode : un style n'est extrait que
-  si AUCUNE de ses propriétés n'entre en conflit avec une règle CSS qui
-  battrait la classe dans la cascade (règle normale spéc. ≥11 dans
-  tokens/base/components, ou ≥10 dans les fichiers chargés après). Les
-  `!important` battent l'ancien inline ET la nouvelle classe pareil → jamais
-  dangereux. Analyse conservatrice (ascendants/pseudo-classes supposés
-  satisfaits). 425 règles dangereuses indexées sur les 9 CSS.
-  Vérif : 262 classes définies = 262 utilisées, 0 orpheline, 0 double `class=`.
-- ⏳ RESTE : **907 occurrences** avec conflit de cascade PROUVÉ → extraction =
-  régression visuelle réelle. Ne PEUT PAS être fait à l'aveugle. Exige une
-  session avec build+navigateur (diff visuel) OU vérif runtime Apex
-  (`apex-layout-inspector`). Périmètre honnête : ces 907 restent inline.
-- Note : `tsc`/`vite build` non lançables dans le sandbox (registre npm
-  cassé) → la CI GitHub vérifie le build au merge `main`.
+**✅ CHANTIER 2 — Styles inline → classes CSS — FAIT (1900 occ, 487 classes)**
+- ✅ Tranche A — `<div>/<span>` à `style` unique : **672 occ → 179 classes**.
+  Régression impossible (ciblable seulement par `div`/`span`/`*`).
+- ✅ Tranche B — éléments classe/tag/form sans conflit de cascade :
+  **329 occ → 83 classes** (`scripts/extract-inline-styles-2.cjs`).
+- ✅ Tranche C — le reste, **spécificité calculée** : **899 occ → 225 classes**
+  (`scripts/extract-inline-styles-3.cjs`). Sélecteur double
+  `#apex-root .cls.cls` (spéc. 120, cas in-root) + `.cls…` (repli pour modale
+  portée hors racine via `document.body.appendChild`, dimensionné aux règles
+  sans `#id`). Reproduit exactement la priorité de l'ancien style inline ;
+  `!important` bat l'ancien inline ET la classe pareil → neutre.
+  Vérif : reqA max = 111 (< 120 ✓), 487 classes définies = 487 utilisées,
+  0 orpheline, accolades CSS équilibrées.
+- ⏳ RESTE inline : **1147 `style=`** = styles UNIQUES (non répétés, pas de
+  dette de duplication) + DYNAMIQUES (`${…}`, non factorisables en classe
+  statique). Légitimement laissés inline.
+- Build : `tsc`/`vite build` non lançables dans le sandbox → CI GitHub vérifie
+  au merge `main` (build v13.4.242 déjà vert).
+  ⚠️ Leçon : le chantier 1 a cassé le build une fois (`new URL('../workers/…')`
+  non réécrits — corrigé v13.4.242). `check-imports.cjs` détecte désormais
+  aussi les `new URL()`.
 
 **CHANTIER 3 — ✅ FAIT (v13.4.240)**
 - 80 routes regroupées en 6 sections dans `bootstrap.ts` (auth/cœur/outils/

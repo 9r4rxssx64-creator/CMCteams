@@ -1111,21 +1111,21 @@ export function render(root: HTMLElement): void {
       if (/^https?:/.test(v)) {
         return `<a href="${escapeHtml(v)}" target="_blank" rel="noopener" style="display:block;color:#5aa8ff;padding:4px 0;text-decoration:none">${escapeHtml(k.replace(/_/g, ' '))}</a>`;
       }
-      return `<div style="padding:4px 0">📞 ${escapeHtml(k.replace(/_/g, ' '))} : <strong style="color:#ff5858">${escapeHtml(v)}</strong></div>`;
+      return `<div style="padding:4px 0">📞 ${escapeHtml(k.replace(/_/g, ' '))} : <strong class="ax-gs-329">${escapeHtml(v)}</strong></div>`;
     })
     .join('');
 
   root.innerHTML = `
     <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#ff5858,#ff8080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">⚕ Medical Pro</h2>
-      <p style="color:var(--ax-text-dim,#999);font-size:13px;margin-bottom:16px">${Object.keys(AX_MEDICAL_FR.otc).length} OTC &middot; IMC + IMG + métabolisme &middot; ${Object.keys(AX_MEDICAL_FR.urgences).length} urgences SAMU &middot; ${Object.keys(AX_MEDICAL_FR.vaccins_adulte).length} vaccins &middot; FAST AVC &middot; SCORE CV</p>
+      <p class="ax-gs-421">${Object.keys(AX_MEDICAL_FR.otc).length} OTC &middot; IMC + IMG + métabolisme &middot; ${Object.keys(AX_MEDICAL_FR.urgences).length} urgences SAMU &middot; ${Object.keys(AX_MEDICAL_FR.vaccins_adulte).length} vaccins &middot; FAST AVC &middot; SCORE CV</p>
 
       <div class="ax-gs-4">
-        <h3 style="color:#ff8080;margin:0 0 10px">📊 IMC + Métabolisme de base</h3>
-        <input id="medP" type="number" placeholder="Poids (kg)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Poids kg">
-        <input id="medT" type="number" placeholder="Taille (cm, ex 175)" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Taille cm">
-        <input id="medA" type="number" placeholder="Age" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;margin-bottom:6px;min-height:44px" aria-label="Age">
-        <select id="medS" style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Sexe">
+        <h3 class="ax-gs-430">📊 IMC + Métabolisme de base</h3>
+        <input id="medP" type="number" placeholder="Poids (kg)" class="ax-gs-425" aria-label="Poids kg">
+        <input id="medT" type="number" placeholder="Taille (cm, ex 175)" class="ax-gs-425" aria-label="Taille cm">
+        <input id="medA" type="number" placeholder="Age" class="ax-gs-425" aria-label="Age">
+        <select id="medS" class="ax-gs-423" aria-label="Sexe">
           <option value="homme">Homme</option><option value="femme">Femme</option>
         </select>
         <button id="medCalcBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#ff5858,#ff8080);color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer;min-height:44px">Calculer</button>
@@ -1133,24 +1133,24 @@ export function render(root: HTMLElement): void {
       </div>
 
       <div class="ax-gs-4">
-        <h3 style="color:#ff8080;margin:0 0 10px">💊 Info médicament (${Object.keys(AX_MEDICAL_FR.otc).length} OTC)</h3>
-        <input id="medMed" type="text" placeholder="Doliprane, Ibuprofène, Aspirine..." style="width:100%;padding:11px;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#eee;border-radius:8px;min-height:44px" aria-label="Nom médicament">
-        <button id="medLookupBtn" type="button" style="width:100%;margin-top:8px;padding:12px;background:rgba(255,88,88,0.2);color:#ff8080;border:1px solid #ff5858;border-radius:8px;font-weight:600;cursor:pointer;min-height:44px">Rechercher</button>
+        <h3 class="ax-gs-430">💊 Info médicament (${Object.keys(AX_MEDICAL_FR.otc).length} OTC)</h3>
+        <input id="medMed" type="text" placeholder="Doliprane, Ibuprofène, Aspirine..." class="ax-gs-423" aria-label="Nom médicament">
+        <button id="medLookupBtn" type="button" class="ax-gs-427">Rechercher</button>
         <div id="medMedResult" class="ax-gs-242"></div>
       </div>
 
       <div class="ax-gs-158">
-        <h3 style="color:#ff5858;margin:0 0 10px">🚨 Urgences (15 SAMU / 18 / 112)</h3>
+        <h3 class="ax-gs-426">🚨 Urgences (15 SAMU / 18 / 112)</h3>
         <div style="font-size:13px;line-height:1.6;max-height:280px;overflow-y:auto">${urgencesHtml}</div>
       </div>
 
       <div class="ax-gs-4">
-        <h3 style="color:#ff8080;margin:0 0 10px">💉 Calendrier vaccinal adulte</h3>
+        <h3 class="ax-gs-430">💉 Calendrier vaccinal adulte</h3>
         <div style="font-size:12px;line-height:1.7">${vaccinsHtml}</div>
       </div>
 
       <div class="ax-gs-4">
-        <h3 style="color:#ff8080;margin:0 0 10px">🔗 Sources officielles : Vidal &middot; ANSM &middot; HAS &middot; Ameli</h3>
+        <h3 class="ax-gs-430">🔗 Sources officielles : Vidal &middot; ANSM &middot; HAS &middot; Ameli</h3>
         <div class="ax-gs-160">${sourcesHtml}</div>
       </div>
 

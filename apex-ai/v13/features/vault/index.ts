@@ -484,7 +484,7 @@ export function render(rootEl: HTMLElement): void {
   activeVaultScope = createCleanupScope('vault');
   const isAdmin = store.get('isAdmin') as boolean | undefined;
   if (!isAdmin) {
-    rootEl.innerHTML = `<div style="padding:40px;text-align:center"><h2 style="color:var(--ax-gold-deep)">🔒 Coffre admin</h2><p class="ax-gs-226">Cette section est réservée à l'admin Kevin.</p></div>`;
+    rootEl.innerHTML = `<div style="padding:40px;text-align:center"><h2 class="ax-gs-372">🔒 Coffre admin</h2><p class="ax-gs-226">Cette section est réservée à l'admin Kevin.</p></div>`;
     return;
   }
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
@@ -1299,30 +1299,30 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
       style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
       <div style="background:var(--ax-bg-flat);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto">
         <div class="ax-gs-175">
-          <h2 style="margin:0;font-size:18px;color:var(--ax-gold)">+ Ajouter une clé</h2>
+          <h2 class="ax-gs-475">+ Ajouter une clé</h2>
           <button id="ax-vault-modal-close" aria-label="Fermer"
-            style="background:transparent;border:0;color:var(--ax-text-dim);font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
+            class="ax-gs-476">×</button>
         </div>
-        <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
+        <label class="ax-gs-477">
           Catégorie
           <select id="ax-vault-add-cat" style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px">
             ${catOpts}
           </select>
         </label>
-        <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
+        <label class="ax-gs-477">
           Service (ex: anthropic, openai, stripe)
           <input type="text" id="ax-vault-add-service" aria-label="Nom du service" placeholder="anthropic"
-            style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px;box-sizing:border-box;-webkit-appearance:none">
+            class="ax-gs-478">
         </label>
-        <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
+        <label class="ax-gs-477">
           Alias (optionnel)
           <input type="text" id="ax-vault-add-alias" aria-label="Alias optionnel pour ce service" placeholder="perso, client X..."
-            style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px;box-sizing:border-box;-webkit-appearance:none">
+            class="ax-gs-478">
         </label>
-        <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
+        <label class="ax-gs-477">
           Valeur (clé / token)
           <textarea id="ax-vault-add-value" placeholder="Colle la clé ici"
-            style="width:100%;margin-top:4px;padding:10px;background:rgba(0,0,0,0.4);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;min-height:80px;font-family:'SF Mono',Menlo,monospace;box-sizing:border-box;-webkit-appearance:none;resize:vertical"></textarea>
+            class="ax-gs-479"></textarea>
         </label>
         <div class="ax-gs-176">
           <button id="ax-vault-add-detect"
@@ -1404,20 +1404,20 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
       style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
       <div style="background:var(--ax-bg-flat);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;max-width:440px;width:100%">
         <div class="ax-gs-175">
-          <h2 style="margin:0;font-size:18px;color:var(--ax-gold)">✏️ Modifier ${escapeHtml(entry.service)}</h2>
+          <h2 class="ax-gs-475">✏️ Modifier ${escapeHtml(entry.service)}</h2>
           <button id="ax-vault-modal-close" aria-label="Fermer"
-            style="background:transparent;border:0;color:var(--ax-text-dim);font-size:24px;cursor:pointer;min-height:32px;min-width:32px">×</button>
+            class="ax-gs-476">×</button>
         </div>
         <p style="color:rgba(255,255,255,0.6);font-size:12px;margin:0 0 12px">Une nouvelle valeur remplacera l'ancienne (chiffrement AES-GCM 256).</p>
-        <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
+        <label class="ax-gs-477">
           Nouvelle valeur
           <textarea id="ax-vault-edit-value" placeholder="Colle la nouvelle clé"
-            style="width:100%;margin-top:4px;padding:10px;background:rgba(0,0,0,0.4);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;min-height:80px;font-family:'SF Mono',Menlo,monospace;box-sizing:border-box;-webkit-appearance:none;resize:vertical"></textarea>
+            class="ax-gs-479"></textarea>
         </label>
-        <label style="display:block;margin-bottom:10px;font-size:13px;color:rgba(255,255,255,0.7)">
+        <label class="ax-gs-477">
           Alias (optionnel)
           <input type="text" id="ax-vault-edit-alias" aria-label="Alias optionnel" value="${escapeHtml(entry.alias ?? '')}"
-            style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px;box-sizing:border-box;-webkit-appearance:none">
+            class="ax-gs-478">
         </label>
         <div class="ax-gs-176">
           <button id="ax-vault-edit-cancel"

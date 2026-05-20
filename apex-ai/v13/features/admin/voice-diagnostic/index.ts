@@ -257,12 +257,12 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       <p style="color:rgba(255,255,255,0.6);font-size:12.5px;margin:0 0 16px;line-height:1.4">Test exhaustif du micro, dictée, "Dis Apex" et synthèse vocale. Identifie pourquoi ça marche ou non.</p>
       <div id="voice-diag-results" style="display:flex;flex-direction:column;gap:8px"></div>
       <section style="margin-top:18px;padding:14px;background:linear-gradient(135deg,rgba(20,20,35,0.7),rgba(14,14,28,0.5));border:1px solid rgba(232,184,48,0.25);border-radius:14px">
-        <h3 style="margin:0 0 8px;font-size:14px;color:#e8b830">🎤 Test live micro (3s)</h3>
+        <h3 class="ax-gs-310">🎤 Test live micro (3s)</h3>
         <button id="voice-diag-test-btn" style="padding:12px 20px;background:linear-gradient(135deg,#c9a227,#e8b830);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;min-height:44px">Démarrer test</button>
         <div id="voice-diag-test-out" style="margin-top:10px;padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;font-size:13px;min-height:24px;color:rgba(255,255,255,0.7)">Pas encore lancé</div>
       </section>
       <section style="margin-top:14px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px">
-        <h3 style="margin:0 0 8px;font-size:14px;color:#e8b830">🔧 Solutions rapides</h3>
+        <h3 class="ax-gs-310">🔧 Solutions rapides</h3>
         <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:rgba(255,255,255,0.78)">
           <li><strong>Permission refusée</strong> : iOS Réglages → Safari → Microphone → Autoriser, puis recharge.</li>
           <li><strong>SpeechRecognition KO en PWA</strong> : ouvre <a href="https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/" style="color:#6a8aff">Apex dans Safari classique</a> (URL directe, pas l'icône). Limitation Apple iOS PWA.</li>

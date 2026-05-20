@@ -704,18 +704,18 @@ export function render(rootEl: HTMLElement): void {
       return `
         <div class="ax-invoice-card" data-invoice-id="${escapeHtml(inv.id)}" style="background:rgba(201,162,39,0.05);border:1px solid ${isOverdue ? '#ff6666' : 'rgba(201,162,39,0.3)'};border-radius:12px;padding:14px;margin-bottom:10px">
           <header class="ax-gs-214">
-            <strong style="color:#c9a227">${escapeHtml(inv.number)} · ${escapeHtml(inv.type)}</strong>
+            <strong class="ax-gs-266">${escapeHtml(inv.number)} · ${escapeHtml(inv.type)}</strong>
             <span style="font-size:12px;color:${isOverdue ? '#ff6666' : 'var(--ax-text-dim)'}">${escapeHtml(inv.date)}${isOverdue ? ' ⚠ EN RETARD' : ''}</span>
           </header>
           <div style="font-size:13px;color:var(--ax-text-dim);margin-bottom:6px">Client : ${escapeHtml(inv.client.nom || '—')} · ${escapeHtml(inv.country)} · ${escapeHtml(inv.currency)}</div>
-          <div class="ax-gs-160">Total HT : <strong>${formatCurrency(tot.ht, inv.currency)}</strong> · TVA : ${formatCurrency(tot.tva, inv.currency)} · TTC : <strong style="color:#c9a227">${formatCurrency(tot.ttc, inv.currency)}</strong></div>
+          <div class="ax-gs-160">Total HT : <strong>${formatCurrency(tot.ht, inv.currency)}</strong> · TVA : ${formatCurrency(tot.tva, inv.currency)} · TTC : <strong class="ax-gs-266">${formatCurrency(tot.ttc, inv.currency)}</strong></div>
           ${inv.recurrence !== 'none' ? `<div style="font-size:12px;color:#2196f3;margin-top:4px">🔁 Récurrence ${escapeHtml(inv.recurrence)}</div>` : ''}
           <div class="ax-gs-80">
-            <button class="ax-btn ax-btn-sm" data-action="export-pdf" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">💾 PDF</button>
-            <button class="ax-btn ax-btn-sm" data-action="export-facturx" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">📄 FACTUR-X</button>
-            ${inv.recurrence !== 'none' ? `<button class="ax-btn ax-btn-sm" data-action="generate-recurrence" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">🔁 Générer suivante</button>` : ''}
-            <button class="ax-btn ax-btn-sm" data-action="credit-note" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;min-height:36px">↩ Avoir</button>
-            <button class="ax-btn ax-btn-sm" data-action="remove" data-invoice-id="${escapeHtml(inv.id)}" style="font-size:11px;padding:6px 10px;color:#ff6666;min-height:36px">Supprimer</button>
+            <button class="ax-btn ax-btn-sm ax-gs-458" data-action="export-pdf" data-invoice-id="${escapeHtml(inv.id)}">💾 PDF</button>
+            <button class="ax-btn ax-btn-sm ax-gs-458" data-action="export-facturx" data-invoice-id="${escapeHtml(inv.id)}">📄 FACTUR-X</button>
+            ${inv.recurrence !== 'none' ? `<button class="ax-btn ax-btn-sm ax-gs-458" data-action="generate-recurrence" data-invoice-id="${escapeHtml(inv.id)}">🔁 Générer suivante</button>` : ''}
+            <button class="ax-btn ax-btn-sm ax-gs-458" data-action="credit-note" data-invoice-id="${escapeHtml(inv.id)}">↩ Avoir</button>
+            <button class="ax-btn ax-btn-sm ax-gs-459" data-action="remove" data-invoice-id="${escapeHtml(inv.id)}">Supprimer</button>
           </div>
         </div>
       `;
@@ -723,19 +723,19 @@ export function render(rootEl: HTMLElement): void {
     : '<p class="ax-gs-213">Aucune facture. Crée la première !</p>';
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:760px;margin:0 auto">
+    <div class="ax-page ax-gs-332">
       <header class="ax-gs-210">
-        <h1 style="margin:0;color:#c9a227">🧾 Studio Facture Pro</h1>
+        <h1 class="ax-gs-333">🧾 Studio Facture Pro</h1>
         <span class="ax-gs-3">${invoices.length} doc${invoices.length > 1 ? 's' : ''}${overdue.length > 0 ? ` · ⚠ ${overdue.length} en retard` : ''}</span>
       </header>
 
       <div class="ax-gs-1">
-        <p style="margin:0 0 8px 0;font-size:13px;color:var(--ax-text-dim)">Devis, factures, relances, acomptes, soldes, avoirs. Multi-devise (EUR/USD/GBP/CHF/MAD), TVA 9 pays, FACTUR-X (norme EU 2026), récurrence auto, relance auto J+15/30/45.</p>
+        <p class="ax-gs-468">Devis, factures, relances, acomptes, soldes, avoirs. Multi-devise (EUR/USD/GBP/CHF/MAD), TVA 9 pays, FACTUR-X (norme EU 2026), récurrence auto, relance auto J+15/30/45.</p>
         <div class="ax-gs-7">
-          <button class="ax-btn ax-btn-primary" data-create="devis" style="min-height:44px">📋 Nouveau devis</button>
-          <button class="ax-btn ax-btn-primary" data-create="facture" style="min-height:44px">🧾 Nouvelle facture</button>
-          <button class="ax-btn" data-create="acompte" style="min-height:44px">💵 Acompte</button>
-          <button class="ax-btn" data-create="relance" style="min-height:44px">📨 Relance</button>
+          <button class="ax-btn ax-btn-primary ax-gs-401" data-create="devis">📋 Nouveau devis</button>
+          <button class="ax-btn ax-btn-primary ax-gs-401" data-create="facture">🧾 Nouvelle facture</button>
+          <button class="ax-btn ax-gs-401" data-create="acompte">💵 Acompte</button>
+          <button class="ax-btn ax-gs-401" data-create="relance">📨 Relance</button>
         </div>
       </div>
 

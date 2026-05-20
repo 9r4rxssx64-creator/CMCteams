@@ -69,7 +69,7 @@ function renderState(rootEl: HTMLElement): void {
     rootEl.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
         <div style="max-width:480px;text-align:center;color:#fff">
-          <h1 style="color:#c9a227">Aucune demande en cours</h1>
+          <h1 class="ax-gs-266">Aucune demande en cours</h1>
           <p style="color:var(--ax-text-dim,#aaa)">Tu n'as pas de demande d'inscription en attente.</p>
           <button id="wa-back" class="ax-btn ax-btn-primary ax-gs-211">← Retour à la connexion</button>
         </div>
@@ -95,16 +95,16 @@ function renderState(rootEl: HTMLElement): void {
   })();
 
   rootEl.innerHTML = `
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#08080f 0%,#181820 100%)">
-      <div style="max-width:560px;width:100%;background:rgba(20,20,35,0.92);backdrop-filter:blur(20px);border:1px solid rgba(201,162,39,0.3);border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+    <div class="ax-gs-402">
+      <div class="ax-gs-441">
         <div style="text-align:center;margin-bottom:20px">
           <div style="font-size:42px;margin-bottom:8px">${statusBadge.icon}</div>
           <h1 style="margin:0 0 4px;color:${statusBadge.color};font-size:24px">${statusBadge.label}</h1>
-          <p style="color:var(--ax-text-dim,#aaa);margin:0;font-size:14px">${escapeHtml(fullName)}</p>
+          <p class="ax-gs-442">${escapeHtml(fullName)}</p>
         </div>
 
         ${req.status === 'awaiting_kevin' ? `
-          <div style="background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.2);border-radius:12px;padding:16px;margin-bottom:16px">
+          <div class="ax-gs-287">
             <h3 style="margin:0 0 8px;color:#c9a227;font-size:15px">📱 Ouvre WhatsApp et envoie ce code à Kevin</h3>
             <div style="background:rgba(0,0,0,0.5);border-radius:10px;padding:14px;text-align:center;font-family:'Courier New',monospace;font-size:24px;color:#c9a227;letter-spacing:2px;margin-bottom:12px">
               ${escapeHtml(otp)}
@@ -115,7 +115,7 @@ function renderState(rootEl: HTMLElement): void {
             </a>
           </div>
           <div style="font-size:13px;color:var(--ax-text-dim,#aaa);line-height:1.6">
-            <p style="margin:0 0 8px"><strong style="color:#fff">Étapes suivantes :</strong></p>
+            <p style="margin:0 0 8px"><strong class="ax-gs-327">Étapes suivantes :</strong></p>
             <ol style="margin:0;padding-left:20px">
               <li>Ouvre WhatsApp via le bouton ci-dessus (lien pré-rempli)</li>
               <li>Envoie le message à Kevin</li>
@@ -153,8 +153,8 @@ function renderState(rootEl: HTMLElement): void {
 
         <div style="display:grid;gap:8px;margin-top:16px">
           <button id="wa-check" class="ax-btn ax-btn-secondary ax-btn-block">🔄 Vérifier maintenant</button>
-          <button id="wa-cancel" class="ax-btn ax-btn-ghost ax-btn-block" style="font-size:12px">${req.status === 'rejected' || req.status === 'expired' ? '📝 Nouvelle demande' : 'Annuler ma demande'}</button>
-          <button id="wa-back" class="ax-btn ax-btn-ghost ax-btn-block" style="font-size:12px">← Connexion</button>
+          <button id="wa-cancel" class="ax-btn ax-btn-ghost ax-btn-block ax-gs-270">${req.status === 'rejected' || req.status === 'expired' ? '📝 Nouvelle demande' : 'Annuler ma demande'}</button>
+          <button id="wa-back" class="ax-btn ax-btn-ghost ax-btn-block ax-gs-270">← Connexion</button>
         </div>
       </div>
     </div>

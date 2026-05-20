@@ -284,10 +284,10 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   const globalResults = searchQuery && searchQuery.length >= 3 ? searchKbGlobal(searchQuery) : [];
 
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:1100px;margin:0 auto">
+    <div class="ax-page ax-gs-268">
       <header class="ax-gs-181">
-        <h1 style="margin:0 0 4px;color:#c9a227;font-size:28px">📚 Base de connaissances</h1>
-        <p style="color:#a0a4c0;margin:0;font-size:13px">
+        <h1 class="ax-gs-324">📚 Base de connaissances</h1>
+        <p class="ax-gs-325">
           ${stats.categories} catégories · ${stats.entries} entrées · injectées dans le system prompt IA Apex
         </p>
       </header>
@@ -304,12 +304,12 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       ${globalResults.length > 0 ? `
         <section style="margin-bottom:24px;background:rgba(201,162,39,.05);border-left:3px solid #c9a227;border-radius:8px;padding:12px">
           <h3 style="margin:0 0 10px;color:#c9a227;font-size:13px">🔍 Résultats globaux (${globalResults.length})</h3>
-          <ul style="list-style:none;padding:0;margin:0">
+          <ul class="ax-gs-286">
             ${globalResults.slice(0, 20).map((r) => `
               <li style="padding:8px;border-bottom:1px solid rgba(255,255,255,.05)">
-                <strong style="color:#fff;font-size:12px">${escapeHtml(r.category.icon)} ${escapeHtml(r.entry.title)}</strong>
+                <strong class="ax-gs-395">${escapeHtml(r.category.icon)} ${escapeHtml(r.entry.title)}</strong>
                 <span style="color:#a0a4c0;font-size:11px"> · ${escapeHtml(r.category.label)}</span>
-                <p style="margin:2px 0 0;color:#a0a4c0;font-size:11px;line-height:1.4">${escapeHtml(r.entry.content.slice(0, 150))}${r.entry.content.length > 150 ? '...' : ''}</p>
+                <p class="ax-gs-396">${escapeHtml(r.entry.content.slice(0, 150))}${r.entry.content.length > 150 ? '...' : ''}</p>
               </li>
             `).join('')}
           </ul>
@@ -321,7 +321,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
           <h2 style="margin:0 0 4px;color:#fff;font-size:18px">${escapeHtml(currentCategory.icon)} ${escapeHtml(currentCategory.label)}</h2>
           <p style="margin:0;color:#a0a4c0;font-size:12px">${escapeHtml(currentCategory.description)}</p>
         </div>
-        <ul style="list-style:none;padding:0;margin:0">
+        <ul class="ax-gs-286">
           ${filtered.length > 0 ? filtered.map(renderEntry).join('') : '<li class="ax-gs-209">Aucune entrée pour cette recherche.</li>'}
         </ul>
       </section>

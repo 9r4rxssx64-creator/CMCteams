@@ -12,30 +12,30 @@ export function render(rootEl: HTMLElement): void {
   const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
   if (!guardFeatureEnabled('module.domotique', rootEl, uid)) return;
   rootEl.innerHTML = `
-    <div class="ax-page" style="padding:16px;max-width:600px;margin:0 auto">
-      <h1 style="margin:0 0 16px;color:#c9a227">🏠 Domotique</h1>
+    <div class="ax-page ax-gs-368">
+      <h1 class="ax-gs-369">🏠 Domotique</h1>
       <p class="ax-gs-226">Pilote tes objets connectés depuis Apex.</p>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
         <div class="ax-gs-43">
           <div class="ax-gs-28">💡</div>
           <strong class="ax-gs-229">Lumières</strong>
-          <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Configurer</button>
+          <button class="ax-btn ax-btn-sm ax-gs-379">Configurer</button>
         </div>
         <div class="ax-gs-43">
           <div class="ax-gs-28">🌡️</div>
           <strong class="ax-gs-229">Thermostat</strong>
-          <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Configurer</button>
+          <button class="ax-btn ax-btn-sm ax-gs-379">Configurer</button>
         </div>
         <div class="ax-gs-43">
           <div class="ax-gs-28">📺</div>
           <strong class="ax-gs-229">TV</strong>
-          <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Télécommande</button>
+          <button class="ax-btn ax-btn-sm ax-gs-379">Télécommande</button>
         </div>
         <div class="ax-gs-43">
           <div class="ax-gs-28">🔒</div>
           <strong class="ax-gs-229">Sécurité</strong>
-          <button class="ax-btn ax-btn-sm" style="margin-top:8px;width:100%">Caméras</button>
+          <button class="ax-btn ax-btn-sm ax-gs-379">Caméras</button>
         </div>
       </div>
 

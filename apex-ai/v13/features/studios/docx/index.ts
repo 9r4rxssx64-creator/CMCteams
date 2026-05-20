@@ -94,8 +94,8 @@ export function render(rootEl: HTMLElement): void {
     return template.fields
       .map((f) =>
         f.type === 'textarea'
-          ? `<label style="display:block;margin-bottom:8px"><span class="ax-gs-16">${escapeHtml(f.label)}</span><textarea data-field="${escapeHtml(f.key)}" rows="3" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px;resize:vertical"></textarea></label>`
-          : `<label style="display:block;margin-bottom:8px"><span class="ax-gs-16">${escapeHtml(f.label)}</span><input data-field="${escapeHtml(f.key)}" type="text" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:14px"></label>`,
+          ? `<label class="ax-gs-461"><span class="ax-gs-16">${escapeHtml(f.label)}</span><textarea data-field="${escapeHtml(f.key)}" rows="3" class="ax-gs-462"></textarea></label>`
+          : `<label class="ax-gs-461"><span class="ax-gs-16">${escapeHtml(f.label)}</span><input data-field="${escapeHtml(f.key)}" type="text" class="ax-gs-463"></label>`,
       )
       .join('');
   }
@@ -103,12 +103,12 @@ export function render(rootEl: HTMLElement): void {
   function fullRender(template: typeof TEMPLATES_META[number]): void {
     rootEl.innerHTML = `
       <div class="ax-gs-169">
-        <h1 style="font-size:24px;margin-bottom:8px;color:#f1f5f9">📄 Studio Word — Document .docx</h1>
+        <h1 class="ax-gs-289">📄 Studio Word — Document .docx</h1>
         <p class="ax-gs-199">Génère un document Word téléchargeable. 100% client-side, aucune donnée envoyée serveur.</p>
 
-        <label style="display:block;margin-bottom:16px">
+        <label class="ax-gs-403">
           <span class="ax-gs-15">Choisir un modèle</span>
-          <select id="docx-template-select" style="width:100%;padding:12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:15px">
+          <select id="docx-template-select" class="ax-gs-464">
             ${TEMPLATES_META.map((t) => `<option value="${t.id}" ${t.id === template.id ? 'selected' : ''}>${t.emoji} ${escapeHtml(t.label)}</option>`).join('')}
           </select>
         </label>
@@ -117,7 +117,7 @@ export function render(rootEl: HTMLElement): void {
           ${renderForm(template)}
         </div>
 
-        <button id="docx-generate" style="width:100%;padding:14px;background:#10b981;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px">
+        <button id="docx-generate" class="ax-gs-465">
           ⬇️ Générer le .docx
         </button>
 
@@ -153,8 +153,8 @@ export function render(rootEl: HTMLElement): void {
         if (result.success) {
           resEl.innerHTML = `
             <div class="ax-gs-47">
-              <p style="color:#10b981;font-size:14px;margin-bottom:12px">✅ ${escapeHtml(result.filename)} (${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
-              <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇️ Télécharger</a>
+              <p class="ax-gs-466">✅ ${escapeHtml(result.filename)} (${(result.sizeBytes / 1024).toFixed(1)} Ko)</p>
+              <a href="${result.blobUrl}" download="${escapeHtml(result.filename)}" class="ax-gs-467">⬇️ Télécharger</a>
             </div>`;
           toast.success(`✅ ${result.filename}`);
         } else {

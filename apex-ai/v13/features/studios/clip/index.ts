@@ -432,15 +432,15 @@ export function render(rootEl: HTMLElement): void {
 
   rootEl.innerHTML = `
     <div class="ax-card ax-gs-197">
-      <h2 style="margin:0 0 8px;color:#c9a227">📸 Studio Clip</h2>
-      <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">Montage clip court · ${TRANSITIONS.length} transitions · ${FILTERS.length} filtres · ${CAPTION_STYLES.length} styles captions · Export ${ASPECT_RATIOS.length} formats.</p>
+      <h2 class="ax-gs-365">📸 Studio Clip</h2>
+      <p class="ax-gs-417">Montage clip court · ${TRANSITIONS.length} transitions · ${FILTERS.length} filtres · ${CAPTION_STYLES.length} styles captions · Export ${ASPECT_RATIOS.length} formats.</p>
       <div class="ax-gs-30">
         <button id="ax-clip-new" class="ax-btn ax-btn-primary">+ Nouveau clip</button>
       </div>
       <div id="ax-clip-list" class="ax-gs-254">
         ${list.length === 0
           ? '<p class="ax-gs-255">Aucun clip. Crée le premier !</p>'
-          : list.map((p) => `<div class="ax-gs-46"><strong style="color:#fff">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.segments.length} clips · ${p.totalDurationSec.toFixed(1)}s · ${p.ratio}</small></div>`).join('')}
+          : list.map((p) => `<div class="ax-gs-46"><strong class="ax-gs-327">${escapeHtml(p.name)}</strong><br><small class="ax-gs-240">${p.segments.length} clips · ${p.totalDurationSec.toFixed(1)}s · ${p.ratio}</small></div>`).join('')}
       </div>
     </div>
   `;

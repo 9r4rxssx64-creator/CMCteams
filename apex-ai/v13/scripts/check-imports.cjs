@@ -38,35 +38,54 @@ function exists(base) {
 }
 
 const IMPORT_RE = /\b(?:from|import)\s*\(?\s*(['"])([^'"\n]+)\1/g;
+// new URL('../x', import.meta.url) — refs worker/asset, doivent aussi résoudre
+const URL_RE = /\bnew\s+URL\(\s*(['"])([^'"\n]+)\1/g;
 const broken = [];
 let checked = 0;
 
 for (const f of files) {
-  const src = fs.readFileSync(f, 'utf8');
+  // commentaires retirés : les exemples JSDoc (`* import … from '…'`) ne sont
+  // pas de vrais imports et fausseraient le résultat.
+  const src = fs.readFileSync(f, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
   let m;
-  IMPORT_RE.lastIndex = 0;
-  while ((m = IMPORT_RE.exec(src))) {
-    const spec = m[2];
-    let abs = null;
-    if (spec.startsWith('./') || spec.startsWith('../')) {
-      abs = path.resolve(path.dirname(f), spec);
-    } else {
-      for (const [a, dir] of Object.entries(ALIASES)) {
-        if (spec.startsWith(a)) { abs = path.join(ROOT, dir, spec.slice(a.length)); break; }
-      }
-    }
-    if (!abs) continue; // import de package npm — hors scope
-    checked++;
-    if (!exists(abs)) {
-      broken.push({ file: path.relative(ROOT, f), spec });
+  for (const RE of [IMPORT_RE, URL_RE]) {
+    RE.lastIndex = 0;
+    while ((m = RE.exec(src))) {
+      checkSpec(f, m[2]);
     }
   }
 }
 
+function checkSpec(f, spec) {
+  let abs = null;
+  if (spec.startsWith('./') || spec.startsWith('../')) {
+    abs = path.resolve(path.dirname(f), spec);
+  } else {
+    for (const [a, dir] of Object.entries(ALIASES)) {
+      if (spec.startsWith(a)) { abs = path.join(ROOT, dir, spec.slice(a.length)); break; }
+    }
+  }
+  if (!abs) return; // package npm — hors scope
+  checked++;
+  if (!exists(abs)) broken.push({ file: path.relative(ROOT, f), spec });
+}
+
+// Faux positifs connus : specs apparaissant dans des littéraux de chaîne
+// (doc du prompt système dans core/memory.ts), pas de vrais imports.
+const KNOWN_FALSE_POSITIVES = new Set([
+  'core/memory.ts::./whatsapp.js',
+  'core/memory.ts::../../services/whatsapp.js',
+  'core/memory.ts::@features/clients/index.js',
+]);
+const real = broken.filter((b) => !KNOWN_FALSE_POSITIVES.has(b.file + '::' + b.spec));
+
 console.log('Imports internes vérifiés: ' + checked + ' dans ' + files.length + ' fichiers');
-if (broken.length) {
-  console.error('\n❌ ' + broken.length + ' import(s) cassé(s) :');
-  for (const b of broken) console.error('  ' + b.file + '  ->  ' + b.spec);
+if (real.length) {
+  console.error('\n❌ ' + real.length + ' import(s) cassé(s) :');
+  for (const b of real) console.error('  ' + b.file + '  ->  ' + b.spec);
   process.exit(1);
 }
-console.log('✅ Tous les imports internes résolvent.');
+console.log('✅ Tous les imports internes résolvent.'
+  + (broken.length ? ' (' + broken.length + ' faux positifs connus ignorés)' : ''));

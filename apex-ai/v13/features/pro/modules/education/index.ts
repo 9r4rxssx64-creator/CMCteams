@@ -481,9 +481,9 @@ export function render(root: HTMLElement): void {
   if (!guardFeatureEnabled('pro.education', root, uid)) return;
   root.innerHTML = `
     <div class="ax-card ax-gs-197">
-      <h2 style="margin:0 0 8px;color:#c9a227">🎓 Education Pro</h2>
-      <p style="color:#a0a4c0;font-size:13px;margin:0 0 16px">${SUBJECTS.length} matières · ${QUESTIONS_BANK.length}+ questions · Flashcards SM-2 · Conjugaison FR/EN/ES/DE/IT · Math/Physique/Chimie/Bio.</p>
-      <h3 style="color:#79c0ff;font-size:15px">Matières disponibles</h3>
+      <h2 class="ax-gs-365">🎓 Education Pro</h2>
+      <p class="ax-gs-417">${SUBJECTS.length} matières · ${QUESTIONS_BANK.length}+ questions · Flashcards SM-2 · Conjugaison FR/EN/ES/DE/IT · Math/Physique/Chimie/Bio.</p>
+      <h3 class="ax-gs-418">Matières disponibles</h3>
       <div class="ax-gs-157">
         ${SUBJECTS.map((s) => `<div style="border:1px solid #2a2f48;border-radius:8px;padding:10px;background:#13162a;font-size:13px;text-align:center">${s.emoji} ${escapeHtml(s.label)}<br><small class="ax-gs-240">${questionsBySubject(s.id).length} questions</small></div>`).join('')}
       </div>

@@ -37,11 +37,11 @@ function renderList(rootEl: HTMLElement): void {
   const processed = signup.listProcessed().slice(0, 20);
 
   rootEl.innerHTML = `
-    <div style="padding:16px;max-width:960px;margin:0 auto">
+    <div class="ax-gs-364">
       <h1 style="color:#c9a227;margin:0 0 4px;font-size:24px">📥 Demandes d'inscription</h1>
       <p style="color:var(--ax-text-dim,#aaa);margin:0 0 20px;font-size:13px">${pending.length} en attente · ${processed.length} traitées récemment</p>
 
-      <h2 style="color:#fff;font-size:16px;margin:0 0 12px">⏳ En attente (${pending.length})</h2>
+      <h2 class="ax-gs-446">⏳ En attente (${pending.length})</h2>
       ${pending.length === 0 ? `
         <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:24px;text-align:center;color:var(--ax-text-dim,#888);margin-bottom:24px">
           Aucune demande en attente
@@ -52,7 +52,7 @@ function renderList(rootEl: HTMLElement): void {
         </div>
       `}
 
-      <h2 style="color:#fff;font-size:16px;margin:0 0 12px">📋 Historique récent</h2>
+      <h2 class="ax-gs-446">📋 Historique récent</h2>
       ${processed.length === 0 ? `
         <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;text-align:center;color:var(--ax-text-dim,#888)">
           Aucun historique
@@ -83,13 +83,13 @@ function renderCard(r: SignupRequest, withActions: boolean): string {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div class="ax-gs-11">
           <div class="ax-gs-77">
-            <strong style="color:#fff;font-size:15px">${escapeHtml(fullName)}</strong>
+            <strong class="ax-gs-409">${escapeHtml(fullName)}</strong>
             <span style="background:${statusBadge.color}20;color:${statusBadge.color};padding:2px 8px;border-radius:4px;font-size:11px">${statusBadge.label}</span>
           </div>
           <div style="font-size:12px;color:var(--ax-text-dim,#aaa);display:grid;gap:2px">
             <div>📧 ${escapeHtml(r.email)}</div>
             <div>📱 ${escapeHtml(maskPhone(r.whatsapp))}</div>
-            <div>💎 Plan: <strong style="color:#c9a227">${escapeHtml(r.plan)}</strong></div>
+            <div>💎 Plan: <strong class="ax-gs-266">${escapeHtml(r.plan)}</strong></div>
             <div>📅 ${escapeHtml(date)}</div>
             ${withActions ? `<div style="font-family:'Courier New',monospace;color:#c9a227;font-size:11px">🔑 OTP: ${escapeHtml(r.otp)}</div>` : ''}
             ${r.rejectReason ? `<div class="ax-gs-110">Raison: ${escapeHtml(r.rejectReason)}</div>` : ''}
@@ -97,8 +97,8 @@ function renderCard(r: SignupRequest, withActions: boolean): string {
         </div>
         ${withActions ? `
           <div style="display:grid;gap:6px;min-width:160px">
-            <button class="ax-btn ax-btn-primary signup-approve-client" data-id="${escapeHtml(r.id)}" style="font-size:12px;padding:8px 12px">✅ Approuver client</button>
-            <button class="ax-btn ax-btn-secondary signup-approve-family" data-id="${escapeHtml(r.id)}" style="font-size:12px;padding:8px 12px">👨‍👩‍👧 Famille</button>
+            <button class="ax-btn ax-btn-primary signup-approve-client ax-gs-336" data-id="${escapeHtml(r.id)}">✅ Approuver client</button>
+            <button class="ax-btn ax-btn-secondary signup-approve-family ax-gs-336" data-id="${escapeHtml(r.id)}">👨‍👩‍👧 Famille</button>
             <button class="ax-btn ax-btn-ghost signup-reject" data-id="${escapeHtml(r.id)}" style="font-size:11px;padding:6px 10px;color:#ef4444">❌ Refuser</button>
           </div>
         ` : ''}
