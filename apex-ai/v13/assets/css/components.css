@@ -1243,7 +1243,14 @@
   padding: var(--ax-s-2) var(--ax-s-4);
   min-height: var(--ax-touch-min);
   max-width: 100%;
-  white-space: nowrap;
+  /* v13.4.241 fix Kevin "boutons coupés à droite, 30 cachés off-viewport" :
+   * white-space:nowrap faisait déborder les boutons à texte long ("Zoom
+   * Inspector live...", "Voir dashboard santé live") au-delà du viewport.
+   * → normal + word-break : le texte passe à la ligne, le bouton rentre. */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-align: center;
   background: var(--ax-bg-flat);
   color: var(--ax-text);
   border: 1px solid var(--ax-border);

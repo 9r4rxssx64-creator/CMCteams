@@ -152,6 +152,21 @@ main {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  /* v13.4.241 fix Kevin "affichage tronqué à droite, boutons hors écran" :
+   * garde-fou universel — aucune vue ne dépasse la largeur viewport.
+   * Un enfant trop large est clippé proprement (jamais de débordement
+   * chaotique qui pousse les boutons off-screen). */
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+/* Garde-fou par conteneur de vue : contenu contraint au viewport */
+.ax-page,
+.ax-admin,
+.ax-settings,
+.ax-vault-page {
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 /* Sauf chat qui a son propre layout flex avec scroll interne */
 #apex-root > .ax-chat {
