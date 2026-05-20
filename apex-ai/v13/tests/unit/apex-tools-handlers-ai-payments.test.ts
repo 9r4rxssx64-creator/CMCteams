@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleAnthropicTask, handleOpenaiTask } from '../../services/apex-tools-handlers/ai.js';
 import { handlePaypalTask, handleStripeTask } from '../../services/apex-tools-handlers/payments.js';
 
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: { readKey: vi.fn() },
 }));
 

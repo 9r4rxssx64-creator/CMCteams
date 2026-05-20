@@ -177,7 +177,7 @@ describe('chat-persistence tryFirebaseRestoreConversation (v13.4.172)', () => {
   });
 
   it('Firebase read non-array → conversation reste vide', async () => {
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: {
         read: vi.fn().mockResolvedValue(null),
       },
@@ -185,11 +185,11 @@ describe('chat-persistence tryFirebaseRestoreConversation (v13.4.172)', () => {
     const conv: PersistedMessage[] = [];
     await tryFirebaseRestoreConversation(conv);
     expect(conv).toHaveLength(0);
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 
   it('Firebase read array vide → conversation reste vide', async () => {
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: {
         read: vi.fn().mockResolvedValue([]),
       },
@@ -197,11 +197,11 @@ describe('chat-persistence tryFirebaseRestoreConversation (v13.4.172)', () => {
     const conv: PersistedMessage[] = [];
     await tryFirebaseRestoreConversation(conv);
     expect(conv).toHaveLength(0);
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 
   it('Firebase throw → silent recovery (no rethrow)', async () => {
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: {
         read: vi.fn().mockRejectedValue(new Error('network')),
       },
@@ -209,12 +209,12 @@ describe('chat-persistence tryFirebaseRestoreConversation (v13.4.172)', () => {
     const conv: PersistedMessage[] = [];
     await expect(tryFirebaseRestoreConversation(conv)).resolves.toBeUndefined();
     expect(conv).toHaveLength(0);
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 
   /* v13.4.205 — Firebase restore avec data valide push in-place */
   it('Firebase read array valide → push messages in-place', async () => {
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: {
         read: vi.fn().mockResolvedValue([
           { id: 'cloud_1', role: 'user', text: 'Hello cloud', ts: 1000 },
@@ -232,11 +232,11 @@ describe('chat-persistence tryFirebaseRestoreConversation (v13.4.172)', () => {
     expect(conv[1]?.text).toBe('Response cloud');
     /* streaming false par défaut au restore */
     expect(conv[0]?.streaming).toBe(false);
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 
   it('Firebase read messages sans id → génère id restored_<ts>_<random>', async () => {
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: {
         read: vi.fn().mockResolvedValue([
           { role: 'user', text: 'Sans id', ts: 5000 },
@@ -249,11 +249,11 @@ describe('chat-persistence tryFirebaseRestoreConversation (v13.4.172)', () => {
     await tryRestore(conv);
     expect(conv).toHaveLength(1);
     expect(conv[0]?.id).toMatch(/^restored_5000_/);
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 
   it('Firebase read filtre messages text vide/non-string', async () => {
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: {
         read: vi.fn().mockResolvedValue([
           { id: 'a', role: 'user', text: 'valid', ts: 1 },
@@ -269,7 +269,7 @@ describe('chat-persistence tryFirebaseRestoreConversation (v13.4.172)', () => {
     await tryRestore(conv);
     expect(conv).toHaveLength(1);
     expect(conv[0]?.id).toBe('a');
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 });
 
@@ -284,7 +284,7 @@ describe('chat-persistence Firebase sync 30s debounce (v13.4.205)', () => {
     vi.useFakeTimers();
     _resetPersistenceTimeoutsForTests();
     firebaseWriteMock = vi.fn().mockResolvedValue(undefined);
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: { write: firebaseWriteMock, read: vi.fn() },
     }));
   });
@@ -292,7 +292,7 @@ describe('chat-persistence Firebase sync 30s debounce (v13.4.205)', () => {
   afterEach(() => {
     vi.useRealTimers();
     _resetPersistenceTimeoutsForTests();
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 
   it('Firebase sync DECLENCHEE après 30s post-persist', async () => {

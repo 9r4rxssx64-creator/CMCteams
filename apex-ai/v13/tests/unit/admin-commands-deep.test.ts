@@ -17,8 +17,8 @@ const { mockStore, mockFirebase, mockAuditLog } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../core/store.js', () => ({ store: mockStore }));
-vi.mock('../../services/firebase.js', () => ({ firebase: mockFirebase }));
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/storage/firebase.js', () => ({ firebase: mockFirebase }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
 import { adminCommands } from '../../services/admin/admin-commands.js';
 

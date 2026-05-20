@@ -18,8 +18,8 @@ const { mockRealtimeBackup, mockAuditLog } = vi.hoisted(() => ({
   mockAuditLog: { record: vi.fn() },
 }));
 
-vi.mock('../../services/realtime-backup.js', () => ({ realtimeBackup: mockRealtimeBackup }));
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/storage/realtime-backup.js', () => ({ realtimeBackup: mockRealtimeBackup }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
 import { restoreHelper } from '../../services/storage/restore-helper.js';
 

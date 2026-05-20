@@ -7,7 +7,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../services/pii-redaction.js', () => ({
+vi.mock('../../services/vault/pii-redaction.js', () => ({
   redactPII: vi.fn((s: string) => ({ redacted: s.replace(/\d{16}/g, 'XXXX'), pii_count: 0 })),
 }));
 

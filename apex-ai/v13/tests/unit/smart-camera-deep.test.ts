@@ -11,7 +11,7 @@ vi.mock('../../core/logger.js', () => ({
 }));
 
 const auditRecordMock = vi.fn().mockResolvedValue(undefined);
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: (...args: unknown[]) => auditRecordMock(...args) },
 }));
 

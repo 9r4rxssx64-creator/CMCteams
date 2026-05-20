@@ -68,11 +68,11 @@ vi.mock('../../core/store.js', () => ({
   },
 }));
 
-vi.mock('../../services/feature-guard.js', () => ({
+vi.mock('../../services/auth/feature-guard.js', () => ({
   guardFeatureEnabled: vi.fn(() => true),
 }));
 
-vi.mock('../../services/csp-style-helper.js', () => ({
+vi.mock('../../services/core-svc/csp-style-helper.js', () => ({
   cspStyleHelper: { withNonce: vi.fn((html: string) => html), extractStyles: vi.fn() },
 }));
 
@@ -80,7 +80,7 @@ vi.mock('../../services/csp-style-helper.js', () => ({
  * MOCKS SERVICES SPÉCIFIQUES
  * ====================================================================== */
 
-vi.mock('../../services/cross-platform.js', () => ({
+vi.mock('../../services/core-svc/cross-platform.js', () => ({
   crossPlatform: {
     requestAllPermissions: vi.fn(async () => ({
       notifications: 'granted',
@@ -94,7 +94,7 @@ vi.mock('../../services/cross-platform.js', () => ({
   },
 }));
 
-vi.mock('../../services/device-detect.js', () => ({
+vi.mock('../../services/integrations/device-detect.js', () => ({
   deviceDetect: {
     detect: vi.fn(() => ({
       os: 'ios',
@@ -167,7 +167,7 @@ vi.mock('../../services/device-detect.js', () => ({
   },
 }));
 
-vi.mock('../../services/iot-providers-registry.js', () => {
+vi.mock('../../services/integrations/iot-providers-registry.js', () => {
   const fakeProvider = {
     id: 'ewelink',
     name: 'eWeLink',
@@ -202,7 +202,7 @@ vi.mock('../../core/memory.js', () => ({
   },
 }));
 
-vi.mock('../../services/persistent-memory-store.js', () => ({
+vi.mock('../../services/storage/persistent-memory-store.js', () => ({
   persistentMemory: {
     list: vi.fn(async () => [
       { id: 'm1', category: 'profile', text: 'Lieu : Monaco', ts: Date.now() - 1000, scope: 'kdmc_admin', importance: 90, source: 'chat' },
@@ -212,7 +212,7 @@ vi.mock('../../services/persistent-memory-store.js', () => ({
   },
 }));
 
-vi.mock('../../services/sentinels.js', () => ({
+vi.mock('../../services/sentinels/sentinels.js', () => ({
   sentinels: {
     runOne: vi.fn(async () => ({ msg: 'memory-watch ran OK', severity: 'ok' })),
   },
@@ -222,7 +222,7 @@ vi.mock('../../ui/drilldown.js', () => ({
   drillDown: { open: vi.fn() },
 }));
 
-vi.mock('../../services/apex-meta-marketplace.js', () => ({
+vi.mock('../../services/core-svc/apex-meta-marketplace.js', () => ({
   apexMetaMarketplace: {
     init: vi.fn(),
     getStats: vi.fn(() => ({
@@ -245,7 +245,7 @@ vi.mock('../../services/apex-meta-marketplace.js', () => ({
   META_MARKETPLACE_CATALOG: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
 }));
 
-vi.mock('../../services/apex-plugins-marketplace.js', () => ({
+vi.mock('../../services/core-svc/apex-plugins-marketplace.js', () => ({
   apexPluginsMarketplace: {
     getStats: vi.fn(() => ({
       totalCatalog: 50,
@@ -284,7 +284,7 @@ vi.mock('../../services/apex-plugins-marketplace.js', () => ({
   },
 }));
 
-vi.mock('../../services/auto-improvement.js', () => ({
+vi.mock('../../services/sentinels/auto-improvement.js', () => ({
   autoImprovement: {
     getState: vi.fn(() => ({ installed: ['mcp-1'], skipped: [] })),
     autoInstallSafe: vi.fn(async () => ({ ok: true, message: 'Installed' })),
@@ -307,7 +307,7 @@ vi.mock('../../data/apex-extended-catalog.js', () => ({
   searchCatalog: vi.fn(() => []),
 }));
 
-vi.mock('../../services/smart-router.js', () => {
+vi.mock('../../services/ai/smart-router.js', () => {
   const stats = {
     last_ping_ts: Date.now() - 10_000,
     last_ping_ok: true,
@@ -336,7 +336,7 @@ vi.mock('../../services/smart-router.js', () => {
   };
 });
 
-vi.mock('../../services/voice-print.js', () => ({
+vi.mock('../../services/ai/voice-print.js', () => ({
   voicePrint: {
     getPrintFor: vi.fn(() => null),
     needsCalibration: vi.fn(() => ({ needs: false, reason: '', confidence: 0.9 })),

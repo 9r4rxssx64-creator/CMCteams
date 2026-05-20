@@ -123,7 +123,7 @@ describe('feature toggles — wiring final (ARCHI-101)', () => {
   describe('Tools mapping (TOOL_TOGGLE_MAP)', () => {
     it('charge le mapping et expose au moins 30 tools', async () => {
       /* Lecture textuelle : pas d'export direct, mais on vérifie présence */
-      const dispatchPath = join(ROOT, 'services', 'apex-tools-dispatch.ts');
+      const dispatchPath = join(ROOT, 'services', 'core-svc', 'apex-tools-dispatch.ts');
       const content = readFileSync(dispatchPath, 'utf8');
       const matches = content.match(/'tool\.[a-z_]+'/g) ?? [];
       const unique = new Set(matches);
@@ -181,25 +181,25 @@ describe('feature toggles — wiring final (ARCHI-101)', () => {
     });
 
     it('feature.pinecone-rag OFF → fallback localStorage', () => {
-      const pineconePath = join(ROOT, 'services', 'pinecone-store.ts');
+      const pineconePath = join(ROOT, 'services', 'storage', 'pinecone-store.ts');
       const content = readFileSync(pineconePath, 'utf8');
       expect(content).toMatch(/isFeatureEnabled\(['"]feature\.pinecone-rag['"]\)/);
     });
 
     it('auth.biometric OFF → admin-action-gate skip biometric', () => {
-      const gatePath = join(ROOT, 'services', 'admin-action-gate.ts');
+      const gatePath = join(ROOT, 'services', 'auth', 'admin-action-gate.ts');
       const content = readFileSync(gatePath, 'utf8');
       expect(content).toMatch(/isFeatureEnabled\(['"]auth\.biometric['"]\)/);
     });
 
     it('auth.voice_print OFF → identifySpeaker retourne not identified', () => {
-      const vpPath = join(ROOT, 'services', 'voice-print.ts');
+      const vpPath = join(ROOT, 'services', 'ai', 'voice-print.ts');
       const content = readFileSync(vpPath, 'utf8');
       expect(content).toMatch(/isFeatureEnabled\(['"]auth\.voice_print['"]/);
     });
 
     it('studio.camera OFF → tool dispatcher refuse', () => {
-      const dispatchPath = join(ROOT, 'services', 'apex-tools-dispatch.ts');
+      const dispatchPath = join(ROOT, 'services', 'core-svc', 'apex-tools-dispatch.ts');
       const content = readFileSync(dispatchPath, 'utf8');
       expect(content).toMatch(/isFeatureEnabled\(['"]studio\.camera['"]\)/);
     });

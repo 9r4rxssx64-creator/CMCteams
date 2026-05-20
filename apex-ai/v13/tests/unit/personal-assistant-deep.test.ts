@@ -15,8 +15,8 @@ const { mockVault, mockAuditLog } = vi.hoisted(() => ({
   mockAuditLog: { record: vi.fn() },
 }));
 
-vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/vault/vault.js', () => ({ vault: mockVault }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
 import { personalAssistant } from '../../services/core-svc/personal-assistant.js';
 

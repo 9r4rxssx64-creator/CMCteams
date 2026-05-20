@@ -13,7 +13,7 @@ const { mockAuditLog } = vi.hoisted(() => ({
   mockAuditLog: { record: vi.fn().mockResolvedValue(undefined) },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
 import { predictiveEngine } from '../../services/ai/predictive-engine.js';
 

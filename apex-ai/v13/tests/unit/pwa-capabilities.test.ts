@@ -13,7 +13,7 @@ const { mockAuditLog } = vi.hoisted(() => ({
   mockAuditLog: { record: vi.fn() },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
 import { pwaCapabilities } from '../../services/core-svc/pwa-capabilities.js';
 

@@ -12,7 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /* Mock vault.readKey pour contrôler la présence de la clé Pinecone */
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: {
     readKey: vi.fn(async (k: string): Promise<string> => {
       if (k === 'ax_pinecone_key') return globalThis.__pineconeKey ?? '';
@@ -22,7 +22,7 @@ vi.mock('../../services/vault.js', () => ({
 }));
 
 /* Mock persistent-memory-store pour fallback + resync */
-vi.mock('../../services/persistent-memory-store.js', () => ({
+vi.mock('../../services/storage/persistent-memory-store.js', () => ({
   persistentMemory: {
     list: vi.fn(async (): Promise<unknown[]> => globalThis.__pmemList ?? []),
   },

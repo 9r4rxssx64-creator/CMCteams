@@ -17,7 +17,7 @@ import { apexVaultImport } from '../../services/vault/apex-vault-import.js';
 import type { VaultEntry } from '../../features/vault/index.js';
 
 /* Mock vault.setKey + vault.decryptAuto pour ne pas dépendre du flow PIN admin */
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: {
     setKey: vi.fn().mockResolvedValue({ ok: true }),
     decryptAuto: vi.fn().mockImplementation(async (encrypted: string) => {

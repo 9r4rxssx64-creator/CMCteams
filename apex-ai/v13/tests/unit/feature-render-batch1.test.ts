@@ -41,7 +41,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-vi.mock('../../services/signup.js', () => ({
+vi.mock('../../services/auth/signup.js', () => ({
   signup: {
     /* v13.4.211 — selfSignupDirect remplace requestSignup pour flow auto */
     selfSignupDirect: vi.fn(async () => ({
@@ -61,13 +61,13 @@ vi.mock('../../services/signup.js', () => ({
   },
 }));
 
-vi.mock('../../services/csp-style-helper.js', () => ({
+vi.mock('../../services/core-svc/csp-style-helper.js', () => ({
   cspStyleHelper: {
     withNonce: vi.fn((html: string) => html),
   },
 }));
 
-vi.mock('../../services/rgpd.js', () => ({
+vi.mock('../../services/auth/rgpd.js', () => ({
   rgpd: {
     showCookieBanner: vi.fn(() => ({ shouldShow: false, reason: 'set' })),
     hasConsent: vi.fn(() => false),
@@ -88,7 +88,7 @@ vi.mock('../../services/rgpd.js', () => ({
   },
 }));
 
-vi.mock('../../services/multi-source-analyze.js', () => ({
+vi.mock('../../services/ai/multi-source-analyze.js', () => ({
   multiSourceAnalyze: {
     getHistory: vi.fn(() => [] as unknown[]),
     getStats: vi.fn(() => ({
@@ -101,7 +101,7 @@ vi.mock('../../services/multi-source-analyze.js', () => ({
   },
 }));
 
-vi.mock('../../services/study-service.js', () => ({
+vi.mock('../../services/integrations/study-service.js', () => ({
   studyService: {
     listKnown: vi.fn(() => [] as unknown[]),
     refreshAll: vi.fn(async () => ({ refreshed: 3, errors: [] as string[] })),
@@ -115,7 +115,7 @@ vi.mock('../../core/store.js', () => ({
   },
 }));
 
-vi.mock('../../services/innovation-watch.js', () => ({
+vi.mock('../../services/sentinels/innovation-watch.js', () => ({
   innovationWatch: {
     getStats: vi.fn(() => ({
       lastScan: 0,

@@ -17,12 +17,12 @@ vi.mock('../../core/logger.js', () => ({
 }));
 
 const auditRecordMock = vi.fn().mockResolvedValue(undefined);
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: (...args: unknown[]) => auditRecordMock(...args) },
 }));
 
 const vaultSetKeyMock = vi.fn().mockResolvedValue({ ok: true, persisted: { local: true } });
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: { setKey: (...args: unknown[]) => vaultSetKeyMock(...args) },
 }));
 

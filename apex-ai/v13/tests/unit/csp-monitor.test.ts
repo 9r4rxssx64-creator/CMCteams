@@ -14,8 +14,8 @@ const { mockAuditLog, mockClaudeBridge } = vi.hoisted(() => ({
   mockClaudeBridge: { pushTodo: vi.fn().mockResolvedValue({ id: 'todo_x' }) },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
-vi.mock('../../services/claude-bridge.js', () => ({ claudeBridge: mockClaudeBridge }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/ai/claude-bridge.js', () => ({ claudeBridge: mockClaudeBridge }));
 
 import { cspMonitor } from '../../services/observability/csp-monitor.js';
 

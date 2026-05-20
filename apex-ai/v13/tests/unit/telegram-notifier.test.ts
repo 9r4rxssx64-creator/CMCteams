@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../services/push-notifications.js', () => ({
+vi.mock('../../services/integrations/push-notifications.js', () => ({
   pushNotifications: {
     send: vi.fn().mockResolvedValue(false),
   },

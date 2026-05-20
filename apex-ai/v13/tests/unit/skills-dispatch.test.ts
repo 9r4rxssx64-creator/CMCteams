@@ -21,10 +21,10 @@ vi.mock('../../services/skills/pptx-generator.js', () => ({
 vi.mock('../../services/skills/xlsx-generator.js', () => ({
   xlsxGenerator: { generate: vi.fn().mockResolvedValue({ success: true, blob_url: 'blob:xlsx' }) },
 }));
-vi.mock('../../services/mcp-client.js', () => ({
+vi.mock('../../services/ai/mcp-client.js', () => ({
   mcpClient: { call: vi.fn().mockResolvedValue({ success: true, data: 'mcp-result' }) },
 }));
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: vi.fn().mockResolvedValue(undefined) },
 }));
 vi.mock('../../services/skills/video-use.js', () => ({
@@ -33,7 +33,7 @@ vi.mock('../../services/skills/video-use.js', () => ({
     composeHyperframes: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
-vi.mock('../../services/apex-self-audit.js', () => ({
+vi.mock('../../services/admin/apex-self-audit.js', () => ({
   apexSelfAudit: { runFullAudit: vi.fn().mockResolvedValue({ score: 95 }) },
 }));
 vi.mock('../../services/skills/futuristic-modules.js', () => ({

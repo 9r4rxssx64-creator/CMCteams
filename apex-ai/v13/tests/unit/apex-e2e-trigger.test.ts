@@ -15,9 +15,9 @@ const { mockAuth, mockFirebase, mockVault } = vi.hoisted(() => ({
   mockVault: { readKey: vi.fn() },
 }));
 
-vi.mock('../../services/auth.js', () => ({ auth: mockAuth }));
-vi.mock('../../services/firebase.js', () => ({ firebase: mockFirebase }));
-vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
+vi.mock('../../services/auth/auth.js', () => ({ auth: mockAuth }));
+vi.mock('../../services/storage/firebase.js', () => ({ firebase: mockFirebase }));
+vi.mock('../../services/vault/vault.js', () => ({ vault: mockVault }));
 
 import {
   triggerE2EWebkit,

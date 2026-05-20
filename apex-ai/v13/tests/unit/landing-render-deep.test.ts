@@ -7,16 +7,16 @@ vi.mock('../../core/bootstrap.js', () => ({ APP_VER: 'v13.4.172' }));
 vi.mock('../../core/router.js', () => ({
   router: { navigate: vi.fn() },
 }));
-vi.mock('../../services/auth.js', () => ({
+vi.mock('../../services/auth/auth.js', () => ({
   auth: {
     login: vi.fn(async () => ({ ok: true })),
     loginTrusted: vi.fn(async () => ({ ok: true })),
   },
 }));
-vi.mock('../../services/feature-toggles.js', () => ({
+vi.mock('../../services/auth/feature-toggles.js', () => ({
   isFeatureEnabled: vi.fn(() => true),
 }));
-vi.mock('../../services/device-context.js', () => ({
+vi.mock('../../services/integrations/device-context.js', () => ({
   deviceContext: { getFingerprint: vi.fn(async () => ({ device_id: 'trusted-fp' })) },
 }));
 vi.mock('../../ui/toast.js', () => ({

@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /* Mock apex-autonomous-mode pour ne pas déclencher de réelles actions IA */
-vi.mock('../../services/apex-autonomous-mode.js', () => ({
+vi.mock('../../services/admin/apex-autonomous-mode.js', () => ({
   apexAutonomousMode: { tick: vi.fn().mockResolvedValue(undefined) },
 }));
 
@@ -21,8 +21,8 @@ const { mockAuditLog, mockFirebase } = vi.hoisted(() => ({
   mockFirebase: { init: vi.fn().mockResolvedValue(undefined) },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
-vi.mock('../../services/firebase.js', () => ({ firebase: mockFirebase }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/storage/firebase.js', () => ({ firebase: mockFirebase }));
 
 import { autonomousWatch } from '../../services/sentinels/autonomous-watch.js';
 import { sentinelAutoRepair } from '../../services/sentinels/sentinel-auto-repair.js';

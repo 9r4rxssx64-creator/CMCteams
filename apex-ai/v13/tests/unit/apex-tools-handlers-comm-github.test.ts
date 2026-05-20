@@ -20,7 +20,7 @@ import {
   handleTelegramTask,
 } from '../../services/apex-tools-handlers/comm.js';
 
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: { readKey: vi.fn() },
 }));
 

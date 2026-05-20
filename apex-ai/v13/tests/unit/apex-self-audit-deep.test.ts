@@ -10,46 +10,46 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: vi.fn(async () => {}) },
 }));
 
-vi.mock('../../services/soc2-compliance.js', () => ({
+vi.mock('../../services/auth/soc2-compliance.js', () => ({
   soc2: {
     record: vi.fn(async () => {}),
     verifyIntegrity: vi.fn(async () => ({ ok: true, broken_at: -1, total: 100 })),
   },
 }));
 
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: { readKey: vi.fn(async () => '') },
 }));
 
-vi.mock('../../services/secret-scanner.js', () => ({
+vi.mock('../../services/vault/secret-scanner.js', () => ({
   secretScanner: {
     getStats: vi.fn(async () => ({ leaks_count: 0, by_severity: { critical: 0 } })),
     autoMigrate: vi.fn(async () => ({ migrated: 0 })),
   },
 }));
 
-vi.mock('../../services/storage-compressor.js', () => ({
+vi.mock('../../services/storage/storage-compressor.js', () => ({
   storageCompressor: {
     getQuotaStatus: vi.fn(() => ({ severity: 'ok', used_mb: 1, pct: 20 })),
     migrateAllToCompressed: vi.fn(async () => ({ migrated: 0 })),
   },
 }));
 
-vi.mock('../../services/sentinels.js', () => ({
+vi.mock('../../services/sentinels/sentinels.js', () => ({
   sentinels: { list: vi.fn(() => []) },
 }));
 
-vi.mock('../../services/service-lifecycle.js', () => ({
+vi.mock('../../services/core-svc/service-lifecycle.js', () => ({
   lifecycle: {
     getStats: vi.fn(() => ({ total: 50, failed: 0, total_intervals_tracked: 5 })),
   },
 }));
 
-vi.mock('../../services/ai-routing-policy.js', () => ({
+vi.mock('../../services/ai/ai-routing-policy.js', () => ({
   aiRoutingPolicy: {
     getStatus: vi.fn(() => ({
       paid_providers_available: ['anthropic'],
@@ -60,7 +60,7 @@ vi.mock('../../services/ai-routing-policy.js', () => ({
   },
 }));
 
-vi.mock('../../services/context-loader.js', () => ({
+vi.mock('../../services/ai/context-loader.js', () => ({
   contextLoader: { load: vi.fn(async () => ({ rules: ['rule1'] })) },
 }));
 
