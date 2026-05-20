@@ -425,17 +425,17 @@ export function renderCredentialCard(c: CredentialDisplay): string {
       <code style="display:block;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:11px;color:var(--ax-text-muted);font-family:'SF Mono',Menlo,monospace;letter-spacing:1px">${escapeHtml(masked)}</code>
       ${metaLine}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button data-action="test" data-cred-id="${escapeHtml(c.id)}"
-          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(34,204,119,0.1);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🔄 Test</button>
-        <button data-action="recharge" data-service="${escapeHtml(c.service)}" data-recharge-url="${escapeHtml(recharge)}" ${recharge ? '' : 'disabled'}
-          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(201,162,39,0.1);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px;${recharge ? '' : 'opacity:0.4;cursor:not-allowed'}">💰 Recharger</button>
-        <button data-action="discover-links" data-service="${escapeHtml(c.service)}"
+        <button data-action="test" data-cred-id="${escapeHtml(c.id)}" aria-label="Tester la clé ${escapeHtml(c.service)}"
+          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(34,204,119,0.1);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">🔄 Test</button>
+        <button data-action="recharge" data-service="${escapeHtml(c.service)}" data-recharge-url="${escapeHtml(recharge)}" ${recharge ? '' : 'disabled'} aria-label="Recharger ${escapeHtml(c.service)}"
+          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(201,162,39,0.1);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px;${recharge ? '' : 'opacity:0.4;cursor:not-allowed'}">💰 Recharger</button>
+        <button data-action="discover-links" data-service="${escapeHtml(c.service)}" aria-label="Chercher les liens de ${escapeHtml(c.service)}"
           title="Cherche login/dashboard/billing/api_keys/usage en autonomie"
-          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(74,158,255,0.1);color:var(--ax-blue-bright);border:1px solid rgba(74,158,255,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🔍 Chercher liens</button>
-        <button data-action="edit" data-cred-id="${escapeHtml(c.id)}"
-          style="padding:6px 10px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">✏️</button>
-        <button data-action="delete" data-cred-id="${escapeHtml(c.id)}"
-          style="padding:6px 10px;background:rgba(255,91,91,0.1);color:var(--ax-error);border:1px solid rgba(255,91,91,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:32px">🗑</button>
+          style="flex:1;min-width:80px;padding:6px 10px;background:rgba(74,158,255,0.1);color:var(--ax-blue-bright);border:1px solid rgba(74,158,255,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">🔍 Chercher liens</button>
+        <button data-action="edit" data-cred-id="${escapeHtml(c.id)}" aria-label="Modifier la clé ${escapeHtml(c.service)}" title="Modifier"
+          style="min-width:44px;padding:6px 10px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">✏️</button>
+        <button data-action="delete" data-cred-id="${escapeHtml(c.id)}" aria-label="Supprimer la clé ${escapeHtml(c.service)}" title="Supprimer"
+          style="min-width:44px;padding:6px 10px;background:rgba(255,91,91,0.1);color:var(--ax-error);border:1px solid rgba(255,91,91,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">🗑</button>
       </div>
     </div>
   `;
