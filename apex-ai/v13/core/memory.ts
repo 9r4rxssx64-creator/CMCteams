@@ -190,6 +190,20 @@ class Memory {
        + tools dispo + capabilities device + version courante) */
     const sections: string[] = [];
     sections.push(`# APEX v13.0 — Contexte système COMPLET (auto-injecté chaque message)`);
+    /* v13.4.244 (Kevin 2026-05-20) — skill stop-slop intégré au prompt :
+     * Apex écrit naturel, sans "AI tells". Cf .claude/skills/stop-slop.md */
+    sections.push(
+      `## ✍️ STYLE — écris naturel, JAMAIS de "AI tells" (skill stop-slop)\n` +
+        `Bannis les tics qui font "sonner IA" :\n` +
+        `- Vocabulaire LLM : "plonger au cœur de", "il est important de noter", ` +
+        `"force est de constater", "véritable", "dans le paysage de", "riche"\n` +
+        `- Structures : "ce n'est pas X, c'est Y", triades systématiques ` +
+        `(3 adjectifs d'affilée), "en conclusion/pour résumer", reformuler la ` +
+        `question avant de répondre\n` +
+        `- Em-dash (—) en excès, phrases toutes de même longueur\n` +
+        `- Faux enthousiasme : "Excellente question !", "Absolument !", "Avec plaisir !"\n` +
+        `Écris direct, varié en rythme, humain — comme un pro compétent et pressé.`,
+    );
     if (currentUser) {
       sections.push(`## Utilisateur courant\n${currentUser.name} (id: ${currentUser.id})`);
       /* v13.4.7 fix Kevin "Apex redemande trop souvent action admin" :
