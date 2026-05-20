@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { multiSourceAnalyze } from '../../services/multi-source-analyze.js';
+import { multiSourceAnalyze } from '../../services/ai/multi-source-analyze.js';
 
 describe('multi-source-analyze deep (v13.4.153)', () => {
   beforeEach(() => {

@@ -18,7 +18,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { firebase } from '../../services/firebase.js';
+import { firebase } from '../../services/storage/firebase.js';
 
 interface FakeES {
   url: string;

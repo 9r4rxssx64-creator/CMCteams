@@ -6,7 +6,7 @@
  * Fix : sync auto au boot + après chaque vault.setKey + lecture registry pour UI.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { credentialsAudit } from '../../services/credentials-audit.js';
+import { credentialsAudit } from '../../services/vault/credentials-audit.js';
 
 describe('credentialsAudit syncFromVault + readRegistry (Kevin v13.3.36 P1)', () => {
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('credentialsAudit syncFromVault + readRegistry (Kevin v13.3.36 P1)', ()
   });
 
   it('après vault.setKey → registry sync auto reflète la nouvelle clé', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     /* Avant setKey : aucune clé */
     await credentialsAudit.syncFromVault();
     const before = credentialsAudit.readRegistry();
@@ -88,7 +88,7 @@ describe('credentialsAudit syncFromVault + readRegistry (Kevin v13.3.36 P1)', ()
   });
 
   it('multi setKey → registry reflète toutes les clés', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_anthropic_key', 'sk-ant-api03-' + 'A'.repeat(95));
     await vault.setKey('ax_openai_key', 'sk-' + 'B'.repeat(48));
     await vault.setKey('ax_groq_key', 'gsk_' + 'C'.repeat(56));

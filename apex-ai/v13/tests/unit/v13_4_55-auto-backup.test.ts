@@ -5,7 +5,7 @@
  * Restore après rollback. Cleanup ancien automatique. Export/import.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { autoBackup } from '../../services/auto-backup.js';
+import { autoBackup } from '../../services/storage/auto-backup.js';
 
 describe('v13.4.55 auto-backup — snapshots', () => {
   beforeEach(async () => {

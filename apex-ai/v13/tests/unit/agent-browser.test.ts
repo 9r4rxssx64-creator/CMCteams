@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { agentBrowser } from '../../services/agent-browser.js';
+import { agentBrowser } from '../../services/integrations/agent-browser.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

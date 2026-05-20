@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { auth } from '../../services/auth.js';
+import { auth } from '../../services/auth/auth.js';
 import { store } from '../../core/store.js';
 
 describe('auth coverage final boost', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectCredential } from '../../services/credential-patterns.js';
+import { detectCredential } from '../../services/vault/credential-patterns.js';
 
 describe('PATs Kevin réels — anti-confusion', () => {
   it('ghp_ + 36 chars → classic (pas fine-grained)', () => {

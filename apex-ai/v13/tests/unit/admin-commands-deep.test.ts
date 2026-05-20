@@ -20,7 +20,7 @@ vi.mock('../../core/store.js', () => ({ store: mockStore }));
 vi.mock('../../services/firebase.js', () => ({ firebase: mockFirebase }));
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { adminCommands } from '../../services/admin-commands.js';
+import { adminCommands } from '../../services/admin/admin-commands.js';
 
 describe('admin-commands deep (v13.4.148)', () => {
   beforeEach(() => {

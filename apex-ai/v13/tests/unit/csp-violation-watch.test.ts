@@ -12,7 +12,7 @@ import {
   getCSPViolations,
   clearCSPViolations,
   type CSPViolationEntry,
-} from '../../services/bodyguard.js';
+} from '../../services/observability/bodyguard.js';
 
 function makeCSPEvent(directive: string, blockedURI: string, sourceFile = '', lineNumber = 0): SecurityPolicyViolationEvent {
   const event = new Event('securitypolicyviolation') as SecurityPolicyViolationEvent;

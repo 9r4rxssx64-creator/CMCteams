@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { hallucinationCrossCheck } from '../../services/hallucination-cross-check.js';
-import type { Provider, StreamChunk, ChatMessage } from '../../services/ai-router.js';
+import { hallucinationCrossCheck } from '../../services/ai/hallucination-cross-check.js';
+import type { Provider, StreamChunk, ChatMessage } from '../../services/ai/ai-router.js';
 
 type StreamFn = (
   messages: ChatMessage[],
@@ -20,7 +20,7 @@ type StreamFn = (
 ) => Promise<void>;
 
 vi.mock('../../services/ai-router.js', async () => {
-  const actual = await vi.importActual<typeof import('../../services/ai-router.js')>('../../services/ai-router.js');
+  const actual = await vi.importActual<typeof import('../../services/ai/ai-router.js')>('../../services/ai-router.js');
   return {
     ...actual,
     aiRouter: {
@@ -29,7 +29,7 @@ vi.mock('../../services/ai-router.js', async () => {
   };
 });
 
-import { aiRouter } from '../../services/ai-router.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
 
 describe('hallucination-cross-check', () => {
   beforeEach(() => {

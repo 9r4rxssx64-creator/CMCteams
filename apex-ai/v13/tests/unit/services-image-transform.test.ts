@@ -4,8 +4,8 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { imageTransform } from '../../services/image-transform.js';
-import { vault } from '../../services/vault.js';
+import { imageTransform } from '../../services/core-svc/image-transform.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('image-transform service', () => {
   let origFetch: typeof globalThis.fetch;

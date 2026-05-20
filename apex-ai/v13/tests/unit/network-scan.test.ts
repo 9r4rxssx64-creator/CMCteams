@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { networkScan } from '../../services/network-scan.js';
+import { networkScan } from '../../services/integrations/network-scan.js';
 
 const CACHE_KEY = 'apex_v13_network_scan_cache';
 

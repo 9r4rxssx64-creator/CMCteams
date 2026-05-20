@@ -4,7 +4,7 @@
  *  mis en appui dans les bons endroits et que tout fonctionne."
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { credentialsAudit } from '../../services/credentials-audit.js';
+import { credentialsAudit } from '../../services/vault/credentials-audit.js';
 
 describe('Credentials Audit (P0 sécu Kevin demande)', () => {
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe('Credentials Audit (P0 sécu Kevin demande)', () => {
   });
 
   it('audit après vault.setKey (chiffré AXENC1:) → status ok + encrypted=true', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_anthropic_key', 'sk-ant-api03-' + 'A'.repeat(95));
     const r = await credentialsAudit.runFullAudit();
     const entry = r.entries.find((e) => e.storage_key === 'ax_anthropic_key');
@@ -49,7 +49,7 @@ describe('Credentials Audit (P0 sécu Kevin demande)', () => {
   });
 
   it('preview masquée (jamais valeur en clair)', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const longKey = 'sk-ant-api03-' + 'B'.repeat(95);
     await vault.setKey('ax_anthropic_key', longKey);
     const r = await credentialsAudit.runFullAudit();

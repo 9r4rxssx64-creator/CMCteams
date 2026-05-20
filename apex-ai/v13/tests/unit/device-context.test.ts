@@ -2,7 +2,7 @@
  * Tests device-context.ts (Kevin "reconnaître appareils + geo + notifs + CGU").
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { deviceContext } from '../../services/device-context.js';
+import { deviceContext } from '../../services/integrations/device-context.js';
 
 describe('Device Context (fingerprint + geo + notifs + CGU)', () => {
   beforeEach(() => {

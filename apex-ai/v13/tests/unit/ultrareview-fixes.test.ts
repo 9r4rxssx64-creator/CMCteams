@@ -52,7 +52,7 @@ describe('Ultra Review fix C2 — version-badge ne double pas le static HTML', (
 describe('Ultra Review fix C3 — inp-optimizer ne monkey-patch PAS addEventListener', () => {
   it('EventTarget.prototype.addEventListener inchangé après install()', async () => {
     const originalAddEvent = EventTarget.prototype.addEventListener;
-    const { inpOptimizer } = await import('../../services/inp-optimizer.js');
+    const { inpOptimizer } = await import('../../services/observability/inp-optimizer.js');
     inpOptimizer.install();
     /* Si monkey-patch encore là, addEventListener aurait été remplacé */
     expect(EventTarget.prototype.addEventListener).toBe(originalAddEvent);
@@ -61,7 +61,7 @@ describe('Ultra Review fix C3 — inp-optimizer ne monkey-patch PAS addEventList
   it('inp-optimizer.ts NE contient PLUS de monkey-patch (source check)', async () => {
     /* Test source : on importe et vérifie que la méthode optimizeExistingListeners
      * n'existe plus (elle réécrivait EventTarget.prototype.addEventListener). */
-    const mod = await import('../../services/inp-optimizer.js');
+    const mod = await import('../../services/observability/inp-optimizer.js');
     /* Vérifie publiquement : inpOptimizer existe + install()/uninstall() OK */
     expect(typeof mod.inpOptimizer.install).toBe('function');
     expect(typeof mod.inpOptimizer.uninstall).toBe('function');
@@ -81,7 +81,7 @@ describe('Ultra Review fix C5 — single force-update flow (forceUpdateBanner)',
   });
 
   it('isUpdateInProgress() retourne false initialement', async () => {
-    const { forceUpdateBanner } = await import('../../services/force-update-banner.js');
+    const { forceUpdateBanner } = await import('../../services/core-svc/force-update-banner.js');
     /* Pas de méthode publique mais on peut vérifier via sessionStorage */
     expect(sessionStorage.getItem('apex_v13_force_update_in_progress')).toBeNull();
     /* Évite tasks-side-effects */
@@ -89,7 +89,7 @@ describe('Ultra Review fix C5 — single force-update flow (forceUpdateBanner)',
   });
 
   it('forceUpdate marque session storage in-progress (anti race)', async () => {
-    const { forceUpdateBanner } = await import('../../services/force-update-banner.js');
+    const { forceUpdateBanner } = await import('../../services/core-svc/force-update-banner.js');
     /* Mock fetch + caches + serviceWorker pour éviter side effects */
     const originalFetch = globalThis.fetch;
     globalThis.fetch = vi.fn(() => Promise.reject(new Error('network'))) as unknown as typeof fetch;
@@ -113,7 +113,7 @@ describe('Ultra Review fix C5 — single force-update flow (forceUpdateBanner)',
 
 describe('Ultra Review fix C7 — OpenAI regex back-compat alias ne matche PAS Anthropic', () => {
   it('CREDENTIAL_PATTERNS alias : sk-ant-* matche Anthropic uniquement', async () => {
-    const { CREDENTIAL_PATTERNS } = await import('../../services/vault.js');
+    const { CREDENTIAL_PATTERNS } = await import('../../services/vault/vault.js');
     const sample = 'sk-ant-api03-' + 'X'.repeat(50);
     const matched = CREDENTIAL_PATTERNS.filter((p) => p.regex.test(sample));
     /* Doit matcher Anthropic seul, JAMAIS OpenAI */
@@ -123,7 +123,7 @@ describe('Ultra Review fix C7 — OpenAI regex back-compat alias ne matche PAS A
   });
 
   it('CREDENTIAL_PATTERNS alias : sk-proj-* matche OpenAI (negative lookahead OK)', async () => {
-    const { CREDENTIAL_PATTERNS } = await import('../../services/vault.js');
+    const { CREDENTIAL_PATTERNS } = await import('../../services/vault/vault.js');
     const openaiSample = 'sk-' + 'A'.repeat(48);
     const openaiPattern = CREDENTIAL_PATTERNS.find((p) => p.name === 'OpenAI');
     expect(openaiPattern?.regex.test(openaiSample)).toBe(true);
@@ -159,7 +159,7 @@ describe('Ultra Review fix M3 — fixCSPViolations URL parsing strict', () => {
 
 describe('Ultra Review fix M5 — estimateTokens heuristique multi-langue', () => {
   it('texte français : ~3.2 chars/token', async () => {
-    const { estimateTokens } = await import('../../services/ai-router.js');
+    const { estimateTokens } = await import('../../services/ai/ai-router.js');
     const fr = 'Bonjour, comment ça va aujourd\'hui ? J\'espère que tu vas bien et que la journée se passe sans encombre.';
     const tokens = estimateTokens(fr);
     /* fr.length = ~110, attendu ~110/3.2 ≈ 35 tokens */
@@ -168,7 +168,7 @@ describe('Ultra Review fix M5 — estimateTokens heuristique multi-langue', () =
   });
 
   it('texte code/JSON : plus dense (~2.8 chars/token)', async () => {
-    const { estimateTokens } = await import('../../services/ai-router.js');
+    const { estimateTokens } = await import('../../services/ai/ai-router.js');
     const code = '```ts\nconst x: number = 42;\nfunction f(): boolean { return x > 0; }\n```';
     const tokens = estimateTokens(code);
     /* code.length = ~75, attendu ~75/2.8 ≈ 27 tokens (plus dense) */
@@ -177,7 +177,7 @@ describe('Ultra Review fix M5 — estimateTokens heuristique multi-langue', () =
   });
 
   it('chaîne vide → 0', async () => {
-    const { estimateTokens } = await import('../../services/ai-router.js');
+    const { estimateTokens } = await import('../../services/ai/ai-router.js');
     expect(estimateTokens('')).toBe(0);
   });
 });

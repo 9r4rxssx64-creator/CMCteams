@@ -7,7 +7,7 @@ import {
   detectStudioIntent,
   smartStudiosAnticipator,
   type StudioIntent,
-} from '../../services/smart-studios-anticipator.js';
+} from '../../services/ai/smart-studios-anticipator.js';
 
 describe('smart-studios-anticipator — detectStudioIntent', () => {
   it('matche musique avec confidence ≥ 0.7 (≥2 keywords)', () => {

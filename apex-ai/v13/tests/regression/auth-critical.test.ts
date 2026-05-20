@@ -16,7 +16,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { auth } from '../../services/auth.js';
+import { auth } from '../../services/auth/auth.js';
 import { store } from '../../core/store.js';
 
 describe('REGRESSION auth — Kevin admin aliases (v13.3.65)', () => {

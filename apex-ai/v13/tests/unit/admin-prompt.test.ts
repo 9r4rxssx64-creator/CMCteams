@@ -2,7 +2,7 @@
  * Tests admin-prompt.ts (Kevin règle 1-clic + fenêtre + bouton direct).
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { adminPrompt } from '../../services/admin-prompt.js';
+import { adminPrompt } from '../../services/admin/admin-prompt.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
 
 describe('Admin Prompt 1-clic (CLAUDE.md règle absolue Kevin)', () => {

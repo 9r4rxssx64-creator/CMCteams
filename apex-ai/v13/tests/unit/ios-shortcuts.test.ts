@@ -14,7 +14,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { iosShortcuts } from '../../services/ios-shortcuts.js';
+import { iosShortcuts } from '../../services/integrations/ios-shortcuts.js';
 
 const ORIG_UA = navigator.userAgent;
 

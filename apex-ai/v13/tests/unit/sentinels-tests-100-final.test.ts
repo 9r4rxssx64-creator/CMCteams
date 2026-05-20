@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { sentinels, registerCoreSentinels, registerAgentWatchesSentinel } from '../../services/sentinels.js';
+import { sentinels, registerCoreSentinels, registerAgentWatchesSentinel } from '../../services/sentinels/sentinels.js';
 
 describe('sentinels — coverage push 90%+ (final)', () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>;
@@ -98,7 +98,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('with critical pending → ok=false count', async () => {
       registerCoreSentinels();
-      const { observability } = await import('../../services/observability.js');
+      const { observability } = await import('../../services/observability/observability.js');
       observability.capture('critical', 'test.event', 'critical pending event');
       const r = await sentinels.runOne('error-watch');
       expect(r?.ts).toBeGreaterThan(0);
@@ -939,7 +939,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
   describe('observability integration on failure paths', () => {
     it('check fail → observability captures warn', async () => {
-      const obsModule = await import('../../services/observability.js');
+      const obsModule = await import('../../services/observability/observability.js');
       const captureSpy = vi.spyOn(obsModule.observability, 'capture');
       sentinels.register({
         id: 'fail-with-details',
@@ -1027,7 +1027,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
     it('mock list with > 1000 facts → oversized branch', { timeout: 30_000 }, async () => {
       registerCoreSentinels();
       /* Re-import & spy persistentMemory.list to return mock data */
-      const mod = await import('../../services/persistent-memory-store.js');
+      const mod = await import('../../services/storage/persistent-memory-store.js');
       if (mod.persistentMemory && typeof mod.persistentMemory.list === 'function') {
         const big: Array<{ scope: string; importance: number; id: string }> = [];
         for (let i = 0; i < 1100; i++) {
@@ -1042,7 +1042,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mock list returning non-array → "not_array" skip path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/persistent-memory-store.js');
+      const mod = await import('../../services/storage/persistent-memory-store.js');
       if (mod.persistentMemory && typeof mod.persistentMemory.list === 'function') {
         const spy = vi.spyOn(mod.persistentMemory, 'list').mockResolvedValue('not-array' as never);
         const r = await sentinels.runOne('memory-watch');
@@ -1054,7 +1054,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mock list throws → "list_threw" skip path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/persistent-memory-store.js');
+      const mod = await import('../../services/storage/persistent-memory-store.js');
       if (mod.persistentMemory && typeof mod.persistentMemory.list === 'function') {
         const spy = vi.spyOn(mod.persistentMemory, 'list').mockRejectedValue(new Error('IDB closed'));
         const r = await sentinels.runOne('memory-watch');
@@ -1073,7 +1073,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix removes facts beyond cap of 100', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/persistent-memory-store.js');
+      const mod = await import('../../services/storage/persistent-memory-store.js');
       if (mod.persistentMemory) {
         const big: Array<{ scope: string; importance: number; id: string }> = [];
         for (let i = 0; i < 1050; i++) {
@@ -1096,7 +1096,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('voice-quality-watch with mocked voiceprints', () => {
     it('voiceprints with calibration needed → ok=false path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/voice-print.js');
+      const mod = await import('../../services/ai/voice-print.js');
       if (mod.voicePrint) {
         const printsSpy = vi.spyOn(mod.voicePrint, 'listPrints').mockReturnValue([
           { uid: 'u1', features: [], created_at: 0, last_match_score: 0.5, total_matches: 1, mfcc_avg: [], pitch_estimate: 0, samples: 1 },
@@ -1114,7 +1114,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('all voiceprints OK → ok=true path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/voice-print.js');
+      const mod = await import('../../services/ai/voice-print.js');
       if (mod.voicePrint) {
         const printsSpy = vi.spyOn(mod.voicePrint, 'listPrints').mockReturnValue([
           { uid: 'u1', features: [], created_at: 0, last_match_score: 0.95, total_matches: 1, mfcc_avg: [], pitch_estimate: 0, samples: 1 },
@@ -1133,7 +1133,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('memory-bridge-watch fail/recovery paths', () => {
     it('mocked health: 0 backends → ok=true local-only', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/memory-bridge.js');
+      const mod = await import('../../services/storage/memory-bridge.js');
       if (mod.memoryBridge) {
         const spy = vi.spyOn(mod.memoryBridge, 'getHealth').mockReturnValue({
           backends_configured: 0, recent_failures: 0, last_sync_age_ms: 0,
@@ -1146,7 +1146,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked health: 3+ failures → ok=false', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/memory-bridge.js');
+      const mod = await import('../../services/storage/memory-bridge.js');
       if (mod.memoryBridge) {
         const spy = vi.spyOn(mod.memoryBridge, 'getHealth').mockReturnValue({
           backends_configured: 2, recent_failures: 4, last_sync_age_ms: 100000,
@@ -1159,7 +1159,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked health: stale > 24h → ok=false', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/memory-bridge.js');
+      const mod = await import('../../services/storage/memory-bridge.js');
       if (mod.memoryBridge) {
         const spy = vi.spyOn(mod.memoryBridge, 'getHealth').mockReturnValue({
           backends_configured: 1, recent_failures: 0, last_sync_age_ms: 25 * 60 * 60 * 1000,
@@ -1172,7 +1172,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix runAutoSync ok results', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/memory-bridge.js');
+      const mod = await import('../../services/storage/memory-bridge.js');
       if (mod.memoryBridge) {
         const spy = vi.spyOn(mod.memoryBridge, 'runAutoSync').mockResolvedValue([
           { backend: 'notion', ok: true } as never,
@@ -1192,7 +1192,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('ai-unblock-watch with mocked failover', () => {
     it('mocked runOnce returning failover → ok=false path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/ai-unblock-watch.js');
+      const mod = await import('../../services/sentinels/ai-unblock-watch.js');
       if (mod.aiUnblockWatch) {
         const spy = vi.spyOn(mod.aiUnblockWatch, 'runOnce').mockResolvedValue({
           probes: [{ provider: 'anthropic' }, { provider: 'openai' }],
@@ -1209,7 +1209,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked runOnce throws → catch path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/ai-unblock-watch.js');
+      const mod = await import('../../services/sentinels/ai-unblock-watch.js');
       if (mod.aiUnblockWatch) {
         const spy = vi.spyOn(mod.aiUnblockWatch, 'runOnce').mockRejectedValue(new Error('runOnce boom'));
         const r = await sentinels.runOne('ai-unblock-watch');
@@ -1222,7 +1222,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('reconsult-kevin-watch with mocked outputs', () => {
     it('mocked runOnce with updated_count > 0', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/reconsult-kevin-watch.js');
+      const mod = await import('../../services/sentinels/reconsult-kevin-watch.js');
       if (mod.reconsultKevinWatch) {
         const spy = vi.spyOn(mod.reconsultKevinWatch, 'runOnce').mockResolvedValue({
           updated_count: 3,
@@ -1242,7 +1242,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked runOnce with high failed_count → ok=false', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/reconsult-kevin-watch.js');
+      const mod = await import('../../services/sentinels/reconsult-kevin-watch.js');
       if (mod.reconsultKevinWatch) {
         const spy = vi.spyOn(mod.reconsultKevinWatch, 'runOnce').mockResolvedValue({
           updated_count: 0,
@@ -1258,7 +1258,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked runOnce throws → catch path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/reconsult-kevin-watch.js');
+      const mod = await import('../../services/sentinels/reconsult-kevin-watch.js');
       if (mod.reconsultKevinWatch) {
         const spy = vi.spyOn(mod.reconsultKevinWatch, 'runOnce').mockRejectedValue(new Error('fetch fail'));
         const r = await sentinels.runOne('reconsult-kevin-watch');
@@ -1271,7 +1271,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('realtime-backup-watch with mocked stats', () => {
     it('IDB unavailable → ok=true skip', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/realtime-backup.js');
+      const mod = await import('../../services/storage/realtime-backup.js');
       if (mod.realtimeBackup) {
         const spy = vi.spyOn(mod.realtimeBackup, 'getStats').mockResolvedValue({
           idb_available: false,
@@ -1289,7 +1289,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('total_snapshots=0 warmup → ok=true', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/realtime-backup.js');
+      const mod = await import('../../services/storage/realtime-backup.js');
       if (mod.realtimeBackup) {
         const spy = vi.spyOn(mod.realtimeBackup, 'getStats').mockResolvedValue({
           idb_available: true,
@@ -1308,7 +1308,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('memory + chat both stale → ok=false path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/realtime-backup.js');
+      const mod = await import('../../services/storage/realtime-backup.js');
       if (mod.realtimeBackup) {
         const spy = vi.spyOn(mod.realtimeBackup, 'getStats').mockResolvedValue({
           idb_available: true,
@@ -1327,7 +1327,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('snapshots OK → ok=true info', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/realtime-backup.js');
+      const mod = await import('../../services/storage/realtime-backup.js');
       if (mod.realtimeBackup) {
         const spy = vi.spyOn(mod.realtimeBackup, 'getStats').mockResolvedValue({
           idb_available: true,
@@ -1346,7 +1346,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('getStats throws → catch path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/realtime-backup.js');
+      const mod = await import('../../services/storage/realtime-backup.js');
       if (mod.realtimeBackup) {
         const spy = vi.spyOn(mod.realtimeBackup, 'getStats').mockRejectedValue(new Error('IDB error'));
         const r = await sentinels.runOne('realtime-backup-watch');
@@ -1357,7 +1357,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix throws → catch path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/realtime-backup.js');
+      const mod = await import('../../services/storage/realtime-backup.js');
       if (mod.realtimeBackup) {
         const spy = vi.spyOn(mod.realtimeBackup, 'snapshotNow').mockRejectedValue(new Error('snapshot boom'));
         const list = sentinels.list();
@@ -1375,7 +1375,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('smart-router-watch with mocked rankings', () => {
     it('mocked rank with recommendations → details path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/smart-router.js');
+      const mod = await import('../../services/ai/smart-router.js');
       if (mod.smartRouter) {
         const pingSpy = vi.spyOn(mod.smartRouter, 'pingAllProviders').mockResolvedValue(undefined as never);
         const rankSpy = vi.spyOn(mod.smartRouter, 'rankProviders').mockResolvedValue([
@@ -1397,7 +1397,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked rank throws → catch path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/smart-router.js');
+      const mod = await import('../../services/ai/smart-router.js');
       if (mod.smartRouter) {
         const spy = vi.spyOn(mod.smartRouter, 'pingAllProviders').mockRejectedValue(new Error('ping fail'));
         const r = await sentinels.runOne('smart-router-watch');
@@ -1410,7 +1410,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('service-knowledge-watch with mocked services', () => {
     it('mocked listKnown returns services → ok=true', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/study-service.js');
+      const mod = await import('../../services/integrations/study-service.js');
       if (mod.studyService) {
         const spy = vi.spyOn(mod.studyService, 'listKnown').mockReturnValue([
           { service_name: 'anthropic' },
@@ -1425,7 +1425,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked listKnown throws → catch path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/study-service.js');
+      const mod = await import('../../services/integrations/study-service.js');
       if (mod.studyService) {
         const spy = vi.spyOn(mod.studyService, 'listKnown').mockImplementation(() => { throw new Error('study fail'); });
         const r = await sentinels.runOne('service-knowledge-watch');
@@ -1436,7 +1436,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix refreshAll with errors → ok=false', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/study-service.js');
+      const mod = await import('../../services/integrations/study-service.js');
       if (mod.studyService) {
         const spy = vi.spyOn(mod.studyService, 'refreshAll').mockResolvedValue({
           refreshed: 2,
@@ -1456,7 +1456,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('memory-leak-watch boundary', () => {
     it('mocked > 50 intervals → ok=false leak', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/service-lifecycle.js');
+      const mod = await import('../../services/core-svc/service-lifecycle.js');
       if (mod.lifecycle) {
         const spy = vi.spyOn(mod.lifecycle, 'getStats').mockReturnValue({
           total_intervals_tracked: 100,
@@ -1488,7 +1488,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('credentials-watch with vault decrypt errors', () => {
     it('vault throws on readKey → catch logs but continues', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/vault.js');
+      const mod = await import('../../services/vault/vault.js');
       if (mod.vault) {
         const spy = vi.spyOn(mod.vault, 'readKey').mockRejectedValue(new Error('decrypt fail'));
         const r = await sentinels.runOne('credentials-watch');
@@ -1501,7 +1501,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('agent-watches-runner with mocked reports', () => {
     it('with critical reports → ok=false', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/agent-watches.js');
+      const mod = await import('../../services/sentinels/agent-watches.js');
       if (mod.agentWatches) {
         const spy = vi.spyOn(mod.agentWatches, 'runAll').mockResolvedValue([
           { agent: 'a1', severity: 'critical', msg: 'down' },
@@ -1516,7 +1516,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('with err reports → ok=false', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/agent-watches.js');
+      const mod = await import('../../services/sentinels/agent-watches.js');
       if (mod.agentWatches) {
         const spy = vi.spyOn(mod.agentWatches, 'runAll').mockResolvedValue([
           { agent: 'a1', severity: 'err', msg: 'errored' },
@@ -1531,7 +1531,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('with only warn reports → ok=true non-blocking', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/agent-watches.js');
+      const mod = await import('../../services/sentinels/agent-watches.js');
       if (mod.agentWatches) {
         const spy = vi.spyOn(mod.agentWatches, 'runAll').mockResolvedValue([
           { agent: 'a1', severity: 'warn', msg: 'careful' },
@@ -1547,7 +1547,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('error-watch with critical events', () => {
     it('multiple criticals → ok=false count', async () => {
       registerCoreSentinels();
-      const obsModule = await import('../../services/observability.js');
+      const obsModule = await import('../../services/observability/observability.js');
       obsModule.observability.capture('critical', 'evt1', 'first critical');
       obsModule.observability.capture('critical', 'evt2', 'second critical');
       obsModule.observability.capture('critical', 'evt3', 'third critical');
@@ -1608,7 +1608,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
         LCP: 100, INP: 10, CLS: 0.001, ts: Date.now(),
       }));
       registerCoreSentinels();
-      const mod = await import('../../services/perf-metrics.js');
+      const mod = await import('../../services/observability/perf-metrics.js');
       if (mod.perfMetrics) {
         const snapSpy = vi.spyOn(mod.perfMetrics, 'getSnapshot').mockReturnValue({
           LCP: { value: 1000 } as never, INP: { value: 200 } as never, CLS: { value: 0.5 } as never,
@@ -1629,7 +1629,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
         LCP: 100, INP: 10, CLS: 0.001, ts: Date.now(),
       }));
       registerCoreSentinels();
-      const mod = await import('../../services/perf-metrics.js');
+      const mod = await import('../../services/observability/perf-metrics.js');
       if (mod.perfMetrics) {
         const snapSpy = vi.spyOn(mod.perfMetrics, 'getSnapshot').mockReturnValue({
           LCP: { value: 5000 } as never, INP: { value: 500 } as never, CLS: { value: 1.0 } as never,
@@ -1646,7 +1646,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('reconsult-kevin-watch unchanged path', () => {
     it('mocked runOnce updated_count=0, unchanged > 0 → ok=true', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/reconsult-kevin-watch.js');
+      const mod = await import('../../services/sentinels/reconsult-kevin-watch.js');
       if (mod.reconsultKevinWatch) {
         const spy = vi.spyOn(mod.reconsultKevinWatch, 'runOnce').mockResolvedValue({
           updated_count: 0,
@@ -1711,7 +1711,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('security-watch tamper branch', () => {
     it('audit log with tamper → ok=false + log security_log', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/audit-log.js');
+      const mod = await import('../../services/observability/audit-log.js');
       if (mod.auditLog) {
         const reloadSpy = vi.spyOn(mod.auditLog, 'reload').mockImplementation(() => undefined);
         const entriesSpy = vi.spyOn(mod.auditLog, 'getEntries').mockReturnValue([
@@ -1730,7 +1730,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix audit chain rebuild ok rebuilt > 0', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/audit-log.js');
+      const mod = await import('../../services/observability/audit-log.js');
       if (mod.auditLog) {
         const reloadSpy = vi.spyOn(mod.auditLog, 'reload').mockImplementation(() => undefined);
         const repairSpy = vi.spyOn(mod.auditLog, 'autoRepair').mockResolvedValue({
@@ -1750,7 +1750,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix audit chain rebuild ok rebuilt = 0 → already valid', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/audit-log.js');
+      const mod = await import('../../services/observability/audit-log.js');
       if (mod.auditLog) {
         const reloadSpy = vi.spyOn(mod.auditLog, 'reload').mockImplementation(() => undefined);
         const repairSpy = vi.spyOn(mod.auditLog, 'autoRepair').mockResolvedValue({
@@ -1770,7 +1770,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix audit chain rebuild fail rien rebuilt', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/audit-log.js');
+      const mod = await import('../../services/observability/audit-log.js');
       if (mod.auditLog) {
         const reloadSpy = vi.spyOn(mod.auditLog, 'reload').mockImplementation(() => undefined);
         const repairSpy = vi.spyOn(mod.auditLog, 'autoRepair').mockResolvedValue({
@@ -1789,7 +1789,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix audit chain throws → catch path', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/audit-log.js');
+      const mod = await import('../../services/observability/audit-log.js');
       if (mod.auditLog) {
         const reloadSpy = vi.spyOn(mod.auditLog, 'reload').mockImplementation(() => { throw new Error('reload boom'); });
         const list = sentinels.list();
@@ -1806,7 +1806,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('voice-quality-watch error branch', () => {
     it('voicePrint listPrints throws → ok=true skip', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/voice-print.js');
+      const mod = await import('../../services/ai/voice-print.js');
       if (mod.voicePrint) {
         const spy = vi.spyOn(mod.voicePrint, 'listPrints').mockImplementation(() => { throw new Error('voice unavailable'); });
         const r = await sentinels.runOne('voice-quality-watch');
@@ -1820,7 +1820,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('memory-watch error branches', () => {
     it('memory-watch outer catch on unexpected throw', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/persistent-memory-store.js');
+      const mod = await import('../../services/storage/persistent-memory-store.js');
       if (mod.persistentMemory) {
         /* Mock to throw inside the user iteration — covered via outer catch */
         const spy = vi.spyOn(mod.persistentMemory, 'list').mockImplementation(() => {
@@ -1835,7 +1835,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix list throws → catch returns fail msg', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/persistent-memory-store.js');
+      const mod = await import('../../services/storage/persistent-memory-store.js');
       if (mod.persistentMemory) {
         const spy = vi.spyOn(mod.persistentMemory, 'list').mockRejectedValue(new Error('idb fail'));
         const list = sentinels.list();
@@ -1850,7 +1850,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('autoFix list returns non-array → fail', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/persistent-memory-store.js');
+      const mod = await import('../../services/storage/persistent-memory-store.js');
       if (mod.persistentMemory) {
         const spy = vi.spyOn(mod.persistentMemory, 'list').mockResolvedValue('not-array' as never);
         const list = sentinels.list();
@@ -1867,7 +1867,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('credentials-rotation-watch err_count branch', () => {
     it('mocked run returning err_count > 0 → ok=false', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/credentials-rotation-watch.js');
+      const mod = await import('../../services/sentinels/credentials-rotation-watch.js');
       if (mod.credentialsRotationWatch) {
         const spy = vi.spyOn(mod.credentialsRotationWatch, 'run').mockResolvedValue({
           err_count: 2, warn_count: 1, scanned: 5,
@@ -1881,7 +1881,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked run returning warn_count > 0 → ok=true (non-blocking)', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/credentials-rotation-watch.js');
+      const mod = await import('../../services/sentinels/credentials-rotation-watch.js');
       if (mod.credentialsRotationWatch) {
         const spy = vi.spyOn(mod.credentialsRotationWatch, 'run').mockResolvedValue({
           err_count: 0, warn_count: 2, scanned: 5,
@@ -1897,7 +1897,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
   describe('decrypt-watch fail counts branch', () => {
     it('mocked auditDecryptHealth with failed → ok=false alert sent', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/vault.js');
+      const mod = await import('../../services/vault/vault.js');
       if (mod.vault) {
         const spy = vi.spyOn(mod.vault, 'auditDecryptHealth').mockResolvedValue({
           total: 10, ok: 7, failed: 3, failedKeys: ['ax_anthropic_key', 'ax_openai_key', 'ax_groq_key'],
@@ -1911,7 +1911,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked auditDecryptHealth ok=total → ok=true', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/vault.js');
+      const mod = await import('../../services/vault/vault.js');
       if (mod.vault) {
         const spy = vi.spyOn(mod.vault, 'auditDecryptHealth').mockResolvedValue({
           total: 5, ok: 5, failed: 0, failedKeys: [],
@@ -1925,7 +1925,7 @@ describe('sentinels — coverage push 90%+ (final)', () => {
 
     it('mocked auditDecryptHealth throws → ok=false catch', async () => {
       registerCoreSentinels();
-      const mod = await import('../../services/vault.js');
+      const mod = await import('../../services/vault/vault.js');
       if (mod.vault) {
         const spy = vi.spyOn(mod.vault, 'auditDecryptHealth').mockRejectedValue(new Error('audit fail'));
         const r = await sentinels.runOne('decrypt-watch');

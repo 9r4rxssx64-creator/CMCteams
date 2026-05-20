@@ -11,7 +11,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { LogRedactionWrapper, logRedaction } from '../../services/log-redaction-wrapper.js';
+import { LogRedactionWrapper, logRedaction } from '../../services/observability/log-redaction-wrapper.js';
 
 describe('LogRedactionWrapper — P0 sécu OWASP ASVS L2 V7.1.1', () => {
   beforeEach(() => {

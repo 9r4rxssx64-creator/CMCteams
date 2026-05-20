@@ -32,7 +32,7 @@ vi.mock('../../core/memory.js', () => ({
   },
 }));
 
-import { claudeMemBridge } from '../../services/claude-mem-bridge.js';
+import { claudeMemBridge } from '../../services/ai/claude-mem-bridge.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { gstackRoles } from '../../services/gstack-roles.js';
+import { gstackRoles } from '../../services/core-svc/gstack-roles.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

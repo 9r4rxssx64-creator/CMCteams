@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { vision } from '../../services/vision.js';
+import { vision } from '../../services/ai/vision.js';
 
 function makeBlob(sizeBytes: number, type = 'image/jpeg'): Blob {
   const bytes = new Uint8Array(sizeBytes);

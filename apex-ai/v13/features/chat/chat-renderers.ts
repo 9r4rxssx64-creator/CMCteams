@@ -9,8 +9,8 @@
  * Re-exportées depuis chat/index.ts (façade backward-compat).
  */
 
-import { filterCommands, type SlashCommand } from '../../services/slash-commands.js';
-import type { FollowUpSuggestion } from '../../services/suggestions.js';
+import { filterCommands, type SlashCommand } from '../../services/admin/slash-commands.js';
+import type { FollowUpSuggestion } from '../../services/ai/suggestions.js';
 
 import { escapeHtml } from './chat-markdown.js';
 

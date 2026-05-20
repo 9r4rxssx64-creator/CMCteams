@@ -21,7 +21,7 @@ import { escapeHtml } from '../../core/html-safe.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { credentialsAudit, type CredentialAuditEntry, type CredentialsAuditReport } from '../../services/credentials-audit.js';
+import { credentialsAudit, type CredentialAuditEntry, type CredentialsAuditReport } from '../../services/vault/credentials-audit.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -270,7 +270,7 @@ function openRecoverModal(rootEl: HTMLElement, storageKey: string, serviceName: 
         return;
       }
       try {
-        const { vault } = await import('../../services/vault.js');
+        const { vault } = await import('../../services/vault/vault.js');
         const r = await vault.recover(storageKey, value);
         if (r.ok) {
           haptic.success();
@@ -308,7 +308,7 @@ function attachHandlers(rootEl: HTMLElement): void {
       haptic.tap();
       void (async () => {
         toast.info('📡 Test alertes en cours...');
-        const { kevinAlerts } = await import('../../services/kevin-alerts.js');
+        const { kevinAlerts } = await import('../../services/admin/kevin-alerts.js');
         const r = await kevinAlerts.testAllChannels();
         const ok = Object.entries(r).filter(([, v]) => v).map(([k]) => k);
         if (ok.length === 0) {

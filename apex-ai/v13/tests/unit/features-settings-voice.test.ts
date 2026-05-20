@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import * as voiceModule from '../../services/voice.js';
+import * as voiceModule from '../../services/ai/voice.js';
 import { store } from '../../core/store.js';
 
 describe('Settings — section Voice', () => {

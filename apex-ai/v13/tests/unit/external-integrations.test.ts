@@ -2,7 +2,7 @@
  * Tests external-integrations.ts (email + social + cross-promo + scalability).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { externalIntegrations } from '../../services/external-integrations.js';
+import { externalIntegrations } from '../../services/integrations/external-integrations.js';
 
 describe('External Integrations (email + social + cross-promo + scalability)', () => {
   beforeEach(() => {

@@ -13,8 +13,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { multiKeyVault } from '../../services/multi-key-vault.js';
-import { vault } from '../../services/vault.js';
+import { multiKeyVault } from '../../services/vault/multi-key-vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 import {
   buildCredentialDisplays,

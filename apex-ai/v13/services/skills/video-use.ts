@@ -15,7 +15,7 @@
  */
 
 import { logger } from '../../core/logger.js';
-import { auditLog } from '../audit-log.js';
+import { auditLog } from '../observability/audit-log.js';
 
 const FFMPEG_CDN = 'https://esm.sh/@ffmpeg/ffmpeg@0.12.10';
 const FFMPEG_UTIL_CDN = 'https://esm.sh/@ffmpeg/util@0.12.1';

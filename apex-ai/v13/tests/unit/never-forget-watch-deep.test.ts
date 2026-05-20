@@ -25,7 +25,7 @@ vi.mock('../../core/apex-identity.js', () => ({
 }));
 
 import { APEX_IDENTITY } from '../../core/apex-identity.js';
-import { neverForgetWatch } from '../../services/never-forget-watch.js';
+import { neverForgetWatch } from '../../services/sentinels/never-forget-watch.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

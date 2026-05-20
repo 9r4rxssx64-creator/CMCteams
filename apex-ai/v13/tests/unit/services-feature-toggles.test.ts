@@ -18,7 +18,7 @@ import {
   featureToggles,
   isFeatureEnabled,
   renderDisabledNotice,
-} from '../../services/feature-toggles.js';
+} from '../../services/auth/feature-toggles.js';
 
 describe('feature-toggles service', () => {
   beforeEach(() => {

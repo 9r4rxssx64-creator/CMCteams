@@ -6,7 +6,7 @@
  * Auto-repair : reconstruction depuis snapshot avec backup.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auditLog } from '../../services/audit-log.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('v13.4.54 audit-log — chain hash immutable', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('vault.detectPattern', () => {
   it('détecte clé Anthropic', () => {

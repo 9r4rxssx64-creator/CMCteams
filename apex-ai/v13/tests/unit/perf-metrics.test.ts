@@ -2,7 +2,7 @@
  * Tests perf-metrics.ts (Core Web Vitals dashboard).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { perfMetrics } from '../../services/perf-metrics.js';
+import { perfMetrics } from '../../services/observability/perf-metrics.js';
 
 describe('Perf Metrics (Web Vitals au-delà 100/100)', () => {
   beforeEach(() => {

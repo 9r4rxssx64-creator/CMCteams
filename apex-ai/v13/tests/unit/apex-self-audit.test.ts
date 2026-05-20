@@ -3,7 +3,7 @@
  * Self-audit avec auto-fix whitelist + escalade Claude Code.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { apexSelfAudit } from '../../services/apex-self-audit.js';
+import { apexSelfAudit } from '../../services/admin/apex-self-audit.js';
 
 describe('apex-self-audit (P0 coverage 4→80%)', () => {
   beforeEach(() => {

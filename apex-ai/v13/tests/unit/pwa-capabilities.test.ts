@@ -15,7 +15,7 @@ const { mockAuditLog } = vi.hoisted(() => ({
 
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { pwaCapabilities } from '../../services/pwa-capabilities.js';
+import { pwaCapabilities } from '../../services/core-svc/pwa-capabilities.js';
 
 describe('pwa-capabilities (v13.4.146 coverage)', () => {
   beforeEach(() => {

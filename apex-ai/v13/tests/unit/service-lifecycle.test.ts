@@ -2,7 +2,7 @@
  * Tests service-lifecycle (Architecture 18→20).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { lifecycle } from '../../services/service-lifecycle.js';
+import { lifecycle } from '../../services/core-svc/service-lifecycle.js';
 
 describe('Service Lifecycle Manager', () => {
   beforeEach(() => {

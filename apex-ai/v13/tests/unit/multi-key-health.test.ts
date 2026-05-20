@@ -4,7 +4,7 @@
  * Module : services/multi-key-health.ts (190 stmts, était 0% coverage).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { multiKeyHealth } from '../../services/multi-key-health.js';
+import { multiKeyHealth } from '../../services/ai/multi-key-health.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

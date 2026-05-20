@@ -11,7 +11,7 @@
  * switchProvider() qui persist immédiatement ou start() qui resette + persist.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { streamPartialSaver } from '../../services/stream-partial-saver.js';
+import { streamPartialSaver } from '../../services/ai/stream-partial-saver.js';
 
 describe('v13.4.45 streamPartialSaver.getResumeCandidate — anti-perte stream', () => {
   beforeEach(() => {

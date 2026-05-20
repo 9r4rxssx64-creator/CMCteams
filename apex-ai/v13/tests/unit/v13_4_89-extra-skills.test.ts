@@ -11,7 +11,7 @@ import {
   gsdMethodology,
   contextMode,
   memPalace,
-} from '../../services/apex-extra-skills.js';
+} from '../../services/core-svc/apex-extra-skills.js';
 
 describe('v13.4.89 SkillCreator (Anthropic L\'usine à skills parité)', () => {
   it("singleton défini avec 4 méthodes", () => {

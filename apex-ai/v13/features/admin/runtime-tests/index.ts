@@ -9,7 +9,7 @@
 
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
-import { runtimeTester, type RuntimeTestReport, type RuntimeTestResult } from '../../../services/apex-runtime-tester.js';
+import { runtimeTester, type RuntimeTestReport, type RuntimeTestResult } from '../../../services/admin/apex-runtime-tester.js';
 import { toast } from '../../../ui/toast.js';
 
 function escapeHtml(s: string): string {

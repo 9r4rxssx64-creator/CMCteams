@@ -8,7 +8,7 @@
  * - emergencyCleanup réel (trim arrays)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { telemetry, type TelemetryEntry, type ClaudeTodo } from '../../services/telemetry.js';
+import { telemetry, type TelemetryEntry, type ClaudeTodo } from '../../services/observability/telemetry.js';
 
 describe('Telemetry deep coverage (P1 boost 53%→90%)', () => {
   beforeEach(() => {

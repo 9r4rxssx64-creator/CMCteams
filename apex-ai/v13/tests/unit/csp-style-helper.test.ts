@@ -4,7 +4,7 @@
  * Module : services/csp-style-helper.ts (106 lines, 0% coverage).
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 
 describe('csp-style-helper (v13.4.149 coverage)', () => {
   beforeEach(() => {

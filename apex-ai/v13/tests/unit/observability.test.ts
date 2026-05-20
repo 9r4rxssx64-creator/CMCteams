@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { observability } from '../../services/observability.js';
+import { observability } from '../../services/observability/observability.js';
 
 describe('observability service (tests réels Jet 6)', () => {
   beforeEach(() => {

@@ -2,7 +2,7 @@
  * Tests agent-system.ts (parité Claude Code subagents internes).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { agentSystem } from '../../services/agent-system.js';
+import { agentSystem } from '../../services/core-svc/agent-system.js';
 
 describe('Agent System (subagents internes Apex IA)', () => {
   beforeEach(() => {

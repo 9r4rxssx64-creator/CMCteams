@@ -13,9 +13,9 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { apexTools } from '../../services/apex-tools.js';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
-import { mcpMemoryServer } from '../../services/mcp-memory-server.js';
+import { apexTools } from '../../services/core-svc/apex-tools.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
+import { mcpMemoryServer } from '../../services/ai/mcp-memory-server.js';
 
 describe('MCP Memory Server (knowledge graph)', () => {
   beforeEach(async () => {

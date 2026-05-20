@@ -12,8 +12,8 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { multiKeyVault } from '../../services/multi-key-vault.js';
-import { vault } from '../../services/vault.js';
+import { multiKeyVault } from '../../services/vault/multi-key-vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('Vault decrypt graceful fallback (v13.3.21 Kevin "decrypt failed")', () => {
   beforeEach(() => {
@@ -226,7 +226,7 @@ describe('Vault decrypt graceful fallback (v13.3.21 Kevin "decrypt failed")', ()
 
   describe('credentials-audit detect decrypt_failed status', () => {
     it('status "decrypt_failed" si AXENC1: présent mais readKey retourne ""', async () => {
-      const { credentialsAudit } = await import('../../services/credentials-audit.js');
+      const { credentialsAudit } = await import('../../services/vault/credentials-audit.js');
       /* Inject AXENC1: corrompue avec phantom passphrase */
       vault.setPassphrase('current');
       const corrupted = await vault.encrypt('lost', 'phantom-passphrase-NEVER-set-anywhere');

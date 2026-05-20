@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { rulesEngine } from '../../services/rules-engine.js';
+import { rulesEngine } from '../../services/core-svc/rules-engine.js';
 
 const FAKE_CLAUDE_MD = `# CLAUDE.md
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { aiSafety } from '../../services/ai-safety.js';
+import { aiSafety } from '../../services/ai/ai-safety.js';
 
 describe('ai-safety', () => {
   it('detectInjection bloque "ignore previous instructions"', () => {

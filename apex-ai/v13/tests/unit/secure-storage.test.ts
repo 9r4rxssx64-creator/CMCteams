@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { secureStorage } from '../../services/secure-storage.js';
+import { secureStorage } from '../../services/storage/secure-storage.js';
 
 describe('secure-storage', () => {
   beforeEach(() => {

@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { search } from '../../services/search.js';
+import { search } from '../../services/integrations/search.js';
 import { logger } from '../../core/logger.js';
 
 let savedWorker: typeof Worker | undefined;

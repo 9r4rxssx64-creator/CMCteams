@@ -11,7 +11,7 @@ import {
   ALL_PROVIDERS_LOGICAL,
   MIN_HEALTHY_PROVIDERS,
   auditProviderChain,
-} from '../../services/ai-router.js';
+} from '../../services/ai/ai-router.js';
 
 describe('H2 — Failover chain providers', () => {
   beforeEach(() => {

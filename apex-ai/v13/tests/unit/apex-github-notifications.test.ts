@@ -12,7 +12,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { apexGithubNotifications } from '../../services/apex-github-notifications';
+import { apexGithubNotifications } from '../../services/integrations/apex-github-notifications';
 
 vi.mock('../../services/auth', () => ({
   auth: {
@@ -73,8 +73,8 @@ describe('apex-github-notifications (v13.4.203)', () => {
   });
 
   it('cleanActionsNotifications gère absence token gracefully (admin mais no token)', async () => {
-    const { auth } = await import('../../services/auth');
-    const { vault } = await import('../../services/vault');
+    const { auth } = await import('../../services/auth/auth');
+    const { vault } = await import('../../services/vault/vault');
     vi.mocked(auth.isAdminSync).mockReturnValue(true);
     vi.mocked(vault.readKey).mockResolvedValue('');
     const r = await apexGithubNotifications.cleanActionsNotifications();

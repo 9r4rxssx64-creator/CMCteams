@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sentinels, registerCoreSentinels } from '../../services/sentinels.js';
+import { sentinels, registerCoreSentinels } from '../../services/sentinels/sentinels.js';
 
 describe('auto-fix everywhere (Kevin v13.3.79+)', () => {
   beforeEach(() => {

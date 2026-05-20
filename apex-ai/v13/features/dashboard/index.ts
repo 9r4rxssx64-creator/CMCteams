@@ -21,8 +21,8 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 import { haptic } from '../../ui/haptic.js';
 import { renderRechargeAction } from '../../ui/recharge-action.js';
 
@@ -123,12 +123,12 @@ export async function computeKpis(): Promise<DashboardKpi[]> {
   } catch { /* skip */ }
 
   try {
-    const { kdmcProjectsRegistry } = await import('../../services/kdmc-projects-registry.js');
+    const { kdmcProjectsRegistry } = await import('../../services/admin/kdmc-projects-registry.js');
     projectsActive = kdmcProjectsRegistry.countActive();
   } catch { /* skip */ }
 
   try {
-    const { sentinels } = await import('../../services/sentinels.js');
+    const { sentinels } = await import('../../services/sentinels/sentinels.js');
     const list = sentinels.list();
     sentinelsTotal = list.length;
     sentinelsOk = list.filter((s) => s.lastResult?.ok).length;
@@ -158,7 +158,7 @@ export async function loadAlerts(): Promise<DashboardAlert[]> {
   const alerts: DashboardAlert[] = [];
 
   try {
-    const { sentinels } = await import('../../services/sentinels.js');
+    const { sentinels } = await import('../../services/sentinels/sentinels.js');
     const list = sentinels.list();
     const failing = list.filter((s) => s.lastResult && !s.lastResult.ok);
     for (const s of failing.slice(0, 3)) {
@@ -204,7 +204,7 @@ export async function loadAlerts(): Promise<DashboardAlert[]> {
  */
 export async function loadServiceHealth(): Promise<ServiceHealthLight[]> {
   try {
-    const { multiKeyVault } = await import('../../services/multi-key-vault.js');
+    const { multiKeyVault } = await import('../../services/vault/multi-key-vault.js');
     const services = multiKeyVault.getKnownServices();
     const out: ServiceHealthLight[] = [];
     for (const service of services) {
@@ -419,7 +419,7 @@ export async function loadRechargeLinks(
   const out: Record<string, { recharge: string | null; usage: string | null; apiKeys: string | null }> = {};
   if (services.length === 0) return out;
   try {
-    const { linksRegistry } = await import('../../services/links-registry.js');
+    const { linksRegistry } = await import('../../services/integrations/links-registry.js');
     for (const service of services) {
       out[service] = {
         recharge: linksRegistry.getRechargeLink(service),

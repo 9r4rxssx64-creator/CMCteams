@@ -3,7 +3,7 @@
  * Couvre les paths internal classes/methods + edge cases.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { smartCamera } from '../../services/smart-camera.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
 
 describe('Smart Camera coverage extension', () => {
   beforeEach(() => {

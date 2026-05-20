@@ -5,7 +5,7 @@
 
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 
 export function render(rootEl: HTMLElement): void {
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */

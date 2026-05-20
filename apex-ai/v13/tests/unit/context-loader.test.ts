@@ -2,8 +2,8 @@
  * Tests context-loader.ts (68.1% → 95%+).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { contextLoader } from '../../services/context-loader.js';
-import { persistentMemory } from '../../services/persistent-memory-store.js';
+import { contextLoader } from '../../services/ai/context-loader.js';
+import { persistentMemory } from '../../services/storage/persistent-memory-store.js';
 
 describe('context-loader (P0 coverage)', () => {
   beforeEach(() => {

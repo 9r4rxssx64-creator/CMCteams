@@ -12,7 +12,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { vaultDeepRecovery, __test_helpers } from '../../services/vault-deep-recovery.js';
+import { vaultDeepRecovery, __test_helpers } from '../../services/vault/vault-deep-recovery.js';
 
 describe('Vault Deep Recovery (Kevin 2026-05-09 P0 ABSOLUE)', () => {
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe('Vault Deep Recovery (Kevin 2026-05-09 P0 ABSOLUE)', () => {
   });
 
   it('reclassifyMisplacedKeys : valeur Anthropic stockée dans ax_openai_key → migrée vers ax_anthropic_key', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     /* Stocke une vraie clé Anthropic dans ax_openai_key (mauvais emplacement) */
     const anthropicKey = 'sk-ant-api03-' + 'X'.repeat(95);
     await vault.setKey('ax_openai_key', anthropicKey);
@@ -71,13 +71,13 @@ describe('Vault Deep Recovery (Kevin 2026-05-09 P0 ABSOLUE)', () => {
     expect(r.phone).toBe('+33612345678');
 
     /* Vérifie que ax_kevin_whatsapp_phone est bien set + déchiffrable */
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const phone = await vault.readKey('ax_kevin_whatsapp_phone');
     expect(phone).toBe('+33612345678');
   });
 
   it('autoWireWhatsApp : skip si déjà wiré (idempotent)', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     /* Pré-set numéro valide */
     await vault.setKey('ax_kevin_whatsapp_phone', '+33612345678');
 
@@ -96,7 +96,7 @@ describe('Vault Deep Recovery (Kevin 2026-05-09 P0 ABSOLUE)', () => {
   });
 
   it('reclassifyMisplacedKeys : clé bien classée NE BOUGE PAS (pas de régression)', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const anthropicKey = 'sk-ant-api03-' + 'Y'.repeat(95);
     await vault.setKey('ax_anthropic_key', anthropicKey);
 

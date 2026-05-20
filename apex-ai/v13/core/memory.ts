@@ -114,7 +114,7 @@ class Memory {
     const present: string[] = [];
     if (candidateKeys.length > 0) {
       try {
-        const { vault } = await import('../services/vault.js');
+        const { vault } = await import('../services/vault/vault.js');
         for (const k of candidateKeys) {
           try {
             const v = await vault.readKey(k);
@@ -646,7 +646,7 @@ class Memory {
       const isAdminKevin = user.id === 'kdmc_admin' || user.role === 'admin';
       if (!isAdminKevin) return;
 
-      const { persistentMemory } = await import('../services/persistent-memory-store.js');
+      const { persistentMemory } = await import('../services/storage/persistent-memory-store.js');
       const existing = await persistentMemory.list();
       const existingKevin = existing.filter((e) => e.scope === 'kdmc_admin' && e.category === 'profile');
       if (existingKevin.length >= 5) {
@@ -1084,7 +1084,7 @@ class Memory {
     /* Push dans persistentMemoryStore (per-user scope) */
     if (facts.length > 0) {
       try {
-        const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+        const { persistentMemory: persistentMemoryStore } = await import('../services/storage/persistent-memory-store.js');
         for (const f of facts) {
           await persistentMemoryStore.add({
             category: f.category as 'profile' | 'preferences' | 'projects' | 'relationships' | 'facts',
@@ -1281,7 +1281,7 @@ class Memory {
    */
   async buildAdminCrossUserKnowledge(): Promise<string> {
     try {
-      const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+      const { persistentMemory: persistentMemoryStore } = await import('../services/storage/persistent-memory-store.js');
       const all = await persistentMemoryStore.list();
       /* Group par scope (user) */
       const byUser = new Map<string, typeof all>();
@@ -1380,7 +1380,7 @@ class Memory {
     let lessonsFormatted = '';
     let sharedFacts: Array<{ category: string; importance: number; text: string }> = [];
     try {
-      const { persistentMemory: persistentMemoryStore } = await import('../services/persistent-memory-store.js');
+      const { persistentMemory: persistentMemoryStore } = await import('../services/storage/persistent-memory-store.js');
       if (currentUser) {
         const top = await persistentMemoryStore.getTop50ForSystemPrompt(currentUser.id, 50);
         userFactsCount = top.count;
@@ -1439,7 +1439,7 @@ class Memory {
     /* v13.4.4 — PRIORITÉ 10 : Top règles + erreurs depuis rules-engine
      * (lazy import pour ne pas créer cycle de modules au boot). */
     try {
-      const { rulesEngine } = await import('../services/rules-engine.js');
+      const { rulesEngine } = await import('../services/core-svc/rules-engine.js');
       const injection = rulesEngine.buildSystemPromptInjection();
       if (injection) addIfRoom(injection);
     } catch (err: unknown) {

@@ -7,7 +7,7 @@
  * Critique règle Kevin "100/100 RÉEL chaque axe" (CLAUDE.md).
  */
 import { describe, it, expect } from 'vitest';
-import { apexSelfAudit } from '../../services/apex-self-audit.js';
+import { apexSelfAudit } from '../../services/admin/apex-self-audit.js';
 
 describe('v13.4.85 apex-self-audit — API publique', () => {
   it("singleton défini avec méthodes attendues", () => {

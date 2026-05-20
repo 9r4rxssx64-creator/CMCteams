@@ -22,7 +22,7 @@ const { mockAuth, mockVault } = vi.hoisted(() => ({
 vi.mock('../../services/auth.js', () => ({ auth: mockAuth }));
 vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
 
-import { apexGithubGistBackup } from '../../services/apex-github-gist-backup.js';
+import { apexGithubGistBackup } from '../../services/vault/apex-github-gist-backup.js';
 
 describe('apex-github-gist-backup (v13.4.141 coverage)', () => {
   beforeEach(() => {

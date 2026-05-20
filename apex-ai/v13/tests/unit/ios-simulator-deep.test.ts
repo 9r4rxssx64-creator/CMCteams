@@ -7,7 +7,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { iosSimulator } from '../../services/ios-simulator.js';
+import { iosSimulator } from '../../services/integrations/ios-simulator.js';
 import { logger } from '../../core/logger.js';
 
 beforeEach(() => {
@@ -123,7 +123,7 @@ describe('iosSimulator — openPreview', () => {
     }));
     /* re-import après doMock */
     vi.resetModules();
-    const { iosSimulator: fresh } = await import('../../services/ios-simulator.js');
+    const { iosSimulator: fresh } = await import('../../services/integrations/ios-simulator.js');
     await fresh.openPreview('<h1>x</h1>');
     expect(open).toHaveBeenCalled();
     const passed = open.mock.calls[0]![0];
@@ -144,7 +144,7 @@ describe('iosSimulator — openPreview', () => {
       throw new Error('module not found');
     });
     vi.resetModules();
-    const { iosSimulator: fresh } = await import('../../services/ios-simulator.js');
+    const { iosSimulator: fresh } = await import('../../services/integrations/ios-simulator.js');
     await expect(fresh.openPreview('<h1>x</h1>')).rejects.toThrow(/Modal-sheet indispo/);
     vi.doUnmock('../../ui/modal-sheet.js');
   });
@@ -158,7 +158,7 @@ describe('iosSimulator — openPreview', () => {
       modalSheet: { open, closeAll: vi.fn() },
     }));
     vi.resetModules();
-    const { iosSimulator: fresh } = await import('../../services/ios-simulator.js');
+    const { iosSimulator: fresh } = await import('../../services/integrations/ios-simulator.js');
     await fresh.openPreview('<h1>new</h1>');
     const hist = fresh.history();
     expect(hist.length).toBe(10);
@@ -176,7 +176,7 @@ describe('iosSimulator — openPreview', () => {
     localStorage.setItem = function () { throw new Error('quota'); };
     try {
       vi.resetModules();
-      const { iosSimulator: fresh } = await import('../../services/ios-simulator.js');
+      const { iosSimulator: fresh } = await import('../../services/integrations/ios-simulator.js');
       await expect(fresh.openPreview('<h1>x</h1>')).resolves.toBeUndefined();
       /* persist a échoué silencieusement → openPreview résout malgré tout */
     } finally {

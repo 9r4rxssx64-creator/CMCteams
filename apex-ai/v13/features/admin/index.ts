@@ -14,14 +14,14 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { apexExecute, type ExecutionRequest } from '../../services/apex-execute.js';
-import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
-import { auth } from '../../services/auth.js';
-import { commerce, type Plan } from '../../services/commerce.js';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
-import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
-import { kdmcProjectsRegistry, type ProjectStatus } from '../../services/kdmc-projects-registry.js';
-import { whatsapp } from '../../services/whatsapp.js';
+import { apexExecute, type ExecutionRequest } from '../../services/admin/apex-execute.js';
+import { apexKnowledgeBase } from '../../services/admin/apex-knowledge-base.js';
+import { auth } from '../../services/auth/auth.js';
+import { commerce, type Plan } from '../../services/integrations/commerce.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
+import { kdmcProjectsRegistry, type ProjectStatus } from '../../services/admin/kdmc-projects-registry.js';
+import { whatsapp } from '../../services/integrations/whatsapp.js';
 import { haptic } from '../../ui/haptic.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
@@ -400,7 +400,7 @@ async function mountLazyAdminView(rootEl: HTMLElement): Promise<void> {
   const mountAudits = rootEl.querySelector<HTMLElement>('#ax-admin-audits-summary');
   if (mountAudits) {
     try {
-      const { reportsHistory } = await import('../../services/apex-reports-history.js');
+      const { reportsHistory } = await import('../../services/admin/apex-reports-history.js');
       const stats = reportsHistory.getStats();
       const lastLayoutDate = stats.lastLayoutTs
         ? new Date(stats.lastLayoutTs).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -457,7 +457,7 @@ async function mountLazyAdminView(rootEl: HTMLElement): Promise<void> {
       return;
     }
     try {
-      const { auditLog } = await import('../../services/audit-log.js');
+      const { auditLog } = await import('../../services/observability/audit-log.js');
       auditLog.init();
       const entries = auditLog.getEntries().slice(-100).reverse();
       const rows = entries

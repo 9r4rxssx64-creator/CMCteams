@@ -11,7 +11,7 @@
  * Auto-utilisation par Apex IA selon intent détecté dans le chat user.
  */
 
-import type { ApexTool } from '../apex-tools-types.js';
+import type { ApexTool } from '../core-svc/apex-tools-types.js';
 
 export const SKILLS_TOOLS: readonly ApexTool[] = [
   /* ─────────── Document Generators ─────────── */

@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
+import { autoDiscoverLinks } from '../../services/integrations/auto-discover-links.js';
 
 describe('AutoDiscoverLinks (autonome 100%)', () => {
   beforeEach(() => {

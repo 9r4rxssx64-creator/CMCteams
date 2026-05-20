@@ -5,7 +5,7 @@
  * dashboard/billing/docs/support associés (Kevin règle "crée liens auto").
  */
 import { describe, it, expect } from 'vitest';
-import { linksRegistry } from '../../services/links-registry.js';
+import { linksRegistry } from '../../services/integrations/links-registry.js';
 
 describe('v13.4.56 links-registry — catalogue + helpers', () => {
   it("singleton défini avec méthodes attendues", () => {

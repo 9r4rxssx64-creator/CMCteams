@@ -5,7 +5,7 @@
  * Critique sécurité commercialisable : audit log immutable, intégrité prouvable.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auditLog } from '../../services/audit-log.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('v13.4.69 audit-log — API publique', () => {
   beforeEach(() => {

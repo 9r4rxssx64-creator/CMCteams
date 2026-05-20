@@ -12,7 +12,7 @@ import {
   scanDom,
   startAutoMonitor,
   stopAutoMonitor,
-} from '../../services/apex-layout-inspector.js';
+} from '../../services/admin/apex-layout-inspector.js';
 
 describe('apex-layout-inspector scanDom (v13.4.180)', () => {
   beforeEach(() => {
@@ -153,7 +153,7 @@ describe('apex-layout-inspector report shape (v13.4.180)', () => {
 import {
   apexLayoutInspector,
   screenshot,
-} from '../../services/apex-layout-inspector.js';
+} from '../../services/admin/apex-layout-inspector.js';
 
 describe('apex-layout-inspector screenshot (v13.4.200)', () => {
   beforeEach(() => {

@@ -13,8 +13,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { aiRouter } from '../../services/ai-router.js';
-import { auth } from '../../services/auth.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
+import { auth } from '../../services/auth/auth.js';
 
 describe('REGRESSION ai-router — hasAnyKey silencieux (no key)', () => {
   beforeEach(() => {

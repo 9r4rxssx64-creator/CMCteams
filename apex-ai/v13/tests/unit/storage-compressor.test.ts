@@ -2,7 +2,7 @@
  * Tests storage-compressor (iOS quota fix LZ-string).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { storageCompressor } from '../../services/storage-compressor.js';
+import { storageCompressor } from '../../services/storage/storage-compressor.js';
 
 describe('Storage Compressor (iOS PWA quota)', () => {
   beforeEach(() => {

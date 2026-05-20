@@ -17,7 +17,7 @@
 import { it, expect, vi, beforeEach, describe } from 'vitest';
 
 import { memory } from '../../core/memory.js';
-import { aiRouter } from '../../services/ai-router.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
 
 describe('E2E Memory Injection chain (mémoire persistante → system prompt → Anthropic body)', () => {
   beforeEach(() => {

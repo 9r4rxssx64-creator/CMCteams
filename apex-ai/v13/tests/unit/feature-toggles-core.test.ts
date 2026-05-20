@@ -19,7 +19,7 @@ import {
   featureToggles,
   isFeatureEnabled,
   renderDisabledNotice,
-} from '../../services/feature-toggles.js';
+} from '../../services/auth/feature-toggles.js';
 
 const STORAGE_GLOBAL = 'ax_feature_toggles_global';
 const STORAGE_USER_PREFIX = 'ax_feature_toggles_user_';

@@ -11,8 +11,8 @@
  * - Sécurité : non-admin ne peut pas approve/reject
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { signup } from '../../services/signup.js';
-import { authGate } from '../../services/auth-gate.js';
+import { signup } from '../../services/auth/signup.js';
+import { authGate } from '../../services/auth/auth-gate.js';
 
 describe('signup.validate', () => {
   it('rejette prénom court', () => {

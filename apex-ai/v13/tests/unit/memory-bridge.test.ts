@@ -4,8 +4,8 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { memoryBridge } from '../../services/memory-bridge.js';
-import { persistentMemory } from '../../services/persistent-memory-store.js';
+import { memoryBridge } from '../../services/storage/memory-bridge.js';
+import { persistentMemory } from '../../services/storage/persistent-memory-store.js';
 
 describe('memory-bridge — config', () => {
   beforeEach(() => {

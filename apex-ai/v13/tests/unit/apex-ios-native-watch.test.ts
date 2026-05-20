@@ -23,7 +23,7 @@ const { mockApexIosNative, mockClaudeBridge } = vi.hoisted(() => ({
 vi.mock('../../services/apex-ios-native.js', () => ({ apexIosNative: mockApexIosNative }));
 vi.mock('../../services/claude-bridge.js', () => ({ claudeBridge: mockClaudeBridge }));
 
-import { iosNativeWatch } from '../../services/apex-ios-native-watch.js';
+import { iosNativeWatch } from '../../services/sentinels/apex-ios-native-watch.js';
 
 describe('apex-ios-native-watch (v13.4.149 coverage)', () => {
   beforeEach(() => {

@@ -25,7 +25,7 @@ vi.mock('../../services/mcp-client.js', () => ({
   mcpClient: { healthCheck: (...args: unknown[]) => mcpHealthMock(...args) },
 }));
 
-import { skillsWatch } from '../../services/skills-watch.js';
+import { skillsWatch } from '../../services/sentinels/skills-watch.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

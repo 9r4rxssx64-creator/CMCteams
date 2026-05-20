@@ -10,7 +10,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { messageFactExtractor } from '../../services/message-fact-extractor.js';
+import { messageFactExtractor } from '../../services/ai/message-fact-extractor.js';
 
 describe('message-fact-extractor — extraction continue facts', () => {
   beforeEach(() => {

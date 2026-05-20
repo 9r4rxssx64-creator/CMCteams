@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { hyperframes } from '../../services/hyperframes.js';
+import { hyperframes } from '../../services/core-svc/hyperframes.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

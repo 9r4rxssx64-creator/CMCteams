@@ -25,7 +25,7 @@ export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
  * import { di } gardé pour rétrocompat __APEX__ window debug, mais c'est un alias service-locator. */
-import { logRedaction } from '../services/log-redaction-wrapper.js';
+import { logRedaction } from '../services/observability/log-redaction-wrapper.js';
 
 import { errors } from './errors.js';
 import { events } from './events.js';
@@ -64,12 +64,12 @@ async function bootstrap(): Promise<void> {
    * on tente la restore Firebase AVANT toute autre init pour récupérer les credentials.
    * Best-effort : si offline ou backup absent → no-op et on continue le boot. */
   try {
-    const { autoUltraReset } = await import('@services/auto-ultra-reset.js');
+    const { autoUltraReset } = await import('@services/storage/auto-ultra-reset.js');
     if (autoUltraReset.isPostResetReload()) {
       logger.info('boot', 'Post auto-reset reload detected — attempting Firebase restore first');
       /* Firebase init AVANT pour avoir la connexion */
       try {
-        const { firebase } = await import('@services/firebase.js');
+        const { firebase } = await import('@services/storage/firebase.js');
         await firebase.init();
       } catch (err: unknown) {
         logger.warn('boot', 'firebase init pre-restore failed', { err });
@@ -104,7 +104,7 @@ async function bootstrap(): Promise<void> {
     {
       label: 'sentry',
       fn: async () => {
-        const { sentryBridge } = await import('@services/sentry-bridge.js');
+        const { sentryBridge } = await import('@services/observability/sentry-bridge.js');
         await sentryBridge.init();
         try {
           const lastTestKey = 'apex_v13_sentry_last_test_ts';
@@ -125,7 +125,7 @@ async function bootstrap(): Promise<void> {
     {
       label: 'bodyguard',
       fn: async () => {
-        const { bodyguard } = await import('@services/bodyguard.js');
+        const { bodyguard } = await import('@services/observability/bodyguard.js');
         bodyguard.install();
       },
     },
@@ -138,7 +138,7 @@ async function bootstrap(): Promise<void> {
     {
       label: 'audit-log',
       fn: async () => {
-        const { auditLog } = await import('@services/audit-log.js');
+        const { auditLog } = await import('@services/observability/audit-log.js');
         auditLog.init();
         try {
           const repair = await auditLog.autoRepair();
@@ -152,7 +152,7 @@ async function bootstrap(): Promise<void> {
     {
       label: 'credentials-registry-sync',
       fn: async () => {
-        const { credentialsAudit } = await import('@services/credentials-audit.js');
+        const { credentialsAudit } = await import('@services/vault/credentials-audit.js');
         const r = await credentialsAudit.syncFromVault();
         if (r.ok) {
           logger.info('boot', `Credentials registry sync : ${r.configured}/${r.total} configurés`);
@@ -162,7 +162,7 @@ async function bootstrap(): Promise<void> {
     {
       label: 'auto-backup',
       fn: async () => {
-        const { autoBackup } = await import('@services/auto-backup.js');
+        const { autoBackup } = await import('@services/storage/auto-backup.js');
         await autoBackup.init();
         try {
           const stats = autoBackup.getStats();
@@ -179,34 +179,34 @@ async function bootstrap(): Promise<void> {
     {
       label: 'observability',
       fn: async () => {
-        const { observability } = await import('@services/observability.js');
+        const { observability } = await import('@services/observability/observability.js');
         observability.init();
       },
     },
     {
       label: 'firebase-queue',
       fn: async () => {
-        const { firebaseQueue } = await import('@services/firebase-queue.js');
+        const { firebaseQueue } = await import('@services/storage/firebase-queue.js');
         firebaseQueue.init();
       },
     },
     {
       label: 'sentinels',
       fn: async () => {
-        const { sentinels } = await import('@services/sentinels.js');
-        const { bootstrapSentinelsRegistry } = await import('@services/sentinels-registry.js');
+        const { sentinels } = await import('@services/sentinels/sentinels.js');
+        const { bootstrapSentinelsRegistry } = await import('@services/sentinels/sentinels-registry.js');
         bootstrapSentinelsRegistry();
         sentinels.init();
         /* v13.4.4 — Enregistre rules-injection-watch via lazy import (sentinelle 1×/h) */
         try {
-          const { rulesInjectionWatch } = await import('@services/rules-injection-watch.js');
+          const { rulesInjectionWatch } = await import('@services/sentinels/rules-injection-watch.js');
           rulesInjectionWatch.registerSentinel();
         } catch (err: unknown) {
           logger.warn('boot', 'rules-injection-watch register failed', { err });
         }
         /* v13.4.5 — Démarre autonomous-watch (sentinelle 30s dédiée mode autonome Apex) */
         try {
-          const { autonomousWatch } = await import('@services/autonomous-watch.js');
+          const { autonomousWatch } = await import('@services/sentinels/autonomous-watch.js');
           autonomousWatch.start();
         } catch (err: unknown) {
           logger.warn('boot', 'autonomous-watch start failed', { err });
@@ -214,7 +214,7 @@ async function bootstrap(): Promise<void> {
 
         /* v13.4.10 — Skills + MCP sentinelles (1h skills-watch, 30min mcp-health-watch) */
         try {
-          const { skillsWatch } = await import('@services/skills-watch.js');
+          const { skillsWatch } = await import('@services/sentinels/skills-watch.js');
           skillsWatch.start();
         } catch (err: unknown) {
           logger.warn('boot', 'skills-watch start failed', { err });
@@ -222,7 +222,7 @@ async function bootstrap(): Promise<void> {
 
         /* v13.4.10 — Initialise MCP registry (default servers : bofip, almanac, legal-hunter) */
         try {
-          const { mcpRegistry } = await import('@services/mcp-registry.js');
+          const { mcpRegistry } = await import('@services/ai/mcp-registry.js');
           void mcpRegistry.init();
         } catch (err: unknown) {
           logger.warn('boot', 'mcp-registry init failed', { err });
@@ -253,7 +253,7 @@ async function bootstrap(): Promise<void> {
   /* v13.4.180 (Kevin "intègre Playwright dans Apex et qu'il sache") :
    * Apex auto-inspecte ses propres vues toutes les 30s + alerte si overflow détecté. */
   await safeInit('layout-inspector', async () => {
-    const { apexLayoutInspector } = await import('../services/apex-layout-inspector.js');
+    const { apexLayoutInspector } = await import('../services/admin/apex-layout-inspector.js');
     apexLayoutInspector.startAutoMonitor(30_000);
     /* Expose globally pour Apex IA tool use + console debug */
     (window as unknown as { apexLayoutInspector?: unknown }).apexLayoutInspector = apexLayoutInspector;
@@ -262,7 +262,7 @@ async function bootstrap(): Promise<void> {
   /* v13.4.181 (Kevin "teste réel toutes fonctions, bouton, systèmes et corrige auto bugs") :
    * Apex test runtime des boutons cliquables + auto-fix whitelist + escalade Claude Code. */
   await safeInit('functional-tester', async () => {
-    const { apexFunctionalTester } = await import('../services/apex-functional-tester.js');
+    const { apexFunctionalTester } = await import('../services/admin/apex-functional-tester.js');
     (window as unknown as { apexFunctionalTester?: unknown }).apexFunctionalTester = apexFunctionalTester;
   });
 
@@ -272,8 +272,8 @@ async function bootstrap(): Promise<void> {
    * boucle test runtime → résultat CI commit (latence <60s post-deploy)
    * au lieu d'attendre cycle 12h + cron 6h. */
   safeInit('runtime-tests-expose-window', async () => {
-    const { autoTestRunner } = await import('../services/auto-test-runner.js');
-    const { apexMultiBranchCoordinator } = await import('../services/apex-multi-branch-coordinator.js');
+    const { autoTestRunner } = await import('../services/admin/auto-test-runner.js');
+    const { apexMultiBranchCoordinator } = await import('../services/admin/apex-multi-branch-coordinator.js');
     const w = window as unknown as {
       autoTestRunner?: unknown;
       apexMultiBranchCoordinator?: unknown;
@@ -286,7 +286,7 @@ async function bootstrap(): Promise<void> {
   /* v13.4.194 (Kevin 2026-05-16 HTTP 503 Cloudflare) :
    * Init Cloudflare status banner — restore banner si HTTP 503 récent. */
   await safeInit('cloudflare-status', async () => {
-    const { cloudflareStatus } = await import('../services/cloudflare-status.js');
+    const { cloudflareStatus } = await import('../services/observability/cloudflare-status.js');
     cloudflareStatus.init();
   });
 
@@ -304,7 +304,7 @@ async function bootstrap(): Promise<void> {
       }
     };
     schedule(() => {
-      void import('../services/voice-overlay.js').catch(() => { /* lazy fallback à l'activation */ });
+      void import('../services/ai/voice-overlay.js').catch(() => { /* lazy fallback à l'activation */ });
     });
   }).catch(() => { /* non-blocking */ });
 
@@ -339,7 +339,7 @@ async function bootstrap(): Promise<void> {
       schedule(() => {
         void (async () => {
           try {
-            const { autoTestRunner } = await import('../services/auto-test-runner.js');
+            const { autoTestRunner } = await import('../services/admin/auto-test-runner.js');
             const summary = await autoTestRunner.runAll();
             localStorage.setItem('apex_v13_auto_test_last_version', APP_VER);
             logger.info('auto-test-boot',
@@ -371,7 +371,7 @@ async function bootstrap(): Promise<void> {
   /* v13.4.37 — Economy Mode init (charge toggle persisté depuis localStorage).
    * Non-bloquant : si fail, mode économie reste inactif (default safe). */
   try {
-    const { economyMode } = await import('../services/economy-mode.js');
+    const { economyMode } = await import('../services/core-svc/economy-mode.js');
     economyMode.init();
     logger.info('boot', `Economy mode ${economyMode.isActive() ? 'ACTIVÉ' : 'inactif'}`);
   } catch (err: unknown) {
@@ -402,7 +402,7 @@ async function bootstrap(): Promise<void> {
 
   /* 5. Services lazy-load (services/ chargés à la demande par router) */
   /* Pre-init seulement les services critiques */
-  const { firebase } = await import('@services/firebase.js');
+  const { firebase } = await import('@services/storage/firebase.js');
   await firebase.init().catch((err: unknown) => {
     logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
   });
@@ -412,7 +412,7 @@ async function bootstrap(): Promise<void> {
    * qu'au prochain tick (5min). On déclenche un snapshot initial non-bloquant
    * dès firebase.init pour avoir Firebase aligné dès la 1ère seconde.
    * Idempotent : pushAllLocal a un throttle 5min/clé, donc OK si appelé 2× au boot. */
-  void import('@services/vault-firebase-backup.js')
+  void import('@services/vault/vault-firebase-backup.js')
     .then(async ({ vaultFirebaseBackup }) => {
       try {
         const audit = await vaultFirebaseBackup.auditCoherence();
@@ -445,7 +445,7 @@ async function bootstrap(): Promise<void> {
    * vues admin affichent "Accès réservé" même si Kevin était bien loggué session
    * précédente. Bug présent depuis v13.0 jamais détecté car aucun test ne simulait
    * un cold-boot avec apex_v13_user/uid déjà en localStorage. */
-  const { auth } = await import('@services/auth.js');
+  const { auth } = await import('@services/auth/auth.js');
   auth.restoreSession();
   ctx.isAdmin = await auth.isAdmin().catch(() => false);
   store.set('isAdmin', ctx.isAdmin);
@@ -573,7 +573,7 @@ async function bootstrap(): Promise<void> {
   /* Kevin 2026-05-08 : Click Fallback Guard — aucun bouton ne reste silencieux.
    * Si un click n'a pas de handler wired, toast "bientôt disponible" + log audit
    * (jamais "rien" comme avant). Idempotent. */
-  void import('../services/click-fallback-guard.js')
+  void import('../services/core-svc/click-fallback-guard.js')
     .then(({ clickFallbackGuard }) => clickFallbackGuard.install())
     .catch((err: unknown) => {
       logger.warn('boot', 'click-fallback-guard install failed', { err });
@@ -690,7 +690,7 @@ async function bootstrap(): Promise<void> {
     events.on('notification:clicked', (payload) => {
       const swExtras = (window as Window & { __ax_last_notif?: { tag?: string; source?: string } })
         .__ax_last_notif;
-      void import('../services/notification-actions.js')
+      void import('../services/integrations/notification-actions.js')
         .then(({ notificationActions }) => {
           notificationActions.handleClick({
             url: payload.url ?? null,
@@ -716,7 +716,7 @@ async function bootstrap(): Promise<void> {
    * Timeout 3s : force exec après 3s si idle pas dispo (TTI cible <3s).
    */
   const runServicesBootstrap = (): void => {
-    void import('@services/services-bootstrap.js')
+    void import('@services/core-svc/services-bootstrap.js')
       .then(({ bootstrapServices }) => {
         const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? null;
         return bootstrapServices(uid);
@@ -739,7 +739,7 @@ async function bootstrap(): Promise<void> {
   /* v13.3.80 Kevin 2026-05-08 19:55 — global-back-button (← Chat partout, fix
    * "on peut plus revenir en arrière sur ces vues"). Mount au boot, hide auto
    * sur view chat. Idempotent. */
-  void import('@services/global-back-button.js')
+  void import('@services/core-svc/global-back-button.js')
     .then(({ globalBackButton }) => {
       globalBackButton.install();
     })
@@ -751,7 +751,7 @@ async function bootstrap(): Promise<void> {
    * pas se mettre à jour comme tu avais prévu"). Détecte version distante vs
    * locale, affiche banner rouge non-dismissible si stale, bouton 1-clic
    * unregister SW + clear caches + reload fresh. Solution iOS Safari PWA. */
-  void import('@services/force-update-banner.js')
+  void import('@services/core-svc/force-update-banner.js')
     .then(({ forceUpdateBanner }) => {
       forceUpdateBanner.install();
     })
@@ -762,7 +762,7 @@ async function bootstrap(): Promise<void> {
   /* v13.4.46 Kevin "Toujours en zoom" iPhone PWA — triple protection anti-zoom.
    * Bloque gesturestart/change/end + multi-touch + double-tap + reset programmatique
    * si visualViewport.scale > 1. Check périodique 1s + visibilitychange/focus. */
-  void import('@services/anti-zoom-ios.js')
+  void import('@services/core-svc/anti-zoom-ios.js')
     .then(({ antiZoomIOS }) => {
       antiZoomIOS.install();
     })
@@ -776,7 +776,7 @@ async function bootstrap(): Promise<void> {
    * push-auto-init = SW push subscribe + Notification.requestPermission UI
    * → bandwidth+main thread concurrent avec LCP. Reporté quand idle. */
   const runPushAutoInit = (): void => {
-    void import('@services/push-auto-init.js')
+    void import('@services/integrations/push-auto-init.js')
       .then(({ pushAutoInit }) => {
         const uid = ctx.isAdmin ? ADMIN_ID : (store.get('user') as { id?: string } | null)?.id ?? 'anon';
         return pushAutoInit.autoInit(uid);
@@ -942,7 +942,7 @@ async function bootstrap(): Promise<void> {
     void Promise.allSettled([
       import('../ui/sos-rescue.js').then((m) => m.sosRescue.mount()),
       import('../ui/hud-debug.js').then((m) => m.hudDebug.mount()),
-      import('../services/auto-test-runner.js').then((m) => m.autoTestRunner.scheduleAutoRun()),
+      import('../services/admin/auto-test-runner.js').then((m) => m.autoTestRunner.scheduleAutoRun()),
     ]).then((results) => {
       const ok = results.filter((r) => r.status === 'fulfilled').length;
       logger.info('boot', `v13.3.30 autonomy modules : ${ok}/${results.length} mounted`);

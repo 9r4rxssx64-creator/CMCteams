@@ -19,7 +19,7 @@ vi.mock('../../services/apex-secrets-proxy-client.js', () => ({
   apexSecretsProxy: mockApexSecretsProxy,
 }));
 
-import { proxyAutoEnable } from '../../services/proxy-auto-enable.js';
+import { proxyAutoEnable } from '../../services/integrations/proxy-auto-enable.js';
 
 describe('proxy-auto-enable (v13.4.159 coverage)', () => {
   beforeEach(() => {

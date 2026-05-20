@@ -20,7 +20,7 @@ import {
   handleNotificationClick,
   notificationActions,
   resolveNotificationRoute,
-} from '../../services/notification-actions.js';
+} from '../../services/integrations/notification-actions.js';
 
 describe('services/notification-actions — resolveNotificationRoute', () => {
   it('input null → null', () => {

@@ -17,7 +17,7 @@ import {
   type FunctionalHistoryEntry,
   type LayoutHistoryEntry,
   reportsHistory,
-} from '../../../services/apex-reports-history.js';
+} from '../../../services/admin/apex-reports-history.js';
 
 type Severity = 'critical' | 'warning' | 'ok';
 type ViewCategory = 'chat' | 'admin' | 'settings' | 'vault' | 'studio' | 'memory' | 'other';
@@ -491,7 +491,7 @@ export function render(rootEl: HTMLElement): void {
       const btn = rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-functional');
       if (btn) btn.disabled = true;
       try {
-        const { apexFunctionalTester } = await import('../../../services/apex-functional-tester.js');
+        const { apexFunctionalTester } = await import('../../../services/admin/apex-functional-tester.js');
         const out = await apexFunctionalTester.testAndAutoFix({ maxButtons: 30 });
         reportsHistory.recordFunctional(out.before, out.fixes, out.after, out.improvement);
         render(rootEl);
@@ -503,7 +503,7 @@ export function render(rootEl: HTMLElement): void {
   rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-layout')?.addEventListener('click', () => {
     void (async () => {
       try {
-        const { apexLayoutInspector } = await import('../../../services/apex-layout-inspector.js');
+        const { apexLayoutInspector } = await import('../../../services/admin/apex-layout-inspector.js');
         const r = apexLayoutInspector.scanDom();
         reportsHistory.recordLayout(r);
         render(rootEl);

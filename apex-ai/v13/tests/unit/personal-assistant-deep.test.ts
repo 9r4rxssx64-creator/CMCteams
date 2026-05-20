@@ -18,7 +18,7 @@ const { mockVault, mockAuditLog } = vi.hoisted(() => ({
 vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { personalAssistant } from '../../services/personal-assistant.js';
+import { personalAssistant } from '../../services/core-svc/personal-assistant.js';
 
 describe('personal-assistant deep (v13.4.154)', () => {
   beforeEach(() => {

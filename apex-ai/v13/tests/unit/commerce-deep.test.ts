@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { commerce } from '../../services/commerce.js';
+import { commerce } from '../../services/integrations/commerce.js';
 import { store } from '../../core/store.js';
 
 describe('commerce deep tests', () => {

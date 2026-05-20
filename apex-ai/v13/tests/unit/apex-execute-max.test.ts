@@ -15,7 +15,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { apexExecute } from '../../services/apex-execute.js';
+import { apexExecute } from '../../services/admin/apex-execute.js';
 
 describe('apex-execute MAX (niveau autonomie totale 2026-05-04)', () => {
   beforeEach(() => {

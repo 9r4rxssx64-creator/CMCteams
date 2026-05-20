@@ -13,12 +13,12 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { vault, CREDENTIAL_PATTERNS } from '../../services/vault.js';
+import { vault, CREDENTIAL_PATTERNS } from '../../services/vault/vault.js';
 import {
   detectCredential,
   detectAllCredentials,
   CREDENTIAL_PATTERNS as PATTERNS_FULL,
-} from '../../services/credential-patterns.js';
+} from '../../services/vault/credential-patterns.js';
 
 describe('REGRESSION vault — 14+ patterns détection critique', () => {
   it('REGRESSION SECU — Au moins 15 patterns historiques préservés (backward-compat)', () => {

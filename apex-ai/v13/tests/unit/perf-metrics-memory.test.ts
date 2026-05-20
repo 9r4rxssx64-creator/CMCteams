@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { perfMetrics } from '../../services/perf-metrics.js';
+import { perfMetrics } from '../../services/observability/perf-metrics.js';
 
 describe('perf-metrics — H6 getMemoryUsage()', () => {
   beforeEach(() => {

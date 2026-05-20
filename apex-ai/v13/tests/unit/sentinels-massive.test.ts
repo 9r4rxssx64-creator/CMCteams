@@ -4,7 +4,7 @@
  * init load saved, scheduleRun coverage minimal.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { sentinels, registerCoreSentinels } from '../../services/sentinels.js';
+import { sentinels, registerCoreSentinels } from '../../services/sentinels/sentinels.js';
 
 describe('sentinels massive coverage Jet 8 final', () => {
   beforeEach(() => {

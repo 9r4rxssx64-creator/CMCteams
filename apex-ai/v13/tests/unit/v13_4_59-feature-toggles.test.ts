@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isFeatureEnabled,
   renderDisabledNotice,
-} from '../../services/feature-toggles.js';
+} from '../../services/auth/feature-toggles.js';
 
 describe('v13.4.59 isFeatureEnabled — résolution priority', () => {
   it("feature inconnue retourne boolean défini (true ou false selon politique)", () => {

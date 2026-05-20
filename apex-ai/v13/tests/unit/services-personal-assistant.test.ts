@@ -15,7 +15,7 @@ import {
   personalAssistant,
   type SuccessResult,
   type EmailHeader,
-} from '../../services/personal-assistant.js';
+} from '../../services/core-svc/personal-assistant.js';
 
 describe('PersonalAssistant — intégrations réseaux sociaux + apps', () => {
   beforeEach(() => {

@@ -4,9 +4,9 @@
  */
 
 import { logger } from '../../core/logger.js';
-import { auditLog } from '../audit-log.js';
-import { firebase } from '../firebase.js';
-import { orchestrator } from '../orchestrator.js';
+import { auditLog } from '../observability/audit-log.js';
+import { firebase } from '../storage/firebase.js';
+import { orchestrator } from '../core-svc/orchestrator.js';
 
 export async function readFile(path: string, branch = 'main'): Promise<{ content: string; size: number }> {
   if (!path || path.includes('..') || path.startsWith('/')) {
@@ -21,7 +21,7 @@ export async function readFile(path: string, branch = 'main'): Promise<{ content
 export async function resolvePhone(phoneArg?: string, contactName?: string): Promise<string> {
   if (phoneArg && phoneArg.trim().length > 0) return phoneArg;
   if (!contactName) return '';
-  const { contacts } = await import('../contacts.js');
+  const { contacts } = await import('../integrations/contacts.js');
   const direct = contacts.getByName(contactName);
   if (direct) {
     return direct.whatsapp ?? direct.phone ?? '';
@@ -51,7 +51,7 @@ export async function webFetch(url: string): Promise<{ content: string; status: 
 }
 export async function webSearch(query: string, maxResults = 5): Promise<{ results: unknown[]; provider: string }> {
   if (!query) throw new Error('query required');
-  const { vault } = await import('../vault.js');
+  const { vault } = await import('../vault/vault.js');
   /* Brave Search API si configuré (déchiffré via vault.readKey si AXENC1:) */
   const braveKey = await vault.readKey('ax_brave_key');
   if (braveKey) {
@@ -162,7 +162,7 @@ export function qrGenerate(data: string, format = 'plain'): { qr_data: string; f
   return { qr_data: data, format };
 }
 export async function translate(text: string, targetLang: string): Promise<{ translated: string; provider: string }> {
-  const { vault } = await import('../vault.js');
+  const { vault } = await import('../vault/vault.js');
   /* DeepL si key configurée (déchiffré) */
   const deeplKey = await vault.readKey('ax_deepl_key');
   if (deeplKey) {
@@ -537,7 +537,7 @@ export async function weather(location: string, days = 5): Promise<unknown> {
   };
 }
 export async function newsHeadlines(category = 'general', country = 'fr'): Promise<unknown> {
-  const { vault } = await import('../vault.js');
+  const { vault } = await import('../vault/vault.js');
   /* Tente NewsAPI si clé, sinon RSS Le Monde France 24 publics (déchiffré) */
   const newsApiKey = await vault.readKey('ax_newsapi_key');
   if (newsApiKey) {
@@ -569,7 +569,7 @@ export async function marketData(type: string, symbol: string): Promise<unknown>
     return { type: 'crypto', symbol: symbol.toLowerCase(), price: data[symbol.toLowerCase()] ?? null };
   }
   if (type === 'stock' || type === 'forex') {
-    const { vault } = await import('../vault.js');
+    const { vault } = await import('../vault/vault.js');
     const finnhubKey = await vault.readKey('ax_finnhub_key');
     if (!finnhubKey) {
       return { type, symbol, message: 'Configurer ax_finnhub_key pour stocks/forex' };
@@ -653,7 +653,7 @@ export function detectIntent(text: string): { intent: string; confidence: number
   return { intent: 'unknown', confidence: 0.3 };
 }
 export async function sentinelsStatus(): Promise<unknown> {
-  const { sentinels } = await import('../sentinels.js');
+  const { sentinels } = await import('../sentinels/sentinels.js');
   const list = sentinels.list();
   return {
     total: list.length,
@@ -668,7 +668,7 @@ export async function sentinelsStatus(): Promise<unknown> {
   };
 }
 export async function perfMetricsSnapshot(): Promise<unknown> {
-  const { perfMetrics } = await import('../perf-metrics.js');
+  const { perfMetrics } = await import('../observability/perf-metrics.js');
   return {
     ...perfMetrics.formatForUI(),
     score_breakdown: perfMetrics.getScore().details,

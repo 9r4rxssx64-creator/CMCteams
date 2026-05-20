@@ -13,7 +13,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { aiProvidersHealth, type ProviderId } from '../../services/ai-providers-health.js';
+import { aiProvidersHealth, type ProviderId } from '../../services/ai/ai-providers-health.js';
 
 /**
  * Helper : crée une Response mockée pour fetch.

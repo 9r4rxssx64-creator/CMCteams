@@ -6,7 +6,7 @@
  * sans gros setup, donc on teste les helpers utilisés par ai-router).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { economyMode } from '../../services/economy-mode.js';
+import { economyMode } from '../../services/core-svc/economy-mode.js';
 
 describe('v13.4.37 economy-mode integration ai-router pattern', () => {
   beforeEach(() => {

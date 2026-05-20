@@ -9,7 +9,7 @@
  * les helpers shouldSync + isLocalOnly avec préfixes longs.
  */
 import { describe, it, expect } from 'vitest';
-import { firebase, FB_FIX, FB_LOCAL } from '../../services/firebase.js';
+import { firebase, FB_FIX, FB_LOCAL } from '../../services/storage/firebase.js';
 
 describe('v13.4.26 firebase.shouldSync — whitelist FB_FIX strict', () => {
   it("key dans FB_FIX → shouldSync true", () => {

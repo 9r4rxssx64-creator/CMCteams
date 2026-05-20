@@ -6,7 +6,7 @@
  * domain Kevin (Casino Monaco).
  */
 import { describe, it, expect } from 'vitest';
-import { aiSafety } from '../../services/ai-safety.js';
+import { aiSafety } from '../../services/ai/ai-safety.js';
 
 describe('v13.4.74 ai-safety — API publique', () => {
   it("singleton défini avec méthodes attendues", () => {

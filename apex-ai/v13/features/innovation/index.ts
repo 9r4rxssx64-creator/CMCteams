@@ -15,7 +15,7 @@
 import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
-import type { TechUpdate, InnovationCategory } from '../../services/innovation-watch.js';
+import type { TechUpdate, InnovationCategory } from '../../services/sentinels/innovation-watch.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeInnovationScope: CleanupScope | null = null;
@@ -66,7 +66,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* P1-6 : cleanup ancien scope avant re-render */
   activeInnovationScope?.cleanup();
   activeInnovationScope = createCleanupScope('innovation');
-  const { innovationWatch } = await import('../../services/innovation-watch.js');
+  const { innovationWatch } = await import('../../services/sentinels/innovation-watch.js');
   const stats = innovationWatch.getStats();
   const updates = innovationWatch.getUpdates();
   const pending = updates.filter((u) => (u.status ?? 'pending') === 'pending');

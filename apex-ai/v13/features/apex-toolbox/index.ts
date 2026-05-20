@@ -21,7 +21,7 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import type { ApexTool } from '../../services/apex-tools.js';
+import type { ApexTool } from '../../services/core-svc/apex-tools.js';
 /* eslint-enable import/order */
 
 /* Re-export escapeHtml for backward compatibility (tests import from this module). */
@@ -34,7 +34,7 @@ export function dispose(): void {
   activeToolboxScope?.cleanup();
   activeToolboxScope = null;
 }
-import { capabilities, type Capability } from '../../services/capabilities.js';
+import { capabilities, type Capability } from '../../services/core-svc/capabilities.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -148,7 +148,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* Lazy-load apex-tools (lourd) */
   let allTools: ReadonlyArray<ApexTool> = [];
   try {
-    const { apexTools } = await import('../../services/apex-tools.js');
+    const { apexTools } = await import('../../services/core-svc/apex-tools.js');
     allTools = apexTools.list();
   } catch (err: unknown) {
     logger.warn('feature-apex-toolbox', 'apex-tools load failed', { err });

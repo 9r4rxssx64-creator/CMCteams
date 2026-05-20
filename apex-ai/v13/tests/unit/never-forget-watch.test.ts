@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { neverForgetWatch } from '../../services/never-forget-watch.js';
+import { neverForgetWatch } from '../../services/sentinels/never-forget-watch.js';
 
 beforeEach(() => {
   /* Clean state avant chaque test */

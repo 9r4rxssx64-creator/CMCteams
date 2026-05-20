@@ -6,7 +6,7 @@
  * (navigator.bluetooth, NDEFReader, ImageCapture, MediaRecorder, etc.).
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { deviceControl } from '../../services/device-control.js';
+import { deviceControl } from '../../services/integrations/device-control.js';
 
 describe('device-control — mocks APIs hardware (success paths)', () => {
   beforeEach(() => {

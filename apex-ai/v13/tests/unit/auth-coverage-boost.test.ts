@@ -11,7 +11,7 @@
  * - loginTrusted : device fingerprint match
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auth } from '../../services/auth.js';
+import { auth } from '../../services/auth/auth.js';
 import { store } from '../../core/store.js';
 
 describe('Auth coverage boost (P1-4 audit fix)', () => {

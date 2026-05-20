@@ -4,7 +4,7 @@
  * streamFromProvider parsing SSE, [DONE] marker, error paths.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { aiRouter } from '../../services/ai-router.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
 
 describe('ai-router massive coverage Jet 8 final', () => {
   beforeEach(() => {

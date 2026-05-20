@@ -13,10 +13,10 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { auditLog } from '../../services/audit-log.js';
-import { stripeBilling, tenantPlanToStripePlan } from '../../services/stripe-billing.js';
-import { tenantManager } from '../../services/tenant.js';
-import { vault } from '../../services/vault.js';
+import { auditLog } from '../../services/observability/audit-log.js';
+import { stripeBilling, tenantPlanToStripePlan } from '../../services/integrations/stripe-billing.js';
+import { tenantManager } from '../../services/auth/tenant.js';
+import { vault } from '../../services/vault/vault.js';
 
 const ADMIN = 'kdmc_admin';
 

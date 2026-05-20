@@ -15,7 +15,7 @@ const { mockAuditLog } = vi.hoisted(() => ({
 
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { predictiveEngine } from '../../services/predictive-engine.js';
+import { predictiveEngine } from '../../services/ai/predictive-engine.js';
 
 describe('predictive-engine deep (v13.4.161)', () => {
   beforeEach(() => {

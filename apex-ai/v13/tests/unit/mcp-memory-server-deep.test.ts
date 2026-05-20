@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { mcpMemoryServer } from '../../services/mcp-memory-server.js';
+import { mcpMemoryServer } from '../../services/ai/mcp-memory-server.js';
 
 describe('mcp-memory-server deep (v13.4.156)', () => {
   beforeEach(async () => {

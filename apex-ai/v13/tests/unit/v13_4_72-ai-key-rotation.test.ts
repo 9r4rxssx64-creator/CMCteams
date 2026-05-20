@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import {
   aiKeyRotation,
   classifyError,
-} from '../../services/ai-key-rotation.js';
+} from '../../services/ai/ai-key-rotation.js';
 
 describe('v13.4.72 ai-key-rotation — classifyError HTTP', () => {
   it("401 → auth_invalid", () => {

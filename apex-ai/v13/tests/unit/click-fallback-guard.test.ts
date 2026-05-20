@@ -20,7 +20,7 @@ vi.mock('../../ui/haptic.js', () => ({
   haptic: { tap: () => hapticTapMock() },
 }));
 
-import { clickFallbackGuard } from '../../services/click-fallback-guard.js';
+import { clickFallbackGuard } from '../../services/core-svc/click-fallback-guard.js';
 
 beforeEach(() => {
   vi.useFakeTimers();

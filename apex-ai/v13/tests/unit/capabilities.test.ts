@@ -2,7 +2,7 @@
  * Tests capabilities.ts (registry + system prompt context).
  */
 import { describe, it, expect } from 'vitest';
-import { capabilities } from '../../services/capabilities.js';
+import { capabilities } from '../../services/core-svc/capabilities.js';
 
 describe('Capabilities Registry (au-delà 100/100 polyvalence)', () => {
   describe('list + count', () => {

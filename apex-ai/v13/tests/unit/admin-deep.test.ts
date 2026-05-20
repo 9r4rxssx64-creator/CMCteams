@@ -33,7 +33,7 @@ describe('features/admin deep tests Jet 7.9 (37% → 90%+)', () => {
   });
 
   it('Commerce toggle change déclenche commerce.setEnabled (state persisté)', async () => {
-    const { commerce } = await import('../../services/commerce.js');
+    const { commerce } = await import('../../services/integrations/commerce.js');
     const { render } = await import('../../features/admin/index.js');
     render(root);
     const toggle = root.querySelector<HTMLInputElement>('#commerce-toggle');

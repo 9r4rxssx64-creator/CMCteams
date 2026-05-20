@@ -3,7 +3,7 @@
  * Cible : subscribe/send/canSend/getStats/getSentHistory/persistSubscription/recordSent.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { pushNotifications } from '../../services/push-notifications.js';
+import { pushNotifications } from '../../services/integrations/push-notifications.js';
 
 describe('Push Notifications coverage extension', () => {
   let origNotification: unknown;

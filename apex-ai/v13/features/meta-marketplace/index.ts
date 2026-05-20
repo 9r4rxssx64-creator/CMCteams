@@ -25,7 +25,7 @@ import {
   type MarketplaceItem,
   type MarketplaceProvider,
   META_MARKETPLACE_CATALOG,
-} from '../../services/apex-meta-marketplace.js';
+} from '../../services/core-svc/apex-meta-marketplace.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeMetaScope: CleanupScope | null = null;

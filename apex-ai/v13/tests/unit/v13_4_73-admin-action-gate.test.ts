@@ -6,7 +6,7 @@
  * P0 sécurité Kevin règle "WebAuthn obligatoire admin Kevin".
  */
 import { describe, it, expect } from 'vitest';
-import { adminActionGate } from '../../services/admin-action-gate.js';
+import { adminActionGate } from '../../services/auth/admin-action-gate.js';
 
 describe('v13.4.73 admin-action-gate — API publique', () => {
   it("singleton défini avec méthodes attendues", () => {

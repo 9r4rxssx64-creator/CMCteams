@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { planMode } from '../../services/plan-mode.js';
+import { planMode } from '../../services/admin/plan-mode.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

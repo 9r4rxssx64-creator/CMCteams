@@ -5,7 +5,7 @@
  * + return failure proprement en happy-dom.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { deviceControl, type DeviceFeature } from '../../services/device-control.js';
+import { deviceControl, type DeviceFeature } from '../../services/integrations/device-control.js';
 
 describe('device-control (P0 coverage 16→60%)', () => {
   beforeEach(() => {

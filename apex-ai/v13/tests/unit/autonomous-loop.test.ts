@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { autonomousLoop } from '../../services/autonomous-loop.js';
+import { autonomousLoop } from '../../services/admin/autonomous-loop.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

@@ -13,7 +13,7 @@
  * bash_safe / web_fetch / web_search / spawn_subagent / create_pr / ...").
  */
 import { describe, it, expect } from 'vitest';
-import type { AllowedTask } from '../../services/apex-execute.js';
+import type { AllowedTask } from '../../services/admin/apex-execute.js';
 
 describe('v13.4.40 PARITÉ APEX — tools LECTURE/RECHERCHE/COMMS', () => {
   it("AllowedTask contient read_file (Read parité)", () => {

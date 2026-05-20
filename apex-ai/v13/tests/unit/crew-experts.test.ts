@@ -17,7 +17,7 @@ const { mockAiRouter, mockAuditLog } = vi.hoisted(() => ({
 vi.mock('../../services/ai-router.js', () => ({ aiRouter: mockAiRouter }));
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { crewExperts, type CrewMember } from '../../services/crew-experts.js';
+import { crewExperts, type CrewMember } from '../../services/ai/crew-experts.js';
 
 describe('crew-experts (v13.4.142 coverage)', () => {
   beforeEach(() => {

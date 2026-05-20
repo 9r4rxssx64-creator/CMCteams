@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auditLog } from '../../services/audit-log.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('audit-log coverage boost', () => {
   beforeEach(() => {

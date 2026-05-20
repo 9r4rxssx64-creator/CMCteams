@@ -21,9 +21,9 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { aiRouter, type StreamChunk } from '../../services/ai-router.js';
-import { apexTools } from '../../services/apex-tools.js';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { aiRouter, type StreamChunk } from '../../services/ai/ai-router.js';
+import { apexTools } from '../../services/core-svc/apex-tools.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 function makeSSE(events: string[]): Response {
   const encoder = new TextEncoder();

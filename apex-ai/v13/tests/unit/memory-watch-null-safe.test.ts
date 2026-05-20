@@ -21,8 +21,8 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
         remove: async () => true,
       },
     }));
-    const sentinelsMod = await import('../../services/sentinels.js');
-    const { sentinels, bootstrapSentinelsRegistry } = await import('../../services/sentinels-registry.js').then(async (m) => ({
+    const sentinelsMod = await import('../../services/sentinels/sentinels.js');
+    const { sentinels, bootstrapSentinelsRegistry } = await import('../../services/sentinels/sentinels-registry.js').then(async (m) => ({
       ...m,
       sentinels: sentinelsMod.sentinels,
     })).catch(() => ({ sentinels: sentinelsMod.sentinels, bootstrapSentinelsRegistry: () => {} }));
@@ -46,8 +46,8 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
         remove: async () => true,
       },
     }));
-    const sentinelsMod = await import('../../services/sentinels.js');
-    const regMod = await import('../../services/sentinels-registry.js');
+    const sentinelsMod = await import('../../services/sentinels/sentinels.js');
+    const regMod = await import('../../services/sentinels/sentinels-registry.js');
     regMod.bootstrapSentinelsRegistry();
     /* @ts-expect-error — accès interne pour test */
     const reg = sentinelsMod.sentinels.list?.() ?? [];
@@ -66,8 +66,8 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
     vi.doMock('../../services/persistent-memory-store.js', () => ({
       persistentMemory: null,
     }));
-    const sentinelsMod = await import('../../services/sentinels.js');
-    const regMod = await import('../../services/sentinels-registry.js');
+    const sentinelsMod = await import('../../services/sentinels/sentinels.js');
+    const regMod = await import('../../services/sentinels/sentinels-registry.js');
     regMod.bootstrapSentinelsRegistry();
     /* @ts-expect-error — accès interne pour test */
     const reg = sentinelsMod.sentinels.list?.() ?? [];
@@ -87,8 +87,8 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
         remove: async () => true,
       },
     }));
-    const sentinelsMod = await import('../../services/sentinels.js');
-    const regMod = await import('../../services/sentinels-registry.js');
+    const sentinelsMod = await import('../../services/sentinels/sentinels.js');
+    const regMod = await import('../../services/sentinels/sentinels-registry.js');
     regMod.bootstrapSentinelsRegistry();
     /* @ts-expect-error — accès interne pour test */
     const reg = sentinelsMod.sentinels.list?.() ?? [];
@@ -108,8 +108,8 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
         remove: async () => true,
       },
     }));
-    const sentinelsMod = await import('../../services/sentinels.js');
-    const regMod = await import('../../services/sentinels-registry.js');
+    const sentinelsMod = await import('../../services/sentinels/sentinels.js');
+    const regMod = await import('../../services/sentinels/sentinels-registry.js');
     regMod.bootstrapSentinelsRegistry();
     /* @ts-expect-error — accès interne */
     const reg = sentinelsMod.sentinels.list?.() ?? [];
@@ -135,8 +135,8 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
         remove: async () => true,
       },
     }));
-    const sentinelsMod = await import('../../services/sentinels.js');
-    const regMod = await import('../../services/sentinels-registry.js');
+    const sentinelsMod = await import('../../services/sentinels/sentinels.js');
+    const regMod = await import('../../services/sentinels/sentinels-registry.js');
     regMod.bootstrapSentinelsRegistry();
     /* @ts-expect-error */
     const reg = sentinelsMod.sentinels.list?.() ?? [];

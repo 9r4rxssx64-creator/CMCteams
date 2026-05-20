@@ -26,14 +26,14 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { autoDiscoverLinks } from '../../services/auto-discover-links.js';
-import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/credential-patterns.js';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
-import { genericSecrets } from '../../services/generic-secrets.js';
-import { linksRegistry } from '../../services/links-registry.js';
-import { multiKeyVault, type KeyEntry, type KeyStatus } from '../../services/multi-key-vault.js';
-import { vault } from '../../services/vault.js';
+import { autoDiscoverLinks } from '../../services/integrations/auto-discover-links.js';
+import { CREDENTIAL_PATTERNS, detectCredential, type CredentialPattern } from '../../services/vault/credential-patterns.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
+import { genericSecrets } from '../../services/vault/generic-secrets.js';
+import { linksRegistry } from '../../services/integrations/links-registry.js';
+import { multiKeyVault, type KeyEntry, type KeyStatus } from '../../services/vault/multi-key-vault.js';
+import { vault } from '../../services/vault/vault.js';
 import { haptic } from '../../ui/haptic.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
@@ -790,7 +790,7 @@ function attachHandlers(rootEl: HTMLElement): void {
       const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-rescue-result');
       if (result) result.innerHTML = '⏳ Lecture Firebase backup chiffré…';
       try {
-        const { vaultFirebaseBackup } = await import('../../services/vault-firebase-backup.js');
+        const { vaultFirebaseBackup } = await import('../../services/vault/vault-firebase-backup.js');
         const r = await vaultFirebaseBackup.restoreAllFromFirebaseBackup();
         if (result) {
           /* v13.4.133 audit-grade : DOM API, valeurs numériques mais audit XSS strict */
@@ -823,7 +823,7 @@ function attachHandlers(rootEl: HTMLElement): void {
       const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-rescue-result');
       if (result) result.innerHTML = '⏳ Scan 4 sources : alias, IDB, Firebase, pattern…';
       try {
-        const { autoRestoreCredentials } = await import('../../services/auto-restore-credentials.js');
+        const { autoRestoreCredentials } = await import('../../services/vault/auto-restore-credentials.js');
         const r = await autoRestoreCredentials.restoreAutomatically();
         if (result) {
           result.textContent = '';
@@ -989,7 +989,7 @@ function attachHandlers(rootEl: HTMLElement): void {
       void (async () => {
         haptic.tap();
         try {
-          const { apexVaultImport } = await import('../../services/apex-vault-import.js');
+          const { apexVaultImport } = await import('../../services/vault/apex-vault-import.js');
           const r = await apexVaultImport.promptAndImport();
           if (r.cancelled) {
             toast.info('Import annulé', { duration: 2000 });
@@ -1065,7 +1065,7 @@ function attachHandlers(rootEl: HTMLElement): void {
 
           if (compressed && compressed.length < QR_MAX_SAFE) {
             /* Compress OK + tient dans QR → modal QR */
-            const { apexQrBackup } = await import('../../services/apex-qr-backup.js');
+            const { apexQrBackup } = await import('../../services/vault/apex-qr-backup.js');
             await apexQrBackup.showQrBackupModal({
               text: `APEXVAULT_LZ:${compressed}`, /* prefix pour détection au scan */
               title: '📦 Backup Vault Compressé — Photos iCloud',
@@ -1078,11 +1078,11 @@ function attachHandlers(rootEl: HTMLElement): void {
           /* Strategy 2 : vault trop gros même compressé → upload Gist privé + QR de l'URL */
           toast.info(`Vault compressé ${compressed.length}B encore > QR max. Upload Gist privé chiffré...`, { duration: 4000 });
           try {
-            const { apexGithubGistBackup } = await import('../../services/apex-github-gist-backup.js');
+            const { apexGithubGistBackup } = await import('../../services/vault/apex-github-gist-backup.js');
             const r = await apexGithubGistBackup.pushBackup({ force: true });
             if (r.ok && r.gist_id) {
               const gistUrl = `https://gist.github.com/${r.gist_id}`;
-              const { apexQrBackup } = await import('../../services/apex-qr-backup.js');
+              const { apexQrBackup } = await import('../../services/vault/apex-qr-backup.js');
               await apexQrBackup.showQrBackupModal({
                 text: `APEXVAULT_GIST:${r.gist_id}`,
                 title: '📦 Backup Vault → Gist URL — Photos iCloud',

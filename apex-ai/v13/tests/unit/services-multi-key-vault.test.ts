@@ -18,8 +18,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { multiKeyVault, type KeyEntry } from '../../services/multi-key-vault.js';
-import { vault } from '../../services/vault.js';
+import { multiKeyVault, type KeyEntry } from '../../services/vault/multi-key-vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('multi-key-vault — addKey + listKeys', () => {
   beforeEach(() => {

@@ -5,7 +5,7 @@
  * pour replay si échec push initial. Escalade auto Claude Code si critical.
  */
 import { describe, it, expect } from 'vitest';
-import { observability } from '../../services/observability.js';
+import { observability } from '../../services/observability/observability.js';
 
 describe('v13.4.58 observability — capture + buffer', () => {
   it("singleton défini + méthodes attendues", () => {

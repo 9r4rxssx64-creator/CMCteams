@@ -6,9 +6,9 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { reportsHistory } from '../../services/apex-reports-history.js';
-import type { FunctionalTestReport } from '../../services/apex-functional-tester.js';
-import type { LayoutScanReport } from '../../services/apex-layout-inspector.js';
+import { reportsHistory } from '../../services/admin/apex-reports-history.js';
+import type { FunctionalTestReport } from '../../services/admin/apex-functional-tester.js';
+import type { LayoutScanReport } from '../../services/admin/apex-layout-inspector.js';
 
 const LAYOUT_KEY = 'apex_v13_audit_layout_history';
 const FUNCTIONAL_KEY = 'apex_v13_audit_functional_history';

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auth } from '../../services/auth.js';
+import { auth } from '../../services/auth/auth.js';
 
 describe('auth.isKevinAdmin', () => {
   it('reconnaît tous les aliases Kevin (v13.3.65 : MIN 2 tokens stricts)', () => {

@@ -15,8 +15,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { mcpMemoryStub } from '../../services/mcp-memory-stub.js';
-import { vault } from '../../services/vault.js';
+import { mcpMemoryStub } from '../../services/ai/mcp-memory-stub.js';
+import { vault } from '../../services/vault/vault.js';
 
 /* Helper pour reset l'état du singleton entre tests
  * Les propriétés privées restent — on accepte qu'init() soit idempotent.

@@ -3,7 +3,7 @@
  * v13.0.20+ : tests étendus pour fix critiques Kevin (recharge 1-clic, plans, 40+ services).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { linksRegistry } from '../../services/links-registry.js';
+import { linksRegistry } from '../../services/integrations/links-registry.js';
 
 describe('Links Registry (auto-create + verification)', () => {
   beforeEach(() => {

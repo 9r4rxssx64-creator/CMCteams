@@ -11,7 +11,7 @@ import {
   RECOMMENDED_KEYS,
   getCriticality,
   computeStats,
-} from '../../services/credential-categories.js';
+} from '../../services/vault/credential-categories.js';
 
 describe('credential-categories — constants', () => {
   it('ESSENTIAL_KEYS contient au moins 1 provider IA', () => {

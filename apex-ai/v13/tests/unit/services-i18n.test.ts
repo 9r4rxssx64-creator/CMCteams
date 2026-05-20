@@ -3,7 +3,7 @@
  * fallback fr si manque, available(), reset().
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { i18n } from '../../services/i18n.js';
+import { i18n } from '../../services/core-svc/i18n.js';
 
 describe('i18n — init + détection navigator', () => {
   beforeEach(() => {

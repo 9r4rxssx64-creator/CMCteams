@@ -3,7 +3,7 @@
  * Règle Kevin "Vérifie teste pour tout toujours".
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { multiSourceAnalyze } from '../../services/multi-source-analyze.js';
+import { multiSourceAnalyze } from '../../services/ai/multi-source-analyze.js';
 
 describe('multi-source-analyze', () => {
   beforeEach(() => {

@@ -49,7 +49,7 @@ async function persistAttachmentsAsync(
   const fresh = attachments.filter((a) => a.base64 !== '__IDB__' && a.base64.length > 0);
   if (fresh.length === 0) return;
   try {
-    const { chatAttachmentsStore } = await import('../../services/chat-attachments-store.js');
+    const { chatAttachmentsStore } = await import('../../services/ai/chat-attachments-store.js');
     await chatAttachmentsStore.persistAttachments(msgId, fresh);
   } catch (err: unknown) {
     logger.warn('chat-persistence', 'persistAttachmentsAsync failed', { err });
@@ -84,7 +84,7 @@ export function loadPersistedConversation(): PersistedMessage[] {
  * avec sentinel '__IDB__'. Mute l'array conversation in-place. */
 async function restoreAttachmentsForMessages(messages: PersistedMessage[]): Promise<void> {
   try {
-    const { chatAttachmentsStore } = await import('../../services/chat-attachments-store.js');
+    const { chatAttachmentsStore } = await import('../../services/ai/chat-attachments-store.js');
     for (const msg of messages) {
       if (!msg.attachments || msg.attachments.length === 0) continue;
       const hasSentinel = msg.attachments.some((a) => a.base64 === '__IDB__');
@@ -157,7 +157,7 @@ export function persistConversation(conversation: readonly PersistedMessage[]): 
           .filter((m) => !m.streaming && m.text && m.text.length < FIREBASE_MAX_TEXT_LEN)
           .slice(-FIREBASE_MAX_MESSAGES)
           .map((m) => ({ role: m.role, text: m.text, ts: m.ts }));
-        const { firebase } = await import('../../services/firebase.js');
+        const { firebase } = await import('../../services/storage/firebase.js');
         await firebase.write(FIREBASE_PATH, cloudPayload);
       } catch (err: unknown) {
         logger.warn('chat-persistence', 'Firebase sync skipped', { err });
@@ -177,7 +177,7 @@ export async function tryFirebaseRestoreConversation(
 ): Promise<void> {
   if (conversation.length > 0) return; /* déjà chargé local */
   try {
-    const { firebase } = await import('../../services/firebase.js');
+    const { firebase } = await import('../../services/storage/firebase.js');
     const cloudRaw = await firebase.read(FIREBASE_PATH);
     if (!Array.isArray(cloudRaw) || cloudRaw.length === 0) return;
     const restored: PersistedMessage[] = (cloudRaw as Array<{ id?: string; role: 'user' | 'assistant'; text: string; ts: number }>)

@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { codeReviewMultiAgent } from '../../services/code-review-multi-agent.js';
+import { codeReviewMultiAgent } from '../../services/ai/code-review-multi-agent.js';
 
 vi.mock('../../services/crew-experts.js', () => ({
   crewExperts: {

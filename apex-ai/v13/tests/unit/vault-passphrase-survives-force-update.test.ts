@@ -15,7 +15,7 @@
  * d'une clé localStorage, l'ajouter à PRESERVE_PREFIXES + ce test attrape.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 /* Mirror exact du PRESERVE_PREFIXES de services/force-update-banner.ts.
  * Si on l'enrichit là-bas, dupliquer ici (ou refactor en const partagée). */

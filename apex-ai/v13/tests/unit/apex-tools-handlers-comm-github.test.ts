@@ -24,7 +24,7 @@ vi.mock('../../services/vault.js', () => ({
   vault: { readKey: vi.fn() },
 }));
 
-import { vault } from '../../services/vault.js';
+import { vault } from '../../services/vault/vault.js';
 
 const mockedReadKey = vi.mocked(vault.readKey);
 

@@ -33,7 +33,7 @@ import {
   BLONDEL_MIN,
   BLONDEL_MAX,
 } from '../../features/studios/architecture/index.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 
 let root: HTMLDivElement;
 

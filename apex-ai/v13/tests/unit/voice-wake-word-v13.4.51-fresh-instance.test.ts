@@ -14,8 +14,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { voicePrint } from '../../services/voice-print.js';
-import { wakeWord } from '../../services/wake-word.js';
+import { voicePrint } from '../../services/ai/voice-print.js';
+import { wakeWord } from '../../services/ai/wake-word.js';
 
 class FakeSR {
   static instances: FakeSR[] = [];

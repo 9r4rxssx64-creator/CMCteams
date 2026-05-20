@@ -5,7 +5,7 @@
  * Stratégie : mock du QR lib externe + vérifier flow public API.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apexQrBackup } from '../../services/apex-qr-backup.js';
+import { apexQrBackup } from '../../services/vault/apex-qr-backup.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

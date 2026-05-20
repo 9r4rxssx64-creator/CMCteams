@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { agentWatchesRunner } from '../../core/agent-watches-runner.js';
-import { agentWatches } from '../../services/agent-watches.js';
+import { agentWatches } from '../../services/sentinels/agent-watches.js';
 
 /* Reduce backoff delay for tests — patch via spy */
 beforeEach(() => {

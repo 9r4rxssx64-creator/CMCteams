@@ -10,7 +10,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
+import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
 
 interface AnthropicSystemBlock {
   type: string;

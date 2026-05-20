@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 import { store } from '../../core/store.js';
-import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
-import { vault } from '../../services/vault.js';
+import { apexKnowledgeBase } from '../../services/admin/apex-knowledge-base.js';
+import { vault } from '../../services/vault/vault.js';
 
 describe('admin/index.ts — knowledge tab', () => {
   let root: HTMLElement;

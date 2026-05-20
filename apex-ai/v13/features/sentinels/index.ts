@@ -20,8 +20,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* P1-6 : cleanup ancien scope avant re-render (anti listener leak) */
   activeSentinelsScope?.cleanup();
   activeSentinelsScope = createCleanupScope('sentinels');
-  const { sentinels } = await import('../../services/sentinels.js');
-  const { sentinelsRegistry, bootstrapSentinelsRegistry } = await import('../../services/sentinels-registry.js');
+  const { sentinels } = await import('../../services/sentinels/sentinels.js');
+  const { sentinelsRegistry, bootstrapSentinelsRegistry } = await import('../../services/sentinels/sentinels-registry.js');
   /* Idempotent — booste vers 18+ sentinelles si pas déjà fait */
   bootstrapSentinelsRegistry();
   const list = sentinels.list();

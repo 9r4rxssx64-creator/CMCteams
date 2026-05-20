@@ -20,38 +20,38 @@ describe('notification-actions', () => {
   });
 
   it('resolveRoute mappe credentials_missing → admin-credentials-status', async () => {
-    const { resolveNotificationRoute } = await import('../../services/notification-actions.js');
+    const { resolveNotificationRoute } = await import('../../services/integrations/notification-actions.js');
     expect(resolveNotificationRoute('credentials_missing')).toBe('admin-credentials-status');
     expect(resolveNotificationRoute('credentials-missing')).toBe('admin-credentials-status');
     expect(resolveNotificationRoute('auto-restore-watch')).toBe('admin-credentials-status');
   });
 
   it('resolveRoute mappe auto_reset → self-diag', async () => {
-    const { resolveNotificationRoute } = await import('../../services/notification-actions.js');
+    const { resolveNotificationRoute } = await import('../../services/integrations/notification-actions.js');
     expect(resolveNotificationRoute('auto_reset')).toBe('self-diag');
     expect(resolveNotificationRoute('auto-ultra-reset')).toBe('self-diag');
   });
 
   it('resolveRoute strip le # initial des routes hash', async () => {
-    const { resolveNotificationRoute } = await import('../../services/notification-actions.js');
+    const { resolveNotificationRoute } = await import('../../services/integrations/notification-actions.js');
     expect(resolveNotificationRoute('#admin')).toBe('admin');
     expect(resolveNotificationRoute('#chat')).toBe('chat');
   });
 
   it('resolveRoute extrait hash des URLs absolues', async () => {
-    const { resolveNotificationRoute } = await import('../../services/notification-actions.js');
+    const { resolveNotificationRoute } = await import('../../services/integrations/notification-actions.js');
     expect(resolveNotificationRoute('https://apex.example.com/index.html#vault')).toBe('vault');
   });
 
   it('resolveRoute renvoie null sur input vide/null', async () => {
-    const { resolveNotificationRoute } = await import('../../services/notification-actions.js');
+    const { resolveNotificationRoute } = await import('../../services/integrations/notification-actions.js');
     expect(resolveNotificationRoute('')).toBeNull();
     expect(resolveNotificationRoute(null)).toBeNull();
     expect(resolveNotificationRoute(undefined)).toBeNull();
   });
 
   it('handleClick navigue via location.hash quand route valide', async () => {
-    const { handleNotificationClick } = await import('../../services/notification-actions.js');
+    const { handleNotificationClick } = await import('../../services/integrations/notification-actions.js');
     const ok = handleNotificationClick({ url: 'credentials_missing' });
     expect(ok).toBe(true);
     /* router.navigate set hash si différent */
@@ -59,7 +59,7 @@ describe('notification-actions', () => {
   });
 
   it('handleClick fallback chat si rien ne matche', async () => {
-    const { handleNotificationClick } = await import('../../services/notification-actions.js');
+    const { handleNotificationClick } = await import('../../services/integrations/notification-actions.js');
     const ok = handleNotificationClick({ url: '', tag: '', source: '' });
     expect(ok).toBe(false);
     /* fallback déclenche router.navigate('chat') ou location.hash='#chat' */
@@ -67,7 +67,7 @@ describe('notification-actions', () => {
   });
 
   it('handleClick préfère url sur tag si url valide', async () => {
-    const { handleNotificationClick } = await import('../../services/notification-actions.js');
+    const { handleNotificationClick } = await import('../../services/integrations/notification-actions.js');
     handleNotificationClick({ url: 'vault', tag: 'chat', source: 'chat' });
     expect(location.hash).toContain('vault');
   });
@@ -79,7 +79,7 @@ describe('click-fallback-guard', () => {
   });
 
   it('install est idempotent', async () => {
-    const { clickFallbackGuard } = await import('../../services/click-fallback-guard.js');
+    const { clickFallbackGuard } = await import('../../services/core-svc/click-fallback-guard.js');
     clickFallbackGuard.install();
     expect(clickFallbackGuard.isInstalled()).toBe(true);
     /* Re-install ne crash pas */
@@ -88,7 +88,7 @@ describe('click-fallback-guard', () => {
   });
 
   it('button avec data-action est considéré wired (laisse passer)', async () => {
-    const { clickFallbackGuard } = await import('../../services/click-fallback-guard.js');
+    const { clickFallbackGuard } = await import('../../services/core-svc/click-fallback-guard.js');
     clickFallbackGuard.install();
     document.body.innerHTML = '<button data-action="speak" id="b1">Test</button>';
     const btn = document.getElementById('b1') as HTMLButtonElement;
@@ -99,7 +99,7 @@ describe('click-fallback-guard', () => {
   });
 
   it('button submit dans <form> est wired', async () => {
-    const { clickFallbackGuard } = await import('../../services/click-fallback-guard.js');
+    const { clickFallbackGuard } = await import('../../services/core-svc/click-fallback-guard.js');
     clickFallbackGuard.install();
     document.body.innerHTML = '<form><button type="submit" id="b2">Send</button></form>';
     const btn = document.getElementById('b2') as HTMLButtonElement;
@@ -108,7 +108,7 @@ describe('click-fallback-guard', () => {
   });
 
   it('button avec onclick attribute est wired', async () => {
-    const { clickFallbackGuard } = await import('../../services/click-fallback-guard.js');
+    const { clickFallbackGuard } = await import('../../services/core-svc/click-fallback-guard.js');
     clickFallbackGuard.install();
     document.body.innerHTML = '<button onclick="void 0" id="b3">X</button>';
     const btn = document.getElementById('b3') as HTMLButtonElement;
@@ -116,7 +116,7 @@ describe('click-fallback-guard', () => {
   });
 
   it('a[href] non-vide est wired', async () => {
-    const { clickFallbackGuard } = await import('../../services/click-fallback-guard.js');
+    const { clickFallbackGuard } = await import('../../services/core-svc/click-fallback-guard.js');
     clickFallbackGuard.install();
     document.body.innerHTML = '<a href="#chat" id="a1">Chat</a>';
     const a = document.getElementById('a1') as HTMLAnchorElement;
@@ -143,7 +143,7 @@ describe('SW notification click message shape', () => {
 
 describe('kevin-alerts cta_url integration', () => {
   it('alertKevin accepte cta_url dans payload', async () => {
-    const { kevinAlerts } = await import('../../services/kevin-alerts.js');
+    const { kevinAlerts } = await import('../../services/admin/kevin-alerts.js');
     /* Mock Notification API */
     const NotificationMock = vi.fn() as unknown as typeof Notification;
     Object.defineProperty(NotificationMock, 'permission', { value: 'denied', configurable: true });

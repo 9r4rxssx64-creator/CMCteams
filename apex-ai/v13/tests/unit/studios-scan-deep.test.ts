@@ -56,7 +56,7 @@ import {
 } from '../../features/studios/scan/index.js';
 import { toast } from '../../ui/toast.js';
 import { haptic } from '../../ui/haptic.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 
 let root: HTMLDivElement;
 

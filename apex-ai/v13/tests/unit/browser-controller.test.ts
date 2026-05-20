@@ -25,7 +25,7 @@ import {
   isBlockedDomain,
   listNavigationTargets,
   registerNavigationTarget,
-} from '../../services/browser-controller.js';
+} from '../../services/integrations/browser-controller.js';
 import {
   axAutofillField,
   cancelAutofill,
@@ -34,7 +34,7 @@ import {
   isWritableKey,
   listPendingAutofills,
   listWritableKeys,
-} from '../../services/form-auto-fill.js';
+} from '../../services/core-svc/form-auto-fill.js';
 
 describe('browser-controller — isBlockedDomain', () => {
   it('accepte une URL https valide', () => {

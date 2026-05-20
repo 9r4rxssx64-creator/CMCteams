@@ -66,8 +66,8 @@ vi.mock('../../core/logger.js', () => ({
   logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-import { crossPlatform } from '../../services/cross-platform.js';
-import { deviceDetect } from '../../services/device-detect.js';
+import { crossPlatform } from '../../services/core-svc/cross-platform.js';
+import { deviceDetect } from '../../services/integrations/device-detect.js';
 import { toast } from '../../ui/toast.js';
 
 interface DDExtras {

@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { webauthn } from '../../services/webauthn.js';
+import { webauthn } from '../../services/auth/webauthn.js';
 
 const CRED_LIST_KEY = 'apex_v13_webauthn_credentials';
 

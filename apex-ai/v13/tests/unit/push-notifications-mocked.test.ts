@@ -3,7 +3,7 @@
  * Cible : subscribe, send, sendServerPush, testWorkerHealth, rate limit.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { pushNotifications } from '../../services/push-notifications.js';
+import { pushNotifications } from '../../services/integrations/push-notifications.js';
 
 describe('push-notifications — mocks', () => {
   beforeEach(() => {

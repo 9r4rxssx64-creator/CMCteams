@@ -8,7 +8,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { studyService } from '../../services/study-service.js';
+import { studyService } from '../../services/integrations/study-service.js';
 
 describe('M4 — Study service auto-fetch top providers', () => {
   beforeEach(() => {

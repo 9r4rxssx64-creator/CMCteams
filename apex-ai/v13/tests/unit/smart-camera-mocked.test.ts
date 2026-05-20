@@ -3,7 +3,7 @@
  * Cible : success paths, flash/zoom/switch + error paths via stream null.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { smartCamera } from '../../services/smart-camera.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
 
 describe('smart-camera — comprehensive mocks', () => {
   beforeEach(() => {

@@ -11,8 +11,8 @@
  * - Gestion erreurs (input vide, format invalide, etc.)
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { apexTools } from '../../services/apex-tools.js';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexTools } from '../../services/core-svc/apex-tools.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 describe('Apex Tools PUSH MAX v13.0.20 — 100+ tools', () => {
   beforeEach(() => {

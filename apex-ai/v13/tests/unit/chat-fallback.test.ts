@@ -2,7 +2,7 @@
  * Tests chat-fallback.ts (path 100/100 — anti-message-vide règle CLAUDE.md).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { chatFallback } from '../../services/chat-fallback.js';
+import { chatFallback } from '../../services/ai/chat-fallback.js';
 
 describe('Chat Fallback (anti-message-vide)', () => {
   beforeEach(() => {

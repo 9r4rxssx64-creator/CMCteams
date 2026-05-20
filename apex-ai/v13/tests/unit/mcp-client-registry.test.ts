@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe('MCP Registry', () => {
   it('init enregistre 3 default servers (bofip, almanac, legal-hunter)', async () => {
-    const { mcpRegistry } = await import('../../services/mcp-registry.js');
+    const { mcpRegistry } = await import('../../services/ai/mcp-registry.js');
     await mcpRegistry.init();
     const servers = mcpRegistry.list();
 
@@ -42,7 +42,7 @@ describe('MCP Registry', () => {
   });
 
   it('get retourne un server existant', async () => {
-    const { mcpRegistry } = await import('../../services/mcp-registry.js');
+    const { mcpRegistry } = await import('../../services/ai/mcp-registry.js');
     await mcpRegistry.init();
     const bofip = mcpRegistry.get('bofip');
     expect(bofip).toBeDefined();
@@ -51,14 +51,14 @@ describe('MCP Registry', () => {
   });
 
   it('get retourne null pour ID inconnu', async () => {
-    const { mcpRegistry } = await import('../../services/mcp-registry.js');
+    const { mcpRegistry } = await import('../../services/ai/mcp-registry.js');
     await mcpRegistry.init();
     const unknown = mcpRegistry.get('inconnu');
     expect(unknown).toBeNull();
   });
 
   it('register ajoute un nouveau server', async () => {
-    const { mcpRegistry } = await import('../../services/mcp-registry.js');
+    const { mcpRegistry } = await import('../../services/ai/mcp-registry.js');
     await mcpRegistry.init();
     const ok = await mcpRegistry.register({
       id: 'custom-server',
@@ -70,7 +70,7 @@ describe('MCP Registry', () => {
   });
 
   it('register refuse un duplicate', async () => {
-    const { mcpRegistry } = await import('../../services/mcp-registry.js');
+    const { mcpRegistry } = await import('../../services/ai/mcp-registry.js');
     await mcpRegistry.init();
     const ok = await mcpRegistry.register({
       id: 'bofip', /* déjà présent */
@@ -81,7 +81,7 @@ describe('MCP Registry', () => {
   });
 
   it('unregister supprime un server existant', async () => {
-    const { mcpRegistry } = await import('../../services/mcp-registry.js');
+    const { mcpRegistry } = await import('../../services/ai/mcp-registry.js');
     await mcpRegistry.init();
     await mcpRegistry.register({
       id: 'to-delete',
@@ -94,7 +94,7 @@ describe('MCP Registry', () => {
   });
 
   it('unregister retourne false pour ID inconnu', async () => {
-    const { mcpRegistry } = await import('../../services/mcp-registry.js');
+    const { mcpRegistry } = await import('../../services/ai/mcp-registry.js');
     await mcpRegistry.init();
     const ok = await mcpRegistry.unregister('inexistant-123');
     expect(ok).toBe(false);
@@ -121,7 +121,7 @@ describe('MCP Client', () => {
   });
 
   it('call retourne erreur si server non enregistré', async () => {
-    const { mcpClient } = await import('../../services/mcp-client.js');
+    const { mcpClient } = await import('../../services/ai/mcp-client.js');
     const result = await mcpClient.call({
       serverId: 'unknown-server',
       toolName: 'search',
@@ -135,7 +135,7 @@ describe('MCP Client', () => {
   it('call gère fetch failure gracefully', async () => {
     global.fetch = vi.fn(() => Promise.reject(new Error('Network error'))) as unknown as typeof fetch;
 
-    const { mcpClient } = await import('../../services/mcp-client.js');
+    const { mcpClient } = await import('../../services/ai/mcp-client.js');
     const result = await mcpClient.call({
       serverId: 'test-server',
       toolName: 'search',
@@ -156,7 +156,7 @@ describe('MCP Client', () => {
       }),
     ) as unknown as typeof fetch;
 
-    const { mcpClient } = await import('../../services/mcp-client.js');
+    const { mcpClient } = await import('../../services/ai/mcp-client.js');
     const result = await mcpClient.call({
       serverId: 'test-server',
       toolName: 'search',
@@ -176,7 +176,7 @@ describe('MCP Client', () => {
       }),
     ) as unknown as typeof fetch;
 
-    const { mcpClient } = await import('../../services/mcp-client.js');
+    const { mcpClient } = await import('../../services/ai/mcp-client.js');
     const result = await mcpClient.call({
       serverId: 'test-server',
       toolName: 'unknown_tool',
@@ -196,7 +196,7 @@ describe('MCP Client', () => {
       }),
     ) as unknown as typeof fetch;
 
-    const { mcpClient } = await import('../../services/mcp-client.js');
+    const { mcpClient } = await import('../../services/ai/mcp-client.js');
     const result = await mcpClient.call({
       serverId: 'test-server',
       toolName: 'search',
@@ -216,7 +216,7 @@ describe('MCP Client', () => {
       }),
     ) as unknown as typeof fetch;
 
-    const { mcpClient } = await import('../../services/mcp-client.js');
+    const { mcpClient } = await import('../../services/ai/mcp-client.js');
     const health = await mcpClient.healthCheck('test-server');
     expect(typeof health.alive).toBe('boolean');
     expect(typeof health.latencyMs).toBe('number');

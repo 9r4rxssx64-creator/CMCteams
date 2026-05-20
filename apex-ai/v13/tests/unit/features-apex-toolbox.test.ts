@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { computeStats, escapeHtml, filterTools } from '../../features/apex-toolbox/index.js';
-import type { ApexTool } from '../../services/apex-tools.js';
+import type { ApexTool } from '../../services/core-svc/apex-tools.js';
 
 const FAKE_TOOLS: ReadonlyArray<ApexTool> = [
   {
@@ -142,14 +142,14 @@ describe('features/apex-toolbox — computeStats', () => {
 
 describe('features/apex-toolbox — apex-tools registry réel', () => {
   it('apex-tools service charge sans erreur', async () => {
-    const { apexTools } = await import('../../services/apex-tools.js');
+    const { apexTools } = await import('../../services/core-svc/apex-tools.js');
     const list = apexTools.list();
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThan(0);
   });
 
   it('chaque tool a name + description + inputSchema + minTier + impactLevel', async () => {
-    const { apexTools } = await import('../../services/apex-tools.js');
+    const { apexTools } = await import('../../services/core-svc/apex-tools.js');
     const list = apexTools.list();
     for (const t of list) {
       expect(t.name).toBeTruthy();

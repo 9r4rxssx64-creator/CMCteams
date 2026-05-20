@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { crossPlatform } from '../../services/cross-platform.js';
+import { crossPlatform } from '../../services/core-svc/cross-platform.js';
 
 describe('Cross-platform wrappers', () => {
   beforeEach(() => {

@@ -70,7 +70,7 @@ describe('Chat camera button wiring (anti-théâtre)', () => {
     });
 
     it('choix single → smart-camera.captureSingle appelé (env happy-dom)', async () => {
-      const { smartCamera } = await import('../../services/smart-camera.js');
+      const { smartCamera } = await import('../../services/ai/smart-camera.js');
       const captureSpy = vi.spyOn(smartCamera, 'captureSingle');
       const { render } = await import('../../features/chat/index.js');
       render(root);
@@ -85,7 +85,7 @@ describe('Chat camera button wiring (anti-théâtre)', () => {
     });
 
     it('choix burst → smart-camera.captureBurst appelé', async () => {
-      const { smartCamera } = await import('../../services/smart-camera.js');
+      const { smartCamera } = await import('../../services/ai/smart-camera.js');
       const burstSpy = vi.spyOn(smartCamera, 'captureBurst');
       const { render } = await import('../../features/chat/index.js');
       render(root);
@@ -99,7 +99,7 @@ describe('Chat camera button wiring (anti-théâtre)', () => {
     });
 
     it('choix qr_live → smart-camera.scanQrLive appelé', async () => {
-      const { smartCamera } = await import('../../services/smart-camera.js');
+      const { smartCamera } = await import('../../services/ai/smart-camera.js');
       const qrSpy = vi.spyOn(smartCamera, 'scanQrLive');
       const { render } = await import('../../features/chat/index.js');
       render(root);
@@ -113,7 +113,7 @@ describe('Chat camera button wiring (anti-théâtre)', () => {
     });
 
     it('choix video_record → smart-camera.startVideoRecord appelé', async () => {
-      const { smartCamera } = await import('../../services/smart-camera.js');
+      const { smartCamera } = await import('../../services/ai/smart-camera.js');
       const videoSpy = vi.spyOn(smartCamera, 'startVideoRecord');
       const { render } = await import('../../features/chat/index.js');
       render(root);

@@ -17,7 +17,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { autoRestoreCredentials, ALIAS_GROUPS_EXPORT } from '../../services/auto-restore-credentials.js';
+import { autoRestoreCredentials, ALIAS_GROUPS_EXPORT } from '../../services/vault/auto-restore-credentials.js';
 
 describe('Auto Restore Credentials (Kevin règle ABSOLUE 2026-05-08)', () => {
   beforeEach(() => {
@@ -38,7 +38,7 @@ describe('Auto Restore Credentials (Kevin règle ABSOLUE 2026-05-08)', () => {
   });
 
   it('alias détecté : ax_shared_api_key présent → ax_anthropic_key recoverable via alias', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     /* Stocke uniquement ax_shared_api_key (legacy v12) */
     await vault.setKey('ax_shared_api_key', 'sk-ant-api03-' + 'X'.repeat(95));
     const r = await autoRestoreCredentials.auditMissing();
@@ -49,7 +49,7 @@ describe('Auto Restore Credentials (Kevin règle ABSOLUE 2026-05-08)', () => {
   });
 
   it('restoreAutomatically : alias migration migre ax_shared_api_key → ax_anthropic_key', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     const target = 'sk-ant-api03-' + 'M'.repeat(95);
     await vault.setKey('ax_shared_api_key', target);
     /* Pré-condition : ax_anthropic_key absent */
@@ -83,7 +83,7 @@ describe('Auto Restore Credentials (Kevin règle ABSOLUE 2026-05-08)', () => {
   });
 
   it('clé déjà présente (ax_anthropic_key set) → stats.present_count > 0 et truly_absent_count diminue', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_anthropic_key', 'sk-ant-api03-' + 'P'.repeat(95));
     const stats = await autoRestoreCredentials.getStats();
     expect(stats.present_count).toBeGreaterThanOrEqual(1);
@@ -101,7 +101,7 @@ describe('Auto Restore Credentials (Kevin règle ABSOLUE 2026-05-08)', () => {
   });
 
   it('boot() idempotent (multi-call ne double-restore pas)', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_shared_api_key', 'sk-ant-api03-' + 'B'.repeat(95));
     await autoRestoreCredentials.boot();
     /* 2e call : ne doit pas crash */
@@ -111,7 +111,7 @@ describe('Auto Restore Credentials (Kevin règle ABSOLUE 2026-05-08)', () => {
   });
 
   it('restoreAutomatically retourne details par clé (audit trace)', async () => {
-    const { vault } = await import('../../services/vault.js');
+    const { vault } = await import('../../services/vault/vault.js');
     await vault.setKey('ax_shared_api_key', 'sk-ant-api03-' + 'D'.repeat(95));
     const r = await autoRestoreCredentials.restoreAutomatically();
     expect(Array.isArray(r.details)).toBe(true);

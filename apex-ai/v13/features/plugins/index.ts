@@ -153,7 +153,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
     await renderExtended(rootEl);
     return;
   }
-  const { apexPluginsMarketplace } = await import('../../services/apex-plugins-marketplace.js');
+  const { apexPluginsMarketplace } = await import('../../services/core-svc/apex-plugins-marketplace.js');
   const stats = apexPluginsMarketplace.getStats();
   const categories = apexPluginsMarketplace.getCategories();
 
@@ -351,7 +351,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
  * ============================================================ */
 
 async function renderExtended(rootEl: HTMLElement): Promise<void> {
-  const { autoImprovement } = await import('../../services/auto-improvement.js');
+  const { autoImprovement } = await import('../../services/sentinels/auto-improvement.js');
   const state = autoImprovement.getState();
   const installedSet = new Set(state.installed);
 

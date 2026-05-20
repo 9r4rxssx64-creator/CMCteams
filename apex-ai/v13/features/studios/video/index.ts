@@ -30,7 +30,7 @@ export { escapeHtml }; /* re-export pour tests + parité historique */
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
-import { isFeatureEnabled, renderDisabledNotice } from '../../../services/feature-toggles.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../../services/auth/feature-toggles.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeVideoScope: CleanupScope | null = null;

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { permissions } from '../../services/permissions.js';
+import { permissions } from '../../services/auth/permissions.js';
 import { store } from '../../core/store.js';
 
 describe('permissions coverage boost', () => {

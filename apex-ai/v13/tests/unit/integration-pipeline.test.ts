@@ -9,10 +9,10 @@
  * Sans ces tests, les services sont du THÉÂTRE selon audit subagent (verdict 72/100).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { aiRouter } from '../../services/ai-router.js';
-import { tokensDashboard } from '../../services/tokens-dashboard.js';
-import { vault } from '../../services/vault.js';
-import { linksRegistry } from '../../services/links-registry.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
+import { tokensDashboard } from '../../services/observability/tokens-dashboard.js';
+import { vault } from '../../services/vault/vault.js';
+import { linksRegistry } from '../../services/integrations/links-registry.js';
 
 describe('INTÉGRATION pipeline (anti-théâtre Jet 8 final)', () => {
   beforeEach(() => {

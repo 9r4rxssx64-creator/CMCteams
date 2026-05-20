@@ -23,7 +23,7 @@ const { mockAuditLog, mockAiRouter } = vi.hoisted(() => ({
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 vi.mock('../../services/ai-router.js', () => ({ aiRouter: mockAiRouter }));
 
-import { agentSystem } from '../../services/agent-system.js';
+import { agentSystem } from '../../services/core-svc/agent-system.js';
 
 describe('agent-system deep (v13.4.164)', () => {
   beforeEach(() => {

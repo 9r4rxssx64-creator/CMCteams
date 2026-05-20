@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { apexIosNative } from '../../services/apex-ios-native.js';
+import { apexIosNative } from '../../services/integrations/apex-ios-native.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: {

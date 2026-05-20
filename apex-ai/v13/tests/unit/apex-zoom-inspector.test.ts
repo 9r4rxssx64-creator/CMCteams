@@ -4,7 +4,7 @@
  * Module : services/apex-zoom-inspector.ts (114 stmts, était 0% coverage).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apexZoomInspector } from '../../services/apex-zoom-inspector.js';
+import { apexZoomInspector } from '../../services/admin/apex-zoom-inspector.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

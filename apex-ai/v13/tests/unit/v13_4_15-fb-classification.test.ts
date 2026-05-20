@@ -13,7 +13,7 @@
  * par accident, ce test fail et bloque commit.
  */
 import { describe, it, expect } from 'vitest';
-import { FB_FIX, FB_LOCAL } from '../../services/firebase.js';
+import { FB_FIX, FB_LOCAL } from '../../services/storage/firebase.js';
 
 describe('v13.4.15 FB_LOCAL/FB_FIX classification (sécurité critique)', () => {
   it("apex_v13_pin (admin global) doit être dans FB_LOCAL", () => {

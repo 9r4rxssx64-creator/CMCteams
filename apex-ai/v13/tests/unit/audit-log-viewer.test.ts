@@ -11,7 +11,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { auditLog } from '../../services/audit-log';
+import { auditLog } from '../../services/observability/audit-log';
 
 describe('audit-log-viewer (v13.4.211)', () => {
   let rootEl: HTMLElement;

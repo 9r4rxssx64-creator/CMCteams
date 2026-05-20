@@ -15,7 +15,7 @@
 import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
-import type { SmartProvider, ProviderStats } from '../../services/smart-router.js';
+import type { SmartProvider, ProviderStats } from '../../services/ai/smart-router.js';
 
 let activeScope: CleanupScope | null = null;
 
@@ -75,7 +75,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   activeScope?.cleanup();
   activeScope = createCleanupScope('smart-router');
 
-  const { smartRouter } = await import('../../services/smart-router.js');
+  const { smartRouter } = await import('../../services/ai/smart-router.js');
   const ranked = await smartRouter.rankProviders();
   const recos = await smartRouter.getRecommendations();
   const override = smartRouter.getOverride();

@@ -3,7 +3,7 @@
  * Stratégie : Anthropic priority + free first + domain routing + budget aware.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { aiRoutingPolicy } from '../../services/ai-routing-policy.js';
+import { aiRoutingPolicy } from '../../services/ai/ai-routing-policy.js';
 
 describe('AI Routing Policy (free-first + Anthropic priority)', () => {
   beforeEach(() => {

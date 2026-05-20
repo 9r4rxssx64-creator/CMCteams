@@ -2,8 +2,8 @@
  * Tests SOC2 compliance + Secret Scanner (Sécurité 18→20).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { soc2 } from '../../services/soc2-compliance.js';
-import { secretScanner } from '../../services/secret-scanner.js';
+import { soc2 } from '../../services/auth/soc2-compliance.js';
+import { secretScanner } from '../../services/vault/secret-scanner.js';
 
 describe('SOC2 Compliance', () => {
   beforeEach(() => {

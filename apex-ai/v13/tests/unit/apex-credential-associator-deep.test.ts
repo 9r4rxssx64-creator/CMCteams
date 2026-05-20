@@ -16,7 +16,7 @@ const { mockAuth } = vi.hoisted(() => ({
 
 vi.mock('../../services/auth.js', () => ({ auth: mockAuth }));
 
-import { apexCredentialAssociator } from '../../services/apex-credential-associator.js';
+import { apexCredentialAssociator } from '../../services/vault/apex-credential-associator.js';
 
 describe('apex-credential-associator deep (v13.4.148)', () => {
   beforeEach(() => {

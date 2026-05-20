@@ -3,7 +3,7 @@
  * Couvre : restoreSession, createUser, listUsers, login flow complet, rate-limit, hashPin, generateInviteToken.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auth } from '../../services/auth.js';
+import { auth } from '../../services/auth/auth.js';
 import { store } from '../../core/store.js';
 
 describe('auth service deep tests (Jet 7)', () => {

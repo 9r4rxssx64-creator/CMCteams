@@ -4,7 +4,7 @@
  * Module : services/auto-test-runner.ts (249 stmts, était 10.8% coverage).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { autoTestRunner } from '../../services/auto-test-runner.js';
+import { autoTestRunner } from '../../services/admin/auto-test-runner.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

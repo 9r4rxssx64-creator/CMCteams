@@ -16,8 +16,8 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { apexClaudeCodeParity } from '../../services/apex-claude-code-parity.js';
-import { apexExecute } from '../../services/apex-execute.js';
+import { apexClaudeCodeParity } from '../../services/admin/apex-claude-code-parity.js';
+import { apexExecute } from '../../services/admin/apex-execute.js';
 
 /* Helper: Spy fetch with custom response */
 function mockFetch(payload: unknown, status = 200): ReturnType<typeof vi.spyOn> {
@@ -849,7 +849,7 @@ describe('apex-claude-code-parity (parité Claude Code)', () => {
   /* ===== Audit log écrit pour chaque appel ===== */
   describe('Audit log enforcement', () => {
     it('write blocked path → audit log entry', async () => {
-      const auditModule = await import('../../services/audit-log.js');
+      const auditModule = await import('../../services/observability/audit-log.js');
       const recordSpy = vi.spyOn(auditModule.auditLog, 'record');
       await apexClaudeCodeParity.write('node_modules/x.ts', 'pwn');
       expect(recordSpy).toHaveBeenCalledWith(
@@ -859,7 +859,7 @@ describe('apex-claude-code-parity (parité Claude Code)', () => {
     });
 
     it('bash blocked → audit log entry', async () => {
-      const auditModule = await import('../../services/audit-log.js');
+      const auditModule = await import('../../services/observability/audit-log.js');
       const recordSpy = vi.spyOn(auditModule.auditLog, 'record');
       await apexClaudeCodeParity.bash('rm -rf /');
       expect(recordSpy).toHaveBeenCalledWith(
@@ -871,7 +871,7 @@ describe('apex-claude-code-parity (parité Claude Code)', () => {
     it('grep autorisé → audit log entry parity.grep', async () => {
       localStorage.setItem('ax_github_token', 'ghp_test');
       mockFetch({ items: [] });
-      const auditModule = await import('../../services/audit-log.js');
+      const auditModule = await import('../../services/observability/audit-log.js');
       const recordSpy = vi.spyOn(auditModule.auditLog, 'record');
       await apexClaudeCodeParity.grep('foo');
       expect(recordSpy).toHaveBeenCalledWith('parity.grep', expect.any(Object));
@@ -880,7 +880,7 @@ describe('apex-claude-code-parity (parité Claude Code)', () => {
     it('createPR autorisé → audit log entry parity.createPR', async () => {
       localStorage.setItem('ax_github_token', 'ghp_test');
       mockFetch({ number: 1, html_url: 'http://x' });
-      const auditModule = await import('../../services/audit-log.js');
+      const auditModule = await import('../../services/observability/audit-log.js');
       const recordSpy = vi.spyOn(auditModule.auditLog, 'record');
       await apexClaudeCodeParity.createPR({ title: 't', body: 'b', head: 'h' });
       expect(recordSpy).toHaveBeenCalledWith('parity.createPR', expect.any(Object));

@@ -18,8 +18,8 @@ import { APP_VER } from '../../core/bootstrap.js';
 import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { router } from '../../core/router.js';
-import { auth } from '../../services/auth.js';
-import { isFeatureEnabled } from '../../services/feature-toggles.js';
+import { auth } from '../../services/auth/auth.js';
+import { isFeatureEnabled } from '../../services/auth/feature-toggles.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -55,7 +55,7 @@ async function tryAutoLogin(): Promise<boolean> {
     const deviceTrusted = localStorage.getItem('apex_v13_device_trusted_v1');
     if (!lastUid || !lastName || !deviceTrusted) return false;
     /* Device fingerprint check */
-    const { deviceContext } = await import('../../services/device-context.js');
+    const { deviceContext } = await import('../../services/integrations/device-context.js');
     const fp = await deviceContext.getFingerprint();
     if (fp.device_id !== deviceTrusted) {
       /* Device a changé — purge trusted, force re-login */
@@ -63,7 +63,7 @@ async function tryAutoLogin(): Promise<boolean> {
       return false;
     }
     /* Login transparent sans PIN (device trusted) */
-    const { auth } = await import('../../services/auth.js');
+    const { auth } = await import('../../services/auth/auth.js');
     const r = await auth.loginTrusted(lastUid, lastName);
     if (r.ok) {
       router.navigate('chat');

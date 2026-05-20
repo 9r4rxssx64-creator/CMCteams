@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { APEX_PLUGINS_CATALOG } from '../../data/apex-plugins-catalog.js';
-import { apexPluginsMarketplace } from '../../services/apex-plugins-marketplace.js';
+import { apexPluginsMarketplace } from '../../services/core-svc/apex-plugins-marketplace.js';
 
 const STORAGE_KEY = 'apex_v13_plugins_state';
 const STATS_KEY = 'apex_v13_plugins_stats';

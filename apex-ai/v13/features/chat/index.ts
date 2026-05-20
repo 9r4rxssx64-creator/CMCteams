@@ -20,20 +20,20 @@ import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
-import { aiRouter, type ChatMessage } from '../../services/ai-router.js';
-import { commerce } from '../../services/commerce.js';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
-import { isFeatureEnabled, renderDisabledNotice } from '../../services/feature-toggles.js';
+import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
+import { commerce } from '../../services/integrations/commerce.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
 import {
   parseSlashCommand,
   helpText,
   SLASH_COMMANDS,
-} from '../../services/slash-commands.js';
+} from '../../services/admin/slash-commands.js';
 import {
   generateFollowUps,
   isFollowUpsEnabled,
-} from '../../services/suggestions.js';
-import { vault } from '../../services/vault.js';
+} from '../../services/ai/suggestions.js';
+import { vault } from '../../services/vault/vault.js';
 import { haptic } from '../../ui/haptic.js';
 import { renderMarkdownEnriched, wireMarkdownActions } from '../../ui/markdown.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
@@ -259,7 +259,7 @@ export async function handleLightboxAction(
       prompt = p;
     }
     try {
-      const { apexToolsDispatch } = await import('../../services/apex-tools-dispatch.js');
+      const { apexToolsDispatch } = await import('../../services/core-svc/apex-tools-dispatch.js');
       const params: Record<string, unknown> = { url: img.url, type: action };
       if (prompt) params['prompt'] = prompt;
       const res = await apexToolsDispatch.execute('transform_image', params, 'admin');
@@ -435,7 +435,7 @@ async function autoAnalyzeDeviceImage(file: File, rootEl: HTMLElement): Promise<
     if (!key) return;
   } catch { return; }
   try {
-    const { visionDeviceAnalyze } = await import('../../services/vision-device-analyze.js');
+    const { visionDeviceAnalyze } = await import('../../services/ai/vision-device-analyze.js');
     /* Toast info "🔍 Apex analyse l'image..." */
     toast.info('🔍 Apex analyse ton image...', { duration: 3000 });
     const result = await visionDeviceAnalyze.autoDetectAndAnalyze({ imageBlob: file });
@@ -463,7 +463,7 @@ async function autoAnalyzeDeviceImage(file: File, rootEl: HTMLElement): Promise<
  * Propose configuration Broadlink 1-clic après extraction vision.
  */
 async function proposeBroadlinkSetup(
-  result: import('../../services/vision-device-analyze.js').BroadlinkAccountAnalysis,
+  result: import('../../services/ai/vision-device-analyze.js').BroadlinkAccountAnalysis,
   rootEl: HTMLElement,
 ): Promise<void> {
   const hasToken = !!result.token;
@@ -498,7 +498,7 @@ async function proposeBroadlinkSetup(
     document.querySelector<HTMLButtonElement>('#ax-bl-setup-token')?.addEventListener('click', () => {
       void (async () => {
         if (!result.token) return;
-        const { broadlinkBridge } = await import('../../services/broadlink-bridge.js');
+        const { broadlinkBridge } = await import('../../services/integrations/broadlink-bridge.js');
         const r = await broadlinkBridge.setToken(result.token, result.email);
         if (r.ok) {
           toast.success('✅ Token Broadlink configuré + chiffré dans Coffre');
@@ -525,7 +525,7 @@ async function proposeBroadlinkSetup(
  * Propose configuration Smart TV (stocke device + propose pilotage via Broadlink).
  */
 async function proposeSmartTVSetup(
-  result: import('../../services/vision-device-analyze.js').SmartTVAnalysis,
+  result: import('../../services/ai/vision-device-analyze.js').SmartTVAnalysis,
   rootEl: HTMLElement,
 ): Promise<void> {
   void rootEl;
@@ -668,7 +668,7 @@ async function autoExtractAndLearn(text: string): Promise<void> {
  */
 async function detectAndSuggestTool(text: string, rootEl: HTMLElement): Promise<void> {
   try {
-    const { apexToolsDispatch } = await import('../../services/apex-tools-dispatch.js');
+    const { apexToolsDispatch } = await import('../../services/core-svc/apex-tools-dispatch.js');
     const intentRes = await apexToolsDispatch.execute('detect_intent', { text }, 'admin');
     if (!intentRes.ok || !intentRes.result) return;
     const intent = (intentRes.result as { intent?: string; confidence?: number }).intent;
@@ -686,7 +686,7 @@ async function detectAndSuggestTool(text: string, rootEl: HTMLElement): Promise<
       return;
     }
 
-    const { smartToolsSuggester } = await import('../../services/smart-tools-suggester.js');
+    const { smartToolsSuggester } = await import('../../services/ai/smart-tools-suggester.js');
     const tool = smartToolsSuggester.suggestForIntent(intent);
     if (!tool) return;
 
@@ -975,7 +975,7 @@ export function handleWakeWordTextTrigger(_rootEl: HTMLElement, text: string): b
   /* Activate wake word voice mode (lazy import — services/wake-word charge SpeechRecognition iOS) */
   void (async () => {
     try {
-      const { wakeWord } = await import('../../services/wake-word.js');
+      const { wakeWord } = await import('../../services/ai/wake-word.js');
       const r = await wakeWord.start();
       if (r.started) {
         toast.success('🎙 Wake word activé — parle, je t\'écoute', { duration: 4000 });
@@ -1121,7 +1121,7 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
 /* v13.4.3 — Slash command /loop */
 async function handleLoopCommand(rootEl: HTMLElement, args: string): Promise<void> {
   try {
-    const { autonomousLoop } = await import('../../services/autonomous-loop.js');
+    const { autonomousLoop } = await import('../../services/admin/autonomous-loop.js');
     autonomousLoop.start();
     const sub = (args || '').trim().toLowerCase();
     if (sub === '' || sub === 'list') {
@@ -1158,7 +1158,7 @@ async function handleLoopCommand(rootEl: HTMLElement, args: string): Promise<voi
 async function handlePlanCommand(rootEl: HTMLElement, objective: string): Promise<void> {
   pushAssistantMessage(rootEl, '🗺 Génération du plan en cours…');
   try {
-    const { planMode } = await import('../../services/plan-mode.js');
+    const { planMode } = await import('../../services/admin/plan-mode.js');
     const plan = await planMode.generate(objective);
     const stepsTxt = plan.steps
       .map((s, i) => `${i + 1}. **[${s.risk}]** ${s.title}${s.files.length ? ` — _${s.files.join(', ')}_` : ''}`)
@@ -1186,7 +1186,7 @@ async function handlePlanCommand(rootEl: HTMLElement, objective: string): Promis
 /* v13.4.3 — Slash command /rules */
 async function handleRulesCommand(rootEl: HTMLElement, args: string): Promise<void> {
   try {
-    const { rulesEngine } = await import('../../services/rules-engine.js');
+    const { rulesEngine } = await import('../../services/core-svc/rules-engine.js');
     const k = (args || '').trim();
     const rules = k ? rulesEngine.filter(k) : rulesEngine.top(10);
     const md = rulesEngine.renderMarkdown(rules);
@@ -1200,8 +1200,8 @@ async function handleRulesCommand(rootEl: HTMLElement, args: string): Promise<vo
 /* v13.4.5 — Slash command /autonomous (mode autonome session-driven) */
 async function handleAutonomousCommand(rootEl: HTMLElement, args: string): Promise<void> {
   try {
-    const { apexAutonomousMode } = await import('../../services/apex-autonomous-mode.js');
-    const { autonomousWatch } = await import('../../services/autonomous-watch.js');
+    const { apexAutonomousMode } = await import('../../services/admin/apex-autonomous-mode.js');
+    const { autonomousWatch } = await import('../../services/sentinels/autonomous-watch.js');
     autonomousWatch.start();
     const sub = (args || '').trim();
     const subLower = sub.toLowerCase();
@@ -1438,7 +1438,7 @@ async function handleSpeakAction(btn: HTMLButtonElement, msg: DisplayMessage): P
   /* Toggle stop si déjà playing */
   if (btn.classList.contains('ax-playing')) {
     try {
-      const { stopAll } = await import('../../services/voice.js');
+      const { stopAll } = await import('../../services/ai/voice.js');
       stopAll();
     } catch {
       /* ignore — reset UI quoi qu'il arrive */
@@ -1449,7 +1449,7 @@ async function handleSpeakAction(btn: HTMLButtonElement, msg: DisplayMessage): P
   }
   /* Stop tout autre playback en cours (un seul à la fois) */
   try {
-    const { stopAll, speak, getActiveVoice } = await import('../../services/voice.js');
+    const { stopAll, speak, getActiveVoice } = await import('../../services/ai/voice.js');
     stopAll();
     /* Reset autres boutons playing */
     document.querySelectorAll<HTMLButtonElement>('.ax-msg-action.ax-playing').forEach((b) => {
@@ -1553,7 +1553,7 @@ export async function maybeAutoReadAssistant(msg: DisplayMessage): Promise<void>
   if (!msg.text || msg.text.length === 0) return;
   if (!isAutoReadEnabled()) return;
   try {
-    const { speak, getActiveVoice, stopAll } = await import('../../services/voice.js');
+    const { speak, getActiveVoice, stopAll } = await import('../../services/ai/voice.js');
     stopAll();
     const voiceId = getActiveVoice();
     await speak(msg.text, voiceId);
@@ -1737,7 +1737,7 @@ export function render(rootEl: HTMLElement): void {
    * en cours interrompue (crash, background-kill iOS, network drop), proposer reprise. */
   void (async () => {
     try {
-      const { streamPartialSaver } = await import('../../services/stream-partial-saver.js');
+      const { streamPartialSaver } = await import('../../services/ai/stream-partial-saver.js');
       const candidate = streamPartialSaver.getResumeCandidate();
       if (candidate && candidate.partial_text) {
         /* Push message partial dans conversation comme "assistant interrompu" */
@@ -2151,12 +2151,12 @@ export function render(rootEl: HTMLElement): void {
       /* P0 SÉCU v13.0.78 Kevin "il s'affole pas reconnu" :
        * Bulk detect → store toutes clés trouvées (multi-line, .env, JSON OK) */
       void (async () => {
-        const { detectAllCredentials } = await import('../../services/credential-patterns.js');
+        const { detectAllCredentials } = await import('../../services/vault/credential-patterns.js');
         const detected = detectAllCredentials(value);
         if (detected.length > 0) {
           textarea.value = '';
           textarea.style.height = 'auto';
-          const { vault } = await import('../../services/vault.js');
+          const { vault } = await import('../../services/vault/vault.js');
           const result = await vault.autoStoreBulk(value);
           if (result.stored.length > 0) {
             /* v13.3.75 (Kevin screenshot): dedup les noms si Kevin colle plusieurs clés
@@ -2175,7 +2175,7 @@ export function render(rootEl: HTMLElement): void {
             void (async () => {
               try {
                 await new Promise((r) => setTimeout(r, 4000));
-                const { vaultFirebaseBackup } = await import('../../services/vault-firebase-backup.js');
+                const { vaultFirebaseBackup } = await import('../../services/vault/vault-firebase-backup.js');
                 const fbList = await vaultFirebaseBackup.listAll();
                 const fbKeys = new Set(fbList.map((e) => e.key));
                 const storedKeys = result.stored.map((s) => `ax_${s.pattern.name.toLowerCase().replace(/\s+/g, '_')}_key`);
@@ -2214,7 +2214,7 @@ export function render(rootEl: HTMLElement): void {
          * Solution : si planning détecté + size ≥ 1000 chars → push direct,
          * bypass IA, message assistant court fixe (zéro risque crash). */
         try {
-          const { detectSbmPlanning, pushPlanningToCmc, _internals } = await import('../../services/cmc-planning-bridge.js');
+          const { detectSbmPlanning, pushPlanningToCmc, _internals } = await import('../../services/integrations/cmc-planning-bridge.js');
           const det = detectSbmPlanning(value);
           if (det.detected && det.size >= _internals.MIN_PUSH_LENGTH) {
             /* Ajout user msg dans conversation (visible) */
@@ -2248,7 +2248,7 @@ export function render(rootEl: HTMLElement): void {
          * que CMCteams (admin Kevin) propose un import 1-clic. */
         void (async () => {
           try {
-            const { detectAndPushIfPlanning } = await import('../../services/cmc-planning-bridge.js');
+            const { detectAndPushIfPlanning } = await import('../../services/integrations/cmc-planning-bridge.js');
             const r = await detectAndPushIfPlanning(value, 'chat');
             if (r && r.push.ok && r.push.id) {
               toast.info(`📋 Planning détecté → envoyé à CMCteams (id: ${r.push.id})`, { duration: 5000 });
@@ -2334,7 +2334,7 @@ export function render(rootEl: HTMLElement): void {
       /* v13.3.19 — Bridge Apex → CMCteams sur paste (règle Kevin 2026-05-07 §8) */
       void (async () => {
         try {
-          const { detectAndPushIfPlanning } = await import('../../services/cmc-planning-bridge.js');
+          const { detectAndPushIfPlanning } = await import('../../services/integrations/cmc-planning-bridge.js');
           const r = await detectAndPushIfPlanning(pasted, 'paste');
           if (r && r.push.ok && r.push.id) {
             toast.info(`📋 Planning détecté → envoyé à CMCteams (id: ${r.push.id})`, { duration: 5000 });
@@ -2346,7 +2346,7 @@ export function render(rootEl: HTMLElement): void {
        * extrait URLs+social_handle+email+IBAN+phone+SIRET+VAT+BTC+ETH. */
       void (async () => {
         try {
-          const { apexPasteExtractor } = await import('../../services/apex-paste-extractor.js');
+          const { apexPasteExtractor } = await import('../../services/admin/apex-paste-extractor.js');
           const r = apexPasteExtractor.extract(pasted);
           if (r.ok && r.total > 0) {
             /* Catégoriser pour affichage toast */
@@ -2366,13 +2366,13 @@ export function render(rootEl: HTMLElement): void {
         } catch { /* non-bloquant */ }
       })();
       void (async () => {
-        const { detectAllCredentials } = await import('../../services/credential-patterns.js');
+        const { detectAllCredentials } = await import('../../services/vault/credential-patterns.js');
         const detected = detectAllCredentials(pasted);
         if (detected.length === 0) {
           /* v13.3.53 — Texte sans credential MAIS peut contenir URLs/emails/IPs : multi-source */
           if (/(https?:\/\/|@|\d+\.\d+\.\d+\.\d+|[0-9A-F]{2}[:-][0-9A-F]{2})/i.test(pasted) && pasted.length > 20) {
             try {
-              const { multiSourceAnalyze } = await import('../../services/multi-source-analyze.js');
+              const { multiSourceAnalyze } = await import('../../services/ai/multi-source-analyze.js');
               const result = await multiSourceAnalyze.analyzeText(pasted);
               if (result.extracted_count > 0) {
                 const r = await multiSourceAnalyze.installAll(result, { test: false });
@@ -2386,7 +2386,7 @@ export function render(rootEl: HTMLElement): void {
         }
         /* Credential détecté : clear textarea (efface valeur visible) + chiffre */
         textarea.value = '';
-        const { vault } = await import('../../services/vault.js');
+        const { vault } = await import('../../services/vault/vault.js');
         const result = await vault.autoStoreBulk(pasted);
         if (result.stored.length > 0) {
           /* v13.3.75 dedup names (cf. fix toast 1703) */
@@ -2408,7 +2408,7 @@ export function render(rootEl: HTMLElement): void {
         }
         /* v13.3.53 — Multi-source pour extraire AUSSI URLs/sites/emails de la même paste */
         try {
-          const { multiSourceAnalyze } = await import('../../services/multi-source-analyze.js');
+          const { multiSourceAnalyze } = await import('../../services/ai/multi-source-analyze.js');
           const msResult = await multiSourceAnalyze.analyzeText(pasted);
           const sites = msResult.items.filter((it) => it.type === 'site');
           if (sites.length > 0) {
@@ -2464,7 +2464,7 @@ export function render(rootEl: HTMLElement): void {
     /* Pre-check permission micro (anti-blocage silencieux) */
     void (async () => {
       try {
-        const { checkMicrophonePermission } = await import('../../services/voice-print.js');
+        const { checkMicrophonePermission } = await import('../../services/ai/voice-print.js');
         const perm = await checkMicrophonePermission();
         if (perm === 'denied') {
           toast.warn('🚫 Micro refusé après mise à jour. Réglages iOS > Safari (ou Apex) > Microphone → Autoriser, puis recharge.', {
@@ -2527,7 +2527,7 @@ export function render(rootEl: HTMLElement): void {
           /* v13.4.193 Kevin "overlay transparent style Claude Code" :
            * Affiche overlay fullscreen avec transcript en grand. Tap outside
            * ou Stop = arrête + close. Envoyer = submit + close. */
-          void import('../../services/voice-overlay.js').then(({ voiceOverlay }) => {
+          void import('../../services/ai/voice-overlay.js').then(({ voiceOverlay }) => {
             voiceOverlay.show({
               onStop: () => {
                 try { recognition?.stop(); } catch { /* ignore */ }
@@ -2563,7 +2563,7 @@ export function render(rootEl: HTMLElement): void {
           if (ta) ta.value = transcript;
           /* v13.4.193 Kevin "overlay transparent comme Claude Code" :
            * Affiche le transcript en grand dans overlay fullscreen (style Claude voice). */
-          void import('../../services/voice-overlay.js').then(({ voiceOverlay }) => {
+          void import('../../services/ai/voice-overlay.js').then(({ voiceOverlay }) => {
             if (voiceOverlay.isVisible()) {
               voiceOverlay.updateTranscript(transcript, hasFinal);
             }
@@ -2580,7 +2580,7 @@ export function render(rootEl: HTMLElement): void {
               if (lastFinalTranscript.trim().length > 0 && recognitionActive) {
                 try { recognition?.stop(); } catch { /* ignore */ }
                 /* v13.4.193 close overlay before submit */
-                void import('../../services/voice-overlay.js').then(({ voiceOverlay }) => {
+                void import('../../services/ai/voice-overlay.js').then(({ voiceOverlay }) => {
                   voiceOverlay.hide();
                 }).catch(() => { /* skip */ });
                 const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
@@ -2656,7 +2656,7 @@ export function render(rootEl: HTMLElement): void {
     haptic.tap();
     void (async () => {
       try {
-        const { voicePrint, checkMicrophonePermission } = await import('../../services/voice-print.js');
+        const { voicePrint, checkMicrophonePermission } = await import('../../services/ai/voice-print.js');
         if (!voicePrint.isSupported()) {
           toast.warn('Wake word non supporté par ton navigateur');
           return;
@@ -2836,7 +2836,7 @@ export function render(rootEl: HTMLElement): void {
             const reader = new FileReader();
             reader.onload = async () => {
               const dataUrl = reader.result as string;
-              const { multiSourceAnalyze } = await import('../../services/multi-source-analyze.js');
+              const { multiSourceAnalyze } = await import('../../services/ai/multi-source-analyze.js');
               toast.info('🔍 Analyse multi-source en cours...', { duration: 3000 });
               const result = await multiSourceAnalyze.analyzeImage(dataUrl);
               if (result.extracted_count === 0) return;
@@ -2853,7 +2853,7 @@ export function render(rootEl: HTMLElement): void {
       }
       void (async () => {
         try {
-          const { fileConverter } = await import('../../services/file-converter.js');
+          const { fileConverter } = await import('../../services/core-svc/file-converter.js');
           const r = await fileConverter.ingest(file, 'admin');
           if (r.ok) toast.success(`✅ ${file.name} ingéré`);
           else toast.warn(`Ingest fail : ${r.reason ?? file.name}`);
@@ -2890,7 +2890,7 @@ export function render(rootEl: HTMLElement): void {
         }
         void (async () => {
           try {
-            const { fileConverter } = await import('../../services/file-converter.js');
+            const { fileConverter } = await import('../../services/core-svc/file-converter.js');
             await fileConverter.ingest(file, 'admin');
             toast.success(`📎 ${file.name} ajouté`);
           } catch { /* ignore */ }
@@ -2916,7 +2916,7 @@ export function render(rootEl: HTMLElement): void {
           }
           void (async () => {
             try {
-              const { fileConverter } = await import('../../services/file-converter.js');
+              const { fileConverter } = await import('../../services/core-svc/file-converter.js');
               await fileConverter.ingest(file, 'admin');
               toast.success(`📋 ${file.name || 'media collé'} ajouté`);
             } catch { /* ignore */ }
@@ -2932,8 +2932,8 @@ export function render(rootEl: HTMLElement): void {
     haptic.tap();
     void (async () => {
       try {
-        const { smartCamera } = await import('../../services/smart-camera.js');
-        const { adminPrompt } = await import('../../services/admin-prompt.js');
+        const { smartCamera } = await import('../../services/ai/smart-camera.js');
+        const { adminPrompt } = await import('../../services/admin/admin-prompt.js');
         const mode = await adminPrompt.askChoice('📷 Caméra', 'Choisis le mode :', [
           { id: 'single', label: 'Photo simple', emoji: '📷', variant: 'primary' },
           { id: 'burst', label: 'Rafale (5 photos)', emoji: '⚡', variant: 'ghost' },
@@ -3140,7 +3140,7 @@ export function render(rootEl: HTMLElement): void {
     haptic.tap();
     void (async () => {
       try {
-        const { aiRoutingPolicy } = await import('../../services/ai-routing-policy.js');
+        const { aiRoutingPolicy } = await import('../../services/ai/ai-routing-policy.js');
         const status = aiRoutingPolicy.getStatus();
         const recos = aiRoutingPolicy.recommendActions();
         const recosHtml = recos.length
@@ -3301,7 +3301,7 @@ export function render(rootEl: HTMLElement): void {
             }
             if (input) input.value = trimmed;
             /* Auto-detect immédiat pour preview */
-            const { detectCredential } = await import('../../services/credential-patterns.js');
+            const { detectCredential } = await import('../../services/vault/credential-patterns.js');
             const detected = detectCredential(trimmed);
             if (preview && detectionEl) {
               if (detected) {
@@ -3330,7 +3330,7 @@ export function render(rootEl: HTMLElement): void {
             if (preview) preview.style.display = 'none';
             return;
           }
-          const { detectCredential } = await import('../../services/credential-patterns.js');
+          const { detectCredential } = await import('../../services/vault/credential-patterns.js');
           const detected = detectCredential(value);
           if (detected) {
             detectionEl.textContent = `✅ Détecté : ${detected.name} (${value.length} chars)`;
@@ -3429,7 +3429,7 @@ export function render(rootEl: HTMLElement): void {
           onClick: () => {
             haptic.medium();
             sheet.close();
-            void import('../../services/auth.js').then((m) => {
+            void import('../../services/auth/auth.js').then((m) => {
               m.auth.logout();
               toast.info('Déconnecté');
               location.hash = '#landing';

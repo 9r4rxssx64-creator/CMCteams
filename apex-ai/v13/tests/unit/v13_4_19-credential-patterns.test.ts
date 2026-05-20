@@ -12,7 +12,7 @@ import {
   detectCredential,
   detectAllCredentials,
   CREDENTIAL_PATTERNS,
-} from '../../services/credential-patterns.js';
+} from '../../services/vault/credential-patterns.js';
 
 describe('v13.4.19 detectCredential — patterns AI/devops/payments', () => {
   it("Anthropic API key (sk-ant-api03-...)", () => {

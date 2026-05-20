@@ -4,7 +4,7 @@
  * Module : services/apex-icloud-keychain.ts (~140 stmts, était 0% coverage).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apexIcloudKeychain } from '../../services/apex-icloud-keychain.js';
+import { apexIcloudKeychain } from '../../services/vault/apex-icloud-keychain.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

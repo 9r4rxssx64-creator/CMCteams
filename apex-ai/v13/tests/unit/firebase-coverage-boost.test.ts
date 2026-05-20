@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { firebase, FB_FIX, FB_LOCAL } from '../../services/firebase.js';
+import { firebase, FB_FIX, FB_LOCAL } from '../../services/storage/firebase.js';
 
 describe('firebase coverage boost', () => {
   beforeEach(() => {

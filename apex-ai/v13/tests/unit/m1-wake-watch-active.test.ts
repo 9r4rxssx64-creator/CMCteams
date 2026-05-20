@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { sentinels, registerCoreSentinels } from '../../services/sentinels.js';
+import { sentinels, registerCoreSentinels } from '../../services/sentinels/sentinels.js';
 
 describe('M1 — wake-watch sentinelle', () => {
   beforeEach(() => {

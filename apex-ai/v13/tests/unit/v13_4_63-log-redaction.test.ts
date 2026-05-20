@@ -5,7 +5,7 @@
  * Critique sécurité Apex commercialisable : pas de leak credentials dans logs.
  */
 import { describe, it, expect } from 'vitest';
-import { logRedaction } from '../../services/log-redaction-wrapper.js';
+import { logRedaction } from '../../services/observability/log-redaction-wrapper.js';
 
 describe('v13.4.63 log-redaction — redactString patterns', () => {
   it("singleton défini avec méthodes attendues", () => {

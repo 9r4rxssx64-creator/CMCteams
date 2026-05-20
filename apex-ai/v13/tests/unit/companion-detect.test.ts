@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { companionDetect } from '../../services/companion-detect.js';
+import { companionDetect } from '../../services/integrations/companion-detect.js';
 
 interface CapacitorGlobal {
   isNativePlatform: () => boolean;

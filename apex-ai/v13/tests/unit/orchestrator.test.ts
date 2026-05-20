@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { orchestrator, PROJECTS, TOOLS_HTML } from '../../services/orchestrator.js';
+import { orchestrator, PROJECTS, TOOLS_HTML } from '../../services/core-svc/orchestrator.js';
 
 describe('orchestrator', () => {
   it('liste 6 projets Kevin préservés', () => {

@@ -7,7 +7,7 @@
  */
 
 import { logger } from '../../core/logger.js';
-import { auditLog } from '../audit-log.js';
+import { auditLog } from '../observability/audit-log.js';
 
 const JSPDF_CDN = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
 const AUTOTABLE_CDN = 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js';

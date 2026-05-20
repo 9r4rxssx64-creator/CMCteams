@@ -20,11 +20,11 @@ import { createCleanupScope, type CleanupScope } from '../../../core/listener-cl
 import { logger } from '../../../core/logger.js';
 import { router } from '../../../core/router.js';
 import { store } from '../../../core/store.js';
-import { codeReviewMultiAgent, type ReviewReport } from '../../../services/code-review-multi-agent.js';
-import { frontendDesign, type DesignOutput } from '../../../services/frontend-design.js';
-import { gstackRoles, type PipelineResult } from '../../../services/gstack-roles.js';
-import { securityReview, type ScanReport } from '../../../services/security-review.js';
-import { superpowersMethodology, type SuperpowerSession } from '../../../services/superpowers-methodology.js';
+import { codeReviewMultiAgent, type ReviewReport } from '../../../services/ai/code-review-multi-agent.js';
+import { frontendDesign, type DesignOutput } from '../../../services/core-svc/frontend-design.js';
+import { gstackRoles, type PipelineResult } from '../../../services/core-svc/gstack-roles.js';
+import { securityReview, type ScanReport } from '../../../services/admin/security-review.js';
+import { superpowersMethodology, type SuperpowerSession } from '../../../services/ai/superpowers-methodology.js';
 import { haptic } from '../../../ui/haptic.js';
 import { modalSheet } from '../../../ui/modal-sheet.js';
 import { toast } from '../../../ui/toast.js';

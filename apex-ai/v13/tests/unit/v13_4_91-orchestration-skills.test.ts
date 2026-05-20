@@ -6,7 +6,7 @@ import {
   remoteControl,
   hiveMind,
   webScrapper,
-} from '../../services/apex-orchestration-skills.js';
+} from '../../services/core-svc/apex-orchestration-skills.js';
 
 describe('v13.4.91 RemoteControl (OpenClaw /rc command)', () => {
   it("singleton défini avec 4 méthodes", () => {

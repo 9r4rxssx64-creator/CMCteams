@@ -4,7 +4,7 @@
  * online listener, idempotency-key passthrough, quota gracefull.
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { firebaseQueue } from '../../services/firebase-queue.js';
+import { firebaseQueue } from '../../services/storage/firebase-queue.js';
 
 describe('firebase-queue deep tests Jet 8', () => {
   beforeEach(() => {
@@ -130,7 +130,7 @@ describe('firebase-queue deep tests Jet 8', () => {
 
   describe('idempotency-key passthrough vers firebase.write', () => {
     it('writeOne passe entry.id comme idempotencyKey lors du flush', async () => {
-      const { firebase } = await import('../../services/firebase.js');
+      const { firebase } = await import('../../services/storage/firebase.js');
       const initSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('null', { status: 200 }));
       await firebase.init();
       initSpy.mockRestore();

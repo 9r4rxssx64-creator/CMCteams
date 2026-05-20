@@ -8,7 +8,7 @@
  */
 
 import { logger } from '../../core/logger.js';
-import type { MarketplaceItem, MarketplaceProvider } from '../apex-meta-marketplace-types.js';
+import type { MarketplaceItem, MarketplaceProvider } from '../core-svc/apex-meta-marketplace-types.js';
 
 export interface SearchHelpers {
   fetchJson: <T>(url: string, init?: RequestInit) => Promise<T | null>;
@@ -214,7 +214,7 @@ export async function searchClaudePlugins(_h: SearchHelpers, query: string, limi
   void _h; /* Param signature uniformisée avec autres handlers, pas utilisé ici */
   /* Délégation au catalogue interne 196 plugins (apex-plugins-marketplace.ts) */
   try {
-    const mod = await import('../apex-plugins-marketplace.js');
+    const mod = await import('../core-svc/apex-plugins-marketplace.js');
     const results = mod.apexPluginsMarketplace.search(query || '', limit);
     return results.map((p) => ({
       id: p.id,

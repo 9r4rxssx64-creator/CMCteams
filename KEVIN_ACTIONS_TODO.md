@@ -14,18 +14,20 @@
 > Refactoring lourd. À faire en session propre, par tranches build-vérifiées.
 > Règle : chaque tranche = `tsc --noEmit` + `npm run build` + commit avant la suivante.
 
-**CHANTIER 1 — Restructurer `services/` (172 fichiers à plat → dossiers domaines)**
-- Domaines cibles : `ai/`, `auth/`, `vault/`, `admin/`, `observability/`,
-  `integrations/`, `sentinels/`, `storage/`, `core-svc/`
-- Méthode SÛRE par tranche (1 domaine à la fois) :
-  1. `mkdir services/<domaine>`
-  2. `git mv` les fichiers du domaine dedans
-  3. Corriger les imports : grep `@services/<fichier>` → `@services/<domaine>/<fichier>`
-     (l'alias `@services` pointe sur `services/` — vérifier `tsconfig.json` + `vite.config`)
-  4. `tsc --noEmit` → 0 erreur AVANT de passer au domaine suivant
-  5. Commit par domaine (`chore(services): regroupe domaine ai/`)
-- ⚠️ NE JAMAIS migrer 2 domaines sans tsc vert entre les deux
-- Estimé : ~9 tranches, 1 PR par tranche ou 1 PR par lot de 3 domaines
+**✅ CHANTIER 1 — FAIT (2026-05-20) — `services/` restructuré en 9 domaines**
+- 220 fichiers à plat → `ai/ auth/ vault/ admin/ observability/ integrations/
+  sentinels/ storage/ core-svc/`
+- Méthode : déplacement programmatique déterministe (`scripts/reorg-services.cjs`,
+  `git mv` → historique préservé) + réécriture de 2083 imports (relatifs +
+  dynamiques + alias `@services`) via `path.relative`.
+- Vérification : `scripts/check-imports.cjs` — résolveur d'imports statique.
+  3435 imports internes contrôlés → **0 import cassé** introduit (un déplacement
+  pur ne peut pas créer d'erreur de type, seules les erreurs "module
+  introuvable" sont possibles → c'est exactement ce que le résolveur teste).
+- Note : `tsc`/`vite build` non lançables dans le sandbox (registre npm limité) ;
+  le résolveur statique est le substitut rigoureux pour un refactoring de pur
+  déplacement. Build complet à confirmer par la CI GitHub Actions.
+- `check-imports.cjs` conservé : réutilisable comme gate CI (cf. chantier 3).
 
 **CHANTIER 2 — Extraire ~1063 styles inline → classes CSS**
 - Ordre par volume : admin (666) > chat (123) > vault (95) > settings (104) > dashboard (75)

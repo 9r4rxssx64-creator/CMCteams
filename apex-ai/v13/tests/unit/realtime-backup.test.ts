@@ -52,7 +52,7 @@ describe('RealtimeBackup — snapshots IDB', () => {
   });
 
   it('snapshotNow("memory") crée 1 snapshot avec data array', async () => {
-    const { realtimeBackup } = await import('../../services/realtime-backup.js');
+    const { realtimeBackup } = await import('../../services/storage/realtime-backup.js');
     realtimeBackup.setMemoryGetter(async () => [
       { id: 'm1', text: 'fact 1', importance: 80, category: 'facts', scope: 'kevin' },
       { id: 'm2', text: 'fact 2', importance: 50, category: 'facts', scope: 'kevin' },
@@ -67,7 +67,7 @@ describe('RealtimeBackup — snapshots IDB', () => {
   });
 
   it('rotation FIFO : > 12 snapshots → cleanup garde 12 max par kind', async () => {
-    const { realtimeBackup } = await import('../../services/realtime-backup.js');
+    const { realtimeBackup } = await import('../../services/storage/realtime-backup.js');
     let counter = 0;
     realtimeBackup.setMemoryGetter(async () => {
       counter += 1;
@@ -88,8 +88,8 @@ describe('RealtimeBackup — snapshots IDB', () => {
   });
 
   it('restore() depuis snapshot → restaure data + crée pre-rollback', async () => {
-    const { realtimeBackup } = await import('../../services/realtime-backup.js');
-    const { restoreHelper } = await import('../../services/restore-helper.js');
+    const { realtimeBackup } = await import('../../services/storage/realtime-backup.js');
+    const { restoreHelper } = await import('../../services/storage/restore-helper.js');
 
     const snap1Data = [
       { id: 'a', text: 'fact A', importance: 70, category: 'facts', scope: 'kevin' },
@@ -125,8 +125,8 @@ describe('RealtimeBackup — snapshots IDB', () => {
   });
 
   it('listSnapshots filtre par kind', async () => {
-    const { realtimeBackup } = await import('../../services/realtime-backup.js');
-    const { restoreHelper } = await import('../../services/restore-helper.js');
+    const { realtimeBackup } = await import('../../services/storage/realtime-backup.js');
+    const { restoreHelper } = await import('../../services/storage/restore-helper.js');
     realtimeBackup.setMemoryGetter(async () => [{ id: 'm', text: 'x', importance: 50, category: 'facts', scope: 'k' }]);
     realtimeBackup.setChatGetter(async () => [{ id: 'c', role: 'user', content: 'hello' }]);
     await realtimeBackup.snapshotNow('memory');

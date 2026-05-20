@@ -23,7 +23,7 @@ export { escapeHtml } from '../../core/escape-html.js';
 
 import { escapeHtml } from '../../core/escape-html.js';
 import { logger } from '../../core/logger.js';
-import { geolocation, type GeoPosition, type FavoriteLocation, type LocalWeather } from '../../services/geolocation.js';
+import { geolocation, type GeoPosition, type FavoriteLocation, type LocalWeather } from '../../services/integrations/geolocation.js';
 
 let activeWatchId = -1;
 

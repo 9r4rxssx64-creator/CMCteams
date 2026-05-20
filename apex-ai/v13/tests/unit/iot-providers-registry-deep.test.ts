@@ -19,7 +19,7 @@ const { mockVault, mockAuditLog } = vi.hoisted(() => ({
 vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
 vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
-import { iotRegistry, BUILTIN_PROVIDERS } from '../../services/iot-providers-registry.js';
+import { iotRegistry, BUILTIN_PROVIDERS } from '../../services/integrations/iot-providers-registry.js';
 
 describe('iot-providers-registry deep (v13.4.151)', () => {
   beforeEach(() => {

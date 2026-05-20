@@ -6,7 +6,7 @@
  * IP geo fallback chain, history throttle.
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { geolocation } from '../../services/geolocation.js';
+import { geolocation } from '../../services/integrations/geolocation.js';
 
 interface MockGeolocation {
   getCurrentPosition: (success: PositionCallback, error?: PositionErrorCallback, opts?: PositionOptions) => void;

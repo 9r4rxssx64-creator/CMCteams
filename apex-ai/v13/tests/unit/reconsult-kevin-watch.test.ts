@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { reconsultKevinWatch } from '../../services/reconsult-kevin-watch.js';
+import { reconsultKevinWatch } from '../../services/sentinels/reconsult-kevin-watch.js';
 
 function mockTextResponse(text: string, status = 200): Response {
   return new Response(text, { status });

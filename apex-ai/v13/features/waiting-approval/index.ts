@@ -8,7 +8,7 @@
 import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { router } from '../../core/router.js';
-import { type SignupRequest } from '../../services/signup.js';
+import { type SignupRequest } from '../../services/auth/signup.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 

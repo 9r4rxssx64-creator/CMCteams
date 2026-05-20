@@ -3,11 +3,11 @@
  * Vérifie que les services s'orchestrent correctement entre eux.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auditLog } from '../../services/audit-log.js';
-import { observability } from '../../services/observability.js';
-import { rgpd } from '../../services/rgpd.js';
-import { aiSafety } from '../../services/ai-safety.js';
-import { secureStorage } from '../../services/secure-storage.js';
+import { auditLog } from '../../services/observability/audit-log.js';
+import { observability } from '../../services/observability/observability.js';
+import { rgpd } from '../../services/auth/rgpd.js';
+import { aiSafety } from '../../services/ai/ai-safety.js';
+import { secureStorage } from '../../services/storage/secure-storage.js';
 
 describe('Integration multi-service (Jet 6.5)', () => {
   beforeEach(() => {

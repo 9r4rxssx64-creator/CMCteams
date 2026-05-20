@@ -11,7 +11,7 @@
  * - DeepL + Gemini + Claude
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { apexToolsDispatch } from '../../services/apex-tools-dispatch.js';
+import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 function mockFetchOnce(response: Partial<Response> & { json?: () => Promise<unknown>; text?: () => Promise<string> }): void {
   vi.spyOn(globalThis, 'fetch').mockImplementationOnce(async () => response as Response);

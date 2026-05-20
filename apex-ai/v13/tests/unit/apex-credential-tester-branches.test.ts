@@ -21,7 +21,7 @@ import {
   testAllConfigured,
   isServiceSupported,
   listSupportedServices,
-} from '../../services/apex-credential-tester.js';
+} from '../../services/vault/apex-credential-tester.js';
 
 describe('apex-credential-tester branches (v13.4.146)', () => {
   beforeEach(() => {

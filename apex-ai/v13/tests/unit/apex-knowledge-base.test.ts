@@ -7,8 +7,8 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { apexKnowledgeBase } from '../../services/apex-knowledge-base.js';
-import { vault } from '../../services/vault.js';
+import { apexKnowledgeBase } from '../../services/admin/apex-knowledge-base.js';
+import { vault } from '../../services/vault/vault.js';
 
 const SAMPLE_FILE_CONTENT_B64 = btoa('Hello from CMCteams\nLine 2');
 

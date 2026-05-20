@@ -55,7 +55,7 @@ class Errors {
 
     /* Forward to Sentry runtime monitoring (audit Kevin v13.1.0).
      * Lazy import pour éviter cycle + ne pas bloquer si module pas encore chargé. */
-    void import('../services/sentry-bridge.js')
+    void import('../services/observability/sentry-bridge.js')
       .then(({ sentryBridge }) => {
         if (sentryBridge.isInitialized()) {
           sentryBridge.captureException(error, ctx as Record<string, unknown>);

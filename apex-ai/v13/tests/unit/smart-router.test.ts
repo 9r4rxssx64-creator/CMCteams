@@ -14,7 +14,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { smartRouter, type SmartProvider } from '../../services/smart-router.js';
+import { smartRouter, type SmartProvider } from '../../services/ai/smart-router.js';
 
 /* Helper : seed manually des stats pour un provider via writeStats indirect.
  * On simule un ping avec mocked fetch latency + ok response. */

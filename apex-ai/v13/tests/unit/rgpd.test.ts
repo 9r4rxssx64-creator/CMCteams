@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { rgpd } from '../../services/rgpd.js';
+import { rgpd } from '../../services/auth/rgpd.js';
 
 describe('rgpd service (tests réels Jet 6 — cascade Firebase)', () => {
   beforeEach(() => {

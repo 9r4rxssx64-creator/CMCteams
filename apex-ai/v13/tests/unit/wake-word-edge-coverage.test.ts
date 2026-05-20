@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { wakeWord } from '../../services/wake-word.js';
+import { wakeWord } from '../../services/ai/wake-word.js';
 
 class FakeSpeechRecognition {
   continuous = false;

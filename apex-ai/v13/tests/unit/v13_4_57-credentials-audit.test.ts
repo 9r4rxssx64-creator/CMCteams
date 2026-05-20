@@ -5,7 +5,7 @@
  * syncFromVault rapproche vault chiffré et registry visible Kevin admin.
  */
 import { describe, it, expect } from 'vitest';
-import { credentialsAudit } from '../../services/credentials-audit.js';
+import { credentialsAudit } from '../../services/vault/credentials-audit.js';
 
 describe('v13.4.57 credentials-audit — types + API', () => {
   it("singleton défini avec méthodes attendues", () => {

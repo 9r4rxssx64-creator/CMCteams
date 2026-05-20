@@ -15,7 +15,7 @@ vi.mock('../../services/audit-log.js', () => ({
   auditLog: { record: (...args: unknown[]) => auditRecordMock(...args) },
 }));
 
-import { smartCamera } from '../../services/smart-camera.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
 
 /* Helpers : fake MediaStream + tracks */
 function makeFakeTrack(opts: {

@@ -16,9 +16,9 @@
  * repair manuel. Le repair est exposé via sentinelAutoRepair.* pour wire UI.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sentinels, registerCoreSentinels } from '../../services/sentinels.js';
-import { sentinelAutoRepair } from '../../services/sentinel-auto-repair.js';
-import { auditLog } from '../../services/audit-log.js';
+import { sentinels, registerCoreSentinels } from '../../services/sentinels/sentinels.js';
+import { sentinelAutoRepair } from '../../services/sentinels/sentinel-auto-repair.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 const TARGETS = [
   'security-watch',

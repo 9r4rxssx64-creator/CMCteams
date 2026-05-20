@@ -14,7 +14,7 @@
 
 import { APP_VER } from '../core/bootstrap.js';
 import { logger } from '../core/logger.js';
-import { styleInjector } from '../services/style-injector.js';
+import { styleInjector } from '../services/core-svc/style-injector.js';
 
 const BADGE_ID = 'apex-version-badge';
 const STATIC_BADGE_ID = 'apex-version-badge-static';

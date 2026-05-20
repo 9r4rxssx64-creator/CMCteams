@@ -18,7 +18,7 @@
 import { escapeHtml } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { guardFeatureEnabled } from '../../services/feature-guard.js';
+import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 
 interface RemoteDeviceCard {
   id: string;
@@ -141,7 +141,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
   const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
   if (!guardFeatureEnabled('module.remote', rootEl, uid)) return;
-  const { deviceControl } = await import('../../services/device-control.js');
+  const { deviceControl } = await import('../../services/integrations/device-control.js');
   const env = deviceControl.detectDevice();
   const supported = deviceControl.listAllSupported();
   const hasNFC = supported.includes('nfc');
@@ -317,7 +317,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   rootEl.querySelector<HTMLButtonElement>('#ax-remote-scan-lan')?.addEventListener('click', () => {
     void (async () => {
       const { toast } = await import('../../ui/toast.js');
-      const { networkScan } = await import('../../services/network-scan.js');
+      const { networkScan } = await import('../../services/integrations/network-scan.js');
       toast.info('🔍 Scan LAN en cours (peut prendre 30-60s)...');
       const result = await networkScan.scan();
       const out = rootEl.querySelector<HTMLDivElement>('#ax-remote-lan-results');
@@ -355,7 +355,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
   rootEl.querySelector<HTMLButtonElement>('#ax-remote-scan-badge')?.addEventListener('click', () => {
     void (async () => {
       const { toast } = await import('../../ui/toast.js');
-      const { badgeCloner } = await import('../../services/badge-cloner.js');
+      const { badgeCloner } = await import('../../services/integrations/badge-cloner.js');
       toast.info('📲 Approche un tag NFC...');
       const r = await badgeCloner.scanBadge();
       if (r.ok && r.badge) {
@@ -369,7 +369,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   rootEl.querySelector<HTMLButtonElement>('#ax-remote-list-badges')?.addEventListener('click', () => {
     void (async () => {
-      const { badgeCloner } = await import('../../services/badge-cloner.js');
+      const { badgeCloner } = await import('../../services/integrations/badge-cloner.js');
       const list = await badgeCloner.listBadgesAsync();
       const out = rootEl.querySelector<HTMLDivElement>('#ax-remote-badges-list');
       if (!out) return;
@@ -388,7 +388,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
 
   /* === ÉMULATEURS HARDWARE === */
   const updateEmulatorStatus = async (): Promise<void> => {
-    const { cardEmulator } = await import('../../services/card-emulator.js');
+    const { cardEmulator } = await import('../../services/integrations/card-emulator.js');
     const status = cardEmulator.getStatus();
     const el = rootEl.querySelector<HTMLDivElement>('#ax-remote-emulator-status');
     if (!el) return;
@@ -410,7 +410,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
     rootEl.querySelector<HTMLButtonElement>(selector)?.addEventListener('click', () => {
       void (async () => {
         const { toast } = await import('../../ui/toast.js');
-        const { cardEmulator } = await import('../../services/card-emulator.js');
+        const { cardEmulator } = await import('../../services/integrations/card-emulator.js');
         const r = await cardEmulator[method]();
         if (r.ok) {
           toast.success('✅ Connecté');
@@ -433,9 +433,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
  * Dispatch action télécommande vers device-control approprié.
  */
 async function handleRemoteAction(deviceId: string, actionId: string): Promise<void> {
-  const { deviceControl } = await import('../../services/device-control.js');
+  const { deviceControl } = await import('../../services/integrations/device-control.js');
   const { toast } = await import('../../ui/toast.js');
-  const { auditLog } = await import('../../services/audit-log.js');
+  const { auditLog } = await import('../../services/observability/audit-log.js');
   void auditLog.record('remote.action', { details: { device: deviceId, action: actionId } });
 
   /* Vibration courte feedback haptique action déclenchée */

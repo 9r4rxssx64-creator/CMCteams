@@ -6,7 +6,7 @@
  * shared pour alerter Kevin proactivement.
  */
 import { describe, it, expect } from 'vitest';
-import { orchestrator } from '../../services/orchestrator.js';
+import { orchestrator } from '../../services/core-svc/orchestrator.js';
 
 describe('v13.4.86 orchestrator — Parité CMC audit logs', () => {
   it("singleton orchestrator avec méthodes CMC audit", () => {

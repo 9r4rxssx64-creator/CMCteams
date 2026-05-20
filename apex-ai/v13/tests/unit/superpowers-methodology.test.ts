@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { superpowersMethodology } from '../../services/superpowers-methodology.js';
+import { superpowersMethodology } from '../../services/ai/superpowers-methodology.js';
 
 vi.mock('../../services/ai-router.js', () => ({
   aiRouter: {

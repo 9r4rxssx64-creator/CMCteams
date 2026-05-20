@@ -6,7 +6,7 @@
  * Règle Kevin : admin = TOUJOURS Anthropic priorité absolue.
  */
 import { describe, it, expect } from 'vitest';
-import { aiRoutingPolicy } from '../../services/ai-routing-policy.js';
+import { aiRoutingPolicy } from '../../services/ai/ai-routing-policy.js';
 
 describe('v13.4.75 ai-routing-policy — API publique', () => {
   it("singleton défini avec méthodes attendues", () => {

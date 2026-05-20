@@ -8,7 +8,7 @@ import {
   generateFollowUps,
   isFollowUpsEnabled,
   setFollowUpsEnabled,
-} from '../../services/suggestions.js';
+} from '../../services/ai/suggestions.js';
 
 describe('services/suggestions', () => {
   beforeEach(() => {

@@ -33,7 +33,7 @@ describe('features/landing deep tests Jet 7.9 (47% → 90%+)', () => {
   });
 
   it('login form submit appelle auth.login (vrai handler attaché, pas cosmétique)', async () => {
-    const { auth } = await import('../../services/auth.js');
+    const { auth } = await import('../../services/auth/auth.js');
     const loginSpy = vi.spyOn(auth, 'login').mockResolvedValue({ ok: false, reason: 'Identifiants invalides' });
     const { render } = await import('../../features/landing/index.js');
     render(root);

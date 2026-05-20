@@ -3,7 +3,7 @@
  * Wire 16 services au boot (anti-pattern Declaration ≠ Deployment).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { bootstrapServices } from '../../services/services-bootstrap.js';
+import { bootstrapServices } from '../../services/core-svc/services-bootstrap.js';
 
 describe('Services Bootstrap (anti-pattern Declaration ≠ Deployment)', () => {
   beforeEach(() => {

@@ -12,8 +12,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { visionDeviceAnalyze } from '../../services/vision-device-analyze.js';
-import { vision } from '../../services/vision.js';
+import { visionDeviceAnalyze } from '../../services/ai/vision-device-analyze.js';
+import { vision } from '../../services/ai/vision.js';
 
 describe('vision-device-analyze — extraction structurée images device', () => {
   beforeEach(() => {

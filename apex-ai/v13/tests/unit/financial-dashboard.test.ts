@@ -2,7 +2,7 @@
  * Tests financial-dashboard.ts (bilan live/jour/mois + ROI + burn rate).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { financialDashboard } from '../../services/financial-dashboard.js';
+import { financialDashboard } from '../../services/observability/financial-dashboard.js';
 
 describe('Financial Dashboard (bilan live + ROI + projections)', () => {
   beforeEach(() => {

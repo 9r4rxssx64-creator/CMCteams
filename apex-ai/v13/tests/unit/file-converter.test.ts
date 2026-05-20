@@ -2,7 +2,7 @@
  * Tests file-converter.ts (multi-format polyvalent Kevin).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { fileConverter } from '../../services/file-converter.js';
+import { fileConverter } from '../../services/core-svc/file-converter.js';
 
 describe('File Converter (multi-format auto)', () => {
   beforeEach(() => {

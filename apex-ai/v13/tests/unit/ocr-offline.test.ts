@@ -6,7 +6,7 @@
  * On teste le code chemin error/cleanup et empty_image.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ocrOffline } from '../../services/ocr-offline.js';
+import { ocrOffline } from '../../services/ai/ocr-offline.js';
 
 vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },

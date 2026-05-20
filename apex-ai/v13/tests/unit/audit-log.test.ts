@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { auditLog } from '../../services/audit-log.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('audit-log service (tests réels Jet 6)', () => {
   beforeEach(() => {

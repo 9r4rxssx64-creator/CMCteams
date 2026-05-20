@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { styleInjector, StyleInjector } from '../../services/style-injector.js';
+import { styleInjector, StyleInjector } from '../../services/core-svc/style-injector.js';
 
 beforeEach(() => {
   styleInjector.clear();

@@ -13,7 +13,7 @@ import {
   kdmcProjectsRegistry,
   KDMC_PROJECTS,
   type KdmcProjectUpdate,
-} from '../../services/kdmc-projects-registry.js';
+} from '../../services/admin/kdmc-projects-registry.js';
 
 describe('kdmc-projects-registry', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { bodyguard } from '../../services/bodyguard.js';
+import { bodyguard } from '../../services/observability/bodyguard.js';
 
 describe('bodyguard service (tests Jet 6.5 + audit fixes)', () => {
   it('install() ne throw pas', () => {
@@ -12,7 +12,7 @@ describe('bodyguard service (tests Jet 6.5 + audit fixes)', () => {
   });
 
   it('CSP violation event TRIGGER auditLog.record (vrai handler attaché)', async () => {
-    const { auditLog } = await import('../../services/audit-log.js');
+    const { auditLog } = await import('../../services/observability/audit-log.js');
     const recordSpy = vi.spyOn(auditLog, 'record').mockResolvedValue(undefined);
     bodyguard.install();
     /* Trigger event CSP réel avec violatedDirective + blockedURI */
@@ -34,7 +34,7 @@ describe('bodyguard service (tests Jet 6.5 + audit fixes)', () => {
   });
 
   it('postMessage externe TRIGGER auditLog.record security.postmessage_external', async () => {
-    const { auditLog } = await import('../../services/audit-log.js');
+    const { auditLog } = await import('../../services/observability/audit-log.js');
     const recordSpy = vi.spyOn(auditLog, 'record').mockResolvedValue(undefined);
     bodyguard.install();
     /* Postmessage origin externe (pas dans trusted list) */

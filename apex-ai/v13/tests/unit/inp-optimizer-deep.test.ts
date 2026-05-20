@@ -13,9 +13,9 @@ vi.mock('../../services/perf-metrics.js', () => ({
   perfMetrics: { record: vi.fn() },
 }));
 
-import { inpOptimizer } from '../../services/inp-optimizer.js';
+import { inpOptimizer } from '../../services/observability/inp-optimizer.js';
 import { logger } from '../../core/logger.js';
-import { perfMetrics } from '../../services/perf-metrics.js';
+import { perfMetrics } from '../../services/observability/perf-metrics.js';
 
 let savedObserver: typeof PerformanceObserver | undefined;
 let observerCallbacks: Array<(list: { getEntries: () => Array<Record<string, unknown>> }) => void> = [];

@@ -3,7 +3,7 @@
  * hasConsent par catégorie, portableExport, optOutAutomation.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { rgpd } from '../../services/rgpd.js';
+import { rgpd } from '../../services/auth/rgpd.js';
 
 describe('rgpd v13.1 — Cookie banner', () => {
   beforeEach(() => {

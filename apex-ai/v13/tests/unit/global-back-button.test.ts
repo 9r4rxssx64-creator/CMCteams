@@ -9,7 +9,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { globalBackButton } from '../../services/global-back-button.js';
+import { globalBackButton } from '../../services/core-svc/global-back-button.js';
 
 const BTN_ID = 'apex-global-back-btn';
 const STYLE_ID = 'apex-global-back-style';

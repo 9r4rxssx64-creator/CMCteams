@@ -8,7 +8,7 @@
  * Tests : toggle + isActive + bypass auto-restore + resolveModel/MaxTokens.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { economyMode, type ExpensiveTaskType } from '../../services/economy-mode.js';
+import { economyMode, type ExpensiveTaskType } from '../../services/core-svc/economy-mode.js';
 
 describe('v13.4.36 economyMode.setActive + toggle', () => {
   beforeEach(() => {

@@ -35,9 +35,9 @@ import {
   gsdMethodology,
   securityReviewWrapper,
   skillCreator,
-} from '../../services/apex-extra-skills.js';
+} from '../../services/core-svc/apex-extra-skills.js';
 /* MemPalace n'est pas exporté directement, on l'utilise via import direct */
-import * as extraSkillsModule from '../../services/apex-extra-skills.js';
+import * as extraSkillsModule from '../../services/core-svc/apex-extra-skills.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

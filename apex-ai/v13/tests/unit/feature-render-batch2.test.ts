@@ -377,15 +377,15 @@ import { render as renderPlugins, dispose as disposePlugins } from '../../featur
 import { render as renderRouter, dispose as disposeRouter } from '../../features/smart-router/index.js';
 import { render as renderVoiceBio, dispose as disposeVoice } from '../../features/voice-bio/index.js';
 
-import { crossPlatform } from '../../services/cross-platform.js';
-import { iotRegistry } from '../../services/iot-providers-registry.js';
+import { crossPlatform } from '../../services/core-svc/cross-platform.js';
+import { iotRegistry } from '../../services/integrations/iot-providers-registry.js';
 import { memory } from '../../core/memory.js';
-import { persistentMemory } from '../../services/persistent-memory-store.js';
-import { sentinels } from '../../services/sentinels.js';
-import { apexMetaMarketplace } from '../../services/apex-meta-marketplace.js';
-import { apexPluginsMarketplace } from '../../services/apex-plugins-marketplace.js';
-import { smartRouter } from '../../services/smart-router.js';
-import { voicePrint } from '../../services/voice-print.js';
+import { persistentMemory } from '../../services/storage/persistent-memory-store.js';
+import { sentinels } from '../../services/sentinels/sentinels.js';
+import { apexMetaMarketplace } from '../../services/core-svc/apex-meta-marketplace.js';
+import { apexPluginsMarketplace } from '../../services/core-svc/apex-plugins-marketplace.js';
+import { smartRouter } from '../../services/ai/smart-router.js';
+import { voicePrint } from '../../services/ai/voice-print.js';
 import { store } from '../../core/store.js';
 import { toast } from '../../ui/toast.js';
 

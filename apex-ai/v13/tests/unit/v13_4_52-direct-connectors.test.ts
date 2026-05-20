@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DIRECT_CONNECTORS,
   directConnectors,
-} from '../../services/direct-connectors-registry.js';
+} from '../../services/integrations/direct-connectors-registry.js';
 
 describe('v13.4.52 DIRECT_CONNECTORS registry', () => {
   it("registry ≥ 30 connecteurs", () => {

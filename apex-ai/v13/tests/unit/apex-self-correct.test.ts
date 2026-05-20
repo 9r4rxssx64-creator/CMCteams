@@ -19,13 +19,13 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { aiKeyRotation } from '../../services/ai-key-rotation.js';
+import { aiKeyRotation } from '../../services/ai/ai-key-rotation.js';
 import {
   apexSelfCorrect,
   DEFAULT_DETECTION_WINDOW,
   type FaultDetection,
-} from '../../services/apex-self-correct.js';
-import { auditLog } from '../../services/audit-log.js';
+} from '../../services/admin/apex-self-correct.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 describe('apex-self-correct — cascade auto-correct sans Kevin', () => {
   beforeEach(() => {

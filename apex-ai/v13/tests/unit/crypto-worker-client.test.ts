@@ -10,7 +10,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cryptoWorker } from '../../services/crypto-worker-client.js';
+import { cryptoWorker } from '../../services/storage/crypto-worker-client.js';
 
 interface FakeWorkerHandler {
   type: string;

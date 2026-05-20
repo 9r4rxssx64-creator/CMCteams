@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { consumptionAnomalyDetector } from '../../services/consumption-anomaly-detector.js';
+import { consumptionAnomalyDetector } from '../../services/observability/consumption-anomaly-detector.js';
 
 const HIST_KEY = 'apex_v13_consumption_history';
 

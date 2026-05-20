@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { whatsapp } from '../../services/whatsapp.js';
+import { whatsapp } from '../../services/integrations/whatsapp.js';
 
 describe('WhatsApp validation clients/comptes (Kevin v13.0.80)', () => {
   beforeEach(() => {

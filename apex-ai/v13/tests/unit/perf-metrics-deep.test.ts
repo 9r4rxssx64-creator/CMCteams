@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-import { perfMetrics } from '../../services/perf-metrics.js';
+import { perfMetrics } from '../../services/observability/perf-metrics.js';
 import { logger } from '../../core/logger.js';
 
 let savedObserver: typeof PerformanceObserver | undefined;

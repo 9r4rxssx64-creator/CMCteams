@@ -3,7 +3,7 @@
  * Demande Kevin : info live conso + notif 1-clic recharge par IA + abo.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { consumptionMonitor } from '../../services/consumption-monitor.js';
+import { consumptionMonitor } from '../../services/observability/consumption-monitor.js';
 
 describe('Consumption Monitor (live + alertes 1 clic recharge)', () => {
   beforeEach(() => {

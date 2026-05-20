@@ -10,8 +10,8 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { vault } from '../../services/vault.js';
-import { FB_FIX } from '../../services/firebase.js';
+import { vault } from '../../services/vault/vault.js';
+import { FB_FIX } from '../../services/storage/firebase.js';
 
 describe('Vault persistence (fix Kevin "clés pas en mémoire")', () => {
   beforeEach(() => {

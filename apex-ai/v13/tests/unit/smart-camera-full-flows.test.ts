@@ -4,7 +4,7 @@
  * Solution : Object.defineProperty getter/setter sur HTMLVideoElement.prototype.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { smartCamera } from '../../services/smart-camera.js';
+import { smartCamera } from '../../services/ai/smart-camera.js';
 
 function makeVideoStream(): MediaStream {
   const track = {

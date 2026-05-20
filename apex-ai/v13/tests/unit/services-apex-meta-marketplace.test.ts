@@ -14,7 +14,7 @@ import {
   apexMetaMarketplace,
   META_MARKETPLACE_CATALOG,
   type MarketplaceCategory,
-} from '../../services/apex-meta-marketplace.js';
+} from '../../services/core-svc/apex-meta-marketplace.js';
 
 const STORAGE_KEY = 'apex_v13_meta_marketplace_state';
 

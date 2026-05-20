@@ -13,7 +13,7 @@ import {
   detectSbmPlanning,
   detectAndPushIfPlanning,
   _internals,
-} from '../../services/cmc-planning-bridge.js';
+} from '../../services/integrations/cmc-planning-bridge.js';
 
 describe('v13.4.34 detectSbmPlanning — détection patterns SBM', () => {
   it("text vide → detected false", () => {

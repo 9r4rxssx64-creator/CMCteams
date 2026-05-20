@@ -7,7 +7,7 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { cspStyleHelper } from '../../services/csp-style-helper.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { renderRechargeAction } from '../../ui/recharge-action.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
@@ -52,7 +52,7 @@ interface VoiceListItem {
  */
 export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
   try {
-    const voiceMod = await import('../../services/voice.js');
+    const voiceMod = await import('../../services/ai/voice.js');
     const { listVoices, getActiveVoice, setActiveVoice, speak, stopAll } = voiceMod;
 
     const autoReadInput = rootEl.querySelector<HTMLInputElement>('#ax-settings-auto-read');
@@ -302,7 +302,7 @@ export function render(rootEl: HTMLElement): void {
   /* Wire memory-bridge section : status read-only + sync button */
   void (async () => {
     try {
-      const { memoryBridge } = await import('../../services/memory-bridge.js');
+      const { memoryBridge } = await import('../../services/storage/memory-bridge.js');
       const statusEl = rootEl.querySelector<HTMLElement>('#ax-memory-bridge-status');
       const syncBtn = rootEl.querySelector<HTMLButtonElement>('#ax-memory-bridge-sync');
       const refreshStatus = (): void => {
@@ -336,7 +336,7 @@ export function render(rootEl: HTMLElement): void {
   if (consoBtn && activeSettingsScope) activeSettingsScope.bind(consoBtn, 'click', () => {
     void (async () => {
       try {
-        const { consumptionAnomalyDetector } = await import('../../services/consumption-anomaly-detector.js');
+        const { consumptionAnomalyDetector } = await import('../../services/observability/consumption-anomaly-detector.js');
         const reports = consumptionAnomalyDetector.scanAllVerbose();
         const out = rootEl.querySelector<HTMLDivElement>('#ax-conso-results');
         if (!out) return;
@@ -373,7 +373,7 @@ export function render(rootEl: HTMLElement): void {
   if (zoomBtn && activeSettingsScope) {
     activeSettingsScope.bind(zoomBtn, 'click', () => {
       void (async () => {
-        const { apexZoomInspector } = await import('../../services/apex-zoom-inspector.js');
+        const { apexZoomInspector } = await import('../../services/admin/apex-zoom-inspector.js');
         if (apexZoomInspector.isVisible()) {
           apexZoomInspector.hide();
         } else {
@@ -393,8 +393,8 @@ export function render(rootEl: HTMLElement): void {
         if (!resultsEl) return;
         resultsEl.innerHTML = '<div style="color:var(--ax-blue)">⏳ Test des boutons en cours (jusqu\'à 40 boutons, ~30s)...</div>';
         try {
-          const { apexFunctionalTester } = await import('../../services/apex-functional-tester.js');
-          const { reportsHistory } = await import('../../services/apex-reports-history.js');
+          const { apexFunctionalTester } = await import('../../services/admin/apex-functional-tester.js');
+          const { reportsHistory } = await import('../../services/admin/apex-reports-history.js');
           const out = await apexFunctionalTester.testAndAutoFix({ maxButtons: 30 });
           reportsHistory.recordFunctional(out.before, out.fixes, out.after, out.improvement);
           const okPct = out.before.tested > 0 ? Math.round((out.before.ok / out.before.tested) * 100) : 0;
@@ -437,8 +437,8 @@ export function render(rootEl: HTMLElement): void {
         if (!resultsEl) return;
         resultsEl.innerHTML = '<div style="color:var(--ax-purple)">⏳ Scan layout...</div>';
         try {
-          const { apexLayoutInspector } = await import('../../services/apex-layout-inspector.js');
-          const { reportsHistory } = await import('../../services/apex-reports-history.js');
+          const { apexLayoutInspector } = await import('../../services/admin/apex-layout-inspector.js');
+          const { reportsHistory } = await import('../../services/admin/apex-reports-history.js');
           const r = apexLayoutInspector.scanDom();
           reportsHistory.recordLayout(r);
           const sampleHidden = r.hiddenButtons.slice(0, 5).map(
@@ -478,7 +478,7 @@ export function render(rootEl: HTMLElement): void {
         if (!resultsEl) return;
         resultsEl.innerHTML = '<div style="color:var(--ax-warning)">⏳ Test Cloudflare API en cours...</div>';
         try {
-          const { apexCloudflareVaultDeploy } = await import('../../services/apex-cloudflare-vault-deploy.js');
+          const { apexCloudflareVaultDeploy } = await import('../../services/vault/apex-cloudflare-vault-deploy.js');
           const diag = await apexCloudflareVaultDeploy.runDiagnostic();
           const row = (label: string, ok: boolean, detail?: string): string => `
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px">
@@ -526,7 +526,7 @@ export function render(rootEl: HTMLElement): void {
   const logoutBtn = rootEl.querySelector<HTMLButtonElement>('#ax-settings-logout');
   if (logoutBtn && activeSettingsScope) activeSettingsScope.bind(logoutBtn, 'click', () => {
     void (async () => {
-      const { auth } = await import('../../services/auth.js');
+      const { auth } = await import('../../services/auth/auth.js');
       auth.logout();
       location.hash = '#login';
     })();

@@ -15,7 +15,7 @@ const { mockAuth } = vi.hoisted(() => ({
 
 vi.mock('../../services/auth.js', () => ({ auth: mockAuth }));
 
-import { apexTV } from '../../services/apex-tv.js';
+import { apexTV } from '../../services/integrations/apex-tv.js';
 
 const sampleM3U = `#EXTM3U
 #EXTINF:-1 tvg-logo="https://x.com/bfm.png" tvg-country="FR" tvg-language="French",BFM TV

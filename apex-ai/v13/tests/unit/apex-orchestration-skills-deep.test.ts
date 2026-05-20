@@ -33,7 +33,7 @@ import {
   hiveMind,
   remoteControl,
   webScrapper,
-} from '../../services/apex-orchestration-skills.js';
+} from '../../services/core-svc/apex-orchestration-skills.js';
 
 beforeEach(() => {
   vi.clearAllMocks();

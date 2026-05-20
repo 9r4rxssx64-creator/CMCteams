@@ -8,7 +8,7 @@
  * analyzeImage/URL/installAll non testés ici (mock Anthropic Vision API requis).
  */
 import { describe, it, expect } from 'vitest';
-import { multiSourceAnalyze } from '../../services/multi-source-analyze.js';
+import { multiSourceAnalyze } from '../../services/ai/multi-source-analyze.js';
 
 describe('v13.4.31 analyzeText — extraction credentials', () => {
   it("text vide → result avec 0 items", async () => {

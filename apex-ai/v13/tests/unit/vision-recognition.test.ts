@@ -2,7 +2,7 @@
  * Tests vision-recognition.ts (Kevin "camera reconnaît tout + cross-app routing").
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { visionRecognition } from '../../services/vision-recognition.js';
+import { visionRecognition } from '../../services/ai/vision-recognition.js';
 
 describe('Vision Recognition (camera + cross-app)', () => {
   beforeEach(() => {
