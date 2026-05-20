@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.716";
+var APP_VER="v9.717";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -15056,6 +15056,20 @@ function agentsStart(){
       }
     }
   }catch(_v704err){}
+  // v9.717 Kevin "Je t'avais demandé d'effacer tout l'historique partout" :
+  // Re-trigger du wipe TOTAL (les flags v703/v704 étaient déjà posés sur le device
+  // de Kevin → leurs one-shots ne re-tournaient plus). NEW flag cmc_v717_purge_done
+  // → purge complète une fois : A.overrides TOUS mois, teamHistory, familyHistory,
+  // snapshots cmc_history_*, IDB shadow, nodes Firebase, logs. Repart 100% propre.
+  try{
+    if(!lg("cmc_v717_purge_done",false)){
+      if(typeof cmcWipeAllPlanningMemory==="function"){
+        var _w717=cmcWipeAllPlanningMemory(true);
+        ls("cmc_v717_purge_done",{ts:Date.now(),stats:_w717||null});
+        console.log("[v9.717 purge total] historique planning effacé partout — re-import requis");
+      }
+    }
+  }catch(_v717err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
