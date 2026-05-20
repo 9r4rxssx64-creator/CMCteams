@@ -21,6 +21,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { router } from '../../core/router.js';
 
 import { auditLog } from '../observability/audit-log.js';
 import { soc2 } from '../auth/soc2-compliance.js';
@@ -355,13 +356,16 @@ class ApexSelfAudit {
 
     /* MODE BRUTAL : checks UX supplémentaires */
     if (brutal) {
-      /* Brut 1 : 145 vues v12 manquantes (audit subagent v13.0.35) */
+      /* v13.4.242 fix faux positif (Kevin 2026-05-20) : v13RoutesActual était
+       * HARDCODÉ à 5 (tableau littéral, date de v13.0.35). v13 a maintenant
+       * 80 routes — le check disait à tort "140 vues manquantes". Compte réel
+       * via router.getRouteCount(). */
       const v12ViewsExpected = 145;
-      const v13RoutesActual = ['chat', 'admin', 'laurence', 'studios', 'pro'].length;
+      const v13RoutesActual = router.getRouteCount();
       if (v13RoutesActual < v12ViewsExpected * 0.5) {
-        findings.push(this.makeFinding('ux', 'p0_critical',
-          `${v12ViewsExpected - v13RoutesActual} vues v12 manquantes`,
-          `v13 a ${v13RoutesActual} vues vs ${v12ViewsExpected} v12.785`,
+        findings.push(this.makeFinding('ux', 'p1_high',
+          `${v12ViewsExpected - v13RoutesActual} vues v12 potentiellement manquantes`,
+          `v13 a ${v13RoutesActual} routes vs ${v12ViewsExpected} vues v12.785`,
           'no_action'));
       }
       /* Brut 2 : touch targets < 44px Apple HIG */
@@ -462,14 +466,16 @@ class ApexSelfAudit {
             'no_action'));
         }
       } catch { /* skip */ }
-      /* Brut 2 : nombre services bootstrap */
+      /* v13.4.242 fix faux positif (Kevin 2026-05-20) : l'ancien check testait
+       * `lifecycle.getStats().total === 0` → "bootstrap KO". Or le registry
+       * service-lifecycle n'est câblé par AUCUN service (0 lifecycle.register)
+       * — total=0 est l'état NORMAL. Le bootstrap réel se fait via safeInit().
+       * Vrai signal de bootstrap KO = router sans aucune route enregistrée. */
       try {
-        const { lifecycle } = await import('../core-svc/service-lifecycle.js');
-        const stats = lifecycle.getStats();
-        if (stats.total === 0) {
+        if (router.getRouteCount() === 0) {
           findings.push(this.makeFinding('architecture', 'p0_critical',
-            'Aucun service initialisé',
-            'service-lifecycle stats.total = 0 → bootstrap KO',
+            'Bootstrap KO — aucune route enregistrée',
+            'router.getRouteCount() = 0 → le bootstrap a échoué',
             'restart_failed_services'));
         }
       } catch { /* skip */ }
@@ -485,9 +491,13 @@ class ApexSelfAudit {
       const { aiRoutingPolicy } = await import('../ai/ai-routing-policy.js');
       const status = aiRoutingPolicy.getStatus();
       if (status.paid_providers_available.length === 0 && status.free_providers_available.length === 0) {
-        findings.push(this.makeFinding('ai_safety', 'p0_critical',
-          'Aucun provider IA configuré',
-          'Apex ne peut répondre — colle au moins 1 clé API',
+        /* v13.4.242 (Kevin 2026-05-20) : message honnête — Apex peut répondre
+         * via le Worker proxy apex-secrets-proxy (clés server-side) OU via une
+         * clé locale. Ce finding signale que le routing-policy ne détecte
+         * aucune des deux voies — à vérifier (proxy branché ? clé collée ?). */
+        findings.push(this.makeFinding('ai_safety', 'p1_high',
+          'Aucun provider IA détecté par le routing',
+          'Vérifier : Worker proxy apex-secrets-proxy branché OU 1 clé API locale',
           'prompt_user_paste_key'));
       }
       if (status.anthropic_health === 'critical') {

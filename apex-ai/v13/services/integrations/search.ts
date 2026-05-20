@@ -72,7 +72,7 @@ class SearchService {
         }
         /* Vite worker import : new URL + import.meta.url + type:'module' */
         const worker = new Worker(
-          new URL('../workers/search-index.worker.ts', import.meta.url),
+          new URL('../../workers/search-index.worker.ts', import.meta.url),
           { type: 'module' },
         );
         let readyTimer: ReturnType<typeof setTimeout> | null = null;

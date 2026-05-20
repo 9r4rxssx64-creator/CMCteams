@@ -52,7 +52,9 @@ class CryptoWorkerClient {
           return;
         }
         const worker = new Worker(
-          new URL('../workers/crypto.worker.ts', import.meta.url),
+          /* v13.4.242 fix build cassé : crypto-worker-client.ts déplacé dans
+           * services/storage/ (2 niveaux sous racine) → '../../workers/'. */
+          new URL('../../workers/crypto.worker.ts', import.meta.url),
           { type: 'module' },
         );
         let readyTimer: ReturnType<typeof setTimeout> | null = null;
