@@ -325,7 +325,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.134';
+const __APEX_CHAT_VERSION__ = 'v1.1.135';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -456,7 +456,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.134</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.135</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -470,7 +470,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.134</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.135</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3530,7 +3530,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.134',
+    version: 'v1.1.135',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5566,7 +5566,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.134 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.135 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5585,7 +5585,9 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          diag = 'HTTP ' + r.status + ' : ' + (data.error || data.message || JSON.stringify(data).slice(0,120));
+          // v1.1.135 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
+          diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
       } else {
         diag = 'pas de réponse';
@@ -8275,7 +8277,13 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        diagInfo = 'Worker HTTP ' + r.status + (r.statusText ? ' ' + r.statusText : '');
+        // v1.1.135 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        const ed = await r.json().catch(() => ({}));
+        const cause = ed.detail || ed.message || ed.error || r.statusText || '';
+        diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
+        if(r.status === 401 || r.status === 403){
+          diagInfo += (String(K.token||'').startsWith('local-') ? ' (session locale, pas de JWT serveur — reconnecte-toi)' : '');
+        }
       }
     }
     // Complément : peers extraits des convs existantes
@@ -9929,8 +9937,12 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message });
-      throw new Error(data.message || ('Erreur ' + r.status));
+      // v1.1.135 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
+      _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
+      const ex = new Error(cause);
+      ex.httpStatus = r.status; ex.apiDetail = data.detail; ex.apiStep = data.step;
+      throw ex;
     }
     return data;
   }catch(e){
