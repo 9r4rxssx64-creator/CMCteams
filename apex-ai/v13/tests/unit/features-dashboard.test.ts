@@ -49,9 +49,7 @@ describe('features/dashboard — computeKpis', () => {
     const kpis = await computeKpis();
     for (const k of kpis) {
       expect(k.route).toBeTruthy();
-      /* v13.4.232 (étape 3 design system) : couleurs migrées hex → CSS vars.
-       * Accepte hex OU var(--ax-*) — les KPI utilisent désormais les tokens. */
-      expect(k.color).toMatch(/^(#[0-9a-f]{6}|var\(--ax-[\w-]+\))$/i);
+      expect(k.color).toMatch(/^#[0-9a-f]{6}$/i);
       expect(k.label.length).toBeGreaterThan(0);
     }
   });
