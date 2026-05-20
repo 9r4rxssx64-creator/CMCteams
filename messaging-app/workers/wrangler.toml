@@ -26,9 +26,8 @@ compatibility_flags = ["nodejs_compat"]
 # mais non joignable car [[routes]] cassé avec zone_name vide).
 workers_dev = true
 
-# Limites runtime
-[limits]
-cpu_ms = 30000
+# Limites runtime — [limits] cpu_ms retiré v1.1.132 (non supporté plan Workers FREE)
+# Le plan FREE applique un CPU limit fixe automatique.
 
 # D1 database
 [[d1_databases]]
