@@ -5178,20 +5178,20 @@ function _stripPersistedTeamFamHistory(empsArr){
 // 212 emps "explicit" skip dans algo → ré-affectations bloquées sur vieilles valeurs.
 // Solution : NEW flag cmc_v710_redetect_done → wipe forcé pour les devices ayant
 // déjà fait v9.707 (qui n'aurait pas tourné si flag v707 déjà set par v9.707).
-(function _v714RedetectBoot(){
+(function _v715RedetectBoot(){
   try{
-    if(localStorage.getItem("cmc_v714_redetect_done"))return;
+    if(localStorage.getItem("cmc_v715_redetect_done"))return;
     var _eRaw=localStorage.getItem("cmc_e");
-    if(!_eRaw){localStorage.setItem("cmc_v714_redetect_done","1");return;}
+    if(!_eRaw){localStorage.setItem("cmc_v715_redetect_done","1");return;}
     var _emps=JSON.parse(_eRaw);
-    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v714_redetect_done","1");return;}
+    if(!Array.isArray(_emps)){localStorage.setItem("cmc_v715_redetect_done","1");return;}
     var _wiped=0;
     _emps.forEach(function(e){
       if(e&&e.teamHistory){_wiped+=Object.keys(e.teamHistory).length;e.teamHistory={};}
       if(e&&e.familyHistory){e.familyHistory={};}
     });
     localStorage.setItem("cmc_e",JSON.stringify(_emps));
-    localStorage.setItem("cmc_v714_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
+    localStorage.setItem("cmc_v715_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
     try{window._cmcLastDetectCacheKey=null;}catch(_){}
     // Aussi : wipe cmc_team_mirror_* pour forcer re-détection miroir au prochain dc()
     try{
@@ -5201,7 +5201,7 @@ function _stripPersistedTeamFamHistory(empsArr){
         }
       }
     }catch(_){}
-    console.log("[v9.714 redetect-boot] "+_wiped+" teamHistory + miroirs wipés — algo v9.714 (parser grille préserve le 'c' chef) au prochain dc()");
+    console.log("[v9.715 redetect-boot] "+_wiped+" teamHistory + miroirs wipés — algo v9.715 (apostrophes courbes normalisées + chef 'c' minuscule) au prochain dc()");
   }catch(_e){console.warn("[v9.711 redetect-boot]",_e);}
 })();
 var A={
@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.714";
+var APP_VER="v9.715";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -38021,6 +38021,11 @@ function doImport(){
       }
       // Normaliser les variantes de barre oblique (iOS copy-paste : ∕ U+2215, ⁄ U+2044, ／ U+FF0F)
       code=code.replace(/[\u2215\u2044\uff0f]/g,"/");
+      // v9.715 \u2014 normaliser guillemets/apostrophes courbes \u2192 droits (comme _applyCodeArr).
+      // Sans \u00e7a "14/19'c" gardait une apostrophe courbe U+2019 que la normalisation de
+      // signature /[c'"*]/ (apostrophe droite) ne strippait pas \u2192 "14/19'" != "14/19"
+      // \u2192 chef isol\u00e9 de ses croupiers.
+      code=code.replace(/[\u201c\u201d]/g,'"').replace(/[\u2018\u2019\u02bc]/g,"'");
       if(/^CO(LONNE)?\d*$/.test(code)) continue;
       // Normaliser tiret→slash : "16-3"→"16/3"
       code=code.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");
@@ -38041,11 +38046,16 @@ function doImport(){
           var c2s=(c2!==code?c2:code).replace(/["':;]+$/,"");
           if(c2s&&CODES[c2s]){code=c2s;}
           else{
-            var _chefBase=code.replace(/C+$/,"");
-            if(_chefBase!==code&&CODES[_chefBase]){
-              var _chefCode=_chefBase+"c";
+            // v9.715 — code chef "Xc" ou "X'c". Les bases avec apostrophe (14/19',
+            // 16/3') n'existent PAS dans CODES, seules les bases nues oui. On capture
+            // base nue + apostrophe séparément, on clone depuis la base nue, et on
+            // reconstruit le code chef avec un 'c' MINUSCULE (le 'C' majuscule
+            // cassait _famFromCells dont la regex /c$/ est sensible à la casse).
+            var _chefM=code.match(/^(.+?)('?)C+$/i);
+            if(_chefM&&CODES[_chefM[1]]){
+              var _chefCode=_chefM[1]+_chefM[2]+"c";
               if(!CODES[_chefCode]){
-                try{CODES[_chefCode]=Object.assign({},CODES[_chefBase],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
               }
               code=_chefCode;
             }
