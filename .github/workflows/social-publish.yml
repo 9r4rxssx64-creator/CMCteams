@@ -2,125 +2,596 @@ name: Social — Generate & Publish Daily Video
 
 on:
   schedule:
-    # Tous les jours à 10h UTC (=> 12h Europe/Monaco)
     - cron: "0 10 * * *"
   workflow_dispatch:
     inputs:
       niche:
-        description: "Niche (betrayal-revenge, mystery, finance-lesson, etc.)"
+        description: "Niche (betrayal, revenge, mystery, finance, motivation, true_crime, psychology, tech, history)"
         required: false
-        default: "betrayal-revenge"
+        default: "betrayal"
       format:
         description: "Format (short, long)"
         required: false
         default: "long"
-      publish_platforms:
-        description: "Plateformes (comma: youtube,facebook,instagram)"
-        required: false
-        default: "youtube"
 
 permissions:
   contents: write
 
+env:
+  PIPER_VOICE: "en_US-hfc_male-medium"
+
 jobs:
   generate-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup Python + Node
+        uses: actions/setup-python@v5
         with:
-          node-version: "22"
+          python-version: "3.12"
 
-      - name: Install espeak-ng (TTS local)
+      - name: Install system deps
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y espeak-ng
+          sudo apt-get install -y ffmpeg espeak-ng curl jq
 
-      - name: Install deps
-        working-directory: tools/social
-        run: npm install --no-audit --no-fund
+      - name: Install Piper TTS (neural voice)
+        run: |
+          pip install piper-tts
+          # Pre-download voice model so it's cached
+          echo "Testing Piper..."
+          echo "Hello world" | piper --model "$PIPER_VOICE" --output_file /tmp/test_piper.wav 2>/dev/null && echo "✅ Piper OK" || echo "⚠️ Piper failed, will use gTTS fallback"
 
-      - name: Generate video
+      - name: Install gTTS fallback
+        run: pip install gtts
+
+      - name: Install Node deps
         working-directory: tools/social
+        run: npm install --no-audit --no-fund 2>/dev/null || true
+
+      - name: "🎬 Generate Pro Video"
         env:
           GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: |
-          NICHE="${{ github.event.inputs.niche || 'betrayal-revenge' }}"
+          set -e
+          NICHE="${{ github.event.inputs.niche || 'betrayal' }}"
           FORMAT="${{ github.event.inputs.format || 'long' }}"
 
-          # Si on a Gemma, génère un nouveau script
-          if [ -n "$GOOGLE_AI_API_KEY" ]; then
-            node cli.js generate --ai-script --niche "$NICHE" --format "$FORMAT" || node cli.js generate --random --format "$FORMAT"
-          else
-            node cli.js generate --random --format "$FORMAT"
-          fi
+          echo "============================================"
+          echo "🎬 KDMC Studio — Pro Video Pipeline"
+          echo "   Niche: $NICHE | Format: $FORMAT"
+          echo "============================================"
 
-      - name: Publish to YouTube
-        if: contains(github.event.inputs.publish_platforms || 'youtube', 'youtube')
-        working-directory: tools/social
-        env:
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-        run: |
-          # Trouve la dernière vidéo générée
-          LATEST=$(ls -t output/*/*.mp4 2>/dev/null | head -1)
-          if [ -n "$LATEST" ]; then
-            node cli.js publish --platform youtube --video "$LATEST" --privacy private
-          fi
+          # === 1. Pick a story from library ===
+          LIBRARY="tools/social/config/content-library.json"
 
-      - name: Extract + publish Shorts
-        if: ${{ github.event.inputs.format == 'long' }}
-        working-directory: tools/social
-        env:
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-        run: |
-          LATEST=$(ls -t output/*/*_long.mp4 2>/dev/null | head -1)
-          if [ -n "$LATEST" ]; then
-            node cli.js extract-shorts --video "$LATEST" --count 3
-            # Publie les shorts en private pour validation manuelle
-            for SHORT in $(ls "$(dirname $LATEST)/shorts/"*.mp4 2>/dev/null); do
-              node cli.js publish --platform youtube --video "$SHORT" --privacy private --short
-            done
-          fi
+          # Find first unused story matching niche
+          STORY_JSON=$(python3 -c "
+          import json, random, sys
+          lib = json.load(open('$LIBRARY'))
+          niche = '$NICHE'
+          candidates = []
+          for cat, stories in lib.items():
+            if cat.startswith('_'): continue
+            if not isinstance(stories, list): continue
+            for s in stories:
+              if s.get('used'): continue
+              tags = s.get('tags', [])
+              if niche in cat or niche in ' '.join(tags):
+                candidates.append(s)
+          if not candidates:
+            # Fallback: any unused story
+            for cat, stories in lib.items():
+              if cat.startswith('_') or not isinstance(stories, list): continue
+              for s in stories:
+                if not s.get('used'):
+                  candidates.append(s)
+          if not candidates:
+            print('ERROR: No unused stories', file=sys.stderr)
+            sys.exit(1)
+          story = random.choice(candidates[:5])
+          print(json.dumps(story))
+          ")
 
-      - name: Notify Telegram
-        if: always()
-        working-directory: tools/social
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
-            STATUS="${{ job.status }}"
-            if [ "$STATUS" = "success" ]; then
-              MSG="✅ Vidéo générée + publiée (private pour validation)"
-            else
-              MSG="❌ Échec génération vidéo : $STATUS"
+          STORY_ID=$(echo "$STORY_JSON" | jq -r '.id')
+          STORY_TITLE=$(echo "$STORY_JSON" | jq -r '.title')
+          STORY_SCRIPT=$(echo "$STORY_JSON" | jq -r '.script')
+          STORY_TAGS=$(echo "$STORY_JSON" | jq -r '.tags | join(",")')
+
+          echo "📖 Story: $STORY_ID — $STORY_TITLE"
+          WORD_COUNT=$(echo "$STORY_SCRIPT" | wc -w)
+          echo "   Words: $WORD_COUNT"
+
+          # Create output directory
+          OUTDIR="tools/social/output/${STORY_ID}_$(date +%Y%m%d)"
+          mkdir -p "$OUTDIR"
+
+          # === 2. Generate TTS with Piper (neural) → gTTS → espeak fallback ===
+          echo ""
+          echo "🎙 Step 2: Text-to-Speech (neural voice)..."
+
+          # Split into chunks of ~200 words for better TTS
+          CHUNK_DIR="$OUTDIR/chunks"
+          mkdir -p "$CHUNK_DIR"
+
+          python3 << 'PYEOF'
+          import os, sys, subprocess, json
+
+          script = json.loads(os.environ.get("STORY_JSON_ESCAPED", sys.argv[1] if len(sys.argv) > 1 else ""))
+          text = script if isinstance(script, str) else ""
+          PYEOF
+
+          # Simpler: write script to file, then process
+          echo "$STORY_SCRIPT" > "$OUTDIR/script.txt"
+
+          # Try Piper TTS first (neural quality)
+          TTS_BACKEND="unknown"
+          AUDIO_FILE="$OUTDIR/narration.wav"
+
+          if echo "Test sentence" | piper --model "$PIPER_VOICE" --output_file /tmp/piper_test.wav 2>/dev/null; then
+            echo "   Using Piper TTS (neural voice)..."
+            cat "$OUTDIR/script.txt" | piper --model "$PIPER_VOICE" --output_file "$AUDIO_FILE" 2>/dev/null
+            if [ -f "$AUDIO_FILE" ] && [ $(stat -f%z "$AUDIO_FILE" 2>/dev/null || stat -c%s "$AUDIO_FILE") -gt 1000 ]; then
+              TTS_BACKEND="piper"
+              echo "   ✅ Piper TTS OK"
             fi
-            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-              -d "chat_id=$TELEGRAM_CHAT_ID" \
-              -d "text=$MSG" \
-              -d "parse_mode=HTML"
           fi
 
-      - name: Commit state changes
+          # Fallback: gTTS (Google Translate — natural but less dramatic)
+          if [ "$TTS_BACKEND" = "unknown" ]; then
+            echo "   Piper failed, trying gTTS (Google Translate)..."
+            python3 -c "
+          from gtts import gTTS
+          text = open('$OUTDIR/script.txt').read()
+          tts = gTTS(text=text, lang='en', slow=False)
+          tts.save('$OUTDIR/narration.mp3')
+          print('OK')
+          " && TTS_BACKEND="gtts" && echo "   ✅ gTTS OK" || true
+          fi
+
+          # Fallback: espeak-ng (last resort — robotic)
+          if [ "$TTS_BACKEND" = "unknown" ]; then
+            echo "   ⚠️ Using espeak-ng (robotic fallback)..."
+            espeak-ng -v en -s 155 -p 40 -w "$AUDIO_FILE" -f "$OUTDIR/script.txt"
+            TTS_BACKEND="espeak"
+          fi
+
+          # Convert to MP3 if WAV
+          NARRATION_MP3="$OUTDIR/narration.mp3"
+          if [ "$TTS_BACKEND" = "piper" ] || [ "$TTS_BACKEND" = "espeak" ]; then
+            ffmpeg -y -i "$AUDIO_FILE" -codec:a libmp3lame -b:a 192k -ar 44100 "$NARRATION_MP3" 2>/dev/null
+            rm -f "$AUDIO_FILE"
+          fi
+
+          # Get audio duration
+          DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$NARRATION_MP3" 2>/dev/null | cut -d'.' -f1)
+          echo "   Duration: ${DURATION}s | Backend: $TTS_BACKEND"
+
+          # === 3. Download stock video background from Pexels ===
+          echo ""
+          echo "🎥 Step 3: Stock video background..."
+
+          BG_VIDEO="$OUTDIR/background.mp4"
+          BG_DOWNLOADED=false
+
+          # Pexels API for real stock video
+          if [ -n "$PEXELS_API_KEY" ]; then
+            # Search terms by niche
+            case "$NICHE" in
+              betrayal|revenge) SEARCH_QUERY="dark moody room cinematic" ;;
+              mystery) SEARCH_QUERY="foggy forest night mysterious" ;;
+              finance) SEARCH_QUERY="luxury office city skyline" ;;
+              motivation) SEARCH_QUERY="sunrise mountain epic landscape" ;;
+              true_crime) SEARCH_QUERY="detective dark city night" ;;
+              psychology) SEARCH_QUERY="abstract brain neural science" ;;
+              tech) SEARCH_QUERY="futuristic technology neon" ;;
+              history) SEARCH_QUERY="ancient ruins dramatic sunset" ;;
+              *) SEARCH_QUERY="cinematic dramatic dark moody" ;;
+            esac
+
+            echo "   Searching Pexels: '$SEARCH_QUERY'..."
+            PEXELS_RESPONSE=$(curl -sS -H "Authorization: $PEXELS_API_KEY" \
+              "https://api.pexels.com/videos/search?query=$(echo "$SEARCH_QUERY" | tr ' ' '+')&per_page=5&size=medium&orientation=landscape" 2>/dev/null || echo "")
+
+            if [ -n "$PEXELS_RESPONSE" ]; then
+              # Get a random video URL (HD quality)
+              VIDEO_URL=$(echo "$PEXELS_RESPONSE" | python3 -c "
+          import json, sys, random
+          try:
+            data = json.load(sys.stdin)
+            videos = data.get('videos', [])
+            if videos:
+              v = random.choice(videos)
+              files = v.get('video_files', [])
+              # Prefer HD (1280x720 or 1920x1080)
+              hd = [f for f in files if f.get('height', 0) >= 720 and f.get('height', 0) <= 1080]
+              if not hd: hd = files
+              if hd:
+                best = sorted(hd, key=lambda x: x.get('height', 0), reverse=True)[0]
+                print(best['link'])
+          except: pass
+          " 2>/dev/null)
+
+              if [ -n "$VIDEO_URL" ]; then
+                echo "   Downloading Pexels video..."
+                curl -sL -o "$BG_VIDEO" "$VIDEO_URL" 2>/dev/null
+                if [ -f "$BG_VIDEO" ] && [ $(stat -c%s "$BG_VIDEO" 2>/dev/null || echo 0) -gt 50000 ]; then
+                  BG_DOWNLOADED=true
+                  echo "   ✅ Pexels video: $(du -h "$BG_VIDEO" | cut -f1)"
+                fi
+              fi
+            fi
+          fi
+
+          # Fallback: Pollinations AI image with Ken Burns
+          BG_IMAGE="$OUTDIR/bg_image.jpg"
+          if [ "$BG_DOWNLOADED" = "false" ]; then
+            echo "   Pexels unavailable, generating AI background..."
+            case "$NICHE" in
+              betrayal) BG_PROMPT="dark moody cinematic room dramatic shadows broken trust 4K wallpaper" ;;
+              revenge) BG_PROMPT="dark justice dramatic lighting film noir 4K cinematic" ;;
+              mystery) BG_PROMPT="foggy dark forest moonlight mysterious path cinematic 4K" ;;
+              finance) BG_PROMPT="luxury penthouse office golden hour city skyline cinematic 4K" ;;
+              motivation) BG_PROMPT="epic sunrise mountain peak golden clouds inspirational 4K" ;;
+              true_crime) BG_PROMPT="detective desk case files dim lamp noir cinematic 4K" ;;
+              psychology) BG_PROMPT="abstract brain neural network glowing synapses dark 4K" ;;
+              tech) BG_PROMPT="futuristic neon holographic interface cyberpunk city 4K" ;;
+              history) BG_PROMPT="ancient dramatic ruins golden sunset epic landscape 4K" ;;
+              *) BG_PROMPT="dark dramatic cinematic atmosphere moody 4K" ;;
+            esac
+
+            curl -sL -o "$BG_IMAGE" "https://image.pollinations.ai/prompt/$(python3 -c "import urllib.parse; print(urllib.parse.quote('$BG_PROMPT'))")?width=1920&height=1080&nologo=true&seed=$(date +%s)" 2>/dev/null
+
+            if [ -f "$BG_IMAGE" ] && [ $(stat -c%s "$BG_IMAGE" 2>/dev/null || echo 0) -gt 5000 ]; then
+              # Convert image to video with Ken Burns zoom effect
+              ffmpeg -y -loop 1 -i "$BG_IMAGE" \
+                -vf "zoompan=z='min(zoom+0.0008,1.3)':d=$((DURATION * 25)):s=1920x1080:fps=25,format=yuv420p" \
+                -t "$DURATION" -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p \
+                "$BG_VIDEO" 2>/dev/null
+              BG_DOWNLOADED=true
+              echo "   ✅ AI image → Ken Burns video"
+            fi
+          fi
+
+          # Absolute fallback: dark gradient video
+          if [ "$BG_DOWNLOADED" = "false" ]; then
+            echo "   Using dark gradient fallback..."
+            ffmpeg -y -f lavfi -i "color=c=0x0a0a1a:s=1920x1080:d=$DURATION:r=25" \
+              -vf "drawtext=text='':fontcolor=white" \
+              -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p \
+              "$BG_VIDEO" 2>/dev/null
+            BG_DOWNLOADED=true
+          fi
+
+          # === 4. Download background music ===
+          echo ""
+          echo "🎵 Step 4: Background music..."
+
+          MUSIC_FILE="$OUTDIR/music.mp3"
+          declare -A MUSIC_URLS=(
+            [betrayal]="https://cdn.pixabay.com/audio/2024/11/29/audio_d4b72f7f3c.mp3"
+            [revenge]="https://cdn.pixabay.com/audio/2024/11/29/audio_d4b72f7f3c.mp3"
+            [mystery]="https://cdn.pixabay.com/audio/2024/10/08/audio_ad5aa4ef65.mp3"
+            [finance]="https://cdn.pixabay.com/audio/2024/07/23/audio_b60a4dc0fd.mp3"
+            [motivation]="https://cdn.pixabay.com/audio/2024/07/23/audio_b60a4dc0fd.mp3"
+            [true_crime]="https://cdn.pixabay.com/audio/2024/08/15/audio_93f3a04c37.mp3"
+            [psychology]="https://cdn.pixabay.com/audio/2024/10/08/audio_ad5aa4ef65.mp3"
+            [tech]="https://cdn.pixabay.com/audio/2024/09/19/audio_84e32a9d7b.mp3"
+            [history]="https://cdn.pixabay.com/audio/2024/09/19/audio_84e32a9d7b.mp3"
+          )
+          MUSIC_URL="${MUSIC_URLS[$NICHE]:-${MUSIC_URLS[betrayal]}}"
+          curl -sL -o "$MUSIC_FILE" "$MUSIC_URL" 2>/dev/null
+          HAS_MUSIC=false
+          if [ -f "$MUSIC_FILE" ] && [ $(stat -c%s "$MUSIC_FILE" 2>/dev/null || echo 0) -gt 10000 ]; then
+            HAS_MUSIC=true
+            echo "   ✅ Music downloaded: $(du -h "$MUSIC_FILE" | cut -f1)"
+          else
+            echo "   ⚠️ No music available"
+          fi
+
+          # === 5. Generate ASS subtitles with word-level animation ===
+          echo ""
+          echo "📝 Step 5: Animated subtitles..."
+
+          ASS_FILE="$OUTDIR/subtitles.ass"
+          python3 << SUBEOF
+          import re, math
+
+          script = open("$OUTDIR/script.txt").read().strip()
+          duration = $DURATION
+          words = script.split()
+          total_words = len(words)
+
+          # Time per word (ms)
+          ms_per_word = (duration * 1000) / max(total_words, 1)
+
+          # Group into subtitle lines (5-7 words each)
+          WORDS_PER_LINE = 6
+          lines = []
+          for i in range(0, total_words, WORDS_PER_LINE):
+            chunk = words[i:i+WORDS_PER_LINE]
+            start_ms = i * ms_per_word
+            end_ms = min((i + len(chunk)) * ms_per_word, duration * 1000)
+            lines.append((chunk, start_ms, end_ms))
+
+          def ms_to_ass(ms):
+            h = int(ms // 3600000)
+            m = int((ms % 3600000) // 60000)
+            s = int((ms % 60000) // 1000)
+            cs = int((ms % 1000) // 10)
+            return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
+
+          # ASS file header
+          ass = """[Script Info]
+          Title: KDMC Stories
+          ScriptType: v4.00+
+          WrapStyle: 0
+          ScaledBorderAndShadow: yes
+          YCbCr Matrix: TV.709
+          PlayResX: 1920
+          PlayResY: 1080
+
+          [V4+ Styles]
+          Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+          Style: Main,Arial,72,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,40,40,80,1
+          Style: Highlight,Arial,76,&H0000D4FF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,2,2,40,40,80,1
+
+          [Events]
+          Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+          """
+
+          for chunk_words, start_ms, end_ms in lines:
+            text = " ".join(chunk_words)
+            start = ms_to_ass(start_ms)
+            end = ms_to_ass(end_ms)
+
+            # Build karaoke-style highlighting
+            # Each word highlights progressively
+            word_dur_ms = (end_ms - start_ms) / max(len(chunk_words), 1)
+            kara_text = ""
+            for j, w in enumerate(chunk_words):
+              wd = int(word_dur_ms / 10)  # ASS karaoke timing is in centiseconds
+              kara_text += "{\\kf" + str(wd) + "}" + w + " "
+
+            ass += f"Dialogue: 0,{start},{end},Main,,0,0,0,,{kara_text.strip()}\n"
+
+          with open("$ASS_FILE", "w") as f:
+            f.write(ass)
+
+          print(f"   ✅ {len(lines)} subtitle lines generated")
+          SUBEOF
+
+          # === 6. Compose final video ===
+          echo ""
+          echo "🎬 Step 6: Final composition..."
+
+          FINAL_VIDEO="$OUTDIR/${STORY_ID}_${FORMAT}.mp4"
+
+          if [ "$FORMAT" = "short" ]; then
+            W=1080; H=1920
+          else
+            W=1920; H=1080
+          fi
+
+          # Ensure background video is correct duration and size
+          BG_PREPARED="$OUTDIR/bg_prepared.mp4"
+          ffmpeg -y -stream_loop -1 -i "$BG_VIDEO" \
+            -t "$DURATION" \
+            -vf "scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,eq=brightness=-0.05:saturation=0.85" \
+            -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -r 25 \
+            -an "$BG_PREPARED" 2>/dev/null
+          echo "   ✅ Background prepared (${W}x${H}, ${DURATION}s)"
+
+          # Build FFmpeg filter for final composition
+          if [ "$HAS_MUSIC" = "true" ]; then
+            # Mix narration (loud) + music (quiet background)
+            ffmpeg -y \
+              -i "$BG_PREPARED" \
+              -i "$NARRATION_MP3" \
+              -i "$MUSIC_FILE" \
+              -filter_complex "
+                [0:v]ass=$ASS_FILE[vout];
+                [2:a]volume=0.10,afade=t=in:st=0:d=3,afade=t=out:st=$((DURATION - 3)):d=3[music];
+                [1:a]volume=1.8[voice];
+                [voice][music]amix=inputs=2:duration=first:dropout_transition=3[aout]
+              " \
+              -map "[vout]" -map "[aout]" \
+              -c:v libx264 -preset medium -crf 22 -pix_fmt yuv420p \
+              -c:a aac -b:a 192k -ar 44100 \
+              -shortest -movflags +faststart \
+              "$FINAL_VIDEO" 2>/dev/null
+          else
+            # Voice only (no music)
+            ffmpeg -y \
+              -i "$BG_PREPARED" \
+              -i "$NARRATION_MP3" \
+              -filter_complex "
+                [0:v]ass=$ASS_FILE[vout];
+                [1:a]volume=1.8[aout]
+              " \
+              -map "[vout]" -map "[aout]" \
+              -c:v libx264 -preset medium -crf 22 -pix_fmt yuv420p \
+              -c:a aac -b:a 192k -ar 44100 \
+              -shortest -movflags +faststart \
+              "$FINAL_VIDEO" 2>/dev/null
+          fi
+
+          # Check result
+          if [ ! -f "$FINAL_VIDEO" ] || [ $(stat -c%s "$FINAL_VIDEO" 2>/dev/null || echo 0) -lt 100000 ]; then
+            echo "❌ Final video generation failed!"
+            # Simpler fallback without ASS
+            ffmpeg -y \
+              -i "$BG_PREPARED" \
+              -i "$NARRATION_MP3" \
+              -c:v copy -c:a aac -b:a 128k \
+              -shortest -movflags +faststart \
+              "$FINAL_VIDEO" 2>/dev/null || exit 1
+          fi
+
+          FINAL_SIZE=$(du -h "$FINAL_VIDEO" | cut -f1)
+          echo ""
+          echo "============================================"
+          echo "✅ VIDEO COMPLETE"
+          echo "   File:     $FINAL_VIDEO"
+          echo "   Size:     $FINAL_SIZE"
+          echo "   Duration: ${DURATION}s"
+          echo "   TTS:      $TTS_BACKEND"
+          echo "   BG:       $([ "$BG_DOWNLOADED" = "true" ] && echo 'Pexels/AI' || echo 'gradient')"
+          echo "   Music:    $([ "$HAS_MUSIC" = "true" ] && echo 'yes' || echo 'no')"
+          echo "============================================"
+
+          # Save metadata
+          cat > "$OUTDIR/metadata.json" << METAEOF
+          {
+            "id": "$STORY_ID",
+            "title": "$STORY_TITLE",
+            "tags": "$(echo $STORY_TAGS | tr ',' '","' | sed 's/^/"/;s/$/"/' | sed 's/""/"/g')",
+            "format": "$FORMAT",
+            "width": $W,
+            "height": $H,
+            "duration": $DURATION,
+            "tts": "$TTS_BACKEND",
+            "hasMusic": $HAS_MUSIC,
+            "generatedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          METAEOF
+
+          # Export for next steps
+          echo "FINAL_VIDEO=$FINAL_VIDEO" >> $GITHUB_ENV
+          echo "STORY_ID=$STORY_ID" >> $GITHUB_ENV
+          echo "STORY_TITLE=$STORY_TITLE" >> $GITHUB_ENV
+          echo "STORY_TAGS=$STORY_TAGS" >> $GITHUB_ENV
+          echo "DURATION=$DURATION" >> $GITHUB_ENV
+
+          # Mark story as used
+          python3 -c "
+          import json
+          lib = json.load(open('$LIBRARY'))
+          for cat, stories in lib.items():
+            if cat.startswith('_') or not isinstance(stories, list): continue
+            for s in stories:
+              if s.get('id') == '$STORY_ID':
+                s['used'] = True
+                s['usedAt'] = '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
+          json.dump(lib, open('$LIBRARY', 'w'), indent=2, ensure_ascii=False)
+          "
+
+      - name: "📤 Upload to YouTube"
+        if: success()
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          if [ -z "$YOUTUBE_CLIENT_ID" ] || [ -z "$YOUTUBE_REFRESH_TOKEN" ]; then
+            echo "⚠️ YouTube credentials not configured, skipping upload"
+            exit 0
+          fi
+
+          echo "📤 Uploading to YouTube..."
+
+          # Get fresh access token
+          TOKEN_RESPONSE=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
+            -d "client_id=$YOUTUBE_CLIENT_ID" \
+            -d "client_secret=$YOUTUBE_CLIENT_SECRET" \
+            -d "refresh_token=$YOUTUBE_REFRESH_TOKEN" \
+            -d "grant_type=refresh_token")
+
+          ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+          if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+            echo "❌ Failed to get access token"
+            echo "$TOKEN_RESPONSE"
+            exit 1
+          fi
+          echo "   ✅ Access token obtained"
+
+          # Build description with tags
+          TAGS_HASHTAGS=$(echo "$STORY_TAGS" | tr ',' '\n' | sed 's/^/#/' | tr '\n' ' ')
+          DESCRIPTION="$STORY_TITLE
+
+          $TAGS_HASHTAGS
+
+          Subscribe for daily stories that will keep you on the edge of your seat.
+
+          Generated by KDMC Studio"
+
+          # Prepare metadata JSON
+          cat > /tmp/yt_meta.json << YTEOF
+          {
+            "snippet": {
+              "title": "$(echo "$STORY_TITLE" | sed 's/"/\\"/g' | head -c 95)",
+              "description": "$(echo "$DESCRIPTION" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')",
+              "tags": [$(echo "$STORY_TAGS" | tr ',' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/,$//')],
+              "categoryId": "24",
+              "defaultLanguage": "en"
+            },
+            "status": {
+              "privacyStatus": "private",
+              "selfDeclaredMadeForKids": false
+            }
+          }
+          YTEOF
+
+          # Upload video (resumable upload)
+          echo "   Uploading video..."
+          UPLOAD_URL=$(curl -s -X POST \
+            "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/yt_meta.json \
+            -D - -o /dev/null 2>/dev/null | grep -i "location:" | tr -d '\r' | sed 's/location: //i')
+
+          if [ -z "$UPLOAD_URL" ]; then
+            echo "❌ Failed to initiate upload"
+            # Try simple upload
+            UPLOAD_RESULT=$(curl -s -X POST \
+              "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status" \
+              -H "Authorization: Bearer $ACCESS_TOKEN" \
+              -F "metadata=@/tmp/yt_meta.json;type=application/json" \
+              -F "file=@$FINAL_VIDEO;type=video/mp4")
+            echo "$UPLOAD_RESULT" | jq -r '.id // "upload failed"'
+          else
+            UPLOAD_RESULT=$(curl -s -X PUT "$UPLOAD_URL" \
+              -H "Authorization: Bearer $ACCESS_TOKEN" \
+              -H "Content-Type: video/mp4" \
+              --data-binary @"$FINAL_VIDEO")
+            VIDEO_ID=$(echo "$UPLOAD_RESULT" | jq -r '.id // empty')
+            if [ -n "$VIDEO_ID" ]; then
+              echo "   ✅ Uploaded! Video ID: $VIDEO_ID"
+              echo "   🔗 https://youtube.com/watch?v=$VIDEO_ID"
+            else
+              echo "   ⚠️ Upload response:"
+              echo "$UPLOAD_RESULT" | head -20
+            fi
+          fi
+
+      - name: "💾 Commit changes"
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
           git add tools/social/config/content-library.json 2>/dev/null || true
-          git add tools/social/output/_publish-log.json 2>/dev/null || true
           if git diff --staged --quiet; then
-            echo "Pas de changements à commit"
+            echo "No changes to commit"
           else
-            git commit -m "auto: video generated + published $(date -u +%Y-%m-%d)"
-            git push
+            git commit -m "auto: video ${{ env.STORY_ID }} generated $(date -u +%Y-%m-%d) [skip ci]"
+            git push -u origin main || sleep 2 && git pull --rebase origin main && git push -u origin main || true
           fi
+
+      - name: "📊 Summary"
+        if: always()
+        run: |
+          echo "## 🎬 Video Generation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Story | ${{ env.STORY_TITLE }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${{ env.DURATION }}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Date | $(date -u +%Y-%m-%d) |" >> $GITHUB_STEP_SUMMARY

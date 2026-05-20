@@ -173,4 +173,5 @@ export async function generateNarrativeVideo(story, opts = {}) {
   };
 }
 
-export default { generateNarrativeVideo };
+export const generate = generateNarrativeVideo;
+export default { generateNarrativeVideo, generate };
