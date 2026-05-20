@@ -8751,3 +8751,79 @@ Applicable dans :
 A verifier a chaque audit (axRunAudit, subagent audit).
 
 ---
+
+## 🔬 RÈGLE ABSOLUE — TOUJOURS DÉTAILLER LES ERREURS PARTOUT, CAUSE EXACTE (Kevin 2026-05-20, ABSOLUE)
+
+> **"Note tous projets, toujours détailler les erreurs partout pour savoir cause exact."** — Kevin 2026-05-20
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex, Apex Chat, CMCteams, e-KDMC, Télécommande, CrackPass, tous projets actuels et futurs.
+
+### Distinction fondamentale : 2 destinataires, 2 messages
+
+Chaque erreur a TOUJOURS deux faces — ne jamais en sacrifier une :
+
+1. **Face USER (toast/UI visible)** : message clair, actionnable, sans jargon (cf. règle UX ERREURS ci-dessus).
+2. **Face DIAGNOSTIC (log + payload technique)** : cause EXACTE, complète, jamais générique.
+
+❌ INTERDIT ABSOLU — masquer la cause exacte derrière un message générique :
+- `catch(e){ return err('Erreur interne', 500); }` — la vraie `e.message` est PERDUE
+- `catch(e){ toast('Ça ne marche pas'); }` — aucun moyen de savoir pourquoi
+- `{error:'error'}` — code générique sans le `message` réel
+- `console.error('fail')` sans `e.message` + `e.stack`
+- Workflow CI `echo "failed"` sans le stdout/stderr réel de la commande
+
+✅ OBLIGATOIRE — la cause exacte doit TOUJOURS être récupérable :
+
+### 1. Côté serveur / Worker / API
+
+Toute réponse d'erreur DOIT inclure un champ diagnostic détaillé :
+```js
+catch (e) {
+  console.error('[handleX]', e.message, e.stack);
+  return err('Erreur interne, réessaie', 500, 'internal', {
+    detail: e.message,                          // cause exacte
+    where: (e.stack||'').split('\n')[1]||'',    // ligne fautive
+    step: currentStep                           // étape métier qui a planté
+  });
+}
+```
+Le `message` user reste soft, mais `detail`/`where`/`step` exposent la cause exacte pour le debug.
+
+### 2. Côté client / frontend
+
+Tout `fetch` qui échoue DOIT afficher (au moins en mode admin/diag) :
+- Le **status HTTP** réel (`r.status`)
+- Le **body d'erreur** réel (`data.message` ET `data.detail`, pas seulement `data.error` qui est souvent un code)
+- Le **nom + message** de l'exception JS (`e.name`, `e.message`), distinguer `AbortError`/timeout/network
+
+Pattern toast diagnostic (déjà appliqué Apex Chat v1.1.121/134) :
+```js
+diag = 'HTTP '+r.status+' : '+(data.detail||data.message||data.error||'?');
+```
+⚠️ Préférer `data.message`/`data.detail` (texte réel) à `data.error` (code générique type "error").
+
+### 3. Côté CI / GitHub Actions
+
+Chaque step qui peut échouer DOIT logger la sortie réelle :
+- `set -x` ou echo de la commande exacte
+- Capturer ET afficher stdout + stderr (`2>&1`)
+- Codes d'erreur API (Cloudflare code 10000, 9109, 100328, 10097…) loggés en clair
+- JAMAIS `|| echo "erreur"` qui avale la vraie sortie
+
+### 4. Côté logs persistants
+
+Tout `ax_error_log` / `cmc_audit` / `ax_silent_log` DOIT stocker :
+`{msg, stack, name, ctx, step, http_status?, response_body?, ts, app_version}`
+
+### 5. Test mental obligatoire avant chaque catch / chaque toast d'erreur
+
+> *"Si cette erreur se produit chez Kevin dans 1 mois, est-ce que je peux savoir la CAUSE EXACTE rien qu'avec ce qui est affiché/loggé ? Ou est-ce que je devrai deviner ?"*
+
+Si je devrais deviner → l'erreur n'est pas assez détaillée → enrichir AVANT push.
+
+### 6. Application
+
+S'applique : Claude Code (priorité absolue moi-même), Apex IA, Apex Chat Worker + frontend,
+CMCteams, tous workflows GitHub Actions, tous projets futurs.
+
+---

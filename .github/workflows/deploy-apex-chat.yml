@@ -113,13 +113,13 @@ jobs:
           echo "::notice::D1 ID hardcoded:"
           grep "database_id" wrangler.toml | head -1
 
-      - name: Apply D1 migrations (toutes, 0001→0004)
+      - name: Apply D1 migrations (toutes — glob auto)
         if: github.event.inputs.apply_migrations != 'no'
         working-directory: messaging-app/workers
         run: |
-          # v1.1.134 : applique TOUTES les migrations (avant : juste 0001).
+          # v1.1.135 : glob auto de TOUTES les migrations (toute nouvelle 000N reprise auto).
           # Les CREATE TABLE IF NOT EXISTS sont idempotents.
-          for mig in ../d1-migrations/0001_init.sql ../d1-migrations/0002_admin_features.sql ../d1-migrations/0003_finalize.sql ../d1-migrations/0004_premium_ai_cache.sql; do
+          for mig in $(ls ../d1-migrations/0*.sql | sort); do
             if [ -f "$mig" ]; then
               echo "=== Migration: $mig ==="
               wrangler d1 execute apex-chat-main --file="$mig" --remote 2>&1 | tail -8 || echo "::warning::$mig partiel (peut être déjà appliqué)"
@@ -159,21 +159,39 @@ jobs:
       - name: Generate + put secrets (after Worker exists)
         working-directory: messaging-app/workers
         run: |
-          # Secrets crypto auto-générés
-          JWT_SIGN_KEY=$(openssl rand -hex 64)
-          APEX_CHAT_ADMIN_TOKEN=$(openssl rand -hex 32)
-          APEX_HANDOFF_TOKEN=$(openssl rand -hex 32)
+          # Liste des secrets déjà présents sur le Worker (évite régénération destructrice)
+          EXISTING=$(wrangler secret list 2>/dev/null || echo '[]')
+          has_secret() { echo "$EXISTING" | grep -q "\"$1\""; }
 
-          echo "$JWT_SIGN_KEY" | wrangler secret put JWT_SIGN_KEY
-          echo "$APEX_CHAT_ADMIN_TOKEN" | wrangler secret put APEX_CHAT_ADMIN_TOKEN
-          echo "$APEX_HANDOFF_TOKEN" | wrangler secret put APEX_HANDOFF_TOKEN
+          # printf '%s' (PAS echo) : echo ajoute un \n qui corrompt les secrets
+          # comparés caractère par caractère (ex KEVIN_PHONE_E164 → "+33...\n" ne matche jamais)
+          put_secret() { printf '%s' "$2" | wrangler secret put "$1"; }
 
-          # Helper : push secret seulement si valeur définie
+          # JWT_SIGN_KEY : STABLE entre déploiements (régénérer invaliderait tous les JWT existants).
+          # Généré une seule fois, conservé tant qu'il existe sur le Worker.
+          if has_secret "JWT_SIGN_KEY"; then
+            echo "::notice::JWT_SIGN_KEY déjà présent — conservé (pas de régénération)"
+          else
+            put_secret "JWT_SIGN_KEY" "$(openssl rand -hex 64)"
+            echo "::notice::JWT_SIGN_KEY généré (première fois)"
+          fi
+          if has_secret "APEX_CHAT_ADMIN_TOKEN"; then
+            echo "::notice::APEX_CHAT_ADMIN_TOKEN déjà présent — conservé"
+          else
+            put_secret "APEX_CHAT_ADMIN_TOKEN" "$(openssl rand -hex 32)"
+          fi
+          if has_secret "APEX_HANDOFF_TOKEN"; then
+            echo "::notice::APEX_HANDOFF_TOKEN déjà présent — conservé"
+          else
+            put_secret "APEX_HANDOFF_TOKEN" "$(openssl rand -hex 32)"
+          fi
+
+          # Helper : push secret seulement si valeur définie (printf, jamais echo)
           push_if_set() {
             local name=$1
             local value=$2
             if [ -n "$value" ]; then
-              echo "$value" | wrangler secret put "$name"
+              put_secret "$name" "$value"
               echo "::notice::✓ $name configuré"
             fi
           }

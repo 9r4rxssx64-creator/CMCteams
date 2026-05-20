@@ -49,8 +49,16 @@ function json(data, status = 200, extraHeaders = {}) {
   });
 }
 
-function err(message, status = 400, code = 'error') {
-  return json({ error: code, message }, status);
+// err() — règle CLAUDE.md "détailler les erreurs partout" :
+// message = soft (user), detail = cause EXACTE (diagnostic). detail accepte string ou objet.
+function err(message, status = 400, code = 'error', detail) {
+  const body = { error: code, message };
+  if (detail !== undefined && detail !== null) {
+    body.detail = (typeof detail === 'string') ? detail : (detail.message || JSON.stringify(detail));
+    if (detail && detail.stack) body.where = String(detail.stack).split('\n')[1] || '';
+    if (detail && detail.step) body.step = detail.step;
+  }
+  return json(body, status);
 }
 
 export function normalizeName(s) {
@@ -376,8 +384,12 @@ export async function verifyFirebaseIdToken(idToken, env) {
 }
 
 export async function handleVerifyOtp(request, env) {
-  const { phone, name, pseudo, otp, firebase_id_token } = await request.json();
-  if (!phone || !pseudo) return err('Champs manquants', 400);
+  let _parseErr = null;
+  const reqBody = await request.json().catch((e) => { _parseErr = e.message; return {}; });
+  if (_parseErr) return err('Corps requête invalide', 400, 'bad_json', _parseErr);
+  const { phone, name, pseudo, otp, firebase_id_token } = reqBody;
+  if (!phone || !pseudo) return err('Champs manquants', 400, 'missing_fields',
+    'phone=' + (phone ? 'ok' : 'VIDE') + ' pseudo=' + (pseudo ? 'ok' : 'VIDE'));
   if (!/^[a-zA-Z0-9_-]{3,20}$/.test(pseudo)) return err('Pseudo invalide (3-20 chars alphanum)', 400);
   // Règle Kevin : prénom + nom obligatoires (sécurité anti-impersonation)
   const isKevinBypass = env.KEVIN_PHONE_E164 && phone.replace(/[\s\-]/g, '') === env.KEVIN_PHONE_E164;
@@ -390,25 +402,48 @@ export async function handleVerifyOtp(request, env) {
   const phoneHash = await sha256(cleanPhone);
 
   // ============ BYPASS ADMIN Kevin ============
-  if (env.KEVIN_PHONE_E164 && cleanPhone === env.KEVIN_PHONE_E164 && otp === '000000') {
-    // Skip OTP check, créer/récupérer compte Kevin admin
-    let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind('kdmc_admin').first();
-    if (!user) {
-      await env.APEX_CHAT_DB.prepare(
-        `INSERT OR REPLACE INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
-         identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
-         VALUES (?, ?, ?, ?, ?, 1, 1, 'PENDING', 'PENDING', 'PENDING', 'admin-bypass', ?, 'active')`
-      ).bind('kdmc_admin', pseudo || 'kevin', name || 'Kevin DESARZENS', cleanPhone, phoneHash, Date.now()).run();
-      user = { id: 'kdmc_admin', pseudo: pseudo || 'kevin', real_name: name || 'Kevin DESARZENS', is_admin: 1 };
+  if (otp === '000000') {
+    // Diagnostic explicite si le secret KEVIN_PHONE_E164 n'est pas configuré
+    if (!env.KEVIN_PHONE_E164) {
+      return err('Bypass admin indisponible', 503, 'kevin_phone_unset',
+        'Secret KEVIN_PHONE_E164 absent du Worker — config GitHub/Cloudflare requise');
     }
-    const jwt = await signJWT({
-      sub: 'kdmc_admin',
-      pseudo: user.pseudo,
-      is_admin: true,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 30 * 86400
-    }, env.JWT_SIGN_KEY || 'dev-key');
-    return json({ ok: true, token: jwt, user: { id: 'kdmc_admin', pseudo: user.pseudo, is_admin: true }});
+    if (cleanPhone !== env.KEVIN_PHONE_E164) {
+      return err('Numéro non reconnu comme admin', 403, 'not_kevin_phone',
+        'cleanPhone reçu ne correspond pas au secret KEVIN_PHONE_E164');
+    }
+    let step = 'init';
+    try {
+      // Skip OTP check, créer/récupérer compte Kevin admin
+      step = 'select_user';
+      let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind('kdmc_admin').first();
+      if (!user) {
+        step = 'insert_user';
+        await env.APEX_CHAT_DB.prepare(
+          `INSERT OR REPLACE INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
+           identity_key_pub, pq_key_pub, prekey_signed, source, created_at, status)
+           VALUES (?, ?, ?, ?, ?, 1, 1, 'PENDING', 'PENDING', 'PENDING', 'admin-bypass', ?, 'active')`
+        ).bind('kdmc_admin', pseudo || 'kevin', name || 'Kevin DESARZENS', cleanPhone, phoneHash, Date.now()).run();
+        user = { id: 'kdmc_admin', pseudo: pseudo || 'kevin', real_name: name || 'Kevin DESARZENS', is_admin: 1 };
+      }
+      step = 'sign_jwt';
+      if (!env.JWT_SIGN_KEY) {
+        return err('Config serveur incomplète', 503, 'jwt_key_unset',
+          'Secret JWT_SIGN_KEY absent du Worker — JWT non signable');
+      }
+      const jwt = await signJWT({
+        sub: 'kdmc_admin',
+        pseudo: user.pseudo,
+        is_admin: true,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 30 * 86400
+      }, env.JWT_SIGN_KEY);
+      return json({ ok: true, token: jwt, user: { id: 'kdmc_admin', pseudo: user.pseudo, is_admin: true }});
+    } catch (e) {
+      console.error('[verify-otp/bypass]', step, e.message, e.stack);
+      e.step = 'bypass:' + step;
+      return err('Connexion admin échouée', 500, 'bypass_fail', e);
+    }
   }
 
   // Mode 1 : OTP Vonage (priorité)
@@ -3286,17 +3321,19 @@ export default {
 
       return err('Route inconnue', 404);
     } catch (e) {
-      console.error('API error', e.message, e.stack);
+      console.error('API error', path, method, e.message, e.stack);
       // Push télémétrie vers Apex
       ctx.waitUntil(env.TELEMETRY_QUEUE?.send({
         sentinel: 'api-error',
         severity: 'err',
         msg: e.message,
+        stack: (e.stack || '').slice(0, 600),
         path,
         method,
         ts: Date.now()
       }).catch(() => {}));
-      return err('Erreur interne, réessaie dans un instant', 500);
+      // Règle CLAUDE.md : message user soft, mais detail = cause EXACTE (jamais masquée)
+      return err('Erreur interne, réessaie dans un instant', 500, 'internal', e);
     }
   },
 
