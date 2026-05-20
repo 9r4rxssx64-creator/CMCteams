@@ -5323,7 +5323,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.721";
+var APP_VER="v9.722";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23929,7 +23929,7 @@ function vPlan(){
       +'<table style="border-collapse:collapse;table-layout:fixed;width:'+(118+da.length*44+2*30)+'px"><colgroup><col style="width:118px">';
     da.forEach(function(){bh+='<col style="width:44px">';});
     bh+='<col style="width:30px"><col style="width:30px"></colgroup>';
-    bh+='<thead><tr><th style="padding:0;background:rgba(6,14,7,.22);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
+    bh+='<thead><tr><th style="padding:0;background:#0b1409;position:sticky;left:0;border-right:1px solid #182818;z-index:6;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
     // v9.167 — Annotations admin par jour (clic sur header = prompt si admin, tooltip pour tous)
     var _dayNotes=getDayNotes(A.year,A.month);
     da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#0a1408":"#0c1608";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?";border-bottom:2px solid rgba(201,162,39,.5)":"";var dn=_dayNotes[d];var _dnTitle=dn?'title="'+esc(dn.text)+'"':'';var _clickAttr=isAdm?(' onclick="promptDayNote('+A.year+','+A.month+','+d+')" style="cursor:pointer"'):'';bh+='<th data-planday="'+d+'" '+_dnTitle+' style="padding:3px 1px;min-width:28px;background:'+thBg+';text-align:center;position:sticky;top:0;z-index:2'+thBorder+(isAdm?";cursor:pointer":"")+'"'+_clickAttr+'><div style="font-weight:700;color:'+thCol+';font-size:14px">'+d+(dn?'<span style="color:#ffce3a;font-size:10px;margin-left:2px">\u2605</span>':'')+'</div><div style="font-size:11px;color:'+(isTod?"rgba(201,162,39,.4)":"#182818")+'">'+DS[dow]+'</div></th>';});
@@ -24367,7 +24367,7 @@ function vDeparts(){
       +'<div style="background:rgba(6,15,8,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:rgba(6,14,7,.22);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
+      +'<th style="padding:0;background:#0b1409;position:sticky;left:0;border-right:1px solid #182818;z-index:6;width:118px">'
       +'<div style="width:118px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#a0bca0;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
