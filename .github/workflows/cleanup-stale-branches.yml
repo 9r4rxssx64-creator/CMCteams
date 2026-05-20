@@ -86,13 +86,19 @@ jobs:
           # project/* + archive/* (anciens noms claude/* à supprimer, le
           # nouveau nom a déjà été créé pointant sur le même commit).
           # Si la branche n'existe pas → ignore silencieusement (push --delete OK).
+          # Kevin 2026-05-20 — 4 branches apex-chat mergées dans main mais non
+          # détectées par git branch -r --merged (merge --no-ff auto-merge bot).
           EXPLICIT=$(printf "%s\n" \
             "claude/continue-perfection-work-46Oic" \
             "claude/continue-perfection-work-T47uI" \
             "claude/iphone-device-remote-control-Nam26" \
             "claude/universal-password-cracker-o2mbo" \
             "claude/ecommerce-automation-platform-Gprjk" \
-            "claude/evaluate-resources-shZBa")
+            "claude/evaluate-resources-shZBa" \
+            "claude/apex-chat-deploy-acctid" \
+            "claude/apex-chat-migrations" \
+            "claude/apex-chat-v133-merge" \
+            "claude/apex-chat-v134-merge")
           echo "$EXPLICIT"
 
           # Combine + dedupe
