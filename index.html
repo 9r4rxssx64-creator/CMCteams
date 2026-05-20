@@ -5178,9 +5178,9 @@ function _stripPersistedTeamFamHistory(empsArr){
 // 212 emps "explicit" skip dans algo → ré-affectations bloquées sur vieilles valeurs.
 // Solution : NEW flag cmc_v710_redetect_done → wipe forcé pour les devices ayant
 // déjà fait v9.707 (qui n'aurait pas tourné si flag v707 déjà set par v9.707).
-(function _v711RedetectBoot(){
+(function _v712RedetectBoot(){
   try{
-    if(localStorage.getItem("cmc_v711_redetect_done"))return;
+    if(localStorage.getItem("cmc_v712_redetect_done"))return;
     var _eRaw=localStorage.getItem("cmc_e");
     if(!_eRaw){localStorage.setItem("cmc_v710_redetect_done","1");return;}
     var _emps=JSON.parse(_eRaw);
@@ -5191,7 +5191,7 @@ function _stripPersistedTeamFamHistory(empsArr){
       if(e&&e.familyHistory){e.familyHistory={};}
     });
     localStorage.setItem("cmc_e",JSON.stringify(_emps));
-    localStorage.setItem("cmc_v711_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
+    localStorage.setItem("cmc_v712_redetect_done",JSON.stringify({ts:Date.now(),wiped:_wiped}));
     try{window._cmcLastDetectCacheKey=null;}catch(_){}
     // Aussi : wipe cmc_team_mirror_* pour forcer re-détection miroir au prochain dc()
     try{
@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.711";
+var APP_VER="v9.712";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37212,7 +37212,32 @@ function doImport(){
       _ac=_ac.replace(/^(\d{1,2})-(\d{1,2})(\*?)$/,"$1/$2$3");_ac=_ac.replace(/CDP$/,"*");
       _ac=_ac.replace(/(\d)\s*\/\s*(\d)/g,"$1/$2");
       // v9.122 — Accepter aussi les variantes avec : ou ; ou multiples ''/"" en suffixe (pit boss PDF)
-      if(!CODES[_ac]){var _c9=_ac.replace(/"'/g,"'");if(_c9!==_ac&&CODES[_c9])_ac=_c9;else{_c9=(_c9!==_ac?_c9:_ac).replace(/[C"':;]+$/,"");if(_c9&&CODES[_c9])_ac=_c9;}}
+      // v9.712 Kevin diag mai 2026 — NE PLUS stripper le 'C' (chef BJ) :
+      // Avant /[C"':;]+$/ enlevait le C → "22/6C" devenait "22/6" → tous les chefs
+      // BJ détectés comme roulettes (codes plain) → 22 équipes roulettes au lieu de
+      // BJ/Roul/CMC distinctes. Kevin "toutes les valeurs des plannings ont de
+      // l'importance". Le 'c' final = code CHEF, doit être PRÉSERVÉ.
+      if(!CODES[_ac]){
+        var _c9=_ac.replace(/"'/g,"'");
+        if(_c9!==_ac&&CODES[_c9]){_ac=_c9;}
+        else{
+          // Strip UNIQUEMENT "':; (artefacts PDF) — PAS le C (marqueur chef)
+          var _c9s=(_c9!==_ac?_c9:_ac).replace(/["':;]+$/,"");
+          if(_c9s&&CODES[_c9s]){_ac=_c9s;}
+          else{
+            // v9.712 — code chef "Xc" : si base X valide → préserver suffixe 'c',
+            // cloner l'entrée CODES de base (même horaire/couleur) + flag chef.
+            var _chefBase=_ac.replace(/C+$/,"");
+            if(_chefBase!==_ac&&CODES[_chefBase]){
+              var _chefCode=_chefBase+"c";
+              if(!CODES[_chefCode]){
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefBase],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+              }
+              _ac=_chefCode;
+            }
+          }
+        }
+      }
       if(!CODES[_ac]){var _cAl={"RHE":"RH","RHO":"RH","REPO":"R","REPOS":"R","CONGE":"CP","MALADIE":"M","FORMATION":"AF","RECUP":"RRT","PRET":"PRT","PATRIMOINE":"PAT","20H5":"20/5","19H4":"19/4","16H3":"16/3","16H22":"16/22","22H6":"22/6","14H19":"14/19"};if(_cAl[_ac])_ac=_cAl[_ac];}
       // v9.140 — Auto-apprentissage codes inconnus au lieu de les ignorer
       // v9.372 — P0 : résoudre variante * ou CDP_MAP AVANT le check CODES (évite skip silencieux)
