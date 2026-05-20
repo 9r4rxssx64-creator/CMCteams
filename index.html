@@ -5296,7 +5296,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.717";
+var APP_VER="v9.718";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37260,13 +37260,15 @@ function doImport(){
           var _c9s=(_c9!==_ac?_c9:_ac).replace(/["':;]+$/,"");
           if(_c9s&&CODES[_c9s]){_ac=_c9s;}
           else{
-            // v9.712 — code chef "Xc" : si base X valide → préserver suffixe 'c',
-            // cloner l'entrée CODES de base (même horaire/couleur) + flag chef.
-            var _chefBase=_ac.replace(/C+$/,"");
-            if(_chefBase!==_ac&&CODES[_chefBase]){
-              var _chefCode=_chefBase+"c";
+            // v9.718 — code chef "Xc" ou "X'c" (aligné sur le parser grille v9.715).
+            // Les bases avec apostrophe (14/19', 16/3') n'existent PAS dans CODES :
+            // on capture base nue + apostrophe séparément via regex, on clone depuis
+            // la base nue, on reconstruit avec un 'c' MINUSCULE garanti.
+            var _chefM=_ac.match(/^(.+?)('?)C+$/i);
+            if(_chefM&&CODES[_chefM[1]]){
+              var _chefCode=_chefM[1]+_chefM[2]+"c";
               if(!CODES[_chefCode]){
-                try{CODES[_chefCode]=Object.assign({},CODES[_chefBase],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
               }
               _ac=_chefCode;
             }
