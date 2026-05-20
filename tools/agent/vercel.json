@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
   "crons": [
     {
       "path": "/api/cron?trigger=cron:0 3 * * *",
