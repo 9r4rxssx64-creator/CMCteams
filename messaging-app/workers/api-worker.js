@@ -127,7 +127,13 @@ export async function verifyJWT(token, secret) {
 
 async function getAuthUser(request, env) {
   const auth = request.headers.get('Authorization') || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  let token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  // WebSocket : le navigateur ne peut PAS poser de header Authorization sur un
+  // upgrade WS → le token arrive en query param ?token=. Sans ce fallback,
+  // toute connexion WebSocket échoue en 401 ("WebSocket non connecté").
+  if (!token) {
+    try { token = new URL(request.url).searchParams.get('token'); } catch (_) {}
+  }
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
   if (!payload || !payload.sub) return null;

@@ -328,7 +328,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.140';
+const __APEX_CHAT_VERSION__ = 'v1.1.141';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -374,7 +374,7 @@ if('serviceWorker' in navigator){
   }).catch(_=>{});
 
   // === Sentinelle remote version (compare APP_VER local vs remote) ===
-  // v1.1.140 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
+  // v1.1.141 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.140</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.141</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -483,7 +483,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.140</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.141</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1235,7 +1235,7 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
-            // v1.1.140 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            // v1.1.141 : ne pas effacer le nom local si le serveur ne le renvoie pas
             name: c.name || localById[c.id]?.name,
             pseudo: c.pseudo || localById[c.id]?.pseudo,
             peer_id: c.peer_id || localById[c.id]?.peer_id,
@@ -1246,7 +1246,7 @@ K._refreshConvs = async function(){
             bg_id: localById[c.id]?.bg_id,
             peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
           }));
-          // v1.1.140 : applique les tombstones — conv supprimées ne réapparaissent jamais.
+          // v1.1.141 : applique les tombstones — conv supprimées ne réapparaissent jamais.
           // Retente le delete serveur tant que le serveur les renvoie.
           if(K._deletedConvIds && K._deletedConvIds.length){
             const serverIds = new Set(K.conversations.map(c => c.id));
@@ -1270,7 +1270,7 @@ K._refreshConvs = async function(){
   toast('🔄 Rafraîchi', 'ok', 1500);
 };
 
-// v1.1.140 : nom affichable d'une conversation. Si le serveur ne renvoie
+// v1.1.141 : nom affichable d'une conversation. Si le serveur ne renvoie
 // pas name/pseudo (DM chiffré), on résout le correspondant via peer_id
 // dans les contacts chargés, puis members_detail. Évite le "Sans nom".
 K._convName = function(c){
@@ -1287,7 +1287,7 @@ K._convName = function(c){
   return 'Sans nom';
 };
 
-// v1.1.140 : tombstones de conversations supprimées.
+// v1.1.141 : tombstones de conversations supprimées.
 // Une conv supprimée ne doit JAMAIS réapparaître, même si le serveur la
 // renvoie encore (delete serveur différé/échoué). Le refresh retente le
 // delete serveur tant que la conv est tombstonée.
@@ -3392,7 +3392,7 @@ K._openConvActionsMenu = function(convId, ev){
   `);
 };
 
-// v1.1.140 : suppression conversation. Local-first (jamais bloqué) +
+// v1.1.141 : suppression conversation. Local-first (jamais bloqué) +
 // best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
 K._deleteConv = async function(convId){
   const conv = (K.conversations || []).find(c => c.id === convId);
@@ -3631,7 +3631,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.140',
+    version: 'v1.1.141',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5667,7 +5667,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.140 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.141 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5686,7 +5686,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.140 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.141 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -5810,7 +5810,7 @@ K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
   K.render();
-  // v1.1.140 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
+  // v1.1.141 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
   try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_){}
 };
 
@@ -6232,6 +6232,10 @@ K._openWs = async function(convId){
 
     K.ws.addEventListener('open', () => {
       _logTelemetry('ok', 'ws-open', { convId });
+      K._wsRetry = 0;   // reconnexion réussie → reset backoff
+      if(K.view === 'chat' && K.viewData?.id === convId && typeof K._updatePresenceHeader === 'function'){
+        try{ K._updatePresenceHeader(); }catch(_){}
+      }
     });
 
     K.ws.addEventListener('message', async (event) => {
@@ -6248,6 +6252,18 @@ K._openWs = async function(convId){
     K.ws.addEventListener('close', (e) => {
       _logTelemetry('info', 'ws-close', { convId, code: e.code });
       K.ws = null;
+      if(K.wsPing){ clearInterval(K.wsPing); K.wsPing = null; }
+      // v1.1.141 : reconnexion auto (backoff) si toujours sur la conv et fermeture non volontaire.
+      // 1000 = close normal, 1008 = auth refusée → pas de retry inutile.
+      if(e.code !== 1000 && e.code !== 1008 && K.view === 'chat' && K.viewData?.id === convId){
+        K._wsRetry = (K._wsRetry || 0) + 1;
+        if(K._wsRetry <= 8){
+          const delay = Math.min(1000 * Math.pow(2, K._wsRetry - 1), 15000);
+          setTimeout(() => {
+            if(K.view === 'chat' && K.viewData?.id === convId && !K.ws) K._openWs(convId);
+          }, delay);
+        }
+      }
     });
 
     // Ping keep-alive 25s
@@ -6557,8 +6573,18 @@ K._call = async function(type, convId){
       K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
       $('#call-status').textContent = '📞 Appel en cours...';
     } else {
-      toast('WebSocket non connecté', 'err');
-      K._endCall();
+      // v1.1.141 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
+      const cs = $('#call-status'); if(cs) cs.textContent = '🛜 Connexion temps réel…';
+      K._openWs(convId);
+      setTimeout(() => {
+        if(K.ws?.readyState === WebSocket.OPEN){
+          K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
+          const c2 = $('#call-status'); if(c2) c2.textContent = '📞 Appel en cours...';
+        } else {
+          toast('Connexion temps réel indisponible — réessaie dans un instant', 'err', 4000);
+          K._endCall();
+        }
+      }, 2500);
     }
   }catch(e){
     _safeCatch('call-start', e);
@@ -8384,7 +8410,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.140 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.141 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -10044,7 +10070,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.140 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.141 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);
@@ -10699,7 +10725,7 @@ async function _boot(){
     // Charger état persisté
     K.conversations = lg('conversations', []);
     K.contacts = lg('contacts', []);
-    // v1.1.140 : tombstones — conv supprimées qui ne doivent jamais réapparaître
+    // v1.1.141 : tombstones — conv supprimées qui ne doivent jamais réapparaître
     K._deletedConvIds = lg('deleted_convs', []);
     if(K._deletedConvIds.length){
       K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
