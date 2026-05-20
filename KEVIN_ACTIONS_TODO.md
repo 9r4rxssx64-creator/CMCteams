@@ -1,28 +1,15 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-## 🔑 SECRETS GITHUB À AJOUTER — 5 providers IA/data (2026-05-20)
+## ✅ FAIT — Secrets GitHub 5 providers IA/data (2026-05-20)
 
-> Le proxy `apex-secrets-proxy` est **déjà prêt** à servir ces 5 services (PR #290 mergée).
-> Il manque juste les secrets GitHub. Tant qu'ils ne sont pas créés, le proxy
-> répond `503 not configured` pour ces routes (rien de cassé).
-
-**Page secrets** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions
-→ "New repository secret" pour chacun. **Nom EXACT obligatoire** (sinon non reconnu) :
-
-| Secret à créer (nom EXACT) | Service | Où récupérer la clé |
-|----------------------------|---------|---------------------|
-| `XAI_API_KEY` | xAI Grok | https://console.x.ai |
-| `MISTRAL_API_KEY` | Mistral | https://console.mistral.ai |
-| `COHERE_API_KEY` | Cohere | https://dashboard.cohere.com |
-| `TOGETHER_API_KEY` | Together AI | https://api.together.xyz/settings/api-keys |
-| `FINNHUB_API_KEY` | Finnhub (bourse) | https://finnhub.io/dashboard |
-
-**Après création** : lancer le workflow `Sync Apex Secrets to Cloudflare Worker`
-(onglet Actions) OU il se relance au prochain push touchant le workflow.
-→ Apex utilisera alors xAI/Mistral/Cohere/Together/Finnhub automatiquement.
-
-**Vérification** : ouvrir `https://apex-secrets-proxy.<account>.workers.dev/health`
-→ le champ `available_providers` doit lister les nouveaux services.
+> **TERMINÉ** — Kevin a créé les 5 secrets (`XAI_API_KEY`, `MISTRAL_API_KEY`,
+> `COHERE_API_KEY`, `TOGETHER_API_KEY`, `FINNHUB_API_KEY`) + `PEXELS_API_KEY`.
+> Workflow `sync-apex-secrets-to-cf-worker.yml` re-déclenché → secrets poussés
+> au Cloudflare Worker `apex-secrets-proxy`. Apex peut désormais utiliser
+> xAI/Mistral/Cohere/Together/Finnhub/Pexels via le proxy.
+>
+> Vérif : `https://apex-secrets-proxy.<account>.workers.dev/health`
+> → `available_providers` doit lister les nouveaux services.
 
 ---
 

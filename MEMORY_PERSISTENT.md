@@ -52,10 +52,10 @@
 | Gemini | `GEMINI_API_KEY` | ✅ | https://aistudio.google.com/apikey |
 | DeepSeek | `DEEPSEEK_API_KEY` | ✅ | https://platform.deepseek.com |
 | Perplexity | `PERPLEXITI_API_KEY` *(typo Kevin)* | ✅ | https://www.perplexity.ai/settings/api |
-| xAI Grok | `XAI_API_KEY` | ⏳ secret à créer | https://console.x.ai |
-| Mistral | `MISTRAL_API_KEY` | ⏳ secret à créer | https://console.mistral.ai |
-| Cohere | `COHERE_API_KEY` | ⏳ secret à créer | https://dashboard.cohere.com |
-| Together | `TOGETHER_API_KEY` | ⏳ secret à créer | https://api.together.xyz/settings/api-keys |
+| xAI Grok | `XAI_API_KEY` | ✅ (créé 2026-05-20) | https://console.x.ai |
+| Mistral | `MISTRAL_API_KEY` | ✅ (créé 2026-05-20) | https://console.mistral.ai |
+| Cohere | `COHERE_API_KEY` | ✅ (créé 2026-05-20) | https://dashboard.cohere.com |
+| Together | `TOGETHER_API_KEY` | ✅ (créé 2026-05-20) | https://api.together.xyz/settings/api-keys |
 
 ### Recherche / mémoire / data
 
@@ -63,7 +63,8 @@
 |---------|---------------|-------------|-----------|
 | Tavily | `TAVILY_API_KEY` | ✅ | https://app.tavily.com |
 | Pinecone | `PINECONE_API_KEY` | ✅ | https://app.pinecone.io (index `apex-memory`) |
-| Finnhub | `FINNHUB_API_KEY` | ⏳ secret à créer | https://finnhub.io/dashboard |
+| Finnhub | `FINNHUB_API_KEY` | ✅ (créé 2026-05-20) | https://finnhub.io/dashboard |
+| Pexels | `PEXELS_API_KEY` | ✅ (créé 2026-05-20) | https://www.pexels.com/api |
 | OpenLegi | `API_OPEN_LEGO` | ✅ | https://mcp.openlegi.fr |
 
 ### Infra / notifs / auth
