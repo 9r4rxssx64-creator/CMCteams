@@ -1624,6 +1624,52 @@ async function handleWsConversation(convId, request, env) {
   return doStub.fetch(request);
 }
 
+// GET /api/conversations/:id/ws-diag — reproduit les checks du WS et renvoie
+// la cause EXACTE en JSON (le WebSocket ne révèle qu'un code 1006 opaque).
+// Le token peut venir du header OU de ?token= (comme le WS).
+async function handleWsDiag(convId, request, env) {
+  const result = { ok: false, convId, step: 'auth' };
+  try {
+    const auth = await getAuthUser(request, env);
+    result.authenticated = !!auth;
+    if (!auth) {
+      result.cause = 'auth_failed';
+      result.detail = 'Token rejeté (getAuthUser=null). JWT périmé, signature invalide, ou ?token= absent.';
+      return json(result, 200);
+    }
+    result.userId = auth.sub;
+    result.step = 'conv_lookup';
+    const conv = await env.APEX_CHAT_DB.prepare(
+      'SELECT id, type, sharded_to_do FROM conversations WHERE id=?'
+    ).bind(convId).first();
+    result.convExists = !!conv;
+    if (!conv) {
+      result.cause = 'conv_not_found';
+      result.detail = 'Conversation absente côté serveur (jamais créée / locale uniquement).';
+      return json(result, 200);
+    }
+    result.step = 'membership';
+    const member = await env.APEX_CHAT_DB.prepare(
+      'SELECT role FROM conversation_members WHERE conv_id=? AND user_id=?'
+    ).bind(convId, auth.sub).first();
+    result.isMember = !!member;
+    if (!member) {
+      result.cause = 'not_member';
+      result.detail = 'Utilisateur pas membre de cette conversation côté serveur.';
+      return json(result, 200);
+    }
+    result.ok = true;
+    result.cause = 'ok';
+    result.detail = 'Tous les checks WS passent — le temps réel devrait fonctionner.';
+    return json(result, 200);
+  } catch (e) {
+    console.error('[ws-diag]', result.step, e.message, e.stack);
+    result.cause = 'exception';
+    result.detail = 'Erreur serveur à l\'étape ' + result.step + ' : ' + e.message;
+    return json(result, 200);
+  }
+}
+
 // ============================================================================
 //  Phase 4 — Groupes, communautés, channels (membership + stories + polls)
 // ============================================================================
@@ -3280,6 +3326,9 @@ export default {
       if (path === '/api/conversations' && method === 'POST') return await handleCreateConversation(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
+      // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
+      const wsDiagMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws-diag$/);
+      if (wsDiagMatch && method === 'GET') return await handleWsDiag(wsDiagMatch[1], request, env);
 
       // Phase 4 — Membres / update conv
       const membersMatch = path.match(/^\/api\/conversations\/([^\/]+)\/members$/);

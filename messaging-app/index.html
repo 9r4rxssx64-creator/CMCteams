@@ -328,7 +328,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.143';
+const __APEX_CHAT_VERSION__ = 'v1.1.144';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -374,7 +374,7 @@ if('serviceWorker' in navigator){
   }).catch(_=>{});
 
   // === Sentinelle remote version (compare APP_VER local vs remote) ===
-  // v1.1.143 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
+  // v1.1.144 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
@@ -469,7 +469,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.143</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.144</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -483,7 +483,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.143</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.144</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1235,7 +1235,7 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
-            // v1.1.143 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            // v1.1.144 : ne pas effacer le nom local si le serveur ne le renvoie pas
             name: c.name || localById[c.id]?.name,
             pseudo: c.pseudo || localById[c.id]?.pseudo,
             peer_id: c.peer_id || localById[c.id]?.peer_id,
@@ -1246,7 +1246,7 @@ K._refreshConvs = async function(){
             bg_id: localById[c.id]?.bg_id,
             peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
           }));
-          // v1.1.143 : applique les tombstones — conv supprimées ne réapparaissent jamais.
+          // v1.1.144 : applique les tombstones — conv supprimées ne réapparaissent jamais.
           // Retente le delete serveur tant que le serveur les renvoie.
           if(K._deletedConvIds && K._deletedConvIds.length){
             const serverIds = new Set(K.conversations.map(c => c.id));
@@ -1270,7 +1270,7 @@ K._refreshConvs = async function(){
   toast('🔄 Rafraîchi', 'ok', 1500);
 };
 
-// v1.1.143 : nom affichable d'une conversation. Si le serveur ne renvoie
+// v1.1.144 : nom affichable d'une conversation. Si le serveur ne renvoie
 // pas name/pseudo (DM chiffré), on résout le correspondant via peer_id
 // dans les contacts chargés, puis members_detail. Évite le "Sans nom".
 K._convName = function(c){
@@ -1287,7 +1287,7 @@ K._convName = function(c){
   return 'Sans nom';
 };
 
-// v1.1.143 : tombstones de conversations supprimées.
+// v1.1.144 : tombstones de conversations supprimées.
 // Une conv supprimée ne doit JAMAIS réapparaître, même si le serveur la
 // renvoie encore (delete serveur différé/échoué). Le refresh retente le
 // delete serveur tant que la conv est tombstonée.
@@ -3392,7 +3392,7 @@ K._openConvActionsMenu = function(convId, ev){
   `);
 };
 
-// v1.1.143 : suppression conversation. Local-first (jamais bloqué) +
+// v1.1.144 : suppression conversation. Local-first (jamais bloqué) +
 // best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
 K._deleteConv = async function(convId){
   const conv = (K.conversations || []).find(c => c.id === convId);
@@ -3631,7 +3631,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.143',
+    version: 'v1.1.144',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5667,7 +5667,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.143 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.144 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5686,7 +5686,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.143 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.144 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -5810,7 +5810,7 @@ K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
   K.render();
-  // v1.1.143 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
+  // v1.1.144 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
   try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_){}
 };
 
@@ -6217,7 +6217,7 @@ K._sendMsg = async function(){
 // ============================================================================
 //  WebSocket client (Phase 3)
 // ============================================================================
-// v1.1.143 : ré-authentification admin auto. Le token JWT peut périmer après
+// v1.1.144 : ré-authentification admin auto. Le token JWT peut périmer après
 // un redéploiement du Worker (clé de signature). Au lieu d'un blocage silencieux
 // "Mode local", l'app re-login Kevin via le bypass admin → token frais → réouvre WS.
 K._reauthAdmin = async function(reopenConvId, cause){
@@ -6257,6 +6257,63 @@ K._reauthAdmin = async function(reopenConvId, cause){
     toast('Reconnexion impossible : ' + ((e && e.name === 'AbortError') ? 'timeout' : ((e && e.message) || 'réseau')), 'warn', 7000);
   }finally{
     K._reauthInProgress = false;
+  }
+};
+
+// v1.1.144 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
+// /ws-diag rejoue les checks serveur et renvoie la cause exacte → on agit dessus.
+K._wsDiagnose = async function(convId){
+  if(K._wsDiagRunning) return;
+  K._wsDiagRunning = true;
+  try{
+    const base = API_BASE + '/api/conversations/' + encodeURIComponent(convId) + '/ws-diag';
+    // 1) Test du chemin EXACT du WebSocket : token en query param, sans header
+    const r = await fetch(base + '?token=' + encodeURIComponent(K.token), { cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    console.log('[ws-diag]', JSON.stringify(d));
+
+    if(d.cause === 'auth_failed'){
+      // 2) Re-test avec token en HEADER → le token est-il valide en lui-même ?
+      const r2 = await fetch(base, { headers: { 'Authorization': 'Bearer ' + K.token }, cache: 'no-store' });
+      const d2 = await r2.json().catch(() => ({}));
+      if(d2 && d2.authenticated){
+        // Token valide via header mais pas via ?token= → Worker pas à jour
+        toast('⚠️ Serveur : auth WebSocket pas encore déployée (redéploiement en cours)', 'warn', 8000);
+      } else {
+        // Token réellement périmé → ré-auth admin
+        if(K.user && K.user.is_admin && K.user.phone && K._reauthAdmin){
+          toast('🔑 Session expirée — reconnexion auto…', 'info', 2000);
+          await K._reauthAdmin(convId, 'ws-diag: token périmé');
+        } else {
+          toast('Session expirée — reconnecte-toi', 'warn', 7000);
+        }
+      }
+      return;
+    }
+    if(d.cause === 'conv_not_found'){
+      toast('⚠️ Cette conversation n\'existe pas côté serveur — ' + (d.detail || ''), 'warn', 9000);
+      return;
+    }
+    if(d.cause === 'not_member'){
+      toast('⚠️ ' + (d.detail || 'Pas membre de cette conversation'), 'warn', 9000);
+      return;
+    }
+    if(d.cause === 'exception'){
+      toast('⚠️ Serveur : ' + (d.detail || 'erreur interne'), 'err', 9000);
+      return;
+    }
+    if(d.ok){
+      // Tous les checks passent → le WS devrait marcher, on relance proprement
+      toast('Temps réel : nouvelle tentative…', 'info', 2000);
+      K._wsRetry = 0;
+      if(K.view === 'chat' && K.viewData && K.viewData.id === convId) K._openWs(convId);
+      return;
+    }
+    toast('Temps réel indisponible : ' + (d.detail || d.cause || 'cause inconnue'), 'warn', 7000);
+  }catch(e){
+    console.warn('[ws-diag] échoué :', (e && e.message) || e);
+  }finally{
+    K._wsDiagRunning = false;
   }
 };
 
@@ -6306,19 +6363,11 @@ K._openWs = async function(convId){
         }
         return;
       }
-      // 1006/1011 = fermeture anormale AVANT le DO (souvent token périmé → 401 Worker,
-      // ou réseau). On lève le doute avec un health-check du token.
-      if((e.code === 1006 || e.code === 1011) && K.user && K.user.is_admin && K.user.phone && K.token && !K._wsHealthChecking){
-        K._wsHealthChecking = true;
-        fetch(API_BASE + '/api/conversations', { headers: { 'Authorization': 'Bearer ' + K.token } })
-          .then(hr => {
-            if(hr.status === 401 || hr.status === 403){
-              console.warn('[WS] token périmé (HTTP ' + hr.status + ') → ré-auth admin');
-              if(K._reauthAdmin) K._reauthAdmin(convId, 'token périmé (HTTP ' + hr.status + ')');
-            }
-          })
-          .catch(() => {})
-          .finally(() => { K._wsHealthChecking = false; });
+      // 1006/1011 = fermeture anormale AVANT le Durable Object. Le WS ne révèle
+      // pas le statut HTTP → on appelle /ws-diag qui rejoue les checks et donne
+      // la cause EXACTE (auth / conv absente / pas membre).
+      if((e.code === 1006 || e.code === 1011) && K.token && K._wsDiagnose){
+        K._wsDiagnose(convId);
       }
       // Reconnexion auto backoff (réseau)
       if(K.view === 'chat' && K.viewData?.id === convId){
@@ -6640,7 +6689,7 @@ K._call = async function(type, convId){
       K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
       $('#call-status').textContent = '📞 Appel en cours...';
     } else {
-      // v1.1.143 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
+      // v1.1.144 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
       const cs = $('#call-status'); if(cs) cs.textContent = '🛜 Connexion temps réel…';
       K._openWs(convId);
       setTimeout(() => {
@@ -8477,7 +8526,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.143 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.144 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -10137,7 +10186,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.143 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.144 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);
@@ -10792,7 +10841,7 @@ async function _boot(){
     // Charger état persisté
     K.conversations = lg('conversations', []);
     K.contacts = lg('contacts', []);
-    // v1.1.143 : tombstones — conv supprimées qui ne doivent jamais réapparaître
+    // v1.1.144 : tombstones — conv supprimées qui ne doivent jamais réapparaître
     K._deletedConvIds = lg('deleted_convs', []);
     if(K._deletedConvIds.length){
       K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
