@@ -2,27 +2,49 @@
 
 ## 🏗 CHANTIER ORGANISATION APEX v13 — audit architecture 42/100 (2026-05-20)
 
-> Audit architecture : le cosmétique (design system, visuel) est fait, mais
-> l'organisation du code est à 42/100. État réel et plan ci-dessous.
+> Audit architecture : le cosmétique est fait, l'organisation du code à 42/100.
 
-### ✅ Fait (v13.4.238)
-- Doublon route `dashboard` corrigé → `dashboard-perso` (vue récap rendue accessible)
+### ✅ Fait
+- v13.4.238 : doublon route `dashboard` corrigé → `dashboard-perso`
+- v13.4.239 : 5 features orphelines câblées (geo/innovation/marketplace/plugins/admin-toggles)
+- v13.4.239 : router instrumenté (détecte doublons) + check `architecture-routes` dans l'audit Apex
 
-### ⏳ Décision Kevin requise
-**5 features sans route** (`geo`, `innovation`, `meta-marketplace`, `plugins`,
-`admin-toggles`) — soit les câbler (donner une route), soit les retirer.
-→ Sont-elles des features finies oubliées, ou du WIP/code mort ?
+### ⏳ PLAN D'EXÉCUTION — 3 chantiers (session fraîche dédiée)
 
-### ⏳ Gros chantiers refactoring (sessions dédiées — PAS faits)
-1. **172 fichiers `services/` à plat** → restructurer en dossiers domaines
-   (`ai/`, `auth/`, `vault/`, `admin/`, `observability/`, `integrations/`).
-   Risque : casse tous les imports → migration progressive + tests par étape.
-2. **~1063 styles inline** (admin 666, chat 123, vault 95...) → extraire en
-   classes CSS. Gros volume, risque régression visuelle si fait en masse.
-3. **75 routes en vrac** → regrouper par catégorie (auth / métier / admin / studios).
+> Refactoring lourd. À faire en session propre, par tranches build-vérifiées.
+> Règle : chaque tranche = `tsc --noEmit` + `npm run build` + commit avant la suivante.
 
-Refactoring profond, pas du cosmétique. Non faisable en 1 session sans risque.
-À planifier par étapes.
+**CHANTIER 1 — Restructurer `services/` (172 fichiers à plat → dossiers domaines)**
+- Domaines cibles : `ai/`, `auth/`, `vault/`, `admin/`, `observability/`,
+  `integrations/`, `sentinels/`, `storage/`, `core-svc/`
+- Méthode SÛRE par tranche (1 domaine à la fois) :
+  1. `mkdir services/<domaine>`
+  2. `git mv` les fichiers du domaine dedans
+  3. Corriger les imports : grep `@services/<fichier>` → `@services/<domaine>/<fichier>`
+     (l'alias `@services` pointe sur `services/` — vérifier `tsconfig.json` + `vite.config`)
+  4. `tsc --noEmit` → 0 erreur AVANT de passer au domaine suivant
+  5. Commit par domaine (`chore(services): regroupe domaine ai/`)
+- ⚠️ NE JAMAIS migrer 2 domaines sans tsc vert entre les deux
+- Estimé : ~9 tranches, 1 PR par tranche ou 1 PR par lot de 3 domaines
+
+**CHANTIER 2 — Extraire ~1063 styles inline → classes CSS**
+- Ordre par volume : admin (666) > chat (123) > vault (95) > settings (104) > dashboard (75)
+- Méthode par fichier : repérer les `style="..."` répétés → créer 1 classe
+  `.ax-*` dans `components.css` → remplacer. Build + diff visuel après chaque fichier.
+- ⚠️ Risque régression visuelle → tester le rendu après CHAQUE feature
+- Commencer par `vault` (95, plus petit) pour roder la méthode, finir par `admin`
+
+**CHANTIER 3 — Regrouper les 75 routes par catégorie**
+- Réordonner les `router.register()` dans `bootstrap.ts` avec commentaires de
+  section : `/* === AUTH === */`, `/* === MÉTIER === */`, `/* === ADMIN === */`,
+  `/* === STUDIOS === */`, `/* === MONITORING === */`
+- Risque quasi nul (l'ordre n'affecte pas le runtime) — à faire en dernier
+- Bonus : ajouter un CI gate "features sans route" (scan `features/*/index.ts`
+  vs `router.register`) pour ne plus jamais avoir de feature orpheline
+
+### Décision Kevin (info)
+Les 5 features orphelines étaient des features FINIES oubliées (pas du code mort)
+→ toutes câblées v13.4.239. Aucune suppression nécessaire.
 
 ---
 
