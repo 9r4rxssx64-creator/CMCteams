@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { superpowersMethodology } from '../../services/ai/superpowers-methodology.js';
 
-vi.mock('../../services/ai-router.js', () => ({
+vi.mock('../../services/ai/ai-router.js', () => ({
   aiRouter: {
     stream: vi.fn().mockImplementation((_msgs: unknown, _sys: unknown, onChunk: (c: { text?: string }) => void) => {
       onChunk({ text: 'Mock IA output for current step' });

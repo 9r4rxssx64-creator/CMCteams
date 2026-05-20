@@ -16,13 +16,13 @@ vi.mock('../../core/logger.js', () => ({
 }));
 
 const authIsAdminSyncMock = vi.fn();
-vi.mock('../../services/auth.js', () => ({
+vi.mock('../../services/auth/auth.js', () => ({
   auth: { isAdminSync: () => authIsAdminSyncMock() },
 }));
 
 const crewRunMock = vi.fn();
 const crewDefaultMembersMock = vi.fn();
-vi.mock('../../services/crew-experts.js', () => ({
+vi.mock('../../services/ai/crew-experts.js', () => ({
   crewExperts: {
     run: (...args: unknown[]) => crewRunMock(...args),
     defaultMembers: (mode: string) => crewDefaultMembersMock(mode),

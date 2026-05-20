@@ -87,7 +87,7 @@ describe('v13.4.95 rescue.css anti-zoom CSS', () => {
 });
 
 describe('v13.4.95 vault.setKey Firebase backup AWAITED', () => {
-  const vaultTs = readFileSync(resolve(ROOT, 'services/vault.ts'), 'utf-8');
+  const vaultTs = readFileSync(resolve(ROOT, 'services/vault/vault.ts'), 'utf-8');
 
   it("vault.setKey contient Promise.race avec timeout pour Firebase backup", () => {
     expect(vaultTs).toContain('Promise.race');

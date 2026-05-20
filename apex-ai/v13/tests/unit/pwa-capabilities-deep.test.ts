@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: vi.fn().mockResolvedValue(undefined) },
 }));
 

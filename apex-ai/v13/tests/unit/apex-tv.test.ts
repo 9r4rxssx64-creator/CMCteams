@@ -13,7 +13,7 @@ const { mockAuth } = vi.hoisted(() => ({
   mockAuth: { isAdminSync: vi.fn() },
 }));
 
-vi.mock('../../services/auth.js', () => ({ auth: mockAuth }));
+vi.mock('../../services/auth/auth.js', () => ({ auth: mockAuth }));
 
 import { apexTV } from '../../services/integrations/apex-tv.js';
 

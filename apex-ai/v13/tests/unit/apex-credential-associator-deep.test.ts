@@ -14,7 +14,7 @@ const { mockAuth } = vi.hoisted(() => ({
   mockAuth: { isAdminSync: vi.fn() },
 }));
 
-vi.mock('../../services/auth.js', () => ({ auth: mockAuth }));
+vi.mock('../../services/auth/auth.js', () => ({ auth: mockAuth }));
 
 import { apexCredentialAssociator } from '../../services/vault/apex-credential-associator.js';
 

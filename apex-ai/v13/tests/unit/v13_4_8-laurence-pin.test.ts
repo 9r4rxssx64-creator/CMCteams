@@ -3,7 +3,7 @@
  * Vérifie flux complet PIN per-user Laurence (Erreur #37 anti-régression).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { auth } from '../../services/auth/auth';
+import { auth } from '../../services/auth/auth.js';
 
 describe('v13.4.8 — Laurence login flow + PIN per-user (anti-régression Erreur #37)', () => {
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe('v13.4.8 — Laurence login flow + PIN per-user (anti-régression Erreu
     const r = await auth.login('Laurence Saint-Polit', '1234');
     expect(r.ok).toBe(true);
     /* Read store.isAdmin */
-    const { store } = await import('../../core/store');
+    const { store } = await import('../../core/store.js');
     expect(store.get('isAdmin')).toBe(false);
   });
 

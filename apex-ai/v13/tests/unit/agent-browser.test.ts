@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { agentBrowser } from '../../services/integrations/agent-browser.js';
 
-vi.mock('../../services/ai-router.js', () => ({
+vi.mock('../../services/ai/ai-router.js', () => ({
   aiRouter: {
     stream: vi.fn().mockImplementation((_msgs: unknown, _sys: unknown, onChunk: (c: { text?: string }) => void) => {
       onChunk({

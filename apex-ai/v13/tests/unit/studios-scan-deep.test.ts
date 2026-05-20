@@ -16,7 +16,7 @@ vi.mock('../../core/store.js', () => ({
   store: { get: vi.fn(() => ({ id: 'kdmc_admin' })), set: vi.fn(), subscribe: vi.fn(() => () => {}) },
 }));
 
-vi.mock('../../services/feature-guard.js', () => ({
+vi.mock('../../services/auth/feature-guard.js', () => ({
   guardFeatureEnabled: vi.fn(() => true),
 }));
 

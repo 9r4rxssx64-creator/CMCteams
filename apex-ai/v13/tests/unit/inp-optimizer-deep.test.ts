@@ -9,7 +9,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../services/perf-metrics.js', () => ({
+vi.mock('../../services/observability/perf-metrics.js', () => ({
   perfMetrics: { record: vi.fn() },
 }));
 

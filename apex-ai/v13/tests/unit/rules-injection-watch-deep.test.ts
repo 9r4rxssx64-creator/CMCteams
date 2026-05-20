@@ -22,7 +22,7 @@ vi.mock('../../core/memory.js', () => ({
 }));
 
 const rulesListMock = vi.fn();
-vi.mock('../../services/rules-engine.js', () => ({
+vi.mock('../../services/core-svc/rules-engine.js', () => ({
   rulesEngine: { list: () => rulesListMock() },
 }));
 

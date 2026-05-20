@@ -12,9 +12,9 @@ import {
   handleShopifyTask,
 } from '../../services/apex-tools-handlers/data.js';
 
-/* Mock vault — handlers font `await import('../vault.js')`.
+/* Mock vault — handlers font `await import('../../services/vault/vault.js')`.
  * Le path est ../vault.js relatif au handler. */
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: {
     readKey: vi.fn(),
   },

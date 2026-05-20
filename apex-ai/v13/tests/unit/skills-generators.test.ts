@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: vi.fn(async () => undefined) },
 }));
 

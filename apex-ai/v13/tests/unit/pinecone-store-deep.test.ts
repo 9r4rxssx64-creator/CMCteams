@@ -14,8 +14,8 @@ const { mockVault, mockFeatureToggles } = vi.hoisted(() => ({
   mockFeatureToggles: { isEnabled: vi.fn() },
 }));
 
-vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
-vi.mock('../../services/feature-toggles.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({ vault: mockVault }));
+vi.mock('../../services/auth/feature-toggles.js', () => ({
   featureToggles: mockFeatureToggles,
   isFeatureEnabled: (id: string): boolean => mockFeatureToggles.isEnabled(id),
 }));

@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: {
     setKey: vi.fn(async () => ({ ok: true })),
     decryptAuto: vi.fn(async (s: string) => (s.startsWith('AXENC1:') ? 'plain-' + s.slice(7) : s)),

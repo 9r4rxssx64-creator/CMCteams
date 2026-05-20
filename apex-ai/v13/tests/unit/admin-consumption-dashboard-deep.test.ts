@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../services/consumption-monitor.js', () => ({
+vi.mock('../../services/observability/consumption-monitor.js', () => ({
   consumptionMonitor: {
     formatForUI: vi.fn(() => ({
       total_alerts: 0,
@@ -46,7 +46,7 @@ vi.mock('../../core/store.js', () => ({
   store: { get: vi.fn(() => ({ id: 'test_uid' })) },
 }));
 
-vi.mock('../../services/feature-guard.js', () => ({
+vi.mock('../../services/auth/feature-guard.js', () => ({
   guardFeatureEnabled: vi.fn(() => true),
 }));
 

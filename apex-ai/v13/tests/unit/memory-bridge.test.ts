@@ -113,17 +113,17 @@ describe('memory-bridge — syncToFirebase', () => {
 
   it('échoue si Firebase offline', async () => {
     /* Mock firebase service comme déconnecté */
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: { isConnected: () => false },
     }));
     const r = await memoryBridge.syncToFirebase('user1');
     expect(r.ok).toBe(false);
     expect(r.reason).toContain('offline');
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 
   it('Firebase HTTP 500 → ok=false', async () => {
-    vi.doMock('../../services/firebase.js', () => ({
+    vi.doMock('../../services/storage/firebase.js', () => ({
       firebase: { isConnected: () => true },
     }));
     await persistentMemory.add({ category: 'profile', text: 'x', scope: 'user1', importance: 50 });
@@ -131,7 +131,7 @@ describe('memory-bridge — syncToFirebase', () => {
     const r = await memoryBridge.syncToFirebase('user1');
     expect(r.ok).toBe(false);
     expect(r.reason).toContain('500');
-    vi.doUnmock('../../services/firebase.js');
+    vi.doUnmock('../../services/storage/firebase.js');
   });
 });
 

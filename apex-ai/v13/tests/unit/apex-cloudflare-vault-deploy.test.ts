@@ -14,8 +14,8 @@ const { mockVault, mockApexVaultImport } = vi.hoisted(() => ({
   mockApexVaultImport: { importFromJson: vi.fn() },
 }));
 
-vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
-vi.mock('../../services/apex-vault-import.js', () => ({ apexVaultImport: mockApexVaultImport }));
+vi.mock('../../services/vault/vault.js', () => ({ vault: mockVault }));
+vi.mock('../../services/vault/apex-vault-import.js', () => ({ apexVaultImport: mockApexVaultImport }));
 
 import { apexCloudflareVaultDeploy } from '../../services/vault/apex-cloudflare-vault-deploy.js';
 

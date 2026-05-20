@@ -14,7 +14,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-vi.mock('../../services/feature-toggles.js', () => ({
+vi.mock('../../services/auth/feature-toggles.js', () => ({
   featureToggles: {
     isEnabledGlobal: vi.fn((id: string) => {
       if (id === 'feature.realtime-backup') return true;
@@ -23,7 +23,7 @@ vi.mock('../../services/feature-toggles.js', () => ({
   },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: {
     record: vi.fn(async () => undefined),
   },

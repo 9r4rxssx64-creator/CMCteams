@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import {
   apexMultiBranchCoordinator,
   type BranchInfo,
-} from '../../services/admin/apex-multi-branch-coordinator';
+} from '../../services/admin/apex-multi-branch-coordinator.js';
 
 describe('apex-multi-branch-coordinator (v13.4.205)', () => {
   it('exports singleton', () => {

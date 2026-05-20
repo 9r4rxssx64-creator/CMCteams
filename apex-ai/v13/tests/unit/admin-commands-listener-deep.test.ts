@@ -31,8 +31,8 @@ vi.mock('../../core/events.js', () => ({
     },
   },
 }));
-vi.mock('../../services/firebase.js', () => ({ firebase: mockFirebase }));
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/storage/firebase.js', () => ({ firebase: mockFirebase }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
 import { adminCommandsListener } from '../../services/admin/admin-commands-listener.js';
 

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../core/store.js', () => ({
   store: { get: vi.fn(() => ({ id: 'test_uid' })) },
 }));
-vi.mock('../../services/feature-guard.js', () => ({
+vi.mock('../../services/auth/feature-guard.js', () => ({
   guardFeatureEnabled: vi.fn(() => true),
 }));
 vi.mock('../../core/logger.js', () => ({
