@@ -325,7 +325,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.133';
+const __APEX_CHAT_VERSION__ = 'v1.1.134';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -456,7 +456,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.133</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.134</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -470,7 +470,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.133</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.134</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3530,7 +3530,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.133',
+    version: 'v1.1.134',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5566,12 +5566,11 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.133 : appel Worker /api/auth/verify-otp avec otp='000000' pour
-    // obtenir un VRAI JWT admin (sinon le Worker rejette le token local 403).
-    let realToken = null, realUser = null;
+    // v1.1.134 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 8000);
+      const tid = setTimeout(() => ctrl.abort(), 12000);
       let r;
       try {
         r = await fetch(API_BASE + '/api/auth/verify-otp', {
@@ -5581,11 +5580,19 @@ K._handleAuthPseudo = async function(){
           signal: ctrl.signal,
         });
       } finally { clearTimeout(tid); }
-      if(r && r.ok){
+      if(r){
         const data = await r.json().catch(() => ({}));
-        if(data.ok && data.token){ realToken = data.token; realUser = data.user; }
+        if(r.ok && data.ok && data.token){
+          realToken = data.token; realUser = data.user;
+        } else {
+          diag = 'HTTP ' + r.status + ' : ' + (data.error || data.message || JSON.stringify(data).slice(0,120));
+        }
+      } else {
+        diag = 'pas de réponse';
       }
-    }catch(e){ /* worker offline → fallback local */ }
+    }catch(e){
+      diag = (e && e.name === 'AbortError') ? 'timeout 12s' : ((e && e.message) || 'network');
+    }
     const adminUser = {
       id: (realUser && realUser.id) || 'kdmc_admin',
       pseudo: (realUser && realUser.pseudo) || pseudo,
@@ -5596,10 +5603,10 @@ K._handleAuthPseudo = async function(){
     };
     if(realToken){
       K.login(adminUser, realToken);
-      toast('👑 Kevin admin — connecté au serveur', 'ok', 2500);
+      toast('👑 Kevin admin — connecté au serveur ✅', 'ok', 2500);
     } else {
       K.login(adminUser, 'local-admin-' + Date.now());
-      toast('👑 Kevin admin (mode local — serveur injoignable)', 'warn', 3000);
+      toast('⚠️ Serveur refuse login : ' + diag, 'warn', 8000);
     }
     return;
   }
