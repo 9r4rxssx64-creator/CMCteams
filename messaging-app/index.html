@@ -325,7 +325,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.136';
+const __APEX_CHAT_VERSION__ = 'v1.1.137';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -456,7 +456,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.136</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.137</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -470,7 +470,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.136</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.137</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1222,6 +1222,10 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
+            // v1.1.137 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            name: c.name || localById[c.id]?.name,
+            pseudo: c.pseudo || localById[c.id]?.pseudo,
+            peer_id: c.peer_id || localById[c.id]?.peer_id,
             pinned: localById[c.id]?.pinned,
             muted: localById[c.id]?.muted,
             archived: localById[c.id]?.archived,
@@ -1237,6 +1241,23 @@ K._refreshConvs = async function(){
   }
   K._updateUnreadBadge && K._updateUnreadBadge();
   toast('🔄 Rafraîchi', 'ok', 1500);
+};
+
+// v1.1.137 : nom affichable d'une conversation. Si le serveur ne renvoie
+// pas name/pseudo (DM chiffré), on résout le correspondant via peer_id
+// dans les contacts chargés, puis members_detail. Évite le "Sans nom".
+K._convName = function(c){
+  if(!c) return 'Sans nom';
+  if(c.name || c.pseudo) return c.name || c.pseudo;
+  const peerId = c.peer_id || (Array.isArray(c.members) ? c.members.find(m => m !== K.user?.id) : null);
+  if(peerId){
+    const ct = (K.contacts || []).find(u => u.id === peerId);
+    if(ct) return ct.display_name || ct.real_name || ct.pseudo || ct.name || ('#' + String(peerId).slice(0, 6));
+    const md = (c.members_detail || []).find(m => m.id === peerId);
+    if(md) return md.name || md.pseudo || ('#' + String(peerId).slice(0, 6));
+    return '#' + String(peerId).slice(0, 6);
+  }
+  return 'Sans nom';
 };
 
 if(typeof window !== 'undefined' && document.readyState !== 'loading'){
@@ -3304,7 +3325,7 @@ K._openConvActionsMenu = function(convId, ev){
   const conv = K.conversations.find(c => c.id === convId);
   if(!conv) return;
   K._showModal('⚙️ Actions conversation', `
-    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px"><strong>${esc(conv.name || conv.pseudo || 'Sans nom')}</strong></p>
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px"><strong>${esc(K._convName(conv))}</strong></p>
     <div style="display:grid;gap:6px">
       <button class="btn btn-out btn-block" onclick="K._markConvUnread('${esc(convId)}')">🔵 Marquer comme non-lue</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvPinned('${esc(convId)}')">${conv.pinned ? '📌 Désépingler' : '📌 Épingler en haut'}</button>
@@ -3319,9 +3340,38 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openConvInfo('${esc(convId)}')">ℹ️ Infos & statistiques</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openReactionStats('${esc(convId)}')">📊 Stats réactions</button>
-      ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(conv.name || conv.pseudo || '')}')">🚫 Bloquer ${esc(conv.name || conv.pseudo || '')}</button>` : ''}
+      ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(K._convName(conv))}')">🚫 Bloquer ${esc(K._convName(conv))}</button>` : ''}
+      <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946" onclick="K._deleteConv('${esc(convId)}')">🗑 Supprimer la conversation</button>
     </div>
   `);
+};
+
+// v1.1.137 : suppression conversation. Local-first (jamais bloqué) +
+// best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
+K._deleteConv = async function(convId){
+  const conv = (K.conversations || []).find(c => c.id === convId);
+  const nom = conv ? K._convName(conv) : 'cette conversation';
+  if(!confirm('🗑 Supprimer la conversation avec ' + nom + ' ?\n\nLes messages seront effacés de ton appareil. Action irréversible.')) return;
+  // 1) Suppression locale immédiate — toujours réussit
+  K.conversations = (K.conversations || []).filter(c => c.id !== convId);
+  if(K.messages) delete K.messages[convId];
+  ls('conversations', K.conversations);
+  try{ K._clearDraft && K._clearDraft(convId); }catch(_){}
+  K._closeModal && K._closeModal();
+  if(K.viewData && K.viewData.id === convId){ K.viewData = null; K.sv && K.sv('chats'); }
+  else { K.render && K.render(); }
+  // 2) Best-effort serveur (sinon elle réapparaîtrait au prochain refresh)
+  let srvOk = false, diag = '';
+  if(K.token && !String(K.token).startsWith('local-') && !String(convId).startsWith('group_local_')){
+    try{
+      const r = await K._api('DELETE', '/api/conversations/' + encodeURIComponent(convId));
+      srvOk = !!(r && r.ok);
+      if(!srvOk) diag = (r && (r.detail || r.message)) || 'réponse serveur inattendue';
+    }catch(e){
+      diag = (e && (e.apiDetail || e.message)) || 'réseau';
+    }
+  } else { srvOk = true; } // conv purement locale
+  toast(srvOk ? '🗑 Conversation supprimée' : ('🗑 Supprimée ici — serveur : ' + diag), srvOk ? 'ok' : 'warn', srvOk ? 2000 : 6000);
 };
 
 K._viewArchivedConvs = function(){
@@ -3530,7 +3580,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.136',
+    version: 'v1.1.137',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -5566,7 +5616,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.136 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.137 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5585,7 +5635,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.136 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.137 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -5837,9 +5887,9 @@ function renderChats(app){
               const peerId = c.peer_id || (Array.isArray(c.members) ? c.members.find(m => m !== K.user?.id) : null);
               const p = peerId && K._presenceState && K._presenceState[peerId];
               return (p && p.status === 'online') ? ' avatar-online' : '';
-            })()}">${esc((c.name || c.pseudo || '?')[0].toUpperCase())}</div>
+            })()}">${esc((K._convName(c) || '?')[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0">
-              <div class="conv-name">${c.pinned ? '📌 ' : ''}${c.muted ? '🔕 ' : ''}${K._isSnoozed && K._isSnoozed(c.id) ? '💤 ' : ''}${esc(c.name || c.pseudo || 'Sans nom')}</div>
+              <div class="conv-name">${c.pinned ? '📌 ' : ''}${c.muted ? '🔕 ' : ''}${K._isSnoozed && K._isSnoozed(c.id) ? '💤 ' : ''}${esc(K._convName(c))}</div>
               <div class="conv-last">${(() => {
                 const typing = K._typingState && K._typingState[c.id] && Object.values(K._typingState[c.id]).some(t => Date.now() - t.ts < 4000);
                 if(typing) return '<span style="color:var(--ax-gold);font-style:italic">✏️ écrit...</span>';
@@ -5867,9 +5917,9 @@ function renderChat(app){
   app.innerHTML = `
     <div class="chat-header">
       <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
-      <div class="avatar">${esc((conv.name || conv.pseudo || '?')[0].toUpperCase())}</div>
+      <div class="avatar">${esc((K._convName(conv) || '?')[0].toUpperCase())}</div>
       <div style="flex:1;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
-        <div style="font-weight:600">${esc(conv.name || conv.pseudo || '')}</div>
+        <div style="font-weight:600">${esc(K._convName(conv))}</div>
         <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
       </div>
       <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
@@ -8277,7 +8327,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.136 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.137 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -9937,7 +9987,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.136 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.137 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);

@@ -1701,6 +1701,48 @@ export async function handleRemoveMember(convId, userId, request, env) {
   return json({ ok: true, member_count: recount.c });
 }
 
+// DELETE /api/conversations/:id — supprime la conv du côté de l'appelant.
+// Self-leave TOUJOURS autorisé (DM ou groupe) — règle Kevin "jamais bloqué".
+// Si plus aucun membre → purge conv + messages. Erreurs détaillées par étape.
+export async function handleDeleteConversation(convId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  let step = 'leave';
+  try {
+    await env.APEX_CHAT_DB.prepare(
+      'DELETE FROM conversation_members WHERE conv_id=? AND user_id=?'
+    ).bind(convId, auth.sub).run();
+
+    step = 'recount';
+    const recount = await env.APEX_CHAT_DB.prepare(
+      'SELECT COUNT(*) as c FROM conversation_members WHERE conv_id=?'
+    ).bind(convId).first();
+    const remaining = recount ? recount.c : 0;
+
+    if (remaining === 0) {
+      step = 'purge_messages';
+      await env.APEX_CHAT_DB.prepare('DELETE FROM messages WHERE conv_id=?').bind(convId).run();
+      step = 'purge_conv';
+      await env.APEX_CHAT_DB.prepare('DELETE FROM conversations WHERE id=?').bind(convId).run();
+    } else {
+      step = 'update_count';
+      await env.APEX_CHAT_DB.prepare('UPDATE conversations SET member_count=? WHERE id=?')
+        .bind(remaining, convId).run();
+    }
+
+    step = 'audit';
+    await auditLog(env, auth.sub, 'delete_conv', 'conv', convId, { remaining },
+      await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'))
+      .catch(() => {});
+
+    return json({ ok: true, remaining });
+  } catch (e) {
+    console.error('[delete-conv]', step, e.message, e.stack);
+    e.step = 'delete_conv:' + step;
+    return err('Suppression conversation échouée', 500, 'delete_conv_fail', e);
+  }
+}
+
 export async function handleListMembers(convId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
@@ -3241,6 +3283,7 @@ export default {
       if (memberRemoveMatch && method === 'DELETE') return await handleRemoveMember(memberRemoveMatch[1], memberRemoveMatch[2], request, env);
       const convUpdateMatch = path.match(/^\/api\/conversations\/([^\/]+)$/);
       if (convUpdateMatch && method === 'PATCH') return await handleUpdateConv(convUpdateMatch[1], request, env);
+      if (convUpdateMatch && method === 'DELETE') return await handleDeleteConversation(convUpdateMatch[1], request, env);
 
       // Phase 4 — Stories
       if (path === '/api/stories' && method === 'POST') return await handleCreateStory(request, env);
