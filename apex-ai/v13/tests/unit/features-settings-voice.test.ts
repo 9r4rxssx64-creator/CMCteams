@@ -101,7 +101,7 @@ describe('Settings — section Voice', () => {
       const { render, wireVoiceSection } = await import('../../features/settings/index.js');
       render(root);
       await wireVoiceSection(root);
-      const testBtn = root.querySelector<HTMLButtonElement>('.ax-voice-test-btn[data-test-voice]');
+      const testBtn = root.querySelector<HTMLButtonElement>('.ax-voice-item__action--test[data-test-voice]');
       expect(testBtn).not.toBeNull();
       const voiceId = testBtn!.getAttribute('data-test-voice');
       testBtn!.click();
@@ -116,7 +116,7 @@ describe('Settings — section Voice', () => {
       const { render, wireVoiceSection } = await import('../../features/settings/index.js');
       render(root);
       await wireVoiceSection(root);
-      const setBtn = root.querySelector<HTMLButtonElement>('.ax-voice-set-btn[data-set-voice]');
+      const setBtn = root.querySelector<HTMLButtonElement>('.ax-voice-item__action--set[data-set-voice]');
       expect(setBtn).not.toBeNull();
       const voiceId = setBtn!.getAttribute('data-set-voice');
       setBtn!.click();
