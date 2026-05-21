@@ -163,14 +163,17 @@ ${Array.from({ length: frames }, (_, i) =>
 (function(){
   var id="${id}";var frames=${frames};var fps=${DEFAULT_FPS};
   window.__timelines = window.__timelines || {};
-  window.__timelines[id] = { fps: fps, frames: frames, duration: frames*(1000/fps) };
+  /* v13.4.246 — anti timer zombie : clear le timer d'un rendu précédent du même id. */
+  var prev = window.__timelines[id];
+  if(prev && prev.timer){ try{ clearInterval(prev.timer); }catch(e){} }
+  var meta = { fps: fps, frames: frames, duration: frames*(1000/fps) };
+  window.__timelines[id] = meta;
   var c=document.querySelector('[data-composition-id="'+id+'"]');
   if(!c)return;
   var i=0;
-  var allFrames = c.querySelectorAll('[data-frame-' + 0 + '], [data-frame-' + 1 + '], [data-frame-' + 2 + '], [data-frame-' + 3 + '], [data-frame-' + 4 + '], [data-frame-' + 5 + ']');
   var arr=[];for(var k=0;k<frames;k++){var f=c.querySelector('[data-frame-'+k+']');if(f)arr.push(f);}
   if(arr.length===0)return;arr[0].style.display='flex';
-  setInterval(function(){arr[i].style.display='none';i=(i+1)%arr.length;arr[i].style.display='flex';},1000/fps);
+  meta.timer=setInterval(function(){arr[i].style.display='none';i=(i+1)%arr.length;arr[i].style.display='flex';},1000/fps);
 })();
 </script>
 </div>`;
