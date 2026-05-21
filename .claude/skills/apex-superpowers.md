@@ -1,7 +1,7 @@
 ---
 name: apex-superpowers
-description: Framework methodologie TDD + brainstorming + sous-agents review. Inspire obra/superpowers (30k stars GitHub).
-when_to_use: Tache complexe (>5 etapes), feature nouvelle, refactor, debogage difficile.
+description: 14 méthodologies de développement (brainstorming, plans, TDD, debug, sous-agents, parallélisme...). Inspiré de obra/superpowers.
+when_to_use: Tâche complexe (>5 étapes), feature nouvelle, refactor cross-file, débogage difficile, audit.
 model: sonnet
 allowed_tools: [brainstorm, execute_plan, code_review, run_test]
 ---
@@ -10,57 +10,39 @@ allowed_tools: [brainstorm, execute_plan, code_review, run_test]
 
 ## Mission
 
-Apex applique une methodologie de developpement structuree pour les taches complexes, inspiree de **Superpowers** (obra/superpowers, 30k stars).
+Appliquer une méthodologie de développement structurée et répétable pour les tâches complexes, inspirée de **Superpowers** (obra/superpowers).
 
-## Cycle TDD obligatoire
+## Les 14 méthodologies
 
-`/brainstorming` (socratique) → `/execute-plan` (par lots) → tests rouge-vert-refactor → review sous-agent → ship
-
-### Phase 1 — Brainstorming socratique
-Affiner exigences AVANT codage :
-- Quel est le probleme reel ?
-- Quels sont les cas limites ?
-- Quelles dependances ?
-- Test mental : "Si user fait X, attend Y ?"
-
-### Phase 2 — Plan d'execution par lots
-Decomposer en steps atomiques :
-- Lot 1 : tests echec (red)
-- Lot 2 : implementation minimale (green)
-- Lot 3 : refactor + edge cases
-- Lot 4 : review
-
-### Phase 3 — Debogage 4 phases
-Methodologie systematique :
-1. **Reproduire** le bug (test isolant)
-2. **Localiser** la cause racine (pas symptome)
-3. **Analyser** les modeles + hypotheses
-4. **Verifier** mecanismes de securite (regression test)
-
-Si 3 tentatives infructueuses → revue d'architecture obligatoire.
-
-### Phase 4 — Sous-agents review
-Sous-agents reviewers :
-- Code quality (lint + typecheck)
-- Security audit (OWASP)
-- Performance (latency + bundle)
-- UX (mobile-first iPhone 375px)
+1. **Brainstorming socratique** — Avant de coder : quel est le problème réel ? cas limites ? dépendances ? Test mental "si user fait X, attend Y ?".
+2. **Écriture de plan** — Décomposer en étapes atomiques écrites AVANT le code. Un plan = des lots vérifiables.
+3. **Exécution de plan par lots** — Avancer lot par lot, valider chaque lot avant le suivant. Pas de big-bang.
+4. **Test-Driven Development** — Rouge (test échoue) → Vert (implémentation minimale) → Refactor. Tests d'abord pour le critique.
+5. **Débogage systématique (4 phases)** — Reproduire (test isolant) → Localiser la cause racine (pas le symptôme) → Analyser hypothèses → Vérifier avec un test de non-régression.
+6. **Développement piloté par sous-agents** — Déléguer recherche/audit à des sous-agents pour garder le contexte principal propre.
+7. **Parallélisme d'agents** — Lancer 3-5 sous-agents en parallèle sur des angles indépendants (sécu/perf/UX/archi). Un seul message, plusieurs appels.
+8. **Traçage de cause racine** — Remonter la chaîne complète (UI → handler → API → données). Ne jamais patcher un symptôme.
+9. **Vérification avant complétion** — Ne jamais dire "fait" sans preuve : compile, tests verts, comportement réel observé. Jamais "ça devrait marcher".
+10. **Attente par condition** — Attendre un état (`until <check>`), jamais un `sleep` arbitraire.
+11. **Défense en profondeur** — Valider aux frontières (entrée user, API externe), faire confiance au code interne. Pas de validation redondante partout.
+12. **Revue de code reçue** — Traiter chaque retour : corriger, ou expliquer pourquoi non. Jamais ignorer en silence.
+13. **Demande de revue** — Sur toute feature non triviale, lancer ≥ 1 sous-agent reviewer (qualité / sécu OWASP / perf / UX mobile 375px) avant de livrer.
+14. **Audit post-fix** — Après un lot de corrections, re-mesurer l'écart réel (jamais estimé). Si écart estimé vs réel > 5 points → stop features, intégration only.
 
 ## Quand l'invoquer
 
-- Tache > 30 min estimee
-- Feature non-triviale
-- Bug reproduit 3+ fois
-- Refactor cross-file
+- Tâche estimée > 30 min · feature non-triviale · bug reproduit 3+ fois · refactor cross-file · audit.
 
 ## Anti-patterns
 
-1. **Skip brainstorming** "je sais ce que je fais" → cause bugs frequents
-2. **Implement avant test** → TDD obligatoire pour features critiques
-3. **Fix symptome au lieu de cause** → 4 phases obligatoires
-4. **Skip sous-agents review** sur feature complex → toujours 1+ review
+1. Sauter le brainstorming "je sais ce que je fais" → bugs.
+2. Coder avant le test sur du critique → TDD obligatoire.
+3. Corriger le symptôme au lieu de la cause → 4 phases obligatoires.
+4. Sauter la revue sous-agent sur une feature complexe.
+5. Déclarer "fait" sans vérification end-to-end.
+6. Estimer un score au lieu de le mesurer.
 
-## References
+## Références
 
-- obra/superpowers : https://github.com/obra/superpowers (30k stars)
+- obra/superpowers : https://github.com/obra/superpowers
 - Pattern Apex : `apex-ai/v13/services/skills/superpowers.ts`
