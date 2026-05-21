@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.252';
+export const APP_VER = 'v13.4.253';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -471,6 +471,8 @@ async function bootstrap(): Promise<void> {
   /* dashboard-perso : vue récap (clés/liens/devices/mémoire). v13.4.238 :
    * renommé depuis 'dashboard' qui faisait doublon → était inaccessible. */
   router.register('dashboard-perso', { loader: () => import('@features/dashboard-personnel/index.js'), requiresAuth: true });
+  /* v13.4.253 : mémo dédié des commandes slash du chat (Kevin) */
+  router.register('commands', { loader: () => import('@features/commands/index.js'), requiresAuth: true });
 
   /* ═══════════ OUTILS UTILISATEUR (19) ═══════════ */
   router.register('browser', { loader: () => import('@features/browser/index.js'), requiresAuth: true });

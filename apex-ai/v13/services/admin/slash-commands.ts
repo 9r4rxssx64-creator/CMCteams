@@ -96,6 +96,8 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'resume', emoji: '▶️', description: 'Reprend la boucle autonome en pause', argsHint: '' },
   { name: 'statusline', emoji: '📟', description: 'Affiche l\'état d\'Apex (version, IA, boucle, conv)', argsHint: '' },
   { name: 'ooda', emoji: '🎯', description: 'Analyse OODA (Observe-Orient-Decide-Act) d\'un objectif', argsHint: '<objectif>', requiresArgs: true },
+  /* v13.4.253 — mémo dédié des commandes */
+  { name: 'commands', emoji: '📒', description: 'Mémo dédié : toutes les commandes du chat', argsHint: '', route: 'commands' },
 ];
 
 export interface SlashParseResult {

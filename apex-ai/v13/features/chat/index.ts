@@ -1002,6 +1002,7 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     auto: 'autonomous', autonome: 'autonomous',
     audit: 'ultrareview', review: 'ultrareview', ultra: 'ultrareview',
     'ultra-review': 'ultrareview', 'claude-chrome': 'chrome', navigateur: 'chrome',
+    memo: 'commands', aide: 'commands', commande: 'commands',
   };
   const normalizedText = (() => {
     if (!text || !text.trim().startsWith('/')) return text;
