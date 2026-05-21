@@ -1001,6 +1001,7 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
   const aliasMap: Record<string, string> = {
     auto: 'autonomous', autonome: 'autonomous',
     audit: 'ultrareview', review: 'ultrareview', ultra: 'ultrareview',
+    'ultra-review': 'ultrareview', 'claude-chrome': 'chrome', navigateur: 'chrome',
   };
   const normalizedText = (() => {
     if (!text || !text.trim().startsWith('/')) return text;
@@ -1135,9 +1136,64 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'test':
       void handleTestCommand(rootEl);
       return true;
+    /* v13.4.252 — resume / statusline / ooda */
+    case 'resume':
+      void handleResumeCommand(rootEl);
+      return true;
+    case 'statusline':
+      void handleStatuslineCommand(rootEl);
+      return true;
+    case 'ooda':
+      if (!args) {
+        pushAssistantMessage(rootEl, 'Usage : `/ooda <objectif>` — analyse Observe-Orient-Decide-Act.');
+        return true;
+      }
+      void handleOodaCommand(rootEl, args);
+      return true;
     default:
       return false;
   }
+}
+
+/* v13.4.252 — /resume : reprend la boucle autonome en pause. */
+async function handleResumeCommand(rootEl: HTMLElement): Promise<void> {
+  try {
+    const { autonomousLoop } = await import('../../services/admin/autonomous-loop.js');
+    autonomousLoop.resume();
+    const snap = autonomousLoop.list();
+    pushAssistantMessage(rootEl, `▶️ Boucle autonome reprise — ${snap.tasks.length} tâche(s) en file.`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur resume : ${msg}`);
+  }
+}
+
+/* v13.4.252 — /statusline : état synthétique d'Apex. */
+async function handleStatuslineCommand(rootEl: HTMLElement): Promise<void> {
+  const online = typeof navigator !== 'undefined' && navigator.onLine ? '🟢 en ligne' : '🔴 hors ligne';
+  let loop = '—';
+  try {
+    const { autonomousLoop } = await import('../../services/admin/autonomous-loop.js');
+    const snap = autonomousLoop.list();
+    loop = snap.paused
+      ? `⏸ pausée (${snap.tasks.length})`
+      : (snap.intervalActive ? `▶ active (${snap.tasks.length})` : `⏹ arrêtée (${snap.tasks.length})`);
+  } catch {
+    /* boucle indisponible */
+  }
+  pushAssistantMessage(
+    rootEl,
+    '### 📟 Statut Apex\n\n'
+    + `- **Version** : \`${APP_VER}\`\n`
+    + `- **Réseau** : ${online}\n`
+    + `- **Boucle autonome** : ${loop}\n`
+    + `- **Conversation** : ${conversation.length} message(s)`,
+  );
+}
+
+/* v13.4.252 — /ooda : analyse OODA, réutilise le générateur de plan. */
+async function handleOodaCommand(rootEl: HTMLElement, objective: string): Promise<void> {
+  await handlePlanCommand(rootEl, `Analyse OODA (Observe → Orient → Decide → Act) : ${objective}`);
 }
 
 /* v13.4.245 — /ultrareview : audit complet Apex (8 axes, mode brutal). Admin only. */
