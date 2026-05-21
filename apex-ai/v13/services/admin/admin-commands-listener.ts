@@ -22,10 +22,10 @@ import { ADMIN_ID } from '../../core/bootstrap.js';
 import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-
-import type { AdminCommand } from './admin-commands.js';
 import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
+
+import type { AdminCommand } from './admin-commands.js';
 
 const FB_KEY = 'ax_admin_commands_pending';
 

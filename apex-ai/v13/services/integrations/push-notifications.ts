@@ -18,7 +18,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
 

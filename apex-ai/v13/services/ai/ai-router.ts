@@ -15,6 +15,12 @@
 
 import { errors } from '../../core/errors.js';
 import { logger } from '../../core/logger.js';
+import { economyMode } from '../core-svc/economy-mode.js';
+import { auditLog } from '../observability/audit-log.js';
+import { tokensDashboard } from '../observability/tokens-dashboard.js';
+import { redactMessageContent, redactPII } from '../vault/pii-redaction.js';
+
+import { chatFallback } from './chat-fallback.js';
 
 /* P0-3 PERF (audit v13.2.5) : apex-tools-dispatch (102KB raw / 27KB gzip) lazy-loadé
  * uniquement quand un tool_use est détecté dans la réponse Claude (loop boucle 530).
@@ -42,11 +48,7 @@ async function loadApexTools(): Promise<ApexToolsInstance> {
   _apexTools = mod.apexTools as unknown as ApexToolsInstance;
   return _apexTools;
 }
-import { auditLog } from '../observability/audit-log.js';
-import { chatFallback } from './chat-fallback.js';
-import { economyMode } from '../core-svc/economy-mode.js';
-import { redactMessageContent, redactPII } from '../vault/pii-redaction.js';
-import { tokensDashboard } from '../observability/tokens-dashboard.js';
+
 
 export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
 

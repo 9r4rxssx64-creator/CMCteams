@@ -24,8 +24,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
+
 import { auth } from './auth.js';
 import { isFeatureEnabled } from './feature-toggles.js';
 import { webauthn } from './webauthn.js';

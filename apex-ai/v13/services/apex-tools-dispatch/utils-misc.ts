@@ -4,9 +4,9 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { orchestrator } from '../core-svc/orchestrator.js';
 import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
-import { orchestrator } from '../core-svc/orchestrator.js';
 
 export async function readFile(path: string, branch = 'main'): Promise<{ content: string; size: number }> {
   if (!path || path.includes('..') || path.startsWith('/')) {

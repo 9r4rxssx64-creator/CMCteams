@@ -19,7 +19,6 @@
  *  - Admin only (Kevin) via auth.isAdminSync() guard
  */
 import { logger } from '../../core/logger.js';
-
 import { auth } from '../auth/auth.js';
 import { firebase } from '../storage/firebase.js';
 import { vault } from '../vault/vault.js';

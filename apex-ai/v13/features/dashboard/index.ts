@@ -21,8 +21,8 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { haptic } from '../../ui/haptic.js';
 import { renderRechargeAction } from '../../ui/recharge-action.js';
 

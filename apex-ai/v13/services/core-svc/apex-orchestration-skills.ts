@@ -22,9 +22,8 @@
  * Permission tier-aware admin only sur create_session / spawn_swarm / scrape_site.
  */
 import { logger } from '../../core/logger.js';
-
-import { auth } from '../auth/auth.js';
 import { crewExperts } from '../ai/crew-experts.js';
+import { auth } from '../auth/auth.js';
 
 /* ===========================================================
    1. Remote Control (OpenClaw /rc command)

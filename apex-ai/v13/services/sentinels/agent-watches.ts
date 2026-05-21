@@ -20,8 +20,8 @@
  */
 
 import { auditLog } from '../observability/audit-log.js';
-import { firebase } from '../storage/firebase.js';
 import { telemetry } from '../observability/telemetry.js';
+import { firebase } from '../storage/firebase.js';
 
 export type AgentSeverity = 'ok' | 'warn' | 'err' | 'critical';
 

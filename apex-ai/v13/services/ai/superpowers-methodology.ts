@@ -15,9 +15,9 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { auditLog } from '../observability/audit-log.js';
 
 import { aiRouter } from './ai-router.js';
-import { auditLog } from '../observability/audit-log.js';
 
 export type SuperpowerStep = 'brainstorm' | 'plan' | 'dev' | 'test' | 'review' | 'ship' | 'reflect';
 

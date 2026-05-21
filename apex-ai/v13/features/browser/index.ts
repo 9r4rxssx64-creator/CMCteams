@@ -25,8 +25,8 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 
 /* Re-export escapeHtml for backward compatibility (tests import from this module). */
 export { escapeHtml };

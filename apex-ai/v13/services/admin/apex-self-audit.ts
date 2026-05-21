@@ -22,9 +22,8 @@
 
 import { logger } from '../../core/logger.js';
 import { router } from '../../core/router.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import { soc2 } from '../auth/soc2-compliance.js';
+import { auditLog } from '../observability/audit-log.js';
 import { vault } from '../vault/vault.js';
 
 /**

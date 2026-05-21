@@ -30,7 +30,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
 
 interface UserDataExport {

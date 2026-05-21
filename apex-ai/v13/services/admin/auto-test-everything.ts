@@ -20,11 +20,10 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { directConnectors } from '../integrations/direct-connectors-registry.js';
 import { linksRegistry } from '../integrations/links-registry.js';
-import { multiKeyVault } from '../vault/multi-key-vault.js';
 import { sentinelsRegistry } from '../sentinels/sentinels-registry.js';
+import { multiKeyVault } from '../vault/multi-key-vault.js';
 import { vaultDeepRecovery } from '../vault/vault-deep-recovery.js';
 
 export type TestStatus = 'ok' | 'warn' | 'error' | 'pending';

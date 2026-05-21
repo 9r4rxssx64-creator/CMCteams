@@ -1,3 +1,6 @@
+/* eslint-disable no-console -- ce module patche/restaure console.log|debug|trace
+ * par conception (wrapper de redaction global). Référencer ces méthodes ici
+ * est volontaire et nécessaire. */
 /**
  * APEX v13 — Log Redaction Wrapper (P0 sécu fix audit OWASP ASVS L2 V7.1.1)
  *

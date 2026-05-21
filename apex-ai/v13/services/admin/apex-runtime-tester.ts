@@ -19,7 +19,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
 
 export type RuntimeTestStatus = 'pass' | 'fail' | 'warn' | 'skip';

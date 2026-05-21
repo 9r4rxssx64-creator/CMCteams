@@ -17,6 +17,7 @@
  */
 
 import { commerce } from '../integrations/commerce.js';
+
 import { consumptionMonitor } from './consumption-monitor.js';
 import { tokensDashboard } from './tokens-dashboard.js';
 

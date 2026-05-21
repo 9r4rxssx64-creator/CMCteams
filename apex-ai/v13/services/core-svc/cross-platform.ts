@@ -17,7 +17,6 @@
 
 import { logger } from '../../core/logger.js';
 import { toast } from '../../ui/toast.js';
-
 import { deviceDetect } from '../integrations/device-detect.js';
 
 export interface CrossPlatformResult<T = unknown> {
