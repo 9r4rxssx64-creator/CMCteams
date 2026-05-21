@@ -5323,7 +5323,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.725";
+var APP_VER="v9.726";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -16702,6 +16702,15 @@ function _cmcBreadcrumb(){
   }
   return '<div style="padding:6px 14px;background:rgba(201,162,39,.04);border-bottom:1px solid rgba(201,162,39,.1);font-size:12px;display:flex;align-items:center;gap:8px"><a href="#" onclick="sv(\'accueil\');return false" style="color:#4a9aff;text-decoration:none;font-weight:600">🏠 Accueil</a><span style="color:#7a9a7a">›</span><strong style="color:#c9a227">'+esc(label)+'</strong></div>';
 }
+function _vMissingView(title,msg,btnLabel,btnRoute){
+  // v9.726 — fallback unifié pour vue déclarée dans le routeur mais non implémentée
+  // (erreur #28 Declaration ≠ Deployment). Message honnête + bouton de repli, au
+  // lieu de la carte d'erreur générique qui faisait croire à un bug "temporaire".
+  return '<div class="card" style="padding:20px;text-align:center">'
+    +'<div style="font-size:18px;font-weight:700;color:#c9a227;margin-bottom:8px">'+esc(title)+'</div>'
+    +'<div style="color:#a0cca0;margin-bottom:16px">'+esc(msg)+'</div>'
+    +'<button class="btn gold" onclick="sv(\''+esc(btnRoute)+'\')">'+esc(btnLabel)+'</button></div>';
+}
 function vMain(){
   // v9.581 (Kevin "erreur d'affichage Can't find variable") — safety wrapper :
   // si une case route vers une fonction de vue non définie, on retourne une vue
@@ -16794,8 +16803,8 @@ function _vMainImpl(){
     case"geo":      return isAdm?vGeoAdmin():""; // v9.210
     case"geolocation": return isAdm?vGeolocationCMC():""; // v9.487 — multi-casinos precision live
     case"pit":      return vPit(); // v9.211 — pit boss live (admin + cadres)
-    case"pitmap":   return vPitMapView(); // v9.500 — map visuelle Pit Boss (lecture seule + carré break)
-    case"pitmapview": return vPitMapView(); // v9.500 — alias
+    case"pitmap":   return typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
+    case"pitmapview": return typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
     case"quotidienne": return vQuotidienne(); // v9.312 — réunion direction
     case"endshiftdash": return vEndShiftDashboard(); // v9.339 — dashboard fins de shift
     case"dayhistory":  return vDayHistory(); // v9.342 — historique du jour
@@ -16838,9 +16847,9 @@ function _vMainImpl(){
     case"debug": return isAdm?vDebug():""; // v9.91
     case"ia":       return vIA();
     case"lessonscmc": return isAdm?vLessonsLearnedCmc():""; // v9.525 - Lessons partagees Apex+CMCteams
-    case"passation":  return vPassation(); // v9.540 - Passation digitale (form remplir)
-    case"passations": return vPassationsList(); // v9.540 - Liste passations
-    case"crossteamactivity": return isAdm?vCrossTeamActivity():""; // v9.540 - Stats cross-team
+    case"passation":  return typeof vPassation==="function"?vPassation():_vMissingView("📋 Passation digitale","Cette vue est en cours de développement et n'est pas encore disponible.","🏠 Retour accueil","accueil"); // v9.726 — guard erreur #28
+    case"passations": return typeof vPassationsList==="function"?vPassationsList():_vMissingView("📋 Historique passations","Cette vue est en cours de développement et n'est pas encore disponible.","📋 Voir le journal d'audit","auditlog"); // v9.726 — guard erreur #28
+    case"crossteamactivity": return isAdm?(typeof vCrossTeamActivity==="function"?vCrossTeamActivity():_vMissingView("📊 Activité cross-team","Cette vue est en cours de développement et n'est pas encore disponible.","📊 Voir les statistiques","stats")):""; // v9.726 — guard erreur #28
     case"rgpd":case"mes-donnees":case"vie-privee": return vRGPD(); // v9.548 - RGPD complet (export + erase + CSP + droits)
     default: return vAccueil();
   }

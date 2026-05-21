@@ -144,3 +144,7 @@ export async function renderCapabilitiesAdmin(rootEl: HTMLElement): Promise<void
 }
 
 export const capabilitiesAdmin = { render: renderCapabilitiesAdmin };
+
+/* v13.4.246 — wire routeur : le routeur appelle `mod.render(rootEl)`.
+   Alias exporté pour que la route `admin-capabilities` fonctionne. */
+export const render = renderCapabilitiesAdmin;

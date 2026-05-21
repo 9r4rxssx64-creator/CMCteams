@@ -95,7 +95,7 @@ const SHORTCUTS: ReadonlyArray<DashboardShortcut> = [
   { id: 'pro', icon: '🎓', label: 'Pro', description: 'Modules expert', route: 'pro', color: 'var(--ax-pink)' },
   { id: 'self-diag', icon: '🩺', label: 'Audit', description: 'Auto-diagnostic', route: 'self-diag', color: 'var(--ax-cyan)' },
   { id: 'settings', icon: '⚙️', label: 'Réglages', description: 'Configurer Apex', route: 'settings', color: 'var(--ax-text-dim)' },
-  { id: 'rgpd', icon: '🛡', label: 'RGPD', description: 'Mes données', route: 'rgpd', color: 'var(--ax-gold)' },
+  { id: 'rgpd', icon: '🛡', label: 'RGPD', description: 'Mes données', route: 'admin-rgpd', color: 'var(--ax-gold)' },
 ];
 
 /**
