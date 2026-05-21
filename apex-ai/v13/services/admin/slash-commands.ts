@@ -42,6 +42,10 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'rules', emoji: '📜', description: 'Affiche les règles permanentes Apex (filtre optionnel)', argsHint: '<keyword?>' },
   /* v13.4.5 — Mode autonome Apex (Kevin 2026-05-10) */
   { name: 'autonomous', emoji: '🤖', description: 'Mode autonome : Apex bosse seul jusqu\'à fin/quota (status/stop)', argsHint: '<objectif|status|stop>' },
+  /* v13.4.245 — commandes audit/diagnostic (Kevin "lancer /ultrareview") */
+  { name: 'ultrareview', emoji: '🔍', description: 'Audit complet Apex — 8 axes, mode brutal', argsHint: '' },
+  { name: 'diag', emoji: '🩺', description: 'Diagnostic runtime Apex (santé live)', argsHint: '' },
+  { name: 'test', emoji: '🧪', description: 'Lance les auto-tests runtime', argsHint: '' },
 ];
 
 export interface SlashParseResult {
