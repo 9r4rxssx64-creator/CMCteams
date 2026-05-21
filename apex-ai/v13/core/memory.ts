@@ -97,9 +97,12 @@ class Memory {
    * Performance : ~50-200ms total pour 16 clés (PBKDF2 200k iterations).
    * Throttle : pas plus d'1× / 30s pour éviter saturation lors de bulk paste.
    */
-  async refreshVaultAudit(): Promise<{ present: string[]; total: number }> {
-    /* Throttle : skip si exécuté il y a moins de 30s */
-    if (Date.now() - this._lastVaultAuditTs < 30_000 && this._lastVaultAuditPresent.length > 0) {
+  async refreshVaultAudit(force = false): Promise<{ present: string[]; total: number }> {
+    /* Throttle : skip si exécuté il y a moins de 30s — SAUF force=true.
+     * force est requis après une restauration EN MASSE (gist GitHub, import) :
+     * sinon le throttle fige la mémoire d'Apex sur la 1re clé restaurée et
+     * Apex « croit » son coffre vide/incomplet. */
+    if (!force && Date.now() - this._lastVaultAuditTs < 30_000 && this._lastVaultAuditPresent.length > 0) {
       return { present: this._lastVaultAuditPresent, total: this._lastVaultAuditPresent.length };
     }
     const candidateKeys: string[] = [];

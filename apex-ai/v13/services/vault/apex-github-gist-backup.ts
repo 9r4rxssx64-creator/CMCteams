@@ -174,6 +174,15 @@ class ApexGithubGistBackup {
       }
     }
     logger.info('gist-backup', `restored ${restored}/${payload.count} keys from gist ${gist.id.slice(0, 8)}…`);
+    /* v13.4.254 — force le rafraîchissement de la mémoire vault d'Apex après
+     * la restauration EN MASSE. Sans ça, le throttle de refreshVaultAudit fige
+     * la mémoire sur la 1re clé → Apex annonce son coffre vide à tort. */
+    if (restored > 0) {
+      try {
+        const { memory } = await import('../../core/memory.js');
+        await memory.refreshVaultAudit(true);
+      } catch { /* non-bloquant */ }
+    }
     return { ok: true, restored, gist_id: gist.id };
   }
 
