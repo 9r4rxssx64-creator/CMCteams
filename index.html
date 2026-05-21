@@ -1328,7 +1328,7 @@ var CODES={
   "19/4*" :{l:"19h\u20134h CDP",   bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
   "16/3*" :{l:"Coupure CDP",       bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
   "16/22*":{l:"16h\u201322h CDP",  bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
-  "19/4'" :{l:"Convention",        bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:false},
+  "19/4'" :{l:"19h–4h (Convention)",bg:"#d8342e",c:"#ffe23a",b:"#a31f1a",cdp:false,conv:true}, // CONVENTION : fond rouge / écriture jaune (PDF SBM)
   // ── Repos / congés / absences (fonds colorés pastel) ──────────────────
   "RH"    :{l:"Repos Hebdo",  bg:"#c8a8e0",c:"#0c0430",b:"#a088c8",cdp:false},  // violet
   "R"     :{l:"Repos",        bg:"#e8e8e8",c:"#0a0a0a",b:"#bcbcbc",cdp:false},  // gris
@@ -1414,26 +1414,36 @@ function learnNewCode(code){
 var CK; // reconstruit apr\u00e8s fusion
 function _rebuildCK(){CK=Object.keys(CODES);}
 _rebuildCK();
-// v9.726 \u2014 REPRODUCTION \u00c0 L'IDENTIQUE (Kevin 2026-05-21) : pr\u00e9serve les suffixes
-// ' et " (sens m\u00e9tier \u2014 jour de Convention). Si le code est <base>+quotes, que
-// la base est connue mais que la variante suffix\u00e9e n'existe pas \u2192 clone l'entr\u00e9e
-// CODES de base (m\u00eame horaire/couleur) et la persiste. Retourne le code variante
-// \u00e0 stocker, ou null si non applicable (le parser strippe alors normalement).
+// v9.727 \u2014 Jour de CONVENTION : code \u00e0 suffixe ' ou " (NOTES_USER : fond ROUGE,
+// \u00e9criture JAUNE dans le PDF SBM \u2014 rep\u00e8re visuel exact). Source UNIQUE de
+// d\u00e9tection, utilis\u00e9e partout (couleur cellule, badge, m\u00e9ta, compteurs).
+function _cmcIsConv(code){return /['"]$/.test(String(code==null?"":code));}
+// v9.727 \u2014 Style CONVENTION : copie exacte du rep\u00e8re visuel PDF SBM
+// (fond rouge / \u00e9criture jaune). Appliqu\u00e9 aux variantes ' / " des codes.
+var _CMC_CONV_STYLE={bg:"#d8342e",c:"#ffe23a",b:"#a31f1a",cdp:false,conv:true};
+// v9.726/727 \u2014 REPRODUCTION \u00c0 L'IDENTIQUE (Kevin 2026-05-21) : pr\u00e9serve les
+// suffixes ' et " (jour de Convention). Si le code est <base>+quotes et que la
+// base est connue \u2192 cr\u00e9e/r\u00e9pare la variante suffix\u00e9e avec la COULEUR Convention
+// (fond rouge, \u00e9criture jaune \u2014 pas la couleur du code de base). Retourne le
+// code variante, ou null si non applicable (le parser strippe alors normalement).
 function _cmcEnsureQuoteVariant(tok){
   var m=String(tok==null?"":tok).match(/^(.+?)(['"]+)$/);
   if(!m)return null;
   var base=m[1],variant=base+m[2];
-  if(CODES[variant])return variant;
-  if(!CODES[base])return null;
+  var existing=CODES[variant];
+  if(existing&&existing.conv)return variant; // d\u00e9j\u00e0 en couleur Convention
+  if(!existing&&!CODES[base])return null;
   try{
-    var ent=Object.assign({},CODES[base],{conv:true,learned:true});
+    var src=existing||CODES[base]||{};
+    var ent=Object.assign({},src,_CMC_CONV_STYLE,{learned:true,
+      l:(src.l&&!/convention/i.test(src.l))?(src.l+" (Convention)"):"Convention"});
     CODES[variant]=ent;
     if(typeof _learnedCodes==="object"&&_learnedCodes){
       _learnedCodes[variant]=ent;
       try{ls("cmc_learned_codes",_learnedCodes);}catch(_p){}
     }
     if(typeof _rebuildCK==="function")_rebuildCK();
-  }catch(_e){return null;}
+  }catch(_e){return CODES[variant]?variant:null;}
   return variant;
 }
 var TC={
@@ -21688,7 +21698,7 @@ function vMonPlanning(){
   // v9.66 Planning audit : calcul s\u00e9rie cons\u00e9cutive de jours travaill\u00e9s (alerte fatigue)
   var _maxConsec=0,_curConsec=0,_curConsecStart=0;
   var totCDP=0,totConv=0,totNuit=0,totCoup=0,totJour=0,totHeures=0;
-  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;if(_c.endsWith("*"))totCDP++;if(_c.endsWith("'"))totConv++;totHeures+=codeHours(_c);var _base=_c.replace(/[*']/g,"");if(_base==="22/6"||_base==="20/5"||_base==="19/4")totNuit++;else if(_base==="16/3")totCoup++;else totJour++;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
+  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;if(_c.endsWith("*"))totCDP++;if(_cmcIsConv(_c))totConv++;totHeures+=codeHours(_c);var _base=_c.replace(/[*']/g,"");if(_base==="22/6"||_base==="20/5"||_base==="19/4")totNuit++;else if(_base==="16/3")totCoup++;else totJour++;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
   var h='<div class="page bg-casino" style="position:relative">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">'
     +empAvatarHtml(emp,40,tcc)
@@ -21746,7 +21756,7 @@ function vMonPlanning(){
       var _JOURS2=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
       var _hrs=codeHours(_code2);
       var _isCdp=_code2.endsWith("*");
-      var _isConv=_code2.endsWith("'");
+      var _isConv=_cmcIsConv(_code2);
       var _lieu=_isCdp?"☕ Café de Paris":_isConv?"🎩 Convention":"🏛 Casino Monte-Carlo";
       var _pos=isWork(_code2)&&CHEFS_T[A.user.team]?calcDepPos(A.user.name,A.user.team,d):null;
       // Collègues même jour
@@ -21805,7 +21815,7 @@ function vMonPlanning(){
       :code==="M"?"linear-gradient(135deg,rgba(255,220,40,.65),rgba(230,190,20,.55))"
       :code==="RRT"||code==="PRT"?"linear-gradient(135deg,rgba(255,200,40,.58),rgba(220,160,20,.48))"
       :code.endsWith("*")?"linear-gradient(135deg,rgba(255,160,60,.60),rgba(220,120,30,.50))"
-      :code.endsWith("'")?"linear-gradient(135deg,rgba(255,110,110,.55),rgba(220,70,70,.45))"
+      :_cmcIsConv(code)?"linear-gradient(135deg,rgba(216,52,46,.78),rgba(170,30,26,.68))"
       :(ci2&&isWork(code)?codeBg+"cc":"rgba(10,22,12,.45)");
     var borderStyle=isToday?"3px solid #ffdc40":"2px solid "+(_isPast?"rgba(40,50,40,.6)":ci2&&isWork(code)?codeColor+"99":code==="CP"?"rgba(232,120,200,.7)":code==="RH"?"rgba(160,100,220,.7)":code==="AF"?"rgba(80,220,100,.7)":code==="M"?"rgba(255,220,40,.8)":isWE?"rgba(80,120,180,.4)":"rgba(120,180,120,.35)");
     var _affDot=_affOn&&_affCache[d]?'<span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4040;margin-left:3px;vertical-align:middle;box-shadow:0 0 6px rgba(255,64,64,.8)" title="Forte affluence"></span>':"";
@@ -21821,8 +21831,8 @@ function vMonPlanning(){
       +(_timeLabel?'<div style="font-size:11px;color:'+codeTxtColor+';opacity:.92;line-height:1;white-space:nowrap;overflow:hidden;max-width:100%;font-weight:700;'+txtShadow+'">'+_timeLabel+'</div>':"")
       +(depPos?'<div style="font-size:13px;color:#ffdc40;font-weight:900;'+txtShadow+'">\u2191'+depPos+'</div>':"")
       +(code.endsWith("*")?'<div style="font-size:10px;color:#fff;font-weight:900;line-height:1;background:rgba(220,120,30,.85);padding:1px 5px;border-radius:3px">\u2615 CDP</div>':"")
-      +(code.endsWith("'")?'<div style="font-size:10px;color:#fff;font-weight:900;line-height:1;background:rgba(220,70,70,.85);padding:1px 5px;border-radius:3px">\ud83c\udfa9</div>':"")
-      +(isWork(code)&&!code.endsWith("*")&&!code.endsWith("'")?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
+      +(_cmcIsConv(code)?'<div style="font-size:10px;color:#ffe23a;font-weight:900;line-height:1;background:rgba(170,30,26,.92);padding:1px 5px;border-radius:3px">\ud83c\udfa9 CONV</div>':"")
+      +(isWork(code)&&!code.endsWith("*")&&!_cmcIsConv(code)?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
       +'</div>';
     // Fin de semaine (samedi) ou fin de mois
     var _dow3=new Date(A.year,A.month,d).getDay();
@@ -26503,7 +26513,7 @@ function _cmcInferCellMetaFromCodes(key){
         var bg=null;
         // Inferrence bg depuis code SBM (priorité 1)
         if(c.endsWith("*"))bg="CDP";
-        else if(c.endsWith("'"))bg="CONV";
+        else if(_cmcIsConv(c))bg="CONV";
         else if(c==="CP")bg="CP";
         else if(c==="RH")bg="RH";
         else if(c==="R")bg="R";
@@ -26722,7 +26732,7 @@ function _cmcImportCompletenessCheck(key, sourceText){
         if(c==="R")ovR++;
         if(c==="AF")ovAF++;
         if(c.endsWith("*"))ovCDP++;
-        if(c.endsWith("'"))ovConv++;
+        if(_cmcIsConv(c))ovConv++;
       });
     });
     rep.details={
@@ -39495,7 +39505,7 @@ function doImport(){
       Object.keys(row).forEach(function(d){
         _totCells++;var c=row[d];
         if(c&&c.endsWith("*"))_totCDP2++;
-        if(c&&c.endsWith("'"))_totConv2++;
+        if(c&&_cmcIsConv(c))_totConv2++;
         if(c==="CP")_totCP2++;if(c==="AF")_totAF2++;if(c==="RH")_totRH2++;if(c==="R")_totR2++;
       });
     });
