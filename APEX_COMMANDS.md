@@ -106,14 +106,10 @@
 
 ---
 
-## ⚠️ Commandes demandées mais en attente de précision
+## ⚠️ Commande demandée mais en attente de précision
 
-Kevin, ces deux commandes de ta liste n'ont pas été ajoutées car leur rôle
-exact n'est pas clair — dis-moi ce qu'elles doivent faire et je les câble :
-
-- **`/l99`** — sens inconnu. Que doit-elle déclencher ?
-- **`/rename`** — renommer quoi ? La conversation en cours ? (Apex v13 n'a
-  pas encore de conversations nommées — à confirmer.)
+- **`/l99`** — sens inconnu. Dis-moi ce qu'elle doit déclencher et je la câble.
+- `/rename` — abandonnée (décision Kevin, non ajoutée).
 
 ---
 
