@@ -1,7 +1,34 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-20 soir** (Architecture Apex v238→v240 : routes câblées + regroupées)
+> Dernière mise à jour : **2026-05-21** (Audit 8 axes + blocage accès — CMC v9.727 / Apex v13.4.247)
+
+## 🔒 SESSION 2026-05-21 — Audit 8 axes + blocage accès projets
+
+Branche `claude/code-review-debug-bhYZP` — commits `8ccaa79d` + `4d7b0ff5`.
+
+**Nouveaux fichiers** :
+- `.github/CODEOWNERS` — revue propriétaire obligatoire sur tout changement
+- `.github/workflows/branch-guard.yml` — alerte (issue + échec) sur push non autorisé sur `main`
+- `FIREBASE_SECURITY.md` — verrouillage données Firebase (état + chemin App Check)
+- `database.rules.example.json` — modèle de règles Realtime Database
+
+Liens GitHub (branche `claude/code-review-debug-bhYZP`) :
+- https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/code-review-debug-bhYZP/.github/CODEOWNERS
+- https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/code-review-debug-bhYZP/.github/workflows/branch-guard.yml
+- https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/code-review-debug-bhYZP/FIREBASE_SECURITY.md
+- https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/code-review-debug-bhYZP/database.rules.example.json
+
+**Fichiers modifiés** : `index.html` + `sw.js` (CMC v9.727) ; Apex v13.4.247 →
+`core/bootstrap.ts`, `index.html`, `sw.js`, `package.json`,
+`services/admin/kdmc-projects-registry.ts`, `services/core-svc/apex-tools-dispatch.ts`,
+`services/core-svc/hyperframes.ts`, `services/vault/vault.ts`,
+`features/admin/index.ts`, `features/admin/capabilities/index.ts`,
+`features/admin/voice-diagnostic/index.ts`, `features/admin/credentials-status/index.ts`,
+`features/dashboard/index.ts`, `features/vault/index.ts`, `features/admin-backup/index.ts`,
+`features/multi-source-history/index.ts`, `features/settings/index.ts`.
+
+---
 
 ## 🏛 SESSION 2026-05-20 soir 2 — Architecture Apex v13
 

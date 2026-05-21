@@ -1,4 +1,39 @@
-# Mémo de reprise — Apex v13.4.243 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+# Mémo de reprise — Apex v13.4.247 / CMC v9.727 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-21)
+
+## 🔍 SESSION 2026-05-21 — Audit 8 axes + blocage accès projets (CMC v9.727 / Apex v13.4.247)
+
+Branche `claude/code-review-debug-bhYZP`. Audit complet 8 axes des 2 projets
+(6 subagents parallèles) puis correctifs P1 + verrouillage accès. 2 commits.
+
+**Scores mesurés** : CMCteams Archi 14/20 · Sécu 15/20 · Perf 12/20.
+Apex v13 Archi 16/20 · Sécu 14.5/20 · Perf 17/20 (Lighthouse 99) · Fonc 17/20 · UX 16/20.
+Aucun P0 plantant l'app.
+
+**Commit `8ccaa79d` — correctifs P1** :
+- CMCteams : 4 routes admin cassées guardées (vCrossTeamActivity, vPassation,
+  vPassationsList, vPitMapView — erreur #28). Helper `_vMissingView`.
+- Apex : re-vérif admin autoritaire dans `apex-tools-dispatch.execute()` (le tier
+  passé par l'appelant n'est plus fait confiance) ; 3 features admin orphelines
+  câblées (capabilities, pinecone-status, voice-diagnostic) ; route morte
+  dashboard `rgpd`→`admin-rgpd` ; timers zombies vault/hyperframes clearables ;
+  erreurs voice-diagnostic rendues claires.
+
+**Commit `4d7b0ff5` — blocage accès + restes** :
+- `.github/CODEOWNERS` + `.github/workflows/branch-guard.yml` (alerte push non
+  autorisé sur main).
+- `FIREBASE_SECURITY.md` + `database.rules.example.json` (verrou réel = App Check).
+- `kdmcProjectsRegistry.update()`/`reset()` refusent les non-admin.
+- CMCteams `adminSetMotdFromInput()` guard explicite.
+- ~12 messages d'erreur bruts Apex rendus clairs (cause conservée + loggée).
+
+**Limites honnêtes** :
+- `npm install` Apex échoue dans le sandbox (miroir npm incohérent sur playwright) —
+  PAS un bug repo, `package.json` correct, le CI réel installe OK. Non modifié.
+- Différé : routage des 32 `setInterval` via lifecycle (refacto, pas un bug) ;
+  implémentation effective des 4 vues CMCteams (features à spécifier).
+
+**Actions Kevin restantes** (cf. KEVIN_ACTIONS_TODO.md) : protéger la branche
+`main` (Settings → Branches) + activer Firebase App Check.
 
 ## 🔧 SESSION 2026-05-20 (soir 3) — Fix Firebase backup KO + auto-test qui se bloque (v13.4.243)
 

@@ -1,5 +1,30 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔒 SESSION 2026-05-21 — Blocage accès projets : 2 actions Kevin
+
+Suite à la demande « bloquer les projets pour que personne de l'extérieur ne
+puisse les modifier, sauf Apex AI ». Le code en place (CODEOWNERS, branch-guard,
+guards app) **alerte et durcit** ; le **blocage réel** demande ces 2 réglages —
+non automatisables (réglages admin externes), une seule fois :
+
+1. **Protéger la branche `main` GitHub** — le seul vrai verrou du code :
+   GitHub → repo `cmcteams` → Settings → Branches → Add branch protection rule
+   → Branch name pattern : `main` → cocher :
+   - Require a pull request before merging
+   - Require review from Code Owners
+   - Restrict who can push to matching branches
+   Sans ça, `CODEOWNERS` + `branch-guard.yml` ne font qu'alerter, pas bloquer.
+
+2. **Activer Firebase App Check** — le vrai verrou des données (cf. `FIREBASE_SECURITY.md`) :
+   Console Firebase → App Check → enregistrer les apps (CMCteams + Apex) →
+   fournisseur reCAPTCHA → puis « Enforce » sur Realtime Database.
+   Ensuite : me redemander de câbler le SDK App Check dans les 2 apps.
+
+> Tant que ces 2 points ne sont pas faits, le verrouillage reste **partiel**
+> (détection/alerte + guards in-app), pas un blocage technique total.
+
+---
+
 ## 🧩 SKILLS & COMMANDES CLAUDE CODE — vues TikTok (2026-05-20)
 
 > Kevin a partagé des contenus TikTok présentant 5 skills + 5 commandes Claude
