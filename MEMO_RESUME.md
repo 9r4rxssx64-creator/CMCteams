@@ -1,4 +1,34 @@
-# Mémo de reprise — Apex v13.4.243 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+# Mémo de reprise — Apex v13.4.249 / CMC v9.727 / Apex Chat v1.1.147 / e-KDMC (2026-05-21)
+
+## 🎨 SESSION 2026-05-21 — Revue UI/UX pro-expert (branche claude/apex-ui-ux-pro-review-6am3n)
+
+Revue UI/UX + a11y des 4 apps du dépôt (skills apex-ui-ux-pro-max + apex-taste).
+6 commits, tous build/syntax-vérifiés. Tests E2E navigateur = sandbox bloqué
+(pas de Chromium, ni cache Playwright, ni apt) → CI-only, validation visuelle
+reportée. Branche mergée vers main (Kevin « merge tout, on testera en réel après »).
+
+- **Apex v13.4.247** : `:focus-visible` étendu (role=button/tab/menuitem/switch,
+  tabindex=0, summary) + `::selection` couleurs de marque.
+- **Apex v13.4.248** : zoom utilisateur réactivé (a11y Apple HIG) — viewport
+  `maximum-scale=5`, script inline gesturestart retiré, `rescue.js initAntiZoom`
+  retiré, test régression v13.4.95 mis à jour (verrouille le zoom activé).
+- **Apex v13.4.249** : `ux-overrides.css` mort (395 l. / 108 !important jamais
+  chargées) supprimé + lint `import/order` 214→11 (eslint --fix, 132 fichiers).
+- **CMCteams v9.727** : `::selection` marque (root déjà solide a11y :
+  `*:focus-visible` global, zoom activé, scrollbars stylées, mode a11y-focus-strong).
+- **e-KDMC** : `:focus-visible` clavier + `::selection` CRÉÉS sur 6 pages
+  (dashboard + 5 stores) — aucune n'avait de focus clavier (trou a11y réel).
+- **Apex Chat v1.1.147** : zoom réactivé (`maximum-scale=5`) + `::selection`.
+
+Vérifs : Apex build tsc strict + vite vert ; 11745 tests passés, 7 fichiers en
+échec = sous-ensemble EXACT des 9 pré-existants (0 régression) ; CMCteams /
+e-KDMC / Apex Chat `node --check` JS vert.
+
+Reste pour la session « tests visuels en réel » : états vides/loading Apex,
+tokenisation des ~1360 styles inline, revue substantielle du monolithe
+CMCteams (3 MB), validation iPhone des changements zoom/`::selection`.
+
+---
 
 ## 🔧 SESSION 2026-05-20 (soir 3) — Fix Firebase backup KO + auto-test qui se bloque (v13.4.243)
 
