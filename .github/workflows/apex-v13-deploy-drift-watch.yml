@@ -34,8 +34,9 @@ jobs:
       - name: Extract versions
         id: ver
         run: |
-          SRC=$(grep "data-app-ver" apex-ai/v13/index.html | sed 's/.*data-app-ver="\([^"]*\)".*/\1/')
-          DEPLOYED=$(grep "data-app-ver" apex-ai-v13/index.html 2>/dev/null | sed 's/.*data-app-ver="\([^"]*\)".*/\1/' || echo "ABSENT")
+          SRC=$(grep -oE 'data-app-ver="[^"]*"' apex-ai/v13/index.html | head -1 | sed 's/.*="\([^"]*\)"/\1/')
+          DEPLOYED=$(grep -oE 'data-app-ver="[^"]*"' apex-ai-v13/index.html 2>/dev/null | head -1 | sed 's/.*="\([^"]*\)"/\1/' || echo "ABSENT")
+          [ -z "$DEPLOYED" ] && DEPLOYED="ABSENT"
           BOOTSTRAP=$(grep "APP_VER = '" apex-ai/v13/core/bootstrap.ts | head -1 | sed "s/.*APP_VER = '\([^']*\)'.*/\1/")
           SW=$(grep "CACHE_VERSION" apex-ai/v13/sw.js | head -1 | sed "s/.*'apex-\([^']*\)'.*/\1/")
           PKG=$(grep '"version"' apex-ai/v13/package.json | head -1 | sed 's/.*"version": *"\([^"]*\)".*/v\1/')
