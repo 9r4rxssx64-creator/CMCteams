@@ -213,7 +213,7 @@
         "avg": 14
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "revenge-002",
