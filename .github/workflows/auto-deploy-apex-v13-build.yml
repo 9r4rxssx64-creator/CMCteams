@@ -74,7 +74,7 @@ jobs:
           cp apex-ai/v13/manifest.json apex-ai-v13/manifest.json
           # Verify version cohérence
           echo "=== Verification ==="
-          grep "data-app-ver" apex-ai-v13/index.html | head -1
+          grep -oE 'data-app-ver="[^"]*"' apex-ai-v13/index.html | head -1
           grep "CACHE_VERSION" apex-ai-v13/sw.js | head -1
 
       - name: Commit and push if changed
@@ -86,8 +86,9 @@ jobs:
             echo "No changes to deploy"
             exit 0
           fi
-          # Extraire APP_VER pour message commit
-          APP_VER=$(grep "data-app-ver" apex-ai-v13/index.html | sed 's/.*data-app-ver="\([^"]*\)".*/\1/')
+          # Extraire APP_VER pour message commit (1re occurrence de l'attribut
+          # data-app-ver="…" uniquement — évite la ligne <script> getAttribute)
+          APP_VER=$(grep -oE 'data-app-ver="[^"]*"' apex-ai-v13/index.html | head -1 | sed 's/.*="\([^"]*\)"/\1/')
           git commit -m "Auto-deploy Apex ${APP_VER} build → apex-ai-v13/ [skip ci]" \
             -m "Source apex-ai/v13/ → build dist/ → deployed apex-ai-v13/ (auto)."
           git push origin main
