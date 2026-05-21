@@ -5,9 +5,24 @@ Tests d'intégration qui exécutent `index.html` dans Chromium (UA iPhone Safari
 ## Installation
 
 ```bash
-npm install
-npm run playwright:install   # Télécharge Chromium (~150 MB)
+npm install                  # installe playwright 1.56.0 (épinglé)
+npm run playwright:install   # télécharge Chromium si absent
+npm run playwright:check     # vérifie que Chromium se lance bien
 ```
+
+### Chromium / Playwright — environnement
+
+- `playwright` est **épinglé à `1.56.0`** (`package.json`) — sa révision
+  Chromium intégrée (**chromium-1194 / Chromium 141**) correspond au navigateur
+  pré-installé dans l'environnement Claude Code web (`/opt/pw-browsers`).
+  ⚠ Ne PAS repasser en `^1.x` : un Playwright plus récent réclame une révision
+  Chromium non pré-installée → erreur `Executable doesn't exist`.
+- La variable `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` (fournie par
+  l'environnement) permet à Playwright de trouver ce Chromium sans
+  téléchargement réseau.
+- Un hook `SessionStart` (`.claude/settings.json`) vérifie au démarrage de
+  chaque session que `playwright@1.56` est présent, sinon lance `npm install`.
+- Apex (`apex-ai/v13/`) : `@playwright/test` est aussi épinglé à `1.56.0`.
 
 ## Commandes
 

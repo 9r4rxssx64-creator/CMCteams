@@ -998,7 +998,10 @@ export function handleWakeWordTextTrigger(_rootEl: HTMLElement, text: string): b
  */
 export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
   /* v13.4.5 — Alias `/auto` et `/autonome` redirigés vers `/autonomous` (Kevin "mode autonome"). */
-  const aliasMap: Record<string, string> = { auto: 'autonomous', autonome: 'autonomous' };
+  const aliasMap: Record<string, string> = {
+    auto: 'autonomous', autonome: 'autonomous',
+    audit: 'ultrareview', review: 'ultrareview', ultra: 'ultrareview',
+  };
   const normalizedText = (() => {
     if (!text || !text.trim().startsWith('/')) return text;
     const body = text.trim().slice(1);
@@ -1021,6 +1024,15 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
   const cmd = parsed.command;
   if (!cmd) return false;
   const args = parsed.args ?? '';
+  /* v13.4.250 — commandes de navigation : champ `route` -> handler générique */
+  if (cmd.route) {
+    try {
+      store.set('view', cmd.route);
+    } catch {
+      toast.info('Ouvre la section depuis le menu');
+    }
+    return true;
+  }
   switch (cmd.name) {
     case 'help':
       pushAssistantMessage(rootEl, helpText());
@@ -1113,8 +1125,98 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'autonomous':
       void handleAutonomousCommand(rootEl, args);
       return true;
+    /* v13.4.245 — commandes audit/diagnostic */
+    case 'ultrareview':
+      void handleUltraReviewCommand(rootEl);
+      return true;
+    case 'diag':
+      void handleDiagCommand(rootEl);
+      return true;
+    case 'test':
+      void handleTestCommand(rootEl);
+      return true;
     default:
       return false;
+  }
+}
+
+/* v13.4.245 — /ultrareview : audit complet Apex (8 axes, mode brutal). Admin only. */
+async function handleUltraReviewCommand(rootEl: HTMLElement): Promise<void> {
+  try {
+    const { auth } = await import('../../services/auth/auth.js');
+    if (!auth.isAdminSync()) {
+      pushAssistantMessage(rootEl, '🔒 `/ultrareview` est réservé à l\'admin.');
+      return;
+    }
+    pushAssistantMessage(rootEl, '🔍 Audit complet Apex en cours… (8 axes, mode brutal — patiente quelques secondes)');
+    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
+    const r = await apexSelfAudit.runFullAudit(true);
+    const axes = Object.entries(r.axes)
+      .map(([k, v]) => `- **${k}** : ${v.score}/100 _(${v.findings_count} finding${v.findings_count > 1 ? 's' : ''})_`)
+      .join('\n');
+    const steps = r.next_steps.length
+      ? '\n\n**Prochaines étapes**\n' + r.next_steps.map((s) => `- ${s}`).join('\n')
+      : '';
+    pushAssistantMessage(
+      rootEl,
+      `### 🔍 Ultra-review Apex — ${r.total_score}/100\n\n`
+      + `${r.total_findings} finding(s) · ${r.auto_fixed_count} auto-corrigé(s) · `
+      + `${r.escalated_count} escaladé(s) · ${(r.duration_ms / 1000).toFixed(1)} s\n\n`
+      + `${axes}${steps}`,
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur ultrareview : ${msg}`);
+  }
+}
+
+/* v13.4.245 — /diag : diagnostic runtime Apex (santé live). Admin only. */
+async function handleDiagCommand(rootEl: HTMLElement): Promise<void> {
+  try {
+    const { auth } = await import('../../services/auth/auth.js');
+    if (!auth.isAdminSync()) {
+      pushAssistantMessage(rootEl, '🔒 `/diag` est réservé à l\'admin.');
+      return;
+    }
+    pushAssistantMessage(rootEl, '🩺 Diagnostic runtime en cours…');
+    const { apexRuntimeDiagnostic } = await import('../../services/admin/apex-runtime-diagnostic.js');
+    const r = await apexRuntimeDiagnostic.runAll();
+    const fails = r.checks.filter((c) => !c.ok)
+      .map((c) => `- ❌ **${c.label}** — ${c.detail}`).join('\n');
+    pushAssistantMessage(
+      rootEl,
+      `### 🩺 Diagnostic runtime — ${r.version}\n\n`
+      + `✅ ${r.okCount} OK · ❌ ${r.failCount} échec(s)\n\n`
+      + `${r.summary}${fails ? '\n\n' + fails : ''}`,
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur diag : ${msg}`);
+  }
+}
+
+/* v13.4.245 — /test : auto-tests runtime. Admin only. */
+async function handleTestCommand(rootEl: HTMLElement): Promise<void> {
+  try {
+    const { auth } = await import('../../services/auth/auth.js');
+    if (!auth.isAdminSync()) {
+      pushAssistantMessage(rootEl, '🔒 `/test` est réservé à l\'admin.');
+      return;
+    }
+    pushAssistantMessage(rootEl, '🧪 Auto-tests runtime en cours…');
+    const { autoTestRunner } = await import('../../services/admin/auto-test-runner.js');
+    const r = await autoTestRunner.runAll();
+    const fails = r.results.filter((t) => t.status === 'fail')
+      .map((t) => `- ❌ ${t.name}${t.error ? ' — ' + t.error : ''}`).join('\n');
+    pushAssistantMessage(
+      rootEl,
+      `### 🧪 Auto-tests — ${r.passed}/${r.total} OK\n\n`
+      + `✅ ${r.passed} · ❌ ${r.failed} · ⏭ ${r.skipped} · ${(r.durationMs / 1000).toFixed(1)} s`
+      + `${fails ? '\n\n' + fails : ''}`,
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    pushAssistantMessage(rootEl, `⚠️ Erreur test : ${msg}`);
   }
 }
 

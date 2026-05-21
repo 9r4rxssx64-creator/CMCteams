@@ -1,7 +1,7 @@
 {
   "name": "apex-v13",
   "private": true,
-  "version": "13.4.249",
+  "version": "13.4.251",
   "type": "module",
   "description": "APEX AI v13 — Rebuild propre niveau entreprise commercialisable",
   "scripts": {
@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@lhci/cli": "^0.14.0",
-    "@playwright/test": "^1.49.0",
+    "@playwright/test": "1.56.0",
     "@size-limit/preset-app": "^11.1.0",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
