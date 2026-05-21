@@ -19,8 +19,8 @@ type StreamFn = (
   onError?: (err: Error) => void,
 ) => Promise<void>;
 
-vi.mock('../../services/ai-router.js', async () => {
-  const actual = await vi.importActual<typeof import('../../services/ai/ai-router.js')>('../../services/ai-router.js');
+vi.mock('../../services/ai/ai-router.js', async () => {
+  const actual = await vi.importActual<typeof import('../../services/ai/ai-router.js')>('../../services/ai/ai-router.js');
   return {
     ...actual,
     aiRouter: {

@@ -14,8 +14,8 @@ const { mockAiRouter, mockAuditLog } = vi.hoisted(() => ({
   mockAuditLog: { record: vi.fn() },
 }));
 
-vi.mock('../../services/ai-router.js', () => ({ aiRouter: mockAiRouter }));
-vi.mock('../../services/audit-log.js', () => ({ auditLog: mockAuditLog }));
+vi.mock('../../services/ai/ai-router.js', () => ({ aiRouter: mockAiRouter }));
+vi.mock('../../services/observability/audit-log.js', () => ({ auditLog: mockAuditLog }));
 
 import { crewExperts, type CrewMember } from '../../services/ai/crew-experts.js';
 

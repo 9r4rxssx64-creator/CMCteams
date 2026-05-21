@@ -11,7 +11,7 @@ vi.mock('../../core/logger.js', () => ({
 }));
 
 const authIsAdminSyncMock = vi.fn();
-vi.mock('../../services/auth.js', () => ({
+vi.mock('../../services/auth/auth.js', () => ({
   auth: { isAdminSync: () => authIsAdminSyncMock() },
 }));
 

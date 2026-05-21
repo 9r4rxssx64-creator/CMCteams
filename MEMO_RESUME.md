@@ -1,4 +1,19 @@
-# Mémo de reprise — Apex v13.4.243 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+# Mémo de reprise — Apex v13.4.244 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-21)
+
+## 🧪 SESSION 2026-05-21 — Réparation complète suite de tests Apex v13 (v13.4.244)
+
+Suite `claude/fix-firebase-backup-tests-oTgtn`. Demande Kevin « répare tout ce qui est cassé ».
+État initial : **69 fichiers de tests cassés / 649 tests rouges** (collatéral du chantier 1
+de restructure `services/`). État final : **564 fichiers, 11825 tests — 100% verts**.
+
+- **68 fichiers de tests** réalignés : `vi.mock` / imports / `readFileSync` pointaient les
+  anciens chemins plats `services/<x>.js` disparus → chemins domaines (`services/<domaine>/`).
+- **wake-word fresh-instance** (`voice-print.ts` + `wake-word.ts`) : le restart `onend`
+  réutilisait l'instance SpeechRecognition morte → désormais instance neuve à chaque restart
+  (extraction `_buildWakeRecognition` / `_buildRecognition`). Corrige le wake-word iOS qui
+  mourait après 1 cycle (cf. CLAUDE.md erreurs #62, #63).
+- Vérifié : `tsc --noEmit` clean, `vite build` OK, suite complète 11825/11825 verte.
+- Reste : dette lint `import/order` pré-existante (chantier 1) — non bloquante pour le build.
 
 ## 🔧 SESSION 2026-05-20 (soir 3) — Fix Firebase backup KO + auto-test qui se bloque (v13.4.243)
 

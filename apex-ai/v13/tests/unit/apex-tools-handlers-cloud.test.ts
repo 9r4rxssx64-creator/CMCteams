@@ -11,7 +11,7 @@ import {
   handleVercelTask,
 } from '../../services/apex-tools-handlers/cloud.js';
 
-vi.mock('../../services/vault.js', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: { readKey: vi.fn() },
 }));
 

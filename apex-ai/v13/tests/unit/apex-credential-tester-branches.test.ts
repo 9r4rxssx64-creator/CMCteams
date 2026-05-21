@@ -14,7 +14,7 @@ const { mockVault } = vi.hoisted(() => ({
   mockVault: { readKey: vi.fn() },
 }));
 
-vi.mock('../../services/vault.js', () => ({ vault: mockVault }));
+vi.mock('../../services/vault/vault.js', () => ({ vault: mockVault }));
 
 import {
   testRuntime,

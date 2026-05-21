@@ -166,6 +166,85 @@ class WakeWord {
   }
 
   /**
+   * v13.4.243 — Construit une instance SpeechRecognition fraîche, entièrement
+   * câblée (onresult / onerror / onend). Pattern "fresh instance" : sur iOS
+   * Safari, ré-appeler `.start()` sur une instance déjà passée par `onend`
+   * échoue silencieusement (instance morte). Le restart DOIT créer une
+   * nouvelle instance (cf. CLAUDE.md Erreur #43).
+   */
+  private _buildRecognition(): MinimalSpeechRecognition {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) throw new Error('SpeechRecognition indisponible');
+    const rec = new Ctor();
+    rec.continuous = !isiOS(); /* iOS Safari : continuous instable */
+    rec.interimResults = true;
+    rec.lang = 'fr-FR';
+
+    rec.onresult = (event) => {
+      const results = event.results;
+      for (let i = 0; i < results.length; i++) {
+        const transcript = (results[i]?.[0]?.transcript ?? '').toLowerCase();
+        pushVoiceLog({
+          ts: Date.now(),
+          evt: 'interim',
+          src: 'wake-word-svc',
+          detail: transcript.slice(0, 80),
+        });
+        if (this.keywordRegex.test(transcript)) {
+          this.handleWakeDetected(transcript);
+        }
+      }
+      /* reset no-speech compteur dès qu'on a un résultat */
+      this.noSpeechRetries = 0;
+    };
+
+    rec.onerror = (event) => {
+      const err = event.error ?? 'unknown';
+      pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word-svc', detail: err });
+      if (err === 'no-speech') {
+        this.noSpeechRetries++;
+        if (this.noSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
+          logger.warn('wake-word', 'Trop de no-speech consécutifs, stop pour éviter drain batterie');
+          pushVoiceLog({
+            ts: Date.now(),
+            evt: 'suspend',
+            src: 'wake-word-svc',
+            detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
+          });
+          this.stop();
+        }
+        return;
+      }
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        logger.warn('wake-word', 'Permission micro refusée');
+        pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word-svc', detail: 'denied' });
+        this.stop();
+        return;
+      }
+      /* aborted, network, audio-capture : recovery via onend (silencieux) */
+    };
+
+    rec.onend = () => {
+      pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word-svc' });
+      if (!this.listening) return;
+      /* Restart sur iOS (continuous=false) ou recovery erreur — instance fraîche */
+      setTimeout(() => {
+        if (!this.listening) return;
+        try {
+          const fresh = this._buildRecognition();
+          this.recognition = fresh;
+          fresh.start();
+          pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word-svc' });
+        } catch {
+          /* ignore double-start race InvalidStateError */
+        }
+      }, RESTART_DELAY_MS);
+    };
+
+    return rec;
+  }
+
+  /**
    * Active listening continu. Demande permission micro implicitement via Web Speech API.
    */
   async start(): Promise<WakeStartResult> {
@@ -179,69 +258,7 @@ class WakeWord {
       return { started: false, reason: 'Web Speech API non supportée sur ce navigateur' };
     }
     try {
-      const rec = new Ctor();
-      rec.continuous = !isiOS(); /* iOS Safari : continuous instable */
-      rec.interimResults = true;
-      rec.lang = 'fr-FR';
-
-      rec.onresult = (event) => {
-        const results = event.results;
-        for (let i = 0; i < results.length; i++) {
-          const transcript = (results[i]?.[0]?.transcript ?? '').toLowerCase();
-          pushVoiceLog({
-            ts: Date.now(),
-            evt: 'interim',
-            src: 'wake-word-svc',
-            detail: transcript.slice(0, 80),
-          });
-          if (this.keywordRegex.test(transcript)) {
-            this.handleWakeDetected(transcript);
-          }
-        }
-        /* reset no-speech compteur dès qu'on a un résultat */
-        this.noSpeechRetries = 0;
-      };
-
-      rec.onerror = (event) => {
-        const err = event.error ?? 'unknown';
-        pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word-svc', detail: err });
-        if (err === 'no-speech') {
-          this.noSpeechRetries++;
-          if (this.noSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
-            logger.warn('wake-word', 'Trop de no-speech consécutifs, stop pour éviter drain batterie');
-            pushVoiceLog({
-              ts: Date.now(),
-              evt: 'suspend',
-              src: 'wake-word-svc',
-              detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
-            });
-            this.stop();
-          }
-          return;
-        }
-        if (err === 'not-allowed' || err === 'service-not-allowed') {
-          logger.warn('wake-word', 'Permission micro refusée');
-          pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word-svc', detail: 'denied' });
-          this.stop();
-          return;
-        }
-        /* aborted, network, audio-capture : recovery via onend (silencieux) */
-      };
-
-      rec.onend = () => {
-        pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word-svc' });
-        if (!this.listening) return;
-        /* Restart sur iOS (continuous=false) ou recovery erreur */
-        setTimeout(() => {
-          if (!this.listening) return;
-          try {
-            rec.start();
-            pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word-svc' });
-          } catch {
-            /* ignore double-start race InvalidStateError */
-          }
-        }, RESTART_DELAY_MS);
-      };
+      const rec = this._buildRecognition();
 
       this.recognition = rec;
       this.listening = true;

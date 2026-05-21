@@ -15,7 +15,7 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
 
   it('list() returning non-array → status ok skipped (no crash)', async () => {
     /* Mock persistent-memory-store list() retournant un objet (pas array) */
-    vi.doMock('../../services/persistent-memory-store.js', () => ({
+    vi.doMock('../../services/storage/persistent-memory-store.js', () => ({
       persistentMemory: {
         list: async () => ({ broken: 'not_an_array' }),
         remove: async () => true,
@@ -40,7 +40,7 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
   });
 
   it('list() throwing (IDB closed) → status ok skipped (no crash)', async () => {
-    vi.doMock('../../services/persistent-memory-store.js', () => ({
+    vi.doMock('../../services/storage/persistent-memory-store.js', () => ({
       persistentMemory: {
         list: async () => { throw new Error('IDB closed'); },
         remove: async () => true,
@@ -63,7 +63,7 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
   });
 
   it('module persistent-memory-store missing/null → status ok skipped', async () => {
-    vi.doMock('../../services/persistent-memory-store.js', () => ({
+    vi.doMock('../../services/storage/persistent-memory-store.js', () => ({
       persistentMemory: null,
     }));
     const sentinelsMod = await import('../../services/sentinels/sentinels.js');
@@ -81,7 +81,7 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
   });
 
   it('list method missing on persistentMemory → status ok skipped', async () => {
-    vi.doMock('../../services/persistent-memory-store.js', () => ({
+    vi.doMock('../../services/storage/persistent-memory-store.js', () => ({
       persistentMemory: {
         /* Pas de list() */
         remove: async () => true,
@@ -102,7 +102,7 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
   });
 
   it('list() retournant array vide → ok + 0 facts', async () => {
-    vi.doMock('../../services/persistent-memory-store.js', () => ({
+    vi.doMock('../../services/storage/persistent-memory-store.js', () => ({
       persistentMemory: {
         list: async () => [],
         remove: async () => true,
@@ -124,7 +124,7 @@ describe('memory-watch null safety (Kevin v13.3.36 P1 crash fix)', () => {
   });
 
   it('entries avec scope manquant ne crashent pas', async () => {
-    vi.doMock('../../services/persistent-memory-store.js', () => ({
+    vi.doMock('../../services/storage/persistent-memory-store.js', () => ({
       persistentMemory: {
         list: async () => [
           { scope: 'kevin', importance: 50, id: 'a' },

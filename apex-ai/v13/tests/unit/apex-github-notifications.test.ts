@@ -14,13 +14,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apexGithubNotifications } from '../../services/integrations/apex-github-notifications';
 
-vi.mock('../../services/auth', () => ({
+vi.mock('../../services/auth/auth.js', () => ({
   auth: {
     isAdminSync: vi.fn(() => false), /* default non-admin */
   },
 }));
 
-vi.mock('../../services/vault', () => ({
+vi.mock('../../services/vault/vault.js', () => ({
   vault: {
     readKey: vi.fn(async () => ''), /* default no token */
   },
