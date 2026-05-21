@@ -18,6 +18,21 @@ import {
   type LayoutHistoryEntry,
   reportsHistory,
 } from '../../../services/admin/apex-reports-history.js';
+import { toast } from '../../../ui/toast.js';
+
+/**
+ * v13.4.245 — Course la promesse contre un timeout. Garde-fou contre un
+ * scan async qui ne se résout jamais (la cause sync confirm()/prompt() est
+ * traitée en amont dans apex-functional-tester, ceci couvre le reste).
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} : délai dépassé (${Math.round(ms / 1000)}s)`)), ms),
+    ),
+  ]);
+}
 
 type Severity = 'critical' | 'warning' | 'ok';
 type ViewCategory = 'chat' | 'admin' | 'settings' | 'vault' | 'studio' | 'memory' | 'other';
@@ -489,25 +504,51 @@ export function render(rootEl: HTMLElement): void {
   rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-functional')?.addEventListener('click', () => {
     void (async () => {
       const btn = rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-functional');
-      if (btn) btn.disabled = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Test…';
+      }
       try {
         const { apexFunctionalTester } = await import('../../../services/admin/apex-functional-tester.js');
-        const out = await apexFunctionalTester.testAndAutoFix({ maxButtons: 30 });
+        /* v13.4.245 (FIX "test bloqué" + "scan sans résultat") :
+         * timeout 90s + erreur RÉELLEMENT affichée (avant : catch silencieux
+         * → aucun résultat, aucun message, bouton figé à vie). */
+        const out = await withTimeout(
+          apexFunctionalTester.testAndAutoFix({ maxButtons: 30 }),
+          90_000,
+          'Test fonctionnel',
+        );
         reportsHistory.recordFunctional(out.before, out.fixes, out.after, out.improvement);
-        render(rootEl);
-      } catch { /* ignore */ }
-      if (btn) btn.disabled = false;
+        toast.success(`🧪 Test terminé : ${out.before.ok}/${out.before.tested} OK`);
+        render(rootEl); /* re-render → bouton recréé propre */
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error(`Test fonctionnel KO — ${msg}`);
+        const liveBtn = rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-functional');
+        if (liveBtn) {
+          liveBtn.disabled = false;
+          liveBtn.textContent = '🧪 Tester';
+        }
+      }
     })();
   });
 
   rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-layout')?.addEventListener('click', () => {
     void (async () => {
+      const btn = rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-layout');
+      if (btn) btn.disabled = true;
       try {
         const { apexLayoutInspector } = await import('../../../services/admin/apex-layout-inspector.js');
         const r = apexLayoutInspector.scanDom();
         reportsHistory.recordLayout(r);
+        toast.success(`📐 Scan layout : ${r.hiddenButtons.length} bouton(s) caché(s)`);
         render(rootEl);
-      } catch { /* ignore */ }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error(`Scan layout KO — ${msg}`);
+        const liveBtn = rootEl.querySelector<HTMLButtonElement>('#ax-audits-run-layout');
+        if (liveBtn) liveBtn.disabled = false;
+      }
     })();
   });
 
