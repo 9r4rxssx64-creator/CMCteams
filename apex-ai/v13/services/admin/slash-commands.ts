@@ -87,6 +87,15 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'pdf', emoji: '📕', description: 'Studio PDF', argsHint: '', route: 'studio-pdf' },
   { name: 'prefecture', emoji: '🏛', description: 'Studio dossier préfecture', argsHint: '', route: 'studio-prefecture' },
   { name: 'presentation', emoji: '📑', description: 'Studio présentation', argsHint: '', route: 'studio-presentation' },
+  /* v13.4.252 — commandes demandées par Kevin */
+  { name: 'team-onboarding', emoji: '👥', description: 'Ouvre l\'accueil / onboarding équipe', argsHint: '', route: 'onboarding' },
+  { name: 'skill-creator', emoji: '🛠', description: 'Ouvre les skills Apex (catalogue 2026)', argsHint: '', route: 'skills-2026' },
+  { name: 'schedule', emoji: '🗓', description: 'Ouvre l\'agenda / planification', argsHint: '', route: 'calendar' },
+  { name: 'remote-control', emoji: '📡', description: 'Ouvre la télécommande universelle', argsHint: '', route: 'remote' },
+  { name: 'chrome', emoji: '🖥', description: 'Ouvre le navigateur intégré (Apex Chrome)', argsHint: '', route: 'browser' },
+  { name: 'resume', emoji: '▶️', description: 'Reprend la boucle autonome en pause', argsHint: '' },
+  { name: 'statusline', emoji: '📟', description: 'Affiche l\'état d\'Apex (version, IA, boucle, conv)', argsHint: '' },
+  { name: 'ooda', emoji: '🎯', description: 'Analyse OODA (Observe-Orient-Decide-Act) d\'un objectif', argsHint: '<objectif>', requiresArgs: true },
 ];
 
 export interface SlashParseResult {
