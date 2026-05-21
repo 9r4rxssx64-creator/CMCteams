@@ -484,6 +484,8 @@ body.a11y-focus-strong :focus-visible{outline:3px solid #ffdc40!important;outlin
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(201,162,39,.18);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(201,162,39,.35)}
+/* v9.727 selection texte couleurs de marque (coherence Apex, skill apex-taste) */
+::selection{background:var(--cmc-gold-soft);color:inherit}
 /* === DIAPORAMA FOND D'\u00c9CRAN (v9.51) === */
 /* 2 couches qui alternent avec crossfade 1.2s toutes les 5 secondes */
 .bg-slide{
@@ -5323,7 +5325,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.726";
+var APP_VER="v9.727";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
