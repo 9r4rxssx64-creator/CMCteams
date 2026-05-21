@@ -1412,6 +1412,28 @@ function learnNewCode(code){
 var CK; // reconstruit apr\u00e8s fusion
 function _rebuildCK(){CK=Object.keys(CODES);}
 _rebuildCK();
+// v9.726 \u2014 REPRODUCTION \u00c0 L'IDENTIQUE (Kevin 2026-05-21) : pr\u00e9serve les suffixes
+// ' et " (sens m\u00e9tier \u2014 jour de Convention). Si le code est <base>+quotes, que
+// la base est connue mais que la variante suffix\u00e9e n'existe pas \u2192 clone l'entr\u00e9e
+// CODES de base (m\u00eame horaire/couleur) et la persiste. Retourne le code variante
+// \u00e0 stocker, ou null si non applicable (le parser strippe alors normalement).
+function _cmcEnsureQuoteVariant(tok){
+  var m=String(tok==null?"":tok).match(/^(.+?)(['"]+)$/);
+  if(!m)return null;
+  var base=m[1],variant=base+m[2];
+  if(CODES[variant])return variant;
+  if(!CODES[base])return null;
+  try{
+    var ent=Object.assign({},CODES[base],{conv:true,learned:true});
+    CODES[variant]=ent;
+    if(typeof _learnedCodes==="object"&&_learnedCodes){
+      _learnedCodes[variant]=ent;
+      try{ls("cmc_learned_codes",_learnedCodes);}catch(_p){}
+    }
+    if(typeof _rebuildCK==="function")_rebuildCK();
+  }catch(_e){return null;}
+  return variant;
+}
 var TC={
   "1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830",
   "6":"#b89020","7":"#3a62a0","8":"#2a7a40","9":"#984060","10":"#a86820",
@@ -5323,7 +5345,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.725";
+var APP_VER="v9.726";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35915,11 +35937,9 @@ function parseCMCPlanningFromItems(allItems, year, month){
       if(d<bestDist){bestDist=d;bestEmp=el.empName;}
     });
     if(bestEmp){
-      var empObj=A.employees.find(function(e){return e.name===bestEmp;});
-      // Auto-upgrade CDP selon profil employe
-      if(empObj&&!code.endsWith("*")&&CDP_MAP[code]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(code)>=0){
-        code=CDP_MAP[code];
-      }
+      // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : pas d'auto-upgrade CDP
+      // selon le profil cdpShifts. Le code stocké = le code brut du PDF. Le *
+      // n'est posé que s'il est présent dans le PDF (marque CDP voisine ci-dessus).
       planning[bestEmp][day]=code;
     }
   });
@@ -37587,6 +37607,9 @@ function doImport(){
       var _ac=null;
       // Tentative 1 : lookup direct avec apostrophes/quotes pr\u00e9serv\u00e9s (CDP/CONV)
       if(_acRaw&&CODES[_acRaw])_ac=_acRaw;
+      // v9.726 \u2014 Tentative 1bis : pr\u00e9server le suffixe ' / " (Convention) via
+      // clone de l'entr\u00e9e CODES de base (reproduction \u00e0 l'identique).
+      if(!_ac){var _qvA=_cmcEnsureQuoteVariant(_acRaw.replace(/[:;]+$/,""));if(_qvA)_ac=_qvA;}
       // Tentative 2 : strip suffixes :; et quotes finaux
       if(!_ac){
         var _acT2=_acRaw.replace(/[\"'`]+$/,"").replace(/[:;]+$/,"");
@@ -37657,7 +37680,8 @@ function doImport(){
       if(!_ac||!CODES[_ac]){if(_ac)_importSkipped++;continue;}
       var _adn=_curFDay+(_ai-_curBase);
       if(_adn<1||_adn>days)continue;
-      if(!_ac.endsWith("*")&&CDP_MAP[_ac]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(_ac)>=0)_ac=CDP_MAP[_ac];
+      // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : pas d'auto-upgrade CDP
+      // selon le profil cdpShifts. Le * n'est posé que via une marque PDF réelle.
       // v9.67 — Appliquer automatiquement le tag couleur PDF
       if(_pdfTag){
         if(_pdfTag==="CDP"&&CDP_MAP[_ac.replace(/[*']/g,"")])_ac=CDP_MAP[_ac.replace(/[*']/g,"")];
@@ -38458,6 +38482,10 @@ function doImport(){
       // chefs BJ détectés comme roulettes. Fix identique v9.712 : préserver le
       // 'c', cloner l'entrée CODES de base (même horaire/couleur) + flag chef.
       if(!CODES[code]){
+        // v9.726 — préserver le suffixe ' / " (Convention) AVANT tout strip
+        var _qvG=_cmcEnsureQuoteVariant(code.replace(/[:;]+$/,""));
+        if(_qvG){code=_qvG;}
+        else{
         var c2=code.replace(/"'/g,"'");
         if(c2!==code&&CODES[c2]){code=c2;}
         else{
@@ -38480,6 +38508,7 @@ function doImport(){
             }
           }
         }
+        }
       }
       // Alias codes courants mal formatés dans certains exports PDF
       if(!CODES[code]){
@@ -38490,10 +38519,8 @@ function doImport(){
           "20/5CDP":"20/5*","19/4CDP":"19/4*","16/3CDP":"16/3*","16/22CDP":"16/22*"};
         if(_cAlias[code])code=_cAlias[code];
       }
-      // Auto-upgrade CDP
-      if(!code.endsWith("*")&&CDP_MAP[code]&&emp.cdpShifts&&emp.cdpShifts.indexOf(code)>=0){
-        code=CDP_MAP[code];
-      }
+      // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : pas d'auto-upgrade CDP
+      // selon le profil cdpShifts. Le * n'est posé que via une marque PDF réelle.
       var dayNum=fromDay+(di-codesStart); // offset depuis le jour de debut de la (sous-)période
       if(dayNum<1||dayNum>days) continue;
       // v9.142 — Auto-apprentissage + ne PAS ignorer les codes horaires
@@ -38615,8 +38642,12 @@ function doImport(){
         });
         var exactCode=(cdpFreq*2>baseCnt)?best+"*":best;
         toFill.forEach(function(emp){
-          var isOutlier=outlierIds.indexOf(emp.id)>=0;
-          if(!isOutlier&&(A.overrides[key][emp.id]||{})[d]) return;
+          // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : le consensus d'équipe
+          // ne REMPLIT que les cellules vides, il n'écrase JAMAIS une cellule
+          // déjà parsée depuis le PDF. Un employé mal parsé = bug parser à
+          // corriger, pas à masquer par un consensus (qui peut être décalé —
+          // ex. HAREL écrasé par la rotation miroir, bug v8.57).
+          if((A.overrides[key][emp.id]||{})[d]) return;
           if(!A.overrides[key][emp.id]) A.overrides[key][emp.id]={};
           A.overrides[key][emp.id][d]=exactCode;
           if(!refData.rows[emp.id]) refData.rows[emp.id]={};
