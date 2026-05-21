@@ -1,7 +1,25 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-20 soir** (Architecture Apex v238→v240 : routes câblées + regroupées)
+> Dernière mise à jour : **2026-05-21** (Revue UI/UX pro-expert — 4 apps)
+
+## 🎨 SESSION 2026-05-21 — Revue UI/UX pro-expert (branche claude/apex-ui-ux-pro-review-6am3n)
+
+Aucun fichier créé — uniquement des modifications (a11y + polish). Fichiers touchés :
+
+- **Apex v13** (`apex-ai/v13/`) : `assets/css/base.css` (focus-visible + ::selection),
+  `index.html` (viewport zoom), `assets/js/rescue.js` (initAntiZoom retiré),
+  `tests/unit/v13_4_95-iphone-ux-regression.test.ts` (mis à jour),
+  `assets/css/ux-overrides.css` **supprimé** (CSS mort), 132 fichiers .ts/.cjs
+  réordonnés (lint import/order), `core/bootstrap.ts` + `sw.js` + `package.json` (v13.4.249).
+- **CMCteams** : `index.html` + `sw.js` (::selection, v9.727).
+- **e-KDMC** : `dashboard/index.html` + `stores/{glow-wellness,ecocraft,digital-vault,pawsome,tech-hub}/index.html`
+  (focus-visible + ::selection, 6 fichiers).
+- **Apex Chat** (`messaging-app/`) : `index.html` + `sw.js` (zoom + ::selection, v1.1.147).
+
+6 commits sur la branche, mergés vers main le 2026-05-21.
+
+---
 
 ## 🏛 SESSION 2026-05-20 soir 2 — Architecture Apex v13
 

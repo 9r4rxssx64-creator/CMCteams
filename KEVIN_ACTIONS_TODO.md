@@ -1,5 +1,23 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🎨 TESTS VISUELS EN RÉEL — revue UI/UX (2026-05-21)
+
+> Session UI/UX pro-expert mergée vers main (6 commits, 4 apps). Le sandbox ne
+> peut pas lancer de navigateur → validation visuelle à faire « en réel ».
+
+**À tester sur iPhone après déploiement :**
+1. **Zoom utilisateur** réactivé sur Apex v13 + Apex Chat — vérifier que le
+   pinch-zoom marche ET que l'app ne « saute » pas / ne zoome pas toute seule.
+2. **`::selection`** (Apex, CMCteams, e-KDMC, Apex Chat) — sélection de texte
+   lisible (teinte de marque).
+3. **Focus clavier** (e-KDMC 6 pages, Apex) — anneau visible en navigation Tab.
+
+**Reste à faire (session avec navigateur) :** états vides/loading Apex,
+tokenisation des ~1360 styles inline Apex, revue du monolithe CMCteams (3 MB),
+2 lint `import/order` structurels + 9 warnings `no-console` pré-existants Apex.
+
+---
+
 ## 🧩 SKILLS & COMMANDES CLAUDE CODE — vues TikTok (2026-05-20)
 
 > Kevin a partagé des contenus TikTok présentant 5 skills + 5 commandes Claude
