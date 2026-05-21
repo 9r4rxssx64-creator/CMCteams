@@ -2853,3 +2853,18 @@ S'applique : Apex IA dans son auto-correction, Claude Code dans mes commits, tou
 - ✅ KEVIN_INVENTORY.md + MEMO_RESUME.md + CLAUDE.md à jour
 - ✅ Auto-merge bot main (pas push direct)
 - ✅ 0 régression
+
+---
+
+## Session 2026-05-21 — Installation outils TikTok dans Apex (branche claude/apex-installation-setup-VCzUl)
+
+Kevin a envoyé ~30 captures TikTok (DeepSeek-Coder-V2, superpowers, claude-mem, impeccable, ui-ux-pro-max, taste, thinking-styles, claw-code, outils piratage...). Demande : "Installe tout dans Apex, fonctionnel, qu'il s'en serve auto."
+
+**Triage honnête fait** : la majorité existait déjà (apex-impeccable-design, apex-frontend-design, apex-superpowers, apex-claude-mem, claude-mem-bridge.ts, DeepSeek provider). Écarté : claw-code (signal arnaque), outils piratage (hors sujet), gamedev Windows.
+
+**Livré (vrais manques comblés)** :
+- `.claude/commands/` — 10 slash-commands thinking-styles : analyst, critic, optimizer, simplify, eli5, deepdive, compare, proscons, firstprinciples, contrarian.
+- `.claude/skills/apex-ui-ux-pro-max.md` — système de design (familles de styles, construction palette, 99 règles UX condensées).
+- `.claude/skills/apex-taste.md` — heuristiques de goût layout/typo/couleur/mouvement.
+- `.claude/skills/apex-superpowers.md` — enrichi de 6 → 14 méthodologies.
+- `apex-ai/v13/core/memory.ts` — directive DeepSeek = spécialiste code dans le system prompt Apex (auto-routing code → provider deepseek). Nécessite build/deploy CI pour passer en prod.

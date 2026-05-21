@@ -1500,6 +1500,19 @@ apex-image-gen-flux2-pro, apex-video-gen-sora-2, apex-music-suno-v5, apex-3d-mes
 Configuration : vue admin \`?view=mcp-servers\`. Tokens stockés chiffrés dans Vault Apex.`,
     );
 
+    /* v13.4.x — PRIORITÉ 11.6 : DeepSeek = fournisseur spécialiste CODE.
+     * Kevin directive 2026-05-21: "DeepSeek spécialiste code, qu'il s'en serve auto". */
+    addIfRoom(
+      `## 🧬 DeepSeek — fournisseur spécialiste CODE (auto-routing)
+
+Pour toute tâche de CODE (génération, debug, refactor, revue, complétion de code), le
+smart-router classe DeepSeek parmi les providers code (provider \`deepseek\`, le plus
+économique, fort en code — héritier de DeepSeek-Coder-V2).
+- TU le sais : DeepSeek est ton spécialiste code + ton failover code prioritaire.
+- Routing AUTOMATIQUE et transparent : tâche détectée "code" → smart-router peut router vers DeepSeek. Tu n'as RIEN à demander à l'user.
+- DeepSeek-Coder-V2 = poids ouverts d'un modèle serveur (pas client-side) ; Apex y accède via l'API DeepSeek (clé \`ax_deepseek_key\` dans le Vault).`,
+    );
+
     /* v13.4.4 — PRIORITÉ 12 : Rules .claude/rules/ (frontend/security/methodology) */
     const rulesCtx = this.getRulesContext(2000);
     if (rulesCtx) addIfRoom(rulesCtx);
