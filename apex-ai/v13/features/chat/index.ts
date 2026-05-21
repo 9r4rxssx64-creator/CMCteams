@@ -1024,6 +1024,15 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
   const cmd = parsed.command;
   if (!cmd) return false;
   const args = parsed.args ?? '';
+  /* v13.4.250 — commandes de navigation : champ `route` -> handler générique */
+  if (cmd.route) {
+    try {
+      store.set('view', cmd.route);
+    } catch {
+      toast.info('Ouvre la section depuis le menu');
+    }
+    return true;
+  }
   switch (cmd.name) {
     case 'help':
       pushAssistantMessage(rootEl, helpText());
