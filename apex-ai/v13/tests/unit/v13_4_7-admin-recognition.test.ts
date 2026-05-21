@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { memory } from '../../core/memory';
+import { memory } from '../../core/memory.js';
 
 describe('v13.4.7 — Admin Kevin reconnaissance + wake word', () => {
   beforeEach(() => {

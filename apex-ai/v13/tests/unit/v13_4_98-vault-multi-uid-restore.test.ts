@@ -14,7 +14,7 @@ import { resolve } from 'node:path';
 const ROOT = resolve(import.meta.dirname, '../..');
 
 describe('v13.4.98 vault-firebase-backup multi-uid fallback', () => {
-  const src = readFileSync(resolve(ROOT, 'services/vault-firebase-backup.ts'), 'utf-8');
+  const src = readFileSync(resolve(ROOT, 'services/vault/vault-firebase-backup.ts'), 'utf-8');
 
   it("getUid() fallback ADMIN_KEVIN_UID si pin admin présent", () => {
     expect(src).toContain("const ADMIN_KEVIN_UID = 'kdmc_admin'");

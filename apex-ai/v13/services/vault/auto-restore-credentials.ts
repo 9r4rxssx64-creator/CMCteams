@@ -29,8 +29,9 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
+import { FB_FIX } from '../storage/firebase.js';
+
 import {
   computeStats,
   getCriticality,
@@ -40,7 +41,6 @@ import {
   type CredentialCriticality,
 } from './credential-categories.js';
 import { detectCredential, CREDENTIAL_PATTERNS } from './credential-patterns.js';
-import { FB_FIX } from '../storage/firebase.js';
 
 /* ============================================================
    Notification throttling (Kevin règle 2026-05-08 : pas de spam)

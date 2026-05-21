@@ -15,7 +15,7 @@ const { mockStore, mockApexSecretsProxy } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../core/store.js', () => ({ store: mockStore }));
-vi.mock('../../services/apex-secrets-proxy-client.js', () => ({
+vi.mock('../../services/integrations/apex-secrets-proxy-client.js', () => ({
   apexSecretsProxy: mockApexSecretsProxy,
 }));
 

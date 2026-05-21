@@ -12,7 +12,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import {
   dispatchCodeReview,
   dispatchFuturisticModuleInvoke,
@@ -89,9 +88,10 @@ import {
   wikipediaLookup,
   youtubeSearch,
 } from '../apex-tools-dispatch/utils-misc.js';
-import { apexTools, type ApexTool } from './apex-tools.js';
-import { auditLog } from '../observability/audit-log.js';
 import { guardToolEnabled } from '../auth/feature-guard.js';
+import { auditLog } from '../observability/audit-log.js';
+
+import { apexTools, type ApexTool } from './apex-tools.js';
 import { orchestrator } from './orchestrator.js';
 
 /**
@@ -265,6 +265,25 @@ class ApexToolsDispatcher {
     userTier: ApexTool['minTier'] = 'client_free',
     options: { skipValidation?: boolean } = {},
   ): Promise<ToolExecResult> {
+    /* v13.4.246 — Re-vérification admin autoritaire (audit sécurité).
+       Le `userTier` reçu de l'appelant n'est PAS fiable : features/chat passe
+       un 'admin' hardcodé et resolveUserTier() (ai-router) lit un JSON
+       localStorage non signé. On re-dérive l'admin depuis auth.isAdminSync()
+       — source unique partagée avec les guards router/UI. Un appelant qui
+       réclame 'admin' sans l'être est rétrogradé à 'client_free' (fail-closed)
+       → les tools impact-C repassent alors par la validation explicite.
+       Limite honnête : app 100% client → un utilisateur avec DevTools peut
+       toujours forger `apex_v13_user`. Ce contrôle élimine les chemins
+       divergents/hardcodés (vrai bug), pas l'auto-spoof. Les tools réellement
+       destructeurs restent protégés par le coffre (PAT chiffré) + validation. */
+    if (userTier === 'admin') {
+      try {
+        const { auth } = await import('../auth/auth.js');
+        if (!auth.isAdminSync()) userTier = 'client_free';
+      } catch {
+        userTier = 'client_free';
+      }
+    }
     /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout).
        Si le tool est mappé sur un toggle et que toggle = OFF → refuse. */
     const toggleId = TOOL_TOGGLE_MAP[toolName];

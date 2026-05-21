@@ -79,6 +79,8 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; k
 class Vault {
   private passphrase: string | null = null;
   private watchStarted = false;
+  /* v13.4.246 — handle du poll 30s stocké pour être clearable (audit perf : timer zombie). */
+  private credWatchInterval: ReturnType<typeof setInterval> | null = null;
 
   setPassphrase(passphrase: string): void {
     /* v13.3.21 : si une passphrase user était déjà set ET différente,
@@ -159,8 +161,9 @@ class Vault {
       } catch { return false; }
     };
     /* v13.4.8 fix C6 — batch les 8 lectures dans UNE seule transaction IDB
-     * (au lieu de 8 opens séparés). Réduit la fréquence d'open de 960/h → 120/h. */
-    setInterval(() => {
+     * (au lieu de 8 opens séparés). Réduit la fréquence d'open de 960/h → 120/h.
+     * v13.4.246 : handle stocké → clearable via stopCredentialsWatch(). */
+    this.credWatchInterval = setInterval(() => {
       void (async () => {
         try {
           const keysToCheck: string[] = [];
@@ -203,6 +206,18 @@ class Vault {
       } catch { /* skip */ }
     })();
     logger.info('vault-watch', '✅ Credentials watch started (storage event + poll 30s + boot restore)');
+  }
+
+  /**
+   * v13.4.246 — arrête le poll 30s du credentials-watch (cleanup / teardown / HMR).
+   * Idempotent. Permet de relancer proprement via startCredentialsWatch().
+   */
+  stopCredentialsWatch(): void {
+    if (this.credWatchInterval !== null) {
+      clearInterval(this.credWatchInterval);
+      this.credWatchInterval = null;
+    }
+    this.watchStarted = false;
   }
 
   async deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {

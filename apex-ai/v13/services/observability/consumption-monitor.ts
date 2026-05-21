@@ -20,10 +20,10 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { auditLog } from './audit-log.js';
 import { linksRegistry } from '../integrations/links-registry.js';
 import { pushNotifications } from '../integrations/push-notifications.js';
+
+import { auditLog } from './audit-log.js';
 import { tokensDashboard } from './tokens-dashboard.js';
 
 export type ConsumptionSeverity = 'ok' | 'warn' | 'critical';

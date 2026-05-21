@@ -12,7 +12,7 @@ import {
   renderSkeleton,
   renderSkeletonHTML,
   skeleton,
-} from '../../ui/skeleton';
+} from '../../ui/skeleton.js';
 
 describe('ui/skeleton.ts (v13.4.217 coverage)', () => {
   it('renderSkeleton({shape:"line"}) retourne HTML avec ax-skel', () => {

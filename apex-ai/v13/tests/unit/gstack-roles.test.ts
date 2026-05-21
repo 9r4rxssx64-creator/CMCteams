@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { gstackRoles } from '../../services/core-svc/gstack-roles.js';
 
-vi.mock('../../services/ai-router.js', () => ({
+vi.mock('../../services/ai/ai-router.js', () => ({
   aiRouter: {
     stream: vi.fn().mockImplementation((_msgs: unknown, sys: string, onChunk: (c: { text?: string }) => void) => {
       /* Réponse mock dépend du rôle (system prompt) */

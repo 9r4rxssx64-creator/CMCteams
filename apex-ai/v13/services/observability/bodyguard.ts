@@ -8,9 +8,9 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { storageCompressor } from '../storage/storage-compressor.js';
 
 import { auditLog } from './audit-log.js';
-import { storageCompressor } from '../storage/storage-compressor.js';
 
 const CSP_VIOLATIONS_KEY = 'ax_csp_violations_log';
 const CSP_VIOLATIONS_CAP = 100;

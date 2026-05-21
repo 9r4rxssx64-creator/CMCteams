@@ -33,6 +33,11 @@ paths = [
   '''apex-ai/v13/services/credential-patterns\.ts''',
   '''apex-ai/v13/tests/.*\.test\.ts''',
   '''apex-ai/v13/services/apex-smart-classifier\.ts''',
+  # Build output mirror déployé (généré depuis apex-ai/v13/dist/ — la source
+  # reste scannée). Les chunks minifiés embarquent les regex de détection de
+  # credentials (credential-patterns.ts, déjà allowlisté) + haute entropie de
+  # minification → faux positifs. La source apex-ai/v13/ attrape les vrais leaks.
+  '''apex-ai-v13/.*''',
   '''CLAUDE\.md''',
   '''KEVIN_INVENTORY\.md''',
   '''MEMO_RESUME\.md''',

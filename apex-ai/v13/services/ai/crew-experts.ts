@@ -19,9 +19,9 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { auditLog } from '../observability/audit-log.js';
 
 import { aiRouter } from './ai-router.js';
-import { auditLog } from '../observability/audit-log.js';
 
 export type CrewMode = 'consensus' | 'debate' | 'specialized';
 export type CrewProvider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral';

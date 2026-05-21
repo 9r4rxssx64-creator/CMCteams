@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
   hapticTap: vi.fn(),
 }));
 
-vi.mock('../../services/wake-word.js', () => ({
+vi.mock('../../services/ai/wake-word.js', () => ({
   wakeWord: {
     start: mocks.startMock,
     stop: vi.fn(),

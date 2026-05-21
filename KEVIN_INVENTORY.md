@@ -1409,3 +1409,18 @@ grep -rln "from.*services/X\.js'\|import('.*X\.js')" .
 
 ### Coût total ajouté
 - 0€ (Cloudflare Worker free tier 100k req/jour, GitHub Actions free)
+
+---
+
+## Session 2026-05-21 — Skills & commands ajoutés (branche claude/apex-installation-setup-VCzUl)
+
+Fichiers créés :
+- `.claude/commands/analyst.md` · `critic.md` · `optimizer.md` · `simplify.md` · `eli5.md` · `deepdive.md` · `compare.md` · `proscons.md` · `firstprinciples.md` · `contrarian.md` — 10 slash-commands thinking-styles
+- `.claude/skills/apex-ui-ux-pro-max.md` — système de design complet
+- `.claude/skills/apex-taste.md` — heuristiques de goût UI
+
+Fichiers modifiés :
+- `.claude/skills/apex-superpowers.md` — enrichi à 14 méthodologies
+- `apex-ai/v13/core/memory.ts` — directive DeepSeek spécialiste code (system prompt Apex)
+
+Liens GitHub : https://github.com/9r4rxssx64-creator/cmcteams/tree/claude/apex-installation-setup-VCzUl/.claude

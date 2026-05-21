@@ -1,28 +1,13 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.242">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.249">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+  <!-- v13.4.248 a11y : zoom utilisateur réactivé (Apple HIG + skill apex-ui-ux-pro-max).
+       Le double-tap-zoom reste neutralisé via CSS touch-action:manipulation
+       (base.css/rescue.css) — seul le pinch-zoom accessibilité est rétabli. -->
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
   <meta name="theme-color" content="#08080f">
 
-  <!-- v13.4.98 Anti-zoom INLINE Safari iOS — agit AVANT le bundle JS, indépendant.
-       Kevin "X zoom tjs UX" : le rescue.js peut arriver tard si le SW transition.
-       Cet inline garantit l'anti-zoom dès le 1er paint. -->
-  <script nonce="APEX_BOOT_NONCE">
-    (function(){
-      try {
-        ['gesturestart','gesturechange','gestureend'].forEach(function(evt){
-          document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
-        });
-        var lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e){
-          var now = Date.now();
-          if (now - lastTouchEnd <= 300) e.preventDefault();
-          lastTouchEnd = now;
-        }, { passive:false });
-      } catch(_) {}
-    })();
-  </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="APEX">

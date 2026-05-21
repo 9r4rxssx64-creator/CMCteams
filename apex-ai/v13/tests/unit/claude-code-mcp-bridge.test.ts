@@ -10,7 +10,7 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../services/claude-bridge.js', () => ({
+vi.mock('../../services/ai/claude-bridge.js', () => ({
   claudeBridge: {
     pushTodo: vi.fn().mockResolvedValue({ id: 'todo_xyz_123', ts: Date.now(), status: 'pending' }),
   },

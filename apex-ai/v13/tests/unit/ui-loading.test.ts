@@ -15,7 +15,7 @@ import {
   shimmerLine,
   spinner,
   thinking,
-} from '../../ui/loading';
+} from '../../ui/loading.js';
 
 describe('ui/loading.ts (v13.4.216 coverage)', () => {
   it('spinner() retourne HTML avec class', () => {

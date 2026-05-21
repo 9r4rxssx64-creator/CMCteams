@@ -18,7 +18,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { redactPII } from '../vault/pii-redaction.js';
 
 export interface SentryEvent {

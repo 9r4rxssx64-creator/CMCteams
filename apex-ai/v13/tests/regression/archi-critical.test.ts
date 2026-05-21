@@ -101,7 +101,7 @@ describe('REGRESSION ARCHI — apex-tools.ts <300L (audit Round 2)', () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    const fp = path.resolve(process.cwd(), 'services/apex-tools.ts');
+    const fp = path.resolve(process.cwd(), 'services/core-svc/apex-tools.ts');
     if (!fs.existsSync(fp)) {
       /* Si le fichier a été déplacé, c'est OK — on accepte */
       return;

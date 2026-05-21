@@ -20,8 +20,8 @@ const { mockApexIosNative, mockClaudeBridge } = vi.hoisted(() => ({
   mockClaudeBridge: { pushTodo: vi.fn() },
 }));
 
-vi.mock('../../services/apex-ios-native.js', () => ({ apexIosNative: mockApexIosNative }));
-vi.mock('../../services/claude-bridge.js', () => ({ claudeBridge: mockClaudeBridge }));
+vi.mock('../../services/integrations/apex-ios-native.js', () => ({ apexIosNative: mockApexIosNative }));
+vi.mock('../../services/ai/claude-bridge.js', () => ({ claudeBridge: mockClaudeBridge }));
 
 import { iosNativeWatch } from '../../services/sentinels/apex-ios-native-watch.js';
 

@@ -21,8 +21,8 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { haptic } from '../../ui/haptic.js';
 import { renderRechargeAction } from '../../ui/recharge-action.js';
 
@@ -95,7 +95,7 @@ const SHORTCUTS: ReadonlyArray<DashboardShortcut> = [
   { id: 'pro', icon: '🎓', label: 'Pro', description: 'Modules expert', route: 'pro', color: 'var(--ax-pink)' },
   { id: 'self-diag', icon: '🩺', label: 'Audit', description: 'Auto-diagnostic', route: 'self-diag', color: 'var(--ax-cyan)' },
   { id: 'settings', icon: '⚙️', label: 'Réglages', description: 'Configurer Apex', route: 'settings', color: 'var(--ax-text-dim)' },
-  { id: 'rgpd', icon: '🛡', label: 'RGPD', description: 'Mes données', route: 'rgpd', color: 'var(--ax-gold)' },
+  { id: 'rgpd', icon: '🛡', label: 'RGPD', description: 'Mes données', route: 'admin-rgpd', color: 'var(--ax-gold)' },
 ];
 
 /**

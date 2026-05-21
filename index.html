@@ -484,6 +484,8 @@ body.a11y-focus-strong :focus-visible{outline:3px solid #ffdc40!important;outlin
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(201,162,39,.18);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(201,162,39,.35)}
+/* v9.727 selection texte couleurs de marque (coherence Apex, skill apex-taste) */
+::selection{background:var(--cmc-gold-soft);color:inherit}
 /* === DIAPORAMA FOND D'\u00c9CRAN (v9.51) === */
 /* 2 couches qui alternent avec crossfade 1.2s toutes les 5 secondes */
 .bg-slide{
@@ -1326,7 +1328,7 @@ var CODES={
   "19/4*" :{l:"19h\u20134h CDP",   bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
   "16/3*" :{l:"Coupure CDP",       bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
   "16/22*":{l:"16h\u201322h CDP",  bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
-  "19/4'" :{l:"Convention",        bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:false},
+  "19/4'" :{l:"19h–4h (Convention)",bg:"#d8342e",c:"#ffe23a",b:"#a31f1a",cdp:false,conv:true}, // CONVENTION : fond rouge / écriture jaune (PDF SBM)
   // ── Repos / congés / absences (fonds colorés pastel) ──────────────────
   "RH"    :{l:"Repos Hebdo",  bg:"#c8a8e0",c:"#0c0430",b:"#a088c8",cdp:false},  // violet
   "R"     :{l:"Repos",        bg:"#e8e8e8",c:"#0a0a0a",b:"#bcbcbc",cdp:false},  // gris
@@ -1412,6 +1414,38 @@ function learnNewCode(code){
 var CK; // reconstruit apr\u00e8s fusion
 function _rebuildCK(){CK=Object.keys(CODES);}
 _rebuildCK();
+// v9.727 \u2014 Jour de CONVENTION : code \u00e0 suffixe ' ou " (NOTES_USER : fond ROUGE,
+// \u00e9criture JAUNE dans le PDF SBM \u2014 rep\u00e8re visuel exact). Source UNIQUE de
+// d\u00e9tection, utilis\u00e9e partout (couleur cellule, badge, m\u00e9ta, compteurs).
+function _cmcIsConv(code){return /['"]$/.test(String(code==null?"":code));}
+// v9.727 \u2014 Style CONVENTION : copie exacte du rep\u00e8re visuel PDF SBM
+// (fond rouge / \u00e9criture jaune). Appliqu\u00e9 aux variantes ' / " des codes.
+var _CMC_CONV_STYLE={bg:"#d8342e",c:"#ffe23a",b:"#a31f1a",cdp:false,conv:true};
+// v9.726/727 \u2014 REPRODUCTION \u00c0 L'IDENTIQUE (Kevin 2026-05-21) : pr\u00e9serve les
+// suffixes ' et " (jour de Convention). Si le code est <base>+quotes et que la
+// base est connue \u2192 cr\u00e9e/r\u00e9pare la variante suffix\u00e9e avec la COULEUR Convention
+// (fond rouge, \u00e9criture jaune \u2014 pas la couleur du code de base). Retourne le
+// code variante, ou null si non applicable (le parser strippe alors normalement).
+function _cmcEnsureQuoteVariant(tok){
+  var m=String(tok==null?"":tok).match(/^(.+?)(['"]+)$/);
+  if(!m)return null;
+  var base=m[1],variant=base+m[2];
+  var existing=CODES[variant];
+  if(existing&&existing.conv)return variant; // d\u00e9j\u00e0 en couleur Convention
+  if(!existing&&!CODES[base])return null;
+  try{
+    var src=existing||CODES[base]||{};
+    var ent=Object.assign({},src,_CMC_CONV_STYLE,{learned:true,
+      l:(src.l&&!/convention/i.test(src.l))?(src.l+" (Convention)"):"Convention"});
+    CODES[variant]=ent;
+    if(typeof _learnedCodes==="object"&&_learnedCodes){
+      _learnedCodes[variant]=ent;
+      try{ls("cmc_learned_codes",_learnedCodes);}catch(_p){}
+    }
+    if(typeof _rebuildCK==="function")_rebuildCK();
+  }catch(_e){return CODES[variant]?variant:null;}
+  return variant;
+}
 var TC={
   "1":"#c9a227","2":"#4a72a8","3":"#3a8a50","4":"#a84868","5":"#c07830",
   "6":"#b89020","7":"#3a62a0","8":"#2a7a40","9":"#984060","10":"#a86820",
@@ -4831,6 +4865,23 @@ function moSelOpts(val,blank){
 }
 function tc(tid){var t=A.teams.find(function(x){return x.id===tid;});var c=(t&&t.color)||TC[tid]||"#888888";return /^#[0-9a-fA-F]{3,6}$/.test(c)?c:"#888888";}
 function gt(tid){return A.teams.find(function(x){return x.id===tid;})||null;}
+// v9.721 — Garantit qu'une équipe détectée existe dans A.teams. La détection
+// (_cmcDetectTeamsByRestPattern / _cmcDetectTeamsByPdfColumn) écrit teamHistory[key]
+// avec des IDs séquentiels qui ne sont PAS dans DEF_TEAMS → gt()/tc()/nom échouent
+// → "Ma section" + miroir + nom d'équipe invisibles. Ce helper ADDITIF crée l'entrée
+// manquante (jamais ne supprime/modifie l'existant). Idempotent (check gt d'abord).
+function _cmcEnsureTeam(tid){
+  if(!tid)return null;
+  var t=gt(tid);if(t)return t;
+  var s=String(tid);
+  var fam=/^r/i.test(s)?"roulettes":/^c/i.test(s)?"cmc":"bj";
+  var num=s.replace(/[^0-9]/g,"")||"?";
+  var nm=fam==="roulettes"?("Roul. Éq."+num):fam==="cmc"?("CMC Éq."+num):("BJ Éq."+num);
+  var pal=["#c9a227","#4a72a8","#3a8a50","#a84868","#c07830","#2a9a9a","#8a5aa8","#b06840"];
+  var nt={id:s,name:nm,color:pal[(parseInt(num,10)||0)%pal.length],family:fam,departureOrder:(parseInt(num,10)||1),_auto:true};
+  A.teams.push(nt);
+  return nt;
+}
 function gm(tid){
   var t=gt(tid);
   var mid=t&&t.mirrorTeamId;
@@ -4844,7 +4895,7 @@ function _cmcMirrorTeam(tid,y,m){
   if(!tid)return null;
   try{
     var mp=lg("cmc_team_mirror_"+y+"-"+m,{})||{};
-    if(mp[tid]){var t=gt(mp[tid]);if(t)return t;}
+    if(mp[tid])return _cmcEnsureTeam(mp[tid]); // v9.721 — garantit l'existence
   }catch(_){}
   return (typeof gm==="function")?gm(tid):null;
 }
@@ -5306,7 +5357,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.720";
+var APP_VER="v9.727";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -15080,6 +15131,23 @@ function agentsStart(){
       }
     }
   }catch(_v717err){}
+  // v9.724 Kevin "Efface tout l'historique, vraiment partout" (2026-05-20) :
+  // Le flag cmc_v717_purge_done est déjà posé sur le device de Kevin → le bloc
+  // v717 ne re-tourne plus. NEW flag cmc_v724_purge_done → re-déclenche le wipe
+  // TOTAL une fois : A.overrides tous mois, teamHistory, familyHistory, snapshots
+  // cmc_history_*, IDB shadow, nodes Firebase, logs. App 100% vierge, re-import requis.
+  // Garde-fou : ne pose le flag QUE si le wipe a réellement tourné (admin présent).
+  try{
+    if(!lg("cmc_v724_purge_done",false) && A.user && A.user.id===AID){
+      if(typeof cmcWipeAllPlanningMemory==="function"){
+        var _w724=cmcWipeAllPlanningMemory(true);
+        if(_w724){
+          ls("cmc_v724_purge_done",{ts:Date.now(),stats:_w724});
+          console.log("[v9.724 purge total] historique effacé partout — re-import requis");
+        }
+      }
+    }
+  }catch(_v724err){}
   agentsStop();
   APP_AGENTS.forEach(function(a){
     if(!agentIsEnabled(a.id))return;
@@ -16668,6 +16736,15 @@ function _cmcBreadcrumb(){
   }
   return '<div style="padding:6px 14px;background:rgba(201,162,39,.04);border-bottom:1px solid rgba(201,162,39,.1);font-size:12px;display:flex;align-items:center;gap:8px"><a href="#" onclick="sv(\'accueil\');return false" style="color:#4a9aff;text-decoration:none;font-weight:600">🏠 Accueil</a><span style="color:#7a9a7a">›</span><strong style="color:#c9a227">'+esc(label)+'</strong></div>';
 }
+function _vMissingView(title,msg,btnLabel,btnRoute){
+  // v9.726 — fallback unifié pour vue déclarée dans le routeur mais non implémentée
+  // (erreur #28 Declaration ≠ Deployment). Message honnête + bouton de repli, au
+  // lieu de la carte d'erreur générique qui faisait croire à un bug "temporaire".
+  return '<div class="card" style="padding:20px;text-align:center">'
+    +'<div style="font-size:18px;font-weight:700;color:#c9a227;margin-bottom:8px">'+esc(title)+'</div>'
+    +'<div style="color:#a0cca0;margin-bottom:16px">'+esc(msg)+'</div>'
+    +'<button class="btn gold" onclick="sv(\''+esc(btnRoute)+'\')">'+esc(btnLabel)+'</button></div>';
+}
 function vMain(){
   // v9.581 (Kevin "erreur d'affichage Can't find variable") — safety wrapper :
   // si une case route vers une fonction de vue non définie, on retourne une vue
@@ -16760,8 +16837,8 @@ function _vMainImpl(){
     case"geo":      return isAdm?vGeoAdmin():""; // v9.210
     case"geolocation": return isAdm?vGeolocationCMC():""; // v9.487 — multi-casinos precision live
     case"pit":      return vPit(); // v9.211 — pit boss live (admin + cadres)
-    case"pitmap":   return vPitMapView(); // v9.500 — map visuelle Pit Boss (lecture seule + carré break)
-    case"pitmapview": return vPitMapView(); // v9.500 — alias
+    case"pitmap":   return typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
+    case"pitmapview": return typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
     case"quotidienne": return vQuotidienne(); // v9.312 — réunion direction
     case"endshiftdash": return vEndShiftDashboard(); // v9.339 — dashboard fins de shift
     case"dayhistory":  return vDayHistory(); // v9.342 — historique du jour
@@ -16804,9 +16881,9 @@ function _vMainImpl(){
     case"debug": return isAdm?vDebug():""; // v9.91
     case"ia":       return vIA();
     case"lessonscmc": return isAdm?vLessonsLearnedCmc():""; // v9.525 - Lessons partagees Apex+CMCteams
-    case"passation":  return vPassation(); // v9.540 - Passation digitale (form remplir)
-    case"passations": return vPassationsList(); // v9.540 - Liste passations
-    case"crossteamactivity": return isAdm?vCrossTeamActivity():""; // v9.540 - Stats cross-team
+    case"passation":  return typeof vPassation==="function"?vPassation():_vMissingView("📋 Passation digitale","Cette vue est en cours de développement et n'est pas encore disponible.","🏠 Retour accueil","accueil"); // v9.726 — guard erreur #28
+    case"passations": return typeof vPassationsList==="function"?vPassationsList():_vMissingView("📋 Historique passations","Cette vue est en cours de développement et n'est pas encore disponible.","📋 Voir le journal d'audit","auditlog"); // v9.726 — guard erreur #28
+    case"crossteamactivity": return isAdm?(typeof vCrossTeamActivity==="function"?vCrossTeamActivity():_vMissingView("📊 Activité cross-team","Cette vue est en cours de développement et n'est pas encore disponible.","📊 Voir les statistiques","stats")):""; // v9.726 — guard erreur #28
     case"rgpd":case"mes-donnees":case"vie-privee": return vRGPD(); // v9.548 - RGPD complet (export + erase + CSP + droits)
     default: return vAccueil();
   }
@@ -21621,7 +21698,7 @@ function vMonPlanning(){
   // v9.66 Planning audit : calcul s\u00e9rie cons\u00e9cutive de jours travaill\u00e9s (alerte fatigue)
   var _maxConsec=0,_curConsec=0,_curConsecStart=0;
   var totCDP=0,totConv=0,totNuit=0,totCoup=0,totJour=0,totHeures=0;
-  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;if(_c.endsWith("*"))totCDP++;if(_c.endsWith("'"))totConv++;totHeures+=codeHours(_c);var _base=_c.replace(/[*']/g,"");if(_base==="22/6"||_base==="20/5"||_base==="19/4")totNuit++;else if(_base==="16/3")totCoup++;else totJour++;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
+  for(var _d=1;_d<=days;_d++){var _c=myPl[_d]||"";if(isWork(_c)){totWork++;_curConsec++;if(_curConsec===1)_curConsecStart=_d;if(_curConsec>_maxConsec)_maxConsec=_curConsec;if(_c.endsWith("*"))totCDP++;if(_cmcIsConv(_c))totConv++;totHeures+=codeHours(_c);var _base=_c.replace(/[*']/g,"");if(_base==="22/6"||_base==="20/5"||_base==="19/4")totNuit++;else if(_base==="16/3")totCoup++;else totJour++;}else{_curConsec=0;if(_c==="CP")totCp++;else if(_c==="M")totM++;else if(_c==="RRT")totRRT++;else if(_c==="AF")totAF++;else if(_c==="RH"||_c==="R")totRH++;}}
   var h='<div class="page bg-casino" style="position:relative">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">'
     +empAvatarHtml(emp,40,tcc)
@@ -21679,7 +21756,7 @@ function vMonPlanning(){
       var _JOURS2=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
       var _hrs=codeHours(_code2);
       var _isCdp=_code2.endsWith("*");
-      var _isConv=_code2.endsWith("'");
+      var _isConv=_cmcIsConv(_code2);
       var _lieu=_isCdp?"☕ Café de Paris":_isConv?"🎩 Convention":"🏛 Casino Monte-Carlo";
       var _pos=isWork(_code2)&&CHEFS_T[A.user.team]?calcDepPos(A.user.name,A.user.team,d):null;
       // Collègues même jour
@@ -21738,7 +21815,7 @@ function vMonPlanning(){
       :code==="M"?"linear-gradient(135deg,rgba(255,220,40,.65),rgba(230,190,20,.55))"
       :code==="RRT"||code==="PRT"?"linear-gradient(135deg,rgba(255,200,40,.58),rgba(220,160,20,.48))"
       :code.endsWith("*")?"linear-gradient(135deg,rgba(255,160,60,.60),rgba(220,120,30,.50))"
-      :code.endsWith("'")?"linear-gradient(135deg,rgba(255,110,110,.55),rgba(220,70,70,.45))"
+      :_cmcIsConv(code)?"linear-gradient(135deg,rgba(216,52,46,.78),rgba(170,30,26,.68))"
       :(ci2&&isWork(code)?codeBg+"cc":"rgba(10,22,12,.45)");
     var borderStyle=isToday?"3px solid #ffdc40":"2px solid "+(_isPast?"rgba(40,50,40,.6)":ci2&&isWork(code)?codeColor+"99":code==="CP"?"rgba(232,120,200,.7)":code==="RH"?"rgba(160,100,220,.7)":code==="AF"?"rgba(80,220,100,.7)":code==="M"?"rgba(255,220,40,.8)":isWE?"rgba(80,120,180,.4)":"rgba(120,180,120,.35)");
     var _affDot=_affOn&&_affCache[d]?'<span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4040;margin-left:3px;vertical-align:middle;box-shadow:0 0 6px rgba(255,64,64,.8)" title="Forte affluence"></span>':"";
@@ -21754,8 +21831,8 @@ function vMonPlanning(){
       +(_timeLabel?'<div style="font-size:11px;color:'+codeTxtColor+';opacity:.92;line-height:1;white-space:nowrap;overflow:hidden;max-width:100%;font-weight:700;'+txtShadow+'">'+_timeLabel+'</div>':"")
       +(depPos?'<div style="font-size:13px;color:#ffdc40;font-weight:900;'+txtShadow+'">\u2191'+depPos+'</div>':"")
       +(code.endsWith("*")?'<div style="font-size:10px;color:#fff;font-weight:900;line-height:1;background:rgba(220,120,30,.85);padding:1px 5px;border-radius:3px">\u2615 CDP</div>':"")
-      +(code.endsWith("'")?'<div style="font-size:10px;color:#fff;font-weight:900;line-height:1;background:rgba(220,70,70,.85);padding:1px 5px;border-radius:3px">\ud83c\udfa9</div>':"")
-      +(isWork(code)&&!code.endsWith("*")&&!code.endsWith("'")?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
+      +(_cmcIsConv(code)?'<div style="font-size:10px;color:#ffe23a;font-weight:900;line-height:1;background:rgba(170,30,26,.92);padding:1px 5px;border-radius:3px">\ud83c\udfa9 CONV</div>':"")
+      +(isWork(code)&&!code.endsWith("*")&&!_cmcIsConv(code)?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
       +'</div>';
     // Fin de semaine (samedi) ou fin de mois
     var _dow3=new Date(A.year,A.month,d).getDay();
@@ -23678,7 +23755,7 @@ function vPlan(){
   var _myEmpRec=A.user?(empById(A.user.id)||A.user):null;
   var _vUKey=A.year+"-"+A.month;
   var _myTeamId=(_myEmpRec&&_myEmpRec.teamHistory&&_myEmpRec.teamHistory[_vUKey])||null;
-  var utid=(_myTeamId&&gt(_myTeamId))?_myTeamId:null;
+  var utid=_myTeamId||null;if(utid)_cmcEnsureTeam(utid); // v9.721 — plus d'exigence gt() : Ma section s'affiche dès qu'il y a teamHistory
   var utc=tc(utid),mirT=utid?_cmcMirrorTeam(utid,A.year,A.month):null;
   /* v9.604 \u2014 Sticky header : nav mois + boutons toujours visibles pendant scroll planning */
   var h=`<div class="page bg-planning"><div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px"><div style="display:flex;align-items:center;gap:8px"><button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">\u2039</button><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">${MFR[A.month]}${typeof cmcVersionBadgeHTML==="function"?cmcVersionBadgeHTML(A.year,A.month,{size:"small"}):""}</div><div style="font-size:14px;color:#a0cca0">${A.year}</div></div>${todayD?`<button class="btn ghost" onclick="A.year=new Date().getFullYear();A.month=new Date().getMonth();dc();setTimeout(adjGrid,80)" title="Aller \u00e0 aujourd\u2019hui" style="padding:5px 10px;font-size:13px">\ud83d\udccd Aujourd\u2019hui</button>`:""}${isAdm?`<button class="btn ghost" onclick="exportPlanningCSV(A.year,A.month)" title="Export CSV du planning complet" style="padding:5px 10px;font-size:13px">\ud83d\udcca CSV</button>`:""}${(function(){try{return lg("cmc_visual_planning_"+A.year+"-"+A.month,null)?'<button class="btn ghost" onclick="cmcShowVisualPlanning()" title="Voir le planning visuel SBM original (traits/couleurs)" style="padding:5px 10px;font-size:13px">\ud83d\uddbc\ufe0f</button>':'';}catch(_){return"";}})()}<button class="btn ghost" onclick="window.print()" title="Imprimer ce planning" style="padding:5px 10px;font-size:13px">\ud83d\udda8</button><button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">\u203a</button></div></div>`;
@@ -23912,7 +23989,7 @@ function vPlan(){
       +'<table style="border-collapse:collapse;table-layout:fixed;width:'+(118+da.length*44+2*30)+'px"><colgroup><col style="width:118px">';
     da.forEach(function(){bh+='<col style="width:44px">';});
     bh+='<col style="width:30px"><col style="width:30px"></colgroup>';
-    bh+='<thead><tr><th style="padding:0;background:rgba(6,14,7,.22);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
+    bh+='<thead><tr><th style="padding:0;background:#0b1409;position:sticky;left:0;border-right:1px solid #182818;z-index:6;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
     // v9.167 — Annotations admin par jour (clic sur header = prompt si admin, tooltip pour tous)
     var _dayNotes=getDayNotes(A.year,A.month);
     da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#0a1408":"#0c1608";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?";border-bottom:2px solid rgba(201,162,39,.5)":"";var dn=_dayNotes[d];var _dnTitle=dn?'title="'+esc(dn.text)+'"':'';var _clickAttr=isAdm?(' onclick="promptDayNote('+A.year+','+A.month+','+d+')" style="cursor:pointer"'):'';bh+='<th data-planday="'+d+'" '+_dnTitle+' style="padding:3px 1px;min-width:28px;background:'+thBg+';text-align:center;position:sticky;top:0;z-index:2'+thBorder+(isAdm?";cursor:pointer":"")+'"'+_clickAttr+'><div style="font-weight:700;color:'+thCol+';font-size:14px">'+d+(dn?'<span style="color:#ffce3a;font-size:10px;margin-left:2px">\u2605</span>':'')+'</div><div style="font-size:11px;color:'+(isTod?"rgba(201,162,39,.4)":"#182818")+'">'+DS[dow]+'</div></th>';});
@@ -24145,7 +24222,7 @@ function vDeparts(){
   if(myTeam==="?")myTeam=null;
   // v9.154 — Live presence lookup
   var _onlineSet={};try{(getOnlineUsers()||[]).forEach(function(u){_onlineSet[u.uid]=true;});}catch(_){}
-  var myMirT=(myTeam&&gt(myTeam))?_cmcMirrorTeam(myTeam,A.year,A.month):null;
+  if(myTeam)_cmcEnsureTeam(myTeam);var myMirT=myTeam?_cmcMirrorTeam(myTeam,A.year,A.month):null; // v9.721 — miroir résolu même si équipe non pré-enregistrée
   // v9.58 — Détection user flottant (pas d'équipe ou non présent dans PDF) → vue générale
   var _isFloating=isUserFloating(A.user,A.year,A.month);
   // Mon équipe + miroir en tête (admin et non-admin), puis le reste par famille/numéro
@@ -24350,7 +24427,7 @@ function vDeparts(){
       +'<div style="background:rgba(6,15,8,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid '+tcc+'22;border-top:none;border-radius:0 0 8px 8px">'
       +'<div class="dep-grid-scroll" style="overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border-radius:0 0 8px 8px">'
       +'<table style="border-collapse:collapse;min-width:100%"><thead><tr>'
-      +'<th style="padding:0;background:rgba(6,14,7,.22);position:sticky;left:0;border-right:1px solid #182818;z-index:5;width:118px">'
+      +'<th style="padding:0;background:#0b1409;position:sticky;left:0;border-right:1px solid #182818;z-index:6;width:118px">'
       +'<div style="width:118px;padding:3px 5px;overflow:hidden">'
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#a0bca0;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
@@ -26436,7 +26513,7 @@ function _cmcInferCellMetaFromCodes(key){
         var bg=null;
         // Inferrence bg depuis code SBM (priorité 1)
         if(c.endsWith("*"))bg="CDP";
-        else if(c.endsWith("'"))bg="CONV";
+        else if(_cmcIsConv(c))bg="CONV";
         else if(c==="CP")bg="CP";
         else if(c==="RH")bg="RH";
         else if(c==="R")bg="R";
@@ -26655,7 +26732,7 @@ function _cmcImportCompletenessCheck(key, sourceText){
         if(c==="R")ovR++;
         if(c==="AF")ovAF++;
         if(c.endsWith("*"))ovCDP++;
-        if(c.endsWith("'"))ovConv++;
+        if(_cmcIsConv(c))ovConv++;
       });
     });
     rep.details={
@@ -34736,6 +34813,7 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
         famCounters[fm]=(famCounters[fm]||0)+1;
         var nn=famCounters[fm];
         var teamId=fm==="roulettes"?("r"+nn):fm==="cmc"?("c"+nn):String(nn);
+        _cmcEnsureTeam(teamId); // v9.721 — enregistre l'équipe dans A.teams
         mirrorTrack[fm][blockIdx][cc]=teamId;
         for(var mm=0;mm<column.members.length;mm++){
           var emp=_matchEmp(column.members[mm]);
@@ -34743,7 +34821,13 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
           if(!emp.teamHistory)emp.teamHistory={};
           if(!emp.familyHistory)emp.familyHistory={};
           emp.teamHistory[key]=teamId;
-          emp.familyHistory[key]=fm;
+          // v9.725 (Kevin "BJ affiché sous Jeux européens") — n'écrit la famille
+          // que si le parser de grille (v9.655, source FIABLE = en-tête de section
+          // PDF "Roulettes"/"Chefs black Jack"/"Employés cartes CMC") ne l'a PAS
+          // déjà posée. Avant : pdf-column ÉCRASAIT toujours avec un `fm` issu du
+          // curseur fragile des listes de noms (1ʳᵉ moitié du PDF) désaligné sur
+          // les colonnes statut M/CP → équipe BJ classée roulettes.
+          if(!emp.familyHistory[key])emp.familyHistory[key]=fm;
           teamsAssigned++;
         }
       }
@@ -34766,6 +34850,7 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
     // ── Persistance ──
     if(teamsAssigned>0){
       try{ls("cmc_e",A.employees);}catch(_){}
+      try{ls("cmc_t",A.teams);}catch(_){} // v9.721 — persiste les équipes auto-créées
       if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
     }
     var rep={ok:teamsAssigned>0,teamsAssigned:teamsAssigned,columns:colsTotal,
@@ -34968,6 +35053,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       famCounters[domFam]=(famCounters[domFam]||0)+1;
       var n=famCounters[domFam];
       var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:String(n);
+      _cmcEnsureTeam(teamId); // v9.721 — enregistre l'équipe dans A.teams
       teamGroups.push({
         teamId:teamId,sig:sig,
         cycle:group[0].cycle,offset:group[0].offset,
@@ -35002,6 +35088,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     }
     // 5. Sync employees + Firebase
     try{ls("cmc_e",A.employees);}catch(_){}
+    try{ls("cmc_t",A.teams);}catch(_){} // v9.721 — persiste les équipes auto-créées
     if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
     // 6. Audit enrichi
     var report={
@@ -35871,11 +35958,9 @@ function parseCMCPlanningFromItems(allItems, year, month){
       if(d<bestDist){bestDist=d;bestEmp=el.empName;}
     });
     if(bestEmp){
-      var empObj=A.employees.find(function(e){return e.name===bestEmp;});
-      // Auto-upgrade CDP selon profil employe
-      if(empObj&&!code.endsWith("*")&&CDP_MAP[code]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(code)>=0){
-        code=CDP_MAP[code];
-      }
+      // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : pas d'auto-upgrade CDP
+      // selon le profil cdpShifts. Le code stocké = le code brut du PDF. Le *
+      // n'est posé que s'il est présent dans le PDF (marque CDP voisine ci-dessus).
       planning[bestEmp][day]=code;
     }
   });
@@ -37543,6 +37628,9 @@ function doImport(){
       var _ac=null;
       // Tentative 1 : lookup direct avec apostrophes/quotes pr\u00e9serv\u00e9s (CDP/CONV)
       if(_acRaw&&CODES[_acRaw])_ac=_acRaw;
+      // v9.726 \u2014 Tentative 1bis : pr\u00e9server le suffixe ' / " (Convention) via
+      // clone de l'entr\u00e9e CODES de base (reproduction \u00e0 l'identique).
+      if(!_ac){var _qvA=_cmcEnsureQuoteVariant(_acRaw.replace(/[:;]+$/,""));if(_qvA)_ac=_qvA;}
       // Tentative 2 : strip suffixes :; et quotes finaux
       if(!_ac){
         var _acT2=_acRaw.replace(/[\"'`]+$/,"").replace(/[:;]+$/,"");
@@ -37613,7 +37701,8 @@ function doImport(){
       if(!_ac||!CODES[_ac]){if(_ac)_importSkipped++;continue;}
       var _adn=_curFDay+(_ai-_curBase);
       if(_adn<1||_adn>days)continue;
-      if(!_ac.endsWith("*")&&CDP_MAP[_ac]&&empObj.cdpShifts&&empObj.cdpShifts.indexOf(_ac)>=0)_ac=CDP_MAP[_ac];
+      // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : pas d'auto-upgrade CDP
+      // selon le profil cdpShifts. Le * n'est posé que via une marque PDF réelle.
       // v9.67 — Appliquer automatiquement le tag couleur PDF
       if(_pdfTag){
         if(_pdfTag==="CDP"&&CDP_MAP[_ac.replace(/[*']/g,"")])_ac=CDP_MAP[_ac.replace(/[*']/g,"")];
@@ -37684,16 +37773,33 @@ function doImport(){
         A.employees.filter(function(x){return isEmpActive(x,iy,im)&&x!==_simBF;}).forEach(function(x){
           var sc=_strSim(eName,x.name);if(sc>_sim2F)_sim2F=sc;
         });
-        if(_simBFS-_sim2F>=0.1)_fe=_simBF;
+        // v9.723 (Kevin) — guard homonymes : refuser un match bigram si nom de
+        // famille identique mais INITIALE différente. LANDAU B ≠ LANDAU J,
+        // ENZA B ≠ ENZA C, SEGGIARO G ≠ SEGGIARO J — ce sont des personnes
+        // distinctes (souvent des frères). Le bigram 0.85 les confondait.
+        var _tP=eName.split(/\s+/),_bP=_simBF.name.split(/\s+/);
+        var _tSur=_tP.slice(0,-1).join(" ").toUpperCase(),_bSur=_bP.slice(0,-1).join(" ").toUpperCase();
+        var _tIni=(_tP[_tP.length-1]||"").toUpperCase(),_bIni=(_bP[_bP.length-1]||"").toUpperCase();
+        var _diffHomonym=_tSur===_bSur&&_tIni.length<=2&&_bIni.length<=2&&_tIni!==_bIni;
+        if(_simBFS-_sim2F>=0.1&&!_diffHomonym)_fe=_simBF;
+        else if(_diffHomonym)console.warn("[import homonyme] "+eName+" ≠ "+_simBF.name+" (initiale différente, match refusé)");
       }
     }
-    if(!_fe){
-      // v9.126 — Fallback cadres : match par nom de famille si prénom différent
+    if(!_fe && importFamily==="cadres"){
+      // v9.126 — Fallback cadres : match par nom de famille.
+      // v9.723 (Kevin "LANDAU B chef → LANDAU J cadre, ce sont 2 frères") :
+      // (1) STRICTEMENT réservé à un import cadres — un import V1 (employés/chefs)
+      //     ne doit JAMAIS assigner un horaire à un cadre.
+      // (2) L'INITIALE doit correspondre : LANDAU B ≠ LANDAU J, ENZA B ≠ ENZA C.
+      var _spn=eName.split(/\s+/);
+      var _surnameP=_spn[0];
+      var _initP=(_spn[_spn.length-1]||"").toUpperCase().charAt(0);
       var _cadreMatch=A.employees.find(function(x){
         if(x.family!=="cadres")return false;
-        var _surnameP=eName.split(/\s+/)[0];
-        var _surnameDef=x.name.split(/\s+/)[0];
-        return _surnameP===_surnameDef;
+        var _xp=x.name.split(/\s+/);
+        if(_xp[0]!==_surnameP)return false;
+        var _initD=(_xp[_xp.length-1]||"").toUpperCase().charAt(0);
+        return !_initP||!_initD||_initP===_initD; // initiale doit matcher si présente
       });
       if(_cadreMatch){_fe=_cadreMatch;}
     }
@@ -38397,6 +38503,10 @@ function doImport(){
       // chefs BJ détectés comme roulettes. Fix identique v9.712 : préserver le
       // 'c', cloner l'entrée CODES de base (même horaire/couleur) + flag chef.
       if(!CODES[code]){
+        // v9.726 — préserver le suffixe ' / " (Convention) AVANT tout strip
+        var _qvG=_cmcEnsureQuoteVariant(code.replace(/[:;]+$/,""));
+        if(_qvG){code=_qvG;}
+        else{
         var c2=code.replace(/"'/g,"'");
         if(c2!==code&&CODES[c2]){code=c2;}
         else{
@@ -38419,6 +38529,7 @@ function doImport(){
             }
           }
         }
+        }
       }
       // Alias codes courants mal formatés dans certains exports PDF
       if(!CODES[code]){
@@ -38429,10 +38540,8 @@ function doImport(){
           "20/5CDP":"20/5*","19/4CDP":"19/4*","16/3CDP":"16/3*","16/22CDP":"16/22*"};
         if(_cAlias[code])code=_cAlias[code];
       }
-      // Auto-upgrade CDP
-      if(!code.endsWith("*")&&CDP_MAP[code]&&emp.cdpShifts&&emp.cdpShifts.indexOf(code)>=0){
-        code=CDP_MAP[code];
-      }
+      // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : pas d'auto-upgrade CDP
+      // selon le profil cdpShifts. Le * n'est posé que via une marque PDF réelle.
       var dayNum=fromDay+(di-codesStart); // offset depuis le jour de debut de la (sous-)période
       if(dayNum<1||dayNum>days) continue;
       // v9.142 — Auto-apprentissage + ne PAS ignorer les codes horaires
@@ -38554,8 +38663,12 @@ function doImport(){
         });
         var exactCode=(cdpFreq*2>baseCnt)?best+"*":best;
         toFill.forEach(function(emp){
-          var isOutlier=outlierIds.indexOf(emp.id)>=0;
-          if(!isOutlier&&(A.overrides[key][emp.id]||{})[d]) return;
+          // v9.726 — REPRODUCTION À L'IDENTIQUE (Kevin) : le consensus d'équipe
+          // ne REMPLIT que les cellules vides, il n'écrase JAMAIS une cellule
+          // déjà parsée depuis le PDF. Un employé mal parsé = bug parser à
+          // corriger, pas à masquer par un consensus (qui peut être décalé —
+          // ex. HAREL écrasé par la rotation miroir, bug v8.57).
+          if((A.overrides[key][emp.id]||{})[d]) return;
           if(!A.overrides[key][emp.id]) A.overrides[key][emp.id]={};
           A.overrides[key][emp.id][d]=exactCode;
           if(!refData.rows[emp.id]) refData.rows[emp.id]={};
@@ -39392,7 +39505,7 @@ function doImport(){
       Object.keys(row).forEach(function(d){
         _totCells++;var c=row[d];
         if(c&&c.endsWith("*"))_totCDP2++;
-        if(c&&c.endsWith("'"))_totConv2++;
+        if(c&&_cmcIsConv(c))_totConv2++;
         if(c==="CP")_totCP2++;if(c==="AF")_totAF2++;if(c==="RH")_totRH2++;if(c==="R")_totR2++;
       });
     });

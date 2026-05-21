@@ -43,6 +43,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 .toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);z-index:10000;padding:12px 24px;border-radius:var(--r);background:var(--card);color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.3);font-size:14px;transition:bottom .3s;border:1px solid var(--border)}
 .toast.show{bottom:24px}
 @media(max-width:768px){.sidebar{display:none}.main{margin-left:0}}
+/* a11y + polish (revue UI/UX pro-expert) */
+:focus-visible{outline:2px solid var(--p)!important;outline-offset:2px;border-radius:4px}
+::selection{background:color-mix(in srgb,var(--p) 30%,transparent)}
 </style>
 </head>
 <body>

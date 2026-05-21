@@ -23,9 +23,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import { isFeatureEnabled } from '../auth/feature-toggles.js';
+import { auditLog } from '../observability/audit-log.js';
 
 /* ============================================================================
  * Types publics
@@ -64,7 +63,15 @@ const MAX_NO_SPEECH_RETRIES = 20;
 const STATUS_KEY = 'apex_v13_wake_word_status';
 
 /* Variantes phonétiques tolérées (mauvaise reconnaissance Web Speech FR) */
-const KEYWORD_VARIANTS_BASE = ['dis apex', 'dit apex', 'di apex', 'hey apex', 'ok apex', 'dispex', 'hapex'];
+const KEYWORD_VARIANTS_BASE = [
+  'dis apex',
+  'dit apex',
+  'di apex',
+  'hey apex',
+  'ok apex',
+  'dispex',
+  'hapex',
+];
 
 const VOICE_LOG_KEY = 'ax_voice_log';
 const VOICE_LOG_MAX = 100;
@@ -94,7 +101,9 @@ interface MinimalSpeechRecognition {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
-  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> & { length: number } }) => void) | null;
+  onresult:
+    | ((event: { results: ArrayLike<{ 0: { transcript: string } }> & { length: number } }) => void)
+    | null;
   onerror: ((event: { error?: string }) => void) | null;
   onend: (() => void) | null;
   start: () => void;
@@ -125,9 +134,7 @@ function getSpeechRecognitionCtor(): (new () => MinimalSpeechRecognition) | null
 function buildKeywordRegex(keyword: string): RegExp {
   const variants = new Set<string>([keyword.toLowerCase().trim(), ...KEYWORD_VARIANTS_BASE]);
   /* Échappe regex spec chars */
-  const parts = [...variants]
-    .filter(Boolean)
-    .map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const parts = [...variants].filter(Boolean).map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   return new RegExp(`\\b(?:${parts.join('|')})\\b`, 'i');
 }
 
@@ -156,7 +163,8 @@ class WakeWord {
         const raw = localStorage.getItem(STATUS_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as { totalDetections?: number; lastDetected?: number };
-          this.totalDetections = typeof parsed.totalDetections === 'number' ? parsed.totalDetections : 0;
+          this.totalDetections =
+            typeof parsed.totalDetections === 'number' ? parsed.totalDetections : 0;
           this.lastDetected = typeof parsed.lastDetected === 'number' ? parsed.lastDetected : null;
         }
       }
@@ -179,75 +187,10 @@ class WakeWord {
       return { started: false, reason: 'Web Speech API non supportée sur ce navigateur' };
     }
     try {
-      const rec = new Ctor();
-      rec.continuous = !isiOS(); /* iOS Safari : continuous instable */
-      rec.interimResults = true;
-      rec.lang = 'fr-FR';
-
-      rec.onresult = (event) => {
-        const results = event.results;
-        for (let i = 0; i < results.length; i++) {
-          const transcript = (results[i]?.[0]?.transcript ?? '').toLowerCase();
-          pushVoiceLog({
-            ts: Date.now(),
-            evt: 'interim',
-            src: 'wake-word-svc',
-            detail: transcript.slice(0, 80),
-          });
-          if (this.keywordRegex.test(transcript)) {
-            this.handleWakeDetected(transcript);
-          }
-        }
-        /* reset no-speech compteur dès qu'on a un résultat */
-        this.noSpeechRetries = 0;
-      };
-
-      rec.onerror = (event) => {
-        const err = event.error ?? 'unknown';
-        pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word-svc', detail: err });
-        if (err === 'no-speech') {
-          this.noSpeechRetries++;
-          if (this.noSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
-            logger.warn('wake-word', 'Trop de no-speech consécutifs, stop pour éviter drain batterie');
-            pushVoiceLog({
-              ts: Date.now(),
-              evt: 'suspend',
-              src: 'wake-word-svc',
-              detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
-            });
-            this.stop();
-          }
-          return;
-        }
-        if (err === 'not-allowed' || err === 'service-not-allowed') {
-          logger.warn('wake-word', 'Permission micro refusée');
-          pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word-svc', detail: 'denied' });
-          this.stop();
-          return;
-        }
-        /* aborted, network, audio-capture : recovery via onend (silencieux) */
-      };
-
-      rec.onend = () => {
-        pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word-svc' });
-        if (!this.listening) return;
-        /* Restart sur iOS (continuous=false) ou recovery erreur */
-        setTimeout(() => {
-          if (!this.listening) return;
-          try {
-            rec.start();
-            pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word-svc' });
-          } catch {
-            /* ignore double-start race InvalidStateError */
-          }
-        }, RESTART_DELAY_MS);
-      };
-
-      this.recognition = rec;
       this.listening = true;
       this.config.enabled = true;
       this.noSpeechRetries = 0;
-      rec.start();
+      this.spawnRecognition();
       pushVoiceLog({
         ts: Date.now(),
         evt: 'start',
@@ -255,7 +198,9 @@ class WakeWord {
         detail: isiOS() ? 'iOS' : 'desktop',
       });
 
-      void auditLog.record('wake.start', { details: { keyword: this.config.keyword, ios: isiOS() } });
+      void auditLog.record('wake.start', {
+        details: { keyword: this.config.keyword, ios: isiOS() },
+      });
       return { started: true };
     } catch (err: unknown) {
       const reason = err instanceof Error ? err.message : String(err);
@@ -264,6 +209,87 @@ class WakeWord {
       logger.warn('wake-word', 'start failed', { err: reason });
       return { started: false, reason };
     }
+  }
+
+  /**
+   * v13.4.51 fresh-instance pattern : crée une NOUVELLE instance
+   * SpeechRecognition à chaque (re)démarrage, la câble et la démarre. iOS
+   * Safari throw InvalidStateError si `rec.start()` est réutilisé sur une
+   * instance déjà terminée — onend recrée donc une instance fraîche.
+   */
+  private spawnRecognition(): void {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) throw new Error('Web Speech API non supportée sur ce navigateur');
+
+    const rec = new Ctor();
+    rec.continuous = !isiOS(); /* iOS Safari : continuous instable */
+    rec.interimResults = true;
+    rec.lang = 'fr-FR';
+
+    rec.onresult = (event) => {
+      const results = event.results;
+      for (let i = 0; i < results.length; i++) {
+        const transcript = (results[i]?.[0]?.transcript ?? '').toLowerCase();
+        pushVoiceLog({
+          ts: Date.now(),
+          evt: 'interim',
+          src: 'wake-word-svc',
+          detail: transcript.slice(0, 80),
+        });
+        if (this.keywordRegex.test(transcript)) {
+          this.handleWakeDetected(transcript);
+        }
+      }
+      /* reset no-speech compteur dès qu'on a un résultat */
+      this.noSpeechRetries = 0;
+    };
+
+    rec.onerror = (event) => {
+      const err = event.error ?? 'unknown';
+      pushVoiceLog({ ts: Date.now(), evt: 'error', src: 'wake-word-svc', detail: err });
+      if (err === 'no-speech') {
+        this.noSpeechRetries++;
+        if (this.noSpeechRetries >= MAX_NO_SPEECH_RETRIES) {
+          logger.warn(
+            'wake-word',
+            'Trop de no-speech consécutifs, stop pour éviter drain batterie',
+          );
+          pushVoiceLog({
+            ts: Date.now(),
+            evt: 'suspend',
+            src: 'wake-word-svc',
+            detail: `${MAX_NO_SPEECH_RETRIES}× no-speech`,
+          });
+          this.stop();
+        }
+        return;
+      }
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        logger.warn('wake-word', 'Permission micro refusée');
+        pushVoiceLog({ ts: Date.now(), evt: 'permission', src: 'wake-word-svc', detail: 'denied' });
+        this.stop();
+        return;
+      }
+      /* aborted, network, audio-capture : recovery via onend (silencieux) */
+    };
+
+    rec.onend = () => {
+      pushVoiceLog({ ts: Date.now(), evt: 'end', src: 'wake-word-svc' });
+      if (!this.listening) return;
+      /* Restart sur iOS (continuous=false) ou recovery erreur — instance fraîche */
+      setTimeout(() => {
+        if (!this.listening) return;
+        try {
+          this.spawnRecognition();
+          pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word-svc' });
+        } catch {
+          /* ignore double-start race InvalidStateError */
+        }
+      }, RESTART_DELAY_MS);
+    };
+
+    this.recognition = rec;
+    rec.start();
   }
 
   /**

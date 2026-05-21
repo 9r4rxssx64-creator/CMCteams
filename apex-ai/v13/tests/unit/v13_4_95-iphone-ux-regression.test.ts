@@ -5,8 +5,9 @@
  *
  * Ces tests vérifient les invariants STATIQUES qui peuvent être testés sans
  * un vrai Safari iOS :
- * 1. viewport meta correct (user-scalable=no, maximum-scale=1)
- * 2. rescue.js contient initAntiZoom + gesturestart preventDefault
+ * 1. viewport meta autorise le zoom utilisateur (a11y — v13.4.248 : Apple HIG
+ *    + skill apex-ui-ux-pro-max "ne jamais désactiver le zoom").
+ * 2. rescue.js ne bloque plus le pinch-zoom (initAntiZoom retiré v13.4.248).
  * 3. rescue.js contient initToolbarToggle + apex-rescue-show
  * 4. rescue.css contient touch-action: manipulation + -webkit-text-size-adjust
  * 5. vault.ts setKey AWAIT vault-firebase-backup (au lieu void async)
@@ -20,15 +21,15 @@ import { resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 
-describe('v13.4.95 viewport meta iPhone Safari', () => {
+describe('v13.4.248 viewport meta iPhone Safari — zoom a11y rétabli', () => {
   const indexHtml = readFileSync(resolve(ROOT, 'index.html'), 'utf-8');
 
-  it('viewport meta contient user-scalable=no', () => {
-    expect(indexHtml).toMatch(/user-scalable\s*=\s*no/);
+  it('viewport meta NE désactive PAS le zoom (a11y Apple HIG)', () => {
+    expect(indexHtml).not.toMatch(/user-scalable\s*=\s*no/);
   });
 
-  it('viewport meta contient maximum-scale=1', () => {
-    expect(indexHtml).toMatch(/maximum-scale\s*=\s*1/);
+  it('viewport meta autorise le zoom (maximum-scale >= 5)', () => {
+    expect(indexHtml).toMatch(/maximum-scale\s*=\s*5/);
   });
 
   it('viewport meta contient viewport-fit=cover (notch iPhone)', () => {
@@ -36,23 +37,16 @@ describe('v13.4.95 viewport meta iPhone Safari', () => {
   });
 });
 
-describe('v13.4.95 rescue.js anti-zoom + toolbar toggle', () => {
+describe('v13.4.248 rescue.js — pinch-zoom non bloqué + toolbar toggle', () => {
   const rescueJs = readFileSync(resolve(ROOT, 'assets/js/rescue.js'), 'utf-8');
 
-  it("rescue.js contient initAntiZoom (gesturestart preventDefault)", () => {
-    expect(rescueJs).toContain('initAntiZoom');
-    expect(rescueJs).toContain('gesturestart');
-    expect(rescueJs).toContain('preventDefault');
+  it("rescue.js ne contient plus initAntiZoom (zoom a11y rétabli)", () => {
+    expect(rescueJs).not.toContain('initAntiZoom()');
   });
 
-  it("rescue.js bloque gesturechange + gestureend (Safari iOS pinch)", () => {
-    expect(rescueJs).toContain('gesturechange');
-    expect(rescueJs).toContain('gestureend');
-  });
-
-  it("rescue.js contient double-tap detection (touchend < 300ms)", () => {
-    expect(rescueJs).toMatch(/lastTouchEnd/);
-    expect(rescueJs).toMatch(/300/);
+  it("rescue.js ne bloque plus gesturestart/change/end (pinch-zoom Safari iOS)", () => {
+    expect(rescueJs).not.toContain('gesturestart');
+    expect(rescueJs).not.toContain('gesturechange');
   });
 
   it("rescue.js contient initToolbarToggle (Kevin 'boutons superposés')", () => {
@@ -87,7 +81,7 @@ describe('v13.4.95 rescue.css anti-zoom CSS', () => {
 });
 
 describe('v13.4.95 vault.setKey Firebase backup AWAITED', () => {
-  const vaultTs = readFileSync(resolve(ROOT, 'services/vault.ts'), 'utf-8');
+  const vaultTs = readFileSync(resolve(ROOT, 'services/vault/vault.ts'), 'utf-8');
 
   it("vault.setKey contient Promise.race avec timeout pour Firebase backup", () => {
     expect(vaultTs).toContain('Promise.race');

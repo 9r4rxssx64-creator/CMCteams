@@ -14,7 +14,7 @@ const renderDisabledNoticeMock = vi.fn(
   (id: string) => `<div data-disabled-feature="${id}">disabled</div>`,
 );
 
-vi.mock('../../services/feature-toggles.js', () => ({
+vi.mock('../../services/auth/feature-toggles.js', () => ({
   isFeatureEnabled: (...args: unknown[]) => isFeatureEnabledMock(...args),
   renderDisabledNotice: (...args: unknown[]) => renderDisabledNoticeMock(...args),
 }));

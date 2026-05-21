@@ -59,7 +59,7 @@ describe('v13.4.90 iOS Simulator workflow', () => {
 
 describe('v13.4.90 apex-execute ALLOWED_TASKS inclut run_ios_e2e', () => {
   it("apex-execute.ts source contient 'run_ios_e2e' dans ALLOWED_TASKS Set", () => {
-    const src = readFileSync(join(APEX_V13, 'services', 'apex-execute.ts'), 'utf8');
+    const src = readFileSync(join(APEX_V13, 'services', 'admin', 'apex-execute.ts'), 'utf8');
     /* Vérification : run_ios_e2e doit apparaître DANS le ALLOWED_TASKS new Set([...]) */
     const allowedSetMatch = src.match(/ALLOWED_TASKS[^[]*\[([\s\S]*?)\]/);
     expect(allowedSetMatch).not.toBeNull();
@@ -67,7 +67,7 @@ describe('v13.4.90 apex-execute ALLOWED_TASKS inclut run_ios_e2e', () => {
   });
 
   it("Tous les v13.4.40 tasks parité Claude Code présents dans ALLOWED_TASKS", () => {
-    const src = readFileSync(join(APEX_V13, 'services', 'apex-execute.ts'), 'utf8');
+    const src = readFileSync(join(APEX_V13, 'services', 'admin', 'apex-execute.ts'), 'utf8');
     const allowedSetMatch = src.match(/ALLOWED_TASKS[^[]*\[([\s\S]*?)\]/);
     expect(allowedSetMatch).not.toBeNull();
     const setContent = allowedSetMatch?.[1] ?? '';
@@ -88,36 +88,36 @@ describe('v13.4.90 apex-execute ALLOWED_TASKS inclut run_ios_e2e', () => {
   });
 
   it("AllowedTask type inclut 'run_ios_e2e' dans la signature TS", () => {
-    const src = readFileSync(join(APEX_V13, 'services', 'apex-execute.ts'), 'utf8');
+    const src = readFileSync(join(APEX_V13, 'services', 'admin', 'apex-execute.ts'), 'utf8');
     expect(src).toContain("| 'run_ios_e2e'");
   });
 });
 
 describe('v13.4.90 apex-e2e-trigger service complet', () => {
   it("services/apex-e2e-trigger.ts existe", () => {
-    expect(existsSync(join(APEX_V13, 'services', 'apex-e2e-trigger.ts'))).toBe(true);
+    expect(existsSync(join(APEX_V13, 'services', 'admin', 'apex-e2e-trigger.ts'))).toBe(true);
   });
 
   it("Service expose triggerE2EWebkit + listE2ERequests + getLastE2EResult", () => {
-    const src = readFileSync(join(APEX_V13, 'services', 'apex-e2e-trigger.ts'), 'utf8');
+    const src = readFileSync(join(APEX_V13, 'services', 'admin', 'apex-e2e-trigger.ts'), 'utf8');
     expect(src).toContain('export async function triggerE2EWebkit');
     expect(src).toContain('export async function listE2ERequests');
     expect(src).toContain('export async function getLastE2EResult');
   });
 
   it("Service utilise event_type 'apex_e2e_request' (match workflow)", () => {
-    const src = readFileSync(join(APEX_V13, 'services', 'apex-e2e-trigger.ts'), 'utf8');
+    const src = readFileSync(join(APEX_V13, 'services', 'admin', 'apex-e2e-trigger.ts'), 'utf8');
     expect(src).toContain('apex_e2e_request');
   });
 
   it("Service guard tier admin only (auth.isAdminSync)", () => {
-    const src = readFileSync(join(APEX_V13, 'services', 'apex-e2e-trigger.ts'), 'utf8');
+    const src = readFileSync(join(APEX_V13, 'services', 'admin', 'apex-e2e-trigger.ts'), 'utf8');
     expect(src).toContain('auth.isAdminSync()');
     expect(src).toContain('admin_only_e2e_trigger');
   });
 
   it("Service utilise vault.getKey('github') pour PAT", () => {
-    const src = readFileSync(join(APEX_V13, 'services', 'apex-e2e-trigger.ts'), 'utf8');
+    const src = readFileSync(join(APEX_V13, 'services', 'admin', 'apex-e2e-trigger.ts'), 'utf8');
     expect(src).toContain("vault");
     expect(src).toContain('github');
   });

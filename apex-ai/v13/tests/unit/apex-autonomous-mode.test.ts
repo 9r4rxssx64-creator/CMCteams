@@ -18,7 +18,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 /* Mocks aiRouter (utilisé par apex-autonomous-mode) */
-vi.mock('../../services/ai-router.js', () => ({
+vi.mock('../../services/ai/ai-router.js', () => ({
   aiRouter: {
     stream: vi.fn(
       async (
@@ -32,25 +32,25 @@ vi.mock('../../services/ai-router.js', () => ({
   },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: vi.fn(async () => undefined) },
 }));
 
-vi.mock('../../services/firebase-queue.js', () => ({
+vi.mock('../../services/storage/firebase-queue.js', () => ({
   firebaseQueue: { add: vi.fn(), init: vi.fn() },
 }));
 
-vi.mock('../../services/consumption-monitor.js', () => ({
+vi.mock('../../services/observability/consumption-monitor.js', () => ({
   consumptionMonitor: {
     getServiceStatus: vi.fn(() => ({ pct_used: 10, severity: 'ok' })),
   },
 }));
 
-vi.mock('../../services/telegram-notifier.js', () => ({
+vi.mock('../../services/integrations/telegram-notifier.js', () => ({
   telegramNotifier: { notify: vi.fn(async () => ({ delivered: { telegram: true } })) },
 }));
 
-vi.mock('../../services/push-notifications.js', () => ({
+vi.mock('../../services/integrations/push-notifications.js', () => ({
   pushNotifications: { send: vi.fn(async () => true) },
 }));
 

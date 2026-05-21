@@ -13,8 +13,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
+
 import { mcpClient, type McpServer } from './mcp-client.js';
 
 const STORAGE_KEY = 'ax_mcp_servers';

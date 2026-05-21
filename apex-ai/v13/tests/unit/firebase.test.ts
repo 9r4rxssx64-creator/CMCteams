@@ -25,6 +25,15 @@ describe('firebase service', () => {
     it('clés inconnues ne sont PAS syncées (whitelist strict)', () => {
       expect(firebase.shouldSync('random_key')).toBe(false);
     });
+    it('v13.4.243 — paths vault_backup/* sont syncés (FIX Firebase backup KO)', () => {
+      /* Régression : avant ce fix, firebase.write() rejetait silencieusement
+       * les paths vault_backup/<uid>/<key> car absents de FB_FIX → le backup
+       * vault n'écrivait JAMAIS rien dans Firebase. */
+      expect(firebase.shouldSync('vault_backup/kdmc_admin/ax_anthropic_key')).toBe(true);
+      expect(firebase.shouldSync('vault_backup/anon/ax_openai_key')).toBe(true);
+      /* Une clé qui contient "vault_backup" sans être un path préfixé reste filtrée */
+      expect(firebase.shouldSync('my_vault_backup_key')).toBe(false);
+    });
     it('FB_FIX et FB_LOCAL sont des arrays exportés', () => {
       expect(Array.isArray(FB_FIX)).toBe(true);
       expect(Array.isArray(FB_LOCAL)).toBe(true);

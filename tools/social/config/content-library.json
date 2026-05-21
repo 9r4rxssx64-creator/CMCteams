@@ -60,7 +60,7 @@
         "avg": 15
       },
       "duration_target": "medium",
-      "used": false
+      "used": true
     },
     {
       "id": "betrayal-004",
@@ -193,7 +193,7 @@
         "avg": 15
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     }
   ],
   "narrative_revenge": [
@@ -213,7 +213,7 @@
         "avg": 14
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "revenge-002",

@@ -11,17 +11,17 @@ vi.mock('../../core/logger.js', () => ({
 }));
 
 const auditRecordMock = vi.fn().mockResolvedValue(undefined);
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: (...args: unknown[]) => auditRecordMock(...args) },
 }));
 
 const mcpListMock = vi.fn();
-vi.mock('../../services/mcp-registry.js', () => ({
+vi.mock('../../services/ai/mcp-registry.js', () => ({
   mcpRegistry: { list: () => mcpListMock() },
 }));
 
 const mcpHealthMock = vi.fn();
-vi.mock('../../services/mcp-client.js', () => ({
+vi.mock('../../services/ai/mcp-client.js', () => ({
   mcpClient: { healthCheck: (...args: unknown[]) => mcpHealthMock(...args) },
 }));
 

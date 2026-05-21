@@ -21,7 +21,7 @@ vi.mock('../../core/logger.js', () => ({
 }));
 
 const auditRecordMock = vi.fn(async () => undefined);
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: auditRecordMock },
 }));
 
@@ -31,7 +31,7 @@ const alertKevinMock = vi.fn(async () => ({
   channels_ok: ['audit-log'],
   channels_failed: [],
 }));
-vi.mock('../../services/kevin-alerts.js', () => ({
+vi.mock('../../services/admin/kevin-alerts.js', () => ({
   kevinAlerts: { alertKevin: alertKevinMock },
 }));
 
@@ -43,7 +43,7 @@ const restoreAllMock = vi.fn(async () => ({
   failed: 0,
   details: [],
 }));
-vi.mock('../../services/vault-firebase-backup.js', () => ({
+vi.mock('../../services/vault/vault-firebase-backup.js', () => ({
   vaultFirebaseBackup: {
     pushAllLocal: pushAllLocalMock,
     restoreAllFromFirebaseBackup: restoreAllMock,
@@ -51,14 +51,14 @@ vi.mock('../../services/vault-firebase-backup.js', () => ({
 }));
 
 const sentinelsListMock = vi.fn(() => [] as Array<{ id: string; lastResult?: { ok: boolean; msg: string } }>);
-vi.mock('../../services/sentinels.js', () => ({
+vi.mock('../../services/sentinels/sentinels.js', () => ({
   sentinels: { list: sentinelsListMock },
 }));
 
 const neverForgetGetLastRunMock = vi.fn(() => null as null | {
   checks: Array<{ id: string; passed: boolean; severity: string }>;
 });
-vi.mock('../../services/never-forget-watch.js', () => ({
+vi.mock('../../services/sentinels/never-forget-watch.js', () => ({
   neverForgetWatch: { getLastRun: neverForgetGetLastRunMock },
 }));
 

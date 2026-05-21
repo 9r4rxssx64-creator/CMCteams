@@ -22,7 +22,7 @@ vi.mock('../../ui/toast.js', () => ({
   toast: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
 
-vi.mock('../../services/auto-backup.js', () => ({
+vi.mock('../../services/storage/auto-backup.js', () => ({
   autoBackup: {
     snapshot: vi.fn().mockResolvedValue({ id: 'snap_1', size_bytes: 100 }),
   },

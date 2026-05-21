@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { codeReviewMultiAgent } from '../../services/ai/code-review-multi-agent.js';
 
-vi.mock('../../services/crew-experts.js', () => ({
+vi.mock('../../services/ai/crew-experts.js', () => ({
   crewExperts: {
     run: vi.fn().mockImplementation((opts: unknown) => {
       const o = opts as { members: unknown[]; task: string };

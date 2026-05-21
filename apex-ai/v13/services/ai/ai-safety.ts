@@ -17,8 +17,8 @@
  * 10. Domain-specific safety   : finance (anti-fraud), broadlink (no auto), credentials (no exfil)
  */
 
-import { auditLog } from '../observability/audit-log.js';
 import { backend } from '../integrations/backend.js';
+import { auditLog } from '../observability/audit-log.js';
 import { observability } from '../observability/observability.js';
 import { redactPII } from '../vault/pii-redaction.js';
 

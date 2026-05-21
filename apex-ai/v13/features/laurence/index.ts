@@ -22,9 +22,9 @@
 
 import { escapeAttr, escapeHtml } from '../../core/escape-html.js';
 import { store } from '../../core/store.js';
-import { auditLog } from '../../services/observability/audit-log.js';
 import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 import { permissions } from '../../services/auth/permissions.js';
+import { auditLog } from '../../services/observability/audit-log.js';
 
 const LAURENCE_WALLPAPERS = [
   'linear-gradient(135deg, #ffd6e8 0%, #c9a4ff 50%, #a4c8ff 100%)', /* Rose-violet-bleu */

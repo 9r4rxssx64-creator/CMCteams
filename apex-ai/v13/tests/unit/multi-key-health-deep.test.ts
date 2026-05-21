@@ -9,11 +9,11 @@ vi.mock('../../core/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../services/sentinels.js', () => ({
+vi.mock('../../services/sentinels/sentinels.js', () => ({
   sentinels: { register: vi.fn() },
 }));
 
-vi.mock('../../services/multi-key-vault.js', () => ({
+vi.mock('../../services/vault/multi-key-vault.js', () => ({
   multiKeyVault: {
     getStats: vi.fn(),
     healthCheckAll: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('../../services/multi-key-vault.js', () => ({
   },
 }));
 
-vi.mock('../../services/ai-key-rotation.js', () => ({
+vi.mock('../../services/ai/ai-key-rotation.js', () => ({
   aiKeyRotation: {
     isProviderDead: vi.fn(),
     getDeadUntil: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock('../../services/ai-key-rotation.js', () => ({
   },
 }));
 
-vi.mock('../../services/audit-log.js', () => ({
+vi.mock('../../services/observability/audit-log.js', () => ({
   auditLog: { record: vi.fn(async () => {}) },
 }));
 

@@ -13,7 +13,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../services/device-detect.js', () => {
+vi.mock('../../services/integrations/device-detect.js', () => {
   /* État mutable par test : on switch capabilities et os via setters */
   const state = {
     caps: {

@@ -20,19 +20,19 @@ import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
-import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
-import { commerce } from '../../services/integrations/commerce.js';
-import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
-import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
 import {
   parseSlashCommand,
   helpText,
   SLASH_COMMANDS,
 } from '../../services/admin/slash-commands.js';
+import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
 import {
   generateFollowUps,
   isFollowUpsEnabled,
 } from '../../services/ai/suggestions.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
+import { commerce } from '../../services/integrations/commerce.js';
 import { vault } from '../../services/vault/vault.js';
 import { haptic } from '../../ui/haptic.js';
 import { renderMarkdownEnriched, wireMarkdownActions } from '../../ui/markdown.js';

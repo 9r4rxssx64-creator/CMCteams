@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.242';
+export const APP_VER = 'v13.4.249';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -549,6 +549,10 @@ async function bootstrap(): Promise<void> {
   router.register('runtime-tests', { loader: () => import('@features/admin/runtime-tests/index.js'), requiresAdmin: true });
   router.register('apex-audits-live', { loader: () => import('@features/admin/apex-audits-live/index.js'), requiresAdmin: true });
   router.register('audit-log-viewer', { loader: () => import('@features/admin/audit-log-viewer/index.js'), requiresAdmin: true });
+  /* v13.4.246 — wire features admin construites mais jamais enregistrées (audit archi, erreur #28). */
+  router.register('admin-capabilities', { loader: () => import('@features/admin/capabilities/index.js'), requiresAdmin: true });
+  router.register('admin-pinecone-status', { loader: () => import('@features/admin/pinecone-status/index.js'), requiresAdmin: true });
+  router.register('admin-voice-diagnostic', { loader: () => import('@features/admin/voice-diagnostic/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

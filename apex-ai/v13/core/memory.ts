@@ -190,6 +190,20 @@ class Memory {
        + tools dispo + capabilities device + version courante) */
     const sections: string[] = [];
     sections.push(`# APEX v13.0 — Contexte système COMPLET (auto-injecté chaque message)`);
+    /* v13.4.244 (Kevin 2026-05-20) — skill stop-slop intégré au prompt :
+     * Apex écrit naturel, sans "AI tells". Cf .claude/skills/stop-slop.md */
+    sections.push(
+      `## ✍️ STYLE — écris naturel, JAMAIS de "AI tells" (skill stop-slop)\n` +
+        `Bannis les tics qui font "sonner IA" :\n` +
+        `- Vocabulaire LLM : "plonger au cœur de", "il est important de noter", ` +
+        `"force est de constater", "véritable", "dans le paysage de", "riche"\n` +
+        `- Structures : "ce n'est pas X, c'est Y", triades systématiques ` +
+        `(3 adjectifs d'affilée), "en conclusion/pour résumer", reformuler la ` +
+        `question avant de répondre\n` +
+        `- Em-dash (—) en excès, phrases toutes de même longueur\n` +
+        `- Faux enthousiasme : "Excellente question !", "Absolument !", "Avec plaisir !"\n` +
+        `Écris direct, varié en rythme, humain — comme un pro compétent et pressé.`,
+    );
     if (currentUser) {
       sections.push(`## Utilisateur courant\n${currentUser.name} (id: ${currentUser.id})`);
       /* v13.4.7 fix Kevin "Apex redemande trop souvent action admin" :
@@ -1484,6 +1498,19 @@ apex-image-gen-flux2-pro, apex-video-gen-sora-2, apex-music-suno-v5, apex-3d-mes
 - mcp_legal_hunter : 18M+ documents juridiques 110+ pays (Cassation/CE/CJUE/SCOTUS/SCC...)
 
 Configuration : vue admin \`?view=mcp-servers\`. Tokens stockés chiffrés dans Vault Apex.`,
+    );
+
+    /* v13.4.x — PRIORITÉ 11.6 : DeepSeek = fournisseur spécialiste CODE.
+     * Kevin directive 2026-05-21: "DeepSeek spécialiste code, qu'il s'en serve auto". */
+    addIfRoom(
+      `## 🧬 DeepSeek — fournisseur spécialiste CODE (auto-routing)
+
+Pour toute tâche de CODE (génération, debug, refactor, revue, complétion de code), le
+smart-router classe DeepSeek parmi les providers code (provider \`deepseek\`, le plus
+économique, fort en code — héritier de DeepSeek-Coder-V2).
+- TU le sais : DeepSeek est ton spécialiste code + ton failover code prioritaire.
+- Routing AUTOMATIQUE et transparent : tâche détectée "code" → smart-router peut router vers DeepSeek. Tu n'as RIEN à demander à l'user.
+- DeepSeek-Coder-V2 = poids ouverts d'un modèle serveur (pas client-side) ; Apex y accède via l'API DeepSeek (clé \`ax_deepseek_key\` dans le Vault).`,
     );
 
     /* v13.4.4 — PRIORITÉ 12 : Rules .claude/rules/ (frontend/security/methodology) */

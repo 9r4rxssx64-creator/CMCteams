@@ -163,23 +163,40 @@ export async function testButtonsInView(opts: {
   const toTest = visible.slice(0, max);
   const results: ButtonTestResult[] = [];
 
-  for (let i = 0; i < toTest.length; i++) {
-    const btn = toTest[i];
-    if (!btn) continue;
-    opts.onProgress?.(i + 1, toTest.length);
-    try {
-      const result = await testOneButton(btn);
-      results.push(result);
-    } catch (err: unknown) {
-      results.push({
-        selector: buildSelector(btn),
-        label: (btn.textContent ?? '').slice(0, 40) || '(error)',
-        status: 'error',
-        reactions: [],
-        durationMs: 0,
-        errorMessage: err instanceof Error ? err.message : String(err),
-      });
+  /* v13.4.245 (FIX "test bloqué") : un bouton cliqué qui ouvre confirm()/
+   * prompt()/alert() FIGE le thread JS jusqu'à réponse user → le scan ne
+   * se termine jamais. On neutralise ces dialogues bloquants pendant le
+   * scan (réponse instantanée négative) et on les restaure dans finally. */
+  const origConfirm = window.confirm;
+  const origPrompt = window.prompt;
+  const origAlert = window.alert;
+  window.confirm = () => false;
+  window.prompt = () => null;
+  window.alert = () => undefined;
+
+  try {
+    for (let i = 0; i < toTest.length; i++) {
+      const btn = toTest[i];
+      if (!btn) continue;
+      opts.onProgress?.(i + 1, toTest.length);
+      try {
+        const result = await testOneButton(btn);
+        results.push(result);
+      } catch (err: unknown) {
+        results.push({
+          selector: buildSelector(btn),
+          label: (btn.textContent ?? '').slice(0, 40) || '(error)',
+          status: 'error',
+          reactions: [],
+          durationMs: 0,
+          errorMessage: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
+  } finally {
+    window.confirm = origConfirm;
+    window.prompt = origPrompt;
+    window.alert = origAlert;
   }
 
   const ok = results.filter((r) => r.status === 'ok').length;
