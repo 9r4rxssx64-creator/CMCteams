@@ -29,7 +29,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { ADMIN_TOOLS } from '../apex-tools-registry/admin-tools.js';
 import { CODE_TOOLS } from '../apex-tools-registry/code-tools.js';
 import { COMM_TOOLS } from '../apex-tools-registry/comm-tools.js';
@@ -40,8 +39,9 @@ import { MEDIA_TOOLS } from '../apex-tools-registry/media-tools.js';
 import { MEMORY_TOOLS } from '../apex-tools-registry/memory-tools.js';
 import { SKILLS_TOOLS } from '../apex-tools-registry/skills-tools.js';
 import { WEB_TOOLS } from '../apex-tools-registry/web-tools.js';
-import type { ApexTool } from './apex-tools-types.js';
 import { auditLog } from '../observability/audit-log.js';
+
+import type { ApexTool } from './apex-tools-types.js';
 
 export type { ApexTool } from './apex-tools-types.js';
 

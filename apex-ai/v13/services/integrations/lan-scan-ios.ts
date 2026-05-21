@@ -33,8 +33,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
+
 import { iosShortcuts } from './ios-shortcuts.js';
 import { pushcutBridge } from './pushcut-bridge.js';
 

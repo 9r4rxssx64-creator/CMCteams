@@ -34,10 +34,9 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import type { TenantPlan, TenantQuotas } from '../auth/tenant.js';
 import { tenantManager } from '../auth/tenant.js';
+import { auditLog } from '../observability/audit-log.js';
 import { vault } from '../vault/vault.js';
 
 

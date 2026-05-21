@@ -16,7 +16,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { persistentMemory } from '../storage/persistent-memory-store.js';
 
 export interface LoadedContext {

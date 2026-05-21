@@ -21,12 +21,13 @@
 import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-
-import { auditLog } from '../observability/audit-log.js';
-import { authGate } from './auth-gate.js';
-import { auth } from './auth.js';
 import { kevinAlerts } from '../admin/kevin-alerts.js';
 import { whatsapp } from '../integrations/whatsapp.js';
+import { auditLog } from '../observability/audit-log.js';
+
+import { authGate } from './auth-gate.js';
+import { auth } from './auth.js';
+
 
 export type SignupPlan = 'family' | 'free' | 'basic' | 'pro';
 

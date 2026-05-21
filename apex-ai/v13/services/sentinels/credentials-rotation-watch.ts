@@ -21,9 +21,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import { linksRegistry } from '../integrations/links-registry.js';
+import { auditLog } from '../observability/audit-log.js';
 import { multiKeyVault, type KeyEntry } from '../vault/multi-key-vault.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

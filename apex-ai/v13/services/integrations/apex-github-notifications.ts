@@ -22,7 +22,6 @@
  *  - Logs sans token, juste compteurs
  */
 import { logger } from '../../core/logger.js';
-
 import { auth } from '../auth/auth.js';
 import { vault } from '../vault/vault.js';
 

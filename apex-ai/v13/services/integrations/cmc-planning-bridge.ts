@@ -24,7 +24,6 @@
  *  - Pas de logs PII (raw_text non loggé)
  */
 import { logger } from '../../core/logger.js';
-
 import { auth } from '../auth/auth.js';
 import { firebase } from '../storage/firebase.js';
 

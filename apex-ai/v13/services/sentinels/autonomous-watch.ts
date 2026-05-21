@@ -12,7 +12,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { apexAutonomousMode } from '../admin/apex-autonomous-mode.js';
 
 const TICK_INTERVAL_MS = 30 * 1000;

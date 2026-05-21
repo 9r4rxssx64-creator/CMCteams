@@ -27,7 +27,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { aiRouter, type ChatMessage } from '../ai/ai-router.js';
 import { auditLog } from '../observability/audit-log.js';
 import { firebaseQueue } from '../storage/firebase-queue.js';

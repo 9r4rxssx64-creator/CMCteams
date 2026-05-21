@@ -30,9 +30,9 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
 import { observability } from '../observability/observability.js';
+
 import { persistentMemory, type MemoryEntry } from './persistent-memory-store.js';
 
 export type MemoryBackend = 'notion' | 'firebase' | 'github_gist' | 'github_issues' | 'n8n_webhook';

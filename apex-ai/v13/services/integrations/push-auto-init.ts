@@ -27,8 +27,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
+
 import { pushNotifications } from './push-notifications.js';
 
 export type PushEnvironment =

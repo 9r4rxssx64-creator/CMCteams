@@ -13,9 +13,9 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { soc2 } from '../auth/soc2-compliance.js';
 
 import { CREDENTIAL_PATTERNS } from './credential-patterns.js';
-import { soc2 } from '../auth/soc2-compliance.js';
 
 export interface SecretLeak {
   storage_key: string;

@@ -25,9 +25,9 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { claudeBridge } from '../ai/claude-bridge.js';
 
 import { auditLog } from './audit-log.js';
-import { claudeBridge } from '../ai/claude-bridge.js';
 
 const STATS_KEY = 'ax_csp_aggregated_stats';
 const SUGGESTIONS_KEY = 'ax_csp_whitelist_suggestions';

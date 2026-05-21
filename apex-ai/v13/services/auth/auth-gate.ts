@@ -23,9 +23,8 @@
 
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import { commerce, type Plan } from '../integrations/commerce.js';
+import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
 
 export type AccountStatus =

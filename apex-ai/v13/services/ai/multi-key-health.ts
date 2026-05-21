@@ -20,11 +20,11 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { auditLog } from '../observability/audit-log.js';
+import { sentinels } from '../sentinels/sentinels.js';
+import { multiKeyVault } from '../vault/multi-key-vault.js';
 
 import { aiKeyRotation, type RotationProvider } from './ai-key-rotation.js';
-import { auditLog } from '../observability/audit-log.js';
-import { multiKeyVault } from '../vault/multi-key-vault.js';
-import { sentinels } from '../sentinels/sentinels.js';
 
 const HEALTH_LOG_KEY = 'ax_provider_health_log';
 const MAX_LOG_ENTRIES = 200;

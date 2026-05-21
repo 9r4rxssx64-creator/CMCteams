@@ -13,10 +13,9 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import { mcpClient } from '../ai/mcp-client.js';
 import { mcpRegistry } from '../ai/mcp-registry.js';
+import { auditLog } from '../observability/audit-log.js';
 
 export type SkillsWatchSeverity = 'ok' | 'warn' | 'err' | 'critical';
 

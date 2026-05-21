@@ -12,7 +12,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import {
   dispatchCodeReview,
   dispatchFuturisticModuleInvoke,
@@ -89,9 +88,10 @@ import {
   wikipediaLookup,
   youtubeSearch,
 } from '../apex-tools-dispatch/utils-misc.js';
-import { apexTools, type ApexTool } from './apex-tools.js';
-import { auditLog } from '../observability/audit-log.js';
 import { guardToolEnabled } from '../auth/feature-guard.js';
+import { auditLog } from '../observability/audit-log.js';
+
+import { apexTools, type ApexTool } from './apex-tools.js';
 import { orchestrator } from './orchestrator.js';
 
 /**

@@ -27,7 +27,7 @@ const ROOT = path.resolve(__dirname, '..');
 const DRY = process.argv.includes('--dry');
 const CSS = path.join(ROOT, 'assets/css/components.css');
 const CSS_FILES = ['tokens', 'base', 'components', 'animations', 'rescue',
-  'financial-bilan', 'laurence', 'ux-premium', 'ux-overrides'];
+  'financial-bilan', 'laurence', 'ux-premium'];
 const SPEC_CAP = 120; // si conflit in-root >= 120, on n'extrait pas (#apex-root .cls.cls = 120)
 
 function parseRules(css) {

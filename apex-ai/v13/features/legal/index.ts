@@ -14,8 +14,8 @@
 import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
-import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { rgpd } from '../../services/auth/rgpd.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 
 /* P1-6 (audit v13.2.7) : scope listeners pour anti-leak SPA navigation. */
 let activeLegalScope: CleanupScope | null = null;

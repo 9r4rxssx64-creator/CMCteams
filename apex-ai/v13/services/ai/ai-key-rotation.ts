@@ -25,7 +25,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
 import { detectCredential, type CredentialPattern } from '../vault/credential-patterns.js';
 import { multiKeyVault, type KeyEntry } from '../vault/multi-key-vault.js';

@@ -25,7 +25,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auth } from '../auth/auth.js';
 
 export type ExtractedType =

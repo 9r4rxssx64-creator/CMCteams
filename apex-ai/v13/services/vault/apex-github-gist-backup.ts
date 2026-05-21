@@ -27,8 +27,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auth } from '../auth/auth.js';
+
 import { vault } from './vault.js';
 
 const GIST_DESCRIPTION_PREFIX = 'apex-vault-backup-v1';

@@ -25,7 +25,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { isFeatureEnabled } from '../auth/feature-toggles.js';
 import { vault } from '../vault/vault.js';
 
