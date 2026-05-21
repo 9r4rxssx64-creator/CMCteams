@@ -217,10 +217,24 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
-select:focus-visible {
+select:focus-visible,
+summary:focus-visible,
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+[role='link']:focus-visible,
+[role='menuitem']:focus-visible,
+[role='switch']:focus-visible,
+[role='checkbox']:focus-visible,
+[tabindex='0']:focus-visible {
   outline: 2px solid var(--ax-gold);
   outline-offset: 2px;
   border-radius: var(--ax-r-sm);
+}
+
+/* v13.4.247 — sélection de texte aux couleurs de marque (détail soigné, skill apex-taste) */
+::selection {
+  background: var(--ax-gold-soft);
+  color: var(--ax-text);
 }
 
 /* Skip link accessibility (legacy + v13.3.74 a11y fix) */
