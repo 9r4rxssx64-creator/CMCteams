@@ -1,0 +1,14 @@
+# CODEOWNERS — CMCteams + Apex AI
+#
+# Toute modification de CE dépôt requiert la revue/approbation du propriétaire.
+# Couplé à la protection de branche GitHub (Settings → Branches → main) :
+#   - "Require a pull request before merging"
+#   - "Require review from Code Owners"
+#   - "Restrict who can push to matching branches"
+# → personne de l'extérieur ne peut modifier le code sans l'aval de Kevin.
+#
+# L'automatisation Apex AI (workflows GitHub Actions du dépôt, ex. apex-execute.yml,
+# auto-merge-claude.yml) continue de fonctionner : elle s'exécute en tant que
+# github-actions[bot], déjà autorisé par les workflows internes.
+
+*       @9r4rxssx64-creator

@@ -5323,7 +5323,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.726";
+var APP_VER="v9.727";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -5670,6 +5670,9 @@ function setMotd(text){
 }
 function clearMotd(){setMotd("");}
 function adminSetMotdFromInput(){
+  /* v9.726 — guard admin explicite (defense-in-depth, audit sécu) :
+     ne pas dépendre uniquement du guard interne de setMotd(). */
+  if(!A.user||A.user.id!==AID){toast("Action réservée à l'admin","err");return;}
   var el=document.getElementById("motdIn");
   if(!el)return;
   setMotd(el.value);

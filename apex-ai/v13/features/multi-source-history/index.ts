@@ -212,7 +212,8 @@ function wireHandlers(rootEl: HTMLElement, history: MultiSourceResult[]): void {
         void render(rootEl);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        toast.error(`Refresh fail : ${msg}`, { duration: 5000 });
+        logger.warn('multi-source-history', 'refresh failed', { err });
+        toast.error(`Le rafraîchissement a échoué, réessaie. (${msg})`, { duration: 5000 });
       }
     })();
   });
@@ -227,7 +228,8 @@ function wireHandlers(rootEl: HTMLElement, history: MultiSourceResult[]): void {
       void render(rootEl);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      toast.error(`Clear fail : ${msg}`);
+      logger.warn('multi-source-history', 'clear history failed', { err });
+      toast.error(`Impossible de vider l'historique, réessaie. (${msg})`);
     }
   });
 

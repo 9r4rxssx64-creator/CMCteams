@@ -809,7 +809,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         }
       } catch (err: unknown) {
         logger.warn('feature-vault', 'rescueFb failed', { err });
-        if (result) result.innerHTML = `<div class="ax-gs-48">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
+        if (result) result.innerHTML = `<div class="ax-gs-48">⚠ Impossible de lire le backup Firebase, vérifie ta connexion. <span style="opacity:.6;font-size:11px;font-family:ui-monospace,monospace">(${escapeHtml(String(err).slice(0, 120))})</span></div>`;
         toast.error('Erreur lecture Firebase backup');
         haptic.error();
       }
@@ -841,7 +841,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         }
       } catch (err: unknown) {
         logger.warn('feature-vault', 'rescueAll failed', { err });
-        if (result) result.innerHTML = `<div class="ax-gs-48">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
+        if (result) result.innerHTML = `<div class="ax-gs-48">⚠ Le scan multi-sources a échoué, réessaie. <span style="opacity:.6;font-size:11px;font-family:ui-monospace,monospace">(${escapeHtml(String(err).slice(0, 120))})</span></div>`;
         toast.error('Erreur scan multi-sources');
         haptic.error();
       }

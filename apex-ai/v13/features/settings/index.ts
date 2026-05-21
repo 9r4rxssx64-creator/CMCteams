@@ -422,7 +422,8 @@ export function render(rootEl: HTMLElement): void {
           `;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          resultsEl.innerHTML = `<div class="ax-gs-76">❌ Erreur test : ${escapeHtml(msg)}</div>`;
+          logger.warn('feature-settings', 'functional test failed', { err });
+          resultsEl.innerHTML = `<div class="ax-gs-76">❌ Le test fonctionnel a échoué, réessaie. <span style="opacity:.6;font-size:11px;font-family:ui-monospace,monospace">(${escapeHtml(msg)})</span></div>`;
         }
       })();
     });
@@ -459,9 +460,10 @@ export function render(rootEl: HTMLElement): void {
           `;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
+          logger.warn('feature-settings', 'layout scan failed', { err });
           /* v13.4.187 audit XSS gap #1 closure : escape même les Error.message
            * internes (peut contenir données user-controlled via stack traces). */
-          resultsEl.innerHTML = `<div class="ax-gs-76">❌ Erreur scan : ${escapeHtml(msg)}</div>`;
+          resultsEl.innerHTML = `<div class="ax-gs-76">❌ Le scan du layout a échoué, réessaie. <span style="opacity:.6;font-size:11px;font-family:ui-monospace,monospace">(${escapeHtml(msg)})</span></div>`;
         }
       })();
     });

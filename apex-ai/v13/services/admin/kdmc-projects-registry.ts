@@ -31,6 +31,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { auth } from '../auth/auth.js';
 
 export type ProjectStatus = 'active' | 'wip' | 'archived';
 
@@ -311,6 +312,12 @@ class KdmcProjectsRegistry {
    * Retourne false si projet inconnu OU aucun champ valide.
    */
   update(id: string, fields: KdmcProjectUpdate): boolean {
+    /* v13.4.246 — verrou écriture : seul l'admin (Kevin / Apex) modifie le
+       registre des projets. Un appelant non-admin est refusé (lecture seule). */
+    if (!auth.isAdminSync()) {
+      logger.warn('kdmc-projects-registry', `update ${id} refusé : admin requis`);
+      return false;
+    }
     this.hydrate();
     const base = KDMC_PROJECTS.find((p) => p.id === id);
     if (!base) {
@@ -349,6 +356,11 @@ class KdmcProjectsRegistry {
 
   /** Retire tous les overrides (utile pour tests / reset admin). */
   reset(): void {
+    /* v13.4.246 — verrou écriture : reset réservé à l'admin (Kevin / Apex). */
+    if (!auth.isAdminSync()) {
+      logger.warn('kdmc-projects-registry', 'reset refusé : admin requis');
+      return;
+    }
     this.overrides = {};
     this.hydrated = true;
     try {

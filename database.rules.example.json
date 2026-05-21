@@ -1,0 +1,14 @@
+{
+  "//": "MODÈLE de règles Realtime Database — voir FIREBASE_SECURITY.md.",
+  "//1": "Garde les apps fonctionnelles (read/write autorisés) + plafonds anti-pollution.",
+  "//2": "Verrouillage RÉEL = activer Firebase App Check puis remplacer les '.write'",
+  "//3": "ci-dessous par \"auth != null && request.auth.token != null\" une fois App Check forcé.",
+  "//4": "NE PAS déployer sans vérifier que toutes les clés écrites par l'app sont couvertes.",
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "$top": {
+      ".validate": "newData.isString() ? newData.val().length <= 5000000 : true"
+    }
+  }
+}

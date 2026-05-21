@@ -319,7 +319,7 @@ function attachHandlers(rootEl: HTMLElement): void {
           render(rootEl);
         } catch (err: unknown) {
           logger.warn('admin-backup', 'snapshot failed', { err });
-          toast.error('Erreur backup : ' + (err instanceof Error ? err.message : 'fail'));
+          toast.error('La sauvegarde a échoué, réessaie. (' + (err instanceof Error ? err.message : 'fail') + ')');
         }
       })();
     });
@@ -340,7 +340,8 @@ function attachHandlers(rootEl: HTMLElement): void {
             toast.info('Coffre exporté (voir console)');
           }
         } catch (err: unknown) {
-          toast.error('Erreur export : ' + (err instanceof Error ? err.message : 'fail'));
+          logger.warn('admin-backup', 'export failed', { err });
+          toast.error('L\'export du coffre a échoué, réessaie. (' + (err instanceof Error ? err.message : 'fail') + ')');
         }
       })();
     });
@@ -368,7 +369,8 @@ function attachHandlers(rootEl: HTMLElement): void {
           }
           render(rootEl);
         } catch (err: unknown) {
-          toast.error('Erreur cleanup : ' + (err instanceof Error ? err.message : 'fail'));
+          logger.warn('admin-backup', 'cleanup failed', { err });
+          toast.error('Le nettoyage a échoué, réessaie. (' + (err instanceof Error ? err.message : 'fail') + ')');
         }
       })();
     });
@@ -407,7 +409,8 @@ function attachHandlers(rootEl: HTMLElement): void {
           }
           render(rootEl);
         } catch (err: unknown) {
-          toast.error('Erreur restore : ' + (err instanceof Error ? err.message : 'fail'));
+          logger.warn('admin-backup', 'restore failed', { err });
+          toast.error('La restauration a échoué, réessaie. (' + (err instanceof Error ? err.message : 'fail') + ')');
         }
       })();
     });
@@ -494,7 +497,8 @@ function openImportModal(rootEl: HTMLElement): void {
           closeModal();
           render(rootEl);
         } catch (err: unknown) {
-          toast.error('Erreur import : ' + (err instanceof Error ? err.message : 'fail'));
+          logger.warn('admin-backup', 'import failed', { err });
+          toast.error('L\'import du coffre a échoué, vérifie le contenu collé. (' + (err instanceof Error ? err.message : 'fail') + ')');
         }
       })();
     }

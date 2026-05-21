@@ -206,7 +206,7 @@ function attachHandlers(rootEl: HTMLElement): void {
           await refresh(rootEl);
         } catch (err: unknown) {
           logger.error('credentials-status', 'restoreAll failed', { err });
-          toast.show(`Erreur restore : ${String(err).slice(0, 100)}`, 'error');
+          toast.show(`La restauration a échoué, réessaie. (${String(err).slice(0, 100)})`, 'error');
           restoreAllBtn.disabled = false;
         }
       })();
