@@ -25,7 +25,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
 import { cspMonitor } from '../observability/csp-monitor.js';
 import { multiKeyVault } from '../vault/multi-key-vault.js';

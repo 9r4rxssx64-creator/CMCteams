@@ -16,8 +16,8 @@
 
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
-
 import { auditLog } from '../observability/audit-log.js';
+
 import { crewExperts, type CrewMember, type CrewResult } from './crew-experts.js';
 
 export type AgentRole =

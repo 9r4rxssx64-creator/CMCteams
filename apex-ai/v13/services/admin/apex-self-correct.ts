@@ -37,11 +37,10 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { aiKeyRotation, type RotationProvider } from '../ai/ai-key-rotation.js';
 import { auditLog } from '../observability/audit-log.js';
-import { autoRestoreCredentials } from '../vault/auto-restore-credentials.js';
 import { autoUltraReset } from '../storage/auto-ultra-reset.js';
+import { autoRestoreCredentials } from '../vault/auto-restore-credentials.js';
 
 /* ============================================================
    Types publics

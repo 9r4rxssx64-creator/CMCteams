@@ -32,7 +32,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { META_MARKETPLACE_CATALOG } from '../apex-meta-marketplace/catalog.js';
 import { buildCliCommand, hasApiKey } from '../apex-meta-marketplace/install-helpers.js';
 import {
@@ -42,6 +41,8 @@ import {
   stripHtmlShared,
   type SearchHelpers,
 } from '../apex-meta-marketplace/search-handlers.js';
+import { auditLog } from '../observability/audit-log.js';
+
 import type {
   MarketplaceCategory,
   MarketplaceProvider,
@@ -50,7 +51,6 @@ import type {
   InstallResult,
   MetaMarketplaceStats,
 } from './apex-meta-marketplace-types.js';
-import { auditLog } from '../observability/audit-log.js';
 
 const STORAGE_KEY = 'apex_v13_meta_marketplace_state';
 

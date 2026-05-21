@@ -16,7 +16,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { isFeatureEnabled } from '../auth/feature-toggles.js';
 
 export interface FallbackResponse {

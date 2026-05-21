@@ -22,8 +22,8 @@ import { escapeHtml } from '../../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../../core/listener-cleanup.js';
 import { logger } from '../../../core/logger.js';
 import { store } from '../../../core/store.js';
-import { auditLog } from '../../../services/observability/audit-log.js';
 import { rgpd } from '../../../services/auth/rgpd.js';
+import { auditLog } from '../../../services/observability/audit-log.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 

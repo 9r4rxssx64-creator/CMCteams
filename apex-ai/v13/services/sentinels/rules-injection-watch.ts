@@ -18,7 +18,6 @@
 
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
-
 import { rulesEngine } from '../core-svc/rules-engine.js';
 
 export interface InjectionAuditReport {

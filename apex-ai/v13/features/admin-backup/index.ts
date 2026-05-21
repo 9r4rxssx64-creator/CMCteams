@@ -19,8 +19,8 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import { autoBackup, type Backup, type BackupStats } from '../../services/storage/auto-backup.js';
 import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
+import { autoBackup, type Backup, type BackupStats } from '../../services/storage/auto-backup.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
