@@ -110,7 +110,10 @@ export interface Sentinel {
   desc: string;
   intervalMs: number;
   lastRun: number;
-  lastResult?: { ok: boolean; msg: string; ts: number };
+  /* `errored` = la sentinelle a LEVÉ une exception (vrai dysfonctionnement).
+   * Distinct de `ok:false` qui signifie "check OK mais a détecté un problème
+   * à signaler" (storage plein, CSP violation…). Cf apex-self-audit. */
+  lastResult?: { ok: boolean; msg: string; ts: number; errored?: boolean };
   enabled: boolean;
   check: () => Promise<{ ok: boolean; msg: string; details?: Record<string, unknown> }>;
   /* Auto-repair whitelist : action correctrice si check échoue */
@@ -221,7 +224,7 @@ class SentinelsManager {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       s.lastRun = Date.now();
-      s.lastResult = { ok: false, msg, ts: Date.now() };
+      s.lastResult = { ok: false, msg, ts: Date.now(), errored: true };
       observability.capture('error', `sentinel.${s.id}`, msg);
       this.persist();
       return s.lastResult;
