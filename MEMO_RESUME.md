@@ -1,4 +1,39 @@
-# Mémo de reprise — Apex v13.4.243 / CMC v9.658 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-20)
+# Mémo de reprise — Apex v13.4.243 / CMC v9.728 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-22)
+
+## 📋 SESSION 2026-05-22 — CMCteams import : reproduction + couleurs + cadres (v9.726→728)
+
+Branche `claude/dossier-reprise-markdown-EyxIo`. Chantier import planning SBM.
+
+### Livré et vérifié (commits poussés)
+- **v9.726** — 3 fixes parser : (1) décalage de jour (consensus d'équipe v8.57 écrasait
+  des cellules déjà parsées → ne remplit plus que les cellules vides) ; (2) `*` CDP
+  inventé retiré (3 auto-upgrade selon profil `cdpShifts`) ; (3) suffixes `'`/`"`
+  préservés via `_cmcEnsureQuoteVariant()`. Audit `npm run test:fidelity` (Playwright,
+  câblé dans test:ci) : 29/29 employés reproduits à l'identique.
+- **v9.727** — couleurs Convention : codes `'`/`"` = fond rouge / écriture jaune
+  (NOTES_USER). Helper `_cmcIsConv()` source unique, remplace 8 `endsWith("'")`.
+- **v9.728** — cadres non contaminés : les 2 scans de rattrapage cadres (fallback
+  v9.462 + SECOURS v9.146) matchaient par nom de famille seul → `CAMPI H`←`CAMPI PH`,
+  `ENZA C`←`ENZA B`. Gated sur `_importTypeDetails.hasCadres`.
+
+### ⚠️ NON RÉSOLU — fragmentation des équipes (diag Kevin 2026-05-22)
+Kevin : « beaucoup d'équipe a 1-2 personne ». Cause racine analysée dans
+`_cmcDetectTeamsByPdfColumn` (l. 34575) :
+1. **Colonnes RH / R comptées comme équipes** : le header de rotation
+   `… 4 RH du au 4 R du au` génère des « équipes » r5/r6/r11/r12 qui ne sont
+   que les positions de repos du cycle.
+2. **`_extractEntries` ne gère pas le fragmentage PDF.js** : dans la section
+   Chefs BJ, les codes-poste et les noms sont sur des lignes SÉPARÉES
+   (`BRE … BRTCP+KE.` puis ligne `MILLO W * HORGNE C GARINO Y …`).
+   `_extractEntries` attend `<poste> <nom>` adjacents → entrées non extraites →
+   colonnes sous-remplies → équipes de 1-2 personnes (ex équipe `2` = BASILE G +
+   CERETTI R au lieu de 5 chefs).
+Rework algorithmique réel nécessaire — pas un fix chirurgical (cf. CLAUDE.md
+erreur #50 : tout changement aveugle de la détection d'équipes régresse).
+
+---
+
+# Mémo de reprise — Apex v13.4.243 / CMC v9.658 (2026-05-20)
 
 ## 🔧 SESSION 2026-05-20 (soir 3) — Fix Firebase backup KO + auto-test qui se bloque (v13.4.243)
 
