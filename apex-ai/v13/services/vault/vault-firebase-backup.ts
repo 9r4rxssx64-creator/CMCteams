@@ -49,6 +49,7 @@ export interface BackupResult {
   reason?: string;
   throttled?: boolean;
   ts?: number;
+  queued?: boolean;
 }
 
 export interface RestoreResult {
@@ -198,10 +199,14 @@ class VaultFirebaseBackup {
         return { ok: false, throttled: true, reason: 'throttled', ts: lastPush };
       }
     }
-    if (!firebase.isConnected()) {
-      logger.debug('vault-fb-backup', `offline — skip push ${storageKey} (will retry next setKey)`);
-      return { ok: false, reason: 'offline' };
-    }
+    /* v13.4.257 (FIX "Firebase backup KO 0/20" — Kevin "tjs pas de coffre
+     * en mémoire") : on N'ABANDONNE PLUS le push quand !isConnected().
+     * firebase.write() met en file d'attente offline (firebase-queue) et
+     * flush automatiquement à la reconnexion. L'ancien `return offline`
+     * pré-court-circuitait write() → le backup vault ne touchait JAMAIS
+     * la file → 0 sauvegarde dès que la connexion flanchait (cas iOS
+     * Safari background très fréquent) et ne se rattrapait jamais. */
+    const online = firebase.isConnected();
     const uid = getUid();
     const safeKey = fbSafeKeyId(storageKey);
     const ts = Date.now();
@@ -214,11 +219,16 @@ class VaultFirebaseBackup {
     };
     const path = `${FB_BACKUP_PATH}/${uid}/${safeKey}`;
     try {
-      /* Use firebase.write avec idempotency key pour éviter spam si même valeur */
+      /* Use firebase.write avec idempotency key pour éviter spam si même valeur.
+       * Offline → write() met en file d'attente (flush auto à la reconnexion). */
       await firebase.write(path, envelope, { idempotencyKey: `vfb_${safeKey}_${envelope.hash}` });
       this.recordPush(storageKey, ts);
-      logger.info('vault-fb-backup', `✅ pushed ${storageKey} → ${path}`, { hash: envelope.hash });
-      return { ok: true, ts };
+      if (online) {
+        logger.info('vault-fb-backup', `✅ pushed ${storageKey} → ${path}`, { hash: envelope.hash });
+      } else {
+        logger.info('vault-fb-backup', `📥 queued ${storageKey} (offline — flush auto à la reconnexion)`);
+      }
+      return { ok: true, ts, ...(online ? {} : { queued: true }) };
     } catch (err: unknown) {
       logger.warn('vault-fb-backup', `push failed ${storageKey}`, { err });
       return { ok: false, reason: String(err).slice(0, 100) };
