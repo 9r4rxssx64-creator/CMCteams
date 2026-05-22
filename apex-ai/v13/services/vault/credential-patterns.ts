@@ -380,15 +380,6 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     docs: 'https://docs.perplexity.ai/',
   },
   {
-    name: 'OpenRouter',
-    regex: /^sk-or-(?:v1-)?[A-Za-z0-9]{40,}$/,
-    storageKey: 'ax_openrouter_key',
-    category: 'ai',
-    dashboard: 'https://openrouter.ai/keys',
-    billing: 'https://openrouter.ai/credits',
-    docs: 'https://openrouter.ai/docs',
-  },
-  {
     name: 'Cohere',
     /* v13.3.95 P0 FIX Kevin "il a reconnu une API en Cohere alors que c'est pas Cohere" :
      * Avant : /^(?:co_|[A-Za-z0-9]{40})[A-Za-z0-9]{0,40}$/ matchait TOUTE string 40-80 chars
@@ -402,14 +393,6 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     category: 'ai',
     dashboard: 'https://dashboard.cohere.com/',
     docs: 'https://docs.cohere.com/',
-  },
-  {
-    name: 'DeepSeek',
-    regex: /^sk-[a-f0-9]{32,}$/,
-    storageKey: 'ax_deepseek_key',
-    category: 'ai',
-    dashboard: 'https://platform.deepseek.com/api_keys',
-    docs: 'https://platform.deepseek.com/api-docs',
   },
   {
     /* Pinecone vector DB — RAG mémoire sémantique Apex (mcp-memory-stub.ts).
