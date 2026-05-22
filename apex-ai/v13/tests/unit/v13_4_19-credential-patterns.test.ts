@@ -32,11 +32,29 @@ describe('v13.4.19 detectCredential — patterns AI/devops/payments', () => {
   });
 
   it("OpenAI classic (sk-...) ≠ Anthropic ni Project", () => {
-    const k = 'sk-' + 'a'.repeat(48);
+    /* v13.4.262 : clé réaliste avec MAJUSCULES (base62) — une clé OpenAI
+     * tout-en-hex minuscule est indissociable d'une clé DeepSeek (sk-+hex). */
+    const k = 'sk-' + 'A1b2C3d4'.repeat(6);
     const p = detectCredential(k);
     expect(p).not.toBeNull();
     expect(p?.name).toBe('OpenAI');
     expect(p?.storageKey).toBe('ax_openai_key');
+  });
+
+  it("DeepSeek (sk-+hex) ≠ OpenAI — clé hex pure → DeepSeek", () => {
+    /* v13.4.262 — collision réglée : sk- + hex pur = DeepSeek (pattern strict). */
+    const k = 'sk-' + '0123456789abcdef'.repeat(2);
+    const p = detectCredential(k);
+    expect(p?.name).toBe('DeepSeek');
+    expect(p?.storageKey).toBe('ax_deepseek_key');
+  });
+
+  it("OpenRouter (sk-or-...) ≠ OpenAI", () => {
+    /* v13.4.262 — collision réglée : sk-or- exclu du pattern OpenAI. */
+    const k = 'sk-or-v1-' + 'A1b2C3d4'.repeat(6);
+    const p = detectCredential(k);
+    expect(p?.name).toBe('OpenRouter');
+    expect(p?.storageKey).toBe('ax_openrouter_key');
   });
 
   it("GitHub PAT classic (ghp_...) — v13.4.6 storageKey distinct", () => {
@@ -140,7 +158,7 @@ describe('v13.4.19 detectAllCredentials — multi-key paste (.env, JSON)', () =>
   it("détecte 2 credentials dans .env (Kevin colle fichier complet)", () => {
     const env = `
 ANTHROPIC_API_KEY=sk-ant-api03-${'a'.repeat(95)}
-OPENAI_API_KEY=sk-${'b'.repeat(48)}
+OPENAI_API_KEY=sk-${'A1b2C3d4'.repeat(6)}
 `;
     const result = detectAllCredentials(env);
     expect(result.length).toBeGreaterThanOrEqual(2);

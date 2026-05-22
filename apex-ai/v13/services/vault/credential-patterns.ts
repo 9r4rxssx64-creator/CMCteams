@@ -311,8 +311,34 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
     testMethod: 'GET',
   },
   {
+    /* v13.4.261 FIX collision Kevin "mauvaise reconnaissance API" :
+     * OpenRouter `sk-or-...` était capturé par le pattern OpenAI générique
+     * (sk-... sans exclusion de `or-`). Placé AVANT OpenAI générique +
+     * OpenAI exclut maintenant `or-` explicitement. */
+    name: 'OpenRouter',
+    regex: /^sk-or-(?:v1-)?[A-Za-z0-9]{40,}$/,
+    storageKey: 'ax_openrouter_key',
+    category: 'ai',
+    dashboard: 'https://openrouter.ai/keys',
+    billing: 'https://openrouter.ai/credits',
+    docs: 'https://openrouter.ai/docs',
+  },
+  {
+    /* v13.4.261 FIX collision : DeepSeek `sk-`+hex était capturé par OpenAI
+     * générique (placé avant). Placé AVANT OpenAI générique → le pattern
+     * hex-strict gagne. Une vraie clé OpenAI contient maj/underscore/tiret
+     * donc ne matchera jamais [a-f0-9] pur. */
+    name: 'DeepSeek',
+    regex: /^sk-[a-f0-9]{32,}$/,
+    storageKey: 'ax_deepseek_key',
+    category: 'ai',
+    dashboard: 'https://platform.deepseek.com/api_keys',
+    docs: 'https://platform.deepseek.com/api-docs',
+  },
+  {
     name: 'OpenAI',
-    regex: /^sk-(?!ant-)(?!proj-)[A-Za-z0-9_-]{40,}$/,
+    /* v13.4.261 : ajout (?!or-) — sinon OpenRouter sk-or-... matché ici à tort. */
+    regex: /^sk-(?!ant-)(?!proj-)(?!or-)[A-Za-z0-9_-]{40,}$/,
     storageKey: 'ax_openai_key',
     category: 'ai',
     dashboard: 'https://platform.openai.com/',
