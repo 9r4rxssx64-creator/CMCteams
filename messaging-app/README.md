@@ -1,7 +1,7 @@
 # 💬 Apex Chat
 
 **Messagerie privée ultra-sécurisée avec IA Apex intégrée.**
-Chiffrement militaire post-quantum (PQXDH) — Serveur aveugle.
+Chiffrement de bout en bout (E2E — ECDH P-256 + AES-GCM 256) — Serveur aveugle.
 
 > Branche : `claude/private-messaging-app-jpLl1`
 > Repo : `9r4rxssx64-creator/cmcteams` — dossier `messaging-app/`
@@ -59,7 +59,7 @@ messaging-app/
 | Database | Cloudflare D1 (SQL) | Sharding préparé Day 1 (colonne `shard_id` virtuelle) |
 | Médias | Cloudflare R2 | Stockage illimité, zero egress fee |
 | Auth | Firebase Auth Phone | 10K vérifs gratuites/mois, migration Vonage à 50K users |
-| Crypto | PQXDH (Signal Protocol post-quantum) | Standard industrie, Kyber-768 + Ed25519 + double ratchet |
+| Crypto | E2E ECDH P-256 + AES-GCM 256 + PBKDF2 100k | Chiffrement bout-en-bout, serveur aveugle (PQXDH/Kyber : prévu, non actif) |
 | Push | Cloudflare Worker dédié | Web Push (VAPID) + APNs + FCM cross-platform |
 | IA | Anthropic + failover (OpenRouter / Gemini / Groq / OpenAI) | Cache LRU 60-70% hit rate, divise coûts par 7 |
 | Self-healing | Cloudflare Queues → Apex `ax_telemetry_in` | Pipeline cross-app vers Claude Code |
@@ -89,7 +89,7 @@ messaging-app/
 | Tes contacts | Pseudo + photo + bio + statut "en ligne" (toggle par contact) — vrai nom JAMAIS révélé |
 | **Admin Kevin (Option A)** | Pseudo + vrai nom, fiche complète au clic, conversations (clé maître invisible) |
 | Serveur Cloudflare | Métadonnées (qui→qui, quand, taille) — contenu chiffré, ILLISIBLE |
-| Hacker / gouvernement | RIEN (chiffrement post-quantum PQXDH) |
+| Hacker / gouvernement | RIEN (chiffrement E2E, serveur aveugle) |
 
 **Bascule prévue** :
 - **Option A** (active) : Kevin admin lit tout côté client, marketing "privé entre nous"
