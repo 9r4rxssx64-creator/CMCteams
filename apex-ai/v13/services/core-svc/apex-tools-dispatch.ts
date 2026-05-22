@@ -13,6 +13,8 @@
 
 import { logger } from '../../core/logger.js';
 import {
+  dispatchApexExtraSkills,
+  dispatchApexOrchestration,
   dispatchCodeReview,
   dispatchFuturisticModuleInvoke,
   dispatchGenerateDesignSystem,
@@ -1786,6 +1788,10 @@ class ApexToolsDispatcher {
         return await dispatchSecurityReview(params);
       case 'code_review':
         return await dispatchCodeReview(params);
+      case 'apex_extra_skills':
+        return await dispatchApexExtraSkills(params);
+      case 'apex_orchestration':
+        return await dispatchApexOrchestration(params);
       case 'generate_design_system':
         return await dispatchGenerateDesignSystem(params);
       case 'generate_marketing_copy':

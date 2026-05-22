@@ -7,6 +7,14 @@
 
 import { logger } from '../../core/logger.js';
 import { mcpClient } from '../ai/mcp-client.js';
+import {
+  contextMode,
+  gsdMethodology,
+  memPalace,
+  securityReviewWrapper,
+  skillCreator,
+} from '../core-svc/apex-extra-skills.js';
+import { hiveMind, remoteControl, webScrapper } from '../core-svc/apex-orchestration-skills.js';
 import { docxGenerator, type DocxGenerateInput } from '../skills/docx-generator.js';
 import { pdfGenerator, type PdfGenerateInput } from '../skills/pdf-generator.js';
 import { pptxGenerator, type PptxGenerateInput } from '../skills/pptx-generator.js';
@@ -360,5 +368,137 @@ export async function dispatchFuturisticModuleInvoke(params: Record<string, unkn
       module_id: moduleId,
       error: err instanceof Error ? err.message : String(err),
     };
+  }
+}
+
+/**
+ * v13.4.260 — Câblage skills internes Apex (apex-extra-skills.ts).
+ * Outil action-discriminé : security_scan, gsd_evaluate, context_optimize,
+ * mempalace_*, skill_list. Les méthodes ont leurs propres guards admin.
+ */
+export async function dispatchApexExtraSkills(params: Record<string, unknown>): Promise<unknown> {
+  const action = p<string>(params, 'action') ?? '';
+  switch (action) {
+    case 'security_scan': {
+      const findings = securityReviewWrapper.scanText(p<string>(params, 'text') ?? '');
+      return { success: true, action, findings, summary: securityReviewWrapper.summary(findings) };
+    }
+    case 'gsd_evaluate': {
+      const docUpdated = p<boolean>(params, 'doc_updated');
+      return {
+        success: true,
+        action,
+        ...gsdMethodology.evaluate({
+          codeWritten: p<boolean>(params, 'code_written') ?? false,
+          testsPass: p<boolean>(params, 'tests_pass') ?? false,
+          committed: p<boolean>(params, 'committed') ?? false,
+          pushed: p<boolean>(params, 'pushed') ?? false,
+          auditOk: p<boolean>(params, 'audit_ok') ?? false,
+          ...(docUpdated !== undefined && { docUpdated }),
+        }),
+      };
+    }
+    case 'context_optimize': {
+      const maxTokens = p<number>(params, 'max_tokens');
+      const includeAdminContext = p<boolean>(params, 'include_admin_context');
+      return {
+        success: true,
+        action,
+        ...contextMode.optimize({
+          ...(maxTokens !== undefined && { maxTokens }),
+          ...(includeAdminContext !== undefined && { includeAdminContext }),
+        }),
+      };
+    }
+    case 'mempalace_create': {
+      const facts = p<string[]>(params, 'facts');
+      const r = memPalace.createRoom({
+        name: p<string>(params, 'name') ?? '',
+        description: p<string>(params, 'description') ?? '',
+        ...(facts !== undefined && { facts }),
+      });
+      return { ...r, success: r.ok, action };
+    }
+    case 'mempalace_list':
+      return { success: true, action, rooms: memPalace.listRooms() };
+    case 'mempalace_recall':
+      return { success: true, action, rooms: memPalace.recall(p<string>(params, 'query') ?? '') };
+    case 'skill_list':
+      return { success: true, action, skills: skillCreator.list() };
+    default:
+      return { success: false, error: `action inconnue: ${action}` };
+  }
+}
+
+/**
+ * v13.4.260 — Câblage orchestration Apex (apex-orchestration-skills.ts).
+ * Outil action-discriminé : remote control, HiveMind swarm, web scraping.
+ * Les méthodes sensibles ont leurs propres guards admin.
+ */
+export async function dispatchApexOrchestration(params: Record<string, unknown>): Promise<unknown> {
+  const action = p<string>(params, 'action') ?? '';
+  switch (action) {
+    case 'rc_create': {
+      const rcName = p<string>(params, 'name');
+      const flags = p<Array<'verbose' | 'sandbox' | 'no-sandbox'>>(params, 'flags');
+      const r = remoteControl.createSession({
+        ...(rcName !== undefined && { name: rcName }),
+        ...(flags !== undefined && { flags }),
+      });
+      return { ...r, success: r.ok, action };
+    }
+    case 'rc_list':
+      return { success: true, action, sessions: remoteControl.listSessions() };
+    case 'rc_revoke': {
+      const r = remoteControl.revokeSession(p<string>(params, 'session_id') ?? '');
+      return { ...r, success: r.ok, action };
+    }
+    case 'swarm_spawn': {
+      const topology = p<'hierarchical' | 'mesh' | 'ring' | 'star'>(params, 'topology');
+      const consensus = p<'raft' | 'bft' | 'gossip' | 'crdt' | 'pow-lite'>(params, 'consensus');
+      const queenType = p<'strategic' | 'tactical' | 'adaptive'>(params, 'queen_type');
+      const workersCount = p<number>(params, 'workers_count');
+      const r = hiveMind.spawnSwarm({
+        ...(topology !== undefined && { topology }),
+        ...(consensus !== undefined && { consensus }),
+        ...(queenType !== undefined && { queen_type: queenType }),
+        ...(workersCount !== undefined && { workers_count: workersCount }),
+      });
+      return { ...r, success: r.ok, action };
+    }
+    case 'swarm_list':
+      return {
+        success: true,
+        action,
+        swarms: hiveMind.listSwarms(),
+        active_agents: hiveMind.countActiveAgents(),
+      };
+    case 'swarm_execute': {
+      const mode = p<'consensus' | 'debate' | 'specialized'>(params, 'mode');
+      const r = await hiveMind.executeTask({
+        swarmId: p<string>(params, 'swarm_id') ?? '',
+        task: p<string>(params, 'task') ?? '',
+        ...(mode !== undefined && { mode }),
+      });
+      return { ...r, success: r.ok, action };
+    }
+    case 'swarm_dissolve': {
+      const r = hiveMind.dissolveSwarm(p<string>(params, 'swarm_id') ?? '');
+      return { ...r, success: r.ok, action };
+    }
+    case 'scrape_start': {
+      const depth = p<number>(params, 'depth');
+      const r = webScrapper.startScrape({
+        url: p<string>(params, 'url') ?? '',
+        ...(depth !== undefined && { depth }),
+      });
+      return { ...r, success: r.ok, action };
+    }
+    case 'scrape_list':
+      return { success: true, action, jobs: webScrapper.listJobs() };
+    case 'scrape_domains':
+      return { success: true, action, allowed_domains: webScrapper.getAllowedDomains() };
+    default:
+      return { success: false, error: `action inconnue: ${action}` };
   }
 }

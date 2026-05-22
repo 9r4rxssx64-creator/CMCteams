@@ -276,4 +276,65 @@ export const SKILLS_TOOLS: readonly ApexTool[] = [
     minTier: 'family',
     impactLevel: 'B',
   },
+
+  /* ─────────── Skills internes Apex (câblés v13.4.260) ─────────── */
+  {
+    name: 'apex_extra_skills',
+    description:
+      'Skills internes Apex (ADMIN ONLY). action=security_scan : scanne un texte source (XSS/secrets/eval/CSP). action=gsd_evaluate : note une livraison selon la méthode GSD (zéro demi-mesure). action=context_optimize : compresse facts/lessons pour réduire les tokens. action=mempalace_create/mempalace_list/mempalace_recall : mémoire spatiale. action=skill_list : liste les skills générés.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['security_scan', 'gsd_evaluate', 'context_optimize', 'mempalace_create', 'mempalace_list', 'mempalace_recall', 'skill_list'],
+        },
+        text: { type: 'string', description: 'security_scan : texte source à analyser' },
+        name: { type: 'string', description: 'mempalace_create : nom de la salle' },
+        description: { type: 'string', description: 'mempalace_create : description' },
+        facts: { type: 'array', description: 'mempalace_create : faits liés à la salle' },
+        query: { type: 'string', description: 'mempalace_recall : requête de rappel' },
+        code_written: { type: 'boolean', description: 'gsd_evaluate' },
+        tests_pass: { type: 'boolean', description: 'gsd_evaluate' },
+        committed: { type: 'boolean', description: 'gsd_evaluate' },
+        pushed: { type: 'boolean', description: 'gsd_evaluate' },
+        audit_ok: { type: 'boolean', description: 'gsd_evaluate' },
+        doc_updated: { type: 'boolean', description: 'gsd_evaluate (optionnel)' },
+        max_tokens: { type: 'number', description: 'context_optimize : budget tokens' },
+        include_admin_context: { type: 'boolean', description: 'context_optimize' },
+      },
+      required: ['action'],
+    },
+    minTier: 'admin',
+    impactLevel: 'A',
+  },
+  {
+    name: 'apex_orchestration',
+    description:
+      'Orchestration Apex (ADMIN ONLY). action=rc_create/rc_list/rc_revoke : sessions de contrôle à distance. action=swarm_spawn/swarm_list/swarm_execute/swarm_dissolve : multi-agents HiveMind (exécution réelle via crew-experts). action=scrape_start/scrape_list/scrape_domains : web scraping sur domaines whitelistés.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['rc_create', 'rc_list', 'rc_revoke', 'swarm_spawn', 'swarm_list', 'swarm_execute', 'swarm_dissolve', 'scrape_start', 'scrape_list', 'scrape_domains'],
+        },
+        name: { type: 'string', description: 'rc_create : nom de session' },
+        flags: { type: 'array', description: 'rc_create : verbose/sandbox/no-sandbox' },
+        session_id: { type: 'string', description: 'rc_revoke : id de session' },
+        topology: { type: 'string', enum: ['hierarchical', 'mesh', 'ring', 'star'], description: 'swarm_spawn' },
+        consensus: { type: 'string', enum: ['raft', 'bft', 'gossip', 'crdt', 'pow-lite'], description: 'swarm_spawn' },
+        queen_type: { type: 'string', enum: ['strategic', 'tactical', 'adaptive'], description: 'swarm_spawn' },
+        workers_count: { type: 'number', description: 'swarm_spawn : 1-20 workers' },
+        swarm_id: { type: 'string', description: 'swarm_execute / swarm_dissolve' },
+        task: { type: 'string', description: 'swarm_execute : tâche à exécuter' },
+        mode: { type: 'string', enum: ['consensus', 'debate', 'specialized'], description: 'swarm_execute' },
+        url: { type: 'string', description: 'scrape_start : URL (domaine whitelisté requis)' },
+        depth: { type: 'number', description: 'scrape_start : profondeur 1-3' },
+      },
+      required: ['action'],
+    },
+    minTier: 'admin',
+    impactLevel: 'B',
+  },
 ];
