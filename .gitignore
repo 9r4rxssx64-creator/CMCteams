@@ -9,3 +9,6 @@ tools/video/assets/*.png
 
 # v13.4.225 — dist/ racine = build artifacts non versionnés
 /dist/
+
+# iRemoteHub bridge — secrets locaux (auth_token + anthropic_api_key)
+iRemoteHub/bridge/config.json

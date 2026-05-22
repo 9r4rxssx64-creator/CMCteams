@@ -60,7 +60,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use((req, res, next) => {
   if (req.path === '/health' || req.path === '/') return next();
   const token = req.header('X-Auth-Token') || req.query.token;
-  if (token !== CONFIG.auth_token) {
+  if (!auth.verifyToken(token, CONFIG.auth_token)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
   next();

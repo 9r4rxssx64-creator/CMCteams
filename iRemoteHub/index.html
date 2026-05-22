@@ -198,7 +198,7 @@ label { display: block; font-size: .8rem; color: var(--fg-dim); margin: 8px 0 4p
 "use strict";
 
 // ========== Constantes ==========
-const APP_VER = "v0.1.0";
+const APP_VER = "v0.1.1";
 const NS = "iremotehub_";
 const APEX_ORIGINS = ["https://apex.local", "https://localhost", window.location.origin];
 
@@ -454,7 +454,14 @@ async function runMacro(name) {
   try {
     toast("🪄 " + name + "…");
     const r = await apiPost("/macro/" + encodeURIComponent(name), { source: A.embedded ? "apex" : "pwa" });
-    toast("✅ " + name + " — " + (r.results ? r.results.length : 0) + " action(s)", "ok");
+    const acted = (r.results || []).filter(x => x && !x.skipped);
+    const failed = acted.filter(x => x.ok === false);
+    const done = acted.filter(x => x.ok === true).length;
+    if (failed.length) {
+      toast("⚠️ " + name + " — " + done + "/" + acted.length + " OK (" + failed.length + " échec" + (failed.length > 1 ? "s" : "") + ")", "err");
+    } else {
+      toast("✅ " + name + " — " + done + " action(s)", "ok");
+    }
     fire("macro:done", { name, result: r });
     return r;
   } catch (e) {
