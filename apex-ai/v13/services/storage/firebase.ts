@@ -221,20 +221,35 @@ class Firebase {
       this.scheduleReconnect();
     }
     this.flushQueue();
-    /* Sprint 8 : restore vault keys depuis Firebase si localStorage vide
-       (Kevin règle "ne plus perdre clé API après clear cache iPhone") */
-    if (this.connected) void this.restoreVaultKeysFromFirebase();
-    /* v13.3.74+ Kevin 2026-05-08 ABSOLUE — Auto-restore depuis Firebase backup dédié.
-     * Path /apex/vault_backup/<uid>/* survit même si FB_FIX whitelist change.
-     * Couche 4 de la triple-persistence béton (cf. vault-firebase-backup.ts).
-     * Best-effort : si offline ou pas de backup → no-op. */
-    if (this.connected) {
-      void import('../vault/vault-firebase-backup.js')
-        .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.restoreAllFromFirebaseBackup())
-        .catch((err: unknown) => {
-          logger.debug('firebase', 'vault-fb-backup auto-restore skipped', { err });
-        });
-    }
+    /* v13.4.258 (FIX DIAG couche-par-couche "coffre vide après reboot") :
+     * restore vault TOUTES couches — voir restoreVaultAllLayers(). */
+    this.restoreVaultAllLayers();
+  }
+
+  /**
+   * v13.4.258 — Restore vault depuis Firebase, toutes couches. Appelé à
+   * l'init SI connecté ET à CHAQUE reconnexion réussie.
+   *
+   * BUG corrigé (diag couche-par-couche) : avant, le restore vault était
+   * gardé `if (this.connected)` UNIQUEMENT dans init(). Sur iOS Safari,
+   * Firebase est quasi-toujours déconnecté au boot (SSE/ping pas encore
+   * up) → le restore était sauté. attemptReconnect() faisait flushQueue()
+   * mais JAMAIS le restore → les clés du backup Firebase n'étaient jamais
+   * récupérées si le localStorage avait été évincé. → "Coffre vide".
+   *
+   * Idempotent : restoreAllFromFirebaseBackup saute les clés déjà locales.
+   */
+  private restoreVaultAllLayers(): void {
+    if (!this.connected) return;
+    /* Sprint 8 : restore clés vault depuis FB_FIX si localStorage vide. */
+    void this.restoreVaultKeysFromFirebase();
+    /* Couche 4 : backup dédié /apex/vault_backup/<uid>/* (survit changement
+     * FB_FIX). Best-effort : offline ou pas de backup → no-op. */
+    void import('../vault/vault-firebase-backup.js')
+      .then(({ vaultFirebaseBackup }) => vaultFirebaseBackup.restoreAllFromFirebaseBackup())
+      .catch((err: unknown) => {
+        logger.debug('firebase', 'vault-fb-backup auto-restore skipped', { err });
+      });
   }
 
   isConnected(): boolean {
@@ -294,6 +309,10 @@ class Firebase {
         this.startSSE();
         this.startWatchdog();
         this.flushQueue();
+        /* v13.4.258 (FIX diag) : re-tente le restore vault à chaque
+         * reconnexion — pas seulement à l'init. Sans ça, un boot offline
+         * (iOS Safari typique) laissait le coffre vide à vie. */
+        this.restoreVaultAllLayers();
         return true;
       }
       throw new Error(`HTTP ${ping.status}`);
