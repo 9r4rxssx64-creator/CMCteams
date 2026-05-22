@@ -21,7 +21,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { vault } from '../vault/vault.js';
 
 export type AccessMode = 'direct' | 'via_claude_code' | 'both';

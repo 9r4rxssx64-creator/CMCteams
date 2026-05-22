@@ -23,7 +23,6 @@
 import { ADMIN_ID } from '../../core/bootstrap.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-
 import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
 

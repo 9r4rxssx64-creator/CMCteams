@@ -14,7 +14,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { apexIosNative } from '../integrations/apex-ios-native.js';
 
 const REQUIRED_PLUGINS = [

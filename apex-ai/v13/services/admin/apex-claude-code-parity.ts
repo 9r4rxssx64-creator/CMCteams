@@ -20,12 +20,12 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { claudeBridge } from '../ai/claude-bridge.js';
+import { auditLog } from '../observability/audit-log.js';
+import { memoryBridge } from '../storage/memory-bridge.js';
 
 import { apexExecute } from './apex-execute.js';
 import { apexSelfAudit } from './apex-self-audit.js';
-import { auditLog } from '../observability/audit-log.js';
-import { claudeBridge } from '../ai/claude-bridge.js';
-import { memoryBridge } from '../storage/memory-bridge.js';
 
 /* === Types === */
 

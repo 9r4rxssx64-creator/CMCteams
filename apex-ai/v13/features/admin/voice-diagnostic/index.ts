@@ -226,7 +226,20 @@ class VoiceDiagnostic {
       };
       rec.onerror = (e: Event): void => {
         const ev = e as Event & { error: string };
-        out.innerHTML = `<div class="ax-gs-13">⚠️ Erreur : ${escapeHtml(ev.error ?? 'inconnu')}</div>`;
+        const code = ev.error ?? 'inconnu';
+        logger.warn('voice-diagnostic', 'SpeechRecognition error', { code });
+        /* v13.4.246 — message clair + actionnable, code technique gardé en diagnostic. */
+        const friendly =
+          code === 'not-allowed' || code === 'service-not-allowed'
+            ? 'Micro refusé — autorise le micro dans les réglages du navigateur.'
+            : code === 'no-speech'
+              ? 'Aucune voix détectée — parle plus près du micro.'
+              : code === 'audio-capture'
+                ? 'Aucun micro détecté sur cet appareil.'
+                : code === 'network'
+                  ? 'Réseau indisponible pour la reconnaissance vocale.'
+                  : 'La reconnaissance vocale a échoué, réessaie.';
+        out.innerHTML = `<div class="ax-gs-13">⚠️ ${escapeHtml(friendly)} <span style="opacity:.5">(${escapeHtml(code)})</span></div>`;
       };
       rec.onend = (): void => {
         if (!transcript) {
@@ -292,7 +305,9 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         .join('');
     } catch (err: unknown) {
       logger.warn('voice-diagnostic', 'runAll failed', { err });
-      resultsEl.innerHTML = `<div style="padding:14px;color:#ff5b5b">Erreur : ${escapeHtml(String(err))}</div>`;
+      /* v13.4.246 — message clair + cause exacte gardée en diagnostic (règle erreurs détaillées). */
+      const cause = err instanceof Error ? err.message : String(err);
+      resultsEl.innerHTML = `<div style="padding:14px;color:#ff5b5b">Le diagnostic vocal a échoué, réessaie. <span style="opacity:.6;font-size:11px;font-family:ui-monospace,monospace">(${escapeHtml(cause)})</span></div>`;
     }
   }
   const testBtn = rootEl.querySelector<HTMLButtonElement>('#voice-diag-test-btn');

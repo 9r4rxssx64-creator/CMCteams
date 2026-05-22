@@ -27,8 +27,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auth } from '../auth/auth.js';
+
 import { vault } from './vault.js';
 
 const GIST_DESCRIPTION_PREFIX = 'apex-vault-backup-v1';
@@ -174,6 +174,15 @@ class ApexGithubGistBackup {
       }
     }
     logger.info('gist-backup', `restored ${restored}/${payload.count} keys from gist ${gist.id.slice(0, 8)}…`);
+    /* v13.4.254 — force le rafraîchissement de la mémoire vault d'Apex après
+     * la restauration EN MASSE. Sans ça, le throttle de refreshVaultAudit fige
+     * la mémoire sur la 1re clé → Apex annonce son coffre vide à tort. */
+    if (restored > 0) {
+      try {
+        const { memory } = await import('../../core/memory.js');
+        await memory.refreshVaultAudit(true);
+      } catch { /* non-bloquant */ }
+    }
     return { ok: true, restored, gist_id: gist.id };
   }
 
@@ -197,10 +206,16 @@ class ApexGithubGistBackup {
      * 2. ax_github_pat_finegrained (PAT fine-grained github_pat_...)
      * 3. ax_github_token (legacy v13.4.x avant rename)
      * Premier qui répond plaintext > 10 chars gagne. */
+    /* v13.4.255 — noms de clé historiques inclus (dérive entre versions,
+     * cf. NOTES_USER.md / MEMO_RESUME.md) : ax_github_token →
+     * ax_github_token_classic/_fine → ax_github_pat_classic/_finegrained. */
     const candidates = [
       'ax_github_pat_classic',
       'ax_github_pat_finegrained',
       'ax_github_token',
+      'ax_github_token_classic',
+      'ax_github_token_fine',
+      'ax_github_pat',
     ];
     for (const k of candidates) {
       try {
@@ -210,6 +225,25 @@ class ApexGithubGistBackup {
         /* try next */
       }
     }
+    /* v13.4.255 — Fallback robuste (Kevin "PAT pas sûr d'où") : le PAT peut
+     * avoir été stocké sous une clé inattendue (renommages entre versions,
+     * mauvais classement #50). Scan TOUT le coffre pour une valeur qui matche
+     * un format de PAT GitHub (ghp_… classic ou github_pat_… fine-grained). */
+    const GH_PAT = /^(ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82,})$/;
+    try {
+      const seen = new Set(candidates);
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith('ax_') || seen.has(k)) continue;
+        try {
+          const v = await vault.readKey(k);
+          if (v && GH_PAT.test(v.trim())) {
+            logger.info('gist-backup', `PAT GitHub retrouvé par pattern sous ${k}`);
+            return v.trim();
+          }
+        } catch { /* skip key */ }
+      }
+    } catch { /* localStorage indisponible */ }
     return '';
   }
 

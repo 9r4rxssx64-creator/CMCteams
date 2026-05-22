@@ -16,11 +16,11 @@ import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { apexExecute, type ExecutionRequest } from '../../services/admin/apex-execute.js';
 import { apexKnowledgeBase } from '../../services/admin/apex-knowledge-base.js';
-import { auth } from '../../services/auth/auth.js';
-import { commerce, type Plan } from '../../services/integrations/commerce.js';
-import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
-import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
 import { kdmcProjectsRegistry, type ProjectStatus } from '../../services/admin/kdmc-projects-registry.js';
+import { auth } from '../../services/auth/auth.js';
+import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
+import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
+import { commerce, type Plan } from '../../services/integrations/commerce.js';
 import { whatsapp } from '../../services/integrations/whatsapp.js';
 import { haptic } from '../../ui/haptic.js';
 import { skeleton } from '../../ui/skeleton.js';
@@ -191,6 +191,9 @@ function renderHealthTab(): string {
         <button class="ax-btn-health ax-btn-health-eco" data-nav-route="runtime-tests">🧪 Tester TOUT (live)</button>
         <button class="ax-btn-health ax-btn-health-blue" data-nav-route="apex-audits-live">📊 Audits Apex (historique)</button>
         <button class="ax-btn-health" data-nav-route="audit-log-viewer" title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">🔒 Audit Log Viewer</button>
+        <button class="ax-btn-health" data-nav-route="admin-capabilities" title="Registre des capacités/compétences Apex">🧠 Capacités IA</button>
+        <button class="ax-btn-health" data-nav-route="admin-pinecone-status" title="État de l'index Pinecone (mémoire vectorielle)">🌲 Pinecone</button>
+        <button class="ax-btn-health" data-nav-route="admin-voice-diagnostic" title="Diagnostic reconnaissance + synthèse vocale">🎙 Diagnostic Voix</button>
       </div>
       <div id="ax-admin-health-mount" class="ax-gs-187"></div>
       <div id="ax-admin-audits-summary" class="ax-gs-187"></div>

@@ -42,11 +42,13 @@ async function loadApexTools(): Promise<ApexToolsInstance> {
   _apexTools = mod.apexTools as unknown as ApexToolsInstance;
   return _apexTools;
 }
-import { auditLog } from '../observability/audit-log.js';
-import { chatFallback } from './chat-fallback.js';
 import { economyMode } from '../core-svc/economy-mode.js';
-import { redactMessageContent, redactPII } from '../vault/pii-redaction.js';
+import { auditLog } from '../observability/audit-log.js';
 import { tokensDashboard } from '../observability/tokens-dashboard.js';
+import { redactMessageContent, redactPII } from '../vault/pii-redaction.js';
+
+import { chatFallback } from './chat-fallback.js';
+
 
 export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
 

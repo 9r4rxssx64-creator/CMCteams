@@ -26,7 +26,7 @@ const CSS = path.join(ROOT, 'assets/css/components.css');
 
 // Ordre de chargement (index.html). components = index 2.
 const FILE_ORDER = ['tokens', 'base', 'components', 'animations', 'rescue',
-  'financial-bilan', 'laurence', 'ux-premium', 'ux-overrides'];
+  'financial-bilan', 'laurence', 'ux-premium'];
 const COMPONENTS_IDX = 2;
 
 // --- 1. Parser CSS : descend dans @media, ignore @keyframes/@font-face ------

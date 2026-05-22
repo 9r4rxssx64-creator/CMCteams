@@ -23,7 +23,6 @@
  */
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
-
 import { auth } from '../auth/auth.js';
 
 export interface ClaudeMemExport {

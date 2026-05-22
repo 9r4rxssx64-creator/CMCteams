@@ -92,28 +92,10 @@
     bind('apex-rescue-login', navHash('#login'));
   }
 
-  /* v13.4.95 — Anti-zoom RADICAL Safari iOS 16+ (Kevin "Zoom tjs UX") :
-     Bloque gesturestart/gesturechange/gestureend qui sont les events Safari iOS
-     pour pinch-zoom. Même avec user-scalable=no le navigateur peut zoomer
-     accessibilité — ces preventDefault bloquent ÇA. */
-  function initAntiZoom() {
-    try {
-      ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (evt) {
-        document.addEventListener(evt, function (e) {
-          e.preventDefault();
-        }, { passive: false });
-      });
-      /* Double-tap to zoom : preventDefault sur dblclick + détection 2-touches rapides */
-      var lastTouchEnd = 0;
-      document.addEventListener('touchend', function (e) {
-        var now = Date.now();
-        if (now - lastTouchEnd <= 300) {
-          e.preventDefault();
-        }
-        lastTouchEnd = now;
-      }, { passive: false });
-    } catch (_) { /* navigator pas iOS Safari : ignore */ }
-  }
+  /* v13.4.248 — Anti-zoom pinch RETIRÉ (accessibilité, Apple HIG + skill
+     apex-ui-ux-pro-max "ne jamais désactiver le zoom"). Le double-tap-zoom
+     reste neutralisé par CSS touch-action:manipulation (rescue.css/base.css),
+     sans bloquer le pinch-zoom utilisateur. */
 
   /* v13.4.95 — Toolbar rescue masquable (Kevin "boutons superposés / pas accès fonctions").
      Tap long sur n'importe quel bouton toolbar → toggle visibility.
@@ -164,7 +146,6 @@
     if (btn) btn.addEventListener('click', rescueReset);
     initRescueToolbar();
     initSkipLink();
-    initAntiZoom();
     initToolbarToggle();
   }
 

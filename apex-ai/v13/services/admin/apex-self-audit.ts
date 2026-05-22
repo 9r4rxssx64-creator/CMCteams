@@ -22,9 +22,8 @@
 
 import { logger } from '../../core/logger.js';
 import { router } from '../../core/router.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import { soc2 } from '../auth/soc2-compliance.js';
+import { auditLog } from '../observability/audit-log.js';
 import { vault } from '../vault/vault.js';
 
 /**
@@ -108,8 +107,18 @@ class ApexSelfAudit {
       }
     }
 
+    /* v13.4.256 (FIX score global "20/100 Note F") : chaque axe est noté
+     * /20. L'ancien calcul faisait `somme / 6` → résultat sur échelle /20
+     * (max 20) mais affiché "/100" → faux "20/100 Note F" alors que les
+     * axes étaient à 18-20/20. Désormais : score pondéré sur /100 réel,
+     * avec les poids affichés dans l'UI (25/20/15/15/15/10, somme=100). */
     const totalScore = Math.round(
-      (security.score + performance.score + ux.score + tests.score + architecture.score + aiSafety.score) / 6,
+      (security.score / 20) * 25 +
+        (performance.score / 20) * 20 +
+        (ux.score / 20) * 15 +
+        (tests.score / 20) * 15 +
+        (architecture.score / 20) * 15 +
+        (aiSafety.score / 20) * 10,
     );
 
     const report: AuditReport = {
@@ -170,13 +179,31 @@ class ApexSelfAudit {
       }
     } catch { /* skip */ }
 
-    /* 3. CSP unsafe-inline check */
+    /* 3. CSP unsafe-inline check — uniquement les vrais vecteurs XSS.
+     * On parse la directive CSP réelle (pas un includes() sur tout le DOM,
+     * qui matchait n'importe quel texte). `script-src` unsafe-inline = vrai
+     * vecteur (P1). `style-src` unsafe-inline = risque mineur (P2). En
+     * revanche `style-src-attr 'unsafe-inline'` n'exécute aucun JS → ce
+     * n'est PAS un vecteur XSS, on ne le flag pas (sinon faux positif). */
     try {
-      const html = document.documentElement.outerHTML;
-      if (html.includes('unsafe-inline')) {
+      const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      const csp = meta?.getAttribute('content') ?? '';
+      const directive = (name: string): string => {
+        const m = new RegExp(`(?:^|;)\\s*${name}\\s+([^;]*)`, 'i').exec(csp);
+        return m?.[1] ?? '';
+      };
+      const scriptSrc = directive('script-src');
+      const styleSrc = directive('style-src');
+      const scriptNeutralised = scriptSrc.includes("'nonce-") || scriptSrc.includes("'strict-dynamic'");
+      if (scriptSrc.includes("'unsafe-inline'") && !scriptNeutralised) {
         findings.push(this.makeFinding('security', 'p1_high',
-          'CSP unsafe-inline présent',
-          'CSP autorise unsafe-inline → vulnérable XSS',
+          'CSP script-src unsafe-inline',
+          'script-src autorise unsafe-inline sans nonce/strict-dynamic → vrai vecteur XSS',
+          'remove_unsafe_inline'));
+      } else if (styleSrc.includes("'unsafe-inline'") && !styleSrc.includes("'nonce-")) {
+        findings.push(this.makeFinding('security', 'p2_medium',
+          'CSP style-src unsafe-inline',
+          'style-src autorise unsafe-inline (risque mineur — CSS n\'exécute pas de JS)',
           'remove_unsafe_inline'));
       }
     } catch { /* skip */ }
@@ -261,16 +288,30 @@ class ApexSelfAudit {
       }
     } catch { /* skip */ }
 
-    /* 2. Sentinelles actives ? */
+    /* 2. Sentinelles — distinguer "cassée" de "signale un problème".
+     * `errored` = la sentinelle a levé une exception (vrai dysfonctionnement
+     * → P1, restart pertinent). `ok:false` sans `errored` = la sentinelle
+     * FONCTIONNE et signale un problème réel (storage plein, CSP violation…)
+     * → ce n'est PAS une sentinelle en erreur, la restart ne corrige rien.
+     * Avant : les 2 cas étaient confondus → faux "13 sentinelles en erreur". */
     try {
       const { sentinels } = await import('../sentinels/sentinels.js');
       const list = sentinels.list();
-      const failed = list.filter((s) => s.lastResult?.ok === false);
-      if (failed.length > 3) {
+      const crashed = list.filter((s) => s.lastResult?.errored === true);
+      if (crashed.length > 0) {
         findings.push(this.makeFinding('performance', 'p1_high',
-          `${failed.length} sentinelles en erreur`,
-          failed.map((s) => s.name).join(', '),
+          `${crashed.length} sentinelle(s) en erreur (exception)`,
+          crashed.map((s) => s.name).join(', '),
           'restart_failed_sentinels'));
+      }
+      const reporting = list.filter(
+        (s) => s.lastResult?.ok === false && s.lastResult.errored !== true,
+      );
+      if (reporting.length > 5) {
+        findings.push(this.makeFinding('performance', 'p2_medium',
+          `${reporting.length} sentinelles signalent un problème`,
+          `${reporting.map((s) => s.name).join(', ')} — ces sentinelles fonctionnent ; voir les findings dédiés pour les vraies causes`,
+          'no_action'));
       }
     } catch { /* skip */ }
 

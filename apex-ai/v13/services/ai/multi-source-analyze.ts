@@ -28,12 +28,11 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { auditLog } from '../observability/audit-log.js';
-import { CREDENTIAL_PATTERNS, detectAllCredentials, type CredentialPattern } from '../vault/credential-patterns.js';
-import { firebase } from '../storage/firebase.js';
 import { linksRegistry } from '../integrations/links-registry.js';
 import { studyService, type ServiceStudy } from '../integrations/study-service.js';
+import { auditLog } from '../observability/audit-log.js';
+import { firebase } from '../storage/firebase.js';
+import { CREDENTIAL_PATTERNS, detectAllCredentials, type CredentialPattern } from '../vault/credential-patterns.js';
 import { vault } from '../vault/vault.js';
 
 /* === Types publics === */

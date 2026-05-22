@@ -33,7 +33,6 @@ import {
   type PluginStatus,
   type PluginSource,
 } from '../../data/apex-plugins-catalog.js';
-
 import { auditLog } from '../observability/audit-log.js';
 
 const STORAGE_KEY = 'apex_v13_plugins_state';

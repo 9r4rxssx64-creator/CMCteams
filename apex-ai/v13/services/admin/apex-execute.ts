@@ -53,9 +53,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-
-import { auditLog } from '../observability/audit-log.js';
 import { claudeBridge } from '../ai/claude-bridge.js';
+import { auditLog } from '../observability/audit-log.js';
 
 /* === Types === */
 

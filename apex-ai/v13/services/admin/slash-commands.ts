@@ -22,6 +22,8 @@ export interface SlashCommand {
   argsHint: string;
   /** Si true, args requis pour exécuter */
   requiresArgs?: boolean;
+  /** Si défini, la commande navigue vers cette route (handler générique). */
+  route?: string;
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
@@ -42,6 +44,60 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'rules', emoji: '📜', description: 'Affiche les règles permanentes Apex (filtre optionnel)', argsHint: '<keyword?>' },
   /* v13.4.5 — Mode autonome Apex (Kevin 2026-05-10) */
   { name: 'autonomous', emoji: '🤖', description: 'Mode autonome : Apex bosse seul jusqu\'à fin/quota (status/stop)', argsHint: '<objectif|status|stop>' },
+  /* v13.4.245 — commandes audit/diagnostic (Kevin "lancer /ultrareview") */
+  { name: 'ultrareview', emoji: '🔍', description: 'Audit complet Apex — 8 axes, mode brutal', argsHint: '' },
+  { name: 'diag', emoji: '🩺', description: 'Diagnostic runtime Apex (santé live)', argsHint: '' },
+  { name: 'test', emoji: '🧪', description: 'Lance les auto-tests runtime', argsHint: '' },
+  /* v13.4.250 — navigation : une commande par destination (Kevin "toutes les commandes /") */
+  { name: 'vault', emoji: '🔐', description: 'Ouvre le Coffre (clés, secrets)', argsHint: '', route: 'vault' },
+  { name: 'dashboard', emoji: '📊', description: 'Ouvre le tableau de bord', argsHint: '', route: 'dashboard' },
+  { name: 'notes', emoji: '📝', description: 'Ouvre les notes', argsHint: '', route: 'notes' },
+  { name: 'calendar', emoji: '📅', description: 'Ouvre le calendrier', argsHint: '', route: 'calendar' },
+  { name: 'legal', emoji: '⚖️', description: 'Ouvre le module juridique', argsHint: '', route: 'legal' },
+  { name: 'browser', emoji: '🌐', description: 'Ouvre le navigateur intégré', argsHint: '', route: 'browser' },
+  { name: 'crypto', emoji: '🪙', description: 'Ouvre le module crypto', argsHint: '', route: 'crypto' },
+  { name: 'calc', emoji: '🧮', description: 'Ouvre les calculatrices', argsHint: '', route: 'calculators' },
+  { name: 'knowledge', emoji: '🧠', description: 'Ouvre la base de connaissances', argsHint: '', route: 'knowledge' },
+  { name: 'sentinels', emoji: '🛡', description: 'Ouvre les sentinelles', argsHint: '', route: 'sentinels' },
+  { name: 'billing', emoji: '💳', description: 'Ouvre l\'abonnement / facturation', argsHint: '', route: 'billing' },
+  { name: 'studios', emoji: '🎨', description: 'Ouvre les studios créatifs', argsHint: '', route: 'studios' },
+  { name: 'remote', emoji: '📡', description: 'Ouvre la télécommande', argsHint: '', route: 'remote' },
+  { name: 'domotique', emoji: '🏠', description: 'Ouvre la domotique', argsHint: '', route: 'domotique' },
+  { name: 'geo', emoji: '📍', description: 'Ouvre la géolocalisation', argsHint: '', route: 'geolocation' },
+  { name: 'workflow', emoji: '🔀', description: 'Ouvre les workflows', argsHint: '', route: 'workflow' },
+  { name: 'marketplace', emoji: '🛒', description: 'Ouvre la marketplace', argsHint: '', route: 'marketplace' },
+  { name: 'plugins', emoji: '🧩', description: 'Ouvre les plugins', argsHint: '', route: 'plugins' },
+  { name: 'archive', emoji: '🗄', description: 'Ouvre les archives', argsHint: '', route: 'archive' },
+  { name: 'pro', emoji: '💼', description: 'Ouvre l\'espace pro', argsHint: '', route: 'pro' },
+  { name: 'toolbox', emoji: '🧰', description: 'Ouvre la boîte à outils Apex', argsHint: '', route: 'apex-toolbox' },
+  { name: 'mcp', emoji: '🔌', description: 'Ouvre les serveurs MCP', argsHint: '', route: 'mcp-servers' },
+  { name: 'innovation', emoji: '💡', description: 'Ouvre la veille innovation', argsHint: '', route: 'innovation' },
+  { name: 'iot', emoji: '📲', description: 'Ouvre les fournisseurs IoT', argsHint: '', route: 'iot-providers' },
+  { name: 'device', emoji: '📱', description: 'Ouvre les appareils', argsHint: '', route: 'device' },
+  { name: 'voicebio', emoji: '🎙', description: 'Ouvre la biométrie vocale', argsHint: '', route: 'voice-bio' },
+  { name: 'smartrouter', emoji: '🧭', description: 'Ouvre le routeur IA intelligent', argsHint: '', route: 'smart-router' },
+  /* Studios créatifs — raccourcis directs */
+  { name: 'music', emoji: '🎵', description: 'Studio musique', argsHint: '', route: 'studio-music' },
+  { name: 'video', emoji: '🎬', description: 'Studio vidéo', argsHint: '', route: 'studio-video' },
+  { name: 'photo', emoji: '📸', description: 'Studio photo', argsHint: '', route: 'studio-photo' },
+  { name: 'cv', emoji: '📄', description: 'Studio CV', argsHint: '', route: 'studio-cv' },
+  { name: 'facture', emoji: '🧾', description: 'Studio facture / devis', argsHint: '', route: 'studio-invoice' },
+  { name: 'logo', emoji: '🎯', description: 'Studio logo', argsHint: '', route: 'studio-logo' },
+  { name: 'scan', emoji: '📷', description: 'Studio scan / OCR', argsHint: '', route: 'studio-scan' },
+  { name: 'pdf', emoji: '📕', description: 'Studio PDF', argsHint: '', route: 'studio-pdf' },
+  { name: 'prefecture', emoji: '🏛', description: 'Studio dossier préfecture', argsHint: '', route: 'studio-prefecture' },
+  { name: 'presentation', emoji: '📑', description: 'Studio présentation', argsHint: '', route: 'studio-presentation' },
+  /* v13.4.252 — commandes demandées par Kevin */
+  { name: 'team-onboarding', emoji: '👥', description: 'Ouvre l\'accueil / onboarding équipe', argsHint: '', route: 'onboarding' },
+  { name: 'skill-creator', emoji: '🛠', description: 'Ouvre les skills Apex (catalogue 2026)', argsHint: '', route: 'skills-2026' },
+  { name: 'schedule', emoji: '🗓', description: 'Ouvre l\'agenda / planification', argsHint: '', route: 'calendar' },
+  { name: 'remote-control', emoji: '📡', description: 'Ouvre la télécommande universelle', argsHint: '', route: 'remote' },
+  { name: 'chrome', emoji: '🖥', description: 'Ouvre le navigateur intégré (Apex Chrome)', argsHint: '', route: 'browser' },
+  { name: 'resume', emoji: '▶️', description: 'Reprend la boucle autonome en pause', argsHint: '' },
+  { name: 'statusline', emoji: '📟', description: 'Affiche l\'état d\'Apex (version, IA, boucle, conv)', argsHint: '' },
+  { name: 'ooda', emoji: '🎯', description: 'Analyse OODA (Observe-Orient-Decide-Act) d\'un objectif', argsHint: '<objectif>', requiresArgs: true },
+  /* v13.4.253 — mémo dédié des commandes */
+  { name: 'commands', emoji: '📒', description: 'Mémo dédié : toutes les commandes du chat', argsHint: '', route: 'commands' },
 ];
 
 export interface SlashParseResult {

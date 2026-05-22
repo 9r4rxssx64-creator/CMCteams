@@ -20,7 +20,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { featureToggles } from '../auth/feature-toggles.js';
 
 /* ============================================================

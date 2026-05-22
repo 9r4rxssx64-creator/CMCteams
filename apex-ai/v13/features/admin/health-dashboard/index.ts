@@ -26,12 +26,12 @@ import {
   type FullHealthReport,
   type ProgressUpdate,
 } from '../../../services/admin/auto-test-everything.js';
-import { linksRegistry } from '../../../services/integrations/links-registry.js';
-import { multiKeyVault } from '../../../services/vault/multi-key-vault.js';
-import { noRegressionWatch } from '../../../services/sentinels/no-regression-watch.js';
 import { rulesEngine, type ApexRule } from '../../../services/core-svc/rules-engine.js';
+import { linksRegistry } from '../../../services/integrations/links-registry.js';
+import { noRegressionWatch } from '../../../services/sentinels/no-regression-watch.js';
 import { rulesInjectionWatch } from '../../../services/sentinels/rules-injection-watch.js';
 import { sentinelsRegistry } from '../../../services/sentinels/sentinels-registry.js';
+import { multiKeyVault } from '../../../services/vault/multi-key-vault.js';
 import { haptic } from '../../../ui/haptic.js';
 import { toast } from '../../../ui/toast.js';
 

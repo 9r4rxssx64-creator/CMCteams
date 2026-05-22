@@ -22,7 +22,6 @@
 import { haptic } from '../../ui/haptic.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
 import { toast } from '../../ui/toast.js';
-
 import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
 

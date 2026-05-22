@@ -23,7 +23,6 @@
  */
 
 import { logger } from '../../core/logger.js';
-
 import { auditLog } from '../observability/audit-log.js';
 
 /* Interfaces typées Web Hardware APIs (non couvertes par lib.dom partout) */

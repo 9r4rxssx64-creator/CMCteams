@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.245';
+export const APP_VER = 'v13.4.260';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -290,6 +290,14 @@ async function bootstrap(): Promise<void> {
     cloudflareStatus.init();
   });
 
+  /* v13.4.259 (Kevin "contourne les blocages iOS / arrière-plan") :
+   * Init iOS PWA resilience — storage.persist() (anti-eviction du Coffre)
+   * + flush/resync au passage background↔foreground. */
+  await safeInit('ios-resilience', async () => {
+    const { iosResilience } = await import('../services/core-svc/ios-resilience.js');
+    await iosResilience.init();
+  });
+
   /* v13.4.197 (audit Kevin P1 LCP +613% régression) : voice-overlay preload
    * DÉCALÉ après FCP via requestIdleCallback pour ne PAS bloquer le LCP.
    * Le module reste chaud quand wake word/dictée déclenchent (warm <100ms),
@@ -471,6 +479,8 @@ async function bootstrap(): Promise<void> {
   /* dashboard-perso : vue récap (clés/liens/devices/mémoire). v13.4.238 :
    * renommé depuis 'dashboard' qui faisait doublon → était inaccessible. */
   router.register('dashboard-perso', { loader: () => import('@features/dashboard-personnel/index.js'), requiresAuth: true });
+  /* v13.4.253 : mémo dédié des commandes slash du chat (Kevin) */
+  router.register('commands', { loader: () => import('@features/commands/index.js'), requiresAuth: true });
 
   /* ═══════════ OUTILS UTILISATEUR (19) ═══════════ */
   router.register('browser', { loader: () => import('@features/browser/index.js'), requiresAuth: true });
@@ -549,6 +559,10 @@ async function bootstrap(): Promise<void> {
   router.register('runtime-tests', { loader: () => import('@features/admin/runtime-tests/index.js'), requiresAdmin: true });
   router.register('apex-audits-live', { loader: () => import('@features/admin/apex-audits-live/index.js'), requiresAdmin: true });
   router.register('audit-log-viewer', { loader: () => import('@features/admin/audit-log-viewer/index.js'), requiresAdmin: true });
+  /* v13.4.246 — wire features admin construites mais jamais enregistrées (audit archi, erreur #28). */
+  router.register('admin-capabilities', { loader: () => import('@features/admin/capabilities/index.js'), requiresAdmin: true });
+  router.register('admin-pinecone-status', { loader: () => import('@features/admin/pinecone-status/index.js'), requiresAdmin: true });
+  router.register('admin-voice-diagnostic', { loader: () => import('@features/admin/voice-diagnostic/index.js'), requiresAdmin: true });
   router.init();
   events.emit('boot:routerReady', { ctx });
 

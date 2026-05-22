@@ -39,9 +39,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /home/user/CMCteams && (node -e \"const v=require('playwright/package.json').version;if(!v.startsWith('1.56.'))process.exit(1)\" 2>/dev/null && echo '[hook] playwright 1.56 + Chromium pret pour les tests') || (echo '[hook] installation des dependances de test...' && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-audit --no-fund 2>&1 | tail -2)",
-            "timeout": 240,
-            "statusMessage": "Verification environnement de test (Chromium/Playwright)..."
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
+            "timeout": 300,
+            "statusMessage": "Préparation environnement (deps CMCteams + Apex v13 + Apex Chat)..."
           }
         ]
       }
