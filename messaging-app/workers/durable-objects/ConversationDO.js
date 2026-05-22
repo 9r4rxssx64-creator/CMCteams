@@ -142,13 +142,38 @@ export class ConversationDO {
       lastReset: Date.now()
     });
 
-    // Send hello + last messages
+    // Send hello
     server.send(JSON.stringify({
       type: 'hello',
       seq: this.seq,
       connected: this.sessions.size,
       ts: Date.now()
     }));
+
+    // Historique : envoyer les 50 derniers messages (D1 + buffer non flushé)
+    // → permet de retrouver ses conversations sur un nouvel appareil / après reset.
+    try {
+      const hist = await this.env.APEX_CHAT_DB.prepare(
+        'SELECT id, sender_id, ciphertext, mime, ts, reply_to, view_once, expires_at FROM messages WHERE conv_id=? ORDER BY ts DESC LIMIT 50'
+      ).bind(convId).all();
+      const rows = (hist.results || []).slice().reverse();
+      const seen = new Set(rows.map(r => r.id));
+      // Ajouter les messages encore en buffer (pas encore flushés en D1)
+      for (const pm of this.pendingMessages) {
+        if (pm.conv_id === convId && !seen.has(pm.id)) {
+          rows.push({ id: pm.id, sender_id: pm.sender_id, ciphertext: pm.ciphertext,
+            mime: pm.mime, ts: pm.ts, reply_to: pm.reply_to || null,
+            view_once: pm.view_once || 0, expires_at: pm.expires_at || null });
+        }
+      }
+      const now = Date.now();
+      const fresh = rows.filter(r => !r.expires_at || r.expires_at > now);
+      if (fresh.length) {
+        server.send(JSON.stringify({ type: 'history', conv_id: convId, messages: fresh }));
+      }
+    } catch (e) {
+      console.error('[ConversationDO] history send failed:', e.message);
+    }
 
     // Notifier membres présents
     this.broadcast({
