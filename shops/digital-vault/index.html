@@ -377,11 +377,11 @@ S.cart=[];saveCart();
 /* Afficher confirmation */
 var modal=document.getElementById("payModal");
 if(modal)modal.innerHTML='<div style="background:var(--card);border-radius:16px;padding:40px;max-width:440px;width:100%;border:1px solid var(--border);text-align:center">'
-+'<div style="font-size:48px;margin-bottom:16px">✅</div>'
-+'<h2 style="font-size:22px;font-weight:800;margin-bottom:8px">Commande confirmée !</h2>'
++'<div style="font-size:48px;margin-bottom:16px">📋</div>'
++'<h2 style="font-size:22px;font-weight:800;margin-bottom:8px">Commande enregistrée</h2>'
 +'<p style="color:var(--muted);margin-bottom:16px">Numéro : <strong style="color:var(--p)">'+orderId+'</strong></p>'
 +'<p style="color:var(--muted);margin-bottom:8px">Total : <strong>'+fmtP(total)+'</strong> via '+method+'</p>'
-+'<p style="color:var(--muted);font-size:13px;margin-bottom:24px">Un email de confirmation vous sera envoyé.</p>'
++'<p style="color:var(--muted);font-size:13px;margin-bottom:24px">Ta commande sera validée dès réception du paiement. Un email de confirmation te sera envoyé.</p>'
 +'<button onclick="document.getElementById(\'payModal\').remove();sv(\'home\')" style="padding:14px 32px;background:var(--p);color:#000;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">Continuer mes achats</button>'
 +'</div>';
 return orderId}
