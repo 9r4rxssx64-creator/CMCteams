@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.256">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.257">
 <head>
   <meta charset="utf-8">
   <!-- v13.4.248 a11y : zoom utilisateur réactivé (Apple HIG + skill apex-ui-ux-pro-max).
@@ -21,8 +21,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-368aa9562a17e182335071c079aa003c' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-368aa9562a17e182335071c079aa003c';
+             script-src 'self' 'nonce-06cbbb76953b8a2e1294df613ec3e02e' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-06cbbb76953b8a2e1294df613ec3e02e';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -134,7 +134,7 @@
        link CSS externes). Réduit LCP ~150-250ms iPhone Safari.
        INTERVENTION ADDITIVE : aucun fichier existant modifié, juste ajout.
        Validation auto-test au boot v13.4.204 testVisualRender + Layout. -->
-  <style nonce="368aa9562a17e182335071c079aa003c">
+  <style nonce="06cbbb76953b8a2e1294df613ec3e02e">
     html { background: #08080f; color: #e8b830; color-scheme: dark; }
     body { margin: 0; padding: 0; min-height: 100vh; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: #08080f; color: #f0e8d8; -webkit-text-size-adjust: 100%; }
     #apex-root { min-height: 100vh; position: relative; }
@@ -170,13 +170,13 @@
   <link rel="dns-prefetch" href="https://api.openai.com">
   <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com">
   <link rel="preload" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACi0lEQVR42u3YMRGAMBBFwZTpkBHfcRNVUOEB5m3xDNz8bW7Med1SteEIAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAuA3nb3cAYDu+N/cAwAABEBx/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAABAefwQAJAfPwQAAAAAAOXxQwAAAAAAUB4/BADkxw8BAAAAAEB5/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAABAefwQAJAfPwQAAAAAAOXxQwAAAAAAUB4/BADkxw8BAAAAAEB5/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAGD8WgAYvwAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAwLgCoAo4IgC8CYIABAABQBGBEEAAiAIgDjgSALwGggAEAAFAEYCwQACIAiACOBIAvAOCAAQAAUARgFBAAIAF8gCQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAB4BACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQPpuD3jJmw663UkDAAAAAElFTkSuQmCC" as="image" fetchpriority="high">
-  <script nonce="368aa9562a17e182335071c079aa003c" type="module" crossorigin src="./core/main-DW_pcgpj.js"></script>
+  <script nonce="06cbbb76953b8a2e1294df613ec3e02e" type="module" crossorigin src="./core/main-DSCuRoLA.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-CLzI061R.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-B5GxSoZr.js">
-  <link rel="modulepreload" crossorigin href="./chunks/monitoring-BkJ7GkQd.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-D6Tnu3RN.js">
-  <link nonce="368aa9562a17e182335071c079aa003c" rel="stylesheet" crossorigin href="./assets/css/main-DHIjTGDO.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-Cof9K27Z.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-Bcrv6FHT.js">
+  <link rel="modulepreload" crossorigin href="./chunks/monitoring-3zUOqrVw.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-By5nLrMY.js">
+  <link nonce="06cbbb76953b8a2e1294df613ec3e02e" rel="stylesheet" crossorigin href="./assets/css/main-DHIjTGDO.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-PYOKmitP.js">
 </head>
 <body>
   <!-- Splash minimal (visible <1s avant boot bundle) -->
@@ -223,14 +223,14 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="368aa9562a17e182335071c079aa003c" src="./assets/js/rescue.js"></script>
+  <script nonce="06cbbb76953b8a2e1294df613ec3e02e" src="./assets/js/rescue.js"></script>
 
   <!-- v13.4.225 (Kevin "intègre le système MAJ auto forcé de CMCteams qui marche") :
        Defense-in-depth — auto-MAJ inline indépendant du bundle Vite, copie 1:1
        du système CMCteams v9.615 qui fonctionne. Si bundle bootstrap.js échoue
        ou tarde, ce script garantit MAJ auto en standalone (même logique).
        Anti-récidive Erreur #54 + Kevin "tjs v207 sur iPhone". -->
-  <script nonce="368aa9562a17e182335071c079aa003c">
+  <script nonce="06cbbb76953b8a2e1294df613ec3e02e">
     (function(){
       var APX_VER = document.documentElement.getAttribute('data-app-ver') || 'v0';
       var inProgress = false;
