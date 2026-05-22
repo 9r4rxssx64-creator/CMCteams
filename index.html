@@ -4874,6 +4874,12 @@ function _cmcEnsureTeam(tid){
   if(!tid)return null;
   var t=gt(tid);if(t)return t;
   var s=String(tid);
+  // v9.730 — équipe "Horaires aménagés" (employés à horaires aménagés)
+  if(s==="amenage"){
+    var at={id:"amenage",name:"🕐 Horaires aménagés",color:"#8a8a9a",family:"cmc",departureOrder:99,_auto:true};
+    A.teams.push(at);
+    return at;
+  }
   var fam=/^r/i.test(s)?"roulettes":/^c/i.test(s)?"cmc":"bj";
   var num=s.replace(/[^0-9]/g,"")||"?";
   var nm=fam==="roulettes"?("Roul. Éq."+num):fam==="cmc"?("CMC Éq."+num):("BJ Éq."+num);
@@ -5357,7 +5363,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.727";
+var APP_VER="v9.731";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34613,10 +34619,13 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
     function _sectionFamily(line){
       var n=_norm(line);
       if(!n)return null;
+      // v9.730 — section "aménagement" (chefs OU cartes) → famille dédiée
+      // "amenage" : ces employés à horaires aménagés sont regroupés en UNE
+      // seule équipe, pas fragmentés par colonne (colonnes à count 0/1).
+      if(/AMENAGEMENT/.test(n))return "amenage";
       if(/^ROULETTES?\b/.test(n))return "roulettes";
       if(/^CHEFS? BLACK ?JACK/.test(n))return "bj";
       if(/^EMPLOYES? CARTES? CMC/.test(n))return "cmc";
-      if(/^EMPLOYES? CARTES? AMENAGEMENT/.test(n))return "cmc";
       if(/^EMPLOYES? CARTES?\b/.test(n))return "cmc";
       return null;
     }
@@ -34705,8 +34714,63 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
       }
       return entries;
     }
+    // ── v9.729 — Fusion lignes cassées par PDF.js ──────────────────────────
+    // PDF.js fragmente parfois une rangée d'employés en 2 lignes : ligne A =
+    // codes-poste + plages "1 31" SANS noms, ligne B = noms seuls. _extractEntries
+    // attend <poste> <nom> adjacents → 0 entrée → colonnes sous-remplies → bloc
+    // jamais plein → équipes de 1-2 pers ou ballonnées. On ré-interleave A+B.
+    function _classifyLine(line){
+      var tk=_tokens(line);
+      if(!tk.length)return{kind:"empty"};
+      if(_sectionFamily(line)||_parseRotationHeader(tk))return{kind:"other"};
+      var posteN=0,nameN=0,other=0;
+      for(var z=0;z<tk.length;z++){
+        var t=tk[z];
+        if(_isPosteCode(t))posteN++;
+        else if(/^\d{1,2}$/.test(t)||t==="*"){}
+        else if(/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'\-]*\.?$/.test(t))nameN++;
+        else other++;
+      }
+      if(posteN>=2&&nameN===0)return{kind:"posteOnly",toks:tk};
+      if(posteN===0&&nameN>=2&&other===0)return{kind:"namesOnly",toks:tk};
+      return{kind:"other"};
+    }
+    function _mergePosteNameLines(rawLines){
+      var out=[];
+      for(var li=0;li<rawLines.length;li++){
+        var cA=_classifyLine(rawLines[li]);
+        if(cA.kind==="posteOnly"&&li+1<rawLines.length){
+          var cB=_classifyLine(rawLines[li+1]);
+          if(cB.kind==="namesOnly"){
+            var postes=cA.toks.filter(function(t){return _isPosteCode(t);});
+            var names=[],j=0,bt=cB.toks;
+            while(j<bt.length){
+              var w=String(bt[j]||"").replace(/\*/g,"");
+              if(/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'\-]+$/.test(w)){
+                var nm=w;
+                if(j+1<bt.length){
+                  var nx=String(bt[j+1]||"").replace(/\*/g,"");
+                  if(/^[A-Za-zÀ-ÿ]{1,3}\.?$/.test(nx)){nm=w+" "+nx;j++;}
+                }
+                names.push(nm);
+              }
+              j++;
+            }
+            if(postes.length>=2&&postes.length===names.length){
+              var merged=[];
+              for(var k=0;k<postes.length;k++){merged.push(postes[k]);merged.push(names[k]);}
+              out.push(merged.join("\t"));
+              li++; // ligne B consommée
+              continue;
+            }
+          }
+        }
+        out.push(rawLines[li]);
+      }
+      return out;
+    }
     // ── Parcours des lignes ──
-    var lines=srcText.split(/\r?\n/);
+    var lines=_mergePosteNameLines(srcText.split(/\r?\n/));
     var curFamily=null;
     var blocks=[]; // {family, cols:[{count,code,members:[name...]}]}
     var curBlock=null;
@@ -34802,6 +34866,25 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
       if(blk.suspect){suspectBlocks++;continue;}
       var fm=blk.family||"roulettes";
       if(fm==="cadres")continue;
+      // v9.730 — Section "Horaires aménagés" : tous les emps des sections
+      // aménagement (cartes + chefs) regroupés dans UNE équipe "amenage",
+      // sans fragmentation par colonne (les colonnes y sont à count 0/1).
+      if(fm==="amenage"){
+        _cmcEnsureTeam("amenage");
+        for(var ac=0;ac<blk.cols.length;ac++){
+          var acol=blk.cols[ac];
+          for(var am=0;am<acol.members.length;am++){
+            var aemp=_matchEmp(acol.members[am]);
+            if(!aemp){unmatched++;continue;}
+            if(!aemp.teamHistory)aemp.teamHistory={};
+            if(!aemp.familyHistory)aemp.familyHistory={};
+            aemp.teamHistory[key]="amenage";
+            if(!aemp.familyHistory[key])aemp.familyHistory[key]="cmc";
+            teamsAssigned++;
+          }
+        }
+        continue;
+      }
       famBlockOrder[fm]=(famBlockOrder[fm]||0);
       var blockIdx=famBlockOrder[fm];
       famBlockOrder[fm]++;
@@ -39018,7 +39101,13 @@ function doImport(){
     return e.family==="cadres"&&isEmpActive(e,iy,im)&&(!A.overrides[key]||!A.overrides[key][e.id]||Object.keys(A.overrides[key][e.id]||{}).length===0);
   });
   // DIAGNOSTIC visible : toast + console avec les noms cherch\u00e9s vs trouv\u00e9s dans le texte
-  if(_cadresVides.length>0){
+  // v9.728 \u2014 Le scan de SECOURS brute-force ne tourne QUE si l'import contient
+  // r\u00e9ellement une section cadres (PIT BOSS / SUPERVISEUR / INSPECTEUR). Sur un
+  // import V1 employ\u00e9s+chefs (hasCadres=false), les cadres sont absents du PDF :
+  // tenter de les "r\u00e9cup\u00e9rer" matche le nom de famille d'un employ\u00e9 homonyme
+  // (ex CAMPI H cadre \u2190 CAMPI PH chef) et leur colle des codes bidons.
+  // CLAUDE.md r\u00e8gle import incr\u00e9mental : un import employ\u00e9s+chefs NE TOUCHE PAS les cadres.
+  if(_cadresVides.length>0 && _importTypeDetails && _importTypeDetails.hasCadres){
     var _diagFound=[],_diagNotFound=[];
     var _allText=lines.join("\n").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     _cadresVides.forEach(function(_ce){
@@ -39223,7 +39312,12 @@ function doImport(){
       var filled=0;for(var d=1;d<=_daysN;d++)if(row[d])filled++;
       return filled===0;
     });
-    if(_cadresSansH.length>0&&txt){
+    // v9.728 — Le fallback cadres ne tourne QUE si l'import contient réellement
+    // une section cadres. Sur un V1 employés+chefs (hasCadres=false), les cadres
+    // sont absents du PDF : le scan surname-only matche un homonyme employé
+    // (ex CAMPI H cadre ← CAMPI PH chef, ENZA C cadre ← ENZA B croupier) et leur
+    // attribue des codes bidons. CLAUDE.md : un import employés+chefs ne touche pas les cadres.
+    if(_cadresSansH.length>0&&txt&&_importTypeDetails&&_importTypeDetails.hasCadres){
       var _rescued=0;
       // v9.462 STEP 1 — Pre-traitement : joindre lignes cassees par PDF.js
       // Pattern A : ligne courte (<=3 chars, ex "M." ou "JF") suit une ligne longue → join

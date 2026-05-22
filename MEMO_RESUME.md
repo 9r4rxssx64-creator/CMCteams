@@ -1,3 +1,35 @@
+# Mémo de reprise — Apex v13.4.243 / CMC v9.728 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-22)
+
+## 📋 SESSION 2026-05-22 — CMCteams import : reproduction + couleurs + cadres (v9.726→728)
+
+Branche `claude/dossier-reprise-markdown-EyxIo`. Chantier import planning SBM.
+
+### Livré et vérifié (commits poussés)
+- **v9.726** — 3 fixes parser : (1) décalage de jour (consensus d'équipe v8.57 écrasait
+  des cellules déjà parsées → ne remplit plus que les cellules vides) ; (2) `*` CDP
+  inventé retiré (3 auto-upgrade selon profil `cdpShifts`) ; (3) suffixes `'`/`"`
+  préservés via `_cmcEnsureQuoteVariant()`. Audit `npm run test:fidelity` (Playwright,
+  câblé dans test:ci) : 29/29 employés reproduits à l'identique.
+- **v9.727** — couleurs Convention : codes `'`/`"` = fond rouge / écriture jaune
+  (NOTES_USER). Helper `_cmcIsConv()` source unique, remplace 8 `endsWith("'")`.
+- **v9.728** — cadres non contaminés : les 2 scans de rattrapage cadres (fallback
+  v9.462 + SECOURS v9.146) matchaient par nom de famille seul → `CAMPI H`←`CAMPI PH`,
+  `ENZA C`←`ENZA B`. Gated sur `_importTypeDetails.hasCadres`.
+
+### ✅ RÉSOLU v9.729 — fragmentation des équipes
+Cause : PDF.js fragmente une rangée d'employés en 2 lignes (codes-poste seuls
+puis noms seuls) → `_extractEntries` n'extrayait rien → colonnes sous-remplies.
+Fix : `_mergePosteNameLines()` ré-interleave les paires avant parsing.
+Vérifié sur le vrai texte PDF de Kevin (`tests/fixtures/mai-2026-v1-full.txt`,
+fourni dans son diagnostic) : chefs BJ 4-5/équipe, roulettes 3-6/équipe, 0
+équipe ≤2. Test `test:teamsizes`.
+### ✅ RÉSOLU v9.730 — section « Horaires aménagés »
+Les 2 emps aménagés (BLANZIERI K, ACCOMASSO F) étaient en 2 équipes à
+1 personne (`c13`/`c15`). Fix : `_sectionFamily` détecte `AMENAGEMENT` →
+famille `amenage`, regroupés dans une seule équipe « 🕐 Horaires aménagés ».
+
+---
+
 # Mémo de reprise — Apex v13.4.249 / CMC v9.727 / Apex Chat v1.1.147 / e-KDMC (2026-05-21)
 
 ## 🎨 SESSION 2026-05-21 — Revue UI/UX pro-expert (branche claude/apex-ui-ux-pro-review-6am3n)
