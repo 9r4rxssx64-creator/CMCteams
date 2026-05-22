@@ -73,6 +73,13 @@ async function main() {
   // L'équipe chefs BJ "2" (la colonne 19/4'c) doit être pleine (le bug la donnait à 2).
   const t2 = r['2'];
   check('équipe chefs BJ "2" remplie (≥4)', t2 && t2.n >= 4, t2 ? ('2:' + t2.n) : 'absente');
+  // v9.730 — les employés à horaires aménagés sont regroupés dans UNE équipe
+  // "amenage" (et non fragmentés en équipes à 1 personne c13/c15).
+  const am = r['amenage'];
+  check('section "Horaires aménagés" regroupée', am && am.n >= 1, am ? ('amenage:' + am.n) : 'absente');
+  const stray1 = entries.filter(([id]) => /^c1[0-9]$/.test(id) && r[id].n === 1);
+  check('aucune équipe cartes à 1 personne isolée', stray1.length === 0,
+    stray1.length ? stray1.map(([k]) => k).join(' ') : 'aucune');
 
   console.log('=== AUDIT TAILLES ÉQUIPES — mai 2026 V1 (texte réel Kevin) ===');
   tests.forEach(t => console.log((t.ok ? '  ✓ ' : '  ✗ ') + t.label + ' — ' + t.detail));

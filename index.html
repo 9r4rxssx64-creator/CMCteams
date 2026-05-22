@@ -4872,6 +4872,12 @@ function _cmcEnsureTeam(tid){
   if(!tid)return null;
   var t=gt(tid);if(t)return t;
   var s=String(tid);
+  // v9.730 — équipe "Horaires aménagés" (employés à horaires aménagés)
+  if(s==="amenage"){
+    var at={id:"amenage",name:"🕐 Horaires aménagés",color:"#8a8a9a",family:"cmc",departureOrder:99,_auto:true};
+    A.teams.push(at);
+    return at;
+  }
   var fam=/^r/i.test(s)?"roulettes":/^c/i.test(s)?"cmc":"bj";
   var num=s.replace(/[^0-9]/g,"")||"?";
   var nm=fam==="roulettes"?("Roul. Éq."+num):fam==="cmc"?("CMC Éq."+num):("BJ Éq."+num);
@@ -5355,7 +5361,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.729";
+var APP_VER="v9.730";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34602,10 +34608,13 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
     function _sectionFamily(line){
       var n=_norm(line);
       if(!n)return null;
+      // v9.730 — section "aménagement" (chefs OU cartes) → famille dédiée
+      // "amenage" : ces employés à horaires aménagés sont regroupés en UNE
+      // seule équipe, pas fragmentés par colonne (colonnes à count 0/1).
+      if(/AMENAGEMENT/.test(n))return "amenage";
       if(/^ROULETTES?\b/.test(n))return "roulettes";
       if(/^CHEFS? BLACK ?JACK/.test(n))return "bj";
       if(/^EMPLOYES? CARTES? CMC/.test(n))return "cmc";
-      if(/^EMPLOYES? CARTES? AMENAGEMENT/.test(n))return "cmc";
       if(/^EMPLOYES? CARTES?\b/.test(n))return "cmc";
       return null;
     }
@@ -34846,6 +34855,25 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
       if(blk.suspect){suspectBlocks++;continue;}
       var fm=blk.family||"roulettes";
       if(fm==="cadres")continue;
+      // v9.730 — Section "Horaires aménagés" : tous les emps des sections
+      // aménagement (cartes + chefs) regroupés dans UNE équipe "amenage",
+      // sans fragmentation par colonne (les colonnes y sont à count 0/1).
+      if(fm==="amenage"){
+        _cmcEnsureTeam("amenage");
+        for(var ac=0;ac<blk.cols.length;ac++){
+          var acol=blk.cols[ac];
+          for(var am=0;am<acol.members.length;am++){
+            var aemp=_matchEmp(acol.members[am]);
+            if(!aemp){unmatched++;continue;}
+            if(!aemp.teamHistory)aemp.teamHistory={};
+            if(!aemp.familyHistory)aemp.familyHistory={};
+            aemp.teamHistory[key]="amenage";
+            if(!aemp.familyHistory[key])aemp.familyHistory[key]="cmc";
+            teamsAssigned++;
+          }
+        }
+        continue;
+      }
       famBlockOrder[fm]=(famBlockOrder[fm]||0);
       var blockIdx=famBlockOrder[fm];
       famBlockOrder[fm]++;

@@ -23,9 +23,10 @@ Fix : `_mergePosteNameLines()` ré-interleave les paires avant parsing.
 Vérifié sur le vrai texte PDF de Kevin (`tests/fixtures/mai-2026-v1-full.txt`,
 fourni dans son diagnostic) : chefs BJ 4-5/équipe, roulettes 3-6/équipe, 0
 équipe ≤2. Test `test:teamsizes`.
-Reste mineur : section « cartes aménagement » → 2 équipes à 1 emp
-(`c13`/`c15`, BLANZIERI K + ACCOMASSO F) car le PDF a des colonnes count=1
-dans cette section marginale — non bloquant.
+### ✅ RÉSOLU v9.730 — section « Horaires aménagés »
+Les 2 emps aménagés (BLANZIERI K, ACCOMASSO F) étaient en 2 équipes à
+1 personne (`c13`/`c15`). Fix : `_sectionFamily` détecte `AMENAGEMENT` →
+famille `amenage`, regroupés dans une seule équipe « 🕐 Horaires aménagés ».
 
 ---
 
