@@ -1,23 +1,30 @@
 # e-KDMC — Plateforme e-Commerce Automatisée KDMC
 
 Projet de Kevin DESARZENS (U11804 · kevind@monaco.mc).
-Créé le 2026-04-13. **EN PRODUCTION v1.10** depuis le 2026-05-18.
+Créé le 2026-04-13. **PROTOTYPE v1.10 — NON production-ready** (audit 2026-05-22).
+
+> ⚠️ État réel (audit ultra-review) : ce n'est PAS encore en production.
+> Reste à faire avant mise en ligne : vraies images produit (placeholders
+> emoji actuellement), checkout 100 % fonctionnel, webhook Stripe +
+> agent automation (aujourd'hui en `// TODO`), pages légales (CGV/
+> Mentions/Confidentialité), réalignement de cette doc sur la réalité.
 
 ---
 
 ## 🎯 État du projet
 
-**5 boutiques en ligne + dashboard admin + agent automation 24/7.**
+**5 boutiques (front) + dashboard admin — prototype, backend non branché.**
 
 | Boutique | Thème | Produits | Status |
 |----------|-------|----------|--------|
-| **CHEZ LOLO** | Cosmétiques Provence (olive/crème) | 100 | ✅ Live |
-| **Tech Hub** | Gadgets & accessoires tech | 100 | ✅ Live |
-| **EcoCraft** | Éco-responsable, zéro déchet | 100 | ✅ Live |
-| **Digital Vault** | Produits numériques (formations, templates) | 100 | ✅ Live |
-| **Pawsome** | Animaux (chiens, chats) | 100 | ✅ Live |
+| **CHEZ LOLO** | Cosmétiques Provence (olive/crème) | 100 | 🔧 Prototype |
+| **Tech Hub** | Gadgets & accessoires tech | 100 | 🔧 Prototype |
+| **EcoCraft** | Éco-responsable, zéro déchet | 100 | 🔧 Prototype |
+| **Digital Vault** | Produits numériques (formations, templates) | 100 | 🔧 Prototype |
+| **Pawsome** | Animaux (chiens, chats) | 100 | 🔧 Prototype |
 
-**Total : 500 produits, descriptions uniques, photos Unsplash réelles.**
+**Total : 500 produits — descriptions à différencier, images produit à
+intégrer (placeholders emoji actuellement, pas de vraies photos).**
 
 ---
 

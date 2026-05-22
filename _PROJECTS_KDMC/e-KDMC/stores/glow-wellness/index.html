@@ -153,6 +153,21 @@ var P=[{"id":"gw001","name":"Sérum Vitamine C Bio","cat":"visage","price":26.85
 var S={view:"home",vp:null,cart:[],search:"",cat:"all",sort:"popular",page:1,pp:12};
 function esc(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function toast(m,t){var e=document.getElementById("toast");e.innerHTML=(t==="error"?"❌":"✅")+" "+esc(m);e.className="toast show";clearTimeout(toast._t);toast._t=setTimeout(function(){e.className="toast"},3e3)}
+function showPayment(total){
+var m=document.createElement("div");m.id="payModal";
+m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
+m.innerHTML='<div style="background:var(--card);border-radius:16px;padding:28px;max-width:420px;width:100%;border:1px solid var(--border);max-height:90vh;overflow-y:auto">'
++'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><h2 style="font-size:20px;font-weight:800">Paiement</h2><span onclick="document.getElementById(\'payModal\').remove()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
++'<div style="background:var(--bg);padding:14px;border-radius:12px;margin-bottom:16px;text-align:center"><span style="font-size:13px;color:var(--muted)">Total à payer</span><div style="font-size:28px;font-weight:800;color:var(--p);margin-top:4px">'+fmtP(total)+'</div></div>'
++'<a href="https://paypal.me/kdmc/'+total.toFixed(2)+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px;background:#0070ba22;border:1px solid #0070ba55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600;margin-bottom:10px"><span style="font-size:26px">\U0001F17F️</span><div><div>PayPal</div><div style="font-size:12px;color:var(--muted)">paypal.me/kdmc</div></div></a>'
++'<a href="https://revolut.me/kdmc" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px;background:#0075eb22;border:1px solid #0075eb55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600;margin-bottom:10px"><span style="font-size:26px">\U0001F504</span><div><div>Revolut</div><div style="font-size:12px;color:var(--muted)">@kdmc</div></div></a>'
++'<div onclick="showIBAN()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#22c55e22;border:1px solid #22c55e55;border-radius:12px;cursor:pointer;font-weight:600"><span style="font-size:26px">\U0001F3E6</span><div><div>Virement bancaire</div><div style="font-size:12px;color:var(--muted)">IBAN — délai 1-2 jours</div></div></div>'
++'<div id="ibanBox" style="display:none;margin-top:10px;background:var(--bg);padding:14px;border-radius:12px;border:1px solid var(--border)"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Coordonnées bancaires :</div><div style="font-family:monospace;font-size:14px;font-weight:600">MC98 •••• •••• •••• •••• •••</div><div style="font-size:12px;margin-top:4px"><b>Titulaire :</b> Kevin DESARZENS</div><div style="font-size:11px;color:var(--muted);margin-top:6px">Indique ton numéro de commande en référence.</div></div>'
++'<p style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px">Ta commande sera validée dès réception du paiement.</p>'
++'</div>';
+m.onclick=function(e){if(e.target===m)m.remove()};
+document.body.appendChild(m)}
+function showIBAN(){var b=document.getElementById("ibanBox");if(b)b.style.display=b.style.display==="none"?"block":"none"}
 function sv(v,p){S.view=v;S.vp=p;S.page=1;dc();scrollTo({top:0,behavior:"smooth"})}
 function dc(){var a=document.getElementById("app");if(!a)return;a.innerHTML=hdr()+({home:vHome,products:vProducts,product:vProduct,cart:vCartPage,about:vAbout,contact:vContact}[S.view]||vHome)()+footer();cartBadge();
 document.querySelectorAll(".nav-item").forEach(function(el){el.classList.toggle("active",el.dataset.cat===(S.cat||"all"))});
@@ -172,7 +187,7 @@ function footer(){return '<div class="footer"><div class="footer-inner">'
 +'<div><h4>Newsletter</h4><p style="font-size:13px;color:var(--muted);margin-bottom:8px">Recevez nos offres exclusives</p>'
 +'<div style="display:flex;gap:8px"><input type="email" placeholder="votre@email.com" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" id="nlEmail">'
 +'<button onclick="nlSub()" style="padding:10px 16px;background:var(--p);color:#fff;border-radius:var(--rs);font-weight:700;font-size:13px">OK</button></div></div>'
-+'</div><div class="footer-bottom">© 2026 '+esc(STORE_NAME)+' — KDMC. Tous droits réservés. Paiement sécurisé par Stripe 🔒</div></div>'}
++'</div><div class="footer-bottom">© 2026 '+esc(STORE_NAME)+' — KDMC. Tous droits réservés. Paiement PayPal · Revolut · IBAN 🔒</div></div>'}
 function stars(r){var f=Math.floor(r),h=r%1>=.3,s="";for(var i=0;i<f;i++)s+="★";if(h)s+="½";for(var j=f+(h?1:0);j<5;j++)s+="☆";return '<span class="stars" title="'+r+'/5">'+s+"</span>"}
 function fmtP(p){return p.toFixed(2).replace(".",",")+" €"}
 function disc(o,c){return o>c?Math.round((1-c/o)*100):0}
@@ -242,7 +257,7 @@ return '<div class="section" style="max-width:700px;margin:0 auto"><div class="s
 +'<span style="margin-left:auto;font-weight:700">'+fmtP(item.price*item.qty)+'</span></div></div>'
 +'<span onclick="rmCart(\''+item.id+'\');dc()" style="color:#ef4444;cursor:pointer;font-size:18px;padding:8px">✕</span></div>'}).join("")
 +'<div style="margin-top:24px;padding:20px;background:var(--bg);border-radius:var(--r)"><div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700"><span>Total</span><span style="color:var(--p)">'+fmtP(total)+'</span></div>'
-+'<button onclick="toast(\'Redirection vers le paiement Stripe...\')" style="width:100%;padding:16px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:16px;font-weight:700;border:none;cursor:pointer;margin-top:16px">💳 Payer '+fmtP(total)+'</button></div></div>'}
++'<button onclick="showPayment('+total+')" style="width:100%;padding:16px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:16px;font-weight:700;border:none;cursor:pointer;margin-top:16px">💳 Payer '+fmtP(total)+'</button></div></div>'}
 function vAbout(){return '<div class="section" style="max-width:700px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:16px">À propos de '+esc(STORE_NAME)+'</h1><p style="color:var(--muted);line-height:1.8">'+esc(STORE_NAME)+' est une boutique en ligne KDMC dédiée à vous offrir les meilleurs produits de qualité à des prix accessibles. Notre mission : rendre le shopping en ligne simple, sûr et agréable.</p>'
 +'<div class="trust" style="margin-top:32px"><div class="trust-item"><span class="trust-icon">🏆</span>Qualité Premium</div><div class="trust-item"><span class="trust-icon">💯</span>Satisfaction garantie</div><div class="trust-item"><span class="trust-icon">🌍</span>Livraison mondiale</div></div></div>'}
 function vContact(){return '<div class="section" style="max-width:500px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:24px">📧 Contactez-nous</h1>'
@@ -267,7 +282,7 @@ ci.innerHTML=S.cart.map(function(it){return '<div class="cart-item"><div class="
 +'<div class="cart-item-qty"><button onclick="cartQty(\''+it.id+'\',-1);renderCartPanel()">−</button><span>'+it.qty+'</span><button onclick="cartQty(\''+it.id+'\',1);renderCartPanel()">+</button></div>'
 +'<div class="cart-item-rm" onclick="rmCart(\''+it.id+'\');renderCartPanel()">Supprimer</div></div></div>'}).join("");
 var total=S.cart.reduce(function(s,i){return s+i.price*i.qty},0);
-cf.innerHTML='<div class="cart-total"><span>Total</span><span class="amount">'+fmtP(total)+'</span></div><button class="btn-checkout" onclick="toast(\'Redirection vers Stripe...\')">💳 Commander — '+fmtP(total)+"</button>"}
+cf.innerHTML='<div class="cart-total"><span>Total</span><span class="amount">'+fmtP(total)+'</span></div><button class="btn-checkout" onclick="showPayment('+total+')">💳 Commander — '+fmtP(total)+"</button>"}
 function nlSub(){var e=document.getElementById("nlEmail");if(e&&e.value.indexOf("@")>0){toast("Bienvenue ! Vérifiez vos emails 📧");e.value=""}else toast("Email invalide","error")}
 /* INIT */
 loadCart();dc();
