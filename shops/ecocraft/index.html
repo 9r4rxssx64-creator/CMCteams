@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>EcoCraft | KDMC Boutique</title>
 <meta property="og:title" content="EcoCraft — Produits Éco-Responsables | KDMC">
@@ -28,7 +28,7 @@ input,textarea,select{font:inherit}img{max-width:100%;height:auto}
 /* HEADER */
 .hdr{position:sticky;top:0;z-index:100;background:#ffffff;border-bottom:1px solid var(--border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .hdr-inner{max-width:1280px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:16px}
-.logo{font-size:22px;font-weight:800;font-family:"Playfair Display",Georgia,serif;letter-spacing:0.5px;color:var(--p);cursor:pointer;white-space:nowrap}
+.logo{font-size:22px;font-weight:800;font-family:"Fraunces",Georgia,serif;letter-spacing:0.5px;color:var(--p);cursor:pointer;white-space:nowrap}
 .logo span{font-size:14px;color:var(--muted);font-weight:400;margin-left:4px}
 .search-box{flex:1;max-width:400px;position:relative}
 .search-box input{width:100%;padding:10px 16px 10px 36px;border-radius:100px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px}
@@ -44,14 +44,14 @@ input,textarea,select{font:inherit}img{max-width:100%;height:auto}
 .nav-item:hover,.nav-item.active{background:var(--p);color:#fff;border-color:var(--p)}
 /* HERO */
 .hero{background:linear-gradient(135deg,#16653422,#ffffff);padding:48px 16px;text-align:center}
-.hero h1{font-size:clamp(28px,5vw,48px);font-weight:800;font-family:\"Playfair Display\",Georgia,serif;letter-spacing:0.5px;margin-bottom:8px}
+.hero h1{font-size:clamp(28px,5vw,48px);font-weight:800;font-family:\"Fraunces\",Georgia,serif;letter-spacing:0.5px;margin-bottom:8px}
 .hero h1 em{color:var(--p);font-style:normal}
 .hero p{font-size:16px;color:var(--muted);max-width:600px;margin:0 auto 24px}
 .hero-stats{display:flex;justify-content:center;gap:32px;flex-wrap:wrap}
 .hero-stat{text-align:center}.hero-stat strong{font-size:24px;color:var(--p);display:block}.hero-stat span{font-size:12px;color:var(--muted)}
 /* SECTIONS */
 .section{max-width:1280px;margin:0 auto;padding:32px 16px}
-.section-title{font-size:22px;font-weight:700;font-family:"Playfair Display",Georgia,serif;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.section-title{font-size:22px;font-weight:700;font-family:"Fraunces",Georgia,serif;margin-bottom:20px;display:flex;align-items:center;gap:8px}
 /* GRID */
 .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 /* CARD */
@@ -112,7 +112,7 @@ input,textarea,select{font:inherit}img{max-width:100%;height:auto}
 /* FOOTER */
 .footer{background:var(--card);border-top:1px solid var(--border);padding:32px 16px;margin-top:48px}
 .footer-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px}
-.footer h4{font-family:"Playfair Display",Georgia,serif;font-size:14px;font-weight:700;margin-bottom:12px;color:var(--p)}
+.footer h4{font-family:"Fraunces",Georgia,serif;font-size:14px;font-weight:700;margin-bottom:12px;color:var(--p)}
 .footer a{display:block;font-size:13px;color:var(--muted);padding:4px 0;transition:color .2s}
 .footer a:hover{color:var(--p)}
 .footer-bottom{text-align:center;padding-top:24px;margin-top:24px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
@@ -214,8 +214,8 @@ return '<div class="card" onclick="sv(\'product\',\''+p.id+'\')"><div class="car
 function vHome(){var featured=P.filter(function(p){return disc(p.origPrice,p.price)>=25}).slice(0,6);
 if(featured.length<6)featured=P.slice(0,6);
 var best=P.slice().sort(function(a,b){return b.rating-a.rating}).slice(0,6);
-return '<div class="hero"><h1>Bienvenue sur <em>'+esc(STORE_NAME)+'</em></h1>'
-+'<p>Découvrez notre collection de '+P.length+'+ produits soigneusement sélectionnés pour vous.</p>'
+return '<div class="hero"><h1>Consommer mieux, <em>sans compromis</em></h1>'
++'<p>Zéro déchet, maison verte et mode durable — des produits éco-responsables choisis avec soin.</p>'
 +'<div class="hero-stats"><div class="hero-stat"><strong>'+P.length+'+</strong><span>Produits</span></div>'
 +'<div class="hero-stat"><strong>'+CATS.length+'</strong><span>Catégories</span></div>'
 +'<div class="hero-stat"><strong>4.7★</strong><span>Note moyenne</span></div>'
