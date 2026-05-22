@@ -56,9 +56,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2
 <div class="nav-item" onclick="sv('products')">🏷️ Produits</div>
 <div class="nav-item" onclick="sv('customers')">👥 Clients</div>
 <div class="nav-item" onclick="sv('analytics')">📈 Analytiques</div>
-<div class="nav-item" onclick="sv('inventory')">📋 Inventaire</div>
-<div class="nav-item" onclick="sv('emails')">📧 Emails</div>
-<div class="nav-item" onclick="sv('finance')">💰 Finance</div>
 <div class="nav-item" onclick="sv('settings')">⚙️ Paramètres</div>
 <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
 <div class="nav-item" onclick="window.open('../stores/digital-vault/index.html')">🏪 Digital Vault</div>
@@ -82,7 +79,7 @@ var STORES=[
 function esc(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 function toast(m){var e=document.getElementById("toast");e.textContent=m;e.className="toast show";clearTimeout(toast._t);toast._t=setTimeout(function(){e.className="toast"},3e3)}
 function fmtP(p){return p.toFixed(2).replace(".",",")+" €"}
-function sv(v){D.view=v;dc();document.querySelectorAll(".nav-item").forEach(function(el,i){el.classList.toggle("active",i==={home:0,orders:1,products:2,customers:3,analytics:4,inventory:5,emails:6,finance:7,settings:8}[v])})}
+function sv(v){D.view=v;dc();document.querySelectorAll(".nav-item").forEach(function(el,i){el.classList.toggle("active",i==={home:0,orders:1,products:2,customers:3,analytics:4,settings:5}[v])})}
 function dc(){document.getElementById("app").innerHTML=({home:vHome,orders:vOrders,products:vProducts,customers:vCustomers,analytics:vAnalytics,settings:vSettings}[D.view]||vHome)()}
 function totalRev(){return STORES.reduce(function(s,st){return s+st.revenue},0)}
 function totalOrd(){return STORES.reduce(function(s,st){return s+st.orders},0)}
