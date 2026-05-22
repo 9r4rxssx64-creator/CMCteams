@@ -1,15 +1,15 @@
 # DOSSIER REPRISE — CMCteams import planning SBM
 
 > Document de reprise pour repartir propre dans une nouvelle conversation.
-> Dernière mise à jour : v9.725 — 2026-05-21.
+> Dernière mise à jour : v9.731 — 2026-05-22.
 
 ---
 
 ## 1. CONTEXTE PROJET
 
 - **CMCteams** : app planning Casino de Monaco. SPA monofichier `index.html` (~2.9 MB, JS vanilla ES5 — `var` uniquement, pas de `const`/`let`/arrow), français.
-- Repo : `9r4rxssx64-creator/cmcteams`. Branche dev : **`claude/fix-cms-teams-import-bgkHk`** (un auto-merge bot pousse vers main ; GitHub Pages déploie main).
-- Version : **v9.725** — `APP_VER` ligne ~5326, `sw.js` const `CACHE='cmcteams-v9.725'`. **Toujours bumper `APP_VER` ET `sw.js` ensemble dans le même commit.**
+- Repo : `9r4rxssx64-creator/cmcteams`. Le travail import est mergé dans main ; toute nouvelle session import repart d'une branche fraîche `claude/fix-cms-teams-import-*` (un auto-merge bot pousse vers main ; GitHub Pages déploie main).
+- Version : **v9.731** — `APP_VER` ligne ~5366, `sw.js` const `CACHE='cmcteams-v9.731'`. **Toujours bumper `APP_VER` ET `sw.js` ensemble dans le même commit.**
 - Kevin = admin (AID `U11804`), **non-codeur**, travaille sur **iPhone**, souvent frustré du temps perdu. Lui parler simple, sans jargon. Ne jamais prétendre "fait" sans avoir testé.
 
 ---
@@ -46,7 +46,7 @@ Objectif validé par Kevin via AskUserQuestion — **"les trois d'affilée"** :
 
 ---
 
-## 4. TRAVAIL DÉJÀ FAIT ET POUSSÉ (v9.721 → v9.725, tous 153/153 tests OK)
+## 4. TRAVAIL DÉJÀ FAIT ET POUSSÉ (v9.721 → v9.731, mergé dans main)
 
 ### v9.721 — `_cmcEnsureTeam`
 ~ligne 4833, après `gt()`. Cause racine de "Ma section invisible" : la détection écrivait `teamHistory` avec des IDs séquentiels ("7","11"…"r9") absents de `A.teams` → `gt()` retournait null → vPlan/vDeparts ne trouvaient rien.
@@ -82,13 +82,37 @@ Bloc boot (~15099) flag `cmc_v724_purge_done`, admin only, appelle `cmcWipeAllPl
 ### v9.725 — inversion famille
 `_cmcDetectTeamsByPdfColumn` (~34778) : `emp.familyHistory[key]=fm;` (écrasement inconditionnel) → `if(!emp.familyHistory[key])emp.familyHistory[key]=fm;`. Il y a 2 écrivains de `familyHistory` : le parser de grille (~38404, FIABLE — utilise les en-têtes de section PDF) et pdf-column (curseur fragile de la 1ʳᵉ moitié, désaligné par les colonnes statut M/CP). pdf-column tournait APRÈS et écrasait la bonne valeur. Le write conditionnel garde le parser de grille comme source de vérité tout en restant testable en isolation.
 
+### v9.726 — reproduction à l'identique (audit `test:fidelity`)
+Nouvel audit `npm run test:fidelity` : importe le texte PDF source réel et vérifie que chaque cellule de `A.overrides` == le code source, caractère pour caractère. 3 écarts corrigés :
+1. **Décalage de jour** — la passe « consensus d'équipe » v8.57 écrasait HAREL/COSTAGLIOLI correctement parsés par une rotation miroir décalée → la passe ne remplit plus QUE les cellules vides (`if([d])return;`).
+2. **`*` inventé** — 3 sites « auto-upgrade CDP » ajoutaient `16/3*` selon le profil `cdpShifts` → retirés (le `*` ne vient que d'une marque PDF réelle).
+3. **Suffixes `'`/`"` perdus** — helper `_cmcEnsureQuoteVariant()` clone l'entrée `CODES` de base dans la variante suffixée → `22/6'`/`19/4""` conservés exactement.
+Résultat : 29/29 employés reproduits à l'identique. `test:fidelity` câblé dans `test:ci`. Voir erreurs #62/#63 CLAUDE.md.
+
+### v9.727 — couleurs Convention
+Codes à suffixe `'`/`"` (jours de Convention) : fond ROUGE, écriture JAUNE dans le PDF SBM. v9.726 clonait la couleur de base → repère visuel perdu. FIX : `_cmcEnsureQuoteVariant()` applique le style Convention (`bg #d8342e` / `c #ffe23a`) ; source unique `_cmcIsConv(code)` (`/['"]$/`) remplace les 8 `endsWith("'")` éparpillés (les codes `"` étaient ignorés). `'` ET `"` colorés identiquement dans toutes les vues.
+
+### v9.728 — cadres non contaminés sur import V1
+Sur un import V1 (employés+chefs, `hasCadres=false`), 2 scans de rattrapage cadres matchaient les cadres par nom de famille seul sur un homonyme employé (`CAMPI H` cadre ← codes de `CAMPI PH` chef). FIX : les 2 scans sont gated sur `_importTypeDetails.hasCadres` — un import employés+chefs ne touche plus jamais les cadres.
+
+### v9.729 — fin de la fragmentation des équipes
+Cause : PDF.js fragmente une rangée en 2 lignes (codes-poste + plages SANS noms, puis noms seuls) → 0 entrée → colonnes sous-remplies → équipes de 1-2 pers ou ballonnées. FIX : helper `_mergePosteNameLines()` dans `_cmcDetectTeamsByPdfColumn` ré-interleave les paires A+B avant le parsing. Vérifié contre le vrai texte PDF SBM mai 2026 V1 (`tests/fixtures/mai-2026-v1-full.txt`). Nouveau test `test:teamsizes` câblé dans `test:all`.
+
+### v9.730 — section « Horaires aménagés »
+Les 2 employés des sections aménagement (BLANZIERI K, ACCOMASSO F) finissaient en 2 équipes à 1 personne (`c13`/`c15`). FIX : `_sectionFamily` détecte `AMENAGEMENT` → famille `amenage` ; `_cmcDetectTeamsByPdfColumn` regroupe tous ces emps dans UNE équipe `amenage` (« 🕐 Horaires aménagés », famille `cmc`) sans fragmentation par colonne.
+
+### v9.731 — bump umbrella (PR #323)
+Version de batch qui regroupe v9.726→v9.730 (reproduction, couleurs, cadres, équipes). `APP_VER`+`sw.js` bumpés, fixture `tests/fixtures/mai-2026-v1-full.txt` + `tests/runtime-audit-team-sizes.mjs` ajoutés.
+
 ---
 
-## 5. CE QUI RESTE / EN ATTENTE — BLOQUANT
+## 5. CE QUI RESTE / EN ATTENTE
 
-Kevin doit (1) **recharger l'app** (récupère v9.725, déclenche la purge auto) et (2) **ré-importer son PDF de mai**. Les fixes v9.723/v9.725 agissent **au moment de l'import** — les anciennes données importées avant restent fausses.
+Les bugs majeurs d'import (fragmentation, familles mélangées, cadres contaminés, reproduction infidèle, couleurs Convention) sont corrigés et mergés v9.726→v9.731. Tous les fixes agissent **au moment de l'import**.
 
-**NE PAS faire de nouvelles modifs de détection à l'aveugle.** Attendre un **export diagnostic pris APRÈS ré-import**. S'il reste des bugs : l'algo de **comptage/groupement** des équipes (`_cmcDetectTeamsByRestPattern` ~34787) n'a PAS été réécrit — c'est le candidat #1 (Kevin voyait "30 éq" anormales). Le diagnostiquer contre les vraies données + la vérité terrain.
+Pour valider : Kevin doit (1) **recharger l'app** (récupère v9.731, déclenche la purge auto v9.724) et (2) **ré-importer son PDF de mai**. Les anciennes données importées avant ces fixes restent fausses jusqu'au ré-import.
+
+**NE PAS faire de nouvelles modifs de détection à l'aveugle.** S'il reste un bug visible après ré-import : exiger un **export diagnostic réel pris APRÈS ré-import** + le comparer à la vérité terrain NOTES_USER.md avant de toucher l'algo. `_cmcDetectTeamsByRestPattern` (~34787, fallback jours de repos) n'a pas été réécrit — candidat à diagnostiquer si la détection par colonne PDF échoue sur un format particulier.
 
 ---
 
@@ -121,17 +145,20 @@ Kevin doit (1) **recharger l'app** (récupère v9.725, déclenche la purge auto)
 
 ## 8. TESTS
 
-- `npm run test:all` (19 suites Playwright).
+- `npm run test:ci` = `test:check-syntax` + `test:all` + `test:fidelity` (pipeline complet).
+- `npm run test:all` (21 suites Playwright).
 - `npm run test:check-syntax` (syntaxe JS — combine les blocs `<script>` SANS séparateur, méthode du pre-commit hook).
+- `npm run test:fidelity` (reproduction à l'identique — chaque cellule == code source PDF ; 29/29 employés).
+- `npm run test:teamsizes` (audit fragmentation — aucune équipe ≤2 ni >8 ; ajouté v9.729).
 - `npm run test:kevin` (oracle vérité terrain).
 - `npm run test:v719` (12 checks détection par colonne).
-- Référence actuelle : **153/153 OK** sur v9.725.
+- Référence : **160/160 runtime + test:fidelity 29/29 OK** mesuré v9.727.
 
 ---
 
 ## 9. RÈGLES DE TRAVAIL
 
-- Brancher uniquement `claude/fix-cms-teams-import-bgkHk`. Jamais push direct main. Jamais force-push/reset --hard. Jamais `--no-verify`.
+- Travailler sur une branche `claude/*` dédiée. Jamais push direct main. Jamais force-push/reset --hard. Jamais `--no-verify`. Vérifier en début de session : `git log --oneline main..HEAD | wc -l` — si > 3 commits non mergés, merger d'abord.
 - `esc()` sur toute donnée utilisateur avant `innerHTML`. Guards admin `if(!A.user||A.user.id!==AID)return;` sur fonctions destructrices.
 - Bumper `APP_VER` + `sw.js` CACHE ensemble. Mettre à jour la table d'historique dans CLAUDE.md.
 - Mobile-first 375px. JS ES5 strict (var only).
