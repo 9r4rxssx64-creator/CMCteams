@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KDMC Shops — Portail e-Commerce</title>
+<meta name="description" content="KDMC Shops — 5 boutiques en ligne : Tech Hub, CHEZ LOLO, EcoCraft, Digital Vault, Pawsome. 500 produits, livraison rapide, paiement sécurisé.">
+<meta name="theme-color" content="#0c0c0e">
+<link rel="canonical" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="KDMC Shops — Portail e-Commerce">
+<meta property="og:description" content="5 boutiques en ligne, 500 produits. Tech, cosmétiques de Provence, éco-responsable, produits digitaux et animalerie.">
+<meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/shops/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%92%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0c0e;--card:#17171b;--card-h:#1e1e24;
+  --border:#2a2a30;--border-h:#3c3c44;
+  --text:#f4f4f5;--muted:#9a9aa3;--faint:#6a6a73;
+  --gold:#e8b830;--gold-soft:rgba(232,184,48,.10);
+  --r:18px;--r-sm:12px;--r-pill:100px;
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  --ease:cubic-bezier(.25,.8,.25,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(232,184,48,.07),transparent),var(--bg);
+  background-attachment:fixed;
+  color:var(--text);min-height:100vh;line-height:1.5;
+  padding:max(32px,env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom));
+}
+.wrap{max-width:960px;margin:0 auto}
+.serif{font-family:"Playfair Display",Georgia,serif}
+header{text-align:center;margin-bottom:40px}
+.logo{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+h1{font-size:clamp(30px,6vw,46px);font-weight:800;letter-spacing:.5px;margin:10px 0 8px}
+h1 em{color:var(--gold);font-style:normal}
+.tagline{color:var(--muted);font-size:15px;max-width:440px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:420px;margin:32px auto 40px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px 22px;text-align:center}
+.stat b{display:block;font-size:28px;font-weight:800;color:var(--gold);line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+.section-label{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin:0 0 16px 4px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(248px,1fr))}
+.card{
+  --accent:var(--gold);
+  position:relative;display:block;text-decoration:none;color:inherit;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:26px 24px 24px;overflow:hidden;
+  transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .35s var(--ease),background .35s var(--ease);
+  animation:fadeUp .55s var(--ease) both;
+}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent);opacity:.65;transition:opacity .35s var(--ease)}
+.card:hover,.card:focus-visible{transform:translateY(-5px);background:var(--card-h);border-color:var(--accent);box-shadow:var(--shadow);outline:none}
+.card:hover::before,.card:focus-visible::before{opacity:1}
+.card:active{transform:translateY(-1px)}
+.card-icon{
+  width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:30px;margin-bottom:16px;
+  background:color-mix(in srgb,var(--accent) 14%,transparent);
+}
+.card-title{font-size:19px;font-weight:700;margin-bottom:6px}
+.card-desc{font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:16px}
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.badge{
+  display:inline-block;padding:5px 12px;border-radius:var(--r-pill);font-size:12px;font-weight:700;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);
+  color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
+}
+.go{font-size:13px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px}
+.card:hover .go{gap:8px}
+.go span{transition:margin .25s var(--ease)}
+.admin{background:linear-gradient(180deg,var(--card),rgba(232,184,48,.04))}
+footer{margin-top:56px;text-align:center;color:var(--faint);font-size:13px;line-height:1.9}
+footer a{color:var(--muted);text-decoration:none;transition:color .2s}
+footer a:hover{color:var(--gold)}
+.legal{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.card:nth-child(2){animation-delay:.07s}
+.card:nth-child(3){animation-delay:.14s}
+.card:nth-child(4){animation-delay:.21s}
+.card:nth-child(5){animation-delay:.28s}
+.card:nth-child(6){animation-delay:.35s}
+@media (min-width:560px){.stats{grid-template-columns:repeat(4,1fr);max-width:none}}
+@media (prefers-reduced-motion:reduce){
+  .card{animation:none;transition:none}
+  body{background-attachment:scroll}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">Kevin Desarzens · Monaco</div>
+  <h1 class="serif">🛒 <em>KDMC</em> Shops</h1>
+  <p class="tagline">Cinq boutiques en ligne, un seul portail. Produits sélectionnés, livraison rapide, paiement sécurisé.</p>
+  <div class="stats">
+    <div class="stat"><b>5</b><span>Boutiques</span></div>
+    <div class="stat"><b>500</b><span>Produits</span></div>
+    <div class="stat"><b>43</b><span>Catégories</span></div>
+    <div class="stat"><b>24/7</b><span>Disponible</span></div>
+  </div>
+</header>
+
+<main>
+<p class="section-label">Nos boutiques</p>
+<div class="grid">
+
+  <a href="tech-hub/" class="card" style="--accent:#3b82f6" aria-label="Tech Hub — boutique high-tech">
+    <div class="card-icon">💻</div>
+    <div class="card-title">Tech Hub</div>
+    <div class="card-desc">Smartphones, audio, gaming, maison connectée, wearables et accessoires.</div>
+    <div class="card-foot"><span class="badge">100 produits</span><span class="go">Visiter<span>→</span></span></div>
+  </a>
+
+  <a href="chez-lolo/" class="card" style="--accent:#7c8c3c" aria-label="CHEZ LOLO — cosmétiques de Provence">
+    <div class="card-icon">🫒</div>
+    <div class="card-title">CHEZ LOLO</div>
+    <div class="card-desc">Cosmétiques naturels de Provence : huile d'olive, lavande, amande douce, soins bio.</div>
+    <div class="card-foot"><span class="badge">100 produits</span><span class="go">Visiter<span>→</span></span></div>
+  </a>
+
+  <a href="ecocraft/" class="card" style="--accent:#16a34a" aria-label="EcoCraft — produits éco-responsables">
+    <div class="card-icon">🌿</div>
+    <div class="card-title">EcoCraft</div>
+    <div class="card-desc">Produits éco-responsables, zéro déchet, maison verte et mode durable.</div>
+    <div class="card-foot"><span class="badge">100 produits</span><span class="go">Visiter<span>→</span></span></div>
+  </a>
+
+  <a href="digital-vault/" class="card" style="--accent:#d4af37" aria-label="Digital Vault — produits numériques">
+    <div class="card-icon">🔐</div>
+    <div class="card-title">Digital Vault</div>
+    <div class="card-desc">Logiciels, formations, templates, ebooks, assets créatifs et licences.</div>
+    <div class="card-foot"><span class="badge">100 produits</span><span class="go">Visiter<span>→</span></span></div>
+  </a>
+
+  <a href="pawsome/" class="card" style="--accent:#f97316" aria-label="Pawsome — animalerie">
+    <div class="card-icon">🐾</div>
+    <div class="card-title">Pawsome</div>
+    <div class="card-desc">Alimentation, jouets, accessoires, santé et confort pour vos animaux.</div>
+    <div class="card-foot"><span class="badge">100 produits</span><span class="go">Visiter<span>→</span></span></div>
+  </a>
+
+  <a href="dashboard/" class="card admin" style="--accent:#e8b830" aria-label="Dashboard administrateur">
+    <div class="card-icon">📊</div>
+    <div class="card-title">Dashboard Admin</div>
+    <div class="card-desc">Commandes, produits, clients, statistiques et paramètres KDMC.</div>
+    <div class="card-foot"><span class="badge">Accès admin</span><span class="go">Ouvrir<span>→</span></span></div>
+  </a>
+
+</div>
+</main>
+
+<footer>
+  <p>KDMC e-Commerce Platform — Monaco 🇲🇨</p>
+  <p>Paiement sécurisé PayPal &amp; Revolut · Livraison suivie · Service client 24/7</p>
+  <nav class="legal" aria-label="Pages légales">
+    <a href="legal/cgv.html">CGV</a>
+    <a href="legal/mentions.html">Mentions légales</a>
+    <a href="legal/confidentialite.html">Confidentialité</a>
+    <a href="legal/livraison.html">Livraison</a>
+    <a href="legal/retours.html">Retours</a>
+    <a href="legal/faq.html">FAQ</a>
+  </nav>
+</footer>
+</div>
+</body>
+</html>
