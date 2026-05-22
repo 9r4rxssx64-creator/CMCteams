@@ -51,6 +51,11 @@ export interface FunctionalTestReport {
 }
 
 const DESTRUCTIVE_PATTERNS = /supprim|efface|détruir|reset|vider|logout|déconnex|delete|destroy|format|purge|wipe|kill/i;
+/* v13.4.255 (Kevin "le test des boutons bloqué sur certain test et s'arrête") :
+ * un bouton qui relance un test / audit / diagnostic, cliqué PENDANT le scan
+ * fonctionnel, re-déclenche le sous-système de test → récursion / opération
+ * longue → le scan se fige. Ces boutons sont skippés pendant le scan. */
+const RECURSIVE_PATTERNS = /auto.?test|self.?audit|diagnostic|\baudit\b|lancer.*(test|scan|audit)|run.*(test|audit|now)|tester.*(tout|bouton|maintenant)|re.?test|🧪/i;
 const TEST_SAFE_ATTR = 'data-test-safe';
 const TEST_DELAY_MS = 600;
 const MAX_BUTTONS_PER_SCAN = 40;
@@ -87,12 +92,21 @@ function isDestructive(btn: HTMLElement): boolean {
   return DESTRUCTIVE_PATTERNS.test(text) || DESTRUCTIVE_PATTERNS.test(aria) || DESTRUCTIVE_PATTERNS.test(title);
 }
 
+/* Bouton qui relance un test/audit/diagnostic → ne PAS le cliquer pendant
+ * un scan fonctionnel (sinon récursion / blocage du scan). */
+function isRecursiveTrigger(btn: HTMLElement): boolean {
+  const text = (btn.textContent ?? '').trim();
+  const aria = btn.getAttribute('aria-label') ?? '';
+  const title = btn.getAttribute('title') ?? '';
+  return RECURSIVE_PATTERNS.test(text) || RECURSIVE_PATTERNS.test(aria) || RECURSIVE_PATTERNS.test(title);
+}
+
 async function testOneButton(btn: HTMLElement): Promise<ButtonTestResult> {
   const selector = buildSelector(btn);
   const label = ((btn.textContent ?? btn.getAttribute('aria-label') ?? '').trim().slice(0, 40)) || '(no label)';
   const start = Date.now();
 
-  if (isDestructive(btn)) {
+  if (isDestructive(btn) || isRecursiveTrigger(btn)) {
     return { selector, label, status: 'skipped_destructive', reactions: [], durationMs: 0 };
   }
 
