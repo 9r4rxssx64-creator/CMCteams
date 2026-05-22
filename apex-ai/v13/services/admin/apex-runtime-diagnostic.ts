@@ -69,6 +69,9 @@ class ApexRuntimeDiagnostic {
     /* 7. Auto-restore credentials : a tourné ? */
     checks.push(this.checkAutoRestore());
 
+    /* v13.4.259 — résilience iOS (storage persistant anti-eviction). */
+    checks.push(this.checkIosResilience());
+
     /* 8. Sentinelles : combien run / pending */
     checks.push(await this.checkSentinels());
 
@@ -313,6 +316,30 @@ class ApexRuntimeDiagnostic {
   }
 
   /** Auto-restore credentials : a tourné depuis ce boot ? */
+  /**
+   * v13.4.259 — Résilience iOS : le stockage est-il marqué "persistant"
+   * (non-évincable par iOS) ? C'est la parade au "Coffre vide" causé par
+   * l'eviction localStorage/IDB d'iOS Safari sous pression disque.
+   */
+  private checkIosResilience(): DiagnosticCheck {
+    try {
+      const persisted = localStorage.getItem('apex_v13_storage_persisted');
+      const ok = persisted === 'true';
+      return {
+        id: 'ios-resilience',
+        label: 'iOS — stockage persistant',
+        ok,
+        detail: ok
+          ? 'storage.persist() accordé — Coffre protégé de l\'eviction iOS'
+          : persisted === 'false'
+            ? 'storage.persist() refusé par le navigateur — risque eviction'
+            : 'non encore demandé (boot en cours ?)',
+      };
+    } catch (err) {
+      return { id: 'ios-resilience', label: 'iOS — stockage persistant', ok: false, detail: `error: ${String(err)}` };
+    }
+  }
+
   private checkAutoRestore(): DiagnosticCheck {
     try {
       /* Heuristique : auto-restore log l'exécution dans apex_v13_audit avec category=auto-restore */

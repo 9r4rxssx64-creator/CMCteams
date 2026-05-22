@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.258';
+export const APP_VER = 'v13.4.259';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -288,6 +288,14 @@ async function bootstrap(): Promise<void> {
   await safeInit('cloudflare-status', async () => {
     const { cloudflareStatus } = await import('../services/observability/cloudflare-status.js');
     cloudflareStatus.init();
+  });
+
+  /* v13.4.259 (Kevin "contourne les blocages iOS / arrière-plan") :
+   * Init iOS PWA resilience — storage.persist() (anti-eviction du Coffre)
+   * + flush/resync au passage background↔foreground. */
+  await safeInit('ios-resilience', async () => {
+    const { iosResilience } = await import('../services/core-svc/ios-resilience.js');
+    await iosResilience.init();
   });
 
   /* v13.4.197 (audit Kevin P1 LCP +613% régression) : voice-overlay preload
