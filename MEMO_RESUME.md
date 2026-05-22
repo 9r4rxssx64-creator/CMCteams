@@ -16,20 +16,16 @@ Branche `claude/dossier-reprise-markdown-EyxIo`. Chantier import planning SBM.
   v9.462 + SECOURS v9.146) matchaient par nom de famille seul → `CAMPI H`←`CAMPI PH`,
   `ENZA C`←`ENZA B`. Gated sur `_importTypeDetails.hasCadres`.
 
-### ⚠️ NON RÉSOLU — fragmentation des équipes (diag Kevin 2026-05-22)
-Kevin : « beaucoup d'équipe a 1-2 personne ». Cause racine analysée dans
-`_cmcDetectTeamsByPdfColumn` (l. 34575) :
-1. **Colonnes RH / R comptées comme équipes** : le header de rotation
-   `… 4 RH du au 4 R du au` génère des « équipes » r5/r6/r11/r12 qui ne sont
-   que les positions de repos du cycle.
-2. **`_extractEntries` ne gère pas le fragmentage PDF.js** : dans la section
-   Chefs BJ, les codes-poste et les noms sont sur des lignes SÉPARÉES
-   (`BRE … BRTCP+KE.` puis ligne `MILLO W * HORGNE C GARINO Y …`).
-   `_extractEntries` attend `<poste> <nom>` adjacents → entrées non extraites →
-   colonnes sous-remplies → équipes de 1-2 personnes (ex équipe `2` = BASILE G +
-   CERETTI R au lieu de 5 chefs).
-Rework algorithmique réel nécessaire — pas un fix chirurgical (cf. CLAUDE.md
-erreur #50 : tout changement aveugle de la détection d'équipes régresse).
+### ✅ RÉSOLU v9.729 — fragmentation des équipes
+Cause : PDF.js fragmente une rangée d'employés en 2 lignes (codes-poste seuls
+puis noms seuls) → `_extractEntries` n'extrayait rien → colonnes sous-remplies.
+Fix : `_mergePosteNameLines()` ré-interleave les paires avant parsing.
+Vérifié sur le vrai texte PDF de Kevin (`tests/fixtures/mai-2026-v1-full.txt`,
+fourni dans son diagnostic) : chefs BJ 4-5/équipe, roulettes 3-6/équipe, 0
+équipe ≤2. Test `test:teamsizes`.
+Reste mineur : section « cartes aménagement » → 2 équipes à 1 emp
+(`c13`/`c15`, BLANZIERI K + ACCOMASSO F) car le PDF a des colonnes count=1
+dans cette section marginale — non bloquant.
 
 ---
 

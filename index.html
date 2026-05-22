@@ -5355,7 +5355,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.728";
+var APP_VER="v9.729";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34694,8 +34694,63 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
       }
       return entries;
     }
+    // ── v9.729 — Fusion lignes cassées par PDF.js ──────────────────────────
+    // PDF.js fragmente parfois une rangée d'employés en 2 lignes : ligne A =
+    // codes-poste + plages "1 31" SANS noms, ligne B = noms seuls. _extractEntries
+    // attend <poste> <nom> adjacents → 0 entrée → colonnes sous-remplies → bloc
+    // jamais plein → équipes de 1-2 pers ou ballonnées. On ré-interleave A+B.
+    function _classifyLine(line){
+      var tk=_tokens(line);
+      if(!tk.length)return{kind:"empty"};
+      if(_sectionFamily(line)||_parseRotationHeader(tk))return{kind:"other"};
+      var posteN=0,nameN=0,other=0;
+      for(var z=0;z<tk.length;z++){
+        var t=tk[z];
+        if(_isPosteCode(t))posteN++;
+        else if(/^\d{1,2}$/.test(t)||t==="*"){}
+        else if(/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'\-]*\.?$/.test(t))nameN++;
+        else other++;
+      }
+      if(posteN>=2&&nameN===0)return{kind:"posteOnly",toks:tk};
+      if(posteN===0&&nameN>=2&&other===0)return{kind:"namesOnly",toks:tk};
+      return{kind:"other"};
+    }
+    function _mergePosteNameLines(rawLines){
+      var out=[];
+      for(var li=0;li<rawLines.length;li++){
+        var cA=_classifyLine(rawLines[li]);
+        if(cA.kind==="posteOnly"&&li+1<rawLines.length){
+          var cB=_classifyLine(rawLines[li+1]);
+          if(cB.kind==="namesOnly"){
+            var postes=cA.toks.filter(function(t){return _isPosteCode(t);});
+            var names=[],j=0,bt=cB.toks;
+            while(j<bt.length){
+              var w=String(bt[j]||"").replace(/\*/g,"");
+              if(/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'\-]+$/.test(w)){
+                var nm=w;
+                if(j+1<bt.length){
+                  var nx=String(bt[j+1]||"").replace(/\*/g,"");
+                  if(/^[A-Za-zÀ-ÿ]{1,3}\.?$/.test(nx)){nm=w+" "+nx;j++;}
+                }
+                names.push(nm);
+              }
+              j++;
+            }
+            if(postes.length>=2&&postes.length===names.length){
+              var merged=[];
+              for(var k=0;k<postes.length;k++){merged.push(postes[k]);merged.push(names[k]);}
+              out.push(merged.join("\t"));
+              li++; // ligne B consommée
+              continue;
+            }
+          }
+        }
+        out.push(rawLines[li]);
+      }
+      return out;
+    }
     // ── Parcours des lignes ──
-    var lines=srcText.split(/\r?\n/);
+    var lines=_mergePosteNameLines(srcText.split(/\r?\n/));
     var curFamily=null;
     var blocks=[]; // {family, cols:[{count,code,members:[name...]}]}
     var curBlock=null;
