@@ -8970,3 +8970,41 @@ S'applique : Claude Code (priorité absolue moi-même), Apex IA, Apex Chat Worke
 CMCteams, tous workflows GitHub Actions, tous projets futurs.
 
 ---
+
+## 🔎 RÈGLE ABSOLUE — VEILLE OUTILS : ÉVALUER, COMPARER, INTÉGRER OU ÉCARTER (Kevin 2026-05-22, ABSOLUE)
+
+> **"Je regarde les TikTok et j'essaie d'améliorer Apex et tous nos projets en récupérant des infos. À toi de me dire si c'est pertinent, si ce que je te montre c'est plus performant que les outils qu'on a déjà. Si oui, intègre-les. Sinon on laisse de côté et tu me dis 'ça ne vaut pas le coup, on est mieux équipé'. Vérifie à chaque fois quand c'est gratuit pour profiter de tout installer. Quand c'est payant, tu me dis combien € et si ça vaut le coup. Note-le, enregistre-le dans des dossiers, met à jour."** — Kevin 2026-05-22
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex, CMCteams, tous projets Kevin actuels et futurs.
+
+### 1. Procédure obligatoire à CHAQUE outil que Kevin montre (TikTok, lien, capture)
+
+Pour chaque outil/repo/skill/service présenté, Claude Code DOIT :
+
+1. **Identifier** : type (skill CC / repo / MCP / SaaS / modèle IA / app), source exacte (URL GitHub si dispo).
+2. **Vérifier l'existant** : Apex / les projets ont-ils déjà cette fonction ? Chercher dans `.claude/skills/`, services, registres.
+3. **Comparer la performance** : l'outil montré est-il PLUS performant que ce qu'on a déjà ? (mesuré, pas estimé — stars, dernière maj, capacités réelles, CVE).
+4. **Vérifier le prix** :
+   - **Gratuit** → si pertinent ET sûr (pas de signal arnaque, pas de code malveillant) → **installer / intégrer** ("profiter du gratuit").
+   - **Payant** → annoncer le **prix exact en €/mois** + verdict : « ça vaut le coup » ou « on a déjà l'équivalent gratuit / mieux ».
+5. **Verdict honnête** (jamais de complaisance) :
+   - ✅ **Intégré** — meilleur que l'existant OU comble un manque réel.
+   - ⚖️ **Déjà couvert** — Apex/projets ont déjà aussi bien ou mieux.
+   - ❌ **Écarté** — moins puissant, risque sécurité, arnaque, hors sujet, ou payant sans valeur ajoutée.
+6. **Enregistrer** : chaque évaluation va dans `VEILLE_OUTILS.md` (racine repo) — tableau outil / type / prix / verdict / date. Mettre à jour à chaque nouvel outil.
+
+### 2. Anti-patterns interdits
+
+- ❌ Faire semblant d'« installer » un service SaaS tiers (ChatGPT, Canva, Zapier… ne s'installent pas dans une app).
+- ❌ Installer un repo sans vérifier (CVE, signal arnaque type « 192k★ record + Discord »).
+- ❌ Dire « intégré » sans l'avoir vraiment fait et testé.
+- ❌ Estimer un prix — vérifier ou dire « à confirmer ».
+- ❌ Installer un doublon de ce qui existe déjà.
+
+### 3. Test mental obligatoire
+
+> *"Cet outil est-il (a) plus performant que ce qu'on a, (b) sûr, (c) gratuit ou rentable ? Si oui aux 3 → intégrer. Sinon → écarter et dire honnêtement à Kevin pourquoi. Et l'ai-je noté dans VEILLE_OUTILS.md ?"*
+
+S'applique : Claude Code (priorité absolue), Apex, CMCteams, tous projets futurs.
+
+---
