@@ -1,11 +1,15 @@
 #!/bin/bash
-# APEX/CMCteams — SessionStart hook
+# APEX/CMCteams — SessionStart hook (mode ASYNC)
 # Optimise le démarrage de session Claude Code : installe les dépendances
 # des projets actifs du monorepo pour que tests / lint / build / typecheck
-# soient prêts dès le 1er prompt — quelle que soit la branche.
+# soient prêts — quelle que soit la branche.
 #
+# Mode ASYNC (Kevin 2026-05-22) : la session démarre IMMÉDIATEMENT, le hook
+# tourne en arrière-plan. La 1re ligne stdout DOIT être le JSON {"async":true}.
 # Idempotent : si node_modules existe déjà → skip (rapide). Non-interactif.
 # Non-bloquant par projet : l'échec d'un projet n'abat pas le hook.
+echo '{"async": true, "asyncTimeout": 300000}'
+
 set -uo pipefail
 
 ROOT="${CLAUDE_PROJECT_DIR:-/home/user/CMCteams}"
