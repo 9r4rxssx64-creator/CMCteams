@@ -458,6 +458,14 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
        * quand actif du même service présent. Whitelist deleted via removeKey. */
       try {
         const { multiKeyVault } = await import('../vault/multi-key-vault.js');
+        /* v13.4.263 FIX KEVIN "le coffre se perd toujours" :
+         * Si iOS Safari a évincé le localStorage, restaure le coffre depuis
+         * l'IndexedDB shadow AVANT le dedup. hydrateFromIdb est idempotent
+         * (no-op si localStorage a déjà des données). */
+        const hydrated = await multiKeyVault.hydrateFromIdb();
+        if (hydrated.restored) {
+          logger.info('vault-lifecycle', `🔓 Coffre restauré depuis IDB shadow : ${hydrated.count} clés (localStorage évincé par iOS)`);
+        }
         const result = multiKeyVault.dedupAuto();
         if (result.dedupedCount > 0) {
           logger.info('vault-lifecycle', `🧹 dedupAuto removed ${result.dedupedCount} duplicates at boot`);

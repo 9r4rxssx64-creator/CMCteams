@@ -87,6 +87,65 @@ const STORAGE_KEY = 'apex_v13_multi_keys';
 const MAX_FAIL_BEFORE_FAILING = 3;
 const HEALTH_RECENT_TEST_MS = 24 * 60 * 60 * 1000; /* < 24h = "testé récemment" */
 
+/* v13.4.263 — IndexedDB shadow : même base que vault.ts (apex_v13_vault_shadow,
+ * store 'keys'). L'index multi-keys complet est stocké sous une clé dédiée.
+ * IDB résiste mieux que localStorage à l'éviction iOS Safari. */
+const IDB_DB_NAME = 'apex_v13_vault_shadow';
+const IDB_STORE = 'keys';
+const IDB_SHADOW_KEY = 'apex_v13_multi_keys_shadow';
+
+function writeIdbShadow(json: string): Promise<void> {
+  if (!('indexedDB' in globalThis)) return Promise.resolve();
+  return new Promise<void>((resolve, reject) => {
+    const req = indexedDB.open(IDB_DB_NAME, 1);
+    req.onupgradeneeded = (): void => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = (): void => {
+      const db = req.result;
+      try {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(json, IDB_SHADOW_KEY);
+        tx.oncomplete = (): void => { db.close(); resolve(); };
+        tx.onerror = (): void => { db.close(); reject(tx.error ?? new Error('idb tx failed')); };
+      } catch (e: unknown) {
+        db.close();
+        reject(e instanceof Error ? e : new Error(String(e)));
+      }
+    };
+    req.onerror = (): void => reject(req.error ?? new Error('idb open failed'));
+  });
+}
+
+function readIdbShadow(): Promise<string | null> {
+  if (!('indexedDB' in globalThis)) return Promise.resolve(null);
+  return new Promise<string | null>((resolve) => {
+    try {
+      const req = indexedDB.open(IDB_DB_NAME, 1);
+      req.onupgradeneeded = (): void => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = (): void => {
+        const db = req.result;
+        try {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const getReq = tx.objectStore(IDB_STORE).get(IDB_SHADOW_KEY);
+          getReq.onsuccess = (): void => {
+            db.close();
+            resolve(typeof getReq.result === 'string' ? getReq.result : null);
+          };
+          getReq.onerror = (): void => { db.close(); resolve(null); };
+        } catch { db.close(); resolve(null); }
+      };
+      req.onerror = (): void => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 /**
  * Ping endpoint config par service. Permet test "léger" sans consommer le quota.
  * Si pas configuré, testKey retourne {ok:false, reason:'no test endpoint'}.
@@ -292,6 +351,13 @@ class MultiKeyVault {
 
   /**
    * Persiste l'index. Backup Firebase chiffré best-effort (non bloquant).
+   *
+   * v13.4.263 (Kevin "le coffre se perd toujours") — TRIPLE persistence :
+   *  1. localStorage (rapide, primary)
+   *  2. IndexedDB shadow (résiste l'éviction localStorage iOS Safari)
+   *  3. Firebase (cloud, cross-device — si joignable)
+   * Avant : seulement localStorage + Firebase. Quand Firebase KO + iOS évince
+   * le localStorage → perte totale. L'IDB shadow comble ce trou.
    */
   private async persist(): Promise<void> {
     const data = this.cache ?? [];
@@ -299,6 +365,13 @@ class MultiKeyVault {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (err: unknown) {
       logger.warn('multi-key-vault', 'persist localStorage failed', { err });
+    }
+    /* v13.4.263 — Couche 2 : IndexedDB shadow (résiste l'éviction localStorage
+       iOS Safari). Non-bloquant : best-effort. */
+    try {
+      await writeIdbShadow(JSON.stringify(data));
+    } catch (err: unknown) {
+      logger.debug('multi-key-vault', 'IDB shadow write skipped', { err });
     }
     /* Firebase backup chiffré (les `encrypted` champs sont déjà AXENC1: chiffrés,
        donc OK de pousser en clair la liste — chaque entrée reste opaque). */
@@ -309,6 +382,51 @@ class MultiKeyVault {
       }
     } catch (err: unknown) {
       logger.debug('multi-key-vault', 'firebase backup skipped (offline ok)', { err });
+    }
+  }
+
+  /**
+   * v13.4.263 (Kevin "le coffre se perd toujours") — Restaure le coffre depuis
+   * l'IndexedDB shadow si le localStorage a été évincé par iOS Safari.
+   *
+   * iOS Safari peut effacer le localStorage sous pression de stockage. L'IDB
+   * est plus durable. Si localStorage vide MAIS IDB a des données → on
+   * restaure localStorage + cache, et on émet 'apex:vault-hydrated' pour que
+   * l'UI Coffre se re-render.
+   *
+   * Appelé au boot (services-bootstrap). Idempotent.
+   */
+  async hydrateFromIdb(): Promise<{ restored: boolean; count: number }> {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const lsHasData = !!raw && raw !== '[]' && raw !== 'null';
+      if (lsHasData) return { restored: false, count: 0 };
+      /* localStorage vide → tenter IDB shadow */
+      const idbRaw = await readIdbShadow();
+      if (!idbRaw) return { restored: false, count: 0 };
+      const parsed = JSON.parse(idbRaw) as unknown;
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return { restored: false, count: 0 };
+      }
+      const entries = (parsed as KeyEntry[]).filter(
+        (e) => e && typeof e === 'object' && typeof e.id === 'string' && typeof e.service === 'string',
+      );
+      if (entries.length === 0) return { restored: false, count: 0 };
+      /* Restaure localStorage + cache mémoire */
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      } catch { /* quota — cache mémoire suffit pour cette session */ }
+      this.cache = entries;
+      logger.info('multi-key-vault', `hydrateFromIdb : ${entries.length} clés restaurées depuis IDB shadow`);
+      try {
+        if (typeof window !== 'undefined' && typeof CustomEvent === 'function') {
+          window.dispatchEvent(new CustomEvent('apex:vault-hydrated', { detail: { count: entries.length } }));
+        }
+      } catch { /* ignore */ }
+      return { restored: true, count: entries.length };
+    } catch (err: unknown) {
+      logger.warn('multi-key-vault', 'hydrateFromIdb failed', { err });
+      return { restored: false, count: 0 };
     }
   }
 
