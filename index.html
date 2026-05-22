@@ -5355,7 +5355,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.727";
+var APP_VER="v9.728";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -39007,7 +39007,13 @@ function doImport(){
     return e.family==="cadres"&&isEmpActive(e,iy,im)&&(!A.overrides[key]||!A.overrides[key][e.id]||Object.keys(A.overrides[key][e.id]||{}).length===0);
   });
   // DIAGNOSTIC visible : toast + console avec les noms cherch\u00e9s vs trouv\u00e9s dans le texte
-  if(_cadresVides.length>0){
+  // v9.728 \u2014 Le scan de SECOURS brute-force ne tourne QUE si l'import contient
+  // r\u00e9ellement une section cadres (PIT BOSS / SUPERVISEUR / INSPECTEUR). Sur un
+  // import V1 employ\u00e9s+chefs (hasCadres=false), les cadres sont absents du PDF :
+  // tenter de les "r\u00e9cup\u00e9rer" matche le nom de famille d'un employ\u00e9 homonyme
+  // (ex CAMPI H cadre \u2190 CAMPI PH chef) et leur colle des codes bidons.
+  // CLAUDE.md r\u00e8gle import incr\u00e9mental : un import employ\u00e9s+chefs NE TOUCHE PAS les cadres.
+  if(_cadresVides.length>0 && _importTypeDetails && _importTypeDetails.hasCadres){
     var _diagFound=[],_diagNotFound=[];
     var _allText=lines.join("\n").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     _cadresVides.forEach(function(_ce){
@@ -39212,7 +39218,12 @@ function doImport(){
       var filled=0;for(var d=1;d<=_daysN;d++)if(row[d])filled++;
       return filled===0;
     });
-    if(_cadresSansH.length>0&&txt){
+    // v9.728 — Le fallback cadres ne tourne QUE si l'import contient réellement
+    // une section cadres. Sur un V1 employés+chefs (hasCadres=false), les cadres
+    // sont absents du PDF : le scan surname-only matche un homonyme employé
+    // (ex CAMPI H cadre ← CAMPI PH chef, ENZA C cadre ← ENZA B croupier) et leur
+    // attribue des codes bidons. CLAUDE.md : un import employés+chefs ne touche pas les cadres.
+    if(_cadresSansH.length>0&&txt&&_importTypeDetails&&_importTypeDetails.hasCadres){
       var _rescued=0;
       // v9.462 STEP 1 — Pre-traitement : joindre lignes cassees par PDF.js
       // Pattern A : ligne courte (<=3 chars, ex "M." ou "JF") suit une ligne longue → join
