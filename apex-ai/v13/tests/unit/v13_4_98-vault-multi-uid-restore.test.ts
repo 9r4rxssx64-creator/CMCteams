@@ -43,24 +43,19 @@ describe('v13.4.98 vault-firebase-backup multi-uid fallback', () => {
   });
 });
 
-describe('v13.4.98 index.html anti-zoom INLINE', () => {
+/* v13.4.265 — describe 'anti-zoom INLINE' RÉÉCRIT : v13.4.248 a VOLONTAIREMENT
+ * retiré le script inline gesturestart (zoom utilisateur réactivé pour
+ * l'accessibilité — Apple HIG). Les anciens tests vérifiaient la présence du
+ * bloqueur de zoom → obsolètes. On vérifie maintenant l'intention v13.4.248. */
+describe('v13.4.248 index.html — zoom accessibilité réactivé', () => {
   const html = readFileSync(resolve(ROOT, 'index.html'), 'utf-8');
 
-  it("script inline gesturestart/gesturechange/gestureend dans <head>", () => {
-    /* Le script inline doit être AVANT le bundle JS bootstrap */
-    expect(html).toMatch(/gesturestart[\s\S]*gesturechange[\s\S]*gestureend/);
-    /* Doit être nonce-protégé pour CSP strict */
-    expect(html).toMatch(/<script\s+nonce="APEX_BOOT_NONCE">[\s\S]*gesturestart/);
+  it("viewport autorise le pinch-zoom (maximum-scale >= 5, pas user-scalable=no)", () => {
+    expect(html).toMatch(/maximum-scale=5/);
+    expect(html).not.toMatch(/user-scalable=no/);
   });
 
-  it("anti-zoom inline AVANT bootstrap.js module", () => {
-    const gestureIdx = html.indexOf('gesturestart');
-    const bootstrapIdx = html.indexOf('bootstrap.js');
-    expect(gestureIdx).toBeGreaterThan(0);
-    expect(bootstrapIdx).toBeGreaterThan(gestureIdx); /* gesture handler AVANT bootstrap */
-  });
-
-  it("touchend double-tap detection (<300ms)", () => {
-    expect(html).toMatch(/lastTouchEnd[\s\S]*300/);
+  it("pas de script inline gesturestart bloquant le zoom (retiré v13.4.248)", () => {
+    expect(html).not.toMatch(/gesturestart[\s\S]*preventDefault/);
   });
 });

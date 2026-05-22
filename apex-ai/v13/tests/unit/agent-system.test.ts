@@ -2,11 +2,15 @@
  * Tests agent-system.ts (parité Claude Code subagents internes).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { store } from '../../core/store.js';
 import { agentSystem } from '../../services/core-svc/agent-system.js';
 
 describe('Agent System (subagents internes Apex IA)', () => {
   beforeEach(() => {
     localStorage.clear();
+    /* v13.4.265 — contexte admin requis (execute() re-vérifie isAdminSync v13.4.246). */
+    store.set('user', { id: 'kdmc_admin', name: 'Kevin DESARZENS' });
+    store.set('isAdmin', true);
   });
 
   describe('spawn audit agent', () => {

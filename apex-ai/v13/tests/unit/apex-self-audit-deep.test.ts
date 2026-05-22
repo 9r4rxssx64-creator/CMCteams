@@ -64,6 +64,7 @@ vi.mock('../../services/ai/context-loader.js', () => ({
   contextLoader: { load: vi.fn(async () => ({ rules: ['rule1'] })) },
 }));
 
+import { store } from '../../core/store.js';
 import { apexSelfAudit } from '../../services/admin/apex-self-audit.js';
 import { vault } from '../../services/vault/vault.js';
 import { secretScanner } from '../../services/vault/secret-scanner.js';
@@ -76,6 +77,9 @@ import { soc2 } from '../../services/auth/soc2-compliance.js';
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  /* v13.4.265 — contexte admin requis (execute() re-vérifie isAdminSync v13.4.246). */
+  store.set('user', { id: 'kdmc_admin', name: 'Kevin DESARZENS' });
+  store.set('isAdmin', true);
   /* Reset defaults */
   (secretScanner.getStats as ReturnType<typeof vi.fn>).mockResolvedValue({ leaks_count: 0, by_severity: { critical: 0 } });
   (soc2.verifyIntegrity as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, broken_at: -1, total: 100 });
@@ -98,8 +102,9 @@ describe('apex-self-audit — runFullAudit basic', () => {
   it('runFullAudit retourne report avec scores par axe', async () => {
     const r = await apexSelfAudit.runFullAudit(false);
     expect(r.id).toMatch(/^audit_/);
+    /* v13.4.265 — total_score est sur échelle /100 (somme pondérée), pas /20. */
     expect(r.total_score).toBeGreaterThanOrEqual(0);
-    expect(r.total_score).toBeLessThanOrEqual(20);
+    expect(r.total_score).toBeLessThanOrEqual(100);
     expect(r.axes.security.score).toBeDefined();
     expect(r.axes.performance.score).toBeDefined();
     expect(r.axes.ux.score).toBeDefined();
@@ -175,15 +180,18 @@ describe('apex-self-audit — auditPerformance findings', () => {
     expect(r.findings.some((f) => f.title.includes('Storage quota warn'))).toBe(true);
   });
 
-  it('sentinelles failed >3 → finding p1', async () => {
+  it('sentinelles crashées (errored) → finding p1', async () => {
+    /* v13.4.265 — le code distingue crashed (lastResult.errored===true → p1)
+       de reporting (ok===false sans errored → p2 si >5). Une sentinelle
+       crashée déclenche le p1 quel que soit le nombre. */
     (sentinels.list as ReturnType<typeof vi.fn>).mockReturnValueOnce([
-      { name: 's1', lastResult: { ok: false } },
-      { name: 's2', lastResult: { ok: false } },
-      { name: 's3', lastResult: { ok: false } },
-      { name: 's4', lastResult: { ok: false } },
+      { name: 's1', lastResult: { ok: false, errored: true } },
+      { name: 's2', lastResult: { ok: false, errored: true } },
+      { name: 's3', lastResult: { ok: false, errored: true } },
+      { name: 's4', lastResult: { ok: false, errored: true } },
     ]);
     const r = await apexSelfAudit.runFullAudit(false);
-    expect(r.findings.some((f) => f.title.includes('sentinelles en erreur'))).toBe(true);
+    expect(r.findings.some((f) => f.title.includes('sentinelle(s) en erreur'))).toBe(true);
   });
 
   it('intervals >50 → finding p1', async () => {

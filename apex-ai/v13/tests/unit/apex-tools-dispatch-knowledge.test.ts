@@ -9,6 +9,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+import { store } from '../../core/store.js';
 import { apexKnowledgeBase } from '../../services/admin/apex-knowledge-base.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 import { vault } from '../../services/vault/vault.js';
@@ -16,6 +17,9 @@ import { vault } from '../../services/vault/vault.js';
 describe('apex-tools-dispatch — knowledge base cases', () => {
   beforeEach(() => {
     localStorage.clear();
+    /* v13.4.265 — contexte admin requis (execute() re-vérifie isAdminSync v13.4.246). */
+    store.set('user', { id: 'kdmc_admin', name: 'Kevin DESARZENS' });
+    store.set('isAdmin', true);
     apexKnowledgeBase.clearCache();
     vi.restoreAllMocks();
     vi.spyOn(vault, 'readKey').mockResolvedValue('ghp_fake_for_tests');

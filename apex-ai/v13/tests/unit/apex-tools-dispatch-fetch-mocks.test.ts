@@ -11,6 +11,7 @@
  * - DeepL + Gemini + Claude
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { store } from '../../core/store.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 function mockFetchOnce(response: Partial<Response> & { json?: () => Promise<unknown>; text?: () => Promise<string> }): void {
@@ -24,6 +25,9 @@ function mockFetchAlways(handler: (url: string | URL | Request) => Partial<Respo
 describe('apex-tools-dispatch — fetch mocks (success + failure paths)', () => {
   beforeEach(() => {
     localStorage.clear();
+    /* v13.4.265 — contexte admin requis (execute() re-vérifie isAdminSync v13.4.246). */
+    store.set('user', { id: 'kdmc_admin', name: 'Kevin DESARZENS' });
+    store.set('isAdmin', true);
   });
 
   afterEach(() => {

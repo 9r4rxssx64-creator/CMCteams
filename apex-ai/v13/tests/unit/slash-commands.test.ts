@@ -19,7 +19,8 @@ describe('services/slash-commands', () => {
 
     it('chaque commande a name + emoji + description', () => {
       for (const cmd of SLASH_COMMANDS) {
-        expect(cmd.name).toMatch(/^[a-z]+$/);
+        /* v13.4.265 — autorise le tiret (ex: 'team-onboarding') en plus de a-z. */
+        expect(cmd.name).toMatch(/^[a-z][a-z-]*$/);
         expect(cmd.emoji.length).toBeGreaterThan(0);
         expect(cmd.description.length).toBeGreaterThan(5);
       }

@@ -6,12 +6,16 @@
  * Tests qu'Apex peut désormais ÉCRIRE des fichiers réellement (pas juste afficher).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { store } from '../../core/store.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    /* v13.4.265 — contexte admin requis (execute() re-vérifie isAdminSync v13.4.246). */
+    store.set('user', { id: 'kdmc_admin', name: 'Kevin DESARZENS' });
+    store.set('isAdmin', true);
   });
 
   describe('create_or_update_file', () => {
@@ -79,13 +83,20 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     it('update fichier existant via SHA récupéré', async () => {
       const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
-      vi.spyOn(globalThis, 'fetch')
-        /* 1er fetch = check existing → 200 avec SHA */
-        .mockResolvedValueOnce(new Response(JSON.stringify({ sha: 'old_sha_xyz' }), { status: 200 }))
-        /* 2e fetch = PUT update → 200 */
-        .mockResolvedValueOnce(new Response(JSON.stringify({
-          commit: { sha: 'new_sha_def', html_url: 'https://github.com/x/y/commit/new_sha_def' },
-        }), { status: 200 }));
+      /* v13.4.265 — mock routé par MÉTHODE (pas par ordre) : le mock par ordre
+         (mockResolvedValueOnce) est fragile car un fetch parasite (backup
+         Firebase async de setKey) peut consommer la 1ʳᵉ réponse. Le routage
+         GET=check SHA / PUT=commit est déterministe. */
+      vi.spyOn(globalThis, 'fetch').mockImplementation((_input, init) => {
+        const method = (init?.method ?? 'GET').toUpperCase();
+        if (method === 'PUT') {
+          return Promise.resolve(new Response(JSON.stringify({
+            commit: { sha: 'new_sha_def', html_url: 'https://github.com/x/y/commit/new_sha_def' },
+          }), { status: 200 }));
+        }
+        /* GET = check existing → SHA */
+        return Promise.resolve(new Response(JSON.stringify({ sha: 'old_sha_xyz' }), { status: 200 }));
+      });
 
       const r = await apexToolsDispatch.execute('create_or_update_file', {
         path: 'test/existing.ts',
@@ -112,9 +123,15 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     it('supprime avec confirm:true + fetch 200', async () => {
       const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
-      vi.spyOn(globalThis, 'fetch')
-        .mockResolvedValueOnce(new Response(JSON.stringify({ sha: 'sha_to_delete' }), { status: 200 }))
-        .mockResolvedValueOnce(new Response('{}', { status: 200 }));
+      /* v13.4.265 — mock routé par méthode (GET=SHA, DELETE=ok) — robuste
+         contre les fetchs parasites async de setKey (cf test update plus haut). */
+      vi.spyOn(globalThis, 'fetch').mockImplementation((_input, init) => {
+        const method = (init?.method ?? 'GET').toUpperCase();
+        if (method === 'DELETE') {
+          return Promise.resolve(new Response('{}', { status: 200 }));
+        }
+        return Promise.resolve(new Response(JSON.stringify({ sha: 'sha_to_delete' }), { status: 200 }));
+      });
 
       const r = await apexToolsDispatch.execute('delete_repo_file', {
         path: 'test/old.ts',

@@ -3,11 +3,15 @@
  * Self-audit avec auto-fix whitelist + escalade Claude Code.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { store } from '../../core/store.js';
 import { apexSelfAudit } from '../../services/admin/apex-self-audit.js';
 
 describe('apex-self-audit (P0 coverage 4→80%)', () => {
   beforeEach(() => {
     localStorage.clear();
+    /* v13.4.265 — contexte admin requis (execute() re-vérifie isAdminSync v13.4.246). */
+    store.set('user', { id: 'kdmc_admin', name: 'Kevin DESARZENS' });
+    store.set('isAdmin', true);
   });
 
   describe('runFullAudit() basique', () => {
@@ -24,11 +28,20 @@ describe('apex-self-audit (P0 coverage 4→80%)', () => {
       expect(r.axes.ai_safety).toBeTruthy();
     });
 
-    it('total_score est moyenne des 6 axes', async () => {
+    it('total_score = somme pondérée des 6 axes /20 normalisée /100', async () => {
+      /* v13.4.265 — axes notés /20, total_score pondéré /100 (cf apex-self-audit.ts
+         l.111-122 : security 25% + performance 20% + ux 15% + tests 15% +
+         architecture 15% + ai_safety 10%). */
       const r = await apexSelfAudit.runFullAudit();
-      const sum = r.axes.security.score + r.axes.performance.score + r.axes.ux.score
-        + r.axes.tests.score + r.axes.architecture.score + r.axes.ai_safety.score;
-      expect(r.total_score).toBe(Math.round(sum / 6));
+      const weighted = Math.round(
+        (r.axes.security.score / 20) * 25 +
+        (r.axes.performance.score / 20) * 20 +
+        (r.axes.ux.score / 20) * 15 +
+        (r.axes.tests.score / 20) * 15 +
+        (r.axes.architecture.score / 20) * 15 +
+        (r.axes.ai_safety.score / 20) * 10,
+      );
+      expect(r.total_score).toBe(weighted);
     });
 
     it('mode brutal=true génère plus de findings', async () => {

@@ -88,14 +88,16 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       expect(writeSpy).toHaveBeenCalledTimes(2);
     });
 
-    it('si offline → skip avec reason "offline"', async () => {
+    it('si offline → push mis en file (queued) au lieu de skip', async () => {
+      /* v13.4.265 — comportement changé volontairement (Kevin "ne rien perdre") :
+         offline ne SKIP plus, firebase.write() met en file (firebase-queue) et
+         flush auto à la reconnexion. push() retourne ok:true + queued:true. */
       vi.spyOn(firebase, 'isConnected').mockReturnValue(false);
-      const writeSpy = vi.spyOn(firebase, 'write').mockResolvedValue();
+      vi.spyOn(firebase, 'write').mockResolvedValue();
       const enc = await vault.encryptAuto('sk-offline-test');
       const r = await vaultFirebaseBackup.push('ax_anthropic_key', enc);
-      expect(r.ok).toBe(false);
-      expect(r.reason).toBe('offline');
-      expect(writeSpy).not.toHaveBeenCalled();
+      expect(r.ok).toBe(true);
+      expect(r.queued).toBe(true);
     });
   });
 

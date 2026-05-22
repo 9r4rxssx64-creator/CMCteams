@@ -4,6 +4,7 @@
  * project_status, memory_recall/add, search_latest_tools.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { store } from '../../core/store.js';
 import { apexTools } from '../../services/core-svc/apex-tools.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
@@ -11,6 +12,12 @@ describe('Apex Tools Registry (Jet 8 path Apex IA full power)', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    /* v13.4.265 — execute() re-vérifie l'admin via auth.isAdminSync() (sécu
+     * v13.4.246). Sans user admin dans le store, le tier 'admin' est rétrogradé
+     * à 'client_free' → permission refusée. Les tests dispatcher passent 'admin'
+     * → on établit le contexte admin attendu. */
+    store.set('user', { id: 'kdmc_admin', name: 'Kevin DESARZENS' });
+    store.set('isAdmin', true);
   });
 
   describe('Registry list + filter par tier', () => {
