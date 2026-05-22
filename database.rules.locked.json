@@ -1,0 +1,12 @@
+{
+  "//": "Règles RTDB VERROUILLÉES — Option B (cf. FIREBASE_SECURITY.md).",
+  "//1": "À déployer SEULEMENT après que le firebase-write-proxy soit en ligne",
+  "//2": "ET que les 2 apps aient été reroutées (sinon les écritures cassent).",
+  "//3": "'.write': false → aucune écriture directe par un client.",
+  "//4": "Le Worker écrit avec le database secret → bypasse cette règle.",
+  "//5": "'.read': true → la synchro temps réel SSE des apps continue.",
+  "rules": {
+    ".read": true,
+    ".write": false
+  }
+}
