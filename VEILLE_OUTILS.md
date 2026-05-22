@@ -34,6 +34,7 @@
 | 2026-05-22 | « feature dev » / « Creator » (Top 5 plugins) | Skills CC | Gratuit ? | Non identifiables (pas d'URL) | ⏳ En attente — URL GitHub requise |
 | 2026-05-22 | Wispr Flow (wisprflow.ai) | App dictée vocale | Free tier limité ; Pro ~12-15 $/mois (à confirmer) | Apex a déjà une dictée native gratuite (Web Speech API + wake word) | ❌ Écarté — payant ; équivalent gratuit déjà dans Apex |
 | 2026-05-22 | 21st.dev Magic MCP | MCP composants UI | Pro 20 $/mois | Skills design Apex couvrent le besoin | ❌ Écarté — payant, non prioritaire |
+| 2026-05-22 | « 5 Skills Claude » (Nina Roig) — Avocat du Diable, Red Team, Reality Check, Boucle Infinie, Aigle Superviseur | Skills/commands CC (markdown auto-créés) | Gratuit | Concepts déjà couverts : `contrarian`/`critic`, skill `verify`, `apex-code-review`, `apex-superpowers` (plan-driven), `stop-slop` + règle absolue END-TO-END | ⚖️ Déjà couvert — 4/5 seraient des doublons (règle ZÉRO DOUBLON). ✅ 1 apport intégré : commande `contrarian` enrichie du framework Steel-man + score /10 |
 | 2026-05-22 | « 24 AI productivity tools » (ChatGPT, Claude, Perplexity, Canva, Gamma, ElevenLabs, Midjourney, Runway, HeyGen, Descript, Zapier, Make, Notion, NotebookLM…) | Services SaaS tiers | Freemium / Paid | Apex couvre déjà ~80 % des fonctions (multi-providers IA, generate_pptx, design, voix, video_edit, modules image/vidéo) | ⚖️ Pas installables (services externes) — fonctions déjà dans Apex. Manque seulement : meeting notes, correction grammaire |
 
 ---
