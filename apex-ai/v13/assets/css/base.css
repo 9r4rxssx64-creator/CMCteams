@@ -152,10 +152,16 @@ main {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  /* v13.4.260 fix Kevin (screenshot Centre Admin tronqué à droite) :
+   * #apex-root est un flex container. Une vue avec `margin:0 auto` (pattern
+   * centré : .ax-admin, vue Commandes…) voit ses marges auto cross-axis
+   * DÉSACTIVER le stretch flex → la vue prend sa largeur de contenu
+   * (barre d'onglets nowrap ~599px) au lieu du viewport → débordement.
+   * `width:100%` rétablit le pattern centré correct (width:100% + max-width
+   * + margin:auto) : 100% du viewport en mobile, centré sur desktop. */
+  width: 100%;
   /* v13.4.241 fix Kevin "affichage tronqué à droite, boutons hors écran" :
-   * garde-fou universel — aucune vue ne dépasse la largeur viewport.
-   * Un enfant trop large est clippé proprement (jamais de débordement
-   * chaotique qui pousse les boutons off-screen). */
+   * garde-fou universel — aucune vue ne dépasse la largeur viewport. */
   max-width: 100vw;
   overflow-x: hidden;
 }
