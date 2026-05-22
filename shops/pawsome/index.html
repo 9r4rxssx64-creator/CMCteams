@@ -145,6 +145,17 @@ input,textarea,select{font:inherit}img{max-width:100%;height:auto}
 @media(max-width:375px){.grid{gap:8px}.card-body{padding:8px}.nav-item{padding:6px 12px;font-size:12px}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .card{animation:fadeUp .5s ease both}
+/* --- Mobile & accessibilité (Lot E) --- */
+input,select,textarea{font-size:16px}
+.search-box input{font-size:16px}
+.nav-item,.card-cta,.btn-checkout,.btn-add{min-height:44px}
+.nav-item{display:inline-flex;align-items:center;justify-content:center}
+.cookie{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.btt{bottom:calc(24px + env(safe-area-inset-bottom))}
+.toast.show{bottom:calc(24px + env(safe-area-inset-bottom))}
+.hdr{padding-top:env(safe-area-inset-top)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav-item:focus-visible,.card:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"Pawsome — Tout pour vos Animaux","description":"Alimentation, jouets, accessoires & santé pour chiens et chats. 100+ produits sélectionnés.","url":"https://9r4rxssx64-creator.github.io/CMCteams/shops/pawsome/","image":"https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200&h=630&fit=crop","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
@@ -185,7 +196,7 @@ document.querySelectorAll(".nav-item").forEach(function(el){el.classList.toggle(
 if(S.view==="home"||S.view==="products"){document.querySelectorAll(".card").forEach(function(c,i){c.style.animationDelay=i*30+"ms"})}}
 function hdr(){return '<div class="hdr"><div class="hdr-inner">'
 +'<div class="logo" onclick="sv(\'home\')">'+esc(STORE_NAME)+'<span>KDMC</span></div>'
-+'<div class="search-box"><input type="text" placeholder="Rechercher..." value="'+esc(S.search)+'" oninput="S.search=this.value;S.page=1;dc();this.focus()" id="searchIn"></div>'
++'<div class="search-box"><input type="text" aria-label="Rechercher un produit" placeholder="Rechercher..." value="'+esc(S.search)+'" oninput="S.search=this.value;S.page=1;dc();this.focus()" id="searchIn"></div>'
 +'<div class="nav-actions"><div class="cart-btn" onclick="toggleCart()">🛒<span class="cart-badge" id="cart-badge">0</span></div></div>'
 +'</div></div>'
 +'<div class="nav"><div class="nav-item'+(S.cat==='all'?' active':'')+'" data-cat="all" onclick="S.cat=\'all\';S.page=1;sv(\'products\')">Tous</div>'
@@ -196,7 +207,7 @@ function footer(){return '<div class="footer"><div class="footer-inner">'
 +'<div><h4>Catégories</h4>'+CATS.slice(0,5).map(function(c){return '<a href="#" onclick="S.cat=\''+c.id+'\';sv(\'products\');return false">'+c.icon+" "+esc(c.name)+"</a>"}).join("")+'</div>'
 +'<div><h4>Aide</h4><a href="../legal/faq.html">FAQ</a><a href="../legal/retours.html">Retours</a><a href="../legal/livraison.html">Livraison</a><a href="../legal/confidentialite.html">Confidentialité</a></div>'
 +'<div><h4>Newsletter</h4><p style="font-size:13px;color:var(--muted);margin-bottom:8px">Recevez nos offres exclusives</p>'
-+'<div style="display:flex;gap:8px"><input type="email" placeholder="votre@email.com" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" id="nlEmail">'
++'<div style="display:flex;gap:8px"><input type="email" aria-label="Votre adresse email" placeholder="votre@email.com" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" id="nlEmail">'
 +'<button onclick="nlSub()" style="padding:10px 16px;background:var(--p);color:#fff;border-radius:var(--rs);font-weight:700;font-size:13px">OK</button></div></div>'
 +'</div><div class="footer-bottom">© 2026 '+esc(STORE_NAME)+' — KDMC. Tous droits réservés. <a href="../legal/cgv.html" style="color:var(--muted)">CGV</a> · <a href="../legal/mentions.html" style="color:var(--muted)">Mentions</a> · <a href="../legal/confidentialite.html" style="color:var(--muted)">Confidentialité</a> Paiement sécurisé — PayPal · Revolut · Virement 🔒</div></div>'}
 function stars(r){var f=Math.floor(r),h=r%1>=.3,s="";for(var i=0;i<f;i++)s+="★";if(h)s+="½";for(var j=f+(h?1:0);j<5;j++)s+="☆";return '<span class="stars" title="'+r+'/5">'+s+"</span>"}
