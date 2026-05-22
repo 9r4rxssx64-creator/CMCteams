@@ -1,14 +1,15 @@
 #!/bin/bash
 # APEX/CMCteams — SessionStart hook (mode ASYNC)
 # Optimise le démarrage de session Claude Code : installe les dépendances
-# des projets actifs du monorepo pour que tests / lint / build / typecheck
-# soient prêts — quelle que soit la branche.
+# des projets actifs du monorepo + Playwright/Chromium pour que tests
+# (unit + E2E) / lint / build / typecheck soient prêts — quelle que soit
+# la branche.
 #
 # Mode ASYNC (Kevin 2026-05-22) : la session démarre IMMÉDIATEMENT, le hook
 # tourne en arrière-plan. La 1re ligne stdout DOIT être le JSON {"async":true}.
-# Idempotent : si node_modules existe déjà → skip (rapide). Non-interactif.
+# Idempotent : si node_modules / navigateur existent déjà → skip (rapide).
 # Non-bloquant par projet : l'échec d'un projet n'abat pas le hook.
-echo '{"async": true, "asyncTimeout": 300000}'
+echo '{"async": true, "asyncTimeout": 420000}'
 
 set -uo pipefail
 
@@ -32,9 +33,34 @@ install_project "$ROOT"               "CMCteams (racine)"
 install_project "$ROOT/apex-ai/v13"   "Apex v13"
 install_project "$ROOT/messaging-app" "Apex Chat (messaging-app)"
 
-# Vérifie Chromium/Playwright pour les tests E2E (déjà fourni par l'env web).
-if node -e "const v=require('playwright/package.json').version;process.exit(v.startsWith('1.5')?0:1)" 2>/dev/null; then
-  echo "[hook] Playwright + Chromium prêts pour les tests E2E ✓"
-fi
+# Playwright + Chromium pour les tests E2E réels (Kevin 2026-05-22 :
+# "donne playwright et chromium aux autres branches et apex aussi").
+# Avant : le hook SKIPPAIT le téléchargement → branches sans navigateur.
+# Maintenant : `playwright install chromium` est lancé explicitement.
+# - Idempotent : no-op rapide si le bon navigateur est déjà là.
+# - Lancé depuis Apex v13 (qui porte @playwright/test) → le navigateur est
+#   installé dans PLAYWRIGHT_BROWSERS_PATH, PARTAGÉ par les 3 projets
+#   (CMCteams runtime-audit, Apex v13 E2E, Apex Chat E2E).
+# - Non-bloquant : si le réseau bloque cdn.playwright.dev (sandbox), le hook
+#   continue et les E2E restent lançables en CI.
+setup_playwright() {
+  local pwdir=""
+  for d in "$ROOT/apex-ai/v13" "$ROOT/messaging-app" "$ROOT"; do
+    if [ -d "$d/node_modules/@playwright/test" ] || [ -d "$d/node_modules/playwright-core" ]; then
+      pwdir="$d"; break
+    fi
+  done
+  if [ -z "$pwdir" ]; then
+    echo "[hook] Playwright absent des node_modules — navigateur non installé"
+    return 0
+  fi
+  echo "[hook] Playwright/Chromium : install/vérif depuis ${pwdir#"$ROOT"/} …"
+  if ( cd "$pwdir" && npx --yes playwright install chromium 2>&1 | tail -3 ); then
+    echo "[hook] Playwright + Chromium prêts pour les tests E2E ✓ (partagé Apex v13 / Apex Chat / CMCteams)"
+  else
+    echo "[hook] Chromium non téléchargeable (réseau restreint) — E2E disponibles en CI uniquement"
+  fi
+}
+setup_playwright
 
-echo "[hook] environnement prêt — tests / lint / build / typecheck disponibles"
+echo "[hook] environnement prêt — tests (unit + E2E) / lint / build / typecheck disponibles"
