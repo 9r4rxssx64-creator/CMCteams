@@ -1350,9 +1350,12 @@ class VoicePrint {
     this.wakeSuspendTimer = setTimeout(() => {
       this.wakeSuspendTimer = null;
       this.wakeNoSpeechRetries = 0;
-      if (!this.wakeListening || !this.wakeRecognition) return;
+      if (!this.wakeListening) return;
+      /* v13.4.261 fix : fresh-instance après suspend (l'ancienne instance est
+       * morte — iOS Safari throw InvalidStateError sur rec.start() réutilisé).
+       * Cohérent avec le pattern spawnWakeRecognition() utilisé dans onend. */
       try {
-        (this.wakeRecognition as { start: () => void }).start();
+        this.spawnWakeRecognition();
         pushVoiceLog({ ts: Date.now(), evt: 'restart', src: 'wake-word', detail: 'after-suspend' });
       } catch {
         /* ignore */
