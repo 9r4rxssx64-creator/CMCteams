@@ -330,7 +330,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.147';
+const __APEX_CHAT_VERSION__ = 'v1.1.148';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -376,7 +376,7 @@ if('serviceWorker' in navigator){
   }).catch(_=>{});
 
   // === Sentinelle remote version (compare APP_VER local vs remote) ===
-  // v1.1.146 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
+  // v1.1.148 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
@@ -403,7 +403,7 @@ if('serviceWorker' in navigator){
           return;   // retentera au prochain cycle
         }
         console.log('[MAJ] Nouvelle version', m[1], '(local', __APEX_CHAT_VERSION__ + ') — reload force [' + (reason||'?') + ']');
-        try{ if(typeof toast === 'function') toast('🔄 Mise à jour ' + m[1] + '…', 'info', 2500); }catch(_){}
+        try{ if(typeof toast === 'function') toast('🔄 Mise à jour ' + m[1] + '…', 'info', 2500); }catch(_e){_safeCatch('silent',_e)}
         try{
           if('caches' in window){
             const keys = await caches.keys();
@@ -453,10 +453,10 @@ if('serviceWorker' in navigator){
           }
           const regs = await navigator.serviceWorker.getRegistrations();
           await Promise.all(regs.map(r => r.unregister()));
-        }catch(_){}
+        }catch(_e){_safeCatch('silent',_e)}
         location.replace(location.pathname + '?_admin_force=' + data.ts);
       }
-    } catch(_) {}
+    } catch(_e){_safeCatch('silent',_e)}
   }
   setTimeout(_checkAdminForceUpdate, 7000);
   setInterval(_checkAdminForceUpdate, 60000);
@@ -471,7 +471,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.147</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.148</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -485,7 +485,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.147</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.148</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -680,7 +680,7 @@ function _cleanupStorage(){
         localStorage.removeItem(k);
       }
     }
-  }catch(e){}
+  }catch(e){_safeCatch('silent',e)}
 }
 
 // ============================================================================
@@ -702,7 +702,10 @@ function _logTelemetry(severity, sentinel, payload){
     if(severity !== 'info' && severity !== 'ok'){
       _escalateToApex(severity, sentinel, payload).catch(()=>{});
     }
-  }catch(e){}
+  }catch(_te){
+    // Catch terminal du logger — NE PAS rappeler _safeCatch (récursion).
+    try{ console.error('[apex-chat] _logTelemetry KO', _te && _te.message); }catch(_x){}
+  }
 }
 
 async function _escalateToApex(severity, sentinel, payload){
@@ -722,7 +725,7 @@ async function _escalateToApex(severity, sentinel, payload){
       method: 'POST',
       body: JSON.stringify(entry)
     });
-  }catch(e){}
+  }catch(e){_safeCatch('silent',e)}
 }
 
 function _runSentinels(){
@@ -929,7 +932,7 @@ K._startGeoWatch = function(){
       err => { /* silent - user a refusé ou indoor */ },
       { enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 }
     );
-  }catch(_){}
+  }catch(_e){_safeCatch('silent',_e)}
 };
 
 function _distKm(a, b){
@@ -1110,7 +1113,7 @@ K._markAllConvsRead = function(){
   }
   K._unreadPerConv = {};
   document.title = 'Apex Chat';
-  if('clearAppBadge' in navigator){ try{ navigator.clearAppBadge(); }catch(_){} }
+  if('clearAppBadge' in navigator){ try{ navigator.clearAppBadge(); }catch(_e){_safeCatch('silent',_e)} }
   toast(`✅ ${count} conversation${count > 1 ? 's' : ''} marquée${count > 1 ? 's' : ''} lue${count > 1 ? 's' : ''}`, 'ok');
   if(K.view === 'chats' && typeof K.render === 'function') K.render();
 };
@@ -1212,7 +1215,7 @@ K._installPullToRefresh = function(){
     if(indicator){
       if(dy > 80){
         indicator.textContent = '🔄 Rafraîchissement...';
-        if('vibrate' in navigator){ try { navigator.vibrate(15); } catch(_) {} }
+        if('vibrate' in navigator){ try { navigator.vibrate(15); } catch(_e){_safeCatch('silent',_e)} }
         K._refreshConvs && K._refreshConvs();
         setTimeout(() => { if(indicator) indicator.remove(); indicator = null; }, 1200);
       } else {
@@ -1224,7 +1227,7 @@ K._installPullToRefresh = function(){
 };
 
 K._refreshConvs = async function(){
-  if(K._checkRemoteVersion){ try { K._checkRemoteVersion(); } catch(_) {} }
+  if(K._checkRemoteVersion){ try { K._checkRemoteVersion(); } catch(_e){_safeCatch('silent',_e)} }
   if(K.token && typeof API_BASE !== 'undefined'){
     try {
       const r = await fetch(API_BASE + '/api/conversations', {
@@ -1237,7 +1240,7 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
-            // v1.1.146 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            // v1.1.148 : ne pas effacer le nom local si le serveur ne le renvoie pas
             name: c.name || localById[c.id]?.name,
             pseudo: c.pseudo || localById[c.id]?.pseudo,
             peer_id: c.peer_id || localById[c.id]?.peer_id,
@@ -1248,7 +1251,7 @@ K._refreshConvs = async function(){
             bg_id: localById[c.id]?.bg_id,
             peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
           }));
-          // v1.1.146 : applique les tombstones — conv supprimées ne réapparaissent jamais.
+          // v1.1.148 : applique les tombstones — conv supprimées ne réapparaissent jamais.
           // Retente le delete serveur tant que le serveur les renvoie.
           if(K._deletedConvIds && K._deletedConvIds.length){
             const serverIds = new Set(K.conversations.map(c => c.id));
@@ -1266,13 +1269,13 @@ K._refreshConvs = async function(){
           K.render();
         }
       }
-    } catch(_) {}
+    } catch(_e){_safeCatch('silent',_e)}
   }
   K._updateUnreadBadge && K._updateUnreadBadge();
   toast('🔄 Rafraîchi', 'ok', 1500);
 };
 
-// v1.1.146 : nom affichable d'une conversation. Si le serveur ne renvoie
+// v1.1.148 : nom affichable d'une conversation. Si le serveur ne renvoie
 // pas name/pseudo (DM chiffré), on résout le correspondant via peer_id
 // dans les contacts chargés, puis members_detail. Évite le "Sans nom".
 K._convName = function(c){
@@ -1289,7 +1292,7 @@ K._convName = function(c){
   return 'Sans nom';
 };
 
-// v1.1.146 : tombstones de conversations supprimées.
+// v1.1.148 : tombstones de conversations supprimées.
 // Une conv supprimée ne doit JAMAIS réapparaître, même si le serveur la
 // renvoie encore (delete serveur différé/échoué). Le refresh retente le
 // delete serveur tant que la conv est tombstonée.
@@ -1338,7 +1341,7 @@ K._openQuickReactionBar = function(msgId, anchorEl){
   if(left + barRect.width > window.innerWidth - 10) left = window.innerWidth - barRect.width - 10;
   bar.style.top = top + 'px';
   bar.style.left = left + 'px';
-  if('vibrate' in navigator){ try { navigator.vibrate(20); } catch(_) {} }
+  if('vibrate' in navigator){ try { navigator.vibrate(20); } catch(_e){_safeCatch('silent',_e)} }
   setTimeout(() => {
     document.addEventListener('click', K._closeQuickReactionBar, { once: true, capture: true });
   }, 100);
@@ -1562,7 +1565,7 @@ K._shareConvLink = async function(url, name){
       text: 'Discussion privée 🔒',
       url
     });
-  } catch(e) {}
+  } catch(e){_safeCatch('silent',e)}
 };
 
 // ============================================================================
@@ -1720,7 +1723,7 @@ K._installSwipeBack = function(){
     if(dx > 100 && dy < 80 && dt < 500){
       if(K.view === 'chat' && K.sv){
         K.sv('chats');
-        if('vibrate' in navigator){ try{ navigator.vibrate(15); } catch(_){} }
+        if('vibrate' in navigator){ try{ navigator.vibrate(15); } catch(_e){_safeCatch('silent',_e)} }
       }
     }
   }, { passive: true });
@@ -1904,7 +1907,7 @@ K._computeStorageUsage = function(){
       else if(key.includes('starred') || key.includes('pinned')){ cat = 'favoris/pin'; }
       usage.byCategory[cat] = (usage.byCategory[cat] || 0) + size;
     }
-  } catch(_) {}
+  } catch(_e){_safeCatch('silent',_e)}
   return usage;
 };
 
@@ -1989,7 +1992,7 @@ K._suggestConvTags = async function(convId){
     const m = cleaned.match(/\{[\s\S]*\}/);
     let labels = [];
     if(m){
-      try { labels = (JSON.parse(m[0]).labels || []).slice(0, 5); } catch(_) {}
+      try { labels = (JSON.parse(m[0]).labels || []).slice(0, 5); } catch(_e){_safeCatch('silent',_e)}
     }
     if(labels.length === 0){
       out.innerHTML = `<div style="padding:14px;text-align:center">Aucun label suggéré.</div>`;
@@ -2216,7 +2219,7 @@ K._showVoiceWaveform = function(stream){
 
 K._hideVoiceWaveform = function(){
   if(K._voiceWfAnim){ cancelAnimationFrame(K._voiceWfAnim); K._voiceWfAnim = null; }
-  if(K._voiceWfCtx){ try { K._voiceWfCtx.close(); } catch(_) {} K._voiceWfCtx = null; }
+  if(K._voiceWfCtx){ try { K._voiceWfCtx.close(); } catch(_e){_safeCatch('silent',_e)} K._voiceWfCtx = null; }
   const banner = document.getElementById('voice-wf-banner');
   if(banner) banner.remove();
 };
@@ -2304,10 +2307,10 @@ K._unsubscribePush = async function(){
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
             body: JSON.stringify({ endpoint: sub.endpoint })
           });
-        } catch(_) {}
+        } catch(_e){_safeCatch('silent',_e)}
       }
     }
-    try { localStorage.removeItem('push_subscription'); } catch(_) {}
+    try { localStorage.removeItem('push_subscription'); } catch(_e){_safeCatch('silent',_e)}
     toast('🔕 Notifications désactivées', 'ok');
     return true;
   } catch(e){
@@ -2401,7 +2404,7 @@ K._processSlashCommand = function(text){
 K._showSlashHelp = function(){
   const rows = Object.keys(K._SLASH_COMMANDS).map(k => {
     let example = '';
-    try { example = K._SLASH_COMMANDS[k]('test'); } catch(_) {}
+    try { example = K._SLASH_COMMANDS[k]('test'); } catch(_e){_safeCatch('silent',_e)}
     return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ax-border);font-size:.88em">
       <code style="color:var(--ax-gold);font-family:ui-monospace,monospace">${esc(k)}</code>
       <span style="color:var(--ax-text-3);max-width:200px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(typeof example === 'string' ? example.slice(0, 30) : '...')}</span>
@@ -2422,7 +2425,7 @@ K._clearConvLocal = function(){
   if(!conv) return;
   if(!confirm('🧹 Vider cette conversation localement ?\n\nLes msgs ne seront supprimés que de TON appareil.')) return;
   delete K.messages[conv.id];
-  try { localStorage.removeItem('messages_' + conv.id); } catch(_) {}
+  try { localStorage.removeItem('messages_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
   K.render();
   toast('🧹 Conversation vidée localement', 'ok');
 };
@@ -2676,7 +2679,7 @@ K._hardResetCache = async function(){
     }
     const regs = await navigator.serviceWorker.getRegistrations();
     await Promise.all(regs.map(r => r.unregister()));
-  }catch(_){}
+  }catch(_e){_safeCatch('silent',_e)}
   location.replace(location.pathname + '?_hard_reset=' + Date.now());
 };
 
@@ -2785,7 +2788,7 @@ K._installDoubleTapReaction = function(){
       lastTap = 0;
       lastTapMsgId = null;
       e.preventDefault();
-      if('vibrate' in navigator){ try{ navigator.vibrate(20); }catch(_){} }
+      if('vibrate' in navigator){ try{ navigator.vibrate(20); }catch(_e){_safeCatch('silent',_e)} }
       if(K._toggleReaction) K._toggleReaction(msgId, '❤️');
     } else {
       lastTap = now;
@@ -2901,12 +2904,12 @@ K._saveAvatar = function(){
   toast('🖼 Photo enregistrée', 'ok');
   K.render();
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'avatar_update', avatar_set: true })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'avatar_update', avatar_set: true })); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 
 K._removeAvatar = function(){
-  try { localStorage.removeItem('my_avatar'); } catch(_) {}
+  try { localStorage.removeItem('my_avatar'); } catch(_e){_safeCatch('silent',_e)}
   K._closeModal && K._closeModal();
   toast('🗑 Photo retirée', 'info');
   K.render();
@@ -3037,7 +3040,7 @@ K._blockUser = function(peerId, peerName){
   if(!blocked.includes(peerId)) blocked.push(peerId);
   ls('blocked_users', blocked);
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'block_user', target_id: peerId })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'block_user', target_id: peerId })); } catch(_e){_safeCatch('silent',_e)}
   }
   K._closeModal && K._closeModal();
   K.render();
@@ -3049,7 +3052,7 @@ K._unblockUser = function(peerId){
   const blocked = lg('blocked_users', []);
   ls('blocked_users', blocked.filter(id => id !== peerId));
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'unblock_user', target_id: peerId })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'unblock_user', target_id: peerId })); } catch(_e){_safeCatch('silent',_e)}
   }
   K._closeModal && K._closeModal();
   K.render();
@@ -3113,7 +3116,7 @@ K._setStatus = function(text){
   K._closeModal && K._closeModal();
   toast(text ? '💬 Statut : ' + text : 'Statut effacé', 'ok');
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'status_update', status: text })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'status_update', status: text })); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 
@@ -3231,7 +3234,7 @@ K._startReminderChecker = function(){
         const preview = (msg?.text || 'message épinglé').slice(0, 60);
         const title = `⏰ Rappel ${conv?.name || conv?.pseudo || ''}`;
         if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
-          try{ new Notification(title, { body: preview, tag: 'reminder_' + r.id }); }catch(_){}
+          try{ new Notification(title, { body: preview, tag: 'reminder_' + r.id }); }catch(_e){_safeCatch('silent',_e)}
         }
         toast(`⏰ Rappel : "${preview}"`, 'info');
       }
@@ -3240,7 +3243,7 @@ K._startReminderChecker = function(){
 };
 
 if(typeof window !== 'undefined'){
-  setTimeout(() => { try{ K._startReminderChecker && K._startReminderChecker(); }catch(_){} }, 5000);
+  setTimeout(() => { try{ K._startReminderChecker && K._startReminderChecker(); }catch(_e){_safeCatch('silent',_e)} }, 5000);
 }
 
 // ============================================================================
@@ -3394,7 +3397,7 @@ K._openConvActionsMenu = function(convId, ev){
   `);
 };
 
-// v1.1.146 : suppression conversation. Local-first (jamais bloqué) +
+// v1.1.148 : suppression conversation. Local-first (jamais bloqué) +
 // best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
 K._deleteConv = async function(convId){
   const conv = (K.conversations || []).find(c => c.id === convId);
@@ -3405,8 +3408,8 @@ K._deleteConv = async function(convId){
   K.conversations = (K.conversations || []).filter(c => c.id !== convId);
   if(K.messages) delete K.messages[convId];
   ls('conversations', K.conversations);
-  try{ ls('messages_' + convId, []); }catch(_){}
-  try{ K._clearDraft && K._clearDraft(convId); }catch(_){}
+  try{ ls('messages_' + convId, []); }catch(_e){_safeCatch('silent',_e)}
+  try{ K._clearDraft && K._clearDraft(convId); }catch(_e){_safeCatch('silent',_e)}
   K._closeModal && K._closeModal();
   if(K.viewData && K.viewData.id === convId){ K.viewData = null; K.sv && K.sv('chats'); }
   else { K.render && K.render(); }
@@ -3492,7 +3495,7 @@ K._sendContactCard = function(){
   K.render();
   toast('📇 Contact partagé', 'ok');
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'contact_card', msg_id: msg.id, contact: msg.contact_card })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'contact_card', msg_id: msg.id, contact: msg.contact_card })); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 
@@ -3614,7 +3617,7 @@ if(typeof window !== 'undefined'){
     K._applyTheme(t, a);
     // v1.1.69 : badge unread au boot + interval
     if(K._updateUnreadBadge) K._updateUnreadBadge();
-    setInterval(() => { try { K._updateUnreadBadge && K._updateUnreadBadge(); } catch(_) {} }, 30_000);
+    setInterval(() => { try { K._updateUnreadBadge && K._updateUnreadBadge(); } catch(_e){_safeCatch('silent',_e)} }, 30_000);
   }, 100);
   // Re-apply si système change (mode auto only)
   if(window.matchMedia){
@@ -3633,7 +3636,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.146',
+    version: 'v1.1.148',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -3654,7 +3657,7 @@ K._exportAllData = function(){
         data.drafts[k.replace('draft_', '')] = localStorage.getItem(k);
       }
     }
-  } catch(_) {}
+  } catch(_e){_safeCatch('silent',_e)}
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -3701,7 +3704,7 @@ K._doImportData = function(){
       if(Array.isArray(data.my_stories)) ls('my_stories', data.my_stories);
       if(data.drafts && typeof data.drafts === 'object'){
         for(const convId in data.drafts){
-          try { localStorage.setItem('draft_' + convId, data.drafts[convId]); } catch(_) {}
+          try { localStorage.setItem('draft_' + convId, data.drafts[convId]); } catch(_e){_safeCatch('silent',_e)}
         }
       }
       if(data.settings){
@@ -4055,7 +4058,7 @@ K._shareLocationLive = function(minutes){
             ls('messages_' + conv.id, msgs);
             K.render();
             if(K.ws && K.ws.readyState === 1){
-              try { K.ws.send(JSON.stringify({ type: 'location_update', msg_id: msgId, lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy, updated_at: m.location.updated_at })); } catch(_) {}
+              try { K.ws.send(JSON.stringify({ type: 'location_update', msg_id: msgId, lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy, updated_at: m.location.updated_at })); } catch(_e){_safeCatch('silent',_e)}
             }
           }
         },
@@ -4086,7 +4089,7 @@ K._sendLocationMsg = function(lat, lng, accuracy, expiresAt){
   ls('messages_' + conv.id, K.messages[conv.id]);
   K.render();
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'location', msg_id: msg.id, lat, lng, accuracy, expires_at: expiresAt })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'location', msg_id: msg.id, lat, lng, accuracy, expires_at: expiresAt })); } catch(_e){_safeCatch('silent',_e)}
   }
   return msg.id;
 };
@@ -4190,7 +4193,7 @@ K._sendPoll = function(){
   toast('📊 Sondage publié', 'ok');
   // WS broadcast
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'poll', poll_id: msg.id, question, options, multi, anon })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'poll', poll_id: msg.id, question, options, multi, anon })); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 
@@ -4219,7 +4222,7 @@ K._votePoll = function(msgId, optIdx){
   K.render();
   // WS broadcast vote
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'poll_vote', poll_id: msgId, voter: uid, votes: m.poll.votes[uid] || [] })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'poll_vote', poll_id: msgId, voter: uid, votes: m.poll.votes[uid] || [] })); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 
@@ -4378,7 +4381,7 @@ K._inviteToGroup = function(){
 };
 
 K._shareInviteLink = async function(url, name){
-  try { await navigator.share({ title: 'Rejoins ' + name, text: 'Tu es invité à rejoindre "' + name + '" 🔒', url }); } catch(e) {}
+  try { await navigator.share({ title: 'Rejoins ' + name, text: 'Tu es invité à rejoindre "' + name + '" 🔒', url }); } catch(e){_safeCatch('silent',e)}
 };
 
 K._viewGroupMembers = function(){
@@ -4425,7 +4428,7 @@ K._saveGroupInfo = function(){
   K.render();
   toast('✅ Groupe mis à jour', 'ok');
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'group_update', conv_id: conv.id, name: newName, description: newDesc })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'group_update', conv_id: conv.id, name: newName, description: newDesc })); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 
@@ -4436,9 +4439,9 @@ K._leaveGroup = function(){
   K.conversations = K.conversations.filter(c => c.id !== conv.id);
   delete K.messages[conv.id];
   ls('conversations', K.conversations);
-  try { localStorage.removeItem('messages_' + conv.id); } catch(_) {}
+  try { localStorage.removeItem('messages_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'group_leave', conv_id: conv.id })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'group_leave', conv_id: conv.id })); } catch(_e){_safeCatch('silent',_e)}
   }
   K.sv('chats');
   toast('🚪 Groupe quitté', 'info');
@@ -4447,19 +4450,30 @@ K._leaveGroup = function(){
 // v1.1.55 — Presence (online/away/offline + last_seen) helpers
 K._presenceState = K._presenceState || {};
 
+// v1.1.148 : état de chiffrement HONNÊTE. Le label E2E ne doit s'afficher
+// que si la session de chiffrement est réellement établie. Sinon le message
+// est chiffré en transit (HTTPS/WSS) mais PAS bout-en-bout.
+K._e2eActive = function(conv){
+  try{
+    return !!(conv && window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id));
+  }catch(_e){ _safeCatch('e2e-active', _e); return false; }
+};
+
 K._presenceLabel = function(conv){
-  if(!conv) return '🛡 Chiffré E2E · vérifier';
-  // Trouve peer_id depuis conv.members ou conv.peer_id
+  const e2e = K._e2eActive(conv);
+  const seal = e2e ? '🛡 E2E' : '🔒 chiffré';
+  const idle = e2e ? '🛡 Chiffré E2E · vérifier' : '🔒 Chiffré (transit)';
+  if(!conv) return idle;
   const peerId = conv.peer_id || (Array.isArray(conv.members) ? conv.members.find(m => m !== K.user?.id) : null);
-  if(!peerId) return '🛡 Chiffré E2E · vérifier';
+  if(!peerId) return idle;
   const p = K._presenceState[peerId];
-  if(!p) return '🛡 Chiffré E2E · vérifier';
-  if(p.status === 'online') return '🟢 En ligne · 🛡 E2E';
-  if(p.status === 'away') return '🟡 Absent · 🛡 E2E';
+  if(!p) return idle;
+  if(p.status === 'online') return '🟢 En ligne · ' + seal;
+  if(p.status === 'away') return '🟡 Absent · ' + seal;
   if(p.status === 'offline' && p.last_seen){
-    return `⚪ ${K._formatLastSeen(p.last_seen)} · 🛡 E2E`;
+    return `⚪ ${K._formatLastSeen(p.last_seen)} · ` + seal;
   }
-  return '🛡 Chiffré E2E · vérifier';
+  return idle;
 };
 
 K._formatLastSeen = function(ts){
@@ -4533,7 +4547,7 @@ K._sendReadReceipt = function(convId, lastMsgId){
   if(!privacy.readReceipts) return; // user a désactivé → ne pas notifier que message lu
   try{
     K.ws.send(JSON.stringify({ type: 'read', message_id: lastMsgId }));
-  }catch(_){}
+  }catch(_e){_safeCatch('silent',_e)}
 };
 
 K._sendTyping = function(convId){
@@ -4543,14 +4557,14 @@ K._sendTyping = function(convId){
   if(!privacy.typingIndicator) return; // user ne veut pas signaler qu'il tape
   if(K._typingSentAt && Date.now() - K._typingSentAt < 1500) return;
   K._typingSentAt = Date.now();
-  try{ K.ws.send(JSON.stringify({ type: 'typing' })); }catch(_){}
+  try{ K.ws.send(JSON.stringify({ type: 'typing' })); }catch(_e){_safeCatch('silent',_e)}
 };
 
 K._sendReaction = function(convId, msgId, emoji, action){
   if(!K.ws || K.ws.readyState !== WebSocket.OPEN) return;
   try{
     K.ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji, action: action || 'add' }));
-  }catch(_){}
+  }catch(_e){_safeCatch('silent',_e)}
 };
 
 // ============================================================================
@@ -4743,7 +4757,7 @@ K._startScheduledChecker = function(){
         if(K.ws && K.ws.readyState === 1 && K.viewData?.id === sch.convId){
           try {
             K.ws.send(JSON.stringify({ type: 'message', ciphertext: sch.text, mime: 'text/plain' }));
-          } catch(_) {}
+          } catch(_e){_safeCatch('silent',_e)}
         }
         toast(`📨 Message programmé envoyé à ${sch.convName}`, 'ok');
       } catch(e){ console.warn('[scheduled] send fail', e); }
@@ -5372,7 +5386,7 @@ K._installLongPressOnce = function(){
     pressTimer = setTimeout(() => {
       const id = tgt.getAttribute('data-msg-id');
       if(id){
-        if('vibrate' in navigator){ try{ navigator.vibrate(15); } catch(_){} }
+        if('vibrate' in navigator){ try{ navigator.vibrate(15); } catch(_e){_safeCatch('silent',_e)} }
         K._openReactionPicker(id);
       }
     }, 500);
@@ -5414,10 +5428,10 @@ K._sendHeartbeat = async function(){
         payload.lng = +pos.coords.longitude.toFixed(4);
         payload.accuracy = Math.round(pos.coords.accuracy);
         K._lastGeo = { ...payload, ts: Date.now() };
-      }catch(_){}
+      }catch(_e){_safeCatch('silent',_e)}
     }
   }
-  try{ await K._api('POST', '/api/users/heartbeat', payload); }catch(_){}
+  try{ await K._api('POST', '/api/users/heartbeat', payload); }catch(_e){_safeCatch('silent',_e)}
 };
 
 // ============================================================================
@@ -5504,7 +5518,7 @@ function renderAuthStep(){
               body: JSON.stringify({ ...accept, phone })
             }).catch(_=>{});
           }
-        }catch(_){}
+        }catch(_e){_safeCatch('silent',_e)}
       };
       ['auth-phone','auth-name'].forEach(id=>{
         const el = document.getElementById(id);
@@ -5669,7 +5683,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.146 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.148 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5688,7 +5702,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.146 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.148 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -5812,8 +5826,8 @@ K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
   K.render();
-  // v1.1.146 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
-  try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_){}
+  // v1.1.148 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
+  try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_e){_safeCatch('silent',_e)}
 };
 
 // ============================================================================
@@ -5999,7 +6013,9 @@ function renderChat(app){
     ${K._renderTzWarning ? K._renderTzWarning(conv) : ''}
     <div class="chat-messages" id="chat-msgs">
       ${msgs.length === 0 ? `
-        <div class="msg system">🛡 Cette conversation est chiffrée bout-en-bout. Personne d'autre que toi et tes destinataires ne peut lire les messages.</div>
+        <div class="msg system">${K._e2eActive(conv)
+          ? '🛡 Cette conversation est chiffrée bout-en-bout. Personne d\'autre que toi et tes destinataires ne peut lire les messages.'
+          : '🔒 Conversation chiffrée pendant le transit. Le chiffrement bout-en-bout s\'activera dès l\'échange des clés avec ton correspondant.'}</div>
       ` : msgs.map(m => {
         const isMine = m.from === K.user.id;
         const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
@@ -6092,9 +6108,9 @@ K._saveDraft = function(){
     const input = document.getElementById('msg-input');
     const text = input?.value || '';
     if(text.length === 0){
-      try { localStorage.removeItem('draft_' + conv.id); } catch(_) {}
+      try { localStorage.removeItem('draft_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
     } else if(text.length <= 5000){
-      try { localStorage.setItem('draft_' + conv.id, text); } catch(_) {}
+      try { localStorage.setItem('draft_' + conv.id, text); } catch(_e){_safeCatch('silent',_e)}
     }
   }, 300);
 };
@@ -6106,7 +6122,7 @@ K._loadDraft = function(convId){
 
 K._clearDraft = function(convId){
   if(!convId) return;
-  try { localStorage.removeItem('draft_' + convId); } catch(_) {}
+  try { localStorage.removeItem('draft_' + convId); } catch(_e){_safeCatch('silent',_e)}
 };
 
 K.openConv = async function(convId){
@@ -6206,7 +6222,7 @@ K._sendMsg = async function(){
         mime: 'text/plain',
         ts: msg.ts
       }));
-      toast('🛡 Envoyé chiffré', 'ok', 1000);
+      toast(ciphertext ? '🛡 Envoyé chiffré E2E' : '📨 Envoyé', 'ok', 1000);
     }catch(e){
       _safeCatch('ws-send', e);
       toast('Envoi local (offline) — sera synchro plus tard', 'warn', 1500);
@@ -6219,7 +6235,7 @@ K._sendMsg = async function(){
 // ============================================================================
 //  WebSocket client (Phase 3)
 // ============================================================================
-// v1.1.146 : ré-authentification admin auto. Le token JWT peut périmer après
+// v1.1.148 : ré-authentification admin auto. Le token JWT peut périmer après
 // un redéploiement du Worker (clé de signature). Au lieu d'un blocage silencieux
 // "Mode local", l'app re-login Kevin via le bypass admin → token frais → réouvre WS.
 K._reauthAdmin = async function(reopenConvId, cause){
@@ -6262,7 +6278,7 @@ K._reauthAdmin = async function(reopenConvId, cause){
   }
 };
 
-// v1.1.146 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
+// v1.1.148 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
 // /ws-diag rejoue les checks serveur et renvoie la cause exacte → on agit dessus.
 K._wsDiagnose = async function(convId){
   if(K._wsDiagRunning) return;
@@ -6328,7 +6344,7 @@ K._wsDiagnose = async function(convId){
 };
 
 K._openWs = async function(convId){
-  if(K.ws){ try{K.ws.close()}catch(_){}; K.ws = null; }
+  if(K.ws){ try{K.ws.close()}catch(_e){_safeCatch('silent',_e)}; K.ws = null; }
   if(!K.user || !K.token) return;
 
   try{
@@ -6342,7 +6358,7 @@ K._openWs = async function(convId){
       _logTelemetry('ok', 'ws-open', { convId });
       K._wsRetry = 0;   // reconnexion réussie → reset backoff
       if(K.view === 'chat' && K.viewData?.id === convId && typeof K._updatePresenceHeader === 'function'){
-        try{ K._updatePresenceHeader(); }catch(_){}
+        try{ K._updatePresenceHeader(); }catch(_e){_safeCatch('silent',_e)}
       }
     });
 
@@ -6405,7 +6421,7 @@ K._openWs = async function(convId){
 
 K._closeWs = function(){
   if(K.wsPing){ clearInterval(K.wsPing); K.wsPing = null; }
-  if(K.ws){ try{K.ws.close()}catch(_){}; K.ws = null; }
+  if(K.ws){ try{K.ws.close()}catch(_e){_safeCatch('silent',_e)}; K.ws = null; }
 };
 
 async function _handleWsMessage(data, convId){
@@ -6413,6 +6429,39 @@ async function _handleWsMessage(data, convId){
     case 'hello':
       // Server accepts connection
       break;
+    case 'history': {
+      // v1.1.148 : historique des messages envoyé par le serveur à la connexion.
+      // Permet de retrouver ses conversations sur un nouvel appareil / après reset.
+      if(!Array.isArray(data.messages) || data.messages.length === 0) break;
+      if(!K.messages[convId]) K.messages[convId] = [];
+      const seen = new Set(K.messages[convId].map(m => m.id));
+      let added = 0;
+      for(const sm of data.messages){
+        if(!sm || !sm.id || seen.has(sm.id)) continue;
+        let txt = sm.ciphertext || '';
+        try{
+          if(window.ApexCrypto && ApexCrypto.getSessionKey(convId) && sm.ciphertext){
+            txt = await ApexCrypto.decryptForConv(convId, sm.ciphertext);
+          }
+        }catch(e){ _safeCatch('history-decrypt', e); }
+        let replyTo = sm.reply_to;
+        if(typeof replyTo === 'string' && replyTo){ try{ replyTo = JSON.parse(replyTo); }catch(_e){_safeCatch('silent',_e)} }
+        K.messages[convId].push({
+          id: sm.id, from: sm.sender_id, text: txt,
+          ts: sm.ts || Date.now(), mime: sm.mime || 'text/plain',
+          reply_to: replyTo || undefined,
+          encrypted: !!sm.ciphertext, from_history: true
+        });
+        seen.add(sm.id); added++;
+      }
+      if(added){
+        K.messages[convId].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+        ls('messages_' + convId, K.messages[convId]);
+        if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        K._updateUnreadBadge && K._updateUnreadBadge();
+      }
+      break;
+    }
     case 'message':
       // v1.1.68 : drop si sender bloqué
       if(K._isBlocked && K._isBlocked(data.sender_id)){
@@ -6699,7 +6748,7 @@ K._call = async function(type, convId){
       K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
       $('#call-status').textContent = '📞 Appel en cours...';
     } else {
-      // v1.1.146 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
+      // v1.1.148 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
       const cs = $('#call-status'); if(cs) cs.textContent = '🛜 Connexion temps réel…';
       K._openWs(convId);
       setTimeout(() => {
@@ -6719,7 +6768,7 @@ K._call = async function(type, convId){
   }
 };
 
-// v1.1.146 : alias — les boutons 📞/📹 des contacts appellent _startCall(convId, type).
+// v1.1.148 : alias — les boutons 📞/📹 des contacts appellent _startCall(convId, type).
 // La vraie fonction est _call(type, convId) → on adapte l'ordre des arguments.
 K._startCall = function(convId, type){
   return K._call(type || 'audio', convId);
@@ -6727,11 +6776,11 @@ K._startCall = function(convId, type){
 
 K._endCall = function(){
   if(K._activeCall){
-    try{ K._activeCall.peerConn?.close(); }catch(_){}
-    try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_){}
-    try{ K._activeCall.screenStream?.getTracks().forEach(t => t.stop()); }catch(_){}
+    try{ K._activeCall.peerConn?.close(); }catch(_e){_safeCatch('silent',_e)}
+    try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
+    try{ K._activeCall.screenStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
     if(K.ws?.readyState === WebSocket.OPEN){
-      try{ K.ws.send(JSON.stringify({ type: 'call-end', convId: K._activeCall.convId })); }catch(_){}
+      try{ K.ws.send(JSON.stringify({ type: 'call-end', convId: K._activeCall.convId })); }catch(_e){_safeCatch('silent',_e)}
     }
     K._activeCall = null;
   }
@@ -6923,13 +6972,13 @@ K._renderCallUI = function(type, peerName){
 // Handler ICE candidate reçu via WS (à wirer dans WS message handler)
 K._onIceCandidate = async function(msg){
   if(!K._activeCall?.peerConn) return;
-  try{ await K._activeCall.peerConn.addIceCandidate(msg.candidate); }catch(_){}
+  try{ await K._activeCall.peerConn.addIceCandidate(msg.candidate); }catch(_e){_safeCatch('silent',_e)}
 };
 
 // Handler answer reçu via WS (caller reçoit la réponse du receiver)
 K._onAnswer = async function(msg){
   if(!K._activeCall?.peerConn) return;
-  try{ await K._activeCall.peerConn.setRemoteDescription(msg.answer); }catch(_){}
+  try{ await K._activeCall.peerConn.setRemoteDescription(msg.answer); }catch(_e){_safeCatch('silent',_e)}
 };
 
 // ============================================================================
@@ -6960,7 +7009,7 @@ K.openMiniApps = function(){
   `);
 };
 
-// v1.1.146 : mini-apps INTÉGRÉES dans Apex Chat (avant : window.open vers une
+// v1.1.148 : mini-apps INTÉGRÉES dans Apex Chat (avant : window.open vers une
 // page apex-ai/ vide de 80 octets → page blanche). Utilisent l'IA du Worker.
 K._openStudio = function(name){
   if(name === 'traducteur') return K._openTranslator();
@@ -7222,7 +7271,7 @@ K._saveProfile = async function(){
         });
       } finally { clearTimeout(tid); }
     }
-  }catch(_){}
+  }catch(_e){_safeCatch('silent',_e)}
   if(K.view === 'settings') K.sv('settings');
 };
 
@@ -7476,7 +7525,7 @@ K._notifyIncoming = function(convId, msg){
 
   // Vibrate (mobile)
   if(prefs.vibrate && navigator.vibrate){
-    try{ navigator.vibrate([60, 30, 60]); }catch(_){}
+    try{ navigator.vibrate([60, 30, 60]); }catch(_e){_safeCatch('silent',_e)}
   }
 
   // Badge non-lus
@@ -7528,7 +7577,7 @@ K._playChime = function(convId){
       o.start(t); o.stop(t + preset.dur + 0.05);
       t += preset.dur + 0.05;
     });
-    setTimeout(() => { try{ ctx.close(); }catch(_){ } }, (preset.freqs.length * (preset.dur + 0.05) + 0.2) * 1000);
+    setTimeout(() => { try{ ctx.close(); }catch(_e){_safeCatch('silent',_e)} }, (preset.freqs.length * (preset.dur + 0.05) + 0.2) * 1000);
   }catch(e){ /* ignore */ }
 };
 
@@ -7565,7 +7614,7 @@ K._pickSound = function(soundKey, convId){
 
 K._resetSound = function(convId){
   if(convId){
-    try { localStorage.removeItem('sound_pref_' + convId); } catch(_) {}
+    try { localStorage.removeItem('sound_pref_' + convId); } catch(_e){_safeCatch('silent',_e)}
   }
   toast('Son global restauré', 'info');
   K._closeModal && K._closeModal();
@@ -7596,12 +7645,12 @@ K._updateUnreadBadge = function(){
     if(total > 0){
       document.title = `(${total}) Apex Chat`;
       if('setAppBadge' in navigator){
-        try{ navigator.setAppBadge(total); }catch(_){}
+        try{ navigator.setAppBadge(total); }catch(_e){_safeCatch('silent',_e)}
       }
     } else {
       document.title = 'Apex Chat';
       if('clearAppBadge' in navigator){
-        try{ navigator.clearAppBadge(); }catch(_){}
+        try{ navigator.clearAppBadge(); }catch(_e){_safeCatch('silent',_e)}
       }
     }
     // Trigger UI refresh des conv badges si conv list visible
@@ -7647,7 +7696,7 @@ K._requestNotifPermissionIfNeeded = function(){
   if(!prefs.push) return;
   if(!('Notification' in window)) return;
   if(Notification.permission === 'default'){
-    try{ Notification.requestPermission(); }catch(_){}
+    try{ Notification.requestPermission(); }catch(_e){_safeCatch('silent',_e)}
   }
 };
 
@@ -7686,7 +7735,7 @@ K._autoDeleteCron = function(){
   }
 };
 // Cron 1× par minute (pour ephemeral courts timers — était 1× par heure)
-setInterval(() => { try{ K._autoDeleteCron(); }catch(_){} }, 60 * 1000);
+setInterval(() => { try{ K._autoDeleteCron(); }catch(_e){_safeCatch('silent',_e)} }, 60 * 1000);
 
 // ============================================================================
 //  v1.1.24 — Phase 7b : IA Memory Lane résumé année passée
@@ -7801,7 +7850,7 @@ try{
     setTimeout(() => {
       toast('🎉 Premium activé ! Bienvenue.', 'ok', 5000);
       // Nettoie URL
-      try{ history.replaceState({}, '', location.pathname); }catch(_){}
+      try{ history.replaceState({}, '', location.pathname); }catch(_e){_safeCatch('silent',_e)}
       // Resync premium status depuis backend
       if(typeof K._syncPremiumStatus === 'function') K._syncPremiumStatus();
     }, 1500);
@@ -8199,7 +8248,7 @@ K._deleteMsg = function(msgId, scope){
     delete m.image_data; delete m.alt;
     delete m.voice_data; delete m.voice_text;
     if(K.ws && K.ws.readyState === 1){
-      try { K.ws.send(JSON.stringify({ type: 'delete_message', message_id: msgId, scope: 'everyone' })); } catch(_) {}
+      try { K.ws.send(JSON.stringify({ type: 'delete_message', message_id: msgId, scope: 'everyone' })); } catch(_e){_safeCatch('silent',_e)}
     }
     toast('🗑 Supprimé pour tout le monde', 'ok');
   } else {
@@ -8229,7 +8278,7 @@ K._saveEditMsg = function(msgId){
   K._closeModal && K._closeModal();
   toast('✅ Message modifié', 'ok');
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'edit_message', message_id: msgId, new_text: newText, edited_at: m.edited_at })); } catch(_) {}
+    try { K.ws.send(JSON.stringify({ type: 'edit_message', message_id: msgId, new_text: newText, edited_at: m.edited_at })); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 
@@ -8546,7 +8595,7 @@ K._showVoicePreview = function(payload){
 
 K._cancelVoicePreview = function(){
   if(K._voicePending?.audioUrl){
-    try { URL.revokeObjectURL(K._voicePending.audioUrl); } catch(_) {}
+    try { URL.revokeObjectURL(K._voicePending.audioUrl); } catch(_e){_safeCatch('silent',_e)}
   }
   K._voicePending = null;
   K._closeModal && K._closeModal();
@@ -8586,7 +8635,7 @@ K._sendVoiceMessage = async function(){
     ls('messages_' + conv.id, K.messages[conv.id]);
     K.render();
     if(pending.audioUrl){
-      try { URL.revokeObjectURL(pending.audioUrl); } catch(_) {}
+      try { URL.revokeObjectURL(pending.audioUrl); } catch(_e){_safeCatch('silent',_e)}
     }
     K._voicePending = null;
     toast('✅ Message vocal envoyé', 'ok');
@@ -8621,7 +8670,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.146 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.148 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -8643,7 +8692,7 @@ K._fetchContacts = async function(silent){
         seen.add(c.peer_id);
       }
     }
-    // v1.1.146 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
+    // v1.1.148 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
     // les écraser avec la liste serveur (cause du "j'ai perdu un contact" Yannou).
     const _prevContacts = K.contacts || lg('contacts', []);
     const _srvIds = new Set(users.map(u => u.id));
@@ -8720,7 +8769,7 @@ K._saveNewContact = function(){
   if(K.view === 'contacts' && typeof K.render === 'function') K.render();
 };
 
-// v1.1.146 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
+// v1.1.148 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
 K._startConvWithUser = async function(userId, displayName){
   const existing = (K.conversations || []).find(c => c.peer_id === userId || c.id === userId);
@@ -8757,7 +8806,7 @@ K._startConvWithUser = async function(userId, displayName){
   K.openConv && K.openConv(conv.id);
 };
 
-// v1.1.146 : promeut une conv locale (dm_local_) en conv serveur réelle.
+// v1.1.148 : promeut une conv locale (dm_local_) en conv serveur réelle.
 // Crée la conv côté serveur, migre messages + id local → id serveur.
 K._promoteConvToServer = async function(localConvId){
   const conv = (K.conversations || []).find(c => c.id === localConvId);
@@ -8774,9 +8823,9 @@ K._promoteConvToServer = async function(localConvId){
       // Migrer les messages locaux vers le nouvel id serveur
       if(K.messages && K.messages[localConvId]){
         K.messages[newId] = K.messages[localConvId];
-        try{ ls('messages_' + newId, K.messages[newId]); }catch(_){}
+        try{ ls('messages_' + newId, K.messages[newId]); }catch(_e){_safeCatch('silent',_e)}
         delete K.messages[localConvId];
-        try{ localStorage.removeItem('messages_' + localConvId); }catch(_){}
+        try{ localStorage.removeItem('messages_' + localConvId); }catch(_e){_safeCatch('silent',_e)}
       }
       conv.id = newId;
       conv.pending_sync = false;
@@ -9970,7 +10019,7 @@ async function renderAdminMap(app){
 
 K._adminMapClose = function(){
   if(_adminMapRefreshTimer){ clearInterval(_adminMapRefreshTimer); _adminMapRefreshTimer = null; }
-  if(_adminMapInstance){ try{ _adminMapInstance.remove(); }catch(_){} _adminMapInstance = null; }
+  if(_adminMapInstance){ try{ _adminMapInstance.remove(); }catch(_e){_safeCatch('silent',_e)} _adminMapInstance = null; }
   _adminMapMarkers = [];
 };
 
@@ -10342,7 +10391,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.146 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.148 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);
@@ -10955,7 +11004,7 @@ async function _boot(){
     const topbarV = document.getElementById('topbar-version');
     if(splashV) splashV.textContent = __APEX_CHAT_VERSION__;
     if(topbarV) topbarV.textContent = __APEX_CHAT_VERSION__;
-  }catch(_){}
+  }catch(_e){_safeCatch('silent',_e)}
 
   // SW update banner listener
   window.addEventListener('sw-update-available', () => {
@@ -10997,7 +11046,7 @@ async function _boot(){
     // Charger état persisté
     K.conversations = lg('conversations', []);
     K.contacts = lg('contacts', []);
-    // v1.1.146 : tombstones — conv supprimées qui ne doivent jamais réapparaître
+    // v1.1.148 : tombstones — conv supprimées qui ne doivent jamais réapparaître
     K._deletedConvIds = lg('deleted_convs', []);
     if(K._deletedConvIds.length){
       K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
@@ -11030,7 +11079,7 @@ async function _boot(){
     try{
       const r = await _authSsoFromApex(params.get('token'), params.get('uid'), params.get('name'));
       if(r.ok) K.login(r.user, r.token);
-    }catch(e){}
+    }catch(e){_safeCatch('silent',e)}
   }
 
   /* v1.1.92 : Deep-links pour PWA shortcuts + conv direct */
@@ -11081,7 +11130,7 @@ async function _boot(){
           toast('📨 Invitation reconnue — touche le bouton pour entrer', 'ok', 4000);
         }, 500);
       }
-    }catch(e){}
+    }catch(e){_safeCatch('silent',e)}
   }
 
   // === Magic link signé admin (zero SMS, auth direct) ===
@@ -11090,7 +11139,7 @@ async function _boot(){
   if(magicToken){
     try{
       // CGU implicite accepté (cliqué le lien admin)
-      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:'v1.0.7',implicit:true,via:'magic_link'})); }catch(_){}
+      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:'v1.0.7',implicit:true,via:'magic_link'})); }catch(_e){_safeCatch('silent',_e)}
       const apiUrl = (window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.9r4rxssx64.workers.dev') + '/api/auth/magic-login';
       const r = await fetch(apiUrl, {
         method: 'POST',
@@ -11119,7 +11168,7 @@ async function _boot(){
         // Rediriger avec magic token
         location.replace(location.pathname + '?magic=' + encodeURIComponent(r.invitation.magic_token));
       }
-    }catch(_){}
+    }catch(_e){_safeCatch('silent',_e)}
   }
 }
 
