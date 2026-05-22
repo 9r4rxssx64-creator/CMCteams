@@ -38,12 +38,10 @@
 
 ---
 
-## Manques identifiés (pistes d'amélioration réelles)
+## Manques identifiés → comblés
 
-- **Notes de réunion automatiques** (équivalent Fireflies/Granola/Otter) — pas dans Apex.
-- **Correction grammaire/style** (équivalent Grammarly) — pas dans Apex.
-
-À implémenter nativement dans Apex si Kevin le souhaite (gratuit, Web Speech + IA déjà dispo).
+- ✅ **Notes de réunion automatiques** (équivalent Fireflies/Granola/Otter) — intégré 2026-05-22 : skill `apex-meeting-notes.md` + directive auto dans le system prompt Apex (`core/memory.ts`). Gratuit.
+- ✅ **Correction grammaire/style** (équivalent Grammarly) — intégré 2026-05-22 : skill `apex-grammar-fix.md` + directive auto dans le system prompt Apex. Gratuit.
 
 ---
 

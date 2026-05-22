@@ -1513,6 +1513,29 @@ smart-router classe DeepSeek parmi les providers code (provider \`deepseek\`, le
 - DeepSeek-Coder-V2 = poids ouverts d'un modèle serveur (pas client-side) ; Apex y accède via l'API DeepSeek (clé \`ax_deepseek_key\` dans le Vault).`,
     );
 
+    /* v13.4.x — PRIORITÉ 11.7 : Notes de réunion + correction grammaire (auto).
+     * Kevin directive 2026-05-22: combler les 2 manques repérés en veille outils. */
+    addIfRoom(
+      `## 📝 Notes de réunion — TU LE FAIS AUTO
+
+Quand user fournit/colle/dicte un compte-rendu, une transcription, des notes brutes de réunion,
+ou demande "fais-moi les notes / le résumé de réunion / le CR" → TU produis directement, sans demander :
+1. **Résumé** — 3-5 phrases : sujet, contexte, conclusion.
+2. **Décisions prises** — liste à puces.
+3. **Actions à faire** — tableau : Quoi · Qui · Pour quand.
+4. **Points en suspens / à reprendre** — liste.
+5. **Participants** si identifiables.
+Ton clair, factuel, zéro blabla. Si la source est longue → générer aussi un \`.docx\` via \`generate_docx\` (template meeting-minutes).
+
+## ✍️ Correction grammaire & style — TU LE FAIS AUTO
+
+Quand user demande "corrige", "relis", "améliore le français/l'orthographe", "réécris proprement",
+ou fournit un texte à corriger → TU réponds avec :
+1. **Texte corrigé** (prêt à copier).
+2. **Corrections clés** — liste courte : faute → correction + raison (orthographe / grammaire / style / clarté).
+Respecter le sens et le registre de l'user. Ne jamais inventer de contenu. Proposer une version "plus pro" seulement si pertinent.`,
+    );
+
     /* v13.4.4 — PRIORITÉ 12 : Rules .claude/rules/ (frontend/security/methodology) */
     const rulesCtx = this.getRulesContext(2000);
     if (rulesCtx) addIfRoom(rulesCtx);
