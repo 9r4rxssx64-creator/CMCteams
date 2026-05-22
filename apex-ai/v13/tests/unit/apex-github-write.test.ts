@@ -58,14 +58,26 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     it('crée fichier nouveau via fetch mock 201 Created', async () => {
       const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
-      const fetchSpy = vi.spyOn(globalThis, 'fetch')
-        /* 1er fetch = check existing → 404 (pas de fichier) */
-        .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))
-        /* 2e fetch = PUT créa → 201 */
-        .mockResolvedValueOnce(new Response(JSON.stringify({
-          commit: { sha: 'abc123', html_url: 'https://github.com/x/y/commit/abc123' },
-          content: { html_url: 'https://github.com/x/y/blob/main/test/new.ts' },
-        }), { status: 201 }));
+      /* v13.4.266 — mock routé par MÉTHODE + URL (pas par ordre) : robuste
+         contre les fetchs async parasites (backup Firebase/Gist de setKey
+         qui peuvent résoudre pendant le test). GET fichier inexistant → 404,
+         PUT → 201 created. */
+      vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+        const url = typeof input === 'string' ? input : (input as Request).url ?? String(input);
+        const method = (init?.method ?? 'GET').toUpperCase();
+        if (url.includes('api.github.com/repos') && method === 'PUT') {
+          return Promise.resolve(new Response(JSON.stringify({
+            commit: { sha: 'abc123', html_url: 'https://github.com/x/y/commit/abc123' },
+            content: { html_url: 'https://github.com/x/y/blob/main/test/new.ts' },
+          }), { status: 201 }));
+        }
+        if (url.includes('api.github.com/repos')) {
+          /* GET check existing → 404 (fichier inexistant) */
+          return Promise.resolve(new Response('Not Found', { status: 404 }));
+        }
+        /* Tout autre fetch parasite (Firebase/Gist) → réponse neutre */
+        return Promise.resolve(new Response('{}', { status: 200 }));
+      });
 
       const r = await apexToolsDispatch.execute('create_or_update_file', {
         path: 'test/new.ts',
@@ -77,7 +89,6 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
       expect(outer.ok).toBe(true);
       expect(outer.result?.action).toBe('created');
       expect(outer.result?.commit_sha).toBe('abc123');
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
     });
 
     it('update fichier existant via SHA récupéré', async () => {

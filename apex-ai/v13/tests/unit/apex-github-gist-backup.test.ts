@@ -109,6 +109,34 @@ describe('apex-github-gist-backup (v13.4.141 coverage)', () => {
       expect(r.ok).toBe(false);
       expect(r.error).toBe('encrypt_failed');
     });
+
+    /* v13.4.266 — le backup couvre maintenant le multi-key-vault */
+    it('push inclut le blob multi-key-vault (apex_v13_multi_keys)', async () => {
+      /* Aucune clé legacy ax_*_key — SEULEMENT le multi-key-vault */
+      localStorage.setItem('apex_v13_multi_keys', JSON.stringify([
+        { id: 'k1', service: 'anthropic', encrypted: 'AXENC1:aaa', addedAt: 1, status: 'active', failCount: 0, successCount: 0 },
+        { id: 'k2', service: 'openai', encrypted: 'AXENC1:bbb', addedAt: 2, status: 'active', failCount: 0, successCount: 0 },
+      ]));
+      mockVault.readKey.mockResolvedValue('ghp_token_long_enough_xxxx');
+      let encryptedPayload = '';
+      mockVault.encryptAuto.mockImplementation((s: string) => {
+        encryptedPayload = s;
+        return Promise.resolve('AXENC1:enc');
+      });
+      vi.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'gist_mk' }), { status: 201 }));
+      /* force:true → bypass le throttle 30s laissé par les tests précédents */
+      const r = await apexGithubGistBackup.pushBackup({ force: true });
+      /* Avant v13.4.266 : count=0 → 'vault_empty_skip'. Maintenant le
+       * multi-key-vault compte → push réussit. */
+      expect(r.ok).toBe(true);
+      /* Le payload chiffré contient bien le blob multi-keys */
+      const parsed = JSON.parse(encryptedPayload) as { count: number; multiKeysBlob?: string };
+      expect(parsed.count).toBe(2);
+      expect(parsed.multiKeysBlob).toBeTruthy();
+      expect(JSON.parse(parsed.multiKeysBlob ?? '[]')).toHaveLength(2);
+    });
   });
 
   describe('pullBackup', () => {

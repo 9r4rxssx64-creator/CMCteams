@@ -383,6 +383,18 @@ class MultiKeyVault {
     } catch (err: unknown) {
       logger.debug('multi-key-vault', 'firebase backup skipped (offline ok)', { err });
     }
+    /* v13.4.266 (Kevin "le coffre doit se sauvegarder automatiquement en temps
+       réel") — Couche 4 : backup Gist GitHub chiffré. Fire-and-forget,
+       throttle 30s interne (anti-spam). Indépendant de Firebase → fonctionne
+       même quand Firebase est KO. Admin-only (pushBackup vérifie isAdminSync). */
+    void (async () => {
+      try {
+        const { apexGithubGistBackup } = await import('./apex-github-gist-backup.js');
+        await apexGithubGistBackup.pushBackup();
+      } catch (err: unknown) {
+        logger.debug('multi-key-vault', 'gist backup skipped', { err });
+      }
+    })();
   }
 
   /**

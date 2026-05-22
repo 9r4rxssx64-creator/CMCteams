@@ -50,6 +50,16 @@ interface VaultBackupContent {
   count: number;
 }
 
+/* v13.4.266 — payload interne (chiffré dans content.encrypted).
+ * `keys` = clés legacy ax_*_key. `multiKeysBlob` = blob JSON brut du
+ * multi-key-vault (apex_v13_multi_keys) — chaque entrée y est déjà chiffrée
+ * AXENC1, on sauvegarde le blob tel quel (opaque, sûr). */
+interface VaultPlaintextPayload {
+  count: number;
+  keys: Array<{ storageKey: string; plaintext: string }>;
+  multiKeysBlob?: string;
+}
+
 class ApexGithubGistBackup {
   private throttleLastPush = 0;
   private readonly THROTTLE_MS = 30_000; /* min 30s entre 2 pushes */
@@ -156,14 +166,14 @@ class ApexGithubGistBackup {
     }
     if (!plaintextJSON) return { ok: false, error: 'decrypt_returned_null' };
 
-    let payload: { count: number; keys: Array<{ storageKey: string; plaintext: string }> };
+    let payload: VaultPlaintextPayload;
     try {
-      payload = JSON.parse(plaintextJSON) as { count: number; keys: Array<{ storageKey: string; plaintext: string }> };
+      payload = JSON.parse(plaintextJSON) as VaultPlaintextPayload;
     } catch {
       return { ok: false, error: 'plaintext_json_invalid' };
     }
 
-    /* Re-setKey toutes les clés via vault */
+    /* Re-setKey toutes les clés legacy via vault */
     let restored = 0;
     for (const { storageKey, plaintext } of payload.keys) {
       try {
@@ -171,6 +181,31 @@ class ApexGithubGistBackup {
         if (r.ok) restored++;
       } catch (err: unknown) {
         logger.warn('gist-backup', `restore failed for ${storageKey}`, { err });
+      }
+    }
+    /* v13.4.266 — restore multi-key-vault : le blob est un JSON array
+     * d'entrées déjà chiffrées AXENC1. On l'écrit tel quel dans localStorage
+     * + reloadFromStorage() pour que le Coffre moderne le reprenne. */
+    if (payload.multiKeysBlob) {
+      try {
+        const parsed = JSON.parse(payload.multiKeysBlob) as unknown;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          /* Merge non-destructif : ne PAS écraser si localStorage a déjà des
+           * clés (l'utilisateur a pu en coller de nouvelles depuis le backup). */
+          const existingRaw = localStorage.getItem('apex_v13_multi_keys');
+          const existing = existingRaw ? (JSON.parse(existingRaw) as unknown[]) : [];
+          if (!Array.isArray(existing) || existing.length === 0) {
+            localStorage.setItem('apex_v13_multi_keys', payload.multiKeysBlob);
+            const { multiKeyVault } = await import('./multi-key-vault.js');
+            multiKeyVault.reloadFromStorage();
+            restored += parsed.length;
+            logger.info('gist-backup', `restored ${parsed.length} multi-key-vault entries`);
+          } else {
+            logger.info('gist-backup', 'multi-key-vault non-vide → skip restore (pas d\'écrasement)');
+          }
+        }
+      } catch (err: unknown) {
+        logger.warn('gist-backup', 'multiKeysBlob restore failed', { err });
       }
     }
     logger.info('gist-backup', `restored ${restored}/${payload.count} keys from gist ${gist.id.slice(0, 8)}…`);
@@ -264,9 +299,9 @@ class ApexGithubGistBackup {
     try { localStorage.setItem('apex_v13_gist_backup_id', id); } catch { /* ignore */ }
   }
 
-  private async collectVaultPlaintext(): Promise<{ count: number; keys: Array<{ storageKey: string; plaintext: string }> }> {
+  private async collectVaultPlaintext(): Promise<VaultPlaintextPayload> {
     const keys: Array<{ storageKey: string; plaintext: string }> = [];
-    /* Scan localStorage pour clés ax_*_key et apex_v13_multi_keys */
+    /* 1. Clés legacy ax_*_key / ax_*_token */
     const candidates: string[] = [];
     try {
       for (let i = 0; i < localStorage.length; i++) {
@@ -283,7 +318,26 @@ class ApexGithubGistBackup {
         }
       } catch { /* skip */ }
     }
-    return { count: keys.length, keys };
+    /* v13.4.266 (Kevin "le coffre se perd") — 2. Multi-key-vault : le Coffre
+     * moderne stocke TOUTES les clés collées dans apex_v13_multi_keys (JSON
+     * array d'entrées déjà chiffrées AXENC1). Avant, cette source était
+     * ignorée → le backup Gist ne couvrait QUE les clés legacy. On sauvegarde
+     * le blob brut (opaque — entries restent chiffrées). */
+    let multiKeysBlob: string | undefined;
+    let multiCount = 0;
+    try {
+      const raw = localStorage.getItem('apex_v13_multi_keys');
+      if (raw && raw !== '[]' && raw !== 'null') {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          multiKeysBlob = raw;
+          multiCount = parsed.length;
+        }
+      }
+    } catch { /* skip */ }
+    const result: VaultPlaintextPayload = { count: keys.length + multiCount, keys };
+    if (multiKeysBlob !== undefined) result.multiKeysBlob = multiKeysBlob;
+    return result;
   }
 
   private async findExistingGist(token: string, description: string): Promise<GistApiResponse | null> {
