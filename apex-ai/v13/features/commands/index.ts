@@ -40,7 +40,7 @@ export function render(rootEl: HTMLElement): void {
     + '<h1 style="color:var(--ax-gold);font-size:22px;margin:0 0 4px">📒 Commandes Apex</h1>'
     + `<p style="color:var(--ax-text-dim);font-size:13px;margin:0 0 18px">`
     + `${SLASH_COMMANDS.length} commandes. Tape <code>/</code> dans le chat pour les utiliser. `
-    + `Les commandes 🧭/🎨 sont cliquables ici.</p>';
+    + `Les commandes 🧭/🎨 sont cliquables ici.</p>`;
 
   for (const cat of CAT_ORDER) {
     const cmds = groups.get(cat);
@@ -66,8 +66,8 @@ export function render(rootEl: HTMLElement): void {
 
   /* Navigation au clic pour les commandes à route. Listener délégué unique
    * (garde dataset → idempotent même si render() est rappelé sur le même nœud). */
-  if (!rootEl.dataset.cmdMemoBound) {
-    rootEl.dataset.cmdMemoBound = '1';
+  if (!rootEl.dataset['cmdMemoBound']) {
+    rootEl.dataset['cmdMemoBound'] = '1';
     rootEl.addEventListener('click', (e) => {
       const el = e.target as HTMLElement | null;
       const row = el?.closest('[data-cmd-route]');
