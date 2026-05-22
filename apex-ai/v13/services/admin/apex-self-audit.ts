@@ -107,8 +107,18 @@ class ApexSelfAudit {
       }
     }
 
+    /* v13.4.256 (FIX score global "20/100 Note F") : chaque axe est noté
+     * /20. L'ancien calcul faisait `somme / 6` → résultat sur échelle /20
+     * (max 20) mais affiché "/100" → faux "20/100 Note F" alors que les
+     * axes étaient à 18-20/20. Désormais : score pondéré sur /100 réel,
+     * avec les poids affichés dans l'UI (25/20/15/15/15/10, somme=100). */
     const totalScore = Math.round(
-      (security.score + performance.score + ux.score + tests.score + architecture.score + aiSafety.score) / 6,
+      (security.score / 20) * 25 +
+        (performance.score / 20) * 20 +
+        (ux.score / 20) * 15 +
+        (tests.score / 20) * 15 +
+        (architecture.score / 20) * 15 +
+        (aiSafety.score / 20) * 10,
     );
 
     const report: AuditReport = {
