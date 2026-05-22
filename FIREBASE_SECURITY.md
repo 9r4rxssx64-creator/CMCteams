@@ -16,49 +16,69 @@ Conséquence : toute personne qui connaît l'URL de la base peut lire/écrire le
 données (planning, employés, chat, mémoire Apex). Le coffre Apex est chiffré
 AES-GCM côté client → son contenu reste illisible, mais il peut être **écrasé**.
 
-## 2. Pourquoi les règles RTDB seules ne suffisent pas
+## 2. ⚠️ Contrainte technique majeure (constat code 2026-05-21)
 
-Les règles `database.rules.json` décident `.read`/`.write` selon `auth`. Or
-les apps n'ouvrent **aucune session Firebase** : `auth` est toujours `null`.
+Les deux apps parlent à Firebase RTDB en **REST brut + SSE** :
+`fetch('<rtdb>/....json')` pour lire/écrire + `new EventSource('<rtdb>/....json')`
+pour la synchro temps réel. **Elles n'utilisent PAS le SDK Firebase.**
 
-- Mettre `".write": "auth != null"` → **bloque aussi les apps** (régression totale).
-- Sans identité, une règle ne peut **pas distinguer « l'app de Kevin » d'un tiers**.
+Or App Check ne s'attache automatiquement **qu'avec le SDK Firebase**. Pour du
+REST brut :
 
-## 3. La vraie solution — Firebase App Check
+- un `fetch()` peut éventuellement porter un jeton App Check (en-tête / param) ;
+- mais un **`EventSource` (SSE) ne peut PAS porter de jeton** (pas d'en-tête
+  custom, connexion longue durée alors que le jeton expire).
 
-**App Check** atteste que les requêtes proviennent de **ton app authentique**
-(et pas d'un script tiers). C'est le seul mécanisme qui réalise réellement
-« seul Apex AI / mes apps peuvent écrire ».
+➡️ **Conclusion : activer « Enforce » App Check sur RTDB casserait la synchro
+temps réel (SSE) des 2 apps.** App Check n'est donc PAS un simple interrupteur
+ici. Enregistrer le fournisseur reCAPTCHA dans la console est **sans danger**
+(n'enforce rien) — mais l'« Enforce » est bloquant tant que l'architecture
+n'a pas changé.
 
-Étapes (console Firebase — action Kevin, ~10 min, une seule fois) :
+## 3. Les 2 vraies solutions (chantier, pas une tâche d'un soir)
 
-1. Console Firebase → **App Check** → enregistrer chaque app web.
-   Fournisseur recommandé : **reCAPTCHA Enterprise** (ou v3).
-2. Côté code (je peux le faire sur demande) : initialiser le SDK App Check au
-   boot des deux apps avec la clé de site.
-3. Console → App Check → **Enforce** sur Realtime Database.
-4. Déployer `database.rules.example.json` adapté (voir §4).
+### Option A — Migrer les 2 apps vers le SDK Firebase
+Remplacer le REST/SSE brut par `firebase/app` + `firebase/database` +
+`firebase/app-check`. Le SDK utilise un WebSocket (pas SSE) et attache le jeton
+App Check automatiquement → App Check « Enforce » fonctionne nativement.
+- ✅ Solution propre et standard.
+- ❌ Refacto réelle de la couche Firebase des 2 apps + tests.
 
-Après §3, toute requête sans jeton App Check valide est **refusée par Firebase** —
-y compris les apps externes, scripts, navigateurs tiers.
+### Option B — Proxy serveur (Cloudflare Worker)  ← recommandée
+Toutes les écritures passent par un Worker Cloudflare (Apex en a déjà un :
+`apex-ai/proxy-apex.js`). Le Worker détient un **secret Firebase serveur**
+(database secret / service account) et écrit en mode admin. Règles RTDB :
+`".write": false` pour tous les clients → **plus aucune écriture externe
+possible**, seul le Worker écrit. Le Worker valide l'origine + un secret partagé.
+- ✅ Bloque réellement « seul mon app » sans dépendre du SDK ni d'App Check.
+- ✅ Réutilise une brique déjà existante (proxy-apex.js).
+- ❌ Rerouter chaque `fbWrite()` / `fetch()` vers le Worker.
 
 ## 4. Règles RTDB d'accompagnement
 
-`database.rules.example.json` (à la racine) est un **modèle** : il garde les
-apps fonctionnelles (lecture/écriture autorisées) MAIS ajoute des
-`.validate` (plafonds de taille anti-pollution / anti-DoS) et **doit être
-complété avec App Check actif** via `auth.token` pour le verrouillage réel.
+`database.rules.example.json` (racine) est un **modèle** : il garde les apps
+fonctionnelles + ajoute des `.validate` (plafonds de taille anti-DoS).
+Le verrouillage réel des écritures (`".write": false` côté client) ne devient
+sûr **qu'une fois l'option A ou B en place**.
 
-⚠️ Ne PAS déployer tel quel sans avoir vérifié qu'il couvre toutes les clés
-réellement écrites par les apps — un déploiement aveugle peut bloquer l'app.
-Le déploiement se fait via la console Firebase (Database → Rules) ou
-`firebase deploy --only database`.
+⚠️ Ne PAS déployer de règles `.write: false` tant que A ou B n'est pas fait —
+sinon les apps ne peuvent plus rien écrire.
 
-## 5. Action restante côté Kevin
+## 5. État / prochaines étapes
 
-- [ ] Activer App Check sur les 2 projets Firebase (console).
-- [ ] Me redonner le feu vert pour intégrer le SDK App Check dans les 2 apps.
-- [ ] Activer "Enforce" puis déployer les règles.
+- [x] Verrouillage **code GitHub** : fait (CODEOWNERS + branch-guard + protection
+      de branche `main`).
+- [x] `database.rules.example.json` : modèle créé.
+- [ ] **Décision Kevin** : Option A (SDK) ou Option B (proxy Worker) ?
+- [ ] Selon le choix : implémentation par Claude Code (chantier dédié).
+- [ ] Puis seulement : régler les règles RTDB + (si A) activer App Check Enforce.
 
-Tant que §3 n'est pas fait, le verrouillage Firebase reste **partiel**
-(durcissement structurel uniquement, pas de blocage par identité).
+Tant que l'option A ou B n'est pas livrée, le verrouillage Firebase reste
+**partiel** : code protégé ✅, données encore modifiables par REST ⚠️
+(atténué par le chiffrement du coffre Apex).
+
+## 6. Note — enregistrement reCAPTCHA en cours
+
+Si une clé reCAPTCHA v3 a été créée et le fournisseur enregistré dans la console
+App Check : **ce n'est pas perdu**. C'est sans danger (aucun Enforce) et la clé
+resservira si l'option A (SDK) est retenue. Ne PAS activer « Enforce ».

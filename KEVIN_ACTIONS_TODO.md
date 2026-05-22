@@ -1,27 +1,31 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-## 🔒 SESSION 2026-05-21 — Blocage accès projets : 2 actions Kevin
+## 🔒 SESSION 2026-05-21 — Blocage accès projets
 
 Suite à la demande « bloquer les projets pour que personne de l'extérieur ne
-puisse les modifier, sauf Apex AI ». Le code en place (CODEOWNERS, branch-guard,
-guards app) **alerte et durcit** ; le **blocage réel** demande ces 2 réglages —
-non automatisables (réglages admin externes), une seule fois :
+puisse les modifier, sauf Apex AI ».
 
-1. **Protéger la branche `main` GitHub** — le seul vrai verrou du code :
-   GitHub → repo `cmcteams` → Settings → Branches → Add branch protection rule
-   → Branch name pattern : `main` → cocher :
-   - Require a pull request before merging
-   - Require review from Code Owners
-   - Restrict who can push to matching branches
-   Sans ça, `CODEOWNERS` + `branch-guard.yml` ne font qu'alerter, pas bloquer.
+### 1. Code GitHub — ✅ FAIT (2026-05-21)
+Branche `main` protégée via Ruleset GitHub (« Require a pull request before
+merging », Block force pushes, Restrict deletions, bypass = Repository admin).
++ `.github/CODEOWNERS` + `.github/workflows/branch-guard.yml`.
+→ Plus aucune modification externe directe du code possible.
 
-2. **Activer Firebase App Check** — le vrai verrou des données (cf. `FIREBASE_SECURITY.md`) :
-   Console Firebase → App Check → enregistrer les apps (CMCteams + Apex) →
-   fournisseur reCAPTCHA → puis « Enforce » sur Realtime Database.
-   Ensuite : me redemander de câbler le SDK App Check dans les 2 apps.
+### 2. Données Firebase — ⏸ DÉCISION À PRENDRE
+App Check **ne peut pas** être simplement activé : les 2 apps parlent à Firebase
+en REST/SSE brut (pas le SDK) → activer « Enforce » casserait la synchro temps
+réel. Détail complet dans `FIREBASE_SECURITY.md`.
 
-> Tant que ces 2 points ne sont pas faits, le verrouillage reste **partiel**
-> (détection/alerte + guards in-app), pas un blocage technique total.
+**Choix à faire (Kevin)** — 2 vraies options :
+- **Option A** — migrer les 2 apps vers le SDK Firebase (App Check natif).
+- **Option B** (recommandée) — router les écritures via un proxy Cloudflare
+  Worker + règles RTDB `.write:false` côté client. Réutilise `proxy-apex.js`.
+
+→ Une fois l'option choisie : Claude Code implémente le chantier dédié.
+→ Ne PAS activer « Enforce » App Check ni déployer de règles `.write:false`
+  avant que l'option soit livrée.
+→ Enregistrer le fournisseur reCAPTCHA dans la console est sans danger
+  (n'enforce rien) — la clé resservira si Option A retenue.
 
 ---
 
