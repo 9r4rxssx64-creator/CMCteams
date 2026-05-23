@@ -4,6 +4,48 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-23 (Ape
 
 ---
 
+## 🧱 RÈGLE ABSOLUE — ISOLATION MAXIMALE + AUTONOMIE TOTALE TOUJOURS (Kevin 2026-05-23, ABSOLUE)
+
+> **"Tu isoles toujours au maximum pour tout en autonomie. Note le pour tous les projets."** — Kevin 2026-05-23
+
+**Règle absolue, NON-NÉGOCIABLE, applicable à TOUS projets actuels + futurs** — Apex, Apex Chat, CMCteams, Shops, e-KDMC, Télécommande, CrackPass, tous projets futurs.
+
+### Principe : isolation max + autonomie totale, simultanément
+
+Pour chaque feature / module / donnée / projet :
+
+1. **Isolation MAXIMALE par défaut** :
+   - Données scopées par projet : chemins Firebase préfixés (`apex_*`, `cmc_*`, `shops_*`), JAMAIS de partage de namespace entre projets.
+   - Permissions minimum nécessaire (principe du moindre privilège).
+   - Sandboxing par tier user (admin vs Laurence vs clients vs employés).
+   - Repos/branches/clés API isolés quand possible.
+   - Si une feature casse, **elle ne doit casser AUCUN autre projet ni surface**.
+   - localStorage / IDB scopés (`<projet>_<feature>_<uid>`).
+
+2. **Tout EN AUTONOMIE** :
+   - Aucune étape manuelle Kevin si je peux la coder (cf. règle « JAMAIS DEMANDER UN CLIC ADMIN GITHUB UI »).
+   - Configuration via API/code, pas via UI tierce.
+   - Self-healing en cas de panne (sentinelles auto-fix).
+   - Bascule/failover auto si une couche tombe.
+
+### Arbitrage isolation vs autonomie
+
+Si conflit (ex: isolation max = nouveau projet Firebase → manuel Kevin) :
+- Préférer **isolation logique** dans projet existant (path scopé + règles strictes) plutôt que création manuelle d'un projet dédié.
+- **1 clic max** Kevin si vraiment indispensable, sinon code autonome.
+
+### Test mental obligatoire avant chaque livraison
+
+> *« Cette feature peut-elle vivre sans intervention Kevin ? Est-elle assez isolée pour qu'une panne ou un piratage n'affecte AUCUN autre projet ? Si je casse cette feature demain, est-ce que CMCteams / Apex / Shops continuent de fonctionner ? »*
+
+Si une réponse non → durcir isolation OU enlever dépendance.
+
+### Application immédiate
+
+S'applique à chaque nouvelle feature/projet en cours et futur — Shops Dashboard Cloud (chemins `shops_admin_v1/...` isolés, règles Firebase strictes, jamais touche aux paths `cmc_*` / `apex_*`), Apex (déjà appliqué), CMCteams (déjà appliqué), tous projets futurs.
+
+---
+
 ## 💾 RÈGLE ABSOLUE — TOUTE NOUVELLE INFO = SAUVEGARDE SÛRE IMMÉDIATE (Kevin 2026-05-23, ABSOLUE)
 
 > **"Toutes nouvelles informations dois être sauvegardé sûr immédiatement. Auto."** — Kevin 2026-05-23

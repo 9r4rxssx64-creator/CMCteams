@@ -20,6 +20,7 @@
 <link rel="canonical" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/digital-vault/">
 <link rel="preconnect" href="https://images.unsplash.com">
 <link rel="manifest" href="manifest.json">
+<script src="../_shared/firebase-orders.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
@@ -384,6 +385,9 @@ order_id:orderId,store:STORE_NAME,total:fmtP(total),method:method,
 items:items.map(function(i){return i.name+" x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),
 timestamp:new Date().toLocaleString("fr-FR")
 }).catch(function(){})}
+
+/* Push commande au dashboard admin (méta uniquement, aucune PII) */
+try{if(window.kdmcPushOrder)window.kdmcPushOrder({shop:STORE_ID,orderId:orderId,total:total,method:method,items_count:S.cart.length,items_summary:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", ")})}catch(_){}
 
 /* Vider panier */
 S.cart=[];saveCart();
