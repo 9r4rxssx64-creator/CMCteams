@@ -9082,6 +9082,50 @@ A verifier a chaque audit (axRunAudit, subagent audit).
 
 ---
 
+## 🆔 RÈGLE ABSOLUE — FACEID/TOUCHID DANS TOUS LES PROJETS (Kevin 2026-05-22, ABSOLUE)
+
+> **"FaceID dans tous les projets note le et fais le un après l'autre."** — Kevin 2026-05-22
+> **"PIN et nom prénom et fiche infos pour 1ère connexion mais après reconnu auto et connecte auto FaceID par exemple."** — Kevin 2026-05-22
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex, Apex Chat, CMCteams, e-KDMC, Télécommande, CrackPass, tous projets actuels et futurs avec lockscreen / unlock / authentification utilisateur.
+
+### 1. Modèle d'authentification standard
+
+- **1ère connexion** : fiche obligatoire (prénom + nom + infos) + création PIN 6 chiffres.
+- **Connexions suivantes** : reconnu auto + connexion auto via **FaceID / TouchID** (biométrie WebAuthn Platform Authenticator). PIN reste en fallback.
+
+### 2. API à utiliser
+
+**WebAuthn Platform Authenticator** (Face ID / Touch ID sur iOS Safari, biométrie sur Android Chrome) :
+
+- Disponibilité : `await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()`.
+- Enrollment : `navigator.credentials.create({publicKey:{authenticatorSelection:{authenticatorAttachment:'platform', userVerification:'required'}, ...}})` après PIN setup (proposé en opt-in à l'utilisateur).
+- Unlock : `navigator.credentials.get({publicKey:{allowCredentials:[{type:'public-key', id:credId}], userVerification:'required'}})` — déclenche Face ID / Touch ID natif.
+
+### 3. Stockage
+
+Credential ID stocké localement par user (`user_biometric_<uid>`). **Aucune clé privée** côté serveur — la biométrie est device-local (zero-knowledge).
+
+### 4. Fallback PIN obligatoire
+
+Si la biométrie échoue (refusée, indisponible, hardware absent), **le PIN 6 chiffres reste accessible** comme méthode de fallback sur le lockscreen.
+
+### 5. Application — un projet après l'autre
+
+À implémenter dans l'ordre :
+1. **Apex Chat** (priorité, demande initiale)
+2. **Apex** (déjà partiel via vault — étendre au lockscreen général)
+3. **CMCteams**
+4. **e-KDMC**, **Télécommande**, **CrackPass**, futurs projets
+
+### 6. Test mental obligatoire avant chaque release projet
+
+> *"Sur iPhone, après la 1ère connexion (où j'ai mis fiche+PIN), est-ce qu'à l'ouverture suivante l'app me propose Face ID en 1 clic, ET le PIN reste accessible si Face ID rate ?"*
+
+Si non → fixer avant push.
+
+---
+
 ## 🔬 RÈGLE ABSOLUE — TOUJOURS DÉTAILLER LES ERREURS PARTOUT, CAUSE EXACTE (Kevin 2026-05-20, ABSOLUE)
 
 > **"Note tous projets, toujours détailler les erreurs partout pour savoir cause exact."** — Kevin 2026-05-20
