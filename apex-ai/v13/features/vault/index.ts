@@ -26,6 +26,7 @@ import { escapeHtml } from '../../core/escape-html.js';
 import { createCleanupScope, type CleanupScope } from '../../core/listener-cleanup.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
+import { preserveScroll } from '../../core/view-utils.js';
 import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { autoDiscoverLinks } from '../../services/integrations/auto-discover-links.js';
@@ -811,7 +812,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         if (r.restored > 0) {
           toast.success(`🔓 ${r.restored} clés restaurées depuis Firebase backup`);
           haptic.success();
-          setTimeout(() => render(rootEl), 600);
+          setTimeout(() => void preserveScroll(rootEl, () => render(rootEl)), 600);
         } else {
           toast.info('Aucune clé trouvée dans Firebase backup');
         }
@@ -843,7 +844,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         if (r.restored > 0) {
           toast.success(`🔓 ${r.restored} clés restaurées (4 sources)`);
           haptic.success();
-          setTimeout(() => render(rootEl), 600);
+          setTimeout(() => void preserveScroll(rootEl, () => render(rootEl)), 600);
         } else {
           toast.info('Aucune clé trouvable dans les 4 sources. Colle une clé manuellement ci-dessous.');
         }
@@ -993,7 +994,7 @@ function attachHandlers(rootEl: HTMLElement): void {
           toast.success(`🔁 ${r.migrated} clés legacy migrées vers le coffre central`);
           haptic.success();
           /* Rafraîchit l'UI pour afficher les nouvelles clés */
-          setTimeout(() => render(rootEl), 600);
+          setTimeout(() => void preserveScroll(rootEl, () => render(rootEl)), 600);
         } else if (r.failed > 0) {
           toast.error(`${r.failed} échec(s) decrypt — passphrase perdue`);
           haptic.error();
@@ -1051,7 +1052,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         if (r.renamed > 0) {
           toast.success(`♻️ ${r.renamed} services renommés en canonique`);
           haptic.success();
-          setTimeout(() => render(rootEl), 600);
+          setTimeout(() => void preserveScroll(rootEl, () => render(rootEl)), 600);
         } else {
           toast.info('Rien à réparer (services déjà canoniques)');
         }
@@ -1179,7 +1180,7 @@ function attachHandlers(rootEl: HTMLElement): void {
         }
         toast.success(`🗑 ${deleted} clés illisibles supprimées`);
         haptic.success();
-        setTimeout(() => render(rootEl), 800);
+        setTimeout(() => void preserveScroll(rootEl, () => render(rootEl)), 800);
       } catch (err: unknown) {
         logger.warn('feature-vault', 'cleanupInvalid failed', { err });
         toast.error('Erreur suppression');
