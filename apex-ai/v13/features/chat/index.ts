@@ -79,6 +79,13 @@ interface DisplayMessage {
   /* v13.4.11 fix Kevin "Apex n'a pas accès aux pièces jointes" — base64 + mime
    * pour reconstruire content array Anthropic au moment d'appel IA. */
   attachments?: Array<{ mime: string; base64: string; name: string }>;
+  /* v13.4.273 (Kevin "Revois l'utilisation des différentes ia que tout soit
+   * bien en place") : badge "via [provider]" sous chaque réponse IA.
+   * Renseigné par stream() depuis aiRouter — lecture seule côté UI. */
+  provider?: string;
+  modelUsed?: string;
+  latencyMs?: number;
+  costEur?: number;
 }
 
 /* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé).
@@ -854,6 +861,9 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
 
   /* v13.3.30 — Deep prompt avec docs + facts + lessons (Kevin règle mémoire long terme) */
   const sysPrompt = await buildSystemPromptDeep();
+  /* v13.4.273 (Kevin "tout soit bien en place avec eco token") :
+   * mesure latence client-side du premier au dernier chunk pour badge UI. */
+  const streamT0 = Date.now();
   await aiRouter.stream(
     messages,
     sysPrompt,
@@ -882,6 +892,20 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
       }
       if (chunk.done) {
         delete assistantMsg.streaming;
+        /* v13.4.273 : capture provider + latence pour badge sous la réponse */
+        if (chunk.provider) assistantMsg.provider = chunk.provider;
+        assistantMsg.latencyMs = Date.now() - streamT0;
+        /* Coût estimé approximatif : longueur réponse en tokens × cost table provider */
+        try {
+          const estimatedOutTokens = Math.ceil(assistantMsg.text.length / 4);
+          const COST_TABLE_EUR_PER_M: Record<string, number> = {
+            anthropic: 8.0, openai: 6.0, groq: 0, gemini: 0, openrouter: 0, openclaw: 0,
+          };
+          const cost = (COST_TABLE_EUR_PER_M[chunk.provider ?? 'anthropic'] ?? 0) * estimatedOutTokens / 1_000_000;
+          assistantMsg.costEur = cost;
+        } catch {
+          /* skip si pas calculable */
+        }
         store.set('isStreaming', false);
         renderMessages(rootEl);
         /* v13.3.53 : persist conversation après streaming complet (Kevin "perds chat à chaque MAJ") */
@@ -1729,6 +1753,42 @@ export async function maybeAutoReadAssistant(msg: DisplayMessage): Promise<void>
  *
  * Exposé pour tests (anti-XSS + render).
  */
+/**
+ * v13.4.273 — Badge "via [provider] · latence · coût" sous chaque réponse IA.
+ * Kevin règle "tout soit bien en place avec eco token et les réglages
+ * consommation et performance" — il doit VOIR quel provider Apex utilise
+ * pour vérifier que l'optimisation marche.
+ */
+export function renderProviderBadge(msg: DisplayMessage): string {
+  if (msg.role !== 'assistant' || msg.streaming || !msg.provider) return '';
+  const parts: string[] = [];
+  const ICONS: Record<string, string> = {
+    anthropic: '🟧',
+    openai: '🟢',
+    openrouter: '🔵',
+    groq: '⚡',
+    gemini: '🔷',
+    openclaw: '🐾',
+  };
+  const icon = ICONS[msg.provider] ?? '🤖';
+  parts.push(`${icon} ${escapeHtml(msg.provider)}`);
+  if (msg.modelUsed) parts.push(escapeHtml(msg.modelUsed.replace(/^claude-/, '').replace(/-20\d{6}$/, '')));
+  if (typeof msg.latencyMs === 'number' && msg.latencyMs > 0) {
+    parts.push(`${(msg.latencyMs / 1000).toFixed(1)}s`);
+  }
+  if (typeof msg.costEur === 'number' && msg.costEur > 0) {
+    parts.push(`~${msg.costEur < 0.01 ? '<0,01' : msg.costEur.toFixed(3)}€`);
+  } else if (typeof msg.costEur === 'number') {
+    parts.push('gratuit');
+  }
+  return (
+    `<div class="ax-provider-badge" style="display:inline-flex;gap:6px;align-items:center;padding:3px 8px;` +
+    `background:rgba(255,255,255,0.04);border-radius:6px;font-size:10px;color:var(--ax-text-dim);` +
+    `margin:6px 0 0;font-family:'SF Mono',Menlo,monospace;letter-spacing:0.02em" ` +
+    `title="Provider utilisé par le routing IA pour cette réponse">${parts.join(' · ')}</div>`
+  );
+}
+
 export function renderToolPills(msg: DisplayMessage): string {
   if (!msg.toolPills || msg.toolPills.length === 0) return '';
   const allDone = msg.toolPills.every((p) => p.status === 'done');
@@ -1840,6 +1900,7 @@ function renderMessages(rootEl: HTMLElement): void {
         }
       }
       const pills = renderToolPills(m);
+      const providerBadge = renderProviderBadge(m);
       const actions = renderMessageActions(m);
       /* v13.3.48 — Follow-up chips uniquement sur DERNIER message assistant terminé */
       let followUps = '';
@@ -1851,7 +1912,7 @@ function renderMessages(rootEl: HTMLElement): void {
       const md = m.streaming ? renderMarkdownLight(m.text) : renderMarkdownEnriched(m.text);
       return `
         <div class="ax-msg ax-msg-${m.role} ax-modernized-msg ax-slide-up-fade" data-msg-id="${m.id}">
-          <div class="ax-msg-body">${pills}${md}${trail}${actions}${followUps}</div>
+          <div class="ax-msg-body">${pills}${md}${trail}${providerBadge}${actions}${followUps}</div>
         </div>
       `;
     })
@@ -2157,6 +2218,7 @@ export function render(rootEl: HTMLElement): void {
       <header class="ax-chat-header">
         <h1 id="ax-chat-logo" title="Long-press 3s pour Diagnostic admin" style="cursor:pointer;-webkit-tap-highlight-color:transparent">APEX</h1>
         <div style="display:flex;gap:4px;align-items:center">
+          <button class="ax-btn ax-btn-icon" id="ax-chat-mode-toggle" aria-label="Mode routing IA" title="Mode routing IA (clic pour basculer auto/eco/premium)" style="font-size:14px;min-width:36px;padding:4px 6px">⚡</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-clear" aria-label="Effacer chat" title="Effacer le chat (conversation courante)">🗑</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-menu" aria-label="Menu" title="Menu">☰</button>
         </div>
@@ -3198,6 +3260,52 @@ export function render(rootEl: HTMLElement): void {
     logoEl.addEventListener('touchend', cancelPress);
     logoEl.addEventListener('touchcancel', cancelPress);
   }
+
+  /* v13.4.273 (Kevin "Revois l'utilisation des différentes ia que tout soit
+   * bien en place avec eco token") : toggle 1-tap mode routing IA depuis le
+   * header chat. Cycle auto → economy → premium → auto. Toast indique le
+   * nouveau mode + icône bouton change pour refléter l'état courant. */
+  const modeToggleBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-mode-toggle');
+  const MODE_ICONS: Record<string, string> = { auto: '⚡', economy: '💚', premium: '👑', forced: '🎯' };
+  const MODE_LABELS: Record<string, string> = {
+    auto: 'Auto (intelligent, free fallback si budget)',
+    economy: 'Économie (gratuit d\'abord — haiku, max_tokens /2)',
+    premium: 'Premium (Anthropic Opus toujours)',
+    forced: 'Forced (provider admin override)',
+  };
+  /* Set icon initial selon mode persisté */
+  void (async () => {
+    try {
+      const { aiRoutingPolicy } = await import('../../services/ai/ai-routing-policy.js');
+      const m = aiRoutingPolicy.getMode();
+      if (modeToggleBtn) {
+        modeToggleBtn.textContent = MODE_ICONS[m] ?? '⚡';
+        modeToggleBtn.setAttribute('title', `Mode IA : ${MODE_LABELS[m] ?? m} — clic pour basculer`);
+      }
+    } catch { /* ignore */ }
+  })();
+  modeToggleBtn?.addEventListener('click', () => {
+    haptic.tap();
+    void (async () => {
+      try {
+        const { aiRoutingPolicy } = await import('../../services/ai/ai-routing-policy.js');
+        const current = aiRoutingPolicy.getMode();
+        /* Cycle : auto → economy → premium → auto (skip forced, admin-only) */
+        const next: 'auto' | 'economy' | 'premium' =
+          current === 'auto' ? 'economy' : current === 'economy' ? 'premium' : 'auto';
+        aiRoutingPolicy.setMode(next);
+        if (modeToggleBtn) {
+          modeToggleBtn.textContent = MODE_ICONS[next] ?? '⚡';
+          modeToggleBtn.setAttribute('title', `Mode IA : ${MODE_LABELS[next]} — clic pour basculer`);
+        }
+        toast.success(`${MODE_ICONS[next]} Mode IA : ${MODE_LABELS[next]}`);
+        haptic.success();
+      } catch (err: unknown) {
+        logger.warn('chat', 'mode-toggle failed', { err });
+        toast.error('Impossible de changer de mode');
+      }
+    })();
+  });
 
   /* Menu hamburger ☰ : drawer modal avec navigation rapide
    * Fix Kevin v13.0.40 "le bouton paramètres et les trois traits ne fonctionnent pas" */
