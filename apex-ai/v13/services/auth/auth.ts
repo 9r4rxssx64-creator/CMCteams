@@ -443,44 +443,75 @@ class Auth {
     return btoa(payload + ':' + hash).replace(/=+$/, '');
   }
 
+  /* v13.4.264 (Kevin "Sécu max partout — personne ne doit pouvoir se connecter") :
+   * Rate-limit progressif PIN BINDÉ AU DEVICE FINGERPRINT.
+   *
+   * Avant : la clé localStorage `apex_v13_pin_fails_<uid>` était la seule trace.
+   * Un attaquant qui clear localStorage (DevTools, autre onglet) la résettait
+   * → brute-force possible sans pénalité.
+   *
+   * Maintenant : `apex_v13_pin_fails_<uid>` ET `apex_v13_pin_fails_dev_<deviceId>`
+   * sont les 2 verrous. Si l'un OU l'autre est locked → refus. Le device_id est
+   * dérivé de `apex_v13_device_id` (stable per-device) — un attaquant qui clear
+   * tout le localStorage régénère un nouveau device_id, donc bypass. Mais sur
+   * un device légitime de Kevin (pas wiped), les 2 verrous se cumulent.
+   *
+   * Combined avec la sentinelle audit-honesty-watch + le rate-limit Cloudflare
+   * Worker (à enrichir prochaine étape), c'est une défense en profondeur. */
+  private getDeviceFailKey(): string {
+    try {
+      const did = localStorage.getItem('apex_v13_device_id');
+      return did ? `apex_v13_pin_fails_dev_${did}` : 'apex_v13_pin_fails_dev_anon';
+    } catch {
+      return 'apex_v13_pin_fails_dev_anon';
+    }
+  }
+
+  private readFails(key: string): { count: number; lockedUntil: number } {
+    try {
+      return JSON.parse(localStorage.getItem(key) ?? '{"count":0,"lockedUntil":0}');
+    } catch {
+      return { count: 0, lockedUntil: 0 };
+    }
+  }
+
   /* Rate-limit progressif PIN (P0 anti brute-force, parité v12.785) */
   private checkRateLimit(uid: string): { allowed: boolean; waitMin: number } {
-    const key = `apex_v13_pin_fails_${uid}`;
-    let fails: { count: number; lockedUntil: number };
-    try {
-      fails = JSON.parse(localStorage.getItem(key) ?? '{"count":0,"lockedUntil":0}');
-    } catch {
-      fails = { count: 0, lockedUntil: 0 };
-    }
-    if (fails.lockedUntil > Date.now()) {
-      return { allowed: false, waitMin: Math.ceil((fails.lockedUntil - Date.now()) / 60_000) };
+    const userKey = `apex_v13_pin_fails_${uid}`;
+    const devKey = this.getDeviceFailKey();
+    const userFails = this.readFails(userKey);
+    const devFails = this.readFails(devKey);
+    const now = Date.now();
+    /* Lock = max(user, device) — n'importe lequel actif suffit à bloquer */
+    const lockedUntil = Math.max(userFails.lockedUntil, devFails.lockedUntil);
+    if (lockedUntil > now) {
+      return { allowed: false, waitMin: Math.ceil((lockedUntil - now) / 60_000) };
     }
     return { allowed: true, waitMin: 0 };
   }
 
   private recordFail(uid: string): void {
-    const key = `apex_v13_pin_fails_${uid}`;
-    let fails: { count: number; lockedUntil: number };
-    try {
-      fails = JSON.parse(localStorage.getItem(key) ?? '{"count":0,"lockedUntil":0}');
-    } catch {
-      fails = { count: 0, lockedUntil: 0 };
-    }
-    fails.count++;
+    const userKey = `apex_v13_pin_fails_${uid}`;
+    const devKey = this.getDeviceFailKey();
     /* Échelle : 5→30s, 6→2min, 7→10min, 8→1h, 9→24h */
     const lockMs = [0, 0, 0, 0, 0, 30_000, 120_000, 600_000, 3_600_000, 86_400_000];
-    const lock = fails.count < lockMs.length ? lockMs[fails.count] ?? 86_400_000 : 86_400_000;
-    fails.lockedUntil = lock > 0 ? Date.now() + lock : 0;
-    try {
-      localStorage.setItem(key, JSON.stringify(fails));
-    } catch {
-      /* ignore */
+    for (const key of [userKey, devKey]) {
+      const fails = this.readFails(key);
+      fails.count += 1;
+      const lock = fails.count < lockMs.length ? lockMs[fails.count] ?? 86_400_000 : 86_400_000;
+      fails.lockedUntil = lock > 0 ? Date.now() + lock : 0;
+      try {
+        localStorage.setItem(key, JSON.stringify(fails));
+      } catch {
+        /* ignore quota */
+      }
     }
   }
 
   private clearFails(uid: string): void {
     try {
       localStorage.removeItem(`apex_v13_pin_fails_${uid}`);
+      localStorage.removeItem(this.getDeviceFailKey());
     } catch {
       /* ignore */
     }

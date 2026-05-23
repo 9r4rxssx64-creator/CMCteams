@@ -1,6 +1,76 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-23 (Apex v13.4.263 / CMC v9.732).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-23 (Apex v13.4.264 / CMC v9.732).
+
+---
+
+## 🛡 RÈGLE ABSOLUE — SÉCURITÉ MAXIMALE PARTOUT, TOUS PROJETS (Kevin 2026-05-23, ABSOLUE)
+
+> **"Le niveau secu doit être poussé sur tous les projet pareil. Maximal. Personne ne doit pouvoir se connecter ou modifier etc mes app, code etc"** — Kevin 2026-05-23
+
+**Règle absolue, NON-NÉGOCIABLE, PRIORITAIRE SUR TOUT** — Apex v13, Apex Chat, CMCteams, e-KDMC, Télécommande, CrackPass, tous projets actuels et futurs.
+
+### Principe : verrouillage total
+
+- ❌ Personne d'inconnu ne se connecte (login restrict whitelist + anti-énumération)
+- ❌ Personne ne modifie le code (Kevin seul collaborateur + commits signés + tests CI bloquants)
+- ❌ Personne ne lit/écrit les données utilisateurs sans auth (Firebase rules `auth.uid` strict)
+- ❌ Personne ne contourne le PIN (rate-limit progressif + device fingerprint + WebAuthn pour critiques)
+- ❌ Personne n'exfiltre les secrets (Vault AES-GCM 256, jamais en clair, redaction logs)
+- ✅ Users connus + device trusté = accès fluide (cf règle « Reconnu auto après 1ère connexion »)
+
+### Composants obligatoires dans chaque projet
+
+| Surface | Exigence MAX |
+|---|---|
+| **Login** | Whitelist users connus + rate-limit progressif (5→30s, 6→2min, 7→10min, 8→1h, 9→24h) + rate-limit **device-fingerprint-bound** (pas de bypass via clear localStorage) + anti-énumération (PBKDF2 constant-time même pour user inconnu) |
+| **Firebase rules** | `auth.uid` requis pour read/write per-user paths. Path admin = `auth.token.role === 'admin'`. Validation schéma sur chaque clé. `.read/.write: true` global = INTERDIT |
+| **Workers Cloudflare** | Header auth (`x-apex-pin` SHA-256 ou JWT). Rate-limit par IP + par fingerprint. CORS strict allowlist. |
+| **Vault** | AES-GCM 256 + PBKDF2 200k iterations. Jamais plaintext localStorage. Redaction automatique dans logs/audit/telemetry |
+| **CSP** | `default-src 'self'`. Nonce required pour script-src. Pas de `unsafe-inline`/`unsafe-eval` sauf justifié. |
+| **GitHub repo** | Kevin = seul collaborateur. CODEOWNERS pour fichiers critiques. Workflow security-audit.yml sur chaque push (gitleaks + dependency-check + secret-scanner) |
+| **Logs / Audit** | Redaction PII + tokens avant tout write. Chain hash audit log (tamper detection). Pas de logs Firebase d'erreurs contenant secrets |
+| **Admin actions** | Guards stricts `isAdmin` + double-confirm modale + audit log immutable + push notif Kevin si action niveau C |
+
+### Anti-patterns interdits absolus
+
+- ❌ Firebase rules `.read: true` ou `.write: true` global (sauf path public assumé)
+- ❌ Secret en clair dans localStorage (`ax_*_key` doit être chiffré AES-GCM)
+- ❌ Rate-limit localStorage seul (bypass via clear cache)
+- ❌ PIN admin partagé avec PIN per-user (cf erreur #37 : `ax_pin` réservé admin, `ax_pin_<uid>` per-user)
+- ❌ Logs contenant tokens/credentials sans `axRedactOutbound`
+- ❌ Workflow CI qui contourne pre-commit (`--no-verify`)
+- ❌ Branch claude/* qui push direct sur main (toujours via auto-merge ou PR)
+- ❌ CSP `unsafe-inline` non justifiée (utiliser nonce)
+
+### Test mental obligatoire avant chaque release projet
+
+> *"Si un attaquant compromet un device Kevin (vol iPhone, attaque XSS), combien
+> peut-il faire de dégâts AVANT que le rate-limit / fingerprint / device-trust /
+> revoke ne le coupent ? Si attaquant compromet repo (token GitHub volé), peut-il
+> push du code malveillant en prod ? Si attaquant scrappe Firebase URL, peut-il
+> lire toutes les données ?"*
+
+Si réponse à 1+ question = "oui, énormément" → durcir AVANT push.
+
+### Audit sécu permanent
+
+Sentinelle `security-audit-watch` (1×/jour minimum) qui :
+- Scanne localStorage pour secrets plaintext
+- Vérifie Firebase rules en production matchent celles du repo (`firebase-rules-apex.json` / `firebase-rules.json`)
+- Pings workers Cloudflare avec/sans header pour confirmer auth gates
+- Audit log diff (tamper detection)
+- Liste tentatives login échouées (anomaly detection)
+- Escalade Claude Code via `ax_claude_todo` si finding critique
+
+### État actuel (audit 2026-05-23) et priorités
+
+| Projet | État global | À durcir |
+|---|---|---|
+| **Apex v13** | 🟢 Vault AES-GCM + PIN PBKDF2 200k + Firebase Phase 5 rules + Worker proxy SHA-256 auth | Rate-limit device-fingerprint-bound (v13.4.264) |
+| **CMCteams** | 🟡 PIN admin SHA + audit log | Firebase rules `.read/.write: true` à durcir — **audit dédié à prévoir** (peut casser prod si mal fait) |
+| **Apex Chat** | 🟢 E2E session + magic-link auth + workers JWT | OK |
+| **GitHub repo** | 🟢 Kevin seul collaborateur | CODEOWNERS ajouté v13.4.264 |
 
 ---
 
