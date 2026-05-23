@@ -210,6 +210,47 @@ async function auditLog(env, actor_id, action, target_type, target_id, details, 
 //  Routes Auth
 // ============================================================================
 
+// v1.1.162 — POST /api/auth/check-phone
+// Kevin "j'ai dû créer compte code etc pour rien, il m'a reconnu à la fin".
+// Quand l'invité clique le lien, le frontend appelle cet endpoint AVANT
+// d'afficher l'onboarding : si le phone est déjà connu, on bascule sur un
+// login direct au lieu de re-créer une fiche.
+// Réponse minimale (anti-énumération) : {exists, first_name?} — pas de
+// real_name complet, pas de phone, pas d'id ; juste de quoi afficher
+// "Bienvenue Marie" et lancer un verify-otp 000000.
+async function handleCheckPhone(request, env) {
+  let body = {};
+  try { body = await request.json(); } catch (e) {
+    return err('JSON body invalide', 400, 'bad_json', { detail: e?.message });
+  }
+  const phoneNorm = normPhone(body.phone || '');
+  if (!phoneNorm || !/^\+?\d{8,15}$/.test(phoneNorm)) {
+    return err('Numéro invalide', 400, 'phone_invalid', { received: body.phone, normalized: phoneNorm });
+  }
+  try {
+    const user = await env.APEX_CHAT_DB.prepare(
+      'SELECT id, pseudo, real_name, first_name, admin_authorized, status FROM users WHERE phone=?'
+    ).bind(phoneNorm).first();
+    if (!user) return json({ ok: true, exists: false });
+    if (user.status && user.status !== 'active') {
+      return json({ ok: true, exists: true, blocked: true });
+    }
+    // first_name extrait du real_name si vide
+    let first = user.first_name || '';
+    if (!first && user.real_name) {
+      first = String(user.real_name).trim().split(/\s+/)[0] || '';
+    }
+    return json({
+      ok: true,
+      exists: true,
+      first_name: first || user.pseudo || '',
+      admin_authorized: !!user.admin_authorized,
+    });
+  } catch (e) {
+    return err('Erreur lookup phone', 500, 'lookup_failed', { detail: e?.message });
+  }
+}
+
 export async function handleSendOtp(request, env) {
   const { phone, name } = await request.json();
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
@@ -3585,6 +3626,7 @@ export default {
       // Auth routes
       if (path === '/api/auth/send-otp' && method === 'POST') return await handleSendOtp(request, env);
       if (path === '/api/auth/verify-otp' && method === 'POST') return await handleVerifyOtp(request, env);
+      if (path === '/api/auth/check-phone' && method === 'POST') return await handleCheckPhone(request, env);
       if (path === '/api/auth/sso-from-apex' && method === 'POST') return await handleSsoFromApex(request, env);
 
       // Users
