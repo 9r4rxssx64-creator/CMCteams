@@ -910,6 +910,41 @@ async function handleUploadMyAvatar(request, env) {
   }
 }
 
+// v1.1.169 — POST /api/admin/user-toggles
+// Per-user feature toggle. Frontend (K._userToggleCycle) appelait cet
+// endpoint depuis v1.1.152 mais il n'existait pas → .catch(()=>{}) masquait
+// silencieusement → toggles per-user JAMAIS persistés serveur.
+// Schéma : table system_config(key,value) → key="user_toggle:{uid}:{feature}"
+async function handleAdminSetUserToggle(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  // Admin OR user soi-même (chacun peut changer ses propres toggles)
+  let body = {};
+  try { body = await request.json(); } catch (e) {
+    return err('JSON body invalide', 400, 'bad_json', { detail: e?.message });
+  }
+  const targetUid = String(body.uid || auth.sub).slice(0, 64);
+  const feature = String(body.feature || '').slice(0, 64);
+  const value = body.value;
+  if (!feature) return err('feature requis', 400, 'feature_missing');
+  if (targetUid !== auth.sub) {
+    // Modifie un autre user → admin obligatoire
+    const u = await env.APEX_CHAT_DB.prepare('SELECT is_admin FROM users WHERE id=?').bind(auth.sub).first();
+    if (!u || !u.is_admin) return err('Admin requis pour modifier un autre user', 403, 'forbidden_other');
+  }
+  try {
+    const key = `user_toggle:${targetUid}:${feature}`;
+    await env.APEX_CHAT_DB.prepare(
+      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
+    ).bind(key, JSON.stringify(value)).run();
+    return json({ ok: true, uid: targetUid, feature, value });
+  } catch (e) {
+    return err('Échec save toggle', 500, 'db_write_failed', {
+      detail: e?.message, where: (e?.stack || '').split('\n')[1] || '',
+    });
+  }
+}
+
 async function handleAdminGetFullUser(pseudo, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
@@ -3796,6 +3831,7 @@ export default {
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
       if (path === '/api/users/me' && method === 'PATCH') return await handleUpdateMe(request, env);
       if (path === '/api/users/me/avatar' && method === 'POST') return await handleUploadMyAvatar(request, env);
+      if (path === '/api/admin/user-toggles' && method === 'POST') return await handleAdminSetUserToggle(request, env);
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
       if (path === '/api/cgu/accept' && method === 'POST') return await handleCguAccept(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
