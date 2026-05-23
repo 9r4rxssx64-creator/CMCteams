@@ -5363,7 +5363,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.732";
+var APP_VER="v9.734";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35189,6 +35189,9 @@ function _cmcDetectTeamsByRestPattern(iy,im){
   }catch(e){console.warn("[v9.650 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
 }
 
+// v9.733 RESCUE PASS retiré v9.734 (Kevin règle absolue "aucune invention,
+// reproduction exacte"). Voir _postValidateImport pour l'enregistrement.
+
 function _postValidateImport(iy,im,okCount,errCount,errLines){
   try{
     var key=iy+"-"+im;
@@ -35210,6 +35213,11 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     // v9.648 — Détection auto équipes par pattern RH (filet de sécurité hybride :
     // SKIP les emps ayant déjà teamHistory[key] → complète seulement les non-couverts)
     try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
+    // v9.734 (Kevin 2026-05-23 "Aucune invention. Reproduction exacte de l'import") :
+    // Le RESCUE PASS v9.733 (assignation par signature similaire) a été RETIRÉ.
+    // Inférer une équipe à partir d'autres emps de signature similaire = INVENTION.
+    // Les emps sans assignation explicite dans le PDF source restent sans équipe
+    // → visibles dans section "❔ Pas de planning ce mois" (v9.647).
     var totalActive=A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length;
     if(totalActive===0)return;
     var withCodes=Object.keys(ov).filter(function(eid){
