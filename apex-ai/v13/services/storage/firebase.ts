@@ -250,6 +250,12 @@ class Firebase {
       .catch((err: unknown) => {
         logger.debug('firebase', 'vault-fb-backup auto-restore skipped', { err });
       });
+    /* v13.4.268 (Kevin "Donnée perso vide") : restore aussi les clés data
+     * (persistent_memory, facts, lessons, kb, audit, links_registry) que
+     * restoreVaultKeysFromFirebase ne couvre pas. Best-effort, idempotent. */
+    void this.restoreDataKeysFromFirebase().catch((err: unknown) => {
+      logger.debug('firebase', 'data-keys restore skipped', { err });
+    });
   }
 
   isConnected(): boolean {
@@ -537,6 +543,65 @@ class Firebase {
     if (restored > 0) {
       logger.info('firebase', `🔄 ${restored} clés API restorées depuis Firebase backup (skipped: ${skipped})`);
     }
+  }
+
+  /**
+   * v13.4.268 (Kevin "Donnée perso vide") :
+   * Restore les clés DATA (persistent_memory, facts, lessons, kb, audit…)
+   * depuis Firebase quand local + IDB sont vides. Complète restoreVaultKeysFromFirebase
+   * qui ne couvre QUE les *_key/*_token. Sans cette méthode, le Dashboard Personnel
+   * (apex_v13_persistent_memory + apex_v13_facts + apex_v13_lessons) reste vide tant
+   * que le SSE ne pousse rien — et le SSE ne s'abonne pas à la valeur "current",
+   * uniquement aux changements à venir.
+   *
+   * Stratégie : pour chaque clé FB_FIX qui n'est PAS un vault key (suffix _key/_token),
+   * si absent en localStorage ET Firebase a une valeur → écrire local.
+   * Idempotent : skip si déjà présent local.
+   */
+  async restoreDataKeysFromFirebase(): Promise<{ restored: number; skipped: number; details: string[] }> {
+    const DATA_KEYS = FB_FIX.filter((k) => !(k.endsWith('_key') || k.endsWith('_token')));
+    const result = { restored: 0, skipped: 0, details: [] as string[] };
+    if (!this.connected) {
+      logger.debug('firebase', 'restoreDataKeysFromFirebase skipped (offline)');
+      return result;
+    }
+    for (const key of DATA_KEYS) {
+      try {
+        /* Déjà présent local → skip (anti-écrasement) */
+        const existing = localStorage.getItem(key);
+        if (existing && existing.length > 2) {
+          result.skipped += 1;
+          continue;
+        }
+        const url = `${this.url}/apex/${key}.json`;
+        const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        if (!r.ok) {
+          result.skipped += 1;
+          continue;
+        }
+        const value = await r.json() as unknown;
+        if (value === null || value === undefined) {
+          result.skipped += 1;
+          continue;
+        }
+        try {
+          localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+          result.restored += 1;
+          result.details.push(key);
+        } catch (err: unknown) {
+          logger.warn('firebase', `restoreDataKeysFromFirebase persist failed for ${key}`, { err });
+        }
+      } catch {
+        /* skip */
+      }
+    }
+    if (result.restored > 0) {
+      logger.info(
+        'firebase',
+        `📦 ${result.restored} données restaurées depuis Firebase : ${result.details.join(', ')}`,
+      );
+    }
+    return result;
   }
 
   shouldSync(key: string): boolean {

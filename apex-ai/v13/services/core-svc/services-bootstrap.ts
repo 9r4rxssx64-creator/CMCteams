@@ -465,6 +465,19 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       } catch (err: unknown) {
         logger.warn('vault-lifecycle', 'dedupAuto failed (non-blocking)', { err });
       }
+      /* v13.4.268 (Kevin "Automatisé tout dans apex et fais le tri dans les
+       * boutons inutiles") : auto-maintenance silencieuse au boot.
+       *   1. Migration legacy flat → coffre central (si > 3 orphelines)
+       *   2. Repair services mal nommés (cloudflare_global → cloudflare)
+       *   3. Push Firebase backup (si connecté et drift détecté)
+       * Throttle 1/h. Toast info seulement si action effectivement faite.
+       * Remplace les 3 boutons Coffre 🔁 Migrer / ♻️ Réparer / 📤 Push. */
+      try {
+        const { vaultAutoMaintenance } = await import('../admin/vault-auto-maintenance.js');
+        await vaultAutoMaintenance.run();
+      } catch (err: unknown) {
+        logger.warn('vault-lifecycle', 'auto-maintenance failed (non-blocking)', { err });
+      }
     }),
 
     /* v13.3.79 (Kevin 2026-05-08 ABSOLUE) — Auto-restore credentials.
