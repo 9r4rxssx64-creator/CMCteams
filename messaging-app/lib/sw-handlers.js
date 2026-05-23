@@ -177,23 +177,26 @@ export async function handlePush(event, { registration }) {
     // Payload non-JSON ou absent → fallback default ci-dessus
   }
 
+  // v1.1.150 : actions différenciées appel vs message + vibration urgent
+  const isCall = data.payload?.type === 'call';
+  const defaultActions = data.payload?.convId
+    ? [{ action: 'reply', title: '💬 Répondre' }, { action: 'mark_read', title: '✅ Vu' }]
+    : [{ action: 'open', title: 'Ouvrir' }, { action: 'dismiss', title: 'Plus tard' }];
+  const callActions = [
+    { action: 'answer_call', title: '✅ Répondre' },
+    { action: 'reject_call', title: '❌ Refuser' }
+  ];
   return registration.showNotification(data.title, {
     body: data.body,
     icon: data.icon || './manifest.json',
     badge: data.badge || './manifest.json',
     tag: data.tag || 'apex-chat',
     renotify: !!data.renotify,
-    requireInteraction: !!data.urgent,
+    requireInteraction: !!(data.urgent || isCall),
+    silent: false,
     data: data.payload || {},
-    /* v1.1.87 — Quick reply actions if convId présent */
-    actions: data.actions || (data.payload?.convId ? [
-      { action: 'reply', title: '💬 Répondre' },
-      { action: 'mark_read', title: '✅ Vu' },
-    ] : [
-      { action: 'open', title: 'Ouvrir' },
-      { action: 'dismiss', title: 'Plus tard' },
-    ]),
-    vibrate: [100, 50, 100],
+    actions: data.actions || (isCall ? callActions : defaultActions),
+    vibrate: isCall ? [200, 100, 200, 100, 200] : [100, 50, 100],
   });
 }
 
@@ -203,6 +206,8 @@ export async function handlePush(event, { registration }) {
 export async function handleNotificationClick(event, { clients }) {
   event.notification.close();
   if (event.action === 'dismiss') return null;
+  const isCall = event.notification.data?.type === 'call';
+
   /* v1.1.87 — mark_read : juste fermer (server-side prochaine read receipt) */
   if (event.action === 'mark_read') {
     const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
@@ -211,6 +216,38 @@ export async function handleNotificationClick(event, { clients }) {
         client.postMessage({ type: 'mark-conv-read', convId: event.notification.data.convId });
         return client;
       }
+    }
+    return null;
+  }
+
+  // v1.1.150 : actions d'appel — répondre OUVRE la conv et démarre l'app de
+  // réponse ; refuser envoie un call-busy au caller via WS.
+  if (event.action === 'reject_call' && event.notification.data?.convId) {
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of list) {
+      if (client.url.includes('/messaging-app/')) {
+        client.postMessage({ type: 'call-reject', convId: event.notification.data.convId });
+        return client;
+      }
+    }
+    return null;
+  }
+  if ((event.action === 'answer_call' || isCall) && event.notification.data?.convId) {
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of list) {
+      if (client.url.includes('/messaging-app/')) {
+        client.focus();
+        client.postMessage({
+          type: 'call-answer',
+          convId: event.notification.data.convId,
+          callType: event.notification.data.callType || 'audio',
+          callerName: event.notification.data.callerName || ''
+        });
+        return client;
+      }
+    }
+    if (clients.openWindow) {
+      return clients.openWindow('./?call=' + encodeURIComponent(event.notification.data.convId));
     }
     return null;
   }

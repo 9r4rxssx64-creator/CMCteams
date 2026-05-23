@@ -3637,10 +3637,12 @@ export async function sendPushToUser(userId, payload, env) {
     'SELECT endpoint, vapid_p256dh, vapid_auth, fcm_token, apns_token FROM push_subscriptions WHERE user_id=? AND last_seen > ?'
   ).bind(userId, Date.now() - 30 * 86400000).all();
 
+  // v1.1.150 : URL push-worker configurable (avant : sous-domaine "desarzens-kevin"
+  // hardcodé incorrect → 100% des pushs perdus). Default = subdomain Kevin.
+  const pushBase = env.APEX_PUSH_WORKER_URL || 'https://apex-push-worker.9r4rxssx64.workers.dev';
   for (const sub of (subs.results || [])) {
     if (sub.endpoint && sub.vapid_p256dh) {
-      // Web Push
-      fetch('https://apex-push-worker.desarzens-kevin.workers.dev/web-push', {
+      fetch(pushBase + '/web-push', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3650,7 +3652,7 @@ export async function sendPushToUser(userId, payload, env) {
           subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } },
           payload
         })
-      }).catch(() => {});
+      }).catch((e) => console.warn('[sendPushToUser] web-push fetch failed:', e && e.message));
     }
   }
 }

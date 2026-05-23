@@ -99,6 +99,9 @@ KEVIN_INVISIBLE_ADMIN = "true"
 AUTH_PROVIDER = "firebase"  # firebase | vonage
 TURN_PROVIDER = "p2p-only"  # p2p-only | local-coturn | cloudflare-calls
 JWT_ISSUER = "apex-chat"
+# v1.1.150 : URL du push-worker (Web Push VAPID). Le sous-domaine d'origine
+# (desarzens-kevin) était faux → tous les pushs partaient dans le vide.
+APEX_PUSH_WORKER_URL = "https://apex-push-worker.9r4rxssx64.workers.dev"
 
 # Secrets (à définir via wrangler secret put) :
 #   - JWT_SIGN_KEY            : HS256 secret pour JWT
