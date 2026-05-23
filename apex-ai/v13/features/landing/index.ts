@@ -52,8 +52,27 @@ async function tryAutoLogin(): Promise<boolean> {
   try {
     const lastUid = localStorage.getItem('apex_v13_last_known_uid');
     const lastName = localStorage.getItem('apex_v13_last_known_name');
-    const deviceTrusted = localStorage.getItem('apex_v13_device_trusted_v1');
-    if (!lastUid || !lastName || !deviceTrusted) return false;
+    let deviceTrusted = localStorage.getItem('apex_v13_device_trusted_v1');
+    if (!lastUid || !lastName) return false;
+    /* v13.4.262 (Kevin "Il doit garder mon pin en mémoire") :
+     * AUTO-RECOVERY trust device. Si l'admin a déjà un PIN configuré ET un
+     * last_known_uid/name (preuve qu'il s'est déjà loggé OK auparavant) MAIS
+     * que le trust device est absent (race condition d'un ancien login fire-
+     * and-forget, ou clear localStorage partiel) → on set le trust silenc-
+     * ieusement maintenant. Sécurité : limité au cas admin Kevin avec PIN
+     * déjà persisté, donc le seul effet est d'éviter de redemander le PIN
+     * à quelqu'un qui l'a déjà validé au moins une fois sur ce device. */
+    if (!deviceTrusted && lastUid === 'kdmc_admin' && localStorage.getItem('apex_v13_pin')) {
+      try {
+        const { deviceContext } = await import('../../services/integrations/device-context.js');
+        const fp = await deviceContext.getFingerprint();
+        localStorage.setItem('apex_v13_device_trusted_v1', fp.device_id);
+        deviceTrusted = fp.device_id;
+      } catch {
+        /* device-context indispo → on tombera sur le retour false plus bas */
+      }
+    }
+    if (!deviceTrusted) return false;
     /* Device fingerprint check */
     const { deviceContext } = await import('../../services/integrations/device-context.js');
     const fp = await deviceContext.getFingerprint();
