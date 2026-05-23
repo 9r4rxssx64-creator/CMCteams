@@ -627,8 +627,12 @@ export function render(rootEl: HTMLElement): void {
       <section style="margin-top:14px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px">
         <h3 style="margin:0 0 8px;color:var(--ax-gold);font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">📊 Diagnostic</h3>
         <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">Si « pas de mémoire coffre » ou « problème Cloudflare » → lance ce diag pour voir l'état exact de chaque couche (local, Firebase backup, Cloudflare proxy).</p>
-        <button id="ax-vault-diag-btn" type="button"
-          style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
+        <div class="ax-gs-7">
+          <button id="ax-vault-diag-btn" type="button"
+            style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
+          <button id="ax-vault-push-all-btn" type="button"
+            style="padding:10px 16px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📤 Push toutes mes clés vers Firebase backup</button>
+        </div>
         <div id="ax-vault-diag-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.85)"></div>
       </section>
 
@@ -948,6 +952,63 @@ function attachHandlers(rootEl: HTMLElement): void {
           result.append(errBox);
         }
         toast.error('Diagnostic impossible');
+        haptic.error();
+      }
+    })();
+  });
+
+  /* v13.4.265 Kevin "Firebase RECONNECTING + 0 backup" : bouton 1-clic qui
+   * pousse TOUTES les clés vault locales (préfixes ax_ + apex_v13_) vers
+   * `vault_backup/<uid>/<key>` Firebase. Réutilise pushAllLocal() existant.
+   * Idempotent : skip throttle 5min par clé, mais avec force:true on bypass. */
+  const pushAllBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-push-all-btn');
+  if (pushAllBtn && activeVaultScope) activeVaultScope.bind(pushAllBtn, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-diag-result');
+      if (result) result.textContent = '⏳ Push de toutes les clés chiffrées vers Firebase backup…';
+      try {
+        const { vaultFirebaseBackup } = await import('../../services/vault/vault-firebase-backup.js');
+        const r = await vaultFirebaseBackup.pushAllLocal();
+        if (!result) return;
+        result.textContent = '';
+        const box = document.createElement('div');
+        box.style.cssText = 'padding:10px;background:rgba(34,204,119,.1);color:var(--ax-green);border:1px solid rgba(34,204,119,0.25);border-radius:8px;font-size:12px;line-height:1.5';
+        const line1 = document.createElement('div');
+        line1.style.cssText = 'font-weight:700;margin-bottom:4px';
+        line1.textContent = `📤 ${r.pushed} clé(s) backupées · ${r.failed} échec(s) · ${r.skipped} ignorées`;
+        box.append(line1);
+        if (r.failed > 0) {
+          const hint = document.createElement('div');
+          hint.style.cssText = 'opacity:0.85;color:var(--ax-gold)';
+          hint.textContent = 'Échecs probables : Firebase hors-ligne (RECONNECTING). Relance ce push quand le diag affiche Firebase 🟢 CONNECTED.';
+          box.append(hint);
+        } else if (r.pushed === 0 && r.skipped > 0) {
+          const hint = document.createElement('div');
+          hint.style.cssText = 'opacity:0.85';
+          hint.textContent = `${r.skipped} clé(s) déjà backupées récemment (throttle 5 min) — rien à faire.`;
+          box.append(hint);
+        }
+        result.append(box);
+        if (r.pushed > 0) {
+          toast.success(`📤 ${r.pushed} clés backupées vers Firebase`);
+          haptic.success();
+        } else if (r.failed > 0) {
+          toast.error(`${r.failed} échec(s) — Firebase hors-ligne ?`);
+          haptic.error();
+        } else {
+          toast.info('Rien à push (tout est déjà à jour ou throttle)');
+        }
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'pushAll failed', { err });
+        if (result) {
+          result.textContent = '';
+          const errBox = document.createElement('div');
+          errBox.style.cssText = 'padding:8px;background:rgba(255,91,91,0.1);color:#ff8b8b;border-radius:8px';
+          errBox.textContent = '⚠ Push échoué : ' + String(err).slice(0, 160);
+          result.append(errBox);
+        }
+        toast.error('Push impossible');
         haptic.error();
       }
     })();
