@@ -5375,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.735";
+var APP_VER="v9.736";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -26181,7 +26181,14 @@ function cmcExportTeamsDetectionDiag(){
       var cycle=_calcCycle(rhDays);
       var offset=cycle?(rhDays[0]-1)%cycle:null;
       var firstWork=_firstWork(r);
-      var firstWorkNorm=firstWork?firstWork.replace(/c$/i,""):null;
+      // v9.736 (Kevin 2026-05-23 diag "équipes à 1-2") : aligner la normalisation
+      // du diag sur celle de l'algo réel (_cmcDetectTeamsByRestPattern l. 35071) :
+      // strip suffixes c/'/'/* en fin. Avant : seul `c` était strippé → diag
+      // montrait `6:2:16/3` (13) + `6:2:16/3*` (8) + `6:2:16/3"'` (2) comme
+      // 3 sigs distinctes alors que l'algo les groupe tous en `6:2:16/3` (23).
+      // Le diag faisait croire à Kevin que l'algo créait 3 équipes à 13/8/2,
+      // alors qu'en réalité il en crée 1 (split par famille ensuite).
+      var firstWorkNorm=firstWork?firstWork.replace(/[c'"*]+$/i,"")||firstWork:null;
       var sig=(cycle&&offset!=null&&firstWorkNorm)?(cycle+":"+offset+":"+firstWorkNorm):null;
       var skipReason=null;
       if((emp.family||"")==="cadres")skipReason="family=cadres (cadres exclus algo)";
