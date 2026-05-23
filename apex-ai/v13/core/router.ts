@@ -100,6 +100,15 @@ class Router {
     events.emit('route:change', { from: previous, to: target });
     store.set('view', target);
 
+    /* v13.4.269 (Kevin "vue remonte en haut quand je clique") :
+     * Scroll behavior intelligent :
+     *  - Nouvelle route (previous !== target) → scroll to top (standard SPA)
+     *  - Même route re-dispatch (previous === target) → préserve scroll
+     *    (cas : action user → render() → on ne veut pas que la vue saute)
+     */
+    const isSameRoute = previous === target && previous !== '';
+    const preservedScrollY = isSameRoute ? window.scrollY : 0;
+
     /* v13.3.74 UX fix — skeleton pendant lazy import (feature-list par défaut) */
     let disposeSkeleton: (() => void) | null = null;
     try {
@@ -109,6 +118,17 @@ class Router {
       const mod = await route.loader();
       /* render() est responsable de remplacer le skeleton via innerHTML */
       await mod.render(this.rootEl);
+      /* v13.4.269 : restore scroll dans un microtask (laisse DOM se settle).
+       * Si nouvelle route → preservedScrollY=0 → scroll top (comportement attendu).
+       * Si même route → preservedScrollY=last → vue reste à sa position. */
+      queueMicrotask(() => {
+        try {
+          window.scrollTo({ top: preservedScrollY, left: 0, behavior: 'instant' as ScrollBehavior });
+        } catch {
+          /* fallback non-supporté → scrollTo legacy */
+          window.scrollTo(0, preservedScrollY);
+        }
+      });
     } catch (err: unknown) {
       /* v13.4.79 (Kevin 2026-05-14 22:04 "Souci de chargement" iPhone PWA) :
        * "Importing a module script failed" = race condition iOS Safari SW
