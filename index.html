@@ -116,6 +116,18 @@
 }
 html{color-scheme:dark;overflow-x:hidden;overscroll-behavior-y:contain}
 body{overflow-x:hidden;max-width:100vw;overscroll-behavior-y:contain}
+/* v9.735 (Kevin 2026-05-23 "l'app saute, scintille — pendant import") :
+   Pendant un import, les multiples toasts + reflows + animations CSS infinite
+   (shimmer, pulseDot, floatUp, chipFloat, sttPulse, simPulse) provoquent un
+   scintillement visible sur iPhone Safari PWA. On gèle TOUTES les animations
+   et transitions pour la durée de l'import. Réactivées dès _importInProgress=false. */
+body.cmc-importing *,body.cmc-importing *::before,body.cmc-importing *::after{
+  animation-duration:0s !important;
+  animation-iteration-count:1 !important;
+  transition-duration:0s !important;
+}
+/* Le toast garde son fade-in court (250ms) — utile pour signaler la fin d'import */
+body.cmc-importing .toast{animation:none !important;transition:opacity .25s ease !important}
 /* v9.402 — Réduction du blur mobile (fluidité iOS 375px) */
 @media (max-width:480px){
   [style*="backdrop-filter"]{backdrop-filter:blur(4px)!important;-webkit-backdrop-filter:blur(4px)!important}
@@ -5363,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.734";
+var APP_VER="v9.735";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12485,7 +12497,7 @@ var _cmcAiWhitelist={"flushSync":function(){try{if(typeof flushSyncQueue==="func
 "refreshUI":function(){try{if(typeof dc==="function")dc();return"UI refreshed";}catch(e){return"err: "+e;}},
 "forceReloadEmployees":function(){try{if(typeof fbLoadAll==="function")fbLoadAll();if(typeof dc==="function")dc();return"employees reloaded from FB";}catch(e){return"err: "+e;}},
 "clearClientAnomalies":function(){try{var anom=lg("cmc_client_anomalies",[]);if(anom.length>200){anom=anom.slice(-200);ls("cmc_client_anomalies",anom);return"trimmed anomalies 200";}return"anomalies ok";}catch(e){return"err: "+e;}},
-"resetImportLock":function(){try{if(typeof _importInProgress!=="undefined")_importInProgress=false;return"import lock reset";}catch(e){return"err: "+e;}},
+"resetImportLock":function(){try{if(typeof _importInProgress!=="undefined")_importInProgress=false;try{document.body.classList.remove("cmc-importing");}catch(_){}return"import lock reset";}catch(e){return"err: "+e;}},
 "clearCadresDiag":function(){try{localStorage.removeItem("cmc_cadres_fallback_diag");return"cadres diag cleared";}catch(e){return"err: "+e;}},
 "escalateToClaudeCode":function(ctx,reason){try{var buf=lg("ax_claude_todo",[]);var entry={ts:Date.now(),apexVersion:"cmcteams@"+APP_VER,context:ctx||{src:"cmcteams-ai"},reason:reason||"CMCteams self-fix echec",severity:"normal",status:"pending",url:location.href,userId:(A.user&&A.user.id)||"?"};buf.push(entry);if(buf.length>100)buf=buf.slice(-100);ls("ax_claude_todo",buf);if(typeof fbWrite==="function")try{fbWrite("ax_claude_todo",buf);}catch(_){}return"escalated to Claude Code";}catch(e){return"err: "+e;}}};
 
@@ -37196,6 +37208,12 @@ function doImport(){
   _importSkipped=0;
   // v9.58 — Mode import : bufferise les fbWrite (évite N re-renders SSE + écrasement concurrent)
   _importInProgress=true;
+  // v9.735 (Kevin "L'app saute, scintille — pendant import") : gèle toutes les
+  // animations CSS infinite (shimmer, pulseDot, floatUp, etc.) pour la durée
+  // de l'import. Le scintille vient des reflows répétés combinés aux
+  // animations actives. Classe retirée dès la fin de l'import (lignes 39250,
+  // 39577, 39860 où _importInProgress=false).
+  try{if(typeof document!=="undefined")document.body.classList.add("cmc-importing");}catch(_){}
   try{
   // v9.623 (audit #3 archi) — Reset markers PDF globaux pour éviter fuite cross-import.
   // Le parser PDF.js écrit dans window._pdfXxx. Sans reset, un 2e import successif
@@ -37220,7 +37238,7 @@ function doImport(){
   var im=parseInt((document.getElementById("impM")||{}).value||A.month);
   // v9.128 — Fallback cache texte si textarea vide (après dc() re-render)
   if(!txt&&window._lastImportText){txt=window._lastImportText;}
-  if(!txt){_importInProgress=false;toast("\u26a0\ufe0f Aucun contenu \u2014 importez d'abord un PDF","err");return;}
+  if(!txt){_importInProgress=false;try{document.body.classList.remove("cmc-importing");}catch(_){}toast("\u26a0\ufe0f Aucun contenu \u2014 importez d'abord un PDF","err");return;}
   // v9.413 — Extraction légendes PDF (Kevin : "prendre en compte toutes les infos, encadrés, légendes")
   try{var _legRes=parseLegendsFromPdf(txt);if(_legRes.enriched>0)console.log("[legend] "+_legRes.found+" détectées, "+_legRes.enriched+" nouvelles/MAJ");}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("do-import",_e);}catch(__){}}
   // v9.694 (Kevin "Tout auto. Workflow conversion format meilleure reconnaissance") :
@@ -39243,6 +39261,7 @@ function doImport(){
   }catch(_morErr){console.warn("[v9.640 manual-overrides apply]",_morErr);}
   // v9.58 — Fin d'import OK : flush toutes les écritures Firebase bufferisées en une fois
   _importInProgress=false;
+  try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.735 réactive animations
   _flushImportPending();
   // v9.553 (Kevin 2026-04-26) - SENTINELLE post-import : detecte regression silencieuse
   try{_postValidateImport(iy,im,ok,err,errLines);}catch(_pvErr){console.warn("[postValidateImport] err",_pvErr);}
@@ -39570,6 +39589,7 @@ function doImport(){
         ls("cmc_import_log",_ilg594);
       }catch(_){}
       _importInProgress=false;
+      try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.735 réactive animations
       _flushImportPending();
       _dcPending=false;
       setTimeout(function(){try{dc();}catch(_){}},0);
@@ -39852,6 +39872,7 @@ function doImport(){
   }catch(e){
     // v9.58 — En cas d'erreur : désactiver le flag et flush ce qui a été bufferisé
     _importInProgress=false;
+    try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.735 réactive animations
     _flushImportPending();
     // v9.61 Fix audit P0 : reset _dcPending au cas o\u00f9 une rafale SSE aurait laiss\u00e9
     // le flag \u00e0 true avant l'exception (sinon dc() ne se rejoue plus jusqu'au prochain
