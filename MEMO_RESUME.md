@@ -1,4 +1,43 @@
-# Mémo de reprise — Apex v13.4.243 / CMC v9.728 / Apex Chat v1.1.108 / Social Video Pipeline v1.0 (2026-05-22)
+# Mémo de reprise — Apex v13.4.261 / CMC v9.731 / Apex Chat v1.1.148 / Social Video Pipeline v1.0 (2026-05-23)
+
+## 📊 SESSION 2026-05-23 — Apex v13.4.261 : Diagnostic vault + Cloudflare (read-only)
+
+Branche `claude/continued-work-wjpH6`. Kevin : « Problème Cloudflare, pas de mémoire coffre. »
+
+Pattern Zoom Inspector (CLAUDE.md erreur #56) — pas de patch aveugle. Outil de
+diag visible qui montre la cause exacte avant toute action.
+
+### Livré
+- **`services/admin/vault-diagnostic.ts`** (nouveau, ~250 lignes) : `runVaultDiagnostic()` inspecte les 3 couches en parallèle :
+  - **Local** : compte clés `ax_*` / `apex_v13_*` (encrypted vs plaintext, sample 10)
+  - **Firebase** : connection state + `vault_backup` count par uid (réutilise `vaultFirebaseBackup.auditCoherence()`) + drift local↔FB
+  - **Cloudflare proxy** : `apexSecretsProxy.checkHealth()` (ping `/health` + latence + providers exposés)
+  - Sortie : résumé 1 ligne + recommandations actionnables priorisées
+- **`features/vault/index.ts`** : nouvelle section « 📊 Diagnostic » avec bouton dédié, modale inline en `result.append(domNode)` (audit XSS strict, valeurs numériques uniquement texte).
+- Bump APP_VER `v13.4.260` → `v13.4.261` (4 fichiers : bootstrap, sw.js CACHE_VERSION, package.json, index.html data-app-ver).
+
+### Vérifications
+- `npx tsc --noEmit` : 0 erreur
+- `npx vite build` : 6.54s OK, 0 `APPEX_BOOT_NONCE` placeholder dans dist/index.html (anti #54)
+- `npx vitest run tests/unit` : 547/558 fichiers OK (98.1%), 11636/11729 tests (99.3%). Les 11 fichiers failed = sous-ensemble EXACT pré-existant (anti-zoom inline retiré v13.4.248, github tools mocks, etc.) — 0 régression introduite.
+
+### Lecture seule, faible risque
+Le service ne modifie ni vault, ni Firebase, ni Worker. Il PING `/health` (déjà
+exposé), liste les clés présentes côté local + Firebase, et calcule un audit
+coherence. Aucun side-effect destructif.
+
+### Ce que Kevin voit après push + auto-deploy
+Coffre > section « 📊 Diagnostic » > bouton « Diagnostic complet » :
+- 💾 Local : N clés (X chiffrées, Y plaintext)
+- ☁ Firebase 🟢 CONNECTED — N backup(s) (ou 🔴 hors-ligne)
+- 🌐 Cloudflare proxy 🟢 OK 120ms 15 providers (ou 🔴 KO + erreur exacte)
+- 💡 À faire : 1-3 actions concrètes selon l'état détecté
+
+Cible directement les 2 symptômes signalés. Si vault local vide mais backup
+Firebase plein → reco « clique Restaurer depuis Firebase ». Si Cloudflare KO →
+reco « PIN admin à re-saisir » ou « failover IA déjà actif ».
+
+---
 
 ## 📋 SESSION 2026-05-22 — CMCteams import : reproduction + couleurs + cadres (v9.726→728)
 
