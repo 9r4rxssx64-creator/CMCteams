@@ -2,7 +2,7 @@
    Isolation : path Firebase strictement `shops_admin_v1/*`. Aucune PII
    (email, adresse, CB) n'est envoyée. Échec silencieux si réseau KO. */
 (function(){
-  var FB="https://kdmc-clients-default-rtdb.firebaseio.com";
+  var FB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
   var BASE="shops_admin_v1";
   function safe(v,max){return String(v==null?"":v).slice(0,max||120)}
   function num(v){var n=Number(v);return isFinite(n)?n:0}
