@@ -54,9 +54,23 @@ function json(data, status = 200, extraHeaders = {}) {
 function err(message, status = 400, code = 'error', detail) {
   const body = { error: code, message };
   if (detail !== undefined && detail !== null) {
-    body.detail = (typeof detail === 'string') ? detail : (detail.message || JSON.stringify(detail));
-    if (detail && detail.stack) body.where = String(detail.stack).split('\n')[1] || '';
-    if (detail && detail.step) body.step = detail.step;
+    // v1.1.165 — préserver une string courte dans body.detail (pour toast user-friendly)
+    // et mettre l'objet complet dans body.context (pour debug avancé).
+    if (typeof detail === 'string') {
+      body.detail = detail;
+    } else if (detail && typeof detail === 'object') {
+      // Priorité : detail.detail (string explicite) > detail.message > stringify court
+      body.detail = String(detail.detail || detail.message || detail.error || 'erreur');
+      if (detail.where) body.where = detail.where;
+      if (detail.step) body.step = detail.step;
+      // Le reste (partial, received, hint, etc.) dans body.context séparé
+      const ctx = {};
+      for (const k of Object.keys(detail)) {
+        if (!['detail', 'message', 'where', 'step', 'stack'].includes(k)) ctx[k] = detail[k];
+      }
+      if (Object.keys(ctx).length) body.context = ctx;
+      if (detail.stack) body.where = body.where || (String(detail.stack).split('\n')[1] || '');
+    }
   }
   return json(body, status);
 }
