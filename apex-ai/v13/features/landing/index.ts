@@ -54,22 +54,27 @@ async function tryAutoLogin(): Promise<boolean> {
     const lastName = localStorage.getItem('apex_v13_last_known_name');
     let deviceTrusted = localStorage.getItem('apex_v13_device_trusted_v1');
     if (!lastUid || !lastName) return false;
-    /* v13.4.262 (Kevin "Il doit garder mon pin en mémoire") :
-     * AUTO-RECOVERY trust device. Si l'admin a déjà un PIN configuré ET un
-     * last_known_uid/name (preuve qu'il s'est déjà loggé OK auparavant) MAIS
-     * que le trust device est absent (race condition d'un ancien login fire-
-     * and-forget, ou clear localStorage partiel) → on set le trust silenc-
-     * ieusement maintenant. Sécurité : limité au cas admin Kevin avec PIN
-     * déjà persisté, donc le seul effet est d'éviter de redemander le PIN
-     * à quelqu'un qui l'a déjà validé au moins une fois sur ce device. */
-    if (!deviceTrusted && lastUid === 'kdmc_admin' && localStorage.getItem('apex_v13_pin')) {
-      try {
-        const { deviceContext } = await import('../../services/integrations/device-context.js');
-        const fp = await deviceContext.getFingerprint();
-        localStorage.setItem('apex_v13_device_trusted_v1', fp.device_id);
-        deviceTrusted = fp.device_id;
-      } catch {
-        /* device-context indispo → on tombera sur le retour false plus bas */
+    /* v13.4.263 (Kevin "Dans tous les projets pour moi et les autres,
+     * reconnu auto après 1ère connexion") : AUTO-RECOVERY trust device
+     * ÉTENDUE À TOUS LES USERS (pas que Kevin admin). Condition : avoir
+     * un last_known_uid+name (preuve d'un login OK antérieur) ET un PIN
+     * persisté (admin global OR per-user). Sécurité conservée : sans PIN
+     * persisté, l'auto-trust ne se déclenche jamais (un attaquant qui
+     * arrive sur l'écran landing d'un device fresh ne peut rien recover).
+     * Le device fingerprint check juste après reste l'autre garde-fou. */
+    if (!deviceTrusted) {
+      const hasPin =
+        localStorage.getItem('apex_v13_pin') !== null ||
+        localStorage.getItem(`apex_v13_pin_${lastUid}`) !== null;
+      if (hasPin) {
+        try {
+          const { deviceContext } = await import('../../services/integrations/device-context.js');
+          const fp = await deviceContext.getFingerprint();
+          localStorage.setItem('apex_v13_device_trusted_v1', fp.device_id);
+          deviceTrusted = fp.device_id;
+        } catch {
+          /* device-context indispo → on tombera sur le retour false plus bas */
+        }
       }
     }
     if (!deviceTrusted) return false;

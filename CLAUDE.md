@@ -1,6 +1,70 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-16 (Apex v13.4.201 / CMC v9.617).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-23 (Apex v13.4.263 / CMC v9.732).
+
+---
+
+## 🔓 RÈGLE ABSOLUE — RECONNAISSANCE AUTO APRÈS 1ʳᵉ CONNEXION, TOUS PROJETS, TOUS USERS (Kevin 2026-05-23, ABSOLUE)
+
+> **"Dans tous les projets pour moi et les autres, reconnu auto après 1ère connexion."** — Kevin 2026-05-23
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex v13, Apex Chat, CMCteams, e-KDMC, Télécommande, CrackPass, tous projets actuels et futurs.
+
+### 1. Principe
+
+Après UNE seule connexion réussie (PIN/password/auth), le device est trusté
+pour le user. Aux boots suivants : auto-login transparent, **plus jamais
+demander le PIN** sauf si le trust est explicitement révoqué (logout, untrust,
+device fingerprint change).
+
+S'applique à **tous les users**, pas seulement Kevin admin :
+- Kevin DESARZENS (admin)
+- Laurence Saint-Polit
+- Clients pro / free
+- Employés CMCteams
+- Famille / amis
+
+### 2. Composants obligatoires dans chaque projet
+
+a) **Trust device storage** (clé localStorage stable, ex Apex
+   `apex_v13_device_trusted_v1`) : stocke le `device_id` au login réussi.
+
+b) **Trust SET en `await`, jamais fire-and-forget** : la trace de trust DOIT
+   être persistée AVANT que `login()` ne retourne `ok:true`. Sinon race
+   condition si user navigue avant fin de l'import async (cas Apex v13.4.262).
+
+c) **Auto-recovery au boot** : si `last_known_uid` + PIN persisté détectés
+   mais trust device absent → set le trust automatiquement (one-time fix
+   pour devices qui ont déjà eu un login OK avant la règle).
+
+d) **Auto-login `tryAutoLogin()` au render landing** : background, non-bloquant,
+   skip vers la vue principale si OK.
+
+e) **Device fingerprint check** : si `device_id` calculé ≠ `device_id` stocké
+   → purge trust + force re-login PIN (sécurité contre vol localStorage).
+
+f) **`untrust` explicite au logout** : `localStorage.removeItem('<projet>_device_trusted_v1')`.
+
+### 3. Anti-patterns interdits
+
+- ❌ `void this.trustCurrentDevice()` fire-and-forget — race condition
+- ❌ Restriction par uid spécifique (`if uid === 'kdmc_admin'`) — doit
+  marcher pour tous
+- ❌ Demander PIN à chaque session si user déjà loggé OK une fois
+- ❌ Trust device sans device fingerprint (vol localStorage = bypass total)
+- ❌ Trust qui n'est pas révoqué au logout explicite
+
+### 4. Test mental obligatoire avant chaque release projet
+
+> *"Un user se logge avec succès une fois (PIN OK). Il ferme l'app, la rouvre.
+> Est-ce qu'elle l'auto-connecte sans redemander le PIN ? Si non → fix avant push."*
+
+### 5. Implementation référence
+
+- **Apex v13.4.263** : `services/auth/auth.ts` (await trustCurrentDevice +
+  loginTrusted) + `features/landing/index.ts` (tryAutoLogin avec auto-recovery
+  pour TOUS users)
+- À auditer / aligner : CMCteams, Apex Chat, e-KDMC, Télécommande, CrackPass.
 
 ---
 
