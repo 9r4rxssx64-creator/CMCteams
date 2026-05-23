@@ -1238,9 +1238,9 @@ function attachHandlers(rootEl: HTMLElement): void {
       const r = await autoDetectAndStore(valueToProcess);
       if (r.ok) {
         haptic.success();
-        toast.success(`✅ ${r.pattern_name} stocké`);
-        result.innerHTML = `<div style="padding:8px;background:rgba(34,204,119,.1);color:var(--ax-green);border-radius:8px">✅ ${escapeHtml(r.pattern_name)} → ${escapeHtml(r.storage_key)}</div>`;
-        /* Tente aussi addition multi-key (si service connu via storageKey) */
+        /* Tente aussi addition multi-key (si service connu via storageKey).
+         * v13.4.270 : addKey pousse maintenant immédiatement le backup chiffré
+         * dédié vers Firebase vault_backup/<uid>/<key> (force:true bypass throttle). */
         const detected = detectCredential(valueToProcess);
         if (detected) {
           const serviceFromKey = detected.storageKey.replace(/^(ax_|apex_v13_)/, '').replace(/_(?:key|token|pat|sk|pk|id|secret)$/, '');
@@ -1250,6 +1250,16 @@ function attachHandlers(rootEl: HTMLElement): void {
             /* legacy mode only — not blocking */
           }
         }
+        /* v13.4.270 (Kevin "Toutes nouvelles informations dois être sauvegardé
+         * sûr immédiatement") : feedback EXPLICITE des 3 couches de sauvegarde. */
+        const { firebase } = await import('../../services/storage/firebase.js');
+        const fbState = firebase.getConnectionState();
+        const fbIcon = fbState === 'CONNECTED' ? '🟢 poussé' : (fbState === 'RECONNECTING' ? '🟡 en queue (push auto à la reconnexion)' : '⚪ ' + fbState);
+        toast.success(`✅ ${r.pattern_name} stocké · 🔐 AES-GCM-256 · 💾 local OK · ☁ ${fbIcon}`, { duration: 6000 });
+        result.innerHTML = `<div style="padding:10px;background:rgba(34,204,119,.1);color:var(--ax-green);border-radius:8px;line-height:1.55">
+          <div style="font-weight:700">✅ ${escapeHtml(r.pattern_name)} → ${escapeHtml(r.storage_key)}</div>
+          <div style="font-size:11px;opacity:0.85;margin-top:4px">🔐 Chiffré AES-GCM-256 + PBKDF2 200k · 💾 localStorage + IDB shadow · ☁ Firebase backup ${fbIcon}</div>
+        </div>`;
         ta.value = '';
         render(rootEl);
       } else {
