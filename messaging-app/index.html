@@ -330,7 +330,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.163';
+const __APEX_CHAT_VERSION__ = 'v1.1.164';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -370,7 +370,7 @@ if('serviceWorker' in navigator){
       if(e.data?.type === 'mark-conv-read' && e.data.convId){
         if(typeof K !== 'undefined' && K._markConvAsRead) K._markConvAsRead(e.data.convId);
       }
-      // v1.1.163 — Appel entrant : "Répondre" depuis la notif → ouvre la conv + auto-décroche
+      // v1.1.164 — Appel entrant : "Répondre" depuis la notif → ouvre la conv + auto-décroche
       if(e.data?.type === 'call-answer' && e.data.convId){
         if(typeof K !== 'undefined' && K.openConv){
           K.openConv(e.data.convId);
@@ -393,7 +393,7 @@ if('serviceWorker' in navigator){
   }).catch(_=>{});
 
   // === Sentinelle remote version (compare APP_VER local vs remote) ===
-  // v1.1.163 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
+  // v1.1.164 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
@@ -488,7 +488,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.163</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.164</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -502,7 +502,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.163</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.164</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -884,7 +884,7 @@ K.login = async function(user, token){
   }catch(e){ /* ignore */ }
   toast('Bienvenue ' + (user.pseudo || user.real_name) + ' !', 'ok');
 
-  // v1.1.163 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
+  // v1.1.164 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
   // après login, si profil incomplet OU pas de PIN local → onboarding forcé
   // (fiche + PIN 6 chiffres). Une fois fait, on note l'unlock.
   try{
@@ -1264,7 +1264,7 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
-            // v1.1.163 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            // v1.1.164 : ne pas effacer le nom local si le serveur ne le renvoie pas
             name: c.name || localById[c.id]?.name,
             pseudo: c.pseudo || localById[c.id]?.pseudo,
             peer_id: c.peer_id || localById[c.id]?.peer_id,
@@ -1275,7 +1275,7 @@ K._refreshConvs = async function(){
             bg_id: localById[c.id]?.bg_id,
             peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
           }));
-          // v1.1.163 : applique les tombstones — conv supprimées ne réapparaissent jamais.
+          // v1.1.164 : applique les tombstones — conv supprimées ne réapparaissent jamais.
           // Retente le delete serveur tant que le serveur les renvoie.
           if(K._deletedConvIds && K._deletedConvIds.length){
             const serverIds = new Set(K.conversations.map(c => c.id));
@@ -1299,7 +1299,7 @@ K._refreshConvs = async function(){
   toast('🔄 Rafraîchi', 'ok', 1500);
 };
 
-// v1.1.163 — Helper display name uniforme, privilégie real_name au pseudo
+// v1.1.164 — Helper display name uniforme, privilégie real_name au pseudo
 // auto-généré (Kevin "Son nom est écrit Laurence_vwve, faut suivre la fiche
 // admin, ajoute le pseudo partout"). Le serveur a parfois un pseudo auto
 // type "user_xxxx" / "laurence_vwve" — on l'évite si on a mieux.
@@ -1329,7 +1329,7 @@ K._displayName = function(u){
   return 'Sans nom';
 };
 
-// v1.1.163 → v1.1.163 : nom affichable d'une conversation. Privilégie
+// v1.1.164 → v1.1.164 : nom affichable d'une conversation. Privilégie
 // real_name/display_name aux pseudos auto. Si le serveur ne renvoie pas
 // name/pseudo (DM chiffré), on résout le correspondant via peer_id dans
 // les contacts chargés, puis members_detail.
@@ -1351,7 +1351,7 @@ K._convName = function(c){
   return 'Sans nom';
 };
 
-// v1.1.163 : tombstones de conversations supprimées.
+// v1.1.164 : tombstones de conversations supprimées.
 // Une conv supprimée ne doit JAMAIS réapparaître, même si le serveur la
 // renvoie encore (delete serveur différé/échoué). Le refresh retente le
 // delete serveur tant que la conv est tombstonée.
@@ -2666,7 +2666,7 @@ K._runTldr = async function(convId){
 };
 
 // ============================================================================
-//  v1.1.163 — Cercle privé pré-câblé Kevin ↔ proche (Laurence par défaut)
+//  v1.1.164 — Cercle privé pré-câblé Kevin ↔ proche (Laurence par défaut)
 //  Kevin "on devrait être connectés de base pour tous les projets".
 //  Modal admin → numéro Laurence → POST /api/admin/configure-core-pair
 //  → user créé en D1 + conv DM auto-créée → apparait des 2 côtés sans invite.
@@ -3003,7 +3003,7 @@ K._isMentionedInMsg = function(msg){
 
 // ============================================================================
 //  v1.1.71 — Profile photo upload + display
-//  v1.1.163 — Fix bouton Enregistrer : compression canvas, HEIC iOS toléré,
+//  v1.1.164 — Fix bouton Enregistrer : compression canvas, HEIC iOS toléré,
 //             vérif explicite du save (échec QuotaExceeded ne ment plus)
 // ============================================================================
 K._openProfilePhoto = function(){
@@ -3098,7 +3098,7 @@ K._previewAvatar = async function(file){
   }
 };
 
-K._saveAvatar = function(){
+K._saveAvatar = async function(){
   if(!K._pendingAvatar){ toast('Pas d\'image sélectionnée', 'warn'); return; }
   const dataUrl = K._pendingAvatar;
   // Vérification EXPLICITE : ls() avale QuotaExceeded silencieusement.
@@ -3126,6 +3126,31 @@ K._saveAvatar = function(){
   }
   // Best-effort shadow IndexedDB
   try { idbSet('my_avatar', dataUrl).catch(()=>{}); } catch(_){}
+  // v1.1.164 — sync vers backend pour que les peers voient la photo aussi.
+  // Best-effort : si offline, la photo locale reste OK, retry au prochain save.
+  if(K.token && typeof API_BASE !== 'undefined' && !String(K.token).startsWith('local-')){
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 8000);
+      try {
+        const r = await fetch(API_BASE + '/api/users/me/avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
+          body: JSON.stringify({ data_url: dataUrl }),
+          signal: ctrl.signal,
+        });
+        if(!r.ok){
+          const data = await r.json().catch(() => ({}));
+          console.warn('[avatar] upload backend KO:', data.detail || data.message || ('HTTP ' + r.status));
+        } else {
+          // Update K.user en local pour cohérence immédiate
+          if(K.user){ K.user.avatar_url = dataUrl; ls('user', K.user); }
+        }
+      } finally { clearTimeout(tid); }
+    } catch (e) {
+      console.warn('[avatar] upload backend exception:', e?.message || e);
+    }
+  }
   K._pendingAvatar = null;
   K._closeModal && K._closeModal();
   toast('🖼 Photo enregistrée', 'ok');
@@ -3148,11 +3173,49 @@ K._getAvatar = function(userId){
   return cache[userId] || '';
 };
 
+// v1.1.164 — fetch lazy avatar d'un peer si pas en cache. Asynchrone :
+// renvoie quand l'avatar est disponible (ou rien). Le caller fait
+// K.render() pour rafraîchir l'UI avec la nouvelle photo.
+K._fetchedPeerAvatars = K._fetchedPeerAvatars || {}; // dédupe inflight
+K._fetchPeerAvatar = async function(userId){
+  if(!userId || userId === K.user?.id) return null;
+  if(K._fetchedPeerAvatars[userId]) return null; // déjà en cours / déjà tenté
+  K._fetchedPeerAvatars[userId] = Date.now();
+  const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+  if(!apiBase || !K.token || String(K.token).startsWith('local-')) return null;
+  try {
+    const r = await fetch(apiBase + '/api/users/' + encodeURIComponent(userId), {
+      headers: { 'Authorization': 'Bearer ' + K.token },
+    });
+    if(!r.ok) return null;
+    const data = await r.json().catch(() => ({}));
+    const u = data && data.user;
+    if(!u) return null;
+    const cache = lg('peer_avatars_cache', {});
+    if(u.avatar_url){
+      cache[userId] = u.avatar_url;
+      ls('peer_avatars_cache', cache);
+      // Re-render si une vue est ouverte (UI affichera la photo maintenant)
+      try { K.render && K.render(); } catch(_) {}
+      return u.avatar_url;
+    } else if(cache[userId]){
+      // Avatar retiré côté serveur → nettoie le cache
+      delete cache[userId];
+      ls('peer_avatars_cache', cache);
+    }
+    return null;
+  } catch (_) { return null; }
+};
+
 K._renderAvatarHTML = function(name, userId, sizePx){
   const size = sizePx || 36;
   const avatar = K._getAvatar(userId);
   if(avatar){
     return `<img src="${esc(avatar)}" alt="${esc(name || '?')}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
+  }
+  // Pas en cache + peer connu → lazy fetch (sans bloquer le rendu)
+  if(userId && userId !== K.user?.id){
+    try { K._fetchPeerAvatar(userId); } catch(_) {}
   }
   return `<div class="avatar" style="width:${size}px;height:${size}px;flex-shrink:0">${esc((name || '?')[0].toUpperCase())}</div>`;
 };
@@ -3624,7 +3687,7 @@ K._openConvActionsMenu = function(convId, ev){
   `);
 };
 
-// v1.1.163 : suppression conversation. Local-first (jamais bloqué) +
+// v1.1.164 : suppression conversation. Local-first (jamais bloqué) +
 // best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
 K._deleteConv = async function(convId){
   const conv = (K.conversations || []).find(c => c.id === convId);
@@ -3863,7 +3926,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.163',
+    version: 'v1.1.164',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4677,7 +4740,7 @@ K._leaveGroup = function(){
 // v1.1.55 — Presence (online/away/offline + last_seen) helpers
 K._presenceState = K._presenceState || {};
 
-// v1.1.163 : état de chiffrement HONNÊTE. Le label E2E ne doit s'afficher
+// v1.1.164 : état de chiffrement HONNÊTE. Le label E2E ne doit s'afficher
 // que si la session de chiffrement est réellement établie. Sinon le message
 // est chiffré en transit (HTTPS/WSS) mais PAS bout-en-bout.
 K._e2eActive = function(conv){
@@ -5841,7 +5904,7 @@ K._handleAuthPhone = async function(){
     return;
   }
 
-  // v1.1.163 Kevin "enlève l'histoire du code etc, pour tous" :
+  // v1.1.164 Kevin "enlève l'histoire du code etc, pour tous" :
   // pas de SMS, pas d'étape OTP — on passe direct à la création de compte
   // avec otp:'000000' (mode "cercle privé" — Kevin contrôle qui rejoint).
   // L'admin vérifie le numéro dans la fiche après coup.
@@ -5850,7 +5913,7 @@ K._handleAuthPhone = async function(){
   renderAuthStep();
   return;
 
-  // === [LEGACY OTP — désactivé v1.1.163] Tentative worker avec timeout 8s ===
+  // === [LEGACY OTP — désactivé v1.1.164] Tentative worker avec timeout 8s ===
   try{
     toast('Envoi du SMS...', 'info', 1500);
     const dbg = $('#auth-debug');
@@ -5909,7 +5972,7 @@ K._handleAuthOtp = async function(){
   const otp = $('#auth-otp').value.replace(/\D/g,'');
   if(otp.length !== 6) return toast('Code à 6 chiffres', 'err');
   K.authData.otp = otp;  // OTP Vonage stocké pour verify-otp ensuite
-  // v1.1.163 (Kevin "connection auto après la création du compte pour tout le monde") :
+  // v1.1.164 (Kevin "connection auto après la création du compte pour tout le monde") :
   // pseudo auto-généré à partir du nom + auto-submit → zéro étape supplémentaire.
   // L'utilisateur peut le changer plus tard dans son profil. Si la création
   // serveur échoue, on retombe sur l'étape pseudo manuelle (fallback).
@@ -5934,7 +5997,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.163 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.164 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5953,7 +6016,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.163 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.164 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -6077,7 +6140,7 @@ K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
   K.render();
-  // v1.1.163 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
+  // v1.1.164 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
   try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_e){_safeCatch('silent',_e)}
 };
 
@@ -6486,7 +6549,7 @@ K._sendMsg = async function(){
 // ============================================================================
 //  WebSocket client (Phase 3)
 // ============================================================================
-// v1.1.163 : ré-authentification auto pour TOUT user (admin + non-admin).
+// v1.1.164 : ré-authentification auto pour TOUT user (admin + non-admin).
 // Avant : ne marchait que pour Kevin admin → Laurence voyait "Session
 // expirée — reconnecte-toi" en boucle à chaque déco WS (pas d'action
 // possible de son côté).
@@ -6566,7 +6629,7 @@ K._reauthAny = async function(reopenConvId, cause){
 // Alias rétro-compat : tous les call sites historiques (_reauthAdmin) marchent.
 K._reauthAdmin = K._reauthAny;
 
-// v1.1.163 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
+// v1.1.164 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
 // /ws-diag rejoue les checks serveur et renvoie la cause exacte → on agit dessus.
 K._wsDiagnose = async function(convId){
   if(K._wsDiagRunning) return;
@@ -6586,7 +6649,7 @@ K._wsDiagnose = async function(convId){
         // Token valide via header mais pas via ?token= → Worker pas à jour
         toast('⚠️ Serveur : auth WebSocket pas encore déployée (redéploiement en cours)', 'warn', 8000);
       } else {
-        // Token réellement périmé → ré-auth pour TOUT user qui a un phone stocké (v1.1.163)
+        // Token réellement périmé → ré-auth pour TOUT user qui a un phone stocké (v1.1.164)
         if(K.user && K.user.phone && K._reauthAny){
           await K._reauthAny(convId, 'ws-diag: token périmé');
         } else {
@@ -6674,7 +6737,7 @@ K._openWs = async function(convId){
       // 1008 = auth refusée par le Durable Object (motif explicite : Invalid token, Not a member…)
       const authRefus = (e.code === 1008) || /auth|token|uid|member/i.test(e.reason || '');
       if(authRefus){
-        // v1.1.163 — reauth pour TOUT user (admin + non-admin) avec phone stocké
+        // v1.1.164 — reauth pour TOUT user (admin + non-admin) avec phone stocké
         if(K.user && K.user.phone && K._reauthAny){
           K._reauthAny(convId, e.reason || ('code ' + e.code));
         } else {
@@ -6728,7 +6791,7 @@ async function _handleWsMessage(data, convId){
       // Server accepts connection
       break;
     case 'history': {
-      // v1.1.163 : historique des messages envoyé par le serveur à la connexion.
+      // v1.1.164 : historique des messages envoyé par le serveur à la connexion.
       // Permet de retrouver ses conversations sur un nouvel appareil / après reset.
       if(!Array.isArray(data.messages) || data.messages.length === 0) break;
       if(!K.messages[convId]) K.messages[convId] = [];
@@ -6743,7 +6806,7 @@ async function _handleWsMessage(data, convId){
             txt = await ApexCrypto.decryptForConv(convId, sm.ciphertext);
           }
         }catch(e){ _safeCatch('history-decrypt', e); }
-        // v1.1.163 : dédup mes propres messages — l'historique serveur les
+        // v1.1.164 : dédup mes propres messages — l'historique serveur les
         // renvoie avec l'id officiel alors que je les ai en local avec id m_…
         // → on adopte l'id serveur sur le message local au lieu de doubler.
         if(sm.sender_id === myId){
@@ -6816,7 +6879,7 @@ async function _handleWsMessage(data, convId){
       }
       break;
     case 'ack': {
-      // v1.1.163 : le serveur confirme la réception et donne l'id officiel.
+      // v1.1.164 : le serveur confirme la réception et donne l'id officiel.
       // On adopte cet id côté client → l'historique (qui utilise l'id serveur)
       // se dédupera correctement, plus de message doublé.
       if(data.id && K.messages[convId]){
@@ -7080,7 +7143,7 @@ K._call = async function(type, convId){
       K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
       $('#call-status').textContent = '📞 Appel en cours...';
     } else {
-      // v1.1.163 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
+      // v1.1.164 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
       const cs = $('#call-status'); if(cs) cs.textContent = '🛜 Connexion temps réel…';
       K._openWs(convId);
       setTimeout(() => {
@@ -7100,7 +7163,7 @@ K._call = async function(type, convId){
   }
 };
 
-// v1.1.163 : alias — les boutons 📞/📹 des contacts appellent _startCall(convId, type).
+// v1.1.164 : alias — les boutons 📞/📹 des contacts appellent _startCall(convId, type).
 // La vraie fonction est _call(type, convId) → on adapte l'ordre des arguments.
 K._startCall = function(convId, type){
   return K._call(type || 'audio', convId);
@@ -7341,7 +7404,7 @@ K.openMiniApps = function(){
   `);
 };
 
-// v1.1.163 : mini-apps INTÉGRÉES dans Apex Chat (avant : window.open vers une
+// v1.1.164 : mini-apps INTÉGRÉES dans Apex Chat (avant : window.open vers une
 // page apex-ai/ vide de 80 octets → page blanche). Utilisent l'IA du Worker.
 K._openStudio = function(name){
   if(name === 'traducteur') return K._openTranslator();
@@ -7532,7 +7595,7 @@ K.openProfile = function(){
   // v1.1.121 : fiche profil étendue (prénom + nom + tel obligatoires, reste optionnel)
   K._showModal('👤 Mon profil', `
     <div style="text-align:center;margin-bottom:14px">
-      <div class="avatar avatar-lg" style="margin:0 auto 8px;width:64px;height:64px;font-size:1.8em">${esc((u.pseudo||u.first_name||'?')[0].toUpperCase())}</div>
+      <div style="margin:0 auto 8px;display:inline-block">${K._renderAvatarHTML((u.real_name||u.display_name||u.pseudo||u.first_name||'?'), u.id, 64)}</div>
       <div style="color:var(--ax-text-3);font-size:.75em">ID : ${esc(u.id)}</div>
     </div>
     <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 10px">🔒 Champs <strong>requis</strong> pour les contacts · ✨ optionnels améliorent ton profil</p>
@@ -8024,7 +8087,7 @@ K._markConvAsRead = function(convId){
 
 // Demande permission notif si push activé et pas encore demandé
 K._requestNotifPermissionIfNeeded = async function(){
-  // v1.1.163 : Kevin "messages et appels doivent arriver même app fermée".
+  // v1.1.164 : Kevin "messages et appels doivent arriver même app fermée".
   // Avant : on demandait juste la permission mais on n'enregistrait PAS la
   // souscription push → aucun push possible. Maintenant : si permission
   // accordée, on subscribe immédiatement ; si default, on prompte gentiment.
@@ -9037,7 +9100,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.163 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.164 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -9059,7 +9122,7 @@ K._fetchContacts = async function(silent){
         seen.add(c.peer_id);
       }
     }
-    // v1.1.163 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
+    // v1.1.164 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
     // les écraser avec la liste serveur (cause du "j'ai perdu un contact" Yannou).
     const _prevContacts = K.contacts || lg('contacts', []);
     const _srvIds = new Set(users.map(u => u.id));
@@ -9136,7 +9199,7 @@ K._saveNewContact = function(){
   if(K.view === 'contacts' && typeof K.render === 'function') K.render();
 };
 
-// v1.1.163 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
+// v1.1.164 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
 K._startConvWithUser = async function(userId, displayName){
   const existing = (K.conversations || []).find(c => c.peer_id === userId || c.id === userId);
@@ -9173,7 +9236,7 @@ K._startConvWithUser = async function(userId, displayName){
   K.openConv && K.openConv(conv.id);
 };
 
-// v1.1.163 : promeut une conv locale (dm_local_) en conv serveur réelle.
+// v1.1.164 : promeut une conv locale (dm_local_) en conv serveur réelle.
 // Crée la conv côté serveur, migre messages + id local → id serveur.
 K._promoteConvToServer = async function(localConvId){
   const conv = (K.conversations || []).find(c => c.id === localConvId);
@@ -9322,7 +9385,7 @@ function renderSettings(app){
     <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">Réglages</h2>
     <div class="card">
       <div class="card-row">
-        <div class="avatar avatar-lg">${esc((K.user.pseudo || '?')[0].toUpperCase())}</div>
+        ${K._renderAvatarHTML((K.user.real_name||K.user.display_name||K.user.pseudo||'?'), K.user.id, 56)}
         <div style="flex:1">
           <div style="font-weight:600;font-size:1.1em">${esc(K.user.pseudo)}</div>
           ${K.user.is_admin ? '<span class="tag tag-admin">👑 Admin</span>' : ''}
@@ -9546,7 +9609,7 @@ function renderAdminUsers(app){
 }
 
 K._adminViewUserCard = function(userId){
-  // v1.1.163 : fusion données PRECONFIGURED (config locale) + serveur (K.contacts)
+  // v1.1.164 : fusion données PRECONFIGURED (config locale) + serveur (K.contacts)
   // → Kevin admin voit téléphone réel + tous les détails serveur.
   const local = PRECONFIGURED_USERS[userId] || {};
   const srv = (K.contacts || []).find(c => c.id === userId) || {};
@@ -9721,7 +9784,7 @@ K._adminViewLiveUser = function(userId){
 
   K._showModal('👤 ' + (u.pseudo || u.real_name), `
     <div style="text-align:center;margin-bottom:16px">
-      <div class="avatar avatar-lg" style="margin:0 auto 8px">${esc((u.pseudo||'?')[0].toUpperCase())}</div>
+      <div style="margin:0 auto 8px;display:inline-block">${K._renderAvatarHTML((u.real_name||u.display_name||u.pseudo||'?'), u.id, 64)}</div>
       <div style="font-weight:700;font-size:1.2em">${esc(u.real_name || u.pseudo)}</div>
       <div style="color:var(--ax-text-2)">@${esc(u.pseudo)} · ${esc(u.phone || u.id)}</div>
     </div>
@@ -9914,7 +9977,7 @@ K._adminToggle = function(key){
   K.render();
 };
 
-// v1.1.163 (Kevin "bouton ON/OFF individuel admin pour toutes les options") :
+// v1.1.164 (Kevin "bouton ON/OFF individuel admin pour toutes les options") :
 // surcharge per-user d'un toggle. 3 états : undefined=hérite global,
 // true=forcé ON, false=forcé OFF.
 K.FEATURE_CATALOG = [
@@ -10596,7 +10659,7 @@ async function renderAdminTimeline(app){
     $('#admin-timeline-content').innerHTML = `
       <div class="card" style="margin-bottom:14px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div class="avatar avatar-lg">${esc((u?.pseudo||'?')[0].toUpperCase())}</div>
+          ${K._renderAvatarHTML((u?.real_name||u?.display_name||u?.pseudo||'?'), u?.id, 56)}
           <div style="flex:1">
             <div style="font-weight:700;font-size:1.1em">${esc(u?.real_name || u?.pseudo || '?')}</div>
             <div style="color:var(--ax-text-2);font-size:.82em">@${esc(u?.pseudo || '?')} · ${esc(u?.phone || '')}</div>
@@ -10858,7 +10921,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.163 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.164 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);
@@ -11100,11 +11163,11 @@ K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
 // ============================================================================
 //  Invitation viral SMS
 // ============================================================================
-// v1.1.163 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
+// v1.1.164 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
 // fiche obligatoire + PIN 6 chiffres pour TOUT user à la première connexion,
 // puis lockscreen PIN à chaque ouverture après 10 min d'inactivité.
 
-// v1.1.163 (Kevin "FaceID dans tous les projets") : biométrie WebAuthn
+// v1.1.164 (Kevin "FaceID dans tous les projets") : biométrie WebAuthn
 // Platform Authenticator (Face ID iOS / Touch ID / biométrie Android).
 // Unlock device-local sans serveur (zero-knowledge). PIN reste fallback.
 K._biometricSupported = async function(){
@@ -11218,7 +11281,7 @@ K._profileIncomplete = function(u){
   // Pseudo auto type "kevin_a1b2" ou "user1234"
   if(name === u.pseudo) return true;
   if(/^(ami\d|user\d|[a-z]+_[a-z0-9]{4,})$/i.test(name)) return true;
-  // v1.1.163 Kevin "Pseudo choisi par l'utilisateur dans sa fiche infos" :
+  // v1.1.164 Kevin "Pseudo choisi par l'utilisateur dans sa fiche infos" :
   // un pseudo auto-généré côté serveur compte comme incomplet → force l'user
   // à en saisir un. Réutilise K._isAutoPseudo pour cohérence partout.
   if(!u.pseudo) return true;
@@ -11228,7 +11291,7 @@ K._profileIncomplete = function(u){
 
 K._postLogin = function(){
   if(!K.user) return;
-  // v1.1.163 : restaure l'inviter pending (sauvé depuis ?inviter=<id> avant
+  // v1.1.164 : restaure l'inviter pending (sauvé depuis ?inviter=<id> avant
   // signup → permet d'ouvrir la conv à la fin de l'onboarding/auto-connect)
   if(!K._pendingPostOnboardConv){
     const pendingInv = lg('pending_inviter_after_signup', null);
@@ -11237,7 +11300,7 @@ K._postLogin = function(){
       try{ localStorage.removeItem('pending_inviter_after_signup'); }catch(_){}
     }
   }
-  // v1.1.163 Kevin "lorsque déjà connu connexion auto" :
+  // v1.1.164 Kevin "lorsque déjà connu connexion auto" :
   // Si profil complet (= user déjà connu), CONNEXION AUTO directe.
   if(!K._profileIncomplete()){
     ls('user_unlock_ts', Date.now());
@@ -11248,7 +11311,7 @@ K._postLogin = function(){
       setTimeout(() => K._startConvWithUser(inv, '').catch(()=>{}), 700);
       return;
     }
-    // v1.1.163 : si autorisations système jamais demandées (ancien user
+    // v1.1.164 : si autorisations système jamais demandées (ancien user
     // ou migration), propose le récap groupé une seule fois.
     setTimeout(() => {
       if(K._requestAllPermissions && !lg('perms_bulk_done_v1', false)){
@@ -11263,7 +11326,7 @@ K._postLogin = function(){
 };
 
 // ============================================================================
-//  v1.1.163 — Fast-login invité : "déjà un compte ? Login direct"
+//  v1.1.164 — Fast-login invité : "déjà un compte ? Login direct"
 //  Évite à un utilisateur déjà connu en D1 de refaire fiche + PIN quand il
 //  ouvre un lien d'invitation dans un nouveau navigateur (cas Safari vs PWA,
 //  ou Laurence chez Kevin etc.). Si le phone existe → verify-otp 000000
@@ -11427,7 +11490,7 @@ K._submitOnboarding = async function(inviterUserId){
     name = (nameEl.value || '').trim();
     const tokens = name.split(/\s+/).filter(t => t.length >= 2);
     if(tokens.length < 2) return toast('Prénom ET nom requis (ex: Marie Dupont)', 'err');
-    // v1.1.163 — Pseudo obligatoire à l'inscription (Kevin "À l'inscription
+    // v1.1.164 — Pseudo obligatoire à l'inscription (Kevin "À l'inscription
     // tout doit etre rempli" + "Pseudo choisi par l'utilisateur dans sa
     // fiche infos")
     pseudo = (pseudoEl?.value || '').trim();
@@ -11496,7 +11559,7 @@ K._submitOnboarding = async function(inviterUserId){
   toast('Bienvenue ' + firstName + ' 👋', 'ok', 2200);
   K.render && K.render();
 
-  // v1.1.163 Kevin "Pas atterri direct dans la conversation si nouveau client.
+  // v1.1.164 Kevin "Pas atterri direct dans la conversation si nouveau client.
   // Dois faire tout fiche, code etc avant d'atterrir auto dans la conversation."
   // → on STOCKE l'inviter à ouvrir, et on n'ouvre la conv qu'à la FIN du chaînage
   // (après Face ID et autorisations). _postOnboardingFinish() s'en charge.
@@ -11524,7 +11587,7 @@ K._submitOnboarding = async function(inviterUserId){
   }, 1200);
 };
 
-// v1.1.163 : appelé à la TOUTE FIN du chaînage onboarding (fiche → PIN →
+// v1.1.164 : appelé à la TOUTE FIN du chaînage onboarding (fiche → PIN →
 // Face ID → autos en bloc). Ouvre la conv avec l'inviteur si pending.
 K._postOnboardingFinish = function(){
   const inv = K._pendingPostOnboardConv;
@@ -11547,7 +11610,7 @@ K._enrollBiometricFromOnboarding = async function(){
   }
 };
 
-// v1.1.163 (Kevin "toutes les auto d'un coup rapid") : modal récap qui demande
+// v1.1.164 (Kevin "toutes les auto d'un coup rapid") : modal récap qui demande
 // toutes les autorisations système nécessaires en une seule fois. L'utilisateur
 // clique 1 fois → iOS/Android prompt chaque autorisation en séquence rapide.
 K._requestAllPermissions = async function(forceShow){
@@ -11619,7 +11682,7 @@ K._doRequestAllPermissions = async function(){
   ls('perms_bulk_done_v1', true);
   toast(`✅ ${ok} accordée(s)${refused ? ' · ' + refused + ' refusée(s)' : ''}`,
     refused ? 'warn' : 'ok', 4500);
-  // v1.1.163 : fin du chaînage onboarding → ouvre la conv inviteur si pending
+  // v1.1.164 : fin du chaînage onboarding → ouvre la conv inviteur si pending
   if(K._postOnboardingFinish) K._postOnboardingFinish();
 };
 
@@ -11636,7 +11699,7 @@ K._showLockscreen = function(){
   K._lockScreenOpen = true;
   const host = document.getElementById('modal-host') || document.body;
   const firstName = (K.user.real_name || K.user.pseudo || '').split(/\s+/)[0];
-  // v1.1.163 : Face ID / Touch ID prioritaire si enrôlé. PIN reste en fallback.
+  // v1.1.164 : Face ID / Touch ID prioritaire si enrôlé. PIN reste en fallback.
   const bioEnrolled = K._biometricEnrolled();
   host.innerHTML = `
     <div id="apex-lock" style="position:fixed;inset:0;background:rgba(6,14,7,.97);
@@ -11747,7 +11810,7 @@ document.addEventListener('visibilitychange', () => {
   document.addEventListener(ev, () => K._touchUnlock && K._touchUnlock(), { passive: true });
 });
 
-// v1.1.163 : consomme un magic invite token (?invite=<jwt>).
+// v1.1.164 : consomme un magic invite token (?invite=<jwt>).
 // 2 cas :
 //   - pas connecté → magic-login, devient l'utilisateur invité, ouvre conv avec l'inviteur
 //   - déjà connecté → résout le token + ouvre la conv DM avec l'autre partie directement
@@ -11790,7 +11853,7 @@ async function _consumeInviteToken(token){
     const data = await r.json().catch(() => ({}));
     if(r.ok && data.ok && data.token && data.user){
       await K.login(data.user, data.token);
-      // v1.1.163 Kevin "l'invité sauf si déjà connu doit remplir sa fiche +
+      // v1.1.164 Kevin "l'invité sauf si déjà connu doit remplir sa fiche +
       // créer un code PIN avant d'utiliser l'app". Si profil incomplet
       // (display_name vide, égal au pseudo, ou pseudo auto-généré), force
       // l'onboarding. Sinon, déjà connu → ouvre direct la conv.
@@ -11817,7 +11880,7 @@ async function _consumeInviteToken(token){
   }
 }
 
-// v1.1.163 (Kevin "que tout le monde, iOS et Android, puisse inviter depuis
+// v1.1.164 (Kevin "que tout le monde, iOS et Android, puisse inviter depuis
 // son répertoire") : Contact Picker API (Android Chrome) + Web Share / sms:
 // scheme (iOS). Le lien magique est créé côté serveur — l'invité clique →
 // auto-login direct, pas de code.
@@ -11854,7 +11917,7 @@ K.openInvite = function(){
   `);
 };
 
-// v1.1.163 Kevin "ajoute direct contact de l'appareil ou option manuelle.
+// v1.1.164 Kevin "ajoute direct contact de l'appareil ou option manuelle.
 // La plupart passe par les contacts tél" : flux principal = partage natif via
 // Web Share API. L'utilisateur choisit son contact dans la share sheet (Messages,
 // WhatsApp…) qui ouvre le picker du système d'exploitation. Marche iOS + Android.
@@ -11960,7 +12023,7 @@ K._sendInvite1Click = async function(){
 
   toast('Création de l\'invitation…', 'info', 1500);
 
-  // v1.1.163 : crée un VRAI magic-token JWT côté serveur (avant : token bidon
+  // v1.1.164 : crée un VRAI magic-token JWT côté serveur (avant : token bidon
   // en base64 → le destinataire atterrissait sur l'app sans login).
   let inv = null;
   try{
@@ -12367,7 +12430,7 @@ async function _boot(){
     $('#splash').classList.add('h');
     $('#topbar').classList.remove('h');
     $('#security-banner').classList.remove('h');
-    // v1.1.163 : lockscreen PIN si configuré et inactivité > 10 min
+    // v1.1.164 : lockscreen PIN si configuré et inactivité > 10 min
     setTimeout(() => {
       if(K._needsLockscreen && K._needsLockscreen()) K._showLockscreen();
     }, 500);
@@ -12376,7 +12439,7 @@ async function _boot(){
     // Charger état persisté
     K.conversations = lg('conversations', []);
     K.contacts = lg('contacts', []);
-    // v1.1.163 : tombstones — conv supprimées qui ne doivent jamais réapparaître
+    // v1.1.164 : tombstones — conv supprimées qui ne doivent jamais réapparaître
     K._deletedConvIds = lg('deleted_convs', []);
     if(K._deletedConvIds.length){
       K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
@@ -12412,7 +12475,7 @@ async function _boot(){
     }catch(e){_safeCatch('silent',e)}
   }
 
-  // v1.1.163 : magic invite link au boot (avant l'éventuel écran de login)
+  // v1.1.164 : magic invite link au boot (avant l'éventuel écran de login)
   // → un visiteur pas connecté se connecte SANS OTP via le token, devient
   // l'invité du lien et atterrit directement sur la conv avec l'inviteur.
   const _bootInviteTok = params.get('invite');
@@ -12420,7 +12483,7 @@ async function _boot(){
     try{ await _consumeInviteToken(_bootInviteTok); }catch(e){ _safeCatch('boot-invite', e); }
     history.replaceState(null, '', location.pathname);
   }
-  // v1.1.163 : lien générique ?inviter=<userId> (partage natif iOS/Android,
+  // v1.1.164 : lien générique ?inviter=<userId> (partage natif iOS/Android,
   // pas de magic-token pré-bound — l'utilisateur signe-up normalement).
   // Déjà connecté → ouvre direct la conv. Pas connecté → stocke pour après.
   const _bootInviter = params.get('inviter');
@@ -12430,7 +12493,7 @@ async function _boot(){
     } else {
       try{ ls('pending_inviter_after_signup', _bootInviter); }catch(_){}
       try{ K._pendingPostOnboardConv = _bootInviter; }catch(_){}
-      // v1.1.163 — Kevin "j'ai dû créer compte code etc pour rien, il m'a
+      // v1.1.164 — Kevin "j'ai dû créer compte code etc pour rien, il m'a
       // reconnu à la fin". Avant de lancer l'onboarding complet, on propose
       // un fast-login via numéro : si le phone est déjà connu côté Worker
       // → JWT direct, pas de fiche/PIN à refaire. Sinon → onboarding normal.
@@ -12469,7 +12532,7 @@ async function _boot(){
       }
       history.replaceState(null, '', location.pathname);
     }
-    /* v1.1.163 : ?invite=<magic_token> — utilisé pour 2 cas :
+    /* v1.1.164 : ?invite=<magic_token> — utilisé pour 2 cas :
        (a) visiteur pas connecté → magic-login auto (pas d'OTP), devient l'invité
        (b) déjà connecté → ouvre direct la conv DM avec l'autre partie
        Avant : aucun handler → utilisateur atterrissait sur l'accueil. */
