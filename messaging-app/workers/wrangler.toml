@@ -15,6 +15,10 @@
 #    - 1 KV namespace : APEX_CHAT_CACHE (cache LRU IA)
 #    - 5 Queues       : telemetry, pipeline-fix, letters-deliver, timecapsule-open, memory-lane
 #    - 3 DO classes   : ConversationDO, BroadcastDO, PresenceDO
+#
+# v1.1.165 — trigger re-deploy pour pousser APEX_CHAT_ADMIN_TOKEN
+# depuis GitHub Secret vers env du Worker (deploy-apex-chat.yml step
+# "Generate + put secrets" lit secrets.APEX_CHAT_ADMIN_TOKEN en priorité).
 # ============================================================================
 
 name = "apex-chat-api"
