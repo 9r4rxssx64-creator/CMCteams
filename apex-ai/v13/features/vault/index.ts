@@ -586,13 +586,8 @@ export function render(rootEl: HTMLElement): void {
       ${(stats.total === 0 || stats.invalid > 0) ? `
       <section id="ax-vault-empty-rescue" class="ax-empty-banner" style="background:linear-gradient(135deg,rgba(255,91,91,0.10),rgba(232,184,48,0.06));border-color:rgba(255,91,91,0.35)">
         <h3 class="ax-empty-banner-title">${stats.total === 0 ? '🆘 Coffre vide — Restauration possible' : `🚨 ${stats.invalid} clé(s) illisible(s) — récupération ou cleanup`}</h3>
-        <p class="ax-empty-banner-body">${stats.total === 0 ? "Apex peut tenter de récupérer tes clés depuis 4 sources : Firebase backup chiffré, IndexedDB shadow, alias localStorage, pattern detection." : "Ces clés ont été chiffrées avec une passphrase historisée perdue (régression v13.3.86 fixée v13.3.88). Soit re-coller les clés une par une, soit supprimer les illisibles."}</p>
-        <div class="ax-gs-7">
-          <button id="ax-vault-rescue-fb" data-action="rescue-firebase" class="ax-btn-health ax-btn-health-primary">🔓 Restaurer depuis Firebase</button>
-          <button id="ax-vault-rescue-all" data-action="rescue-scan-all" class="ax-btn-health ax-btn-health-blue">🔄 Scanner toutes sources</button>
-          ${stats.invalid > 0 ? `<button id="ax-vault-cleanup-invalid" data-action="cleanup-invalid" class="ax-btn-health ax-btn-health-danger">🗑 Supprimer ${stats.invalid} illisibles</button>` : ''}
-        </div>
-        <div id="ax-vault-rescue-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.7)"></div>
+        <p class="ax-empty-banner-body">${stats.total === 0 ? 'Utilise les boutons « 🔓 Restaurer depuis Firebase » ou « 🔄 Scanner toutes sources » dans la section Diagnostic ci-dessous, ou recolle tes clés via « Auto-détection rapide ».' : 'Ces clés ont été chiffrées avec une passphrase historisée perdue (régression v13.3.86 fixée v13.3.88). Soit recoller les clés via « Auto-détection rapide », soit supprimer les illisibles.'}</p>
+        ${stats.invalid > 0 ? `<div class="ax-gs-7"><button id="ax-vault-cleanup-invalid" data-action="cleanup-invalid" class="ax-btn-health ax-btn-health-danger">🗑 Supprimer ${stats.invalid} illisibles</button></div>` : ''}
       </section>
       ` : ''}
 
@@ -626,11 +621,18 @@ export function render(rootEl: HTMLElement): void {
       </section>
 
       <section style="margin-top:14px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px">
-        <h3 style="margin:0 0 8px;color:var(--ax-gold);font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">📊 Diagnostic</h3>
-        <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">Migration legacy, réparation services et push backup Firebase tournent <strong>automatiquement au boot</strong> (v13.4.268). Ce bouton donne l'état détaillé en lecture seule.</p>
-        <button id="ax-vault-diag-btn" type="button"
-          style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
+        <h3 style="margin:0 0 8px;color:var(--ax-gold);font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">📊 Diagnostic & restauration</h3>
+        <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">Maintenance auto au boot (v13.4.268+). Si tu as perdu des clés (reinstall PWA, clear cache) → restaure depuis Firebase backup chiffré.</p>
+        <div class="ax-gs-7">
+          <button id="ax-vault-diag-btn" type="button"
+            style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
+          <button id="ax-vault-rescue-fb" data-action="rescue-firebase" type="button"
+            style="padding:10px 16px;background:rgba(232,184,48,0.18);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.40);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔓 Restaurer depuis Firebase</button>
+          <button id="ax-vault-rescue-all" data-action="rescue-scan-all" type="button"
+            style="padding:10px 16px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.30);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">🔄 Scanner toutes sources</button>
+        </div>
         <div id="ax-vault-diag-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.85)"></div>
+        <div id="ax-vault-rescue-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.85)"></div>
       </section>
 
       <p style="text-align:center;color:rgba(255,255,255,0.4);font-size:11px;margin-top:16px;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;line-height:1.6">
