@@ -257,11 +257,12 @@ export class ConversationDO {
 
         this.pendingMessages.push(messageRecord);
 
-        // Fan-out immédiat aux clients connectés
+        // Fan-out aux AUTRES clients (pas au sender — il reçoit déjà son ack
+        // et a déjà affiché le message localement → évite le doublon).
         this.broadcast({
           type: 'message',
           ...messageRecord
-        });
+        }, ws);
 
         // Push notif aux déconnectés (best-effort)
         await this.notifyOfflineMembers(messageRecord);
