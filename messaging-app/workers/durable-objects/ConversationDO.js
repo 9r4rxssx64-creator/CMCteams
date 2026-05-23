@@ -351,6 +351,14 @@ export class ConversationDO {
           convId: session.convId,
           ts: Date.now(),
         }, ws);
+        // v1.1.150 : push d'appel — sur un OFFER, si le destinataire n'est pas
+        // connecté en WS, on lui envoie une notification "📞 Appel entrant".
+        // Toucher la notif ouvre l'app sur la conv (le caller doit attendre
+        // la connexion WS pour que le SDP/ICE soient relayés).
+        if (msg.type === 'webrtc-offer') {
+          this.notifyOfflineCall(session.userId, session.convId, msg.callType || 'audio')
+            .catch((e) => console.warn('[call push] failed:', e && e.message));
+        }
         break;
 
       default:
@@ -385,35 +393,91 @@ export class ConversationDO {
 
       if (offline.length === 0) return;
 
-      // Push via worker push (best-effort, fire and forget)
-      // L'IA Apex peut décrypter le message côté client si user en ligne, sinon notif générique
+      // v1.1.150 : nom de l'expéditeur dans la notif (titre plus parlant que "Apex Chat")
+      let senderName = 'Quelqu\'un';
+      try {
+        const u = await this.env.APEX_CHAT_DB.prepare(
+          'SELECT pseudo, real_name FROM users WHERE id=?'
+        ).bind(messageRecord.sender_id).first();
+        if (u) senderName = u.real_name || u.pseudo || senderName;
+      } catch (_) {}
+
       const pushPayload = {
-        title: 'Apex Chat',
-        body: 'Nouveau message',
+        title: senderName,
+        body: '💬 Nouveau message',
         tag: `conv-${messageRecord.conv_id}`,
+        renotify: true,
         payload: {
+          type: 'message',
           convId: messageRecord.conv_id,
           messageId: messageRecord.id,
+          senderId: messageRecord.sender_id,
+          senderName,
           ts: messageRecord.ts
         }
       };
 
-      for (const member of offline) {
-        // Fire and forget — pas de await, on utilise waitUntil au niveau du worker parent
-        fetch(`https://apex-push-worker.desarzens-kevin.workers.dev/broadcast`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Apex-Push-Token': this.env.APEX_CHAT_ADMIN_TOKEN || ''
-          },
-          body: JSON.stringify({
-            topic: `user:${member.user_id}`,
-            ...pushPayload
-          })
-        }).catch(() => {});  // best-effort
-      }
+      await this._pushToUsers(offline.map(m => m.user_id), pushPayload);
     } catch (e) {
       console.error('notifyOfflineMembers error', e.message);
+    }
+  }
+
+  // v1.1.150 : push d'appel entrant. Quand un offer WebRTC arrive et que
+  // le destinataire n'est PAS connecté en WS, on lui envoie un push "📞 Appel
+  // entrant de X" avec actions Répondre/Refuser → l'app ouverte via la notif
+  // peut décrocher (recipient must be online at that point for WebRTC).
+  async notifyOfflineCall(callerUserId, convId, callType) {
+    try {
+      const members = await this.env.APEX_CHAT_DB.prepare(
+        'SELECT user_id FROM conversation_members WHERE conv_id=?'
+      ).bind(convId).all();
+      const connectedUsers = new Set([...this.sessions.values()].map(s => s.userId));
+      const offline = (members.results || []).filter(m =>
+        m.user_id !== callerUserId && !connectedUsers.has(m.user_id)
+      );
+      if (offline.length === 0) return;
+
+      let callerName = 'Quelqu\'un';
+      try {
+        const u = await this.env.APEX_CHAT_DB.prepare(
+          'SELECT pseudo, real_name FROM users WHERE id=?'
+        ).bind(callerUserId).first();
+        if (u) callerName = u.real_name || u.pseudo || callerName;
+      } catch (_) {}
+
+      const isVideo = callType === 'video';
+      const pushPayload = {
+        title: '📞 Appel ' + (isVideo ? 'vidéo' : 'audio') + ' entrant',
+        body: callerName + ' t\'appelle',
+        tag: `call-${convId}`,
+        renotify: true,
+        urgent: true,
+        payload: {
+          type: 'call',
+          convId,
+          callerId: callerUserId,
+          callerName,
+          callType: callType || 'audio',
+          ts: Date.now()
+        }
+      };
+      await this._pushToUsers(offline.map(m => m.user_id), pushPayload);
+    } catch (e) {
+      console.error('notifyOfflineCall error', e.message);
+    }
+  }
+
+  // Helper : push fire-and-forget vers une liste d'user_ids via le push-worker.
+  async _pushToUsers(userIds, pushPayload) {
+    const pushBase = this.env.APEX_PUSH_WORKER_URL || 'https://apex-push-worker.9r4rxssx64.workers.dev';
+    const token = this.env.APEX_CHAT_ADMIN_TOKEN || '';
+    for (const uid of userIds) {
+      fetch(pushBase + '/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Apex-Push-Token': token },
+        body: JSON.stringify({ topic: `user:${uid}`, ...pushPayload })
+      }).catch((e) => console.warn('[push]', uid, 'failed:', e && e.message));
     }
   }
 
