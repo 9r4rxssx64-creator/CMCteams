@@ -902,6 +902,7 @@ async function handleCreateInvitation(request, env) {
   let user = await env.APEX_CHAT_DB.prepare(
     'SELECT id, pseudo FROM users WHERE phone_hash=?'
   ).bind(phoneHash).first();
+  const userExisted = !!user;
   if (!user) {
     const userId = 'u_' + Array.from(crypto.getRandomValues(new Uint8Array(8)))
       .map(b => b.toString(16).padStart(2, '0')).join('');
@@ -944,8 +945,33 @@ async function handleCreateInvitation(request, env) {
   const baseUrl = env.APEX_CHAT_BASE_URL || '';
   const magicUrl = `${baseUrl}?invite=${encodeURIComponent(magicToken)}`;
   const shortUrl = `${baseUrl}i/${code}`;
-  const inviterName = (await env.APEX_CHAT_DB.prepare('SELECT real_name, pseudo FROM users WHERE id=?')
-    .bind(auth.sub).first().catch(() => null))?.real_name || auth.pseudo || 'un ami';
+  const inviterRow = await env.APEX_CHAT_DB.prepare('SELECT real_name, pseudo FROM users WHERE id=?')
+    .bind(auth.sub).first().catch(() => null);
+  const inviterName = inviterRow?.real_name || auth.pseudo || 'un ami';
+
+  // v1.1.158 Kevin "déjà connu hors ligne → notification push" :
+  // Si l'invité existe DÉJÀ côté serveur (compte préexistant, pas juste créé
+  // par cet appel), on lui envoie un push notif "📩 X t'invite à discuter".
+  // Si c'est un nouveau compte (créé par l'INSERT plus haut), il n'a pas
+  // encore de souscription push → on saute (le canal SMS/Share du inviter
+  // se charge de la notif initiale).
+  if (userExisted && user && user.id) {
+    try {
+      await sendPushToUser(user.id, {
+        title: '📩 Nouvelle invitation',
+        body: inviterName + ' t\'invite à discuter sur Apex Chat',
+        tag: 'invite-' + auth.sub,
+        renotify: true,
+        payload: {
+          type: 'invitation',
+          inviter_id: auth.sub,
+          inviter_name: inviterName,
+          magic_token: magicToken,
+          ts: Date.now()
+        }
+      }, env);
+    } catch (e) { console.warn('[invite push]', e.message); }
+  }
 
   return json({
     ok: true, code, expires_at: expiresAt,
