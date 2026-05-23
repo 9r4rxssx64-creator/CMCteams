@@ -356,7 +356,22 @@ class MultiKeyVault {
     list.push(entry);
     this.cache = list;
     await this.persist();
-    logger.info('multi-key-vault', `addKey ${service} (id=${entry.id.slice(0, 8)})`, {
+    /* v13.4.270 (Kevin "Toutes nouvelles informations dois être sauvegardé sûr
+     * immédiatement. Auto.") : push IMMÉDIAT du backup chiffré dédié vers
+     * Firebase `vault_backup/<uid>/<storageKey>` (force:true bypass throttle
+     * 5min). Garantit redondance cross-device dès le collage, sans attendre
+     * l'auto-maintenance suivante (1×/h max). Best-effort : si Firebase
+     * offline, le push est queueé et flush auto à la reconnexion. */
+    try {
+      const storageKey = `ax_${service}_key`;
+      const { vaultFirebaseBackup } = await import('./vault-firebase-backup.js');
+      void vaultFirebaseBackup.push(storageKey, encrypted, { force: true }).catch((err: unknown) => {
+        logger.debug('multi-key-vault', `immediate backup skipped for ${service}`, { err });
+      });
+    } catch (err: unknown) {
+      logger.debug('multi-key-vault', 'vault-fb-backup import failed', { err });
+    }
+    logger.info('multi-key-vault', `addKey ${service} (id=${entry.id.slice(0, 8)}) — backup immédiat déclenché`, {
       alias: entry.alias,
       total_for_service: this.listKeys(service).length,
     });

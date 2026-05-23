@@ -1,6 +1,47 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-23 (Apex v13.4.264 / CMC v9.732).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-23 (Apex v13.4.270 / CMC v9.736).
+
+---
+
+## 💾 RÈGLE ABSOLUE — TOUTE NOUVELLE INFO = SAUVEGARDE SÛRE IMMÉDIATE (Kevin 2026-05-23, ABSOLUE)
+
+> **"Toutes nouvelles informations dois être sauvegardé sûr immédiatement. Auto."** — Kevin 2026-05-23
+
+**Règle absolue, NON-NÉGOCIABLE, AUTO** — Apex v13, Apex Chat, CMCteams, e-KDMC, tous projets actuels + futurs.
+
+### Principe : 3 couches en parallèle, immédiatement, sans demander
+
+Dès qu'une nouvelle info user arrive (clé API collée, fact extrait du chat, préférence cochée, message important, document uploadé) :
+1. **Chiffrement** AES-GCM-256 + PBKDF2 200k iterations (si donnée secrète)
+2. **Persistence locale** : localStorage + IDB shadow (les deux, simultanément)
+3. **Backup cloud** : Firebase backup chiffré (path dédié `vault_backup/<uid>/<key>` ou clé FB_FIX dédiée)
+
+### Composants obligatoires dans chaque projet
+
+| Type info | Chiffrement | Local | Firebase | Confirmation visible |
+|---|---|---|---|---|
+| Clé API / token | AES-GCM-256 | localStorage + IDB | `vault_backup/<uid>/<key>` (force:true bypass throttle) | Toast détaillant les 3 couches |
+| Fact persistent_memory | non (déjà filtré PII) | localStorage + IDB | FB_FIX `apex_v13_persistent_memory` | silencieux (extraction auto) |
+| Préférence / réglage | non | localStorage | FB_FIX `apex_v13_settings_<uid>` | Toast court "✅ Sauvegardé" |
+| Document uploadé | optionnel | localStorage léger + IDB chunks | si <10 Mo : FB_FIX `apex_v13_attachments` | Toast avec taille |
+
+### Anti-patterns interdits absolus
+
+- ❌ Push Firebase **différé** sans confirmation user (Kevin doit voir que c'est en cours OU déjà fait)
+- ❌ Throttle 5min sur les NOUVELLES infos (le throttle ne s'applique qu'aux re-push de la même clé existante)
+- ❌ Persist local seul sans push Firebase (single point of failure : reinstall PWA = perte)
+- ❌ Toast vague "✅ Stocké" sans préciser les 3 couches (Kevin doit avoir la preuve)
+- ❌ Extraction de fact silencieuse sans persist immédiat (race condition)
+
+### Test mental obligatoire avant chaque ajout d'info user
+
+> *"Si Kevin colle cette nouvelle clé MAINTENANT puis ferme l'app et la réinstalle dans 1 minute, est-ce qu'elle est récupérable ? Si oui, est-il SÛR (visible) que c'est sauvegardé ? Sinon → durcir."*
+
+### Implementation référence
+
+- **Apex v13.4.270** : `services/vault/multi-key-vault.ts addKey()` → push immédiat `vaultFirebaseBackup.push(storageKey, encrypted, {force:true})` après persist local + toast UI `features/vault/index.ts` détaillant les 3 couches avec état Firebase live (🟢 poussé / 🟡 en queue / ⚪ offline).
+- À auditer / aligner : Apex Chat (messages chiffrés E2E déjà OK), CMCteams (planning local + sync Firebase OK), e-KDMC.
 
 ---
 
