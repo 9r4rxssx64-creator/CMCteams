@@ -632,6 +632,8 @@ export function render(rootEl: HTMLElement): void {
             style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
           <button id="ax-vault-migrate-legacy-btn" type="button"
             style="padding:10px 16px;background:rgba(232,184,48,0.20);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔁 Migrer mes clés legacy vers le coffre</button>
+          <button id="ax-vault-repair-services-btn" type="button"
+            style="padding:10px 16px;background:rgba(247,131,34,0.20);color:var(--ax-orange);border:1px solid rgba(247,131,34,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">♻️ Réparer services mal nommés</button>
           <button id="ax-vault-push-all-btn" type="button"
             style="padding:10px 16px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📤 Push toutes mes clés vers Firebase backup</button>
         </div>
@@ -1016,6 +1018,61 @@ function attachHandlers(rootEl: HTMLElement): void {
           result.append(errBox);
         }
         toast.error('Migration impossible');
+        haptic.error();
+      }
+    })();
+  });
+
+  /* v13.4.267 Kevin "bcp de clefs non fonctionnelles et liens pas bons" :
+   * Répare les services migrés avec un nom non-canonique (ex : "cloudflare_global"
+   * → "cloudflare"). Sans ça : PING_CONFIGS et linksRegistry ne matchent pas
+   * → test échoue + lien dashboard invalide. */
+  const repairBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-repair-services-btn');
+  if (repairBtn && activeVaultScope) activeVaultScope.bind(repairBtn, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-diag-result');
+      if (result) result.textContent = '⏳ Réparation des services mal nommés…';
+      try {
+        const r = await multiKeyVault.repairMisnamedServices();
+        if (!result) return;
+        result.textContent = '';
+        const box = document.createElement('div');
+        const ok = r.renamed > 0 || r.deleted_duplicate > 0;
+        box.style.cssText = `padding:10px;background:${ok ? 'rgba(34,204,119,.1)' : 'rgba(255,255,255,0.03)'};color:${ok ? 'var(--ax-green)' : 'rgba(255,255,255,0.85)'};border:1px solid ${ok ? 'rgba(34,204,119,0.25)' : 'rgba(255,255,255,0.1)'};border-radius:8px;font-size:12px;line-height:1.5`;
+        const line1 = document.createElement('div');
+        line1.style.cssText = 'font-weight:700;margin-bottom:4px';
+        line1.textContent = `♻️ ${r.scanned} entrée(s) scannées : ${r.renamed} renommée(s) · ${r.deleted_duplicate} duplicate(s) marqué(s) invalides · ${r.skipped} déjà canoniques`;
+        box.append(line1);
+        if (r.renamed > 0) {
+          const detail = document.createElement('div');
+          detail.style.cssText = 'opacity:0.85;margin-top:4px';
+          const sample = r.details
+            .filter((d) => d.status === 'renamed')
+            .slice(0, 6)
+            .map((d) => `${d.from} → ${d.to}`)
+            .join(', ');
+          detail.textContent = `Renommés : ${sample}${r.renamed > 6 ? '…' : ''}. Liens dashboard + endpoints test devraient maintenant matcher.`;
+          box.append(detail);
+        }
+        result.append(box);
+        if (r.renamed > 0) {
+          toast.success(`♻️ ${r.renamed} services renommés en canonique`);
+          haptic.success();
+          setTimeout(() => render(rootEl), 600);
+        } else {
+          toast.info('Rien à réparer (services déjà canoniques)');
+        }
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'repairMisnamedServices failed', { err });
+        if (result) {
+          result.textContent = '';
+          const errBox = document.createElement('div');
+          errBox.style.cssText = 'padding:8px;background:rgba(255,91,91,0.1);color:#ff8b8b;border-radius:8px';
+          errBox.textContent = '⚠ Réparation échouée : ' + String(err).slice(0, 160);
+          result.append(errBox);
+        }
+        toast.error('Réparation impossible');
         haptic.error();
       }
     })();

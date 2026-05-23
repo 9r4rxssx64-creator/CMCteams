@@ -1005,6 +1005,52 @@ class MultiKeyVault {
       'apex_v13_vault_fb',
       'apex_v13_multi_keys',
     ];
+    /* v13.4.267 (Kevin "bcp de clefs non fonctionnelles + liens pas bons") :
+     * Table d'alias storage_key → service canonique. Sans ça :
+     *   ax_cloudflare_global_key → service 'cloudflare_global' (absent de
+     *   PING_CONFIGS + linksRegistry) → test échoue + lien invalide.
+     * Avec : alias mappe vers le nom canonique connu des registres. */
+    const STORAGE_KEY_ALIAS: Record<string, string> = {
+      /* Cloudflare : 3 variantes de storage key → 1 service canonique */
+      ax_cloudflare_global_key: 'cloudflare',
+      ax_cloudflare_auth_token: 'cloudflare',
+      ax_cloudflare_token: 'cloudflare',
+      ax_cloudflare_api_token: 'cloudflare',
+      /* GitHub : storage keys spécifiques mais PING_CONFIGS connaît les 2 sous-types */
+      ax_github_token: 'github',
+      ax_github_oauth: 'github',
+      /* Google / Gemini parfois confondus */
+      ax_google_key: 'google',
+      ax_youtube_key: 'google',
+      /* Railway : token infra, pas une clé API d'inférence — on l'importe
+       * quand même pour traçabilité, mais sans endpoint test (le service
+       * "railway" n'a pas de PING_CONFIG, le testKey retournera "no test
+       * endpoint" proprement). */
+      ax_railway_token: 'railway',
+      /* Telegram bot : idem, infra not inference */
+      ax_telegram_token: 'telegram',
+      ax_telegram_bot_token: 'telegram',
+      /* Stripe : 2 variantes (live/test) → service canonique 'stripe' */
+      ax_stripe_sk: 'stripe',
+      ax_stripe_pk: 'stripe',
+      /* Pinecone alias */
+      ax_pinecone_api_key: 'pinecone',
+      /* Resend / Brevo alias */
+      ax_brevo_smtp_key: 'brevo',
+    };
+    /* Aussi : SKIP_KEY_EXACT — storage keys qui ne sont PAS des clés API
+     * d'inférence (identifiants persos, tags, emails). On ne les migre pas. */
+    const SKIP_KEY_EXACT = new Set([
+      'ax_kevin_whatsapp_phone',
+      'ax_paypal_email',
+      'ax_revolut_tag',
+      'ax_lydia_tag',
+      'ax_iban_nom',
+      'ax_iban',
+      'ax_bic',
+      'ax_btc_address',
+      'ax_eth_address',
+    ]);
     /* Pattern → service IA. Si la storage_key matche, on l'importe avec ce service. */
     const flatKeys: string[] = [];
     try {
@@ -1014,6 +1060,7 @@ class MultiKeyVault {
         if (!(k.startsWith('ax_') || k.startsWith('apex_v13_'))) continue;
         if (!(k.endsWith('_key') || k.endsWith('_token') || k.endsWith('_secret'))) continue;
         if (SKIP_PREFIXES.some((p) => k.startsWith(p))) continue;
+        if (SKIP_KEY_EXACT.has(k)) continue;
         const v = localStorage.getItem(k);
         if (!v || !v.startsWith('AXENC1:')) continue;
         flatKeys.push(k);
@@ -1032,14 +1079,15 @@ class MultiKeyVault {
           result.details.push({ key: storageKey, status: 'failed', reason: 'storage_disappeared' });
           continue;
         }
-        /* Dérive le nom du service depuis storage_key. Ex :
-         * `ax_anthropic_key` → 'anthropic'
-         * `ax_github_pat_classic` → 'github_pat_classic'
-         * `apex_v13_openai_key` → 'openai' */
-        let service = storageKey
-          .replace(/^ax_/, '')
-          .replace(/^apex_v13_/, '')
-          .replace(/_(key|token|secret)$/, '');
+        /* v13.4.267 : alias table d'abord, sinon dérivation littérale.
+         * Ex : `ax_cloudflare_global_key` → 'cloudflare' (via alias) au lieu de 'cloudflare_global'. */
+        let service = STORAGE_KEY_ALIAS[storageKey];
+        if (!service) {
+          service = storageKey
+            .replace(/^ax_/, '')
+            .replace(/^apex_v13_/, '')
+            .replace(/_(key|token|secret)$/, '');
+        }
         if (!service) {
           result.skipped += 1;
           result.details.push({ key: storageKey, status: 'skipped', reason: 'service_unknown' });
@@ -1075,6 +1123,105 @@ class MultiKeyVault {
     logger.info(
       'multi-key-vault',
       `migrateLegacyFlatKeys: scanned=${result.scanned} migrated=${result.migrated} failed=${result.failed} skipped=${result.skipped}`,
+    );
+    return result;
+  }
+
+  /**
+   * v13.4.267 (Kevin "bcp de clefs non fonctionnelles + liens pas bons") :
+   * RÉPARE les entrées du coffre central déjà migrées avec un service
+   * non-canonique (ex : `cloudflare_global`, `cloudflare_token`).
+   *
+   * Pour chaque entrée du coffre :
+   * - Cherche le nom canonique dans une table de rename
+   * - Si rename nécessaire ET service canonique pas déjà occupé → renomme in-place
+   * - Sinon skip
+   *
+   * Lecture seule sur les valeurs encrypted (juste rename du champ `service`).
+   * Anti-doublon : si le service canonique existe déjà, on garde l'entrée
+   * existante et on supprime la duplicate mal nommée (vault dédupe la valeur).
+   */
+  async repairMisnamedServices(): Promise<{
+    scanned: number;
+    renamed: number;
+    deleted_duplicate: number;
+    skipped: number;
+    details: Array<{ from: string; to: string; status: 'renamed' | 'deleted_duplicate' | 'skipped'; reason?: string }>;
+  }> {
+    const RENAME_MAP: Record<string, string> = {
+      cloudflare_global: 'cloudflare',
+      cloudflare_auth: 'cloudflare',
+      cloudflare_api_token: 'cloudflare',
+      cloudflare_token: 'cloudflare',
+      cloudflare_global_key: 'cloudflare',
+      google_key: 'google',
+      youtube_key: 'google',
+      pinecone_api: 'pinecone',
+      stripe_sk: 'stripe',
+      stripe_pk: 'stripe',
+      brevo_smtp: 'brevo',
+      telegram_bot: 'telegram',
+      github_oauth: 'github',
+    };
+    const result = {
+      scanned: 0,
+      renamed: 0,
+      deleted_duplicate: 0,
+      skipped: 0,
+      details: [] as Array<{ from: string; to: string; status: 'renamed' | 'deleted_duplicate' | 'skipped'; reason?: string }>,
+    };
+    const list = this.load();
+    result.scanned = list.length;
+    let modified = false;
+    for (const entry of list) {
+      const canonical = RENAME_MAP[entry.service];
+      if (!canonical) {
+        continue; /* déjà canonique ou hors map */
+      }
+      /* Si le service canonique existe déjà dans le coffre, dédup au lieu de rename */
+      const conflictingEntry = list.find(
+        (k) => k.id !== entry.id && k.service === canonical,
+      );
+      if (conflictingEntry) {
+        /* Marquer cette entrée comme dup à supprimer */
+        entry.status = 'invalid';
+        entry.invalidReason = `Duplicate de ${canonical} (service initialement mal nommé ${entry.service})`;
+        entry.invalidAt = Date.now();
+        result.deleted_duplicate += 1;
+        result.details.push({
+          from: entry.service,
+          to: canonical,
+          status: 'deleted_duplicate',
+          reason: `service ${canonical} déjà présent`,
+        });
+        modified = true;
+      } else {
+        const oldService = entry.service;
+        entry.service = canonical;
+        /* Reset status pour qu'un test re-run propre */
+        if (entry.status === 'failing' || entry.status === 'invalid') {
+          entry.status = 'unknown';
+          entry.failCount = 0;
+          delete entry.invalidReason;
+          delete entry.invalidAt;
+        }
+        result.renamed += 1;
+        result.details.push({
+          from: oldService,
+          to: canonical,
+          status: 'renamed',
+        });
+        modified = true;
+      }
+    }
+    if (modified) {
+      this.cache = list;
+      await this.persist();
+    }
+    result.skipped = result.scanned - result.renamed - result.deleted_duplicate;
+    logger.info(
+      'multi-key-vault',
+      `repairMisnamedServices: scanned=${result.scanned} renamed=${result.renamed} deleted_dup=${result.deleted_duplicate} skipped=${result.skipped}`,
     );
     return result;
   }
