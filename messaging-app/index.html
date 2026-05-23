@@ -330,7 +330,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.154';
+const __APEX_CHAT_VERSION__ = 'v1.1.155';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -370,7 +370,7 @@ if('serviceWorker' in navigator){
       if(e.data?.type === 'mark-conv-read' && e.data.convId){
         if(typeof K !== 'undefined' && K._markConvAsRead) K._markConvAsRead(e.data.convId);
       }
-      // v1.1.154 — Appel entrant : "Répondre" depuis la notif → ouvre la conv + auto-décroche
+      // v1.1.155 — Appel entrant : "Répondre" depuis la notif → ouvre la conv + auto-décroche
       if(e.data?.type === 'call-answer' && e.data.convId){
         if(typeof K !== 'undefined' && K.openConv){
           K.openConv(e.data.convId);
@@ -393,7 +393,7 @@ if('serviceWorker' in navigator){
   }).catch(_=>{});
 
   // === Sentinelle remote version (compare APP_VER local vs remote) ===
-  // v1.1.154 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
+  // v1.1.155 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
@@ -488,7 +488,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.154</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.155</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -502,7 +502,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.154</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.155</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -884,7 +884,7 @@ K.login = async function(user, token){
   }catch(e){ /* ignore */ }
   toast('Bienvenue ' + (user.pseudo || user.real_name) + ' !', 'ok');
 
-  // v1.1.154 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
+  // v1.1.155 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
   // après login, si profil incomplet OU pas de PIN local → onboarding forcé
   // (fiche + PIN 6 chiffres). Une fois fait, on note l'unlock.
   try{
@@ -1264,7 +1264,7 @@ K._refreshConvs = async function(){
           for(const c of K.conversations || []){ localById[c.id] = c; }
           K.conversations = data.conversations.map(c => ({
             ...c,
-            // v1.1.154 : ne pas effacer le nom local si le serveur ne le renvoie pas
+            // v1.1.155 : ne pas effacer le nom local si le serveur ne le renvoie pas
             name: c.name || localById[c.id]?.name,
             pseudo: c.pseudo || localById[c.id]?.pseudo,
             peer_id: c.peer_id || localById[c.id]?.peer_id,
@@ -1275,7 +1275,7 @@ K._refreshConvs = async function(){
             bg_id: localById[c.id]?.bg_id,
             peer_tz_offset_min: localById[c.id]?.peer_tz_offset_min,
           }));
-          // v1.1.154 : applique les tombstones — conv supprimées ne réapparaissent jamais.
+          // v1.1.155 : applique les tombstones — conv supprimées ne réapparaissent jamais.
           // Retente le delete serveur tant que le serveur les renvoie.
           if(K._deletedConvIds && K._deletedConvIds.length){
             const serverIds = new Set(K.conversations.map(c => c.id));
@@ -1299,7 +1299,7 @@ K._refreshConvs = async function(){
   toast('🔄 Rafraîchi', 'ok', 1500);
 };
 
-// v1.1.154 : nom affichable d'une conversation. Si le serveur ne renvoie
+// v1.1.155 : nom affichable d'une conversation. Si le serveur ne renvoie
 // pas name/pseudo (DM chiffré), on résout le correspondant via peer_id
 // dans les contacts chargés, puis members_detail. Évite le "Sans nom".
 K._convName = function(c){
@@ -1316,7 +1316,7 @@ K._convName = function(c){
   return 'Sans nom';
 };
 
-// v1.1.154 : tombstones de conversations supprimées.
+// v1.1.155 : tombstones de conversations supprimées.
 // Une conv supprimée ne doit JAMAIS réapparaître, même si le serveur la
 // renvoie encore (delete serveur différé/échoué). Le refresh retente le
 // delete serveur tant que la conv est tombstonée.
@@ -3421,7 +3421,7 @@ K._openConvActionsMenu = function(convId, ev){
   `);
 };
 
-// v1.1.154 : suppression conversation. Local-first (jamais bloqué) +
+// v1.1.155 : suppression conversation. Local-first (jamais bloqué) +
 // best-effort serveur pour qu'elle ne réapparaisse pas au refresh.
 K._deleteConv = async function(convId){
   const conv = (K.conversations || []).find(c => c.id === convId);
@@ -3660,7 +3660,7 @@ if(typeof window !== 'undefined'){
 K._exportAllData = function(){
   const data = {
     app: 'Apex Chat',
-    version: 'v1.1.154',
+    version: 'v1.1.155',
     exported_at: new Date().toISOString(),
     user: { id: K.user?.id, pseudo: K.user?.pseudo },
     conversations: K.conversations || [],
@@ -4474,7 +4474,7 @@ K._leaveGroup = function(){
 // v1.1.55 — Presence (online/away/offline + last_seen) helpers
 K._presenceState = K._presenceState || {};
 
-// v1.1.154 : état de chiffrement HONNÊTE. Le label E2E ne doit s'afficher
+// v1.1.155 : état de chiffrement HONNÊTE. Le label E2E ne doit s'afficher
 // que si la session de chiffrement est réellement établie. Sinon le message
 // est chiffré en transit (HTTPS/WSS) mais PAS bout-en-bout.
 K._e2eActive = function(conv){
@@ -5638,7 +5638,7 @@ K._handleAuthPhone = async function(){
     return;
   }
 
-  // v1.1.154 Kevin "enlève l'histoire du code etc, pour tous" :
+  // v1.1.155 Kevin "enlève l'histoire du code etc, pour tous" :
   // pas de SMS, pas d'étape OTP — on passe direct à la création de compte
   // avec otp:'000000' (mode "cercle privé" — Kevin contrôle qui rejoint).
   // L'admin vérifie le numéro dans la fiche après coup.
@@ -5647,7 +5647,7 @@ K._handleAuthPhone = async function(){
   renderAuthStep();
   return;
 
-  // === [LEGACY OTP — désactivé v1.1.154] Tentative worker avec timeout 8s ===
+  // === [LEGACY OTP — désactivé v1.1.155] Tentative worker avec timeout 8s ===
   try{
     toast('Envoi du SMS...', 'info', 1500);
     const dbg = $('#auth-debug');
@@ -5706,7 +5706,7 @@ K._handleAuthOtp = async function(){
   const otp = $('#auth-otp').value.replace(/\D/g,'');
   if(otp.length !== 6) return toast('Code à 6 chiffres', 'err');
   K.authData.otp = otp;  // OTP Vonage stocké pour verify-otp ensuite
-  // v1.1.154 (Kevin "connection auto après la création du compte pour tout le monde") :
+  // v1.1.155 (Kevin "connection auto après la création du compte pour tout le monde") :
   // pseudo auto-généré à partir du nom + auto-submit → zéro étape supplémentaire.
   // L'utilisateur peut le changer plus tard dans son profil. Si la création
   // serveur échoue, on retombe sur l'étape pseudo manuelle (fallback).
@@ -5731,7 +5731,7 @@ K._handleAuthPseudo = async function(){
 
   // === Bypass admin : tente vrai JWT du Worker, fallback local si offline ===
   if(K.authData._admin_bypass){
-    // v1.1.154 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
+    // v1.1.155 : appel Worker /api/auth/verify-otp + DIAG erreur exacte visible.
     let realToken = null, realUser = null, diag = '';
     try{
       const ctrl = new AbortController();
@@ -5750,7 +5750,7 @@ K._handleAuthPseudo = async function(){
         if(r.ok && data.ok && data.token){
           realToken = data.token; realUser = data.user;
         } else {
-          // v1.1.154 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
+          // v1.1.155 : cause EXACTE — detail (vraie cause serveur) > message > error (code générique)
           const cause = data.detail || data.message || data.error || JSON.stringify(data).slice(0,140);
           diag = 'HTTP ' + r.status + ' : ' + cause + (data.step ? ' [' + data.step + ']' : '') + (data.where ? ' @' + data.where : '');
         }
@@ -5874,7 +5874,7 @@ K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
   K.render();
-  // v1.1.154 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
+  // v1.1.155 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
   try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_e){_safeCatch('silent',_e)}
 };
 
@@ -6283,7 +6283,7 @@ K._sendMsg = async function(){
 // ============================================================================
 //  WebSocket client (Phase 3)
 // ============================================================================
-// v1.1.154 : ré-authentification admin auto. Le token JWT peut périmer après
+// v1.1.155 : ré-authentification admin auto. Le token JWT peut périmer après
 // un redéploiement du Worker (clé de signature). Au lieu d'un blocage silencieux
 // "Mode local", l'app re-login Kevin via le bypass admin → token frais → réouvre WS.
 K._reauthAdmin = async function(reopenConvId, cause){
@@ -6326,7 +6326,7 @@ K._reauthAdmin = async function(reopenConvId, cause){
   }
 };
 
-// v1.1.154 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
+// v1.1.155 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
 // /ws-diag rejoue les checks serveur et renvoie la cause exacte → on agit dessus.
 K._wsDiagnose = async function(convId){
   if(K._wsDiagRunning) return;
@@ -6478,7 +6478,7 @@ async function _handleWsMessage(data, convId){
       // Server accepts connection
       break;
     case 'history': {
-      // v1.1.154 : historique des messages envoyé par le serveur à la connexion.
+      // v1.1.155 : historique des messages envoyé par le serveur à la connexion.
       // Permet de retrouver ses conversations sur un nouvel appareil / après reset.
       if(!Array.isArray(data.messages) || data.messages.length === 0) break;
       if(!K.messages[convId]) K.messages[convId] = [];
@@ -6493,7 +6493,7 @@ async function _handleWsMessage(data, convId){
             txt = await ApexCrypto.decryptForConv(convId, sm.ciphertext);
           }
         }catch(e){ _safeCatch('history-decrypt', e); }
-        // v1.1.154 : dédup mes propres messages — l'historique serveur les
+        // v1.1.155 : dédup mes propres messages — l'historique serveur les
         // renvoie avec l'id officiel alors que je les ai en local avec id m_…
         // → on adopte l'id serveur sur le message local au lieu de doubler.
         if(sm.sender_id === myId){
@@ -6566,7 +6566,7 @@ async function _handleWsMessage(data, convId){
       }
       break;
     case 'ack': {
-      // v1.1.154 : le serveur confirme la réception et donne l'id officiel.
+      // v1.1.155 : le serveur confirme la réception et donne l'id officiel.
       // On adopte cet id côté client → l'historique (qui utilise l'id serveur)
       // se dédupera correctement, plus de message doublé.
       if(data.id && K.messages[convId]){
@@ -6830,7 +6830,7 @@ K._call = async function(type, convId){
       K.ws.send(JSON.stringify({ type: 'webrtc-offer', offer, convId, callType: type }));
       $('#call-status').textContent = '📞 Appel en cours...';
     } else {
-      // v1.1.154 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
+      // v1.1.155 : WS pas prêt → on l'ouvre et on réessaie une fois avant d'abandonner
       const cs = $('#call-status'); if(cs) cs.textContent = '🛜 Connexion temps réel…';
       K._openWs(convId);
       setTimeout(() => {
@@ -6850,7 +6850,7 @@ K._call = async function(type, convId){
   }
 };
 
-// v1.1.154 : alias — les boutons 📞/📹 des contacts appellent _startCall(convId, type).
+// v1.1.155 : alias — les boutons 📞/📹 des contacts appellent _startCall(convId, type).
 // La vraie fonction est _call(type, convId) → on adapte l'ordre des arguments.
 K._startCall = function(convId, type){
   return K._call(type || 'audio', convId);
@@ -7091,7 +7091,7 @@ K.openMiniApps = function(){
   `);
 };
 
-// v1.1.154 : mini-apps INTÉGRÉES dans Apex Chat (avant : window.open vers une
+// v1.1.155 : mini-apps INTÉGRÉES dans Apex Chat (avant : window.open vers une
 // page apex-ai/ vide de 80 octets → page blanche). Utilisent l'IA du Worker.
 K._openStudio = function(name){
   if(name === 'traducteur') return K._openTranslator();
@@ -7774,7 +7774,7 @@ K._markConvAsRead = function(convId){
 
 // Demande permission notif si push activé et pas encore demandé
 K._requestNotifPermissionIfNeeded = async function(){
-  // v1.1.154 : Kevin "messages et appels doivent arriver même app fermée".
+  // v1.1.155 : Kevin "messages et appels doivent arriver même app fermée".
   // Avant : on demandait juste la permission mais on n'enregistrait PAS la
   // souscription push → aucun push possible. Maintenant : si permission
   // accordée, on subscribe immédiatement ; si default, on prompte gentiment.
@@ -8787,7 +8787,7 @@ K._fetchContacts = async function(silent){
         const data = await r.json().catch(() => ({}));
         users = (data.users || []).filter(u => u.id !== K.user?.id);
       } else if(r){
-        // v1.1.154 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
+        // v1.1.155 : cause EXACTE du body Worker (detail/message), pas juste le code HTTP
         const ed = await r.json().catch(() => ({}));
         const cause = ed.detail || ed.message || ed.error || r.statusText || '';
         diagInfo = 'Worker HTTP ' + r.status + (cause ? ' — ' + cause : '');
@@ -8809,7 +8809,7 @@ K._fetchContacts = async function(silent){
         seen.add(c.peer_id);
       }
     }
-    // v1.1.154 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
+    // v1.1.155 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
     // les écraser avec la liste serveur (cause du "j'ai perdu un contact" Yannou).
     const _prevContacts = K.contacts || lg('contacts', []);
     const _srvIds = new Set(users.map(u => u.id));
@@ -8886,7 +8886,7 @@ K._saveNewContact = function(){
   if(K.view === 'contacts' && typeof K.render === 'function') K.render();
 };
 
-// v1.1.154 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
+// v1.1.155 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
 K._startConvWithUser = async function(userId, displayName){
   const existing = (K.conversations || []).find(c => c.peer_id === userId || c.id === userId);
@@ -8923,7 +8923,7 @@ K._startConvWithUser = async function(userId, displayName){
   K.openConv && K.openConv(conv.id);
 };
 
-// v1.1.154 : promeut une conv locale (dm_local_) en conv serveur réelle.
+// v1.1.155 : promeut une conv locale (dm_local_) en conv serveur réelle.
 // Crée la conv côté serveur, migre messages + id local → id serveur.
 K._promoteConvToServer = async function(localConvId){
   const conv = (K.conversations || []).find(c => c.id === localConvId);
@@ -9293,7 +9293,7 @@ function renderAdminUsers(app){
 }
 
 K._adminViewUserCard = function(userId){
-  // v1.1.154 : fusion données PRECONFIGURED (config locale) + serveur (K.contacts)
+  // v1.1.155 : fusion données PRECONFIGURED (config locale) + serveur (K.contacts)
   // → Kevin admin voit téléphone réel + tous les détails serveur.
   const local = PRECONFIGURED_USERS[userId] || {};
   const srv = (K.contacts || []).find(c => c.id === userId) || {};
@@ -9661,7 +9661,7 @@ K._adminToggle = function(key){
   K.render();
 };
 
-// v1.1.154 (Kevin "bouton ON/OFF individuel admin pour toutes les options") :
+// v1.1.155 (Kevin "bouton ON/OFF individuel admin pour toutes les options") :
 // surcharge per-user d'un toggle. 3 états : undefined=hérite global,
 // true=forcé ON, false=forcé OFF.
 K.FEATURE_CATALOG = [
@@ -10605,7 +10605,7 @@ K._api = async function(method, path, body, timeoutMs){
     const r = await fetch(API_BASE + path, opts);
     const data = await r.json().catch(() => ({}));
     if(!r.ok){
-      // v1.1.154 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
+      // v1.1.155 : règle CLAUDE.md — tracer la cause EXACTE (detail/step/where), pas juste le code
       const cause = data.detail || data.message || data.error || ('Erreur ' + r.status);
       _logTelemetry('warn', 'api-error', { method, path, status: r.status, msg: data.message, detail: data.detail, step: data.step, where: data.where });
       const ex = new Error(cause);
@@ -10847,9 +10847,89 @@ K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
 // ============================================================================
 //  Invitation viral SMS
 // ============================================================================
-// v1.1.154 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
+// v1.1.155 (Kevin "pour tous et tout le monde, sécuriser les connexions") :
 // fiche obligatoire + PIN 6 chiffres pour TOUT user à la première connexion,
 // puis lockscreen PIN à chaque ouverture après 10 min d'inactivité.
+
+// v1.1.155 (Kevin "FaceID dans tous les projets") : biométrie WebAuthn
+// Platform Authenticator (Face ID iOS / Touch ID / biométrie Android).
+// Unlock device-local sans serveur (zero-knowledge). PIN reste fallback.
+K._biometricSupported = async function(){
+  if(!window.PublicKeyCredential || !navigator.credentials) return false;
+  try{
+    return !!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+  }catch(e){ _safeCatch('biometric-supported', e); return false; }
+};
+
+K._biometricEnrolled = function(uid){
+  const id = uid || K.user?.id;
+  if(!id) return false;
+  const stored = lg('user_biometric_' + id, null);
+  return !!(stored && stored.credId);
+};
+
+K._biometricRegister = async function(){
+  if(!K.user) throw new Error('Non connecté');
+  if(!(await K._biometricSupported())) throw new Error('Biométrie non supportée sur ce device');
+  const challenge = crypto.getRandomValues(new Uint8Array(32));
+  const userIdBytes = new TextEncoder().encode(K.user.id);
+  const cred = await navigator.credentials.create({
+    publicKey: {
+      challenge,
+      rp: { name: 'Apex Chat', id: location.hostname },
+      user: {
+        id: userIdBytes,
+        name: K.user.pseudo || K.user.id,
+        displayName: K.user.real_name || K.user.pseudo || 'User'
+      },
+      pubKeyCredParams: [
+        { type: 'public-key', alg: -7 },     // ES256
+        { type: 'public-key', alg: -257 }    // RS256
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        userVerification: 'required',
+        residentKey: 'preferred'
+      },
+      timeout: 60000,
+      attestation: 'none'
+    }
+  });
+  if(!cred || !cred.rawId) throw new Error('Pas de credential reçu');
+  const credId = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+  ls('user_biometric_' + K.user.id, { credId, ts: Date.now() });
+  return true;
+};
+
+K._biometricVerify = async function(){
+  if(!K.user) return false;
+  const stored = lg('user_biometric_' + K.user.id, null);
+  if(!stored || !stored.credId) return false;
+  if(!(await K._biometricSupported())) return false;
+  try{
+    const credIdBytes = Uint8Array.from(atob(stored.credId), c => c.charCodeAt(0));
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ type: 'public-key', id: credIdBytes }],
+        userVerification: 'required',
+        timeout: 60000,
+        rpId: location.hostname
+      }
+    });
+    return !!assertion;
+  }catch(e){
+    _safeCatch('biometric-verify', e);
+    return false;
+  }
+};
+
+K._removeBiometric = function(){
+  if(!K.user) return;
+  try{ localStorage.removeItem('user_biometric_' + K.user.id); }catch(_){}
+  toast('🆔 Face ID désactivé', 'ok', 2000);
+};
 
 K._hashPin = async function(pin){
   const enc = new TextEncoder();
@@ -10890,7 +10970,7 @@ K._profileIncomplete = function(u){
 
 K._postLogin = function(){
   if(!K.user) return;
-  // v1.1.154 Kevin "lorsque déjà connu connexion auto" :
+  // v1.1.155 Kevin "lorsque déjà connu connexion auto" :
   // Si profil complet (= user déjà connu), CONNEXION AUTO directe,
   // aucun modal d'onboarding. Le PIN reste configurable plus tard via
   // Réglages → Sécurité. Le lockscreen ne s'affiche que si un PIN existe.
@@ -10991,8 +11071,37 @@ K._submitOnboarding = async function(inviterUserId){
   toast('Bienvenue ' + firstName + ' 👋', 'ok', 2200);
   K.render && K.render();
 
+  // v1.1.155 (Kevin "FaceID dans tous les projets") : propose Face ID / Touch ID
+  // après création du PIN. Opt-in — l'utilisateur peut refuser et garder juste le PIN.
+  setTimeout(async () => {
+    try{
+      if(!(await K._biometricSupported())) return;
+      if(K._biometricEnrolled()) return;
+      if(!K._showModal) return;
+      K._showModal('🆔 Activer Face ID / Touch ID ?', `
+        <p style="color:var(--ax-text-2);margin:0 0 14px">
+          Tu pourras déverrouiller Apex Chat avec ton visage ou ton empreinte
+          au lieu de retaper ton PIN à chaque fois. Le PIN reste là en secours.
+        </p>
+        <button class="btn btn-block" onclick="K._enrollBiometricFromOnboarding()">🆔 Activer maintenant</button>
+        <button class="btn btn-out btn-block" style="margin-top:8px" onclick="K._closeModal()">Plus tard</button>
+      `);
+    }catch(e){ _safeCatch('post-onboard-biometric', e); }
+  }, 1200);
+
   if(inviterUserId && K._startConvWithUser){
     setTimeout(() => K._startConvWithUser(inviterUserId, '').catch(()=>{}), 600);
+  }
+};
+
+K._enrollBiometricFromOnboarding = async function(){
+  try{
+    await K._biometricRegister();
+    toast('🆔 Face ID / Touch ID activé', 'ok', 2500);
+  }catch(e){
+    toast('Activation refusée : ' + ((e && e.message) || 'erreur'), 'warn', 5000);
+  }finally{
+    K._closeModal();
   }
 };
 
@@ -11009,20 +11118,31 @@ K._showLockscreen = function(){
   K._lockScreenOpen = true;
   const host = document.getElementById('modal-host') || document.body;
   const firstName = (K.user.real_name || K.user.pseudo || '').split(/\s+/)[0];
+  // v1.1.155 : Face ID / Touch ID prioritaire si enrôlé. PIN reste en fallback.
+  const bioEnrolled = K._biometricEnrolled();
   host.innerHTML = `
     <div id="apex-lock" style="position:fixed;inset:0;background:rgba(6,14,7,.97);
       display:flex;align-items:center;justify-content:center;z-index:2147483646;
       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
       <div style="max-width:340px;width:90%;text-align:center;padding:20px">
-        <div style="font-size:3.4em">🔒</div>
+        <div style="font-size:3.4em">${bioEnrolled ? '🆔' : '🔒'}</div>
         <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 6px;font-size:1.5em">Apex Chat</h2>
         <p style="color:var(--ax-text-2);font-size:.95em;margin-bottom:18px">
-          Salut ${esc(firstName)} — tape ton PIN pour déverrouiller
+          Salut ${esc(firstName)} —
+          ${bioEnrolled ? 'utilise Face ID / Touch ID, ou ton PIN.' : 'tape ton PIN pour déverrouiller.'}
         </p>
+        ${bioEnrolled ? `
+          <button class="btn btn-block" style="margin-bottom:12px;font-size:1.05em;padding:14px" onclick="K._unlockWithBiometric()">🆔 Déverrouiller avec Face ID</button>
+          <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ax-text-3);font-size:.8em">
+            <div style="flex:1;height:1px;background:var(--ax-border)"></div>
+            <span>OU</span>
+            <div style="flex:1;height:1px;background:var(--ax-border)"></div>
+          </div>
+        ` : ''}
         <input id="lock-pin" type="tel" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"
           style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:12px;
           padding:14px;color:var(--ax-text);font-size:1.8em;text-align:center;letter-spacing:12px">
-        <button class="btn btn-block" style="margin-top:14px" onclick="K._unlockApp()">🔓 Déverrouiller</button>
+        <button class="btn btn-block" style="margin-top:14px;${bioEnrolled?'background:transparent;color:var(--ax-text-2);border:1px solid var(--ax-border)':''}" onclick="K._unlockApp()">🔓 Déverrouiller avec PIN</button>
         <p style="color:var(--ax-text-3);font-size:.78em;margin-top:18px">
           Mauvais PIN ? <a href="#" onclick="K._forgotPinFlow();return false" style="color:var(--ax-gold)">Réinitialiser</a>
         </p>
@@ -11030,12 +11150,36 @@ K._showLockscreen = function(){
     </div>
   `;
   setTimeout(() => {
-    const i = document.getElementById('lock-pin');
-    if(i){
-      i.focus();
-      i.addEventListener('keydown', (e) => { if(e.key === 'Enter') K._unlockApp(); });
+    // Tente Face ID automatiquement à l'ouverture (UX iPhone style natif)
+    if(bioEnrolled){
+      setTimeout(() => K._unlockWithBiometric(true), 300);
+    } else {
+      const i = document.getElementById('lock-pin');
+      if(i){
+        i.focus();
+        i.addEventListener('keydown', (e) => { if(e.key === 'Enter') K._unlockApp(); });
+      }
     }
   }, 80);
+};
+
+K._unlockWithBiometric = async function(silent){
+  try{
+    const ok = await K._biometricVerify();
+    if(ok){
+      ls('user_unlock_ts', Date.now());
+      ls('user_pin_fails_' + K.user.id, 0);
+      K._lockScreenOpen = false;
+      const el = document.getElementById('apex-lock');
+      if(el) el.remove();
+      K.render && K.render();
+      if(!silent) toast('🆔 Déverrouillé', 'ok', 1500);
+    } else if(!silent){
+      toast('Face ID refusé — utilise ton PIN', 'warn', 3000);
+    }
+  }catch(e){
+    if(!silent) toast('Face ID : ' + ((e && e.message) || 'erreur') + ' — utilise ton PIN', 'warn', 4000);
+  }
 };
 
 K._unlockApp = async function(){
@@ -11085,7 +11229,7 @@ document.addEventListener('visibilitychange', () => {
   document.addEventListener(ev, () => K._touchUnlock && K._touchUnlock(), { passive: true });
 });
 
-// v1.1.154 : consomme un magic invite token (?invite=<jwt>).
+// v1.1.155 : consomme un magic invite token (?invite=<jwt>).
 // 2 cas :
 //   - pas connecté → magic-login, devient l'utilisateur invité, ouvre conv avec l'inviteur
 //   - déjà connecté → résout le token + ouvre la conv DM avec l'autre partie directement
@@ -11128,7 +11272,7 @@ async function _consumeInviteToken(token){
     const data = await r.json().catch(() => ({}));
     if(r.ok && data.ok && data.token && data.user){
       await K.login(data.user, data.token);
-      // v1.1.154 Kevin "l'invité sauf si déjà connu doit remplir sa fiche +
+      // v1.1.155 Kevin "l'invité sauf si déjà connu doit remplir sa fiche +
       // créer un code PIN avant d'utiliser l'app". Si profil incomplet
       // (display_name vide, égal au pseudo, ou pseudo auto-généré), force
       // l'onboarding. Sinon, déjà connu → ouvre direct la conv.
@@ -11563,7 +11707,7 @@ async function _boot(){
     $('#splash').classList.add('h');
     $('#topbar').classList.remove('h');
     $('#security-banner').classList.remove('h');
-    // v1.1.154 : lockscreen PIN si configuré et inactivité > 10 min
+    // v1.1.155 : lockscreen PIN si configuré et inactivité > 10 min
     setTimeout(() => {
       if(K._needsLockscreen && K._needsLockscreen()) K._showLockscreen();
     }, 500);
@@ -11572,7 +11716,7 @@ async function _boot(){
     // Charger état persisté
     K.conversations = lg('conversations', []);
     K.contacts = lg('contacts', []);
-    // v1.1.154 : tombstones — conv supprimées qui ne doivent jamais réapparaître
+    // v1.1.155 : tombstones — conv supprimées qui ne doivent jamais réapparaître
     K._deletedConvIds = lg('deleted_convs', []);
     if(K._deletedConvIds.length){
       K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
@@ -11608,7 +11752,7 @@ async function _boot(){
     }catch(e){_safeCatch('silent',e)}
   }
 
-  // v1.1.154 : magic invite link au boot (avant l'éventuel écran de login)
+  // v1.1.155 : magic invite link au boot (avant l'éventuel écran de login)
   // → un visiteur pas connecté se connecte SANS OTP via le token, devient
   // l'invité du lien et atterrit directement sur la conv avec l'inviteur.
   const _bootInviteTok = params.get('invite');
@@ -11647,7 +11791,7 @@ async function _boot(){
       }
       history.replaceState(null, '', location.pathname);
     }
-    /* v1.1.154 : ?invite=<magic_token> — utilisé pour 2 cas :
+    /* v1.1.155 : ?invite=<magic_token> — utilisé pour 2 cas :
        (a) visiteur pas connecté → magic-login auto (pas d'OTP), devient l'invité
        (b) déjà connecté → ouvre direct la conv DM avec l'autre partie
        Avant : aucun handler → utilisateur atterrissait sur l'accueil. */
