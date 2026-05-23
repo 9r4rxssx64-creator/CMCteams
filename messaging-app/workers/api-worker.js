@@ -849,12 +849,51 @@ export async function handleUpdateMe(request, env) {
   return json({ ok: true, user });
 }
 
-async function handleGetPublicUser(pseudo, env) {
+async function handleGetPublicUser(pseudoOrId, env) {
+  // v1.1.164 — accepte id OU pseudo (frontend résout les peers via leur id).
+  // Retourne real_name + display_name + first_name + last_name + avatar_url
+  // pour K._displayName + K._getAvatar côté frontend.
   const user = await env.APEX_CHAT_DB.prepare(
-    'SELECT id, pseudo, avatar_url, bio, last_seen FROM users WHERE pseudo=? COLLATE NOCASE AND status=?'
-  ).bind(pseudo, 'active').first();
-  if (!user) return err('User introuvable', 404);
+    `SELECT id, pseudo, real_name, display_name, first_name, last_name,
+            avatar_url, bio, last_seen
+     FROM users
+     WHERE (id=? OR pseudo=? COLLATE NOCASE) AND status=?`
+  ).bind(pseudoOrId, pseudoOrId, 'active').first();
+  if (!user) return err('User introuvable', 404, 'user_not_found', { lookup: pseudoOrId });
   return json({ ok: true, user });
+}
+
+// v1.1.164 — POST /api/users/me/avatar : sync avatar entre clients.
+// Kevin "Ne s'affiche pas chez Laurence non plus". On stocke direct la
+// dataURL JPEG (~50KB après compression v1.1.160) en colonne avatar_url
+// → handleGetPublicUser le renvoie aux peers → K._getAvatar les cache.
+async function handleUploadMyAvatar(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  let body = {};
+  try { body = await request.json(); } catch (e) {
+    return err('JSON body invalide', 400, 'bad_json', { detail: e?.message });
+  }
+  const dataUrl = body.data_url || '';
+  if (dataUrl && !dataUrl.startsWith('data:image/')) {
+    return err('data_url doit être une image base64 (data:image/...)', 400, 'bad_data_url');
+  }
+  // Limite 200KB après base64 (≈ 150KB binaire, déjà compressé canvas 512px)
+  if (dataUrl.length > 200 * 1024) {
+    return err('Avatar trop lourd (max 200KB)', 413, 'avatar_too_large', {
+      size: dataUrl.length, max: 200 * 1024,
+    });
+  }
+  try {
+    await env.APEX_CHAT_DB.prepare(
+      'UPDATE users SET avatar_url=?, updated_at=? WHERE id=?'
+    ).bind(dataUrl || null, Date.now(), auth.sub).run();
+    return json({ ok: true, avatar_url: dataUrl || null });
+  } catch (e) {
+    return err('Échec sauvegarde avatar', 500, 'db_write_failed', {
+      detail: e?.message, where: (e?.stack || '').split('\n')[1] || '',
+    });
+  }
 }
 
 async function handleAdminGetFullUser(pseudo, request, env) {
@@ -3742,6 +3781,7 @@ export default {
       // Users
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
       if (path === '/api/users/me' && method === 'PATCH') return await handleUpdateMe(request, env);
+      if (path === '/api/users/me/avatar' && method === 'POST') return await handleUploadMyAvatar(request, env);
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
       if (path === '/api/cgu/accept' && method === 'POST') return await handleCguAccept(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
