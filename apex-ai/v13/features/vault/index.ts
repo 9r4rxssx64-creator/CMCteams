@@ -626,6 +626,12 @@ export function render(rootEl: HTMLElement): void {
         <div class="ax-gs-7">
           <button id="ax-vault-diag-btn" type="button"
             style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
+          <button id="ax-vault-migrate-legacy-btn" type="button"
+            style="padding:10px 16px;background:rgba(232,184,48,0.20);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔁 Migrer mes clés legacy</button>
+          <button id="ax-vault-repair-services-btn" type="button"
+            style="padding:10px 16px;background:rgba(247,131,34,0.20);color:var(--ax-orange);border:1px solid rgba(247,131,34,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">♻️ Réparer services</button>
+          <button id="ax-vault-push-all-btn" type="button"
+            style="padding:10px 16px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📤 Push backup Firebase</button>
           <button id="ax-vault-rescue-fb" data-action="rescue-firebase" type="button"
             style="padding:10px 16px;background:rgba(232,184,48,0.18);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.40);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔓 Restaurer depuis Firebase</button>
           <button id="ax-vault-rescue-all" data-action="rescue-scan-all" type="button"
@@ -980,9 +986,38 @@ function attachHandlers(rootEl: HTMLElement): void {
         if (r.failed > 0) {
           const hint = document.createElement('div');
           hint.style.cssText = 'opacity:0.85;color:#ff8b8b;margin-top:4px';
-          const failedKeys = r.details.filter((d) => d.status === 'failed').slice(0, 5).map((d) => d.key.replace(/^(ax_|apex_v13_)/, '').replace(/_(key|token|secret)$/, ''));
-          hint.textContent = `Échecs (decrypt fail = passphrase perdue cf. erreur #55) : ${failedKeys.join(', ')}${r.failed > 5 ? '…' : ''}. Re-colle ces clés via "Auto-détection rapide".`;
+          const failedServices = r.details.filter((d) => d.status === 'failed').map((d) => d.key.replace(/^(ax_|apex_v13_)/, '').replace(/_(key|token|secret)$/, ''));
+          const shown = failedServices.slice(0, 5).join(', ');
+          hint.textContent = `${r.failed} clé(s) illisibles (passphrase historique perdue, erreur #55) : ${shown}${r.failed > 5 ? `… +${r.failed - 5}` : ''}.`;
           box.append(hint);
+          /* v13.4.272 (Kevin "Rappel toi quelles sont dans GitHub secret presque toute") :
+           * Tester quels services ont une clé valide côté worker proxy (GitHub Secrets).
+           * Si oui → Kevin n'a PAS besoin de re-coller, l'IA y accède via proxyFetch. */
+          void (async () => {
+            try {
+              const mod = await import('../../services/integrations/apex-secrets-proxy-client.js');
+              const health = await mod.apexSecretsProxy.checkHealth();
+              if (health.ok && health.data?.available_providers?.length) {
+                const proxyServices = new Set(health.data.available_providers);
+                const recoverable = failedServices.filter((s) => proxyServices.has(s.toLowerCase()));
+                if (recoverable.length > 0) {
+                  const infoBox = document.createElement('div');
+                  infoBox.style.cssText = 'margin-top:8px;padding:8px;background:rgba(34,204,119,.08);color:var(--ax-green);border:1px solid rgba(34,204,119,0.20);border-radius:6px;line-height:1.5';
+                  const title = document.createElement('div');
+                  title.style.cssText = 'font-weight:700;margin-bottom:2px';
+                  title.textContent = `✅ ${recoverable.length} dispo via worker proxy (GitHub Secrets)`;
+                  infoBox.append(title);
+                  const body = document.createElement('div');
+                  body.style.cssText = 'font-size:11px;opacity:0.9';
+                  body.textContent = `${recoverable.slice(0, 8).join(', ')}${recoverable.length > 8 ? '…' : ''} — l'IA Apex les utilise via le worker proxy sans avoir besoin de la clé en local. Pour les voir dans l'UI Coffre, recolle-les via « Auto-détection rapide ».`;
+                  infoBox.append(body);
+                  box.append(infoBox);
+                }
+              }
+            } catch (err: unknown) {
+              logger.debug('feature-vault', 'proxy availability check failed', { err });
+            }
+          })();
         }
         if (r.skipped > 0) {
           const skipHint = document.createElement('div');
