@@ -795,9 +795,24 @@ export async function handleUpdateMe(request, env) {
   if (!auth) return err('Non authentifié', 401);
 
   const body = await request.json().catch(() => ({}));
-  const ALLOWED = ['avatar_url', 'bio', 'display_name', 'language', 'timezone', 'email'];
+  // v1.1.163 — Kevin "À l'inscription tout doit etre rempli" + "Pseudo choisi
+  // par l'utilisateur dans sa fiche infos". Élargi à tous les champs profil.
+  const ALLOWED = [
+    'avatar_url', 'bio', 'display_name', 'language', 'timezone', 'email',
+    'pseudo', 'real_name', 'first_name', 'last_name',
+    'address', 'city', 'country', 'job', 'birth_date',
+  ];
   const updates = [];
   const args = [];
+  // Validation pseudo : 3-20 chars, alphanum + underscore, pas de pattern auto
+  if (body.pseudo !== undefined) {
+    const p = String(body.pseudo).trim();
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(p)) {
+      return err('Pseudo invalide (3-20 caractères, lettres/chiffres/underscore)', 400, 'pseudo_invalid', {
+        received: body.pseudo, hint: 'ex: marie_d, kevin42'
+      });
+    }
+  }
   for (const k of ALLOWED) {
     if (body[k] !== undefined) {
       const v = String(body[k] || '').slice(0, 500);
@@ -810,9 +825,22 @@ export async function handleUpdateMe(request, env) {
   args.push(Date.now());
   args.push(auth.sub);
 
-  await env.APEX_CHAT_DB.prepare(
-    `UPDATE users SET ${updates.join(', ')} WHERE id=?`
-  ).bind(...args).run();
+  try {
+    await env.APEX_CHAT_DB.prepare(
+      `UPDATE users SET ${updates.join(', ')} WHERE id=?`
+    ).bind(...args).run();
+  } catch (e) {
+    // Constraint UNIQUE sur pseudo → message clair
+    const msg = String(e?.message || '');
+    if (/UNIQUE.*pseudo/i.test(msg) || /pseudo.*UNIQUE/i.test(msg)) {
+      return err('Ce pseudo est déjà pris — choisis-en un autre', 409, 'pseudo_taken', {
+        pseudo: body.pseudo, detail: msg,
+      });
+    }
+    return err('Échec mise à jour profil', 500, 'update_failed', {
+      detail: msg, fields: Object.keys(body),
+    });
+  }
 
   await auditLog(env, auth.sub, 'profile_update', 'user', auth.sub,
     JSON.stringify(Object.keys(body)), null, request.headers.get('user-agent') || '');
@@ -958,6 +986,8 @@ async function ensureCorePair(env, opts) {
   if (!peerPhone) return out; // Kevin créé mais pas peer → on s'arrête là proprement
 
   // --- Peer upsert (par phone d'abord, sinon par id stable) ---
+  // v1.1.163 Kevin "Ajoute déjà lolo pour Laurence" → si user existe déjà,
+  // on UPDATE le pseudo/real_name/first/last (avant : SKIP silencieux).
   let peer = null;
   try {
     const peerHash = await sha256(peerPhone);
@@ -970,6 +1000,45 @@ async function ensureCorePair(env, opts) {
       ).bind(peerId, peerPseudo, peerName, peerFirst, peerLast, peerPhone, peerHash, ts).run();
       peer = { id: peerId, pseudo: peerPseudo, real_name: peerName };
       out.created.peer = true;
+    } else {
+      // User existe → UPDATE des champs explicitement fournis (admin trust).
+      // Catch UNIQUE constraint sur pseudo séparément pour ne pas bloquer la
+      // mise à jour des autres champs en cas de pseudo déjà pris.
+      const sets = [];
+      const argsList = [];
+      if (peerPseudo && peerPseudo !== peer.pseudo) { sets.push('pseudo=?'); argsList.push(peerPseudo); }
+      if (peerName && peerName !== peer.real_name) { sets.push('real_name=?'); argsList.push(peerName); }
+      if (peerFirst) { sets.push('first_name=?'); argsList.push(peerFirst); }
+      if (peerLast) { sets.push('last_name=?'); argsList.push(peerLast); }
+      sets.push('updated_at=?'); argsList.push(ts);
+      argsList.push(peer.id);
+      if (sets.length > 1) {
+        try {
+          await env.APEX_CHAT_DB.prepare(
+            `UPDATE users SET ${sets.join(', ')} WHERE id=?`
+          ).bind(...argsList).run();
+          out.updated_peer = true;
+        } catch (e) {
+          // pseudo déjà pris → on retry sans le pseudo
+          if (/UNIQUE/i.test(String(e?.message || '')) && peerPseudo) {
+            const sets2 = sets.filter(s => !s.startsWith('pseudo='));
+            const args2 = [];
+            if (peerName && peerName !== peer.real_name) args2.push(peerName);
+            if (peerFirst) args2.push(peerFirst);
+            if (peerLast) args2.push(peerLast);
+            args2.push(ts);
+            args2.push(peer.id);
+            await env.APEX_CHAT_DB.prepare(
+              `UPDATE users SET ${sets2.join(', ')} WHERE id=?`
+            ).bind(...args2).run();
+            out.pseudo_conflict = peerPseudo;
+          } else {
+            throw e;
+          }
+        }
+      }
+      // Reload peer après update pour avoir les valeurs à jour
+      peer = await env.APEX_CHAT_DB.prepare('SELECT id, pseudo, real_name FROM users WHERE id=?').bind(peer.id).first();
     }
     out.peer_user = peer;
   } catch (e) {
@@ -3506,6 +3575,47 @@ export async function handleAdminForceUpdate(request, env) {
   }
 }
 
+// v1.1.163 — POST /api/admin/force-update-via-token
+// Variante de handleAdminForceUpdate authentifiée par header secret au lieu
+// de JWT admin → permet à un workflow GitHub Action (sans JWT) de trigger
+// la MAJ chez tous les users automatiquement après chaque déploiement.
+// Kevin "Elle a la version 61 et moi 62" → plus jamais besoin de cliquer
+// "🚀 Forcer MAJ chez TOUS" à la main.
+export async function handleAdminForceUpdateViaToken(request, env) {
+  const provided = request.headers.get('X-Apex-Admin-Token') || '';
+  const expected = env.APEX_CHAT_ADMIN_TOKEN || '';
+  if (!expected) {
+    return err('APEX_CHAT_ADMIN_TOKEN non configuré côté Worker', 503, 'token_unset',
+      'Push le secret via workflow deploy-apex-chat.yml ou wrangler secret put');
+  }
+  // Comparaison constant-time (anti timing attack)
+  if (provided.length !== expected.length) {
+    return err('Token invalide', 401, 'bad_token', { hint: 'X-Apex-Admin-Token header requis' });
+  }
+  let diff = 0;
+  for (let i = 0; i < provided.length; i++) diff |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+  if (diff !== 0) {
+    return err('Token invalide', 401, 'bad_token');
+  }
+  const ts = Date.now();
+  try {
+    await env.APEX_CHAT_DB?.prepare(
+      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
+    ).bind('force_update_ts', String(ts)).run();
+    try {
+      await env.APEX_CHAT_DB?.prepare(
+        'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), 'cron:deploy', 'admin.force_update_via_token',
+        JSON.stringify({ ts, source: 'github-action' }), ts).run();
+    } catch (_) {}
+    return json({ ok: true, ts, source: 'token' });
+  } catch (e) {
+    return err('Failed to set force_update_ts', 500, 'db_write_failed', {
+      detail: e?.message, where: (e?.stack || '').split('\n')[1] || '',
+    });
+  }
+}
+
 export async function handleAdminForceUpdateTs(request, env) {
   // Public endpoint : tous users peuvent fetch (pas de leak admin info)
   try {
@@ -3704,6 +3814,7 @@ export default {
       // v1.1.76 — Admin force-update push to all clients
       if (path === '/api/admin/force-update' && method === 'POST') return await handleAdminForceUpdate(request, env);
       if (path === '/api/admin/force-update-ts' && method === 'GET') return await handleAdminForceUpdateTs(request, env);
+      if (path === '/api/admin/force-update-via-token' && method === 'POST') return await handleAdminForceUpdateViaToken(request, env);
       // v1.1.81 — Web Push subscribe / unsubscribe
       if (path === '/api/push/subscribe' && method === 'POST') return await handlePushSubscribe(request, env);
       if (path === '/api/push/unsubscribe' && method === 'POST') return await handlePushUnsubscribe(request, env);

@@ -175,10 +175,18 @@ jobs:
             put_secret "JWT_SIGN_KEY" "$(openssl rand -hex 64)"
             echo "::notice::JWT_SIGN_KEY généré (première fois)"
           fi
-          if has_secret "APEX_CHAT_ADMIN_TOKEN"; then
-            echo "::notice::APEX_CHAT_ADMIN_TOKEN déjà présent — conservé"
+          # v1.1.163 : si secret GitHub APEX_CHAT_ADMIN_TOKEN défini, on l'aligne
+          # côté Cloudflare (force-push). Sinon : conserve l'existant CF ou auto-génère.
+          # Permet au workflow apex-chat-auto-force-update.yml d'utiliser la même valeur
+          # que celle reconnue par le Worker (cohérence GitHub Secret ↔ env Cloudflare).
+          if [ -n "${{ secrets.APEX_CHAT_ADMIN_TOKEN }}" ]; then
+            put_secret "APEX_CHAT_ADMIN_TOKEN" "${{ secrets.APEX_CHAT_ADMIN_TOKEN }}"
+            echo "::notice::APEX_CHAT_ADMIN_TOKEN aligné depuis GitHub Secret"
+          elif has_secret "APEX_CHAT_ADMIN_TOKEN"; then
+            echo "::notice::APEX_CHAT_ADMIN_TOKEN déjà présent côté Cloudflare — conservé"
           else
             put_secret "APEX_CHAT_ADMIN_TOKEN" "$(openssl rand -hex 32)"
+            echo "::notice::APEX_CHAT_ADMIN_TOKEN auto-généré (1ère fois)"
           fi
           if has_secret "APEX_HANDOFF_TOKEN"; then
             echo "::notice::APEX_HANDOFF_TOKEN déjà présent — conservé"
