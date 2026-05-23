@@ -515,6 +515,12 @@ export async function handleVerifyOtp(request, env) {
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 30 * 86400
       }, env.JWT_SIGN_KEY);
+      // v1.1.161 — best-effort : assure le cercle privé Kevin↔Laurence si le
+      // secret LAURENCE_PHONE_E164 est configuré côté Cloudflare. N'altère pas
+      // la réponse de login en cas d'échec.
+      try {
+        if (env.LAURENCE_PHONE_E164) await ensureCorePair(env);
+      } catch (_e) { /* silent — login Kevin doit toujours réussir */ }
       return json({ ok: true, token: jwt, user: { id: 'kdmc_admin', pseudo: user.pseudo, is_admin: true }});
     } catch (e) {
       console.error('[verify-otp/bypass]', step, e.message, e.stack);
@@ -864,6 +870,143 @@ export async function handleCreateConversation(request, env) {
   }
 
   return json({ ok: true, conversation: { id, type, name, created_at: ts } });
+}
+
+// ============================================================================
+//  v1.1.161 — Cercle privé pré-câblé (Kevin "on devrait être connectés de
+//  base pour tous les projets"). Kevin + un proche (Laurence par défaut)
+//  sont créés en D1 ET la conv DM entre eux est auto-créée. Idempotent.
+//
+//  Appelé via :
+//    - POST /api/admin/configure-core-pair (admin Kevin, 1-clic depuis l'app)
+//    - automatiquement en fin de handleVerifyOtp (graceful : skip si secret absent)
+// ============================================================================
+
+async function ensureCorePair(env, opts) {
+  opts = opts || {};
+  const kevinPhone = normPhone(opts.kevin_phone || env.KEVIN_PHONE_E164 || '');
+  const peerPhone  = normPhone(opts.peer_phone  || env.LAURENCE_PHONE_E164 || '');
+  const peerId     = opts.peer_id   || 'laurence_saint_polit';
+  const peerName   = opts.peer_name || 'Laurence SAINT-POLIT';
+  const peerPseudo = opts.peer_pseudo || 'laurence';
+  const peerFirst  = opts.peer_first_name || 'Laurence';
+  const peerLast   = opts.peer_last_name  || 'SAINT-POLIT';
+  const ts = Date.now();
+  const out = { kevin_user: null, peer_user: null, conv_id: null, created: { kevin: false, peer: false, conv: false }, skipped: [] };
+
+  if (!kevinPhone) { out.skipped.push('KEVIN_PHONE_E164 absent'); return out; }
+  if (!peerPhone)  { out.skipped.push('peer phone absent (secret LAURENCE_PHONE_E164 ou param peer_phone)'); }
+
+  // --- Kevin upsert ---
+  try {
+    const kevinHash = await sha256(kevinPhone);
+    let kevin = await env.APEX_CHAT_DB.prepare('SELECT id, pseudo, real_name FROM users WHERE id=?').bind('kdmc_admin').first();
+    if (!kevin) {
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, source, admin_authorized, created_at, status, is_admin)
+         VALUES ('kdmc_admin', 'kevin', 'Kevin DESARZENS', ?, ?, 'core_pair', 1, ?, 'active', 1)`
+      ).bind(kevinPhone, kevinHash, ts).run();
+      kevin = { id: 'kdmc_admin', pseudo: 'kevin', real_name: 'Kevin DESARZENS' };
+      out.created.kevin = true;
+    }
+    out.kevin_user = kevin;
+  } catch (e) {
+    return { ...out, error: 'ensure kevin failed: ' + (e?.message || '?') };
+  }
+
+  if (!peerPhone) return out; // Kevin créé mais pas peer → on s'arrête là proprement
+
+  // --- Peer upsert (par phone d'abord, sinon par id stable) ---
+  let peer = null;
+  try {
+    const peerHash = await sha256(peerPhone);
+    peer = await env.APEX_CHAT_DB.prepare('SELECT id, pseudo, real_name FROM users WHERE phone=? OR id=?')
+      .bind(peerPhone, peerId).first();
+    if (!peer) {
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO users (id, pseudo, real_name, first_name, last_name, phone, phone_hash, source, admin_authorized, created_at, status, is_admin)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'core_pair', 1, ?, 'active', 0)`
+      ).bind(peerId, peerPseudo, peerName, peerFirst, peerLast, peerPhone, peerHash, ts).run();
+      peer = { id: peerId, pseudo: peerPseudo, real_name: peerName };
+      out.created.peer = true;
+    }
+    out.peer_user = peer;
+  } catch (e) {
+    return { ...out, error: 'ensure peer failed: ' + (e?.message || '?'), step: 'peer_upsert' };
+  }
+
+  // --- Auto-conv DM Kevin↔peer si pas déjà existante ---
+  try {
+    const existConv = await env.APEX_CHAT_DB.prepare(
+      `SELECT c.id FROM conversations c
+       INNER JOIN conversation_members m1 ON m1.conv_id = c.id AND m1.user_id = ?
+       INNER JOIN conversation_members m2 ON m2.conv_id = c.id AND m2.user_id = ?
+       WHERE c.type = 'dm' LIMIT 1`
+    ).bind(out.kevin_user.id, peer.id).first();
+
+    if (existConv) {
+      out.conv_id = existConv.id;
+    } else {
+      const cid = crypto.randomUUID();
+      const doId = 'do_' + cid;
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO conversations (id, type, name, created_by, created_at, sharded_to_do, member_count, last_msg_ts, e2e_version)
+         VALUES (?, 'dm', NULL, ?, ?, ?, 2, ?, 1)`
+      ).bind(cid, out.kevin_user.id, ts, doId, ts).run();
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+         VALUES (?, ?, 'owner', ?, 0)`
+      ).bind(cid, out.kevin_user.id, ts).run();
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+         VALUES (?, ?, 'member', ?, 0)`
+      ).bind(cid, peer.id, ts).run();
+      out.conv_id = cid;
+      out.created.conv = true;
+    }
+  } catch (e) {
+    return { ...out, error: 'ensure conv failed: ' + (e?.message || '?'), step: 'conv_create' };
+  }
+
+  return out;
+}
+
+// POST /api/admin/configure-core-pair  (admin Kevin only)
+// Body : { peer_phone, peer_name?, peer_first_name?, peer_last_name?, peer_pseudo? }
+async function handleConfigureCorePair(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || auth.sub !== 'kdmc_admin') {
+    return err('Réservé admin Kevin', 403, 'forbidden', { auth_sub: auth?.sub || null });
+  }
+  let body = {};
+  try { body = await request.json(); } catch (e) {
+    return err('JSON body invalide', 400, 'bad_json', { detail: e?.message });
+  }
+  if (!body.peer_phone) return err('peer_phone requis (numéro du proche, ex +336…)', 400);
+  try {
+    const result = await ensureCorePair(env, {
+      peer_phone: body.peer_phone,
+      peer_id: body.peer_id || 'laurence_saint_polit',
+      peer_name: body.peer_name,
+      peer_first_name: body.peer_first_name,
+      peer_last_name: body.peer_last_name,
+      peer_pseudo: body.peer_pseudo,
+    });
+    if (result.error) {
+      return err('Échec configuration cercle privé', 500, 'core_pair_failed', {
+        detail: result.error, step: result.step || '?', partial: result,
+      });
+    }
+    try {
+      await auditLog(env, auth.sub, 'configure_core_pair', 'user', result.peer_user?.id,
+        { created: result.created, conv_id: result.conv_id }, request);
+    } catch(_) {}
+    return json({ ok: true, ...result });
+  } catch (e) {
+    return err('Erreur interne configure-core-pair', 500, 'internal', {
+      detail: e?.message, where: (e?.stack || '').split('\n')[1] || '',
+    });
+  }
 }
 
 // ============================================================================
@@ -3457,6 +3600,8 @@ export default {
       // Conversations
       if (path === '/api/conversations' && method === 'GET') return await handleListConversations(request, env);
       if (path === '/api/conversations' && method === 'POST') return await handleCreateConversation(request, env);
+      // v1.1.161 — Cercle privé pré-câblé Kevin↔proche (Laurence)
+      if (path === '/api/admin/configure-core-pair' && method === 'POST') return await handleConfigureCorePair(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
       // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
