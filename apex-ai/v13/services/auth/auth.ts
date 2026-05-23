@@ -270,7 +270,11 @@ class Auth {
       /* Persist last known + trust device (Kevin règle "reconnaît mon appareil") */
       localStorage.setItem('apex_v13_last_known_uid', user.id);
       localStorage.setItem('apex_v13_last_known_name', user.name);
-      void this.trustCurrentDevice();
+      /* v13.4.262 (Kevin "Il doit garder mon pin en mémoire") :
+       * Trust device AWAIT (pas fire-and-forget). Sans await, si Kevin navigue
+       * avant que l'import dynamique device-context se termine, le trust n'est
+       * jamais persisté → re-saisie PIN à chaque session. */
+      await this.trustCurrentDevice();
     } catch {
       /* ignore */
     }

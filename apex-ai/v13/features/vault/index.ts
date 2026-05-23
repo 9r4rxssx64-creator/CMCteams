@@ -624,6 +624,14 @@ export function render(rootEl: HTMLElement): void {
         </div>
       </section>
 
+      <section style="margin-top:14px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px">
+        <h3 style="margin:0 0 8px;color:var(--ax-gold);font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">📊 Diagnostic</h3>
+        <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">Si « pas de mémoire coffre » ou « problème Cloudflare » → lance ce diag pour voir l'état exact de chaque couche (local, Firebase backup, Cloudflare proxy).</p>
+        <button id="ax-vault-diag-btn" type="button"
+          style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
+        <div id="ax-vault-diag-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.85)"></div>
+      </section>
+
       <p style="text-align:center;color:rgba(255,255,255,0.4);font-size:11px;margin-top:16px;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;line-height:1.6">
         🛡 <strong style="color:rgba(255,255,255,0.6)">Sécurité</strong> : AES-GCM 256 + PBKDF2 200k iterations · Audit log immutable<br>
         <span style="opacity:0.7">FB_LOCAL strict pour ax_pin/ax_user · jamais de plaintext en backup</span>
@@ -843,6 +851,103 @@ function attachHandlers(rootEl: HTMLElement): void {
         logger.warn('feature-vault', 'rescueAll failed', { err });
         if (result) result.innerHTML = `<div class="ax-gs-48">⚠ ${escapeHtml(String(err).slice(0, 120))}</div>`;
         toast.error('Erreur scan multi-sources');
+        haptic.error();
+      }
+    })();
+  });
+
+  /* v13.4.261 Kevin "Problème Cloudflare, pas de mémoire coffre" :
+   * Diagnostic complet read-only des 3 couches vault + ping worker proxy.
+   * Lecture seule, modifie rien, expose la cause exacte à Kevin. */
+  const diagBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-diag-btn');
+  if (diagBtn && activeVaultScope) activeVaultScope.bind(diagBtn, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-diag-result');
+      if (result) result.textContent = '⏳ Diagnostic en cours (local + Firebase + Cloudflare)…';
+      try {
+        const { vaultDiagnostic } = await import('../../services/admin/vault-diagnostic.js');
+        const r = await vaultDiagnostic.run();
+        if (!result) return;
+        result.textContent = '';
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+        /* Summary */
+        const summary = document.createElement('div');
+        summary.style.cssText = 'padding:10px;background:rgba(106,138,255,0.08);border:1px solid rgba(106,138,255,0.25);border-radius:8px;font-weight:600';
+        summary.textContent = r.summary;
+        wrap.append(summary);
+        /* Détail local */
+        const localBox = document.createElement('div');
+        localBox.style.cssText = 'padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;line-height:1.5';
+        const localLine = document.createElement('div');
+        localLine.textContent = `💾 Local : ${r.local.total} clé(s) — ${r.local.encrypted} chiffrées, ${r.local.plaintext} en clair`;
+        localBox.append(localLine);
+        if (r.local.sample.length) {
+          const ex = document.createElement('div');
+          ex.style.cssText = 'opacity:0.6;font-family:monospace;font-size:11px;margin-top:4px';
+          ex.textContent = 'ex. ' + r.local.sample.join(', ');
+          localBox.append(ex);
+        }
+        wrap.append(localBox);
+        /* Détail Firebase */
+        const fbBox = document.createElement('div');
+        fbBox.style.cssText = 'padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;line-height:1.5';
+        const fbLine = document.createElement('div');
+        const fbIcon = r.firebase.connected ? '🟢' : '🔴';
+        fbLine.textContent = `☁ Firebase ${fbIcon} ${r.firebase.state} — ${r.firebase.backup_count} backup(s)`;
+        fbBox.append(fbLine);
+        if (r.firebase.drift_detected) {
+          const drift = document.createElement('div');
+          drift.style.cssText = 'opacity:0.85;color:var(--ax-gold);margin-top:4px';
+          drift.textContent = `⚠ Drift : ${r.firebase.in_local_not_fb.length} local-only, ${r.firebase.in_fb_not_local.length} Firebase-only`;
+          fbBox.append(drift);
+        }
+        wrap.append(fbBox);
+        /* Détail Cloudflare proxy */
+        const cfBox = document.createElement('div');
+        cfBox.style.cssText = 'padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;line-height:1.5';
+        const cfLine = document.createElement('div');
+        const cfIcon = r.cloudflare_proxy.reachable ? '🟢' : '🔴';
+        cfLine.textContent = `🌐 Cloudflare proxy ${cfIcon} ${r.cloudflare_proxy.reachable ? `OK (${r.cloudflare_proxy.latency_ms}ms, ${r.cloudflare_proxy.providers.length} providers)` : 'KO (' + (r.cloudflare_proxy.error ?? 'unreachable') + ')'}`;
+        cfBox.append(cfLine);
+        const cfUrl = document.createElement('div');
+        cfUrl.style.cssText = 'opacity:0.55;font-family:monospace;font-size:10px;margin-top:4px;word-break:break-all';
+        cfUrl.textContent = r.cloudflare_proxy.url;
+        cfBox.append(cfUrl);
+        wrap.append(cfBox);
+        /* Reco actions */
+        if (r.recommendations.length) {
+          const recoBox = document.createElement('div');
+          recoBox.style.cssText = 'padding:10px;background:rgba(232,184,48,0.08);border:1px solid rgba(232,184,48,0.25);border-radius:8px;font-size:12px;line-height:1.6';
+          const recoTitle = document.createElement('div');
+          recoTitle.style.cssText = 'font-weight:700;color:var(--ax-gold);margin-bottom:6px';
+          recoTitle.textContent = '💡 À faire :';
+          recoBox.append(recoTitle);
+          for (const rec of r.recommendations) {
+            const item = document.createElement('div');
+            item.style.cssText = 'padding:3px 0 3px 12px;position:relative';
+            const bullet = document.createElement('span');
+            bullet.style.cssText = 'position:absolute;left:0;top:3px';
+            bullet.textContent = '→';
+            item.append(bullet);
+            item.append(document.createTextNode(' ' + rec));
+            recoBox.append(item);
+          }
+          wrap.append(recoBox);
+        }
+        result.append(wrap);
+        haptic.success();
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'diag failed', { err });
+        if (result) {
+          result.textContent = '';
+          const errBox = document.createElement('div');
+          errBox.style.cssText = 'padding:8px;background:rgba(255,91,91,0.1);color:#ff8b8b;border-radius:8px';
+          errBox.textContent = '⚠ Diagnostic échoué : ' + String(err).slice(0, 160);
+          result.append(errBox);
+        }
+        toast.error('Diagnostic impossible');
         haptic.error();
       }
     })();
