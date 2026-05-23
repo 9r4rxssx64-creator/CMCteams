@@ -1,0 +1,73 @@
+name: Apex Chat — Auto-trigger MAJ chez tous les users
+
+# v1.1.163 — Kevin "Elle a la version 61 et moi 62".
+# Après chaque push sur main qui touche messaging-app/ (frontend, sw, worker),
+# trigger /api/admin/force-update-via-token → tous les users (Laurence incluse)
+# sont reloadés automatiquement dans les 60s. Plus besoin de cliquer.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'messaging-app/index.html'
+      - 'messaging-app/sw.js'
+      - 'messaging-app/lib/**'
+      - 'messaging-app/workers/**'
+      - '.github/workflows/apex-chat-auto-force-update.yml'
+  workflow_dispatch:
+
+jobs:
+  force-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Detect API base URL
+        id: api
+        env:
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_SUBDOMAIN }}
+        run: |
+          # ACCOUNT = subdomain Cloudflare Workers (ex: "9r4rxssx64")
+          # Sinon fallback par défaut
+          BASE="${ACCOUNT:-9r4rxssx64}"
+          URL="https://apex-chat-api.${BASE}.workers.dev"
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "::notice::API URL : $URL"
+
+      - name: Check secret APEX_CHAT_ADMIN_TOKEN
+        env:
+          TOKEN: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::Secret GitHub APEX_CHAT_ADMIN_TOKEN absent."
+            echo "Configure-le 1 fois dans Settings → Secrets → Actions (valeur random hex 32 cars)"
+            echo "puis pousse la même valeur côté Cloudflare via deploy-apex-chat.yml."
+            echo "Sans ça, les users devront recevoir la MAJ via leur polling 20s (au lieu d'instantané)."
+            exit 0
+          fi
+          echo "::notice::✅ Secret présent"
+
+      - name: POST /api/admin/force-update-via-token
+        if: ${{ secrets.APEX_CHAT_ADMIN_TOKEN != '' }}
+        env:
+          TOKEN: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
+          URL: ${{ steps.api.outputs.url }}
+        run: |
+          set -e
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "X-Apex-Admin-Token: $TOKEN" \
+            -H "Content-Type: application/json" \
+            "$URL/api/admin/force-update-via-token")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "HTTP $HTTP_CODE"
+          echo "$BODY"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Échec force-update — HTTP $HTTP_CODE"
+            echo "::error::Réponse : $BODY"
+            exit 1
+          fi
+          TS=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ts','?'))" 2>/dev/null || echo "?")
+          echo "::notice::🚀 Force-update envoyé à tous les users (ts=$TS)"
+          echo "::notice::Les apps connectées détecteront le changement dans les 60s et se reloaderont automatiquement."
