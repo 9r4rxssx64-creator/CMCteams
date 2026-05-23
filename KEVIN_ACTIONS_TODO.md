@@ -1,5 +1,29 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🎯 CMCteams v9.732 — gaps fidélité STOCKAGE PB V2 (2026-05-23, diagnostic only)
+
+> Nouveau test `test:fidelity-pb` (CI verte) a mesuré 2 gaps de reproduction à
+> l'identique sur le fixture **mai-2026-v2-pitboss** (20 PB matchés) :
+>
+> 1. `12h30/19` est **stocké** `12H30/19` (parser uppercase l. 37707)
+> 2. `19/4:` est **stocké** `19/4` (parser strip `:` l. 37719)
+>
+> **Impact utilisateur** : NUL côté affichage — `CODES["12H30/19"]` et
+> `CODES["12h30/19"]` sont des alias (l. 1352-1353), même rendu visuel.
+> **Impact mesure** : la règle « reproduction à l'identique caractère pour
+> caractère » n'est pas tenue au niveau stockage `A.overrides`.
+>
+> **Fix safe ≠ trivial** : il faut auditer les ~15 sites qui font
+> `replace(/[*']/g,"")` pour extraire la « base » d'un code et les étendre à
+> `[*':]`. Sinon, préserver `:` casse les comparaisons `_base==="22/6"` qui
+> tournent en stats (ex. l. 21707 totNuit/totCoup/totJour). Idem pour la
+> casse `h/H` — beaucoup plus invasif.
+>
+> **Décision Kevin requise** : (a) on accepte les gaps (UI non affectée),
+> (b) on fait le refactor strip `:` + audit complet 15 sites en session dédiée.
+
+---
+
 ## 🎨 TESTS VISUELS EN RÉEL — revue UI/UX (2026-05-21)
 
 > Session UI/UX pro-expert mergée vers main (6 commits, 4 apps). Le sandbox ne
