@@ -961,6 +961,123 @@ class MultiKeyVault {
       entry.invalidAt = Date.now();
     }
   }
+
+  /**
+   * v13.4.266 (Kevin "diag dit 14 clés mais visuel coffre = juste Anthropic") :
+   * MIGRATION des clés legacy flat localStorage → coffre central.
+   *
+   * Cause racine : avant l'introduction du multi-key-vault (apex_v13_multi_keys),
+   * Apex stockait chaque clé API dans une storage_key flat dédiée (ax_anthropic_key,
+   * ax_openai_key, etc.) chiffrée AXENC1:. L'UI Coffre (buildCredentialDisplays())
+   * lit uniquement le coffre central — les clés flat restent invisibles.
+   *
+   * Cette fonction :
+   * 1. Scanne localStorage pour clés `ax_*_key`, `ax_*_token`, `ax_*_secret`,
+   *    `apex_v13_*_key` chiffrées AXENC1:
+   * 2. Pour chacune : tente decrypt + dérive service depuis storage_key
+   * 3. Si service IA valide ET pas déjà présent dans le coffre → addKey()
+   * 4. Skip les tokens infra (push_admin_token, jwt_secret, etc.)
+   *
+   * Lecture seule sur localStorage (n'efface PAS les clés flat). Le user peut
+   * relancer sans risque.
+   */
+  async migrateLegacyFlatKeys(): Promise<{
+    scanned: number;
+    migrated: number;
+    failed: number;
+    skipped: number;
+    details: Array<{ key: string; status: 'migrated' | 'failed' | 'skipped'; reason?: string }>;
+  }> {
+    const result = {
+      scanned: 0,
+      migrated: 0,
+      failed: 0,
+      skipped: 0,
+      details: [] as Array<{ key: string; status: 'migrated' | 'failed' | 'skipped'; reason?: string }>,
+    };
+    /* Skip ces préfixes : tokens d'infrastructure pas exposés comme "clés API" */
+    const SKIP_PREFIXES = [
+      'apex_v13_push_admin_token',
+      'apex_v13_pin',
+      'apex_v13_user',
+      'apex_v13_passphrase',
+      'apex_v13_device',
+      'apex_v13_vault_fb',
+      'apex_v13_multi_keys',
+    ];
+    /* Pattern → service IA. Si la storage_key matche, on l'importe avec ce service. */
+    const flatKeys: string[] = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (!(k.startsWith('ax_') || k.startsWith('apex_v13_'))) continue;
+        if (!(k.endsWith('_key') || k.endsWith('_token') || k.endsWith('_secret'))) continue;
+        if (SKIP_PREFIXES.some((p) => k.startsWith(p))) continue;
+        const v = localStorage.getItem(k);
+        if (!v || !v.startsWith('AXENC1:')) continue;
+        flatKeys.push(k);
+      }
+    } catch {
+      /* localStorage indispo */
+    }
+    result.scanned = flatKeys.length;
+    if (flatKeys.length === 0) return result;
+    const vault = await getVault();
+    for (const storageKey of flatKeys) {
+      try {
+        const encrypted = localStorage.getItem(storageKey);
+        if (!encrypted) {
+          result.failed += 1;
+          result.details.push({ key: storageKey, status: 'failed', reason: 'storage_disappeared' });
+          continue;
+        }
+        /* Dérive le nom du service depuis storage_key. Ex :
+         * `ax_anthropic_key` → 'anthropic'
+         * `ax_github_pat_classic` → 'github_pat_classic'
+         * `apex_v13_openai_key` → 'openai' */
+        let service = storageKey
+          .replace(/^ax_/, '')
+          .replace(/^apex_v13_/, '')
+          .replace(/_(key|token|secret)$/, '');
+        if (!service) {
+          result.skipped += 1;
+          result.details.push({ key: storageKey, status: 'skipped', reason: 'service_unknown' });
+          continue;
+        }
+        /* Si une clé du même service existe déjà dans le coffre central → skip
+         * (anti-doublon, ne pas écraser une migration manuelle déjà faite). */
+        const existing = this.listKeys(service);
+        if (existing.length > 0) {
+          result.skipped += 1;
+          result.details.push({ key: storageKey, status: 'skipped', reason: 'already_in_vault' });
+          continue;
+        }
+        /* Decrypt + import */
+        const plaintext = await vault.decryptAuto(encrypted);
+        if (!plaintext || plaintext.length < 8) {
+          result.failed += 1;
+          result.details.push({ key: storageKey, status: 'failed', reason: 'decrypt_failed' });
+          continue;
+        }
+        await this.addKey(service, plaintext, { alias: `migré depuis ${storageKey}` });
+        result.migrated += 1;
+        result.details.push({ key: storageKey, status: 'migrated' });
+      } catch (err: unknown) {
+        result.failed += 1;
+        result.details.push({
+          key: storageKey,
+          status: 'failed',
+          reason: String(err).slice(0, 80),
+        });
+      }
+    }
+    logger.info(
+      'multi-key-vault',
+      `migrateLegacyFlatKeys: scanned=${result.scanned} migrated=${result.migrated} failed=${result.failed} skipped=${result.skipped}`,
+    );
+    return result;
+  }
 }
 
 export const multiKeyVault = new MultiKeyVault();

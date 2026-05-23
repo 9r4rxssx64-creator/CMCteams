@@ -630,6 +630,8 @@ export function render(rootEl: HTMLElement): void {
         <div class="ax-gs-7">
           <button id="ax-vault-diag-btn" type="button"
             style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
+          <button id="ax-vault-migrate-legacy-btn" type="button"
+            style="padding:10px 16px;background:rgba(232,184,48,0.20);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔁 Migrer mes clés legacy vers le coffre</button>
           <button id="ax-vault-push-all-btn" type="button"
             style="padding:10px 16px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📤 Push toutes mes clés vers Firebase backup</button>
         </div>
@@ -885,7 +887,8 @@ function attachHandlers(rootEl: HTMLElement): void {
         const localBox = document.createElement('div');
         localBox.style.cssText = 'padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;line-height:1.5';
         const localLine = document.createElement('div');
-        localLine.textContent = `💾 Local : ${r.local.total} clé(s) — ${r.local.encrypted} chiffrées, ${r.local.plaintext} en clair`;
+        const orphanTxt = r.local.legacy_flat_orphans > 0 ? ` · ⚠ ${r.local.legacy_flat_orphans} hors coffre central` : '';
+        localLine.textContent = `💾 Local : ${r.local.total} clé(s) — ${r.local.encrypted} chiffrées · ${r.local.multi_keys_count} dans coffre${orphanTxt}`;
         localBox.append(localLine);
         if (r.local.sample.length) {
           const ex = document.createElement('div');
@@ -952,6 +955,67 @@ function attachHandlers(rootEl: HTMLElement): void {
           result.append(errBox);
         }
         toast.error('Diagnostic impossible');
+        haptic.error();
+      }
+    })();
+  });
+
+  /* v13.4.266 Kevin "diag dit 14 clés mais visuel coffre = juste Anthropic" :
+   * MIGRATION manuelle des clés legacy flat localStorage → coffre central
+   * apex_v13_multi_keys. Lecture seule sur localStorage (n'efface rien). */
+  const migrateBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-migrate-legacy-btn');
+  if (migrateBtn && activeVaultScope) activeVaultScope.bind(migrateBtn, 'click', () => {
+    void (async () => {
+      haptic.tap();
+      const result = rootEl.querySelector<HTMLDivElement>('#ax-vault-diag-result');
+      if (result) result.textContent = '⏳ Migration des clés legacy en cours…';
+      try {
+        const r = await multiKeyVault.migrateLegacyFlatKeys();
+        if (!result) return;
+        result.textContent = '';
+        const box = document.createElement('div');
+        const allGood = r.failed === 0 && r.migrated > 0;
+        box.style.cssText = `padding:10px;background:${allGood ? 'rgba(34,204,119,.1)' : 'rgba(232,184,48,.08)'};color:${allGood ? 'var(--ax-green)' : 'var(--ax-gold)'};border:1px solid ${allGood ? 'rgba(34,204,119,0.25)' : 'rgba(232,184,48,0.25)'};border-radius:8px;font-size:12px;line-height:1.5`;
+        const line1 = document.createElement('div');
+        line1.style.cssText = 'font-weight:700;margin-bottom:4px';
+        line1.textContent = `🔁 ${r.scanned} clé(s) legacy scannées : ${r.migrated} migrées · ${r.failed} échec(s) · ${r.skipped} ignorées`;
+        box.append(line1);
+        if (r.failed > 0) {
+          const hint = document.createElement('div');
+          hint.style.cssText = 'opacity:0.85;color:#ff8b8b;margin-top:4px';
+          const failedKeys = r.details.filter((d) => d.status === 'failed').slice(0, 5).map((d) => d.key.replace(/^(ax_|apex_v13_)/, '').replace(/_(key|token|secret)$/, ''));
+          hint.textContent = `Échecs (decrypt fail = passphrase perdue cf. erreur #55) : ${failedKeys.join(', ')}${r.failed > 5 ? '…' : ''}. Re-colle ces clés via "Auto-détection rapide".`;
+          box.append(hint);
+        }
+        if (r.skipped > 0) {
+          const skipHint = document.createElement('div');
+          skipHint.style.cssText = 'opacity:0.7;margin-top:4px';
+          const skippedKeys = r.details.filter((d) => d.status === 'skipped').slice(0, 5).map((d) => d.key.replace(/^(ax_|apex_v13_)/, '').replace(/_(key|token|secret)$/, ''));
+          skipHint.textContent = `Ignorées (déjà dans coffre ou service inconnu) : ${skippedKeys.join(', ')}${r.skipped > 5 ? '…' : ''}.`;
+          box.append(skipHint);
+        }
+        result.append(box);
+        if (r.migrated > 0) {
+          toast.success(`🔁 ${r.migrated} clés legacy migrées vers le coffre central`);
+          haptic.success();
+          /* Rafraîchit l'UI pour afficher les nouvelles clés */
+          setTimeout(() => render(rootEl), 600);
+        } else if (r.failed > 0) {
+          toast.error(`${r.failed} échec(s) decrypt — passphrase perdue`);
+          haptic.error();
+        } else {
+          toast.info('Rien à migrer (tout déjà à jour ou clés legacy absentes)');
+        }
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'migrateLegacyFlatKeys failed', { err });
+        if (result) {
+          result.textContent = '';
+          const errBox = document.createElement('div');
+          errBox.style.cssText = 'padding:8px;background:rgba(255,91,91,0.1);color:#ff8b8b;border-radius:8px';
+          errBox.textContent = '⚠ Migration échouée : ' + String(err).slice(0, 160);
+          result.append(errBox);
+        }
+        toast.error('Migration impossible');
         haptic.error();
       }
     })();

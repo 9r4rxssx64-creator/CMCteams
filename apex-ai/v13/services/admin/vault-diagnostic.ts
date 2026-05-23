@@ -23,6 +23,10 @@ export interface VaultLayerLocal {
   total: number;
   encrypted: number;
   plaintext: number;
+  /** v13.4.266 — clés présentes dans le coffre central `apex_v13_multi_keys` (UI Coffre les voit). */
+  multi_keys_count: number;
+  /** v13.4.266 — clés legacy flat (`ax_*_key` etc.) NON migrées dans le coffre central. */
+  legacy_flat_orphans: number;
   /** Aperçu des 10 premières clés (storageKey seulement, jamais la valeur). */
   sample: string[];
 }
@@ -78,7 +82,7 @@ function safeLocalKeys(): string[] {
   return out;
 }
 
-function inspectLocal(): VaultLayerLocal {
+async function inspectLocal(): Promise<VaultLayerLocal> {
   const keys = safeLocalKeys();
   let encrypted = 0;
   let plaintext = 0;
@@ -92,10 +96,23 @@ function inspectLocal(): VaultLayerLocal {
       /* skip */
     }
   }
+  /* v13.4.266 — coffre central count (l'UI Coffre lit ÇA, pas les flat). */
+  let multi_keys_count = 0;
+  try {
+    const { multiKeyVault } = await import('../vault/multi-key-vault.js');
+    multi_keys_count = multiKeyVault.listAll(true).length;
+  } catch {
+    /* lazy import échoué */
+  }
+  /* Compte les flat orphelines : encrypted SANS équivalent dans le coffre central.
+   * Approximation : si encrypted > multi_keys_count, l'écart est probablement orphelin. */
+  const legacy_flat_orphans = Math.max(0, encrypted - multi_keys_count);
   return {
     total: keys.length,
     encrypted,
     plaintext,
+    multi_keys_count,
+    legacy_flat_orphans,
     sample: keys.slice(0, 10),
   };
 }
@@ -202,7 +219,8 @@ function collectUidContext(): { uid: string; fallbacks: string[] } {
 function buildSummary(report: Omit<VaultDiagnosticReport, 'summary' | 'recommendations'>): string {
   const { local, firebase: fb, cloudflare_proxy: cf } = report;
   const parts: string[] = [];
-  parts.push(`💾 Local : ${local.total} clés (${local.encrypted} chiffrées${local.plaintext ? `, ${local.plaintext} ⚠ plaintext` : ''})`);
+  const orphanMark = local.legacy_flat_orphans > 0 ? ` ⚠ ${local.legacy_flat_orphans} hors coffre central` : '';
+  parts.push(`💾 Local : ${local.total} clés (${local.encrypted} chiffrées, ${local.multi_keys_count} dans coffre central${orphanMark})`);
   if (fb.connected) {
     parts.push(`☁ Firebase ${fb.state} : ${fb.backup_count} backup(s)`);
   } else {
@@ -257,6 +275,14 @@ function buildRecommendations(
       `⚠ ${local.plaintext} clé(s) en clair dans localStorage. Supprime-les et re-saisis-les (chiffrement automatique AES-GCM).`,
     );
   }
+  /* v13.4.266 (Kevin "diag dit 14 clés mais visuel coffre = juste Anthropic") :
+   * delta legacy flat vs coffre central → l'UI Coffre ne voit pas les flat.
+   * Reco prioritaire car bloque le user qui ne voit pas ses clés. */
+  if (local.legacy_flat_orphans > 0) {
+    recs.push(
+      `⚠ ${local.legacy_flat_orphans} clé(s) legacy flat (storage_key historiques type ax_*_key) NON migrées dans le coffre central — invisibles dans l'UI Coffre ET non testables. Clique « 🔁 Migrer mes clés legacy vers le coffre » pour les importer.`,
+    );
+  }
   if (fb.drift_detected) {
     if (fb.in_local_not_fb.length > 0) {
       recs.push(
@@ -294,8 +320,11 @@ export async function runVaultDiagnostic(): Promise<VaultDiagnosticReport> {
   const ts = Date.now();
   const uidCtx = collectUidContext();
   /* Local : synchrone, rapide. Firebase + Cloudflare : parallèles. */
-  const local = inspectLocal();
-  const [fbLayer, cfLayer] = await Promise.all([inspectFirebase(), inspectCloudflareProxy()]);
+  const [local, fbLayer, cfLayer] = await Promise.all([
+    inspectLocal(),
+    inspectFirebase(),
+    inspectCloudflareProxy(),
+  ]);
   const partial = {
     ts,
     uid: uidCtx.uid,
