@@ -5,7 +5,7 @@
 Le dashboard `shops/dashboard/` lit en temps réel les commandes que les 5 boutiques poussent dans Firebase Realtime Database, dans le chemin **isolé** :
 
 ```
-kdmc-clients-default-rtdb / shops_admin_v1 / orders / <boutique> / <orderId>
+cmcteams-c16ab-default-rtdb / shops_admin_v1 / orders / <boutique> / <orderId>
 ```
 
 **Aucune donnée client (email, adresse, CB) n'est envoyée** — uniquement les méta-commandes (ID, total, méthode de paiement, articles, timestamp).
@@ -15,7 +15,7 @@ kdmc-clients-default-rtdb / shops_admin_v1 / orders / <boutique> / <orderId>
 ## Étape unique : déployer les règles
 
 1. Va sur **https://console.firebase.google.com**
-2. Sélectionne le projet `kdmc-clients`
+2. Sélectionne le projet `cmcteams-c16ab` (CMCTeams)
 3. **Realtime Database → Règles**
 4. Colle (ou fusionne avec l'existant) le bloc ci-dessous :
 
