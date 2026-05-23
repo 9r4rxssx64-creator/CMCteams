@@ -421,18 +421,73 @@ export async function handleVerifyOtp(request, env) {
   const cleanPhone = phoneNorm;
   const phoneHash = await sha256(cleanPhone);
 
-  // ============ BYPASS ADMIN Kevin ============
+  // ============ BYPASS ADMIN Kevin + DIRECT SIGNUP (v1.1.154) ============
+  // Kevin "enlève l'histoire du code etc, pour tous" : otp='000000' est
+  // accepté pour TOUS les numéros — Kevin admin si phone matche le secret,
+  // signup direct (zéro OTP) sinon. Mode "cercle privé" où l'admin vet
+  // les utilisateurs socialement (via la fiche admin).
   if (otp === '000000') {
-    // Diagnostic explicite si le secret KEVIN_PHONE_E164 n'est pas configuré
+    // Cas 1 : pas Kevin → signup direct (création / récupération compte normal)
+    if (!kevinSecret || phoneNorm !== kevinSecret) {
+      let step = 'direct_init';
+      try {
+        step = 'select_existing';
+        let user = await env.APEX_CHAT_DB.prepare(
+          'SELECT * FROM users WHERE phone=?'
+        ).bind(cleanPhone).first();
+        if (!user) {
+          step = 'insert_user';
+          const newId = crypto.randomUUID();
+          const safePseudo = String(pseudo || name || 'user').toLowerCase()
+            .replace(/[^a-z0-9_-]/g, '').slice(0, 18) || ('user' + Date.now().toString(36).slice(-4));
+          await env.APEX_CHAT_DB.prepare(
+            `INSERT INTO users (id, pseudo, real_name, phone, phone_hash,
+               identity_key_pub, pq_key_pub, prekey_signed,
+               source, admin_authorized, created_at, status)
+             VALUES (?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH',
+                     'direct-signup', 1, ?, 'active')
+             ON CONFLICT(pseudo) DO NOTHING`
+          ).bind(newId, safePseudo, name || safePseudo, cleanPhone, phoneHash, Date.now()).run();
+          user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
+          if (!user) {
+            // Pseudo conflict — réessaie avec un suffixe
+            const retryId = newId;
+            const altPseudo = safePseudo.slice(0, 14) + '_' + Date.now().toString(36).slice(-4);
+            await env.APEX_CHAT_DB.prepare(
+              `INSERT INTO users (id, pseudo, real_name, phone, phone_hash,
+                 identity_key_pub, pq_key_pub, prekey_signed,
+                 source, admin_authorized, created_at, status)
+               VALUES (?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH',
+                       'direct-signup', 1, ?, 'active')`
+            ).bind(retryId, altPseudo, name || altPseudo, cleanPhone, phoneHash, Date.now()).run();
+            user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
+            if (!user) return err('Création compte échouée', 500, 'create_fail', 'pseudo_conflict');
+          }
+        }
+        step = 'sign_jwt';
+        if (!env.JWT_SIGN_KEY) return err('Config serveur incomplète', 503, 'jwt_key_unset');
+        const jwt = await signJWT({
+          sub: user.id, pseudo: user.pseudo, is_admin: !!user.is_admin,
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 30 * 86400
+        }, env.JWT_SIGN_KEY);
+        await auditLog(env, user.id, 'direct_signup', 'user', user.id, { phone_hash: phoneHash },
+          await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'))
+          .catch(() => {});
+        return json({ ok: true, token: jwt, user: {
+          id: user.id, pseudo: user.pseudo, real_name: user.real_name,
+          phone: user.phone, is_admin: !!user.is_admin
+        }});
+      } catch (e) {
+        console.error('[direct-signup]', step, e.message, e.stack);
+        e.step = 'direct_signup:' + step;
+        return err('Création compte échouée', 500, 'signup_fail', e);
+      }
+    }
+    // Cas 2 : c'est Kevin (numéro = secret) → bypass admin (logique existante)
     if (!env.KEVIN_PHONE_E164) {
       return err('Bypass admin indisponible', 503, 'kevin_phone_unset',
         'Secret KEVIN_PHONE_E164 absent du Worker — config GitHub/Cloudflare requise');
-    }
-    if (phoneNorm !== kevinSecret) {
-      // Diagnostic masqué : montre EXACTEMENT ce qui est comparé (4 derniers chiffres + longueur)
-      const mask = (s) => s ? ('…' + s.slice(-4) + ' (len ' + s.length + ')') : 'VIDE';
-      return err('Numéro non reconnu comme admin', 403, 'not_kevin_phone',
-        'reçu=' + mask(phoneNorm) + ' vs secret=' + mask(kevinSecret));
     }
     let step = 'init';
     try {
