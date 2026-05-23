@@ -874,7 +874,7 @@ async function handleCreateInvitation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { phone, sent_via } = await request.json();
+  const { phone, name, sent_via } = await request.json();
   if (!phone) return err('Numéro requis');
 
   const config = await getModeConfig(env);
@@ -887,19 +887,71 @@ async function handleCreateInvitation(request, env) {
   ).bind(auth.sub, since).first();
   if (recent && recent.c >= maxPerDay) return err(`Limite ${maxPerDay} invitations/jour atteinte`, 429);
 
+  // v1.1.156 (Kevin "que tout le monde puisse inviter depuis son répertoire") :
+  // chaque user — pas seulement admin — crée maintenant un vrai magic-token JWT
+  // qui pré-autorise l'invité (zero OTP côté destinataire). Aligné avec
+  // handleAdminInviteMagic. Le user invité par non-admin reste user normal.
+  const normalizedPhone = normPhone(phone);
+  const phoneHash = await sha256(normalizedPhone);
+  const niceName = (name || '').trim() || 'ami';
   const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
     .map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
-  const phoneHash = await sha256(phone);
   const expiresAt = Date.now() + 7 * 86400000;
 
-  await env.APEX_CHAT_DB.prepare(
-    `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, created_at, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).bind(code, auth.sub, phoneHash, sent_via || 'sms-native', Date.now(), expiresAt).run();
+  // Pré-créer le user invité (ou marquer un existant comme authorisé)
+  let user = await env.APEX_CHAT_DB.prepare(
+    'SELECT id, pseudo FROM users WHERE phone_hash=?'
+  ).bind(phoneHash).first();
+  if (!user) {
+    const userId = 'u_' + Array.from(crypto.getRandomValues(new Uint8Array(8)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    let safePseudo = niceName.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 18) ||
+      ('ami' + Date.now().toString(36).slice(-4));
+    const exists = await env.APEX_CHAT_DB.prepare('SELECT 1 FROM users WHERE pseudo=?').bind(safePseudo).first();
+    if (exists) safePseudo = safePseudo.slice(0, 12) + '_' + Date.now().toString(36).slice(-4);
+    try {
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, display_name,
+           identity_key_pub, pq_key_pub, prekey_signed,
+           admin_authorized, admin_authorized_by, source, invited_by, created_at, updated_at, status)
+         VALUES (?, ?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH',
+                 1, ?, 'user-invitation', ?, ?, ?, 'active')`
+      ).bind(userId, safePseudo, niceName, normalizedPhone, phoneHash, niceName,
+             auth.sub, auth.sub, Date.now(), Date.now()).run();
+      user = { id: userId, pseudo: safePseudo };
+    } catch (e) {
+      return err('Création compte invité échouée', 500, 'invite_user_fail', { detail: e.message });
+    }
+  } else {
+    await env.APEX_CHAT_DB.prepare(
+      'UPDATE users SET admin_authorized=1, updated_at=? WHERE id=?'
+    ).bind(Date.now(), user.id).run().catch(() => {});
+  }
 
-  return json({ ok: true, code, expires_at: expiresAt,
-    invite_url: `${env.APEX_CHAT_BASE_URL}i/${code}`,
-    sms_template: `Salut ! J'utilise Apex Chat, messagerie privée avec IA. Rejoins-moi : ${env.APEX_CHAT_BASE_URL}i/${code}`
+  // Magic token JWT (7 jours)
+  const magicToken = await signJWT({
+    typ: 'magic_invite', uid: user.id, pseudo: user.pseudo, phone_hash: phoneHash,
+    invited_by: auth.sub,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 7 * 86400
+  }, env.JWT_SIGN_KEY);
+
+  await env.APEX_CHAT_DB.prepare(
+    `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, magic_token, created_at, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(code, auth.sub, phoneHash, sent_via || 'contact-picker', magicToken, Date.now(), expiresAt).run();
+
+  const baseUrl = env.APEX_CHAT_BASE_URL || '';
+  const magicUrl = `${baseUrl}?invite=${encodeURIComponent(magicToken)}`;
+  const shortUrl = `${baseUrl}i/${code}`;
+  const inviterName = (await env.APEX_CHAT_DB.prepare('SELECT real_name, pseudo FROM users WHERE id=?')
+    .bind(auth.sub).first().catch(() => null))?.real_name || auth.pseudo || 'un ami';
+
+  return json({
+    ok: true, code, expires_at: expiresAt,
+    magic_url: magicUrl,
+    invite_url: shortUrl,
+    sms_template: `Salut ${niceName} ! ${inviterName} t'invite sur Apex Chat (messagerie privée chiffrée). Clique direct (pas besoin de code) : ${magicUrl}`
   });
 }
 
