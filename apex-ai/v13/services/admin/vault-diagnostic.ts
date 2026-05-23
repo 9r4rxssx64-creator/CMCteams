@@ -237,6 +237,21 @@ function buildRecommendations(
       'Aucune clé trouvée nulle part (local + Firebase). Re-colle tes clés une par une dans le champ « Auto-détection rapide ».',
     );
   }
+  /* v13.4.265 (Kevin "Firebase RECONNECTING + 0 backup avec 14 clés local") :
+   * cas critique pas de redondance cloud — si reinstall PWA = perte totale.
+   * Recommandation actionnable : utiliser le bouton « 📤 Push toutes mes clés
+   * vers Firebase backup » dès que Firebase repasse 🟢 CONNECTED. */
+  if (local.total > 0 && fb.backup_count === 0) {
+    if (fb.connected) {
+      recs.push(
+        `⚠ ${local.total} clé(s) locale(s) mais AUCUN backup Firebase. Clique « 📤 Push toutes mes clés vers Firebase backup » MAINTENANT pour sauvegarder cross-device.`,
+      );
+    } else {
+      recs.push(
+        `⚠ ${local.total} clé(s) locale(s) sans backup Firebase ET Firebase est ${fb.state}. Attends que Firebase repasse 🟢 CONNECTED (auto-reconnect), puis clique « 📤 Push toutes mes clés vers Firebase backup ». Sans backup, un reinstall PWA = perte totale.`,
+      );
+    }
+  }
   if (local.plaintext > 0) {
     recs.push(
       `⚠ ${local.plaintext} clé(s) en clair dans localStorage. Supprime-les et re-saisis-les (chiffrement automatique AES-GCM).`,
