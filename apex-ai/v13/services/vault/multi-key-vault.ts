@@ -79,6 +79,9 @@ interface PingConfig {
   method: 'GET' | 'HEAD' | 'POST' | 'OPTIONS';
   buildHeaders: (apiKey: string) => Record<string, string>;
   body?: string;
+  /** v13.4.274 — Override URL avec injection apiKey (cas Finnhub `?token=` query param).
+   * Si fourni, `url` n'est utilisé que comme fallback. */
+  buildUrl?: (apiKey: string) => string;
   /* Statuts considérés comme "clé fonctionnelle" (ex: 200, 400 = body issue mais clé valide).
      401/403/429 par défaut → failing (sauf override). */
 }
@@ -202,9 +205,26 @@ const PING_CONFIGS: Record<string, PingConfig> = {
     buildHeaders: (apiKey) => ({ authorization: `Bearer ${apiKey}` }),
   },
   finnhub: {
+    /* v13.4.274 (Kevin "Finnhub ne fonctionne pas") : aligné sur la méthode
+     * officielle Finnhub (`?token=`) ET sur le worker proxy. Header X-Finnhub-Token
+     * marchait aussi mais désaccord = ambiguïté + parfois 401 inutile. */
     url: 'https://finnhub.io/api/v1/quote?symbol=AAPL',
     method: 'GET',
-    buildHeaders: (apiKey) => ({ 'X-Finnhub-Token': apiKey }),
+    buildHeaders: () => ({}),
+    buildUrl: (apiKey) => `https://finnhub.io/api/v1/quote?symbol=AAPL&token=${encodeURIComponent(apiKey)}`,
+  },
+  railway: {
+    /* v13.4.274 (Kevin "Railway ne fonctionne pas") : nouveau PING_CONFIG.
+     * Avant : pas d'endpoint → testKey() retournait "no test endpoint" →
+     * statut perpétuel "unknown" → Kevin pense que ça marche pas.
+     * Maintenant : POST GraphQL `{__typename}` minimal — 200 si auth OK. */
+    url: 'https://backboard.railway.app/graphql/v2',
+    method: 'POST',
+    body: JSON.stringify({ query: '{ __typename }' }),
+    buildHeaders: (apiKey) => ({
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    }),
   },
   cloudflare: {
     url: 'https://api.cloudflare.com/client/v4/user/tokens/verify',
@@ -558,7 +578,9 @@ class MultiKeyVault {
         signal: AbortSignal.timeout(8000),
       };
       if (config.body !== undefined) init.body = config.body;
-      const res = await fetch(config.url, init);
+      /* v13.4.274 — buildUrl override (cas Finnhub `?token=` injecté). */
+      const targetUrl = config.buildUrl ? config.buildUrl(plain) : config.url;
+      const res = await fetch(targetUrl, init);
       const latency = Date.now() - start;
       const status = res.status;
       entry.lastTestedAt = Date.now();

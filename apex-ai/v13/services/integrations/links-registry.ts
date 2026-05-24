@@ -629,6 +629,29 @@ const KNOWN_LINKS: Record<string, Omit<ServiceLink, 'alive' | 'last_verified'>> 
     docs: 'https://posthog.com/docs',
     pricing: 'https://posthog.com/pricing',
   },
+  /* v13.4.274 (Kevin "Finnhub et Railway ne fonctionnent pas") :
+   * entrées linksRegistry manquantes → bouton "Recharger" du Coffre n'affichait
+   * pas de lien dashboard. Maintenant tu peux y aller en 1 clic. */
+  finnhub: {
+    service: 'finnhub',
+    name: 'Finnhub',
+    dashboard: 'https://finnhub.io/dashboard',
+    billing: 'https://finnhub.io/dashboard/billing',
+    api_keys_page: 'https://finnhub.io/dashboard/api-key',
+    docs: 'https://finnhub.io/docs/api',
+    pricing: 'https://finnhub.io/pricing',
+    status_page: 'https://status.finnhub.io',
+  },
+  railway: {
+    service: 'railway',
+    name: 'Railway',
+    dashboard: 'https://railway.app/dashboard',
+    billing: 'https://railway.app/account/billing',
+    api_keys_page: 'https://railway.app/account/tokens',
+    docs: 'https://docs.railway.app/reference/public-api',
+    pricing: 'https://railway.app/pricing',
+    status_page: 'https://railway.statuspage.io/',
+  },
 };
 
 /**
