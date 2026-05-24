@@ -468,7 +468,11 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
   },
   {
     name: 'Cloudflare API Token',
-    regex: /^[A-Za-z0-9_-]{40}$/,
+    /* v13.4.276 (Kevin "Quand je colle finnhub il la confond avec Cloudfare") :
+     * lookahead exige ≥1 majuscule OU underscore/dash → discrimine vs clés
+     * Finnhub (lowercase+digits seuls, format `cv0xxx...`). Les vrais tokens
+     * Cloudflare contiennent toujours mixed case + `_-` (ex `iVz_KEvjsj-V8...`). */
+    regex: /^(?=.*[A-Z_-])[A-Za-z0-9_-]{40}$/,
     storageKey: 'ax_cloudflare_token',
     category: 'devops',
     dashboard: 'https://dash.cloudflare.com/profile/api-tokens',
