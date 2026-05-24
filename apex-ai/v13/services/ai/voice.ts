@@ -1190,6 +1190,40 @@ export function deriveDefaultsFromId(id: string): { pitch: number; rate: number 
     'pro_female_en':   { pitch: 1.45, rate: 1.08 },
     'pro_wavenet_fr':  { pitch: 1.02, rate: 0.98 },
     'pro_azure_fr':    { pitch: 0.95, rate: 1.02 },
+    /* v13.4.275 (Kevin "11 voix doublons audio détectés") : compléter
+     * exactPresets pour ÉLIMINER les collisions du fallback keyword. Chaque ID
+     * a sa combinaison pitch/rate UNIQUE — vérifié 0 doublon avec test:voices. */
+    'pro_neural_fr':           { pitch: 1.08, rate: 1.04 },
+    'pro_elevenlabs_rachel':   { pitch: 1.32, rate: 1.04 },
+    'pro_elevenlabs_adam':     { pitch: 0.82, rate: 1.00 },
+    'pro_elevenlabs_bella':    { pitch: 1.22, rate: 0.99 },
+    'pro_news_anchor':         { pitch: 1.06, rate: 1.10 },
+    'pro_audiobook':           { pitch: 0.92, rate: 0.88 },
+    /* FUN — toutes pitch/rate uniques pour anti-doublon strict */
+    'fun_helium':              { pitch: 1.92, rate: 1.18 },
+    'fun_robot':               { pitch: 0.55, rate: 0.97 },
+    'fun_echo':                { pitch: 1.02, rate: 0.96 },
+    'fun_slow':                { pitch: 0.96, rate: 0.58 },
+    'fun_chipmunk':            { pitch: 1.86, rate: 1.28 },
+    'fun_cartoon':             { pitch: 1.62, rate: 1.16 },
+    'fun_oldman':              { pitch: 0.58, rate: 0.94 },
+    'fun_baby':                { pitch: 1.76, rate: 1.12 },
+    'fun_drunk':               { pitch: 0.84, rate: 0.83 },
+    'fun_megaphone':           { pitch: 0.78, rate: 1.12 },
+    'fun_phone':               { pitch: 1.04, rate: 1.06 },
+    'fun_underwater':          { pitch: 0.66, rate: 0.78 },
+    'fun_whisper':             { pitch: 0.94, rate: 0.82 },
+    'fun_reverse':             { pitch: 1.10, rate: 1.00 },
+    'fun_distorted':           { pitch: 0.75, rate: 1.04 },
+    'fun_autotune':            { pitch: 1.18, rate: 1.02 },
+    'fun_alien':               { pitch: 0.52, rate: 0.96 },
+    'fun_spooky':              { pitch: 0.62, rate: 0.74 },
+    'fun_excited':             { pitch: 1.32, rate: 1.38 },
+    'fun_sad':                 { pitch: 0.86, rate: 0.76 },
+    'fun_cow':                 { pitch: 0.48, rate: 0.82 },
+    'fun_dog':                 { pitch: 1.08, rate: 1.32 },
+    'fun_cat_talking':         { pitch: 1.82, rate: 1.08 },
+    'fun_minion':              { pitch: 1.74, rate: 1.34 },
     /* THEMATIC : 20 voix toutes pitch/rate uniques (fallback Web Speech si pas ElevenLabs) */
     'theme_yoda':            { pitch: 0.65, rate: 0.70 },
     'theme_vader':           { pitch: 0.45, rate: 0.85 },
@@ -1211,6 +1245,10 @@ export function deriveDefaultsFromId(id: string): { pitch: number; rate: number 
     'theme_news_old':        { pitch: 1.05, rate: 0.95 },
     'theme_hulk':            { pitch: 0.50, rate: 1.05 },
     'theme_voldemort':       { pitch: 0.78, rate: 0.88 },
+    'theme_rapper':          { pitch: 0.88, rate: 1.42 },
+    'theme_baby_robot':      { pitch: 1.42, rate: 1.08 },
+    'theme_yoda_v2':         { pitch: 0.70, rate: 0.68 },
+    'theme_trex':            { pitch: 0.38, rate: 0.72 },
   };
   if (exactPresets[lower]) return exactPresets[lower];
   /* Pitch base par keyword caractère (semi-tons → ratio Web Speech 0..2) */
