@@ -102,6 +102,27 @@ export async function runVaultAutoMaintenance(): Promise<{
     } catch (err: unknown) {
       logger.warn('vault-auto-maint', 'backup failed', { err });
     }
+
+    /* 4. HEALTH-CHECK des clés (v13.4.275 — Kevin "Cloudflare NON TESTÉ,
+     * Railway NON TESTÉ, Finnhub PANNE"). Refresh status pour les entries
+     * jamais testées OU dont le dernier test date de > 5min (skip auto interne).
+     * Background, non-bloquant. Permet aux ajouts récents (Railway v274,
+     * Finnhub v274 auth alignée) de remonter un statut réel au lieu de "unknown". */
+    try {
+      const { multiKeyVault } = await import('../vault/multi-key-vault.js');
+      void multiKeyVault.healthCheckAll().then((r) => {
+        if (r.tested > 0) {
+          logger.info(
+            'vault-auto-maint',
+            `🩺 health-check : ${r.tested} testées · ${r.recovered} recovered · ${r.stillDown} stillDown`,
+          );
+        }
+      }).catch((err: unknown) => {
+        logger.debug('vault-auto-maint', 'healthCheckAll skipped (background)', { err });
+      });
+    } catch (err: unknown) {
+      logger.debug('vault-auto-maint', 'health-check import failed', { err });
+    }
   } catch (err: unknown) {
     logger.warn('vault-auto-maint', 'orchestration failed', { err });
   }

@@ -1509,7 +1509,9 @@ async function onTestKey(rootEl: HTMLElement, credId: string, btn: HTMLButtonEle
       haptic.error();
       toast.error(`❌ ${r.reason ?? 'Test échoué'}`);
     }
-    render(rootEl);
+    /* v13.4.275 (Kevin "Quand je teste une je remonte auto en haut de page") :
+     * preserveScroll wrappe le re-render pour garder la position scroll. */
+    await preserveScroll(rootEl, () => render(rootEl));
   } catch (err: unknown) {
     logger.warn('feature-vault', 'testKey failed', { err });
     haptic.error();
