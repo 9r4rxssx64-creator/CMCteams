@@ -57,7 +57,7 @@ jobs:
 
       - name: Comment PR auto-review summary
         if: success()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -90,7 +90,7 @@ jobs:
 
       - name: Block merge si pre-checks fail
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const body = [
