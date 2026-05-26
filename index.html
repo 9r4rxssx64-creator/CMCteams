@@ -5375,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.742";
+var APP_VER="v9.743";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35344,6 +35344,13 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     // v9.648 — Détection auto équipes par pattern RH (filet de sécurité hybride :
     // SKIP les emps ayant déjà teamHistory[key] → complète seulement les non-couverts)
     try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
+    // v9.743 (Kevin 2026-05-26 "tjs pas les bonnes équipes pour tout le monde") :
+    // Fallback final pour emps avec cellules sans équipe. Pour chaque tel emp,
+    // détecte cycle+offset depuis ses RH days (fallback MIN-gap si MEDIAN>10 à
+    // cause de CP/AF blocs intra-mois), puis cherche la plus grande équipe
+    // existante de SA FAMILLE avec MÊME offset (data du mois courant uniquement,
+    // pas d'historique → respecte règle "AUCUNE invention").
+    try{_cmcFallbackUnassignedTeams(iy,im);}catch(_fbErr){console.warn("[v9.743 fallback]",_fbErr&&_fbErr.message);}
     // v9.734 (Kevin 2026-05-23 "Aucune invention. Reproduction exacte de l'import") :
     // Le RESCUE PASS v9.733 (assignation par signature similaire) a été RETIRÉ.
     // Inférer une équipe à partir d'autres emps de signature similaire = INVENTION.
@@ -36622,6 +36629,95 @@ function _saveImportSnapshot(iy,im,sourceText){
       if(s){s.sourceHash=h;localStorage.setItem("cmc_import_snap_"+key,JSON.stringify(s));}
     }catch(e){}}
   });
+}
+// ═══════════════════════════════════════════════════════════════════════════
+// v9.743 — FALLBACK FINAL ÉQUIPES NON ATTRIBUÉES (Kevin 2026-05-26)
+// "Tjs pas les bonnes équipes pour tout le monde et personne sans horaire"
+// Pour chaque emp avec ≥10 cellules SANS teamHistory[key], détecte cycle+offset
+// depuis ses RH days et cherche la plus grande équipe existante de SA FAMILLE
+// avec le MÊME offset. Utilise UNIQUEMENT les données du mois courant
+// (pas d'historique) — respecte la règle Kevin "AUCUNE invention".
+// ═══════════════════════════════════════════════════════════════════════════
+function _cmcFallbackUnassignedTeams(iy,im){
+  var key=iy+"-"+im;
+  var ov=A.overrides[key]||{};
+  if(!Object.keys(ov).length)return{ok:false,reason:"no_data"};
+  // Helper : calcule cycle SBM (médian si ≤10, sinon MIN gap pour résister aux blocs CP/AF intra-mois)
+  function _calcCycleSmart(rhDays){
+    if(rhDays.length<2)return null;
+    var gaps=[];
+    for(var i=1;i<rhDays.length;i++)gaps.push(rhDays[i]-rhDays[i-1]);
+    gaps.sort(function(a,b){return a-b;});
+    var med=gaps[Math.floor(gaps.length/2)];
+    // Si médian >10 (probable bloc CP/AF qui élargit un gap), prendre MIN
+    // Cycles SBM réalistes : 4-8 jours. >10 = anomalie.
+    if(med>10){
+      var mn=gaps[0];
+      if(mn>=2&&mn<=10)return mn;
+    }
+    return med;
+  }
+  function _getRhDays(empId){
+    var r=ov[empId]||{};
+    var rh=[];
+    Object.keys(r).forEach(function(d){
+      if(String(r[d]).toUpperCase()==="RH")rh.push(parseInt(d));
+    });
+    rh.sort(function(a,b){return a-b;});
+    return rh;
+  }
+  function _cellCount(empId){
+    var r=ov[empId]||{};
+    return Object.keys(r).filter(function(d){return !!r[d];}).length;
+  }
+  // 1. Index par (family, offset) → {teamId: count} pour les équipes DÉJÀ attribuées
+  var teamsByFamOffset={};
+  A.employees.forEach(function(emp){
+    if(!emp||!emp.teamHistory||!emp.teamHistory[key])return;
+    var teamId=emp.teamHistory[key];
+    var fam=(emp.familyHistory&&emp.familyHistory[key])||emp.family;
+    if(!fam||fam==="cadres")return;
+    var rh=_getRhDays(emp.id);
+    if(rh.length<2)return;
+    var cycle=_calcCycleSmart(rh);
+    if(!cycle||cycle<2||cycle>15)return;
+    var offset=(rh[0]-1)%cycle;
+    var k=fam+":"+offset;
+    if(!teamsByFamOffset[k])teamsByFamOffset[k]={};
+    if(!teamsByFamOffset[k][teamId])teamsByFamOffset[k][teamId]=0;
+    teamsByFamOffset[k][teamId]++;
+  });
+  // 2. Pour chaque emp SANS teamHistory[key], chercher meilleur match
+  var assigned=0,skipped_noRh=0,skipped_noMatch=0,skipped_cadres=0;
+  A.employees.forEach(function(emp){
+    if(!emp||!isEmpActive(emp,iy,im))return;
+    if(emp.teamHistory&&emp.teamHistory[key])return; // déjà attribué
+    if(emp.family==="cadres"){skipped_cadres++;return;}
+    var cells=_cellCount(emp.id);
+    if(cells<10)return; // pas assez de données
+    var rh=_getRhDays(emp.id);
+    if(rh.length<2){skipped_noRh++;return;}
+    var cycle=_calcCycleSmart(rh);
+    if(!cycle||cycle<2||cycle>15){skipped_noRh++;return;}
+    var offset=(rh[0]-1)%cycle;
+    var fam=(emp.familyHistory&&emp.familyHistory[key])||emp.family||"bj";
+    var k=fam+":"+offset;
+    var candidates=teamsByFamOffset[k];
+    if(!candidates){skipped_noMatch++;return;}
+    // Plus grande équipe = meilleur match
+    var bestTeam=null,bestCount=0;
+    Object.keys(candidates).forEach(function(t){
+      if(candidates[t]>bestCount){bestCount=candidates[t];bestTeam=t;}
+    });
+    if(bestTeam){
+      if(!emp.teamHistory)emp.teamHistory={};
+      emp.teamHistory[key]=bestTeam;
+      assigned++;
+      console.info("[v9.743 fallback] "+emp.name+" → "+bestTeam+" (family="+fam+" cycle="+cycle+" offset="+offset+")");
+    }
+  });
+  console.info("[v9.743 fallback] assigned="+assigned+" skipped_noRh="+skipped_noRh+" skipped_noMatch="+skipped_noMatch+" skipped_cadres="+skipped_cadres);
+  return{ok:true,assigned:assigned};
 }
 // ═══════════════════════════════════════════════════════════════════════════
 // v9.555 — AUTO-RECOVERY IMPORTS (Kevin 2026-04-26 URGENT)
