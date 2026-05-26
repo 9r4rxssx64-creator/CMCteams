@@ -3,23 +3,23 @@ main = "src/index.js"
 compatibility_date = "2026-04-30"
 compatibility_flags = ["nodejs_compat"]
 
-# KV namespace pour rate-limiting (creer via : wrangler kv:namespace create AUTH_KV)
-# Apres creation, copier l ID retourne ici :
+# KV namespace pour rate-limiting des tentatives de login (5/IP/15min)
+# Le workflow `.github/workflows/deploy-apex-auth-worker.yml` crée auto le namespace
+# au premier deploy et persiste l'ID ici via commit auto [skip ci].
 [[kv_namespaces]]
 binding = "AUTH_KV"
 id = "REPLACE_WITH_KV_ID_FROM_WRANGLER_OUTPUT"
 
-# Variables d environnement (PUBLIQUES, pas sensibles)
+# Variables d'environnement (PUBLIQUES, pas sensibles)
+# Pointe le projet Firebase actif (vérifié dans services/auth/rgpd.ts + memory-bridge.ts)
 [vars]
-FIREBASE_PROJECT_ID = "kdmc-clients"
+FIREBASE_PROJECT_ID = "cmcteams-c16ab"
 
-# SECRETS (a configurer via : wrangler secret put NOM)
-# - FIREBASE_PRIVATE_KEY : depuis Firebase Console > Project Settings > Service Accounts > Generate new private key (JSON), copier la valeur "private_key"
-# - FIREBASE_CLIENT_EMAIL : depuis le meme JSON, valeur "client_email"
-#
-# Commande exacte :
-#   wrangler secret put FIREBASE_PRIVATE_KEY
-#   wrangler secret put FIREBASE_CLIENT_EMAIL
+# SECRETS (poussés auto par le workflow depuis GitHub Secrets) :
+#   - FIREBASE_PRIVATE_KEY  : valeur "private_key" du Service Account JSON
+#   - FIREBASE_CLIENT_EMAIL : valeur "client_email" du Service Account JSON
+# Source : Firebase Console > Project Settings > Service Accounts > Generate new private key
+# Projet ciblé : cmcteams-c16ab (PAS kdmc-clients — docs obsolètes nettoyées 2026-05-26)
 
 [observability]
 enabled = true
