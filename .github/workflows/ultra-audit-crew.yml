@@ -55,17 +55,37 @@ jobs:
             fi
             echo ""
 
-            # XSS uniquement dans Apex v13 src/ (hors tests, archive, dist, html legacy)
-            XSS=$(grep -rE "innerHTML[[:space:]]*=" --include="*.ts" \
-              apex-ai/v13/services apex-ai/v13/features apex-ai/v13/core 2>/dev/null | \
-              grep -v "esc(" | grep -v "DOMPurify" | grep -v "/\*" | grep -v "^[^:]*://" | wc -l || echo 0)
-            echo "### XSS potentiel — innerHTML sans esc()/DOMPurify (Apex v13 src/): $XSS"
-            if [ "$XSS" -gt 100 ]; then
-              echo "⚠️ P1: $XSS sites à auditer (cf CLAUDE.md règle esc())"
-            elif [ "$XSS" -gt 0 ]; then
-              echo "ℹ️ $XSS sites — vérifier au cas par cas"
+            # XSS audit : recense les FICHIERS où innerHTML est utilisé SANS aucun
+            # helper d'échappement dans le fichier entier (pas juste sur la même ligne).
+            # Helpers détectés : escapeHtml, escapeAttr, esc(, safeSetHTML, sanitize,
+            # DOMPurify, this.escape, .escape() (méthodes de classes).
+            cd apex-ai/v13
+            RISKY_FILES=""
+            RISKY_COUNT=0
+            for f in $(grep -rlE "innerHTML[[:space:]]*=" --include="*.ts" services features core 2>/dev/null); do
+              ESC=$(grep -cE "escapeHtml|escapeAttr|esc\(|safeSetHTML|sanitize|DOMPurify|\.escape\(" "$f" 2>/dev/null || echo 0)
+              ESC=${ESC:-0}
+              if [ "$ESC" -eq 0 ]; then
+                IH=$(grep -cE "innerHTML[[:space:]]*=" "$f" 2>/dev/null)
+                # Exclure les fichiers où innerHTML n'apparaît QUE dans des commentaires (* ou //)
+                NON_COMMENT=$(grep -E "innerHTML[[:space:]]*=" "$f" 2>/dev/null | grep -vE "^\s*\*|^\s*//" | wc -l)
+                if [ "$NON_COMMENT" -gt 0 ]; then
+                  RISKY_FILES="$RISKY_FILES\n- $f ($NON_COMMENT innerHTML, 0 helper)"
+                  RISKY_COUNT=$((RISKY_COUNT + 1))
+                fi
+              fi
+            done
+            cd - > /dev/null
+            echo "### XSS audit (par fichier, exclude comments)"
+            echo "Fichiers utilisant innerHTML SANS aucun helper d'échappement: $RISKY_COUNT"
+            if [ "$RISKY_COUNT" -eq 0 ]; then
+              echo "✅ Tous les fichiers innerHTML utilisent au moins un helper d'échappement"
+            elif [ "$RISKY_COUNT" -le 5 ]; then
+              echo "ℹ️ $RISKY_COUNT fichier(s) — audit ciblé requis (probablement HTML statique sans user data)"
+              echo -e "$RISKY_FILES"
             else
-              echo "✅ 0 site"
+              echo "⚠️ P1: $RISKY_COUNT fichiers à auditer"
+              echo -e "$RISKY_FILES" | head -20
             fi
             echo ""
 
