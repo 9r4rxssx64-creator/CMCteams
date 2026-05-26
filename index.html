@@ -5391,7 +5391,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.745";
+var APP_VER="v9.746";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36774,7 +36774,80 @@ function _cmcFallbackUnassignedTeams(iy,im){
     console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+")");
   });
   console.info("[v9.744 absence] assigned="+absenceAssigned);
-  return{ok:true,assigned:assigned+absenceAssigned};
+  // v9.746 (Kevin 2026-05-26 "On avance pas — ELIODORI J r10 mais VIGNA M r3 avec MÊME pattern") :
+  // PASSE DE CONSOLIDATION — pour chaque emp avec une équipe attribuée, vérifier
+  // qu'une AUTRE équipe de sa famille n'a PAS la MAJORITÉ d'emps avec EXACTEMENT
+  // le même pattern (cycle, offset, firstWork avec suffixes complets). Si oui,
+  // réattribuer à cette équipe majoritaire. Corrige les cas où _cmcDetectTeamsByPdfColumn
+  // place mal des emps à cause de fragmentation PDF entre blocks.
+  function _firstWorkFull(empId){
+    var r=ov[empId]||{};
+    var ABSENCE=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL"];
+    for(var d=1;d<=31;d++){
+      var c=r[d];if(!c)continue;
+      var cu=String(c).toUpperCase();
+      if(ABSENCE.indexOf(cu)>=0)continue;
+      return String(c); // shift complet AVEC suffixes (c, ', ", *)
+    }
+    return null;
+  }
+  function _rhKey(empId){
+    return _getRhDays(empId).join(",");
+  }
+  // Index par (family, rhKey, firstWorkFull) → {teamId: count}
+  var teamsByPattern={};
+  A.employees.forEach(function(emp){
+    if(!emp||!emp.teamHistory||!emp.teamHistory[key])return;
+    if(emp.family==="cadres")return;
+    var teamId=emp.teamHistory[key];
+    if(teamId==="formation"||teamId==="maladie"||teamId==="conges"||teamId==="amenage")return;
+    var fam=(emp.familyHistory&&emp.familyHistory[key])||emp.family;
+    if(!fam)return;
+    var rhKey=_rhKey(emp.id);
+    if(!rhKey)return;
+    var fw=_firstWorkFull(emp.id);
+    if(!fw)return;
+    var k=fam+"|"+rhKey+"|"+fw;
+    if(!teamsByPattern[k])teamsByPattern[k]={};
+    if(!teamsByPattern[k][teamId])teamsByPattern[k][teamId]=0;
+    teamsByPattern[k][teamId]++;
+  });
+  // Pour chaque emp, vérifier si son équipe est minoritaire pour son pattern
+  var reattributed=0;
+  A.employees.forEach(function(emp){
+    if(!emp||!emp.teamHistory||!emp.teamHistory[key])return;
+    if(emp.family==="cadres")return;
+    var currentTeam=emp.teamHistory[key];
+    if(currentTeam==="formation"||currentTeam==="maladie"||currentTeam==="conges"||currentTeam==="amenage")return;
+    var fam=(emp.familyHistory&&emp.familyHistory[key])||emp.family;
+    if(!fam)return;
+    var rhKey=_rhKey(emp.id);
+    if(!rhKey)return;
+    var fw=_firstWorkFull(emp.id);
+    if(!fw)return;
+    var k=fam+"|"+rhKey+"|"+fw;
+    var teams=teamsByPattern[k];
+    if(!teams||Object.keys(teams).length<2)return; // pas de conflit
+    // Trouver l'équipe MAJORITAIRE pour ce pattern
+    var bestTeam=currentTeam,bestCount=teams[currentTeam]||0;
+    Object.keys(teams).forEach(function(t){
+      if(teams[t]>bestCount){bestCount=teams[t];bestTeam=t;}
+    });
+    if(bestTeam!==currentTeam){
+      var oldCount=teams[currentTeam]||0;
+      // Ne réattribuer QUE si l'équipe cible a strictement plus de membres (évite ping-pong)
+      if(bestCount>oldCount){
+        emp.teamHistory[key]=bestTeam;
+        // Mettre à jour l'index pour les emps suivants
+        teamsByPattern[k][currentTeam]--;
+        teamsByPattern[k][bestTeam]++;
+        reattributed++;
+        console.info("[v9.746 consol] "+emp.name+" : "+currentTeam+" → "+bestTeam+" (pattern "+rhKey+" "+fw+", "+bestCount+">"+oldCount+")");
+      }
+    }
+  });
+  console.info("[v9.746 consol] reattributed="+reattributed);
+  return{ok:true,assigned:assigned+absenceAssigned,consolidated:reattributed};
 }
 // ═══════════════════════════════════════════════════════════════════════════
 // v9.555 — AUTO-RECOVERY IMPORTS (Kevin 2026-04-26 URGENT)
