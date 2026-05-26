@@ -4892,6 +4892,22 @@ function _cmcEnsureTeam(tid){
     A.teams.push(at);
     return at;
   }
+  // v9.744 (Kevin 2026-05-26) — équipes spéciales pour absence intégrale du mois
+  if(s==="formation"){
+    var ft={id:"formation",name:"🎓 Formation",color:"#7a5aa8",family:"all",departureOrder:100,_auto:true};
+    A.teams.push(ft);
+    return ft;
+  }
+  if(s==="maladie"){
+    var mt={id:"maladie",name:"🤒 Maladie",color:"#8a4a4a",family:"all",departureOrder:101,_auto:true};
+    A.teams.push(mt);
+    return mt;
+  }
+  if(s==="conges"){
+    var ct={id:"conges",name:"🏖️ Congés",color:"#4a8a4a",family:"all",departureOrder:102,_auto:true};
+    A.teams.push(ct);
+    return ct;
+  }
   var fam=/^r/i.test(s)?"roulettes":/^c/i.test(s)?"cmc":"bj";
   var num=s.replace(/[^0-9]/g,"")||"?";
   var nm=fam==="roulettes"?("Roul. Éq."+num):fam==="cmc"?("CMC Éq."+num):("BJ Éq."+num);
@@ -5375,7 +5391,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.743";
+var APP_VER="v9.744";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36717,7 +36733,43 @@ function _cmcFallbackUnassignedTeams(iy,im){
     }
   });
   console.info("[v9.743 fallback] assigned="+assigned+" skipped_noRh="+skipped_noRh+" skipped_noMatch="+skipped_noMatch+" skipped_cadres="+skipped_cadres);
-  return{ok:true,assigned:assigned};
+  // v9.744 (Kevin 2026-05-26 "Fais une équipe formation si ça dure tout le mois") :
+  // Pour les emps SANS équipe ET sans RH days (absent toute la période en AF/M/CP),
+  // créer/utiliser une équipe dédiée par code absence dominant :
+  //   • AF intégral (≥80% AF) → équipe "formation"
+  //   • M intégral → équipe "maladie"
+  //   • CP intégral → équipe "conges"
+  // Sinon (codes mixtes ou autres) → laisser sans équipe.
+  var absenceAssigned=0;
+  A.employees.forEach(function(emp){
+    if(!emp||!isEmpActive(emp,iy,im))return;
+    if(emp.teamHistory&&emp.teamHistory[key])return;
+    if(emp.family==="cadres")return;
+    var r=ov[emp.id]||{};
+    var codes=[];
+    Object.keys(r).forEach(function(d){if(r[d])codes.push(String(r[d]).toUpperCase());});
+    if(codes.length<10)return;
+    var counts={};
+    codes.forEach(function(c){counts[c]=(counts[c]||0)+1;});
+    var dominantCode=null,maxCount=0;
+    Object.keys(counts).forEach(function(c){
+      if(counts[c]>maxCount){maxCount=counts[c];dominantCode=c;}
+    });
+    var ratio=maxCount/codes.length;
+    if(ratio<0.80)return; // codes mixtes, ne pas forcer une équipe absence
+    var absenceTeam=null;
+    if(dominantCode==="AF"||dominantCode==="FORMATION")absenceTeam="formation";
+    else if(dominantCode==="M"||dominantCode==="MAL"||dominantCode==="MALADIE")absenceTeam="maladie";
+    else if(dominantCode==="CP")absenceTeam="conges";
+    if(!absenceTeam)return; // autres codes (PRT, RRT, etc.) non gérés
+    if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(absenceTeam);
+    if(!emp.teamHistory)emp.teamHistory={};
+    emp.teamHistory[key]=absenceTeam;
+    absenceAssigned++;
+    console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+")");
+  });
+  console.info("[v9.744 absence] assigned="+absenceAssigned);
+  return{ok:true,assigned:assigned+absenceAssigned};
 }
 // ═══════════════════════════════════════════════════════════════════════════
 // v9.555 — AUTO-RECOVERY IMPORTS (Kevin 2026-04-26 URGENT)
