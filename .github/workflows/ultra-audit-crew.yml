@@ -1,8 +1,13 @@
 name: Ultra Audit Crew (5 expert agents in parallel)
 
-# Crew externe expert — 5 jobs parallèles indépendants. Chaque agent ne fail
-# JAMAIS le job (continue-on-error global) — les findings sont uniquement
-# dans le summary markdown.
+# Crew externe expert — 5 jobs parallèles indépendants + synthesis.
+# Chaque agent écrit son rapport dans un artifact. Synthesis combine
+# les 5 artifacts + crée une issue GitHub auto (label: audit-report).
+#
+# Avantages :
+# - Rapports archivés automatiquement (cherchable via Issues tab)
+# - Lisible via API GitHub (mcp__github__list_issues label:audit-report)
+# - Aucun copier-coller manuel nécessaire
 
 on:
   workflow_dispatch:
@@ -30,32 +35,50 @@ jobs:
       - name: Audit security
         shell: bash {0}
         run: |
-          echo "## 🛡 Security findings" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          mkdir -p /tmp/audit
+          {
+            echo "## 🛡 Security findings"
+            echo ""
 
-          LEAKS=$(grep -rEn "sk-(ant|proj)-[A-Za-z0-9_-]{40,}|AIza[A-Za-z0-9_-]{33}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}" \
-            --include="*.ts" --include="*.js" --include="*.html" --include="*.yml" --include="*.md" \
-            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=tests . 2>/dev/null || true)
-          LEAK_COUNT=$(echo "$LEAKS" | grep -c . 2>/dev/null || echo 0)
-          echo "### Secrets en clair (hors tests/dist/node_modules): $LEAK_COUNT" >> $GITHUB_STEP_SUMMARY
-          if [ "$LEAK_COUNT" -gt 0 ]; then
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "$LEAKS" | head -10 >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "❌ P0 — révoquer + rotation" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ Aucun secret détecté" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
+            LEAKS=$(grep -rEn "sk-(ant|proj)-[A-Za-z0-9_-]{40,}|AIza[A-Za-z0-9_-]{33}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}" \
+              --include="*.ts" --include="*.js" --include="*.html" --include="*.yml" --include="*.md" \
+              --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=tests . 2>/dev/null || true)
+            LEAK_COUNT=$(echo "$LEAKS" | grep -c . 2>/dev/null || echo 0)
+            echo "### Secrets en clair (hors tests/dist/node_modules): $LEAK_COUNT"
+            if [ "$LEAK_COUNT" != "0" ]; then
+              echo '```'
+              echo "$LEAKS" | head -10
+              echo '```'
+              echo "❌ P0 — révoquer + rotation"
+            else
+              echo "✅ Aucun secret détecté"
+            fi
+            echo ""
 
-          XSS=$(grep -rE "innerHTML\s*=" --include="*.ts" --include="*.js" --include="*.html" \
-            --exclude-dir=node_modules --exclude-dir=dist . 2>/dev/null | \
-            grep -v "esc\(" 2>/dev/null | grep -v "DOMPurify" 2>/dev/null | wc -l || echo 0)
-          echo "### XSS potentiel — innerHTML sans esc(): $XSS occurrences" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+            # XSS uniquement dans Apex v13 src/ (hors tests, archive, dist, html legacy)
+            XSS=$(grep -rE "innerHTML[[:space:]]*=" --include="*.ts" \
+              apex-ai/v13/services apex-ai/v13/features apex-ai/v13/core 2>/dev/null | \
+              grep -v "esc(" | grep -v "DOMPurify" | grep -v "/\*" | grep -v "^[^:]*://" | wc -l || echo 0)
+            echo "### XSS potentiel — innerHTML sans esc()/DOMPurify (Apex v13 src/): $XSS"
+            if [ "$XSS" -gt 100 ]; then
+              echo "⚠️ P1: $XSS sites à auditer (cf CLAUDE.md règle esc())"
+            elif [ "$XSS" -gt 0 ]; then
+              echo "ℹ️ $XSS sites — vérifier au cas par cas"
+            else
+              echo "✅ 0 site"
+            fi
+            echo ""
 
-          CSP=$(grep -c "Content-Security-Policy" apex-ai/v13/index.html 2>/dev/null || echo 0)
-          echo "### CSP meta apex-ai/v13/index.html: $CSP" >> $GITHUB_STEP_SUMMARY
+            CSP=$(grep -c "Content-Security-Policy" apex-ai/v13/index.html 2>/dev/null || echo 0)
+            echo "### CSP meta apex-ai/v13/index.html: $CSP $([ "$CSP" = "1" ] && echo '✅' || echo '❌')"
+          } | tee /tmp/audit/security.md >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: audit-security
+          path: /tmp/audit/security.md
+          retention-days: 90
 
   architecture:
     name: 🏗 Architecture Auditor
@@ -68,27 +91,51 @@ jobs:
       - name: Audit architecture
         shell: bash {0}
         run: |
-          echo "## 🏗 Architecture findings" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          mkdir -p /tmp/audit
+          {
+            echo "## 🏗 Architecture findings"
+            echo ""
 
-          FEATURES=$(find apex-ai/v13/features -name "index.ts" 2>/dev/null | wc -l || echo 0)
-          SERVICES=$(find apex-ai/v13/services -name "*.ts" -not -name "*.test.ts" 2>/dev/null | wc -l || echo 0)
-          ROUTES=$(grep -rhE "router\.register\(['\"]([a-z0-9-]+)['\"]" apex-ai/v13 2>/dev/null | wc -l || echo 0)
-          DOUB=$(grep -rhoE "router\.register\(['\"]([a-z0-9-]+)['\"]" apex-ai/v13 2>/dev/null | \
-            sort | uniq -d | wc -l || echo 0)
+            FEATURES=$(find apex-ai/v13/features -name "index.ts" 2>/dev/null | wc -l || echo 0)
+            SERVICES=$(find apex-ai/v13/services -name "*.ts" -not -name "*.test.ts" 2>/dev/null | wc -l || echo 0)
 
-          echo "| Métrique | Valeur |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Features index.ts | $FEATURES |" >> $GITHUB_STEP_SUMMARY
-          echo "| Services .ts | $SERVICES |" >> $GITHUB_STEP_SUMMARY
-          echo "| router.register calls | $ROUTES |" >> $GITHUB_STEP_SUMMARY
-          echo "| Routes en doublon | $DOUB $([ "$DOUB" -gt 0 ] && echo '❌ P0' || echo '✅') |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+            # Routes : EXCLURE tests/ et lignes commentaires (commencent par * ou //)
+            ROUTES=$(grep -rhnE "router\.register\(['\"][a-z0-9-]+['\"]" apex-ai/v13 2>/dev/null | \
+              grep -v "/tests/" | grep -v "tests/unit/" | grep -vE "^[^:]+:[0-9]+:[[:space:]]*\*" | \
+              grep -vE "^[^:]+:[0-9]+:[[:space:]]*//" | wc -l || echo 0)
 
-          echo "### Firebase project URLs utilisées" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          grep -rhoE "[a-z0-9-]+-default-rtdb" apex-ai/v13/services services 2>/dev/null | sort -u >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
+            DOUB=$(grep -rhE "router\.register\(['\"][a-z0-9-]+['\"]" apex-ai/v13 2>/dev/null | \
+              grep -v "/tests/" | grep -v "tests/unit/" | grep -vE "^[[:space:]]*\*" | \
+              grep -vE "^[[:space:]]*//" | \
+              grep -oE "router\.register\(['\"][a-z0-9-]+['\"]" | sort | uniq -d | wc -l || echo 0)
+
+            echo "| Métrique | Valeur |"
+            echo "|----------|--------|"
+            echo "| Features index.ts | $FEATURES |"
+            echo "| Services .ts | $SERVICES |"
+            echo "| router.register calls (hors tests/commentaires) | $ROUTES |"
+            echo "| Routes en doublon | $DOUB $([ "$DOUB" -gt 0 ] && echo '❌ P0' || echo '✅') |"
+            echo ""
+
+            echo "### Firebase project URLs utilisées (code apex-ai/v13/services + services/)"
+            echo '```'
+            grep -rhoE "[a-z0-9-]+-default-rtdb" apex-ai/v13/services services 2>/dev/null | sort -u || true
+            echo '```'
+
+            # Détection mismatch FB
+            FB_COUNT=$(grep -rhoE "[a-z0-9-]+-default-rtdb" apex-ai/v13/services services 2>/dev/null | sort -u | wc -l)
+            if [ "$FB_COUNT" -gt 1 ]; then
+              echo ""
+              echo "⚠️ P1: $FB_COUNT URLs Firebase différentes — vérifier cohérence (CLAUDE.md règle isolation)"
+            fi
+          } | tee /tmp/audit/architecture.md >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: audit-architecture
+          path: /tmp/audit/architecture.md
+          retention-days: 90
 
   code-quality:
     name: 🔬 Code Quality
@@ -105,28 +152,38 @@ jobs:
         working-directory: apex-ai/v13
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund --no-save
 
-      - name: TypeScript strict
+      - name: Audit code quality
         shell: bash {0}
         working-directory: apex-ai/v13
         run: |
-          echo "## 🔬 Code Quality" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          npx tsc --noEmit 2>&1 | tee /tmp/tsc.log
-          ERR=$(grep -c "error TS" /tmp/tsc.log 2>/dev/null || echo 0)
-          echo "### TypeScript strict errors: $ERR" >> $GITHUB_STEP_SUMMARY
-          if [ "$ERR" != "0" ]; then
-            tail -20 /tmp/tsc.log >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
+          mkdir -p /tmp/audit
+          {
+            echo "## 🔬 Code Quality"
+            echo ""
 
-      - name: ESLint
-        shell: bash {0}
-        working-directory: apex-ai/v13
-        run: |
-          npx eslint . -f json -o /tmp/eslint.json 2>/dev/null || true
-          W=$(jq '[.[] | .warningCount] | add // 0' /tmp/eslint.json 2>/dev/null || echo 0)
-          E=$(jq '[.[] | .errorCount] | add // 0' /tmp/eslint.json 2>/dev/null || echo 0)
-          echo "### ESLint: $E errors, $W warnings" >> $GITHUB_STEP_SUMMARY
+            npx tsc --noEmit 2>&1 > /tmp/tsc.log || true
+            TS_ERR=$(grep -c "error TS" /tmp/tsc.log 2>/dev/null || echo 0)
+            echo "### TypeScript strict errors: $TS_ERR $([ "$TS_ERR" = "0" ] && echo '✅' || echo '❌ P0')"
+            if [ "$TS_ERR" != "0" ]; then
+              echo '```'
+              tail -20 /tmp/tsc.log
+              echo '```'
+            fi
+            echo ""
+
+            npx eslint . -f json -o /tmp/eslint.json 2>/dev/null || true
+            W=$(jq '[.[] | .warningCount] | add // 0' /tmp/eslint.json 2>/dev/null || echo 0)
+            E=$(jq '[.[] | .errorCount] | add // 0' /tmp/eslint.json 2>/dev/null || echo 0)
+            echo "### ESLint: $E errors, $W warnings"
+            if [ "$E" != "0" ]; then echo "⚠️ P1 — fix errors"; fi
+          } | tee /tmp/audit/code-quality.md >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: audit-code-quality
+          path: /tmp/audit/code-quality.md
+          retention-days: 90
 
   performance:
     name: ⚡ Performance Auditor
@@ -143,25 +200,37 @@ jobs:
         working-directory: apex-ai/v13
         run: |
           npm ci --no-audit --no-fund || npm install --no-audit --no-fund --no-save
-          npx vite build 2>&1 | tail -30
+          npx vite build 2>&1 | tail -30 > /tmp/build.log || true
+          cat /tmp/build.log
 
-      - name: Bundle analysis
+      - name: Audit performance
         shell: bash {0}
         working-directory: apex-ai/v13
         run: |
-          echo "## ⚡ Performance" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Bundle sizes (top 10)" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          du -sh dist/*.js dist/*.html 2>/dev/null | sort -h | tail -10 >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          mkdir -p /tmp/audit
+          {
+            echo "## ⚡ Performance"
+            echo ""
+            echo "### Bundle sizes (top 10)"
+            echo '```'
+            du -sh dist/*.js dist/*.html 2>/dev/null | sort -h | tail -10 || echo "(no dist found)"
+            echo '```'
+            echo ""
 
-          NONCE=$(grep -c "APEX_BOOT_NONCE" dist/index.html 2>/dev/null || echo 0)
-          echo "### APEX_BOOT_NONCE placeholders dans dist: $NONCE" >> $GITHUB_STEP_SUMMARY
-          if [ "$NONCE" != "0" ]; then
-            echo "❌ P0 (CLAUDE.md erreur #54 — nonce non remplacé = app cassée)" >> $GITHUB_STEP_SUMMARY
-          fi
+            NONCE=$(grep -c "APEX_BOOT_NONCE" dist/index.html 2>/dev/null || echo 0)
+            echo "### APEX_BOOT_NONCE placeholders dans dist: $NONCE $([ "$NONCE" = "0" ] && echo '✅' || echo '❌ P0 (erreur #54)')"
+            echo ""
+
+            TOTAL=$(du -sb dist 2>/dev/null | awk '{print $1}' || echo 0)
+            echo "### Bundle dist/ total: $(($TOTAL / 1024)) KB"
+          } | tee /tmp/audit/performance.md >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: audit-performance
+          path: /tmp/audit/performance.md
+          retention-days: 90
 
   tests:
     name: 🧪 Tests Auditor
@@ -178,31 +247,64 @@ jobs:
         working-directory: apex-ai/v13
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund --no-save
 
-      - name: Vitest unit
+      - name: Audit tests
         shell: bash {0}
         working-directory: apex-ai/v13
         run: |
-          echo "## 🧪 Tests" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          npx vitest run --reporter=default 2>&1 | tee /tmp/vitest.log | tail -50
-          PASS=$(grep -oE "[0-9]+ passed" /tmp/vitest.log | tail -1 | awk '{print $1}' || echo 0)
-          FAIL=$(grep -oE "[0-9]+ failed" /tmp/vitest.log | tail -1 | awk '{print $1}' || echo 0)
-          echo "### Vitest: $PASS passed, $FAIL failed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          tail -30 /tmp/vitest.log >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          mkdir -p /tmp/audit
+          {
+            echo "## 🧪 Tests"
+            echo ""
+            npx vitest run --reporter=default 2>&1 > /tmp/vitest.log || true
+            PASS=$(grep -oE "[0-9]+ passed" /tmp/vitest.log | tail -1 | awk '{print $1}' 2>/dev/null || echo 0)
+            FAIL=$(grep -oE "[0-9]+ failed" /tmp/vitest.log | tail -1 | awk '{print $1}' 2>/dev/null || echo 0)
+            FILES_PASS=$(grep -oE "Test Files[[:space:]]+[0-9]+ passed" /tmp/vitest.log | tail -1 | grep -oE "[0-9]+" || echo 0)
+            echo "### Vitest: $PASS passed, $FAIL failed (sur $FILES_PASS fichiers de tests)"
+            echo ""
+            echo "### Détails (tail vitest)"
+            echo '```'
+            tail -30 /tmp/vitest.log
+            echo '```'
+          } | tee /tmp/audit/tests.md >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: audit-tests
+          path: /tmp/audit/tests.md
+          retention-days: 90
 
   synthesis:
-    name: 📊 Crew Synthesis
+    name: 📊 Crew Synthesis + auto-issue
     needs: [security, architecture, code-quality, performance, tests]
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      issues: write
+      contents: read
     steps:
-      - name: Aggregate
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: /tmp/artifacts
+          merge-multiple: false
+
+      - name: Build combined report
+        id: report
         run: |
+          mkdir -p /tmp
+          DATE_UTC=$(date -u +"%Y-%m-%d %H:%M UTC")
+          DATE_SLUG=$(date -u +"%Y-%m-%d-%H%M")
+          REPORT_FILE=/tmp/full-report.md
+
           {
-            echo "# 🎯 Ultra Audit Crew — Synthèse"
+            echo "# 🎯 Ultra Audit Crew — Rapport $DATE_UTC"
+            echo ""
+            echo "**Commit** : \`${{ github.sha }}\`"
+            echo "**Run** : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "## Statuts agents"
             echo ""
             echo "| Agent | Conclusion |"
             echo "|-------|------------|"
@@ -212,5 +314,45 @@ jobs:
             echo "| ⚡ Performance | ${{ needs.performance.result }} |"
             echo "| 🧪 Tests | ${{ needs.tests.result }} |"
             echo ""
-            echo "Détails dans les jobs individuels."
-          } >> $GITHUB_STEP_SUMMARY
+            echo "---"
+            echo ""
+            for AGENT in security architecture code-quality performance tests; do
+              if [ -f /tmp/artifacts/audit-$AGENT/$AGENT.md ]; then
+                cat /tmp/artifacts/audit-$AGENT/$AGENT.md
+                echo ""
+                echo "---"
+                echo ""
+              fi
+            done
+          } > $REPORT_FILE
+
+          cat $REPORT_FILE >> $GITHUB_STEP_SUMMARY
+          echo "date_slug=$DATE_SLUG" >> $GITHUB_OUTPUT
+          echo "date_utc=$DATE_UTC" >> $GITHUB_OUTPUT
+
+          # Limit issue body to 65000 chars (GitHub limit)
+          head -c 60000 $REPORT_FILE > /tmp/issue-body.md
+          echo "" >> /tmp/issue-body.md
+          echo "_(Report truncated to 60k chars. Full version in artifacts of run #${{ github.run_id }}.)_" >> /tmp/issue-body.md
+
+      - name: Create audit-report issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('/tmp/issue-body.md', 'utf8');
+            const title = `[Ultra Audit Crew] ${{ steps.report.outputs.date_utc }} — Run #${{ github.run_id }}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['audit-report']
+            });
+
+      - name: Upload combined report as artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: audit-full-report-${{ steps.report.outputs.date_slug }}
+          path: /tmp/full-report.md
+          retention-days: 90
