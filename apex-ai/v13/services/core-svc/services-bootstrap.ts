@@ -681,6 +681,16 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }
     }),
 
+    /* v13.4.277 (Kevin "Go 3 tout auto") — CMC Vision Validator.
+       Écoute Firebase `cmc_apex_vision_request_<key>` (CMCteams v9.738+ déclenche
+       quand score d'import < 90 + image attachée). Appel Claude Vision avec
+       prompt structuré, cross-check vs `cmc_ov`, écrit divergences dans
+       `cmc_apex_vision_result_<key>`. Admin only + throttle 5min/key. */
+    safeInit('cmc-vision-validator', async () => {
+      const { startCmcVisionValidator } = await import('../integrations/cmc-vision-validator.js');
+      startCmcVisionValidator();
+    }),
+
     /* P0 : session-logger start session si user logged */
     safeInit('session-logger', async () => {
       if (!uid) return;
