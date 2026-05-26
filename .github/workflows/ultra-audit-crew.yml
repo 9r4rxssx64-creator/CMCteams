@@ -1,0 +1,270 @@
+name: Ultra Audit Crew (5 expert agents in parallel)
+
+# Crew externe expert — 5 jobs parallèles indépendants qui auditent le repo
+# sur 5 axes sans connaissance mutuelle. Synthèse agrégée dans le summary final.
+#
+# Lancement :
+#   - workflow_dispatch (Kevin → Run workflow)
+#   - cron weekly (lundi 03:00 UTC)
+#
+# Pas de quota lourd : chaque job <5 min, total ~25 min cumulés (les 5 tournent
+# en parallèle donc wall-clock ~5 min).
+#
+# Sortie : summary markdown avec findings P0/P1/P2 par axe + issues auto si P0.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'  # Lundi 03:00 UTC
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ultra-audit-crew
+  cancel-in-progress: false
+
+jobs:
+
+  # ──────────────────────────────────────────────────────
+  # CREW 1 — SECURITY AUDITOR
+  # ──────────────────────────────────────────────────────
+  security:
+    name: 🛡 Security Auditor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+
+      - name: Secrets leak scan (gitleaks pattern)
+        run: |
+          set -e
+          echo "## 🛡 Security findings" > /tmp/security.md
+          echo "" >> /tmp/security.md
+
+          # 1. Patterns secrets en clair dans fichiers non-test
+          LEAKS=$(grep -rEn "sk-(ant|proj)-[A-Za-z0-9_-]{40,}|AIza[A-Za-z0-9_-]{33}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}" \
+            --include="*.ts" --include="*.js" --include="*.html" --include="*.yml" --include="*.md" \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=tests . 2>/dev/null | head -10)
+          if [ -n "$LEAKS" ]; then
+            echo "### ❌ P0: Secrets potentiels en clair (hors tests)" >> /tmp/security.md
+            echo '```' >> /tmp/security.md
+            echo "$LEAKS" | head -10 >> /tmp/security.md
+            echo '```' >> /tmp/security.md
+            echo "" >> /tmp/security.md
+          else
+            echo "### ✅ Aucun secret en clair détecté" >> /tmp/security.md
+            echo "" >> /tmp/security.md
+          fi
+
+          # 2. innerHTML sans esc() (XSS potentiel)
+          XSS=$(grep -rEn "innerHTML\s*=" --include="*.ts" --include="*.js" --include="*.html" \
+            --exclude-dir=node_modules --exclude-dir=dist . 2>/dev/null | \
+            grep -v "esc\(" | grep -v "DOMPurify" | wc -l)
+          echo "### XSS — innerHTML sans esc(): $XSS occurrences" >> /tmp/security.md
+          if [ "$XSS" -gt 100 ]; then
+            echo "⚠️ P1: $XSS sites à auditer (cf CLAUDE.md règle esc())" >> /tmp/security.md
+          fi
+          echo "" >> /tmp/security.md
+
+          # 3. CSP meta présence
+          CSP=$(grep -c "Content-Security-Policy" apex-ai/v13/index.html 2>/dev/null || echo 0)
+          echo "### CSP meta apex-ai/v13: $CSP" >> /tmp/security.md
+
+          cat /tmp/security.md >> $GITHUB_STEP_SUMMARY
+
+      - name: npm audit (Apex v13)
+        working-directory: apex-ai/v13
+        continue-on-error: true
+        run: |
+          npm audit --audit-level=high --json > /tmp/npmaudit.json 2>&1 || true
+          VULN=$(jq '.metadata.vulnerabilities | .high + .critical' /tmp/npmaudit.json 2>/dev/null || echo 0)
+          echo "### npm audit high+critical: $VULN" >> $GITHUB_STEP_SUMMARY
+          if [ "$VULN" -gt 0 ]; then
+            jq -r '.vulnerabilities | to_entries[] | select(.value.severity == "high" or .value.severity == "critical") | "- \(.key) (\(.value.severity))"' /tmp/npmaudit.json 2>/dev/null | head -10 >> $GITHUB_STEP_SUMMARY || true
+          fi
+
+  # ──────────────────────────────────────────────────────
+  # CREW 2 — ARCHITECTURE AUDITOR
+  # ──────────────────────────────────────────────────────
+  architecture:
+    name: 🏗 Architecture Auditor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+
+      - name: Routes / features alignment (Apex v13)
+        run: |
+          echo "## 🏗 Architecture findings" > /tmp/archi.md
+          echo "" >> /tmp/archi.md
+
+          # 1. Features index.ts sans router.register correspondant
+          FEATURES=$(find apex-ai/v13/features -name "index.ts" 2>/dev/null | wc -l)
+          ROUTES=$(grep -hE "router\.register\(['\"]([a-z0-9-]+)['\"]" apex-ai/v13/**/*.ts 2>/dev/null | wc -l)
+          echo "### Features index.ts: $FEATURES" >> /tmp/archi.md
+          echo "### router.register calls: $ROUTES" >> /tmp/archi.md
+          echo "" >> /tmp/archi.md
+
+          # 2. Doublons de route
+          DOUB=$(grep -hoE "router\.register\(['\"]([a-z0-9-]+)['\"]" apex-ai/v13/**/*.ts 2>/dev/null | \
+            grep -oE "['\"][a-z0-9-]+['\"]" | sort | uniq -d | wc -l)
+          echo "### Routes en doublon: $DOUB" >> /tmp/archi.md
+          if [ "$DOUB" -gt 0 ]; then
+            echo "❌ P0: $DOUB routes dupliquées (CLAUDE.md erreur #28)" >> /tmp/archi.md
+          fi
+          echo "" >> /tmp/archi.md
+
+          # 3. Services orphelins (jamais importés)
+          SERVICES=$(find apex-ai/v13/services -name "*.ts" -not -name "*.test.ts" 2>/dev/null | wc -l)
+          echo "### Services .ts: $SERVICES" >> /tmp/archi.md
+
+          # 4. Firebase project ID cohérence
+          FB_REFS=$(grep -rhoE "[a-z0-9-]+-default-rtdb" apex-ai/v13/services services/ --include="*.ts" --include="*.js" 2>/dev/null | sort -u)
+          echo "### Firebase project URLs uniques utilisées:" >> /tmp/archi.md
+          echo '```' >> /tmp/archi.md
+          echo "$FB_REFS" >> /tmp/archi.md
+          echo '```' >> /tmp/archi.md
+
+          cat /tmp/archi.md >> $GITHUB_STEP_SUMMARY
+
+  # ──────────────────────────────────────────────────────
+  # CREW 3 — CODE QUALITY / TS STRICT
+  # ──────────────────────────────────────────────────────
+  code-quality:
+    name: 🔬 Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm', cache-dependency-path: 'apex-ai/v13/package-lock.json' }
+
+      - name: Install deps (Apex v13)
+        working-directory: apex-ai/v13
+        run: npm ci --no-audit --no-fund
+
+      - name: TypeScript strict
+        working-directory: apex-ai/v13
+        run: |
+          npx tsc --noEmit 2>&1 | tee /tmp/tsc.log | tail -30 >> $GITHUB_STEP_SUMMARY
+          ERR=$(grep -c "error TS" /tmp/tsc.log || echo 0)
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### TypeScript strict errors: $ERR" >> $GITHUB_STEP_SUMMARY
+          if [ "$ERR" -gt 0 ]; then echo "❌ P0" >> $GITHUB_STEP_SUMMARY; fi
+
+      - name: ESLint
+        working-directory: apex-ai/v13
+        continue-on-error: true
+        run: |
+          npx eslint . --max-warnings 100 -f compact 2>&1 | tail -50 >> $GITHUB_STEP_SUMMARY || true
+          npx eslint . -f json -o /tmp/eslint.json 2>&1 || true
+          W=$(jq '[.[] | .warningCount] | add' /tmp/eslint.json 2>/dev/null || echo 0)
+          E=$(jq '[.[] | .errorCount] | add' /tmp/eslint.json 2>/dev/null || echo 0)
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ESLint: $E errors, $W warnings" >> $GITHUB_STEP_SUMMARY
+
+  # ──────────────────────────────────────────────────────
+  # CREW 4 — PERFORMANCE / BUNDLE
+  # ──────────────────────────────────────────────────────
+  performance:
+    name: ⚡ Performance Auditor
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm', cache-dependency-path: 'apex-ai/v13/package-lock.json' }
+
+      - name: Install deps + build (Apex v13)
+        working-directory: apex-ai/v13
+        run: |
+          npm ci --no-audit --no-fund
+          time npx vite build 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY
+
+      - name: Bundle size analysis
+        working-directory: apex-ai/v13
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ⚡ Bundle sizes" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          du -sh dist/*.js dist/*.html 2>/dev/null | sort -h | tail -10 >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          # Check : dist/index.html ne doit PAS contenir APEX_BOOT_NONCE placeholder
+          # (CLAUDE.md erreur #54)
+          NONCE=$(grep -c "APEX_BOOT_NONCE" dist/index.html 2>/dev/null || echo 0)
+          echo "### APEX_BOOT_NONCE placeholders dans dist: $NONCE" >> $GITHUB_STEP_SUMMARY
+          if [ "$NONCE" -gt 0 ]; then
+            echo "❌ P0 (cf CLAUDE.md erreur #54 — nonce non remplacé = app cassée)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ──────────────────────────────────────────────────────
+  # CREW 5 — TESTS RUNNER
+  # ──────────────────────────────────────────────────────
+  tests:
+    name: 🧪 Tests Auditor
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm', cache-dependency-path: 'apex-ai/v13/package-lock.json' }
+
+      - name: Install deps
+        working-directory: apex-ai/v13
+        run: npm ci --no-audit --no-fund
+
+      - name: Vitest unit
+        working-directory: apex-ai/v13
+        continue-on-error: true
+        run: |
+          npx vitest run --reporter=verbose 2>&1 | tail -50 > /tmp/vitest.log
+          tail -30 /tmp/vitest.log >> $GITHUB_STEP_SUMMARY
+          FAIL=$(grep -cE "FAIL|failed" /tmp/vitest.log || echo 0)
+          PASS=$(grep -cE "PASS|passed" /tmp/vitest.log || echo 0)
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tests: $PASS pass, $FAIL fail (Apex v13)" >> $GITHUB_STEP_SUMMARY
+
+  # ──────────────────────────────────────────────────────
+  # FINAL — Synthesis + auto-issue if P0 found
+  # ──────────────────────────────────────────────────────
+  synthesis:
+    name: 📊 Crew Synthesis
+    needs: [security, architecture, code-quality, performance, tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Aggregate
+        run: |
+          echo "# 🎯 Ultra Audit Crew — Synthèse" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Agent | Conclusion |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🛡 Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏗 Architecture | ${{ needs.architecture.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔬 Code Quality | ${{ needs.code-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚡ Performance | ${{ needs.performance.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Tests | ${{ needs.tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Détails par agent dans les jobs individuels au-dessus." >> $GITHUB_STEP_SUMMARY
+
+      - name: Open issue if any P0 (security or code-quality failure)
+        if: ${{ needs.security.result == 'failure' || needs.code-quality.result == 'failure' || needs.performance.result == 'failure' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `[Ultra Audit Crew] Findings P0 du ${new Date().toISOString().slice(0,10)}`;
+            const body = `Le crew a détecté un échec sur au moins un agent.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nVoir summary du job synthesis pour détails.`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['audit', 'P0']
+            });
