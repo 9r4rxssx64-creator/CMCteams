@@ -5375,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.736";
+var APP_VER="v9.737";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37009,6 +37009,17 @@ function _parseEncadresStatuts(txt, key, year, month){
       // Dernière section : block limité par expectedCount * ~150 chars/ligne, max 8000
       var maxBlock=section.expectedCount>0?Math.min(8000,section.expectedCount*150+200):2000;
       blockEnd=Math.min(txt.length,section.headerEnd+maxBlock);
+    }
+    // v9.737 (Kevin 2026-05-26 diag "PARIZIA K en CP au lieu de travail, 375 cellules
+    // modifiées post-import") : si une ROTATION HEADER (ex "5 20/5 du au 5 19/4 du au
+    // 6 16/22 du au …") apparaît dans le block avant blockEnd, c'est qu'on a quitté
+    // la sous-section CP/M/AF et on entre dans une grille de croupiers — STOP là.
+    // Avant : le block s'étendait jusqu'à la prochaine section CP/M, capturant les
+    // 10 premiers croupiers Roulettes (BARONE E, AUBERT P, PORASSO C…) qui étaient
+    // alors FORCED CP à tort (corruption silencieuse, 375 cellules écrasées).
+    var _rotHdrInBlock=txt.substring(section.headerEnd,blockEnd).search(/\d+\s+\d{1,2}\/\d{1,2}[\s'":*]*\s+du\s+au/i);
+    if(_rotHdrInBlock>0){
+      blockEnd=section.headerEnd+_rotHdrInBlock;
     }
     var block=txt.substring(section.headerEnd,blockEnd);
     nameRe.lastIndex=0;
