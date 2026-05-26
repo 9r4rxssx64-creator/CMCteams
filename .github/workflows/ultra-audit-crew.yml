@@ -43,15 +43,15 @@ jobs:
             LEAKS=$(grep -rEn "sk-(ant|proj)-[A-Za-z0-9_-]{40,}|AIza[A-Za-z0-9_-]{33}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}" \
               --include="*.ts" --include="*.js" --include="*.html" --include="*.yml" --include="*.md" \
               --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=tests . 2>/dev/null || true)
-            LEAK_COUNT=$(echo "$LEAKS" | grep -c . 2>/dev/null || echo 0)
-            echo "### Secrets en clair (hors tests/dist/node_modules): $LEAK_COUNT"
-            if [ "$LEAK_COUNT" != "0" ]; then
+            if [ -z "$LEAKS" ]; then
+              echo "### Secrets en clair (hors tests/dist/node_modules): 0 ✅"
+            else
+              LEAK_COUNT=$(echo "$LEAKS" | wc -l)
+              echo "### Secrets en clair (hors tests/dist/node_modules): $LEAK_COUNT ❌ P0"
               echo '```'
               echo "$LEAKS" | head -10
               echo '```'
               echo "❌ P0 — révoquer + rotation"
-            else
-              echo "✅ Aucun secret détecté"
             fi
             echo ""
 
@@ -100,13 +100,16 @@ jobs:
             SERVICES=$(find apex-ai/v13/services -name "*.ts" -not -name "*.test.ts" 2>/dev/null | wc -l || echo 0)
 
             # Routes : EXCLURE tests/ et lignes commentaires (commencent par * ou //)
-            ROUTES=$(grep -rhnE "router\.register\(['\"][a-z0-9-]+['\"]" apex-ai/v13 2>/dev/null | \
-              grep -v "/tests/" | grep -v "tests/unit/" | grep -vE "^[^:]+:[0-9]+:[[:space:]]*\*" | \
-              grep -vE "^[^:]+:[0-9]+:[[:space:]]*//" | wc -l || echo 0)
+            # IMPORTANT : grep -rn (PAS -h) pour avoir path:ligne, sinon filtre /tests/ ne marche pas
+            ROUTES=$(grep -rnE "router\.register\(['\"][a-z0-9-]+['\"]" apex-ai/v13 2>/dev/null | \
+              grep -v "/tests/" | \
+              grep -vE ":\s*\*" | \
+              grep -vE ":\s*//" | wc -l || echo 0)
 
-            DOUB=$(grep -rhE "router\.register\(['\"][a-z0-9-]+['\"]" apex-ai/v13 2>/dev/null | \
-              grep -v "/tests/" | grep -v "tests/unit/" | grep -vE "^[[:space:]]*\*" | \
-              grep -vE "^[[:space:]]*//" | \
+            DOUB=$(grep -rnE "router\.register\(['\"][a-z0-9-]+['\"]" apex-ai/v13 2>/dev/null | \
+              grep -v "/tests/" | \
+              grep -vE ":\s*\*" | \
+              grep -vE ":\s*//" | \
               grep -oE "router\.register\(['\"][a-z0-9-]+['\"]" | sort | uniq -d | wc -l || echo 0)
 
             echo "| Métrique | Valeur |"
@@ -162,9 +165,12 @@ jobs:
             echo ""
 
             npx tsc --noEmit 2>&1 > /tmp/tsc.log || true
-            TS_ERR=$(grep -c "error TS" /tmp/tsc.log 2>/dev/null || echo 0)
-            echo "### TypeScript strict errors: $TS_ERR $([ "$TS_ERR" = "0" ] && echo '✅' || echo '❌ P0')"
-            if [ "$TS_ERR" != "0" ]; then
+            TS_ERR=$(grep -c "error TS" /tmp/tsc.log 2>/dev/null)
+            TS_ERR=${TS_ERR:-0}
+            if [ "$TS_ERR" -eq 0 ]; then
+              echo "### TypeScript strict errors: 0 ✅"
+            else
+              echo "### TypeScript strict errors: $TS_ERR ❌ P0"
               echo '```'
               tail -20 /tmp/tsc.log
               echo '```'
@@ -217,8 +223,13 @@ jobs:
             echo '```'
             echo ""
 
-            NONCE=$(grep -c "APEX_BOOT_NONCE" dist/index.html 2>/dev/null || echo 0)
-            echo "### APEX_BOOT_NONCE placeholders dans dist: $NONCE $([ "$NONCE" = "0" ] && echo '✅' || echo '❌ P0 (erreur #54)')"
+            NONCE=$(grep -c "APEX_BOOT_NONCE" dist/index.html 2>/dev/null)
+            NONCE=${NONCE:-0}
+            if [ "$NONCE" -eq 0 ]; then
+              echo "### APEX_BOOT_NONCE placeholders dans dist: 0 ✅"
+            else
+              echo "### APEX_BOOT_NONCE placeholders dans dist: $NONCE ❌ P0 (CLAUDE.md erreur #54)"
+            fi
             echo ""
 
             TOTAL=$(du -sb dist 2>/dev/null | awk '{print $1}' || echo 0)

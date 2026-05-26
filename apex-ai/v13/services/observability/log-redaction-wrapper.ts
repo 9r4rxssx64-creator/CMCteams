@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- ce module wrappe explicitement console.* pour redaction PII */
 /**
  * APEX v13 — Log Redaction Wrapper (P0 sécu fix audit OWASP ASVS L2 V7.1.1)
  *

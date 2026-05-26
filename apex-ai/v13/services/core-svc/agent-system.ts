@@ -20,6 +20,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { auditLog } from '../observability/audit-log.js';
 
 /* P0-3 PERF (audit v13.2.5) : apex-tools-dispatch lazy (orchestration agent rare) */
 type ApexToolsDispatchInstance = {
@@ -32,7 +33,6 @@ async function getApexToolsDispatch(): Promise<ApexToolsDispatchInstance> {
   _apexToolsDispatchAgent = mod.apexToolsDispatch as ApexToolsDispatchInstance;
   return _apexToolsDispatchAgent;
 }
-import { auditLog } from '../observability/audit-log.js';
 
 export type AgentType = 'audit' | 'plan' | 'research' | 'monitor';
 
