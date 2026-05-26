@@ -1,108 +1,101 @@
 {
-  "_comment": "Firebase Realtime Database Security Rules pour Apex AI v12.554+",
-  "_database": "kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app",
-  "_phase": "5 (auth.uid per-user gate active une fois apex-auth-worker deploye)",
+  "_comment": "Firebase Realtime Database Security Rules — projet cmcteams-c16ab (Apex + CMCteams + Shops)",
+  "_database": "cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
+  "_phase": "4 durcie (active 2026-05-26) : .read/.write libres sur paths scopés + .write:false sur paths sensibles + validation $key regex",
+  "_published_by": "Kevin DESARZENS",
+  "_published_at": "2026-05-26",
   "_instructions": [
-    "1. Console Firebase -> kdmc-clients project -> Realtime Database -> Rules",
-    "2. Copier-coller tout l'objet 'rules' ci-dessous",
+    "1. Console Firebase > project cmcteams-c16ab > Realtime Database > Rules",
+    "2. Copier-coller l'objet 'rules' ci-dessous",
     "3. Cliquer Publier",
     "",
-    "PHASE 5 ACTIVE : utilise auth.uid + custom tokens depuis apex-auth-worker (Cloudflare Worker)",
-    "Les utilisateurs SANS token Phase 5 (ancienne version Apex) ont acces lecture global lecture only,",
-    "mais ne peuvent ni ecrire ni lire les donnees per-user d'autres utilisateurs."
+    "PHASE 4 DURCIE = active actuellement",
+    "  - Bloque l'écriture des secrets (PINs admin, clés API)",
+    "  - Bloque la pollution avec clés arbitraires (validation $key regex)",
+    "  - Garde lecture libre (compatibilité app sans Firebase Auth)",
+    "",
+    "PHASE 5 STRICTE = à publier APRÈS déploiement apex-auth-worker (cf. _phase5_after_worker)",
+    "  - Exige auth.uid sur tous les paths per-user",
+    "  - Émission de custom tokens par apex-auth-worker (services/apex-auth-worker/)",
+    "  - Workflow auto-deploy : .github/workflows/deploy-apex-auth-worker.yml"
   ],
   "rules": {
+    ".read": false,
+    ".write": false,
+
+    "cmcteams": {
+      ".read": true,
+      ".write": true,
+      "$key": {
+        ".validate": "$key.matches(/^cmc_[a-z0-9_\\-]+$/)"
+      },
+      "cmc_admin_pin": { ".write": false },
+      "cmc_ia_key": { ".write": false },
+      "cmc_motd": {
+        ".validate": "newData.hasChildren(['text','ts','author']) || newData.val() === null"
+      },
+      "cmc_e": { ".validate": "newData.isString() == false" },
+      "cmc_ov": { ".validate": "newData.isString() == false" },
+      "cmc_pw": {
+        ".validate": "newData.isString() == false",
+        "$uid": {
+          "clear": { ".validate": false }
+        }
+      }
+    },
+
     "apex": {
-      "$key": { ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)" },
+      ".read": true,
+      ".write": true,
+      "$key": {
+        ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)"
+      },
+      "ax_admin_pass": { ".write": false },
+      "ax_admin_pin": { ".write": false },
+      "ax_pin": { ".write": false },
+      "ax_user": { ".write": false },
+      "ax_uid": { ".write": false }
+    },
 
-      "ax_admin_pass": { ".write": false, ".read": "auth != null && auth.token.role === 'admin'" },
-      "ax_admin_pin": { ".write": false, ".read": false },
-      "ax_pin": { ".write": false, ".read": false },
-      "ax_user": { ".write": false, ".read": false },
-      "ax_uid": { ".write": false, ".read": false },
-
-      "ax_voice_print_$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": false,
-        "_comment": "Biometrique = LOCAL strict + auth.uid gate lecture (RGPD Art.9)"
-      },
-      "ax_pin_$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
-        ".write": false
-      },
-      "ax_user_chat_$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
-        ".write": "auth != null && auth.uid === $uid"
-      },
-      "ax_user_locations_$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
-      },
-      "ax_health_reports_$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
-      },
-      "ax_msgs_$conv": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      },
-      "ax_settings_$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
-        ".write": "auth != null && auth.uid === $uid"
-      },
-
-      "ax_auth_log": {
-        ".read": "auth != null && auth.token.role === 'admin'",
-        ".write": "auth != null"
-      },
-      "ax_audit": {
-        ".read": "auth != null && auth.token.role === 'admin'",
-        ".write": "auth != null",
-        ".validate": "newData.isString() == false || newData.val() === null"
-      },
-      "ax_security_log": {
-        ".read": "auth != null && auth.token.role === 'admin'",
-        ".write": "auth != null"
-      },
-      "ax_breach_log": {
-        ".read": "auth != null && auth.token.role === 'admin'",
-        ".write": "auth != null"
-      },
-
-      "ax_telemetry_in": {
-        ".read": "auth != null && auth.token.role === 'admin'",
-        ".write": "auth != null",
-        ".validate": "newData.isString() == false || newData.val() === null"
-      },
-      "ax_claude_todo": {
-        ".read": "auth != null && auth.token.role === 'admin'",
-        ".write": "auth != null",
-        ".validate": "newData.isString() == false || newData.val() === null"
-      },
-      "ax_lessons_learned_struct": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.token.role === 'admin'",
-        ".validate": "newData.isString() == false || newData.val() === null"
-      },
-
-      "$other": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.token.role === 'admin'"
+    "shops_admin_v1": {
+      "orders": {
+        ".read": true,
+        "$shop": {
+          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome)$/)",
+          "$orderId": {
+            ".write": "!data.exists() && newData.hasChildren(['orderId','shop','total','ts'])",
+            ".validate": "newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('total').val() < 100000 && $orderId.length <= 40"
+          }
+        }
       }
     }
   },
-  "_phase4_legacy_fallback": {
-    "_comment": "Si Phase 5 worker non deploye, regles Phase 4 (.write false sur sensibles, .read true global) en backup. Apex AI fonctionne en mode degrade mais sans regression.",
-    "rules_phase4": {
+
+  "_phase5_after_worker": {
+    "_comment": "À publier quand apex-auth-worker est déployé ET que tous les clients Apex émettent des custom tokens. Garde les rules CMCteams et shops_admin_v1 actuelles, durcit uniquement /apex avec auth.uid per-user.",
+    "rules_phase5_apex_only": {
       "apex": {
-        ".read": true,
-        ".write": true,
         "$key": { ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)" },
-        "ax_admin_pass": { ".write": false },
-        "ax_admin_pin": { ".write": false },
-        "ax_pin": { ".write": false },
-        "ax_user": { ".write": false },
-        "ax_uid": { ".write": false }
+        "ax_admin_pass": { ".write": false, ".read": "auth != null && auth.token.role === 'admin'" },
+        "ax_admin_pin": { ".write": false, ".read": false },
+        "ax_pin": { ".write": false, ".read": false },
+        "ax_user": { ".write": false, ".read": false },
+        "ax_uid": { ".write": false, ".read": false },
+        "ax_voice_print_$uid": { ".read": "auth != null && auth.uid === $uid", ".write": false },
+        "ax_pin_$uid": { ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')", ".write": false },
+        "ax_user_chat_$uid": { ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')", ".write": "auth != null && auth.uid === $uid" },
+        "ax_user_locations_$uid": { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid" },
+        "ax_health_reports_$uid": { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid" },
+        "ax_msgs_$conv": { ".read": "auth != null", ".write": "auth != null" },
+        "ax_settings_$uid": { ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')", ".write": "auth != null && auth.uid === $uid" },
+        "ax_auth_log": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
+        "ax_audit": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
+        "ax_security_log": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
+        "ax_breach_log": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
+        "ax_telemetry_in": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
+        "ax_claude_todo": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
+        "ax_lessons_learned_struct": { ".read": "auth != null", ".write": "auth != null && auth.token.role === 'admin'" },
+        "$other": { ".read": "auth != null", ".write": "auth != null && auth.token.role === 'admin'" }
       }
     }
   }
