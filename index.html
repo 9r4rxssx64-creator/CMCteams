@@ -5391,7 +5391,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.744";
+var APP_VER="v9.745";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35639,15 +35639,20 @@ function _autoVerifyAfterImport(iy,im){
   var coverage=active.length?Math.round(covered/active.length*100):0;
   // === 5. COHÉRENCE MÉTIER (séries > 6 jours, repos < 8/mois) ===
   var cohIssues=[];
+  // v9.745 — codes d'absence qui ne comptent ni comme travail ni comme repos hebdo
+  var ABSENCE_NON_REPOS={CP:1,AF:1,M:1,MAL:1,MALADIE:1,AT:1,PAT:1,ABI:1,ABS:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,DEPL:1,FORMATION:1,SEMINAIRE:1};
   active.forEach(function(e){
-    var codes=ov[e.id]||{},travCons=0,maxCons=0,reposCount=0;
+    var codes=ov[e.id]||{},travCons=0,maxCons=0,reposCount=0,absenceCount=0;
     for(var d=1;d<=days;d++){
       var c=codes[d]||"";
       if(isWork(c)){travCons++;if(travCons>maxCons)maxCons=travCons;}
       else if(c==="RH"||c==="R"){travCons=0;reposCount++;}
+      else if(c && ABSENCE_NON_REPOS[String(c).toUpperCase()]){travCons=0;absenceCount++;}
     }
     if(maxCons>6)cohIssues.push({emp:e.name,type:"serie_longue",val:maxCons+"j cons\u00e9cutifs"});
-    if(reposCount<8&&Object.keys(codes).length>=days*0.8)cohIssues.push({emp:e.name,type:"repos_insuffisant",val:reposCount+" repos"});
+    // v9.745 (Kevin 2026-05-26 audit "47 anomalies REPOS INSUFFISANT faux positifs") :
+    // Skip si l'emp est en CP/AF/M >10j (les RH+R sont proportionnels aux jours travaill\u00e9s)
+    if(reposCount<8&&Object.keys(codes).length>=days*0.8&&absenceCount<=10)cohIssues.push({emp:e.name,type:"repos_insuffisant",val:reposCount+" repos"});
   });
   // === 6. DIFF REFDATA vs OVERRIDES ===
   var ref=lg("cmc_ref_"+key,null);
