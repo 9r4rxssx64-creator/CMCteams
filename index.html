@@ -5375,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.740";
+var APP_VER="v9.741";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37172,6 +37172,24 @@ function _parseEncadresStatuts(txt, key, year, month){
     // Pour AF (FORMATION typique 4-8 ou plage courte), on évite les emps 1-31.
     // Pour M/CP (typiquement mois entier), c'est neutre car tous les vrais ont 1-31.
     rawMatches.sort(function(a,b){return a.period-b.period;});
+    // v9.741 (Kevin 2026-05-26 diag v9.740) — STRICT period match conditionnel.
+    // Heuristique : on STRICT-filter sur la courte sous-période UNIQUEMENT si
+    // (a) il y a peu de candidats courte-période ET (b) ils suffisent ~à eux seuls
+    // à remplir expectedCount. Ça attrape le cas "3 FORMATION 4-8" du vrai PDF
+    // (2 courts + 5 intrus 1-31, expectedCount=3 → keep 2 courts, drop 5 intrus)
+    // sans casser "10 CP" / "10 FORMATION" légitimes du test fixture qui
+    // mélangent courte+longue période et expectent les 10.
+    var _N_short=rawMatches.filter(function(rm){return rm.period<25;}).length;
+    var _N_long=rawMatches.length-_N_short;
+    var _refPeriod=_N_short>0?rawMatches[0].period:-1;
+    // Condition : (a) au moins 1 court (b) courts couvrent ~expectedCount (max 1 manquant) (c) long count > expectedCount (intrusion)
+    var _strictPeriod=(_N_short>0 && _N_short<=section.expectedCount
+                       && (section.expectedCount-_N_short)<=1
+                       && _N_long>section.expectedCount);
+    if(_strictPeriod){
+      rawMatches=rawMatches.filter(function(rm){return rm.period<25;});
+      console.info("[encadres v9.741] section="+section.code+" strict period<25j → "+rawMatches.length+" candidats retenus (drop "+_N_long+" intrus 1-31)");
+    }
     var sectionFilled=0;
     var matched={};
     for(var rmi=0;rmi<rawMatches.length;rmi++){
