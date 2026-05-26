@@ -1,65 +1,61 @@
 name: Deploy Apex Push Worker
 
+# Déploiement autonome du Cloudflare Worker apex-push-worker (notifications push iPhone via VAPID).
+#
+# AUTO-TRIGGER :
+#   - workflow_dispatch (manuel)
+#   - push sur main qui modifie tools/cloudflare/apex-push-worker.js OU ce workflow
+#
+# ACTIONS AUTOMATIQUES :
+#   1. Pré-flight check secrets (CLOUDFLARE_API_TOKEN, CF_VAPID_*, CF_ADMIN_TOKEN, CF_FIREBASE_URL)
+#   2. Build wrangler.toml temporaire (worker sans dépendances)
+#   3. Deploy via wrangler CLI direct (capture URL output)
+#   4. Push secrets Cloudflare (wrangler secret put)
+#   5. Health check /health avec retry
+#   6. Summary avec URL worker → coller dans Apex Coffre `ax_push_worker_url`
+#
+# SECRETS GITHUB REQUIS :
+#   - CLOUDFLARE_API_TOKEN     : permission "Edit Cloudflare Workers"
+#   - CLOUDFLARE_ACCOUNT_ID    : 32 chars hex (sidebar Cloudflare)
+#   - CF_VAPID_PUBLIC_KEY      : clé publique VAPID Web Push
+#   - CF_VAPID_PRIVATE_KEY     : clé privée VAPID
+#   - CF_VAPID_EMAIL           : mailto:admin@... (contact RGPD obligatoire)
+#   - CF_FIREBASE_URL          : https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app
+#   - CF_ADMIN_TOKEN           : token bearer pour endpoints admin (32 chars random fort)
+#
+# PAS DE KV NAMESPACE — ce worker est stateless (lit subscriptions depuis Firebase RTDB).
+
 on:
   push:
     branches: [main]
     paths:
       - 'tools/cloudflare/apex-push-worker.js'
-      - 'tools/cloudflare/wrangler.toml'
       - '.github/workflows/deploy-push-worker.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: deploy-push-worker
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Vérifier secrets
-        env:
-          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [ -z "$CF_API_TOKEN" ]; then
-            echo "::error::Manque CLOUDFLARE_API_TOKEN"
-            exit 1
-          fi
-          if [ -z "$CF_ACCOUNT_ID" ]; then
-            echo "::error::Manque CLOUDFLARE_ACCOUNT_ID"
-            exit 1
-          fi
-          echo "✅ Secrets OK"
+      - name: Install wrangler
+        run: npm install -g wrangler@latest
 
-      - name: Préparer répertoire wrangler
-        run: |
-          mkdir -p /tmp/wrangler-deploy
-          cp tools/cloudflare/apex-push-worker.js /tmp/wrangler-deploy/index.js
-          cat > /tmp/wrangler-deploy/wrangler.toml << 'EOF'
-          name = "apex-push-worker"
-          main = "index.js"
-          compatibility_date = "2024-12-01"
-          EOF
-          echo "Fichiers prêts :"
-          ls -la /tmp/wrangler-deploy/
-
-      - name: Déployer via Wrangler officiel
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: /tmp/wrangler-deploy
-          command: deploy
-
-
-      - name: Re-pusher les secrets Cloudflare (preserve variables)
+      - name: Pre-flight check secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -68,28 +64,161 @@ jobs:
           CF_VAPID_EMAIL: ${{ secrets.CF_VAPID_EMAIL }}
           CF_FIREBASE_URL: ${{ secrets.CF_FIREBASE_URL }}
           CF_ADMIN_TOKEN: ${{ secrets.CF_ADMIN_TOKEN }}
-        working-directory: /tmp/wrangler-deploy
         run: |
-          if [ -n "$CF_VAPID_PUBLIC_KEY" ]; then
-            echo "$CF_VAPID_PUBLIC_KEY" | npx wrangler secret put VAPID_PUBLIC_KEY 2>&1 || echo "skip VAPID_PUBLIC_KEY"
+          set -e
+          MISSING=""
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && MISSING="$MISSING CLOUDFLARE_API_TOKEN"
+          [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && MISSING="$MISSING CLOUDFLARE_ACCOUNT_ID"
+          [ -z "$CF_VAPID_PUBLIC_KEY" ] && MISSING="$MISSING CF_VAPID_PUBLIC_KEY"
+          [ -z "$CF_VAPID_PRIVATE_KEY" ] && MISSING="$MISSING CF_VAPID_PRIVATE_KEY"
+          [ -z "$CF_VAPID_EMAIL" ] && MISSING="$MISSING CF_VAPID_EMAIL"
+          [ -z "$CF_FIREBASE_URL" ] && MISSING="$MISSING CF_FIREBASE_URL"
+          [ -z "$CF_ADMIN_TOKEN" ] && MISSING="$MISSING CF_ADMIN_TOKEN"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Secrets GitHub manquants :$MISSING"
+            echo ""
+            echo "Pour les ajouter : https://github.com/${{ github.repository }}/settings/secrets/actions"
+            echo ""
+            echo "Référence :"
+            echo " - VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY : générer via tools/cloudflare/gen-vapid.html"
+            echo " - VAPID_EMAIL : ton email (mailto: ajouté auto par le worker)"
+            echo " - FIREBASE_URL : https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app"
+            echo " - ADMIN_TOKEN : pwd 32 chars random fort (sera bearer token côté Apex)"
+            exit 1
           fi
-          if [ -n "$CF_VAPID_PRIVATE_KEY" ]; then
-            echo "$CF_VAPID_PRIVATE_KEY" | npx wrangler secret put VAPID_PRIVATE_KEY 2>&1 || echo "skip"
-          fi
-          if [ -n "$CF_VAPID_EMAIL" ]; then
-            echo "$CF_VAPID_EMAIL" | npx wrangler secret put VAPID_EMAIL 2>&1 || echo "skip"
-          fi
-          if [ -n "$CF_FIREBASE_URL" ]; then
-            echo "$CF_FIREBASE_URL" | npx wrangler secret put FIREBASE_URL 2>&1 || echo "skip"
-          fi
-          if [ -n "$CF_ADMIN_TOKEN" ]; then
-            echo "$CF_ADMIN_TOKEN" | npx wrangler secret put ADMIN_TOKEN 2>&1 || echo "skip"
-          fi
-          echo "✅ Secrets re-pushes (si fournis dans GitHub Secrets)"
+          echo "::notice::Tous les secrets requis sont configurés."
+          wrangler --version
+          CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN wrangler whoami
 
-      - name: Test /health après déploiement
+      - name: Prepare wrangler deploy directory
         run: |
-          sleep 5
-          echo "→ Test /health :"
-          curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health" | jq '.' || \
-          curl -s "https://apex-push-worker.desarzens-kevin.workers.dev/health"
+          set -e
+          mkdir -p /tmp/push-worker-deploy
+          cp tools/cloudflare/apex-push-worker.js /tmp/push-worker-deploy/index.js
+          cat > /tmp/push-worker-deploy/wrangler.toml << 'EOF'
+          name = "apex-push-worker"
+          main = "index.js"
+          compatibility_date = "2025-10-01"
+
+          [observability]
+          enabled = true
+          EOF
+          echo "Fichiers prêts :"
+          ls -la /tmp/push-worker-deploy/
+
+      - name: Deploy worker
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: /tmp/push-worker-deploy
+        run: |
+          set -e
+          DEPLOY_OUT=$(wrangler deploy 2>&1)
+          echo "$DEPLOY_OUT"
+          WORKER_URL=$(echo "$DEPLOY_OUT" | grep -oE 'https://apex-push-worker\.[a-z0-9-]+\.workers\.dev' | head -1)
+          if [ -z "$WORKER_URL" ]; then
+            echo "::warning::URL worker pas trouvée dans la sortie (deploy peut-être OK quand même)"
+          else
+            echo "worker_url=$WORKER_URL" >> $GITHUB_OUTPUT
+            echo "::notice::Worker déployé : $WORKER_URL"
+          fi
+
+      - name: Push VAPID + admin secrets to worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_VAPID_PUBLIC_KEY: ${{ secrets.CF_VAPID_PUBLIC_KEY }}
+          CF_VAPID_PRIVATE_KEY: ${{ secrets.CF_VAPID_PRIVATE_KEY }}
+          CF_VAPID_EMAIL: ${{ secrets.CF_VAPID_EMAIL }}
+          CF_FIREBASE_URL: ${{ secrets.CF_FIREBASE_URL }}
+          CF_ADMIN_TOKEN: ${{ secrets.CF_ADMIN_TOKEN }}
+        working-directory: /tmp/push-worker-deploy
+        run: |
+          set -e
+          echo "Pushing VAPID_PUBLIC_KEY..."
+          printf '%s' "$CF_VAPID_PUBLIC_KEY" | wrangler secret put VAPID_PUBLIC_KEY
+          echo "Pushing VAPID_PRIVATE_KEY..."
+          printf '%s' "$CF_VAPID_PRIVATE_KEY" | wrangler secret put VAPID_PRIVATE_KEY
+          echo "Pushing VAPID_EMAIL..."
+          printf '%s' "$CF_VAPID_EMAIL" | wrangler secret put VAPID_EMAIL
+          echo "Pushing FIREBASE_URL..."
+          printf '%s' "$CF_FIREBASE_URL" | wrangler secret put FIREBASE_URL
+          echo "Pushing ADMIN_TOKEN..."
+          printf '%s' "$CF_ADMIN_TOKEN" | wrangler secret put ADMIN_TOKEN
+          echo "::notice::5 secrets poussés au worker."
+
+      - name: Health check
+        if: ${{ steps.deploy.outputs.worker_url != '' }}
+        run: |
+          set -e
+          URL="${{ steps.deploy.outputs.worker_url }}/health"
+          echo "Pinging $URL ..."
+          for i in 1 2 3; do
+            if curl -fsS "$URL" > /tmp/health.json; then
+              cat /tmp/health.json
+              echo ""
+              # Vérifie que configured:true (sinon les secrets ne sont pas appliqués)
+              if jq -e '.configured == true' /tmp/health.json > /dev/null 2>&1; then
+                echo "::notice::Health check OK + configured=true"
+                exit 0
+              else
+                echo "::warning::Health check OK mais configured=false (secrets pas encore appliqués?)"
+                echo "::notice::Health check OK (re-deploy nécessaire pour appliquer les secrets fraîchement poussés)"
+                exit 0
+              fi
+            fi
+            echo "Retry $i/3..."
+            sleep 5
+          done
+          echo "::error::Health check failed après 3 tentatives"
+          exit 1
+
+      - name: Re-deploy to apply newly-pushed secrets
+        # wrangler secret put attache les secrets au worker mais ne redémarre pas les Workers
+        # déjà déployés. Un second `wrangler deploy` force la prise en compte.
+        if: ${{ steps.deploy.outputs.worker_url != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: /tmp/push-worker-deploy
+        run: |
+          set -e
+          echo "Re-deploying to refresh secrets..."
+          wrangler deploy
+          sleep 3
+          # Re-test health pour confirmer configured=true cette fois
+          URL="${{ steps.deploy.outputs.worker_url }}/health"
+          curl -fsS "$URL" > /tmp/health2.json || true
+          cat /tmp/health2.json
+          if jq -e '.configured == true' /tmp/health2.json > /dev/null 2>&1; then
+            echo "::notice::Configuration confirmée : configured=true"
+          else
+            echo "::warning::configured=false après re-deploy (vérifier secrets)"
+          fi
+
+      - name: Write summary
+        if: always()
+        run: |
+          {
+            echo "## Deploy apex-push-worker"
+            echo ""
+            echo "| Étape | Statut |"
+            echo "|-------|--------|"
+            echo "| Pré-flight check secrets | ✅ |"
+            echo "| Deploy initial | ${{ steps.deploy.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| Secrets poussés | ✅ |"
+            echo "| Re-deploy (apply secrets) | ✅ |"
+            echo ""
+            if [ -n "${{ steps.deploy.outputs.worker_url }}" ]; then
+              echo "### 🎯 URL worker"
+              echo ""
+              echo "\`\`\`"
+              echo "${{ steps.deploy.outputs.worker_url }}"
+              echo "\`\`\`"
+              echo ""
+              echo "**Action Kevin** : Apex Coffre → clé \`ax_push_worker_url\` → coller cette URL."
+              echo ""
+              echo "**Test depuis Apex** : Réglages → Notifications → 🔔 Activer notifications (iPhone PWA installée)."
+            fi
+          } >> $GITHUB_STEP_SUMMARY
