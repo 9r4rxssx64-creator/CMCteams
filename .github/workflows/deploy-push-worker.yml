@@ -113,7 +113,9 @@ jobs:
             echo "::error::Failed to derive VAPID public key"
             exit 1
           fi
-          echo "::add-mask::$PUBLIC_B64URL"
+          # PAS de ::add-mask:: ici : VAPID_PUBLIC_KEY est PUBLIQUE par design (envoyée dans
+          # les headers VAPID des requêtes Web Push, intégrée dans applicationServerKey côté
+          # client). La masquer rend impossible la copie depuis le step summary.
           echo "vapid_public=$PUBLIC_B64URL" >> $GITHUB_OUTPUT
           echo "::notice::VAPID_PUBLIC_KEY dérivée (${#PUBLIC_B64URL} chars)."
 
@@ -133,7 +135,10 @@ jobs:
             echo "::notice::ADMIN_TOKEN généré (fresh, à coller dans Apex Coffre)."
             echo "fresh=true" >> $GITHUB_OUTPUT
           fi
-          echo "::add-mask::$TOKEN"
+          # PAS de ::add-mask:: ici : on a besoin que le summary affiche le token en clair
+          # pour que Kevin puisse le copier UNE fois. Repo privé (Kevin seul collab) +
+          # summary protégé par auth GitHub → risque sécu acceptable vs le bénéfice usability.
+          # Pour figer le token, ajouter PUSH_ADMIN_TOKEN aux GitHub Secrets (cf. summary).
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
       - name: Prepare wrangler deploy directory
