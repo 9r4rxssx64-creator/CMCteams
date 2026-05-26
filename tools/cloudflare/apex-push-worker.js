@@ -1,5 +1,5 @@
 /**
-// Last trigger: 2026-05-26T10:31Z - unmask summary
+// Last trigger: 2026-05-26T10:53:09Z - re-trigger after bot merge
  * Apex Push Worker - Cloudflare Worker
  * Backend qui envoie les notifications push Web Push (VAPID) aux subscribers Apex.
  *
