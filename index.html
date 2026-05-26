@@ -5391,7 +5391,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.749";
+var APP_VER="v9.750";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -44512,6 +44512,58 @@ setTimeout(function(){
     console.info("[v9.749 auto-fix-boot] terminé");
   }catch(e){console.warn("[v9.749 auto-fix-boot]",e&&e.message);}
 },4000);
+
+// v9.750 (Kevin 2026-05-26 diag : LANDAU J cadre avec planning chef BJ) :
+// AUTO-CLEAN stale cadre cells. Si un cadre (family==="cadres") a des cellules
+// avec ≥60% codes chef BJ ('c' suffix) ET un homonyme chef BJ existe (même nom
+// de famille) : c'est le bug homonyme historique (#44 CLAUDE.md, ex LANDAU J
+// reçu cellules de LANDAU B avant fix). Nettoyer pour éviter de mélanger
+// l'identité Pit Boss avec le planning d'un chef.
+setTimeout(function(){
+  try{
+    if(!A||!A.year||A.month===undefined)return;
+    if(!A.user||A.user.id!==AID)return; // admin only
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var ov=A.overrides&&A.overrides[key];
+    if(!ov)return;
+    var cleaned=[];
+    A.employees.forEach(function(e){
+      if(!e||e.family!=="cadres")return;
+      var r=ov[e.id]||{};
+      var codes=[];
+      for(var d=1;d<=31;d++){if(r[d])codes.push(String(r[d]));}
+      if(codes.length<10)return; // trop peu de cellules pour conclure
+      // Compte les codes chef BJ (suffixe 'c' final, ex 22/6c, 19/4'c, 16/3c)
+      var chefBjCount=0;
+      codes.forEach(function(c){if(/c\*?$/.test(c))chefBjCount++;});
+      var chefRatio=chefBjCount/codes.length;
+      if(chefRatio<0.6)return; // pas dominant chef BJ → pas le bug
+      // Vérifie qu'il y a un homonyme chef BJ
+      var surname=(e.name||"").split(/\s+/)[0];
+      if(!surname||surname.length<3)return;
+      var hasHomonym=A.employees.some(function(other){
+        if(!other||other.id===e.id)return false;
+        if(other.family!=="bj")return false;
+        if(!other.chef&&!/^chef/i.test(other.role||""))return false;
+        var oSurname=(other.name||"").split(/\s+/)[0];
+        return oSurname===surname;
+      });
+      if(!hasHomonym)return;
+      // Bug homonyme détecté → wipe les cellules du cadre
+      delete ov[e.id];
+      if(e.teamHistory&&e.teamHistory[key])delete e.teamHistory[key];
+      cleaned.push(e.name);
+      console.info("[v9.750 cadre-clean] "+e.name+" : "+codes.length+" cellules chef BJ wipées (homonyme avec chef BJ "+surname+")");
+    });
+    if(cleaned.length){
+      try{ls("cmc_ov",A.overrides);}catch(_){}
+      try{ls("cmc_e",A.employees);}catch(_){}
+      console.info("[v9.750 cadre-clean] "+cleaned.length+" cadres nettoyés : "+cleaned.join(", "));
+      if(typeof dc==="function")setTimeout(dc,200);
+      if(typeof toast==="function")toast("🧹 "+cleaned.length+" cadre(s) nettoyé(s) (bug homonyme)","info",4000);
+    }
+  }catch(e){console.warn("[v9.750 cadre-clean]",e&&e.message);}
+},5000);
 
 // v9.67 — Initialisation différée : Firebase + sync queue APRÈS le premier paint
 // Le premier render() utilise les données localStorage (synchrone, rapide).
