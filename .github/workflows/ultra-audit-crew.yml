@@ -100,8 +100,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: apex-ai/v13/package-lock.json
 
       - name: Install deps
         working-directory: apex-ai/v13
@@ -140,8 +138,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: apex-ai/v13/package-lock.json
 
       - name: Install + build
         working-directory: apex-ai/v13
@@ -177,8 +173,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: apex-ai/v13/package-lock.json
 
       - name: Install
         working-directory: apex-ai/v13
