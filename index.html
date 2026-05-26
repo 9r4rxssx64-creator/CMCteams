@@ -5391,7 +5391,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.747";
+var APP_VER="v9.748";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -39708,10 +39708,14 @@ function doImport(){
   }catch(_morErr){console.warn("[v9.640 manual-overrides apply]",_morErr);}
   // v9.58 — Fin d'import OK : flush toutes les écritures Firebase bufferisées en une fois
   _importInProgress=false;
-  try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.735 réactive animations
   _flushImportPending();
   // v9.553 (Kevin 2026-04-26) - SENTINELLE post-import : detecte regression silencieuse
+  // v9.748 (Kevin 2026-05-26 "L'app saute à l'import") : `body.cmc-importing` reste
+  // ACTIVE pendant _postValidateImport (qui fait PDF column + fallback v9.743/744 +
+  // consolidation v9.746) pour bloquer les animations CSS pendant cette phase lourde.
+  // Auparavant la classe était retirée AVANT _postValidateImport → scintillement.
   try{_postValidateImport(iy,im,ok,err,errLines);}catch(_pvErr){console.warn("[postValidateImport] err",_pvErr);}
+  try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.748 réactive animations APRÈS post-validate
   // v9.102 — AUTO-V\u00c9RIFICATION automatique apr\u00e8s import (sans bouton, user demande)
   // v9.556 — Skip auto-verify + scroll en mode replay silencieux (evite cascade dc + flicker)
   if(!_silentReplayMode){
