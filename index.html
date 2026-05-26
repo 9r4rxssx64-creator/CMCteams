@@ -5391,7 +5391,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.748";
+var APP_VER="v9.749";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -44470,6 +44470,48 @@ function _cmcStopMapLiveRefresh(){
 }
 window.addEventListener("hashchange",_cmcStopMapLiveRefresh);
 render();
+
+// v9.749 (Kevin 2026-05-26 "Tjs memes résultats" — diag montre toujours NON ÉCRIT) :
+// AUTO-FIX au boot : 4s après chargement (Firebase sync OK), si le mois courant
+// a des emps actifs avec cellules mais SANS teamHistory[key], applique le
+// fallback v9.743/744/746 sans nécessiter de re-import. Garantit que Kevin
+// voit les équipes correctes même après update version (les fallbacks ne
+// tournent normalement que dans _postValidateImport après un import).
+setTimeout(function(){
+  try{
+    if(!A||!A.year||A.month===undefined)return;
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var ov=A.overrides&&A.overrides[key];
+    if(!ov||!Object.keys(ov).length)return; // pas de données ce mois
+    // Détecte emps actifs avec cellules SANS teamHistory[key]
+    var missingCount=0;
+    A.employees.forEach(function(e){
+      if(!e||!isEmpActive(e,iy,im))return;
+      if(e.family==="cadres")return;
+      if(e.teamHistory&&e.teamHistory[key])return; // déjà attribué
+      var cells=Object.keys(ov[e.id]||{}).filter(function(d){return !!ov[e.id][d];});
+      if(cells.length>=10)missingCount++;
+    });
+    if(missingCount===0)return; // tout est OK
+    console.info("[v9.749 auto-fix-boot] "+missingCount+" emps sans équipe détectés pour "+key+" → application des fallbacks");
+    // Appliquer les fallbacks dans l'ordre du _postValidateImport
+    try{
+      var _srcEntry=lg("cmc_import_src_"+key,null);
+      var _srcTxt="";
+      if(_srcEntry){
+        if(typeof _srcEntry==="string")_srcTxt=_srcEntry;
+        else if(_srcEntry.txt)_srcTxt=_srcEntry.txt;
+        else if(_srcEntry.text)_srcTxt=_srcEntry.text;
+      }
+      if(_srcTxt&&typeof _cmcDetectTeamsByPdfColumn==="function")_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
+    }catch(_){}
+    try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_){}
+    try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
+    try{ls("cmc_e",A.employees);}catch(_){}
+    if(typeof dc==="function")setTimeout(dc,200);
+    console.info("[v9.749 auto-fix-boot] terminé");
+  }catch(e){console.warn("[v9.749 auto-fix-boot]",e&&e.message);}
+},4000);
 
 // v9.67 — Initialisation différée : Firebase + sync queue APRÈS le premier paint
 // Le premier render() utilise les données localStorage (synchrone, rapide).
