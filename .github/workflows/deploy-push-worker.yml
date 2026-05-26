@@ -280,5 +280,19 @@ jobs:
               else
                 echo "**3. \`ax_push_admin_token\`** = valeur du secret GitHub \`PUSH_ADMIN_TOKEN\` (inchangé)"
               fi
+              echo ""
+              echo "---"
+              echo ""
+              echo "### 💬 Bloc unique à coller dans le chat Apex (tout d'un coup)"
+              echo ""
+              echo "Copie-colle ce bloc complet dans la zone de chat Apex. L'IA détectera les 3 clés et te demandera UNE seule confirmation pour les stocker dans le Coffre :"
+              echo ""
+              echo "\`\`\`"
+              echo "Stocke ces 3 clés dans le Coffre :"
+              echo ""
+              echo "ax_push_worker_url = ${{ steps.deploy.outputs.worker_url }}"
+              echo "ax_vapid_public = $VAPID_PUBLIC_VAL"
+              echo "ax_push_admin_token = $ADMIN_TOKEN_VAL"
+              echo "\`\`\`"
             fi
           } >> $GITHUB_STEP_SUMMARY

@@ -202,6 +202,16 @@ jobs:
               echo "${{ steps.deploy.outputs.worker_url }}"
               echo "\`\`\`"
               echo ""
-              echo "**Action Kevin** : copier cette URL → Apex Coffre → clé \`ax_auth_worker_url\`"
+              echo "---"
+              echo ""
+              echo "### 💬 Bloc unique à coller dans le chat Apex"
+              echo ""
+              echo "Copie-colle ce bloc complet dans la zone de chat Apex. L'IA détectera la clé et te demandera UNE confirmation pour la stocker dans le Coffre :"
+              echo ""
+              echo "\`\`\`"
+              echo "Stocke cette clé dans le Coffre :"
+              echo ""
+              echo "ax_auth_worker_url = ${{ steps.deploy.outputs.worker_url }}"
+              echo "\`\`\`"
             fi
           } >> $GITHUB_STEP_SUMMARY
