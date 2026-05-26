@@ -2,11 +2,18 @@
 
 ## 🔔 SESSION 2026-05-26 — Push worker iPhone notifs : pause quota Actions
 
-> **Reprise** : 1er juin (renouvellement free tier 2000 min) OU dès que Kevin
-> active le "spending limit" sur GitHub (https://github.com/settings/billing/spending_limit).
+> **DÉCISION KEVIN 2026-05-26 13h50 : option A — on attend le 1er juin.**
 >
-> **Diagnostic** : quota GitHub Actions free épuisé ce mois ($107.33 usage), tout
-> `workflow_dispatch` retourne "Failed to queue. Please try again."
+> Carte enregistrée + budget Actions $5 configurés MAIS le quota reste bloqué
+> "Failed to queue workflow run. Please try again." (grace period interne GitHub
+> ou autre cause non diagnostiquable depuis sandbox). Au 1er juin le free tier
+> renouvelle automatiquement → le workflow `deploy-push-worker.yml` reprend
+> sans intervention.
+>
+> **Reprise** : 1er juin (renouvellement free tier 2000 min). Push iPhone notifs
+> finiront automatiquement à ce moment.
+>
+> **Diagnostic original** : quota GitHub Actions free épuisé ce mois ($107.33 usage).
 
 ### Déjà fait dans cette session
 
