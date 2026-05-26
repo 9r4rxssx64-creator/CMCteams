@@ -1,5 +1,82 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔔 SESSION 2026-05-26 — Push worker iPhone notifs : pause quota Actions
+
+> **Reprise** : 1er juin (renouvellement free tier 2000 min) OU dès que Kevin
+> active le "spending limit" sur GitHub (https://github.com/settings/billing/spending_limit).
+>
+> **Diagnostic** : quota GitHub Actions free épuisé ce mois ($107.33 usage), tout
+> `workflow_dispatch` retourne "Failed to queue. Please try again."
+
+### Déjà fait dans cette session
+
+- ✅ **Firebase rules** Phase 4 durcie publiées dans console (projet `cmcteams-c16ab`)
+  - `.read:true .write:true` sur paths scopés + `.write:false` sur 7 paths sensibles
+    (cmc_admin_pin, cmc_ia_key, ax_admin_pass/pin/user/uid, ax_pin)
+  - Validation `$key` regex anti-pollution sur cmcteams et apex
+  - Validation `cmc_pw/$uid/clear` bloque write password clair
+- ✅ Repo aligné : `firebase-rules-apex.json` mis à jour avec le bloc consolidé publié
+- ✅ **`apex-auth-worker`** déployé sur `https://apex-auth-worker.9r4rxssx64.workers.dev`
+  - 3 secrets Firebase Admin poussés
+  - KV namespace AUTH_KV créé + idempotent (PR #382)
+  - URL collée dans Apex Coffre `ax_auth_worker_url`
+- ✅ **`apex-push-worker`** déployé sur `https://apex-push-worker.9r4rxssx64.workers.dev`
+  - 5 secrets poussés (VAPID_PUBLIC/PRIVATE, EMAIL, FIREBASE_URL, ADMIN_TOKEN)
+  - Health check OK + `configured=true`
+  - URL collée dans Apex Coffre `ax_push_worker_url`
+  - ⚠️ Valeurs VAPID_PUBLIC + ADMIN_TOKEN inaccessibles : Cloudflare masque les
+    secrets après création, et les runs GitHub avec summary unmask sont bloqués
+    par le quota. Au prochain redéploiement, ces valeurs seront affichées en clair.
+- ✅ `deploy-apex-auth-worker.yml` + `deploy-push-worker.yml` : workflows autonomes
+  avec dérivation ECDH VAPID, auto-gen ADMIN_TOKEN, KV idempotent
+- ✅ Outil HTML `tools/firebase/extract-service-account.html` (100% client-side,
+  zero upload) pour extraire VAPID + service account depuis un JSON local
+- ✅ Pattern « bloc unique chat Apex » dans les summaries des 2 workflows
+  (règle Kevin « tout d'un coup »)
+
+### Action restante (quand quota Actions débloque)
+
+| # | Action | Auto |
+|---|--------|------|
+| 1 | Touch `tools/cloudflare/apex-push-worker.js` → trigger `deploy-push-worker.yml` | ⚙️ Auto |
+| 2 | Workflow re-run avec summary unmask (PR #386 sur main) | ⚙️ Auto |
+| 3 | Kevin copie le bloc « chat Apex » du summary, colle dans Apex IA chat | 👤 30 sec |
+| 4 | IA Apex stocke `ax_vapid_public` + `ax_push_admin_token` dans Coffre | ⚙️ Auto |
+| 5 | Apex Réglages → 🔔 Activer notifications (iPhone PWA) | 👤 10 sec |
+| 6 | (Optionnel) Coller `ax_push_admin_token` dans GitHub Secret `PUSH_ADMIN_TOKEN` pour figer | 👤 30 sec |
+
+### 3 options pour débloquer immédiatement (pas attendre 1er juin)
+
+| Option | Effort | Effet |
+|--------|--------|-------|
+| **A** : Setup spending limit GitHub à $0 | 3 min, 0€ | Workflow Actions débloque immédiat, autonomie future totale |
+| **B** : Bypass dashboard Cloudflare (gen-vapid.html + remplacement 5 secrets via UI CF) | 8 min | Marche aujourd'hui, mais procédure manuelle à reprendre chaque cycle |
+| **C** : Attendre 1er juin (renouvellement free tier) | 5 jours | Zéro effort |
+
+→ **Recommandation expert (option A)** : spending limit = setup 1 fois pour la vie.
+Carte enregistrée jamais débitée tant que tu restes sous le quota free.
+
+### Référence rapide
+
+- Liste secrets GitHub configurés (vu 2026-05-26) :
+  AGENT_SECRET, AGENT_SECRET_VERCEL, ANTHROPIC_API_KEY, APEX_ADMIN_PIN_SHA(256),
+  APEX_CHAT_ADMIN_TOKEN, API_OPEN_LEGO, CLOUDFLARE_ACCOUNT_ID/API_TOKEN,
+  COHERE/DEEPSEEK/MISTRAL/OPEN_AI/GROQ/GEMINI/PERPLEXITI/XAI_API_KEY,
+  EMAILJS_PRIVATE_KEY, FINNHUB_API_KEY, **FIREBASE_CLIENT_EMAIL/PRIVATE_KEY**
+  (ajoutés ce jour 2026-05-26 par Kevin), JWT_SECRET, PEXELS/PINECONE/TAVILY/
+  TELEGRAM/TOGETHER_API_KEY, RAILWAY_TOKEN, VAPID_PRIVATE_KEY, VONAGE_*,
+  YOUTUBE_CLIENT_ID/SECRET/REFRESH_TOKEN.
+- **Manque toujours** (pour finir push worker quand quota OK) : aucun secret
+  obligatoire — le workflow `deploy-push-worker.yml` dérive VAPID public via
+  ECDH et auto-génère ADMIN_TOKEN. Optionnel : `PUSH_ADMIN_TOKEN` pour figer.
+
+### PIN admin Kevin (pour référence dans futures sessions)
+
+PIN = `200807` → SHA256 = `cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373`
+(stocké dans GitHub Secret `APEX_ADMIN_PIN_SHA256`).
+
+---
+
 ## 🎯 CMCteams v9.732 — gaps fidélité STOCKAGE PB V2 (2026-05-23, diagnostic only)
 
 > Nouveau test `test:fidelity-pb` (CI verte) a mesuré 2 gaps de reproduction à
