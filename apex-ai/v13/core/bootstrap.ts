@@ -29,6 +29,7 @@ import { logRedaction } from '../services/observability/log-redaction-wrapper.js
 
 import { errors } from './errors.js';
 import { events } from './events.js';
+import { safeSetHTML } from './html-safe.js';
 import { logger } from './logger.js';
 import { memory } from './memory.js';
 import { router } from './router.js';
@@ -960,13 +961,13 @@ bootstrap().catch((err: unknown) => {
   /* Show user-friendly fallback (anti-pattern : pas d'erreur technique brute) */
   const root = document.getElementById('apex-root');
   if (root) {
-    root.innerHTML = `
+    safeSetHTML(root, `
       <div style="padding:40px;text-align:center;color:#fff;background:#08080f;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
         <h1 style="color:#c9a227;font-family:Georgia,serif;letter-spacing:3px">APEX</h1>
         <p style="color:#a0a4c0;margin:16px 0">Un souci au démarrage. Tape SOS en bas-droite pour recharger proprement.</p>
         <p style="color:#6a6f8a;font-size:11px;margin-top:24px">Version ${APP_VER}</p>
       </div>
-    `;
+    `);
   }
   /* Toujours montrer le bouton SOS */
   const sos = document.getElementById('apex-rescue-btn');

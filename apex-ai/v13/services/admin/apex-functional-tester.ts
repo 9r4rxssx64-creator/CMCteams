@@ -26,6 +26,7 @@
  * casser l'app pendant le scan.
  */
 
+import { safeSetHTML } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 
 export interface ButtonTestResult {
@@ -278,9 +279,9 @@ export async function autoFix(report: FunctionalTestReport): Promise<{
       const root = document.getElementById('apex-root');
       if (root) {
         const html = root.innerHTML;
-        root.innerHTML = '';
+        safeSetHTML(root, '');
         await new Promise((r) => setTimeout(r, 100));
-        root.innerHTML = html;
+        safeSetHTML(root, html);
         applied.push('root_remount');
       }
     } catch (err: unknown) {

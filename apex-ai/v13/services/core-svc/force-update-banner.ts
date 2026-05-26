@@ -24,6 +24,7 @@
  */
 
 import { APP_VER } from '../../core/bootstrap.js';
+import { safeSetHTML } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 
 import { styleInjector } from './style-injector.js';
@@ -226,7 +227,7 @@ class ForceUpdateBanner {
     banner.id = BANNER_ID;
     banner.setAttribute('role', 'alert');
     banner.setAttribute('aria-live', 'assertive');
-    banner.innerHTML = `
+    safeSetHTML(banner, `
       <div class="apex-fu-content">
         <div class="apex-fu-icon">🔄</div>
         <div class="apex-fu-text">
@@ -237,7 +238,7 @@ class ForceUpdateBanner {
           🔄 Forcer mise à jour
         </button>
       </div>
-    `;
+    `);
     document.body.appendChild(banner);
     const btn = document.getElementById(`${BANNER_ID}-btn`);
     btn?.addEventListener('click', () => {

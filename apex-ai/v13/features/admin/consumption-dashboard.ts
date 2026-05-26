@@ -12,6 +12,7 @@
  * - Recommandation auto si usage > 80% sur 7 jours
  */
 
+import { safeSetHTML } from '../../core/html-safe.js';
 import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
 import { consumptionMonitor } from '../../services/observability/consumption-monitor.js';
@@ -89,7 +90,7 @@ export function render(root: HTMLElement): void {
   const headerAlert = ui.total_alerts > 0
     ? `<div class="ax-banner-alert">⚠️ ${ui.total_alerts} service${ui.total_alerts > 1 ? 's' : ''} en alerte — recharger vite</div>`
     : '<div class="ax-banner-ok">✅ Tous services dans les budgets</div>';
-  root.innerHTML = `
+  safeSetHTML(root, `
     <div class="ax-consumption-dashboard">
       <h1>💰 Consommation live</h1>
       <p class="ax-subtitle">Suivi conso temps réel + recharge 1-clic + plans upgrade</p>
@@ -97,7 +98,7 @@ export function render(root: HTMLElement): void {
       <div class="ax-consumption-grid">${cards}</div>
       <div id="ax-consumption-modal-mount"></div>
     </div>
-  `;
+  `);
   /* Wire boutons "Plans" (event delegation) */
   root.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
