@@ -19,7 +19,7 @@ jobs:
       contents: write  # contents:write pour pouvoir POST /apex/ax_claude_alerts.json via API REST
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Detect trigger source
         id: trigger
