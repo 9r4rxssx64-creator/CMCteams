@@ -40,6 +40,7 @@
  * ```
  */
 
+import { safeSetHTML } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 
 import { isFeatureEnabled, renderDisabledNotice } from './feature-toggles.js';
@@ -61,7 +62,7 @@ export function guardFeatureEnabled(
 ): boolean {
   if (isFeatureEnabled(featureId, userId)) return true;
   try {
-    rootEl.innerHTML = customFallbackHtml ?? renderDisabledNotice(featureId);
+    safeSetHTML(rootEl, customFallbackHtml ?? renderDisabledNotice(featureId));
   } catch (err) {
     logger.warn('feature-guard', 'failed to render disabled notice', { featureId, err });
   }
