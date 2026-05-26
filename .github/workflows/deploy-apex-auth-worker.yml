@@ -82,35 +82,54 @@ jobs:
           wrangler --version
           CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN wrangler whoami
 
-      - name: Create KV namespace if missing + persist ID
+      - name: Resolve KV namespace AUTH_KV (idempotent — reuse existing or create)
         id: kv_setup
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         working-directory: services/apex-auth-worker
         run: |
           set -e
-          if grep -q "REPLACE_WITH_KV_ID_FROM_WRANGLER_OUTPUT" wrangler.toml; then
-            echo "Creating KV namespace AUTH_KV (first run)..."
+          # Si wrangler.toml a déjà un vrai ID, on garde
+          if ! grep -q "REPLACE_WITH_KV_ID_FROM_WRANGLER_OUTPUT" wrangler.toml; then
+            EXISTING=$(grep -oE 'id\s*=\s*"[a-f0-9]+"' wrangler.toml | head -1)
+            echo "::notice::KV namespace déjà persisté dans wrangler.toml : $EXISTING"
+            echo "kv_setup=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Sinon, idempotence : list les KV existants AVANT de tenter create
+          # (évite "namespace already exists" si workflow a déjà tourné mais commit pas persisté)
+          echo "Listing existing KV namespaces..."
+          LIST_OUT=$(wrangler kv namespace list 2>&1 || true)
+          echo "$LIST_OUT"
+          # Nom canonique wrangler : <worker-name>-<binding> = apex-auth-worker-AUTH_KV
+          EXISTING_ID=$(echo "$LIST_OUT" | jq -r '.[]? | select(.title == "apex-auth-worker-AUTH_KV") | .id' 2>/dev/null | head -1)
+
+          if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
+            KV_ID="$EXISTING_ID"
+            echo "::notice::KV AUTH_KV existe déjà côté Cloudflare : $KV_ID — réutilisé."
+            echo "kv_setup=reused" >> $GITHUB_OUTPUT
+          else
+            echo "Creating KV namespace AUTH_KV..."
             CREATE_OUT=$(wrangler kv namespace create AUTH_KV 2>&1)
             echo "$CREATE_OUT"
-            # Parse ID : essai 2 formats (JSON object + TOML snippet)
             KV_ID=$(echo "$CREATE_OUT" | grep -oE '"id"\s*:\s*"[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}' | head -1)
             if [ -z "$KV_ID" ]; then
               KV_ID=$(echo "$CREATE_OUT" | grep -oE 'id\s*=\s*"[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}' | head -1)
             fi
             if [ -z "$KV_ID" ]; then
-              echo "::error::Impossible de parser l'ID KV namespace depuis la sortie wrangler"
+              echo "::error::Impossible de parser l'ID KV namespace"
               exit 1
             fi
-            sed -i "s/REPLACE_WITH_KV_ID_FROM_WRANGLER_OUTPUT/$KV_ID/" wrangler.toml
-            echo "kv_id=$KV_ID" >> $GITHUB_OUTPUT
-            echo "kv_created=true" >> $GITHUB_OUTPUT
-            echo "::notice::KV namespace AUTH_KV créé avec id=$KV_ID"
-          else
-            EXISTING=$(grep -oE 'id\s*=\s*"[a-f0-9]+"' wrangler.toml | head -1)
-            echo "::notice::KV namespace déjà configuré : $EXISTING"
-            echo "kv_created=false" >> $GITHUB_OUTPUT
+            echo "::notice::KV namespace AUTH_KV créé : $KV_ID"
+            echo "kv_setup=created" >> $GITHUB_OUTPUT
           fi
+
+          # Patch wrangler.toml en local pour ce run (le deploy utilisera le bon ID).
+          # Pas de commit retour vers le repo : l'idempotence ci-dessus garantit qu'on
+          # retrouvera toujours l'ID au prochain run via `wrangler kv namespace list`.
+          sed -i "s/REPLACE_WITH_KV_ID_FROM_WRANGLER_OUTPUT/$KV_ID/" wrangler.toml
+          echo "kv_id=$KV_ID" >> $GITHUB_OUTPUT
 
       - name: Push Firebase secrets to worker
         env:
@@ -163,15 +182,6 @@ jobs:
           echo "::error::Health check failed après 3 tentatives"
           exit 1
 
-      - name: Commit KV namespace ID (first run only)
-        if: ${{ steps.kv_setup.outputs.kv_created == 'true' }}
-        run: |
-          cd $GITHUB_WORKSPACE
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add services/apex-auth-worker/wrangler.toml
-          git commit -m "chore(apex-auth-worker): persist KV namespace AUTH_KV id [skip ci]"
-          git push origin main
 
       - name: Write summary
         if: always()
@@ -181,7 +191,7 @@ jobs:
             echo ""
             echo "| Étape | Statut |"
             echo "|-------|--------|"
-            echo "| KV namespace | ${{ steps.kv_setup.outputs.kv_created == 'true' && '🆕 créé' || '✅ existant' }} |"
+            echo "| KV namespace | ${{ steps.kv_setup.outputs.kv_setup == 'created' && '🆕 créé' || (steps.kv_setup.outputs.kv_setup == 'reused' && '♻️ réutilisé' || '✅ existant') }} |"
             echo "| Secrets Firebase | ✅ poussés |"
             echo "| Deploy | ${{ steps.deploy.outcome == 'success' && '✅' || '❌' }} |"
             echo ""
