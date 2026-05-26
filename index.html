@@ -5375,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.737";
+var APP_VER="v9.738";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35211,10 +35211,122 @@ function _cmcDetectTeamsByRestPattern(iy,im){
 // v9.733 RESCUE PASS retiré v9.734 (Kevin règle absolue "aucune invention,
 // reproduction exacte"). Voir _postValidateImport pour l'enregistrement.
 
+// v9.738 (Kevin "Go 3 tout auto") — Détecteur d'anomalies post-import.
+// Calcule un score de confiance 0-100 + liste anomalies. Utilisé par
+// _postValidateImport pour décider l'auto-trigger Vision API.
+function _cmcImportConfidenceScore(iy,im){
+  try{
+    var key=iy+"-"+im;
+    var ov=(A.overrides&&A.overrides[key])||{};
+    var active=A.employees.filter(function(e){return isEmpActive(e,iy,im)&&(e.family||"")!=="cadres";});
+    var actCount=active.length;
+    if(!actCount)return{score:0,anomalies:["no_active_emps"],severity:"critical",coverage:0};
+    var anomalies=[],score=100;
+    // 1. Couverture (% emps avec ≥1 code)
+    var withCodes=active.filter(function(e){
+      var r=ov[e.id]||{};
+      for(var d in r){if(r[d])return true;}return false;
+    });
+    var coverage=withCodes.length/actCount;
+    if(coverage<0.90){
+      anomalies.push("low_coverage:"+Math.round(coverage*100)+"%");
+      score-=Math.round((0.90-coverage)*100);
+    }
+    // 2. Emps avec ≥50% des cellules en CP (suspect — sauf vrais CP intégraux)
+    var cpDominant=0;
+    withCodes.forEach(function(e){
+      var r=ov[e.id]||{};
+      var total=0,cp=0;
+      for(var d=1;d<=31;d++){if(r[d]){total++;if(r[d]==="CP")cp++;}}
+      if(total>0&&cp/total>=0.5)cpDominant++;
+    });
+    // Tolérance : ~5-10% des emps en CP intégral est NORMAL (vacances été/hiver).
+    // Au-delà de 20% c'est suspect.
+    var cpRatio=cpDominant/withCodes.length;
+    if(cpRatio>0.20){
+      anomalies.push("cp_dominant_high:"+Math.round(cpRatio*100)+"% ("+cpDominant+" emps)");
+      score-=Math.min(25,Math.round((cpRatio-0.20)*150));
+    }
+    // 3. Emps partiels (1-20 jours filled — louche, soit absence longue mais pas complète soit parser raté)
+    var partials=withCodes.filter(function(e){
+      var r=ov[e.id]||{};
+      var n=0;for(var d=1;d<=31;d++)if(r[d])n++;
+      return n>=1&&n<20;
+    });
+    var partialRatio=partials.length/actCount;
+    if(partialRatio>0.05){
+      anomalies.push("partial_emps:"+partials.length+" ("+Math.round(partialRatio*100)+"%)");
+      score-=Math.min(15,partials.length);
+    }
+    // 4. Lignes en erreur trop nombreuses
+    var skipped=(window._importSkipped||0);
+    if(skipped>actCount*0.10){
+      anomalies.push("skipped_lines:"+skipped);
+      score-=Math.min(15,Math.round(skipped/10));
+    }
+    score=Math.max(0,Math.min(100,score));
+    var severity=score>=90?"ok":score>=70?"warn":"critical";
+    return{score:score,anomalies:anomalies,severity:severity,coverage:coverage,
+      activeEmps:actCount,withCodes:withCodes.length,partials:partials.length,cpDominant:cpDominant};
+  }catch(e){console.warn("[v9.738 confidence]",e);return{score:50,anomalies:["compute_error:"+e.message],severity:"warn"};}
+}
+
+// v9.738 — Auto-trigger Vision API si score d'import < 90 ET conditions remplies.
+// Non-bloquant : lance la requête à Apex en arrière-plan, toast informatif.
+// Le résultat sera rendered par _cmcRenderApexVisionResult quand Apex répond.
+function _cmcMaybeAutoVisionFallback(iy,im,confidence){
+  try{
+    if(!A.user||A.user.id!==AID)return; // admin only
+    if(!confidence||confidence.severity==="ok")return;
+    var key=iy+"-"+im;
+    // Throttle : 1 seul auto-trigger Vision par import (évite spam)
+    var lastTrigger=lg("cmc_vision_auto_last_"+key,0);
+    if(Date.now()-lastTrigger<300000){ // 5min throttle
+      console.info("[v9.738 vision-auto] throttled (last "+Math.round((Date.now()-lastTrigger)/1000)+"s ago)");
+      return;
+    }
+    var visual=lg("cmc_visual_planning_"+key,null);
+    var hasKey=!!(lg("cmc_ia_key","")||lg("ax_anthropic_key","")||lg("ax_shared_api_key",""));
+    var hasVisual=!!(visual&&visual.dataUrl);
+    if(!hasVisual&&!hasKey){
+      // Pas de visuel + pas de clé : informer Kevin
+      toast("⚠ Score import "+confidence.score+"/100 ("+confidence.anomalies.slice(0,2).join(", ")+"). Joins image PDF + clé IA pour validation Vision.","warn",10000);
+      return;
+    }
+    if(!hasVisual){
+      // Clé OK mais pas de visuel
+      toast("⚠ Score import "+confidence.score+"/100. Joins image PDF pour validation Vision auto.","warn",8000);
+      return;
+    }
+    if(!hasKey){
+      toast("⚠ Score import "+confidence.score+"/100. Configure une clé IA pour validation Vision auto.","warn",8000);
+      return;
+    }
+    // Conditions OK → auto-trigger
+    ls("cmc_vision_auto_last_"+key,Date.now());
+    var summary=confidence.anomalies.slice(0,2).join(", ");
+    toast("🤖 Score "+confidence.score+"/100 ("+summary+") — Vision auto en cours…","warn",6000);
+    setTimeout(function(){
+      try{
+        if(typeof cmcRequestApexVision==="function")cmcRequestApexVision();
+      }catch(e){console.warn("[v9.738 vision-trigger]",e);}
+    },1500);
+    try{if(typeof _audit==="function")_audit("vision_auto_trigger_v738",AID,key,
+      "score="+confidence.score,confidence.anomalies.join("|"));}catch(_){}
+  }catch(e){console.warn("[v9.738 vision-fallback]",e);}
+}
+
 function _postValidateImport(iy,im,okCount,errCount,errLines){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
+    // v9.738 (Kevin "Go 3 tout auto") — HYBRIDE confidence score :
+    // après les détections d'équipes (pdf-column + RH-pattern), calcule un
+    // score de confiance 0-100 basé sur couverture + CP dominant + conflits.
+    // Si score < 90 ET visuel attaché ET clé IA dispo → auto-trigger Vision
+    // pour validation croisée (cmcRequestApexVision). Aucune écriture auto :
+    // Apex retourne divergences → modal admin pour arbitrage manuel.
+    // Sinon : toast informatif "joindre visuel pour validation".
     // v9.719 — Détection équipes par COLONNE PDF (méthode fiable) D'ABORD.
     // Lit le texte source via cmc_import_src_<key> (objet {txt:...} ou string)
     // avec fallback window._lastImportText.
@@ -35237,6 +35349,20 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     // Inférer une équipe à partir d'autres emps de signature similaire = INVENTION.
     // Les emps sans assignation explicite dans le PDF source restent sans équipe
     // → visibles dans section "❔ Pas de planning ce mois" (v9.647).
+    // v9.738 (Kevin "Go 3 tout auto") — HYBRIDE confidence + auto-trigger Vision.
+    // Si score < 90 ET visuel attaché ET clé IA dispo → cmcRequestApexVision()
+    // en arrière-plan. Apex retourne JSON divergences → modal admin pour arbitrage
+    // manuel. Aucune écriture auto. Throttle 5min/key pour éviter spam.
+    try{
+      var _confidence=_cmcImportConfidenceScore(iy,im);
+      ls("cmc_import_confidence_"+key,{
+        score:_confidence.score,severity:_confidence.severity,
+        anomalies:_confidence.anomalies,ts:Date.now(),app_ver:APP_VER
+      });
+      console.info("[v9.738 confidence] score="+_confidence.score+" severity="+_confidence.severity+
+        " coverage="+Math.round((_confidence.coverage||0)*100)+"% anomalies="+(_confidence.anomalies||[]).join("|"));
+      _cmcMaybeAutoVisionFallback(iy,im,_confidence);
+    }catch(_v738Err){console.warn("[v9.738]",_v738Err&&_v738Err.message);}
     var totalActive=A.employees.filter(function(e){return isEmpActive(e,iy,im);}).length;
     if(totalActive===0)return;
     var withCodes=Object.keys(ov).filter(function(eid){
