@@ -5375,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.741";
+var APP_VER="v9.742";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37143,7 +37143,12 @@ function _parseEncadresStatuts(txt, key, year, month){
     // Avant : le block s'étendait jusqu'à la prochaine section CP/M, capturant les
     // 10 premiers croupiers Roulettes (BARONE E, AUBERT P, PORASSO C…) qui étaient
     // alors FORCED CP à tort (corruption silencieuse, 375 cellules écrasées).
-    var _rotHdrInBlock=txt.substring(section.headerEnd,blockEnd).search(/\d+\s+\d{1,2}\/\d{1,2}[\s'":*]*\s+du\s+au/i);
+    // v9.742 (Kevin 2026-05-26 "tout le monde a planning si nom dans PDF") :
+    // Élargit la classe [c'"*: \s] pour matcher les rotation headers chef-suffixés
+    // (ex "6 22/6c du au 5 19/4'c du au"). Sans `c` dans la classe, le block de
+    // section M ligne 42 dépassait la rotation header ligne 47 et capturait
+    // DESSI P 1-15 + autres → wipe planning. Idem section FORMATION pour BAILET JF.
+    var _rotHdrInBlock=txt.substring(section.headerEnd,blockEnd).search(/\d+\s+\d{1,2}\/\d{1,2}[c'"*:\s]*\s+du\s+au/i);
     if(_rotHdrInBlock>0){
       blockEnd=section.headerEnd+_rotHdrInBlock;
     }
@@ -37187,8 +37192,13 @@ function _parseEncadresStatuts(txt, key, year, month){
                        && (section.expectedCount-_N_short)<=1
                        && _N_long>section.expectedCount);
     if(_strictPeriod){
-      rawMatches=rawMatches.filter(function(rm){return rm.period<25;});
-      console.info("[encadres v9.741] section="+section.code+" strict period<25j → "+rawMatches.length+" candidats retenus (drop "+_N_long+" intrus 1-31)");
+      // v9.742 (Kevin 2026-05-26 BAILET JF wiped by FORMATION) :
+      // Filtre EXACT sur _refPeriod (ex: 4 pour MATTERA M 4-8) au lieu de
+      // `period<25` (qui acceptait BAILET JF 16-31 = period 15 et la wipait).
+      // Si plusieurs périodes courtes coexistent, garder seulement celle qui
+      // matche la 1ʳᵉ (la "vraie" période de cette section, typiquement 4 ou 15).
+      rawMatches=rawMatches.filter(function(rm){return rm.period===_refPeriod;});
+      console.info("[encadres v9.742] section="+section.code+" strict period="+_refPeriod+"j → "+rawMatches.length+" candidats retenus (drop "+_N_long+" intrus 1-31)");
     }
     var sectionFilled=0;
     var matched={};

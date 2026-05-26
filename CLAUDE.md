@@ -1,6 +1,48 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-23 (Apex v13.4.270 / CMC v9.736).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26 (Apex v13.4.277 / CMC v9.741).
+
+---
+
+## 📋 RÈGLE ABSOLUE — TOUT LE MONDE A UN PLANNING SI SON NOM EST DANS LE PDF (Kevin 2026-05-26, ABSOLUE)
+
+> **"Tout le monde a un planning sans exception du moment que son nom et écrit dans le planning"** — Kevin 2026-05-26
+
+**Règle absolue, NON-NÉGOCIABLE, prioritaire** — CMCteams import + tous parsers de planning futurs.
+
+### 1. Garantie : nom dans PDF ⇒ ≥1 cellule dans `A.overrides`
+
+À CHAQUE import, pour CHAQUE employé dont le nom apparaît dans le texte source du PDF (peu importe sa période `1 31` / `1 15` / `16 31` / `4 8`), `A.overrides[key][emp.id]` DOIT contenir au moins 1 cellule remplie. Aucune exception.
+
+### 2. Cas légitimes "0 RH days" ≠ "0 cellule"
+
+Un emp en AF/M/CP intégral toute la période a 0 RH days mais **31 cellules remplies** (toutes = AF par ex). C'est légitime. La règle s'applique au COMPTE de cellules, pas au compte de RH.
+
+### 3. Validation post-import obligatoire
+
+`_postValidateImport` DOIT scanner le texte source, extraire tous les noms (regex `[A-Z]{2,}\s+[A-Z]{1,3}\s+\d+\s+\d+`), et vérifier que chacun a `Object.keys(A.overrides[key][emp.id]||{}).length > 0`. Si un nom est dans le PDF mais 0 cellule → **ERREUR P0** + banner rouge + escalade Apex Vision.
+
+### 4. Périodes partielles supportées
+
+Le parser de grille DOIT gérer toutes les périodes possibles :
+- `1 31` (mois entier, le plus courant)
+- `1 15` (1ère quinzaine — ex DESSI P)
+- `16 31` (2ème quinzaine — ex BAILET JF)
+- `1 30` (juin/avril/sept/nov)
+- `4 8` (sous-période courte — FORMATION typique)
+- Tout `fromDay toDay` avec `1≤fromDay≤toDay≤days`
+
+Quand le parser voit `1 15`, il extrait les codes pour les jours 1-15. Les jours 16-31 sont vides OU remplis par une autre passe (encadré CP par ex).
+
+### 5. Test régression obligatoire
+
+`test:everyone-has-planning` (à créer) : pour chaque fixture PDF, extraire tous les noms `NOM Init period_from period_to` et vérifier que chaque emp matching dans DB a ≥1 cellule. Câblé dans `test:ci`.
+
+### 6. Test mental obligatoire avant chaque release import
+
+> *"Si Kevin importe ce PDF, est-ce que CHAQUE nom visible dans le PDF source a un planning visible dans vMonPlanning/vPlan ? Si un seul emp est dans le PDF mais sans cellule → bug critique, fix avant push."*
+
+S'applique : CMCteams (priorité absolue), tous projets futurs avec import planning.
 
 ---
 

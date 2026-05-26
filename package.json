@@ -28,11 +28,12 @@
     "test:teamsizes": "node tests/runtime-audit-team-sizes.mjs",
     "test:all": "node tests/runtime-audit.mjs && node tests/runtime-audit-encadres.mjs && node tests/runtime-audit-pitboss.mjs && node tests/runtime-audit-teamhistory.mjs && node tests/runtime-audit-v639-format.mjs && node tests/runtime-audit-v650-rh.mjs && node tests/runtime-audit-kevin-truth.mjs && node tests/runtime-audit-v663-badge.mjs && node tests/runtime-audit-scoped-wipe.mjs && node tests/runtime-audit-agents-sanity.mjs && node tests/runtime-audit-visual-bridge.mjs && node tests/runtime-audit-autoupdate.mjs && node tests/runtime-audit-admin-guards.mjs && node tests/runtime-audit-pin-security.mjs && node tests/runtime-audit-apex-handoff.mjs && node tests/runtime-audit-v702-avril.mjs && node tests/runtime-audit-v702-import-e2e.mjs && node tests/runtime-audit-v702-import-safety.mjs && node tests/runtime-audit-v719-pdf-column.mjs && node tests/runtime-audit-team-sizes.mjs && node tests/runtime-audit-master.mjs",
     "test:check-syntax": "python3 -c \"import re;html=open('index.html','r',encoding='utf-8').read();blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL);open('/tmp/cmc_combined.js','w',encoding='utf-8').write(''.join(blocks))\" && node --check /tmp/cmc_combined.js",
-    "test:ci": "npm run test:check-syntax && npm run test:all && npm run test:fidelity && npm run test:homonyms && npm run test:fidelity-pb && npm run test:coverage",
+    "test:ci": "npm run test:check-syntax && npm run test:all && npm run test:fidelity && npm run test:homonyms && npm run test:fidelity-pb && npm run test:coverage && npm run test:everyone-has-planning",
     "test:fidelity": "node tests/runtime-audit-reproduction-fidelity.mjs",
     "test:homonyms": "node tests/runtime-audit-homonyms.mjs",
     "test:fidelity-pb": "node tests/runtime-audit-fidelity-pitboss.mjs",
     "test:coverage": "node tests/runtime-audit-import-coverage.mjs",
+    "test:everyone-has-planning": "node tests/runtime-audit-everyone-has-planning.mjs",
     "playwright:install": "playwright install chromium",
     "playwright:check": "node -e \"const{chromium}=require('playwright');chromium.launch({headless:true}).then(b=>b.close()).then(()=>console.log('chromium OK')).catch(e=>{console.error('chromium KO:',e.message);process.exit(1)})\""
   },
