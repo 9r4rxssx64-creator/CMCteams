@@ -5391,7 +5391,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.746";
+var APP_VER="v9.747";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24075,6 +24075,32 @@ function vPlan(){
     +'<button class="btn ghost" onclick="FAMS_ORDER=[\'bj\',\'roulettes\',\'baccara\',\'cmc\',\'cadres\'];FAMS_ORDER.forEach(function(f){window._planFamOpen[f]=true;});dc()" style="font-size:12px;padding:4px 8px;margin-left:auto">\ud83d\udcc2 Tout ouvrir</button>'
     +'<button class="btn ghost" onclick="[\'bj\',\'roulettes\',\'baccara\',\'cmc\',\'cadres\'].forEach(function(f){window._planFamOpen[f]=false;});dc()" style="font-size:12px;padding:4px 8px">\ud83d\udcc1 Tout fermer</button>'
     +'</div>';
+  // v9.747 (Kevin 2026-05-26 "Pas de section malades, formation etc") :
+  // Section d\u00e9di\u00e9e AVANT les familles standards pour les \u00e9quipes sp\u00e9ciales
+  // (formation, maladie, conges, amenage). Agr\u00e8ge tous les emps quelle que soit
+  // leur family DEF_EMP. Affichage seulement si au moins 1 emp dans l'\u00e9quipe.
+  var _v747SpecialTeams=[
+    {id:"formation",label:"\ud83c\udf93 Formation",color:"#7a5aa8"},
+    {id:"maladie",label:"\ud83e\udd12 Maladie",color:"#8a4a4a"},
+    {id:"conges",label:"\ud83c\udfd6\ufe0f Cong\u00e9s",color:"#4a8a4a"},
+    {id:"amenage",label:"\ud83d\udd50 Horaires am\u00e9nag\u00e9s",color:"#8a8a9a"}
+  ];
+  var _v747KeyFam=A.year+"-"+A.month;
+  _v747SpecialTeams.forEach(function(sp){
+    if(_globalShown[sp.id])return;
+    var members=A.employees.filter(function(e){
+      if(!isEmpActive(e,A.year,A.month))return false;
+      var et=e.teamHistory&&e.teamHistory[_v747KeyFam];
+      return et===sp.id;
+    });
+    if(!members.length)return;
+    _globalShown[sp.id]=true;
+    h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
+      +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
+      +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
+      +'</div>';
+    h+=_renderTeamBlock(sp.id,members,tc(sp.id));
+  });
   FAMS_ORDER.forEach(function(fid){
     // v9.153 — respect filter chip si actif
     if(A._planFilter&&A._planFilter.family&&A._planFilter.family!==fid) return;
