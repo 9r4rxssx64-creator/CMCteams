@@ -1351,6 +1351,10 @@ var CODES={
   "HC"    :{l:"H.Comp.",      bg:"#d8e8a8",c:"#0c1804",b:"#b0c880",cdp:false},  // vert-jaune
   "PRT"   :{l:"Pr\u00eat",         bg:"#ffd060",c:"#1a1004",b:"#e0b040",cdp:false},  // jaune orange
   "PAT"   :{l:"Paternit\u00e9",   bg:"#b8e0f0",c:"#0c3a58",b:"#80b8d0",cdp:false},  // bleu tendre — congé paternité (v9.118)
+  // v9.751 (Kevin 2026-05-26 audit fid\u00e9lit\u00e9 : FOREST M 10j DEPL wip\u00e9s par boot
+  // cleanup ligne 9054 car DEPL absent du dict CODES) : ajout DEPL + DELPT
+  "DEPL"  :{l:"D\u00e9placement", bg:"#d8c0a0",c:"#2a1408",b:"#b09060",cdp:false},
+  "DELPT" :{l:"D\u00e9placement", bg:"#d8c0a0",c:"#2a1408",b:"#b09060",cdp:false},
   "15/19" :{l:"15h\u201319h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   "14/20" :{l:"14h\u201320h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   // ── PIT BOSS / SUPERVISEUR — codes spécifiques cadres (v9.121) ─────────
@@ -5391,7 +5395,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.750";
+var APP_VER="v9.751";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -38779,6 +38783,18 @@ function doImport(){
        parts[1]&&/ /.test(parts[1].trim())&&/^[A-Z\u2605\u2606\u2b50*]/.test(parts[1].trim())&&
        parts[2]&&/^\*?\d{1,2}$/.test(parts[2].trim())){
       nameIdx=1; codesStart=4; // sauter post, nom, du, au
+    }
+    // v9.751 (Kevin 2026-05-26 audit fid\u00e9lit\u00e9 : ANTOGNELLI D, DELMAS G, BARONE E,
+    // PORASSO C, TERRAGNO S, RIGOLI JL, SOLFERINO F et autres avec asterisque `*`
+    // SEUL entre nom et `1 31` \u2192 Format A rejetait car parts[2]="*" \u2260 digit) :
+    // FORMAT A-star : `POST<TAB>NAME<TAB>*<TAB>FROM<TAB>TO<TAB>codes...`
+    // Le `*` SBM marque l'emp comme chef d'\u00e9quipe ou CDP, doit \u00eatre consomm\u00e9.
+    else if((!p0raw||p0raw.trim().split(/\s+/).every(function(t){return _isRoleCode(t);}))&&
+            parts[1]&&/ /.test(parts[1].trim())&&/^[A-Z\u2605\u2606\u2b50*]/.test(parts[1].trim())&&
+            parts[2]&&parts[2].trim()==="*"&&
+            parts[3]&&/^\*?\d{1,2}$/.test(parts[3].trim())&&
+            parts[4]&&/^\d{1,2}$/.test(parts[4].trim())){
+      nameIdx=1; codesStart=5; // sauter post, nom, *, du, au
     }
     // v9.639 (Kevin diag juin 2026 V1 \u2014 12/16 cadres horaires corrompus) :
     // NOUVEAU FORMAT SBM juin 2026+ : `POST<TAB>TEAM<TAB>NAME<TAB>DU<TAB>AU<TAB>codes`
