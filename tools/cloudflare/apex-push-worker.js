@@ -1,5 +1,5 @@
 /**
-// Last trigger: 2026-05-26T11:10:43Z
+// Last trigger: 2026-05-26T11:48:25Z - retry after spending limit
  * Apex Push Worker - Cloudflare Worker
  * Backend qui envoie les notifications push Web Push (VAPID) aux subscribers Apex.
  *
