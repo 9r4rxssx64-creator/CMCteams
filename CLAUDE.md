@@ -709,15 +709,35 @@ Si réponse "je crois" → vérifier d'abord, push ensuite.
 `.github/workflows/sync-apex-secrets-to-cf-worker.yml` documente le mapping
 3-niveaux qui doit matcher (workflow env → wrangler secret put → worker env.X).
 
-### 7. Liste secrets Kevin connus (mémorisée pour futures sessions)
+### 7. Liste secrets Kevin connus (mémorisée pour futures sessions, MAJ 2026-05-26)
 
+**IA / API providers** :
 ANTHROPIC_API_KEY, **OPEN_AI_API_KEY** (underscore), GROQ_API_KEY,
 GEMINI_API_KEY, DEEPSEEK_API_KEY, **PERPLEXITI_API_KEY** (typo),
-TAVILY_API_KEY, PINECONE_API_KEY, TELEGRAM_API_KEY,
-VONAGE_API_KEY, VONAGE_API_SECRET, EMAILJS_PRIVATE_KEY,
-RAILWAY_TOKEN, API_OPEN_LEGO, JWT_SECRET, APEX_ADMIN_PIN_SHA256,
-CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, VAPID_PRIVATE_KEY,
+MISTRAL_API_KEY, COHERE_API_KEY, XAI_API_KEY, TOGETHER_API_KEY,
+TAVILY_API_KEY, PINECONE_API_KEY, FINNHUB_API_KEY, PEXELS_API_KEY,
+TELEGRAM_API_KEY, VONAGE_API_KEY, VONAGE_API_SECRET, EMAILJS_PRIVATE_KEY,
+API_OPEN_LEGO.
+
+**Infra deploy / CI** :
+CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, RAILWAY_TOKEN,
 AGENT_SECRET, AGENT_SECRET_VERCEL.
+
+**Apex auth** :
+APEX_ADMIN_PIN_SHA256, APEX_ADMIN_PIN_SHA, APEX_CHAT_ADMIN_TOKEN, JWT_SECRET.
+
+**Firebase Admin SDK** (ajoutés 2026-05-26 pour apex-auth-worker Phase 5) :
+FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL.
+
+**Push notifications iPhone** (ajoutés 2026-05-26 pour apex-push-worker) :
+VAPID_PRIVATE_KEY, PUSH_ADMIN_TOKEN (fige ADMIN_TOKEN entre runs),
+AX_PUSH_ADMIN_TOKEN (backup), AX_VAPID_PUBLIC (backup).
+
+**YouTube / social** :
+YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN.
+
+**Recommandation** : utiliser `grep -oE 'secrets\.[A-Z_]+' .github/workflows/*.yml | sort -u`
+pour avoir la liste exhaustive consommée par les workflows.
 
 S'applique : Apex (référence v13.4.229), CMCteams, e-KDMC, Télécommande,
 CrackPass, Apex Chat, tous projets futurs.
