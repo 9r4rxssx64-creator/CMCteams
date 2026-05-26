@@ -1,5 +1,19 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔑 SESSION 2026-05-26 14h45 — Nouveaux secrets GitHub ajoutés par Kevin
+
+Kevin a ajouté manuellement 3 secrets côté GitHub Settings/Secrets :
+
+| Secret | Quand | Usage |
+|--------|-------|-------|
+| `PUSH_ADMIN_TOKEN` | 14:45 | **Lu par `deploy-push-worker.yml`** comme valeur fixe de l'ADMIN_TOKEN (au lieu de regenerer un random à chaque run). Au prochain run du workflow, le token sera réutilisé tel quel — plus de surprise/regen. |
+| `AX_PUSH_ADMIN_TOKEN` | 14:45 | Backup / référence — pas consommé par un workflow (clé Apex Coffre, normalement stockée localement chez Kevin). |
+| `AX_VAPID_PUBLIC` | 14:46 | Idem — clé publique VAPID stockée comme backup côté GitHub. |
+
+**Implication** : au prochain run de `deploy-push-worker.yml`, le step "Resolve ADMIN_TOKEN" verra `secrets.PUSH_ADMIN_TOKEN` non vide → utilisera cette valeur (au lieu de fresh). Plus de regen ni perte de session.
+
+**Push direct git CLI fonctionne** (PR #398 mergée en autonomie) — donc la suspension du compte est levée pour git, mais peut-être encore partielle pour les Actions runners (le checkout retournait toujours "account suspended" il y a 4 min). À surveiller au prochain `Run workflow`.
+
 ## 🚨 NOTE 2026-05-26 14h30 — Compte GitHub suspendu temporairement (résolu auto)
 
 > **À garder en mémoire** : pendant la session, le compte `9r4rxssx64-creator`
