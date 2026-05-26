@@ -4,8 +4,13 @@ compatibility_date = "2026-04-30"
 compatibility_flags = ["nodejs_compat"]
 
 # KV namespace pour rate-limiting des tentatives de login (5/IP/15min)
-# Le workflow `.github/workflows/deploy-apex-auth-worker.yml` crée auto le namespace
-# au premier deploy et persiste l'ID ici via commit auto [skip ci].
+#
+# 🔄 IDEMPOTENT — Le workflow `.github/workflows/deploy-apex-auth-worker.yml`
+# résout dynamiquement le KV namespace à chaque run via `wrangler kv namespace list` :
+#   - Si AUTH_KV existe côté Cloudflare → ID réutilisé (sed runner-local)
+#   - Sinon → création + ID injecté
+# Le placeholder ci-dessous est INTENTIONNEL — ne pas le remplacer manuellement.
+# Voir : PR #382 (idempotence) + CLAUDE.md erreur #28 (Declaration ≠ Deployment).
 [[kv_namespaces]]
 binding = "AUTH_KV"
 id = "REPLACE_WITH_KV_ID_FROM_WRANGLER_OUTPUT"

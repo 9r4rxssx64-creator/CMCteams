@@ -35,8 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: '22' }
 
       - name: Secrets leak scan (gitleaks pattern)
@@ -95,8 +95,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: '22' }
 
       - name: Routes / features alignment (Apex v13)
@@ -141,8 +141,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm', cache-dependency-path: 'apex-ai/v13/package-lock.json' }
 
       - name: Install deps (Apex v13)
@@ -177,8 +177,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm', cache-dependency-path: 'apex-ai/v13/package-lock.json' }
 
       - name: Install deps + build (Apex v13)
@@ -212,8 +212,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm', cache-dependency-path: 'apex-ai/v13/package-lock.json' }
 
       - name: Install deps
