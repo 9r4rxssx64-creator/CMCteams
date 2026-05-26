@@ -14,7 +14,6 @@
  * Auto-cleared dès que Cloudflare API répond 200 OK.
  */
 
-import { safeSetHTML } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 
 const STATUS_PAGE = 'https://www.cloudflarestatus.com/';
@@ -70,7 +69,7 @@ function showBanner(): void {
     'cursor:pointer',
     'animation:ax-banner-slide-in 240ms ease-out',
   ].join(';');
-  safeSetHTML(_banner, `
+  _banner.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;line-height:1.4">
       <div style="font-size:20px">☁️</div>
       <div style="flex:1;min-width:0">
@@ -81,7 +80,7 @@ function showBanner(): void {
       </div>
       <button type="button" aria-label="Fermer" style="background:rgba(0,0,0,0.15);border:none;color:#000;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0">×</button>
     </div>
-  `);
+  `;
   document.body.appendChild(_banner);
   _banner.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;

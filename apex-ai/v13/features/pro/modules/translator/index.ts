@@ -21,7 +21,6 @@
  * Sources : DeepL, Google Translate, ISO 639-1
  */
 
-import { safeSetHTML } from '../../../../core/html-safe.js';
 import { createCleanupScope, type CleanupScope } from '../../../../core/listener-cleanup.js';
 import { logger } from '../../../../core/logger.js';
 import { store } from '../../../../core/store.js';
@@ -676,7 +675,7 @@ export function render(root: HTMLElement): void {
     .map((k) => `<option value="${k}"${prefTgt === k ? ' selected' : ''}>${AX_LANGS[k]}</option>`)
     .join('');
 
-  safeSetHTML(root, `
+  root.innerHTML = `
     <div class="ax-gs-34">
       <h2 style="background:linear-gradient(135deg,#5aa8ff,#3a85e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;margin-bottom:8px">🌐 Traducteur Pro</h2>
       <p class="ax-gs-421">${Object.keys(AX_LANGS).length} langues &middot; détection auto &middot; mode interprète &middot; ${Object.keys(GLOSSAIRES).length} glossaires métier &middot; cache 1000</p>
@@ -698,7 +697,7 @@ export function render(root: HTMLElement): void {
       </div>
       <p class="ax-gs-428">Sources : DeepL &middot; Google Translate &middot; ISO 639-1</p>
     </div>
-  `);
+  `;
 
   const tgtSel = root.querySelector<HTMLSelectElement>('#trTgt');
   const inEl = root.querySelector<HTMLTextAreaElement>('#trIn');

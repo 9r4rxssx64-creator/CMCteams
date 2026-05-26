@@ -18,7 +18,6 @@
  * Animations CSS : count-up, pulse, sparkline draw, heatmap fade-in.
  */
 
-import { safeSetHTML } from '../../core/html-safe.js';
 import { financialDashboard, type FinancialServiceLine } from '../../services/observability/financial-dashboard.js';
 
 const CATEGORY_LABELS: Record<FinancialServiceLine['category'], string> = {
@@ -186,7 +185,7 @@ export function render(root: HTMLElement): void {
 
   const projectionDelta = summary.projection_end_month_eur - summary.total_month_eur;
 
-  safeSetHTML(root, `
+  root.innerHTML = `
     <div class="ax-fin-dashboard">
       <header class="ax-fin-hero">
         <h1>💰 Bilan Apex Live</h1>
@@ -261,5 +260,5 @@ export function render(root: HTMLElement): void {
         <span class="ax-fin-updated">Mis à jour : ${new Date().toLocaleTimeString('fr-FR')}</span>
       </footer>
     </div>
-  `);
+  `;
 }

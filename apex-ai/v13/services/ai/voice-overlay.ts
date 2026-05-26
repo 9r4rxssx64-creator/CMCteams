@@ -15,7 +15,6 @@
  * Pattern style Claude Code voice mode iOS.
  */
 
-import { safeSetHTML } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 
 export interface VoiceOverlayOptions {
@@ -80,7 +79,7 @@ export function show(opts: VoiceOverlayOptions = {}): void {
     'cursor:pointer',
   ].join(';');
 
-  safeSetHTML(_overlayEl, `
+  _overlayEl.innerHTML = `
     <div style="
       width:100%;max-width:520px;
       display:flex;flex-direction:column;align-items:center;gap:24px;
@@ -121,7 +120,7 @@ export function show(opts: VoiceOverlayOptions = {}): void {
         ">↑ Envoyer</button>
       </div>
     </div>
-  `);
+  `;
 
   document.body.appendChild(_overlayEl);
   _transcriptEl = _overlayEl.querySelector<HTMLDivElement>('#apex-voice-overlay-transcript');
@@ -156,7 +155,7 @@ export function updateTranscript(transcript: string, isFinal: boolean = false): 
   _currentTranscript = transcript;
   if (!_transcriptEl) return;
   if (!transcript) {
-    safeSetHTML(_transcriptEl, '<span style="opacity:0.4">…</span>');
+    _transcriptEl.innerHTML = '<span style="opacity:0.4">…</span>';
   } else {
     _transcriptEl.textContent = transcript + (isFinal ? '' : '…');
   }

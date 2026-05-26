@@ -3,7 +3,6 @@
  * Stub Sprint 2 — sera enrichi avec live balance + tx history.
  */
 
-import { safeSetHTML } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { guardFeatureEnabled } from '../../services/auth/feature-guard.js';
@@ -12,7 +11,7 @@ export function render(rootEl: HTMLElement): void {
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
   const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
   if (!guardFeatureEnabled('module.crypto', rootEl, uid)) return;
-  safeSetHTML(rootEl, `
+  rootEl.innerHTML = `
     <div class="ax-page ax-gs-368">
       <h1 class="ax-gs-369">₿ Crypto</h1>
       <p class="ax-gs-226">Suivi adresses publiques BTC/ETH (lecture seule, jamais de seed phrase).</p>
@@ -37,6 +36,6 @@ export function render(rootEl: HTMLElement): void {
 
       <p class="ax-gs-212"><a href="#chat" class="ax-gs-198">← Retour chat</a></p>
     </div>
-  `);
+  `;
   logger.info('feature-crypto', 'rendered');
 }

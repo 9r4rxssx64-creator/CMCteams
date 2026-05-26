@@ -19,7 +19,6 @@
  * Activable via Réglages → bouton "🔍 Zoom Inspector".
  */
 
-import { safeSetHTML } from '../../core/html-safe.js';
 import { logger } from '../../core/logger.js';
 
 interface InspectorMetrics {
@@ -178,7 +177,7 @@ function show(): void {
   const updateFn = (): void => {
     if (!panelEl) return;
     const m = collect();
-    safeSetHTML(panelEl, renderPanel(m));
+    panelEl.innerHTML = renderPanel(m);
     /* Re-bind close button */
     const closeBtn = panelEl.querySelector('#apex-zoom-inspector-close');
     if (closeBtn) {
