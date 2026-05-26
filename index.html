@@ -5375,7 +5375,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.738";
+var APP_VER="v9.739";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37149,9 +37149,32 @@ function _parseEncadresStatuts(txt, key, year, month){
     }
     var block=txt.substring(section.headerEnd,blockEnd);
     nameRe.lastIndex=0;
-    var nm,sectionFilled=0;
-    var matched={};
+    // v9.739 (Kevin 2026-05-26 diag "ESPAGNOL P, MIANI N, BERNARDI J forcés AF") :
+    // Pour les sections AF/FORMATION (et autres statuts en sous-période courte),
+    // SCAN d'abord tous les candidats du block, PUIS PRIORISE ceux avec
+    // sous-période courte (toDay - fromDay < 15 jours).
+    // Cas réel : "3 FORMATION du au" + MATTERA M 4 8 + INZIRILLO R 4 8 + CAPIOMONT K 4 8
+    // sont les vrais 3. ESPAGNOL P 1 31, MIANI N 1 31, BERNARDI J 1 31 apparaissaient
+    // AVANT eux dans le block et étaient sélectionnés à tort (matching ordre regex).
+    // Maintenant : on collecte TOUS les matches, on trie courte-période d'abord,
+    // on prend les expectedCount premiers.
+    var rawMatches=[];
+    var nm;
     while((nm=nameRe.exec(block))!==null){
+      rawMatches.push({
+        surname:nm[1].trim(),init:nm[2].trim(),
+        fromDay:parseInt(nm[3])||1,
+        toDay:parseInt(nm[4])||days,
+        period:(parseInt(nm[4])||days)-(parseInt(nm[3])||1)
+      });
+    }
+    // v9.739 — Tri 2-pass : sous-période courte EN PREMIER. Ordre original sinon.
+    // Pour AF (FORMATION typique 4-8 ou plage courte), on évite les emps 1-31.
+    // Pour M/CP (typiquement mois entier), c'est neutre car tous les vrais ont 1-31.
+    rawMatches.sort(function(a,b){return a.period-b.period;});
+    var sectionFilled=0;
+    var matched={};
+    for(var rmi=0;rmi<rawMatches.length;rmi++){
       // v9.633 — HARD-STOP : ne pas matcher plus que expectedCount noms
       if(section.expectedCount>0 && sectionFilled>=section.expectedCount){
         console.info("[encadres v9.633] section="+section.code+" hard-stop atteint expectedCount="+section.expectedCount);
@@ -37163,10 +37186,10 @@ function _parseEncadresStatuts(txt, key, year, month){
         console.warn("[encadres v9.634] section="+section.code+" expectedCount=0 (header malformé), hard-stop défensif 10");
         break;
       }
-      var rawSurname=nm[1].trim();
-      var rawInit=nm[2].trim();
-      var fromDay=parseInt(nm[3])||1;
-      var toDay=parseInt(nm[4])||days;
+      var rawSurname=rawMatches[rmi].surname;
+      var rawInit=rawMatches[rmi].init;
+      var fromDay=rawMatches[rmi].fromDay;
+      var toDay=rawMatches[rmi].toDay;
       if(fromDay<1||fromDay>31||toDay<1||toDay>31||fromDay>toDay)continue;
       var fullName=_norm(rawSurname+" "+rawInit);
       if(matched[fullName])continue; // dédup intra-section
