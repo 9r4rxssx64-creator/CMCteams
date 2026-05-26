@@ -17,11 +17,11 @@
  * Admin only (auth.isAdminSync()). Skip silencieux pour non-admin (Laurence,
  * family, client_pro, client_free).
  */
-import { logger } from '../../core/logger.js';
 import { events } from '../../core/events.js';
+import { logger } from '../../core/logger.js';
+import { vision } from '../ai/vision.js';
 import { auth } from '../auth/auth.js';
 import { firebase } from '../storage/firebase.js';
-import { vision } from '../ai/vision.js';
 
 /** Préfixe Firebase pour requêtes de validation Vision déclenchées par CMCteams. */
 const REQUEST_PREFIX = 'cmc_apex_vision_request_';

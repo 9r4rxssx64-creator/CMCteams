@@ -15,7 +15,6 @@
 
 import { errors } from '../../core/errors.js';
 import { logger } from '../../core/logger.js';
-
 /* P0-3 PERF (audit v13.2.5) : apex-tools-dispatch (102KB raw / 27KB gzip) lazy-loadé
  * uniquement quand un tool_use est détecté dans la réponse Claude (loop boucle 530).
  * Évite preload boot pour 99% des requests qui n'utilisent pas tools. */

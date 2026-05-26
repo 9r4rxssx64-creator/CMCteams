@@ -7,7 +7,7 @@ binding = "SENTINELS_KV"
 id = "REPLACE_WITH_KV_ID"
 
 [vars]
-FIREBASE_DB_URL = "https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app"
+FIREBASE_DB_URL = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app"
 
 [triggers]
 crons = ["0 2 * * 1"]   # Lundi 02:00 UTC
