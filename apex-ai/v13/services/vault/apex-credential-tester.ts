@@ -220,11 +220,12 @@ const SERVICE_TESTS: Record<string, ServiceTestConfig> = {
   },
   railway: {
     storageKey: 'ax_railway_token',
-    /* Railway GraphQL me query */
+    /* Railway GraphQL projects query — compatible avec project-scoped ET
+       account-scoped tokens (vs { me } qui exige account scope uniquement) */
     testUrl: 'https://backboard.railway.com/graphql/v2',
     method: 'POST',
     authHeader: (t: string) => ({ Authorization: `Bearer ${t}`, 'content-type': 'application/json' }),
-    body: () => JSON.stringify({ query: '{ me { id email } }' }),
+    body: () => JSON.stringify({ query: '{ projects { edges { node { id name } } } }' }),
   },
 };
 
