@@ -66,47 +66,91 @@
   }
 
   /**
+   * URLs conventionnelles à tester si proxy-config.json n'existe pas (encore).
+   * Le subdomain Cloudflare de Kevin est `desarzens-kevin` (cf NOTES_USER).
+   * On essaie aussi des variantes courantes — si /healthz répond, on adopte.
+   */
+  const CONVENTIONAL_URLS = [
+    "https://cmc-parser-proxy.desarzens-kevin.workers.dev",
+    "https://cmc-parser-proxy.kdmc.workers.dev",
+  ];
+
+  /**
+   * Probe une URL : GET /healthz, retourne true si 200.
+   */
+  async function probeUrl(baseUrl, timeoutMs) {
+    timeoutMs = timeoutMs || 5000;
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), timeoutMs);
+      const r = await fetch(baseUrl.replace(/\/$/, "") + "/healthz",
+        { method: "GET", signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) return false;
+      const d = await r.json();
+      return !!(d && d.ok);
+    } catch (_) { return false; }
+  }
+
+  /**
    * Charge proxy-config.json (généré automatiquement par le workflow GitHub
    * Actions à chaque déploiement du worker). Kevin n'a RIEN à configurer.
+   *
+   * Fallback en cascade :
+   *  1) Fetch ./proxy-config.json (cas nominal)
+   *  2) Si absent → essaie les URLs conventionnelles (probe /healthz)
+   *  3) Si rien ne répond → retour erreur structurée claire
    *
    * Retour : { ok, config?, error? } structuré.
    */
   async function loadAutoConfig(opts) {
     opts = opts || {};
     const url = opts.url || "./proxy-config.json";
+    const triedUrls = [];
+
+    // Tentative 1 : proxy-config.json (préféré — URL exacte connue)
     try {
       const r = await fetch(url + "?_t=" + Date.now(), { cache: "no-store" });
-      if (!r.ok) {
-        return { ok: false, error: {
-          code: "auto_config_http_" + r.status,
-          message: "Impossible de charger proxy-config.json (HTTP " + r.status + ").",
-          detail: "URL: " + url + " — Le fichier sera créé automatiquement au prochain déploiement du worker via le workflow cmc-parser-proxy-deploy.yml.",
-          step: "loadAutoConfig:fetch",
-          http_status: r.status,
-          hint: "Vérifier que le workflow Actions s'est exécuté avec succès."
-        }};
+      if (r.ok) {
+        const data = await r.json();
+        if (data && data.worker_url) {
+          _autoLoaded = data;
+          return { ok: true, config: data, source: "proxy_config_json" };
+        }
+        triedUrls.push({ url, http: r.status, reason: "JSON sans champ worker_url" });
+      } else {
+        triedUrls.push({ url, http: r.status, reason: "HTTP " + r.status });
       }
-      const data = await r.json();
-      if (!data || !data.worker_url) {
-        return { ok: false, error: {
-          code: "auto_config_invalid",
-          message: "proxy-config.json est présent mais vide ou mal formé.",
-          detail: "Champ worker_url absent. Contenu reçu : " + JSON.stringify(data).slice(0, 300),
-          step: "loadAutoConfig:parse",
-          hint: "Re-déclencher le workflow cmc-parser-proxy-deploy.yml."
-        }};
-      }
-      _autoLoaded = data;
-      return { ok: true, config: data };
     } catch (e) {
-      return { ok: false, error: {
-        code: "auto_config_exception",
-        message: "Exception pendant le chargement de proxy-config.json.",
-        detail: (e && e.message) || String(e),
-        step: "loadAutoConfig:catch",
-        hint: "Vérifier la console réseau du navigateur."
-      }};
+      triedUrls.push({ url, reason: "Exception : " + ((e && e.message) || String(e)) });
     }
+
+    // Tentative 2 : URLs conventionnelles (fallback intelligent — Kevin n'a rien à faire)
+    for (const conv of CONVENTIONAL_URLS) {
+      const ok = await probeUrl(conv, 4000);
+      triedUrls.push({ url: conv + "/healthz", probe_ok: ok });
+      if (ok) {
+        const synthetic = {
+          worker_url: conv,
+          auth_mode: "trusted_origin",
+          source_method: "conventional_url_probe",
+          tried_urls: triedUrls.slice(),
+          note: "URL devinée via convention SBM Cloudflare. proxy-config.json absent ou non commité."
+        };
+        _autoLoaded = synthetic;
+        return { ok: true, config: synthetic, source: "conventional_probe" };
+      }
+    }
+
+    // Tentative 3 : tout a échoué — erreur claire structurée
+    return { ok: false, error: {
+      code: "auto_config_all_failed",
+      message: "Impossible de trouver l'URL du proxy automatiquement.",
+      detail: "Ni proxy-config.json ni les URLs conventionnelles ne répondent. URLs essayées : " + JSON.stringify(triedUrls).slice(0, 400),
+      step: "loadAutoConfig:all_attempts_failed",
+      tried: triedUrls,
+      hint: "(1) Vérifier que le workflow cmc-parser-proxy-deploy.yml a réussi. (2) Sinon, configurer l'URL manuellement dans le bloc « 0. Proxy Vision IA »."
+    }};
   }
 
   async function proxyHealthz() {
