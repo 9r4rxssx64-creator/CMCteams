@@ -478,6 +478,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.2.0-pdfjs-safe"
+    VERSION: "T1-v0.4.0-lazy-autoload"
   };
 }));

@@ -209,7 +209,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.4.0-claude-fallback-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.4.0-dual-badge-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -238,9 +238,16 @@
   (function () {
     var badge = document.getElementById("app-version-badge");
     if (badge) {
-      var ver = (PIPE && PIPE.VERSION) || (VP && VP.VERSION) || "?";
-      badge.textContent = ver;
-      badge.title = "Build : " + (window.__APP_BUILD__ || "?");
+      // Affiche LES DEUX versions (parser + vision) pour diagnostic clair en
+      // cas de cache iOS partiel (l'HTML peut être ancien mais les modules JS
+      // frais — chacun a son numéro indépendant).
+      var pipeV = (PIPE && PIPE.VERSION) || "?";
+      var visV = (VP && VP.VERSION) || "?";
+      // Format compact : extrait la partie v0.X.Y de chaque
+      var pipeShort = (pipeV.match(/v\d+\.\d+\.\d+/) || [pipeV])[0];
+      var visShort = (visV.match(/v\d+\.\d+\.\d+/) || [visV])[0];
+      badge.textContent = "pipe " + pipeShort + " · vision " + visShort;
+      badge.title = "Pipeline : " + pipeV + "\nVision : " + visV + "\nBuild HTML : " + (window.__APP_BUILD__ || "?");
     }
     var btn = document.getElementById("btn-hard-refresh");
     if (btn) {
