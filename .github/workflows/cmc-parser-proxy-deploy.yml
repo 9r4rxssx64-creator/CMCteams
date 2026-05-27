@@ -169,42 +169,48 @@ jobs:
 
       # Toujours afficher l'URL du worker dans le summary GitHub Actions (visible
       # par Kevin direct depuis la page du run, pas besoin de fouiller les logs).
-      # Et expliquer clairement le statut de la PR auto-sync (succès / échec sans
-      # bloquer).
+      # IMPORTANT : on écrit le markdown via un heredoc 'EOF' SINGLE-QUOTED pour
+      # désactiver l'interpolation bash (les backticks markdown ne doivent PAS être
+      # interprétés comme command substitution — bug du run précédent line 5).
       - name: Summary visible pour Kevin
         if: always() && steps.deploy.outputs.worker_url != ''
+        env:
+          WORKER_URL: ${{ steps.deploy.outputs.worker_url }}
+          PR_OK:      ${{ steps.cpr.outcome }}
+          PR_URL:     ${{ steps.cpr.outputs.pull-request-url }}
         run: |
-          URL="${{ steps.deploy.outputs.worker_url }}"
-          PR_OK="${{ steps.cpr.outcome }}"
-          PR_URL="${{ steps.cpr.outputs.pull-request-url }}"
-          {
-            echo "## ✅ Worker `cmc-parser-proxy` déployé"
-            echo ""
-            echo "**URL du worker** : <${URL}>"
-            echo ""
-            echo "**Healthz** : [${URL}/healthz](${URL}/healthz)"
-            echo ""
-            echo "**App de test** : <https://9r4rxssx64-creator.github.io/CMCteams/tools/planning-parser-tester/>"
-            echo ""
-            echo "L'app charge automatiquement cette URL au boot (URL conventionnelle"
-            echo "ou via proxy-config.json). Kevin n'a RIEN à coller manuellement."
-            echo ""
-            echo "### 📝 Sync proxy-config.json"
-            if [ "$PR_OK" = "success" ]; then
-              if [ -n "$PR_URL" ]; then
-                echo "✅ PR créée/mise à jour : $PR_URL"
-              else
-                echo "ℹ️ Aucun changement à committer (proxy-config.json déjà à jour)."
-              fi
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF_HEADER'
+          ## ✅ Worker `cmc-parser-proxy` déployé
+          EOF_HEADER
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**URL du worker** : <${WORKER_URL}>" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Healthz** : [${WORKER_URL}/healthz](${WORKER_URL}/healthz)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**App de test** : <https://9r4rxssx64-creator.github.io/CMCteams/tools/planning-parser-tester/>" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF_BODY'
+          L'app charge automatiquement cette URL au boot (URL conventionnelle
+          ou via proxy-config.json). Kevin n'a RIEN à coller manuellement.
+
+          ### 📝 Sync proxy-config.json
+          EOF_BODY
+          if [ "$PR_OK" = "success" ]; then
+            if [ -n "$PR_URL" ]; then
+              echo "✅ PR créée/mise à jour : $PR_URL" >> "$GITHUB_STEP_SUMMARY"
             else
-              echo "⚠️ Impossible de créer la PR auto (probable restriction repo Actions)."
-              echo ""
-              echo "**Pas grave** : le frontend utilise le fallback URL conventionnelle"
-              echo "(\`cmc-parser-proxy.desarzens-kevin.workers.dev\`)."
-              echo ""
-              echo "Pour activer la sync auto (optionnel) :"
-              echo "1. Soit créer un secret \`APEX_GITHUB_PAT\` (PAT scope: repo, workflow)"
-              echo "2. Soit activer Settings → Actions → General → Workflow permissions →"
-              echo "   « Allow GitHub Actions to create and approve pull requests »"
+              echo "ℹ️ Aucun changement à committer (proxy-config.json déjà à jour)." >> "$GITHUB_STEP_SUMMARY"
             fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          else
+            cat >> "$GITHUB_STEP_SUMMARY" <<'EOF_FALLBACK'
+          ⚠️ Impossible de créer la PR auto (restriction repo Actions par défaut).
+
+          **Pas grave** : le frontend utilise le fallback URL conventionnelle
+          `cmc-parser-proxy.9r4rxssx64.workers.dev`.
+
+          Pour activer la sync auto (optionnel — pas requis pour utiliser l'app) :
+          1. Soit créer un secret `APEX_GITHUB_PAT` (PAT scope `repo` + `workflow`)
+          2. Soit activer Settings → Actions → General → Workflow permissions →
+             « Allow GitHub Actions to create and approve pull requests »
+          EOF_FALLBACK
+          fi
