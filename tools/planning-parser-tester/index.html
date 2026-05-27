@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Anti-cache : force le navigateur à fetch les scripts à chaque visite.
+     Critique pour Safari iOS PWA qui peut servir un cache de 30+ jours. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>🧪 Planning Parser Tester (T1)</title>
 <style>
   :root {
@@ -75,7 +80,16 @@
 </head>
 <body>
 
-<h1>🧪 Planning Parser Tester (T1)</h1>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+  <h1 style="margin:0;">🧪 Planning Parser Tester (T1)</h1>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <code id="app-version-badge" style="font-size:10px;color:var(--text-dim);background:rgba(255,255,255,.05);padding:3px 6px;border-radius:4px;">v?</code>
+    <button id="btn-hard-refresh" type="button" title="Vide le cache et recharge la dernière version"
+      style="background:transparent;border:1px solid var(--border);color:var(--gold);padding:4px 10px;border-radius:999px;cursor:pointer;font-size:11px;min-height:28px;">
+      🔄 Forcer MAJ
+    </button>
+  </div>
+</div>
 <div class="sub">
   Sandbox isolé pour valider le pipeline d'import des plannings SBM <strong>avant</strong> intégration dans CMCteams.<br>
   Fichier : <code>tools/planning-parser-tester/index.html</code> · ne modifie ni <code>index.html</code> racine ni <code>A.overrides</code>.
@@ -166,10 +180,23 @@
      évite la race condition « lib pas encore prête quand on appelle getDocument ».
 ============================================================================= -->
 
-<script src="./helpers-reuse.js"></script>
-<script src="./lib/vision-passes.js"></script>
-<script src="./lib/cell-voting.js"></script>
-<script src="./parser-multi-ocr.js"></script>
+<!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
+     touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
+<script>window.__APP_BUILD__ = "v0.2.0-pdfjs-safe-" + Date.now();</script>
+<script>
+  (function injectScripts() {
+    var v = window.__APP_BUILD__;
+    var srcs = [
+      "./helpers-reuse.js",
+      "./lib/vision-passes.js",
+      "./lib/cell-voting.js",
+      "./parser-multi-ocr.js"
+    ];
+    for (var i = 0; i < srcs.length; i++) {
+      document.write('<script src="' + srcs[i] + '?_=' + encodeURIComponent(v) + '"><\/script>');
+    }
+  })();
+</script>
 
 <!-- ============ Bootstrap UI ============ -->
 <script>
@@ -179,6 +206,33 @@
   const H = window.PlanningParserHelpers;
   const PIPE = window.PlanningParserPipeline;
   const VP = window.VisionPasses;
+
+  // Affiche la version réelle des modules chargés + bouton hard-refresh
+  (function () {
+    var badge = document.getElementById("app-version-badge");
+    if (badge) {
+      var ver = (PIPE && PIPE.VERSION) || (VP && VP.VERSION) || "?";
+      badge.textContent = ver;
+      badge.title = "Build : " + (window.__APP_BUILD__ || "?");
+    }
+    var btn = document.getElementById("btn-hard-refresh");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        // Vide caches Service Worker + Cache Storage + recharge sans cache
+        Promise.all([
+          (typeof caches !== "undefined" && caches.keys) ? caches.keys().then(function (ks) {
+            return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+          }) : Promise.resolve(),
+          (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) ?
+            navigator.serviceWorker.getRegistrations().then(function (rs) {
+              return Promise.all(rs.map(function (r) { return r.unregister(); }));
+            }) : Promise.resolve()
+        ]).finally(function () {
+          window.location.replace(window.location.pathname + "?_v=" + Date.now());
+        });
+      });
+    }
+  })();
 
   /* ===== Proxy config UI ===== */
   const proxyUrl = document.getElementById("proxy-url");
