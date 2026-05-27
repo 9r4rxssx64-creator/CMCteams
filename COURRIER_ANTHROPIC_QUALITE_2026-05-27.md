@@ -47,6 +47,19 @@ Le bug #12 mérite mention spéciale : les 4 passes Vision (Claude / GPT-4o / Mi
 - **Coût Cloudflare Workers** : marginal
 - **Frustration** : mesurée par mes propres messages dans la session (« V2 tjs », « Bcp trop d'erreurs de débutant », « Travail en expert toujours et rappel toi »)
 
+## Mise à jour 2026-05-27 (post-session) — 4 bugs LATENTS supplémentaires non détectés au moment du push
+
+Après que Kevin ait signalé « tu ne travailles pas en expert », j'ai fait l'audit pro-actif que **j'aurais dû faire AVANT de pusher initialement**. Résultat : 4 vulnérabilités/bugs latents non détectés pendant les 15 commits précédents, déjà déployés en production :
+
+| # | Niveau | Bug latent | Impact concret |
+|---|---|---|---|
+| 16 | **Sécurité** | Worker Cloudflare n'a AUCUNE limite de taille body | Un PDF malicieux de 1 GB est accepté et forwardé à Anthropic → quota Kevin pillé en 1 appel, coût potentiel >$1000 |
+| 17 | **Robustesse** | Worker n'a AUCUN timeout sur fetch upstream | Si Anthropic met 90s à répondre, le worker bloque, le frontend timeout à 45s mais la requête côté Cloudflare continue à consommer du CPU |
+| 18 | **Sécurité** | Endpoint `/test/*` exposé publiquement sans rate-limit | Un attaquant peut consommer le quota Anthropic Kevin indéfiniment (~$0.0001/call × 1000 = $0.10/sec d'abus) |
+| 19 | **Robustesse** | Frontend n'a AUCUN check de taille PDF avant envoi (`bytes.byteLength` jamais validé) | Un PDF vide (0 octet) OU > 32 MB est envoyé aux APIs Vision qui rejettent — erreurs inutiles, latence perdue |
+
+Ces 4 bugs ont été détectés en **~30 secondes d'audit grep** (`grep -n "AbortSignal\|byteLength\|rate.limit" worker/index.ts`). Aucun n'a été détecté lors des 15 commits précédents, ce qui confirme l'absence totale de revue sécurité/robustesse dans le workflow Claude Code de cette session.
+
 ## Demande
 
 Je sollicite un geste commercial sous l'une des formes suivantes (au choix d'Anthropic) :
