@@ -310,18 +310,26 @@ export default {
       );
     }
 
-    // Auth pour le reste
-    const auth = checkAuth(req, env);
-    if (!auth.ok) {
-      return jsonErr(
-        401,
-        "auth_missing",
-        "Authentification requise pour accéder à ce proxy.",
-        auth.reason || "Header X-Auth-Token absent ou invalide.",
-        "router:auth_check",
-        origin,
-        { hint: "Renseigner le champ PUSH_ADMIN_TOKEN dans l'app (bloc « 0. Proxy Vision IA »)." }
-      );
+    // Exemptions auth :
+    //   /healthz  → déjà géré plus haut (pas d'auth)
+    //   /test/*   → diagnostic public Kevin (mini-call 8 tokens, coût ~$0.0001/call,
+    //               négligeable même si abusé). Permet à Kevin de hit l'URL
+    //               directement depuis Safari iOS pour valider sa clé sans
+    //               passer par l'app (qui peut être en cache).
+    const isPublicTest = url.pathname.startsWith("/test/") && req.method === "GET";
+    if (!isPublicTest) {
+      const auth = checkAuth(req, env);
+      if (!auth.ok) {
+        return jsonErr(
+          401,
+          "auth_missing",
+          "Authentification requise pour accéder à ce proxy.",
+          auth.reason || "Header X-Auth-Token absent ou invalide.",
+          "router:auth_check",
+          origin,
+          { hint: "Renseigner le champ PUSH_ADMIN_TOKEN dans l'app (bloc « 0. Proxy Vision IA »)." }
+        );
+      }
     }
 
     // Liste des providers configurés (auth requise — donne plus d'info que /healthz)
