@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>♻ Reset nucléaire — Planning Parser Tester</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0b1409; color: #f1efe6; padding: 24px; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+  h1 { color: #e8b830; font-size: 22px; margin-bottom: 8px; }
+  .sub { color: #a9a89c; font-size: 13px; margin-bottom: 20px; }
+  pre { background: rgba(0,0,0,.4); padding: 12px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+  .ok { color: #6fbf73; }
+  .err { color: #ea5455; }
+  .warn { color: #f7b955; }
+  button { background: #e8b830; color: #1a1407; border: none; padding: 14px 22px; border-radius: 999px; font-weight: 600; font-size: 16px; margin-top: 16px; cursor: pointer; min-height: 50px; }
+  a { color: #e8b830; }
+</style>
+</head>
+<body>
+<h1>♻ Reset nucléaire</h1>
+<div class="sub">Désinstalle TOUS les Service Workers du scope app + vide TOUS les caches + redirige vers l'app avec cache-bust frais.</div>
+<pre id="log">⏳ Reset en cours…</pre>
+<button id="goapp" style="display:none;" type="button">▶ Aller à l'app rechargée</button>
+
+<script>
+(async function () {
+  const log = document.getElementById("log");
+  const lines = [];
+  function add(s, cls) { lines.push((cls ? "<span class='" + cls + "'>" : "") + s + (cls ? "</span>" : "")); log.innerHTML = lines.join("\n"); }
+
+  add("📍 Origin : " + location.origin);
+
+  // 1. Unregister TOUS les Service Workers
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      add("🔍 " + regs.length + " Service Worker(s) trouvé(s)");
+      for (const r of regs) {
+        const ok = await r.unregister();
+        add((ok ? "✅" : "❌") + " unregister: " + (r.scope || "scope?"), ok ? "ok" : "err");
+      }
+    } catch (e) {
+      add("❌ Erreur SW: " + e.message, "err");
+    }
+  } else {
+    add("⚠ Service Worker API indisponible", "warn");
+  }
+
+  // 2. Clear caches
+  if (typeof caches !== "undefined" && caches.keys) {
+    try {
+      const ks = await caches.keys();
+      add("🔍 " + ks.length + " cache(s) trouvé(s)");
+      for (const k of ks) {
+        const ok = await caches.delete(k);
+        add((ok ? "✅" : "❌") + " caches.delete(" + k + ")", ok ? "ok" : "err");
+      }
+    } catch (e) {
+      add("❌ Erreur caches: " + e.message, "err");
+    }
+  }
+
+  // 3. Clear localStorage + sessionStorage spécifiques à l'app
+  try {
+    const keysToRm = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("cmc_parser_") || k.startsWith("_pp_") || k.startsWith("ppt_"))) keysToRm.push(k);
+    }
+    for (const k of keysToRm) localStorage.removeItem(k);
+    add("🗑 localStorage : " + keysToRm.length + " clés purgées (" + keysToRm.join(", ") + ")");
+    sessionStorage.clear();
+    add("🗑 sessionStorage : vidée intégralement");
+  } catch (e) {
+    add("❌ Erreur storage: " + e.message, "err");
+  }
+
+  // 4. Probe version réellement servie par GH Pages
+  try {
+    const r = await fetch("./lib/vision-passes.js?_t=" + Date.now(), { cache: "no-store" });
+    const txt = await r.text();
+    const m = txt.match(/VERSION:\s*"([^"]+)"/);
+    if (m) {
+      const v = m[1];
+      const isLatest = v.indexOf("v0.4.") === 0;
+      add(isLatest ? "✅ GH Pages sert " + v + " (dernière)" : "⚠ GH Pages sert " + v + " (PAS la dernière v0.4.0 — attendre 2-5 min)", isLatest ? "ok" : "warn");
+    } else {
+      add("⚠ Impossible de détecter la version dans vision-passes.js", "warn");
+    }
+  } catch (e) {
+    add("❌ Erreur fetch version: " + e.message, "err");
+  }
+
+  add("");
+  add("🚀 Reset terminé. Clique ci-dessous pour ouvrir l'app rechargée.", "ok");
+  const btn = document.getElementById("goapp");
+  btn.style.display = "inline-block";
+  btn.addEventListener("click", function () {
+    location.replace("./?_reset=" + Date.now());
+  });
+})();
+</script>
+</body>
+</html>
