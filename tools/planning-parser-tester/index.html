@@ -203,11 +203,35 @@
   function refreshProxyStatus(extra) {
     const cfg = VP && VP.getProxyConfig();
     if (cfg) {
-      proxyStatus.innerHTML = `🟢 Proxy configuré : <code>${H.esc(cfg.url)}</code>${extra ? " · " + extra : ""}`;
+      const srcLabel = cfg.source === "auto_config" ? "🤖 auto-configuré"
+        : cfg.source === "session_token" ? "🔑 token manuel"
+        : "🔧 URL manuelle";
+      proxyStatus.innerHTML = `🟢 Proxy actif (${srcLabel}) : <code>${H.esc(cfg.url)}</code>${extra ? " · " + extra : ""}`;
       proxyUrl.value = cfg.url;
-      proxyToken.value = "•".repeat(Math.min(16, cfg.token.length));
+      if (cfg.token) proxyToken.value = "•".repeat(Math.min(16, cfg.token.length));
     } else {
       proxyStatus.innerHTML = `⚪ Aucun proxy — passes Vision désactivées (passe A PDF.js seule)${extra ? " · " + extra : ""}`;
+    }
+  }
+
+  // Auto-chargement de proxy-config.json (zéro saisie Kevin)
+  async function autoLoadProxy() {
+    if (!VP) return;
+    proxyStatus.innerHTML = "⏳ Chargement automatique de la config proxy…";
+    const res = await VP.loadAutoConfig();
+    if (res.ok) {
+      // Vérifie immédiatement /healthz pour valider que le worker répond
+      const h = await VP.proxyHealthz();
+      if (h.ok) {
+        const provs = (h.data && h.data.providers_available || []).join(", ");
+        refreshProxyStatus(`/healthz ✓ providers: ${provs || "aucun"}`);
+      } else {
+        const e = h.error || {};
+        proxyStatus.innerHTML = `🟡 Config chargée mais /healthz a échoué — <strong>${H.esc(e.message || "")}</strong><br><span class="small">${H.esc(e.detail || "")}${e.hint ? "<br>💡 " + H.esc(e.hint) : ""}</span>`;
+      }
+    } else {
+      const e = res.error || {};
+      proxyStatus.innerHTML = `⚠ Auto-config indisponible — <strong>${H.esc(e.message || "")}</strong><br><span class="small">${H.esc(e.detail || "")}${e.hint ? "<br>💡 " + H.esc(e.hint) : ""}</span><br><span class="small">Tu peux configurer URL + token manuellement ci-dessous (fallback).</span>`;
     }
   }
   if (VP) {
@@ -244,7 +268,8 @@
       proxyUrl.value = ""; proxyToken.value = "";
       refreshProxyStatus("effacé");
     });
-    refreshProxyStatus();
+    // 🤖 Auto-chargement au boot (Kevin n'a rien à faire)
+    autoLoadProxy();
   } else {
     proxyStatus.textContent = "❌ Module VisionPasses non chargé.";
   }
