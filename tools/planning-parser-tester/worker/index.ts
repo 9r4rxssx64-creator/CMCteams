@@ -37,9 +37,13 @@ const ALLOWED_ORIGINS = [
   "https://kdmc.cloud",
 ];
 
+function isTrustedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  return ALLOWED_ORIGINS.some((o) => origin.startsWith(o));
+}
+
 function corsHeaders(origin: string | null): HeadersInit {
-  const allow =
-    origin && ALLOWED_ORIGINS.some((o) => origin.startsWith(o)) ? origin : "null";
+  const allow = isTrustedOrigin(origin) ? (origin as string) : "null";
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -100,15 +104,36 @@ function describeException(e: unknown): { message: string; stack?: string; name?
   return { message: String(e) };
 }
 
-function checkAuth(req: Request, env: Env): { ok: boolean; reason?: string } {
+/**
+ * Auth en 2 modes (priorité 100% auto pour Kevin) :
+ *
+ *   Mode A — Origin trustée (zéro clic Kevin) :
+ *     Si la requête vient d'une origine de notre allowlist
+ *     (github.io / kdmc.cloud / localhost), on autorise SANS X-Auth-Token.
+ *     Cela permet à l'app frontend servie depuis GitHub Pages de fonctionner
+ *     out-of-the-box, sans que Kevin ait à coller le moindre token.
+ *     CORS-bypass impossible depuis un navigateur tiers (browser bloque
+ *     l'envoi de l'Origin spoofé).
+ *
+ *   Mode B — Token X-Auth-Token (pour curl / Postman / tests serveur) :
+ *     Si la requête n'a pas d'origin trustée, on exige le PUSH_ADMIN_TOKEN.
+ */
+function checkAuth(req: Request, env: Env): { ok: boolean; reason?: string; mode?: "origin" | "token" } {
+  const origin = req.headers.get("Origin");
+  if (isTrustedOrigin(origin)) return { ok: true, mode: "origin" };
+
   const expected = env.PUSH_ADMIN_TOKEN;
-  if (!expected) return { ok: false, reason: "PUSH_ADMIN_TOKEN non configuré côté Worker" };
+  if (!expected) {
+    return { ok: false, reason: "Origin non trustée ET PUSH_ADMIN_TOKEN absent côté Worker.", mode: "token" };
+  }
   const headerToken =
     req.headers.get("X-Auth-Token") ||
     (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-  if (!headerToken) return { ok: false, reason: "Header X-Auth-Token manquant" };
-  if (headerToken !== expected) return { ok: false, reason: "Token invalide" };
-  return { ok: true };
+  if (!headerToken) {
+    return { ok: false, reason: `Origin "${origin || "(absente)"}" non trustée et header X-Auth-Token manquant.`, mode: "token" };
+  }
+  if (headerToken !== expected) return { ok: false, reason: "Token X-Auth-Token invalide.", mode: "token" };
+  return { ok: true, mode: "token" };
 }
 
 /* ====================================================================

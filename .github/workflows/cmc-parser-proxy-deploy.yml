@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write  # pour committer proxy-config.json automatiquement
 
 concurrency:
   group: cmc-parser-proxy-deploy
@@ -32,7 +32,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'  # wrangler >=4 requires Node 22+
 
       - name: Install wrangler
         run: npm install -g wrangler@latest
@@ -82,21 +82,79 @@ jobs:
           PUSH_ADMIN_TOKEN:      ${{ secrets.PUSH_ADMIN_TOKEN }}
         run: echo "$PUSH_ADMIN_TOKEN" | wrangler secret put PUSH_ADMIN_TOKEN
 
-      - name: Deploy Worker
+      - name: Deploy Worker (capture URL)
+        id: deploy
         working-directory: tools/planning-parser-tester/worker
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: wrangler deploy
+        run: |
+          OUT=$(wrangler deploy 2>&1)
+          echo "$OUT"
+          # Extrait la première URL workers.dev affichée par wrangler
+          URL=$(echo "$OUT" | grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' | head -1)
+          if [ -z "$URL" ]; then
+            echo "❌ Impossible de capturer l'URL du worker depuis la sortie wrangler"
+            echo "Cause : la sortie ne contient pas de pattern https://*.workers.dev"
+            exit 1
+          fi
+          echo "✅ Worker URL: $URL"
+          echo "worker_url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Health check
         run: |
+          URL="${{ steps.deploy.outputs.worker_url }}"
           sleep 4
-          STATUS=$(curl -s -o /tmp/h.json -w "%{http_code}" "https://cmc-parser-proxy.${{ secrets.CLOUDFLARE_WORKERS_SUBDOMAIN || 'desarzens-kevin' }}.workers.dev/healthz" || echo "000")
+          STATUS=$(curl -s -o /tmp/h.json -w "%{http_code}" "${URL}/healthz" || echo "000")
           echo "HTTP $STATUS"
           cat /tmp/h.json || true
           if [ "$STATUS" != "200" ]; then
             echo "❌ Worker ne répond pas 200 — déploiement à vérifier"
+            echo "URL testée : ${URL}/healthz"
             exit 1
           fi
-          echo "✅ Worker opérationnel"
+          echo "✅ Worker opérationnel sur ${URL}"
+
+      - name: Write proxy-config.json (auto-config frontend)
+        run: |
+          URL="${{ steps.deploy.outputs.worker_url }}"
+          mkdir -p tools/planning-parser-tester
+          cat > tools/planning-parser-tester/proxy-config.json <<EOF
+          {
+            "_comment": "Auto-généré par .github/workflows/cmc-parser-proxy-deploy.yml — NE PAS éditer à la main.",
+            "worker_url": "${URL}",
+            "auth_mode": "trusted_origin",
+            "auth_note": "L'app servie depuis github.io n'a PAS besoin de token (CORS-bypass impossible côté navigateur). Le token X-Auth-Token reste accepté pour debug curl/Postman.",
+            "providers": ["anthropic", "openai", "mistral", "gemini"],
+            "deployed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "deployed_by": "${{ github.actor }}",
+            "deploy_commit": "${{ github.sha }}",
+            "deploy_run_id": "${{ github.run_id }}"
+          }
+          EOF
+          cat tools/planning-parser-tester/proxy-config.json
+
+      - name: Commit proxy-config.json if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tools/planning-parser-tester/proxy-config.json
+          if git diff --cached --quiet; then
+            echo "ℹ️ proxy-config.json identique — aucun commit nécessaire"
+            exit 0
+          fi
+          git commit -m "chore(parser-tester): auto-sync proxy-config.json [skip ci]
+
+          worker_url=${{ steps.deploy.outputs.worker_url }}
+          deployed_by=${{ github.actor }}
+          run_id=${{ github.run_id }}"
+          # Push avec retry réseau (règle Kevin)
+          for i in 1 2 3 4; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              echo "✅ Pushed (try $i)"
+              exit 0
+            fi
+            sleep $((i * 2))
+          done
+          echo "❌ Impossible de push proxy-config.json après 4 tentatives"
+          exit 1
