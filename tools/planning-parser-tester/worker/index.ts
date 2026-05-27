@@ -238,7 +238,10 @@ async function forwardProvider(
       upstreamHeaders["authorization"] = `Bearer ${apiKey}`;
       break;
     case "mistral":
-      upstreamUrl = "https://api.mistral.ai/v1/ocr";
+      // Switch d'endpoint : l'OCR pur (/v1/ocr) retourne markdown brut, pas
+      // utilisable pour le vote unanime cellule par cellule. Pixtral-large
+      // accepte images + retourne JSON structuré comme demandé par le prompt.
+      upstreamUrl = "https://api.mistral.ai/v1/chat/completions";
       upstreamHeaders["authorization"] = `Bearer ${apiKey}`;
       break;
     case "gemini": {

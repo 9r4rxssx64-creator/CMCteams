@@ -113,12 +113,15 @@ for (const passName of passNames) {
   check(`  ${passName} appelle cloneBytes() au début`, hasClone);
 }
 
-// ───── 5. Format Mistral OCR (bug #10) ─────
-console.log(`\n${INFO} Test 5/12 — Mistral OCR utilise document_url (bug #10)`);
+// ───── 5. Mistral utilise Pixtral chat completions (refactor v0.5.0) ─────
+console.log(`\n${INFO} Test 5/12 — Mistral utilise Pixtral chat completions (refactor v0.5.0)`);
 const mistralFn = vision.match(/async function runMistralOCR[\s\S]*?(?=\n\s{2}async function|\n\s{2}function|\n  \/\*)/);
 const mistralCode = mistralFn ? stripComments(mistralFn[0]) : "";
-check("  runMistralOCR (code actif) ne contient PAS document_base64", mistralFn && !/document_base64/.test(mistralCode));
-check("  runMistralOCR utilise document_url avec data: URL", mistralFn && /type:\s*"document_url"/.test(mistralCode) && /document_url:\s*dataUrl|data:application\/pdf;base64/.test(mistralCode));
+// Anciens formats interdits : document_base64 (HTTP 422), document_url (OCR pur retourne markdown brut non parsable)
+check("  runMistralOCR ne contient PAS document_base64 (HTTP 422)", mistralFn && !/document_base64/.test(mistralCode));
+// Nouveau format attendu : chat completions avec image_url + pixtral-large
+check("  runMistralOCR utilise format image_url chat completions", mistralFn && /type:\s*"image_url"/.test(mistralCode) && /image_url:\s*"data:/.test(mistralCode));
+check("  runMistralOCR utilise modèle pixtral-large-latest", mistralFn && /pixtral-large-latest|opts\.model\s*\|\|\s*"pixtral/.test(mistralCode));
 
 // ───── 6. Modèle Claude alias stable (bug #9) ─────
 console.log(`\n${INFO} Test 6/12 — Modèle Claude alias stable (bug #9)`);

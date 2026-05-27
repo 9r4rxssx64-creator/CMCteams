@@ -371,6 +371,11 @@ INTERDICTION ABSOLUE :
         max_tokens: 8192,
         messages: [{ role: "user", content: contentBlocks }]
       };
+      // max_tokens : 11625 cellules × ~5 tokens + structure JSON ≈ 60k tokens.
+      // claude-sonnet-4-6 supporte jusqu'à 64k output. On alloue 32k pour avoir
+      // marge sans coûter trop (l'API ne facture que les tokens réellement émis).
+      body.max_tokens = 32768;
+
       // Boucle fallback modèles : si 404 (model not found) ou 403 sur ce
       // snapshot précis, on essaie le candidat suivant. 401 = clé invalide
       // → on s'arrête immédiatement (pas la peine d'essayer d'autres modèles).
@@ -608,7 +613,11 @@ INTERDICTION ABSOLUE :
 
       const body = {
         model: opts.model || "gpt-4o",
-        max_tokens: 8192,
+        // 11625 cellules × ~5 tokens + JSON ≈ 60k. GPT-4o max 16384 output.
+        // On utilise le max pour avoir le plus de chances de cap toutes les
+        // cellules. Si insuffisant, le résultat sera tronqué — détecté par le
+        // parser JSON qui retournera une erreur claire.
+        max_tokens: 16384,
         messages: [{
           role: "user",
           content: [{ type: "text", text: STRUCTURED_PROMPT }, ...imageMessages]
@@ -648,64 +657,50 @@ INTERDICTION ABSOLUE :
       return out;
     }
     try {
-      const myBytes = cloneBytes(captureBytes);  // anti-detach
       const isPdf = mime === "application/pdf";
-      // ⚠️ API Mistral OCR (mai 2026) attend `document_url` avec data: URL
-      // pour les fichiers locaux. Format `document_base64` retourne HTTP 422
-      // literal_error DocumentURLChunk (bug observé runtime).
-      const dataUrl = "data:" + (isPdf ? "application/pdf" : (mime || "image/png")) + ";base64," + bytesToBase64(myBytes);
-      const documentObj = isPdf
-        ? { type: "document_url", document_url: dataUrl }
-        : { type: "image_url", image_url: dataUrl };
+      // Refactor 2026-05-27 : Pixtral-large via /v1/chat/completions au lieu
+      // de l'endpoint OCR pur (qui retournait markdown brut non parsable pour
+      // le vote unanime). Format identique à GPT-4o (rasterise PDF en images).
+      const imageMessages = [];
+      if (isPdf) {
+        try {
+          if (window.PlanningParserPipeline && typeof window.PlanningParserPipeline.ensurePdfJsReady === "function") {
+            await window.PlanningParserPipeline.ensurePdfJsReady();
+          }
+          const bytesClone = cloneBytes(captureBytes);
+          const pdf = await window.pdfjsLib.getDocument({ data: bytesClone }).promise;
+          const maxPages = Math.min(pdf.numPages, opts.maxPages || 8);
+          for (let i = 1; i <= maxPages; i++) {
+            const b64 = await pdfPageToPngBase64FromDoc(pdf, i, opts.scale || 2.0);
+            imageMessages.push({ type: "image_url", image_url: "data:image/png;base64," + b64 });
+          }
+        } catch (e) {
+          const ex = describeException(e);
+          out.error = makeErr("pdf_rasterize_failed",
+            "Échec rasterisation PDF pour Pixtral-large.",
+            ex.message, "mistral:rasterize",
+            { exception_name: ex.name, where: ex.stack });
+          return out;
+        }
+      } else {
+        const myBytes = cloneBytes(captureBytes);
+        imageMessages.push({
+          type: "image_url",
+          image_url: "data:" + (mime || "image/png") + ";base64," + bytesToBase64(myBytes)
+        });
+      }
 
       const body = {
-        model: opts.model || "mistral-ocr-latest",
-        document: documentObj,
-        include_image_base64: false
+        model: opts.model || "pixtral-large-latest",
+        max_tokens: 16384,
+        messages: [{
+          role: "user",
+          content: [{ type: "text", text: STRUCTURED_PROMPT }, ...imageMessages]
+        }],
+        response_format: { type: "json_object" }
       };
-      // Mistral OCR retourne `pages[]` avec `markdown` — on cherche un JSON {employees:[…]}
-      // si présent ; sinon, on considère le résultat comme une sortie OCR brute (employees=[],
-      // ok=true) et on garde un aperçu du markdown pour debug humain.
-      let r, rawText = "", data = null;
-      try {
-        r = await fetch(cfg.url + "/v1/mistral", {
-          method: "POST",
-          headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
-          body: JSON.stringify(body)
-        });
-      } catch (e) {
-        const ex = describeException(e);
-        out.error = makeErr("network_error",
-          "Impossible de joindre le proxy Cloudflare pour Mistral OCR.",
-          ex.message,
-          "mistral:fetch",
-          { exception_name: ex.name, where: ex.stack, hint: "Vérifier la connexion réseau et l'URL du proxy." });
-        return out;
-      }
-      try { rawText = await r.text(); data = rawText ? JSON.parse(rawText) : null; }
-      catch (_) { data = { _non_json_body: rawText.slice(0, 400) }; }
-      out.raw = data;
-      if (!r.ok) {
-        out.error = makeErr(
-          (data && data.code) || ("http_" + r.status),
-          (data && data.message) || ("Erreur HTTP " + r.status + " côté proxy/Mistral OCR."),
-          (data && data.detail) || rawText.slice(0, 400),
-          (data && data.step) || "mistral:proxy_response",
-          { http_status: r.status, upstream: data, hint: data && data.hint }
-        );
-        return out;
-      }
-      const md = ((data && data.pages) || []).map(p => p.markdown || "").join("\n");
-      const parsed = tryParseJson(md);
-      if (parsed && Array.isArray(parsed.employees)) {
-        out.employees = parsed.employees;
-        out.ok = true;
-      } else {
-        // Sortie OCR brute sans JSON : succès partiel, on garde pour debug.
-        out.employees = [];
-        out.ok = true;
-        out.raw = Object.assign({}, data, { _markdown_preview: md.slice(0, 1000) });
-      }
+      await callProxyAndExtract(out, cfg, "mistral", "Pixtral-large", "/v1/mistral", body,
+        (data) => data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || "");
     } catch (e) {
       const ex = describeException(e);
       out.error = makeErr("uncaught_exception",
@@ -740,6 +735,9 @@ INTERDICTION ABSOLUE :
     try {
       const myBytes = cloneBytes(captureBytes);  // anti-detach
       const useMime = mime === "application/pdf" ? "application/pdf" : (mime || "image/png");
+      // 2026-05-27 : retiré responseMimeType=application/json qui causait
+      // réponse vide sur PDFs complexes (Gemini gère mal JSON strict + inline_data
+      // PDF). tryParseJson() extrait le JSON depuis text classique ou bloc ```json```.
       const body = {
         contents: [{
           role: "user",
@@ -748,7 +746,7 @@ INTERDICTION ABSOLUE :
             { inline_data: { mime_type: useMime, data: bytesToBase64(myBytes) } }
           ]
         }],
-        generationConfig: { temperature: 0, maxOutputTokens: 8192, responseMimeType: "application/json" }
+        generationConfig: { temperature: 0, maxOutputTokens: 32768 }
       };
       await callProxyAndExtract(out, cfg, "gemini", "Gemini",
         "/v1/gemini?model=" + encodeURIComponent(opts.model || "gemini-2.5-pro"), body,
@@ -833,6 +831,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.4.0-claude-fallback-models"
+    VERSION: "T1-vision-v0.5.0-tokens-pixtral-gemini"
   };
 }));

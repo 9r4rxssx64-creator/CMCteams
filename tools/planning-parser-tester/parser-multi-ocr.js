@@ -393,7 +393,7 @@
               const visionResults = await VisionPasses.runAllVisionPasses(
                 result.capture.bytes,
                 result.capture.mime,
-                { timeout_ms: opts.visionTimeoutMs || 60000 }
+                { timeout_ms: opts.visionTimeoutMs || 120000 }  // 120s : 4 passes parallèles sur PDFs SBM ~2 MB / 8 pages
               );
               for (const vr of visionResults) result.passes.push(vr);
               // Remonte les erreurs des passes individuelles dans result.errors
@@ -527,6 +527,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.4.1-phase-A-clone"
+    VERSION: "T1-v0.5.0-tokens-pixtral-gemini"
   };
 }));
