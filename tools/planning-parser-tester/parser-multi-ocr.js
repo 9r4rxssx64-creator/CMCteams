@@ -80,13 +80,58 @@
   }
 
   /* ================================================================
+   * Helper : charge pdf.js depuis le CDN + configure workerSrc.
+   * Idempotent — appelable depuis n'importe quelle fonction qui touche pdf.js.
+   * Évite la race condition « script CDN async pas encore prêt ».
+   * ================================================================ */
+  const PDFJS_VERSION = "3.11.174";
+  const PDFJS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/" + PDFJS_VERSION;
+  let _pdfJsReadyPromise = null;
+
+  function ensurePdfJsReady() {
+    if (typeof window === "undefined") {
+      return Promise.reject(new Error("window indéfini (env non-browser)"));
+    }
+    if (_pdfJsReadyPromise) return _pdfJsReadyPromise;
+    _pdfJsReadyPromise = new Promise(function (resolve, reject) {
+      function configure() {
+        if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+          if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + "/pdf.worker.min.js";
+          }
+          resolve(window.pdfjsLib);
+        } else {
+          reject(new Error("pdfjsLib chargé mais sans GlobalWorkerOptions — version CDN incompatible ?"));
+        }
+      }
+      if (window.pdfjsLib) { configure(); return; }
+      var existing = document.querySelector("script[data-pdfjs-loader='1']");
+      if (existing) {
+        existing.addEventListener("load", configure, { once: true });
+        existing.addEventListener("error", function () {
+          reject(new Error("Échec chargement script pdf.js depuis " + PDFJS_CDN));
+        }, { once: true });
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = PDFJS_CDN + "/pdf.min.js";
+      s.async = true;
+      s.setAttribute("data-pdfjs-loader", "1");
+      s.onload = configure;
+      s.onerror = function () {
+        reject(new Error("Échec chargement script pdf.js depuis " + PDFJS_CDN));
+      };
+      document.head.appendChild(s);
+    });
+    return _pdfJsReadyPromise;
+  }
+
+  /* ================================================================
    * Phase 3.A — Extraction texte PDF.js
    * Réf : Plan Phase 3 stratégie 1 (grille jour-par-jour).
    * ================================================================ */
   async function extractWithPdfJs(bytes) {
-    if (typeof window === "undefined" || !window.pdfjsLib) {
-      throw new Error("pdfjsLib non chargé — vérifie l'inclusion CDN dans index.html");
-    }
+    await ensurePdfJsReady();
     const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
     const pages = [];
     for (let i = 1; i <= pdf.numPages; i++) {
@@ -395,8 +440,9 @@
     runPipeline,
     captureSource,
     extractWithPdfJs,
+    ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.1.0"
+    VERSION: "T1-v0.2.0-pdfjs-safe"
   };
 }));

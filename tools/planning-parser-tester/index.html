@@ -160,23 +160,11 @@
   </div>
 </div>
 
-<!-- ============ Dépendances CDN ============ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
-<script>
-  // Charger pdf.js en non-module pour compatibilité
-  (function loadPdfJs() {
-    if (window.pdfjsLib) return;
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    s.onload = function () {
-      if (window.pdfjsLib) {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      }
-    };
-    document.head.appendChild(s);
-  })();
-</script>
+<!-- ============ Dépendances CDN ============
+     pdf.js est chargé à la demande par PlanningParserPipeline.ensurePdfJsReady()
+     (cf. parser-multi-ocr.js) — script lazy, idempotent, configure workerSrc auto,
+     évite la race condition « lib pas encore prête quand on appelle getDocument ».
+============================================================================= -->
 
 <script src="./helpers-reuse.js"></script>
 <script src="./lib/vision-passes.js"></script>
