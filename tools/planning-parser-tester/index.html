@@ -87,6 +87,29 @@
   Si une lecture est ambiguë → <code>needs_review</code>, Kevin tranche manuellement.
 </div>
 
+<!-- ============ ZONE 0 : Configuration Proxy IA ============ -->
+<div class="card" id="proxy-card">
+  <h2>0. Proxy Vision IA (clés via secrets GitHub)</h2>
+  <div class="small" style="margin-bottom:10px;">
+    Le frontend n'a <strong>jamais</strong> de clé API en clair. Le Worker Cloudflare <code>cmc-parser-proxy</code>
+    lit les secrets GitHub (ANTHROPIC, OPEN_AI, MISTRAL, GEMINI) et relay les appels Vision IA.
+    Sans proxy, seule la passe A (PDF.js) tourne.
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <input id="proxy-url" type="url" placeholder="https://cmc-parser-proxy.<subdomain>.workers.dev"
+           style="flex:1;min-width:260px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <input id="proxy-token" type="password" placeholder="X-Auth-Token (PUSH_ADMIN_TOKEN)"
+           style="flex:1;min-width:200px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <button class="btn-sec" id="btn-proxy-save" type="button">💾 Enregistrer</button>
+    <button class="btn-sec" id="btn-proxy-test" type="button">🩺 Tester /healthz</button>
+    <button class="btn-sec" id="btn-proxy-clear" type="button">🗑 Effacer</button>
+  </div>
+  <div class="small" id="proxy-status" style="margin-top:8px;"></div>
+  <div class="legend">
+    Stockage <strong>sessionStorage uniquement</strong> (auto-purgé à la fermeture). Jamais persisté Firebase / localStorage / cookies.
+  </div>
+</div>
+
 <!-- ============ ZONE 1 : Input ============ -->
 <div class="card">
   <h2>1. Choisir un document</h2>
@@ -156,6 +179,8 @@
 </script>
 
 <script src="./helpers-reuse.js"></script>
+<script src="./lib/vision-passes.js"></script>
+<script src="./lib/cell-voting.js"></script>
 <script src="./parser-multi-ocr.js"></script>
 
 <!-- ============ Bootstrap UI ============ -->
@@ -165,6 +190,54 @@
 
   const H = window.PlanningParserHelpers;
   const PIPE = window.PlanningParserPipeline;
+  const VP = window.VisionPasses;
+
+  /* ===== Proxy config UI ===== */
+  const proxyUrl = document.getElementById("proxy-url");
+  const proxyToken = document.getElementById("proxy-token");
+  const proxyStatus = document.getElementById("proxy-status");
+  const btnProxySave = document.getElementById("btn-proxy-save");
+  const btnProxyTest = document.getElementById("btn-proxy-test");
+  const btnProxyClear = document.getElementById("btn-proxy-clear");
+
+  function refreshProxyStatus(extra) {
+    const cfg = VP && VP.getProxyConfig();
+    if (cfg) {
+      proxyStatus.innerHTML = `🟢 Proxy configuré : <code>${H.esc(cfg.url)}</code>${extra ? " · " + extra : ""}`;
+      proxyUrl.value = cfg.url;
+      proxyToken.value = "•".repeat(Math.min(16, cfg.token.length));
+    } else {
+      proxyStatus.innerHTML = `⚪ Aucun proxy — passes Vision désactivées (passe A PDF.js seule)${extra ? " · " + extra : ""}`;
+    }
+  }
+  if (VP) {
+    btnProxySave.addEventListener("click", () => {
+      const u = (proxyUrl.value || "").trim();
+      const t = (proxyToken.value || "").trim();
+      if (!u || !t) { alert("URL et token requis."); return; }
+      if (/^•+$/.test(t)) { alert("Re-saisis le token (masqué actuellement)."); return; }
+      VP.setProxyConfig(u, t);
+      refreshProxyStatus("enregistré ✓");
+    });
+    btnProxyTest.addEventListener("click", async () => {
+      proxyStatus.textContent = "⏳ Test en cours…";
+      const h = await VP.proxyHealthz();
+      if (h.ok) {
+        const provs = (h.data && h.data.providers_available || []).join(", ");
+        refreshProxyStatus(`/healthz ✓ providers: ${provs || "aucun"}`);
+      } else {
+        refreshProxyStatus(`❌ ${H.esc(h.reason || ("HTTP " + h.http))}`);
+      }
+    });
+    btnProxyClear.addEventListener("click", () => {
+      VP.clearProxyConfig();
+      proxyUrl.value = ""; proxyToken.value = "";
+      refreshProxyStatus("effacé");
+    });
+    refreshProxyStatus();
+  } else {
+    proxyStatus.textContent = "❌ Module VisionPasses non chargé.";
+  }
 
   const drop = document.getElementById("drop");
   const pick = document.getElementById("pick");
@@ -251,14 +324,31 @@
 
       lastResult = result;
 
-      // Update passe A status
-      const passeAdata = result.passes.find(p => p.passe === "A");
-      if (passeAdata) {
-        passA.querySelector(".status").textContent =
-          `✓ ${passeAdata.tool} · ${result.durations_ms.passe_A || 0} ms · ${passeAdata.pages?.length || 0} pages · ${passeAdata.itemsTotal || 0} items`;
-      } else {
-        passA.querySelector(".status").textContent = "⚠ Pas de texte extrait (format non-PDF ?)";
+      // Update statuts des 6 passes
+      function updatePassBox(id, passe) {
+        const box = document.getElementById("pass-" + id);
+        if (!box) return;
+        const st = box.querySelector(".status");
+        if (!passe) {
+          st.textContent = "⏭ non exécutée (proxy non configuré ou format)";
+          box.classList.add("todo");
+          return;
+        }
+        box.classList.remove("todo");
+        if (passe.ok === false) {
+          st.innerHTML = `❌ ${H.esc(passe.error || "erreur inconnue").slice(0, 140)} <span class="small">(${passe.latency_ms || 0} ms)</span>`;
+        } else if (id === "A") {
+          st.textContent = `✓ ${passe.tool} · ${result.durations_ms.passe_A || 0} ms · ${passe.pages?.length || 0} pages · ${passe.itemsTotal || 0} items`;
+        } else {
+          const empN = (passe.employees || []).length;
+          st.textContent = `✓ ${passe.tool} · ${passe.latency_ms || 0} ms · ${empN} employés lus`;
+        }
       }
+      updatePassBox("A", result.passes.find(p => p.passe === "A"));
+      updatePassBox("B", result.passes.find(p => p.passe === "B"));
+      updatePassBox("C", result.passes.find(p => p.passe === "C"));
+      updatePassBox("D", result.passes.find(p => p.passe === "D"));
+      updatePassBox("E", result.passes.find(p => p.passe === "E"));
 
       // Affiche résultat
       resultCard.style.display = "";
@@ -312,6 +402,13 @@
       lines.push(`<div style="margin-top:6px;"><span class="badge">📐 Cellules attendues</span> ~${inv.cells_expected} <span class="small">(approximation Phase 0)</span></div>`);
     }
     lines.push(`<div style="margin-top:6px;"><span class="badge">⏱</span> ${r.meta?.total_duration_ms || 0} ms total</div>`);
+
+    // Vote 4/4 si disponible
+    if (r.vote_stats) {
+      const s = r.vote_stats;
+      const cls = (s.needs_review === 0 && s.certain > 0) ? "ok" : (s.needs_review > 0 ? "warn" : "err");
+      lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">🗳 Vote</span> ${s.certain} certain · ${s.needs_review} needs_review · ${s.missing_reads} lectures manquantes (sur ${s.total_cells} cellules)</div>`);
+    }
     resultSummary.innerHTML = lines.join("");
   }
 

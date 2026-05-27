@@ -1,0 +1,20 @@
+name = "cmc-parser-proxy"
+main = "index.ts"
+compatibility_date = "2025-05-01"
+account_id = "<set-via-CLOUDFLARE_ACCOUNT_ID-env>"
+
+# Pas de routes personnalisées pour l'instant — accès via *.workers.dev.
+workers_dev = true
+
+# Secrets injectés via `wrangler secret put` dans le workflow GitHub Action.
+# NE PAS commiter de valeurs ici.
+#
+# Secrets attendus côté Worker (mappés depuis les secrets GitHub) :
+#   ANTHROPIC_API_KEY        ← secrets.ANTHROPIC_API_KEY
+#   OPEN_AI_API_KEY          ← secrets.OPEN_AI_API_KEY  (⚠️ underscore — CLAUDE.md règle 7)
+#   MISTRAL_API_KEY          ← secrets.MISTRAL_API_KEY
+#   GEMINI_API_KEY           ← secrets.GEMINI_API_KEY
+#   PUSH_ADMIN_TOKEN         ← secrets.PUSH_ADMIN_TOKEN (auth frontend → worker)
+
+[observability]
+enabled = true

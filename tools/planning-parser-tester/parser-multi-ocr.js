@@ -17,9 +17,20 @@
  */
 
 (function (root, factory) {
-  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./helpers-reuse.js"));
-  else root.PlanningParserPipeline = factory(root.PlanningParserHelpers);
-}(typeof self !== "undefined" ? self : this, function (H) {
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = factory(
+      require("./helpers-reuse.js"),
+      require("./lib/vision-passes.js"),
+      require("./lib/cell-voting.js")
+    );
+  } else {
+    root.PlanningParserPipeline = factory(
+      root.PlanningParserHelpers,
+      root.VisionPasses,
+      root.CellVoting
+    );
+  }
+}(typeof self !== "undefined" ? self : this, function (H, VisionPasses, CellVoting) {
   "use strict";
 
   if (!H) throw new Error("[parser-multi-ocr] helpers-reuse.js doit être chargé avant.");
@@ -239,6 +250,59 @@
 
       /* ---- Phase 0 : Inventaire exhaustif ---- */
       result.inventory = buildInventory(textRaw);
+
+      /* ---- Phase 3.B → 3.E : Passes Vision IA via proxy (si configuré) ---- */
+      if (VisionPasses && opts.runVision !== false && result.capture.bytes) {
+        const proxyCfg = VisionPasses.getProxyConfig();
+        if (proxyCfg) {
+          const isVisionable =
+            result.capture.mime === "application/pdf" ||
+            /^image\//.test(result.capture.mime);
+          if (isVisionable) {
+            const tVision = Date.now();
+            try {
+              const visionResults = await VisionPasses.runAllVisionPasses(
+                result.capture.bytes,
+                result.capture.mime,
+                { timeout_ms: opts.visionTimeoutMs || 60000 }
+              );
+              for (const vr of visionResults) result.passes.push(vr);
+            } catch (e) {
+              result.errors.push({ phase: "vision_passes", message: e.message });
+            }
+            result.durations_ms.vision_total = Date.now() - tVision;
+
+            /* ---- Vote 4/4 cellule par cellule (CertVoting) ---- */
+            if (CellVoting) {
+              const passesWithCells = result.passes.filter(p =>
+                Array.isArray(p.employees) && p.employees.length > 0
+              );
+              if (passesWithCells.length >= 2) {
+                const minAgree = opts.minAgreeingPasses || Math.min(4, passesWithCells.length);
+                const vote = CellVoting.voteCells(passesWithCells, { minAgreeingPasses: minAgree });
+                result.cells_certain = vote.cells_certain;
+                result.cells_needs_review = vote.cells_needs_review;
+                result.vote_stats = vote.stats;
+              } else {
+                result.alerts.push({
+                  severity: "warn",
+                  msg: `Vote impossible : seulement ${passesWithCells.length} passe(s) ont retourné des données structurées. Vérifier les erreurs des passes Vision.`
+                });
+              }
+            }
+          } else {
+            result.alerts.push({
+              severity: "info",
+              msg: `Format ${result.capture.mime} ne déclenche pas les passes Vision (PDF / image uniquement).`
+            });
+          }
+        } else {
+          result.alerts.push({
+            severity: "info",
+            msg: "Proxy Vision non configuré — seule la passe A (PDF.js) a été exécutée. Configure l'URL + token dans la section « Proxy IA »."
+          });
+        }
+      }
 
       /* ---- Alertes globales ---- */
       if (result.type_detected.needs_user_confirm) {
