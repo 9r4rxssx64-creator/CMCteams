@@ -37,50 +37,45 @@ jobs:
       - name: Install wrangler
         run: npm install -g wrangler@latest
 
-      - name: Push Anthropic secret
-        if: env.ANTHROPIC_API_KEY != ''
+      # Push tous les secrets Worker en une seule étape robuste.
+      # Pour chaque secret : on vérifie qu'il est non-vide, et si oui on le pousse
+      # via `wrangler secret put`. Sinon on log clairement « absent » et on
+      # CONTINUE — un provider absent ne casse pas tout le déploiement (le
+      # worker répondra 503 secret_missing avec hint clair pour ce provider seul).
+      - name: Push secrets Worker
         working-directory: tools/planning-parser-tester/worker
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           ANTHROPIC_API_KEY:     ${{ secrets.ANTHROPIC_API_KEY }}
-        run: echo "$ANTHROPIC_API_KEY" | wrangler secret put ANTHROPIC_API_KEY
-
-      - name: Push OpenAI secret (OPEN_AI_API_KEY, underscore — convention Kevin)
-        if: env.OPEN_AI_API_KEY != ''
-        working-directory: tools/planning-parser-tester/worker
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           OPEN_AI_API_KEY:       ${{ secrets.OPEN_AI_API_KEY }}
-        run: echo "$OPEN_AI_API_KEY" | wrangler secret put OPEN_AI_API_KEY
-
-      - name: Push Mistral secret
-        if: env.MISTRAL_API_KEY != ''
-        working-directory: tools/planning-parser-tester/worker
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           MISTRAL_API_KEY:       ${{ secrets.MISTRAL_API_KEY }}
-        run: echo "$MISTRAL_API_KEY" | wrangler secret put MISTRAL_API_KEY
-
-      - name: Push Gemini secret
-        if: env.GEMINI_API_KEY != ''
-        working-directory: tools/planning-parser-tester/worker
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           GEMINI_API_KEY:        ${{ secrets.GEMINI_API_KEY }}
-        run: echo "$GEMINI_API_KEY" | wrangler secret put GEMINI_API_KEY
-
-      - name: Push auth token secret
-        if: env.PUSH_ADMIN_TOKEN != ''
-        working-directory: tools/planning-parser-tester/worker
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           PUSH_ADMIN_TOKEN:      ${{ secrets.PUSH_ADMIN_TOKEN }}
-        run: echo "$PUSH_ADMIN_TOKEN" | wrangler secret put PUSH_ADMIN_TOKEN
+        run: |
+          set +e
+          push_one () {
+            local NAME="$1"
+            local VAL="$2"
+            if [ -z "$VAL" ]; then
+              echo "⚠️  Secret $NAME absent côté repo GitHub — provider correspondant désactivé."
+              return 0
+            fi
+            echo "▶ Push $NAME …"
+            if echo "$VAL" | wrangler secret put "$NAME" >/dev/null 2>&1; then
+              echo "✅ $NAME pushé vers le Worker"
+            else
+              echo "❌ Échec push $NAME — réessai en mode verbose pour diagnostic :"
+              echo "$VAL" | wrangler secret put "$NAME"
+              return 1
+            fi
+          }
+          push_one ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY" || exit 1
+          push_one OPEN_AI_API_KEY   "$OPEN_AI_API_KEY"   || exit 1
+          push_one MISTRAL_API_KEY   "$MISTRAL_API_KEY"   || exit 1
+          push_one GEMINI_API_KEY    "$GEMINI_API_KEY"    || exit 1
+          push_one PUSH_ADMIN_TOKEN  "$PUSH_ADMIN_TOKEN"  || exit 1
+          echo "✅ Tous les secrets disponibles ont été poussés."
 
       - name: Deploy Worker (capture URL)
         id: deploy
