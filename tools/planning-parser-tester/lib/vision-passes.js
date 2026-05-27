@@ -344,23 +344,27 @@ INTERDICTION ABSOLUE :
       return out;
     }
     try {
+      const myBytes = cloneBytes(captureBytes);  // clone INDÉPENDANT (anti-detach)
       const isPdf = mime === "application/pdf";
       const contentBlocks = [];
       if (isPdf) {
         contentBlocks.push({
           type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: bytesToBase64(captureBytes) }
+          source: { type: "base64", media_type: "application/pdf", data: bytesToBase64(myBytes) }
         });
       } else {
         contentBlocks.push({
           type: "image",
-          source: { type: "base64", media_type: mime || "image/png", data: bytesToBase64(captureBytes) }
+          source: { type: "base64", media_type: mime || "image/png", data: bytesToBase64(myBytes) }
         });
       }
       contentBlocks.push({ type: "text", text: STRUCTURED_PROMPT });
 
+      // Modèle par défaut : claude-sonnet-4-6 (CLAUDE.md mentionne disponible
+      // largement). Anciennement claude-sonnet-4-5-20250929 qui peut retourner
+      // 401 si l'organisation n'a pas accès à ce snapshot précis.
       const body = {
-        model: opts.model || "claude-sonnet-4-5-20250929",
+        model: opts.model || "claude-sonnet-4-6",
         max_tokens: 8192,
         messages: [{ role: "user", content: contentBlocks }]
       };
@@ -422,6 +426,24 @@ INTERDICTION ABSOLUE :
       out.latency_ms = Date.now() - started;
     }
     return out;
+  }
+
+  /**
+   * Helper CRITIQUE : retourne un clone INDÉPENDANT du buffer source.
+   * Indispensable parce que pdf.js, et plusieurs APIs Vision (Mistral, Gemini),
+   * peuvent DÉTACHER l'ArrayBuffer transmis (transferable). Si on partage le
+   * même buffer entre 4 passes parallèles, la 1ère qui le détache rend les 3
+   * autres invalides → erreurs « ArrayBuffer has been detached »,
+   * « document has no pages », « application/x-empty ».
+   *
+   * Usage : appeler cloneBytes(captureBytes) au TOUT DÉBUT de chaque passe,
+   * avant tout fetch ou getDocument.
+   */
+  function cloneBytes(srcBytes) {
+    if (!srcBytes) throw new Error("cloneBytes: source vide");
+    // new Uint8Array(srcBytes) crée une vue partageant le même buffer.
+    // .slice() FORCE une copie indépendante (nouveau buffer, GC-safe).
+    return new Uint8Array(srcBytes).slice();
   }
 
   /* ====================================================================
@@ -527,12 +549,8 @@ INTERDICTION ABSOLUE :
           return out;
         }
         try {
-          // ⚠️ Cloner les bytes : pdf.js DÉTACHE l'ArrayBuffer transmis à
-          // getDocument. Si on passait captureBytes direct, runMistralOCR
-          // (ou tout autre appel ultérieur) échouerait avec « object can not
-          // be cloned ». Le clone par new Uint8Array(...).slice() crée un
-          // buffer indépendant pour cette passe seulement.
-          const bytesClone = new Uint8Array(captureBytes).slice();
+          // Clone indépendant — anti detach (cf cloneBytes doc)
+          const bytesClone = cloneBytes(captureBytes);
           const pdf = await window.pdfjsLib.getDocument({ data: bytesClone }).promise;
           const maxPages = Math.min(pdf.numPages, opts.maxPages || 8);
           for (let i = 1; i <= maxPages; i++) {
@@ -549,9 +567,10 @@ INTERDICTION ABSOLUE :
           return out;
         }
       } else {
+        const myBytes = cloneBytes(captureBytes);
         imageMessages.push({
           type: "image_url",
-          image_url: { url: "data:" + (mime || "image/png") + ";base64," + bytesToBase64(captureBytes) }
+          image_url: { url: "data:" + (mime || "image/png") + ";base64," + bytesToBase64(myBytes) }
         });
       }
 
@@ -597,11 +616,12 @@ INTERDICTION ABSOLUE :
       return out;
     }
     try {
+      const myBytes = cloneBytes(captureBytes);  // anti-detach
       const isPdf = mime === "application/pdf";
       // ⚠️ API Mistral OCR (mai 2026) attend `document_url` avec data: URL
       // pour les fichiers locaux. Format `document_base64` retourne HTTP 422
       // literal_error DocumentURLChunk (bug observé runtime).
-      const dataUrl = "data:" + (isPdf ? "application/pdf" : (mime || "image/png")) + ";base64," + bytesToBase64(captureBytes);
+      const dataUrl = "data:" + (isPdf ? "application/pdf" : (mime || "image/png")) + ";base64," + bytesToBase64(myBytes);
       const documentObj = isPdf
         ? { type: "document_url", document_url: dataUrl }
         : { type: "image_url", image_url: dataUrl };
@@ -686,13 +706,14 @@ INTERDICTION ABSOLUE :
       return out;
     }
     try {
+      const myBytes = cloneBytes(captureBytes);  // anti-detach
       const useMime = mime === "application/pdf" ? "application/pdf" : (mime || "image/png");
       const body = {
         contents: [{
           role: "user",
           parts: [
             { text: STRUCTURED_PROMPT },
-            { inline_data: { mime_type: useMime, data: bytesToBase64(captureBytes) } }
+            { inline_data: { mime_type: useMime, data: bytesToBase64(myBytes) } }
           ]
         }],
         generationConfig: { temperature: 0, maxOutputTokens: 8192, responseMimeType: "application/json" }
@@ -780,6 +801,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.2.2-gpt4o-clone-mistral-url"
+    VERSION: "T1-vision-v0.3.0-cloneBytes-all-passes"
   };
 }));
