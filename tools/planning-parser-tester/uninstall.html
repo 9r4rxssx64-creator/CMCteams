@@ -85,8 +85,9 @@
     const m = txt.match(/VERSION:\s*"([^"]+)"/);
     if (m) {
       const v = m[1];
-      const isLatest = v.indexOf("v0.4.") === 0;
-      add(isLatest ? "✅ GH Pages sert " + v + " (dernière)" : "⚠ GH Pages sert " + v + " (PAS la dernière v0.4.0 — attendre 2-5 min)", isLatest ? "ok" : "warn");
+      // Match v0.4.x peu importe le préfixe (ex "T1-vision-v0.4.0-…")
+      const isLatest = /v0\.4\.\d/.test(v);
+      add(isLatest ? "✅ GH Pages sert " + v + " (= dernière v0.4.x)" : "⚠ GH Pages sert " + v + " (pas une v0.4.x — attendre 2-5 min CDN)", isLatest ? "ok" : "warn");
     } else {
       add("⚠ Impossible de détecter la version dans vision-passes.js", "warn");
     }
