@@ -49,11 +49,55 @@ function corsHeaders(origin: string | null): HeadersInit {
   };
 }
 
-function jsonErr(status: number, message: string, detail?: unknown, origin?: string | null) {
-  return new Response(JSON.stringify({ error: true, status, message, detail }), {
+/**
+ * Réponse d'erreur structurée. Garantit :
+ *   - error: true (drapeau)
+ *   - status: code HTTP
+ *   - code: identifiant machine (ex "auth_missing", "upstream_5xx", "secret_missing")
+ *   - message: phrase courte user-friendly (FR, sans jargon)
+ *   - detail: cause technique EXACTE (jamais perdu — règle CLAUDE.md)
+ *   - step: étape métier qui a échoué
+ *   - hint?: action concrète pour corriger
+ *   - where?: emplacement source si exception JS
+ *   - ts: timestamp
+ */
+function jsonErr(
+  status: number,
+  code: string,
+  message: string,
+  detail: unknown,
+  step: string,
+  origin?: string | null,
+  extra?: Record<string, unknown>
+): Response {
+  const body = {
+    error: true,
+    status,
+    code,
+    message,
+    detail: detail === undefined ? null : detail,
+    step,
+    ts: new Date().toISOString(),
+    ...(extra || {}),
+  };
+  return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json", ...corsHeaders(origin ?? null) },
   });
+}
+
+function describeException(e: unknown): { message: string; stack?: string; name?: string } {
+  if (!e) return { message: "(exception vide)" };
+  if (typeof e === "string") return { message: e };
+  if (e && typeof e === "object") {
+    const obj = e as { message?: unknown; stack?: unknown; name?: unknown };
+    return {
+      message: typeof obj.message === "string" ? obj.message : JSON.stringify(e),
+      stack: typeof obj.stack === "string" ? (obj.stack.split("\n").slice(0, 4).join(" | ")) : undefined,
+      name: typeof obj.name === "string" ? obj.name : undefined,
+    };
+  }
+  return { message: String(e) };
 }
 
 function checkAuth(req: Request, env: Env): { ok: boolean; reason?: string } {
@@ -71,80 +115,121 @@ function checkAuth(req: Request, env: Env): { ok: boolean; reason?: string } {
  * Provider forwarders
  * ==================================================================== */
 
-async function forwardAnthropic(body: ArrayBuffer, env: Env): Promise<Response> {
-  if (!env.ANTHROPIC_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: true, message: "ANTHROPIC_API_KEY absent du Worker" }),
-      { status: 503, headers: { "content-type": "application/json" } }
+/**
+ * Wrap commun pour tous les forwarders : vérifie secret + appelle upstream +
+ * gère les erreurs réseau et upstream avec retour structuré clair.
+ */
+async function forwardProvider(
+  providerName: "anthropic" | "openai" | "mistral" | "gemini",
+  body: ArrayBuffer,
+  env: Env,
+  url: URL,
+  origin: string | null
+): Promise<Response> {
+  // 1) Vérification secret
+  const secretMap = {
+    anthropic: env.ANTHROPIC_API_KEY,
+    openai: env.OPEN_AI_API_KEY,
+    mistral: env.MISTRAL_API_KEY,
+    gemini: env.GEMINI_API_KEY,
+  };
+  const secretNameMap = {
+    anthropic: "ANTHROPIC_API_KEY",
+    openai: "OPEN_AI_API_KEY (avec underscore — convention Kevin)",
+    mistral: "MISTRAL_API_KEY",
+    gemini: "GEMINI_API_KEY",
+  };
+  const apiKey = secretMap[providerName];
+  if (!apiKey) {
+    return jsonErr(
+      503,
+      "secret_missing",
+      `Le provider ${providerName} n'est pas configuré sur le Worker.`,
+      `Secret Worker manquant : ${secretNameMap[providerName]}. Re-déclencher le workflow cmc-parser-proxy-deploy.yml après avoir confirmé que le secret GitHub correspondant est présent.`,
+      `forwardProvider:${providerName}:secret_check`,
+      origin,
+      { provider: providerName, secret_name: secretNameMap[providerName] }
     );
   }
-  const upstream = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body,
-  });
-  return upstream;
-}
 
-async function forwardOpenAI(body: ArrayBuffer, env: Env): Promise<Response> {
-  if (!env.OPEN_AI_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: true, message: "OPEN_AI_API_KEY absent du Worker" }),
-      { status: 503, headers: { "content-type": "application/json" } }
-    );
-  }
-  const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.OPEN_AI_API_KEY}`,
-      "content-type": "application/json",
-    },
-    body,
-  });
-  return upstream;
-}
-
-async function forwardMistral(body: ArrayBuffer, env: Env): Promise<Response> {
-  if (!env.MISTRAL_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: true, message: "MISTRAL_API_KEY absent du Worker" }),
-      { status: 503, headers: { "content-type": "application/json" } }
-    );
-  }
-  // Mistral OCR endpoint (peut évoluer — vérifier https://docs.mistral.ai/)
-  const upstream = await fetch("https://api.mistral.ai/v1/ocr", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.MISTRAL_API_KEY}`,
-      "content-type": "application/json",
-    },
-    body,
-  });
-  return upstream;
-}
-
-async function forwardGemini(body: ArrayBuffer, env: Env, url: URL): Promise<Response> {
-  if (!env.GEMINI_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: true, message: "GEMINI_API_KEY absent du Worker" }),
-      { status: 503, headers: { "content-type": "application/json" } }
-    );
-  }
-  // Le frontend passe le modèle dans ?model=gemini-2.5-pro
-  const model = url.searchParams.get("model") || "gemini-2.5-pro";
-  const upstream = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body,
+  // 2) Construction de la requête upstream
+  let upstreamUrl: string;
+  const upstreamHeaders: Record<string, string> = { "content-type": "application/json" };
+  switch (providerName) {
+    case "anthropic":
+      upstreamUrl = "https://api.anthropic.com/v1/messages";
+      upstreamHeaders["x-api-key"] = apiKey;
+      upstreamHeaders["anthropic-version"] = "2023-06-01";
+      break;
+    case "openai":
+      upstreamUrl = "https://api.openai.com/v1/chat/completions";
+      upstreamHeaders["authorization"] = `Bearer ${apiKey}`;
+      break;
+    case "mistral":
+      upstreamUrl = "https://api.mistral.ai/v1/ocr";
+      upstreamHeaders["authorization"] = `Bearer ${apiKey}`;
+      break;
+    case "gemini": {
+      const model = url.searchParams.get("model") || "gemini-2.5-pro";
+      upstreamUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+      break;
     }
-  );
-  return upstream;
+  }
+
+  // 3) Appel upstream — capture les erreurs réseau distinctement des erreurs HTTP
+  let upstream: Response;
+  try {
+    upstream = await fetch(upstreamUrl, { method: "POST", headers: upstreamHeaders, body });
+  } catch (e) {
+    const desc = describeException(e);
+    return jsonErr(
+      502,
+      "upstream_unreachable",
+      `Impossible de joindre ${providerName} (réseau ou DNS).`,
+      desc.message,
+      `forwardProvider:${providerName}:fetch`,
+      origin,
+      { provider: providerName, upstream_url_host: new URL(upstreamUrl).host, exception_name: desc.name, where: desc.stack }
+    );
+  }
+
+  // 4) Si upstream renvoie un code d'erreur, on enrichit la réponse plutôt que de la pipe nue
+  if (!upstream.ok) {
+    const text = await upstream.text();
+    let parsed: unknown = text;
+    try { parsed = JSON.parse(text); } catch (_) { /* garde texte brut */ }
+    const upstreamMessage =
+      (parsed as any)?.error?.message ||
+      (parsed as any)?.message ||
+      (typeof parsed === "string" ? parsed.slice(0, 400) : JSON.stringify(parsed).slice(0, 400));
+    return jsonErr(
+      upstream.status === 401 || upstream.status === 403 ? upstream.status : (upstream.status >= 500 ? 502 : upstream.status),
+      upstream.status === 401 ? "upstream_unauthorized"
+        : upstream.status === 429 ? "upstream_rate_limited"
+        : upstream.status === 400 ? "upstream_bad_request"
+        : upstream.status >= 500 ? "upstream_5xx"
+        : "upstream_error",
+      upstream.status === 401 ? `${providerName} refuse la clé API (401).`
+        : upstream.status === 429 ? `${providerName} a renvoyé 429 — limite forfait atteinte.`
+        : upstream.status === 400 ? `${providerName} a refusé la requête (400 Bad Request).`
+        : upstream.status >= 500 ? `${providerName} est en erreur côté serveur (${upstream.status}).`
+        : `${providerName} a renvoyé HTTP ${upstream.status}.`,
+      upstreamMessage,
+      `forwardProvider:${providerName}:upstream_${upstream.status}`,
+      origin,
+      { provider: providerName, http_status: upstream.status, upstream_body: parsed }
+    );
+  }
+
+  // 5) Succès — pipe la réponse upstream avec CORS attachés
+  const out = new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: upstream.headers,
+  });
+  const ch = corsHeaders(origin);
+  for (const [k, v] of Object.entries(ch)) out.headers.set(k, v as string);
+  return out;
 }
 
 /* ====================================================================
@@ -186,16 +271,26 @@ export default {
 
     // Auth pour le reste
     const auth = checkAuth(req, env);
-    if (!auth.ok) return jsonErr(401, "Unauthorized", auth.reason, origin);
+    if (!auth.ok) {
+      return jsonErr(
+        401,
+        "auth_missing",
+        "Authentification requise pour accéder à ce proxy.",
+        auth.reason || "Header X-Auth-Token absent ou invalide.",
+        "router:auth_check",
+        origin,
+        { hint: "Renseigner le champ PUSH_ADMIN_TOKEN dans l'app (bloc « 0. Proxy Vision IA »)." }
+      );
+    }
 
     // Liste des providers configurés (auth requise — donne plus d'info que /healthz)
     if (url.pathname === "/providers" && req.method === "GET") {
       return new Response(
         JSON.stringify({
-          anthropic: { configured: !!env.ANTHROPIC_API_KEY },
-          openai: { configured: !!env.OPEN_AI_API_KEY, key_name: "OPEN_AI_API_KEY" },
-          mistral: { configured: !!env.MISTRAL_API_KEY },
-          gemini: { configured: !!env.GEMINI_API_KEY },
+          anthropic: { configured: !!env.ANTHROPIC_API_KEY, secret_name: "ANTHROPIC_API_KEY" },
+          openai: { configured: !!env.OPEN_AI_API_KEY, secret_name: "OPEN_AI_API_KEY" },
+          mistral: { configured: !!env.MISTRAL_API_KEY, secret_name: "MISTRAL_API_KEY" },
+          gemini: { configured: !!env.GEMINI_API_KEY, secret_name: "GEMINI_API_KEY" },
         }),
         { status: 200, headers: { "content-type": "application/json", ...corsHeaders(origin) } }
       );
@@ -205,29 +300,45 @@ export default {
     const match = url.pathname.match(/^\/v1\/(anthropic|openai|mistral|gemini)\/?$/);
     if (match && req.method === "POST") {
       const provider = match[1] as Provider;
+      let body: ArrayBuffer;
       try {
-        const body = await req.arrayBuffer();
-        let upstream: Response;
-        switch (provider) {
-          case "anthropic": upstream = await forwardAnthropic(body, env); break;
-          case "openai":    upstream = await forwardOpenAI(body, env); break;
-          case "mistral":   upstream = await forwardMistral(body, env); break;
-          case "gemini":    upstream = await forwardGemini(body, env, url); break;
-        }
-        // Re-attache les headers CORS sur la réponse upstream
-        const out = new Response(upstream.body, {
-          status: upstream.status,
-          statusText: upstream.statusText,
-          headers: upstream.headers,
-        });
-        const ch = corsHeaders(origin);
-        for (const [k, v] of Object.entries(ch)) out.headers.set(k, v as string);
-        return out;
-      } catch (e: any) {
-        return jsonErr(502, "Upstream fetch failed", e?.message || String(e), origin);
+        body = await req.arrayBuffer();
+      } catch (e) {
+        const desc = describeException(e);
+        return jsonErr(
+          400,
+          "request_body_read_failed",
+          "Impossible de lire le corps de la requête.",
+          desc.message,
+          `router:read_body:${provider}`,
+          origin,
+          { exception_name: desc.name, where: desc.stack }
+        );
+      }
+      try {
+        return await forwardProvider(provider, body, env, url, origin);
+      } catch (e) {
+        const desc = describeException(e);
+        return jsonErr(
+          500,
+          "internal_error",
+          `Erreur interne du proxy pendant l'appel ${provider}.`,
+          desc.message,
+          `router:forward:${provider}`,
+          origin,
+          { exception_name: desc.name, where: desc.stack }
+        );
       }
     }
 
-    return jsonErr(404, "Route inconnue", { pathname: url.pathname, method: req.method }, origin);
+    return jsonErr(
+      404,
+      "route_unknown",
+      "Route inconnue sur ce proxy.",
+      `Path ${url.pathname} method ${req.method} ne correspond à aucun endpoint.`,
+      "router:no_match",
+      origin,
+      { available_endpoints: ["GET /healthz", "GET /providers", "POST /v1/{anthropic|openai|mistral|gemini}"] }
+    );
   },
 };

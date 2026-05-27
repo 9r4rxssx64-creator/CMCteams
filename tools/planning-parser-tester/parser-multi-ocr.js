@@ -267,8 +267,32 @@
                 { timeout_ms: opts.visionTimeoutMs || 60000 }
               );
               for (const vr of visionResults) result.passes.push(vr);
+              // Remonte les erreurs des passes individuelles dans result.errors
+              // pour audit central (en plus de passe.error qui reste sur la passe).
+              for (const vr of visionResults) {
+                if (vr.error && !vr.ok) {
+                  result.errors.push({
+                    code: vr.error.code || "vision_passe_failed",
+                    phase: "vision_" + (vr.passe || "?"),
+                    message: vr.error.message || "Échec passe Vision",
+                    detail: vr.error.detail || null,
+                    step: vr.error.step || ("vision:" + (vr.tool || "")),
+                    http_status: vr.error.http_status || null,
+                    hint: vr.error.hint || null,
+                    where: vr.error.where || null,
+                    ts: vr.error.ts || new Date().toISOString()
+                  });
+                }
+              }
             } catch (e) {
-              result.errors.push({ phase: "vision_passes", message: e.message });
+              result.errors.push({
+                code: "vision_orchestrator_failed",
+                phase: "vision_passes",
+                message: "Orchestrateur Vision a échoué.",
+                detail: (e && e.message) || String(e),
+                step: "vision:orchestrator",
+                where: (e && e.stack ? String(e.stack) : "").split("\n").slice(0, 4).join(" | ")
+              });
             }
             result.durations_ms.vision_total = Date.now() - tVision;
 
@@ -320,10 +344,15 @@
       }
 
     } catch (e) {
+      // Erreur fatale du pipeline — toujours structurée avec cause exacte
       result.errors.push({
+        code: e && e.name ? ("exception_" + e.name) : "pipeline_uncaught",
         phase: "pipeline",
-        message: e.message,
-        stack: (e.stack || "").split("\n").slice(0, 5).join(" | ")
+        message: (e && e.message) ? "Erreur pipeline : " + e.message : "Erreur inattendue dans le pipeline.",
+        detail: (e && e.message) || String(e),
+        step: "pipeline:run",
+        where: (e && e.stack ? String(e.stack) : "").split("\n").slice(0, 5).join(" | "),
+        ts: new Date().toISOString()
       });
     }
 

@@ -57,14 +57,53 @@
 
   async function proxyHealthz() {
     const cfg = getProxyConfig();
-    if (!cfg) return { ok: false, reason: "Proxy non configuré" };
-    try {
-      const r = await fetch(cfg.url + "/healthz", { method: "GET" });
-      const data = await r.json();
-      return { ok: r.ok, http: r.status, data };
-    } catch (e) {
-      return { ok: false, reason: "Fetch échoué : " + (e && e.message) };
+    if (!cfg) {
+      return {
+        ok: false,
+        error: {
+          code: "proxy_not_configured",
+          message: "Aucun proxy configuré.",
+          detail: "URL et token absents (sessionStorage vide).",
+          step: "healthz:precheck",
+          hint: "Renseigner URL + X-Auth-Token dans le bloc « 0. Proxy Vision IA »."
+        }
+      };
     }
+    let r, rawText = "", data = null;
+    try {
+      r = await fetch(cfg.url + "/healthz", { method: "GET" });
+    } catch (e) {
+      const ex = describeException(e);
+      return {
+        ok: false,
+        error: {
+          code: "network_error",
+          message: "Impossible de joindre le proxy Cloudflare.",
+          detail: ex.message,
+          step: "healthz:fetch",
+          exception_name: ex.name,
+          where: ex.stack,
+          hint: "Vérifier l'URL et la connexion réseau."
+        }
+      };
+    }
+    try { rawText = await r.text(); data = rawText ? JSON.parse(rawText) : null; }
+    catch (_) { data = { _non_json_body: rawText.slice(0, 400) }; }
+    if (!r.ok) {
+      return {
+        ok: false,
+        http: r.status,
+        data,
+        error: {
+          code: (data && data.code) || ("http_" + r.status),
+          message: (data && data.message) || ("Le proxy a répondu HTTP " + r.status + "."),
+          detail: (data && data.detail) || rawText.slice(0, 400),
+          step: (data && data.step) || "healthz:response",
+          http_status: r.status
+        }
+      };
+    }
+    return { ok: true, http: r.status, data };
   }
 
   /* ====================================================================
@@ -143,6 +182,33 @@ INTERDICTION ABSOLUE :
     return null;
   }
 
+  /**
+   * Construit un objet d'erreur structuré commun à toutes les passes.
+   * Garantit : code machine + message FR clair + detail technique exact + step + hint.
+   * (CLAUDE.md règle absolue « TOUJOURS DÉTAILLER LES ERREURS PARTOUT, CAUSE EXACTE »)
+   */
+  function makeErr(code, message, detail, step, extra) {
+    return Object.assign({
+      code: code || "unknown",
+      message: message || "",
+      detail: detail == null ? null : (typeof detail === "string" ? detail : (function () {
+        try { return JSON.stringify(detail).slice(0, 600); } catch (_) { return String(detail).slice(0, 600); }
+      })()),
+      step: step || "",
+      ts: new Date().toISOString()
+    }, extra || {});
+  }
+
+  function describeException(e) {
+    if (!e) return { message: "(exception vide)", name: "", stack: "" };
+    if (typeof e === "string") return { message: e, name: "", stack: "" };
+    return {
+      name: (e && e.name) || "",
+      message: (e && e.message) || String(e),
+      stack: (e && e.stack ? String(e.stack).split("\n").slice(0, 4).join(" | ") : "")
+    };
+  }
+
   /* ====================================================================
    * Passe B — Claude Sonnet 4.6 Vision (accepte PDF natif)
    * ==================================================================== */
@@ -152,7 +218,15 @@ INTERDICTION ABSOLUE :
     const cfg = getProxyConfig();
     const started = Date.now();
     const out = { passe: "B", tool: "claude-vision", ok: false, latency_ms: 0, employees: [], error: null, raw: null };
-    if (!cfg) { out.error = "Proxy non configuré"; return out; }
+    if (!cfg) {
+      out.error = makeErr("proxy_not_configured",
+        "Le proxy Vision IA n'est pas configuré.",
+        "URL et token absents (sessionStorage vide).",
+        "claude:precheck",
+        { hint: "Renseigner l'URL et le X-Auth-Token dans le bloc « 0. Proxy Vision IA »." });
+      out.latency_ms = Date.now() - started;
+      return out;
+    }
     try {
       const isPdf = mime === "application/pdf";
       const contentBlocks = [];
@@ -174,27 +248,60 @@ INTERDICTION ABSOLUE :
         max_tokens: 8192,
         messages: [{ role: "user", content: contentBlocks }]
       };
-      const r = await fetch(cfg.url + "/v1/anthropic", {
-        method: "POST",
-        headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
-        body: JSON.stringify(body)
-      });
-      const data = await r.json();
+      let r;
+      try {
+        r = await fetch(cfg.url + "/v1/anthropic", {
+          method: "POST",
+          headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
+          body: JSON.stringify(body)
+        });
+      } catch (e) {
+        const ex = describeException(e);
+        out.error = makeErr("network_error",
+          "Impossible de joindre le proxy Cloudflare.",
+          ex.message,
+          "claude:fetch",
+          { exception_name: ex.name, where: ex.stack, hint: "Vérifier la connexion réseau et l'URL du proxy." });
+        return out;
+      }
+      let data = null, rawText = "";
+      try {
+        rawText = await r.text();
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch (_) {
+        data = { _non_json_body: rawText.slice(0, 400) };
+      }
       out.raw = data;
       if (!r.ok) {
-        out.error = "HTTP " + r.status + " : " + (data && (data.message || data.error?.message || JSON.stringify(data).slice(0, 200)));
+        // Le proxy renvoie déjà un objet structuré {code, message, detail, step, ...}
+        out.error = makeErr(
+          (data && data.code) || ("http_" + r.status),
+          (data && data.message) || ("Erreur HTTP " + r.status + " côté proxy/Claude."),
+          (data && data.detail) || rawText.slice(0, 400),
+          (data && data.step) || "claude:proxy_response",
+          { http_status: r.status, upstream: data }
+        );
       } else {
-        const text = (data.content || []).filter(c => c.type === "text").map(c => c.text).join("\n");
+        const text = (data && data.content || []).filter(c => c.type === "text").map(c => c.text).join("\n");
         const parsed = tryParseJson(text);
         if (parsed && Array.isArray(parsed.employees)) {
           out.employees = parsed.employees;
           out.ok = true;
         } else {
-          out.error = "JSON non parsable depuis réponse Claude";
+          out.error = makeErr("json_unparseable",
+            "Claude a répondu mais sa sortie n'est pas un JSON {employees:[…]} parsable.",
+            "Aperçu réponse texte : " + (text || "(vide)").slice(0, 300),
+            "claude:parse_response",
+            { response_preview: (text || "").slice(0, 600), hint: "Vérifier le prompt STRUCTURED_PROMPT ou réessayer." });
         }
       }
     } catch (e) {
-      out.error = e && e.message ? e.message : String(e);
+      const ex = describeException(e);
+      out.error = makeErr("uncaught_exception",
+        "Exception inattendue pendant l'appel Claude.",
+        ex.message,
+        "claude:uncaught",
+        { exception_name: ex.name, where: ex.stack });
     } finally {
       out.latency_ms = Date.now() - started;
     }
@@ -205,22 +312,115 @@ INTERDICTION ABSOLUE :
    * Passe C — GPT-4o Vision (images uniquement → on rasterise le PDF)
    * ==================================================================== */
 
+  /**
+   * Wrapper commun pour un appel proxy + parsing JSON + capture d'erreurs détaillée.
+   * Toutes les passes (B/C/D/E) passent par cette fonction pour garantir des erreurs
+   * structurées et la cause exacte préservée.
+   */
+  async function callProxyAndExtract(out, cfg, providerName, providerLabel, endpoint, body, extractText) {
+    let r, rawText = "", data = null;
+    // 1) Appel proxy
+    try {
+      r = await fetch(cfg.url + endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
+        body: JSON.stringify(body)
+      });
+    } catch (e) {
+      const ex = describeException(e);
+      out.error = makeErr("network_error",
+        `Impossible de joindre le proxy Cloudflare pour ${providerLabel}.`,
+        ex.message,
+        `${providerName}:fetch`,
+        { exception_name: ex.name, where: ex.stack, hint: "Vérifier la connexion réseau et l'URL du proxy." });
+      return;
+    }
+    // 2) Lecture body (essaie JSON, garde brut en fallback)
+    try {
+      rawText = await r.text();
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch (_) {
+      data = { _non_json_body: rawText.slice(0, 400) };
+    }
+    out.raw = data;
+    // 3) Erreur HTTP : exposer la chaîne d'erreur structurée du proxy
+    if (!r.ok) {
+      out.error = makeErr(
+        (data && data.code) || ("http_" + r.status),
+        (data && data.message) || `Erreur HTTP ${r.status} côté proxy/${providerLabel}.`,
+        (data && data.detail) || rawText.slice(0, 400),
+        (data && data.step) || `${providerName}:proxy_response`,
+        { http_status: r.status, upstream: data, hint: data && data.hint }
+      );
+      return;
+    }
+    // 4) Succès → extraction texte + parsing JSON structuré
+    let text = "";
+    try {
+      text = extractText(data) || "";
+    } catch (e) {
+      const ex = describeException(e);
+      out.error = makeErr("response_shape_unexpected",
+        `Forme de réponse inattendue pour ${providerLabel}.`,
+        ex.message,
+        `${providerName}:extract_text`,
+        { exception_name: ex.name, where: ex.stack, response_preview: JSON.stringify(data).slice(0, 400) });
+      return;
+    }
+    const parsed = tryParseJson(text);
+    if (parsed && Array.isArray(parsed.employees)) {
+      out.employees = parsed.employees;
+      out.ok = true;
+    } else {
+      out.error = makeErr("json_unparseable",
+        `${providerLabel} a répondu mais sa sortie n'est pas un JSON {employees:[…]} parsable.`,
+        "Aperçu réponse texte : " + (text || "(vide)").slice(0, 300),
+        `${providerName}:parse_response`,
+        { response_preview: (text || "").slice(0, 600), hint: "Vérifier le prompt STRUCTURED_PROMPT ou réessayer." });
+    }
+  }
+
   async function runGPT4oVision(captureBytes, mime, opts) {
     opts = opts || {};
     const cfg = getProxyConfig();
     const started = Date.now();
     const out = { passe: "C", tool: "gpt4o-vision", ok: false, latency_ms: 0, employees: [], error: null, raw: null };
-    if (!cfg) { out.error = "Proxy non configuré"; return out; }
+    if (!cfg) {
+      out.error = makeErr("proxy_not_configured",
+        "Le proxy Vision IA n'est pas configuré.",
+        "URL et token absents (sessionStorage vide).",
+        "gpt4o:precheck",
+        { hint: "Renseigner l'URL et le X-Auth-Token dans le bloc « 0. Proxy Vision IA »." });
+      out.latency_ms = Date.now() - started;
+      return out;
+    }
     try {
       const isPdf = mime === "application/pdf";
       const imageMessages = [];
       if (isPdf) {
-        // Rasterise jusqu'à 8 pages (assez pour les PDFs SBM standards)
-        const pdf = await window.pdfjsLib.getDocument({ data: captureBytes }).promise;
-        const maxPages = Math.min(pdf.numPages, opts.maxPages || 8);
-        for (let i = 1; i <= maxPages; i++) {
-          const b64 = await pdfPageToPngBase64(captureBytes, i, opts.scale || 2.0);
-          imageMessages.push({ type: "image_url", image_url: { url: "data:image/png;base64," + b64 } });
+        if (!window.pdfjsLib) {
+          out.error = makeErr("pdfjs_missing",
+            "PDF.js n'est pas chargé — impossible de rasteriser le PDF pour GPT-4o.",
+            "window.pdfjsLib indéfini",
+            "gpt4o:rasterize",
+            { hint: "Vérifier l'inclusion CDN de pdf.js dans index.html." });
+          return out;
+        }
+        try {
+          const pdf = await window.pdfjsLib.getDocument({ data: captureBytes }).promise;
+          const maxPages = Math.min(pdf.numPages, opts.maxPages || 8);
+          for (let i = 1; i <= maxPages; i++) {
+            const b64 = await pdfPageToPngBase64(captureBytes, i, opts.scale || 2.0);
+            imageMessages.push({ type: "image_url", image_url: { url: "data:image/png;base64," + b64 } });
+          }
+        } catch (e) {
+          const ex = describeException(e);
+          out.error = makeErr("pdf_rasterize_failed",
+            "Échec de la rasterisation du PDF en images PNG pour GPT-4o.",
+            ex.message,
+            "gpt4o:rasterize",
+            { exception_name: ex.name, where: ex.stack });
+          return out;
         }
       } else {
         imageMessages.push({
@@ -237,27 +437,15 @@ INTERDICTION ABSOLUE :
           content: [{ type: "text", text: STRUCTURED_PROMPT }, ...imageMessages]
         }]
       };
-      const r = await fetch(cfg.url + "/v1/openai", {
-        method: "POST",
-        headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
-        body: JSON.stringify(body)
-      });
-      const data = await r.json();
-      out.raw = data;
-      if (!r.ok) {
-        out.error = "HTTP " + r.status + " : " + (data && (data.message || data.error?.message || JSON.stringify(data).slice(0, 200)));
-      } else {
-        const text = data.choices?.[0]?.message?.content || "";
-        const parsed = tryParseJson(text);
-        if (parsed && Array.isArray(parsed.employees)) {
-          out.employees = parsed.employees;
-          out.ok = true;
-        } else {
-          out.error = "JSON non parsable depuis réponse GPT-4o";
-        }
-      }
+      await callProxyAndExtract(out, cfg, "gpt4o", "GPT-4o", "/v1/openai", body,
+        (data) => data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || "");
     } catch (e) {
-      out.error = e && e.message ? e.message : String(e);
+      const ex = describeException(e);
+      out.error = makeErr("uncaught_exception",
+        "Exception inattendue pendant l'appel GPT-4o.",
+        ex.message,
+        "gpt4o:uncaught",
+        { exception_name: ex.name, where: ex.stack });
     } finally {
       out.latency_ms = Date.now() - started;
     }
@@ -273,45 +461,76 @@ INTERDICTION ABSOLUE :
     const cfg = getProxyConfig();
     const started = Date.now();
     const out = { passe: "D", tool: "mistral-ocr", ok: false, latency_ms: 0, employees: [], error: null, raw: null };
-    if (!cfg) { out.error = "Proxy non configuré"; return out; }
+    if (!cfg) {
+      out.error = makeErr("proxy_not_configured",
+        "Le proxy Vision IA n'est pas configuré.",
+        "URL et token absents (sessionStorage vide).",
+        "mistral:precheck",
+        { hint: "Renseigner l'URL et le X-Auth-Token dans le bloc « 0. Proxy Vision IA »." });
+      out.latency_ms = Date.now() - started;
+      return out;
+    }
     try {
       const isPdf = mime === "application/pdf";
       const documentObj = isPdf
         ? { type: "document_base64", document_base64: bytesToBase64(captureBytes), document_name: "planning.pdf" }
-        : { type: "image_base64", image_base64: bytesToBase64(captureBytes), image_format: mime?.replace("image/", "") || "png" };
+        : { type: "image_base64", image_base64: bytesToBase64(captureBytes), image_format: (mime && mime.replace("image/", "")) || "png" };
 
       const body = {
         model: opts.model || "mistral-ocr-latest",
         document: documentObj,
         include_image_base64: false
       };
-      const r = await fetch(cfg.url + "/v1/mistral", {
-        method: "POST",
-        headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
-        body: JSON.stringify(body)
-      });
-      const data = await r.json();
+      // Mistral OCR retourne `pages[]` avec `markdown` — on cherche un JSON {employees:[…]}
+      // si présent ; sinon, on considère le résultat comme une sortie OCR brute (employees=[],
+      // ok=true) et on garde un aperçu du markdown pour debug humain.
+      let r, rawText = "", data = null;
+      try {
+        r = await fetch(cfg.url + "/v1/mistral", {
+          method: "POST",
+          headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
+          body: JSON.stringify(body)
+        });
+      } catch (e) {
+        const ex = describeException(e);
+        out.error = makeErr("network_error",
+          "Impossible de joindre le proxy Cloudflare pour Mistral OCR.",
+          ex.message,
+          "mistral:fetch",
+          { exception_name: ex.name, where: ex.stack, hint: "Vérifier la connexion réseau et l'URL du proxy." });
+        return out;
+      }
+      try { rawText = await r.text(); data = rawText ? JSON.parse(rawText) : null; }
+      catch (_) { data = { _non_json_body: rawText.slice(0, 400) }; }
       out.raw = data;
       if (!r.ok) {
-        out.error = "HTTP " + r.status + " : " + (data && (data.message || data.error?.message || JSON.stringify(data).slice(0, 200)));
+        out.error = makeErr(
+          (data && data.code) || ("http_" + r.status),
+          (data && data.message) || ("Erreur HTTP " + r.status + " côté proxy/Mistral OCR."),
+          (data && data.detail) || rawText.slice(0, 400),
+          (data && data.step) || "mistral:proxy_response",
+          { http_status: r.status, upstream: data, hint: data && data.hint }
+        );
+        return out;
+      }
+      const md = ((data && data.pages) || []).map(p => p.markdown || "").join("\n");
+      const parsed = tryParseJson(md);
+      if (parsed && Array.isArray(parsed.employees)) {
+        out.employees = parsed.employees;
+        out.ok = true;
       } else {
-        // Mistral OCR retourne `pages[]` avec `markdown` — on essaie d'extraire un tableau JSON si possible,
-        // sinon on délègue le parsing à une passe ultérieure et on retourne le markdown comme employees=[].
-        const md = (data.pages || []).map(p => p.markdown || "").join("\n");
-        const parsed = tryParseJson(md);
-        if (parsed && Array.isArray(parsed.employees)) {
-          out.employees = parsed.employees;
-          out.ok = true;
-        } else {
-          // Pas de JSON dans la sortie OCR — c'est normal pour Mistral OCR brut.
-          // On garde la sortie pour analyse manuelle.
-          out.employees = [];
-          out.ok = true;
-          out.raw = { ...data, _markdown_preview: md.slice(0, 1000) };
-        }
+        // Sortie OCR brute sans JSON : succès partiel, on garde pour debug.
+        out.employees = [];
+        out.ok = true;
+        out.raw = Object.assign({}, data, { _markdown_preview: md.slice(0, 1000) });
       }
     } catch (e) {
-      out.error = e && e.message ? e.message : String(e);
+      const ex = describeException(e);
+      out.error = makeErr("uncaught_exception",
+        "Exception inattendue pendant l'appel Mistral OCR.",
+        ex.message,
+        "mistral:uncaught",
+        { exception_name: ex.name, where: ex.stack });
     } finally {
       out.latency_ms = Date.now() - started;
     }
@@ -327,7 +546,15 @@ INTERDICTION ABSOLUE :
     const cfg = getProxyConfig();
     const started = Date.now();
     const out = { passe: "E", tool: "gemini-vision", ok: false, latency_ms: 0, employees: [], error: null, raw: null };
-    if (!cfg) { out.error = "Proxy non configuré"; return out; }
+    if (!cfg) {
+      out.error = makeErr("proxy_not_configured",
+        "Le proxy Vision IA n'est pas configuré.",
+        "URL et token absents (sessionStorage vide).",
+        "gemini:precheck",
+        { hint: "Renseigner l'URL et le X-Auth-Token dans le bloc « 0. Proxy Vision IA »." });
+      out.latency_ms = Date.now() - started;
+      return out;
+    }
     try {
       const useMime = mime === "application/pdf" ? "application/pdf" : (mime || "image/png");
       const body = {
@@ -340,30 +567,16 @@ INTERDICTION ABSOLUE :
         }],
         generationConfig: { temperature: 0, maxOutputTokens: 8192, responseMimeType: "application/json" }
       };
-      const r = await fetch(
-        cfg.url + "/v1/gemini?model=" + encodeURIComponent(opts.model || "gemini-2.5-pro"),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
-          body: JSON.stringify(body)
-        }
-      );
-      const data = await r.json();
-      out.raw = data;
-      if (!r.ok) {
-        out.error = "HTTP " + r.status + " : " + (data && (data.error?.message || JSON.stringify(data).slice(0, 200)));
-      } else {
-        const text = data.candidates?.[0]?.content?.parts?.map(p => p.text).join("\n") || "";
-        const parsed = tryParseJson(text);
-        if (parsed && Array.isArray(parsed.employees)) {
-          out.employees = parsed.employees;
-          out.ok = true;
-        } else {
-          out.error = "JSON non parsable depuis réponse Gemini";
-        }
-      }
+      await callProxyAndExtract(out, cfg, "gemini", "Gemini",
+        "/v1/gemini?model=" + encodeURIComponent(opts.model || "gemini-2.5-pro"), body,
+        (data) => (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts || []).map(p => p.text || "").join("\n"));
     } catch (e) {
-      out.error = e && e.message ? e.message : String(e);
+      const ex = describeException(e);
+      out.error = makeErr("uncaught_exception",
+        "Exception inattendue pendant l'appel Gemini.",
+        ex.message,
+        "gemini:uncaught",
+        { exception_name: ex.name, where: ex.stack });
     } finally {
       out.latency_ms = Date.now() - started;
     }
@@ -376,27 +589,56 @@ INTERDICTION ABSOLUE :
 
   async function runAllVisionPasses(captureBytes, mime, opts) {
     opts = opts || {};
-    // Lance les 4 passes en parallèle. Chaque passe a un timeout dur de 45s.
-    function withTimeout(promise, ms, label) {
-      return Promise.race([
-        promise,
-        new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} timeout ${ms}ms`)), ms))
-      ]).catch(e => ({
-        passe: label, tool: label.toLowerCase(), ok: false, latency_ms: ms, employees: [],
-        error: e && e.message ? e.message : String(e), raw: null
-      }));
-    }
     const TIMEOUT = opts.timeout_ms || 45000;
-    const results = await Promise.allSettled([
-      withTimeout(runClaudeVision(captureBytes, mime, opts), TIMEOUT, "B"),
-      withTimeout(runGPT4oVision(captureBytes, mime, opts), TIMEOUT, "C"),
-      withTimeout(runMistralOCR(captureBytes, mime, opts), TIMEOUT, "D"),
-      withTimeout(runGeminiVision(captureBytes, mime, opts), TIMEOUT, "E"),
+    // Wrap chaque passe avec un timeout dur. Si timeout → erreur structurée claire.
+    function withTimeout(promiseFactory, ms, passe, tool) {
+      return new Promise((resolve) => {
+        const started = Date.now();
+        let settled = false;
+        const t = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve({
+            passe, tool, ok: false, latency_ms: Date.now() - started, employees: [],
+            error: makeErr("timeout",
+              `${tool} n'a pas répondu dans le délai imparti (${ms} ms).`,
+              `Timeout ${ms} ms dépassé pour la passe ${passe}/${tool}.`,
+              `${tool}:timeout`,
+              { hint: "Augmenter opts.timeout_ms ou vérifier la santé du provider." }),
+            raw: null
+          });
+        }, ms);
+        Promise.resolve()
+          .then(promiseFactory)
+          .then((res) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(t);
+            resolve(res);
+          })
+          .catch((e) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(t);
+            const ex = describeException(e);
+            resolve({
+              passe, tool, ok: false, latency_ms: Date.now() - started, employees: [],
+              error: makeErr("uncaught_in_wrapper",
+                `Exception non capturée par la passe ${tool}.`,
+                ex.message,
+                `${tool}:wrapper`,
+                { exception_name: ex.name, where: ex.stack }),
+              raw: null
+            });
+          });
+      });
+    }
+    return await Promise.all([
+      withTimeout(() => runClaudeVision(captureBytes, mime, opts), TIMEOUT, "B", "claude-vision"),
+      withTimeout(() => runGPT4oVision(captureBytes, mime, opts), TIMEOUT, "C", "gpt4o-vision"),
+      withTimeout(() => runMistralOCR(captureBytes, mime, opts), TIMEOUT, "D", "mistral-ocr"),
+      withTimeout(() => runGeminiVision(captureBytes, mime, opts), TIMEOUT, "E", "gemini-vision"),
     ]);
-    return results.map(r => r.status === "fulfilled" ? r.value : ({
-      passe: "?", tool: "unknown", ok: false, latency_ms: 0, employees: [],
-      error: r.reason && r.reason.message ? r.reason.message : String(r.reason), raw: null
-    }));
   }
 
   /* ====================================================================
