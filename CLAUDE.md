@@ -836,6 +836,72 @@ S'applique TOUS projets (Apex, CMCteams, e-KDMC, etc.).
 
 ---
 
+## 🔌 RÈGLE ABSOLUE — MCP AUTO-INSTALLÉS + 100% AUTO PARTOUT CMCteams + Apex AI (Kevin 2026-05-27, ABSOLUE)
+
+> **"Install le mcp qu'il te faut tout auto, dans apex ai aussi. Toujours tout auto, clefs etc."** — Kevin 2026-05-27
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex AI, CMCteams, tous projets actuels + futurs.
+
+### 1. Aucune saisie manuelle Kevin pour les credentials/URLs/configurations
+
+❌ INTERDIT : « Colle l'URL du worker ici » / « Recopie le token là »
+❌ INTERDIT : « Va dans Settings > Secrets pour récupérer X »
+❌ INTERDIT : « Configure le MCP server toi-même »
+
+✅ OBLIGATOIRE :
+- Toute URL générée par un workflow / déploiement est **commitée auto** dans un fichier de config (ex `proxy-config.json`) que l'app charge au boot.
+- Tout token nécessaire est soit **récupéré via Origin trustée** (CORS allowlist), soit **injecté par un workflow** depuis les secrets GitHub, soit **dérivé d'une session existante** (OAuth, device trust).
+- Tout MCP server requis par une feature DOIT être ajouté automatiquement dans `~/.claude/settings.json` ou équivalent à la première utilisation. Si le user-side MCP est manquant, **détecter, proposer le diff `settings.json`, et appliquer** (pas demander d'action manuelle).
+
+### 2. MCP nécessaires connus (état actuel — toujours installés)
+
+| MCP | Usage | Source des credentials |
+|---|---|---|
+| `mcp__github__*` | Lire/écrire repo, créer PR, merger, lancer workflows | Token GitHub auto-provisionné par l'hôte |
+| `mcp__github__*` (workflows runs) | Trigger workflow_dispatch | Même token |
+| Cloudflare MCP (futur) | Trigger redeploy Worker, voir logs | `CLOUDFLARE_API_TOKEN` secrets GitHub |
+| Cloudflare Worker proxy (alternatif sans MCP) | Récupérer secrets GitHub côté frontend | Workflow `cmc-parser-proxy-deploy.yml` |
+
+### 3. Architecture "tout auto" type pour récupérer des secrets côté frontend
+
+Pattern référence (livré T1 sandbox planning-parser-tester) :
+
+```
+Secrets GitHub (ANTHROPIC_API_KEY, OPEN_AI_API_KEY, MISTRAL_API_KEY,
+  GEMINI_API_KEY, CLOUDFLARE_*, PUSH_ADMIN_TOKEN)
+       │
+       ▼ (workflow auto-deploy déclenché au push worker/**)
+Cloudflare Worker proxy
+  - lit env vars (secrets)
+  - relay vers APIs Vision IA
+  - auth via Origin trustée (allowlist github.io/kdmc.cloud/localhost)
+       │
+       ▼ (workflow capture URL + commit auto)
+tools/<projet>/proxy-config.json (commité auto avec [skip ci])
+       │
+       ▼ (frontend fetch au boot)
+App frontend
+  - loadAutoConfig() charge proxy-config.json
+  - configure URL automatique
+  - aucune saisie Kevin
+```
+
+### 4. Apex AI applique la même règle
+
+Pour chaque nouvelle feature Apex IA qui nécessite des secrets externes :
+- Push notification "Apex va se configurer X" (notification info, pas demande)
+- Workflow ou script auto qui pousse les secrets vers le Worker dédié
+- Frontend Apex charge sa config depuis un endpoint auto-géré
+- ZÉRO formulaire de saisie clé API côté UI (sauf si vraiment impossible techniquement, ex : Kevin doit physiquement créer un compte chez un provider)
+
+### 5. Test mental obligatoire avant chaque livraison
+
+> *"Si Kevin ouvre l'app/feature MAINTENANT sur son iPhone, est-ce qu'il a une SEULE saisie à faire (URL, token, clé, login) ? Si oui → JE DOIS automatiser cette étape via MCP ou workflow ou auto-config avant livraison."*
+
+S'applique : Claude Code (cette session), Apex IA, CMCteams, tous projets futurs Kevin.
+
+---
+
 ## 🔗 RÈGLE ABSOLUE — LIENS TOUJOURS CLIQUABLES + TRIÉS PAR PRIORITÉ DES TÂCHES KEVIN (Kevin 2026-05-27, ABSOLUE)
 
 > **"Tous tes liens ne fonctionnent pas. Toujours je clic ça ouvre directement au bon endroit. Note le, rappel toi toujours. Liens par prio de mes tâches."** — Kevin 2026-05-27

@@ -1,7 +1,11 @@
 name = "cmc-parser-proxy"
 main = "index.ts"
 compatibility_date = "2025-05-01"
-account_id = "<set-via-CLOUDFLARE_ACCOUNT_ID-env>"
+
+# account_id est lu automatiquement depuis la variable d'env CLOUDFLARE_ACCOUNT_ID
+# (cf. workflow .github/workflows/cmc-parser-proxy-deploy.yml). NE PAS hardcoder
+# ici ni mettre un placeholder texte — wrangler le prendrait comme valeur littérale
+# et l'API Cloudflare renverrait erreur 7003 "worker identifier is invalid".
 
 # Pas de routes personnalisées pour l'instant — accès via *.workers.dev.
 workers_dev = true

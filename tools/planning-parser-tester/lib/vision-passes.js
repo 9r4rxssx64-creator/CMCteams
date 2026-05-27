@@ -34,13 +34,23 @@
   const STORAGE_KEY_URL = "cmc_parser_proxy_url";
   const STORAGE_KEY_TOKEN = "cmc_parser_proxy_token";
 
+  // Cache mémoire pour l'auto-config chargée depuis proxy-config.json
+  let _autoLoaded = null;
+
   function getProxyConfig() {
-    // sessionStorage : auto-purge à la fermeture, jamais persisté Firebase.
-    if (typeof sessionStorage === "undefined") return null;
-    const url = sessionStorage.getItem(STORAGE_KEY_URL) || "";
-    const token = sessionStorage.getItem(STORAGE_KEY_TOKEN) || "";
-    if (!url || !token) return null;
-    return { url: url.replace(/\/$/, ""), token };
+    // 1) sessionStorage (override manuel Kevin pour debug) en priorité
+    if (typeof sessionStorage !== "undefined") {
+      const url = sessionStorage.getItem(STORAGE_KEY_URL) || "";
+      const token = sessionStorage.getItem(STORAGE_KEY_TOKEN) || "";
+      if (url) {
+        return { url: url.replace(/\/$/, ""), token: token || "", source: token ? "session_token" : "session_url" };
+      }
+    }
+    // 2) Auto-config depuis proxy-config.json (mode trusted_origin, zéro saisie)
+    if (_autoLoaded && _autoLoaded.url) {
+      return { url: _autoLoaded.url.replace(/\/$/, ""), token: "", source: "auto_config" };
+    }
+    return null;
   }
 
   function setProxyConfig(url, token) {
@@ -53,6 +63,50 @@
     if (typeof sessionStorage === "undefined") return;
     sessionStorage.removeItem(STORAGE_KEY_URL);
     sessionStorage.removeItem(STORAGE_KEY_TOKEN);
+  }
+
+  /**
+   * Charge proxy-config.json (généré automatiquement par le workflow GitHub
+   * Actions à chaque déploiement du worker). Kevin n'a RIEN à configurer.
+   *
+   * Retour : { ok, config?, error? } structuré.
+   */
+  async function loadAutoConfig(opts) {
+    opts = opts || {};
+    const url = opts.url || "./proxy-config.json";
+    try {
+      const r = await fetch(url + "?_t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) {
+        return { ok: false, error: {
+          code: "auto_config_http_" + r.status,
+          message: "Impossible de charger proxy-config.json (HTTP " + r.status + ").",
+          detail: "URL: " + url + " — Le fichier sera créé automatiquement au prochain déploiement du worker via le workflow cmc-parser-proxy-deploy.yml.",
+          step: "loadAutoConfig:fetch",
+          http_status: r.status,
+          hint: "Vérifier que le workflow Actions s'est exécuté avec succès."
+        }};
+      }
+      const data = await r.json();
+      if (!data || !data.worker_url) {
+        return { ok: false, error: {
+          code: "auto_config_invalid",
+          message: "proxy-config.json est présent mais vide ou mal formé.",
+          detail: "Champ worker_url absent. Contenu reçu : " + JSON.stringify(data).slice(0, 300),
+          step: "loadAutoConfig:parse",
+          hint: "Re-déclencher le workflow cmc-parser-proxy-deploy.yml."
+        }};
+      }
+      _autoLoaded = data;
+      return { ok: true, config: data };
+    } catch (e) {
+      return { ok: false, error: {
+        code: "auto_config_exception",
+        message: "Exception pendant le chargement de proxy-config.json.",
+        detail: (e && e.message) || String(e),
+        step: "loadAutoConfig:catch",
+        hint: "Vérifier la console réseau du navigateur."
+      }};
+    }
   }
 
   async function proxyHealthz() {
@@ -646,10 +700,10 @@ INTERDICTION ABSOLUE :
    * ==================================================================== */
 
   return {
-    getProxyConfig, setProxyConfig, clearProxyConfig, proxyHealthz,
+    getProxyConfig, setProxyConfig, clearProxyConfig, proxyHealthz, loadAutoConfig,
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.1.0"
+    VERSION: "T1-vision-v0.2.0-auto"
   };
 }));
