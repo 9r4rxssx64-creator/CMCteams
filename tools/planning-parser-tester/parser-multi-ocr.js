@@ -296,9 +296,44 @@
       /* ---- Phase 0 : Inventaire exhaustif ---- */
       result.inventory = buildInventory(textRaw);
 
-      /* ---- Phase 3.B → 3.E : Passes Vision IA via proxy (si configuré) ---- */
+      /* ---- Phase 3.B → 3.E : Passes Vision IA via proxy (auto-config lazy) ---- */
       if (VisionPasses && opts.runVision !== false && result.capture.bytes) {
-        const proxyCfg = VisionPasses.getProxyConfig();
+        // Si le proxy n'est pas configuré, on tente le loadAutoConfig en lazy
+        // ici (et pas seulement au boot — pour gérer le cas où l'utilisateur
+        // drop un PDF AVANT que autoLoadProxy() ait fini).
+        let proxyCfg = VisionPasses.getProxyConfig();
+        if (!proxyCfg && typeof VisionPasses.loadAutoConfig === "function") {
+          try {
+            const tLoad = Date.now();
+            const loadRes = await VisionPasses.loadAutoConfig();
+            result.durations_ms.proxy_autoload = Date.now() - tLoad;
+            if (loadRes && loadRes.ok) {
+              proxyCfg = VisionPasses.getProxyConfig();
+              result.alerts.push({
+                severity: "info",
+                msg: "Proxy auto-configuré au lancement du pipeline : " + (proxyCfg && proxyCfg.url || "?") +
+                     " (source: " + (loadRes.source || "?") + ")"
+              });
+            } else {
+              const e = loadRes && loadRes.error || {};
+              result.alerts.push({
+                severity: "warn",
+                msg: "Auto-config proxy a échoué : " + (e.message || "?") +
+                     " — Détail : " + (e.detail || "?").toString().slice(0, 200) +
+                     (e.hint ? " — 💡 " + e.hint : "")
+              });
+            }
+          } catch (e) {
+            result.errors.push({
+              code: "proxy_autoload_exception",
+              phase: "vision_autoload",
+              message: "Exception pendant l'auto-config du proxy.",
+              detail: (e && e.message) || String(e),
+              step: "pipeline:autoload_proxy",
+              where: (e && e.stack ? String(e.stack) : "").split("\n").slice(0, 4).join(" | ")
+            });
+          }
+        }
         if (proxyCfg) {
           const isVisionable =
             result.capture.mime === "application/pdf" ||
