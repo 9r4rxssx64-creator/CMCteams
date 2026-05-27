@@ -1,6 +1,12 @@
 /**
  * cmc-parser-proxy — Cloudflare Worker
  *
+ * Last redeploy trigger : 2026-05-27T21:30Z — force re-push des secrets
+ *   (Kevin a rechargé Gemini + vérifié clé Anthropic). Le workflow
+ *   cmc-parser-proxy-deploy.yml détecte ce changement, pousse les secrets
+ *   GitHub actuels (ANTHROPIC_API_KEY, OPEN_AI_API_KEY, MISTRAL_API_KEY,
+ *   GEMINI_API_KEY, PUSH_ADMIN_TOKEN) vers le worker et redéploie.
+ *
  * Proxy sécurisé qui relay les requêtes du frontend `planning-parser-tester`
  * vers les APIs Vision IA (Anthropic / OpenAI / Mistral / Gemini), en injectant
  * les clés API stockées comme secrets Cloudflare (eux-mêmes alimentés par les
