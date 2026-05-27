@@ -233,6 +233,16 @@ async function forwardProvider(
       (parsed as any)?.error?.message ||
       (parsed as any)?.message ||
       (typeof parsed === "string" ? parsed.slice(0, 400) : JSON.stringify(parsed).slice(0, 400));
+    // Hint spécifique pour 401 Anthropic — diagnostic exact secret GitHub vs Apex
+    let hint401 = "";
+    if (upstream.status === 401 && providerName === "anthropic") {
+      hint401 = "Si la même clé fonctionne dans Apex AI : le secret GitHub " +
+                "ANTHROPIC_API_KEY contient probablement une AUTRE clé (vieille / révoquée). " +
+                "Récupérer la clé active depuis Apex (Coffre → ax_anthropic_key) ou " +
+                "https://console.anthropic.com/settings/keys, la coller dans " +
+                "https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/ANTHROPIC_API_KEY, " +
+                "puis re-déclencher le workflow cmc-parser-proxy-deploy.yml.";
+    }
     return jsonErr(
       upstream.status === 401 || upstream.status === 403 ? upstream.status : (upstream.status >= 500 ? 502 : upstream.status),
       upstream.status === 401 ? "upstream_unauthorized"
@@ -248,7 +258,7 @@ async function forwardProvider(
       upstreamMessage,
       `forwardProvider:${providerName}:upstream_${upstream.status}`,
       origin,
-      { provider: providerName, http_status: upstream.status, upstream_body: parsed }
+      { provider: providerName, http_status: upstream.status, upstream_body: parsed, ...(hint401 ? { hint: hint401 } : {}) }
     );
   }
 
