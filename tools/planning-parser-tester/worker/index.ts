@@ -337,6 +337,108 @@ export default {
       );
     }
 
+    // Endpoint de diagnostic LIVE : teste la clé de chaque provider avec un
+    // mini-call (1 token) et retourne soit "OK" soit la vraie erreur upstream.
+    // Permet à Kevin de vérifier que sa clé Anthropic est valide SANS recharger
+    // toute l'app frontend (utile vu le cache Safari iOS).
+    // Exemple : GET /test/anthropic → {ok: true, model: "claude-sonnet-4-6"}
+    //          ou {ok: false, http_status: 401, message: "invalid x-api-key"}
+    const testMatch = url.pathname.match(/^\/test\/(anthropic|openai|mistral|gemini)\/?$/);
+    if (testMatch && req.method === "GET") {
+      const providerName = testMatch[1] as Provider;
+      const requestedModel = url.searchParams.get("model") || "";
+      try {
+        let testBody: unknown;
+        let endpoint: string;
+        let headers: Record<string, string> = { "content-type": "application/json" };
+        const apiKey = ({
+          anthropic: env.ANTHROPIC_API_KEY,
+          openai: env.OPEN_AI_API_KEY,
+          mistral: env.MISTRAL_API_KEY,
+          gemini: env.GEMINI_API_KEY,
+        } as Record<Provider, string | undefined>)[providerName];
+
+        if (!apiKey) {
+          return jsonErr(503, "secret_missing",
+            `Secret ${providerName} absent du Worker.`,
+            "Re-trigger le workflow après avoir ajouté/mis à jour le secret GitHub.",
+            `test:${providerName}:secret`, origin, { provider: providerName });
+        }
+
+        switch (providerName) {
+          case "anthropic":
+            endpoint = "https://api.anthropic.com/v1/messages";
+            headers["x-api-key"] = apiKey;
+            headers["anthropic-version"] = "2023-06-01";
+            testBody = {
+              model: requestedModel || "claude-sonnet-4-6",
+              max_tokens: 8,
+              messages: [{ role: "user", content: "ping" }],
+            };
+            break;
+          case "openai":
+            endpoint = "https://api.openai.com/v1/chat/completions";
+            headers["authorization"] = `Bearer ${apiKey}`;
+            testBody = {
+              model: requestedModel || "gpt-4o-mini",
+              max_tokens: 8,
+              messages: [{ role: "user", content: "ping" }],
+            };
+            break;
+          case "mistral":
+            endpoint = "https://api.mistral.ai/v1/chat/completions";
+            headers["authorization"] = `Bearer ${apiKey}`;
+            testBody = {
+              model: requestedModel || "mistral-small-latest",
+              max_tokens: 8,
+              messages: [{ role: "user", content: "ping" }],
+            };
+            break;
+          case "gemini":
+            endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${requestedModel || "gemini-2.5-flash"}:generateContent?key=${apiKey}`;
+            testBody = {
+              contents: [{ role: "user", parts: [{ text: "ping" }] }],
+              generationConfig: { maxOutputTokens: 8 },
+            };
+            break;
+        }
+
+        const r = await fetch(endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(testBody),
+        });
+        const text = await r.text();
+        let parsed: unknown = text;
+        try { parsed = JSON.parse(text); } catch (_) { /* keep text */ }
+
+        const ok = r.ok;
+        const upstreamMsg =
+          (parsed as any)?.error?.message ||
+          (parsed as any)?.message ||
+          (typeof parsed === "string" ? parsed.slice(0, 300) : JSON.stringify(parsed).slice(0, 300));
+
+        return new Response(JSON.stringify({
+          ok,
+          provider: providerName,
+          model_tested: (testBody as any).model || requestedModel || null,
+          http_status: r.status,
+          message: ok ? `${providerName} accepte la clé et le modèle.` : `${providerName} a renvoyé HTTP ${r.status} — ${upstreamMsg}`,
+          upstream_body: parsed,
+          ts: new Date().toISOString(),
+        }, null, 2), {
+          status: ok ? 200 : (r.status === 401 || r.status === 403 ? r.status : (r.status >= 500 ? 502 : r.status)),
+          headers: { "content-type": "application/json", ...corsHeaders(origin) }
+        });
+      } catch (e) {
+        const desc = describeException(e);
+        return jsonErr(502, "test_exception",
+          `Exception pendant le test ${providerName}.`,
+          desc.message, `test:${providerName}:exception`,
+          origin, { exception_name: desc.name, where: desc.stack });
+      }
+    }
+
     // Forward provider
     const match = url.pathname.match(/^\/v1\/(anthropic|openai|mistral|gemini)\/?$/);
     if (match && req.method === "POST") {

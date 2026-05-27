@@ -361,45 +361,77 @@ INTERDICTION ABSOLUE :
       contentBlocks.push({ type: "text", text: STRUCTURED_PROMPT });
 
       // Modèle par défaut : claude-sonnet-4-6 (CLAUDE.md mentionne disponible
-      // largement). Anciennement claude-sonnet-4-5-20250929 qui peut retourner
-      // 401 si l'organisation n'a pas accès à ce snapshot précis.
+      // largement). Fallback automatique sur d'autres modèles si 404 (modèle
+      // inconnu) ou 403 (pas d'accès à ce snapshot).
+      const candidates = opts.model
+        ? [opts.model]
+        : ["claude-sonnet-4-6", "claude-sonnet-4-5", "claude-opus-4-7", "claude-haiku-4-5"];
       const body = {
-        model: opts.model || "claude-sonnet-4-6",
+        model: candidates[0],
         max_tokens: 8192,
         messages: [{ role: "user", content: contentBlocks }]
       };
-      let r;
-      try {
-        r = await fetch(cfg.url + "/v1/anthropic", {
-          method: "POST",
-          headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
-          body: JSON.stringify(body)
-        });
-      } catch (e) {
-        const ex = describeException(e);
-        out.error = makeErr("network_error",
-          "Impossible de joindre le proxy Cloudflare.",
-          ex.message,
-          "claude:fetch",
-          { exception_name: ex.name, where: ex.stack, hint: "Vérifier la connexion réseau et l'URL du proxy." });
-        return out;
+      // Boucle fallback modèles : si 404 (model not found) ou 403 sur ce
+      // snapshot précis, on essaie le candidat suivant. 401 = clé invalide
+      // → on s'arrête immédiatement (pas la peine d'essayer d'autres modèles).
+      let r, rawText = "", data = null, modelTried = candidates[0];
+      let lastError = null;
+      for (let mi = 0; mi < candidates.length; mi++) {
+        modelTried = candidates[mi];
+        body.model = modelTried;
+        try {
+          r = await fetch(cfg.url + "/v1/anthropic", {
+            method: "POST",
+            headers: { "content-type": "application/json", "X-Auth-Token": cfg.token },
+            body: JSON.stringify(body)
+          });
+        } catch (e) {
+          const ex = describeException(e);
+          out.error = makeErr("network_error",
+            "Impossible de joindre le proxy Cloudflare.",
+            ex.message, "claude:fetch",
+            { exception_name: ex.name, where: ex.stack, hint: "Vérifier la connexion réseau et l'URL du proxy." });
+          return out;
+        }
+        try {
+          rawText = await r.text();
+          data = rawText ? JSON.parse(rawText) : null;
+        } catch (_) {
+          data = { _non_json_body: rawText.slice(0, 400) };
+        }
+        if (r.ok) break;
+        // 401 = clé invalide, inutile d'essayer d'autres modèles
+        if (r.status === 401) {
+          lastError = { code: "upstream_unauthorized", model: modelTried, data, status: 401 };
+          break;
+        }
+        // 404 ou 403 ou 400 (model_not_found) → essaie modèle suivant
+        const upstreamMsgLc = String((data && data.error && data.error.message) || (data && data.message) || rawText || "").toLowerCase();
+        if (r.status === 404 || r.status === 403 ||
+            upstreamMsgLc.includes("model") && upstreamMsgLc.includes("not")) {
+          lastError = { code: "model_unavailable", model: modelTried, data, status: r.status };
+          continue;
+        }
+        // Toute autre erreur → on s'arrête
+        lastError = { code: "http_" + r.status, model: modelTried, data, status: r.status };
+        break;
       }
-      let data = null, rawText = "";
-      try {
-        rawText = await r.text();
-        data = rawText ? JSON.parse(rawText) : null;
-      } catch (_) {
-        data = { _non_json_body: rawText.slice(0, 400) };
-      }
-      out.raw = data;
-      if (!r.ok) {
-        // Le proxy renvoie déjà un objet structuré {code, message, detail, step, ...}
+      out.raw = { last_response: data, model_tried: modelTried, all_candidates: candidates };
+      if (!r || !r.ok) {
         out.error = makeErr(
-          (data && data.code) || ("http_" + r.status),
-          (data && data.message) || ("Erreur HTTP " + r.status + " côté proxy/Claude."),
+          (data && data.code) || (lastError && lastError.code) || ("http_" + (r && r.status || "?")),
+          (data && data.message) || ("Erreur HTTP " + (r && r.status) + " côté proxy/Claude (modèle: " + modelTried + ")."),
           (data && data.detail) || rawText.slice(0, 400),
           (data && data.step) || "claude:proxy_response",
-          { http_status: r.status, upstream: data }
+          {
+            http_status: r && r.status,
+            upstream: data,
+            model_tried: modelTried,
+            all_models_tried: candidates,
+            hint: (data && data.hint) || (r && r.status === 401
+              ? "Vérifier que le secret GitHub ANTHROPIC_API_KEY contient la clé qui fonctionne dans Apex AI."
+              : "Modèle " + modelTried + " indisponible. Essayer manuellement opts.model='claude-opus-4-7'.")
+          }
         );
       } else {
         const text = (data && data.content || []).filter(c => c.type === "text").map(c => c.text).join("\n");
@@ -801,6 +833,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.3.0-cloneBytes-all-passes"
+    VERSION: "T1-vision-v0.4.0-claude-fallback-models"
   };
 }));
