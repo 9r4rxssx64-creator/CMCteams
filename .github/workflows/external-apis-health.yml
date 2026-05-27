@@ -80,19 +80,19 @@ jobs:
             echo "| Railway | (token missing) | ⚠️ | Secret RAILWAY_TOKEN non configuré |" >> /tmp/health/report.md
             ALL_OK=false
           else
-            # Essai backboard.railway.com (URL nouvelle 2025+)
+            # Query { projects } compatible project-scoped ET account-scoped tokens
             HTTP=$(curl -sS -o /tmp/rw.json -w "%{http_code}" -m 10 -X POST \
               -H "Authorization: Bearer $RAILWAY_TOKEN" \
               -H "content-type: application/json" \
-              -d '{"query":"{ me { id email } }"}' \
+              -d '{"query":"{ projects { edges { node { id name } } } }"}' \
               "https://backboard.railway.com/graphql/v2")
             BODY=$(head -c 200 /tmp/rw.json)
             if [ "$HTTP" = "200" ]; then
-              if echo "$BODY" | jq -e '.data.me.id' > /dev/null 2>&1; then
-                EMAIL=$(jq -r '.data.me.email' /tmp/rw.json 2>/dev/null)
-                echo "| Railway | backboard.railway.com /graphql/v2 | ✅ $HTTP | $EMAIL |" >> /tmp/health/report.md
+              if echo "$BODY" | jq -e '.data.projects' > /dev/null 2>&1; then
+                COUNT=$(jq -r '.data.projects.edges | length' /tmp/rw.json 2>/dev/null)
+                echo "| Railway | backboard.railway.com /graphql/v2 | ✅ $HTTP | $COUNT projet(s) accessible(s) |" >> /tmp/health/report.md
               else
-                echo "| Railway | backboard.railway.com /graphql/v2 | ⚠️ $HTTP | Pas de .data.me — JSON: \`$BODY\` |" >> /tmp/health/report.md
+                echo "| Railway | backboard.railway.com /graphql/v2 | ⚠️ $HTTP | Pas de .data.projects — JSON: \`$BODY\` |" >> /tmp/health/report.md
                 ALL_OK=false
               fi
             else
@@ -100,7 +100,7 @@ jobs:
               HTTP2=$(curl -sS -o /tmp/rw2.json -w "%{http_code}" -m 10 -X POST \
                 -H "Authorization: Bearer $RAILWAY_TOKEN" \
                 -H "content-type: application/json" \
-                -d '{"query":"{ me { id email } }"}' \
+                -d '{"query":"{ projects { edges { node { id name } } } }"}' \
                 "https://backboard.railway.app/graphql/v2")
               BODY2=$(head -c 200 /tmp/rw2.json)
               if [ "$HTTP2" = "200" ]; then
