@@ -132,7 +132,14 @@
    * ================================================================ */
   async function extractWithPdfJs(bytes) {
     await ensurePdfJsReady();
-    const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
+    // CRITIQUE : pdf.js getDocument({data: bytes}) TRANSFÈRE et DÉTACHE
+    // l'ArrayBuffer source. Si on passait `bytes` directement, le buffer
+    // original (result.capture.bytes du pipeline) serait détaché → les 4
+    // passes Vision qui tournent APRÈS recevraient un buffer mort
+    // ('Underlying ArrayBuffer has been detached from the view or out-of-bounds').
+    // Clone avant pour préserver l'original.
+    const bytesClone = new Uint8Array(bytes).slice();
+    const pdf = await window.pdfjsLib.getDocument({ data: bytesClone }).promise;
     const pages = [];
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
@@ -478,6 +485,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.4.0-lazy-autoload"
+    VERSION: "T1-v0.4.1-phase-A-clone"
   };
 }));
