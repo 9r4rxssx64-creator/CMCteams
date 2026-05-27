@@ -253,6 +253,48 @@
       result.capture = await captureSource(input, filename);
       result.durations_ms.capture = Date.now() - tCap;
 
+      /* ---- Phase 1.5 : Validation taille (bug #19 fix) ---- */
+      // Garde-fou : refuse PDF vide (0 octet) ou > 32 MB (limite Anthropic + Mistral).
+      // Évite des appels Vision IA inutiles qui retournent des erreurs vagues.
+      const SIZE_MIN = 100;                 // PDF < 100 octets = corrompu/vide
+      const SIZE_MAX = 32 * 1024 * 1024;    // 32 MB = limite stricte Anthropic + Mistral
+      const sizeBytes = result.capture.sizeBytes || 0;
+      if (sizeBytes === 0) {
+        result.alerts.push({
+          severity: "err",
+          msg: "Fichier vide (0 octet). Vérifier le drag&drop ou le sélecteur de fichier."
+        });
+        result.errors.push({
+          code: "input_empty", phase: "capture", message: "Source vide après capture.",
+          detail: "result.capture.sizeBytes = 0", step: "pipeline:size_check_empty",
+          hint: "Re-glisse le PDF dans la zone de dépôt."
+        });
+        result.meta.finished_at = new Date().toISOString();
+        result.meta.total_duration_ms = Date.now() - startedAt;
+        return result;
+      }
+      if (sizeBytes < SIZE_MIN) {
+        result.alerts.push({
+          severity: "warn",
+          msg: "Fichier suspicieusement petit (" + sizeBytes + " octets). Probablement corrompu."
+        });
+      }
+      if (sizeBytes > SIZE_MAX) {
+        result.alerts.push({
+          severity: "err",
+          msg: "Fichier trop volumineux (" + (sizeBytes / 1024 / 1024).toFixed(1) + " MB > 32 MB max). Anthropic + Mistral refusent au-delà."
+        });
+        result.errors.push({
+          code: "input_too_large", phase: "capture", message: "Fichier dépasse 32 MB.",
+          detail: "sizeBytes=" + sizeBytes + " > MAX=" + SIZE_MAX,
+          step: "pipeline:size_check_max",
+          hint: "Compresser le PDF (Adobe Acrobat 'Réduire la taille du fichier') ou scinder en plusieurs."
+        });
+        // On continue quand même la Phase A (PDF.js qui peut lire les gros PDFs)
+        // mais on désactive les passes Vision (qui rejetteraient).
+        opts.runVision = false;
+      }
+
       /* ---- Hash idempotence ---- */
       const tHash = Date.now();
       const hashInput = result.capture.bytes || result.capture.textRaw;

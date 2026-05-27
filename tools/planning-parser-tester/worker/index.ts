@@ -146,6 +146,35 @@ function checkAuth(req: Request, env: Env): { ok: boolean; reason?: string; mode
  * Provider forwarders
  * ==================================================================== */
 
+// Limites strictes pour protéger le quota API Kevin (bug #16 + #17).
+const MAX_BODY_BYTES = 32 * 1024 * 1024;  // 32 MB = limite Anthropic doc + Mistral
+const UPSTREAM_TIMEOUT_MS = 75_000;        // 75s, > timeout frontend (45s) + marge
+
+// Rate-limit in-memory pour /test/* (bug #18). Cloudflare Workers ne persiste
+// pas l'état entre invocations → ce limit est best-effort par instance worker
+// (mais avec cold start fréquent, ça limite déjà bien l'abus). Pour vraie
+// protection production : Cloudflare KV ou Durable Object.
+const testRateLimit: Map<string, number[]> = new Map();
+const TEST_RATE_LIMIT_PER_MIN = 6;
+
+function checkTestRateLimit(ip: string): { ok: boolean; remaining: number } {
+  const now = Date.now();
+  const minute = 60_000;
+  const arr = testRateLimit.get(ip) || [];
+  const recent = arr.filter((t) => now - t < minute);
+  if (recent.length >= TEST_RATE_LIMIT_PER_MIN) {
+    return { ok: false, remaining: 0 };
+  }
+  recent.push(now);
+  testRateLimit.set(ip, recent);
+  // GC : si la map dépasse 1000 IPs, vide les plus anciennes
+  if (testRateLimit.size > 1000) {
+    const oldest = Array.from(testRateLimit.entries()).sort((a, b) => Math.max(...a[1]) - Math.max(...b[1])).slice(0, 500);
+    for (const [k] of oldest) testRateLimit.delete(k);
+  }
+  return { ok: true, remaining: TEST_RATE_LIMIT_PER_MIN - recent.length };
+}
+
 /**
  * Wrap commun pour tous les forwarders : vérifie secret + appelle upstream +
  * gère les erreurs réseau et upstream avec retour structuré clair.
@@ -157,6 +186,18 @@ async function forwardProvider(
   url: URL,
   origin: string | null
 ): Promise<Response> {
+  // Bug #16 fix : limite stricte de body (protège quota API).
+  if (body.byteLength > MAX_BODY_BYTES) {
+    return jsonErr(
+      413,
+      "payload_too_large",
+      `Corps de requête trop volumineux (${(body.byteLength / 1024 / 1024).toFixed(1)} MB).`,
+      `Limite ${MAX_BODY_BYTES} octets = ${MAX_BODY_BYTES / 1024 / 1024} MB. Anthropic + Mistral acceptent au plus 32 MB.`,
+      `forwardProvider:${providerName}:size_check`,
+      origin,
+      { provider: providerName, body_size_bytes: body.byteLength, max_bytes: MAX_BODY_BYTES, hint: "Compresser le PDF avant envoi, ou rasteriser à résolution moindre." }
+    );
+  }
   // 1) Vérification secret
   const secretMap = {
     anthropic: env.ANTHROPIC_API_KEY,
@@ -208,20 +249,39 @@ async function forwardProvider(
   }
 
   // 3) Appel upstream — capture les erreurs réseau distinctement des erreurs HTTP
+  //    Bug #17 fix : timeout dur via AbortController. Anthropic peut mettre
+  //    jusqu'à 60s sur les gros prompts ; on alloue 75s pour avoir une marge,
+  //    et le frontend (45s) timeout en premier proprement.
   let upstream: Response;
+  const abortCtrl = new AbortController();
+  const timeoutHandle = setTimeout(() => abortCtrl.abort(), UPSTREAM_TIMEOUT_MS);
   try {
-    upstream = await fetch(upstreamUrl, { method: "POST", headers: upstreamHeaders, body });
+    upstream = await fetch(upstreamUrl, { method: "POST", headers: upstreamHeaders, body, signal: abortCtrl.signal });
   } catch (e) {
     const desc = describeException(e);
+    const isAbort = desc.name === "AbortError" || desc.message.toLowerCase().includes("abort");
     return jsonErr(
-      502,
-      "upstream_unreachable",
-      `Impossible de joindre ${providerName} (réseau ou DNS).`,
+      isAbort ? 504 : 502,
+      isAbort ? "upstream_timeout" : "upstream_unreachable",
+      isAbort
+        ? `${providerName} n'a pas répondu dans le délai (${UPSTREAM_TIMEOUT_MS / 1000}s).`
+        : `Impossible de joindre ${providerName} (réseau ou DNS).`,
       desc.message,
-      `forwardProvider:${providerName}:fetch`,
+      `forwardProvider:${providerName}:${isAbort ? "timeout" : "fetch"}`,
       origin,
-      { provider: providerName, upstream_url_host: new URL(upstreamUrl).host, exception_name: desc.name, where: desc.stack }
+      {
+        provider: providerName,
+        upstream_url_host: new URL(upstreamUrl).host,
+        timeout_ms: UPSTREAM_TIMEOUT_MS,
+        exception_name: desc.name,
+        where: desc.stack,
+        hint: isAbort
+          ? "Le provider a pris trop longtemps. Réessayer plus tard ou avec un PDF plus petit."
+          : "Vérifier la connectivité Cloudflare → provider.",
+      }
     );
+  } finally {
+    clearTimeout(timeoutHandle);
   }
 
   // 4) Si upstream renvoie un code d'erreur, on enrichit la réponse plutôt que de la pipe nue
@@ -354,6 +414,20 @@ export default {
     const testMatch = url.pathname.match(/^\/test\/(anthropic|openai|mistral|gemini)\/?$/);
     if (testMatch && req.method === "GET") {
       const providerName = testMatch[1] as Provider;
+      // Bug #18 fix : rate-limit best-effort par IP source (6 calls/min).
+      const clientIp = req.headers.get("CF-Connecting-IP") || req.headers.get("X-Forwarded-For") || "unknown";
+      const rl = checkTestRateLimit(clientIp);
+      if (!rl.ok) {
+        return jsonErr(
+          429,
+          "test_rate_limited",
+          "Trop d'appels au endpoint de diagnostic /test/* depuis cette IP.",
+          `Limite : ${TEST_RATE_LIMIT_PER_MIN} calls/minute. Attendre 60s.`,
+          `test:${providerName}:rate_limit`,
+          origin,
+          { ip: clientIp.replace(/:\d+$/, ":***"), limit: TEST_RATE_LIMIT_PER_MIN, hint: "Endpoint réservé au diagnostic ponctuel Kevin. Pour usage programmatique, utiliser /v1/* avec X-Auth-Token." }
+        );
+      }
       const requestedModel = url.searchParams.get("model") || "";
       try {
         let testBody: unknown;
