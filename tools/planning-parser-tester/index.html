@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>🧪 Planning Parser Tester (T1)</title>
+<style>
+  :root {
+    --bg: #0b1409;
+    --bg-card: rgba(14, 28, 18, .65);
+    --gold: #e8b830;
+    --gold-soft: rgba(232, 184, 48, .15);
+    --text: #f1efe6;
+    --text-dim: #a9a89c;
+    --warn: #f7b955;
+    --err: #ea5455;
+    --ok: #6fbf73;
+    --border: rgba(232, 184, 48, .32);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+  body { padding: 16px; padding-bottom: env(safe-area-inset-bottom, 16px); max-width: 920px; margin: 0 auto; min-height: 100vh; }
+  h1 { font-size: 22px; margin: 0 0 6px; font-weight: 600; color: var(--gold); }
+  .sub { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+  .rule { background: rgba(234, 84, 85, .12); border-left: 3px solid var(--err); padding: 10px 12px; border-radius: 6px; margin-bottom: 18px; font-size: 13px; line-height: 1.5; }
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; color: var(--gold); }
+  #drop {
+    border: 2px dashed var(--border); border-radius: 14px; padding: 28px; text-align: center;
+    cursor: pointer; transition: background .15s, border-color .15s; min-height: 120px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #drop.over { background: var(--gold-soft); border-color: var(--gold); }
+  #drop .big { font-size: 36px; margin-bottom: 8px; }
+  #drop .hint { color: var(--text-dim); font-size: 13px; line-height: 1.5; }
+  #pick { display: none; }
+  .btn-pick {
+    display: inline-block; margin-top: 10px; padding: 10px 16px; background: var(--gold); color: #1a1407;
+    border: none; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 14px;
+    min-height: 44px; min-width: 44px;
+  }
+  .btn-pick:hover { filter: brightness(1.08); }
+  textarea#paste-text {
+    width: 100%; min-height: 90px; background: rgba(255, 255, 255, .04); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: ui-monospace, "SF Mono", monospace; font-size: 12px;
+  }
+  pre#result {
+    background: rgba(0, 0, 0, .35); padding: 12px; border-radius: 8px; overflow: auto;
+    font-family: ui-monospace, "SF Mono", monospace; font-size: 12px; line-height: 1.45;
+    white-space: pre-wrap; word-break: break-word; max-height: 60vh;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-right: 6px; background: var(--gold-soft); color: var(--gold); border: 1px solid var(--border); }
+  .badge.ok   { background: rgba(111, 191, 115, .15); color: var(--ok);   border-color: rgba(111, 191, 115, .4); }
+  .badge.warn { background: rgba(247, 185, 85, .15); color: var(--warn); border-color: rgba(247, 185, 85, .4); }
+  .badge.err  { background: rgba(234, 84, 85, .15);  color: var(--err);  border-color: rgba(234, 84, 85, .4); }
+  .small { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+  .legend { font-size: 11px; color: var(--text-dim); margin-top: 8px; line-height: 1.6; }
+  .row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--gold); padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 13px; min-height: 36px; }
+  .btn-sec:hover { background: var(--gold-soft); }
+  .alert-box { padding: 10px 12px; border-radius: 8px; margin-top: 10px; font-size: 13px; line-height: 1.45; }
+  .alert-warn { background: rgba(247, 185, 85, .12); border-left: 3px solid var(--warn); }
+  .alert-err  { background: rgba(234, 84, 85, .12);  border-left: 3px solid var(--err); }
+  .alert-info { background: rgba(111, 191, 115, .12); border-left: 3px solid var(--ok); }
+  .stack-passes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .pass-box { background: rgba(255, 255, 255, .04); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; }
+  .pass-box .name { font-weight: 600; color: var(--gold); margin-bottom: 4px; }
+  .pass-box .status { color: var(--text-dim); font-size: 11px; }
+  .pass-box.todo { opacity: .55; }
+  @media (max-width: 480px) {
+    .stack-passes { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🧪 Planning Parser Tester (T1)</h1>
+<div class="sub">
+  Sandbox isolé pour valider le pipeline d'import des plannings SBM <strong>avant</strong> intégration dans CMCteams.<br>
+  Fichier : <code>tools/planning-parser-tester/index.html</code> · ne modifie ni <code>index.html</code> racine ni <code>A.overrides</code>.
+</div>
+
+<div class="rule">
+  🛑 <strong>Règle absolue inviolable</strong> (Kevin, répétée 3×) :<br>
+  Reproduction à l'identique uniquement. <strong>JAMAIS</strong> d'auto-correction, <strong>JAMAIS</strong> de fallback historique, <strong>JAMAIS</strong> d'auto-remplissage.<br>
+  Si une lecture est ambiguë → <code>needs_review</code>, Kevin tranche manuellement.
+</div>
+
+<!-- ============ ZONE 1 : Input ============ -->
+<div class="card">
+  <h2>1. Choisir un document</h2>
+
+  <div id="drop" tabindex="0" role="button" aria-label="Zone drag and drop">
+    <div class="big">📄</div>
+    <div><strong>Glisse-dépose</strong> un PDF, une photo (HEIC/JPG/PNG), un ZIP ou colle (<kbd>Cmd+V</kbd>) ici.</div>
+    <div class="hint">Accepte aussi clic pour ouvrir le sélecteur fichier.</div>
+    <button class="btn-pick" id="btn-pick-trigger" type="button">📁 Choisir fichier</button>
+    <input id="pick" type="file" accept="application/pdf,image/*,application/zip" multiple>
+  </div>
+
+  <details style="margin-top: 12px;">
+    <summary style="cursor: pointer; color: var(--text-dim); font-size: 13px;">📋 …ou colle directement le texte brut du planning (fallback)</summary>
+    <textarea id="paste-text" placeholder="Colle ici le texte sélectionné depuis ton viewer PDF…"></textarea>
+    <div class="row-btns"><button class="btn-sec" id="btn-paste-go" type="button">▶ Analyser ce texte</button></div>
+  </details>
+</div>
+
+<!-- ============ ZONE 2 : Passes (visualisation pipeline) ============ -->
+<div class="card" id="passes-card" style="display:none;">
+  <h2>2. Pipeline de lecture (6 passes parallèles)</h2>
+  <div class="stack-passes">
+    <div class="pass-box" id="pass-A"><div class="name">A · PDF.js (texte natif)</div><div class="status">…</div></div>
+    <div class="pass-box todo" id="pass-B"><div class="name">B · Claude Vision</div><div class="status">à venir (Phase suivante)</div></div>
+    <div class="pass-box todo" id="pass-C"><div class="name">C · GPT-4o Vision</div><div class="status">à venir</div></div>
+    <div class="pass-box todo" id="pass-D"><div class="name">D · Mistral OCR</div><div class="status">à venir</div></div>
+    <div class="pass-box todo" id="pass-E"><div class="name">E · Gemini 2.5 Pro</div><div class="status">à venir</div></div>
+    <div class="pass-box todo" id="pass-F"><div class="name">F · Tesseract.js (fallback)</div><div class="status">à venir</div></div>
+  </div>
+  <div class="legend">
+    Les passes B-F sont des stubs dans cette première itération. Une fois la passe A validée Kevin sur ses 4 PDFs réels, on active les Vision IA pour atteindre le vote 4/4 unanime (zéro erreur).
+  </div>
+</div>
+
+<!-- ============ ZONE 3 : Résultat ============ -->
+<div class="card" id="result-card" style="display:none;">
+  <h2>3. Résultat de l'analyse</h2>
+  <div id="result-summary"></div>
+  <div id="result-alerts"></div>
+  <details style="margin-top: 12px;">
+    <summary style="cursor: pointer; color: var(--text-dim); font-size: 13px;">📦 JSON brut complet (pour debug / export)</summary>
+    <pre id="result"></pre>
+  </details>
+  <div class="row-btns">
+    <button class="btn-sec" id="btn-export" type="button">💾 Exporter JSON</button>
+    <button class="btn-sec" id="btn-reset" type="button">↩ Recommencer</button>
+  </div>
+</div>
+
+<!-- ============ Dépendances CDN ============ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
+<script>
+  // Charger pdf.js en non-module pour compatibilité
+  (function loadPdfJs() {
+    if (window.pdfjsLib) return;
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    s.onload = function () {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
+    };
+    document.head.appendChild(s);
+  })();
+</script>
+
+<script src="./helpers-reuse.js"></script>
+<script src="./parser-multi-ocr.js"></script>
+
+<!-- ============ Bootstrap UI ============ -->
+<script>
+(function () {
+  "use strict";
+
+  const H = window.PlanningParserHelpers;
+  const PIPE = window.PlanningParserPipeline;
+
+  const drop = document.getElementById("drop");
+  const pick = document.getElementById("pick");
+  const btnPickTrigger = document.getElementById("btn-pick-trigger");
+  const pasteText = document.getElementById("paste-text");
+  const btnPasteGo = document.getElementById("btn-paste-go");
+  const passesCard = document.getElementById("passes-card");
+  const passA = document.getElementById("pass-A");
+  const resultCard = document.getElementById("result-card");
+  const resultEl = document.getElementById("result");
+  const resultSummary = document.getElementById("result-summary");
+  const resultAlerts = document.getElementById("result-alerts");
+  const btnExport = document.getElementById("btn-export");
+  const btnReset = document.getElementById("btn-reset");
+
+  let lastResult = null;
+
+  /* --- Drag & Drop --- */
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    drop.classList.remove("over");
+    const f = e.dataTransfer.files[0];
+    if (f) await analyze(f);
+  });
+  drop.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return; // évite double-trigger via btn
+    pick.click();
+  });
+  drop.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick.click(); }
+  });
+
+  /* --- Sélecteur fichier --- */
+  btnPickTrigger.addEventListener("click", (e) => { e.stopPropagation(); pick.click(); });
+  pick.addEventListener("change", async () => {
+    const f = pick.files[0];
+    if (f) await analyze(f);
+  });
+
+  /* --- Paste clipboard (Cmd+V partout dans la page) --- */
+  window.addEventListener("paste", async (e) => {
+    // Vérifie qu'on n'est pas dans le textarea fallback
+    if (document.activeElement === pasteText) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.kind === "file") {
+        e.preventDefault();
+        await analyze(it.getAsFile());
+        return;
+      }
+    }
+    // Fallback texte
+    const txt = e.clipboardData.getData("text/plain");
+    if (txt && txt.length > 100) {
+      e.preventDefault();
+      await analyze(txt, "clipboard-paste.txt");
+    }
+  });
+
+  /* --- Paste texte explicite --- */
+  btnPasteGo.addEventListener("click", async () => {
+    const t = pasteText.value.trim();
+    if (!t) return alert("Colle d'abord du texte.");
+    await analyze(t, "paste-text.txt");
+  });
+
+  /* --- Analyse --- */
+  async function analyze(input, filename) {
+    try {
+      passesCard.style.display = "";
+      resultCard.style.display = "none";
+      passA.querySelector(".status").textContent = "⏳ Analyse en cours…";
+      passA.classList.remove("todo");
+
+      const result = await PIPE.runPipeline(
+        input,
+        filename || (input && input.name) || "unknown",
+        {}
+      );
+
+      lastResult = result;
+
+      // Update passe A status
+      const passeAdata = result.passes.find(p => p.passe === "A");
+      if (passeAdata) {
+        passA.querySelector(".status").textContent =
+          `✓ ${passeAdata.tool} · ${result.durations_ms.passe_A || 0} ms · ${passeAdata.pages?.length || 0} pages · ${passeAdata.itemsTotal || 0} items`;
+      } else {
+        passA.querySelector(".status").textContent = "⚠ Pas de texte extrait (format non-PDF ?)";
+      }
+
+      // Affiche résultat
+      resultCard.style.display = "";
+      renderSummary(result);
+      renderAlerts(result);
+      resultEl.textContent = JSON.stringify(result, (k, v) => {
+        // Tronque les blobs binaires et le textRaw long pour lisibilité
+        if (k === "bytes" && v) return `[Uint8Array ${v.byteLength || v.length || "?"} bytes]`;
+        if (k === "textRaw" && typeof v === "string" && v.length > 4000)
+          return v.slice(0, 4000) + `\n…[tronqué: ${v.length} chars total]`;
+        if (k === "items" && Array.isArray(v) && v.length > 50)
+          return `[${v.length} items, tronqué]`;
+        return v;
+      }, 2);
+
+    } catch (e) {
+      passA.querySelector(".status").textContent = "❌ Erreur";
+      resultCard.style.display = "";
+      resultEl.textContent = "Erreur : " + (e.message || e) + "\n\nStack:\n" + (e.stack || "—");
+    }
+  }
+
+  function renderSummary(r) {
+    const lines = [];
+    lines.push(`<div><span class="badge">📄</span> <strong>${H.esc(r.capture?.name || "—")}</strong> · ${r.capture?.mime || "?"} · ${r.capture?.sizeBytes || 0} octets</div>`);
+    lines.push(`<div style="margin-top:6px;"><span class="badge">🔢</span> Hash : <code>${(r.hash || "").slice(0, 16)}…</code></div>`);
+
+    const ty = r.type_detected;
+    if (ty) {
+      const conf = ty.confidence || 0;
+      const cls = conf >= 0.95 ? "ok" : conf >= 0.8 ? "warn" : "err";
+      lines.push(`<div style="margin-top:6px;"><span class="badge ${cls}">📋 Type</span> ${H.esc(ty.label)} · confiance ${conf}</div>`);
+    }
+    const v = r.version_detected;
+    if (v) {
+      lines.push(`<div style="margin-top:6px;"><span class="badge">🔢 Version</span> V${v.version} · source: ${v.source}${v.note ? ` (${H.esc(v.note)})` : ""}</div>`);
+    }
+    const my = r.month_year_detected;
+    if (my) {
+      const cls = my.key ? "ok" : "warn";
+      lines.push(`<div style="margin-top:6px;"><span class="badge ${cls}">📅 Mois</span> ${H.esc(my.monthName || "—")} ${my.year || "—"} (key=${my.key || "—"})</div>`);
+    }
+    const inv = r.inventory;
+    if (inv) {
+      lines.push(`<div style="margin-top:6px;"><span class="badge">👥 Noms</span> ${inv.names_total} détectés</div>`);
+      if (inv.sections_detected?.length) {
+        lines.push(`<div style="margin-top:6px;"><span class="badge">📊 Sections</span> ${
+          inv.sections_detected.map(s => H.esc(s.label) + " ×" + s.count).join(", ")
+        }</div>`);
+      }
+      lines.push(`<div style="margin-top:6px;"><span class="badge">📐 Cellules attendues</span> ~${inv.cells_expected} <span class="small">(approximation Phase 0)</span></div>`);
+    }
+    lines.push(`<div style="margin-top:6px;"><span class="badge">⏱</span> ${r.meta?.total_duration_ms || 0} ms total</div>`);
+    resultSummary.innerHTML = lines.join("");
+  }
+
+  function renderAlerts(r) {
+    const parts = [];
+    if (r.alerts?.length) {
+      r.alerts.forEach(a => {
+        const cls = a.severity === "warn" ? "alert-warn" : a.severity === "err" ? "alert-err" : "alert-info";
+        parts.push(`<div class="alert-box ${cls}">⚠ ${H.esc(a.msg)}</div>`);
+      });
+    }
+    if (r.errors?.length) {
+      r.errors.forEach(e => parts.push(`<div class="alert-box alert-err">❌ ${H.esc(e.phase)} : ${H.esc(e.message)}</div>`));
+    }
+    if (!parts.length) parts.push(`<div class="alert-box alert-info">✅ Aucune alerte sur ce premier passage.</div>`);
+    resultAlerts.innerHTML = parts.join("");
+  }
+
+  /* --- Export JSON --- */
+  btnExport.addEventListener("click", () => {
+    if (!lastResult) return;
+    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `parse-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  /* --- Reset --- */
+  btnReset.addEventListener("click", () => {
+    lastResult = null;
+    passesCard.style.display = "none";
+    resultCard.style.display = "none";
+    pick.value = "";
+    pasteText.value = "";
+  });
+
+})();
+</script>
+
+</body>
+</html>
