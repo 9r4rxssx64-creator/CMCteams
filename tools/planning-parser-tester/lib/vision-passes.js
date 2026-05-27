@@ -46,9 +46,16 @@
         return { url: url.replace(/\/$/, ""), token: token || "", source: token ? "session_token" : "session_url" };
       }
     }
-    // 2) Auto-config depuis proxy-config.json (mode trusted_origin, zéro saisie)
-    if (_autoLoaded && _autoLoaded.url) {
-      return { url: _autoLoaded.url.replace(/\/$/, ""), token: "", source: "auto_config" };
+    // 2) Auto-config depuis proxy-config.json ou URL conventionnelle.
+    // ⚠️ NB : loadAutoConfig() stocke l'URL dans _autoLoaded.worker_url
+    // (clé issue du JSON proxy-config.json + objet synthetic). Le champ
+    // _autoLoaded.url n'existe pas — bug historique corrigé ici.
+    if (_autoLoaded && _autoLoaded.worker_url) {
+      return {
+        url: String(_autoLoaded.worker_url).replace(/\/$/, ""),
+        token: "",
+        source: _autoLoaded.source_method === "conventional_url_probe" ? "auto_conventional" : "auto_config_json"
+      };
     }
     return null;
   }
@@ -760,6 +767,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.2.0-auto"
+    VERSION: "T1-vision-v0.2.1-bugfix-worker_url"
   };
 }));
