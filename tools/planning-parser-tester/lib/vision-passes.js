@@ -259,14 +259,17 @@ INTERDICTION ABSOLUE :
     return btoa(binary);
   }
 
-  async function pdfPageToPngBase64(pdfBytes, pageNum, scale) {
-    // Réutilise ensurePdfJsReady() du module parser-multi-ocr (configure workerSrc auto)
-    if (typeof window !== "undefined" && window.PlanningParserPipeline && typeof window.PlanningParserPipeline.ensurePdfJsReady === "function") {
-      await window.PlanningParserPipeline.ensurePdfJsReady();
-    } else if (typeof window === "undefined" || !window.pdfjsLib) {
-      throw new Error("pdfjsLib requis et helper ensurePdfJsReady indisponible");
+  /**
+   * Rasterise UNE page d'un PDF déjà chargé en PNG base64.
+   * IMPORTANT : prend un objet `pdf` déjà chargé via getDocument (pas les bytes
+   * bruts), parce que pdf.js DÉTACHE l'ArrayBuffer transmis à getDocument
+   * (transferable) → un 2e appel avec les mêmes bytes échoue avec
+   * « The object can not be cloned ». Bug observé runtime sur PDFs SBM.
+   */
+  async function pdfPageToPngBase64FromDoc(pdf, pageNum, scale) {
+    if (!pdf || typeof pdf.getPage !== "function") {
+      throw new Error("pdfPageToPngBase64FromDoc : objet pdf invalide (utilise getDocument().promise d'abord)");
     }
-    const pdf = await window.pdfjsLib.getDocument({ data: pdfBytes }).promise;
     const page = await pdf.getPage(pageNum);
     const viewport = page.getViewport({ scale: scale || 2.0 });
     const canvas = document.createElement("canvas");
@@ -524,10 +527,16 @@ INTERDICTION ABSOLUE :
           return out;
         }
         try {
-          const pdf = await window.pdfjsLib.getDocument({ data: captureBytes }).promise;
+          // ⚠️ Cloner les bytes : pdf.js DÉTACHE l'ArrayBuffer transmis à
+          // getDocument. Si on passait captureBytes direct, runMistralOCR
+          // (ou tout autre appel ultérieur) échouerait avec « object can not
+          // be cloned ». Le clone par new Uint8Array(...).slice() crée un
+          // buffer indépendant pour cette passe seulement.
+          const bytesClone = new Uint8Array(captureBytes).slice();
+          const pdf = await window.pdfjsLib.getDocument({ data: bytesClone }).promise;
           const maxPages = Math.min(pdf.numPages, opts.maxPages || 8);
           for (let i = 1; i <= maxPages; i++) {
-            const b64 = await pdfPageToPngBase64(captureBytes, i, opts.scale || 2.0);
+            const b64 = await pdfPageToPngBase64FromDoc(pdf, i, opts.scale || 2.0);
             imageMessages.push({ type: "image_url", image_url: { url: "data:image/png;base64," + b64 } });
           }
         } catch (e) {
@@ -589,9 +598,13 @@ INTERDICTION ABSOLUE :
     }
     try {
       const isPdf = mime === "application/pdf";
+      // ⚠️ API Mistral OCR (mai 2026) attend `document_url` avec data: URL
+      // pour les fichiers locaux. Format `document_base64` retourne HTTP 422
+      // literal_error DocumentURLChunk (bug observé runtime).
+      const dataUrl = "data:" + (isPdf ? "application/pdf" : (mime || "image/png")) + ";base64," + bytesToBase64(captureBytes);
       const documentObj = isPdf
-        ? { type: "document_base64", document_base64: bytesToBase64(captureBytes), document_name: "planning.pdf" }
-        : { type: "image_base64", image_base64: bytesToBase64(captureBytes), image_format: (mime && mime.replace("image/", "")) || "png" };
+        ? { type: "document_url", document_url: dataUrl }
+        : { type: "image_url", image_url: dataUrl };
 
       const body = {
         model: opts.model || "mistral-ocr-latest",
@@ -767,6 +780,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.2.1-bugfix-worker_url"
+    VERSION: "T1-vision-v0.2.2-gpt4o-clone-mistral-url"
   };
 }));
