@@ -253,7 +253,12 @@ INTERDICTION ABSOLUE :
   }
 
   async function pdfPageToPngBase64(pdfBytes, pageNum, scale) {
-    if (typeof window === "undefined" || !window.pdfjsLib) throw new Error("pdfjsLib requis");
+    // Réutilise ensurePdfJsReady() du module parser-multi-ocr (configure workerSrc auto)
+    if (typeof window !== "undefined" && window.PlanningParserPipeline && typeof window.PlanningParserPipeline.ensurePdfJsReady === "function") {
+      await window.PlanningParserPipeline.ensurePdfJsReady();
+    } else if (typeof window === "undefined" || !window.pdfjsLib) {
+      throw new Error("pdfjsLib requis et helper ensurePdfJsReady indisponible");
+    }
     const pdf = await window.pdfjsLib.getDocument({ data: pdfBytes }).promise;
     const page = await pdf.getPage(pageNum);
     const viewport = page.getViewport({ scale: scale || 2.0 });
@@ -499,12 +504,16 @@ INTERDICTION ABSOLUE :
       const isPdf = mime === "application/pdf";
       const imageMessages = [];
       if (isPdf) {
-        if (!window.pdfjsLib) {
-          out.error = makeErr("pdfjs_missing",
-            "PDF.js n'est pas chargé — impossible de rasteriser le PDF pour GPT-4o.",
-            "window.pdfjsLib indéfini",
-            "gpt4o:rasterize",
-            { hint: "Vérifier l'inclusion CDN de pdf.js dans index.html." });
+        try {
+          if (window.PlanningParserPipeline && typeof window.PlanningParserPipeline.ensurePdfJsReady === "function") {
+            await window.PlanningParserPipeline.ensurePdfJsReady();
+          }
+        } catch (e) {
+          out.error = makeErr("pdfjs_load_failed",
+            "PDF.js n'a pas pu être chargé depuis le CDN.",
+            (e && e.message) || String(e),
+            "gpt4o:pdfjs_load",
+            { hint: "Vérifier la connexion internet et que le CDN cdnjs.cloudflare.com est accessible." });
           return out;
         }
         try {
