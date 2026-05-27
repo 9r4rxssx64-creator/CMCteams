@@ -16,7 +16,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # pour committer proxy-config.json automatiquement
+  contents: write       # checkout + écriture branche dédiée
+  pull-requests: write  # création + merge auto de la PR proxy-config
 
 concurrency:
   group: cmc-parser-proxy-deploy
@@ -129,27 +130,45 @@ jobs:
           EOF
           cat tools/planning-parser-tester/proxy-config.json
 
-      - name: Commit proxy-config.json if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add tools/planning-parser-tester/proxy-config.json
-          if git diff --cached --quiet; then
-            echo "ℹ️ proxy-config.json identique — aucun commit nécessaire"
-            exit 0
-          fi
-          git commit -m "chore(parser-tester): auto-sync proxy-config.json [skip ci]
+      # Push direct sur main interdit par la règle GH013 du repo
+      # (« Changes must be made through a pull request »). On crée donc une
+      # PR auto via peter-evans/create-pull-request, que l'auto-merge bot du
+      # repo mergera automatiquement (label "claude-code automation").
+      - name: Create PR pour auto-sync proxy-config.json
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: tools/planning-parser-tester/proxy-config.json
+          branch: chore/parser-proxy-config-sync
+          delete-branch: true
+          commit-message: |
+            chore(parser-tester): auto-sync proxy-config.json [skip ci]
 
-          worker_url=${{ steps.deploy.outputs.worker_url }}
-          deployed_by=${{ github.actor }}
-          run_id=${{ github.run_id }}"
-          # Push avec retry réseau (règle Kevin)
-          for i in 1 2 3 4; do
-            if git push origin HEAD:${{ github.ref_name }}; then
-              echo "✅ Pushed (try $i)"
-              exit 0
-            fi
-            sleep $((i * 2))
-          done
-          echo "❌ Impossible de push proxy-config.json après 4 tentatives"
-          exit 1
+            worker_url=${{ steps.deploy.outputs.worker_url }}
+            deployed_by=${{ github.actor }}
+            run_id=${{ github.run_id }}
+          title: "chore(parser-tester): sync proxy-config.json → worker URL"
+          body: |
+            🤖 Auto-généré par le workflow `cmc-parser-proxy-deploy.yml`.
+
+            - Worker URL : `${{ steps.deploy.outputs.worker_url }}`
+            - Healthz : ✅ vérifié
+            - Run : ${{ github.run_id }}
+
+            Cette PR met à jour `tools/planning-parser-tester/proxy-config.json`
+            pour que l'app frontend charge automatiquement la bonne URL au boot.
+
+            Aucune action Kevin requise — l'auto-merge bot prend le relais.
+          labels: |
+            claude-code automation
+            auto-merge
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+
+      - name: Log PR result
+        if: steps.cpr.outputs.pull-request-number != ''
+        run: |
+          echo "✅ PR créée/mise à jour : ${{ steps.cpr.outputs.pull-request-url }}"
+          echo "Numéro : #${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Operation : ${{ steps.cpr.outputs.pull-request-operation }}"
