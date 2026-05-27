@@ -130,15 +130,17 @@ jobs:
           EOF
           cat tools/planning-parser-tester/proxy-config.json
 
-      # Push direct sur main interdit par la règle GH013 du repo
-      # (« Changes must be made through a pull request »). On crée donc une
-      # PR auto via peter-evans/create-pull-request, que l'auto-merge bot du
-      # repo mergera automatiquement (label "claude-code automation").
-      - name: Create PR pour auto-sync proxy-config.json
+      # Tentative création PR auto via APEX_GITHUB_PAT (bypass restriction
+      # « GitHub Actions is not permitted to create or approve pull request »
+      # qui rejette GITHUB_TOKEN par défaut). Si APEX_GITHUB_PAT absent →
+      # continue-on-error et bascule sur le mode « URL conventionnelle » côté
+      # frontend (zéro saisie Kevin de toute façon).
+      - name: Create PR pour auto-sync proxy-config.json (best-effort)
         id: cpr
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.APEX_GITHUB_PAT || secrets.GITHUB_TOKEN }}
           add-paths: tools/planning-parser-tester/proxy-config.json
           branch: chore/parser-proxy-config-sync
           delete-branch: true
@@ -157,18 +159,52 @@ jobs:
             - Run : ${{ github.run_id }}
 
             Cette PR met à jour `tools/planning-parser-tester/proxy-config.json`
-            pour que l'app frontend charge automatiquement la bonne URL au boot.
-
-            Aucune action Kevin requise — l'auto-merge bot prend le relais.
+            pour que l'app frontend charge la bonne URL exacte au boot
+            (sans dépendre de la convention de naming).
           labels: |
             claude-code automation
             auto-merge
           author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
 
-      - name: Log PR result
-        if: steps.cpr.outputs.pull-request-number != ''
+      # Toujours afficher l'URL du worker dans le summary GitHub Actions (visible
+      # par Kevin direct depuis la page du run, pas besoin de fouiller les logs).
+      # Et expliquer clairement le statut de la PR auto-sync (succès / échec sans
+      # bloquer).
+      - name: Summary visible pour Kevin
+        if: always() && steps.deploy.outputs.worker_url != ''
         run: |
-          echo "✅ PR créée/mise à jour : ${{ steps.cpr.outputs.pull-request-url }}"
-          echo "Numéro : #${{ steps.cpr.outputs.pull-request-number }}"
-          echo "Operation : ${{ steps.cpr.outputs.pull-request-operation }}"
+          URL="${{ steps.deploy.outputs.worker_url }}"
+          PR_OK="${{ steps.cpr.outcome }}"
+          PR_URL="${{ steps.cpr.outputs.pull-request-url }}"
+          {
+            echo "## ✅ Worker `cmc-parser-proxy` déployé"
+            echo ""
+            echo "**URL du worker** : <${URL}>"
+            echo ""
+            echo "**Healthz** : [${URL}/healthz](${URL}/healthz)"
+            echo ""
+            echo "**App de test** : <https://9r4rxssx64-creator.github.io/CMCteams/tools/planning-parser-tester/>"
+            echo ""
+            echo "L'app charge automatiquement cette URL au boot (URL conventionnelle"
+            echo "ou via proxy-config.json). Kevin n'a RIEN à coller manuellement."
+            echo ""
+            echo "### 📝 Sync proxy-config.json"
+            if [ "$PR_OK" = "success" ]; then
+              if [ -n "$PR_URL" ]; then
+                echo "✅ PR créée/mise à jour : $PR_URL"
+              else
+                echo "ℹ️ Aucun changement à committer (proxy-config.json déjà à jour)."
+              fi
+            else
+              echo "⚠️ Impossible de créer la PR auto (probable restriction repo Actions)."
+              echo ""
+              echo "**Pas grave** : le frontend utilise le fallback URL conventionnelle"
+              echo "(\`cmc-parser-proxy.desarzens-kevin.workers.dev\`)."
+              echo ""
+              echo "Pour activer la sync auto (optionnel) :"
+              echo "1. Soit créer un secret \`APEX_GITHUB_PAT\` (PAT scope: repo, workflow)"
+              echo "2. Soit activer Settings → Actions → General → Workflow permissions →"
+              echo "   « Allow GitHub Actions to create and approve pull requests »"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
