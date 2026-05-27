@@ -1,0 +1,102 @@
+name: Deploy cmc-parser-proxy (Cloudflare Worker)
+
+# Déploie automatiquement le worker `cmc-parser-proxy` (proxy IA pour l'app de
+# test T1 `tools/planning-parser-tester/`) sur Cloudflare en injectant les
+# secrets API depuis le repo GitHub vers les secrets Worker. Aucune clé n'est
+# stockée côté frontend ni en clair dans le repo.
+#
+# Trigger : push sur main qui touche le code du worker, OU dispatch manuel.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/planning-parser-tester/worker/**'
+      - '.github/workflows/cmc-parser-proxy-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cmc-parser-proxy-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Push Anthropic secret
+        if: env.ANTHROPIC_API_KEY != ''
+        working-directory: tools/planning-parser-tester/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ANTHROPIC_API_KEY:     ${{ secrets.ANTHROPIC_API_KEY }}
+        run: echo "$ANTHROPIC_API_KEY" | wrangler secret put ANTHROPIC_API_KEY
+
+      - name: Push OpenAI secret (OPEN_AI_API_KEY, underscore — convention Kevin)
+        if: env.OPEN_AI_API_KEY != ''
+        working-directory: tools/planning-parser-tester/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          OPEN_AI_API_KEY:       ${{ secrets.OPEN_AI_API_KEY }}
+        run: echo "$OPEN_AI_API_KEY" | wrangler secret put OPEN_AI_API_KEY
+
+      - name: Push Mistral secret
+        if: env.MISTRAL_API_KEY != ''
+        working-directory: tools/planning-parser-tester/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          MISTRAL_API_KEY:       ${{ secrets.MISTRAL_API_KEY }}
+        run: echo "$MISTRAL_API_KEY" | wrangler secret put MISTRAL_API_KEY
+
+      - name: Push Gemini secret
+        if: env.GEMINI_API_KEY != ''
+        working-directory: tools/planning-parser-tester/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GEMINI_API_KEY:        ${{ secrets.GEMINI_API_KEY }}
+        run: echo "$GEMINI_API_KEY" | wrangler secret put GEMINI_API_KEY
+
+      - name: Push auth token secret
+        if: env.PUSH_ADMIN_TOKEN != ''
+        working-directory: tools/planning-parser-tester/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PUSH_ADMIN_TOKEN:      ${{ secrets.PUSH_ADMIN_TOKEN }}
+        run: echo "$PUSH_ADMIN_TOKEN" | wrangler secret put PUSH_ADMIN_TOKEN
+
+      - name: Deploy Worker
+        working-directory: tools/planning-parser-tester/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: wrangler deploy
+
+      - name: Health check
+        run: |
+          sleep 4
+          STATUS=$(curl -s -o /tmp/h.json -w "%{http_code}" "https://cmc-parser-proxy.${{ secrets.CLOUDFLARE_WORKERS_SUBDOMAIN || 'desarzens-kevin' }}.workers.dev/healthz" || echo "000")
+          echo "HTTP $STATUS"
+          cat /tmp/h.json || true
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Worker ne répond pas 200 — déploiement à vérifier"
+            exit 1
+          fi
+          echo "✅ Worker opérationnel"

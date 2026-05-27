@@ -836,6 +836,76 @@ S'applique TOUS projets (Apex, CMCteams, e-KDMC, etc.).
 
 ---
 
+## 🔗 RÈGLE ABSOLUE — LIENS TOUJOURS CLIQUABLES + TRIÉS PAR PRIORITÉ DES TÂCHES KEVIN (Kevin 2026-05-27, ABSOLUE)
+
+> **"Tous tes liens ne fonctionnent pas. Toujours je clic ça ouvre directement au bon endroit. Note le, rappel toi toujours. Liens par prio de mes tâches."** — Kevin 2026-05-27
+
+**Règle absolue, NON-NÉGOCIABLE** — toutes mes réponses Kevin, tous projets actuels + futurs.
+
+### 1. JAMAIS de chemin relatif sec dans une réponse Kevin
+
+❌ INTERDIT : `tools/planning-parser-tester/index.html` (Kevin ne peut pas cliquer dessus)
+❌ INTERDIT : `apex-ai/v13/services/foo.ts` (idem)
+❌ INTERDIT : `voir lignes 350-410 dans index.html` (rien à cliquer)
+
+✅ OBLIGATOIRE : URL absolue complète + markdown `[label cliquable](https://...)`
+
+### 2. Format markdown cliquable systématique
+
+Pour CHAQUE fichier / commit / action / vue référencé dans une réponse Kevin :
+- Vue GitHub : `https://github.com/9r4rxssx64-creator/cmcteams/blob/<branche>/<path>`
+- Vue dossier : `https://github.com/9r4rxssx64-creator/cmcteams/tree/<branche>/<path>`
+- Edit GitHub : `https://github.com/9r4rxssx64-creator/cmcteams/edit/<branche>/<path>`
+- Raw (téléchargement) : `https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/<branche>/<path>`
+- Commit : `https://github.com/9r4rxssx64-creator/cmcteams/commit/<sha>`
+- Action workflow : `https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/<file>.yml`
+- Action runs : `https://github.com/9r4rxssx64-creator/cmcteams/actions/runs/<id>`
+- GitHub Pages live : `https://9r4rxssx64-creator.github.io/CMCteams/...`
+- Cloudflare Worker : `https://<worker-name>.<subdomain>.workers.dev/...`
+- Cloudflare dashboard : `https://dash.cloudflare.com/?to=/:account/workers/services/view/<worker>/production`
+
+Toujours `[Texte clair pour Kevin](https://...)` — pas d'URL brute jetée sans label.
+
+### 3. Tri par PRIORITÉ des tâches Kevin (le plus urgent en premier)
+
+Quand je liste plusieurs liens dans une réponse, ils DOIVENT être triés par
+ordre d'utilité concrète pour Kevin, du plus actionnable au plus contextuel :
+
+1. **Action immédiate** (1 clic Kevin requis maintenant) — ex : « ▶️ Lancer le workflow »
+2. **Test/Vérification rapide** (Kevin veut voir le résultat) — ex : « 🧪 Ouvrir l'app de test »
+3. **Monitoring / dashboard externe** — ex : « 📊 Voir le déploiement Cloudflare »
+4. **Code / fichiers principaux** modifiés (pour relecture éventuelle)
+5. **Commits récents** (référence historique)
+6. **Docs / README** (référence)
+
+JAMAIS d'ordre alphabétique aveugle. JAMAIS « tous mes commits d'abord ».
+TOUJOURS « qu'est-ce que Kevin doit/peut faire MAINTENANT en premier ? ».
+
+### 4. Catégoriser visuellement par tâche
+
+Grouper les liens sous des en-têtes en gras + emoji pour scan instantané :
+- **▶️ Action immédiate** (1 lien max, le plus urgent)
+- **🧪 Tester maintenant**
+- **📊 Suivre / monitorer**
+- **🔧 Code modifié**
+- **📜 Historique**
+
+Pas de liste plate de 15 liens en vrac.
+
+### 5. Test mental obligatoire avant CHAQUE réponse contenant des liens
+
+> *"Si Kevin tape sur son iPhone et clique mes liens dans l'ordre, est-ce que
+> chaque lien (a) s'ouvre, (b) l'amène à la BONNE page, (c) lui permet de
+> passer à l'action suivante sans réfléchir ? Si non → reprendre."*
+
+### 6. Application immédiate
+
+S'applique : toutes mes réponses Kevin (Claude Code), Apex IA quand il propose
+des liens, CMCteams quand il propose des liens dans son chat, tous projets
+futurs.
+
+---
+
 ## 🚫 RÈGLE ABSOLUE — JAMAIS DEMANDER UN CLIC ADMIN GITHUB UI À KEVIN (2026-05-16, ABSOLUE)
 
 > **"Parle simplement, tout autonome, automatisé, trouve des solutions pour faire à ma place toujours tout au max. Sinon 1 clic. Pareil tous projets."** — Kevin 2026-05-16
