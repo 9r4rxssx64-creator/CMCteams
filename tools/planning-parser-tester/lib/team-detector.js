@@ -205,76 +205,77 @@
       });
     }
 
-    // 2) Cluster par signature RH IDENTIQUE + horaire base normalisé identique
-    //    (un chef `22/6c` + croupiers `22/6` clusterisent ensemble car le `c`
-    //    est retiré du firstWorkCodeNorm).
-    const teamMap = new Map(); // signature → emps[]
+    // 2) GROUPE PRIMAIRE = FAMILLE + jours de repos IDENTIQUES.
+    //    Kevin 2026-05-28 : « les équipes sont triées par famille ; dans une
+    //    famille, le groupe qui a les mêmes repos forme l'équipe principale,
+    //    puis plus bas le groupe qui a les MÊMES repos est son équipe miroir ».
+    //    Donc un groupe de repos (famille+RH) = équipe principale + son miroir.
+    const rhGroups = new Map(); // famille::RH → sigs[]
     for (const s of sigs) {
-      const key = JSON.stringify(s.rhDays) + "::" + (s.firstWorkCodeNorm || "?");
-      if (!teamMap.has(key)) teamMap.set(key, []);
-      teamMap.get(key).push(s);
+      const key = (s.emp.family || "?") + "::" + JSON.stringify(s.rhDays);
+      if (!rhGroups.has(key)) rhGroups.set(key, []);
+      rhGroups.get(key).push(s);
     }
 
-    // 3) Garder seulement les équipes assez grosses
+    // 3) Dans chaque groupe de repos : partition par HORAIRE DE BASE.
+    //    - équipe PRINCIPALE = sous-groupe (horaire) le plus nombreux
+    //    - MIROIR = autre sous-groupe d'AU MOINS 2 membres (un miroir est un
+    //      GROUPE, pas 1 personne — Kevin)
+    //    - sous-groupe d'1 personne (horaire isolé) = bruit du « premier code
+    //      travail » → REPLIÉ dans la principale (mêmes repos = même équipe)
     let teamIdx = 1;
     const teamsArr = [];
-    for (const [, group] of teamMap) {
+    for (const [rhKey, group] of rhGroups) {
       if (group.length < minTeamSize) {
-        for (const s of group) {
-          out.unassigned.push({ fullName: s.emp.fullName, reason: "groupe trop petit (" + group.length + " <" + minTeamSize + ")" });
-        }
+        for (const s of group) out.unassigned.push({ fullName: s.emp.fullName, reason: "repos unique (" + group.length + " <" + minTeamSize + ")" });
         continue;
       }
-      // Famille du groupe = famille majoritaire des membres, sinon null
-      const famCount = {};
+      const sep = rhKey.indexOf("::");
+      const famStr = rhKey.substring(0, sep);
+      const family = famStr && famStr !== "?" ? famStr : null;
+      const rhDays = JSON.parse(rhKey.substring(sep + 2));
+
+      // partition par horaire de base
+      const byBase = new Map();
       for (const s of group) {
-        const f = s.emp.family || "?";
-        famCount[f] = (famCount[f] || 0) + 1;
+        const b = s.firstWorkCodeNorm || "?";
+        if (!byBase.has(b)) byBase.set(b, []);
+        byBase.get(b).push(s);
       }
-      let family = null, maxC = 0;
-      for (const f of Object.keys(famCount)) if (famCount[f] > maxC) { family = f; maxC = famCount[f]; }
-      teamsArr.push({
-        id: "t" + (teamIdx++),
-        signature_rh: group[0].rhDays.slice(),
-        firstWorkCode: group[0].firstWorkCode,
-        firstWorkCodeNorm: group[0].firstWorkCodeNorm,
-        family: family && family !== "?" ? family : null,
-        members: group.map(s => ({ fullName: s.emp.fullName })),
-        rhDays: group[0].rhDays.slice(),
-        cycleHint: group[0].cycleHint
-      });
+      const subs = Array.from(byBase.values()).sort((a, b) => b.length - a.length);
+      const main = subs[0].slice();
+      const mirrors = [];
+      for (let k = 1; k < subs.length; k++) {
+        if (subs[k].length >= 2) mirrors.push(subs[k]);   // vrai miroir (groupe)
+        else for (const s of subs[k]) main.push(s);        // solo = bruit → replie
+      }
+      const mkTeam = (members) => {
+        const t = {
+          id: "t" + (teamIdx++),
+          signature_rh: rhDays.slice(),
+          firstWorkCode: members[0].firstWorkCode,
+          firstWorkCodeNorm: members[0].firstWorkCodeNorm,
+          family,
+          members: members.map(s => ({ fullName: s.emp.fullName })),
+          rhDays: rhDays.slice(),
+          cycleHint: members[0].cycleHint
+        };
+        teamsArr.push(t);
+        return t;
+      };
+      const mainTeam = mkTeam(main);
+      for (const mir of mirrors) {
+        const mirTeam = mkTeam(mir);
+        out.mirrors.push({
+          teamId: mainTeam.id,
+          mirrorTeamId: mirTeam.id,
+          rhDays: rhDays.slice(),
+          reason: "MÊMES jours RH/R [" + rhDays.join(",") + "] + horaires base différents (" +
+                  mainTeam.firstWorkCodeNorm + " ≠ " + mirTeam.firstWorkCodeNorm + ")"
+        });
+      }
     }
     out.teams = teamsArr;
-
-    // 4) Détection miroirs (RÈGLE CORRIGÉE Kevin 2026-05-28) :
-    //    Paire de teams (A, B) où :
-    //      - MÊMES jours RH/R (rhEqual === true)
-    //      - HORAIRES DE BASE DIFFÉRENTS (firstWorkCodeNorm ≠)
-    //      - même famille
-    //      - effectifs comparables (±1) — pas obligatoire mais sanity check
-    //    L'ORDRE d'apparition dans teamsArr distingue principale (A en haut)
-    //    vs miroir (B plus bas). Le clustering étape 2 a déjà séparé A et B
-    //    car leur (rhDays, codeBase) sont distincts.
-    const usedAsMirror = new Set();
-    for (let i = 0; i < teamsArr.length; i++) {
-      if (usedAsMirror.has(teamsArr[i].id)) continue;
-      for (let j = i + 1; j < teamsArr.length; j++) {
-        if (usedAsMirror.has(teamsArr[j].id)) continue;
-        const A = teamsArr[i], B = teamsArr[j];
-        if (A.family !== B.family) continue;
-        if (Math.abs(A.members.length - B.members.length) > 2) continue;
-        if (!isMirrorPair(A, B)) continue;
-        out.mirrors.push({
-          teamId: A.id,
-          mirrorTeamId: B.id,
-          rhDays: A.rhDays.slice(),  // identiques par construction
-          reason: "MÊMES jours RH/R [" + A.rhDays.join(",") + "] + horaires base différents (" +
-                  A.firstWorkCodeNorm + " ≠ " + B.firstWorkCodeNorm + ")"
-        });
-        usedAsMirror.add(A.id); usedAsMirror.add(B.id);
-        break;
-      }
-    }
 
     if (teamsArr.length === 0 && employees.length > 0) {
       out.warnings.push("Aucune équipe détectée — vérifier les signatures RH / la qualité de l'extraction");
@@ -299,6 +300,6 @@
     isMirrorPair,
     isRestCode,
     describeTeam,
-    VERSION: "T1-teams-v0.2.0-mirror-same-rh"
+    VERSION: "T1-teams-v0.3.0-family-rhgroup-mirror"
   };
 }));
