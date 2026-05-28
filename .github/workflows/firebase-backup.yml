@@ -25,7 +25,7 @@ jobs:
           ls -lh backups/
 
       - name: Upload backup artifact (30 days retention)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: firebase-backup-${{ github.run_number }}
           path: backups/
