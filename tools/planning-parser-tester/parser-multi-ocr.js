@@ -467,15 +467,26 @@
               const full = String(e.name).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
               // vrai oubli si le nom complet a des codes dans la grille → on laisse vide (bug)
               const gidx = gridU.indexOf(" " + full + " ");
-              if (gidx >= 0 && DAYCODE.test(gridU.slice(gidx + full.length, gidx + full.length + 90))) continue;
+              if (gidx >= 0 && DAYCODE.test(gridU.slice(gidx + 1 + full.length, gidx + 1 + full.length + 90))) continue;
               // sinon : rattache à l'encadré statut le plus proche AVANT dans le roster
               const ridx = rosterU.indexOf(" " + full + " ");
               let box = null;
               if (ridx >= 0) for (const hd of headers) { if (hd.idx < ridx && (!box || hd.idx > box.idx)) box = hd; }
               if (box && box.code) {
-                for (let d = 1; d <= dim; d++) e.days[String(d)] = box.code;
+                // Période PAR NOM : les 2 nombres juste après le nom (« 1 30 »
+                // = tout le mois, « 1 15 » = 1ère quinzaine, « 16 30 » = 2e…).
+                // Kevin : « le du-au dit si 15 jours ou tout le mois ».
+                // ridx pointe l'espace de tête → +1 pour sauter cet espace.
+                let from = 1, to = dim;
+                const after = rosterU.slice(ridx + 1 + full.length, ridx + 1 + full.length + 18);
+                const perM = after.match(/^\s*\*?\s*(\d{1,2})\s+(\d{1,2})\b/);
+                if (perM) {
+                  const f = parseInt(perM[1], 10), t = parseInt(perM[2], 10);
+                  if (f >= 1 && t <= dim && f <= t) { from = f; to = t; }
+                }
+                for (let d = from; d <= to; d++) e.days[String(d)] = box.code;
                 e.source = "encadre_box_inferred";
-                e.needs_review_box = box.code;
+                e.needs_review_box = box.code + (from === 1 && to === dim ? "" : ` (j${from}-${to})`);
                 inferred++;
               } else {
                 e.roster_only = true; rosterOnly++;
@@ -842,6 +853,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.9.6-encadre-box-inference"
+    VERSION: "T1-v0.9.7-per-name-period"
   };
 }));
