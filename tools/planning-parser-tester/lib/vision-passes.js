@@ -771,6 +771,11 @@ INTERDICTION ABSOLUE :
   async function runAllVisionPasses(captureBytes, mime, opts) {
     opts = opts || {};
     const TIMEOUT = opts.timeout_ms || 45000;
+    // Gemini (passe E) = tie-breaker OPTIONNEL. On lui donne un timeout plus court
+    // que les passes primaires pour qu'un straggler (cf. capture Kevin : gemini 504
+    // après 110s) ne fasse pas traîner tout l'import. Les passes B/C/D + le texte
+    // natif suffisent largement sur les PDFs SBM.
+    const TIE_TIMEOUT = Math.min(TIMEOUT, opts.tieBreakTimeoutMs || 60000);
     // Wrap chaque passe avec un timeout dur. Si timeout → erreur structurée claire.
     function withTimeout(promiseFactory, ms, passe, tool) {
       return new Promise((resolve) => {
@@ -818,7 +823,7 @@ INTERDICTION ABSOLUE :
       withTimeout(() => runClaudeVision(captureBytes, mime, opts), TIMEOUT, "B", "claude-vision"),
       withTimeout(() => runGPT4oVision(captureBytes, mime, opts), TIMEOUT, "C", "gpt4o-vision"),
       withTimeout(() => runMistralOCR(captureBytes, mime, opts), TIMEOUT, "D", "mistral-ocr"),
-      withTimeout(() => runGeminiVision(captureBytes, mime, opts), TIMEOUT, "E", "gemini-vision"),
+      withTimeout(() => runGeminiVision(captureBytes, mime, opts), TIE_TIMEOUT, "E", "gemini-vision"),
     ]);
   }
 
@@ -831,6 +836,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.9.7-per-name-period"
+    VERSION: "T1-vision-v0.9.8-tiebreak-fasttimeout"
   };
 }));

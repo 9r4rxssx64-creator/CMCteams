@@ -554,28 +554,48 @@
             /^image\//.test(result.capture.mime);
           if (isVisionable) {
             const tVision = Date.now();
+            // Texte natif PDF.js déjà exploité (cas usuel SBM) : les passes Vision
+            // ne sont qu'un RENFORT optionnel. Si la passe G a extrait des employés,
+            // un provider lent/HS (ex: gemini timeout 504, cf. capture Kevin) ne doit
+            // NI bloquer ~2 min NI afficher une erreur rouge — l'import reste fiable
+            // sur le texte natif déterministe.
+            const _passeGok = result.passes.find(p =>
+              p.passe === "G" && p.ok && Array.isArray(p.employees) && p.employees.length > 0
+            );
+            const nativeOk = !!_passeGok;
             try {
               const visionResults = await VisionPasses.runAllVisionPasses(
                 result.capture.bytes,
                 result.capture.mime,
-                { timeout_ms: opts.visionTimeoutMs || 120000 }  // 120s : 4 passes parallèles sur PDFs SBM ~2 MB / 8 pages
+                // Renfort optionnel quand le texte natif a réussi → timeout court (60s)
+                // pour ne pas faire attendre ~2 min sur un provider lent. PDF scanné
+                // (pas de texte natif) → Vision critique, on garde 120s.
+                { timeout_ms: opts.visionTimeoutMs || (nativeOk ? 60000 : 120000) }
               );
               for (const vr of visionResults) result.passes.push(vr);
-              // Remonte les erreurs des passes individuelles dans result.errors
-              // pour audit central (en plus de passe.error qui reste sur la passe).
+              // Remonte les échecs des passes. Si le texte natif est fiable (nativeOk)
+              // → alerte JAUNE non bloquante (Vision = vérif optionnelle). Sinon (PDF
+              // scanné) → erreur ROUGE critique (Vision est la seule source).
               for (const vr of visionResults) {
                 if (vr.error && !vr.ok) {
-                  result.errors.push({
-                    code: vr.error.code || "vision_passe_failed",
-                    phase: "vision_" + (vr.passe || "?"),
-                    message: vr.error.message || "Échec passe Vision",
-                    detail: vr.error.detail || null,
-                    step: vr.error.step || ("vision:" + (vr.tool || "")),
-                    http_status: vr.error.http_status || null,
-                    hint: vr.error.hint || null,
-                    where: vr.error.where || null,
-                    ts: vr.error.ts || new Date().toISOString()
-                  });
+                  if (nativeOk) {
+                    result.alerts.push({
+                      severity: "warn",
+                      msg: `Renfort Vision ${vr.passe || "?"}/${vr.tool || "?"} indisponible (${vr.error.code || "?"}) — import basé sur le texte natif PDF (fiable, déterministe). Vision = vérification optionnelle, non requise pour cet import.`
+                    });
+                  } else {
+                    result.errors.push({
+                      code: vr.error.code || "vision_passe_failed",
+                      phase: "vision_" + (vr.passe || "?"),
+                      message: vr.error.message || "Échec passe Vision",
+                      detail: vr.error.detail || null,
+                      step: vr.error.step || ("vision:" + (vr.tool || "")),
+                      http_status: vr.error.http_status || null,
+                      hint: vr.error.hint || null,
+                      where: vr.error.where || null,
+                      ts: vr.error.ts || new Date().toISOString()
+                    });
+                  }
                 }
               }
             } catch (e) {
@@ -853,6 +873,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.9.7-per-name-period"
+    VERSION: "T1-v0.9.8-vision-renfort-nonblocking"
   };
 }));
