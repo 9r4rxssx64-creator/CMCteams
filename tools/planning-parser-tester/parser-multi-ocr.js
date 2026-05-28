@@ -24,7 +24,10 @@
       require("./lib/cell-voting.js"),
       require("./lib/text-parser.js"),
       require("./lib/encadres-parser.js"),
-      require("./lib/team-detector.js")
+      require("./lib/team-detector.js"),
+      require("./lib/validate-post-import.js"),
+      require("./lib/homonyms-guard.js"),
+      require("./lib/code-colors.js")
     );
   } else {
     root.PlanningParserPipeline = factory(
@@ -33,10 +36,13 @@
       root.CellVoting,
       root.TextParser,
       root.EncadresParser,
-      root.TeamDetector
+      root.TeamDetector,
+      root.ValidatePostImport,
+      root.HomonymsGuard,
+      root.CodeColors
     );
   }
-}(typeof self !== "undefined" ? self : this, function (H, VisionPasses, CellVoting, TextParser, EncadresParser, TeamDetector) {
+}(typeof self !== "undefined" ? self : this, function (H, VisionPasses, CellVoting, TextParser, EncadresParser, TeamDetector, ValidatePostImport, HomonymsGuard, CodeColors) {
   "use strict";
 
   if (!H) throw new Error("[parser-multi-ocr] helpers-reuse.js doit être chargé avant.");
@@ -594,6 +600,93 @@
         result.durations_ms.lieu_mapping = Date.now() - tLieu;
       }
 
+      /* ---- Phase 3.K : Audit homonymes (CLAUDE.md erreurs #38, #44) ---- */
+      // Détecte les paires d'emps avec surname identique mais initiales
+      // différentes (sain si distinctes, doublon si même initiale).
+      if (HomonymsGuard && opts.runHomonymsGuard !== false) {
+        const passG = result.passes.find(p => p.passe === "G" && p.ok);
+        const sourceEmps = (passG && passG.employees) || [];
+        if (sourceEmps.length > 0) {
+          const tHom = Date.now();
+          const audit = HomonymsGuard.auditEmployees(
+            sourceEmps.map(e => ({ fullName: e.name || e.fullName }))
+          );
+          result.homonyms_audit = audit;
+          result.durations_ms.homonyms_audit = Date.now() - tHom;
+          if (audit.merging_risks && audit.merging_risks.length > 0) {
+            for (const risk of audit.merging_risks) {
+              result.alerts.push({
+                severity: "warn",
+                msg: "Homonymes risque doublon : " + risk.msg
+              });
+            }
+          }
+          if (audit.known_homonyms_found > 0) {
+            result.alerts.push({
+              severity: "info",
+              msg: `${audit.known_homonyms_found} groupe(s) d'homonymes connus correctement séparés (LANDAU B/J, ENZA B/C, etc.)`
+            });
+          }
+        }
+      }
+
+      /* ---- Phase 3.L : Validations Convention SBM (Art. 17.5, 35, sanctions) ---- */
+      if (ValidatePostImport && opts.runValidations !== false) {
+        const tVal = Date.now();
+        try {
+          const validations = ValidatePostImport.runAll(result);
+          result.validations = validations;
+          result.durations_ms.validations = Date.now() - tVal;
+          const c = validations.stats.by_severity || {};
+          if (c.critical > 0) {
+            result.alerts.push({
+              severity: "err",
+              msg: `Validations Convention : ${c.critical} CRITICAL — vérifier sanctions ou noms PDF non extraits`
+            });
+          }
+          if (c.warn > 0) {
+            result.alerts.push({
+              severity: "warn",
+              msg: `Validations Convention : ${c.warn} warning(s) (Art. 17.5 / 35 / homonymes)`
+            });
+          }
+          if (c.info > 0) {
+            result.alerts.push({
+              severity: "info",
+              msg: `Validations Convention : ${c.info} info`
+            });
+          }
+        } catch (e) {
+          result.errors.push({
+            code: "validations_exception",
+            phase: "validations",
+            message: "Exception lors des validations Convention",
+            detail: (e && e.message) || String(e)
+          });
+        }
+      }
+
+      /* ---- Phase 3.M : Projection couleurs cellule (UI helper) ---- */
+      // Ne MODIFIE PAS les cellules — ajoute juste une couche `colors_per_emp`
+      // avec { bg, fg, label } pour chaque cellule, pour rendu UI.
+      if (CodeColors && opts.runColorMapping !== false) {
+        const tCol = Date.now();
+        result.colors_per_emp = {};
+        for (const passe of result.passes) {
+          if (!passe.ok || !Array.isArray(passe.employees)) continue;
+          for (const emp of passe.employees) {
+            const name = emp.name || emp.fullName;
+            if (!name || result.colors_per_emp[name]) continue;
+            const dayColors = {};
+            for (const d of Object.keys(emp.days || {})) {
+              dayColors[d] = CodeColors.getCellColor(emp.days[d]);
+            }
+            result.colors_per_emp[name] = dayColors;
+          }
+        }
+        result.durations_ms.color_mapping = Date.now() - tCol;
+      }
+
       /* ---- Alertes globales ---- */
       if (result.type_detected.needs_user_confirm) {
         result.alerts.push({
@@ -664,6 +757,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.7.1-convention-sbm-43-codes"
+    VERSION: "T1-v0.8.0-validations-homonyms-colors"
   };
 }));

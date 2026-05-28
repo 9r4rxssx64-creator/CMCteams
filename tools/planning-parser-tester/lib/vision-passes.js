@@ -831,6 +831,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.7.1-convention-sbm-43-codes"
+    VERSION: "T1-vision-v0.8.0-validations-homonyms-colors"
   };
 }));

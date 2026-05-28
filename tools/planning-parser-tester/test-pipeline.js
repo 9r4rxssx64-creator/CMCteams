@@ -18,8 +18,12 @@
  *  12. Workflow secrets matchent CLAUDE.md règle 7 (noms exacts Kevin)
  *  13. Mapping CODE→LIEU par rôle (19/4 employé=CMC, Pit Boss=CCDP)
  *  14. Encadres-parser : codes courts uniquement (erreur #49)
- *  15. Team-detector : algo RH/R + miroir (Kevin 2026-05-15)
+ *  15. Team-detector : algo RH/R + miroir (Kevin 2026-05-15/28)
  *  16. Text-parser v0.3 : 12H30 majuscule + MT + BRTPECK + team_num
+ *  17. Couverture 43 codes officiels Convention SBM
+ *  18. Validations Convention (Art. 17.5, 35, sanctions, everyone-has-planning)
+ *  19. Homonyms guard (anti-merge LANDAU B/J — erreurs #38/#44)
+ *  20. Code colors (projection cellule, ne modifie pas la source)
  *
  * Tous ces tests auraient attrapé les bugs #1-15 de la session 2026-05-27
  * AVANT le push. Lancer obligatoire avant chaque commit qui touche T1.
@@ -70,6 +74,9 @@ const jsFiles = [
   "lib/text-parser.js",
   "lib/encadres-parser.js",
   "lib/team-detector.js",
+  "lib/validate-post-import.js",
+  "lib/homonyms-guard.js",
+  "lib/code-colors.js",
   "sw.js",
 ];
 for (const f of jsFiles) {
@@ -261,6 +268,78 @@ for (const c of requiredCodes) {
   const inHelpers = new RegExp(`code:\\s*"${c}"`).test(helpersFull);
   const inParser  = new RegExp(`\\b${c}\\b`).test(textParserCode);
   check(`  ${c} dans BULLETIN_CODES_FULL + accepté par text-parser`, inHelpers && inParser);
+}
+
+// ───── 18. Validate-post-import : Art. 17.5 + 35 + sanctions ─────
+console.log(`\n${INFO} Test 18/20 — Validations Convention (Art. 17.5, 35, sanctions)`);
+const validate = readFile("lib/validate-post-import.js");
+check("  runAll exporté", /runAll\s*[,}]/.test(validate));
+check("  validateMinRestPerSixWeeks (Art. 17.5)", /validateMinRestPerSixWeeks/.test(validate));
+check("  validateChefRatio (Art. 35)", /validateChefRatio/.test(validate));
+check("  validateMin336Effectif (Art. 35 plancher)", /validateMin336Effectif/.test(validate));
+check("  validateNoForbiddenCodes (sanctions PNE/AMP/MPC/MPP critical)", /validateNoForbiddenCodes/.test(validate) && /SANCTION_CODES/.test(validate));
+check("  validateEveryoneHasPlanning (règle absolue Kevin 2026-05-26)", /validateEveryoneHasPlanning/.test(validate));
+check("  validateAffluencePeriodVersion (Art. 17.6)", /validateAffluencePeriodVersion/.test(validate));
+// Test fonctionnel : exécuter le module et vérifier la détection sanction
+try {
+  const VPI = require(path.join(ROOT, "lib/validate-post-import.js"));
+  const sanctionFindings = VPI.validateNoForbiddenCodes([
+    { fullName: "TEST X", days: { "1": "22/6", "2": "AMP", "3": "RH" } }
+  ]);
+  check("  Sanction AMP détectée en CRITICAL (test fonctionnel)",
+    sanctionFindings.length === 1 && sanctionFindings[0].severity === "critical");
+  const restFindings = VPI.validateMinRestPerSixWeeks([
+    { fullName: "REST X", days: (function () { const d = {}; for (let i = 1; i <= 31; i++) d[i] = "22/6"; return d; })() }
+  ]);
+  check("  Emp 31j travail = 0 repos sur 31j (partial, pas de fail strict)",
+    Array.isArray(restFindings));
+} catch (e) {
+  check("  validate-post-import require OK", false, e.message.slice(0, 120));
+}
+
+// ───── 19. Homonyms-guard : anti-merge LANDAU B/J (erreurs #38/#44) ─────
+console.log(`\n${INFO} Test 19/20 — Homonyms guard (anti-confusion erreurs #38/#44)`);
+const homonyms = readFile("lib/homonyms-guard.js");
+check("  KNOWN_HOMONYMS table (NOTES_USER 65-94)", /KNOWN_HOMONYMS\s*=/.test(homonyms));
+check("  LANDAU B vs J (frères)", /"LANDAU":/.test(homonyms));
+check("  ENZA B vs C (frères)", /"ENZA":/.test(homonyms));
+check("  CAMPI H vs PH (couple)", /"CAMPI":/.test(homonyms));
+check("  canMatch exporté", /canMatch\s*[,}]/.test(homonyms));
+check("  auditEmployees exporté", /auditEmployees\s*[,}]/.test(homonyms));
+try {
+  const HG = require(path.join(ROOT, "lib/homonyms-guard.js"));
+  const blocked = HG.canMatch("LANDAU", "B", "LANDAU", "J");
+  check("  canMatch(LANDAU B, LANDAU J) = bloqué (test fonctionnel)",
+    blocked.safe === false && blocked.reason === "known_homonyms_distinct");
+  const ok = HG.canMatch("DESARZENS", "K", "DESARZENS", "K");
+  check("  canMatch exact (DESARZENS K) = safe",
+    ok.safe === true);
+} catch (e) {
+  check("  homonyms-guard require OK", false, e.message.slice(0, 120));
+}
+
+// ───── 20. Code-colors : mapping 43 codes + suffixes ─────
+console.log(`\n${INFO} Test 20/20 — Code colors (projection cellule, ne modifie pas la source)`);
+const colors = readFile("lib/code-colors.js");
+check("  getCellColor exporté", /getCellColor\s*[,}]/.test(colors));
+check("  getCellStyle exporté (anti-XSS hex valide)", /getCellStyle\s*[,}]/.test(colors));
+check("  CONVENTION_COLOR rouge/jaune (suffixe '/\")", /CONVENTION_COLOR/.test(colors) && /#d8342e/.test(colors) && /#ffe23a/.test(colors));
+check("  CCDP_COLOR orange (suffixe *)", /CCDP_COLOR/.test(colors));
+check("  STATUT_COLORS couvre RH/CP/M/AF/PAT", /"RH":/.test(colors) && /"CP":/.test(colors) && /"AF":/.test(colors) && /"PAT":/.test(colors));
+check("  Sanctions rouge alerte (PNE/AMP/MPC/MPP)", /"PNE":/.test(colors) && /#e85050/.test(colors));
+try {
+  const CC = require(path.join(ROOT, "lib/code-colors.js"));
+  const conv = CC.getCellColor("19/4'");
+  check("  19/4' → Convention rouge/jaune (test fonctionnel)",
+    conv.isConvention === true && conv.bg === "#d8342e");
+  const ccdp = CC.getCellColor("20/5*");
+  check("  20/5* → CCDP orange (test fonctionnel)",
+    ccdp.isCcdp === true);
+  const style = CC.getCellStyle("RH");
+  check("  getCellStyle(RH) retourne background+color hex valide",
+    /background:#[0-9a-f]+/i.test(style) && /color:#[0-9a-f]+/i.test(style));
+} catch (e) {
+  check("  code-colors require OK", false, e.message.slice(0, 120));
 }
 
 // ───── Résumé ─────

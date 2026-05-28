@@ -794,13 +794,13 @@ Le mapping CODE→LIEU doit être conditionnel sur `emp.family`.
 8. Vérifier `MT` (maternité) dans CODE_RE
 
 **Priorité 3 — Validation** :
-9. `_postValidateImport` équivalent dans sandbox (chaque nom PDF → ≥1 cellule)
-10. Mapping code→couleur (`bg`/`fg`) sur les cellules statut (pas seulement Convention/CCDP)
-11. Bloquer le fuzzy match cross-initiale homonymes
+9. ✅ **FAIT v0.8.0** — `validateEveryoneHasPlanning` (chaque nom PDF → ≥1 cellule)
+10. ✅ **FAIT v0.8.0** — `lib/code-colors.js` mapping 43 codes → `{bg, fg, label}` (Phase 3.M)
+11. ✅ **FAIT v0.8.0** — `lib/homonyms-guard.js` bloque fuzzy match cross-initiale (Phase 3.K)
 
 **Priorité 4 — Vote unanime** :
-12. Affichage cellule par cellule (comparateur visuel mentionné README) — actuellement résumé JSON brut
-13. Export `results/<ts>.json` après validation Kevin
+12. ✅ **FAIT v0.8.0** — comparateur visuel cellule par cellule (`renderEmployeeGrid` dans index.html : tableau emp×jour coloré + tooltip code/lieu/libellé)
+13. Export JSON (bouton « 💾 Exporter JSON » existant — export `results/<ts>.json` automatique reste à câbler après validation Kevin)
 
 ---
 
@@ -905,8 +905,12 @@ Checks Art. 17.5 + Art. 35 à appliquer après extraction :
    numéro version ≥ V3 → log info « cohérent ». Si import = période calme
    ET V3+ → flag warning « pourquoi 3 versions ? ».
 
-⚠ Gap T1 : aucune de ces validations n'est implémentée dans le sandbox.
-À ajouter en passe `validate-post-import.js` après team-detector.
+✅ **Implémenté v0.8.0** dans `lib/validate-post-import.js` (Phase 3.L) :
+`validateMinRestPerSixWeeks` (Art. 17.5), `validateChefRatio` (Art. 35),
+`validateMin336Effectif`, `validateSeniorMarker`, `validateNoForbiddenCodes`
+(sanctions CRITICAL), `validateEveryoneHasPlanning` (règle absolue Kevin
+2026-05-26), `validateAffluencePeriodVersion` (Art. 17.6). `runAll()` exécute
+les 7 checks et retourne findings priorisés par severity.
 
 ### 13.4 Niveaux carrière déductibles depuis compétences BRTPECK (Art. 10)
 

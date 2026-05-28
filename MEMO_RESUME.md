@@ -34,14 +34,33 @@ par rôle · encadres-parser · team-detector (règle miroir corrigée) ·
 text-parser v0.3 · **les 43 codes officiels présents dans `BULLETIN_CODES_FULL`
 ET acceptés par `CODE_RE`**.
 
-### Reste à attaquer (P2/P3)
+### v0.8.0 — P2/P3 attaqués (3 nouveaux modules)
 
-- Validations post-import codées (Art. 17.5 10j/6sem, Art. 35 ratio chefs)
-- Mapping code→couleur cellule statut (au-delà de Convention/CCDP)
-- Blocage fuzzy match cross-initiale homonymes (LANDAU B vs J, etc.)
-- UI comparateur visuel cellule par cellule
-- Export `results/<ts>.json` après validation Kevin
-- Critères « OK go intégration CMCteams » : 4 PDFs Kevin importés sans bug + validation manuelle cellule par cellule
+- **`lib/validate-post-import.js`** v0.1.0 (Phase 3.L) : 7 validations Convention —
+  `validateMinRestPerSixWeeks` (Art. 17.5 min 10j/6sem), `validateChefRatio`
+  (Art. 35 25-30%), `validateMin336Effectif`, `validateSeniorMarker`,
+  `validateNoForbiddenCodes` (sanctions PNE/AMP/MPC/MPP → CRITICAL),
+  `validateEveryoneHasPlanning` (règle absolue Kevin 2026-05-26 : chaque nom
+  PDF → ≥1 cellule), `validateAffluencePeriodVersion` (Art. 17.6).
+- **`lib/homonyms-guard.js`** v0.1.0 (Phase 3.K) : `KNOWN_HOMONYMS` (20 surnames
+  NOTES_USER 65-94), `canMatch()` bloque LANDAU B vs J / ENZA B vs C /
+  CAMPI H vs PH, `auditEmployees()` détecte doublons.
+- **`lib/code-colors.js`** v0.1.0 (Phase 3.M) : `getCellColor()` mappe les 43
+  codes → `{bg, fg, label}`. Convention rouge/jaune, CCDP orange, statuts
+  dédiés, sanctions rouge alerte. `getCellStyle()` anti-XSS (hex valide).
+- **UI comparateur visuel** : `renderEmployeeGrid()` dans index.html — tableau
+  emp×31j coloré + tooltip code/lieu/libellé + code BRTPECK.
+- **parser-multi-ocr.js v0.8.0** : Phases 3.K (homonymes) + 3.L (validations)
+  + 3.M (couleurs) wirées. Résumé UI enrichi (équipes, encadrés, homonymes,
+  validations Convention avec findings priorisés).
+- Tests : **17 → 20 sections, 140 → 175 checks ✅** + smoke test end-to-end
+  (require pipeline OK, AMP→critical, BORGIA T/L séparés, 19/4'→Convention).
+
+### Reste (P4)
+
+- Export `results/<ts>.json` AUTO après validation Kevin (bouton manuel existe)
+- Critères « OK go intégration CMCteams » : 4 PDFs Kevin réels importés sans
+  bug + validation manuelle cellule par cellule (action Kevin requise)
 
 ---
 

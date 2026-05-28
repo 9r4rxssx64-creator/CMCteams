@@ -183,6 +183,7 @@
 <div class="card" id="result-card" style="display:none;">
   <h2>3. Résultat de l'analyse</h2>
   <div id="result-summary"></div>
+  <div id="emp-grid"></div>
   <div id="result-alerts"></div>
   <details style="margin-top: 12px;">
     <summary style="cursor: pointer; color: var(--text-dim); font-size: 13px;">📦 JSON brut complet (pour debug / export)</summary>
@@ -210,7 +211,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.7.1-convention-sbm-43-codes-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.8.0-validations-homonyms-colors-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -221,6 +222,9 @@
       "./lib/text-parser.js",
       "./lib/encadres-parser.js",
       "./lib/team-detector.js",
+      "./lib/validate-post-import.js",
+      "./lib/homonyms-guard.js",
+      "./lib/code-colors.js",
       "./parser-multi-ocr.js"
     ];
     for (var i = 0; i < srcs.length; i++) {
@@ -538,7 +542,91 @@
       const cls = (s.needs_review === 0 && s.certain > 0) ? "ok" : (s.needs_review > 0 ? "warn" : "err");
       lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">🗳 Vote</span> ${s.certain} certain · ${s.needs_review} needs_review · ${s.missing_reads} lectures manquantes (sur ${s.total_cells} cellules)</div>`);
     }
+
+    // Équipes + miroirs détectés (Phase 3.I)
+    if (r.teams && r.teams.teams) {
+      const t = r.teams;
+      lines.push(`<div style="margin-top:6px;"><span class="badge">👥 Équipes</span> ${t.teams.length} équipe(s) · ${t.mirrors.length} miroir(s)${t.source ? ` <span class="small">(source ${H.esc(t.source)})</span>` : ""}</div>`);
+      t.mirrors.forEach(mi => {
+        lines.push(`<div class="small" style="margin-left:8px;">🔗 ${H.esc(mi.teamId)} ⇆ ${H.esc(mi.mirrorTeamId)} — ${H.esc(mi.reason || "")}</div>`);
+      });
+    }
+
+    // Encadrés statuts (Phase 3.H)
+    if (r.encadres && r.encadres.boxes && r.encadres.boxes.length) {
+      lines.push(`<div style="margin-top:6px;"><span class="badge">📦 Encadrés</span> ${
+        r.encadres.boxes.map(b => H.esc(b.code) + " ×" + (b.names_found || 0) + " (j" + b.from + "-" + b.to + ")").join(", ")
+      }</div>`);
+    }
+
+    // Homonymes (Phase 3.K)
+    if (r.homonyms_audit) {
+      const h = r.homonyms_audit;
+      if (h.known_homonyms_found > 0 || (h.merging_risks && h.merging_risks.length)) {
+        const cls = (h.merging_risks && h.merging_risks.length) ? "warn" : "ok";
+        lines.push(`<div style="margin-top:6px;"><span class="badge ${cls}">👯 Homonymes</span> ${h.known_homonyms_found || 0} connus séparés · ${(h.merging_risks || []).length} risque(s) doublon</div>`);
+      }
+    }
+
+    // Validations Convention SBM (Phase 3.L)
+    if (r.validations && r.validations.stats) {
+      const s = r.validations.stats.by_severity || {};
+      const cls = s.critical > 0 ? "err" : (s.warn > 0 ? "warn" : "ok");
+      lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">⚖ Convention</span> ${r.validations.stats.findings_total} finding(s) · ${s.critical || 0} critical · ${s.warn || 0} warn · ${s.info || 0} info</div>`);
+      (r.validations.findings || []).slice(0, 8).forEach(f => {
+        const ic = f.severity === "critical" ? "🔴" : f.severity === "warn" ? "🟠" : "🔵";
+        lines.push(`<div class="small" style="margin-left:8px;">${ic} ${H.esc(f.msg)}${f.article ? ` <span style="opacity:.6;">(Art. ${H.esc(f.article)})</span>` : ""}</div>`);
+      });
+      if ((r.validations.findings || []).length > 8) {
+        lines.push(`<div class="small" style="margin-left:8px;opacity:.6;">… +${r.validations.findings.length - 8} autres (voir JSON brut)</div>`);
+      }
+    }
+
     resultSummary.innerHTML = lines.join("");
+    renderEmployeeGrid(r);
+  }
+
+  /* --- Comparateur visuel cellule par cellule (P3) --- */
+  function renderEmployeeGrid(r) {
+    const gridEl = document.getElementById("emp-grid");
+    if (!gridEl) return;
+    // Source = passe G (text-parser) prioritaire
+    const passG = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    const emps = (passG && passG.employees) || [];
+    if (!emps.length) { gridEl.innerHTML = ""; return; }
+
+    const colors = r.colors_per_emp || {};
+    const lieux = r.lieux_per_emp || {};
+    const maxDay = 31;
+
+    let html = '<details open style="margin-top:14px;"><summary style="cursor:pointer;color:var(--gold);font-size:14px;font-weight:600;">🔍 Comparateur visuel — ' + emps.length + ' employés (cellule par cellule)</summary>';
+    html += '<div style="overflow-x:auto;margin-top:10px;"><table style="border-collapse:collapse;font-size:10px;white-space:nowrap;">';
+    // Header jours
+    html += '<tr><th style="position:sticky;left:0;background:#0b1409;z-index:2;padding:3px 6px;text-align:left;border:1px solid var(--border);">Employé</th>';
+    for (let d = 1; d <= maxDay; d++) html += '<th style="padding:2px 3px;border:1px solid var(--border);min-width:22px;text-align:center;color:var(--text-dim);">' + d + '</th>';
+    html += '</tr>';
+    // Lignes employés
+    emps.forEach(emp => {
+      const name = emp.name || emp.fullName;
+      const empColors = colors[name] || {};
+      const empLieux = (lieux[name] && lieux[name].days) || {};
+      html += '<tr><td style="position:sticky;left:0;background:#0b1409;z-index:1;padding:3px 6px;border:1px solid var(--border);font-weight:600;">' + H.esc(name);
+      if (emp.brtpeck) html += ' <span style="opacity:.55;font-size:9px;">' + H.esc(emp.brtpeck) + '</span>';
+      html += '</td>';
+      for (let d = 1; d <= maxDay; d++) {
+        const code = (emp.days || {})[String(d)] || "";
+        const col = empColors[String(d)] || {};
+        const lieu = empLieux[String(d)] || "";
+        const style = (col.bg ? 'background:' + col.bg + ';' : '') + (col.fg ? 'color:' + col.fg + ';' : '');
+        const title = code ? H.esc(code + (lieu ? " · " + lieu : "") + (col.label ? " · " + col.label : "")) : "";
+        html += '<td style="padding:2px 3px;border:1px solid rgba(255,255,255,.08);text-align:center;' + style + '" title="' + title + '">' + H.esc(code) + '</td>';
+      }
+      html += '</tr>';
+    });
+    html += '</table></div>';
+    html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + libellé. Couleurs = projection (la cellule reste le code source exact). Rouge/jaune = Convention · Orange = CCDP · Violet = RH · Vert = formation.</div>';
+    html += '</details>';
+    gridEl.innerHTML = html;
   }
 
   function renderAlerts(r) {
