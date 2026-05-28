@@ -820,12 +820,16 @@ Le mapping CODE→LIEU doit être conditionnel sur `emp.family`.
 11. Workflow Node 22 (bug #2)
 12. Secrets noms conformes CLAUDE.md règle 7
 
-**Tests à ajouter (gap)** :
-- `npm run test:fidelity` équivalent dans sandbox (reproduction PDF identique sur fixture)
-- Cell-voting : vote unanime 4/4 → CERTAIN, vote 3/4 → needs_review
-- Text-parser : `12H30/19` capturé, suffixes préservés, multi-token names
-- Homonymes : LANDAU B ≠ LANDAU J ne mergent jamais
-- Encadrés statut : `2 CP du 1 au 31` → 31 cellules CP
+**Test de fidélité (✅ FAIT v0.8.1)** : `test-fidelity.js` + fixture
+`fixtures/synthetic-mai-2026-v1.txt` (données fictives, format SBM réel).
+Vérifie sur 8 axes : extraction noms+codes · suffixes `'`/`*`/`c` préservés ·
+homonymes LANDAU B ≠ LANDAU J séparés · `12H30/19` H majuscule + `PK` ·
+encadrés `CP du 1 au 31` / `AF du 4 au 8` / `M du 1 au 31` · couleurs
+Convention/CCDP · lieu conditionnel rôle · BRTPECK capturé. **Fidélité 100%**.
+Câblé dans `pre-commit-hook.sh` [5/5] (bloque tout commit avec écart de
+reproduction). Ce test a attrapé 3 vrais bugs du parser texte (code-poste
+`+KE` polluant le nom, titre « PLANNING MAI » capturé, codes « PK RH »
+pris pour un nom) → fix `parseFromRawText` ligne-par-ligne v0.4.0.
 
 ---
 

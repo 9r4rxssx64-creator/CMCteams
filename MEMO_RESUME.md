@@ -56,6 +56,21 @@ ET acceptés par `CODE_RE`**.
 - Tests : **17 → 20 sections, 140 → 175 checks ✅** + smoke test end-to-end
   (require pipeline OK, AMP→critical, BORGIA T/L séparés, 19/4'→Convention).
 
+### v0.8.1 — Test de fidélité « reproduction identique » + fix parser ligne-par-ligne
+
+- **`test-fidelity.js`** + **`fixtures/synthetic-mai-2026-v1.txt`** (données
+  FICTIVES, format SBM réel) : 8 axes vérifiés (extraction · suffixes `'`/`*`/`c`
+  préservés · homonymes LANDAU B≠J · `12H30/19`+PK · encadrés · couleurs · lieux
+  conditionnels · BRTPECK). **Fidélité 100%**. Câblé dans `pre-commit-hook.sh` [5/5].
+- **Bug attrapé par le test fidélité** : `parseFromRawText` scannait le texte
+  globalement → code-poste `.BRTCP+KE` polluait le nom (« KE LANDAU B »),
+  titre « PLANNING MAI » capturé comme nom, codes « PK RH » pris pour un nom.
+  **Fix v0.4.0** : `parseFromRawText` + `parseLineForEmployee` travaillent
+  ligne par ligne, strippent le code-poste BRTPECK (`POST_CODE_PREFIX_RE`)
+  AVANT extraction du nom, EXCLUDE_NAMES enrichi (43 codes + titres).
+- text-parser : v0.3.1 → **v0.4.0-line-by-line-poststrip**.
+- PIPE+VP : v0.8.0 → v0.8.1-fidelity-line-parser.
+
 ### Reste (P4)
 
 - Export `results/<ts>.json` AUTO après validation Kevin (bouton manuel existe)

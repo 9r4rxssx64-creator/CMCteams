@@ -757,6 +757,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.8.0-validations-homonyms-colors"
+    VERSION: "T1-v0.8.1-fidelity-line-parser"
   };
 }));

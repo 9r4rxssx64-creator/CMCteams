@@ -23,12 +23,16 @@
 - [`index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/index.html) : labels UI passes B-F-G honnêtes (« ⏳ en attente » / « 🚧 non implémentée »), légende mise à jour.
 - [`test-pipeline.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/test-pipeline.js) : **17 sections, 140 checks ✅** (vs 12/85 avant). Couvre 43 codes officiels présents dans `BULLETIN_CODES_FULL` ET acceptés par `CODE_RE`.
 
-### Versions
-- T1 pipeline : `v0.6.0-text-parser-native` → `v0.7.1-convention-sbm-43-codes`
-- T1 vision : `v0.6.0` → `v0.7.1`
-- T1 text-parser : `v0.2.0-multipass` → `v0.3.1-convention-43-codes`
-- T1 encadres-parser : `v0.1.0` (nouveau)
-- T1 team-detector : `v0.2.0-mirror-same-rh` (règle miroir corrigée)
+### Test de fidélité (v0.8.1)
+- [`test-fidelity.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/test-fidelity.js) : prouve la reproduction à l'identique sur 8 axes. Câblé dans `pre-commit-hook.sh` [5/5].
+- [`fixtures/synthetic-mai-2026-v1.txt`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/fixtures/synthetic-mai-2026-v1.txt) : fixture format SBM (données FICTIVES, aucun vrai employé exposé).
+
+### Versions (à v0.8.1)
+- T1 pipeline : `v0.6.0` → `v0.8.1-fidelity-line-parser`
+- T1 vision : `v0.6.0` → `v0.8.1`
+- T1 text-parser : `v0.2.0-multipass` → `v0.4.0-line-by-line-poststrip`
+- T1 encadres-parser : `v0.1.0` · team-detector : `v0.2.0-mirror-same-rh`
+- T1 validate-post-import / homonyms-guard / code-colors : `v0.1.0` (nouveaux v0.8.0)
 
 ---
 
