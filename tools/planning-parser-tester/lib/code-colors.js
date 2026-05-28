@@ -46,60 +46,64 @@
     "12h30/19": { bg: "#fff4a0", fg: "#6a5410", label: "12h30-19h CMC" }
   };
 
-  /* Couleurs des codes statut (43 codes Note 6 janv 1993). */
+  /* Couleurs + DÉNOMINATION OFFICIELLE des codes statut (43 codes).
+   * Libellés conformes Convention SBM Note 6 janvier 1993 (Bernard Lées) —
+   * source : index.html racine BULLETIN_CODES. Le label s'affiche au survol
+   * du comparateur visuel (Kevin « aide-toi de la Convention pour la
+   * dénomination des jours »). */
   const STATUT_COLORS = {
     /* Présence / Repos */
-    "P":   { bg: "#e8f0e8", fg: "#202020", label: "Présence" },
-    "RH":  { bg: "#c8a8e0", fg: "#2a0870", label: "Repos hebdo" },
-    "R":   { bg: "#e8e8e8", fg: "#202020", label: "Repos" },
-    "RTP": { bg: "#ffd060", fg: "#5a3808", label: "Repos travaillé à payer" },
-    "RTR": { bg: "#ffd060", fg: "#5a3808", label: "Repos travaillé à récupérer" },
-    "RRT": { bg: "#ffd850", fg: "#5a3808", label: "Récup repos travaillé" },
-    "RHS": { bg: "#ffd850", fg: "#5a3808", label: "Récup heures sup" },
-    "DP":  { bg: "#e0e0e8", fg: "#202020", label: "Disposition" },
+    "P":   { bg: "#e8f0e8", fg: "#202020", label: "Jour de Présence" },
+    "RH":  { bg: "#c8a8e0", fg: "#2a0870", label: "Repos Hebdomadaire" },
+    "R":   { bg: "#e8e8e8", fg: "#202020", label: "Repos simple" },
+    "RTP": { bg: "#ffd060", fg: "#5a3808", label: "Repos Travaillé à Payer" },
+    "RTR": { bg: "#ffd060", fg: "#5a3808", label: "Repos Travaillé à Récupérer (+ compteur)" },
+    "RRT": { bg: "#ffd850", fg: "#5a3808", label: "Récupération Repos Travaillé (- compteur)" },
+    "RHS": { bg: "#ffd850", fg: "#5a3808", label: "Récupération Heures Supplémentaires" },
+    "DP":  { bg: "#e0e0e8", fg: "#202020", label: "Jour de Disposition" },
     /* Congés */
-    "CP":  { bg: "#f8c0d0", fg: "#6a1028", label: "Congé payé" },
-    "CRH": { bg: "#f0b8c8", fg: "#6a1028", label: "Repos hebdo dans congé" },
-    "CPS": { bg: "#f8c0d0", fg: "#6a1028", label: "Congé payé samedi" },
-    "CPM": { bg: "#f8c0d0", fg: "#6a1028", label: "1er jour congé (fractionnement)" },
-    "CDP": { bg: "#f0b8c8", fg: "#6a1028", label: "Congé déjà payé" },
-    "CDH": { bg: "#f0b8c8", fg: "#6a1028", label: "Repos hebdo dans congé déjà payé" },
+    "CP":  { bg: "#f8c0d0", fg: "#6a1028", label: "Jour ouvrable de Congé Payé" },
+    "CRH": { bg: "#f0b8c8", fg: "#6a1028", label: "Repos Hebdo inclus dans Congé" },
+    "CPS": { bg: "#f8c0d0", fg: "#6a1028", label: "Congé Payé Samedi (5e pour 5 sem)" },
+    "CPM": { bg: "#f8c0d0", fg: "#6a1028", label: "1er jour Période Congé (droit fractionnement)" },
+    "CDP": { bg: "#f0b8c8", fg: "#6a1028", label: "Jour Congé Déjà Payé" },
+    "CDH": { bg: "#f0b8c8", fg: "#6a1028", label: "Repos Hebdo inclus dans Congés Déjà Payés" },
     /* Fêtes légales */
-    "FL":  { bg: "#a8e0a8", fg: "#0c3a0c", label: "Fête légale chômée" },
-    "CFL": { bg: "#a8c0a8", fg: "#0c3a0c", label: "Fête légale dans CP" },
-    "FTP": { bg: "#80e080", fg: "#0c3a0c", label: "Fête travaillée à payer" },
-    "FTR": { bg: "#80e080", fg: "#0c3a0c", label: "Fête travaillée à récupérer" },
-    "RFT": { bg: "#a0d0a0", fg: "#0c3a0c", label: "Récup fête travaillée" },
+    "FL":  { bg: "#a8e0a8", fg: "#0c3a0c", label: "Fête Légale chômée et payée" },
+    "CFL": { bg: "#a8c0a8", fg: "#0c3a0c", label: "Fête Légale incluse dans Congé Payé" },
+    "FTP": { bg: "#80e080", fg: "#0c3a0c", label: "Fête Légale Travaillée à Payer" },
+    "FTR": { bg: "#80e080", fg: "#0c3a0c", label: "Fête Légale Travaillée à Récupérer (+ compteur)" },
+    "RFT": { bg: "#a0d0a0", fg: "#0c3a0c", label: "Récupération Fête Travaillée (- compteur)" },
     /* À la masse */
-    "FCP": { bg: "#f0b8c0", fg: "#6a1028", label: "CP (masse)" },
-    "FCS": { bg: "#f0b8c0", fg: "#6a1028", label: "CPS (masse)" },
-    "FRH": { bg: "#c8a8d8", fg: "#2a0870", label: "CRH (masse)" },
-    "FFL": { bg: "#a8c0a8", fg: "#0c3a0c", label: "CFL (masse)" },
+    "FCP": { bg: "#f0b8c0", fg: "#6a1028", label: "Idem CP (employé à la masse)" },
+    "FCS": { bg: "#f0b8c0", fg: "#6a1028", label: "Idem CPS (employé à la masse)" },
+    "FRH": { bg: "#c8a8d8", fg: "#2a0870", label: "Idem CRH (employé à la masse)" },
+    "FFL": { bg: "#a8c0a8", fg: "#0c3a0c", label: "Idem CFL (employé à la masse)" },
     /* Absences */
-    "M":   { bg: "#ffe840", fg: "#4a3808", label: "Maladie" },
-    "MAL": { bg: "#ffe840", fg: "#4a3808", label: "Maladie longue" },
-    "AT":  { bg: "#ffc850", fg: "#5a2808", label: "Accident travail" },
-    "MT":  { bg: "#ffe080", fg: "#5a3808", label: "Maternité" },
-    "ABS": { bg: "#e8c8b0", fg: "#4a2808", label: "Absence tolérée" },
-    "ABI": { bg: "#e88080", fg: "#5a0808", label: "Absence injustifiée" },
-    "ABP": { bg: "#e8c8b0", fg: "#4a2808", label: "Absence autorisée payée" },
-    "AF":  { bg: "#a8e0a8", fg: "#0c3a0c", label: "Formation 9h15-17h45" },
-    "CL":  { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé légal famille (Art. 18)" },
-    "CEO": { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé éducation ouvrière" },
-    "CSC": { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé supplémentaire cadre" },
-    "CSS": { bg: "#d0d0d0", fg: "#202020", label: "Congé sans solde" },
+    "M":   { bg: "#ffe840", fg: "#4a3808", label: "Absence Maladie (indemnisée ou non)" },
+    "MAL": { bg: "#ffe840", fg: "#4a3808", label: "Maladie longue durée" },
+    "AT":  { bg: "#ffc850", fg: "#5a2808", label: "Accident du Travail ou Trajet" },
+    "MT":  { bg: "#ffe080", fg: "#5a3808", label: "Congé Maternité" },
+    "ABS": { bg: "#e8c8b0", fg: "#4a2808", label: "Absence tolérée non payée" },
+    "ABI": { bg: "#e88080", fg: "#5a0808", label: "Absence Injustifiée (sanction possible)" },
+    "ABP": { bg: "#e8c8b0", fg: "#4a2808", label: "Absence autorisée exceptionnellement payée" },
+    "AF":  { bg: "#a8e0a8", fg: "#0c3a0c", label: "Absence Rémunérée Formation (= Présence)" },
+    "CL":  { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé Légal événement familial (Art. 18)" },
+    "CEO": { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé d'Éducation Ouvrière" },
+    "CSC": { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé Supplémentaire Cadre" },
+    "CSS": { bg: "#d0d0d0", fg: "#202020", label: "Congé Sans Solde" },
     /* Sanctions (rouge alerte) */
-    "PNE": { bg: "#e85050", fg: "#ffffff", label: "Préavis non exécuté" },
-    "AMP": { bg: "#e85050", fg: "#ffffff", label: "Mise à pied non payée" },
-    "MPC": { bg: "#e85050", fg: "#ffffff", label: "Mise à pied conservatoire" },
-    "MPP": { bg: "#e8a050", fg: "#ffffff", label: "Mise à pied payée" },
+    "PNE": { bg: "#e85050", fg: "#ffffff", label: "Préavis non Exécuté" },
+    "AMP": { bg: "#e85050", fg: "#ffffff", label: "Mise à Pied non rémunérée" },
+    "MPC": { bg: "#e85050", fg: "#ffffff", label: "Mise à Pied Conservatoire (attente décision)" },
+    "MPP": { bg: "#e8a050", fg: "#ffffff", label: "Mise à Pied Payée" },
     /* Autres */
-    "PAT": { bg: "#b8e0f0", fg: "#0c3a58", label: "Paternité (v9.118)" },
-    "PRT": { bg: "#ffd060", fg: "#5a3808", label: "Prêt (autre service)" },
-    "HC":  { bg: "#d8e8a8", fg: "#2e3a10", label: "Heures complémentaires" },
-    "EDC": { bg: "#e0d0f0", fg: "#4a2080", label: "En détachement cadre" },
+    "PAT": { bg: "#b8e0f0", fg: "#0c3a58", label: "Paternité" },
+    "PRT": { bg: "#ffd060", fg: "#5a3808", label: "Prêt (mis à disposition autre service)" },
+    "HC":  { bg: "#d8e8a8", fg: "#2e3a10", label: "Heures Complémentaires" },
+    "EDC": { bg: "#e0d0f0", fg: "#4a2080", label: "En Détachement Cadre" },
     /* Pit Boss spécifiques */
-    "HD":  { bg: "#e85050", fg: "#ffffff", label: "Hors département / férié" },
+    "HD":  { bg: "#e85050", fg: "#ffffff", label: "Hors Département / Jour férié spécial" },
     "PK":  { bg: "#ffd0e0", fg: "#a82858", label: "Poker Cash Game" }
   };
 

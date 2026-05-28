@@ -778,6 +778,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.9.1-encadres-applied-no-orphan"
+    VERSION: "T1-v0.9.2-convention-denominations"
   };
 }));

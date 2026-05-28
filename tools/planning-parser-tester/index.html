@@ -215,7 +215,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.9.1-encadres-applied-no-orphan-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.9.2-convention-denominations-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -654,7 +654,32 @@
       html += '</tr>';
     });
     html += '</table></div>';
-    html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + libellé. Couleurs = projection (la cellule reste le code source exact). Rouge/jaune = Convention · Orange = CCDP · Violet = RH · Vert = formation.</div>';
+    html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + dénomination Convention. Couleurs = projection (la cellule reste le code source exact).</div>';
+
+    // Légende des codes PRÉSENTS dans cet import + dénomination Convention
+    // (Kevin « aide-toi de la Convention pour la dénomination des jours »).
+    const CC = window.CodeColors;
+    if (CC && CC.getCellColor) {
+      const distinct = {};
+      emps.forEach(emp => {
+        Object.values(emp.days || {}).forEach(code => {
+          if (code && !distinct[code]) distinct[code] = CC.getCellColor(code);
+        });
+      });
+      const codesSorted = Object.keys(distinct).sort();
+      if (codesSorted.length) {
+        html += '<details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--gold);font-size:13px;">📖 Dénomination Convention des ' + codesSorted.length + ' codes présents</summary>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">';
+        codesSorted.forEach(code => {
+          const c = distinct[code];
+          const st = (c.bg ? 'background:' + c.bg + ';' : '') + (c.fg ? 'color:' + c.fg + ';' : '');
+          html += '<div style="display:flex;align-items:center;gap:5px;font-size:11px;padding:2px 4px;">' +
+            '<code style="padding:2px 5px;border-radius:3px;' + st + '">' + H.esc(code) + '</code>' +
+            '<span style="color:var(--text-dim);">' + H.esc(c.label || "?") + '</span></div>';
+        });
+        html += '</div></details>';
+      }
+    }
     html += '</details>';
     gridEl.innerHTML = html;
     renderValidation(r);
