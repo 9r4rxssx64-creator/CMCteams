@@ -23,9 +23,13 @@ jobs:
           node -e "
             const fs = require('fs');
             const html = fs.readFileSync('index.html', 'utf8');
-            const s = html.lastIndexOf('<script>');
-            const e = html.lastIndexOf('</script>');
-            fs.writeFileSync('/tmp/test.js', html.slice(s+8, e));
+            // Extraction CORRECTE : TOUS les blocs <script> inline (hors src=).
+            // L'ancienne méthode lastIndexOf('<script>') ne prenait que le
+            // DERNIER bloc → fragment → faux échec (bug CI, CLAUDE.md #29).
+            const blocks = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+              .filter(m => !/\bsrc=/.test(m[0]))
+              .map(m => m[1]);
+            fs.writeFileSync('/tmp/test.js', blocks.join('\n;\n'));
           "
           node --check /tmp/test.js
           echo "✅ JS syntax OK"
@@ -40,7 +44,10 @@ jobs:
 
       - name: Check no conflict markers
         run: |
-          if grep -rE "^(<<<<<<|======|>>>>>>)" --include="*.html" --include="*.md" --include="*.json" .; then
+          # Marqueurs Git RÉELS uniquement : '<<<<<<< ' / '=======' (exactement
+          # 7, seul sur la ligne) / '>>>>>>> '. Évite les faux positifs sur les
+          # séparateurs de commentaires type '==========' (8+ signes).
+          if grep -rEn "^(<<<<<<< |={7}$|>>>>>>> )" --include="*.html" --include="*.md" --include="*.json" .; then
             echo "❌ Marqueurs de conflit Git trouvés"
             exit 1
           fi
