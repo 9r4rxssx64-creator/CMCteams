@@ -170,115 +170,154 @@
 
   /** Algorithme principal. Reçoit une liste d'emps { fullName, days, family? }.
    *  Retourne teams + mirrors + unassigned + warnings. */
+  /* Codes d'absence/statut (jour NON travaillé dans la rotation d'équipe, à
+   *  ignorer dans la comparaison). DEPL (déplacement/détaché) et RRT (repos
+   *  compensateur) ne font pas partie de la rotation normale → ignorés aussi
+   *  (sinon un membre détaché quelques jours est faussement séparé de son équipe
+   *  — cas LAVAGNA J, juin). */
+  const STATUS_ABS = new Set(["CP", "AF", "M", "MAL", "MT", "PAT", "AT", "ABS", "ABI",
+                              "SS", "RRT", "CRH", "CFL", "FL", "CSS", "EDC", "HD", "HC", "PRT",
+                              "DEPL", "DEP", "FORM", "STAGE"]);
+
+  /** Normalise un code journalier pour comparaison d'équipe :
+   *   RH/R → "REST" ; CP/M/AF/… → "ABS" (jour non travaillé) ; sinon le code de
+   *   base SANS suffixe (c/'/"/*), upper. Deux coéquipiers ont le MÊME code
+   *   normalisé chaque jour travaillé (ils tournent ensemble). */
+  function normalizeDayCode(code) {
+    if (!code) return null;
+    const u = String(code).trim().toUpperCase();
+    if (u === "RH" || u === "R") return "REST";
+    if (STATUS_ABS.has(u)) return "ABS";
+    return String(code).replace(/[c'"*:]+$/gi, "").trim().toUpperCase();
+  }
+
+  /** Algorithme principal (v0.4 — Kevin 2026-05-28, validé sur son équipe juin).
+   *
+   *  CLÉ D'ÉQUIPE = MÊMES CODES JOURNALIERS sur les jours TRAVAILLÉS EN COMMUN.
+   *  Robuste aux CP/absence partiels (un membre en CP la moitié du mois reste
+   *  dans l'équipe : sur ses jours travaillés, ses codes == ceux des coéquipiers)
+   *  et à la rotation (toute l'équipe tourne ensemble : 20/5→19/4→16/22→14/19→
+   *  RH…). L'ancienne signature « repos brut + 1er code » cassait sur les CP
+   *  partiels (repos tronqués → coéquipiers séparés).
+   *
+   *  Étapes : (1) normalise chaque jour ; (2) union-find : 2 emps unis si codes
+   *  identiques sur ≥minOverlap jours co-présents (dont ≥minWorkOverlap jours
+   *  travaillés) à 100% ; (3) clusters ≥minTeamSize = équipes ; (4) miroir =
+   *  2 équipes même famille, MÊMES repos, rotations horaires différentes. */
   function detectTeams(employees, opts) {
     opts = opts || {};
-    const minCellsForSignature = opts.minCellsForSignature || 20;
+    const minWorkDays = opts.minWorkDays || 5;        // jours travaillés min pour signature fiable
+    const minOverlap = opts.minOverlap || 6;           // jours co-présents min pour comparer
+    const minWorkOverlap = opts.minWorkOverlap || 3;   // dont jours travaillés (pas que du repos)
     const minTeamSize = opts.minTeamSize !== undefined ? opts.minTeamSize : 2;
     const skipFamilies = new Set(opts.skipFamilies || ["cadres"]);
 
     const out = { ok: true, teams: [], mirrors: [], unassigned: [], warnings: [] };
 
-    // 1) Filter et calcule signatures
-    const sigs = [];
+    // 1) Filtre + carte des codes journaliers normalisés
+    const nodes = [];
     for (const emp of employees) {
       if (!emp || !emp.fullName) continue;
       if (emp.family && skipFamilies.has(emp.family)) {
         out.unassigned.push({ fullName: emp.fullName, reason: "family=" + emp.family + " (skip — pas d'équipe)" });
         continue;
       }
-      const totalCells = emp.days ? Object.keys(emp.days).length : 0;
-      if (totalCells < minCellsForSignature) {
-        out.unassigned.push({ fullName: emp.fullName, reason: "<" + minCellsForSignature + " cellules (" + totalCells + ")" });
+      const days = emp.days || {};
+      const dn = {}; let work = 0, rest = 0;
+      for (const k of Object.keys(days)) {
+        const d = parseInt(k, 10); if (isNaN(d)) continue;
+        const n = normalizeDayCode(days[k]); if (!n) continue;
+        dn[d] = n;
+        if (n === "REST") rest++; else if (n !== "ABS") work++;
+      }
+      if (work < minWorkDays) {
+        out.unassigned.push({ fullName: emp.fullName, reason: work + " jours travaillés (<" + minWorkDays + ") — statut/absence intégral ?" });
         continue;
       }
-      const ext = getExtendedSignature(emp.days);
-      if (ext.rhDays.length === 0) {
-        out.unassigned.push({ fullName: emp.fullName, reason: "0 jours RH/R (statut intégral ?)" });
-        continue;
+      nodes.push({ emp, dn, work, rest, family: emp.family || null });
+    }
+
+    // 2) Union-find par identité des codes journaliers (jours co-travaillés)
+    const parent = nodes.map((_, i) => i);
+    function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+    function union(a, b) { parent[find(a)] = find(b); }
+    function compatible(A, B) {
+      if (A.family !== B.family) return false;
+      let overlap = 0, workOverlap = 0, match = 0;
+      for (let d = 1; d <= 31; d++) {
+        const a = A.dn[d], b = B.dn[d];
+        if (!a || !b || a === "ABS" || b === "ABS") continue;
+        overlap++;
+        if (a !== "REST" && b !== "REST") workOverlap++;
+        if (a === b) match++;
       }
-      sigs.push({
-        emp: emp,
-        rhDays: ext.rhDays,
-        firstWorkCode: ext.firstWorkCode,
-        firstWorkCodeNorm: ext.firstWorkCodeNorm,
-        cycleHint: ext.cycleHint
-      });
+      return overlap >= minOverlap && workOverlap >= minWorkOverlap && match === overlap;
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      for (let k = i + 1; k < nodes.length; k++) {
+        if (find(i) === find(k)) continue;
+        if (compatible(nodes[i], nodes[k])) union(i, k);
+      }
     }
 
-    // 2) GROUPE PRIMAIRE = FAMILLE + jours de repos IDENTIQUES.
-    //    Kevin 2026-05-28 : « les équipes sont triées par famille ; dans une
-    //    famille, le groupe qui a les mêmes repos forme l'équipe principale,
-    //    puis plus bas le groupe qui a les MÊMES repos est son équipe miroir ».
-    //    Donc un groupe de repos (famille+RH) = équipe principale + son miroir.
-    const rhGroups = new Map(); // famille::RH → sigs[]
-    for (const s of sigs) {
-      const key = (s.emp.family || "?") + "::" + JSON.stringify(s.rhDays);
-      if (!rhGroups.has(key)) rhGroups.set(key, []);
-      rhGroups.get(key).push(s);
+    // 3) Regroupe les clusters → équipes
+    const clusters = new Map();
+    for (let i = 0; i < nodes.length; i++) {
+      const r = find(i);
+      if (!clusters.has(r)) clusters.set(r, []);
+      clusters.get(r).push(nodes[i]);
     }
-
-    // 3) Dans chaque groupe de repos : partition par HORAIRE DE BASE.
-    //    - équipe PRINCIPALE = sous-groupe (horaire) le plus nombreux
-    //    - MIROIR = autre sous-groupe d'AU MOINS 2 membres (un miroir est un
-    //      GROUPE, pas 1 personne — Kevin)
-    //    - sous-groupe d'1 personne (horaire isolé) = bruit du « premier code
-    //      travail » → REPLIÉ dans la principale (mêmes repos = même équipe)
     let teamIdx = 1;
     const teamsArr = [];
-    for (const [rhKey, group] of rhGroups) {
-      if (group.length < minTeamSize) {
-        for (const s of group) out.unassigned.push({ fullName: s.emp.fullName, reason: "repos unique (" + group.length + " <" + minTeamSize + ")" });
+    for (const [, members] of clusters) {
+      if (members.length < minTeamSize) {
+        for (const n of members) out.unassigned.push({ fullName: n.emp.fullName, reason: "cluster trop petit (" + members.length + " <" + minTeamSize + ")" });
         continue;
       }
-      const sep = rhKey.indexOf("::");
-      const famStr = rhKey.substring(0, sep);
-      const family = famStr && famStr !== "?" ? famStr : null;
-      const rhDays = JSON.parse(rhKey.substring(sep + 2));
-
-      // partition par horaire de base
-      const byBase = new Map();
-      for (const s of group) {
-        const b = s.firstWorkCodeNorm || "?";
-        if (!byBase.has(b)) byBase.set(b, []);
-        byBase.get(b).push(s);
-      }
-      const subs = Array.from(byBase.values()).sort((a, b) => b.length - a.length);
-      const main = subs[0].slice();
-      const mirrors = [];
-      for (let k = 1; k < subs.length; k++) {
-        if (subs[k].length >= 2) mirrors.push(subs[k]);   // vrai miroir (groupe)
-        else for (const s of subs[k]) main.push(s);        // solo = bruit → replie
-      }
-      const mkTeam = (members) => {
-        const t = {
-          id: "t" + (teamIdx++),
-          signature_rh: rhDays.slice(),
-          firstWorkCode: members[0].firstWorkCode,
-          firstWorkCodeNorm: members[0].firstWorkCodeNorm,
-          family,
-          members: members.map(s => ({ fullName: s.emp.fullName })),
-          rhDays: rhDays.slice(),
-          cycleHint: members[0].cycleHint
-        };
-        teamsArr.push(t);
-        return t;
-      };
-      const mainTeam = mkTeam(main);
-      for (const mir of mirrors) {
-        const mirTeam = mkTeam(mir);
-        out.mirrors.push({
-          teamId: mainTeam.id,
-          mirrorTeamId: mirTeam.id,
-          rhDays: rhDays.slice(),
-          reason: "MÊMES jours RH/R [" + rhDays.join(",") + "] + horaires base différents (" +
-                  mainTeam.firstWorkCodeNorm + " ≠ " + mirTeam.firstWorkCodeNorm + ")"
-        });
-      }
+      // Référence = membre le plus complet (max jours présents) → repos + rotation
+      const ref = members.slice().sort((a, b) => (b.work + b.rest) - (a.work + a.rest))[0];
+      const rhDays = Object.keys(ref.dn).filter(d => ref.dn[d] === "REST").map(Number).sort((a, b) => a - b);
+      teamsArr.push({
+        id: "t" + (teamIdx++),
+        family: ref.family,
+        members: members.map(n => ({ fullName: n.emp.fullName })),
+        rhDays: rhDays,
+        signature_rh: rhDays.slice(),
+        daySig: ref.dn,                       // rotation de référence (pour miroir)
+        firstWorkCodeNorm: getFirstWorkCode(ref.emp.days) ? normalizeWorkCodeForClustering(getFirstWorkCode(ref.emp.days)) : null
+      });
     }
     out.teams = teamsArr;
 
+    // 4) Miroirs : 2 équipes même famille, MÊMES repos, rotations DIFFÉRENTES
+    //    (l'union-find les a séparées car codes journaliers ≠).
+    const used = new Set();
+    for (let i = 0; i < teamsArr.length; i++) {
+      if (used.has(teamsArr[i].id)) continue;
+      for (let k = i + 1; k < teamsArr.length; k++) {
+        if (used.has(teamsArr[k].id)) continue;
+        const A = teamsArr[i], B = teamsArr[k];
+        if (A.family !== B.family) continue;
+        if (!rhEqual(A.rhDays, B.rhDays)) continue;
+        let common = 0, diff = false;
+        for (let d = 1; d <= 31; d++) {
+          const a = A.daySig[d], b = B.daySig[d];
+          if (!a || !b || a === "ABS" || b === "ABS" || a === "REST" || b === "REST") continue;
+          common++; if (a !== b) diff = true;
+        }
+        if (common >= 3 && diff) {
+          out.mirrors.push({
+            teamId: A.id, mirrorTeamId: B.id, rhDays: A.rhDays.slice(),
+            reason: "MÊMES repos [" + A.rhDays.join(",") + "] + rotations horaires différentes"
+          });
+          used.add(A.id); used.add(B.id);
+          break;
+        }
+      }
+    }
+
     if (teamsArr.length === 0 && employees.length > 0) {
-      out.warnings.push("Aucune équipe détectée — vérifier les signatures RH / la qualité de l'extraction");
+      out.warnings.push("Aucune équipe détectée — vérifier la qualité de l'extraction des codes journaliers");
     }
 
     return out;
