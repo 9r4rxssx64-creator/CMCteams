@@ -334,7 +334,8 @@ function codeToLieu(rawCode, role) {
   // Suffixe `CDP` mot → CCDP
   if (/CDP$/i.test(code)) return "CCDP";
 
-  const isCadre = role && /^(pit|sup|cadres?|ins)$/i.test(role);
+  // startsWith (pas exact) → accepte "pit15", "pit boss", "superviseur", etc.
+  const isCadre = role && /^(pit|sup|cadres?|ins)/i.test(role);
   const table = isCadre ? CODE_TO_LIEU_CADRE : CODE_TO_LIEU_EMPLOYEE;
 
   // 1) Lookup exact (avec suffixe)
@@ -500,6 +501,63 @@ function detectFamiliesGeometric(pages) {
   return map;
 }
 
+/* ------------------------------------------------------------------
+ * RÔLES CADRES par TITRE DE SECTION (géométrique) — Kevin 2026-05-28
+ * Planning cadre (2e PDF) : Pit Boss / Superviseur / Inspecteur. PAS d'équipes
+ * (assignation individuelle). Le rôle conditionne le LIEU (19/4 pit → CCDP).
+ * ------------------------------------------------------------------ */
+const CADRE_ROLE_TITLES = [
+  { re: /PIT\s*BOSS/i,     role: "pit" },
+  { re: /SUPERVISEUR/i,    role: "sup" },
+  { re: /INSPECTEUR/i,     role: "ins" }
+];
+
+/** Détecte le rôle cadre (pit/sup/ins) de chaque nom par géométrie (titre de
+ *  section le plus proche au-dessus). Retourne { normNom: role }. */
+function detectCadreRolesGeometric(pages) {
+  const map = {};
+  if (!pages || !pages.length) return map;
+  const isNameItem = (s) => {
+    s = String(s).trim();
+    if (!s || s.indexOf(" ") < 0) return false;
+    const t = s.split(/\s+/);
+    if (!/^[A-Z]{1,3}$/.test(t[t.length - 1])) return false;
+    const sur = t.slice(0, -1).join(" ");
+    return sur.length >= 2 && /^[A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\- ]+$/.test(sur);
+  };
+  for (const pg of pages) {
+    const items = (pg.items || []).filter(i => i.str && i.str.trim());
+    const titles = [];
+    for (const it of items) {
+      for (const t of CADRE_ROLE_TITLES) if (t.re.test(it.str)) { titles.push({ y: it.y, role: t.role }); break; }
+    }
+    if (!titles.length) continue;
+    for (const it of items) {
+      if (!isNameItem(it.str)) continue;
+      let best = null;
+      for (const t of titles) if (t.y >= it.y && (!best || t.y < best.y)) best = t;
+      if (!best) continue;
+      const key = _famNormName(it.str.trim());
+      if (!map[key]) map[key] = best.role;
+    }
+  }
+  return map;
+}
+
+/** Marque les employés d'un planning CADRE : family="cadres" + role (pit/sup/
+ *  ins) → exclus de la détection d'équipes, lieux mappés sur la table CADRE.
+ *  fallbackRole utilisé si le nom n'est pas rattaché à un titre géométrique. */
+function applyCadreRolesToEmployees(employees, roleMap, fallbackRole) {
+  for (const e of (employees || [])) {
+    const key = _famNormName(e.name || e.fullName || "");
+    e.family = "cadres";
+    e.role = roleMap[key] || fallbackRole || "pit";
+    const pb = parseBrtpeck(e.brtpeck);
+    if (pb) e.competences = pb.letters.concat(pb.plusLetters);
+  }
+  return employees;
+}
+
 /** Applique les familles détectées + les compétences BRTPECK aux employés.
  *  Ne modifie JAMAIS les jours/horaires — enrichit family + competences. */
 function applyFamiliesToEmployees(employees, famMap) {
@@ -520,6 +578,9 @@ const PlanningParserHelpers = {
   familyFromTitle,
   detectFamiliesGeometric,
   applyFamiliesToEmployees,
+  CADRE_ROLE_TITLES,
+  detectCadreRolesGeometric,
+  applyCadreRolesToEmployees,
   SUFFIX_MEANING,
   STATUT_CODES,
   STATUT_LABEL,
