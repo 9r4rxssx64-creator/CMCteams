@@ -396,7 +396,20 @@
           const tEnc = Date.now();
           const monthYear = result.month_year_detected || {};
           const dim = daysInMonth(monthYear.year, monthYear.month);
-          const encResult = EncadresParser.parseEncadres(rawText, dim);
+          // GÉOMÉTRIQUE d'abord (coordonnées X/Y = colonnes fidèles, récupère M/CP
+          // tout le mois sans mélanger les colonnes). Repli texte si pas de calque.
+          let encResult = null;
+          if (typeof EncadresParser.parseEncadresGeometric === "function" &&
+              passeA_PdfJs && Array.isArray(passeA_PdfJs.pages) && passeA_PdfJs.pages.length) {
+            encResult = EncadresParser.parseEncadresGeometric(passeA_PdfJs.pages, dim);
+            if (!encResult || !encResult.boxes || !encResult.boxes.length) {
+              encResult = EncadresParser.parseEncadres(rawText, dim); // repli
+            } else {
+              encResult.method = "geometric";
+            }
+          } else {
+            encResult = EncadresParser.parseEncadres(rawText, dim);
+          }
           result.encadres = encResult;
           result.durations_ms.encadres_parser = Date.now() - tEnc;
           if (encResult.boxes && encResult.boxes.length > 0) {
@@ -639,6 +652,40 @@
             severity: "info",
             msg: "Proxy Vision non configuré — seule la passe A (PDF.js) a été exécutée. Configure l'URL + token dans la section « Proxy IA »."
           });
+        }
+      }
+
+      /* ---- Phase 3.H-bis : Familles par titre de section + compétences ---- */
+      // Kevin 2026-05-28 : famille = titre de section (Roulettes / Chefs black
+      // Jack / Employés cartes CMC / aménagement), pas la compétence seule
+      // (« +E » est dans Roulettes ET Chefs BJ). Compétences BRTPECK attachées
+      // par personne. Géométrique (items X/Y de la passe A).
+      if (H.detectFamiliesGeometric && opts.runFamilies !== false) {
+        const passeA_fam = result.passes.find(p => p.passe === "A" && p.tool === "pdf.js");
+        const passeG = result.passes.find(p => p.passe === "G" && p.ok);
+        if (passeA_fam && Array.isArray(passeA_fam.pages) && passeG && Array.isArray(passeG.employees)) {
+          const tFam = Date.now();
+          const cadreType = result.type_detected && result.type_detected.types &&
+            result.type_detected.types.find(t => t.kind === "cadres");
+          if (cadreType && H.applyCadreRolesToEmployees) {
+            // Planning CADRE (Pit Boss/Superviseur/Inspecteur) : family=cadres +
+            // rôle géométrique → exclus des équipes, lieux mappés table CADRE.
+            const roleMap = H.detectCadreRolesGeometric(passeA_fam.pages);
+            const fallback = /sup/i.test(cadreType.sub) ? "sup" : /ins/i.test(cadreType.sub) ? "ins" : "pit";
+            H.applyCadreRolesToEmployees(passeG.employees, roleMap, fallback);
+            const dist = {};
+            passeG.employees.forEach(e => { const r = e.role || fallback; dist[r] = (dist[r] || 0) + 1; });
+            result.families = { cadre: true, distribution: dist };
+            result.alerts.push({ severity: "info", msg: "Cadres (rôles) : " + Object.entries(dist).map(([r, c]) => r + "×" + c).join(", ") + " — pas d'équipes (assignation individuelle)." });
+          } else {
+            const famMap = H.detectFamiliesGeometric(passeA_fam.pages);
+            H.applyFamiliesToEmployees(passeG.employees, famMap);
+            const dist = {};
+            passeG.employees.forEach(e => { const f = e.family || "(?)"; dist[f] = (dist[f] || 0) + 1; });
+            result.families = { map_size: Object.keys(famMap).length, distribution: dist };
+            result.alerts.push({ severity: "info", msg: "Familles (titre de section) : " + Object.entries(dist).map(([f, c]) => f + "×" + c).join(", ") });
+          }
+          result.durations_ms.families = Date.now() - tFam;
         }
       }
 

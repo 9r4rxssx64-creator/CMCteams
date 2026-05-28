@@ -274,12 +274,20 @@
       brtpeck: e.brtpeck || null,
       teamNumber: (e.teamNumber !== undefined ? e.teamNumber : null),
       _gridDays: new Set(Object.keys(e.days || {})), // jours issus de la GRILLE (intouchables)
+      statuts: Array.isArray(e.statuts) ? e.statuts.slice() : [], // codes encadrés (section maladie/CP…)
       source: e.source || "grid"
     }));
     const byName = new Map();
     for (const e of out) byName.set(normName(e.name), e);
 
-    const stats = { filled: 0, created: 0, cells_added: 0 };
+    // Statuts d'ABSENCE intégrale (Kevin : « longue maladie = seulement dans
+    // l'encadré du haut, pas de ligne de grille »). Un employé présent TOUT LE
+    // MOIS dans un de ces encadrés n'a PAS de vraie grille → ses rares cellules
+    // de grille sont des artefacts de colonnes mélangées (ex : SANNA O en M
+    // récupérait le « R » initiale de son voisin CERETTI R).
+    const ABSENCE_FULL = new Set(["M", "MAL", "CP", "AF", "MT", "PAT", "SS", "ABI", "AT", "ABS", "EDC", "CFL", "CRH"]);
+
+    const stats = { filled: 0, created: 0, cells_added: 0, overridden: 0, dual_display: 0 };
     for (const box of (boxes || [])) {
       const from = box.from || 1;
       const to = box.to || daysInMonth;
@@ -287,17 +295,37 @@
         const key = normName(n.fullName);
         let emp = byName.get(key);
         if (!emp) {
-          emp = { name: cleanDisplayName(n.fullName), days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), source: "encadre" };
+          emp = { name: cleanDisplayName(n.fullName), days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), statuts: [], source: "encadre" };
           byName.set(key, emp);
           out.push(emp);
           stats.created++;
         } else {
           stats.filled++;
         }
+        // Marqueur statut encadré → permet la SECTION « longue maladie » / CP
+        // (et le DOUBLE affichage si l'employé a aussi une équipe).
+        if (!emp.statuts) emp.statuts = [];
+        if (emp.statuts.indexOf(box.code) < 0) emp.statuts.push(box.code);
+
+        // RÈGLE Kevin 2026-05-28 : si une longue maladie a AUSSI une vraie ligne
+        // d'équipe → afficher LES DEUX (section maladie + vue équipe), même si M
+        // tout le mois → on NE touche PAS sa grille (teamNumber non null).
+        // Sinon (pas de vraie équipe) : sa grille est un artefact de colonnes
+        // mélangées (ex SANGIORGIO 30×CP, SANNA 1×R) → l'encadré PRIME.
+        const hasRealTeam = emp.teamNumber != null;
+        if (hasRealTeam) stats.dual_display++;
+        const gridCodes = new Set(Array.from(emp._gridDays).map(d => emp.days[d]));
+        const gridIsArtefact = emp._gridDays.size <= 3 || gridCodes.size <= 1; // sparse OU uniforme
+        const override = ABSENCE_FULL.has(box.code) && !hasRealTeam && gridIsArtefact;
+
         for (let d = from; d <= to; d++) {
           const ds = String(d);
-          // Ne JAMAIS écraser une cellule issue de la grille (donnée source directe).
-          if (emp._gridDays.has(ds)) continue;
+          if (emp._gridDays.has(ds)) {
+            // Vraie équipe OU grille non-artefact → on PROTÈGE la cellule de
+            // grille (double affichage : reste en vue équipe avec son code).
+            if (!override) continue;
+            stats.overridden++;
+          }
           emp.days[ds] = box.code;
           stats.cells_added++;
         }
@@ -308,8 +336,164 @@
     return { employees: out, stats };
   }
 
+  /* ───────────────────────────────────────────────────────────────────────
+   * RECONSTRUCTION GÉOMÉTRIQUE des encadrés (Kevin 2026-05-28).
+   *
+   * POURQUOI : le haut du planning SBM est une grille MULTI-COLONNES
+   * (« 9 M du au   16 CP du au » puis les noms en colonnes dessous). Quand on
+   * APLATIT le PDF en texte (parseEncadres ci-dessus), les colonnes se
+   * mélangent → on perd QUI est dans QUELLE boîte (ex : SANNA O en maladie M
+   * était collée à un faux « R »). La donnée EST dans le PDF, encodée par la
+   * POSITION VISUELLE (x/y) de chaque nom — pas par le texte.
+   *
+   * MÉTHODE : on lit les items PDF.js avec coordonnées (pages[].items[].x/y) :
+   *   1. en-tête = item code statut (M/CP/AF/…) avec « du » à sa droite, même y ;
+   *      count = nombre juste à gauche ; from/to = nombres entre du/au (défaut
+   *      = mois entier — Kevin : « M et CP tout le mois »).
+   *   2. bande X de la colonne = [leftX, leftX de l'en-tête suivant de la rangée).
+   *   3. noms de la boîte = items-nom dans cette bande X, sous l'en-tête,
+   *      du haut vers le bas, jusqu'à `count` (s'arrête sur un gros saut en y).
+   *   4. si noms trouvés < count → on FLAGUE l'écart (PDF.js a parfois lâché un
+   *      item-nom isolé) pour Vision ciblée / complétion — JAMAIS inventer.
+   *
+   * Retourne le MÊME format que parseEncadres → réutilise applyEncadresToEmployees. */
+  function parseEncadresGeometric(pages, daysInMonth) {
+    const out = { ok: true, boxes: [], warnings: [], geometric: true };
+    daysInMonth = daysInMonth || 31;
+    if (!pages || !pages.length) {
+      out.ok = false;
+      out.warnings.push("parseEncadresGeometric : pas de pages/items (PDF sans calque texte ?)");
+      return out;
+    }
+
+    const up = s => String(s).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    const isNum = s => /^\d{1,3}$/.test(String(s).trim());
+    function asCode(s) {
+      const u = up(s);
+      if (ALIAS_LONG_TO_SHORT[u]) return ALIAS_LONG_TO_SHORT[u];
+      if (STATUT_CODES_LONG_FIRST.indexOf(u) >= 0) return u;
+      return null;
+    }
+    function isNameStr(s) {
+      s = String(s).trim();
+      if (!s || s.indexOf(" ") < 0) return false;
+      const t = s.split(/\s+/);
+      const init = t[t.length - 1];
+      if (!/^[A-Z]{1,3}$/.test(init)) return false;          // initiales 1-3 lettres
+      const sur = t.slice(0, -1).join(" ");
+      if (sur.length < 2) return false;
+      if (!/^[A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\- ]+$/.test(sur)) return false;
+      if (NAME_EXCLUDE.has(up(t[0]))) return false;
+      return true;
+    }
+    function splitName(s) {
+      const t = String(s).trim().split(/\s+/).filter(Boolean);
+      const init = t.pop();
+      const surname = t.join(" ");
+      return { surname, initials: init, fullName: surname + " " + init };
+    }
+
+    for (const pg of pages) {
+      const items = (pg.items || []).filter(i => i.str && i.str.trim());
+      if (!items.length) continue;
+
+      // 1) En-têtes d'encadrés (code + « du » à droite, même y).
+      const headers = [];
+      for (const it of items) {
+        const code = asCode(it.str);
+        if (!code) continue;
+        const du = items.find(o => up(o.str) === "DU" && Math.abs(o.y - it.y) < 3 && o.x > it.x && o.x - it.x < 120);
+        if (!du) continue;
+        const au = items.find(o => up(o.str) === "AU" && Math.abs(o.y - it.y) < 3 && o.x > du.x && o.x - du.x < 120);
+        const cnt = items.filter(o => isNum(o.str) && Math.abs(o.y - it.y) < 3 && o.x < it.x && it.x - o.x < 55)
+          .sort((a, b) => b.x - a.x)[0];
+        let from = 1, to = daysInMonth;            // défaut = mois entier (M/CP tout le mois)
+        if (au) {
+          // Dates collées à « du »/« au » uniquement. Gap serré (<16px) pour NE PAS
+          // confondre la date de fin avec le numéro en tête de l'encadré suivant
+          // (ex « M du au 16 CP » : le 16 est le num de CP, PAS la fin de M).
+          const between = items.filter(o => isNum(o.str) && Math.abs(o.y - it.y) < 3 && o.x > du.x && o.x < au.x).sort((a, b) => a.x - b.x);
+          const after = items.filter(o => isNum(o.str) && Math.abs(o.y - it.y) < 3 && o.x > au.x && o.x - au.x < 16).sort((a, b) => a.x - b.x);
+          if (between[0]) from = parseInt(between[0].str, 10);
+          if (after[0]) to = parseInt(after[0].str, 10);
+        }
+        headers.push({ code, y: it.y, codeX: it.x, leftX: cnt ? cnt.x : it.x, count: cnt ? parseInt(cnt.str, 10) : null, from, to });
+      }
+      if (!headers.length) continue;
+
+      // 2) Regroupe les en-têtes par rangée (même y) → bornes X des colonnes.
+      const rows = [];
+      headers.slice().sort((a, b) => b.y - a.y || a.leftX - b.leftX).forEach(h => {
+        let r = rows.find(r => Math.abs(r.y - h.y) < 5);
+        if (!r) { r = { y: h.y, hs: [] }; rows.push(r); }
+        r.hs.push(h);
+      });
+      rows.forEach(r => {
+        r.hs.sort((a, b) => a.leftX - b.leftX);
+        r.hs.forEach((h, i) => { h.rightX = (i + 1 < r.hs.length) ? r.hs[i + 1].leftX : h.leftX + 110; });
+      });
+
+      // 3) Noms par colonne : on marche du HAUT vers le BAS dans la bande X de la
+      //    colonne, jusqu'à la fin visuelle (gros saut en y).
+      //    ⚠️ Le nombre en tête d'encadré (« 9 M », « 16 CP ») N'EST PAS un
+      //    compte de personnes (Kevin 2026-05-28 : « ce n'est pas le nombre…
+      //    peut-être le num des encadrés »). On ne plafonne donc JAMAIS par ce
+      //    nombre — on collecte la colonne entière par géométrie. Il est gardé
+      //    comme `header_num` (informatif), jamais utilisé pour couper/flaguer.
+      const nameItems = items.filter(i => isNameStr(i.str));
+      const family = guessFamily(pg.text || "");
+      const Y_STEP_MAX = 18;   // lignes de noms espacées ~8px ; >18px = fin de colonne
+      for (const h of headers) {
+        let from = h.from, to = h.to;
+        if (from < 1 || to > daysInMonth || from > to) {
+          out.warnings.push(`Période invalide ${h.code} : ${from}-${to} (daysInMonth=${daysInMonth})`);
+          from = Math.max(1, Math.min(from, daysInMonth));
+          to = Math.max(from, Math.min(to, daysInMonth));
+        }
+        // Plancher vertical : un en-tête situé PLUS BAS dans la même bande X
+        // marque la fin de cette colonne → empêche un encadré vide (« 0 EDC »)
+        // placé AU-DESSUS d'aspirer les noms de l'encadré du dessous.
+        let yFloor = -Infinity;
+        for (const h2 of headers) {
+          if (h2 === h || h2.y >= h.y) continue;
+          const overlap = h2.leftX < h.rightX && (h2.rightX || h2.leftX + 110) > h.leftX;
+          if (overlap && h2.y > yFloor) yFloor = h2.y;
+        }
+        // header_num === 0 → encadré VIDE (personne dans ce statut ce mois).
+        let names = [];
+        if (h.count !== 0) {
+          const cand = nameItems
+            .filter(n => n.x >= h.leftX - 6 && n.x < h.rightX - 6 && n.y < h.y - 1 && n.y > yFloor)
+            .sort((a, b) => b.y - a.y);
+          const picked = [];
+          let lastY = null;
+          for (const n of cand) {
+            if (lastY !== null && lastY - n.y > Y_STEP_MAX) break;   // fin de colonne
+            picked.push(n);
+            lastY = n.y;
+          }
+          names = picked.map(n => splitName(n.str.trim()));
+        }
+        out.boxes.push({
+          header_num: h.count,            // nombre en tête (NON un compte de personnes)
+          count: names.length,            // compat : nb réel de noms géométriques
+          names_found: names.length,
+          code: h.code,
+          from, to,
+          days_count: to - from + 1,
+          family,
+          names,
+          raw_header: `${h.count != null ? h.count + " " : ""}${h.code} du au`,
+          geometric: true
+        });
+      }
+    }
+    return out;
+  }
+
   return {
     parseEncadres,
+    parseEncadresGeometric,
     expandBoxesToCells,
     applyEncadresToEmployees,
     resolveCode,
@@ -318,6 +502,6 @@
     normName,
     STATUT_CODES_LONG_FIRST,
     ALIAS_LONG_TO_SHORT,
-    VERSION: "T1-encadres-v0.3.0-poste-match"
+    VERSION: "T1-encadres-v0.4.0-geometric"
   };
 }));

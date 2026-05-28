@@ -334,7 +334,8 @@ function codeToLieu(rawCode, role) {
   // Suffixe `CDP` mot → CCDP
   if (/CDP$/i.test(code)) return "CCDP";
 
-  const isCadre = role && /^(pit|sup|cadres?|ins)$/i.test(role);
+  // startsWith (pas exact) → accepte "pit15", "pit boss", "superviseur", etc.
+  const isCadre = role && /^(pit|sup|cadres?|ins)/i.test(role);
   const table = isCadre ? CODE_TO_LIEU_CADRE : CODE_TO_LIEU_EMPLOYEE;
 
   // 1) Lookup exact (avec suffixe)
@@ -427,9 +428,159 @@ function esc(s) {
 }
 
 /* ------------------------------------------------------------------
+ * FAMILLES par TITRE DE SECTION (géométrique) — Kevin 2026-05-28
+ *
+ * Kevin : « sur les imports il y a les titres au début au-dessus des listes :
+ * roulettes, employés carte, chefs blackjack ». La FAMILLE d'un employé = la
+ * section sous laquelle il est listé (titre juste au-dessus, par bande y).
+ *
+ * ⚠ La compétence seule NE SUFFIT PAS : « +E » (roulette européenne) est
+ * présente DANS Roulettes ET DANS Chefs BJ → impossible de séparer ces 2
+ * familles par compétence. Le TITRE de section est le signal fiable. Les
+ * compétences individuelles (parseBrtpeck) restent attachées par personne.
+ *
+ * Ordre regex = spécifique → générique (aménagement avant le titre de base). */
+const SECTION_FAMILY_TITLES = [
+  { re: /Employ[ée]s?\s+cartes?\s+am[ée]nag/i,                         family: "cmc",       amenage: true },
+  { re: /Employ[ée]s?\s+cartes?\s+CMC/i,                               family: "cmc",       amenage: false },
+  { re: /Chefs?\s+black\s*jack.*am[ée]nag|Responsable\s+de\s+Table\s+am[ée]nag/i, family: "bj", amenage: true },
+  { re: /Chefs?\s+black\s*jack|Responsable\s+de\s+Table/i,             family: "bj",        amenage: false },
+  { re: /Roulettes?|Jeux?\s+europ[ée]ens?/i,                           family: "roulettes", amenage: false }
+];
+
+/** Mappe un texte de titre vers {family, amenage} ou null si non reconnu. */
+function familyFromTitle(str) {
+  if (!str) return null;
+  for (const t of SECTION_FAMILY_TITLES) if (t.re.test(str)) return { family: t.family, amenage: t.amenage };
+  return null;
+}
+
+/** Clé de normalisation nom pour matcher employé ↔ item PDF. */
+function _famNormName(s) {
+  return String(s || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+/** Détecte la famille de chaque nom par GÉOMÉTRIE : pour chaque page, repère les
+ *  items-titre de section (Roulettes / Chefs black Jack / Employés cartes CMC /
+ *  aménagement) avec leur y, puis assigne à chaque item-nom la section dont le
+ *  titre est le plus proche AU-DESSUS (plus petit y ≥ y du nom).
+ *  Retourne une map { normNom: { family, amenage } }. */
+function detectFamiliesGeometric(pages) {
+  const map = {};
+  if (!pages || !pages.length) return map;
+  const isNameItem = (s) => {
+    s = String(s).trim();
+    if (!s || s.indexOf(" ") < 0) return false;
+    const t = s.split(/\s+/);
+    if (!/^[A-Z]{1,3}$/.test(t[t.length - 1])) return false;
+    const sur = t.slice(0, -1).join(" ");
+    return sur.length >= 2 && /^[A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\- ]+$/.test(sur);
+  };
+  for (const pg of pages) {
+    const items = (pg.items || []).filter(i => i.str && i.str.trim());
+    // 1) titres de section + y
+    const titles = [];
+    for (const it of items) {
+      const f = familyFromTitle(it.str.trim());
+      if (f && it.str.trim().length > 5) titles.push({ y: it.y, family: f.family, amenage: f.amenage });
+    }
+    if (!titles.length) continue;
+    // 2) chaque nom → section dont le titre est le plus proche au-dessus
+    for (const it of items) {
+      if (!isNameItem(it.str)) continue;
+      let best = null;
+      for (const t of titles) if (t.y >= it.y && (!best || t.y < best.y)) best = t;
+      if (!best) continue;
+      const key = _famNormName(it.str.trim());
+      // 1ʳᵉ occurrence gagne (l'item-nom dans sa section ; évite d'écraser par
+      // une réapparition plus bas dans une autre zone).
+      if (!map[key]) map[key] = { family: best.family, amenage: best.amenage };
+    }
+  }
+  return map;
+}
+
+/* ------------------------------------------------------------------
+ * RÔLES CADRES par TITRE DE SECTION (géométrique) — Kevin 2026-05-28
+ * Planning cadre (2e PDF) : Pit Boss / Superviseur / Inspecteur. PAS d'équipes
+ * (assignation individuelle). Le rôle conditionne le LIEU (19/4 pit → CCDP).
+ * ------------------------------------------------------------------ */
+const CADRE_ROLE_TITLES = [
+  { re: /PIT\s*BOSS/i,     role: "pit" },
+  { re: /SUPERVISEUR/i,    role: "sup" },
+  { re: /INSPECTEUR/i,     role: "ins" }
+];
+
+/** Détecte le rôle cadre (pit/sup/ins) de chaque nom par géométrie (titre de
+ *  section le plus proche au-dessus). Retourne { normNom: role }. */
+function detectCadreRolesGeometric(pages) {
+  const map = {};
+  if (!pages || !pages.length) return map;
+  const isNameItem = (s) => {
+    s = String(s).trim();
+    if (!s || s.indexOf(" ") < 0) return false;
+    const t = s.split(/\s+/);
+    if (!/^[A-Z]{1,3}$/.test(t[t.length - 1])) return false;
+    const sur = t.slice(0, -1).join(" ");
+    return sur.length >= 2 && /^[A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\- ]+$/.test(sur);
+  };
+  for (const pg of pages) {
+    const items = (pg.items || []).filter(i => i.str && i.str.trim());
+    const titles = [];
+    for (const it of items) {
+      for (const t of CADRE_ROLE_TITLES) if (t.re.test(it.str)) { titles.push({ y: it.y, role: t.role }); break; }
+    }
+    if (!titles.length) continue;
+    for (const it of items) {
+      if (!isNameItem(it.str)) continue;
+      let best = null;
+      for (const t of titles) if (t.y >= it.y && (!best || t.y < best.y)) best = t;
+      if (!best) continue;
+      const key = _famNormName(it.str.trim());
+      if (!map[key]) map[key] = best.role;
+    }
+  }
+  return map;
+}
+
+/** Marque les employés d'un planning CADRE : family="cadres" + role (pit/sup/
+ *  ins) → exclus de la détection d'équipes, lieux mappés sur la table CADRE.
+ *  fallbackRole utilisé si le nom n'est pas rattaché à un titre géométrique. */
+function applyCadreRolesToEmployees(employees, roleMap, fallbackRole) {
+  for (const e of (employees || [])) {
+    const key = _famNormName(e.name || e.fullName || "");
+    e.family = "cadres";
+    e.role = roleMap[key] || fallbackRole || "pit";
+    const pb = parseBrtpeck(e.brtpeck);
+    if (pb) e.competences = pb.letters.concat(pb.plusLetters);
+  }
+  return employees;
+}
+
+/** Applique les familles détectées + les compétences BRTPECK aux employés.
+ *  Ne modifie JAMAIS les jours/horaires — enrichit family + competences. */
+function applyFamiliesToEmployees(employees, famMap) {
+  for (const e of (employees || [])) {
+    const key = _famNormName(e.name || e.fullName || "");
+    if (famMap[key]) { e.family = famMap[key].family; e.amenage = famMap[key].amenage; }
+    const pb = parseBrtpeck(e.brtpeck);
+    if (pb) e.competences = pb.letters.concat(pb.plusLetters);
+  }
+  return employees;
+}
+
+/* ------------------------------------------------------------------
  * Export global (UMD-style) pour usage dans index.html + tests
  * ------------------------------------------------------------------ */
 const PlanningParserHelpers = {
+  SECTION_FAMILY_TITLES,
+  familyFromTitle,
+  detectFamiliesGeometric,
+  applyFamiliesToEmployees,
+  CADRE_ROLE_TITLES,
+  detectCadreRolesGeometric,
+  applyCadreRolesToEmployees,
   SUFFIX_MEANING,
   STATUT_CODES,
   STATUT_LABEL,

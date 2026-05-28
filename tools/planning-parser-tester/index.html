@@ -748,12 +748,28 @@
       lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">🗳 Vote</span> ${s.certain} certain · ${s.needs_review} needs_review · ${s.missing_reads} lectures manquantes (sur ${s.total_cells} cellules)</div>`);
     }
 
-    // Équipes + miroirs détectés (Phase 3.I)
+    // Familles / rôles cadres (Phase 3.H-bis)
+    if (r.families && r.families.distribution) {
+      const d = r.families.distribution;
+      const lbl = r.families.cadre ? "🎯 Rôles cadres" : "🗂 Familles";
+      lines.push(`<div style="margin-top:6px;"><span class="badge">${lbl}</span> ${Object.entries(d).map(([f, c]) => H.esc(f) + " ×" + c).join(" · ")}</div>`);
+    }
+
+    // Équipes + miroirs détectés (Phase 3.I) AVEC composition (membres par famille)
     if (r.teams && r.teams.teams) {
       const t = r.teams;
       lines.push(`<div style="margin-top:6px;"><span class="badge">👥 Équipes</span> ${t.teams.length} équipe(s) · ${t.mirrors.length} miroir(s)${t.source ? ` <span class="small">(source ${H.esc(t.source)})</span>` : ""}</div>`);
-      t.mirrors.forEach(mi => {
-        lines.push(`<div class="small" style="margin-left:8px;">🔗 ${H.esc(mi.teamId)} ⇆ ${H.esc(mi.mirrorTeamId)} — ${H.esc(mi.reason || "")}</div>`);
+      const mirMap = {};
+      (t.mirrors || []).forEach(m => { mirMap[m.teamId] = m.mirrorTeamId; mirMap[m.mirrorTeamId] = m.teamId; });
+      const byFam = {};
+      t.teams.forEach(tm => { (byFam[tm.family || "?"] = byFam[tm.family || "?"] || []).push(tm); });
+      Object.keys(byFam).sort().forEach(fam => {
+        lines.push(`<div class="small" style="margin-top:4px;margin-left:4px;color:var(--gold);font-weight:600;">${H.esc(fam)} — ${byFam[fam].length} équipe(s)</div>`);
+        byFam[fam].forEach(tm => {
+          const mlink = mirMap[tm.id] ? ` <span style="color:var(--gold);">🔗 miroir ${H.esc(mirMap[tm.id])}</span>` : "";
+          const mem = (tm.members || []).map(x => H.esc(x.fullName)).join(", ");
+          lines.push(`<div class="small" style="margin-left:10px;">${H.esc(tm.id)} <span style="opacity:.7;">[${H.esc(tm.firstWorkCodeNorm || "?")}] repos[${(tm.rhDays || []).join(",")}] ×${(tm.members || []).length}</span>${mlink}<br><span style="margin-left:14px;opacity:.85;">${mem}</span></div>`);
+        });
       });
     }
 
@@ -869,14 +885,35 @@
         const code = (emp.days || {})[String(d)] || "";
         const col = empColors[String(d)] || {};
         const lieu = empLieux[String(d)] || "";
-        const style = (col.bg ? 'background:' + col.bg + ';' : '') + (col.fg ? 'color:' + col.fg + ';' : '');
+        const lc = (window.CodeColors && window.CodeColors.getLieuColor) ? window.CodeColors.getLieuColor(lieu) : null;
+        const style = (col.bg ? 'background:' + col.bg + ';' : '') + (col.fg ? 'color:' + col.fg + ';' : '') + (lc ? 'border-bottom:3px solid ' + lc.c + ';' : '');
         const title = code ? H.esc(code + (lieu ? " · " + lieu : "") + (col.label ? " · " + col.label : "")) : "";
         html += '<td style="padding:2px 3px;border:1px solid rgba(255,255,255,.08);text-align:center;' + style + '" title="' + title + '">' + H.esc(code) + '</td>';
       }
       html += '</tr>';
     });
     html += '</table></div>';
-    html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + dénomination Convention. Couleurs = projection (la cellule reste le code source exact).</div>';
+    html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + dénomination Convention. Fond = couleur horaire/statut · liseré bas = lieu. Couleurs = projection (la cellule reste le code source exact).</div>';
+
+    // Légende des LIEUX présents (couleur du liseré) — Kevin « couleurs des lieux »
+    const CCl = window.CodeColors;
+    if (CCl && CCl.getLieuColor) {
+      const lieuxPresents = {};
+      Object.keys(lieux).forEach(nm => {
+        const dd = (lieux[nm] && lieux[nm].days) || {};
+        Object.values(dd).forEach(l => { if (l && !lieuxPresents[l]) { const c = CCl.getLieuColor(l); if (c) lieuxPresents[l] = c; } });
+      });
+      const ll = Object.keys(lieuxPresents);
+      if (ll.length) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;align-items:center;">';
+        html += '<span class="small" style="color:var(--gold);">📍 Lieux :</span>';
+        ll.forEach(l => {
+          const c = lieuxPresents[l];
+          html += '<span class="small" style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:4px;background:' + c.c + ';border-radius:2px;"></span>' + H.esc(l) + ' <span style="opacity:.6;">(' + H.esc(c.label) + ')</span></span>';
+        });
+        html += '</div>';
+      }
+    }
 
     // Légende des codes PRÉSENTS dans cet import + dénomination Convention
     // (Kevin « aide-toi de la Convention pour la dénomination des jours »).
