@@ -396,7 +396,20 @@
           const tEnc = Date.now();
           const monthYear = result.month_year_detected || {};
           const dim = daysInMonth(monthYear.year, monthYear.month);
-          const encResult = EncadresParser.parseEncadres(rawText, dim);
+          // GÉOMÉTRIQUE d'abord (coordonnées X/Y = colonnes fidèles, récupère M/CP
+          // tout le mois sans mélanger les colonnes). Repli texte si pas de calque.
+          let encResult = null;
+          if (typeof EncadresParser.parseEncadresGeometric === "function" &&
+              passeA_PdfJs && Array.isArray(passeA_PdfJs.pages) && passeA_PdfJs.pages.length) {
+            encResult = EncadresParser.parseEncadresGeometric(passeA_PdfJs.pages, dim);
+            if (!encResult || !encResult.boxes || !encResult.boxes.length) {
+              encResult = EncadresParser.parseEncadres(rawText, dim); // repli
+            } else {
+              encResult.method = "geometric";
+            }
+          } else {
+            encResult = EncadresParser.parseEncadres(rawText, dim);
+          }
           result.encadres = encResult;
           result.durations_ms.encadres_parser = Date.now() - tEnc;
           if (encResult.boxes && encResult.boxes.length > 0) {
