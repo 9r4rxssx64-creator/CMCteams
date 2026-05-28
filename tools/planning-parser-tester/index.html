@@ -217,7 +217,11 @@
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+<script>window.__APP_BUILD__ = "v0.9.4-encadre-poste-match-rawdiag-" + Date.now();</script>
+=======
 <script>window.__APP_BUILD__ = "v0.9.3-merge-poste-duplicates-" + Date.now();</script>
+>>>>>>> origin/main
 =======
 <script>window.__APP_BUILD__ = "v0.9.2-convention-denominations-" + Date.now();</script>
 >>>>>>> origin/main
@@ -610,7 +614,23 @@
       const sansHoraire = passGsum.employees.filter(e => !e.days || Object.keys(e.days).length === 0);
       const partiels = passGsum.employees.filter(e => e.days && Object.keys(e.days).length > 0 && Object.keys(e.days).length < 10);
       if (sansHoraire.length > 0) {
-        lines.push(`<div class="alert-box alert-err" style="margin-top:12px;"><strong>⚠ ${sansHoraire.length} employé(s) SANS horaire (oubli potentiel)</strong><br><span class="small">${sansHoraire.map(e => H.esc(e.name)).join(" · ")}</span><br><span class="small" style="opacity:.7;">Ces noms sont détectés mais aucune cellule n'a été extraite. À corriger avant intégration.</span></div>`);
+        // Diagnostic : extrait du texte brut du PDF autour de chaque nom sans
+        // horaire → montre POURQUOI les codes ne sont pas extraits (fragmentation).
+        const passA = (r.passes || []).find(p => p.passe === "A");
+        const raw = (passA && passA.textRaw) || "";
+        const rawNorm = raw.replace(/\s+/g, " ");
+        function ctxFor(name) {
+          if (!rawNorm) return "";
+          // cherche le nom de famille (1er mot ≥3 lettres) dans le texte brut
+          const surname = (name.split(/\s+/).find(t => t.length >= 3) || name).toUpperCase();
+          const idx = rawNorm.toUpperCase().indexOf(surname);
+          if (idx < 0) return "(nom introuvable dans le texte brut)";
+          return rawNorm.slice(Math.max(0, idx - 10), idx + 120);
+        }
+        let diag = sansHoraire.map(e =>
+          `<div style="margin-top:4px;"><code style="color:var(--warn);">${H.esc(e.name)}</code> <span class="small" style="opacity:.65;">→ ${H.esc(ctxFor(e.name))}</span></div>`
+        ).join("");
+        lines.push(`<div class="alert-box alert-err" style="margin-top:12px;"><strong>⚠ ${sansHoraire.length} employé(s) SANS horaire (oubli potentiel)</strong><br><span class="small">${sansHoraire.map(e => H.esc(e.name)).join(" · ")}</span><br><details style="margin-top:6px;"><summary style="cursor:pointer;color:var(--gold);font-size:12px;">🔬 Voir le texte brut PDF autour de chaque nom (diagnostic)</summary><div style="margin-top:6px;font-family:ui-monospace,monospace;font-size:10px;max-height:240px;overflow:auto;">${diag}</div></details></div>`);
       }
       if (partiels.length > 0) {
         lines.push(`<div class="alert-box alert-warn" style="margin-top:8px;"><strong>🟠 ${partiels.length} employé(s) avec PEU de cellules (&lt;10)</strong><br><span class="small">${partiels.map(e => H.esc(e.name) + " (" + Object.keys(e.days).length + ")").join(" · ")}</span></div>`);

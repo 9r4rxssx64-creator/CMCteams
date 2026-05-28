@@ -224,9 +224,31 @@
     return map;
   }
 
-  /** Normalise un nom pour le matching encadré ↔ grille (upper, NFD, espaces). */
+  /** Token pur code-poste (B/R/T/C/P/K/E + séparateurs, ≥2 lettres). */
+  function isPosteToken(t) {
+    const letters = String(t).replace(/[.+]/g, "");
+    return letters.length >= 2 && /^[BRTPECK]+$/.test(letters);
+  }
+
+  /** Nettoie un nom pour l'AFFICHAGE (retire codes-poste tête/queue, garde la casse). */
+  function cleanDisplayName(s) {
+    let tokens = String(s || "").trim().split(/\s+/).filter(Boolean);
+    while (tokens.length > 2 && isPosteToken(tokens[0])) tokens.shift();
+    while (tokens.length > 2 && isPosteToken(tokens[tokens.length - 1])) tokens.pop();
+    if (tokens.length === 2 && isPosteToken(tokens[0]) && !isPosteToken(tokens[1])) tokens = [tokens[1]];
+    return tokens.join(" ");
+  }
+
+  /** Normalise un nom pour le matching encadré ↔ grille. Retire les codes-poste
+   *  (≥2 lettres) en tête ET en queue (« BRTPE PORASSO C » ⇒ clé == « PORASSO C »
+   *  pour matcher la grille), upper/NFD/espaces. Protège les initiales 1 lettre. */
   function normName(s) {
-    return String(s || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+    let tokens = String(s || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
+    while (tokens.length > 2 && isPosteToken(tokens[0])) tokens.shift();
+    while (tokens.length > 2 && isPosteToken(tokens[tokens.length - 1])) tokens.pop();
+    if (tokens.length === 2 && isPosteToken(tokens[0]) && !isPosteToken(tokens[1])) tokens = [tokens[1]];
+    return tokens.join(" ");
   }
 
   /** APPLIQUE les encadrés aux employés (RÈGLE ABSOLUE Kevin 2026-05-26 :
@@ -265,7 +287,7 @@
         const key = normName(n.fullName);
         let emp = byName.get(key);
         if (!emp) {
-          emp = { name: n.fullName, days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), source: "encadre" };
+          emp = { name: cleanDisplayName(n.fullName), days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), source: "encadre" };
           byName.set(key, emp);
           out.push(emp);
           stats.created++;
@@ -296,6 +318,6 @@
     normName,
     STATUT_CODES_LONG_FIRST,
     ALIAS_LONG_TO_SHORT,
-    VERSION: "T1-encadres-v0.2.0-apply-to-emps"
+    VERSION: "T1-encadres-v0.3.0-poste-match"
   };
 }));
