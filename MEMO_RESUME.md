@@ -71,11 +71,26 @@ ET acceptés par `CODE_RE`**.
 - text-parser : v0.3.1 → **v0.4.0-line-by-line-poststrip**.
 - PIPE+VP : v0.8.0 → v0.8.1-fidelity-line-parser.
 
-### Reste (P4)
+### v0.8.2 — Workflow de validation cellule par cellule (P4 codable FAIT)
 
-- Export `results/<ts>.json` AUTO après validation Kevin (bouton manuel existe)
-- Critères « OK go intégration CMCteams » : 4 PDFs Kevin réels importés sans
-  bug + validation manuelle cellule par cellule (action Kevin requise)
+- **Zone validation UI** (`renderValidation` + `buildValidatedExport`) :
+  - Cellules `needs_review` (vote Vision divergent) → boutons pour trancher
+    chacune (choix lectures + option « ∅ vide »), surbrillance du choix,
+    compteur tranchées/restantes.
+  - PDF natif (passe G seule, pas de divergence) → validation globale directe.
+  - Bouton « ✅ Valider l'import » (refuse si cellules non tranchées).
+  - Bouton « 📤 Exporter le résultat validé » → JSON propre (employés finaux +
+    tranchages + équipes + miroirs + encadrés + lieux + validations Convention
+    + `_meta.signed`). Distinct du « 💾 Exporter JSON brut ».
+  - État `_validationChoices` / `_validationSigned` reset à chaque nouvelle analyse.
+- README T1 : mode d'emploi test mis à jour + tableau pipeline complet (10 phases).
+- PIPE+VP → v0.8.2-validation-workflow. Inline JS syntax OK.
+
+### Reste (action KEVIN uniquement — irréductible)
+
+- Critères « OK go intégration CMCteams » : importer ses 4 PDFs réels, vérifier
+  cellule par cellule via le comparateur visuel, cliquer « Valider », signer.
+  Tout le code et les filets (175 checks + fidélité 100%) sont prêts.
 
 ---
 

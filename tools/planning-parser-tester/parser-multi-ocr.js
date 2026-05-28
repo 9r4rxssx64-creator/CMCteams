@@ -757,6 +757,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.8.1-fidelity-line-parser"
+    VERSION: "T1-v0.8.2-validation-workflow"
   };
 }));

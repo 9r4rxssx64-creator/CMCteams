@@ -29,8 +29,20 @@ sur les vrais PDFs de Kevin **AVANT** toute modification de CMCteams.
 6. Pour chaque cellule (emp × jour), les 6 lectures sont comparées :
    - **4/4 unanime** → écrit en CERTAIN (la vraie donnée du PDF).
    - **Divergence** → flag `needs_review`. Tu tranches.
-7. Tu valides cellule par cellule via le comparateur visuel.
-8. Bouton "Tout valider" → export `results/<ts>.json` pour audit.
+   - **PDF natif (cas usuel SBM)** : la passe G (texte PDF.js) suffit, lecture
+     déterministe, aucune divergence à trancher.
+7. **Comparateur visuel cellule par cellule** : tableau employé × 31 jours,
+   chaque cellule colorée (Convention rouge/jaune, CCDP orange, RH violet…),
+   survol = code + lieu + libellé. Tu vérifies que ça matche ton PDF.
+8. **Zone validation** :
+   - Si des cellules sont `needs_review` → boutons pour trancher chacune
+     (choix entre les lectures + option « ∅ vide »).
+   - Bouton **« ✅ Valider l'import (conforme au PDF) »** → marque l'import validé
+     (refuse si des cellules restent à trancher).
+   - Bouton **« 📤 Exporter le résultat validé »** → JSON propre (employés finaux
+     + cellules tranchées + équipes + miroirs + encadrés + lieux + validations
+     Convention). À sauvegarder dans `results/<ts>.json` pour audit.
+   - Bouton **« 💾 Exporter JSON brut »** → dump complet pour debug.
 
 ---
 
@@ -105,10 +117,28 @@ localStorage persistant).
 ## 🎯 Critères de succès AVANT intégration CMCteams
 
 - [ ] Au moins 4 PDFs Kevin importés sans bug fonctionnel (UI ne crashe jamais).
-- [ ] Pour chaque PDF, le résultat affiché matche 100% le source (validation manuelle Kevin cellule par cellule).
+- [ ] Pour chaque PDF, le résultat affiché matche 100% le source (validation manuelle Kevin cellule par cellule via le comparateur visuel).
 - [ ] Aucune cellule inventée. Aucune cellule manquante non flaggée. Suffixes `'/"/*/:` préservés. Mois, version, type, lieux, équipes, miroirs corrects.
-- [ ] Tests automatiques verts (vitest + Playwright sur les 4 fixtures).
+- [x] Tests automatiques verts : `test-pipeline.js` (175 checks) + `test-fidelity.js` (8 axes, fidélité 100% sur fixture synthétique).
 - [ ] Kevin signe « OK go intégration CMCteams ».
+
+### Pipeline complet (v0.8.2) — ce qui est en place
+
+| Phase | Module | Rôle |
+|---|---|---|
+| 3.A | PDF.js | Extraction texte natif (hors-ligne) |
+| 3.B-E | Vision IA (proxy) | Claude / GPT-4o / Mistral / Gemini — renfort PDF scanné |
+| 3.G | text-parser | Parse texte natif → {employees, days}, suffixes préservés |
+| 3.H | encadres-parser | Statuts intégraux « N CODE du J1 au J2 » |
+| 3.I | team-detector | Équipes par RH/R + miroir (mêmes RH + horaire ≠) |
+| 3.K | homonyms-guard | Anti-merge LANDAU B/J, ENZA B/C, CAMPI H/PH |
+| 3.L | validate-post-import | 7 validations Convention (Art. 17.5, 35, sanctions…) |
+| 3.M | code-colors | Projection couleur 43 codes (ne modifie pas la source) |
+| vote | cell-voting | 4/4 unanime → certain, divergence → needs_review |
+| UI | comparateur visuel + validation + export validé | Kevin tranche et signe |
+
+**Reste pour le « OK go »** : action **Kevin** uniquement — importer ses
+4 PDFs réels, vérifier cellule par cellule, signer.
 
 ---
 

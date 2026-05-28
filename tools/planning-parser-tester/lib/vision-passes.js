@@ -831,6 +831,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.8.1-fidelity-line-parser"
+    VERSION: "T1-vision-v0.8.2-validation-workflow"
   };
 }));

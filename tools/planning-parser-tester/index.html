@@ -184,13 +184,16 @@
   <h2>3. Résultat de l'analyse</h2>
   <div id="result-summary"></div>
   <div id="emp-grid"></div>
+  <div id="validation-zone"></div>
   <div id="result-alerts"></div>
   <details style="margin-top: 12px;">
     <summary style="cursor: pointer; color: var(--text-dim); font-size: 13px;">📦 JSON brut complet (pour debug / export)</summary>
     <pre id="result"></pre>
   </details>
   <div class="row-btns">
-    <button class="btn-sec" id="btn-export" type="button">💾 Exporter JSON</button>
+    <button class="btn-sec" id="btn-validate" type="button" style="border-color:var(--ok);color:var(--ok);">✅ Valider l'import (conforme au PDF)</button>
+    <button class="btn-sec" id="btn-export-validated" type="button">📤 Exporter le résultat validé</button>
+    <button class="btn-sec" id="btn-export" type="button">💾 Exporter JSON brut</button>
     <button class="btn-sec" id="btn-reset" type="button">↩ Recommencer</button>
   </div>
 </div>
@@ -211,7 +214,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.8.1-fidelity-line-parser-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.8.2-validation-workflow-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -430,6 +433,9 @@
   /* --- Analyse --- */
   async function analyze(input, filename) {
     try {
+      // Reset l'état de validation pour ce nouveau document
+      _validationChoices = {};
+      _validationSigned = false;
       passesCard.style.display = "";
       resultCard.style.display = "none";
       passA.querySelector(".status").textContent = "⏳ Analyse en cours…";
@@ -627,6 +633,162 @@
     html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + libellé. Couleurs = projection (la cellule reste le code source exact). Rouge/jaune = Convention · Orange = CCDP · Violet = RH · Vert = formation.</div>';
     html += '</details>';
     gridEl.innerHTML = html;
+    renderValidation(r);
+  }
+
+  /* --- Workflow de validation cellule par cellule (P4) --- */
+  // _validationChoices[name][day] = token tranché par Kevin (pour les needs_review).
+  let _validationChoices = {};
+  let _validationSigned = false;
+
+  function renderValidation(r) {
+    const zone = document.getElementById("validation-zone");
+    if (!zone) return;
+    const nr = r.cells_needs_review || {};
+    const names = Object.keys(nr);
+    let html = "";
+
+    if (names.length > 0) {
+      // Cas vote Vision : cellules divergentes à trancher manuellement.
+      let totalNr = 0;
+      names.forEach(n => { totalNr += Object.keys(nr[n]).length; });
+      html += '<div class="alert-box alert-warn" style="margin-top:14px;">';
+      html += '<strong>🟡 ' + totalNr + ' cellule(s) à vérifier (needs_review)</strong> — les lectures divergent, tu tranches :';
+      html += '</div>';
+      html += '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:11px;width:100%;">';
+      names.forEach(n => {
+        Object.keys(nr[n]).forEach(day => {
+          const cell = nr[n][day];
+          const reads = (cell.reads || []).filter(x => x.value !== undefined && x.value !== null);
+          const options = Array.from(new Set(reads.map(x => String(x.value))));
+          const cid = H.esc(n) + "||" + day;
+          html += '<tr style="border-bottom:1px solid rgba(255,255,255,.08);">';
+          html += '<td style="padding:4px 8px;font-weight:600;">' + H.esc(n) + '</td>';
+          html += '<td style="padding:4px 8px;color:var(--text-dim);">jour ' + H.esc(day) + '</td>';
+          html += '<td style="padding:4px 8px;">';
+          options.forEach(opt => {
+            const sel = (_validationChoices[n] && _validationChoices[n][day] === opt) ? ' style="background:var(--ok);color:#04210a;font-weight:700;"' : '';
+            html += '<button class="btn-sec ppt-choice"' + sel + ' data-cid="' + H.esc(cid) + '" data-val="' + H.esc(opt) + '" style="margin:2px;padding:3px 8px;min-height:28px;">' + H.esc(opt) + '</button>';
+          });
+          // Option "vide" explicite
+          const selEmpty = (_validationChoices[n] && _validationChoices[n][day] === "") ? ' style="background:var(--err);color:#fff;font-weight:700;"' : '';
+          html += '<button class="btn-sec ppt-choice"' + selEmpty + ' data-cid="' + H.esc(cid) + '" data-val="" style="margin:2px;padding:3px 8px;min-height:28px;opacity:.8;">∅ vide</button>';
+          html += '</td></tr>';
+        });
+      });
+      html += '</table></div>';
+    } else {
+      // Cas passe G seule (PDF natif) : pas de vote, validation globale.
+      html += '<div class="alert-box alert-info" style="margin-top:14px;">';
+      html += '✅ Aucune divergence à trancher (lecture déterministe). Vérifie le comparateur visuel ci-dessus puis clique « Valider l\'import » si tout est conforme au PDF.';
+      html += '</div>';
+    }
+
+    // Bandeau de statut de validation
+    const certain = (r.vote_stats && r.vote_stats.certain) || 0;
+    const tranchees = countTranchees();
+    const restantes = names.length > 0 ? (totalNeedsReview(r) - tranchees) : 0;
+    html += '<div id="validation-status" class="small" style="margin-top:8px;">';
+    if (_validationSigned) {
+      html += '🟢 <strong>Import validé par Kevin</strong> — prêt à exporter.';
+    } else if (names.length > 0) {
+      html += '🟡 ' + tranchees + ' tranchée(s) · ' + restantes + ' restante(s) à trancher avant validation.';
+    } else {
+      html += '⚪ En attente de validation manuelle.';
+    }
+    html += '</div>';
+
+    zone.innerHTML = html;
+
+    // Handlers boutons de choix
+    Array.prototype.forEach.call(zone.querySelectorAll(".ppt-choice"), btn => {
+      btn.addEventListener("click", () => {
+        const cid = btn.getAttribute("data-cid");
+        const val = btn.getAttribute("data-val");
+        const sep = cid.lastIndexOf("||");
+        const name = cid.slice(0, sep);
+        const day = cid.slice(sep + 2);
+        if (!_validationChoices[name]) _validationChoices[name] = {};
+        _validationChoices[name][day] = val;
+        _validationSigned = false;
+        renderValidation(r); // re-render pour MAJ surbrillance + compteur
+      });
+    });
+  }
+
+  function totalNeedsReview(r) {
+    const nr = r.cells_needs_review || {};
+    let t = 0;
+    Object.keys(nr).forEach(n => { t += Object.keys(nr[n]).length; });
+    return t;
+  }
+  function countTranchees() {
+    let c = 0;
+    Object.keys(_validationChoices).forEach(n => { c += Object.keys(_validationChoices[n]).length; });
+    return c;
+  }
+
+  /* Construit le résultat VALIDÉ propre (pas le dump brut) :
+   * cellules finales = cellules certaines (passe G ou vote) + tranchages Kevin. */
+  function buildValidatedExport(r) {
+    // Source des cellules : passe G (PDF natif) prioritaire, sinon cells_certain (vote).
+    const passG = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    const employees = {};
+    if (passG && passG.employees) {
+      passG.employees.forEach(e => {
+        const name = e.name || e.fullName;
+        employees[name] = {
+          name,
+          brtpeck: e.brtpeck || null,
+          teamNumber: (e.teamNumber !== undefined ? e.teamNumber : null),
+          days: Object.assign({}, e.days || {})
+        };
+      });
+    } else if (r.cells_certain) {
+      Object.keys(r.cells_certain).forEach(name => {
+        employees[name] = { name, days: {} };
+        Object.keys(r.cells_certain[name]).forEach(d => {
+          employees[name].days[d] = r.cells_certain[name][d];
+        });
+      });
+    }
+    // Applique les tranchages Kevin (needs_review résolus)
+    Object.keys(_validationChoices).forEach(name => {
+      if (!employees[name]) employees[name] = { name, days: {} };
+      Object.keys(_validationChoices[name]).forEach(day => {
+        const v = _validationChoices[name][day];
+        if (v === "") delete employees[name].days[day];
+        else employees[name].days[day] = v;
+      });
+    });
+
+    return {
+      _meta: {
+        tool: "planning-parser-tester",
+        pipe_version: (PIPE && PIPE.VERSION) || "?",
+        validated_by: "kevin",
+        validated_at: new Date().toISOString(),
+        signed: _validationSigned,
+        source_file: r.capture && r.capture.name,
+        hash: r.hash
+      },
+      month_year: r.month_year_detected || null,
+      version: r.version_detected || null,
+      type: r.type_detected || null,
+      employees: Object.values(employees),
+      teams: r.teams || null,
+      mirrors: (r.teams && r.teams.mirrors) || [],
+      encadres: (r.encadres && r.encadres.boxes) || [],
+      lieux_per_emp: r.lieux_per_emp || {},
+      validations_convention: r.validations || null,
+      homonyms_audit: r.homonyms_audit || null,
+      manual_choices: _validationChoices,
+      stats: {
+        employees_total: Object.keys(employees).length,
+        cells_tranchees: countTranchees(),
+        needs_review_remaining: r.cells_needs_review ? (totalNeedsReview(r) - countTranchees()) : 0
+      }
+    };
   }
 
   function renderAlerts(r) {
@@ -659,21 +821,53 @@
     resultAlerts.innerHTML = parts.join("");
   }
 
-  /* --- Export JSON --- */
+  /* --- Export JSON brut --- */
   btnExport.addEventListener("click", () => {
     if (!lastResult) return;
-    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+    downloadJson(lastResult, `parse-brut-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`);
+  });
+
+  /* --- Valider l'import --- */
+  const btnValidate = document.getElementById("btn-validate");
+  const btnExportValidated = document.getElementById("btn-export-validated");
+  if (btnValidate) {
+    btnValidate.addEventListener("click", () => {
+      if (!lastResult) return;
+      const remaining = lastResult.cells_needs_review
+        ? (totalNeedsReview(lastResult) - countTranchees()) : 0;
+      if (remaining > 0) {
+        alert("⚠ Il reste " + remaining + " cellule(s) à trancher avant de valider.\nChoisis une valeur pour chacune dans la zone « cellules à vérifier ».");
+        return;
+      }
+      _validationSigned = true;
+      renderValidation(lastResult);
+      alert("✅ Import validé. Tu peux maintenant cliquer « Exporter le résultat validé ».");
+    });
+  }
+  if (btnExportValidated) {
+    btnExportValidated.addEventListener("click", () => {
+      if (!lastResult) return;
+      const validated = buildValidatedExport(lastResult);
+      const tag = validated._meta.signed ? "valide" : "brouillon";
+      downloadJson(validated, `parse-${tag}-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`);
+    });
+  }
+
+  function downloadJson(obj, filename) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `parse-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`;
+    a.download = filename;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
+  }
 
   /* --- Reset --- */
   btnReset.addEventListener("click", () => {
     lastResult = null;
+    _validationChoices = {};
+    _validationSigned = false;
     passesCard.style.display = "none";
     resultCard.style.display = "none";
     pick.value = "";
