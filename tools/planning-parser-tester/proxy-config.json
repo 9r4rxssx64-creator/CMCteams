@@ -1,0 +1,11 @@
+{
+  "_comment": "Auto-généré par .github/workflows/cmc-parser-proxy-deploy.yml — NE PAS éditer à la main.",
+  "worker_url": "https://cmc-parser-proxy.9r4rxssx64.workers.dev",
+  "auth_mode": "trusted_origin",
+  "auth_note": "L'app servie depuis github.io n'a PAS besoin de token (CORS-bypass impossible côté navigateur). Le token X-Auth-Token reste accepté pour debug curl/Postman.",
+  "providers": ["anthropic", "openai", "mistral", "gemini"],
+  "deployed_at": "2026-05-28T00:16:32Z",
+  "deployed_by": "9r4rxssx64-creator",
+  "deploy_commit": "04c396c91f10e734ed2fbdc8e9e52021987e94f2",
+  "deploy_run_id": "26546544600"
+}
