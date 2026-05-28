@@ -46,7 +46,7 @@
     "CMC", "CDP", "CCDP", "MCB", "SUN", "PK", "HD", "PRT", "HC", "RRT",
     "RTP", "RTR", "RHS", "DP", "CRH", "CPS", "CPM", "CDH", "FL", "CFL",
     "FTP", "FTR", "RFT", "FCP", "FCS", "FRH", "FFL", "CL", "CEO", "CSC",
-    "CSS", "PNE", "AMP", "MPC", "MPP", "AT", "PAT", "SS", "P",
+    "CSS", "PNE", "AMP", "MPC", "MPP", "AT", "PAT", "SS", "P", "DEPL", "DEP",
     "PIT", "BOSS", "SUPERVISEUR", "INSPECTEUR", "POKER", "NO", "LIMIT", "DU", "AU",
     "AVRIL", "MAI", "JUIN", "JUILLET", "AOUT", "AOÛT", "SEPTEMBRE", "OCTOBRE",
     "NOVEMBRE", "DECEMBRE", "JANVIER", "FEVRIER", "FÉVRIER", "MARS",
@@ -80,7 +80,7 @@
   //   « R » seul (repos générique) : également accepté.
   // Format horaire : <heures>/<heures> avec suffixes c/'/"/:/* + CDP/PK (postfix)
   //   H majuscule accepté (12H30/19 cf NOTES_USER 1214).
-  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP|PK)*|P|RH|R|RTP|RTR|RRT|RHS|DP|CP|CRH|CPS|CPM|CDP|CDH|FL|CFL|FTP|FTR|RFT|FCP|FCS|FRH|FFL|M|MAL|AT|MT|ABS|ABI|ABP|AF|CL|CEO|CSC|CSS|PNE|AMP|MPC|MPP|PAT|PRT|HC|EDC|HD|PK)$/;
+  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP|PK)*|P|RH|R|RTP|RTR|RRT|RHS|DP|CP|CRH|CPS|CPM|CDP|CDH|FL|CFL|FTP|FTR|RFT|FCP|FCS|FRH|FFL|M|MAL|AT|MT|ABS|ABI|ABP|AF|CL|CEO|CSC|CSS|SS|PNE|AMP|MPC|MPP|PAT|PRT|HC|EDC|HD|PK|DEPL|DEP)$/;
 
   // Numéro d'équipe explicite (V1 juin 2026+) : « BRTP+K 5 NAME »
   //   - Code poste BRTPECK suivi d'un espace, puis 1-2 chiffres = numéro d'équipe,
