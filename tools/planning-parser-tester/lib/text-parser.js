@@ -32,8 +32,11 @@
 }(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  // Regex stricte : surname + initiale (1-3 lettres)
+  // Regex stricte : surname (1 token), avec aussi tolérance multi-token via NAME_RE_MULTI.
   const NAME_RE = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ' \-]{1,30})\s+([A-Z]{1,3})\.?\b/g;
+  // Multi-token : « LANTERI MINET P », « DELLA PINA L », « DE RYCKE K ».
+  // 2 tokens maj + initiale (1-3 lettres).
+  const NAME_RE_MULTI = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,20})\s+([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,20})\s+([A-Z]{1,3})\.?\b/g;
 
   // Faux positifs courants dans les PDFs SBM
   const EXCLUDE_NAMES = new Set([
@@ -69,26 +72,48 @@
     return lines;
   }
 
-  function parseLineForEmployee(line) {
-    if (!line || line.length < 2) return null;
-    const fullText = line.map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
-
+  /**
+   * Cherche un nom employé dans une ligne. Essaie d'abord multi-token (3 mots)
+   * puis simple (2 mots) pour ne pas rater « LANTERI MINET P » → « LANTERI » seul.
+   */
+  function findNameInLine(fullText) {
+    // 1) Essai multi-token : « SURNAME1 SURNAME2 Init »
+    NAME_RE_MULTI.lastIndex = 0;
+    while (true) {
+      const m = NAME_RE_MULTI.exec(fullText);
+      if (!m) break;
+      const t1 = m[1].trim();
+      const t2 = m[2].trim();
+      if (EXCLUDE_NAMES.has(t1) || EXCLUDE_NAMES.has(t2)) continue;
+      // Évite faux positifs : si t2 est un code typique RH/CP/etc., c'est un surname simple
+      if (CODE_RE.test(t2)) continue;
+      return { surname: t1 + " " + t2, initials: m[3], fullName: t1 + " " + t2 + " " + m[3], idx: m.index, length: m[0].length };
+    }
+    // 2) Fallback simple : « SURNAME Init »
     NAME_RE.lastIndex = 0;
-    let nameMatch = null;
     while (true) {
       const m = NAME_RE.exec(fullText);
       if (!m) break;
       const surname = m[1].trim();
       if (EXCLUDE_NAMES.has(surname) || EXCLUDE_NAMES.has(surname.replace(/\s+/g, ""))) continue;
-      nameMatch = { surname, initials: m[2], fullName: surname + " " + m[2], idx: m.index };
-      break;
+      return { surname, initials: m[2], fullName: surname + " " + m[2], idx: m.index, length: m[0].length };
     }
+    return null;
+  }
+
+  function parseLineForEmployee(line, opts) {
+    opts = opts || {};
+    const minCodes = opts.minCodes || 3;  // relâché : 3 codes min (employés CP intégral peuvent avoir peu de codes visibles)
+    if (!line || line.length < 2) return null;
+    const fullText = line.map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+
+    const nameMatch = findNameInLine(fullText);
     if (!nameMatch) return null;
 
-    // Position approximative du nom dans la ligne
+    // Position du nom dans la ligne (char offset → item idx)
     let firstCodeItemIdx = -1;
     let charCount = 0;
-    const nameEndChar = nameMatch.idx + nameMatch.fullName.length;
+    const nameEndChar = nameMatch.idx + nameMatch.length;
     for (let i = 0; i < line.length; i++) {
       const len = (line[i].str || "").length + 1;
       if (charCount + len > nameEndChar) {
@@ -97,6 +122,7 @@
       }
       charCount += len;
     }
+    if (firstCodeItemIdx === -1) firstCodeItemIdx = line.length;
 
     const days = {};
     let dayIdx = 1;
@@ -109,13 +135,78 @@
       }
     }
 
-    if (Object.keys(days).length < 5) return null;
+    if (Object.keys(days).length < minCodes) {
+      // Retourne quand même avec marker (utile pour CP/AF intégral où peu de codes)
+      return { name: nameMatch.fullName, days, raw_line_preview: fullText.slice(0, 200), partial: true };
+    }
 
     return {
       name: nameMatch.fullName,
       days,
       raw_line_preview: fullText.slice(0, 200)
     };
+  }
+
+  /**
+   * Pass 2 : recherche les noms dans le texte brut concaténé (passe lignes-libres).
+   * Récupère les employés qui ont été ratés par la pass 1 (lignes split, format atypique).
+   * Pour chaque nom trouvé, scanne les ~40 items qui suivent dans le texte source
+   * pour extraire les codes horaires associés.
+   */
+  function parseFromRawText(textRaw) {
+    if (!textRaw) return [];
+    const employees = [];
+    const seen = new Set();
+
+    // Cherche tous les noms multi-token d'abord
+    NAME_RE_MULTI.lastIndex = 0;
+    let m;
+    while ((m = NAME_RE_MULTI.exec(textRaw))) {
+      const t1 = m[1].trim(); const t2 = m[2].trim();
+      if (EXCLUDE_NAMES.has(t1) || EXCLUDE_NAMES.has(t2)) continue;
+      if (CODE_RE.test(t2)) continue;
+      const fullName = t1 + " " + t2 + " " + m[3];
+      if (seen.has(fullName)) continue;
+      seen.add(fullName);
+      // Extrait les ~40 tokens qui suivent et cherche les codes
+      const after = textRaw.slice(m.index + m[0].length, m.index + m[0].length + 400);
+      const tokens = after.split(/\s+/).slice(0, 40);
+      const days = {};
+      let d = 1;
+      for (const t of tokens) {
+        if (d > 31) break;
+        if (CODE_RE.test(t)) { days[String(d)] = t; d++; }
+      }
+      if (Object.keys(days).length > 0) employees.push({ name: fullName, days, source: "pass2_raw" });
+    }
+
+    NAME_RE.lastIndex = 0;
+    while ((m = NAME_RE.exec(textRaw))) {
+      const surname = m[1].trim();
+      if (EXCLUDE_NAMES.has(surname) || EXCLUDE_NAMES.has(surname.replace(/\s+/g, ""))) continue;
+      const fullName = surname + " " + m[2];
+      if (seen.has(fullName)) continue;
+      // Skip si ce nom est déjà couvert par un multi-token (LANTERI dans LANTERI MINET P)
+      let coveredByMulti = false;
+      for (const fn of seen) {
+        if (fn.indexOf(surname + " ") === 0 || fn.indexOf(" " + surname + " ") >= 0) {
+          coveredByMulti = true; break;
+        }
+      }
+      if (coveredByMulti) continue;
+      seen.add(fullName);
+      const after = textRaw.slice(m.index + m[0].length, m.index + m[0].length + 400);
+      const tokens = after.split(/\s+/).slice(0, 40);
+      const days = {};
+      let d = 1;
+      for (const t of tokens) {
+        if (d > 31) break;
+        if (CODE_RE.test(t)) { days[String(d)] = t; d++; }
+      }
+      if (Object.keys(days).length > 0) employees.push({ name: fullName, days, source: "pass2_raw" });
+    }
+
+    return employees;
   }
 
   function parseFromPdfJs(pdfPass) {
@@ -133,28 +224,38 @@
         return out;
       }
 
-      const allEmployees = [];
+      // Pass 1 — par ligne via coordonnées x/y
+      const pass1Employees = [];
       let totalLines = 0;
       let linesWithName = 0;
-
       for (const page of pdfPass.pages) {
         const lines = groupItemsByLine(page.items || [], 2);
         totalLines += lines.length;
         for (const line of lines) {
           const emp = parseLineForEmployee(line);
           if (emp) {
-            allEmployees.push(emp);
+            pass1Employees.push(emp);
             linesWithName++;
           }
         }
       }
 
-      // Dédoublonnage par nom (merge cellules si lignes split)
+      // Pass 2 — texte brut complet (rattrape les noms ratés par pass 1)
+      const pass2Employees = parseFromRawText(pdfPass.textRaw || "");
+
+      // Merge — pass1 prioritaire (cellules par coordonnées plus fiables),
+      // pass2 complète pour les noms manqués.
       const dedup = {};
-      for (const emp of allEmployees) {
+      for (const emp of pass1Employees) {
+        dedup[emp.name] = emp;
+      }
+      let pass2Added = 0;
+      for (const emp of pass2Employees) {
         if (!dedup[emp.name]) {
           dedup[emp.name] = emp;
+          pass2Added++;
         } else {
+          // Merge cellules : pass1 prioritaire, pass2 complète les manquants
           for (const [d, v] of Object.entries(emp.days)) {
             if (!dedup[emp.name].days[d]) dedup[emp.name].days[d] = v;
           }
@@ -167,8 +268,12 @@
         pages_processed: pdfPass.pages.length,
         lines_total: totalLines,
         lines_with_name: linesWithName,
+        pass1_employees: pass1Employees.length,
+        pass2_employees: pass2Employees.length,
+        pass2_added_after_dedup: pass2Added,
         unique_employees: out.employees.length,
-        sample_first_emp: out.employees[0] || null
+        sample_first_emp: out.employees[0] || null,
+        sample_last_emp: out.employees[out.employees.length - 1] || null
       };
     } catch (e) {
       out.error = {
@@ -191,6 +296,6 @@
     EXCLUDE_NAMES,
     CODE_RE,
     NAME_RE,
-    VERSION: "T1-text-parser-v0.1.0"
+    VERSION: "T1-text-parser-v0.2.0-multipass"
   };
 }));
