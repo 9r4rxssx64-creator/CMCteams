@@ -220,7 +220,7 @@ check("  Doc mentionne « gros trait noir » (source primaire)", /trait\s+noir/i
 check("  Doc explique miroir = MÊMES jours RH/R + base ≠ (FR clair)", /M[ÊE]MES\s+jours\s+RH\/R|jours\s+RH\/R.*identiques/.test(teams));
 
 // ───── 16. Text-parser v0.3 : 12H30 majuscule + MT + BRTPECK + team_num ─────
-console.log(`\n${INFO} Test 16/16 — Text-parser enrichissements v0.3.0`);
+console.log(`\n${INFO} Test 16/17 — Text-parser enrichissements v0.3.0`);
 const textParser = readFile("lib/text-parser.js");
 check("  CODE_RE accepte H majuscule (12H30/19 NOTES_USER 1214)", /\[hH\]\?/.test(textParser));
 check("  CODE_RE accepte MT (maternité)", /\|MT\|/.test(textParser));
@@ -229,6 +229,39 @@ check("  BRTPECK_RE exporté (compétences devant nom)", /BRTPECK_RE\s*[,}=]/.te
 check("  TEAM_NUM_AFTER_POST_RE (V1 juin 2026+ format BRTP+K 5 NAME)", /TEAM_NUM_AFTER_POST_RE\s*=/.test(textParser));
 check("  parseLineForEmployee retourne brtpeck", /out\.brtpeck\s*=/.test(textParser));
 check("  parseLineForEmployee retourne teamNumber", /out\.teamNumber|teamNumber\s*!==\s*null/.test(textParser));
+
+// ───── 17. Couverture Convention SBM (43 codes officiels Note 6 janv 1993) ─────
+console.log(`\n${INFO} Test 17/17 — Codes officiels SBM (43 codes Bulletin)`);
+const helpersFull = readFile("helpers-reuse.js");
+const textParserCode = readFile("lib/text-parser.js");
+// helpers-reuse.js : table complète
+check("  BULLETIN_CODES_FULL définie (Note 6 janv 1993)", /BULLETIN_CODES_FULL\s*=/.test(helpersFull));
+check("  Catégorie presence_repos", /presence_repos:/.test(helpersFull));
+check("  Catégorie conges", /conges:\s*\[/.test(helpersFull));
+check("  Catégorie fetes", /fetes:\s*\[/.test(helpersFull));
+check("  Catégorie masse (à la masse)", /masse:\s*\[/.test(helpersFull));
+check("  Catégorie absences", /absences:\s*\[/.test(helpersFull));
+check("  Catégorie sanctions", /sanctions:\s*\[/.test(helpersFull));
+check("  Catégorie autres", /autres:\s*\[/.test(helpersFull));
+check("  Catégorie pit_boss", /pit_boss:\s*\[/.test(helpersFull));
+check("  Helper bulletinCategory exporté", /bulletinCategory\s*[,}]/.test(helpersFull));
+check("  ALL_BULLETIN_CODES (liste plate) exporté", /ALL_BULLETIN_CODES\s*[,}]/.test(helpersFull));
+// Codes spécifiques jamais oubliés
+const requiredCodes = ["P", "RH", "RTP", "RTR", "RRT", "RHS", "DP",
+                       "CP", "CRH", "CPS", "CPM", "CDP", "CDH",
+                       "FL", "CFL", "FTP", "FTR", "RFT",
+                       "FCP", "FCS", "FRH", "FFL",
+                       "M", "MAL", "AT", "MT", "ABS", "ABI", "ABP", "AF", "CL", "CEO", "CSC", "CSS",
+                       "PNE", "AMP", "MPC", "MPP",
+                       "PAT", "PRT", "HC", "EDC",
+                       "HD", "PK"];
+for (const c of requiredCodes) {
+  // Le code doit apparaître dans helpers-reuse.js (table BULLETIN_CODES_FULL)
+  // ET dans text-parser.js CODE_RE.
+  const inHelpers = new RegExp(`code:\\s*"${c}"`).test(helpersFull);
+  const inParser  = new RegExp(`\\b${c}\\b`).test(textParserCode);
+  check(`  ${c} dans BULLETIN_CODES_FULL + accepté par text-parser`, inHelpers && inParser);
+}
 
 // ───── Résumé ─────
 console.log("\n────────────────────────");

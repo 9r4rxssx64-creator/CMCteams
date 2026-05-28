@@ -1,7 +1,33 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-21** (Revue UI/UX pro-expert — 4 apps)
+> Dernière mise à jour : **2026-05-28** (Parser-Tester T1 v0.7.1 — Convention SBM 43 codes)
+
+## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (branche claude/schedule-import-integration-szasM)
+
+### Nouveaux fichiers à la racine
+- [`CHECKLIST_EXPERT.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/CHECKLIST_EXPERT.md) (163 lignes) : inventaire complet outils/agents/MCP/skills/secrets/garde-fous/méthodologie pour travail expert sur ce repo.
+- [`IMPORT_RECONNAISSANCE.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/IMPORT_RECONNAISSANCE.md) (943 lignes) : spec exhaustive « tout ce qu'un import SBM doit reconnaître ». Sections : ⓪ méta-import · A-K par personne · 13 Convention SBM (38 articles + 43 codes Bulletin + calendrier affluence + règles validation).
+
+### Nouveaux modules dans `tools/planning-parser-tester/lib/`
+- [`encadres-parser.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/encadres-parser.js) v0.1.0 (237 lignes) : parse encadrés « N CODE du J1 au J2 ». Source de vérité = codes courts officiels (jamais mots français — anti-erreur #49).
+- [`team-detector.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/team-detector.js) v0.2.0 (320 lignes) : détection équipes par pattern RH/R. Règle miroir corrigée Kevin 2026-05-28 : MÊMES RH/R + horaires base ≠ (`20/5` ⇆ `22/6` secteur cartes).
+
+### Fichiers enrichis dans `tools/planning-parser-tester/`
+- [`helpers-reuse.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/helpers-reuse.js) : `codeToLieu(code, role)` + `BULLETIN_CODES_FULL` (43 codes officiels Note 6 janv 1993) + `bulletinCategory()` + mapping `CODE_TO_LIEU_CADRE` vs `EMPLOYEE`.
+- [`lib/text-parser.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/text-parser.js) v0.3.1 : `CODE_RE` accepte les 43 codes Bulletin + H majuscule (`12H30/19`) + `BRTPECK_RE` + `TEAM_NUM_AFTER_POST_RE` (V1 juin `BRTP+K 5 NAME`).
+- [`parser-multi-ocr.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/parser-multi-ocr.js) v0.7.1 : Phase 3.H encadres-parser, 3.I team-detector, 3.J projection `lieux_per_emp`.
+- [`index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/index.html) : labels UI passes B-F-G honnêtes (« ⏳ en attente » / « 🚧 non implémentée »), légende mise à jour.
+- [`test-pipeline.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/test-pipeline.js) : **17 sections, 140 checks ✅** (vs 12/85 avant). Couvre 43 codes officiels présents dans `BULLETIN_CODES_FULL` ET acceptés par `CODE_RE`.
+
+### Versions
+- T1 pipeline : `v0.6.0-text-parser-native` → `v0.7.1-convention-sbm-43-codes`
+- T1 vision : `v0.6.0` → `v0.7.1`
+- T1 text-parser : `v0.2.0-multipass` → `v0.3.1-convention-43-codes`
+- T1 encadres-parser : `v0.1.0` (nouveau)
+- T1 team-detector : `v0.2.0-mirror-same-rh` (règle miroir corrigée)
+
+---
 
 ## 🎨 SESSION 2026-05-21 — Revue UI/UX pro-expert (branche claude/apex-ui-ux-pro-review-6am3n)
 

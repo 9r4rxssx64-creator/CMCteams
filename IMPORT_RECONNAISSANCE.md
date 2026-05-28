@@ -338,31 +338,108 @@ Format : `BRTP+K 5 NAME` → entre POST et NOM, le `5` = numéro d'équipe.
 
 ⚠ Gap T1 : le mapping code→lieu n'est **pas implémenté** côté text-parser. Le helper `LIEUX_SBM` liste juste les lieux. À enrichir par un mapping `CODE_TO_LIEU` par rôle.
 
-### 2.4 Codes statut (repos / congés / absence / formation)
+### 2.4 Codes statut (43 codes officiels Note SBM 6 janv 1993, Bernard Lées)
 
-| Code | Sens | isWork | Couleur fond NOTES_USER |
-|---|---|---|---|
-| `RH` | Repos hebdo | non | Violet lavande `#c8a8e0` |
-| `R` | Repos simple | non | Gris clair `#e8e8e8` |
-| `CP` | Congé payé | non | Rose saumon `#f8c0d0` |
-| `AF` | Formation 9h15-17h45 salle blanche | non (mais présent) | **Vert** `#a8e0a8` |
-| `M` | Maladie | non | Jaune canari `#ffe840` |
-| `MAL` | Maladie longue | non | — |
-| `MT` | Maternité (v9.118) | non | — |
-| `PAT` | **Paternité** (v9.118 — pas Patrimonial) | non | Bleu tendre `#b8e0f0` |
-| `AT` | Accident travail | non | — |
-| `ABS` | Absence tolérée | non | — |
-| `ABI` | Absence injustifiée | non | — |
-| `SS` | Sans solde | non | — |
-| `RRT` | Récup repos travaillé | non | Jaune orange `#ffd850` |
-| `CRH` | Congé repos hebdo | non | — |
-| `CFL` | Congé fête légale | non | — |
-| `FL` | Fête légale | non | — |
-| `CSS` | Congé sans solde | non | — |
-| `EDC` | En Détachement Cadre (statut spécial SBM) | non | — |
-| `HC` | Heures complémentaires | — | Vert-jaune `#d8e8a8` |
-| `PRT` | Prêt | — | Jaune orange `#ffd060` |
-| `HD` | Hors Département / Férié | — | Rouge vif |
+**Source de vérité absolue** : index.html ligne 2084 (`BULLETIN_CODES`)
++ Convention Collective 1er avril 2015. Tous ces codes peuvent apparaître
+dans une cellule jour OU dans un encadré « du au ».
+
+#### Présence / Repos (7 codes)
+
+| Code | Sens | Couleur fond NOTES_USER |
+|---|---|---|
+| `P`   | Jour de Présence | — |
+| `RH`  | Repos Hebdomadaire | Violet lavande `#c8a8e0` |
+| `R`   | Repos simple | Gris clair `#e8e8e8` |
+| `RTP` | Repos Travaillé à Payer | — |
+| `RTR` | Repos Travaillé à Récupérer (+ compteur) | — |
+| `RRT` | Récupération Repos Travaillé (- compteur) | Jaune orange `#ffd850` |
+| `RHS` | Récupération Heures Supplémentaires | — |
+| `DP`  | Jour de Disposition | — |
+
+#### Congés (6 codes)
+
+| Code | Sens |
+|---|---|
+| `CP`  | Jour ouvrable de Congé Payé (rose saumon `#f8c0d0`) |
+| `CRH` | Repos Hebdo inclus dans Congé |
+| `CPS` | Congé Payé Samedi (5e pour 5 sem) |
+| `CPM` | 1er jour Période Congé — droit fractionnement |
+| `CDP` | Jour Congé Déjà Payé |
+| `CDH` | Repos Hebdo inclus dans Congés Déjà Payés |
+
+#### Fêtes légales (5 codes — Art. 17.3 Convention)
+
+| Code | Sens |
+|---|---|
+| `FL`  | Fête Légale chômée et payée |
+| `CFL` | Fête Légale incluse dans Congé Payé |
+| `FTP` | Fête Légale Travaillée à Payer |
+| `FTR` | Fête Légale Travaillée à Récupérer (+ compteur) |
+| `RFT` | Récupération Fête Travaillée (- compteur) |
+
+Jours fériés Monaco : 1er janvier, Sainte-Dévote (27 janv), Lundi de Pâques,
+1er mai (prime 150€ / 280€ groupe fermé), Ascension, Lundi de Pentecôte,
+Fête-Dieu, Assomption (15 août), Toussaint, Fête Nationale (19 nov),
+Immaculée Conception (8 déc), Noël.
+
+#### À la masse (4 codes — variantes employés à la masse)
+
+| Code | Sens |
+|---|---|
+| `FCP` | Idem CP pour employé à la masse |
+| `FCS` | Idem CPS pour employé à la masse |
+| `FRH` | Idem CRH pour employé à la masse |
+| `FFL` | Idem CFL pour employé à la masse |
+
+#### Absences (12 codes)
+
+| Code | Sens | Couleur |
+|---|---|---|
+| `M`   | Absence Maladie (indemnisée ou non) | Jaune canari `#ffe840` |
+| `MAL` | Maladie longue durée | — |
+| `AT`  | Accident du Travail ou Trajet | — |
+| `MT`  | Congé Maternité | — |
+| `ABS` | Absence tolérée non payée | — |
+| `ABI` | Absence Injustifiée (sanction possible) | — |
+| `ABP` | Absence autorisée exceptionnellement payée | — |
+| `AF`  | Absence Rémunérée Formation (= Présence) | **Vert** `#a8e0a8` |
+| `CL`  | **Congé Légal événement familial** (Art. 18 Convention) | — |
+| `CEO` | Congé d'Éducation Ouvrière | — |
+| `CSC` | Congé Supplémentaire Cadre | — |
+| `CSS` | Congé Sans Solde | — |
+
+⚠ **`CL`** = code officiel pour congés familiaux Art. 18 (mariage 4j,
+naissance 3j, décès proche 3j, etc.). Distinct de `CSS` (sans solde) et
+`ABS` (toléré non payé).
+
+#### Sanctions (4 codes — peuvent apparaître si l'admin les ajoute)
+
+| Code | Sens |
+|---|---|
+| `PNE` | Préavis non Exécuté |
+| `AMP` | Mise à Pied non rémunérée |
+| `MPC` | Mise à Pied Conservatoire (attente décision) |
+| `MPP` | Mise à Pied Payée |
+
+#### Autres (4 codes)
+
+| Code | Sens | Couleur |
+|---|---|---|
+| `PAT` | Paternité (v9.118 — pas Patrimonial !) | Bleu tendre `#b8e0f0` |
+| `PRT` | Prêt (mis à disposition autre service) | Jaune orange `#ffd060` |
+| `HC`  | Heures Complémentaires | Vert-jaune `#d8e8a8` |
+| `EDC` | En Détachement Cadre (statut spécial SBM) | — |
+
+#### Pit Boss spécifiques (2 codes)
+
+| Code | Sens |
+|---|---|
+| `HD`  | Hors Département / Jour férié spécial | Fond rouge vif |
+| `PK`  | Poker Cash Game / Rotation Pit Boss au PK | Fond rose |
+
+✅ Tous ces codes (43) sont implémentés dans `helpers-reuse.js`
+`BULLETIN_CODES_FULL` et acceptés par `text-parser.js` `CODE_RE` v0.3.0+.
 
 ✅ `STATUT_CODES`/`STATUT_LABEL` dans `helpers-reuse.js:146`.
 ✅ `CODE_RE` text-parser couvre tous ces codes (vérifier `MT`).
@@ -749,6 +826,121 @@ Le mapping CODE→LIEU doit être conditionnel sur `emp.family`.
 - Text-parser : `12H30/19` capturé, suffixes préservés, multi-token names
 - Homonymes : LANDAU B ≠ LANDAU J ne mergent jamais
 - Encadrés statut : `2 CP du 1 au 31` → 31 cellules CP
+
+---
+
+## 13. Convention Collective SBM (articles applicables aux imports)
+
+Source : index.html ligne 1881 (`CONVENTION`) — 38 articles structurés.
+Liste des articles qui **impactent directement** la lecture/validation
+des plannings :
+
+### 13.1 Articles clés (Art. + impact import)
+
+| Article | Sujet | Impact pour le parser/validation |
+|---|---|---|
+| **Art. 4** | Recrutement — âge min 21 ans | Aucun nouveau ne doit avoir <21 ans (validation RH) |
+| **Art. 6** | Contrat — 12 mois initial + 3 mois essai | Nouveau dans planning depuis ≤3 mois = essai |
+| **Art. 10** | Carrière — niveaux 1-7 selon jeux validés | Niveau déductible depuis compétences BRTPECK : 1 lettre=niv1, …, 7 lettres=Expert |
+| **Art. 11** | Promotions Expert→Chef→Inspecteur→Sous-dir→Directeur | Détectable via `.` final code poste (chef), section PDF (cadre) |
+| **Art. 13** | Rémunération employés (fixe +200€/niveau + %CA + %cagn) | Non visible dans planning |
+| **Art. 17.4** | Congés 2 mois/an (1 mai-31 oct + hiver, 4 sem min consécutives) | **Encadré CP intégral mois entier** = bloc Art. 17.4 |
+| **Art. 17.5** | Repos hebdo : min 1j, normalement 2j consécutifs, **min 10j/6 sem** | **Validation post-import** : ratio repos/6 sem ≥ 10 |
+| **Art. 17.5 (2e jour supprimable)** | 4 premiers récupérés sans majoration, +50% au-delà | RTR (récup) + RH (planifié) à distinguer |
+| **Art. 17.6** | **Forte affluence** : juillet-août, 16 déc-15 janv, Grand Prix, Pâques. Planning publié vendredi <12h, 4 sem à venir | Plus de V2/V3 ; validations RH plus permissives |
+| **Art. 17.7** | Heures supplémentaires employés + inspecteurs | `HC` (heures comp.), `RHS` (récup HS) |
+| **Art. 17.8** | **55+ et femmes enceintes** : pause toutes les 40 min (au lieu 60) | Marqueur ★ rouge (senior 55+) — femmes enceintes : donnée RH externe |
+| **Art. 18** | **Congés familiaux** uniformisés 2019, étendus 2021 pacs | Code `CL` : mariage 4j · naissance 3j · décès proche 3j · mariage enfant 2j · décès beau-parent 1j · décès oncle/tante 1j |
+| **Art. 19** | Congés sans solde (>1 sem) | Code `CSS` |
+| **Art. 20** | Temps partiel max 1 an renouvelable | Validation : ratio jours travaillés/mois |
+| **Art. 21** | Maladie — certificat dès 1er jour, ≥21j = avis médecine du travail | Bloc `M` ou `MAL` ≥21j → traité comme MAL |
+| **Art. 23** | Indemnisation maladie 85% (min 91%), max 1095 jours | Code `M` peut être indemnisé ou non |
+| **Art. 25** | Discipline — sanctions 1er/2e niveau | Codes `PNE`, `AMP`, `MPC`, `MPP` |
+| **Art. 26** | Retraite (10ans=½ · 15ans=1 · 20ans=1,5 · 30ans=2 mois) | Pas d'impact direct |
+| **Art. 35** | **Effectifs — Chefs = 25-30%** de l'effectif employés. Groupe fermé : 33,5% transitoire (10 ans). Plancher absolu 336 (cadres+emps) | **Validation post-import** : ratio chefs/employés dans la fourchette |
+
+### 13.2 Calendrier d'affluence (Art. 17.6 + impact import)
+
+Source : index.html ligne 2147 (`CALENDRIER_AFFLUENCE`). Périodes où
+le casino tourne à plein régime et le planning peut être ajusté plusieurs
+fois (V2, V3) :
+
+| Période | Intensité | Impact |
+|---|---|---|
+| 1er-15 janvier (Réveillon + 1ère quinzaine) | high | Plus de V2 |
+| 27 janvier (Sainte-Dévote Monaco) | medium | — |
+| **22-26 mai (Grand Prix F1)** | **peak** | V2/V3 fréquents, planning publié vendredi <12h |
+| 20-25 juin (Monte-Carlo TV Festival) | high | — |
+| **Juillet-août** | **peak** | Effectifs tendus, moins de RH possibles |
+| 15 août (Assomption + feux) | high | FL ou FTP |
+| 19 nov (Fête Nationale Monaco) | high | FL ou FTP |
+| **16 décembre - 31 décembre** | **peak** | Vacances Noël + Réveillon |
+| **Pâques (mobile)** | high | Week-end pascal — calculé via algo Gauss année courante |
+
+**Conséquences pour le parser** :
+- En période peak : autoriser plus de versions (V3, V4) sans alerter
+- Validation Art. 17.5 (min 10j RH/6 sem) plus permissive
+- Plus de codes `FTP`/`FTR` (fêtes travaillées) dans les cellules
+- Le « 2e jour de repos supprimable » devient fréquent → `RTR` qui s'accumule
+
+### 13.3 Règles de validation post-import (à ajouter dans le pipeline)
+
+Checks Art. 17.5 + Art. 35 à appliquer après extraction :
+
+1. **`validateMinRestPerSixWeeks`** : pour chaque emp, vérifier qu'il a
+   au moins **10 jours RH/R sur toute fenêtre glissante de 6 semaines**
+   (42 jours). Si <10 → flag warning « violation Art. 17.5 ».
+2. **`validateChefRatio`** : ratio (effectif `chef=true`) / (effectif total
+   non-cadre) ∈ [25%, 30%] (Art. 35). Hors fourchette → flag info.
+3. **`validateMin336Effectif`** : effectif total cadres+employés ≥ 336
+   (plancher absolu Art. 35). En-dessous → flag warning.
+4. **`validateSeniorMarker`** : tout emp marqué `★`/`*` rouge avant le nom
+   doit avoir `senior=true` (pause 40 min) OU `chef_european=true`.
+5. **`validate2ndDayRestSupressionCount`** : compter les semaines où le
+   2e jour de repos est supprimé → 4 premières récupérées sans majoration,
+   au-delà = +50% (info statistique).
+6. **`validateNoForbiddenCodes`** : sanctions (`PNE`, `AMP`, `MPC`, `MPP`)
+   présentes → flag CRITICAL (vérifier avec RH avant de garder).
+7. **`validateAffluencePeriodVersion`** : si import = période peak ET
+   numéro version ≥ V3 → log info « cohérent ». Si import = période calme
+   ET V3+ → flag warning « pourquoi 3 versions ? ».
+
+⚠ Gap T1 : aucune de ces validations n'est implémentée dans le sandbox.
+À ajouter en passe `validate-post-import.js` après team-detector.
+
+### 13.4 Niveaux carrière déductibles depuis compétences BRTPECK (Art. 10)
+
+| Nombre de lettres BRTPECK | Niveau | Salaire mensuel | Convention |
+|---|---|---|---|
+| 1 lettre (B ou R ou T ou P ou E ou C ou K) | **Niveau 1** | 2 300 € | Art. 10/13 |
+| 2 lettres | Niveau 2 | 2 765 € | Idem |
+| 3 lettres | Niveau 3 | 3 127 € | Idem |
+| 4 lettres | Niveau 4 | 4 000 € | Idem |
+| 5 lettres | Niveau 5 | 4 700 € | Idem |
+| 6 lettres | Niveau 6 | 5 413 € | Idem |
+| **7 lettres (BRTPECK complet)** | **Niveau 7 — Expert Jeux Premium** | 6 113 € | Art. 10 (Expert) |
+| 7 lettres + `.` final | **Niveau 11/1 — Chef de table** | 7 000 € | Art. 11 |
+| 7 lettres + 5 ans Expert | **Niveau 9/1 — Sous-chef** | 6 460 € | Art. 14 |
+| Cadres (Pit Boss / Inspecteur) | Cadres SBM | 8 295-10 452 € | Art. 15 |
+
+Le niveau n'est pas dans le PDF mais peut être **inféré** depuis le code
+poste (BRTPECK + `.`) et la présence dans la section cadres.
+
+### 13.5 Compétences BRTPECK détaillées (Art. 5)
+
+| Lettre | Jeu | École premium |
+|---|---|---|
+| `B` | BlackJack | École de base |
+| `R` | Roulette anglaise (37 cases, 0 vert) | École de base |
+| `T` | Texas Hold'em (Poker tournoi) | École premium |
+| `P` | Punto Banco (Baccara) | École premium |
+| `E` | **Roulette Européenne** | **École PREMIUM SBM** (Art. 4) — plaque jaune |
+| `C` | Craps (dés) | École premium |
+| `K` | BJ Super / Poker Cash Game | École premium |
+
+**Convention Art. 5** : 5 écoles premium maximum sur 9 ans, **min 1 an
+entre 2 écoles**. La compétence `E` (roulette européenne) confère le
+statut **chef européen** (marqueur `★` rouge devant le nom).
 
 ---
 

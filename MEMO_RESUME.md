@@ -1,3 +1,50 @@
+# Mémo de reprise — Parser-Tester T1 v0.7.1 / Apex v13.4.261 / CMC v9.731 (2026-05-28)
+
+## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (5 gaps P1 + Convention SBM)
+
+Branche `claude/schedule-import-integration-szasM`. Suite à la cascade
+session 2026-05-27 (CLAUDE.md erreur #65, 15 bugs latents), travail
+recentré sur la **reproduction à l'identique** des imports SBM avant
+intégration dans CMCteams.
+
+### Livré (5 commits)
+
+- **CHECKLIST_EXPERT.md** : inventaire complet outils/agents/MCP/skills/secrets/garde-fous (réponse à « Fais une checklist de tout ce que tu as à dispositions pour un travail d'expert »).
+- **IMPORT_RECONNAISSANCE.md** (943 lignes) : spec exhaustive « tout ce qu'un import SBM doit reconnaître ». Sections : ⓪ méta-import (mois/version/type/hash) ; A-K par personne (identification, BRTPECK, grade, groupe, famille, équipe+miroir, horaires, lieux, marqueurs visuels, statuts intégraux) ; 7 lieux SBM ; 8 couleurs visuelles ; 9 règles d'écriture INTERDITS/OBLIGATOIRES ; **13 Convention SBM** (38 articles, calendrier affluence, 43 codes Bulletin Note 6 janv 1993).
+- **T1 v0.6.1** : labels UI honnêtes (passes B/C/D/E/G « ⏳ en attente » au lieu de « à venir » trompeur — passes implémentées depuis v0.5.0 ; F Tesseract « 🚧 non implémentée »).
+- **T1 v0.7.0** : 5 gaps P1 attaqués —
+  - `helpers-reuse.js` : `codeToLieu(code, role)` + `CODE_TO_LIEU_CADRE`/`CODE_TO_LIEU_EMPLOYEE`. **`19/4` employé=CMC mais Pit Boss=CCDP** (NOTES_USER 1194 critique). `15/20`=PNL. Suffixe `*`=CCDP+CMC.
+  - `lib/encadres-parser.js` (237 lignes) : parse encadrés « N CODE du J1 au J2 » (CP/AF/M/MAL/MT/PAT/EDC/SS/ABI/AT/CFL/CRH/ABS). Codes courts en source primaire (jamais mots français — Erreur #49).
+  - `lib/team-detector.js` (320 lignes) : détection équipes par pattern RH/R. Règle miroir **CORRIGÉE Kevin 2026-05-28** : MÊMES jours RH/R + horaires base **différents** (pas un décalage). Secteur cartes : équipe `20/5` ⇆ miroir `22/6` (ou inverse). `isMirrorPair(A,B)` = `rhEqual` + base ≠. Skip family=cadres.
+  - `lib/text-parser.js` v0.3.0 : `12H30/19` H majuscule, `MT`/`CSS`/`ABS`/`FL`, `BRTPECK_RE`, `TEAM_NUM_AFTER_POST_RE` (V1 juin `BRTP+K 5 NAME`).
+  - `parser-multi-ocr.js` v0.7.0 : Phase 3.H encadres-parser + 3.I team-detector + 3.J projection `lieux_per_emp` (sans modifier les cellules — règle reproduction identique).
+- **T1 v0.7.1** : Convention SBM complète —
+  - **43 codes officiels** Note 6 janv 1993 (Bernard Lées) intégrés. Avant : 22 codes couverts. Maintenant : **tous** les codes Présence/Repos (8) · Congés (6) · Fêtes (5) · À la masse (4) · Absences (12) · Sanctions (4) · Autres (4) · Pit Boss (2).
+  - `helpers-reuse.js` : `BULLETIN_CODES_FULL` table par catégorie, `bulletinCategory()` helper, `ALL_BULLETIN_CODES` liste plate.
+  - `text-parser.js` : `CODE_RE` accepte les 43 codes (ajoutés DP/RTP/RTR/RHS/CPS/CPM/CDP/CDH/FTP/FTR/RFT/FCP/FCS/FRH/FFL/ABP/CL/CEO/CSC/PNE/AMP/MPC/MPP).
+  - `IMPORT_RECONNAISSANCE.md` §2.4 enrichi (43 codes par catégorie) + §13 nouveau (38 articles Convention + calendrier affluence + règles validation post-import : `validateMinRestPerSixWeeks` Art. 17.5, `validateChefRatio` 25-30% Art. 35, niveaux 1-7 déductibles BRTPECK).
+
+### Tests régression
+
+`test-pipeline.js` : **12 → 17 sections, 85 → 140 checks ✅**. Couvre :
+syntax JS · helpers exportés · cloneBytes · Mistral Pixtral · Claude
+alias · versions cohérentes · `_autoLoaded.worker_url` · TS interdit
+en .js · Worker `/test/*` auth bypass · Node 22 · secrets noms · CODE→LIEU
+par rôle · encadres-parser · team-detector (règle miroir corrigée) ·
+text-parser v0.3 · **les 43 codes officiels présents dans `BULLETIN_CODES_FULL`
+ET acceptés par `CODE_RE`**.
+
+### Reste à attaquer (P2/P3)
+
+- Validations post-import codées (Art. 17.5 10j/6sem, Art. 35 ratio chefs)
+- Mapping code→couleur cellule statut (au-delà de Convention/CCDP)
+- Blocage fuzzy match cross-initiale homonymes (LANDAU B vs J, etc.)
+- UI comparateur visuel cellule par cellule
+- Export `results/<ts>.json` après validation Kevin
+- Critères « OK go intégration CMCteams » : 4 PDFs Kevin importés sans bug + validation manuelle cellule par cellule
+
+---
+
 # Mémo de reprise — Apex v13.4.261 / CMC v9.731 / Apex Chat v1.1.148 / Social Video Pipeline v1.0 (2026-05-23)
 
 ## 📊 SESSION 2026-05-23 — Apex v13.4.261 : Diagnostic vault + Cloudflare (read-only)

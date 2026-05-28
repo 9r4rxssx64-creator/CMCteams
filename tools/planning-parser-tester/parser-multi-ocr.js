@@ -664,6 +664,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.7.0-lieu-encadres-teams"
+    VERSION: "T1-v0.7.1-convention-sbm-43-codes"
   };
 }));

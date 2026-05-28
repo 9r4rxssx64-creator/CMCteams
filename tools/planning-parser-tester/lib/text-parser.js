@@ -50,13 +50,23 @@
     "POSTE", "NOM", "ÉQUIPE", "TOTAL", "JOURS", "REPOS"
   ]);
 
-  // CODE_RE — couvre TOUS les codes connus SBM. Mises à jour 2026-05-28 :
-  //   - `H` majuscule autorisé (`12H30/19` cf NOTES_USER ligne 1214)
-  //   - `MT` (maternité) ajouté
-  //   - Suffixe `CDP` ou `*` ou `:` ou `c` ou `'` ou `"` préservé (caractère par caractère)
-  //   - Cas particulier `19/4""` (double guillemet — variante Convention)
-  // Forme : <heures>/<heures> + suffixes optionnels, OU code statut, OU PK/HD/PRT/HC/RRT.
-  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP)*|RH|R|CP|AF|M|MAL|MT|SS|ABS|ABI|AT|PAT|CFL|CRH|CSS|EDC|FL|HD|PK|PRT|HC|RRT)$/;
+  // CODE_RE — couvre TOUS les codes officiels SBM (43 codes, Note 6 janv 1993).
+  // Sources : Note SBM 6 janvier 1993 (Bernard Lées) + Convention 1er avril 2015
+  //   + NOTES_USER + index.html ligne 2084 (BULLETIN_CODES).
+  //
+  // Catégories couvertes :
+  //   Présence/Repos (7) : P · RH · RTP · RTR · RRT · RHS · DP
+  //   Congés (6)         : CP · CRH · CPS · CPM · CDP · CDH
+  //   Fêtes légales (5)  : FL · CFL · FTP · FTR · RFT
+  //   À la masse (4)     : FCP · FCS · FRH · FFL
+  //   Absences (11)      : M · MAL · AT · MT · ABS · ABI · ABP · AF · CL · CEO · CSC · CSS
+  //   Sanctions (4)      : PNE · AMP · MPC · MPP
+  //   Autres (4)         : PAT · PRT · HC · EDC
+  //   Pit Boss spécifiques (2) : HD · PK
+  //   « R » seul (repos générique) : également accepté.
+  // Format horaire : <heures>/<heures> avec suffixes c/'/"/:/* + CDP/PK (postfix)
+  //   H majuscule accepté (12H30/19 cf NOTES_USER 1214).
+  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP|PK)*|P|RH|R|RTP|RTR|RRT|RHS|DP|CP|CRH|CPS|CPM|CDP|CDH|FL|CFL|FTP|FTR|RFT|FCP|FCS|FRH|FFL|M|MAL|AT|MT|ABS|ABI|ABP|AF|CL|CEO|CSC|CSS|PNE|AMP|MPC|MPP|PAT|PRT|HC|EDC|HD|PK)$/;
 
   // Numéro d'équipe explicite (V1 juin 2026+) : « BRTP+K 5 NAME »
   //   - Code poste BRTPECK suivi d'un espace, puis 1-2 chiffres = numéro d'équipe,
@@ -327,6 +337,6 @@
     NAME_RE,
     BRTPECK_RE,
     TEAM_NUM_AFTER_POST_RE,
-    VERSION: "T1-text-parser-v0.3.0-brtpeck-team-num"
+    VERSION: "T1-text-parser-v0.3.1-convention-43-codes"
   };
 }));
