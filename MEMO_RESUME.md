@@ -3065,3 +3065,27 @@ Kevin a envoyé ~30 captures TikTok (DeepSeek-Coder-V2, superpowers, claude-mem,
 - `.claude/skills/apex-taste.md` — heuristiques de goût layout/typo/couleur/mouvement.
 - `.claude/skills/apex-superpowers.md` — enrichi de 6 → 14 méthodologies.
 - `apex-ai/v13/core/memory.ts` — directive DeepSeek = spécialiste code dans le system prompt Apex (auto-routing code → provider deepseek). Nécessite build/deploy CI pour passer en prod.
+
+## Session 2026-05-28 — Fix timeout Vision non-bloquant (branche claude/branch-correction-dw8eu)
+
+**Contexte** : capture iPhone Kevin — import planning plante sur "gemini timeout 504"
+(phase vision_E, 110s) + "API 400 thinking-blocks" (bug session IA, PAS le code).
+
+**Diagnostic** :
+- Branche claude/branch-correction-dw8eu = identique a origin/main, 100% propre (rien de casse cote git).
+- API 400 thinking-blocks = bug de la *conversation* IA (replay corrompu au resume), PAS du code.
+  Solution = NOUVELLE session, jamais resume du chat mort (le resume rejoue l'historique casse -> meme 400).
+- Bug reel import : orchestrateur Vision attend les 4 passes (Promise.all) -> bloque ~110s sur gemini
+  (tie-breaker) + remonte le timeout en erreur ROUGE meme quand le texte natif PDF.js a deja tout extrait.
+
+**Fix v0.9.8 (tools/planning-parser-tester)** :
+- parser-multi-ocr.js : si passe G (texte natif) a des employes -> Vision = renfort optionnel,
+  timeout court 60s + echec Vision route en alerte JAUNE non bloquante (pas erreur rouge).
+  PDF scanne (pas de texte natif) -> comportement critique conserve (erreur rouge).
+- lib/vision-passes.js : gemini (passe E, tie-breaker) timeout court TIE_TIMEOUT=60s au lieu de 110-120s.
+- Bumps version : pipeline T1-v0.9.8, vision T1-vision-v0.9.8, __APP_BUILD__ v0.9.8.
+
+**Tests** : test-pipeline 20/20 "Safe to push" + test-fidelity 100% (dont "Encadre M du 1 au 31" = cas Sanna O). 0 regression.
+
+**Reste (besoin PDF reel Kevin)** : si Sanna O absente sur un PDF SCANNE (texte natif vide), la
+couverture "tout nom = >=1 cellule" ne voit pas son nom (rawText vide). A durcir avec le vrai PDF.
