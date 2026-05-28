@@ -831,6 +831,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.9.5-roster-only-classification"
+    VERSION: "T1-vision-v0.9.6-encadre-box-inference"
   };
 }));
