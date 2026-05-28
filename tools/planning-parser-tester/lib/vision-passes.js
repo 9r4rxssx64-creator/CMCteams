@@ -831,6 +831,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.8.3-passe-a-display-fix"
+    VERSION: "T1-vision-v0.9.0-real-pdf-fixes-e2e"
   };
 }));

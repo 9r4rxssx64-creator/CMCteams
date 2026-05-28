@@ -83,11 +83,20 @@ else
 fi
 
 # 5. Test de fidélité « reproduction à l'identique »
-echo -e "\n${INFO} [5/5] Test de fidélité (reproduction identique)"
+echo -e "\n${INFO} [5/6] Test de fidélité (reproduction identique)"
 if node "$SCRIPT_DIR/test-fidelity.js"; then
   echo -e "${PASS} fidélité 100% — reproduction identique"
 else
   echo -e "${FAIL} Écart de fidélité détecté — la reproduction n'est PAS identique"
+  exit 1
+fi
+
+# 6. Test E2E sur PDF réel généré (Chromium + pdfjs) — skip gracieux si absents
+echo -e "\n${INFO} [6/6] Test E2E PDF réel (Chromium HTML→PDF→parse)"
+if node "$SCRIPT_DIR/test-e2e-pdf.js"; then
+  echo -e "${PASS} E2E PDF OK (ou sauté si Chromium/pdfjs absents)"
+else
+  echo -e "${FAIL} E2E PDF échoue — le pipeline a un problème sur PDF réel"
   exit 1
 fi
 

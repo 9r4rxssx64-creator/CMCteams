@@ -194,6 +194,7 @@
     <button class="btn-sec" id="btn-validate" type="button" style="border-color:var(--ok);color:var(--ok);">✅ Valider l'import (conforme au PDF)</button>
     <button class="btn-sec" id="btn-export-validated" type="button">📤 Exporter le résultat validé</button>
     <button class="btn-sec" id="btn-export" type="button">💾 Exporter JSON brut</button>
+    <button class="btn-sec" id="btn-export-raw" type="button" title="Texte brut extrait du PDF — pour que Claude corrige le parser sur ton vrai import">📝 Exporter texte brut PDF</button>
     <button class="btn-sec" id="btn-reset" type="button">↩ Recommencer</button>
   </div>
 </div>
@@ -214,7 +215,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.8.3-passe-a-display-fix-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.9.0-real-pdf-fixes-e2e-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -594,6 +595,23 @@
       }
     }
 
+    // ⚠ EMPLOYÉS SANS HORAIRE (les oublis) — section bien visible (Kevin
+    // « aucun oubli »). Liste les noms détectés mais sans aucune cellule.
+    const passGsum = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    if (passGsum && Array.isArray(passGsum.employees)) {
+      const sansHoraire = passGsum.employees.filter(e => !e.days || Object.keys(e.days).length === 0);
+      const partiels = passGsum.employees.filter(e => e.days && Object.keys(e.days).length > 0 && Object.keys(e.days).length < 10);
+      if (sansHoraire.length > 0) {
+        lines.push(`<div class="alert-box alert-err" style="margin-top:12px;"><strong>⚠ ${sansHoraire.length} employé(s) SANS horaire (oubli potentiel)</strong><br><span class="small">${sansHoraire.map(e => H.esc(e.name)).join(" · ")}</span><br><span class="small" style="opacity:.7;">Ces noms sont détectés mais aucune cellule n'a été extraite. À corriger avant intégration.</span></div>`);
+      }
+      if (partiels.length > 0) {
+        lines.push(`<div class="alert-box alert-warn" style="margin-top:8px;"><strong>🟠 ${partiels.length} employé(s) avec PEU de cellules (&lt;10)</strong><br><span class="small">${partiels.map(e => H.esc(e.name) + " (" + Object.keys(e.days).length + ")").join(" · ")}</span></div>`);
+      }
+      if (sansHoraire.length === 0 && partiels.length === 0) {
+        lines.push(`<div class="alert-box alert-info" style="margin-top:8px;">✅ Tous les ${passGsum.employees.length} employés détectés ont des horaires (aucun oubli).</div>`);
+      }
+    }
+
     resultSummary.innerHTML = lines.join("");
     renderEmployeeGrid(r);
   }
@@ -856,6 +874,24 @@
       const validated = buildValidatedExport(lastResult);
       const tag = validated._meta.signed ? "valide" : "brouillon";
       downloadJson(validated, `parse-${tag}-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`);
+    });
+  }
+
+  /* --- Export texte brut du PDF (capture import réel pour analyse Claude) --- */
+  const btnExportRaw = document.getElementById("btn-export-raw");
+  if (btnExportRaw) {
+    btnExportRaw.addEventListener("click", () => {
+      if (!lastResult) return;
+      const passA = (lastResult.passes || []).find(p => p.passe === "A");
+      const raw = (passA && passA.textRaw) || "";
+      if (!raw) { alert("Pas de texte brut (le PDF n'a peut-être pas de texte natif extractible)."); return; }
+      const blob = new Blob([raw], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `textraw-${(lastResult.capture && lastResult.capture.name || "pdf").replace(/[^a-z0-9]/gi, "_")}-${Date.now()}.txt`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   }
 

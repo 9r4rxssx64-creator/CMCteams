@@ -113,23 +113,35 @@
 
   /** Détermine la couleur d'une cellule à partir de son code.
    *  Retourne { bg, fg, label, isConvention?, isCcdp?, source }.
-   *  Si code inconnu → { bg: null, fg: null, label: "?", source: "unknown" }. */
+   *  Si code inconnu → { bg: null, fg: null, label: "?", source: "unknown" }.
+   *
+   *  Priorité (NOTES_USER « Nomenclature visuelle ») :
+   *   1. Convention : code contient `'` ou `"` N'IMPORTE OÙ (ex `19/4'c`,
+   *      `20/5""`, `22/6'c` chef+Convention) → rouge fond / jaune texte.
+   *      Le `c` final (chef) ne doit PAS masquer le `'` (bug réel JUIN 2026).
+   *   2. CCDP : suffixe `*` (sans quote) → orange.
+   *   3. Code statut (RH/CP/M/...) → couleur dédiée.
+   *   4. Code horaire base (+ suffixe `c` chef) → couleur par horaire. */
   function getCellColor(rawCode) {
     if (!rawCode) return { bg: null, fg: null, label: "vide", source: "empty" };
     const code = normalizeQuotes(String(rawCode).trim());
 
-    // 1. Convention (suffixe ' ou ")
-    if (/['"]$/.test(code)) {
-      return Object.assign({}, CONVENTION_COLOR, { isConvention: true, source: "suffix_convention", code });
+    // 1. Convention — `'` ou `"` PRÉSENT (où que ce soit après le code horaire).
+    //    Les horaires de base (22/6, 19/4, 12h30/19) et les codes statut
+    //    (RH/CP/M) ne contiennent jamais de quote → détection fiable.
+    if (/['"]/.test(code)) {
+      const r = Object.assign({}, CONVENTION_COLOR, { isConvention: true, source: "quote_convention", code });
+      if (/c['"]*$/.test(code)) r.label = "Convention (chef)";
+      return r;
     }
 
     // 2. CCDP (suffixe *)
-    if (/\*$/.test(code)) {
+    if (/\*/.test(code)) {
       return Object.assign({}, CCDP_COLOR, { isCcdp: true, source: "suffix_ccdp", code });
     }
 
     // 3. Standalone CDP
-    if (/CDP$/i.test(code) && !/\d/.test(code.replace(/CDP$/i, ""))) {
+    if (/^CDP$/i.test(code)) {
       return Object.assign({}, CCDP_VIVID, { isCcdp: true, source: "standalone_cdp", code });
     }
 
@@ -139,17 +151,16 @@
       return Object.assign({}, STATUT_COLORS[upper], { source: "statut", code: upper });
     }
 
-    // 5. Code horaire base : normaliser les suffixes c/:/CDP/H et lookup
+    // 5. Code horaire base : normaliser le suffixe c/CDP/H et lookup
     const lowH = code.replace(/H/g, "h");
-    const normalized = lowH.replace(/[c'":]+$/g, "").replace(/CDP$/i, "");
+    const normalized = lowH.replace(/[c:]+$/g, "").replace(/CDP$/i, "");
     if (HORAIRES_BASE[normalized]) {
-      // Si le code original avait `c` (chef), on garde la couleur de base
       const result = Object.assign({}, HORAIRES_BASE[normalized], { source: "horaire_base", code: code });
       if (/c$/.test(code)) result.label += " (chef)";
       return result;
     }
 
-    // 6. Inconnu
+    // 6. Inconnu — la cellule reste affichée (texte préservé), sans couleur.
     return { bg: null, fg: null, label: "?", source: "unknown", code };
   }
 
