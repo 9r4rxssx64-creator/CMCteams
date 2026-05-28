@@ -107,6 +107,28 @@
     "PK":  { bg: "#ffd0e0", fg: "#a82858", label: "Poker Cash Game" }
   };
 
+  /* Couleurs des LIEUX SBM (badge / liseré cellule). Distinctes des couleurs
+   * d'horaire (qui colorent le fond de la cellule) — le lieu se montre en
+   * liseré + légende. Kevin 2026-05-28 « les couleurs aussi des lieux ». */
+  const LIEU_COLORS = {
+    "CMC":            { c: "#3a86ff", label: "Casino Monte-Carlo" },
+    "CCDP":           { c: "#ff7a18", label: "Café de Paris" },
+    "CDP":            { c: "#ff7a18", label: "Café de Paris" },
+    "CCDP+CMC":       { c: "#ff7a18", label: "Café de Paris + CMC" },
+    "SUN":            { c: "#ffd23f", label: "Sun Casino" },
+    "MCB":            { c: "#06d6a0", label: "Monte-Carlo Bay" },
+    "POKER NO LIMIT": { c: "#e84a8a", label: "Poker No Limit" },
+    "PNL":            { c: "#e84a8a", label: "Poker No Limit" },
+    "HD":             { c: "#9b5de5", label: "Hors Département" }
+  };
+
+  /** Couleur d'un lieu (pour liseré/badge). Retourne {c, label} ou null. */
+  function getLieuColor(lieu) {
+    if (!lieu) return null;
+    const key = String(lieu).toUpperCase().trim();
+    return LIEU_COLORS[key] || null;
+  }
+
   /** Normalise apostrophes courbes en droites. */
   function normalizeQuotes(s) {
     if (!s) return s;
@@ -182,12 +204,14 @@
   return {
     getCellColor,
     getCellStyle,
+    getLieuColor,
     normalizeQuotes,
     HORAIRES_BASE,
     STATUT_COLORS,
     CONVENTION_COLOR,
     CCDP_COLOR,
     CCDP_VIVID,
-    VERSION: "T1-colors-v0.1.0-43-codes"
+    LIEU_COLORS,
+    VERSION: "T1-colors-v0.2.0-lieux"
   };
 }));
