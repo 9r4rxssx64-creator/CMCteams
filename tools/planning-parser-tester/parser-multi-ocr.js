@@ -655,6 +655,29 @@
         }
       }
 
+      /* ---- Phase 3.H-bis : Familles par titre de section + compétences ---- */
+      // Kevin 2026-05-28 : famille = titre de section (Roulettes / Chefs black
+      // Jack / Employés cartes CMC / aménagement), pas la compétence seule
+      // (« +E » est dans Roulettes ET Chefs BJ). Compétences BRTPECK attachées
+      // par personne. Géométrique (items X/Y de la passe A).
+      if (H.detectFamiliesGeometric && opts.runFamilies !== false) {
+        const passeA_fam = result.passes.find(p => p.passe === "A" && p.tool === "pdf.js");
+        const passeG = result.passes.find(p => p.passe === "G" && p.ok);
+        if (passeA_fam && Array.isArray(passeA_fam.pages) && passeG && Array.isArray(passeG.employees)) {
+          const tFam = Date.now();
+          const famMap = H.detectFamiliesGeometric(passeA_fam.pages);
+          H.applyFamiliesToEmployees(passeG.employees, famMap);
+          result.durations_ms.families = Date.now() - tFam;
+          const dist = {};
+          passeG.employees.forEach(e => { const f = e.family || "(?)"; dist[f] = (dist[f] || 0) + 1; });
+          result.families = { map_size: Object.keys(famMap).length, distribution: dist };
+          result.alerts.push({
+            severity: "info",
+            msg: "Familles (titre de section) : " + Object.entries(dist).map(([f, c]) => f + "×" + c).join(", ")
+          });
+        }
+      }
+
       /* ---- Phase 3.I : Détection équipes (RH/R pattern) + miroirs ---- */
       // Algorithme officiel SBM (Kevin 2026-05-15) — pattern RH identique = même
       // équipe ; offset constant + horaire base différent = équipe miroir.
