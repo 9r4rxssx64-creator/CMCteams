@@ -143,6 +143,34 @@
   </div>
 </div>
 
+<!-- ============ ZONE 0bis : Capture auto → Claude (chiffré) ============ -->
+<div class="card" id="capture-card">
+  <h2>0bis. 🔒 Envoi auto à Claude (chiffré)</h2>
+  <div class="small" style="margin-bottom:10px;">
+    Chaque planning importé est <strong>chiffré (AES-GCM-256)</strong> sur ton appareil, puis déposé
+    dans la branche <code>planning-captures</code> du dépôt. Claude le récupère et le déchiffre avec
+    <strong>ta phrase secrète</strong>. Les noms des employés ne sont <strong>jamais</strong> lisibles
+    publiquement — seul du contenu chiffré quitte ton iPhone.
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <input id="cap-pat" type="password" autocomplete="off" placeholder="Jeton GitHub (fine-grained · Contents: Read/Write)"
+           style="flex:1;min-width:260px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <input id="cap-pass" type="password" autocomplete="off" placeholder="Phrase secrète (chiffrement)"
+           style="flex:1;min-width:200px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+      <input type="checkbox" id="cap-enabled" style="width:18px;height:18px;"> Auto-envoi
+    </label>
+    <button class="btn-sec" id="btn-cap-save" type="button">💾 Enregistrer</button>
+    <button class="btn-sec" id="btn-cap-test" type="button">🧪 Test envoi</button>
+    <button class="btn-sec" id="btn-cap-clear" type="button">🗑 Effacer</button>
+  </div>
+  <div class="small" id="cap-status" style="margin-top:8px;"></div>
+  <div class="legend">
+    Jeton + phrase stockés en <strong>localStorage</strong> sur ton appareil uniquement (jamais envoyés ailleurs).
+    Le dépôt public ne contient que du <strong>chiffré illisible</strong>.
+  </div>
+</div>
+
 <!-- ============ ZONE 1 : Input ============ -->
 <div class="card">
   <h2>1. Choisir un document</h2>
@@ -215,7 +243,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.9.8-vision-renfort-nonblocking-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.9.9-capture-auto-chiffree-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -362,6 +390,159 @@
     proxyStatus.textContent = "❌ Module VisionPasses non chargé.";
   }
 
+  /* ============================================================
+   * 🔒 Capture auto chiffrée → Claude (branche planning-captures)
+   * Chiffre {pdf, rawText, result} en AES-GCM-256 / PBKDF2 200k puis dépose
+   * via l'API GitHub Contents. Le dépôt public ne contient que du chiffré.
+   * Claude déchiffre avec captures/decrypt.js + la phrase secrète.
+   * ============================================================ */
+  const CAPTURE = (function () {
+    const REPO = "9r4rxssx64-creator/CMCteams";
+    const BRANCH = "planning-captures";
+    const DIR = "tools/planning-parser-tester/captures";
+    const LS_PAT = "cmc_cap_pat", LS_PASS = "cmc_cap_pass", LS_EN = "cmc_cap_enabled";
+    const tenc = new TextEncoder();
+
+    function ab2b64(input) {
+      const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+      let bin = ""; const CH = 0x8000;
+      for (let i = 0; i < bytes.length; i += CH) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+      }
+      return btoa(bin);
+    }
+    const utf8b64 = (str) => ab2b64(tenc.encode(str));
+
+    async function deriveKey(passphrase, salt) {
+      const base = await crypto.subtle.importKey("raw", tenc.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations: 200000, hash: "SHA-256" },
+        base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+      );
+    }
+    async function encryptEnvelope(plainObj, passphrase, meta) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(passphrase, salt);
+      const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, tenc.encode(JSON.stringify(plainObj)));
+      return { v: 1, alg: "PBKDF2-200000-SHA256/AES-GCM-256",
+        salt: ab2b64(salt), iv: ab2b64(iv), ct: ab2b64(ct), ts: Date.now(), meta: meta || {} };
+    }
+
+    function cfg() {
+      return { pat: localStorage.getItem(LS_PAT) || "", pass: localStorage.getItem(LS_PASS) || "",
+               enabled: localStorage.getItem(LS_EN) === "1" };
+    }
+    const safeName = (s) => String(s || "planning").normalize("NFD").replace(/[^\w.-]+/g, "_").slice(0, 60);
+
+    async function send(result, opts) {
+      opts = opts || {};
+      const c = cfg();
+      if (!c.pat || !c.pass) {
+        return { ok: false, error: { message: "Jeton GitHub ou phrase secrète manquant.", hint: "Renseigne les 2 champs puis 💾 Enregistrer." } };
+      }
+      let pdf_base64 = null;
+      try { if (result && result.capture && result.capture.bytes) pdf_base64 = ab2b64(result.capture.bytes); } catch (_) {}
+      const passA = (result.passes || []).find(p => p.passe === "A");
+      const rawText = passA ? (passA.textRaw || "") : "";
+      const slim = JSON.parse(JSON.stringify(result, (k, v) => (k === "bytes" ? undefined : v)));
+      const plain = {
+        filename: (result.capture && result.capture.name) || opts.filename || "planning",
+        mime: (result.capture && result.capture.mime) || "",
+        ts: Date.now(), pdf_base64, rawText, result: slim
+      };
+      const my = result.month_year_detected || {};
+      const passG = (result.passes || []).find(p => p.passe === "G" && p.ok);
+      const meta = {
+        filename: plain.filename, mime: plain.mime,
+        month: (my.month != null ? my.month : null), year: (my.year != null ? my.year : null),
+        sizeBytes: (result.capture && result.capture.sizeBytes) || (pdf_base64 ? Math.round(pdf_base64.length * 0.75) : 0),
+        employees_count: passG && passG.employees ? passG.employees.length : null,
+        build: (window.__APP_BUILD__ || "").slice(0, 48)
+      };
+      let envelope;
+      try { envelope = await encryptEnvelope(plain, c.pass, meta); }
+      catch (e) { return { ok: false, error: { message: "Chiffrement échoué.", detail: (e && e.message) || String(e), step: "crypto:encrypt" } }; }
+      const fname = `${envelope.ts}__${safeName(plain.filename)}.enc.json`;
+      const path = `${DIR}/${fname}`;
+      const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
+      const body = { message: `capture chiffrée ${fname}`, content: utf8b64(JSON.stringify(envelope, null, 2)), branch: BRANCH };
+      let r, txt = "", data = null;
+      try {
+        r = await fetch(url, { method: "PUT", headers: {
+          "Authorization": "Bearer " + c.pat, "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json"
+        }, body: JSON.stringify(body) });
+        txt = await r.text();
+        try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = { _raw: txt.slice(0, 300) }; }
+      } catch (e) {
+        return { ok: false, error: { message: "Réseau : envoi GitHub impossible.", detail: (e && e.message) || String(e), step: "github:fetch" } };
+      }
+      if (r.ok) return { ok: true, path, branch: BRANCH };
+      return { ok: false, error: {
+        message: "GitHub a refusé le dépôt.",
+        detail: (data && data.message) || txt.slice(0, 300),
+        http_status: r.status, step: "github:contents_put",
+        hint: (r.status === 401 || r.status === 403)
+          ? "Jeton invalide ou sans permission Contents: Read/Write sur le dépôt."
+          : (r.status === 404 ? "Branche planning-captures introuvable ou jeton sans accès au dépôt." : null)
+      } };
+    }
+
+    return { cfg, send,
+      saveCfg: (pat, pass, en) => { localStorage.setItem(LS_PAT, pat); localStorage.setItem(LS_PASS, pass); localStorage.setItem(LS_EN, en ? "1" : "0"); },
+      clearCfg: () => { localStorage.removeItem(LS_PAT); localStorage.removeItem(LS_PASS); localStorage.removeItem(LS_EN); } };
+  })();
+
+  /* --- Wiring UI capture --- */
+  (function () {
+    const pat = document.getElementById("cap-pat");
+    const pass = document.getElementById("cap-pass");
+    const en = document.getElementById("cap-enabled");
+    const status = document.getElementById("cap-status");
+    if (!pat || !pass || !en || !status) return;
+    const setStatus = (html) => { status.innerHTML = html; };
+    function renderSendResult(res) {
+      if (res.ok) {
+        setStatus(`✅ Capture chiffrée envoyée à Claude · <code>${H.esc(res.path)}</code> (branche ${H.esc(res.branch)})`);
+      } else {
+        const e = res.error || {};
+        const lines = [`❌ <strong>${H.esc(e.message || "Envoi échoué")}</strong>`];
+        if (e.detail && e.detail !== e.message) lines.push(`<span class="small">Cause : ${H.esc(String(e.detail))}</span>`);
+        const meta = [];
+        if (e.http_status) meta.push("HTTP " + e.http_status);
+        if (e.step) meta.push("étape: " + e.step);
+        if (meta.length) lines.push(`<span class="small" style="color:var(--text-dim);">${H.esc(meta.join(" · "))}</span>`);
+        if (e.hint) lines.push(`<span class="small">💡 ${H.esc(e.hint)}</span>`);
+        setStatus(lines.join("<br>"));
+      }
+    }
+    window.__renderCaptureStatus = renderSendResult;
+    const c = CAPTURE.cfg();
+    if (c.pat) pat.value = "••••••••";
+    if (c.pass) pass.value = "••••••••";
+    en.checked = c.enabled;
+    if (c.pat && c.pass) setStatus(`🟢 Configuré · auto-envoi ${c.enabled ? "ON" : "OFF"}`);
+    document.getElementById("btn-cap-save").addEventListener("click", () => {
+      const cur = CAPTURE.cfg();
+      const pv = /^•+$/.test(pat.value) ? cur.pat : pat.value.trim();
+      const sv = /^•+$/.test(pass.value) ? cur.pass : pass.value.trim();
+      if (!pv || !sv) { setStatus("⚠ Jeton + phrase requis."); return; }
+      CAPTURE.saveCfg(pv, sv, en.checked);
+      pat.value = "••••••••"; pass.value = "••••••••";
+      setStatus(`🟢 Enregistré ✓ · auto-envoi ${en.checked ? "ON" : "OFF"}`);
+    });
+    document.getElementById("btn-cap-clear").addEventListener("click", () => {
+      CAPTURE.clearCfg(); pat.value = ""; pass.value = ""; en.checked = false; setStatus("🗑 Effacé.");
+    });
+    document.getElementById("btn-cap-test").addEventListener("click", async () => {
+      setStatus("⏳ Test d'envoi (capture témoin chiffrée)…");
+      const probe = { capture: { name: "TEST-CAPTURE.txt", mime: "text/plain", sizeBytes: 11, bytes: new TextEncoder().encode("test-claude") },
+                      passes: [{ passe: "A", textRaw: "TEST CAPTURE — essai de chiffrement." }], month_year_detected: {} };
+      renderSendResult(await CAPTURE.send(probe, { filename: "TEST-CAPTURE" }));
+    });
+  })();
+
   const drop = document.getElementById("drop");
   const pick = document.getElementById("pick");
   const btnPickTrigger = document.getElementById("btn-pick-trigger");
@@ -449,6 +630,17 @@
       );
 
       lastResult = result;
+
+      // 🔒 Auto-envoi chiffré à Claude (non bloquant) si activé
+      try {
+        const _capc = CAPTURE.cfg();
+        if (_capc.enabled && _capc.pat && _capc.pass) {
+          const _cs = document.getElementById("cap-status");
+          if (_cs) _cs.innerHTML = "⏳ Envoi chiffré à Claude…";
+          CAPTURE.send(result, { filename: filename || (result.capture && result.capture.name) })
+            .then((res) => { if (window.__renderCaptureStatus) window.__renderCaptureStatus(res); });
+        }
+      } catch (_) {}
 
       // Update statuts des 6 passes — affichage clair des erreurs structurées
       function fmtPasseError(err) {

@@ -3089,3 +3089,33 @@ Kevin a envoyé ~30 captures TikTok (DeepSeek-Coder-V2, superpowers, claude-mem,
 
 **Reste (besoin PDF reel Kevin)** : si Sanna O absente sur un PDF SCANNE (texte natif vide), la
 couverture "tout nom = >=1 cellule" ne voit pas son nom (rawText vide). A durcir avec le vrai PDF.
+
+## Session 2026-05-28 (suite) — Capture auto chiffrée des plannings -> Claude (v0.9.9)
+
+**Besoin Kevin** : "Recupere auto les planning que j'importe dans l'app test, je ne peux pas les envoyer ici."
+
+**Contraintes mesurees** : depuis le sandbox je ne lis QUE GitHub (raw 200) ; Cloudflare + Firebase
+bloques (host_not_allowed 403). Depot PUBLIC (raw sans token = 200) + Pages publie la racine ->
+JAMAIS de PDF employes en clair (PII 258 employes / RGPD).
+
+**Solution (choix Kevin = "Auto via l'app")** :
+- App (index.html, module CAPTURE) : a chaque import, chiffre {pdf, rawText, result} en
+  AES-GCM-256 / PBKDF2 200k SHA-256 sur l'appareil, puis PUT via API GitHub Contents sur la
+  branche dediee `planning-captures` (jamais publiee : declencheur Pages = main seul).
+- Depot public = chiffre illisible uniquement.
+- Cote Claude : `tools/planning-parser-tester/captures/decrypt.js` (node webcrypto, algo identique)
+  -> `_decrypted/<name>.json (+ .pdf)` (gitignore).
+
+**Setup Kevin (1 fois dans l'app, zone "0bis")** : jeton GitHub fine-grained (Contents R/W) +
+phrase secrete + cocher Auto-envoi. La phrase secrete = a me donner dans le chat (canal prive).
+
+**Tests** : decrypt --selftest OK (roundtrip + mauvaise phrase rejetee) ; inline JS concat OK
+(methode pre-commit) ; test-pipeline 20/20 ; test-fidelity 100%. 0 regression.
+
+**Workflow Claude pour lire** :
+  git fetch origin planning-captures
+  git checkout origin/planning-captures -- tools/planning-parser-tester/captures
+  CAP_PASS="<phrase>" node tools/planning-parser-tester/captures/decrypt.js
+
+**A faire passer en prod** : le code app doit atteindre `main` (Pages) pour que l'app deployee ait
+la zone 0bis (auto-merge claude/* -> main).
