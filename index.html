@@ -1335,15 +1335,15 @@ var CODES={
   "14/19" :{l:"14h\u201319h", bg:"#c4e8a8",c:"#0a2004",b:"#9cc878",cdp:false},  // vert
   "20/5"  :{l:"20h\u20135h",  bg:"#b8d4f0",c:"#041838",b:"#80b0d8",cdp:false},  // bleu
   "16/22" :{l:"16h\u201322h", bg:"#d4c4ec",c:"#1a0840",b:"#a898cc",cdp:false},  // lavande
-  // ── Variantes CCDP + CMC (avec * ou ") — PÊCHE TRÈS CLAIR marqué CDP ────
-  "20/5*" :{l:"20h\u20135h CDP",   bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true}, // pêche très clair CDP
-  "19/4*" :{l:"19h\u20134h CDP",   bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
-  "16/3*" :{l:"Coupure CDP",       bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
-  "16/22*":{l:"16h\u201322h CDP",  bg:"#ffe4d0",c:"#804418",b:"#f0c4a8",cdp:true},
+  // ── Variantes CCDP + CMC (avec * ou ") — ORANGE marqué CDP (PDF SBM : CCDP=orange, NOTES_USER ; aligné vMonPlanning v9.754) ────
+  "20/5*" :{l:"20h\u20135h CDP",   bg:"#ffc488",c:"#5a2808",b:"#e0a058",cdp:true}, // pêche très clair CDP
+  "19/4*" :{l:"19h\u20134h CDP",   bg:"#ffc488",c:"#5a2808",b:"#e0a058",cdp:true},
+  "16/3*" :{l:"Coupure CDP",       bg:"#ffc488",c:"#5a2808",b:"#e0a058",cdp:true},
+  "16/22*":{l:"16h\u201322h CDP",  bg:"#ffc488",c:"#5a2808",b:"#e0a058",cdp:true},
   "19/4'" :{l:"19h–4h (Convention)",bg:"#d8342e",c:"#ffe23a",b:"#a31f1a",cdp:false,conv:true}, // CONVENTION : fond rouge / écriture jaune (PDF SBM)
   // ── Repos / congés / absences (fonds colorés pastel) ──────────────────
   "RH"    :{l:"Repos Hebdo",  bg:"#c8a8e0",c:"#0c0430",b:"#a088c8",cdp:false},  // violet
-  "R"     :{l:"Repos",        bg:"#e8e8e8",c:"#0a0a0a",b:"#bcbcbc",cdp:false},  // gris
+  "R"     :{l:"Repos",        bg:"#d8c8f0",c:"#2a1850",b:"#b0a0d8",cdp:false},  // lavande (PDF SBM : R = lavande, NOTES_USER ; aligné vMonPlanning v9.754)
   "CP"    :{l:"Cong\u00e9",        bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},  // rose saumon
   "AF"    :{l:"Formation",    bg:"#a8e0a8",c:"#031805",b:"#80c880",cdp:false},  // vert
   "M"     :{l:"Maladie",      bg:"#ffe840",c:"#1a1004",b:"#e0c428",cdp:false},  // jaune canari
@@ -5395,7 +5395,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.753";
+var APP_VER="v9.754";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
