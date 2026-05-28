@@ -224,14 +224,78 @@
     return map;
   }
 
+  /** Normalise un nom pour le matching encadré ↔ grille (upper, NFD, espaces). */
+  function normName(s) {
+    return String(s || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+  }
+
+  /** APPLIQUE les encadrés aux employés (RÈGLE ABSOLUE Kevin 2026-05-26 :
+   *  « si il y a un nom, il y a des données à appliquer »).
+   *
+   *  Pour chaque encadré « N CODE du J1 au J2 » + ses noms :
+   *   - employé existant dans la grille → REMPLIT ses jours J1..J2 VIDES avec CODE
+   *     (ne JAMAIS écraser une cellule déjà lue — reproduction identique).
+   *   - employé absent de la grille → le CRÉE avec CODE sur J1..J2.
+   *
+   *  Ordre : les encadrés sont appliqués dans l'ordre du PDF — un encadré de
+   *  sous-période (ex AF 4-8) appliqué après un CP intégral surcharge bien les
+   *  jours 4-8 SEULEMENT s'ils étaient vides (priorité Kevin CP défaut + AF
+   *  surcharge → on autorise la surcharge des cellules issues d'un AUTRE
+   *  encadré, jamais d'une cellule de grille).
+   *
+   *  Retourne { employees, stats:{ filled, created, cells_added } }. */
+  function applyEncadresToEmployees(employees, boxes, daysInMonth) {
+    daysInMonth = daysInMonth || 31;
+    const out = (employees || []).map(e => ({
+      name: e.name || e.fullName,
+      days: Object.assign({}, e.days || {}),
+      brtpeck: e.brtpeck || null,
+      teamNumber: (e.teamNumber !== undefined ? e.teamNumber : null),
+      _gridDays: new Set(Object.keys(e.days || {})), // jours issus de la GRILLE (intouchables)
+      source: e.source || "grid"
+    }));
+    const byName = new Map();
+    for (const e of out) byName.set(normName(e.name), e);
+
+    const stats = { filled: 0, created: 0, cells_added: 0 };
+    for (const box of (boxes || [])) {
+      const from = box.from || 1;
+      const to = box.to || daysInMonth;
+      for (const n of (box.names || [])) {
+        const key = normName(n.fullName);
+        let emp = byName.get(key);
+        if (!emp) {
+          emp = { name: n.fullName, days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), source: "encadre" };
+          byName.set(key, emp);
+          out.push(emp);
+          stats.created++;
+        } else {
+          stats.filled++;
+        }
+        for (let d = from; d <= to; d++) {
+          const ds = String(d);
+          // Ne JAMAIS écraser une cellule issue de la grille (donnée source directe).
+          if (emp._gridDays.has(ds)) continue;
+          emp.days[ds] = box.code;
+          stats.cells_added++;
+        }
+      }
+    }
+    // Nettoie le champ interne avant retour
+    for (const e of out) delete e._gridDays;
+    return { employees: out, stats };
+  }
+
   return {
     parseEncadres,
     expandBoxesToCells,
+    applyEncadresToEmployees,
     resolveCode,
     guessFamily,
     extractNames,
+    normName,
     STATUT_CODES_LONG_FIRST,
     ALIAS_LONG_TO_SHORT,
-    VERSION: "T1-encadres-v0.1.0"
+    VERSION: "T1-encadres-v0.2.0-apply-to-emps"
   };
 }));

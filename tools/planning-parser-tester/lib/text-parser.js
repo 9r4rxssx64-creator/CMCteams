@@ -32,8 +32,10 @@
 }(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  // Regex stricte : surname (1 token), avec aussi tolérance multi-token via NAME_RE_MULTI.
-  const NAME_RE = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ' \-]{1,30})\s+([A-Z]{1,3})\.?\b/g;
+  // Regex simple : surname 1 SEUL mot (PAS d'espace dans la classe — sinon elle
+  // mange gloutonnement « MERLO JC RH R » bug E2E). Les noms multi-mots
+  // (LE DUC, DELLA PINA, LANTERI MINET) sont gérés par NAME_RE_MULTI en amont.
+  const NAME_RE = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,30})\s+([A-Z]{1,3})\.?\b/g;
   // Multi-token : « LANTERI MINET P », « DELLA PINA L », « DE RYCKE K ».
   // 2 tokens maj + initiale (1-3 lettres).
   const NAME_RE_MULTI = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,20})\s+([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,20})\s+([A-Z]{1,3})\.?\b/g;
@@ -122,9 +124,16 @@
       if (!m) break;
       const t1 = m[1].trim();
       const t2 = m[2].trim();
+      const t3 = m[3].trim();
       if (EXCLUDE_NAMES.has(t1) || EXCLUDE_NAMES.has(t2)) continue;
       // Évite faux positifs : si t2 est un code typique RH/CP/etc., c'est un surname simple
       if (CODE_RE.test(t2)) continue;
+      // CRITIQUE (bug réel E2E « MERLO JC RH ») : si le 3e token (censé être
+      // l'initiale) est en fait un CODE (RH/R/CP/M…) ou un mot exclu, alors
+      // « t1 t2 » n'est PAS un surname à 2 mots — t2 est l'initiale réelle
+      // (ex MERLO JC) et t3 est un code. On laisse tomber le multi-token et
+      // on passe au match simple « SURNAME Init » plus bas.
+      if (EXCLUDE_NAMES.has(t3) || CODE_RE.test(t3)) break;
       return { surname: t1 + " " + t2, initials: m[3], fullName: t1 + " " + t2 + " " + m[3], idx: m.index, length: m[0].length };
     }
     // 2) Fallback simple : « SURNAME Init »
@@ -305,23 +314,42 @@
       // Pass 2 — texte brut complet (rattrape les noms ratés par pass 1)
       const pass2Employees = parseFromRawText(pdfPass.textRaw || "");
 
-      // Merge — pass1 prioritaire (cellules par coordonnées plus fiables),
-      // pass2 complète pour les noms manqués.
+      // Merge — on garde TOUJOURS l'entrée avec le PLUS de cellules remplies.
+      // CRITIQUE (bug réel test Kevin JUIN 2026) : le PDF SBM a une page
+      // « Roulements du mois » qui liste les noms SANS codes journaliers. Sans
+      // ce garde-fou, l'entrée vide (roster) écrasait l'entrée pleine (grille
+      // planning) → lignes vides. keep-most-cells résout ça.
       const dedup = {};
-      for (const emp of pass1Employees) {
-        dedup[emp.name] = emp;
+      function cellCount(e) { return e && e.days ? Object.keys(e.days).length : 0; }
+      function mergeKeepBest(emp) {
+        const ex = dedup[emp.name];
+        if (!ex) { dedup[emp.name] = emp; return; }
+        // Complète d'abord les cellules manquantes de l'existant avec les nouvelles
+        for (const [d, v] of Object.entries(emp.days || {})) {
+          if (!ex.days[d]) ex.days[d] = v;
+        }
+        // Si la nouvelle entrée a strictement plus de cellules, elle devient la base
+        // (mais on conserve le brtpeck/teamNumber non-null de l'une ou l'autre).
+        if (cellCount(emp) > cellCount(ex)) {
+          if (!emp.brtpeck && ex.brtpeck) emp.brtpeck = ex.brtpeck;
+          if ((emp.teamNumber === undefined || emp.teamNumber === null) && ex.teamNumber != null) emp.teamNumber = ex.teamNumber;
+          // Recompléter les cellules de l'ancien que le nouveau n'a pas
+          for (const [d, v] of Object.entries(ex.days || {})) {
+            if (!emp.days[d]) emp.days[d] = v;
+          }
+          dedup[emp.name] = emp;
+        } else {
+          if (!ex.brtpeck && emp.brtpeck) ex.brtpeck = emp.brtpeck;
+          if ((ex.teamNumber === undefined || ex.teamNumber === null) && emp.teamNumber != null) ex.teamNumber = emp.teamNumber;
+        }
       }
+      // pass1 (coordonnées) d'abord
+      for (const emp of pass1Employees) mergeKeepBest(emp);
+      // pass2 (texte brut) ensuite — complète les noms manqués + cellules
       let pass2Added = 0;
       for (const emp of pass2Employees) {
-        if (!dedup[emp.name]) {
-          dedup[emp.name] = emp;
-          pass2Added++;
-        } else {
-          // Merge cellules : pass1 prioritaire, pass2 complète les manquants
-          for (const [d, v] of Object.entries(emp.days)) {
-            if (!dedup[emp.name].days[d]) dedup[emp.name].days[d] = v;
-          }
-        }
+        if (!dedup[emp.name]) pass2Added++;
+        mergeKeepBest(emp);
       }
 
       out.employees = Object.values(dedup);
