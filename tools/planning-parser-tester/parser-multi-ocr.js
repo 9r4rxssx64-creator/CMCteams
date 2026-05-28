@@ -432,6 +432,49 @@
               });
             }
           }
+
+          /* ---- Classement des employés SANS cellule (RÈGLE Kevin « reproduction
+           * à l'identique, jamais inventer ») ----
+           * Page 1 « Roulements du mois » = blocs de rotation 2D + encadrés statut.
+           * Un employé peut être présent au roster (« POSTE NOM 1 30 ») sans avoir
+           * de LIGNE de grille journalière individuelle dans le texte du PDF
+           * (la grille 2D du bloc rotation est aplatie par pdf.js → on ne peut PAS
+           * dériver son planning sans l'inventer). On distingue :
+           *   - roster_only : nom présent mais jamais suivi de codes journaliers
+           *     dans les pages grille → « à vérifier », PAS un bug parser.
+           *   - vrai oubli  : nom suivi de codes dans la grille mais raté → bug. */
+          const passeGc = result.passes.find(p => p.passe === "G" && p.ok);
+          if (passeGc && Array.isArray(passeGc.employees) && rawText) {
+            const fb = rawText.indexOf("--- page break ---");
+            const gridText = fb > 0 ? rawText.slice(fb) : rawText;
+            const gridU = " " + gridText.toUpperCase().normalize("NFD")
+              .replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ") + " ";
+            const DAYCODE = /\d{1,2}(?:H\d{2})?\/\d{1,2}|RH|CP|AF|EDC|RRT|PRT|PAT|MAL|\bM\b/;
+            let rosterOnly = 0;
+            for (const e of passeGc.employees) {
+              if (e.days && Object.keys(e.days).length > 0) continue;
+              // Match NOM COMPLET (nom + initiale) pour ne pas confondre les
+              // homonymes : « BARILARO A » (roster) ne doit PAS matcher
+              // « BARILARO H » (grille). On accepte une grille seulement si le
+              // nom complet est suivi de codes journaliers.
+              const full = String(e.name).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+              const idx = gridU.indexOf(" " + full + " ");
+              let hasGridRow = false;
+              if (idx >= 0) {
+                // saute l'éventuelle période « 1 30 » puis cherche un code jour
+                hasGridRow = DAYCODE.test(gridU.slice(idx + full.length, idx + full.length + 90));
+              }
+              if (!hasGridRow) { e.roster_only = true; rosterOnly++; }
+            }
+            if (rosterOnly > 0) {
+              result.alerts.push({
+                severity: "info",
+                msg: `${rosterOnly} employé(s) au roster SANS grille journalière dans le PDF ` +
+                     `(blocs de rotation page 1 — schéma 2D non extractible du texte). ` +
+                     `À vérifier : ne PAS inventer leur planning (reproduction à l'identique).`
+              });
+            }
+          }
         }
       }
 
@@ -778,6 +821,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.9.4-encadre-poste-match+rawdiag"
+    VERSION: "T1-v0.9.5-roster-only-classification"
   };
 }));
