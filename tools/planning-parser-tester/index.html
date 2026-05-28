@@ -218,7 +218,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
-<script>window.__APP_BUILD__ = "v0.9.4-encadre-poste-match-rawdiag-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.9.5-roster-only-classification-" + Date.now();</script>
 =======
 <script>window.__APP_BUILD__ = "v0.9.3-merge-poste-duplicates-" + Date.now();</script>
 >>>>>>> origin/main
@@ -611,8 +611,15 @@
     // « aucun oubli »). Liste les noms détectés mais sans aucune cellule.
     const passGsum = (r.passes || []).find(p => p.passe === "G" && p.ok);
     if (passGsum && Array.isArray(passGsum.employees)) {
-      const sansHoraire = passGsum.employees.filter(e => !e.days || Object.keys(e.days).length === 0);
+      const allEmpty = passGsum.employees.filter(e => !e.days || Object.keys(e.days).length === 0);
+      // roster_only = présent au roster mais sans grille journalière dans le PDF
+      // (bloc rotation 2D) → à vérifier, PAS un bug parser.
+      const rosterOnly = allEmpty.filter(e => e.roster_only);
+      const sansHoraire = allEmpty.filter(e => !e.roster_only);
       const partiels = passGsum.employees.filter(e => e.days && Object.keys(e.days).length > 0 && Object.keys(e.days).length < 10);
+      if (rosterOnly.length > 0) {
+        lines.push(`<div class="alert-box alert-warn" style="margin-top:12px;"><strong>ℹ️ ${rosterOnly.length} employé(s) au roster SANS grille journalière dans le PDF</strong><br><span class="small">${rosterOnly.map(e => H.esc(e.name)).join(" · ")}</span><br><span class="small" style="opacity:.75;">Présents dans les blocs de rotation (page 1) mais le PDF ne contient pas leur ligne de codes jour-par-jour (grille 2D aplatie). <strong>Pas un bug</strong> — à vérifier/assigner manuellement. Leur planning n'est PAS inventé (reproduction à l'identique).</span></div>`);
+      }
       if (sansHoraire.length > 0) {
         // Diagnostic : extrait du texte brut du PDF autour de chaque nom sans
         // horaire → montre POURQUOI les codes ne sont pas extraits (fragmentation).
@@ -628,15 +635,17 @@
           return rawNorm.slice(Math.max(0, idx - 10), idx + 120);
         }
         let diag = sansHoraire.map(e =>
-          `<div style="margin-top:4px;"><code style="color:var(--warn);">${H.esc(e.name)}</code> <span class="small" style="opacity:.65;">→ ${H.esc(ctxFor(e.name))}</span></div>`
-        ).join("");
-        lines.push(`<div class="alert-box alert-err" style="margin-top:12px;"><strong>⚠ ${sansHoraire.length} employé(s) SANS horaire (oubli potentiel)</strong><br><span class="small">${sansHoraire.map(e => H.esc(e.name)).join(" · ")}</span><br><details style="margin-top:6px;"><summary style="cursor:pointer;color:var(--gold);font-size:12px;">🔬 Voir le texte brut PDF autour de chaque nom (diagnostic)</summary><div style="margin-top:6px;font-family:ui-monospace,monospace;font-size:10px;max-height:240px;overflow:auto;">${diag}</div></details></div>`);
+          `${H.esc(e.name)}  →  ${H.esc(ctxFor(e.name))}`
+        ).join("\n");
+        lines.push(`<div class="alert-box alert-err" style="margin-top:12px;"><strong>⚠ ${sansHoraire.length} employé(s) SANS horaire (oubli potentiel)</strong><br><span class="small">${sansHoraire.map(e => H.esc(e.name)).join(" · ")}</span><br><div style="margin-top:8px;font-size:11px;color:var(--gold);">🔬 Texte brut PDF autour de chaque nom (copie-colle ce bloc à Claude) :</div><textarea readonly style="width:100%;min-height:180px;margin-top:4px;font-family:ui-monospace,monospace;font-size:10px;background:rgba(0,0,0,.35);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;" onclick="this.select()">${H.esc(diag)}</textarea></div>`);
       }
       if (partiels.length > 0) {
         lines.push(`<div class="alert-box alert-warn" style="margin-top:8px;"><strong>🟠 ${partiels.length} employé(s) avec PEU de cellules (&lt;10)</strong><br><span class="small">${partiels.map(e => H.esc(e.name) + " (" + Object.keys(e.days).length + ")").join(" · ")}</span></div>`);
       }
-      if (sansHoraire.length === 0 && partiels.length === 0) {
+      if (sansHoraire.length === 0 && partiels.length === 0 && rosterOnly.length === 0) {
         lines.push(`<div class="alert-box alert-info" style="margin-top:8px;">✅ Tous les ${passGsum.employees.length} employés détectés ont des horaires (aucun oubli).</div>`);
+      } else if (sansHoraire.length === 0) {
+        lines.push(`<div class="alert-box alert-info" style="margin-top:8px;">✅ Aucun oubli parser : tous les employés avec grille journalière dans le PDF sont lus. Les ${rosterOnly.length} ci-dessus sont au roster sans grille (à vérifier).</div>`);
       }
     }
 
