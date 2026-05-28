@@ -40,17 +40,55 @@
 
   // Faux positifs courants dans les PDFs SBM
   const EXCLUDE_NAMES = new Set([
-    "RH", "CP", "AF", "M", "MAL", "ABS", "EDC", "CMC", "CDP", "CCDP", "MCB",
+    "RH", "R", "CP", "AF", "M", "MAL", "MT", "ABS", "ABI", "ABP", "EDC",
+    "CMC", "CDP", "CCDP", "MCB", "SUN", "PK", "HD", "PRT", "HC", "RRT",
+    "RTP", "RTR", "RHS", "DP", "CRH", "CPS", "CPM", "CDH", "FL", "CFL",
+    "FTP", "FTR", "RFT", "FCP", "FCS", "FRH", "FFL", "CL", "CEO", "CSC",
+    "CSS", "PNE", "AMP", "MPC", "MPP", "AT", "PAT", "SS", "P",
     "PIT", "BOSS", "SUPERVISEUR", "INSPECTEUR", "POKER", "NO", "LIMIT", "DU", "AU",
     "AVRIL", "MAI", "JUIN", "JUILLET", "AOUT", "AOÛT", "SEPTEMBRE", "OCTOBRE",
     "NOVEMBRE", "DECEMBRE", "JANVIER", "FEVRIER", "FÉVRIER", "MARS",
-    "FORMATION", "MALADIE", "SS", "ABI", "AT", "PAT", "CFL", "CRH", "PNL",
-    "BJ", "ROULETTES", "BLACKJACK", "AMENAGEMENT", "AMÉNAGEMENT",
+    "FORMATION", "MALADIE", "MATERNITE", "PATERNITE", "PNL",
+    "BJ", "ROUL", "ROULETTES", "BLACKJACK", "BLACK", "JACK", "AMENAGEMENT", "AMÉNAGEMENT",
     "LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM",
-    "POSTE", "NOM", "ÉQUIPE", "TOTAL", "JOURS", "REPOS"
+    "POSTE", "NOM", "ÉQUIPE", "EQUIPE", "TOTAL", "JOURS", "REPOS",
+    "PLANNING", "CHEF", "CHEFS", "CARTES", "EMPLOYE", "EMPLOYES", "EMPLOYÉS",
+    "MIROIR", "EQ", "ÉQ"
   ]);
 
-  const CODE_RE = /^(?:\d{1,2}h?\d{0,2}\/\d{1,2}h?\d{0,2}[c'"\*\:CDP]*|RH|R|CP|AF|M|MAL|SS|ABI|AT|PAT|CFL|CRH|EDC|HD|PK|PRT|HC|RRT)$/;
+  // Code poste BRTPECK en début de ligne : « .BRTCP+KE », « BRTP+E. », etc.
+  // (optionnellement suivi d'un numéro d'équipe explicite V1 juin « ... 5 NAME »).
+  // Capturé puis retiré AVANT extraction du nom — sinon le « KE » du suffixe
+  // `+KE` pollue le nom (« KE LANDAU B » au lieu de « LANDAU B »).
+  const POST_CODE_PREFIX_RE = /^\s*(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)(?:\s+(\d{1,2}))?\s+/;
+
+  // CODE_RE — couvre TOUS les codes officiels SBM (43 codes, Note 6 janv 1993).
+  // Sources : Note SBM 6 janvier 1993 (Bernard Lées) + Convention 1er avril 2015
+  //   + NOTES_USER + index.html ligne 2084 (BULLETIN_CODES).
+  //
+  // Catégories couvertes :
+  //   Présence/Repos (7) : P · RH · RTP · RTR · RRT · RHS · DP
+  //   Congés (6)         : CP · CRH · CPS · CPM · CDP · CDH
+  //   Fêtes légales (5)  : FL · CFL · FTP · FTR · RFT
+  //   À la masse (4)     : FCP · FCS · FRH · FFL
+  //   Absences (11)      : M · MAL · AT · MT · ABS · ABI · ABP · AF · CL · CEO · CSC · CSS
+  //   Sanctions (4)      : PNE · AMP · MPC · MPP
+  //   Autres (4)         : PAT · PRT · HC · EDC
+  //   Pit Boss spécifiques (2) : HD · PK
+  //   « R » seul (repos générique) : également accepté.
+  // Format horaire : <heures>/<heures> avec suffixes c/'/"/:/* + CDP/PK (postfix)
+  //   H majuscule accepté (12H30/19 cf NOTES_USER 1214).
+  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP|PK)*|P|RH|R|RTP|RTR|RRT|RHS|DP|CP|CRH|CPS|CPM|CDP|CDH|FL|CFL|FTP|FTR|RFT|FCP|FCS|FRH|FFL|M|MAL|AT|MT|ABS|ABI|ABP|AF|CL|CEO|CSC|CSS|PNE|AMP|MPC|MPP|PAT|PRT|HC|EDC|HD|PK)$/;
+
+  // Numéro d'équipe explicite (V1 juin 2026+) : « BRTP+K 5 NAME »
+  //   - Code poste BRTPECK suivi d'un espace, puis 1-2 chiffres = numéro d'équipe,
+  //     puis le nom. Capture le numéro pour le rattacher à l'employé.
+  // Ne match QUE si vraiment entre POST et NOM (pas dans la liste de codes).
+  const TEAM_NUM_AFTER_POST_RE = /(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)\s+(\d{1,2})\s+([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ])/;
+
+  // Compétences BRTPECK : code poste devant le nom (ex « .BRTCP+E. »).
+  // Capture le code complet (avec . initial/final et + optionnel).
+  const BRTPECK_RE = /\b(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)/;
 
   function groupItemsByLine(items, yTolerance) {
     yTolerance = yTolerance || 2;
@@ -105,15 +143,30 @@
     opts = opts || {};
     const minCodes = opts.minCodes || 3;  // relâché : 3 codes min (employés CP intégral peuvent avoir peu de codes visibles)
     if (!line || line.length < 2) return null;
-    const fullText = line.map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+    const rawText = line.map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+
+    // Strip le code-poste BRTPECK du début (sinon « +KE » pollue le nom →
+    // « KE LANDAU B »). Capture brtpeck + teamNumber explicite (V1 juin).
+    let brtpeck = null;
+    let teamNumber = null;
+    let fullText = rawText;
+    let offset = 0;
+    const pm = POST_CODE_PREFIX_RE.exec(rawText);
+    if (pm) {
+      brtpeck = pm[1];
+      if (pm[2]) teamNumber = parseInt(pm[2], 10);
+      fullText = rawText.slice(pm[0].length);
+      offset = pm[0].length;
+    }
 
     const nameMatch = findNameInLine(fullText);
     if (!nameMatch) return null;
 
-    // Position du nom dans la ligne (char offset → item idx)
+    // Position du nom dans la ligne (char offset → item idx).
+    // nameEndChar référencé au rawText d'origine (offset du strip ajouté).
     let firstCodeItemIdx = -1;
     let charCount = 0;
-    const nameEndChar = nameMatch.idx + nameMatch.length;
+    const nameEndChar = offset + nameMatch.idx + nameMatch.length;
     for (let i = 0; i < line.length; i++) {
       const len = (line[i].str || "").length + 1;
       if (charCount + len > nameEndChar) {
@@ -135,16 +188,15 @@
       }
     }
 
-    if (Object.keys(days).length < minCodes) {
-      // Retourne quand même avec marker (utile pour CP/AF intégral où peu de codes)
-      return { name: nameMatch.fullName, days, raw_line_preview: fullText.slice(0, 200), partial: true };
-    }
-
-    return {
+    const out = {
       name: nameMatch.fullName,
       days,
       raw_line_preview: fullText.slice(0, 200)
     };
+    if (brtpeck) out.brtpeck = brtpeck;
+    if (teamNumber !== null) out.teamNumber = teamNumber;
+    if (Object.keys(days).length < minCodes) out.partial = true;
+    return out;
   }
 
   /**
@@ -153,59 +205,69 @@
    * Pour chaque nom trouvé, scanne les ~40 items qui suivent dans le texte source
    * pour extraire les codes horaires associés.
    */
+  /**
+   * Parse UNE ligne de texte brut → employé (nom + codes + brtpeck + teamNumber).
+   * Strippe d'abord le code-poste BRTPECK du début (sinon il pollue le nom),
+   * puis extrait le nom, puis les codes jour.
+   */
+  function parseRawLine(line) {
+    if (!line) return null;
+    const raw = String(line).replace(/\s+/g, " ").trim();
+    if (raw.length < 4) return null;
+
+    // 1) Strip le code-poste BRTPECK du début + capture brtpeck + teamNumber
+    let brtpeck = null;
+    let teamNumber = null;
+    let working = raw;
+    const pm = POST_CODE_PREFIX_RE.exec(raw);
+    if (pm) {
+      brtpeck = pm[1];
+      if (pm[2]) teamNumber = parseInt(pm[2], 10);
+      working = raw.slice(pm[0].length);
+    }
+
+    // 2) Extrait le nom (multi-token d'abord, puis simple)
+    const nameMatch = findNameInLine(working);
+    if (!nameMatch) return null;
+    // Refuse si le "nom" est en fait un code (ligne de codes sans nom)
+    if (EXCLUDE_NAMES.has(nameMatch.surname) || CODE_RE.test(nameMatch.surname)) return null;
+
+    // 3) Extrait les codes APRÈS le nom
+    const after = working.slice(nameMatch.idx + nameMatch.length);
+    const tokens = after.split(/\s+/);
+    const days = {};
+    let d = 1;
+    for (const t of tokens) {
+      if (d > 31) break;
+      const tok = t.trim();
+      if (!tok) continue;
+      if (CODE_RE.test(tok)) { days[String(d)] = tok; d++; }
+    }
+    if (Object.keys(days).length === 0) return null;
+
+    const out = { name: nameMatch.fullName, days, source: "pass2_raw" };
+    if (brtpeck) out.brtpeck = brtpeck;
+    if (teamNumber !== null) out.teamNumber = teamNumber;
+    return out;
+  }
+
+  /**
+   * Pass 2 : ligne par ligne (split \n). Plus fiable que le scan global —
+   * chaque ligne = un employé, le code-poste est strippé, les titres et
+   * lignes de codes purs sont rejetés.
+   */
   function parseFromRawText(textRaw) {
     if (!textRaw) return [];
     const employees = [];
     const seen = new Set();
-
-    // Cherche tous les noms multi-token d'abord
-    NAME_RE_MULTI.lastIndex = 0;
-    let m;
-    while ((m = NAME_RE_MULTI.exec(textRaw))) {
-      const t1 = m[1].trim(); const t2 = m[2].trim();
-      if (EXCLUDE_NAMES.has(t1) || EXCLUDE_NAMES.has(t2)) continue;
-      if (CODE_RE.test(t2)) continue;
-      const fullName = t1 + " " + t2 + " " + m[3];
-      if (seen.has(fullName)) continue;
-      seen.add(fullName);
-      // Extrait les ~40 tokens qui suivent et cherche les codes
-      const after = textRaw.slice(m.index + m[0].length, m.index + m[0].length + 400);
-      const tokens = after.split(/\s+/).slice(0, 40);
-      const days = {};
-      let d = 1;
-      for (const t of tokens) {
-        if (d > 31) break;
-        if (CODE_RE.test(t)) { days[String(d)] = t; d++; }
-      }
-      if (Object.keys(days).length > 0) employees.push({ name: fullName, days, source: "pass2_raw" });
+    const lines = String(textRaw).split(/\r?\n/);
+    for (const line of lines) {
+      const emp = parseRawLine(line);
+      if (!emp) continue;
+      if (seen.has(emp.name)) continue;
+      seen.add(emp.name);
+      employees.push(emp);
     }
-
-    NAME_RE.lastIndex = 0;
-    while ((m = NAME_RE.exec(textRaw))) {
-      const surname = m[1].trim();
-      if (EXCLUDE_NAMES.has(surname) || EXCLUDE_NAMES.has(surname.replace(/\s+/g, ""))) continue;
-      const fullName = surname + " " + m[2];
-      if (seen.has(fullName)) continue;
-      // Skip si ce nom est déjà couvert par un multi-token (LANTERI dans LANTERI MINET P)
-      let coveredByMulti = false;
-      for (const fn of seen) {
-        if (fn.indexOf(surname + " ") === 0 || fn.indexOf(" " + surname + " ") >= 0) {
-          coveredByMulti = true; break;
-        }
-      }
-      if (coveredByMulti) continue;
-      seen.add(fullName);
-      const after = textRaw.slice(m.index + m[0].length, m.index + m[0].length + 400);
-      const tokens = after.split(/\s+/).slice(0, 40);
-      const days = {};
-      let d = 1;
-      for (const t of tokens) {
-        if (d > 31) break;
-        if (CODE_RE.test(t)) { days[String(d)] = t; d++; }
-      }
-      if (Object.keys(days).length > 0) employees.push({ name: fullName, days, source: "pass2_raw" });
-    }
-
     return employees;
   }
 
@@ -296,6 +358,11 @@
     EXCLUDE_NAMES,
     CODE_RE,
     NAME_RE,
-    VERSION: "T1-text-parser-v0.2.0-multipass"
+    BRTPECK_RE,
+    TEAM_NUM_AFTER_POST_RE,
+    POST_CODE_PREFIX_RE,
+    parseRawLine,
+    parseFromRawText,
+    VERSION: "T1-text-parser-v0.4.0-line-by-line-poststrip"
   };
 }));

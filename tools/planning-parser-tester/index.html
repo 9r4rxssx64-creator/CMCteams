@@ -167,15 +167,15 @@
   <h2>2. Pipeline de lecture (6 passes parallèles)</h2>
   <div class="stack-passes">
     <div class="pass-box" id="pass-A"><div class="name">A · PDF.js (texte natif)</div><div class="status">…</div></div>
-    <div class="pass-box todo" id="pass-B"><div class="name">B · Claude Vision</div><div class="status">à venir (Phase suivante)</div></div>
-    <div class="pass-box todo" id="pass-C"><div class="name">C · GPT-4o Vision</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-D"><div class="name">D · Mistral OCR</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-E"><div class="name">E · Gemini 2.5 Pro</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-F"><div class="name">F · Tesseract.js (fallback)</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-G"><div class="name">G · Parser texte natif (PDF.js)</div><div class="status">⏭ pas encore exécutée</div></div>
+    <div class="pass-box todo" id="pass-B"><div class="name">B · Claude Vision</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-C"><div class="name">C · GPT-4o Vision</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-D"><div class="name">D · Mistral (Pixtral)</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-E"><div class="name">E · Gemini 2.5 Pro</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-F"><div class="name">F · Tesseract.js (fallback)</div><div class="status">🚧 non implémentée — fallback hors-ligne futur</div></div>
+    <div class="pass-box todo" id="pass-G"><div class="name">G · Parser texte natif</div><div class="status">⏳ en attente — document requis</div></div>
   </div>
   <div class="legend">
-    Les passes B-F sont des stubs dans cette première itération. Une fois la passe A validée Kevin sur ses 4 PDFs réels, on active les Vision IA pour atteindre le vote 4/4 unanime (zéro erreur).
+    A &amp; G tournent toujours (PDF.js seul, hors-ligne). B–E nécessitent le proxy Vision configuré (Section 0). F (Tesseract) est gardée pour un futur mode hors-ligne pur. Vote unanime cellule par cellule (<code>lib/cell-voting.js</code>) → cellules certaines vs <code>needs_review</code>.
   </div>
 </div>
 
@@ -183,13 +183,17 @@
 <div class="card" id="result-card" style="display:none;">
   <h2>3. Résultat de l'analyse</h2>
   <div id="result-summary"></div>
+  <div id="emp-grid"></div>
+  <div id="validation-zone"></div>
   <div id="result-alerts"></div>
   <details style="margin-top: 12px;">
     <summary style="cursor: pointer; color: var(--text-dim); font-size: 13px;">📦 JSON brut complet (pour debug / export)</summary>
     <pre id="result"></pre>
   </details>
   <div class="row-btns">
-    <button class="btn-sec" id="btn-export" type="button">💾 Exporter JSON</button>
+    <button class="btn-sec" id="btn-validate" type="button" style="border-color:var(--ok);color:var(--ok);">✅ Valider l'import (conforme au PDF)</button>
+    <button class="btn-sec" id="btn-export-validated" type="button">📤 Exporter le résultat validé</button>
+    <button class="btn-sec" id="btn-export" type="button">💾 Exporter JSON brut</button>
     <button class="btn-sec" id="btn-reset" type="button">↩ Recommencer</button>
   </div>
 </div>
@@ -210,7 +214,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.6.0-text-parser-native-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.8.2-validation-workflow-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -219,6 +223,11 @@
       "./lib/vision-passes.js",
       "./lib/cell-voting.js",
       "./lib/text-parser.js",
+      "./lib/encadres-parser.js",
+      "./lib/team-detector.js",
+      "./lib/validate-post-import.js",
+      "./lib/homonyms-guard.js",
+      "./lib/code-colors.js",
       "./parser-multi-ocr.js"
     ];
     for (var i = 0; i < srcs.length; i++) {
@@ -424,6 +433,9 @@
   /* --- Analyse --- */
   async function analyze(input, filename) {
     try {
+      // Reset l'état de validation pour ce nouveau document
+      _validationChoices = {};
+      _validationSigned = false;
       passesCard.style.display = "";
       resultCard.style.display = "none";
       passA.querySelector(".status").textContent = "⏳ Analyse en cours…";
@@ -536,7 +548,247 @@
       const cls = (s.needs_review === 0 && s.certain > 0) ? "ok" : (s.needs_review > 0 ? "warn" : "err");
       lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">🗳 Vote</span> ${s.certain} certain · ${s.needs_review} needs_review · ${s.missing_reads} lectures manquantes (sur ${s.total_cells} cellules)</div>`);
     }
+
+    // Équipes + miroirs détectés (Phase 3.I)
+    if (r.teams && r.teams.teams) {
+      const t = r.teams;
+      lines.push(`<div style="margin-top:6px;"><span class="badge">👥 Équipes</span> ${t.teams.length} équipe(s) · ${t.mirrors.length} miroir(s)${t.source ? ` <span class="small">(source ${H.esc(t.source)})</span>` : ""}</div>`);
+      t.mirrors.forEach(mi => {
+        lines.push(`<div class="small" style="margin-left:8px;">🔗 ${H.esc(mi.teamId)} ⇆ ${H.esc(mi.mirrorTeamId)} — ${H.esc(mi.reason || "")}</div>`);
+      });
+    }
+
+    // Encadrés statuts (Phase 3.H)
+    if (r.encadres && r.encadres.boxes && r.encadres.boxes.length) {
+      lines.push(`<div style="margin-top:6px;"><span class="badge">📦 Encadrés</span> ${
+        r.encadres.boxes.map(b => H.esc(b.code) + " ×" + (b.names_found || 0) + " (j" + b.from + "-" + b.to + ")").join(", ")
+      }</div>`);
+    }
+
+    // Homonymes (Phase 3.K)
+    if (r.homonyms_audit) {
+      const h = r.homonyms_audit;
+      if (h.known_homonyms_found > 0 || (h.merging_risks && h.merging_risks.length)) {
+        const cls = (h.merging_risks && h.merging_risks.length) ? "warn" : "ok";
+        lines.push(`<div style="margin-top:6px;"><span class="badge ${cls}">👯 Homonymes</span> ${h.known_homonyms_found || 0} connus séparés · ${(h.merging_risks || []).length} risque(s) doublon</div>`);
+      }
+    }
+
+    // Validations Convention SBM (Phase 3.L)
+    if (r.validations && r.validations.stats) {
+      const s = r.validations.stats.by_severity || {};
+      const cls = s.critical > 0 ? "err" : (s.warn > 0 ? "warn" : "ok");
+      lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">⚖ Convention</span> ${r.validations.stats.findings_total} finding(s) · ${s.critical || 0} critical · ${s.warn || 0} warn · ${s.info || 0} info</div>`);
+      (r.validations.findings || []).slice(0, 8).forEach(f => {
+        const ic = f.severity === "critical" ? "🔴" : f.severity === "warn" ? "🟠" : "🔵";
+        lines.push(`<div class="small" style="margin-left:8px;">${ic} ${H.esc(f.msg)}${f.article ? ` <span style="opacity:.6;">(Art. ${H.esc(f.article)})</span>` : ""}</div>`);
+      });
+      if ((r.validations.findings || []).length > 8) {
+        lines.push(`<div class="small" style="margin-left:8px;opacity:.6;">… +${r.validations.findings.length - 8} autres (voir JSON brut)</div>`);
+      }
+    }
+
     resultSummary.innerHTML = lines.join("");
+    renderEmployeeGrid(r);
+  }
+
+  /* --- Comparateur visuel cellule par cellule (P3) --- */
+  function renderEmployeeGrid(r) {
+    const gridEl = document.getElementById("emp-grid");
+    if (!gridEl) return;
+    // Source = passe G (text-parser) prioritaire
+    const passG = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    const emps = (passG && passG.employees) || [];
+    if (!emps.length) { gridEl.innerHTML = ""; return; }
+
+    const colors = r.colors_per_emp || {};
+    const lieux = r.lieux_per_emp || {};
+    const maxDay = 31;
+
+    let html = '<details open style="margin-top:14px;"><summary style="cursor:pointer;color:var(--gold);font-size:14px;font-weight:600;">🔍 Comparateur visuel — ' + emps.length + ' employés (cellule par cellule)</summary>';
+    html += '<div style="overflow-x:auto;margin-top:10px;"><table style="border-collapse:collapse;font-size:10px;white-space:nowrap;">';
+    // Header jours
+    html += '<tr><th style="position:sticky;left:0;background:#0b1409;z-index:2;padding:3px 6px;text-align:left;border:1px solid var(--border);">Employé</th>';
+    for (let d = 1; d <= maxDay; d++) html += '<th style="padding:2px 3px;border:1px solid var(--border);min-width:22px;text-align:center;color:var(--text-dim);">' + d + '</th>';
+    html += '</tr>';
+    // Lignes employés
+    emps.forEach(emp => {
+      const name = emp.name || emp.fullName;
+      const empColors = colors[name] || {};
+      const empLieux = (lieux[name] && lieux[name].days) || {};
+      html += '<tr><td style="position:sticky;left:0;background:#0b1409;z-index:1;padding:3px 6px;border:1px solid var(--border);font-weight:600;">' + H.esc(name);
+      if (emp.brtpeck) html += ' <span style="opacity:.55;font-size:9px;">' + H.esc(emp.brtpeck) + '</span>';
+      html += '</td>';
+      for (let d = 1; d <= maxDay; d++) {
+        const code = (emp.days || {})[String(d)] || "";
+        const col = empColors[String(d)] || {};
+        const lieu = empLieux[String(d)] || "";
+        const style = (col.bg ? 'background:' + col.bg + ';' : '') + (col.fg ? 'color:' + col.fg + ';' : '');
+        const title = code ? H.esc(code + (lieu ? " · " + lieu : "") + (col.label ? " · " + col.label : "")) : "";
+        html += '<td style="padding:2px 3px;border:1px solid rgba(255,255,255,.08);text-align:center;' + style + '" title="' + title + '">' + H.esc(code) + '</td>';
+      }
+      html += '</tr>';
+    });
+    html += '</table></div>';
+    html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + libellé. Couleurs = projection (la cellule reste le code source exact). Rouge/jaune = Convention · Orange = CCDP · Violet = RH · Vert = formation.</div>';
+    html += '</details>';
+    gridEl.innerHTML = html;
+    renderValidation(r);
+  }
+
+  /* --- Workflow de validation cellule par cellule (P4) --- */
+  // _validationChoices[name][day] = token tranché par Kevin (pour les needs_review).
+  let _validationChoices = {};
+  let _validationSigned = false;
+
+  function renderValidation(r) {
+    const zone = document.getElementById("validation-zone");
+    if (!zone) return;
+    const nr = r.cells_needs_review || {};
+    const names = Object.keys(nr);
+    let html = "";
+
+    if (names.length > 0) {
+      // Cas vote Vision : cellules divergentes à trancher manuellement.
+      let totalNr = 0;
+      names.forEach(n => { totalNr += Object.keys(nr[n]).length; });
+      html += '<div class="alert-box alert-warn" style="margin-top:14px;">';
+      html += '<strong>🟡 ' + totalNr + ' cellule(s) à vérifier (needs_review)</strong> — les lectures divergent, tu tranches :';
+      html += '</div>';
+      html += '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:11px;width:100%;">';
+      names.forEach(n => {
+        Object.keys(nr[n]).forEach(day => {
+          const cell = nr[n][day];
+          const reads = (cell.reads || []).filter(x => x.value !== undefined && x.value !== null);
+          const options = Array.from(new Set(reads.map(x => String(x.value))));
+          const cid = H.esc(n) + "||" + day;
+          html += '<tr style="border-bottom:1px solid rgba(255,255,255,.08);">';
+          html += '<td style="padding:4px 8px;font-weight:600;">' + H.esc(n) + '</td>';
+          html += '<td style="padding:4px 8px;color:var(--text-dim);">jour ' + H.esc(day) + '</td>';
+          html += '<td style="padding:4px 8px;">';
+          options.forEach(opt => {
+            const sel = (_validationChoices[n] && _validationChoices[n][day] === opt) ? ' style="background:var(--ok);color:#04210a;font-weight:700;"' : '';
+            html += '<button class="btn-sec ppt-choice"' + sel + ' data-cid="' + H.esc(cid) + '" data-val="' + H.esc(opt) + '" style="margin:2px;padding:3px 8px;min-height:28px;">' + H.esc(opt) + '</button>';
+          });
+          // Option "vide" explicite
+          const selEmpty = (_validationChoices[n] && _validationChoices[n][day] === "") ? ' style="background:var(--err);color:#fff;font-weight:700;"' : '';
+          html += '<button class="btn-sec ppt-choice"' + selEmpty + ' data-cid="' + H.esc(cid) + '" data-val="" style="margin:2px;padding:3px 8px;min-height:28px;opacity:.8;">∅ vide</button>';
+          html += '</td></tr>';
+        });
+      });
+      html += '</table></div>';
+    } else {
+      // Cas passe G seule (PDF natif) : pas de vote, validation globale.
+      html += '<div class="alert-box alert-info" style="margin-top:14px;">';
+      html += '✅ Aucune divergence à trancher (lecture déterministe). Vérifie le comparateur visuel ci-dessus puis clique « Valider l\'import » si tout est conforme au PDF.';
+      html += '</div>';
+    }
+
+    // Bandeau de statut de validation
+    const certain = (r.vote_stats && r.vote_stats.certain) || 0;
+    const tranchees = countTranchees();
+    const restantes = names.length > 0 ? (totalNeedsReview(r) - tranchees) : 0;
+    html += '<div id="validation-status" class="small" style="margin-top:8px;">';
+    if (_validationSigned) {
+      html += '🟢 <strong>Import validé par Kevin</strong> — prêt à exporter.';
+    } else if (names.length > 0) {
+      html += '🟡 ' + tranchees + ' tranchée(s) · ' + restantes + ' restante(s) à trancher avant validation.';
+    } else {
+      html += '⚪ En attente de validation manuelle.';
+    }
+    html += '</div>';
+
+    zone.innerHTML = html;
+
+    // Handlers boutons de choix
+    Array.prototype.forEach.call(zone.querySelectorAll(".ppt-choice"), btn => {
+      btn.addEventListener("click", () => {
+        const cid = btn.getAttribute("data-cid");
+        const val = btn.getAttribute("data-val");
+        const sep = cid.lastIndexOf("||");
+        const name = cid.slice(0, sep);
+        const day = cid.slice(sep + 2);
+        if (!_validationChoices[name]) _validationChoices[name] = {};
+        _validationChoices[name][day] = val;
+        _validationSigned = false;
+        renderValidation(r); // re-render pour MAJ surbrillance + compteur
+      });
+    });
+  }
+
+  function totalNeedsReview(r) {
+    const nr = r.cells_needs_review || {};
+    let t = 0;
+    Object.keys(nr).forEach(n => { t += Object.keys(nr[n]).length; });
+    return t;
+  }
+  function countTranchees() {
+    let c = 0;
+    Object.keys(_validationChoices).forEach(n => { c += Object.keys(_validationChoices[n]).length; });
+    return c;
+  }
+
+  /* Construit le résultat VALIDÉ propre (pas le dump brut) :
+   * cellules finales = cellules certaines (passe G ou vote) + tranchages Kevin. */
+  function buildValidatedExport(r) {
+    // Source des cellules : passe G (PDF natif) prioritaire, sinon cells_certain (vote).
+    const passG = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    const employees = {};
+    if (passG && passG.employees) {
+      passG.employees.forEach(e => {
+        const name = e.name || e.fullName;
+        employees[name] = {
+          name,
+          brtpeck: e.brtpeck || null,
+          teamNumber: (e.teamNumber !== undefined ? e.teamNumber : null),
+          days: Object.assign({}, e.days || {})
+        };
+      });
+    } else if (r.cells_certain) {
+      Object.keys(r.cells_certain).forEach(name => {
+        employees[name] = { name, days: {} };
+        Object.keys(r.cells_certain[name]).forEach(d => {
+          employees[name].days[d] = r.cells_certain[name][d];
+        });
+      });
+    }
+    // Applique les tranchages Kevin (needs_review résolus)
+    Object.keys(_validationChoices).forEach(name => {
+      if (!employees[name]) employees[name] = { name, days: {} };
+      Object.keys(_validationChoices[name]).forEach(day => {
+        const v = _validationChoices[name][day];
+        if (v === "") delete employees[name].days[day];
+        else employees[name].days[day] = v;
+      });
+    });
+
+    return {
+      _meta: {
+        tool: "planning-parser-tester",
+        pipe_version: (PIPE && PIPE.VERSION) || "?",
+        validated_by: "kevin",
+        validated_at: new Date().toISOString(),
+        signed: _validationSigned,
+        source_file: r.capture && r.capture.name,
+        hash: r.hash
+      },
+      month_year: r.month_year_detected || null,
+      version: r.version_detected || null,
+      type: r.type_detected || null,
+      employees: Object.values(employees),
+      teams: r.teams || null,
+      mirrors: (r.teams && r.teams.mirrors) || [],
+      encadres: (r.encadres && r.encadres.boxes) || [],
+      lieux_per_emp: r.lieux_per_emp || {},
+      validations_convention: r.validations || null,
+      homonyms_audit: r.homonyms_audit || null,
+      manual_choices: _validationChoices,
+      stats: {
+        employees_total: Object.keys(employees).length,
+        cells_tranchees: countTranchees(),
+        needs_review_remaining: r.cells_needs_review ? (totalNeedsReview(r) - countTranchees()) : 0
+      }
+    };
   }
 
   function renderAlerts(r) {
@@ -569,21 +821,53 @@
     resultAlerts.innerHTML = parts.join("");
   }
 
-  /* --- Export JSON --- */
+  /* --- Export JSON brut --- */
   btnExport.addEventListener("click", () => {
     if (!lastResult) return;
-    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+    downloadJson(lastResult, `parse-brut-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`);
+  });
+
+  /* --- Valider l'import --- */
+  const btnValidate = document.getElementById("btn-validate");
+  const btnExportValidated = document.getElementById("btn-export-validated");
+  if (btnValidate) {
+    btnValidate.addEventListener("click", () => {
+      if (!lastResult) return;
+      const remaining = lastResult.cells_needs_review
+        ? (totalNeedsReview(lastResult) - countTranchees()) : 0;
+      if (remaining > 0) {
+        alert("⚠ Il reste " + remaining + " cellule(s) à trancher avant de valider.\nChoisis une valeur pour chacune dans la zone « cellules à vérifier ».");
+        return;
+      }
+      _validationSigned = true;
+      renderValidation(lastResult);
+      alert("✅ Import validé. Tu peux maintenant cliquer « Exporter le résultat validé ».");
+    });
+  }
+  if (btnExportValidated) {
+    btnExportValidated.addEventListener("click", () => {
+      if (!lastResult) return;
+      const validated = buildValidatedExport(lastResult);
+      const tag = validated._meta.signed ? "valide" : "brouillon";
+      downloadJson(validated, `parse-${tag}-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`);
+    });
+  }
+
+  function downloadJson(obj, filename) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `parse-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`;
+    a.download = filename;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
+  }
 
   /* --- Reset --- */
   btnReset.addEventListener("click", () => {
     lastResult = null;
+    _validationChoices = {};
+    _validationSigned = false;
     passesCard.style.display = "none";
     resultCard.style.display = "none";
     pick.value = "";

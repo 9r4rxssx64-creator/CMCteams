@@ -1,3 +1,99 @@
+# Mémo de reprise — Parser-Tester T1 v0.7.1 / Apex v13.4.261 / CMC v9.731 (2026-05-28)
+
+## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (5 gaps P1 + Convention SBM)
+
+Branche `claude/schedule-import-integration-szasM`. Suite à la cascade
+session 2026-05-27 (CLAUDE.md erreur #65, 15 bugs latents), travail
+recentré sur la **reproduction à l'identique** des imports SBM avant
+intégration dans CMCteams.
+
+### Livré (5 commits)
+
+- **CHECKLIST_EXPERT.md** : inventaire complet outils/agents/MCP/skills/secrets/garde-fous (réponse à « Fais une checklist de tout ce que tu as à dispositions pour un travail d'expert »).
+- **IMPORT_RECONNAISSANCE.md** (943 lignes) : spec exhaustive « tout ce qu'un import SBM doit reconnaître ». Sections : ⓪ méta-import (mois/version/type/hash) ; A-K par personne (identification, BRTPECK, grade, groupe, famille, équipe+miroir, horaires, lieux, marqueurs visuels, statuts intégraux) ; 7 lieux SBM ; 8 couleurs visuelles ; 9 règles d'écriture INTERDITS/OBLIGATOIRES ; **13 Convention SBM** (38 articles, calendrier affluence, 43 codes Bulletin Note 6 janv 1993).
+- **T1 v0.6.1** : labels UI honnêtes (passes B/C/D/E/G « ⏳ en attente » au lieu de « à venir » trompeur — passes implémentées depuis v0.5.0 ; F Tesseract « 🚧 non implémentée »).
+- **T1 v0.7.0** : 5 gaps P1 attaqués —
+  - `helpers-reuse.js` : `codeToLieu(code, role)` + `CODE_TO_LIEU_CADRE`/`CODE_TO_LIEU_EMPLOYEE`. **`19/4` employé=CMC mais Pit Boss=CCDP** (NOTES_USER 1194 critique). `15/20`=PNL. Suffixe `*`=CCDP+CMC.
+  - `lib/encadres-parser.js` (237 lignes) : parse encadrés « N CODE du J1 au J2 » (CP/AF/M/MAL/MT/PAT/EDC/SS/ABI/AT/CFL/CRH/ABS). Codes courts en source primaire (jamais mots français — Erreur #49).
+  - `lib/team-detector.js` (320 lignes) : détection équipes par pattern RH/R. Règle miroir **CORRIGÉE Kevin 2026-05-28** : MÊMES jours RH/R + horaires base **différents** (pas un décalage). Secteur cartes : équipe `20/5` ⇆ miroir `22/6` (ou inverse). `isMirrorPair(A,B)` = `rhEqual` + base ≠. Skip family=cadres.
+  - `lib/text-parser.js` v0.3.0 : `12H30/19` H majuscule, `MT`/`CSS`/`ABS`/`FL`, `BRTPECK_RE`, `TEAM_NUM_AFTER_POST_RE` (V1 juin `BRTP+K 5 NAME`).
+  - `parser-multi-ocr.js` v0.7.0 : Phase 3.H encadres-parser + 3.I team-detector + 3.J projection `lieux_per_emp` (sans modifier les cellules — règle reproduction identique).
+- **T1 v0.7.1** : Convention SBM complète —
+  - **43 codes officiels** Note 6 janv 1993 (Bernard Lées) intégrés. Avant : 22 codes couverts. Maintenant : **tous** les codes Présence/Repos (8) · Congés (6) · Fêtes (5) · À la masse (4) · Absences (12) · Sanctions (4) · Autres (4) · Pit Boss (2).
+  - `helpers-reuse.js` : `BULLETIN_CODES_FULL` table par catégorie, `bulletinCategory()` helper, `ALL_BULLETIN_CODES` liste plate.
+  - `text-parser.js` : `CODE_RE` accepte les 43 codes (ajoutés DP/RTP/RTR/RHS/CPS/CPM/CDP/CDH/FTP/FTR/RFT/FCP/FCS/FRH/FFL/ABP/CL/CEO/CSC/PNE/AMP/MPC/MPP).
+  - `IMPORT_RECONNAISSANCE.md` §2.4 enrichi (43 codes par catégorie) + §13 nouveau (38 articles Convention + calendrier affluence + règles validation post-import : `validateMinRestPerSixWeeks` Art. 17.5, `validateChefRatio` 25-30% Art. 35, niveaux 1-7 déductibles BRTPECK).
+
+### Tests régression
+
+`test-pipeline.js` : **12 → 17 sections, 85 → 140 checks ✅**. Couvre :
+syntax JS · helpers exportés · cloneBytes · Mistral Pixtral · Claude
+alias · versions cohérentes · `_autoLoaded.worker_url` · TS interdit
+en .js · Worker `/test/*` auth bypass · Node 22 · secrets noms · CODE→LIEU
+par rôle · encadres-parser · team-detector (règle miroir corrigée) ·
+text-parser v0.3 · **les 43 codes officiels présents dans `BULLETIN_CODES_FULL`
+ET acceptés par `CODE_RE`**.
+
+### v0.8.0 — P2/P3 attaqués (3 nouveaux modules)
+
+- **`lib/validate-post-import.js`** v0.1.0 (Phase 3.L) : 7 validations Convention —
+  `validateMinRestPerSixWeeks` (Art. 17.5 min 10j/6sem), `validateChefRatio`
+  (Art. 35 25-30%), `validateMin336Effectif`, `validateSeniorMarker`,
+  `validateNoForbiddenCodes` (sanctions PNE/AMP/MPC/MPP → CRITICAL),
+  `validateEveryoneHasPlanning` (règle absolue Kevin 2026-05-26 : chaque nom
+  PDF → ≥1 cellule), `validateAffluencePeriodVersion` (Art. 17.6).
+- **`lib/homonyms-guard.js`** v0.1.0 (Phase 3.K) : `KNOWN_HOMONYMS` (20 surnames
+  NOTES_USER 65-94), `canMatch()` bloque LANDAU B vs J / ENZA B vs C /
+  CAMPI H vs PH, `auditEmployees()` détecte doublons.
+- **`lib/code-colors.js`** v0.1.0 (Phase 3.M) : `getCellColor()` mappe les 43
+  codes → `{bg, fg, label}`. Convention rouge/jaune, CCDP orange, statuts
+  dédiés, sanctions rouge alerte. `getCellStyle()` anti-XSS (hex valide).
+- **UI comparateur visuel** : `renderEmployeeGrid()` dans index.html — tableau
+  emp×31j coloré + tooltip code/lieu/libellé + code BRTPECK.
+- **parser-multi-ocr.js v0.8.0** : Phases 3.K (homonymes) + 3.L (validations)
+  + 3.M (couleurs) wirées. Résumé UI enrichi (équipes, encadrés, homonymes,
+  validations Convention avec findings priorisés).
+- Tests : **17 → 20 sections, 140 → 175 checks ✅** + smoke test end-to-end
+  (require pipeline OK, AMP→critical, BORGIA T/L séparés, 19/4'→Convention).
+
+### v0.8.1 — Test de fidélité « reproduction identique » + fix parser ligne-par-ligne
+
+- **`test-fidelity.js`** + **`fixtures/synthetic-mai-2026-v1.txt`** (données
+  FICTIVES, format SBM réel) : 8 axes vérifiés (extraction · suffixes `'`/`*`/`c`
+  préservés · homonymes LANDAU B≠J · `12H30/19`+PK · encadrés · couleurs · lieux
+  conditionnels · BRTPECK). **Fidélité 100%**. Câblé dans `pre-commit-hook.sh` [5/5].
+- **Bug attrapé par le test fidélité** : `parseFromRawText` scannait le texte
+  globalement → code-poste `.BRTCP+KE` polluait le nom (« KE LANDAU B »),
+  titre « PLANNING MAI » capturé comme nom, codes « PK RH » pris pour un nom.
+  **Fix v0.4.0** : `parseFromRawText` + `parseLineForEmployee` travaillent
+  ligne par ligne, strippent le code-poste BRTPECK (`POST_CODE_PREFIX_RE`)
+  AVANT extraction du nom, EXCLUDE_NAMES enrichi (43 codes + titres).
+- text-parser : v0.3.1 → **v0.4.0-line-by-line-poststrip**.
+- PIPE+VP : v0.8.0 → v0.8.1-fidelity-line-parser.
+
+### v0.8.2 — Workflow de validation cellule par cellule (P4 codable FAIT)
+
+- **Zone validation UI** (`renderValidation` + `buildValidatedExport`) :
+  - Cellules `needs_review` (vote Vision divergent) → boutons pour trancher
+    chacune (choix lectures + option « ∅ vide »), surbrillance du choix,
+    compteur tranchées/restantes.
+  - PDF natif (passe G seule, pas de divergence) → validation globale directe.
+  - Bouton « ✅ Valider l'import » (refuse si cellules non tranchées).
+  - Bouton « 📤 Exporter le résultat validé » → JSON propre (employés finaux +
+    tranchages + équipes + miroirs + encadrés + lieux + validations Convention
+    + `_meta.signed`). Distinct du « 💾 Exporter JSON brut ».
+  - État `_validationChoices` / `_validationSigned` reset à chaque nouvelle analyse.
+- README T1 : mode d'emploi test mis à jour + tableau pipeline complet (10 phases).
+- PIPE+VP → v0.8.2-validation-workflow. Inline JS syntax OK.
+
+### Reste (action KEVIN uniquement — irréductible)
+
+- Critères « OK go intégration CMCteams » : importer ses 4 PDFs réels, vérifier
+  cellule par cellule via le comparateur visuel, cliquer « Valider », signer.
+  Tout le code et les filets (175 checks + fidélité 100%) sont prêts.
+
+---
+
 # Mémo de reprise — Apex v13.4.261 / CMC v9.731 / Apex Chat v1.1.148 / Social Video Pipeline v1.0 (2026-05-23)
 
 ## 📊 SESSION 2026-05-23 — Apex v13.4.261 : Diagnostic vault + Cloudflare (read-only)

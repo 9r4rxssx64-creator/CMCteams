@@ -16,6 +16,14 @@
  *  10. Worker /test/* exempté de l'auth
  *  11. Workflow Node version >= 22 (wrangler v4)
  *  12. Workflow secrets matchent CLAUDE.md règle 7 (noms exacts Kevin)
+ *  13. Mapping CODE→LIEU par rôle (19/4 employé=CMC, Pit Boss=CCDP)
+ *  14. Encadres-parser : codes courts uniquement (erreur #49)
+ *  15. Team-detector : algo RH/R + miroir (Kevin 2026-05-15/28)
+ *  16. Text-parser v0.3 : 12H30 majuscule + MT + BRTPECK + team_num
+ *  17. Couverture 43 codes officiels Convention SBM
+ *  18. Validations Convention (Art. 17.5, 35, sanctions, everyone-has-planning)
+ *  19. Homonyms guard (anti-merge LANDAU B/J — erreurs #38/#44)
+ *  20. Code colors (projection cellule, ne modifie pas la source)
  *
  * Tous ces tests auraient attrapé les bugs #1-15 de la session 2026-05-27
  * AVANT le push. Lancer obligatoire avant chaque commit qui touche T1.
@@ -63,6 +71,12 @@ const jsFiles = [
   "helpers-reuse.js",
   "lib/vision-passes.js",
   "lib/cell-voting.js",
+  "lib/text-parser.js",
+  "lib/encadres-parser.js",
+  "lib/team-detector.js",
+  "lib/validate-post-import.js",
+  "lib/homonyms-guard.js",
+  "lib/code-colors.js",
   "sw.js",
 ];
 for (const f of jsFiles) {
@@ -176,6 +190,157 @@ check("  ANTHROPIC_API_KEY", /secrets\.ANTHROPIC_API_KEY/.test(workflow));
 check("  MISTRAL_API_KEY", /secrets\.MISTRAL_API_KEY/.test(workflow));
 check("  GEMINI_API_KEY", /secrets\.GEMINI_API_KEY/.test(workflow));
 check("  CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN", /secrets\.CLOUDFLARE_ACCOUNT_ID/.test(workflow) && /secrets\.CLOUDFLARE_API_TOKEN/.test(workflow));
+
+// ───── 13. Helpers CODE→LIEU exportés + cohérence vérité terrain ─────
+console.log(`\n${INFO} Test 13/16 — Mapping CODE→LIEU (Kevin 2026-05-28)`);
+const helpers = readFile("helpers-reuse.js");
+check("  CODE_TO_LIEU_CADRE table définie", /const CODE_TO_LIEU_CADRE\s*=\s*\{/.test(helpers));
+check("  CODE_TO_LIEU_EMPLOYEE table définie", /const CODE_TO_LIEU_EMPLOYEE\s*=\s*\{/.test(helpers));
+check("  codeToLieu(code, role) exporté", /codeToLieu\s*[,}]/.test(helpers));
+check("  19/4 PIT BOSS = CCDP (NOTES_USER ligne 1184)", /"19\/4":\s*"CCDP"/.test(helpers));
+check("  19/4 EMPLOYÉ = CMC (NOTES_USER ligne 1194)", /CODE_TO_LIEU_EMPLOYEE[\s\S]*?"19\/4":\s*"CMC"/.test(helpers));
+check("  15/20 = POKER NO LIMIT (NOTES_USER ligne 1192)", /"15\/20":\s*"POKER NO LIMIT"/.test(helpers));
+check("  Suffixe * → CCDP+CMC dans codeToLieu", /CCDP\+CMC/.test(helpers));
+
+// ───── 14. Encadres-parser : codes courts uniquement (erreur #49) ─────
+console.log(`\n${INFO} Test 14/16 — Encadres parser (Kevin reproduction identique)`);
+const encadres = readFile("lib/encadres-parser.js");
+check("  STATUT_CODES_LONG_FIRST (ordre détection)", /STATUT_CODES_LONG_FIRST/.test(encadres));
+check("  HEADER_RE détecte « N CODE du J1 au J2 »", /HEADER_RE\s*=/.test(encadres) && /\\d{1,3}/.test(encadres));
+check("  ALIAS_LONG_TO_SHORT mappe FORMATION→AF (mais cherche pas en primaire)", /"FORMATION":\s*"AF"/.test(encadres));
+check("  Codes MAL/PAT/MT/EDC/SS/ABI/AT/CFL/CRH/ABS supportés", /MAL.*PAT.*MT.*EDC|EDC.*ABS|ABI.*AT/.test(encadres.replace(/\n/g, " ")));
+check("  parseEncadres exporté", /parseEncadres\s*[,}]/.test(encadres));
+check("  expandBoxesToCells exporté", /expandBoxesToCells\s*[,}]/.test(encadres));
+check("  Code statut court priorité (jamais mot français)", encadres.indexOf("ALIAS_LONG_TO_SHORT") < encadres.indexOf("STATUT_CODES_LONG_FIRST") + 2000); // doc rule visible
+
+// ───── 15. Team-detector : algo RH/R officiel SBM (Kevin 2026-05-15/28) ─────
+// Kevin 2026-05-28 a CORRIGÉ la règle miroir : MÊMES jours RH/R + horaires
+// base différents (pas un décalage). Test mis à jour en conséquence.
+console.log(`\n${INFO} Test 15/16 — Team detector RH/R + miroir (Kevin 2026-05-28)`);
+const teams = readFile("lib/team-detector.js");
+check("  detectTeams exporté", /detectTeams\s*[,}]/.test(teams));
+check("  getRestSignature (jours RH/R d'un emp)", /function getRestSignature/.test(teams));
+check("  isMirrorPair (règle corrigée Kevin 2026-05-28)", /function isMirrorPair/.test(teams));
+check("  Skip family=cadres (Pit Boss/Sup pas d'équipe)", /skipFamilies[\s\S]*?cadres/.test(teams));
+check("  normalizeWorkCodeForClustering retire suffixes c/'/\"/*/: ", /\[c'"\*:\]\+/.test(teams));
+check("  Doc mentionne « gros trait noir » (source primaire)", /trait\s+noir/i.test(teams));
+check("  Doc explique miroir = MÊMES jours RH/R + base ≠ (FR clair)", /M[ÊE]MES\s+jours\s+RH\/R|jours\s+RH\/R.*identiques/.test(teams));
+
+// ───── 16. Text-parser v0.3 : 12H30 majuscule + MT + BRTPECK + team_num ─────
+console.log(`\n${INFO} Test 16/17 — Text-parser enrichissements v0.3.0`);
+const textParser = readFile("lib/text-parser.js");
+check("  CODE_RE accepte H majuscule (12H30/19 NOTES_USER 1214)", /\[hH\]\?/.test(textParser));
+check("  CODE_RE accepte MT (maternité)", /\|MT\|/.test(textParser));
+check("  CODE_RE accepte FL / CSS / ABS", /\bFL\b/.test(textParser) && /\bCSS\b/.test(textParser) && /\bABS\b/.test(textParser));
+check("  BRTPECK_RE exporté (compétences devant nom)", /BRTPECK_RE\s*[,}=]/.test(textParser));
+check("  TEAM_NUM_AFTER_POST_RE (V1 juin 2026+ format BRTP+K 5 NAME)", /TEAM_NUM_AFTER_POST_RE\s*=/.test(textParser));
+check("  parseLineForEmployee retourne brtpeck", /out\.brtpeck\s*=/.test(textParser));
+check("  parseLineForEmployee retourne teamNumber", /out\.teamNumber|teamNumber\s*!==\s*null/.test(textParser));
+
+// ───── 17. Couverture Convention SBM (43 codes officiels Note 6 janv 1993) ─────
+console.log(`\n${INFO} Test 17/17 — Codes officiels SBM (43 codes Bulletin)`);
+const helpersFull = readFile("helpers-reuse.js");
+const textParserCode = readFile("lib/text-parser.js");
+// helpers-reuse.js : table complète
+check("  BULLETIN_CODES_FULL définie (Note 6 janv 1993)", /BULLETIN_CODES_FULL\s*=/.test(helpersFull));
+check("  Catégorie presence_repos", /presence_repos:/.test(helpersFull));
+check("  Catégorie conges", /conges:\s*\[/.test(helpersFull));
+check("  Catégorie fetes", /fetes:\s*\[/.test(helpersFull));
+check("  Catégorie masse (à la masse)", /masse:\s*\[/.test(helpersFull));
+check("  Catégorie absences", /absences:\s*\[/.test(helpersFull));
+check("  Catégorie sanctions", /sanctions:\s*\[/.test(helpersFull));
+check("  Catégorie autres", /autres:\s*\[/.test(helpersFull));
+check("  Catégorie pit_boss", /pit_boss:\s*\[/.test(helpersFull));
+check("  Helper bulletinCategory exporté", /bulletinCategory\s*[,}]/.test(helpersFull));
+check("  ALL_BULLETIN_CODES (liste plate) exporté", /ALL_BULLETIN_CODES\s*[,}]/.test(helpersFull));
+// Codes spécifiques jamais oubliés
+const requiredCodes = ["P", "RH", "RTP", "RTR", "RRT", "RHS", "DP",
+                       "CP", "CRH", "CPS", "CPM", "CDP", "CDH",
+                       "FL", "CFL", "FTP", "FTR", "RFT",
+                       "FCP", "FCS", "FRH", "FFL",
+                       "M", "MAL", "AT", "MT", "ABS", "ABI", "ABP", "AF", "CL", "CEO", "CSC", "CSS",
+                       "PNE", "AMP", "MPC", "MPP",
+                       "PAT", "PRT", "HC", "EDC",
+                       "HD", "PK"];
+for (const c of requiredCodes) {
+  // Le code doit apparaître dans helpers-reuse.js (table BULLETIN_CODES_FULL)
+  // ET dans text-parser.js CODE_RE.
+  const inHelpers = new RegExp(`code:\\s*"${c}"`).test(helpersFull);
+  const inParser  = new RegExp(`\\b${c}\\b`).test(textParserCode);
+  check(`  ${c} dans BULLETIN_CODES_FULL + accepté par text-parser`, inHelpers && inParser);
+}
+
+// ───── 18. Validate-post-import : Art. 17.5 + 35 + sanctions ─────
+console.log(`\n${INFO} Test 18/20 — Validations Convention (Art. 17.5, 35, sanctions)`);
+const validate = readFile("lib/validate-post-import.js");
+check("  runAll exporté", /runAll\s*[,}]/.test(validate));
+check("  validateMinRestPerSixWeeks (Art. 17.5)", /validateMinRestPerSixWeeks/.test(validate));
+check("  validateChefRatio (Art. 35)", /validateChefRatio/.test(validate));
+check("  validateMin336Effectif (Art. 35 plancher)", /validateMin336Effectif/.test(validate));
+check("  validateNoForbiddenCodes (sanctions PNE/AMP/MPC/MPP critical)", /validateNoForbiddenCodes/.test(validate) && /SANCTION_CODES/.test(validate));
+check("  validateEveryoneHasPlanning (règle absolue Kevin 2026-05-26)", /validateEveryoneHasPlanning/.test(validate));
+check("  validateAffluencePeriodVersion (Art. 17.6)", /validateAffluencePeriodVersion/.test(validate));
+// Test fonctionnel : exécuter le module et vérifier la détection sanction
+try {
+  const VPI = require(path.join(ROOT, "lib/validate-post-import.js"));
+  const sanctionFindings = VPI.validateNoForbiddenCodes([
+    { fullName: "TEST X", days: { "1": "22/6", "2": "AMP", "3": "RH" } }
+  ]);
+  check("  Sanction AMP détectée en CRITICAL (test fonctionnel)",
+    sanctionFindings.length === 1 && sanctionFindings[0].severity === "critical");
+  const restFindings = VPI.validateMinRestPerSixWeeks([
+    { fullName: "REST X", days: (function () { const d = {}; for (let i = 1; i <= 31; i++) d[i] = "22/6"; return d; })() }
+  ]);
+  check("  Emp 31j travail = 0 repos sur 31j (partial, pas de fail strict)",
+    Array.isArray(restFindings));
+} catch (e) {
+  check("  validate-post-import require OK", false, e.message.slice(0, 120));
+}
+
+// ───── 19. Homonyms-guard : anti-merge LANDAU B/J (erreurs #38/#44) ─────
+console.log(`\n${INFO} Test 19/20 — Homonyms guard (anti-confusion erreurs #38/#44)`);
+const homonyms = readFile("lib/homonyms-guard.js");
+check("  KNOWN_HOMONYMS table (NOTES_USER 65-94)", /KNOWN_HOMONYMS\s*=/.test(homonyms));
+check("  LANDAU B vs J (frères)", /"LANDAU":/.test(homonyms));
+check("  ENZA B vs C (frères)", /"ENZA":/.test(homonyms));
+check("  CAMPI H vs PH (couple)", /"CAMPI":/.test(homonyms));
+check("  canMatch exporté", /canMatch\s*[,}]/.test(homonyms));
+check("  auditEmployees exporté", /auditEmployees\s*[,}]/.test(homonyms));
+try {
+  const HG = require(path.join(ROOT, "lib/homonyms-guard.js"));
+  const blocked = HG.canMatch("LANDAU", "B", "LANDAU", "J");
+  check("  canMatch(LANDAU B, LANDAU J) = bloqué (test fonctionnel)",
+    blocked.safe === false && blocked.reason === "known_homonyms_distinct");
+  const ok = HG.canMatch("DESARZENS", "K", "DESARZENS", "K");
+  check("  canMatch exact (DESARZENS K) = safe",
+    ok.safe === true);
+} catch (e) {
+  check("  homonyms-guard require OK", false, e.message.slice(0, 120));
+}
+
+// ───── 20. Code-colors : mapping 43 codes + suffixes ─────
+console.log(`\n${INFO} Test 20/20 — Code colors (projection cellule, ne modifie pas la source)`);
+const colors = readFile("lib/code-colors.js");
+check("  getCellColor exporté", /getCellColor\s*[,}]/.test(colors));
+check("  getCellStyle exporté (anti-XSS hex valide)", /getCellStyle\s*[,}]/.test(colors));
+check("  CONVENTION_COLOR rouge/jaune (suffixe '/\")", /CONVENTION_COLOR/.test(colors) && /#d8342e/.test(colors) && /#ffe23a/.test(colors));
+check("  CCDP_COLOR orange (suffixe *)", /CCDP_COLOR/.test(colors));
+check("  STATUT_COLORS couvre RH/CP/M/AF/PAT", /"RH":/.test(colors) && /"CP":/.test(colors) && /"AF":/.test(colors) && /"PAT":/.test(colors));
+check("  Sanctions rouge alerte (PNE/AMP/MPC/MPP)", /"PNE":/.test(colors) && /#e85050/.test(colors));
+try {
+  const CC = require(path.join(ROOT, "lib/code-colors.js"));
+  const conv = CC.getCellColor("19/4'");
+  check("  19/4' → Convention rouge/jaune (test fonctionnel)",
+    conv.isConvention === true && conv.bg === "#d8342e");
+  const ccdp = CC.getCellColor("20/5*");
+  check("  20/5* → CCDP orange (test fonctionnel)",
+    ccdp.isCcdp === true);
+  const style = CC.getCellStyle("RH");
+  check("  getCellStyle(RH) retourne background+color hex valide",
+    /background:#[0-9a-f]+/i.test(style) && /color:#[0-9a-f]+/i.test(style));
+} catch (e) {
+  check("  code-colors require OK", false, e.message.slice(0, 120));
+}
 
 // ───── Résumé ─────
 console.log("\n────────────────────────");

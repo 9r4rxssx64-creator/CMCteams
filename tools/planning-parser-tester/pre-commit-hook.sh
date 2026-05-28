@@ -74,11 +74,20 @@ else
 fi
 
 # 4. Suite régression complète
-echo -e "\n${INFO} [4/4] Suite régression test-pipeline.js"
+echo -e "\n${INFO} [4/5] Suite régression test-pipeline.js"
 if node "$SCRIPT_DIR/test-pipeline.js"; then
-  echo -e "${PASS} 12/12 tests régression OK"
+  echo -e "${PASS} tests régression OK"
 else
   echo -e "${FAIL} Suite régression échoue — voir détails ci-dessus"
+  exit 1
+fi
+
+# 5. Test de fidélité « reproduction à l'identique »
+echo -e "\n${INFO} [5/5] Test de fidélité (reproduction identique)"
+if node "$SCRIPT_DIR/test-fidelity.js"; then
+  echo -e "${PASS} fidélité 100% — reproduction identique"
+else
+  echo -e "${FAIL} Écart de fidélité détecté — la reproduction n'est PAS identique"
   exit 1
 fi
 
