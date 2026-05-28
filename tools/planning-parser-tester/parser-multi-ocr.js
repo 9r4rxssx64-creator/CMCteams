@@ -433,45 +433,77 @@
             }
           }
 
-          /* ---- Classement des employés SANS cellule (RÈGLE Kevin « reproduction
-           * à l'identique, jamais inventer ») ----
-           * Page 1 « Roulements du mois » = blocs de rotation 2D + encadrés statut.
-           * Un employé peut être présent au roster (« POSTE NOM 1 30 ») sans avoir
-           * de LIGNE de grille journalière individuelle dans le texte du PDF
-           * (la grille 2D du bloc rotation est aplatie par pdf.js → on ne peut PAS
-           * dériver son planning sans l'inventer). On distingue :
-           *   - roster_only : nom présent mais jamais suivi de codes journaliers
-           *     dans les pages grille → « à vérifier », PAS un bug parser.
-           *   - vrai oubli  : nom suivi de codes dans la grille mais raté → bug. */
+          /* ---- Rattachement des employés SANS grille à leur ENCADRÉ statut ----
+           * (Kevin : « prendre en compte les encadrés en haut bien en étendu »
+           *  + « double info qui valide »). Page 1 = blocs de rotation 2D +
+           * encadrés statut (M/CP/AF/EDC/FORMATION). Un employé présent au
+           * roster sans ligne de grille EST en réalité listé dans un encadré
+           * statut (vérifié sur PDF réel : ORRADO F→M, DUPONT A/CASTEL N/…→CP,
+           * ORENGO N/CREMA F/…→CP). On lui applique le code de l'encadré le plus
+           * proche AVANT lui dans le texte du roster, étendu sur 1..dim.
+           * Marqué needs_review (affectation 2D inférée — Kevin valide, surtout
+           * si 2 encadrés adjacents M/CP). On n'INVENTE pas : le code vient d'un
+           * encadré réel du PDF. */
           const passeGc = result.passes.find(p => p.passe === "G" && p.ok);
           if (passeGc && Array.isArray(passeGc.employees) && rawText) {
             const fb = rawText.indexOf("--- page break ---");
-            const gridText = fb > 0 ? rawText.slice(fb) : rawText;
-            const gridU = " " + gridText.toUpperCase().normalize("NFD")
-              .replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ") + " ";
+            const rosterU = (fb > 0 ? rawText.slice(0, fb) : rawText)
+              .toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ");
+            const gridU = " " + (fb > 0 ? rawText.slice(fb) : "")
+              .toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ") + " ";
             const DAYCODE = /\d{1,2}(?:H\d{2})?\/\d{1,2}|RH|CP|AF|EDC|RRT|PRT|PAT|MAL|\bM\b/;
-            let rosterOnly = 0;
+            // Headers d'encadrés statut dans le roster, avec position
+            const HDR = /(\d{1,3})\s+(CP|AF|MAL|MT|PAT|EDC|CFL|CRH|ABS|ABI|AT|SS|FORMATION|M)\b/g;
+            const headers = [];
+            let hm;
+            while ((hm = HDR.exec(rosterU))) {
+              const code = EncadresParser && EncadresParser.resolveCode
+                ? EncadresParser.resolveCode(hm[2]) : hm[2];
+              headers.push({ code, count: parseInt(hm[1], 10), idx: hm.index });
+            }
+            let inferred = 0, rosterOnly = 0;
             for (const e of passeGc.employees) {
               if (e.days && Object.keys(e.days).length > 0) continue;
-              // Match NOM COMPLET (nom + initiale) pour ne pas confondre les
-              // homonymes : « BARILARO A » (roster) ne doit PAS matcher
-              // « BARILARO H » (grille). On accepte une grille seulement si le
-              // nom complet est suivi de codes journaliers.
               const full = String(e.name).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
-              const idx = gridU.indexOf(" " + full + " ");
-              let hasGridRow = false;
-              if (idx >= 0) {
-                // saute l'éventuelle période « 1 30 » puis cherche un code jour
-                hasGridRow = DAYCODE.test(gridU.slice(idx + full.length, idx + full.length + 90));
+              // vrai oubli si le nom complet a des codes dans la grille → on laisse vide (bug)
+              const gidx = gridU.indexOf(" " + full + " ");
+              if (gidx >= 0 && DAYCODE.test(gridU.slice(gidx + 1 + full.length, gidx + 1 + full.length + 90))) continue;
+              // sinon : rattache à l'encadré statut le plus proche AVANT dans le roster
+              const ridx = rosterU.indexOf(" " + full + " ");
+              let box = null;
+              if (ridx >= 0) for (const hd of headers) { if (hd.idx < ridx && (!box || hd.idx > box.idx)) box = hd; }
+              if (box && box.code) {
+                // Période PAR NOM : les 2 nombres juste après le nom (« 1 30 »
+                // = tout le mois, « 1 15 » = 1ère quinzaine, « 16 30 » = 2e…).
+                // Kevin : « le du-au dit si 15 jours ou tout le mois ».
+                // ridx pointe l'espace de tête → +1 pour sauter cet espace.
+                let from = 1, to = dim;
+                const after = rosterU.slice(ridx + 1 + full.length, ridx + 1 + full.length + 18);
+                const perM = after.match(/^\s*\*?\s*(\d{1,2})\s+(\d{1,2})\b/);
+                if (perM) {
+                  const f = parseInt(perM[1], 10), t = parseInt(perM[2], 10);
+                  if (f >= 1 && t <= dim && f <= t) { from = f; to = t; }
+                }
+                for (let d = from; d <= to; d++) e.days[String(d)] = box.code;
+                e.source = "encadre_box_inferred";
+                e.needs_review_box = box.code + (from === 1 && to === dim ? "" : ` (j${from}-${to})`);
+                inferred++;
+              } else {
+                e.roster_only = true; rosterOnly++;
               }
-              if (!hasGridRow) { e.roster_only = true; rosterOnly++; }
+            }
+            if (inferred > 0) {
+              result.alerts.push({
+                severity: "info",
+                msg: `${inferred} employé(s) sans grille rattaché(s) à leur encadré statut ` +
+                     `(CP/M/AF/EDC) sur 1-${dim} — « double info » roster+encadré. À VÉRIFIER ` +
+                     `(affectation de boîte inférée du texte 2D, surtout si encadrés M/CP adjacents).`
+              });
             }
             if (rosterOnly > 0) {
               result.alerts.push({
-                severity: "info",
-                msg: `${rosterOnly} employé(s) au roster SANS grille journalière dans le PDF ` +
-                     `(blocs de rotation page 1 — schéma 2D non extractible du texte). ` +
-                     `À vérifier : ne PAS inventer leur planning (reproduction à l'identique).`
+                severity: "warn",
+                msg: `${rosterOnly} employé(s) au roster sans encadré identifiable — à vérifier.`
               });
             }
           }
@@ -821,6 +853,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.9.5-roster-only-classification"
+    VERSION: "T1-v0.9.7-per-name-period"
   };
 }));

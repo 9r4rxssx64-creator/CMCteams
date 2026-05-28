@@ -215,19 +215,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<script>window.__APP_BUILD__ = "v0.9.5-roster-only-classification-" + Date.now();</script>
-=======
-<script>window.__APP_BUILD__ = "v0.9.3-merge-poste-duplicates-" + Date.now();</script>
->>>>>>> origin/main
-=======
-<script>window.__APP_BUILD__ = "v0.9.2-convention-denominations-" + Date.now();</script>
->>>>>>> origin/main
-=======
-<script>window.__APP_BUILD__ = "v0.9.1-encadres-applied-no-orphan-" + Date.now();</script>
->>>>>>> origin/main
+<script>window.__APP_BUILD__ = "v0.9.7-per-name-period-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -617,6 +605,11 @@
       const rosterOnly = allEmpty.filter(e => e.roster_only);
       const sansHoraire = allEmpty.filter(e => !e.roster_only);
       const partiels = passGsum.employees.filter(e => e.days && Object.keys(e.days).length > 0 && Object.keys(e.days).length < 10);
+      // Employés rattachés à un encadré statut (double info roster+encadré) → à vérifier
+      const inferes = passGsum.employees.filter(e => e.needs_review_box);
+      if (inferes.length > 0) {
+        lines.push(`<div class="alert-box alert-warn" style="margin-top:12px;"><strong>🔎 ${inferes.length} employé(s) rattachés à leur encadré statut (à vérifier)</strong><br><span class="small">${inferes.map(e => H.esc(e.name) + " → " + H.esc(e.needs_review_box)).join(" · ")}</span><br><span class="small" style="opacity:.75;">Sans grille journalière, mais listés dans un encadré statut (CP/M/AF/EDC) → code étendu sur leur période (« double info » roster + encadré). <strong>Vérifie le code</strong> (surtout si 2 encadrés M/CP côte à côte : l'affectation est inférée du texte 2D aplati).</span></div>`);
+      }
       if (rosterOnly.length > 0) {
         lines.push(`<div class="alert-box alert-warn" style="margin-top:12px;"><strong>ℹ️ ${rosterOnly.length} employé(s) au roster SANS grille journalière dans le PDF</strong><br><span class="small">${rosterOnly.map(e => H.esc(e.name)).join(" · ")}</span><br><span class="small" style="opacity:.75;">Présents dans les blocs de rotation (page 1) mais le PDF ne contient pas leur ligne de codes jour-par-jour (grille 2D aplatie). <strong>Pas un bug</strong> — à vérifier/assigner manuellement. Leur planning n'est PAS inventé (reproduction à l'identique).</span></div>`);
       }
