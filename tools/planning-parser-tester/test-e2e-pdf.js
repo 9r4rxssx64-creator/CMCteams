@@ -79,18 +79,31 @@ function buildSbmHtml() {
   function section(title, rows) {
     return `<h3>${title}</h3><table>${rows.map(r => row(r[0], r[1], r[2], r[3])).join("")}</table>`;
   }
+  // Encadrés statuts « N CODE du J1 au J2 » + noms qui n'apparaissent QUE là
+  // (employés en CP/M intégral, absents de la grille → doivent récupérer leurs
+  // cellules via l'encadré — RÈGLE « aucun oubli »).
+  const encadresHtml = `
+    <div class="enc">2 CP du 1 au 30</div>
+    <div class="rou">VACANCIER A</div>
+    <div class="rou">REPOSE B</div>
+    <div class="enc">1 M du 1 au 30</div>
+    <div class="rou">MALADE C</div>
+    <div class="enc">1 AF du 4 au 8</div>
+    <div class="rou">FORME D</div>`;
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     body{font-family:Arial;font-size:7px;}
     table{border-collapse:collapse;width:100%;}
     td{border:1px solid #ccc;padding:1px 2px;text-align:center;white-space:nowrap;}
     h3{font-size:9px;margin:8px 0 2px;}
     .rou{display:block;margin:3px;padding:2px;border:1px solid #aaa;}
+    .enc{display:block;margin:6px 0 2px;font-weight:bold;}
   </style></head><body>
     <h2>juin 2026</h2>
     ${section("Chefs black jack", chefs)}
     <div style="page-break-before:always;"></div>
     <h2>juin 2026</h2>
     ${section("Employés cartes CMC", employes)}
+    ${encadresHtml}
     <div style="page-break-before:always;"></div>
     <h2>Roulements du mois de juin 2026</h2>
     ${rouSection}
@@ -117,8 +130,14 @@ function buildSbmHtml() {
   }
 
   console.log(`\n${INFO} 2. Extraction items avec pdfjs-dist (= extractWithPdfJs)`);
-  // pdfjs-dist legacy build pour Node
-  const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+  // pdfjs-dist legacy build pour Node — skip gracieux si absent (CI-only)
+  let pdfjsLib;
+  try { pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js"); }
+  catch (e) {
+    console.log(`${INFO} pdfjs-dist absent — test E2E sauté (npm i -D pdfjs-dist@3.11.174 pour l'activer). ${e.message}`);
+    try { fs.unlinkSync(tmpPdf); } catch (_) {}
+    process.exit(0);
+  }
   const data = new Uint8Array(fs.readFileSync(tmpPdf));
   const doc = await pdfjsLib.getDocument({ data, useSystemFonts: true }).promise;
   const pages = [];
@@ -148,9 +167,19 @@ function buildSbmHtml() {
   check("  Pages extraites", pages.length >= 2, pages.length + " pages");
   check("  Items extraits", pdfPass.itemsTotal > 50, pdfPass.itemsTotal + " items");
 
-  console.log(`\n${INFO} 3. Parsing (passe G text-parser + merge keep-most-cells)`);
+  console.log(`\n${INFO} 3. Parsing (passe G text-parser + merge + application encadrés)`);
   const g = TextParser.parseFromPdfJs(pdfPass);
   check("  parseFromPdfJs ok", g.ok, g.error && g.error.message);
+
+  // Reproduit la Phase 3.H du pipeline : parse encadrés + applique aux employés
+  const EncadresParser = require(path.join(ROOT, "lib/encadres-parser.js"));
+  const enc = EncadresParser.parseEncadres(pdfPass.textRaw, 30);
+  check("  Encadrés détectés (CP/M/AF)", enc.boxes.length >= 3, "boxes=" + enc.boxes.length);
+  const applied = EncadresParser.applyEncadresToEmployees(g.employees, enc.boxes, 30);
+  g.employees = applied.employees;
+  console.log(`  ${INFO} encadrés appliqués : +${applied.stats.cells_added} cellules, ` +
+    `${applied.stats.filled} complétés, ${applied.stats.created} créés`);
+
   const byName = {};
   for (const e of g.employees) byName[e.name] = e;
   console.log(`  ${INFO} employés: ${g.employees.length} | ` +
@@ -171,6 +200,23 @@ function buildSbmHtml() {
   check(`  Les ${planningNames.length} employés planning ont ≥20 cellules (anti-Roulements-écrase)`,
     foundWithCells === planningNames.length, foundWithCells + "/" + planningNames.length);
   check("  AUCUNE ligne vide (merge keep-most-cells)", emptyRows === 0, emptyRows + " vides");
+
+  // RÈGLE ABSOLUE Kevin : « si il y a un nom, il y a des données ». Les employés
+  // en CP/M/AF intégral (présents SEULEMENT dans l'encadré) doivent avoir leurs cellules.
+  function cellsOf(nm) { return byName[nm] ? Object.keys(byName[nm].days).length : -1; }
+  function codeOf(nm, day) { return byName[nm] ? byName[nm].days[String(day)] : null; }
+  check("  VACANCIER A (encadré CP 1-30) → 30 cellules CP", cellsOf("VACANCIER A") === 30 && codeOf("VACANCIER A", 15) === "CP",
+    "cells=" + cellsOf("VACANCIER A") + " j15=" + codeOf("VACANCIER A", 15));
+  check("  REPOSE B (encadré CP 1-30) → 30 cellules CP", cellsOf("REPOSE B") === 30 && codeOf("REPOSE B", 1) === "CP",
+    "cells=" + cellsOf("REPOSE B"));
+  check("  MALADE C (encadré M 1-30) → 30 cellules M", cellsOf("MALADE C") === 30 && codeOf("MALADE C", 10) === "M",
+    "cells=" + cellsOf("MALADE C") + " j10=" + codeOf("MALADE C", 10));
+  check("  FORME D (encadré AF 4-8) → cellules AF jours 4-8", codeOf("FORME D", 4) === "AF" && codeOf("FORME D", 8) === "AF",
+    "j4=" + codeOf("FORME D", 4) + " j8=" + codeOf("FORME D", 8));
+  // Recompte les lignes vides APRÈS application encadrés (doit toujours être 0)
+  let emptyAfter = 0;
+  for (const e of g.employees) if (!e.days || Object.keys(e.days).length === 0) emptyAfter++;
+  check("  ZÉRO employé sans donnée (règle absolue « aucun oubli »)", emptyAfter === 0, emptyAfter + " sans donnée");
 
   // Couleurs : 19/4'c (chef+Convention) = rouge/jaune Convention
   const cChefConv = CodeColors.getCellColor("19/4'c");

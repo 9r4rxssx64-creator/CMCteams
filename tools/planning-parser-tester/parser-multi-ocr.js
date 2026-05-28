@@ -411,6 +411,27 @@
               result.alerts.push({ severity: "warn", msg: "Encadrés : " + w });
             }
           }
+
+          /* APPLIQUE les encadrés à la passe G (RÈGLE ABSOLUE Kevin 2026-05-26 :
+           * « si il y a un nom, il y a des données à appliquer ». Personne sans
+           * horaire : ceux absents de la grille ou avec jours vides récupèrent
+           * leur statut CP/M/AF/EDC depuis l'encadré). Ne JAMAIS écraser une
+           * cellule de grille (reproduction identique). */
+          if (typeof EncadresParser.applyEncadresToEmployees === "function" && encResult.boxes && encResult.boxes.length) {
+            const passeG = result.passes.find(p => p.passe === "G" && p.ok);
+            if (passeG && Array.isArray(passeG.employees)) {
+              const before = passeG.employees.length;
+              const applied = EncadresParser.applyEncadresToEmployees(passeG.employees, encResult.boxes, dim);
+              passeG.employees = applied.employees;
+              passeG.encadres_applied = applied.stats;
+              result.alerts.push({
+                severity: "info",
+                msg: `Encadrés appliqués : +${applied.stats.cells_added} cellules statut, ` +
+                     `${applied.stats.filled} employés complétés, ${applied.stats.created} créés ` +
+                     `(${before}→${passeG.employees.length} employés).`
+              });
+            }
+          }
         }
       }
 
@@ -757,6 +778,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.9.0-real-pdf-fixes-e2e"
+    VERSION: "T1-v0.9.1-encadres-applied-no-orphan"
   };
 }));
