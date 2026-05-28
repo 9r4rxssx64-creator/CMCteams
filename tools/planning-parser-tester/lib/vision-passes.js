@@ -831,6 +831,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.6.1-ui-labels-honest"
+    VERSION: "T1-vision-v0.7.0-lieu-encadres-teams"
   };
 }));

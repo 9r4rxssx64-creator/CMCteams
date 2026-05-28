@@ -16,6 +16,10 @@
  *  10. Worker /test/* exempté de l'auth
  *  11. Workflow Node version >= 22 (wrangler v4)
  *  12. Workflow secrets matchent CLAUDE.md règle 7 (noms exacts Kevin)
+ *  13. Mapping CODE→LIEU par rôle (19/4 employé=CMC, Pit Boss=CCDP)
+ *  14. Encadres-parser : codes courts uniquement (erreur #49)
+ *  15. Team-detector : algo RH/R + miroir (Kevin 2026-05-15)
+ *  16. Text-parser v0.3 : 12H30 majuscule + MT + BRTPECK + team_num
  *
  * Tous ces tests auraient attrapé les bugs #1-15 de la session 2026-05-27
  * AVANT le push. Lancer obligatoire avant chaque commit qui touche T1.
@@ -63,6 +67,9 @@ const jsFiles = [
   "helpers-reuse.js",
   "lib/vision-passes.js",
   "lib/cell-voting.js",
+  "lib/text-parser.js",
+  "lib/encadres-parser.js",
+  "lib/team-detector.js",
   "sw.js",
 ];
 for (const f of jsFiles) {
@@ -176,6 +183,52 @@ check("  ANTHROPIC_API_KEY", /secrets\.ANTHROPIC_API_KEY/.test(workflow));
 check("  MISTRAL_API_KEY", /secrets\.MISTRAL_API_KEY/.test(workflow));
 check("  GEMINI_API_KEY", /secrets\.GEMINI_API_KEY/.test(workflow));
 check("  CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN", /secrets\.CLOUDFLARE_ACCOUNT_ID/.test(workflow) && /secrets\.CLOUDFLARE_API_TOKEN/.test(workflow));
+
+// ───── 13. Helpers CODE→LIEU exportés + cohérence vérité terrain ─────
+console.log(`\n${INFO} Test 13/16 — Mapping CODE→LIEU (Kevin 2026-05-28)`);
+const helpers = readFile("helpers-reuse.js");
+check("  CODE_TO_LIEU_CADRE table définie", /const CODE_TO_LIEU_CADRE\s*=\s*\{/.test(helpers));
+check("  CODE_TO_LIEU_EMPLOYEE table définie", /const CODE_TO_LIEU_EMPLOYEE\s*=\s*\{/.test(helpers));
+check("  codeToLieu(code, role) exporté", /codeToLieu\s*[,}]/.test(helpers));
+check("  19/4 PIT BOSS = CCDP (NOTES_USER ligne 1184)", /"19\/4":\s*"CCDP"/.test(helpers));
+check("  19/4 EMPLOYÉ = CMC (NOTES_USER ligne 1194)", /CODE_TO_LIEU_EMPLOYEE[\s\S]*?"19\/4":\s*"CMC"/.test(helpers));
+check("  15/20 = POKER NO LIMIT (NOTES_USER ligne 1192)", /"15\/20":\s*"POKER NO LIMIT"/.test(helpers));
+check("  Suffixe * → CCDP+CMC dans codeToLieu", /CCDP\+CMC/.test(helpers));
+
+// ───── 14. Encadres-parser : codes courts uniquement (erreur #49) ─────
+console.log(`\n${INFO} Test 14/16 — Encadres parser (Kevin reproduction identique)`);
+const encadres = readFile("lib/encadres-parser.js");
+check("  STATUT_CODES_LONG_FIRST (ordre détection)", /STATUT_CODES_LONG_FIRST/.test(encadres));
+check("  HEADER_RE détecte « N CODE du J1 au J2 »", /HEADER_RE\s*=/.test(encadres) && /\\d{1,3}/.test(encadres));
+check("  ALIAS_LONG_TO_SHORT mappe FORMATION→AF (mais cherche pas en primaire)", /"FORMATION":\s*"AF"/.test(encadres));
+check("  Codes MAL/PAT/MT/EDC/SS/ABI/AT/CFL/CRH/ABS supportés", /MAL.*PAT.*MT.*EDC|EDC.*ABS|ABI.*AT/.test(encadres.replace(/\n/g, " ")));
+check("  parseEncadres exporté", /parseEncadres\s*[,}]/.test(encadres));
+check("  expandBoxesToCells exporté", /expandBoxesToCells\s*[,}]/.test(encadres));
+check("  Code statut court priorité (jamais mot français)", encadres.indexOf("ALIAS_LONG_TO_SHORT") < encadres.indexOf("STATUT_CODES_LONG_FIRST") + 2000); // doc rule visible
+
+// ───── 15. Team-detector : algo RH/R officiel SBM (Kevin 2026-05-15/28) ─────
+// Kevin 2026-05-28 a CORRIGÉ la règle miroir : MÊMES jours RH/R + horaires
+// base différents (pas un décalage). Test mis à jour en conséquence.
+console.log(`\n${INFO} Test 15/16 — Team detector RH/R + miroir (Kevin 2026-05-28)`);
+const teams = readFile("lib/team-detector.js");
+check("  detectTeams exporté", /detectTeams\s*[,}]/.test(teams));
+check("  getRestSignature (jours RH/R d'un emp)", /function getRestSignature/.test(teams));
+check("  isMirrorPair (règle corrigée Kevin 2026-05-28)", /function isMirrorPair/.test(teams));
+check("  Skip family=cadres (Pit Boss/Sup pas d'équipe)", /skipFamilies[\s\S]*?cadres/.test(teams));
+check("  normalizeWorkCodeForClustering retire suffixes c/'/\"/*/: ", /\[c'"\*:\]\+/.test(teams));
+check("  Doc mentionne « gros trait noir » (source primaire)", /trait\s+noir/i.test(teams));
+check("  Doc explique miroir = MÊMES jours RH/R + base ≠ (FR clair)", /M[ÊE]MES\s+jours\s+RH\/R|jours\s+RH\/R.*identiques/.test(teams));
+
+// ───── 16. Text-parser v0.3 : 12H30 majuscule + MT + BRTPECK + team_num ─────
+console.log(`\n${INFO} Test 16/16 — Text-parser enrichissements v0.3.0`);
+const textParser = readFile("lib/text-parser.js");
+check("  CODE_RE accepte H majuscule (12H30/19 NOTES_USER 1214)", /\[hH\]\?/.test(textParser));
+check("  CODE_RE accepte MT (maternité)", /\|MT\|/.test(textParser));
+check("  CODE_RE accepte FL / CSS / ABS", /\bFL\b/.test(textParser) && /\bCSS\b/.test(textParser) && /\bABS\b/.test(textParser));
+check("  BRTPECK_RE exporté (compétences devant nom)", /BRTPECK_RE\s*[,}=]/.test(textParser));
+check("  TEAM_NUM_AFTER_POST_RE (V1 juin 2026+ format BRTP+K 5 NAME)", /TEAM_NUM_AFTER_POST_RE\s*=/.test(textParser));
+check("  parseLineForEmployee retourne brtpeck", /out\.brtpeck\s*=/.test(textParser));
+check("  parseLineForEmployee retourne teamNumber", /out\.teamNumber|teamNumber\s*!==\s*null/.test(textParser));
 
 // ───── Résumé ─────
 console.log("\n────────────────────────");

@@ -426,12 +426,38 @@ Le parser doit accepter TOUTES les périodes :
 
 ### 4.1 Détection équipes par pattern RH (V1 sans marqueur explicite)
 
-**Algorithme officiel SBM** (NOTES_USER ligne 8-40, `_cmcDetectTeamsByRestPattern` v9.648) :
-1. Le PDF utilise **trait noir foncé** entre blocs d'équipes (perdu au copy-paste)
-2. **Pattern RH/R identique** = même équipe
-3. **Pattern RH décalé d'un offset constant** = équipe miroir
-4. 4-6 emps par équipe (header PDF indique le compte : « 4 RH du au »)
-5. Famille (BJ/Roul/CMC) déduite de la section PDF où apparaît le bloc
+**Algorithme officiel SBM** (NOTES_USER ligne 8-40 + correction Kevin 2026-05-28) :
+
+**Sources de délimitation par priorité décroissante** :
+1. **Gros trait noir foncé** entre blocs équipes — visible PDF, **PERDU au copy-paste**
+   (donc détectable uniquement par Vision IA passes B-E qui voient le rendu graphique)
+2. **Numéro équipe explicite** entre POST et NOM (V1 juin 2026+ format `BRTP+K 5 NAME`)
+3. **Pattern RH/R identique** + horaire base identique = **MÊME équipe**
+4. **Colonne PDF** (algo `_cmcDetectTeamsByPdfColumn` v9.719) — fallback
+
+**Règle miroir (CORRIGÉE Kevin 2026-05-28)** :
+- 2 équipes sont **miroir l'une de l'autre** quand elles ont :
+  - **MÊMES jours RH/R** (identiques, pas décalés)
+  - **HORAIRES DE BASE DIFFÉRENTS** (sinon ce serait la même équipe)
+  - **Position différente dans le PDF** (principale en haut, miroir plus bas)
+- L'idée métier : 2 groupes qui se reposent les mêmes jours mais
+  travaillent à des horaires différents (matinée vs soirée) pour
+  couvrir les amplitudes d'ouverture du casino.
+- **Secteur cartes** (BJ / CMC / Roulettes — confirmé Kevin 2026-05-28) :
+  équipe `20/5` ⇆ miroir `22/6` (ou inverse). Cycle suivant inverse les
+  attributions. Le 1er jour de travail : un en 22h, l'autre en 20h.
+- Exemple vérité terrain juin V1 (NOTES_USER 134+) :
+  - Équipe principale : BARONE E et al., horaire `20/5`
+  - Équipe miroir : BONO V et al., horaire `22/6'` — MÊMES RH/R que principale
+- Cadres (Pit Boss / Sup) : **pas d'équipe ni miroir** — rotation
+  individuelle (offset 1-14).
+
+**Effectifs typiques** : 4-6 emps par équipe (header PDF indique le compte
+« 4 RH du au »). Famille (BJ/Roul/CMC) déduite de la section PDF où
+apparaît le bloc.
+
+✅ Implémenté dans `lib/team-detector.js` v0.2.0 : clustering par (`rhDays`,
+`firstWorkCodeNorm`), détection miroir via `isMirrorPair(A,B)` (rhEqual + base ≠).
 
 ### 4.2 Détection équipes par colonne PDF (v9.719+, recommandée)
 

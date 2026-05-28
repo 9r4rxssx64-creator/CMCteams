@@ -50,7 +50,23 @@
     "POSTE", "NOM", "ÉQUIPE", "TOTAL", "JOURS", "REPOS"
   ]);
 
-  const CODE_RE = /^(?:\d{1,2}h?\d{0,2}\/\d{1,2}h?\d{0,2}[c'"\*\:CDP]*|RH|R|CP|AF|M|MAL|SS|ABI|AT|PAT|CFL|CRH|EDC|HD|PK|PRT|HC|RRT)$/;
+  // CODE_RE — couvre TOUS les codes connus SBM. Mises à jour 2026-05-28 :
+  //   - `H` majuscule autorisé (`12H30/19` cf NOTES_USER ligne 1214)
+  //   - `MT` (maternité) ajouté
+  //   - Suffixe `CDP` ou `*` ou `:` ou `c` ou `'` ou `"` préservé (caractère par caractère)
+  //   - Cas particulier `19/4""` (double guillemet — variante Convention)
+  // Forme : <heures>/<heures> + suffixes optionnels, OU code statut, OU PK/HD/PRT/HC/RRT.
+  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP)*|RH|R|CP|AF|M|MAL|MT|SS|ABS|ABI|AT|PAT|CFL|CRH|CSS|EDC|FL|HD|PK|PRT|HC|RRT)$/;
+
+  // Numéro d'équipe explicite (V1 juin 2026+) : « BRTP+K 5 NAME »
+  //   - Code poste BRTPECK suivi d'un espace, puis 1-2 chiffres = numéro d'équipe,
+  //     puis le nom. Capture le numéro pour le rattacher à l'employé.
+  // Ne match QUE si vraiment entre POST et NOM (pas dans la liste de codes).
+  const TEAM_NUM_AFTER_POST_RE = /(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)\s+(\d{1,2})\s+([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ])/;
+
+  // Compétences BRTPECK : code poste devant le nom (ex « .BRTCP+E. »).
+  // Capture le code complet (avec . initial/final et + optionnel).
+  const BRTPECK_RE = /\b(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)/;
 
   function groupItemsByLine(items, yTolerance) {
     yTolerance = yTolerance || 2;
@@ -110,6 +126,20 @@
     const nameMatch = findNameInLine(fullText);
     if (!nameMatch) return null;
 
+    // Détecte le code BRTPECK AVANT le nom (compétences) + numéro équipe explicite
+    // (format V1 juin 2026+ : « BRTP+K 5 NAME »).
+    const beforeName = fullText.slice(0, nameMatch.idx);
+    let brtpeck = null;
+    let teamNumber = null;
+    const teamMatch = TEAM_NUM_AFTER_POST_RE.exec(fullText);
+    if (teamMatch && teamMatch.index < nameMatch.idx) {
+      brtpeck = teamMatch[1];
+      teamNumber = parseInt(teamMatch[2], 10);
+    } else {
+      const bm = BRTPECK_RE.exec(beforeName);
+      if (bm) brtpeck = bm[1];
+    }
+
     // Position du nom dans la ligne (char offset → item idx)
     let firstCodeItemIdx = -1;
     let charCount = 0;
@@ -135,16 +165,15 @@
       }
     }
 
-    if (Object.keys(days).length < minCodes) {
-      // Retourne quand même avec marker (utile pour CP/AF intégral où peu de codes)
-      return { name: nameMatch.fullName, days, raw_line_preview: fullText.slice(0, 200), partial: true };
-    }
-
-    return {
+    const out = {
       name: nameMatch.fullName,
       days,
       raw_line_preview: fullText.slice(0, 200)
     };
+    if (brtpeck) out.brtpeck = brtpeck;
+    if (teamNumber !== null) out.teamNumber = teamNumber;
+    if (Object.keys(days).length < minCodes) out.partial = true;
+    return out;
   }
 
   /**
@@ -296,6 +325,8 @@
     EXCLUDE_NAMES,
     CODE_RE,
     NAME_RE,
-    VERSION: "T1-text-parser-v0.2.0-multipass"
+    BRTPECK_RE,
+    TEAM_NUM_AFTER_POST_RE,
+    VERSION: "T1-text-parser-v0.3.0-brtpeck-team-num"
   };
 }));

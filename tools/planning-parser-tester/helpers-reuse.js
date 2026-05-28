@@ -164,6 +164,10 @@ const STATUT_LABEL = {
 /* ------------------------------------------------------------------
  * Mapping horaire → lieu (CADRE_LIEU vs EMPLOYEE_LIEU) — Plan Phase 6
  * Lieux SBM : CMC / CDP/CCDP (Café de Paris) / Sun / MCB / POKER NO LIMIT
+ * Réf : NOTES_USER « CODES HORAIRES PIT BOSS (légende verte) » lignes 1178+
+ * Règle critique Kevin : le MÊME code peut avoir un LIEU DIFFÉRENT selon le rôle
+ *   - `19/4` EMPLOYÉ = CMC mais `19/4` PIT BOSS = CCDP
+ *   - `19/4'` (apostrophe) PIT BOSS = CMC (variante CDP comme les employés)
  * ------------------------------------------------------------------ */
 const LIEUX_SBM = ["CMC", "CDP", "CCDP", "SUN", "MCB", "POKER NO LIMIT", "PNL"];
 
@@ -172,6 +176,87 @@ function isLieuSBM(token) {
   if (!token) return false;
   const t = String(token).toUpperCase().trim();
   return LIEUX_SBM.includes(t);
+}
+
+/* Mapping CODE → LIEU par rôle. Le lieu dépend du rôle ET du code (suffixe inclus).
+ * Source de vérité : NOTES_USER lignes 1182-1197 (légende verte mai 2026 PDF).
+ *
+ * Convention de lookup :
+ *   1. Normaliser le code via normalizeQuotes() (apostrophes droites)
+ *   2. Normaliser `H` → `h` dans format `12H30/19` → `12h30/19`
+ *   3. Choisir la table selon le rôle : "pit"/"sup"/"cadres" → CADRE_LIEU, sinon EMPLOYEE_LIEU
+ *   4. Lookup exact (avec suffixe) ; à défaut lookup base sans suffixe ; à défaut "?"
+ *
+ * Suffixe `*` → CCDP+CMC (priorité absolue, applique partout).
+ * Suffixe `'`/`"` → Convention (jour additionnel direction, lieu = CMC par défaut côté Pit Boss).
+ * Suffixe `CDP` standalone (mot) → CCDP.
+ */
+const CODE_TO_LIEU_CADRE = {
+  // Codes horaires PIT BOSS (légende verte PDF mai 2026)
+  "22/6":      "CMC",
+  "19/4":      "CCDP",           // ⚠ différent des employés où c'est CMC
+  "19/4'":     "CMC",            // variante apostrophe → CMC (comme employés CDP)
+  "19/4\"":    "CMC",
+  "19/4\"'":   "CMC",
+  "16/3":      "CMC",
+  "16/20":     "CMC",
+  "12h30/19":  "CMC",
+  "15/19":     "CCDP",
+  "19/2":      "CMC",
+  "15/20":     "POKER NO LIMIT", // fond rose
+  "20/5":      "CMC",
+  "14/19":     "CMC",
+  "16/22":     "CMC",
+  "PK":        "POKER NO LIMIT",
+  "HD":        "HD"              // hors département / jour férié spécial
+};
+
+const CODE_TO_LIEU_EMPLOYEE = {
+  // Codes horaires EMPLOYÉS / CHEFS BJ / ROULETTES / CMC
+  "22/6":      "CMC",
+  "19/4":      "CMC",            // ⚠ différent des Pit Boss
+  "16/3":      "CMC",
+  "16/20":     "CMC",
+  "14/19":     "CMC",
+  "20/5":      "CMC",
+  "16/22":     "CMC",
+  "12h30/19":  "CMC",
+  "15/19":     "CMC",
+  "19/2":      "CMC",
+  "15/20":     "CMC"
+};
+
+/** Retourne le lieu de travail pour un code et un rôle donné.
+ *  rôle ∈ {"pit","sup","cadres","ins","employee","chef","cmc"}.
+ *  Suffixe `*` priorité absolue (CCDP+CMC). Code statut → null (pas un horaire).
+ *
+ *  ⚠ Préserve TOUJOURS la donnée source — ne réécrit pas le code, ne corrige
+ *  pas un code inconnu. Retourne juste le lieu déduit OU "?" si non mappé.
+ */
+function codeToLieu(rawCode, role) {
+  if (!rawCode) return null;
+  const code = normalizeQuotes(String(rawCode).trim()).replace(/H/g, "h");
+
+  // Codes statut → pas un lieu
+  if (STATUT_CODES.indexOf(code.toUpperCase()) >= 0) return null;
+  if (/^(RH|R)$/.test(code)) return null;
+
+  // Suffixe `*` → CCDP+CMC partout (priorité absolue)
+  if (/\*$/.test(code)) return "CCDP+CMC";
+
+  // Suffixe `CDP` mot → CCDP
+  if (/CDP$/i.test(code)) return "CCDP";
+
+  const isCadre = role && /^(pit|sup|cadres?|ins)$/i.test(role);
+  const table = isCadre ? CODE_TO_LIEU_CADRE : CODE_TO_LIEU_EMPLOYEE;
+
+  // 1) Lookup exact (avec suffixe)
+  if (table[code]) return table[code];
+  // 2) Lookup base sans suffixe c/'/":'/  (préservé en stockage, mais pour lookup)
+  const base = code.replace(/[c'":]+$/g, "");
+  if (table[base]) return table[base];
+  // 3) Inconnu
+  return "?";
 }
 
 /* ------------------------------------------------------------------
@@ -262,6 +347,8 @@ const PlanningParserHelpers = {
   STATUT_CODES,
   STATUT_LABEL,
   LIEUX_SBM,
+  CODE_TO_LIEU_CADRE,
+  CODE_TO_LIEU_EMPLOYEE,
   COMPETENCES,
   MONTHS_FR,
   normalizeQuotes,
@@ -269,6 +356,7 @@ const PlanningParserHelpers = {
   isCcdpSuffixCode,
   isChefCode,
   isLieuSBM,
+  codeToLieu,
   detectPlanningType,
   detectVersion,
   detectMonthYear,

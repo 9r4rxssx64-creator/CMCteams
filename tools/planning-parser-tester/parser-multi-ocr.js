@@ -22,20 +22,30 @@
       require("./helpers-reuse.js"),
       require("./lib/vision-passes.js"),
       require("./lib/cell-voting.js"),
-      require("./lib/text-parser.js")
+      require("./lib/text-parser.js"),
+      require("./lib/encadres-parser.js"),
+      require("./lib/team-detector.js")
     );
   } else {
     root.PlanningParserPipeline = factory(
       root.PlanningParserHelpers,
       root.VisionPasses,
       root.CellVoting,
-      root.TextParser
+      root.TextParser,
+      root.EncadresParser,
+      root.TeamDetector
     );
   }
-}(typeof self !== "undefined" ? self : this, function (H, VisionPasses, CellVoting, TextParser) {
+}(typeof self !== "undefined" ? self : this, function (H, VisionPasses, CellVoting, TextParser, EncadresParser, TeamDetector) {
   "use strict";
 
   if (!H) throw new Error("[parser-multi-ocr] helpers-reuse.js doit être chargé avant.");
+
+  /** Calcule le nombre de jours dans un mois donné (0-indexé). */
+  function daysInMonth(year, monthZeroIdx) {
+    if (!year || monthZeroIdx === null || monthZeroIdx === undefined) return 31;
+    return new Date(year, monthZeroIdx + 1, 0).getDate();
+  }
 
   /* ================================================================
    * Phase 1 — Capture multi-format
@@ -369,6 +379,35 @@
         }
       }
 
+      /* ---- Phase 3.H : Parser encadrés « du au » (statuts intégraux CP/AF/M/EDC...) ---- */
+      // Source : NOTES_USER « FORMATION du au », « N CP du au », « M du au ».
+      // Règle Kevin CLAUDE.md erreur #49 : codes courts uniquement, jamais
+      // chercher « FORMATION/MALADIE » en source primaire.
+      if (EncadresParser && opts.runEncadres !== false) {
+        const passeA_PdfJs = result.passes.find(p => p.passe === "A" && p.tool === "pdf.js");
+        const rawText = passeA_PdfJs && passeA_PdfJs.textRaw;
+        if (rawText) {
+          const tEnc = Date.now();
+          const monthYear = result.month_year_detected || {};
+          const dim = daysInMonth(monthYear.year, monthYear.month);
+          const encResult = EncadresParser.parseEncadres(rawText, dim);
+          result.encadres = encResult;
+          result.durations_ms.encadres_parser = Date.now() - tEnc;
+          if (encResult.boxes && encResult.boxes.length > 0) {
+            result.alerts.push({
+              severity: "info",
+              msg: `Encadrés statuts détectés : ${encResult.boxes.length} (` +
+                   encResult.boxes.map(b => b.code + "×" + (b.names_found || 0)).join(", ") + ")"
+            });
+          }
+          if (encResult.warnings && encResult.warnings.length > 0) {
+            for (const w of encResult.warnings) {
+              result.alerts.push({ severity: "warn", msg: "Encadrés : " + w });
+            }
+          }
+        }
+      }
+
       /* ---- Phase 3.B → 3.E : Passes Vision IA via proxy (auto-config lazy) ---- */
       if (VisionPasses && opts.runVision !== false && result.capture.bytes) {
         // Si le proxy n'est pas configuré, on tente le loadAutoConfig en lazy
@@ -481,6 +520,80 @@
         }
       }
 
+      /* ---- Phase 3.I : Détection équipes (RH/R pattern) + miroirs ---- */
+      // Algorithme officiel SBM (Kevin 2026-05-15) — pattern RH identique = même
+      // équipe ; offset constant + horaire base différent = équipe miroir.
+      // Source primaire idéale = trait noir foncé du PDF (Vision IA seulement),
+      // ce module est le FALLBACK quand seul le texte natif est dispo.
+      if (TeamDetector && opts.runTeamDetector !== false) {
+        // On préfère les emps de la passe G (text-parser, plus fiable sur
+        // texte natif). Si absente, fallback sur 1ère passe Vision avec emps.
+        const passeG = result.passes.find(p => p.passe === "G" && p.ok);
+        let teamSource = null;
+        if (passeG && passeG.employees && passeG.employees.length > 0) {
+          teamSource = { name: "G:text-parser", employees: passeG.employees };
+        } else {
+          const visionWithEmps = result.passes.find(p =>
+            ["B", "C", "D", "E"].indexOf(p.passe) >= 0 && p.ok && Array.isArray(p.employees) && p.employees.length > 0
+          );
+          if (visionWithEmps) {
+            teamSource = { name: visionWithEmps.passe + ":" + (visionWithEmps.tool || "?"), employees: visionWithEmps.employees };
+          }
+        }
+        if (teamSource) {
+          const tTeams = Date.now();
+          // Adapte la forme : team-detector attend { fullName, days, family? }
+          const adapted = teamSource.employees.map(e => ({
+            fullName: e.name || e.fullName,
+            days: e.days || {},
+            family: e.family || null
+          }));
+          const teamRes = TeamDetector.detectTeams(adapted, { minTeamSize: 2 });
+          result.teams = teamRes;
+          result.teams.source = teamSource.name;
+          result.durations_ms.team_detector = Date.now() - tTeams;
+          if (teamRes.teams && teamRes.teams.length > 0) {
+            result.alerts.push({
+              severity: "info",
+              msg: `Équipes détectées (source ${teamSource.name}) : ${teamRes.teams.length} équipe(s), ${teamRes.mirrors.length} miroir(s).`
+            });
+          }
+        }
+      }
+
+      /* ---- Phase 3.J : Enrichir cellules avec LIEU (CMC/CCDP/PNL) ---- */
+      // Mapping conditionnel sur rôle (Kevin 2026-05-28) : le MÊME code peut
+      // avoir un LIEU DIFFÉRENT selon rôle (19/4 employé = CMC, Pit Boss = CCDP).
+      // On n'écrit pas dans les cellules — on ajoute juste une projection `lieux`
+      // à côté pour que l'UI affiche le badge (préserve règle "reproduction
+      // identique" : la cellule reste exactement le code source).
+      if (H.codeToLieu && opts.runLieuMapping !== false) {
+        const tLieu = Date.now();
+        result.lieux_per_emp = {};
+        for (const passe of result.passes) {
+          if (!passe.ok || !Array.isArray(passe.employees)) continue;
+          for (const emp of passe.employees) {
+            const name = emp.name || emp.fullName;
+            if (!name) continue;
+            // Rôle déduit depuis result.type_detected (Pit Boss / Sup / Inspecteur → cadres)
+            const cadreType = result.type_detected.types &&
+              result.type_detected.types.find(t => t.kind === "cadres");
+            const role = cadreType ? cadreType.sub : (emp.family === "cadres" ? "pit" : "employee");
+            const daysLieux = {};
+            for (const d of Object.keys(emp.days || {})) {
+              const code = emp.days[d];
+              const lieu = H.codeToLieu(code, role);
+              if (lieu) daysLieux[d] = lieu;
+            }
+            // Stocke la projection (1 fois par emp, source = 1ère passe qui le voit)
+            if (!result.lieux_per_emp[name]) {
+              result.lieux_per_emp[name] = { role, days: daysLieux, source: passe.passe };
+            }
+          }
+        }
+        result.durations_ms.lieu_mapping = Date.now() - tLieu;
+      }
+
       /* ---- Alertes globales ---- */
       if (result.type_detected.needs_user_confirm) {
         result.alerts.push({
@@ -551,6 +664,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.6.1-ui-labels-honest"
+    VERSION: "T1-v0.7.0-lieu-encadres-teams"
   };
 }));
