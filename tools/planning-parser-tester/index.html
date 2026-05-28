@@ -167,15 +167,15 @@
   <h2>2. Pipeline de lecture (6 passes parallèles)</h2>
   <div class="stack-passes">
     <div class="pass-box" id="pass-A"><div class="name">A · PDF.js (texte natif)</div><div class="status">…</div></div>
-    <div class="pass-box todo" id="pass-B"><div class="name">B · Claude Vision</div><div class="status">à venir (Phase suivante)</div></div>
-    <div class="pass-box todo" id="pass-C"><div class="name">C · GPT-4o Vision</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-D"><div class="name">D · Mistral OCR</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-E"><div class="name">E · Gemini 2.5 Pro</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-F"><div class="name">F · Tesseract.js (fallback)</div><div class="status">à venir</div></div>
-    <div class="pass-box todo" id="pass-G"><div class="name">G · Parser texte natif (PDF.js)</div><div class="status">⏭ pas encore exécutée</div></div>
+    <div class="pass-box todo" id="pass-B"><div class="name">B · Claude Vision</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-C"><div class="name">C · GPT-4o Vision</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-D"><div class="name">D · Mistral (Pixtral)</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-E"><div class="name">E · Gemini 2.5 Pro</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-F"><div class="name">F · Tesseract.js (fallback)</div><div class="status">🚧 non implémentée — fallback hors-ligne futur</div></div>
+    <div class="pass-box todo" id="pass-G"><div class="name">G · Parser texte natif</div><div class="status">⏳ en attente — document requis</div></div>
   </div>
   <div class="legend">
-    Les passes B-F sont des stubs dans cette première itération. Une fois la passe A validée Kevin sur ses 4 PDFs réels, on active les Vision IA pour atteindre le vote 4/4 unanime (zéro erreur).
+    A &amp; G tournent toujours (PDF.js seul, hors-ligne). B–E nécessitent le proxy Vision configuré (Section 0). F (Tesseract) est gardée pour un futur mode hors-ligne pur. Vote unanime cellule par cellule (<code>lib/cell-voting.js</code>) → cellules certaines vs <code>needs_review</code>.
   </div>
 </div>
 
@@ -210,7 +210,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.6.0-text-parser-native-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.6.1-ui-labels-honest-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;

@@ -551,6 +551,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.6.0-text-parser-native"
+    VERSION: "T1-v0.6.1-ui-labels-honest"
   };
 }));
