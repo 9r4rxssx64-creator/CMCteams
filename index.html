@@ -5395,7 +5395,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.752";
+var APP_VER="v9.753";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -38219,6 +38219,23 @@ function doImport(){
         .replace(/[\u201c\u201d]/g,'"')
         .replace(/[\u2018\u2019\u02bc]/g,"'");
       var _ac=null;
+      // Tentative 0 (FIDELITE Kevin 2026-05-28) : preserver la casse 'h' minuscule
+      // (12h30/19) et le ':' final (19/4:) que la normalisation uppercase/strip
+      // perdait (19 nits cadre Pit Boss). GATE sur /h/ minuscule OU ':' final \u2192
+      // les codes chefs/employes (20/5c, 19/4'c, 22/6, RH...) n'en ont AUCUN \u2192
+      // 0 impact (fidelite chefs 29/29 garantie intacte).
+      if(/h/.test(_rawNoTag)||/:$/.test(_rawNoTag)){
+        var _origF=_rawNoTag.replace(/[\u2215\u2044\uff0f]/g,"/").replace(/[\u201c\u201d]/g,'"').replace(/[\u2018\u2019\u02bc]/g,"'").trim();
+        if(CODES[_origF])_ac=_origF;
+        else{
+          var _baseF=_origF.toUpperCase().replace(/["':;]+$/,"");
+          if(CODES[_baseF]){
+            var _quoteF=/["']$/.test(_origF);
+            try{CODES[_origF]=Object.assign({},CODES[_baseF],_quoteF?_CMC_CONV_STYLE:{},{learned:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_f0){}
+            if(CODES[_origF])_ac=_origF;
+          }
+        }
+      }
       // Tentative 1 : lookup direct avec apostrophes/quotes pr\u00e9serv\u00e9s (CDP/CONV)
       if(_acRaw&&CODES[_acRaw])_ac=_acRaw;
       // v9.726 \u2014 Tentative 1bis : pr\u00e9server le suffixe ' / " (Convention) via
@@ -39072,8 +39089,25 @@ function doImport(){
     }
     refData.rows[emp.id]={};
     for(var di=codesStart;di<parts.length;di++){
-      var code=parts[di].trim().toUpperCase();
+      var _codeRaw=parts[di].trim();
+      var code=_codeRaw.toUpperCase();
       if(!code||code==="0"||code==="-") continue;
+      // FIDELITE (Kevin 2026-05-28) : préserver la casse 'h' minuscule (12h30/19)
+      // et le ':' final (19/4:) que le toUpperCase + strip perdaient (19 nits
+      // cadre Pit Boss). GATE sur /h/ minuscule OU ':' final → les codes chefs/
+      // employés (20/5c, 19/4'c, 22/6, RH...) n'en ont AUCUN → 29/29 chefs intact.
+      var _fidO=_codeRaw.replace(/[∕⁄／]/g,"/").replace(/[“”]/g,'"').replace(/[‘’ʼ]/g,"'").trim();
+      if(/h/.test(_fidO)||/:$/.test(_fidO)){
+        if(CODES[_fidO]){code=_fidO;}
+        else{
+          var _fidBase=_fidO.toUpperCase().replace(/["':;]+$/,"");
+          if(CODES[_fidBase]){
+            var _fidQ=/["']$/.test(_fidO);
+            try{CODES[_fidO]=Object.assign({},CODES[_fidBase],_fidQ?_CMC_CONV_STYLE:{},{learned:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_fg){}
+            if(CODES[_fidO])code=_fidO;
+          }
+        }
+      }
       // Détection d'une sous-période inline : deux entiers consécutifs = FROM TO
       // Ex : "CP CP CP 5 30 22/6 19/4..." → jours 1-3 CP, puis nouvelle période à partir du jour 5
       if(/^\d{1,2}$/.test(code)){
