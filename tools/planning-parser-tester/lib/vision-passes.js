@@ -831,6 +831,6 @@ INTERDICTION ABSOLUE :
     runClaudeVision, runGPT4oVision, runMistralOCR, runGeminiVision,
     runAllVisionPasses,
     STRUCTURED_PROMPT,
-    VERSION: "T1-vision-v0.9.1-encadres-applied-no-orphan"
+    VERSION: "T1-vision-v0.9.2-convention-denominations"
   };
 }));
