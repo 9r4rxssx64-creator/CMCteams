@@ -109,8 +109,14 @@ async function main() {
       }
       out.emps++;
       let suffixMis = 0, otherMis = 0;
+      // v8.54 (parser index.html l.38875) : les codes mappent TOUJOURS depuis le
+      // jour 1 — les colonnes "from to" du PDF (ex PENNACINO "21 31") sont des
+      // métadonnées visuelles (fenêtre de présence), PAS le jour de départ des
+      // codes. Le copier-coller inclut les 31 colonnes-jours. Ex PENNACINO :
+      // CP×20 (j1-20, en CP) puis 11 codes rotation (j21-31, présent) = 31 codes
+      // mappés j1-31. parsePB renvoie from=21 mais le mapping reste j1+i.
       p.codes.forEach((src, i) => {
-        const day = p.from + i;
+        const day = 1 + i;
         if (day < 1 || day > 31) return;
         const got = row[day];
         if (got === src) return;
