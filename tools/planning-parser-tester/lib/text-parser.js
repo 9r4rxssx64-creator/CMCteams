@@ -148,6 +148,30 @@
     return null;
   }
 
+  /** Token "pur code-poste" : seulement lettres B/R/T/C/P/K/E (+ séparateurs +/.).
+   *  Un vrai nom de famille contient toujours d'autres lettres. */
+  function isPosteToken(t) {
+    const letters = String(t).replace(/[.+]/g, "");
+    return letters.length >= 2 && /^[BRTPECK]+$/.test(letters);
+  }
+
+  /** Normalise un nom pour la FUSION : retire les codes-poste (≥2 lettres)
+   *  en TÊTE et en QUEUE, où qu'ils soient (bug réel JUIN 2026 : « BRE DEVERINI F »
+   *  vide vs « DEVERINI F BRE » plein = même personne, doublon non fusionné).
+   *  Protège les initiales 1 lettre (homonymes LANDAU B/J, ENZA B/C, CAMPI PH/H
+   *  intacts — jamais strippées). Garde toujours ≥2 tokens (surname + initiale). */
+  function cleanNameKey(name) {
+    if (!name) return name;
+    let tokens = String(name).trim().split(/\s+/).filter(Boolean);
+    while (tokens.length > 2 && isPosteToken(tokens[0])) tokens.shift();
+    while (tokens.length > 2 && isPosteToken(tokens[tokens.length - 1])) tokens.pop();
+    // Cas « BT TULEU » (poste ≥2 + 1 seul mot de nom) → garde le nom seul.
+    if (tokens.length === 2 && isPosteToken(tokens[0]) && !isPosteToken(tokens[1])) {
+      tokens = [tokens[1]];
+    }
+    return tokens.join(" ");
+  }
+
   function parseLineForEmployee(line, opts) {
     opts = opts || {};
     const minCodes = opts.minCodes || 3;  // relâché : 3 codes min (employés CP intégral peuvent avoir peu de codes visibles)
@@ -322,6 +346,9 @@
       const dedup = {};
       function cellCount(e) { return e && e.days ? Object.keys(e.days).length : 0; }
       function mergeKeepBest(emp) {
+        // Normalise le nom (retire codes-poste tête/queue) pour que les doublons
+        // « BRE DEVERINI F » / « DEVERINI F BRE » fusionnent. Affiche le nom propre.
+        emp.name = cleanNameKey(emp.name);
         const ex = dedup[emp.name];
         if (!ex) { dedup[emp.name] = emp; return; }
         // Complète d'abord les cellules manquantes de l'existant avec les nouvelles
@@ -391,6 +418,8 @@
     POST_CODE_PREFIX_RE,
     parseRawLine,
     parseFromRawText,
+    cleanNameKey,
+    isPosteToken,
     VERSION: "T1-text-parser-v0.4.0-line-by-line-poststrip"
   };
 }));

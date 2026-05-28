@@ -778,6 +778,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.9.2-convention-denominations"
+    VERSION: "T1-v0.9.3-merge-poste-duplicates"
   };
 }));

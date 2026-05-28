@@ -238,6 +238,16 @@ function buildSbmHtml() {
   }
   check("  Suffixes ('/\"/*) préservés dans les cellules extraites", suffixOk);
 
+  // Régression cleanNameKey : doublons poste-ordre fusionnent, homonymes distincts
+  console.log(`\n${INFO} 5. Normalisation noms (doublons poste vs homonymes)`);
+  const ck = TextParser.cleanNameKey;
+  check("  « BRE DEVERINI F » == « DEVERINI F BRE » (fusion)", ck("BRE DEVERINI F") === ck("DEVERINI F BRE"));
+  check("  « BT COSLOVICH V » == « COSLOVICH V BT » (fusion)", ck("BT COSLOVICH V") === ck("COSLOVICH V BT"));
+  check("  « KE SYNAVE S » → « SYNAVE S »", ck("KE SYNAVE S") === "SYNAVE S");
+  check("  LANDAU B ≠ LANDAU J (homonymes protégés)", ck("LANDAU B") !== ck("LANDAU J"));
+  check("  CAMPI PH ≠ CAMPI H (homonymes protégés)", ck("CAMPI PH") !== ck("CAMPI H"));
+  check("  LANTERI MINET P intact (initiale poste-letter protégée)", ck("LANTERI MINET P") === "LANTERI MINET P");
+
   try { fs.unlinkSync(tmpPdf); } catch (_) {}
 
   console.log("\n────────────────────────");
