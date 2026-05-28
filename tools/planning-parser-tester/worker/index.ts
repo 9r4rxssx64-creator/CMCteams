@@ -148,7 +148,7 @@ function checkAuth(req: Request, env: Env): { ok: boolean; reason?: string; mode
 
 // Limites strictes pour protéger le quota API Kevin (bug #16 + #17).
 const MAX_BODY_BYTES = 32 * 1024 * 1024;  // 32 MB = limite Anthropic doc + Mistral
-const UPSTREAM_TIMEOUT_MS = 75_000;        // 75s, > timeout frontend (45s) + marge
+const UPSTREAM_TIMEOUT_MS = 110_000;       // 110s = max Cloudflare Workers Paid plan (subrequest)
 
 // Rate-limit in-memory pour /test/* (bug #18). Cloudflare Workers ne persiste
 // pas l'état entre invocations → ce limit est best-effort par instance worker

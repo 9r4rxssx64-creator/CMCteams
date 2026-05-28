@@ -21,16 +21,18 @@
     module.exports = factory(
       require("./helpers-reuse.js"),
       require("./lib/vision-passes.js"),
-      require("./lib/cell-voting.js")
+      require("./lib/cell-voting.js"),
+      require("./lib/text-parser.js")
     );
   } else {
     root.PlanningParserPipeline = factory(
       root.PlanningParserHelpers,
       root.VisionPasses,
-      root.CellVoting
+      root.CellVoting,
+      root.TextParser
     );
   }
-}(typeof self !== "undefined" ? self : this, function (H, VisionPasses, CellVoting) {
+}(typeof self !== "undefined" ? self : this, function (H, VisionPasses, CellVoting, TextParser) {
   "use strict";
 
   if (!H) throw new Error("[parser-multi-ocr] helpers-reuse.js doit être chargé avant.");
@@ -345,6 +347,28 @@
       /* ---- Phase 0 : Inventaire exhaustif ---- */
       result.inventory = buildInventory(textRaw);
 
+      /* ---- Phase 3.G : Parser texte natif (PDF.js → JSON, ZÉRO IA) ---- */
+      // CORRECTION over-engineering 2026-05-27 : pour les PDFs SBM avec texte
+      // extractible (cas usuel), on n'a PAS besoin des 4 IA Vision. PDF.js a
+      // déjà tout extrait en 419ms. Un parser texte simple reconstruit
+      // {employees, days} en 50-200ms, déterministe, gratuit, 0 timeout.
+      // Les passes Vision restent comme RENFORT pour vote 4/4 + PDFs scannés.
+      if (TextParser && opts.runTextParser !== false) {
+        const passeA_PdfJs = result.passes.find(p => p.passe === "A" && p.tool === "pdf.js");
+        if (passeA_PdfJs) {
+          const tText = Date.now();
+          const passeG = TextParser.parseFromPdfJs(passeA_PdfJs);
+          result.passes.push(passeG);
+          result.durations_ms.text_parser = Date.now() - tText;
+          if (passeG.ok && passeG.employees.length > 0) {
+            result.alerts.push({
+              severity: "info",
+              msg: `Parser texte natif : ${passeG.employees.length} employés détectés en ${passeG.latency_ms} ms (zéro coût IA).`
+            });
+          }
+        }
+      }
+
       /* ---- Phase 3.B → 3.E : Passes Vision IA via proxy (auto-config lazy) ---- */
       if (VisionPasses && opts.runVision !== false && result.capture.bytes) {
         // Si le proxy n'est pas configuré, on tente le loadAutoConfig en lazy
@@ -527,6 +551,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.5.0-tokens-pixtral-gemini"
+    VERSION: "T1-v0.6.0-text-parser-native"
   };
 }));
