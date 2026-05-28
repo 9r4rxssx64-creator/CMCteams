@@ -274,6 +274,7 @@
       brtpeck: e.brtpeck || null,
       teamNumber: (e.teamNumber !== undefined ? e.teamNumber : null),
       _gridDays: new Set(Object.keys(e.days || {})), // jours issus de la GRILLE (intouchables)
+      statuts: Array.isArray(e.statuts) ? e.statuts.slice() : [], // codes encadrés (section maladie/CP…)
       source: e.source || "grid"
     }));
     const byName = new Map();
@@ -286,31 +287,43 @@
     // récupérait le « R » initiale de son voisin CERETTI R).
     const ABSENCE_FULL = new Set(["M", "MAL", "CP", "AF", "MT", "PAT", "SS", "ABI", "AT", "ABS", "EDC", "CFL", "CRH"]);
 
-    const stats = { filled: 0, created: 0, cells_added: 0, overridden: 0 };
+    const stats = { filled: 0, created: 0, cells_added: 0, overridden: 0, dual_display: 0 };
     for (const box of (boxes || [])) {
       const from = box.from || 1;
       const to = box.to || daysInMonth;
-      const wholeMonth = from <= 1 && to >= daysInMonth;
       for (const n of (box.names || [])) {
         const key = normName(n.fullName);
         let emp = byName.get(key);
         if (!emp) {
-          emp = { name: cleanDisplayName(n.fullName), days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), source: "encadre" };
+          emp = { name: cleanDisplayName(n.fullName), days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), statuts: [], source: "encadre" };
           byName.set(key, emp);
           out.push(emp);
           stats.created++;
         } else {
           stats.filled++;
         }
-        // « Phantom » = absence tout le mois + ≤3 cellules grille = roster-only
-        // dont la grille est un artefact → l'encadré (source de vérité) prime.
-        const phantom = wholeMonth && ABSENCE_FULL.has(box.code) && emp._gridDays.size <= 3;
+        // Marqueur statut encadré → permet la SECTION « longue maladie » / CP
+        // (et le DOUBLE affichage si l'employé a aussi une équipe).
+        if (!emp.statuts) emp.statuts = [];
+        if (emp.statuts.indexOf(box.code) < 0) emp.statuts.push(box.code);
+
+        // RÈGLE Kevin 2026-05-28 : si une longue maladie a AUSSI une vraie ligne
+        // d'équipe → afficher LES DEUX (section maladie + vue équipe), même si M
+        // tout le mois → on NE touche PAS sa grille (teamNumber non null).
+        // Sinon (pas de vraie équipe) : sa grille est un artefact de colonnes
+        // mélangées (ex SANGIORGIO 30×CP, SANNA 1×R) → l'encadré PRIME.
+        const hasRealTeam = emp.teamNumber != null;
+        if (hasRealTeam) stats.dual_display++;
+        const gridCodes = new Set(Array.from(emp._gridDays).map(d => emp.days[d]));
+        const gridIsArtefact = emp._gridDays.size <= 3 || gridCodes.size <= 1; // sparse OU uniforme
+        const override = ABSENCE_FULL.has(box.code) && !hasRealTeam && gridIsArtefact;
+
         for (let d = from; d <= to; d++) {
           const ds = String(d);
-          // Cas normal : ne JAMAIS écraser une cellule de grille (donnée source).
-          // Cas phantom : l'encadré intégral écrase les rares cellules artefact.
           if (emp._gridDays.has(ds)) {
-            if (!phantom) continue;
+            // Vraie équipe OU grille non-artefact → on PROTÈGE la cellule de
+            // grille (double affichage : reste en vue équipe avec son code).
+            if (!override) continue;
             stats.overridden++;
           }
           emp.days[ds] = box.code;
