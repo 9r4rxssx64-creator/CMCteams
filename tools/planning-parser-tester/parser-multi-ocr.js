@@ -757,6 +757,6 @@
     ensurePdfJsReady,
     buildInventory,
     summarize,
-    VERSION: "T1-v0.8.2-validation-workflow"
+    VERSION: "T1-v0.8.3-passe-a-display-fix"
   };
 }));

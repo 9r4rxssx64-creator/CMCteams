@@ -214,7 +214,7 @@
 
 <!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
      touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
-<script>window.__APP_BUILD__ = "v0.8.2-validation-workflow-" + Date.now();</script>
+<script>window.__APP_BUILD__ = "v0.8.3-passe-a-display-fix-" + Date.now();</script>
 <script>
   (function injectScripts() {
     var v = window.__APP_BUILD__;
@@ -476,18 +476,24 @@
           st.innerHTML = `❌ <strong>${H.esc((passe.error && passe.error.message) || "Erreur")}</strong> <span class="small">· ${passe.latency_ms || 0} ms</span><br><span class="small">${H.esc(msg)}</span>`;
           box.title = msg; // tooltip plein détail au hover
         } else if (id === "A") {
-          st.textContent = `✓ ${passe.tool} · ${result.durations_ms.passe_A || 0} ms · ${passe.pages?.length || 0} pages · ${passe.itemsTotal || 0} items`;
+          const dur = (result.durations_ms && result.durations_ms.passe_A) || passe.latency_ms || 0;
+          const pages = (passe.pages && passe.pages.length) || 0;
+          st.textContent = `✓ ${passe.tool || "pdf.js"} · ${dur} ms · ${pages} pages · ${passe.itemsTotal || 0} items`;
         } else {
           const empN = (passe.employees || []).length;
           st.textContent = `✓ ${passe.tool} · ${passe.latency_ms || 0} ms · ${empN} employés lus`;
         }
       }
-      updatePassBox("A", result.passes.find(p => p.passe === "A"));
-      updatePassBox("B", result.passes.find(p => p.passe === "B"));
-      updatePassBox("C", result.passes.find(p => p.passe === "C"));
-      updatePassBox("D", result.passes.find(p => p.passe === "D"));
-      updatePassBox("E", result.passes.find(p => p.passe === "E"));
-      updatePassBox("G", result.passes.find(p => p.passe === "G"));
+      // Chaque mise à jour isolée : un échec d'affichage d'une passe ne doit
+      // jamais empêcher les autres de s'afficher (ni laisser A bloquée « en cours »).
+      ["A", "B", "C", "D", "E", "G"].forEach(function (pid) {
+        try {
+          updatePassBox(pid, result.passes.find(p => p.passe === pid));
+        } catch (e) {
+          const box = document.getElementById("pass-" + pid);
+          if (box) { const s = box.querySelector(".status"); if (s) s.textContent = "⚠ affichage indisponible"; }
+        }
+      });
 
       // Affiche résultat
       resultCard.style.display = "";
