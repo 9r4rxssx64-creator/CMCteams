@@ -9,6 +9,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+import { store } from '../../core/store.js';
 import { apexKnowledgeBase } from '../../services/admin/apex-knowledge-base.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 import { vault } from '../../services/vault/vault.js';
@@ -19,10 +20,14 @@ describe('apex-tools-dispatch — knowledge base cases', () => {
     apexKnowledgeBase.clearCache();
     vi.restoreAllMocks();
     vi.spyOn(vault, 'readKey').mockResolvedValue('ghp_fake_for_tests');
+    /* v13.4.246 : execute('admin') re-vérifie auth.isAdminSync() (fail-closed).
+       Session admin réelle requise sinon tools rétrogradés → "Tier insuffisant". */
+    store.set('user', { id: 'kdmc_admin', name: 'K' });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    store.set('user', null);
   });
 
   describe('search_repo_code', () => {

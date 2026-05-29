@@ -88,14 +88,17 @@ describe('Vault Triple-Persistence (Kevin v13.3.74+ ABSOLUE)', () => {
       expect(writeSpy).toHaveBeenCalledTimes(2);
     });
 
-    it('si offline → skip avec reason "offline"', async () => {
+    it('si offline → met en file d\'attente (queued), write() appelé pour flush auto (v13.4.257)', async () => {
+      /* v13.4.257 (FIX "Firebase backup KO 0/20") : offline N'ABANDONNE PLUS.
+         firebase.write() met en file (firebase-queue) + flush à la reconnexion
+         → le backup vault n'est plus perdu en arrière-plan iOS. */
       vi.spyOn(firebase, 'isConnected').mockReturnValue(false);
       const writeSpy = vi.spyOn(firebase, 'write').mockResolvedValue();
       const enc = await vault.encryptAuto('sk-offline-test');
       const r = await vaultFirebaseBackup.push('ax_anthropic_key', enc);
-      expect(r.ok).toBe(false);
-      expect(r.reason).toBe('offline');
-      expect(writeSpy).not.toHaveBeenCalled();
+      expect(r.ok).toBe(true);
+      expect(r.queued).toBe(true);
+      expect(writeSpy).toHaveBeenCalled();
     });
   });
 

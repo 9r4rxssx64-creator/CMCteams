@@ -1,12 +1,21 @@
 /**
  * Tests agent-system.ts (parité Claude Code subagents internes).
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { store } from '../../core/store.js';
 import { agentSystem } from '../../services/core-svc/agent-system.js';
 
 describe('Agent System (subagents internes Apex IA)', () => {
   beforeEach(() => {
     localStorage.clear();
+    /* v13.4.246 : les agents audit/monitor exécutent audit_self/read_logs en
+       tier admin, re-vérifié via auth.isAdminSync() (fail-closed). Session admin
+       réelle requise sinon result undefined (tool rétrogradé client_free). */
+    store.set('user', { id: 'kdmc_admin', name: 'K' });
+  });
+
+  afterEach(() => {
+    store.set('user', null);
   });
 
   describe('spawn audit agent', () => {
