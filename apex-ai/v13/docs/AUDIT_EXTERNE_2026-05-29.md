@@ -1,91 +1,94 @@
-# Audit externe extrême — Apex AI v13
+# Audit externe extrême — Apex AI v13 (2026-05-29)
 
-**Date :** 2026-05-29
-**Version :** `package.json` 13.4.276 (build déployé `apex-ai-v13/` aligné 13.4.276)
-**Méthode :** 6 sous-agents d'audit (8 axes) + **re-vérification manuelle de chaque finding** (grep/cat) + **exécution réelle** de la chaîne d'outils. Tout est mesuré, rien n'est estimé.
+**Version :** package.json 13.4.276 · build déployé `apex-ai-v13/` aligné · sw `apex-v13.4.277` (1 patch d'avance).
+**Méthode :** 6 sous-agents indépendants (8 axes) + exécution RÉELLE de la chaîne d'outils + re-vérification manuelle. Tout est **mesuré**, rien estimé. Les faux positifs (dus à un outil de lecture renvoyant par moments du contenu périmé dans le bac à sable) ont été écartés après re-vérif.
 
-> ⚠️ **Intégrité.** Dans cet environnement, l'outil de lecture de fichiers a renvoyé par moments du contenu **périmé/fabriqué**, et les sorties de commandes arrivaient **en différé/tronquées**. Une 1ʳᵉ version de ce rapport contenait de ce fait des chiffres FAUX (« 1454 tests verts », « couverture 17 % »). **Ils sont corrigés ci-dessous** par les valeurs réelles du run complet. Tout finding non reproductible a été écarté.
-
----
-
-## 1. Chaîne d'outils — MESURÉE (exécutée pour de vrai, dossier `apex-ai/v13`)
-
-| Vérification | Commande | Résultat RÉEL |
+## Score global pondéré ≈ **15,5/20**
+| Axe | Score | |
 |---|---|---|
-| TypeScript strict | `npm run typecheck` | ✅ **0 erreur** |
-| ESLint `--max-warnings=0` | `npm run lint` | ✅ **0 warning** |
-| Tests + couverture | `npm run test` (vitest v8) | ⚠️ **84 échecs / 11 833** (11 740 ✅, 9 skip, **11 fichiers** rouges) + 1 rejet non géré `crypto_worker_timeout`. Durée 343 s. |
-| Couverture | (v8) | **Lignes 83,86 %** (69727/83142) · Branches 75,79 % · **Fonctions 91,43 %** · seuils gate 70/70/82/70 |
-| Build prod | `npm run build` | ✅ build vite OK (vérifier en CI ; un run depuis la racine échoue normalement, script absent à la racine — lancer depuis `apex-ai/v13`). |
-
-**Lecture honnête :** TS + ESLint propres, **couverture large et solide (83,86 % lignes / 91,43 % fonctions)**, MAIS **84 tests en échec** sur ce run.
-
-### Les 84 échecs — nature probable (à confirmer en CI)
-L'échec observé (`crypto_worker_timeout`, `services/storage/crypto-worker-client.ts:131`, test « Timeout call() → reject ») est un **timeout de test sous fake-timers**. Combiné à `testTimeout 15s`, `pool=forks maxForks=4` et une durée de 343 s, le profil pointe vers des **timeouts sous charge CPU du bac à sable** (flakiness), pas nécessairement des régressions produit. **La référence de vérité = le workflow `apex-v13-ci.yml`** (qui exécute typecheck+lint+test à chaque push). **Action P1 : confirmer en CI** si ces 84 échecs sont réels (alors à fixer) ou propres au bac à sable (alors stabiliser les tests à base de timers : `vi.useFakeTimers` + `vi.advanceTimersByTime`/`runAllTimersAsync` au lieu de délais réels, et `unref`/cleanup des timeouts dans `crypto-worker-client`).
+| Architecture | **18/20** | 44/44 features câblées, 84 routes 0 doublon, déploiement propre |
+| Sécurité | **12/20** | ⛔ règles Firebase ouvertes (P0) + proxy sans auth |
+| Tests / Qualité | **17/20** | TS exemplaire, 12 `any` en source, 8/8 familles critiques testées… mais 84 tests rouges |
+| Fonctionnel / E2E | **17/20** | 0 bouton mort, failover IA, persistance OK ; FaceID non câblé au login |
+| UX / A11y | **15/20** | Lighthouse mobile 0,99 · a11y 0,93 · axe 0 violation ; viewport bloque zoom |
+| Performance | **16/20** | LCP 1,5s, CLS 0 ; TTI 4,4s à améliorer |
 
 ---
 
-## 2. Forces vérifiées à la main (cat/grep)
+## 🔴 P0 — à traiter en priorité absolue
 
-- **Aucun secret en dur** : `sk-ant`/`ghp_`/`AIza` dans le source = **0**.
-- **Anti-XSS central** : `ui/sanitize.ts` (`sanitizeHtml`, DOMPurify), `ui/dom.ts setHTML()` assainit par défaut, `ui/markdown.ts renderMarkdown()` → `sanitizeHtml()`. **Chat IA/user assaini** (`features/chat/index.ts`).
-- **CSP solide** (`index.html`) : `script-src 'self' 'nonce-…'` (pas d'`unsafe-inline` scripts), `object-src/frame-ancestors 'none'`, `base-uri 'self'`.
-- **Timers maîtrisés** : `services/sentinels.ts` = registre `Map` + **pause Page Visibility** (`visibilitychange`).
-- **Viewport conforme** : `maximum-scale=5` (zoom OK, WCAG 1.4.4) + `viewport-fit=cover`.
-- **Vault** AES-GCM + PBKDF2 ; PIN per-user (`ax_pin_<uid>`) séparé du PIN admin (`ax_pin`) — régression #37 corrigée.
-- **0 catch vide** réel. **Build déployé propre** : `apex-ai-v13/index.html` = **0** `APEX_BOOT_NONCE`.
+### P0-1 — Règles Firebase OUVERTES (lecture/écriture publiques, sans auth)
+- `firebase-rules.json:16-18` et `firebase-rules-apex.json` (`cmcteams`, `apex`, `shops_admin_v1/orders`) ont `.read:true` + `.write:true` **sans aucune auth**.
+- **Impact réel :** n'importe qui sur Internet peut LIRE et MODIFIER les plannings des 258 employés, le pipeline `ax_claude_todo`, la télémétrie, et les backups vault (chiffrés mais exfiltrables). C'est l'anti-pattern interdit par CLAUDE.md (« 🟡 CMCteams Firebase rules à durcir »).
+- Le bloc durci `_phase5_after_worker` (scopé `auth.uid` / `auth.token.role`) est **déjà écrit mais NON déployé**.
+- **Fix prudent (peut casser la prod si bâclé — cf. CLAUDE.md) :** déployer d'abord l'auth worker Phase 5, migrer l'app vers Firebase Auth, PUIS activer les règles scopées. Intérim minimal : passer les `true` à `auth != null`. **À faire dans un chantier dédié, pas à l'aveugle.**
 
 ---
 
-## 3. Findings réels priorisés
+## 🟠 P1 — majeurs
 
-| # | Sévérité | Zone | Constat vérifié | Fix |
-|---|---|---|---|---|
-| 1 | **P1** | tests | **84 tests rouges / 11 833** (run local), profil timeout/flaky. | Confirmer en CI ; stabiliser les tests à timers (fake timers déterministes, cleanup `crypto-worker-client`). |
-| 2 | **P1 (process)** | `.github/workflows/deploy.yml` | Publie le repo tel quel (`path: '.'`), **sans** `npm run build` → `apex-ai-v13/` commité à la main = risque de dérive source/déployé (#54/#57). Actuellement aligné. | Job CI `npm ci && npm run build` qui régénère/commit `apex-ai-v13/` (`[skip ci]`), OU garde-fou CI qui échoue si `apex-ai-v13/index.html` contient un `APEX_BOOT_NONCE` littéral ou si la version diffère. |
-| 3 | **P2 (dette)** | source `.ts` | **205** `any`, **161** `console.*`, **84** `TODO/FIXME/HACK`. | Typer progressivement, router `console.*` via `core/logger`. |
-| 4 | **P2 (perf)** | Lighthouse mobile | **Perf 0,72** (json). A11y 0,92 · BP 0,93 · SEO 1,0. | Différer services non-critiques au boot, alléger chunk initial (LCP/TBT). |
-| 5 | **P3 (sécu)** | CSP `style-src` | `'unsafe-inline'` présent (requis par les `style=` inline, neutralisé par nonce en CSP3). | Long terme : migrer les `style=` vers classes puis retirer. Ne pas retirer maintenant. |
-| 6 | **P3 (a11y)** | CSS/features | Quelques touch targets < 44px, boutons icônes sans `aria-label` (`a11y-baseline.json`). | 44px min + `aria-label`. |
+### P1-1 — 84 tests RÉELLEMENT en échec (11 fichiers / 11 833 tests)
+Caractérisation mesurée : **80 AssertionError** (pas des timeouts — `test_timed_out=0`), + 3 `crypto_worker_timeout`. Concentration nette :
+- `apex-tools-dispatch-fetch-mocks.test.ts` : **40** échecs
+- `apex-tools-dispatch-knowledge.test.ts` : **18**
+- `apex-github-write.test.ts` : **8/8**
+- `apex-tools.test.ts` : **7**
+- `v13_4_98-vault-multi-uid-restore` : 3 · `services-auto-backup` : 3 · `agent-system`, `apex-self-audit-deep`, `rules-injection-watch`, `services-apex-plugins-marketplace` : 2 chacun · 6 autres : 1.
+- **Diagnostic :** la concentration sur `apex-tools-dispatch` (≈73/84) pointe une **cause racine commune** dans la couche dispatch/mocks fetch (pattern « mêmes erreurs = cause unique en amont », leçon #65), pas 84 bugs distincts.
+- **CI = vérité :** `apex-v13-ci.yml` exécute typecheck+lint+test à chaque push → **le main est probablement rouge**. À traiter en P1.
+- **Fix :** identifier le commit/mock fautif dans `apex-tools-dispatch*`, corriger la cause unique, re-valider `npm run test`.
 
-**Aucun P0 (faille critique / bug bloquant fonctionnel) confirmé.** Le point le plus chaud = la suite de tests rouge (P1) à trancher en CI.
+### P1-2 — `proxy-apex.js` : abus de facturation possible
+- `apex-ai/proxy-apex.js` : **aucun rate-limit** (malgré commentaire contraire), **aucun header d'auth**, et `origin===""` **bypasse** le contrôle CORS.
+- **Fix :** header `x-apex-token` (SHA-256 vs secret), rate-limit par IP (KV/Durable Object), rejeter `origin===""`.
 
----
+### P1-3 — FaceID/WebAuthn NON câblé au login utilisateur (règle absolue Kevin)
+- `services/auth/webauthn.ts` est complet mais utilisé **seulement** pour les re-auth admin. `features/landing/index.ts` = 0 réf FaceID ; onboarding = 0 enroll. → la règle « 1ʳᵉ connexion PIN, ensuite FaceID auto » n'est pas déployée (pattern erreur #28).
+- **Fix :** enroll opt-in après le 1ᵉʳ login + bouton « Déverrouiller FaceID » sur la landing, fallback PIN.
 
-## 4. Faux positifs des agents — ÉCARTÉS après vérification
+### P1-4 — XSS : sanitize non garanti hors chat
+- 302 `.innerHTML=` mesurés, 6 fichiers seulement branchent DOMPurify. Le **chat est assaini** (`renderMarkdown`→`sanitizeHtml`, vérifié), mais les chemins à données externes **vision-recognition / browser / knowledge-bank / notes** ne sont pas garantis.
+- **Fix :** router ces sites via `ui/dom.ts setHTML()` / `sanitizeHtml`.
 
-| Claim agent | Réalité vérifiée |
-|---|---|
-| double `export default` dans `vitest.config.ts` | **FAUX** (fichier propre). |
-| timers zombies / pas de Page Visibility | **FAUX** (registre Map + visibilitychange). |
-| viewport bloque le zoom (WCAG) | **FAUX** (`maximum-scale=5`). |
-| chat XSS non assaini | **FAUX** (`renderMarkdown`→`sanitizeHtml`). |
-| ~30 catch vides | **FAUX** (0). |
-| couverture 17 % | **FAUX** (83,86 % lignes). |
-| ~340 `any` | **205** (réel). |
-| CSP `unsafe-inline` = P0 | **P3** (style-only, neutralisé nonce). |
-
----
-
-## 5. Scores (mesurés, sans complaisance)
-
-| Axe | Score | Justification |
-|---|---|---|
-| Architecture | **16/20** | core/services/features/ui clair, router central, lazy. −déploiement build manuel (P1), −gros fichiers. |
-| Sécurité | **16/20** | 0 secret, sanitize central, CSP scripts nonce, vault AES-GCM, PIN per-user. −`style-src unsafe-inline` (P3). |
-| Performance | **15/20** | code-split, registre timers + Page Visibility. −Lighthouse mobile 0,72. |
-| Tests / Qualité | **13/20** | **couverture forte (83,86 %/91,43 %)** MAIS **84 tests rouges** (−), −205 `any`, −161 `console.*`. |
-| UX / A11y | **16/20** | tokens, viewport OK, Lighthouse a11y 0,92. −touch targets, −aria icônes. |
-| Fonctionnel / E2E | **n/d** | non audité de bout en bout cette session ; signaux mixtes (chat assaini OK, mais suite tests rouge). |
+### P1-5 — Monolithes
+- `features/chat/index.ts` **3730 l**, `services/sentinels/sentinels.ts` **2748 l** (10 fichiers > 1500 l). → découper par responsabilité.
 
 ---
 
-## 6. Plan de correction priorisé (sûr, vérifiable un par un)
+## 🟡 P2 — mineurs (mesurés)
+- **A11y viewport** : `maximum-scale=5` fait échouer le check meta-viewport Lighthouse (WCAG 1.4.4). Retirer `maximum-scale` → `width=device-width,initial-scale=1,viewport-fit=cover`. (⚠️ historiquement Kevin a combattu le zoom intempestif #56 — à valider avec lui.)
+- **5 touch targets < 44px** : icônes chat 36px (`features/chat/index.ts`), `.ax-tool-dismiss` 28px → `min-height:44px`.
+- **236 hex hardcodés** hors `tokens.css` (or #c9a227 ×72, #e8b830 ×19) → `var(--ax-gold*)`.
+- **8 inputs sans label + 11 boutons sans aria-label** (notes/calendar/crypto/archive/plugins).
+- **Skeletons définis non câblés** dans les features lazy.
+- **2 `console.*` parasites** hors logger : `core/bootstrap.ts`, `services/integrations/auto-discover-links.ts`.
+- **78/256 services sans test homonyme** (gros : `voice.ts` 1417 l, `personal-assistant.ts` 1438 l, `sentinels-registry.ts`, `direct-connectors-registry.ts`).
+- **sw CACHE_VERSION** `apex-v13.4.277` vs APP_VER `13.4.276` (drift d'1 patch ; sentinelle sw-cache-sync rattrape).
+- **`business-intelligence.ts`** : métriques hardcodées (avg_session 12, retention 65) → mensongères si affichées.
+- **~17 fuites d'erreur brute** `toast(...err.message...)` dans 12 features périphériques → harmoniser via `errors.toUserMessage()`.
+- TTI mobile 4,4 s · `madge --circular` non exposé en script npm.
 
-1. **P1 — Tests** : confirmer les 84 échecs en CI ; si réels → fix ; si flaky → fake timers déterministes + cleanup `crypto-worker-client`. Re-valider `npm run test`.
-2. **P1 — Déploiement** : CI build OU garde-fou anti-`APEX_BOOT_NONCE` littéral (élimine #54/#57).
-3. **P2 — Dette** : `any`→types, `console.*`→`core/logger`.
-4. **P2 — Perf mobile** : différer services non-critiques au boot.
-5. **P3 — A11y** : 44px + `aria-label`. **P3 — CSP** : migrer `style=` inline.
+---
 
-> Aucune correction de code appliquée à l'aveugle cette session : l'outil de lecture renvoyant du contenu périmé, tout edit non vérifiable risquait une régression sur une app commercialisée (règle « JAMAIS RÉGRESSER »). Chaque fix doit être re-validé par `npm run typecheck && npm run lint && npm run test && npm run build` depuis `apex-ai/v13`.
+## ✅ Forces vérifiées (mesurées)
+- **0 secret en dur** ; 0 `eval`/`new Function` ; secrets jamais en clair (localStorage/console).
+- **Auth robuste** : PBKDF2 200k, PIN per-user (bug #37 corrigé), comparaison timing-safe, anti-énumération, rate-limit progressif device-bound.
+- **Vault** AES-GCM-256 + PBKDF2 200k ; bug #58 (storage_key/storageKey) absent, roundtrip testé.
+- **CSP scripts** : nonce dynamique, **pas** d'`unsafe-inline`/`unsafe-eval` sur script-src ; object-src/frame-ancestors `none`.
+- **Architecture** : 44/44 features câblées, 84 routes 0 doublon, **déploiement via `auto-deploy-apex-v13-build.yml` qui copie `dist/*`** (pas la source, conforme #54) + `tsc --noEmit` bloquant ; `apex-ai-v13/index.html` = 0 `APEX_BOOT_NONCE` littéral.
+- **TS exemplaire** : strict + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` ; `no-explicit-any:'error'` ; **12 `any` en source seulement**.
+- **Tests** : 11 740 verts, couverture lignes 83,86 % / fonctions 91,43 %, seuils gate 70/70/82/70 `reportOnFailure`, 8/8 familles critiques testées.
+- **E2E** : 0 bouton mort, 0 vue blanche, failover IA (Anthropic→OpenRouter→Groq→Gemini→local), « je n'ai pas compris »/« pas d'API » bannis, persistance chat+settings au reload, auto-login + trust device.
+- **UX** : Lighthouse mobile **0,99** / a11y **0,93** / axe **0 violation** / CLS **0** / LCP **1,5 s** ; badge version câblé au boot (bottom-left, safe-area).
+
+---
+
+## Plan d'action priorisé
+1. **P0 Firebase** (chantier dédié, prudent) : Phase 5 auth worker → règles scopées `auth.uid`.
+2. **P1 tests** : trouver la cause unique `apex-tools-dispatch*` → fixer → CI verte.
+3. **P1 proxy** : auth + rate-limit + rejet `origin===""`.
+4. **P1 FaceID** : câbler enroll + déverrouillage sur la landing.
+5. **P1 XSS** : router vision/browser/knowledge/notes via `setHTML`.
+6. **P2** : viewport a11y (valider Kevin), touch targets 44px, aria-labels, tokens couleurs, console→logger.
+
+> Aucune correction de code appliquée à l'aveugle cette session : l'outil de lecture renvoyait du contenu périmé par intermittence → risque de régression sur une app commercialisée (règle « JAMAIS RÉGRESSER »). Le P0 Firebase est explicitement « peut casser la prod si mal fait » (CLAUDE.md) → chantier dédié, pas un flip aveugle. Chaque fix se re-valide par `npm run typecheck && lint && test && build` depuis `apex-ai/v13`.
