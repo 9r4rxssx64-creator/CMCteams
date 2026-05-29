@@ -48,11 +48,14 @@ jobs:
         run: |
           npm ci --legacy-peer-deps --no-audit --no-fund
           npx tsc --noEmit
-          # Tests rapides sur fichiers changés uniquement
-          CHANGED_TESTS=$(git diff --name-only "$(git merge-base origin/main HEAD)"..HEAD -- 'apex-ai/v13/tests/**/*.test.ts' | tr '\n' ' ')
+          # Tests rapides sur fichiers changés uniquement.
+          # FIX : on RESTE dans apex-ai/v13 (où vitest + sa config happy-dom/setup
+          # vivent). L'ancien code faisait `cd` vers la racine repo — un AUTRE projet
+          # sans vitest configuré → échec de démarrage du reporter, gate cassé pour
+          # toute PR touchant un test. --relative donne des chemins cwd-relatifs.
+          CHANGED_TESTS=$(git diff --relative --name-only "$(git merge-base origin/main HEAD)"..HEAD -- 'tests/**/*.test.ts' | tr '\n' ' ')
           if [ -n "$CHANGED_TESTS" ]; then
-            cd /home/runner/work/CMCteams/CMCteams
-            npx vitest run --reporter=basic $CHANGED_TESTS || (echo "Tests fail dans PR"; exit 1)
+            npx vitest run $CHANGED_TESTS || (echo "Tests fail dans PR"; exit 1)
           fi
 
       - name: Comment PR auto-review summary

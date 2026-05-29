@@ -58,6 +58,8 @@ jobs:
             --exclude=dist \
             --exclude=coverage \
             --exclude=apex-ai-v13 \
+            --exclude=tests \
+            --exclude='*.test.ts' \
             --error \
             apex-ai/v13/
         env:

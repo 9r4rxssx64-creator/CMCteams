@@ -14,8 +14,11 @@ describe('Landing — FaceID / TouchID (Kevin règle absolue)', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    document.body.innerHTML = '<div id="apex-root"></div>';
-    root = document.getElementById('apex-root')!;
+    /* DOM API plutôt que innerHTML (règle frontend.md + évite faux positif SAST sur fixture) */
+    document.body.replaceChildren();
+    root = document.createElement('div');
+    root.id = 'apex-root';
+    document.body.appendChild(root);
     store.init({ appVer: 'v13.0.0' });
     store.set('user', null);
     location.hash = '';
