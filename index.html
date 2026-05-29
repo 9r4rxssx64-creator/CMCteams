@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.759";
+var APP_VER="v9.760";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -39190,7 +39190,10 @@ function doImport(){
       } else {
         // Nom de famille partagé → bigram interdit, signaler pour correction manuelle
         err++;errLines.push("AMBIGU (homonymes): \""+name+"\" — "+_bSurnCount+" employ\u00e9s avec ce nom de famille, initiale non r\u00e9solue \u2014 v\u00e9rifier DEF_EMP");
-        continue;
+        // v9.760 (Kevin diag V2 "LAVAGNA J absent") : PAS de `continue` ici.
+        // Surname partagé + initiale non résolue = bigram interdit (anti-fusion J→Y/E,
+        // lessons #38/#68) MAIS l'initiale ne matche aucun homonyme → PERSONNE DISTINCTE.
+        // On laisse emp=null tomber vers la création inline ci-dessous (règle #1).
       }
     }
     if(!emp){
