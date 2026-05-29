@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.758";
+var APP_VER="v9.760";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34505,6 +34505,20 @@ function createEmpFromImport(name,family){
   sv("employees");
 }
 
+// v9.759 (Kevin 2026-05-29 — règle #1 "tout le monde a un planning si son nom
+// est dans le PDF"). Garde-fou de validité d'un nom employé : utilisé par la
+// création INLINE pendant l'import (parser, ~l.39200) pour ne créer un employé
+// absent du roster QUE si son nom est un vrai "SURNAME + INITIALE" — jamais un
+// fragment PDF.js / "Colonne" / code (no invention).
+function _cmcIsValidEmpName(n){
+  if(!n)return false; n=String(n).trim();
+  if(n.length<3||n.length>40)return false;
+  if(/colonne/i.test(n))return false;       // artefacts PDF.js
+  if(/[\/0-9]/.test(n))return false;          // codes / chiffres
+  // SURNAME(+mots) + INITIALE 1-3 majuscules (ex "FAUTRIER M", "LANTERI MINET P")
+  return /^[A-ZÀ-Ü][A-Za-zÀ-ÿ'’\-]+(\s+[A-ZÀ-Ü][A-Za-zÀ-ÿ'’\-]+)*\s+[A-ZÀ-Ü]{1,3}$/.test(n);
+}
+
 function markAsRetired(empId,toMo){
   if(!A.user||A.user.id!==AID)return;
   var emp=empById(empId);
@@ -38905,22 +38919,41 @@ function doImport(){
     // Hors mode entête : réinitialiser si la ligne n'est pas positionnelle
     if(!_isPosDR)_pendingEmp=null;
     var parts=rawLine.split(sep);
-    // Format espace (PDF collé sans tab/virgule) : reconstruire parts[]
-    if(sep===","&&parts.length<4){
+    // Format espace : reconstruire parts[].
+    // v9.759 (Kevin diag JUIN "FAUTRIER pas d'horaire, juste RH") — CAUSE RACINE :
+    // sep est GLOBAL (l.~38003 : sep="\t" dès qu'UNE ligne a un tab). PDF.js produit
+    // du MIXTE (sections en colonnes tab + lignes chefs space-séparées). Avant, ce
+    // fallback ne tournait QUE si sep==="," → la ligne space "BRTP+K 5 FAUTRIER M 1 30…"
+    // splittée sur \t restait en 1 cellule → nom jamais matché → 0 code appliqué.
+    // Désormais : TOUTE ligne qui split en <4 colonnes tente la reconstruction par
+    // espaces (les vraies lignes tab donnent ≥4 colonnes → fallback ignoré → 0 régression).
+    if(parts.length<4){
       var sp=rawLine.trim().split(/\s+/);
       var fromIdx=-1;
-      for(var _fi=2;_fi<Math.min(sp.length,10);_fi++){
-        if(/^\d{1,2}$/.test(sp[_fi])&&parseInt(sp[_fi])>=1&&parseInt(sp[_fi])<=31){fromIdx=_fi;break;}
+      // from/to = DEUX entiers 1-31 consécutifs (robuste : un jour isolé ne déclenche pas)
+      for(var _fi=2;_fi<Math.min(sp.length,12);_fi++){
+        if(/^\d{1,2}$/.test(sp[_fi])&&parseInt(sp[_fi])>=1&&parseInt(sp[_fi])<=31&&
+           /^\d{1,2}$/.test(sp[_fi+1]||"")&&parseInt(sp[_fi+1])>=1&&parseInt(sp[_fi+1])<=31){fromIdx=_fi;break;}
       }
-      if(fromIdx>=2&&fromIdx+1<sp.length&&/^\d{1,2}$/.test(sp[fromIdx+1])){
+      if(fromIdx>=2&&fromIdx+1<sp.length){
         // Compter les codes poste initiaux (peut y en avoir plusieurs : BRTP+KE. BRTP+KE. BASILE G)
         var _rci=0;
         while(_rci<fromIdx-1&&_isRoleCode(sp[_rci]))_rci++;
-        if(_rci>0){
-          parts=[sp.slice(0,_rci).join(" "),sp.slice(_rci,fromIdx).join(" "),sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
+        // v9.759 — numéro d'équipe isolé après les codes poste (format SBM v9.639 :
+        // POST TEAM NAME FROM TO). Ex FAUTRIER : "BRTP+K 5 FAUTRIER M 1 30 …" → team "5".
+        var _teamTok="";
+        if(_rci<fromIdx-1&&/^\d{1,2}$/.test(sp[_rci])&&parseInt(sp[_rci])>=1&&parseInt(sp[_rci])<=20){
+          _teamTok=sp[_rci];_rci++;
+        }
+        var _nameJoin=sp.slice(_rci,fromIdx).join(" ");
+        if(_teamTok){
+          // [post, team, name, from, to, ...codes] → détecteur v9.639 (nameIdx=2)
+          parts=[sp.slice(0,_rci-1).join(" "),_teamTok,_nameJoin,sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
+        } else if(_rci>0){
+          parts=[sp.slice(0,_rci).join(" "),_nameJoin,sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
         } else {
           // Pas de code poste : colonne vide pour uniformiser le format 4-colonnes
-          parts=["",sp.slice(0,fromIdx).join(" "),sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
+          parts=["",_nameJoin,sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
         }
       }
     }
@@ -39157,14 +39190,36 @@ function doImport(){
       } else {
         // Nom de famille partagé → bigram interdit, signaler pour correction manuelle
         err++;errLines.push("AMBIGU (homonymes): \""+name+"\" — "+_bSurnCount+" employ\u00e9s avec ce nom de famille, initiale non r\u00e9solue \u2014 v\u00e9rifier DEF_EMP");
-        continue;
+        // v9.760 (Kevin diag V2 "LAVAGNA J absent") : PAS de `continue` ici.
+        // Surname partagé + initiale non résolue = bigram interdit (anti-fusion J→Y/E,
+        // lessons #38/#68) MAIS l'initiale ne matche aucun homonyme → PERSONNE DISTINCTE.
+        // On laisse emp=null tomber vers la création inline ci-dessous (règle #1).
       }
     }
     if(!emp){
-      // Employe introuvable : NE PAS creer de fantome — tous les employes sont dans DEF_EMP
-      err++;errLines.push("INTROUVABLE (skipped): "+name);
-      continue;
-    } else {
+      // v9.759 (Kevin RÈGLE #1 ABSOLUE "tout le monde a un planning si son nom est
+      // dans le PDF") : nom valide non trouvé dans le roster (DEF_EMP incomplet :
+      // diag JUIN ~64 noms absents). On CRÉE l'employé INLINE et on applique ses codes
+      // dans la MÊME passe (pas de ré-import fragile → évite le bug "0 cellule").
+      // Garde-fou _cmcIsValidEmpName (regex "SURNAME + INITIALE", pas de chiffre/slash)
+      // → rejette les fragments PDF.js. Les 5 niveaux de matching (exact→normalisé→
+      // surname→prénom A.reg→bigram 0.85) ont déjà échoué AVANT ici → vrai absent.
+      if(typeof _cmcIsValidEmpName==="function"&&_cmcIsValidEmpName(name)){
+        var _newId="U_TMP_"+Date.now().toString(36).toUpperCase().slice(-5)+A.employees.length;
+        emp={id:_newId,name:name,team:_contextTeam||"1",post:"",chef:!!isRouletteChef,
+             family:(isRouletteChef?"roulettes":importFamily)||"bj",cdpShifts:[],active:true};
+        A.employees.push(emp);
+        ls("cmc_e",A.employees);
+        if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+        try{if(typeof _audit==="function")_audit("import_create_emp",(A.user&&A.user.id)||"import",_newId,"",name);}catch(_){}
+        errLines.push("CRÉÉ (absent du roster): \""+name+"\" → "+_newId);
+        // pas de continue → le bloc ci-dessous applique famille/équipe/codes
+      } else {
+        err++;errLines.push("INTROUVABLE (skipped, nom invalide): "+name);
+        continue;
+      }
+    }
+    {
       // v9.646 (Kevin "ça remet les anciennes équipes comme avant") :
       // SUPPRIMÉ le fallback _contextTeam=emp.team (DEF_EMP default).
       // Cause : Kevin et collègues changent d'équipe chaque mois. Le emp.team
