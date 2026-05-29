@@ -4915,6 +4915,12 @@ function _cmcEnsureTeam(tid){
     A.teams.push(ct);
     return ct;
   }
+  // v9.768 — équipe « En déplacement » (DEPL/DEP intégral)
+  if(s==="deplacement"){
+    var dt={id:"deplacement",name:"✈ En déplacement",color:"#5a7aa8",family:"all",departureOrder:103,_auto:true};
+    A.teams.push(dt);
+    return dt;
+  }
   var fam=/^r/i.test(s)?"roulettes":/^c/i.test(s)?"cmc":"bj";
   var num=s.replace(/[^0-9]/g,"")||"?";
   var nm=fam==="roulettes"?("Roul. Éq."+num):fam==="cmc"?("CMC Éq."+num):("BJ Éq."+num);
@@ -5398,7 +5404,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.767";
+var APP_VER="v9.768";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24119,6 +24125,7 @@ function vPlan(){
     {id:"formation",label:"\ud83c\udf93 Formation",color:"#7a5aa8"},
     {id:"maladie",label:"\ud83e\udd12 Maladie",color:"#8a4a4a"},
     {id:"conges",label:"\ud83c\udfd6\ufe0f Cong\u00e9s",color:"#4a8a4a"},
+    {id:"deplacement",label:"\u2708 En d\u00e9placement",color:"#5a7aa8"},
     {id:"amenage",label:"\ud83d\udd50 Horaires am\u00e9nag\u00e9s",color:"#8a8a9a"}
   ];
   var _v747KeyFam=A.year+"-"+A.month;
@@ -38773,41 +38780,67 @@ function _cmcFallbackUnassignedTeams(iy,im){
   });
   console.info("[v9.743 fallback] assigned="+assigned+" skipped_noRh="+skipped_noRh+" skipped_noMatch="+skipped_noMatch+" skipped_cadres="+skipped_cadres);
   // v9.744 (Kevin 2026-05-26 "Fais une équipe formation si ça dure tout le mois") :
-  // Pour les emps SANS équipe ET sans RH days (absent toute la période en AF/M/CP),
-  // créer/utiliser une équipe dédiée par code absence dominant :
-  //   • AF intégral (≥80% AF) → équipe "formation"
-  //   • M intégral → équipe "maladie"
+  // Pour les emps absents toute la période en AF/M/CP, créer/utiliser une équipe
+  // dédiée par code absence dominant :
+  //   • AF intégral (≥80% sur jours non-repos) → équipe "formation"
+  //   • M intégral  → équipe "maladie"
   //   • CP intégral → équipe "conges"
+  //   • DEPL/DEP intégral → équipe "deplacement"
   // Sinon (codes mixtes ou autres) → laisser sans équipe.
-  var absenceAssigned=0;
+  //
+  // v9.768 (Kevin diag JUIN « toujours pas bon ») — 2 corrections critiques :
+  //   (1) RATIO sur JOURS NON-REPOS (exclure RH/R du dénominateur). Avant, un emp
+  //       100% CP sur jours travaillés mais avec 10 RH/R tombait à 20/30=67% < 80%
+  //       → pas assigné à « conges » → resté collé à BJ Éq.1.
+  //   (2) RÉASSIGNER (override) un emp déjà dans une équipe de TRAVAIL (1-8/r*/c*)
+  //       vers son équipe d'ABSENCE quand il qualifie. Avant : early-return sur
+  //       teamHistory existant → emp coincé dans une fausse équipe de travail (PDF-column
+  //       assignation erronée sur emps full-absence).
+  //   Les équipes d'absence DÉJÀ posées (formation/maladie/conges/deplacement/amenage)
+  //   ne sont jamais écrasées.
+  var _absTeamSet={formation:1,maladie:1,conges:1,deplacement:1,amenage:1};
+  var absenceAssigned=0,absenceOverride=0;
   A.employees.forEach(function(emp){
     if(!emp||!isEmpActive(emp,iy,im))return;
-    if(emp.teamHistory&&emp.teamHistory[key])return;
     if(emp.family==="cadres")return;
+    var existing=emp.teamHistory&&emp.teamHistory[key];
+    if(existing&&_absTeamSet[existing])return; // déjà en équipe d'absence légitime
     var r=ov[emp.id]||{};
     var codes=[];
-    Object.keys(r).forEach(function(d){if(r[d])codes.push(String(r[d]).toUpperCase());});
+    Object.keys(r).forEach(function(d){if(r[d])codes.push(String(r[d]).toUpperCase().replace(/[C'"*:]+$/g,""));});
     if(codes.length<10)return;
+    // v9.768 : exclure RH/R du dénominateur → un emp 100% CP sur jours non-repos
+    // qualifie pour « conges » même s'il a quelques RH/R intercalés.
+    var workCodes=codes.filter(function(c){return c!=="RH"&&c!=="R";});
+    if(workCodes.length<7)return; // pas assez de jours non-repos pour décider
     var counts={};
-    codes.forEach(function(c){counts[c]=(counts[c]||0)+1;});
+    workCodes.forEach(function(c){counts[c]=(counts[c]||0)+1;});
     var dominantCode=null,maxCount=0;
     Object.keys(counts).forEach(function(c){
       if(counts[c]>maxCount){maxCount=counts[c];dominantCode=c;}
     });
-    var ratio=maxCount/codes.length;
+    var ratio=maxCount/workCodes.length;
     if(ratio<0.80)return; // codes mixtes, ne pas forcer une équipe absence
     var absenceTeam=null;
     if(dominantCode==="AF"||dominantCode==="FORMATION")absenceTeam="formation";
     else if(dominantCode==="M"||dominantCode==="MAL"||dominantCode==="MALADIE")absenceTeam="maladie";
     else if(dominantCode==="CP")absenceTeam="conges";
+    else if(dominantCode==="DEPL"||dominantCode==="DEP")absenceTeam="deplacement";
     if(!absenceTeam)return; // autres codes (PRT, RRT, etc.) non gérés
     if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(absenceTeam);
     if(!emp.teamHistory)emp.teamHistory={};
+    if(existing&&existing!==absenceTeam){
+      // v9.768 : OVERRIDE d'une équipe de travail erronée (COURTIN F en CP intégral
+      // collé à BJ Éq.1 par pdf-column → repasser dans « Congés »).
+      console.info("[v9.768 absence override] "+emp.name+" : "+existing+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+" sur "+workCodes.length+" jours non-repos)");
+      absenceOverride++;
+    }else{
+      console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+" sur "+workCodes.length+" jours non-repos)");
+    }
     emp.teamHistory[key]=absenceTeam;
     absenceAssigned++;
-    console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+")");
   });
-  console.info("[v9.744 absence] assigned="+absenceAssigned);
+  console.info("[v9.744 absence] assigned="+absenceAssigned+" override="+absenceOverride);
   // v9.746 (Kevin 2026-05-26 "On avance pas — ELIODORI J r10 mais VIGNA M r3 avec MÊME pattern") :
   // PASSE DE CONSOLIDATION — pour chaque emp avec une équipe attribuée, vérifier
   // qu'une AUTRE équipe de sa famille n'a PAS la MAJORITÉ d'emps avec EXACTEMENT
@@ -38886,11 +38919,12 @@ function _cmcFallbackUnassignedTeams(iy,im){
   // passe que ce fallback). GARDE FINALE = invariant : un emp avec <5 jours TRAVAILLÉS
   // (0 rotation réelle, codes travail non parsés = section fragmentée) ne peut PAS être
   // dans une équipe de TRAVAIL (1-8, r*, c*) → on purge teamHistory[key]. EXCEPTION :
-  // les équipes d'ABSENCE (formation/maladie/conges/deplacement) sont CONSERVÉES (Kevin
-  // veut justement voir ces familles). Cette passe est la dernière → quelle que soit la
-  // passe qui a (mal) assigné l'emp, l'invariant s'applique.
+  // les équipes d'ABSENCE (formation/maladie/conges/deplacement/amenage) sont CONSERVÉES
+  // (Kevin veut justement voir ces familles). v9.768 : amenage ajouté au whitelist + cette
+  // passe attrape uniquement les emps qui n'ont PAS qualifié pour v9.744 (ratio<80% ou
+  // codes mixtes ou trop peu de jours non-repos) → emps « planning vraiment cassé ».
   try{
-    var _absT={formation:1,maladie:1,conges:1,deplacement:1};
+    var _absT={formation:1,maladie:1,conges:1,deplacement:1,amenage:1};
     var _purged=0;
     A.employees.forEach(function(_e){
       if(!_e||!_e.teamHistory||!_e.teamHistory[key])return;
