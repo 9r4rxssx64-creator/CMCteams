@@ -28,6 +28,8 @@
  *   - Audit trail dans Firebase /apex/ax_auth_log (admin-only via rules)
  */
 
+import { verifyCmcPw } from "./cmc-hash.js";
+
 const FIREBASE_AUTH_BASE = "https://identitytoolkit.googleapis.com/v1";
 
 export default {
@@ -105,6 +107,41 @@ export default {
         }, corsHeaders);
       }
 
+      // --- /login-cmc (CMCteams : valide cmc_pw via service account) ---
+      if (url.pathname === "/login-cmc" && request.method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        const { uid, password } = body;
+        if (!uid || !password) {
+          return jsonResp({ ok: false, error: "missing_uid_or_password" }, corsHeaders, 400);
+        }
+
+        // Rate-limit par IP (clé distincte de /login Apex)
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        const rateKey = `rlc:${ip}`;
+        const attempts = parseInt(await env.AUTH_KV.get(rateKey) || "0");
+        if (attempts >= 5) {
+          return jsonResp({ ok: false, error: "rate_limited", retry_after: 900 }, corsHeaders, 429);
+        }
+        await env.AUTH_KV.put(rateKey, String(attempts + 1), { expirationTtl: 900 });
+
+        // Lecture cmc_pw/<uid> en admin (service account) → survit aux règles strictes.
+        // Le mot de passe en clair ne transite QUE sur HTTPS, jamais loggé (RGPD).
+        const stored = await readCmcPw(uid, env, ctx);
+        if (!stored.ok) {
+          const status = stored.status === 404 ? 404 : 502;
+          return jsonResp({ ok: false, error: stored.detail || "user_not_found", detail: stored.detail }, corsHeaders, status);
+        }
+        if (!verifyCmcPw(password, stored.value)) {
+          return jsonResp({ ok: false, error: "password_mismatch" }, corsHeaders, 401);
+        }
+
+        await env.AUTH_KV.delete(rateKey);
+        const customToken = await generateCustomToken(uid, env, "cmc");
+        ctx.waitUntil(auditLog(env, uid, "login_cmc_success", ip));
+
+        return jsonResp({ ok: true, custom_token: customToken, uid, scope: "cmc", expires_in: 3600 }, corsHeaders);
+      }
+
       // --- /refresh ---
       if (url.pathname === "/refresh" && request.method === "POST") {
         const body = await request.json().catch(() => ({}));
@@ -169,9 +206,13 @@ async function sha256(str) {
  * Génère un Firebase custom token signé via service-account.
  * Utilise jose-like JWT signing avec RS256.
  */
-async function generateCustomToken(uid, env) {
+async function generateCustomToken(uid, env, scope = "apex") {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "RS256", typ: "JWT" };
+  // Rôle selon le périmètre : Apex (admin = kdmc_admin) ou CMCteams (admin = U11804).
+  const role = scope === "cmc"
+    ? (uid === "U11804" ? "admin" : "employee")
+    : (uid === "kdmc_admin" ? "admin" : "user");
   const payload = {
     iss: env.FIREBASE_CLIENT_EMAIL,
     sub: env.FIREBASE_CLIENT_EMAIL,
@@ -179,7 +220,7 @@ async function generateCustomToken(uid, env) {
     iat: now,
     exp: now + 3600,
     uid: uid,
-    claims: { role: uid === "kdmc_admin" ? "admin" : "user" }
+    claims: { role, scope }
   };
 
   const encoder = new TextEncoder();
@@ -232,6 +273,27 @@ async function readPinHash(uid, env, ctx) {
 
 export function cleanFbVal(t) {
   return String(t || "").trim().replace(/^"|"$/g, "");
+}
+
+/**
+ * Lit l'enregistrement de mot de passe CMCteams /cmcteams/cmc_pw/<uid>.
+ * Renvoie la valeur parsée (objet { h, ... } ou string legacy) pour verifyCmcPw.
+ * Lecture authentifiée service account (survit aux règles strictes), fallback anonyme.
+ */
+async function readCmcPw(uid, env, ctx) {
+  const base = `https://${env.FIREBASE_PROJECT_ID}-default-rtdb.europe-west1.firebasedatabase.app/cmcteams/cmc_pw/${encodeURIComponent(uid)}.json`;
+  let token = null;
+  try { token = await getGoogleAccessToken(env, ctx); } catch (_) { /* fallback anon */ }
+  const r = await fetch(token ? `${base}?access_token=${encodeURIComponent(token)}` : base);
+  if (!r.ok) {
+    if (r.status === 404) return { ok: false, status: 404, detail: "user_not_found" };
+    return { ok: false, status: r.status, detail: `rtdb_read_${r.status}`, mode: token ? "admin" : "anon" };
+  }
+  const text = await r.text();
+  if (!text || text.trim() === "null") return { ok: false, status: 404, detail: "user_not_found" };
+  let value;
+  try { value = JSON.parse(text); } catch (_) { value = cleanFbVal(text); }
+  return { ok: true, value, mode: token ? "admin" : "anon" };
 }
 
 /**
