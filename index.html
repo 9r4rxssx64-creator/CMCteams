@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.763";
+var APP_VER="v9.764";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37545,6 +37545,29 @@ function _cmcFallbackUnassignedTeams(iy,im){
     }
   });
   console.info("[v9.746 consol] reattributed="+reattributed);
+  // v9.764 (Kevin diag : COURTIN F/NICASTRO/COTTALORDA « · RH R » 0 jour travaillé
+  // TOUJOURS collés à BJ Éq.1 malgré v9.763 — leur teamHistory venait d'une AUTRE
+  // passe que ce fallback). GARDE FINALE = invariant : un emp avec <5 jours TRAVAILLÉS
+  // (0 rotation réelle, codes travail non parsés = section fragmentée) ne peut PAS être
+  // dans une équipe de TRAVAIL (1-8, r*, c*) → on purge teamHistory[key]. EXCEPTION :
+  // les équipes d'ABSENCE (formation/maladie/conges/deplacement) sont CONSERVÉES (Kevin
+  // veut justement voir ces familles). Cette passe est la dernière → quelle que soit la
+  // passe qui a (mal) assigné l'emp, l'invariant s'applique.
+  try{
+    var _absT={formation:1,maladie:1,conges:1,deplacement:1};
+    var _purged=0;
+    A.employees.forEach(function(_e){
+      if(!_e||!_e.teamHistory||!_e.teamHistory[key])return;
+      if(!isEmpActive(_e,iy,im))return;
+      if(_absT[_e.teamHistory[key]])return; // équipe d'absence légitime → garder
+      if(_workedCount(_e.id)<5){
+        console.info("[v9.764 purge] "+_e.name+" retiré équipe travail "+_e.teamHistory[key]+" (<5 j travaillés)");
+        delete _e.teamHistory[key];
+        _purged++;
+      }
+    });
+    if(_purged){console.info("[v9.764 purge] "+_purged+" emp(s) 0-travaillé retiré(s) des équipes de travail");try{ls("cmc_e",A.employees);}catch(_){}}
+  }catch(_pgErr){console.warn("[v9.764 purge]",_pgErr&&_pgErr.message);}
   return{ok:true,assigned:assigned+absenceAssigned,consolidated:reattributed};
 }
 // ═══════════════════════════════════════════════════════════════════════════
