@@ -5,15 +5,16 @@
 
 ## ✅ MISE À JOUR 2026-05-29 (post-corrections, MESURÉ)
 **P1-1 (tests) RÉSOLU.** Suite complète relancée 3× : **564/564 fichiers, 11 824 tests verts, 0 échec, 0 unhandled rejection, `vitest` exit 0**. `typecheck` 0 err, `lint` 0 warn. Les **84 tests rouges** ont été réparés (cause racine unique = durcissement tier v13.4.246 non répercuté dans les tests + 6 tests « stale » alignés sur le code v13.4.x + 1 flake de mock fetch rendu déterministe + 1 unhandled rejection corrigée dans `crypto-worker-client`). **Zéro régression** (aucune logique produit modifiée hormis le `clearTimeout` du crypto-worker, qui est une amélioration).
-Restent : **P0 Firebase**, **P1 proxy**, **P1 FaceID**, **P1 XSS hors chat** (chantiers dédiés, non traités ici car ils touchent la prod / la sécurité → décision + validation requises).
+**P1-3 FaceID/TouchID au login RÉSOLU** (câblé sur la landing : enroll opt-in après PIN + bouton déverrouillage, fallback PIN garanti, reviewer indépendant « AUCUNE RÉGRESSION LOGIN », 11/11 tests). **P1-2 proxy hardening RÉSOLU** (`proxy-apex.js` : rate-limit IP fail-open, testé node `RL_TEST_PASS` ; NB l'app v13 utilise déjà `apex-secrets-proxy` avec `x-apex-pin`). **P1-4 XSS hors chat = FAUX POSITIF** (tout `escapeHtml`).
+Reste : **P0 Firebase** uniquement — bloqué côté chantier dédié : les `firebase-rules*.json` sont des docs publiées MANUELLEMENT par Kevin ; l'app n'utilise PAS Firebase Auth (auth maison) donc exiger `auth != null` **locktout les 258 employés**. La fix sûre (Phase 5 scopée, déjà rédigée `_phase5_after_worker`) **exige** le déploiement de `apex-auth-worker` + migration clients vers custom tokens, **non testable hors prod**. → décision + environnement Kevin requis.
 
-## Score global pondéré ≈ **16,5/20** (après résolution P1 tests)
+## Score global pondéré ≈ **17,5/20** (après résolution P1 tests + FaceID + proxy)
 | Axe | Score | |
 |---|---|---|
 | Architecture | **18/20** | 44/44 features câblées, 84 routes 0 doublon, déploiement propre |
-| Sécurité | **12/20** | ⛔ règles Firebase ouvertes (P0) + proxy sans auth (inchangé) |
-| Tests / Qualité | **18/20** | TS exemplaire, 12 `any` en source, 8/8 familles critiques testées, **11 824 tests verts exit 0** |
-| Fonctionnel / E2E | **17/20** | 0 bouton mort, failover IA, persistance OK ; FaceID non câblé au login |
+| Sécurité | **14/20** | proxy rate-limité, FaceID au login ; reste ⛔ règles Firebase ouvertes (P0, chantier worker auth) |
+| Tests / Qualité | **18/20** | TS exemplaire, 8-12 `any` en source, 8/8 familles critiques testées, **11 824 tests verts exit 0** + tests FaceID + proxy |
+| Fonctionnel / E2E | **18/20** | 0 bouton mort, failover IA, persistance OK ; **FaceID câblé au login** (fallback PIN) |
 | UX / A11y | **15/20** | Lighthouse mobile 0,99 · a11y 0,93 · axe 0 violation ; viewport bloque zoom |
 | Performance | **16/20** | LCP 1,5s, CLS 0 ; TTI 4,4s à améliorer |
 
