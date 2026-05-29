@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.755";
+var APP_VER="v9.756";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11146,23 +11146,6 @@ function dcDebounced(){
   }
   _dcCallCount++;
 }
-// v9.755 (Kevin 2026-05-28 "l'app saute scintille bcp trop surtout à l'import") :
-// COALESCEUR de rafales synchrones. Diagnostic Playwright : à chaque import, 4 dc()
-// (rebuild innerHTML complet) en ~100 ms — doImport + applyAbsenceCadres + l'agent
-// auto-fix autoFillMissingCadres/agentActionAutoFillCadres qui se déclenche EN PLEIN
-// import — soit 4 flashs plein écran consécutifs. dcSoon() = debounce TRAILING court
-// (90 ms) : N appels rapprochés → UN seul dc() 90 ms après le dernier (imperceptible),
-// au lieu de N rebuilds. Distinct de dcDebounced (3000 ms pendant import, pour les
-// échos SSE étalés sur plusieurs secondes). À utiliser pour tout dc() déclenché en
-// rafale par un même flux (import, batch, agent).
-var _dcSoonT=null;
-function dcSoon(){
-  if(_dcSoonT)clearTimeout(_dcSoonT);
-  _dcSoonT=setTimeout(function(){
-    _dcSoonT=null;_dcLastRun=Date.now();
-    try{dc();}catch(_){}
-  },90);
-}
 // ── Modale Accès admin (v9.58) ─────────────────────────────────────────────
 var _accessModalUid=null;
 function openAccessModal(uid){if(!A.user||A.user.id!==AID)return;_accessModalUid=uid;dc();}
@@ -11843,7 +11826,7 @@ function agentActionPurgeOldLogs(){
 function agentActionAutoFillCadres(){
   if(!A.user||A.user.id!==AID)return;
   if(typeof autoFillMissingCadres==="function"){
-    try{autoFillMissingCadres(A.year,A.month);toast("\u2728 Cadres auto-compl\u00e9t\u00e9s pour "+MFR[A.month]+" "+A.year);dcSoon();}catch(e){toast("\u2717 "+(e.message||""),"err");}
+    try{autoFillMissingCadres(A.year,A.month);toast("\u2728 Cadres auto-compl\u00e9t\u00e9s pour "+MFR[A.month]+" "+A.year);dc();}catch(e){toast("\u2717 "+(e.message||""),"err");}
   }
 }
 function agentLastReport(id){
@@ -25461,7 +25444,7 @@ function applyAbsenceCadres(year,month,entries){
     try{fbWrite("cmc_ov",A.overrides);}catch(_){}
     _audit("applyAbsenceCadres",AID,"",JSON.stringify({y:year,m:month,count:count,skipped:skipped,ambiguous:ambiguous}).slice(0,200),"");
     toast("\u2705 "+count+" cadre(s) absence appliqu\u00e9(s)"+(skipped?" \u00b7 "+skipped+" nom(s) introuvables":""));
-    dcSoon(); // v9.755 coalesce rafale import (anti-scintillement)
+    dc();
   }
   return count;
 }
@@ -25535,7 +25518,7 @@ function autoFillMissingCadres(year,month,opts){
         toast("\u26A0 "+needsSource.length+" cadre"+(needsSource.length>1?"s":"")+" sans source - verifiez le PDF (regle Kevin v9.592)","warn",6000);
       }
     }
-    dcSoon(); // v9.755 coalesce rafale import/agent (anti-scintillement)
+    dc();
   }
   return{filled:applied.filter(function(a){return a.nSet>0;}).length,applied:applied};
 }
@@ -39605,8 +39588,7 @@ function doImport(){
     r.innerHTML+=_dsHtml;
   }
   // v9.556 — Mode silencieux (replay auto-recovery) : skip dc() pour eviter flicker
-  // v9.755 — dcSoon() coalesce avec applyAbsenceCadres + agent auto-fill (rafale import)
-  if(!_silentReplayMode){dcSoon();}
+  if(!_silentReplayMode){dc();}
   var _vLabel=_importVersion>1?' (v'+_importVersion+')':"";
   // Détection import incomplet : vérifier combien d'employés actifs ont 0 horaire ce mois
   var _ov2=A.overrides[key]||{};
