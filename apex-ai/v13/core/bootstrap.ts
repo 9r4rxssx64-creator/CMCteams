@@ -416,6 +416,12 @@ async function bootstrap(): Promise<void> {
     logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
   });
 
+  /* Phase 5 — pont Firebase Auth (obtient un id_token au login via apex-auth-worker).
+   * Fail-open : aucune régression si worker absent. Lazy import non-bloquant. */
+  void import('@services/auth/firebase-auth-bridge.js')
+    .then(({ firebaseAuthBridge }) => firebaseAuthBridge.init())
+    .catch((err: unknown) => logger.warn('boot', 'firebase-auth-bridge load failed (fail-open)', { err }));
+
   /* v13.3.95 P0.2 — force snapshot vault → Firebase si drift au boot.
    * Audit externe : "13 local sans backup" → autoFix sentinelle ne s'exécutait
    * qu'au prochain tick (5min). On déclenche un snapshot initial non-bloquant
