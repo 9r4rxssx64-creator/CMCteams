@@ -68,17 +68,23 @@ export default {
         }
         await env.AUTH_KV.put(rateKey, String(attempts + 1), { expirationTtl: 900 });
 
-        // Vérifier pin_hash contre Firebase RTDB
-        const fbResp = await fetch(
-          `https://${env.FIREBASE_PROJECT_ID}-default-rtdb.europe-west1.firebasedatabase.app/apex/ax_pin_${uid}.json`
-        );
-        if (!fbResp.ok) {
-          return jsonResp({ ok: false, error: "user_not_found" }, corsHeaders, 404);
+        // Vérifier pin_hash contre Firebase RTDB.
+        // Lecture AUTHENTIFIÉE via service account (OAuth Google) → fonctionne même
+        // sous les règles strictes Phase 5 où /apex/ax_pin_$uid n'est plus lisible en
+        // anonyme. Fallback anonyme conservé pour compat Phase 4 (règles ouvertes).
+        // Sans ce correctif, activer les règles strictes casserait TOUT login (le
+        // worker ne pourrait plus lire ax_pin → 403). Voir CLAUDE.md Phase 5.
+        const pinRead = await readPinHash(uid, env, ctx);
+        if (!pinRead.ok) {
+          const status = pinRead.status === 404 ? 404 : 502;
+          return jsonResp(
+            { ok: false, error: pinRead.detail || "user_not_found", detail: pinRead.detail, mode: pinRead.mode },
+            corsHeaders,
+            status
+          );
         }
-        const expectedHash = await fbResp.text();
-        const cleanExpected = String(expectedHash || "").replace(/^"|"$/g, "");
 
-        if (cleanExpected !== pin_hash) {
+        if (pinRead.hash !== pin_hash) {
           return jsonResp({ ok: false, error: "pin_mismatch" }, corsHeaders, 401);
         }
 
@@ -136,14 +142,18 @@ async function auditLog(env, uid, action, ip) {
       ts: Date.now(),
       worker_version: "v1.0"
     };
-    await fetch(
-      `https://${env.FIREBASE_PROJECT_ID}-default-rtdb.europe-west1.firebasedatabase.app/apex/ax_auth_log/${entry.ts}.json`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry)
-      }
-    );
+    // Écriture authentifiée (service account) → fonctionne sous règles strictes Phase 5
+    // (ax_auth_log .write: auth != null). Fallback anonyme si le token échoue.
+    let logUrl = `https://${env.FIREBASE_PROJECT_ID}-default-rtdb.europe-west1.firebasedatabase.app/apex/ax_auth_log/${entry.ts}.json`;
+    try {
+      const tok = await getGoogleAccessToken(env, null);
+      if (tok) logUrl += `?access_token=${encodeURIComponent(tok)}`;
+    } catch (_) { /* fallback anonyme */ }
+    await fetch(logUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry)
+    });
   } catch (e) {
     console.warn("audit log failed:", e.message);
   }
@@ -188,7 +198,97 @@ async function generateCustomToken(uid, env) {
   return `${signingInput}.${sigB64}`;
 }
 
-function base64urlEncode(input) {
+/**
+ * Lit le hash de PIN d'un user dans RTDB /apex/ax_pin_<uid>.
+ * Priorité : lecture authentifiée service account (survit aux règles strictes Phase 5).
+ * Fallback : lecture anonyme (compat Phase 4 où /apex est encore lisible).
+ * RTDB renvoie le corps `null` (200) quand le path n'existe pas → traité user_not_found.
+ */
+async function readPinHash(uid, env, ctx) {
+  const base = `https://${env.FIREBASE_PROJECT_ID}-default-rtdb.europe-west1.firebasedatabase.app/apex/ax_pin_${encodeURIComponent(uid)}.json`;
+
+  // 1) Lecture authentifiée (service account)
+  let token = null;
+  try { token = await getGoogleAccessToken(env, ctx); } catch (_) { /* fallback anon */ }
+  if (token) {
+    const r = await fetch(`${base}?access_token=${encodeURIComponent(token)}`);
+    if (r.ok) {
+      const hash = cleanFbVal(await r.text());
+      if (hash === "" || hash === "null") return { ok: false, status: 404, detail: "user_not_found", mode: "admin" };
+      return { ok: true, hash, mode: "admin" };
+    }
+    if (r.status !== 404) return { ok: false, status: r.status, detail: `rtdb_admin_read_${r.status}`, mode: "admin" };
+    return { ok: false, status: 404, detail: "user_not_found", mode: "admin" };
+  }
+
+  // 2) Fallback anonyme (Phase 4)
+  const r = await fetch(base);
+  if (r.status === 404) return { ok: false, status: 404, detail: "user_not_found", mode: "anon" };
+  if (!r.ok) return { ok: false, status: r.status, detail: `rtdb_anon_read_${r.status}`, mode: "anon" };
+  const hash = cleanFbVal(await r.text());
+  if (hash === "" || hash === "null") return { ok: false, status: 404, detail: "user_not_found", mode: "anon" };
+  return { ok: true, hash, mode: "anon" };
+}
+
+export function cleanFbVal(t) {
+  return String(t || "").trim().replace(/^"|"$/g, "");
+}
+
+/**
+ * Mint un access token OAuth2 Google pour le service account (scope firebase.database).
+ * Permet au worker de lire/écrire RTDB en admin (bypass des règles) → indispensable
+ * pour que /login fonctionne une fois les règles strictes Phase 5 publiées.
+ * Caché dans KV (gtoken) jusqu'à ~expiry-60s pour éviter de re-signer à chaque requête.
+ */
+async function getGoogleAccessToken(env, ctx) {
+  if (!env.FIREBASE_PRIVATE_KEY || !env.FIREBASE_CLIENT_EMAIL) {
+    throw new Error("missing_service_account_secrets");
+  }
+  try {
+    const cached = env.AUTH_KV && (await env.AUTH_KV.get("gtoken"));
+    if (cached) return cached;
+  } catch (_) { /* KV indispo → on mint */ }
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claims = {
+    iss: env.FIREBASE_CLIENT_EMAIL,
+    scope: "https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600
+  };
+  const signingInput = `${base64urlEncode(JSON.stringify(header))}.${base64urlEncode(JSON.stringify(claims))}`;
+  const privateKey = await importPrivateKey(env.FIREBASE_PRIVATE_KEY);
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    privateKey,
+    new TextEncoder().encode(signingInput)
+  );
+  const assertion = `${signingInput}.${base64urlEncode(new Uint8Array(signature))}`;
+
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body:
+      "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") +
+      "&assertion=" + encodeURIComponent(assertion)
+  });
+  if (!resp.ok) {
+    const t = await resp.text().catch(() => "");
+    throw new Error(`google_oauth_${resp.status}:${t.slice(0, 140)}`);
+  }
+  const data = await resp.json();
+  if (!data.access_token) throw new Error("google_oauth_no_token");
+  const ttl = Math.max(60, (parseInt(data.expires_in, 10) || 3600) - 60);
+  try {
+    const put = env.AUTH_KV && env.AUTH_KV.put("gtoken", data.access_token, { expirationTtl: ttl });
+    if (put && ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(put); else await put;
+  } catch (_) { /* cache best-effort */ }
+  return data.access_token;
+}
+
+export function base64urlEncode(input) {
   let str;
   if (typeof input === "string") {
     str = btoa(input);
@@ -198,7 +298,7 @@ function base64urlEncode(input) {
   return str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-async function importPrivateKey(pem) {
+export async function importPrivateKey(pem) {
   const pemContents = pem
     .replace(/-----BEGIN PRIVATE KEY-----/, "")
     .replace(/-----END PRIVATE KEY-----/, "")
