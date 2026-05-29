@@ -9,3 +9,6 @@ tools/video/assets/*.png
 
 # v13.4.225 — dist/ racine = build artifacts non versionnés
 /dist/
+
+# Worktrees éphémères des sub-agents Claude Code (copies internes du repo, jamais versionnées)
+.claude/worktrees/

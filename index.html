@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.762";
+var APP_VER="v9.763";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37369,6 +37369,22 @@ function _cmcFallbackUnassignedTeams(iy,im){
     var r=ov[empId]||{};
     return Object.keys(r).filter(function(d){return !!r[d];}).length;
   }
+  // v9.763 (Kevin diag juin : COURTIN F/NICASTRO/COTTALORDA en "· RH R" — 0 jour
+  // travaillé — polluaient BJ Éq.1). Compte les jours TRAVAILLÉS (hors RH/R/absence).
+  // Un emp sans jour travaillé n'a aucune rotation → ne doit PAS être collé à une
+  // équipe (ses codes de travail n'ont pas été parsés : section fragmentée). Même
+  // seuil que la lib validée (minWorkDays:5).
+  function _workedCount(empId){
+    var r=ov[empId]||{};
+    var ABS={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,ABS:1,FL:1,HD:1,HC:1};
+    var n=0;
+    Object.keys(r).forEach(function(d){
+      var c=r[d];if(!c)return;
+      var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");
+      if(!ABS[u])n++;
+    });
+    return n;
+  }
   // 1. Index par (family, offset) → {teamId: count} pour les équipes DÉJÀ attribuées
   var teamsByFamOffset={};
   A.employees.forEach(function(emp){
@@ -37394,6 +37410,10 @@ function _cmcFallbackUnassignedTeams(iy,im){
     if(emp.family==="cadres"){skipped_cadres++;return;}
     var cells=_cellCount(emp.id);
     if(cells<10)return; // pas assez de données
+    // v9.763 — exiger ≥5 jours TRAVAILLÉS (pas juste RH/R). Sinon un emp dont les
+    // codes travail n'ont pas été parsés (section fragmentée) est faussement collé
+    // à une équipe. Affiché "sans équipe / planning incomplet" au lieu d'être pollué.
+    if(_workedCount(emp.id)<5){skipped_noRh++;return;}
     var rh=_getRhDays(emp.id);
     if(rh.length<2){skipped_noRh++;return;}
     var cycle=_calcCycleSmart(rh);
