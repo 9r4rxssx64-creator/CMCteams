@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.756";
+var APP_VER="v9.757";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11054,8 +11054,11 @@ function dc(){
         if(_emp&&_emp.familyHistory&&_emp.familyHistory[_km])delete _emp.familyHistory[_km];
       });
       try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
-      if(_hash>3 && typeof _cmcDetectTeamsByRestPattern==="function"){
-        try{_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
+      if(_hash>3){
+        // v9.757 — union-find par codes journaliers D'ABORD (équipes nettes),
+        // puis rest-pattern remplit les emps non clusterisés (skip-on-explicit).
+        try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(A.year,A.month);}catch(_dcuf){}
+        try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
       }
     }
   }catch(_dcDetErr){}
@@ -35290,6 +35293,136 @@ function _cmcDetectTeamsByRestPattern(iy,im){
   }catch(e){console.warn("[v9.650 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
 }
 
+// v9.757 (Kevin 2026-05-29 "porter l'algo validé") — DÉTECTION ÉQUIPES par
+// IDENTITÉ DES CODES JOURNALIERS (union-find), portée du banc d'essai T1
+// (tools/planning-parser-tester/lib/team-detector.js, validée 6/6 sur l'équipe
+// juin de Kevin). Remplace la signature grossière (cycle:offset:1er code) qui
+// FUSIONNAIT deux rotations de repos différentes dans une même équipe.
+//
+// CLÉ D'ÉQUIPE = mêmes codes journaliers (normalisés) sur les jours TRAVAILLÉS
+// EN COMMUN. Robuste aux CP/absences partiels (un membre en CP la moitié du mois
+// reste dans l'équipe : sur ses jours travaillés ses codes == coéquipiers) et à
+// la rotation (toute l'équipe tourne ensemble). Miroir = 2 équipes même famille,
+// MÊMES repos, rotations différentes.
+//
+// Composition : appelé AVANT _cmcDetectTeamsByRestPattern dans dc(). Pose
+// teamHistory[key] pour les clusters nets ; rest-pattern (qui skip-on-explicit)
+// remplit ensuite les emps que l'union-find n'a pas pu clusteriser (données
+// bruitées). Aucun emp ne perd son équipe (filet rest-pattern + fallback).
+function _cmcDetectTeamsByDailyCodes(iy,im){
+  try{
+    var key=iy+"-"+im;
+    var ov=(A.overrides&&A.overrides[key])||{};
+    if(!Object.keys(ov).length)return{ok:false,reason:"no_data"};
+    var STATUS_ABS={CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DELPT:1,CL:1,CDH:1,CEO:1,CSC:1,CSS:1,HD:1};
+    // Normalise un code journalier : RH/R→REST, absences→ABS, sinon code de base
+    // (strip suffixes c ' " * : ) en MAJ. Deux coéquipiers tournent avec le MÊME
+    // code de base chaque jour ; les suffixes (chef 'c', CMC '"', CDP '*') ne
+    // changent pas l'appartenance d'équipe.
+    function normDay(code){
+      if(code==null||code==="")return null;
+      var u=String(code).trim().toUpperCase();
+      if(u==="RH"||u==="R")return "REST";
+      if(STATUS_ABS[u])return "ABS";
+      return String(code).replace(/[c'"*:]+$/gi,"").trim().toUpperCase();
+    }
+    function _rhEqArr(a,b){if(a.length!==b.length)return false;for(var i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true;}
+    // Famille : signaux fiables des cellules ('c'→bj, '"'→cmc) sinon section PDF
+    function _famDC(emp){
+      var cells=ov[emp.id]||{};
+      var cCount=0,qCount=0,total=0;
+      for(var d in cells){var c=cells[d];if(!c)continue;var cu=String(c).toUpperCase();if(STATUS_ABS[cu]||cu==="RH"||cu==="R")continue;total++;if(/c\*?$/.test(c))cCount++;else if(c.indexOf('"')>=0)qCount++;}
+      if(total>=5){if(cCount>=qCount&&cCount/total>=0.35)return "bj";if(qCount>cCount&&qCount/total>=0.35)return "cmc";}
+      try{if(typeof familyForMonth==="function"){var f=familyForMonth(emp,iy,im,{strict:true});if(f)return f;}}catch(_){}
+      return emp.family||"bj";
+    }
+    // 1) Nodes : codes journaliers normalisés (skip cadres + statut intégral)
+    var nodes=[];
+    Object.keys(ov).forEach(function(eid){
+      var emp=A.employees.find(function(e){return e.id===eid;});
+      if(!emp)return;
+      var fam=_famDC(emp);
+      if(fam==="cadres")return;
+      var r=ov[eid]||{},dn={},work=0,rest=0;
+      Object.keys(r).forEach(function(d){
+        var dd=parseInt(d,10);if(isNaN(dd))return;
+        var n=normDay(r[d]);if(!n)return;
+        dn[dd]=n;if(n==="REST")rest++;else if(n!=="ABS")work++;
+      });
+      if(work<5)return; // statut/absence intégral ou trop peu de données → laissé au filet rest-pattern
+      nodes.push({emp:emp,dn:dn,work:work,rest:rest,family:fam});
+    });
+    if(nodes.length<2)return{ok:false,reason:"too_few_nodes"};
+    // 2) Union-find : unis si MÊME famille + codes identiques sur ≥6 jours
+    //    co-présents (dont ≥3 travaillés) à 100%.
+    var parent=nodes.map(function(_,i){return i;});
+    function find(x){while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x];}return x;}
+    function uni(a,b){parent[find(a)]=find(b);}
+    function compat(X,Y){
+      if(X.family!==Y.family)return false;
+      var overlap=0,workOv=0,match=0;
+      for(var d=1;d<=31;d++){
+        var a=X.dn[d],b=Y.dn[d];
+        if(!a||!b||a==="ABS"||b==="ABS")continue;
+        overlap++;
+        if(a!=="REST"&&b!=="REST")workOv++;
+        if(a===b)match++;
+      }
+      return overlap>=6&&workOv>=3&&match===overlap;
+    }
+    for(var i=0;i<nodes.length;i++)for(var k=i+1;k<nodes.length;k++){
+      if(find(i)===find(k))continue;
+      if(compat(nodes[i],nodes[k]))uni(i,k);
+    }
+    // 3) Clusters ≥2 = équipes ; id séquentiel par famille (r/c/plain)
+    var clusters={};
+    for(var c2=0;c2<nodes.length;c2++){var rr=find(c2);(clusters[rr]=clusters[rr]||[]).push(nodes[c2]);}
+    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
+    var teamGroups=[],assigned=0;
+    Object.keys(clusters).forEach(function(rk){
+      var members=clusters[rk];
+      if(members.length<2)return; // singleton → laissé au filet rest-pattern
+      var fc={};members.forEach(function(m){fc[m.family]=(fc[m.family]||0)+1;});
+      var domFam=Object.keys(fc).reduce(function(a,b){return fc[a]>fc[b]?a:b;});
+      famCounters[domFam]=(famCounters[domFam]||0)+1;
+      var n=famCounters[domFam];
+      var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:String(n);
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(teamId);
+      var ref=members.slice().sort(function(a,b){return (b.work+b.rest)-(a.work+a.rest);})[0];
+      var rhDays=Object.keys(ref.dn).filter(function(d){return ref.dn[d]==="REST";}).map(Number).sort(function(a,b){return a-b;});
+      teamGroups.push({teamId:teamId,family:domFam,rhDays:rhDays,daySig:ref.dn,count:members.length});
+      members.forEach(function(m){
+        if(!m.emp.teamHistory)m.emp.teamHistory={};
+        m.emp.teamHistory[key]=teamId;
+        if(!m.emp.familyHistory)m.emp.familyHistory={};
+        m.emp.familyHistory[key]=domFam;
+        assigned++;
+      });
+    });
+    if(!teamGroups.length)return{ok:false,reason:"no_clusters"};
+    // 4) Miroirs : même famille + MÊMES repos + rotation différente
+    var mirrors={};
+    for(var a3=0;a3<teamGroups.length;a3++)for(var b3=a3+1;b3<teamGroups.length;b3++){
+      var TA=teamGroups[a3],TB=teamGroups[b3];
+      if(TA.family!==TB.family)continue;
+      if(!_rhEqArr(TA.rhDays,TB.rhDays))continue;
+      var common=0,diff=false;
+      for(var d3=1;d3<=31;d3++){
+        var pa=TA.daySig[d3],pb=TB.daySig[d3];
+        if(!pa||!pb||pa==="ABS"||pb==="ABS"||pa==="REST"||pb==="REST")continue;
+        common++;if(pa!==pb)diff=true;
+      }
+      if(common>=3&&diff&&!mirrors[TA.teamId]&&!mirrors[TB.teamId]){mirrors[TA.teamId]=TB.teamId;mirrors[TB.teamId]=TA.teamId;}
+    }
+    if(Object.keys(mirrors).length)try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
+    try{ls("cmc_e",A.employees);}catch(_){}
+    try{ls("cmc_t",A.teams);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+    console.log("[v9.757 dailyCodes] "+teamGroups.length+" équipes, "+assigned+" emps, "+(Object.keys(mirrors).length/2)+" miroirs");
+    return{ok:true,teams:teamGroups.length,assigned:assigned,mirrors:Object.keys(mirrors).length/2};
+  }catch(e){console.warn("[v9.757 dailyCodes]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
 // v9.733 RESCUE PASS retiré v9.734 (Kevin règle absolue "aucune invention,
 // reproduction exacte"). Voir _postValidateImport pour l'enregistrement.
 
@@ -35423,6 +35556,9 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
       if(!_srcTxt && window._lastImportText)_srcTxt=window._lastImportText;
       if(_srcTxt)_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
     }catch(_pdcErr){console.warn("[v9.719 pdf-column]",_pdcErr&&_pdcErr.message);}
+    // v9.757 — union-find par codes journaliers : ÉCRASE les fusions pdf-column
+    // par les vraies équipes (mêmes codes journaliers). Source de vérité principale.
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_dcufI){console.warn("[v9.757 dailyCodes import]",_dcufI&&_dcufI.message);}
     // v9.648 — Détection auto équipes par pattern RH (filet de sécurité hybride :
     // SKIP les emps ayant déjà teamHistory[key] → complète seulement les non-couverts)
     try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
