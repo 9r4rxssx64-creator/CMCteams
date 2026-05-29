@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.764";
+var APP_VER="v9.765";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23765,6 +23765,25 @@ function vAccueil(){
 function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
+  // v9.765 (Kevin diag : COURTIN F/NICASTRO/COTTALORDA « · RH R » 0 jour travaillé
+  // TOUJOURS visibles dans BJ Éq.1). Garde DISPLAY : un emp sans AUCUN jour TRAVAILLÉ
+  // ce mois (codes travail non parsés = section Roulettes/CMC fragmentée) n'apparaît
+  // PAS dans une équipe de TRAVAIL (1-8/r*/c*) — il n'a pas de rotation réelle. Marche
+  // même sur données héritées (sans re-import). Les sections d'ABSENCE (formation/
+  // maladie/conges/amenage, rendues séparément) NE passent PAS ce filtre → visibles.
+  var _PLAN_ABS_CODES={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,ABS:1,FL:1,HD:1,HC:1};
+  function _planHasWork(e){
+    // Visible dans une équipe de TRAVAIL si : (a) ≥1 jour travaillé, OU (b) absence
+    // COMPLÈTE du mois (CP/M/AF tout le mois = vraie donnée, à montrer — règle #1).
+    // MASQUÉ seulement si 0 jour travaillé ET ligne INCOMPLÈTE (codes non parsés =
+    // section fragmentée, ex COURTIN F « · RH R » + 20 jours vides).
+    var r=pl[e.id]||{};
+    var filled=0,worked=0;
+    for(var _wd=1;_wd<=days;_wd++){var c=r[_wd];if(!c)continue;filled++;var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");if(!_PLAN_ABS_CODES[u])worked++;}
+    if(worked>0)return true;       // travaille → visible
+    if(filled>=days-1)return true; // absence intégrale (mois plein) → visible (règle #1)
+    return false;                  // 0 travaillé + ligne incomplète → masqué (parse cassé)
+  }
   // v9.644+646 (Kevin "j'efface le planning du mois, toujours les équipes présentes" / "l'app scintille"):
   // si A.overrides[key] vide → afficher empty state au lieu de la structure équipe.
   // v9.646 : éviter scintillement, ne pas afficher empty state tant que Firebase
@@ -24064,7 +24083,8 @@ function vPlan(){
       var te2=A.employees.filter(function(e){
         if(!isEmpActive(e,A.year,A.month))return false;
         var th=e.teamHistory&&e.teamHistory[_vKeyMa];
-        return th===tid; // v9.702 strict : pas de fallback emp.team
+        if(th!==tid)return false; // v9.702 strict : pas de fallback emp.team
+        return _planHasWork(e); // v9.765 : pas d'équipe de travail si 0 jour travaillé
       });
       if(!te2.length) return;
       _globalShown[tid]=true;
@@ -24131,6 +24151,7 @@ function vPlan(){
     famEmps.forEach(function(e){
       var et=e.teamHistory&&e.teamHistory[_vKeyFam];
       if(!et||et==="?")return; // pas d'équipe pour CE mois → emp invisible
+      if(!_planHasWork(e))return; // v9.765 : 0 jour travaillé → pas dans une équipe de travail
       if(!byFT[et])byFT[et]=[];
       byFT[et].push(e);
       if(ftOrd.indexOf(et)<0)ftOrd.push(et);
