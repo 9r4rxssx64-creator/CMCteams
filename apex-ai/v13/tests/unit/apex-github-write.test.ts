@@ -5,13 +5,21 @@
  *
  * Tests qu'Apex peut désormais ÉCRIRE des fichiers réellement (pas juste afficher).
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { store } from '../../core/store.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    /* v13.4.246 : execute('admin') re-vérifie auth.isAdminSync() (fail-closed).
+       Session admin réelle requise sinon tools rétrogradés → "Tier insuffisant". */
+    store.set('user', { id: 'kdmc_admin', name: 'K' });
+  });
+
+  afterEach(() => {
+    store.set('user', null);
   });
 
   describe('create_or_update_file', () => {
@@ -54,14 +62,25 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     it('crée fichier nouveau via fetch mock 201 Created', async () => {
       const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
-      const fetchSpy = vi.spyOn(globalThis, 'fetch')
-        /* 1er fetch = check existing → 404 (pas de fichier) */
-        .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))
-        /* 2e fetch = PUT créa → 201 */
-        .mockResolvedValueOnce(new Response(JSON.stringify({
-          commit: { sha: 'abc123', html_url: 'https://github.com/x/y/commit/abc123' },
-          content: { html_url: 'https://github.com/x/y/blob/main/test/new.ts' },
-        }), { status: 201 }));
+      /* Mock keyé par URL+méthode (déterministe) : vault.setKey peut déclencher
+         un fetch backup Firebase concurrent qui, avec mockResolvedValueOnce,
+         consommait une des réponses GitHub → flake non-déterministe. */
+      let putCount = 0;
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = (init?.method ?? 'GET').toUpperCase();
+        if (url.includes('api.github.com')) {
+          if (method === 'PUT') {
+            putCount++;
+            return new Response(JSON.stringify({
+              commit: { sha: 'abc123', html_url: 'https://github.com/x/y/commit/abc123' },
+              content: { html_url: 'https://github.com/x/y/blob/main/test/new.ts' },
+            }), { status: 201 });
+          }
+          return new Response('Not Found', { status: 404 }); /* GET check existing */
+        }
+        return new Response('{}', { status: 200 }); /* fetches non-GitHub (backup, etc.) */
+      });
 
       const r = await apexToolsDispatch.execute('create_or_update_file', {
         path: 'test/new.ts',
@@ -73,19 +92,27 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
       expect(outer.ok).toBe(true);
       expect(outer.result?.action).toBe('created');
       expect(outer.result?.commit_sha).toBe('abc123');
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalled();
+      expect(putCount).toBe(1); /* un seul PUT de création, peu importe le nb de GET de vérif */
     });
 
     it('update fichier existant via SHA récupéré', async () => {
       const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
-      vi.spyOn(globalThis, 'fetch')
-        /* 1er fetch = check existing → 200 avec SHA */
-        .mockResolvedValueOnce(new Response(JSON.stringify({ sha: 'old_sha_xyz' }), { status: 200 }))
-        /* 2e fetch = PUT update → 200 */
-        .mockResolvedValueOnce(new Response(JSON.stringify({
-          commit: { sha: 'new_sha_def', html_url: 'https://github.com/x/y/commit/new_sha_def' },
-        }), { status: 200 }));
+      /* Mock keyé par URL+méthode (déterministe, cf. test create ci-dessus). */
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = (init?.method ?? 'GET').toUpperCase();
+        if (url.includes('api.github.com')) {
+          if (method === 'PUT') {
+            return new Response(JSON.stringify({
+              commit: { sha: 'new_sha_def', html_url: 'https://github.com/x/y/commit/new_sha_def' },
+            }), { status: 200 });
+          }
+          return new Response(JSON.stringify({ sha: 'old_sha_xyz' }), { status: 200 });
+        }
+        return new Response('{}', { status: 200 });
+      });
 
       const r = await apexToolsDispatch.execute('create_or_update_file', {
         path: 'test/existing.ts',
@@ -112,9 +139,16 @@ describe('Apex GitHub write tools (P0 parité Claude Code)', () => {
     it('supprime avec confirm:true + fetch 200', async () => {
       const { vault } = await import('../../services/vault/vault.js');
       await vault.setKey('ax_github_token', 'ghp_fake_token');
-      vi.spyOn(globalThis, 'fetch')
-        .mockResolvedValueOnce(new Response(JSON.stringify({ sha: 'sha_to_delete' }), { status: 200 }))
-        .mockResolvedValueOnce(new Response('{}', { status: 200 }));
+      /* Mock keyé par URL+méthode (déterministe). DELETE GitHub → 200. */
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = (init?.method ?? 'GET').toUpperCase();
+        if (url.includes('api.github.com')) {
+          if (method === 'DELETE') return new Response('{}', { status: 200 });
+          return new Response(JSON.stringify({ sha: 'sha_to_delete' }), { status: 200 });
+        }
+        return new Response('{}', { status: 200 });
+      });
 
       const r = await apexToolsDispatch.execute('delete_repo_file', {
         path: 'test/old.ts',

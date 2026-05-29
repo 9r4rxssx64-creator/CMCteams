@@ -43,24 +43,27 @@ describe('v13.4.98 vault-firebase-backup multi-uid fallback', () => {
   });
 });
 
-describe('v13.4.98 index.html anti-zoom INLINE', () => {
+describe('v13.4.248 index.html — zoom utilisateur réactivé (a11y Apple HIG / WCAG 1.4.4)', () => {
   const html = readFileSync(resolve(ROOT, 'index.html'), 'utf-8');
 
-  it("script inline gesturestart/gesturechange/gestureend dans <head>", () => {
-    /* Le script inline doit être AVANT le bundle JS bootstrap */
-    expect(html).toMatch(/gesturestart[\s\S]*gesturechange[\s\S]*gestureend/);
-    /* Doit être nonce-protégé pour CSP strict */
-    expect(html).toMatch(/<script\s+nonce="APEX_BOOT_NONCE">[\s\S]*gesturestart/);
+  /* v13.4.248 a RETIRÉ le script inline anti-zoom (gesturestart/lastTouchEnd) et
+     réactivé le pinch-zoom accessibilité. Le double-tap-zoom reste neutralisé via
+     CSS touch-action:manipulation (base.css/rescue.css), pas via JS. Ces tests
+     vérifient désormais l'intention COURANTE (zoom a11y permis), pas l'ancienne. */
+  it("ne bloque PLUS le pinch-zoom par JS inline (gesturestart retiré)", () => {
+    expect(html).not.toMatch(/gesturestart[\s\S]*gesturechange[\s\S]*gestureend/);
+    expect(html).not.toMatch(/lastTouchEnd[\s\S]*300/);
   });
 
-  it("anti-zoom inline AVANT bootstrap.js module", () => {
-    const gestureIdx = html.indexOf('gesturestart');
-    const bootstrapIdx = html.indexOf('bootstrap.js');
-    expect(gestureIdx).toBeGreaterThan(0);
-    expect(bootstrapIdx).toBeGreaterThan(gestureIdx); /* gesture handler AVANT bootstrap */
+  it("viewport autorise le zoom (pas de user-scalable=no, maximum-scale >= 5)", () => {
+    const vp = html.match(/<meta name="viewport"[^>]*content="([^"]*)"/)?.[1] ?? '';
+    expect(vp).toContain('width=device-width');
+    expect(vp).not.toMatch(/user-scalable\s*=\s*no/);
+    const maxScale = vp.match(/maximum-scale\s*=\s*([\d.]+)/)?.[1];
+    if (maxScale) expect(Number(maxScale)).toBeGreaterThanOrEqual(5);
   });
 
-  it("touchend double-tap detection (<300ms)", () => {
-    expect(html).toMatch(/lastTouchEnd[\s\S]*300/);
+  it("bootstrap chargé en module (entry présent)", () => {
+    expect(html).toMatch(/bootstrap[\w.-]*\.js/);
   });
 });

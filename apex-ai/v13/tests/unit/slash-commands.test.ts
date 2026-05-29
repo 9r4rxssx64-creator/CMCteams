@@ -19,7 +19,7 @@ describe('services/slash-commands', () => {
 
     it('chaque commande a name + emoji + description', () => {
       for (const cmd of SLASH_COMMANDS) {
-        expect(cmd.name).toMatch(/^[a-z]+$/);
+        expect(cmd.name).toMatch(/^[a-z][a-z-]*$/); /* kebab-case autorisé (ex: team-onboarding) */
         expect(cmd.emoji.length).toBeGreaterThan(0);
         expect(cmd.description.length).toBeGreaterThan(5);
       }

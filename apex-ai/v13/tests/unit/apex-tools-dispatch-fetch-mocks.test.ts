@@ -12,6 +12,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
+import { store } from '../../core/store.js';
 
 function mockFetchOnce(response: Partial<Response> & { json?: () => Promise<unknown>; text?: () => Promise<string> }): void {
   vi.spyOn(globalThis, 'fetch').mockImplementationOnce(async () => response as Response);
@@ -24,10 +25,16 @@ function mockFetchAlways(handler: (url: string | URL | Request) => Partial<Respo
 describe('apex-tools-dispatch — fetch mocks (success + failure paths)', () => {
   beforeEach(() => {
     localStorage.clear();
+    /* v13.4.246 a durci execute() : userTier 'admin' est re-vérifié via
+       auth.isAdminSync() (fail-closed). En test il faut donc une vraie session
+       admin en store, sinon les tools 'admin' sont rétrogradés client_free
+       → "Tier insuffisant". On exerce le vrai guard plutôt que de le mocker. */
+    store.set('user', { id: 'kdmc_admin', name: 'K' });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    store.set('user', null);
   });
 
   describe('weather tool', () => {

@@ -3,7 +3,8 @@
  * Couvre listForTier, canExecute, dispatcher exec, validation flow,
  * project_status, memory_recall/add, search_latest_tools.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { store } from '../../core/store.js';
 import { apexTools } from '../../services/core-svc/apex-tools.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
@@ -97,6 +98,13 @@ describe('Apex Tools Dispatcher (executor Jet 8)', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    /* v13.4.246 : execute('admin') re-vérifie auth.isAdminSync() (fail-closed).
+       Session admin réelle requise sinon tools rétrogradés → "Tier insuffisant". */
+    store.set('user', { id: 'kdmc_admin', name: 'K' });
+  });
+
+  afterEach(() => {
+    store.set('user', null);
   });
 
   describe('Permission rejection', () => {

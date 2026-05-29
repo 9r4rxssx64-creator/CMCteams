@@ -8,6 +8,7 @@
  * Stratégie : mock vault.readKey + mock fetch pour chaque API externe.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { store } from '../../core/store.js';
 import { apexToolsDispatch } from '../../services/core-svc/apex-tools-dispatch.js';
 
 async function setupVaultMock(keys: Record<string, string>): Promise<void> {
@@ -18,10 +19,13 @@ async function setupVaultMock(keys: Record<string, string>): Promise<void> {
 describe('execute_task_on_service — autonomie Kevin 2026-05-04', () => {
   beforeEach(() => {
     localStorage.clear();
+    /* v13.4.246 : execute('admin') re-vérifie auth.isAdminSync() (fail-closed). */
+    store.set('user', { id: 'kdmc_admin', name: 'K' });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    store.set('user', null);
   });
 
   describe('list_task_on_service_handlers', () => {
