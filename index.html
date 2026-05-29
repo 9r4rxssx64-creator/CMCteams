@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.757";
+var APP_VER="v9.758";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11101,9 +11101,15 @@ function dc(){
   // v9.58 — Rafra\u00eechir la modale Acc\u00e8s (admin) si ouverte
   var am=document.getElementById("accessModalWrap");
   if(am)am.innerHTML=renderAccessModal();
-  if(A.view==="planning")adjGrid();
-  if(A.view==="departs")setTimeout(adjDeparts,300);
-  if(A.view==="monplanning")setTimeout(adjMonPlanning,80);
+  // v9.758 (Kevin "le slide ne fonctionne pas, ça revient au jour du jour") :
+  // ne re-scroller vers aujourd'hui qu'au CHANGEMENT de vue/mois — PAS à chaque
+  // re-render (SSE/agents/flicker), sinon le défilement horizontal manuel de
+  // l'utilisateur est annulé en permanence (snap au jour du jour).
+  if(_viewChanged){
+    if(A.view==="planning")adjGrid();
+    if(A.view==="departs")setTimeout(adjDeparts,300);
+    if(A.view==="monplanning")setTimeout(adjMonPlanning,80);
+  }
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   if(A.view==="import")setTimeout(function(){if(typeof renderImportRollbackBanner==="function")renderImportRollbackBanner();},50);
   }catch(ex){console.warn("dc() error:",ex);}
