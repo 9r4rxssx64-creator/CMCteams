@@ -92,3 +92,29 @@ Caractérisation mesurée : **80 AssertionError** (pas des timeouts — `test_ti
 6. **P2** : viewport a11y (valider Kevin), touch targets 44px, aria-labels, tokens couleurs, console→logger.
 
 > Aucune correction de code appliquée à l'aveugle cette session : l'outil de lecture renvoyait du contenu périmé par intermittence → risque de régression sur une app commercialisée (règle « JAMAIS RÉGRESSER »). Le P0 Firebase est explicitement « peut casser la prod si mal fait » (CLAUDE.md) → chantier dédié, pas un flip aveugle. Chaque fix se re-valide par `npm run typecheck && lint && test && build` depuis `apex-ai/v13`.
+
+---
+
+## Annexe — diagnostics précis (ajout post-audit perf)
+
+### A. Cause racine des 84 tests rouges = gating de TIER (très haute confiance)
+Les messages d'échec mesurés sont dominés par :
+- **118×** `expected false to be true` et **4+4×** `expected 'Tier insuffisant' to contain 'invalide'/'query'/'path'/'404'`.
+- Logs dispatch observés : `apex-tools Tool exec: weather (client_free) → FAIL`, idem `read_file`, `finance_calculate`, `scrape_url`, `web_fetch`, `market_data`… **en tier `client_free`**.
+
+➡️ La couche `services/apex-tools-dispatch*` **rejette ces outils pour le tier `client_free` avec le message « Tier insuffisant »**, alors que les tests attendent le résultat métier (erreur `404`/`invalide`/`path`, ou succès). **Une seule cause** explique ≈73/84 échecs : un changement de politique de tier (gating durci) **non répercuté dans les tests**, OU une régression du gating.
+
+**À trancher (NE PAS corriger à l'aveugle) :**
+- Si le durcissement de tier est **voulu** → mettre à jour les tests dispatch pour exécuter en tier admin/pro (faible risque produit).
+- Si c'est une **régression** (client_free devrait accéder à ces outils) → corriger le gating — mais **attention sécurité** : ne pas ouvrir des outils admin à `client_free`. Décision produit requise.
+- Méthode : `git log -p services/apex-tools-dispatch*` autour du dernier changement de tier + lire `apex-tools-registry` (champ tier par outil).
+
+### B. P0 perf — `apex-ai/sw.js` figé à `apex-v12.785`
+- `apex-ai/sw.js:13` → `CACHE_VERSION='apex-v12.785'` alors que l'app = `v13.4.277`. `PRECACHE_ASSETS` liste des `./modules/*.js` v12 **inexistants** en v13.
+- C'est le bug « MAJ qui ne passe pas » (erreur #39 + règle ABSOLUE `CACHE_VERSION='apex-'+APP_VER`). Reliquat v12 ; le SW actif v13 est `apex-ai-v13/sw.js` (`apex-v13.4.277`), mais tout ancien install PWA scope `/apex-ai/` peut encore servir du cache v12.
+- **Fix :** soit supprimer `apex-ai/sw.js` (archive v12), soit le resynchroniser ; et confirmer que la sentinelle `sw-cache-sync` couvre bien les 3 sw.js.
+
+### C. Compléments perf (mesurés, pas de fuite massive)
+- Bundle sain : 726 KB gzip / 190 chunks, aucun > 100 KB raw, dompurify/fuse tree-shakés ; **pas** de SDK firebase monolithique (REST/SSE custom ~2 KB). Boot `requestIdleCallback` + `deferredInits`.
+- Timers : pas de fuite massive (2 `setInterval` sans clear), MAIS autonomous-watch/layout-inspector/SW-update non pausés sur `visibilitychange=hidden` → réveil CPU/batterie iPhone en arrière-plan (P1 léger).
+- Listeners 82 `addEventListener` vs 24 `removeEventListener` → registre de cleanup conseillé.
