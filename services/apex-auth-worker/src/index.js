@@ -99,12 +99,12 @@ export default {
         // Audit trail
         ctx.waitUntil(auditLog(env, uid, "login_success", ip));
 
-        return jsonResp({
-          ok: true,
-          custom_token: customToken,
-          uid: uid,
-          expires_in: 3600
-        }, corsHeaders);
+        const out = { ok: true, custom_token: customToken, uid: uid, expires_in: 3600 };
+        // Échange serveur-side custom_token → id_token (si FIREBASE_WEB_API_KEY présent).
+        // Le client n'a alors qu'à attacher id_token en ?auth=. Fail-open si absent.
+        const idt = await exchangeForIdToken(customToken, env);
+        if (idt) { out.id_token = idt.idToken; out.refresh_token = idt.refreshToken; out.expires_in = parseInt(idt.expiresIn, 10) || 3600; }
+        return jsonResp(out, corsHeaders);
       }
 
       // --- /login-cmc (CMCteams : valide cmc_pw via service account) ---
@@ -139,7 +139,10 @@ export default {
         const customToken = await generateCustomToken(uid, env, "cmc");
         ctx.waitUntil(auditLog(env, uid, "login_cmc_success", ip));
 
-        return jsonResp({ ok: true, custom_token: customToken, uid, scope: "cmc", expires_in: 3600 }, corsHeaders);
+        const out = { ok: true, custom_token: customToken, uid, scope: "cmc", expires_in: 3600 };
+        const idt = await exchangeForIdToken(customToken, env);
+        if (idt) { out.id_token = idt.idToken; out.refresh_token = idt.refreshToken; out.expires_in = parseInt(idt.expiresIn, 10) || 3600; }
+        return jsonResp(out, corsHeaders);
       }
 
       // --- /refresh ---
@@ -149,7 +152,17 @@ export default {
         if (!uid || !refresh_token) {
           return jsonResp({ ok: false, error: "missing_params" }, corsHeaders, 400);
         }
-        // TODO Phase 5.1 : valider refresh_token via Firebase Auth REST API
+        // Vrai refresh via Firebase securetoken (valide le refresh_token côté Google).
+        // Fail-open : si pas de Web API key, on remint un custom token (le client
+        // refera l'échange). Ne JAMAIS mint un id_token sans valider le refresh_token.
+        if (env.FIREBASE_WEB_API_KEY) {
+          try {
+            const refreshed = await refreshIdToken(refresh_token, env);
+            return jsonResp({ ok: true, id_token: refreshed.id_token, refresh_token: refreshed.refresh_token, expires_in: parseInt(refreshed.expires_in, 10) || 3600 }, corsHeaders);
+          } catch (e) {
+            return jsonResp({ ok: false, error: "refresh_failed", detail: String(e.message || e).slice(0, 140) }, corsHeaders, 401);
+          }
+        }
         const newToken = await generateCustomToken(uid, env);
         return jsonResp({ ok: true, custom_token: newToken, expires_in: 3600 }, corsHeaders);
       }
@@ -273,6 +286,53 @@ async function readPinHash(uid, env, ctx) {
 
 export function cleanFbVal(t) {
   return String(t || "").trim().replace(/^"|"$/g, "");
+}
+
+/**
+ * Échange un custom token Firebase contre un id_token (utilisable en RTDB ?auth=).
+ * Gated sur FIREBASE_WEB_API_KEY (clé publique). Retourne null si absente (fail-open :
+ * le client recevra alors seulement custom_token et ne s'authentifiera pas → comportement
+ * actuel inchangé). Requiert que Firebase Authentication soit activé sur le projet.
+ */
+export async function exchangeForIdToken(customToken, env) {
+  if (!env.FIREBASE_WEB_API_KEY) return null;
+  try {
+    const r = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${encodeURIComponent(env.FIREBASE_WEB_API_KEY)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: customToken, returnSecureToken: true })
+      }
+    );
+    if (!r.ok) {
+      const t = await r.text().catch(() => "");
+      console.error(`[auth-worker] signInWithCustomToken ${r.status}: ${t.slice(0, 140)}`);
+      return null; // fail-open : login réussit, juste sans id_token
+    }
+    const d = await r.json();
+    return { idToken: d.idToken, refreshToken: d.refreshToken, expiresIn: d.expiresIn };
+  } catch (e) {
+    console.error("[auth-worker] exchangeForIdToken error:", e.message);
+    return null;
+  }
+}
+
+/** Rafraîchit un id_token via le endpoint securetoken (valide le refresh_token côté Google). */
+async function refreshIdToken(refreshToken, env) {
+  const r = await fetch(
+    `https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(env.FIREBASE_WEB_API_KEY)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`
+    }
+  );
+  if (!r.ok) {
+    const t = await r.text().catch(() => "");
+    throw new Error(`securetoken_${r.status}:${t.slice(0, 120)}`);
+  }
+  return r.json(); // { id_token, refresh_token, expires_in, ... }
 }
 
 /**
