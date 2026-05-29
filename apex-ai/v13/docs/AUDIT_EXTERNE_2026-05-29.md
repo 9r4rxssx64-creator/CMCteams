@@ -3,12 +3,16 @@
 **Version :** package.json 13.4.276 · build déployé `apex-ai-v13/` aligné · sw `apex-v13.4.277` (1 patch d'avance).
 **Méthode :** 6 sous-agents indépendants (8 axes) + exécution RÉELLE de la chaîne d'outils + re-vérification manuelle. Tout est **mesuré**, rien estimé. Les faux positifs (dus à un outil de lecture renvoyant par moments du contenu périmé dans le bac à sable) ont été écartés après re-vérif.
 
-## Score global pondéré ≈ **15,5/20**
+## ✅ MISE À JOUR 2026-05-29 (post-corrections, MESURÉ)
+**P1-1 (tests) RÉSOLU.** Suite complète relancée 3× : **564/564 fichiers, 11 824 tests verts, 0 échec, 0 unhandled rejection, `vitest` exit 0**. `typecheck` 0 err, `lint` 0 warn. Les **84 tests rouges** ont été réparés (cause racine unique = durcissement tier v13.4.246 non répercuté dans les tests + 6 tests « stale » alignés sur le code v13.4.x + 1 flake de mock fetch rendu déterministe + 1 unhandled rejection corrigée dans `crypto-worker-client`). **Zéro régression** (aucune logique produit modifiée hormis le `clearTimeout` du crypto-worker, qui est une amélioration).
+Restent : **P0 Firebase**, **P1 proxy**, **P1 FaceID**, **P1 XSS hors chat** (chantiers dédiés, non traités ici car ils touchent la prod / la sécurité → décision + validation requises).
+
+## Score global pondéré ≈ **16,5/20** (après résolution P1 tests)
 | Axe | Score | |
 |---|---|---|
 | Architecture | **18/20** | 44/44 features câblées, 84 routes 0 doublon, déploiement propre |
-| Sécurité | **12/20** | ⛔ règles Firebase ouvertes (P0) + proxy sans auth |
-| Tests / Qualité | **17/20** | TS exemplaire, 12 `any` en source, 8/8 familles critiques testées… mais 84 tests rouges |
+| Sécurité | **12/20** | ⛔ règles Firebase ouvertes (P0) + proxy sans auth (inchangé) |
+| Tests / Qualité | **18/20** | TS exemplaire, 12 `any` en source, 8/8 familles critiques testées, **11 824 tests verts exit 0** |
 | Fonctionnel / E2E | **17/20** | 0 bouton mort, failover IA, persistance OK ; FaceID non câblé au login |
 | UX / A11y | **15/20** | Lighthouse mobile 0,99 · a11y 0,93 · axe 0 violation ; viewport bloque zoom |
 | Performance | **16/20** | LCP 1,5s, CLS 0 ; TTI 4,4s à améliorer |
