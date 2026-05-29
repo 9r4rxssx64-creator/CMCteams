@@ -5398,7 +5398,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.760";
+var APP_VER="v9.761";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12414,7 +12414,7 @@ function _agentHorairesCoverage(){
       });
       // v9.436 — Auto-fix : si cadres sans horaire, tenter autoFillMissingCadres (copie mois N-1)
       var action=byFam.cadres.length>0
-        ?{label:"\u2728 Auto-remplir cadres",fn:"agentActionAutoFillCadres()",auto:true,recordLesson:"Cadres sans horaire d\u00e9tect\u00e9s : auto-compl\u00e9tion depuis mois pr\u00e9c\u00e9dent (pattern RH dimanche si pas d'historique)"}
+        ?{label:"\u2728 Auto-remplir cadres",fn:"agentActionAutoFillCadres()",recordLesson:"v9.761 Kevin 'il me parle de cadre': action MANUELLE admin (jamais auto, regle #48). Cadres vides = normal sur import chefs/employes (PDF cadre separe)."}
         :{label:"\ud83d\udcc5 Voir planning",fn:"agentActionGotoPlanning()"};
       agentAppendReport("horaires",sev,empty.length+" emp. sans horaire "+MFR[m]+" ("+summary.join(" \u00b7 ")+")",empty.slice(0,15),action);
     }else{
@@ -14555,8 +14555,8 @@ function _agentImportWatch(){try{
   agentAppendReport("import-watch",sev,
     missing.length+"/"+totCrit+" cadres/chefs sans horaire"+(pdfLabel?" ("+pdfLabel+")":"")+": "+missing.slice(0,3).map(function(x){return x.name;}).join(", ")+partialNote+leaveNote,
     {missing:missing,totCrit:totCrit,year:y,month:m,pdfType:pdfType,skipPartial:skipPartial,longLeaves:longLeaves},
-    {label:"✍ Auto-fill cadres",fn:"agentActionAutoFillCadres()",auto:true,
-     recordLesson:"Cadres sans horaire detectes par import-watch — auto-completion via mois precedent"}
+    {label:"✍ Auto-fill cadres",fn:"agentActionAutoFillCadres()",
+     recordLesson:"v9.761 Kevin 'il me parle de cadre': MANUEL seulement (jamais auto, regle #48). Import chefs/employes → cadres vides normaux (PDF cadre separe)."}
   );
   // Escalade Apex si echec apres 1h (autoFillMissingCadres deja tente)
   var diag=lg("cmc_cadres_fallback_diag",null);
