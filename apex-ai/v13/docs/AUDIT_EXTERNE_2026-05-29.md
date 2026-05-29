@@ -59,16 +59,21 @@ Caractérisation mesurée : **80 AssertionError** (pas des timeouts — `test_ti
 
 ---
 
-## 🟡 P2 — mineurs (mesurés)
+## ✅ MISE À JOUR 2 (2026-05-29) — vérifications + corrections sûres appliquées
+- **P1-4 XSS « hors chat » = FAUX POSITIF.** Re-vérifié à la main : `features/browser`, `knowledge-bank`, `notes` échappent **toutes** les données dynamiques via `escapeHtml()` (les `innerHTML` restants sont des templates **statiques**). L'agent comptait des `innerHTML` sans voir l'échappement. Helper `safeSetHTML`/`stripDangerousHtml` (`core/html-safe.ts`) + `escapeHtml`/`escapeAttr` (`core/escape-html.ts`) disponibles. **Aucune action requise.**
+- **Dette `any` surévaluée** : mesure réelle = **8 `any` en source** (pas 205), tous légitimes (wrapper redaction `console`, `window.visualViewport`, 1 littéral dans un prompt). `@ts-ignore` = 2. **TS exemplaire confirmé.**
+- **P2 sw.js v12 figé → CORRIGÉ.** `apex-ai/sw.js` (orphelin, plus aucun HTML ne l'enregistre) réécrit en **SW tombstone** : purge ses caches + `unregister()` + `fetch` no-op → tout ancien install PWA scopé `/apex-ai/` s'auto-répare (CLAUDE.md #39 + « MAJ AUTO FORCÉE »). Isolation : n'affecte pas l'app v13 (scope distinct `/apex-ai/v13/`).
+- **P2 BI métriques mensongères → CORRIGÉ.** `business-intelligence.ts` : `avg_session_min`/`retention_7d_pct` passés `number | null` = **null** (n/d) au lieu de 12/65 inventés (règle « JAMAIS ESTIMER »). Reco rétention gardée contre null. 25/25 tests verts, typecheck 0.
+
+## 🟡 P2 — restants (mesurés, non bloquants)
 - **A11y viewport** : `maximum-scale=5` fait échouer le check meta-viewport Lighthouse (WCAG 1.4.4). Retirer `maximum-scale` → `width=device-width,initial-scale=1,viewport-fit=cover`. (⚠️ historiquement Kevin a combattu le zoom intempestif #56 — à valider avec lui.)
 - **5 touch targets < 44px** : icônes chat 36px (`features/chat/index.ts`), `.ax-tool-dismiss` 28px → `min-height:44px`.
 - **236 hex hardcodés** hors `tokens.css` (or #c9a227 ×72, #e8b830 ×19) → `var(--ax-gold*)`.
 - **8 inputs sans label + 11 boutons sans aria-label** (notes/calendar/crypto/archive/plugins).
 - **Skeletons définis non câblés** dans les features lazy.
-- **2 `console.*` parasites** hors logger : `core/bootstrap.ts`, `services/integrations/auto-discover-links.ts`.
-- **78/256 services sans test homonyme** (gros : `voice.ts` 1417 l, `personal-assistant.ts` 1438 l, `sentinels-registry.ts`, `direct-connectors-registry.ts`).
-- **sw CACHE_VERSION** `apex-v13.4.277` vs APP_VER `13.4.276` (drift d'1 patch ; sentinelle sw-cache-sync rattrape).
-- **`business-intelligence.ts`** : métriques hardcodées (avg_session 12, retention 65) → mensongères si affichées.
+- **`console.*` hors logger** : en réalité quasi tous légitimes (commentaires, `core/logger`, wrapper redaction, `console.error` de dernier recours au boot crash). Pas un vrai problème.
+- **78/256 services sans test homonyme** (gros : `voice.ts` 1417 l, `personal-assistant.ts` 1438 l, `sentinels-registry.ts`, `direct-connectors-registry.ts`) — couverts indirectement, mais suites dédiées souhaitables.
+- **sw CACHE_VERSION** v13 `apex-v13.4.277` vs APP_VER `13.4.276` (drift d'1 patch ; sentinelle sw-cache-sync rattrape).
 - **~17 fuites d'erreur brute** `toast(...err.message...)` dans 12 features périphériques → harmoniser via `errors.toUserMessage()`.
 - TTI mobile 4,4 s · `madge --circular` non exposé en script npm.
 
