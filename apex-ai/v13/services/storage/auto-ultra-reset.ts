@@ -220,6 +220,24 @@ const PRESERVE_KEYS = new Set<string>([
   RELOAD_ATTEMPTS_KEY,
 ]);
 
+/**
+ * Garde UNIVERSELLE : protège TOUTE clé de credential du Coffre, pour N'IMPORTE
+ * QUEL service — sans dépendre d'une liste codée en dur forcément incomplète
+ * (130+ services credential possibles). ROOT CAUSE récurrente (Kevin "coffre vidé,
+ * clés disparues, même réseau OK") = un `ax_<service>_key` non listé était effacé
+ * à chaque auto-reset. Erreur #44/#55 CLAUDE.md. Mieux vaut sur-préserver qu'effacer
+ * une clé API (règle "RIEN PERDRE"). Couvre ax_<x>_key/token/pat/secret/apikey +
+ * champs OAuth + identité/paiement.
+ */
+export function isVaultCredentialKey(key: string): boolean {
+  return (
+    /^ax_[a-z0-9][a-z0-9_]*_(key|token|pat|secret|apikey|api_key|client_id|client_secret|private_key|refresh_token|access_token|webhook|url|email)$/i.test(key) ||
+    /^ax_(pin|user|uid|iban|paypal|revolut|btc|eth|vapid|firebase)/i.test(key) ||
+    key === 'ax_shared_api_key' ||
+    key === 'ax_api_key'
+  );
+}
+
 /* ============================================================
    AutoUltraReset class
    ============================================================ */
@@ -660,6 +678,7 @@ class AutoUltraReset {
         const key = localStorage.key(i);
         if (!key) continue;
         if (PRESERVE_KEYS.has(key)) continue;
+        if (isVaultCredentialKey(key)) continue; /* garde universelle credentials (tout service) */
         if (PRESERVE_KEY_PREFIXES.some((p) => key.startsWith(p))) continue;
         if (APEX_KEY_PREFIXES.some((p) => key.startsWith(p))) toRemove.push(key);
       }

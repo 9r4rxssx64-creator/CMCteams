@@ -275,3 +275,29 @@ describe('autoUltraReset — anti-loop helpers', () => {
     expect(autoUltraReset.isPostResetReload()).toBe(true);
   });
 });
+
+describe('isVaultCredentialKey — garde universelle anti perte coffre (Kevin "clés disparues")', () => {
+  it('préserve TOUT ax_<service>_key, même services hors liste codée en dur', async () => {
+    const { isVaultCredentialKey } = await import('../../services/storage/auto-ultra-reset.js');
+    /* Services présents dans la liste ET absents : tous doivent être protégés */
+    for (const k of [
+      'ax_anthropic_key', 'ax_openai_key', 'ax_tavily_key',
+      'ax_vonage_key', 'ax_emailjs_private_key', 'ax_finnhub_key',
+      'ax_youtube_refresh_token', 'ax_some_new_provider_2027_key',
+      'ax_pinecone_key', 'ax_pin', 'ax_user', 'ax_uid',
+      'ax_shared_api_key', 'ax_api_key', 'ax_vapid_public',
+    ]) {
+      expect(isVaultCredentialKey(k)).toBe(true);
+    }
+  });
+
+  it("n'attrape PAS les clés de cache/non-credential", async () => {
+    const { isVaultCredentialKey } = await import('../../services/storage/auto-ultra-reset.js');
+    for (const k of [
+      'apex_v13_sw_cache_x', 'ax_token_usage_2026', 'ax_voice_print_kevin',
+      'apex_v13_app_ver', 'ax_browser_history', 'cmc_chat',
+    ]) {
+      expect(isVaultCredentialKey(k)).toBe(false);
+    }
+  });
+});
