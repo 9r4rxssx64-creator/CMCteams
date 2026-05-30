@@ -1505,3 +1505,11 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - `GOOGLE_SETUP.md` : guide 2 min (clé API) + 5 min (OAuth GSC/GA4/Indexing).
 - Clés jamais commitées (`~/.config/claude-seo/google-api.json` hors repo + `.gitignore`).
 - Action Kevin restante : fournir 1 clé Google API gratuite (PSI+CrUX) — tout le reste est auto.
+
+## ⚖️ Section Avocat / Droit — claude-for-legal (2026-05-30)
+Source : **anthropics/claude-for-legal** (officiel Anthropic, Apache-2.0).
+- `.claude/legal/claude-for-legal/` — 12 modules, 151 skills, 10 agents (vendoré complet, structure préservée)
+  Modules : commercial, corporate/M&A, employment, privacy/RGPD, litigation, regulatory, ip, ai-governance, product, law-student, legal-clinic, legal-builder-hub
+- `.claude/skills/legal/SKILL.md` — orchestrateur `/legal` (avocat/droit, entrée unique, route vers le bon module)
+- `.claude/skills/apex-legal.md` — parité Apex IA (auto-sync prompt) + Legal Data Hunter `mcp_legal_search`
+- Install plugins officiel : `/plugin marketplace add .claude/legal/claude-for-legal`
