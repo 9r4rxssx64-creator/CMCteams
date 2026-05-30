@@ -37,7 +37,9 @@ async function main(){
     test('v9.702 Ma section: pattern strict "return th===tid" présent', () => {
       // Vérifier que le fix v9.702 strict est bien appliqué dans Ma section
       const src = document.documentElement.outerHTML;
-      if(src.indexOf('return th===tid; // v9.702 strict')<0) return 'v9.702 strict marker missing in Ma section';
+      // v9.765 : la logique stricte s'exprime désormais "if(th!==tid)return false;"
+      // (suivi du filtre _planHasWork v9.765) — même garantie : pas de fallback emp.team.
+      if(src.indexOf('if(th!==tid)return false; // v9.702 strict')<0) return 'v9.702 strict marker missing in Ma section';
       return true;
     });
 

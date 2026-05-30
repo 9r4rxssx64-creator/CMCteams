@@ -1475,3 +1475,26 @@ Fichiers modifiés :
 - `apex-ai/v13/core/memory.ts` — directive DeepSeek spécialiste code (system prompt Apex)
 
 Liens GitHub : https://github.com/9r4rxssx64-creator/cmcteams/tree/claude/apex-installation-setup-VCzUl/.claude
+
+## 🔍 Skill SEO installé (2026-05-30, branche claude/seo-skill-install-2rdyZ)
+
+Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source SEO Claude Code.
+
+**Claude Code (CMCteams) — `.claude/`** :
+- `.claude/skills/seo/` — orchestrateur `/seo` + scripts(50) + schema + pdf + hooks
+- `.claude/skills/seo-*/` — 24 sous-skills (technical, schema, geo, local, content, images, backlinks, sitemap, hreflang, ecommerce, cluster, sxo, drift, programmatic, maps, page, plan, google, content-brief, competitor-pages, flow, dataforseo, image-gen, audit)
+- `.claude/agents/seo-*.md` — 18 agents spécialistes
+- Invocation : `/seo audit <url>`, `/seo page <url>`, `/seo schema <url>`, `/seo geo <url>`
+- [Skill SEO sur GitHub](https://github.com/9r4rxssx64-creator/cmcteams/tree/claude/seo-skill-install-2rdyZ/.claude/skills/seo)
+
+**Apex IA (parité runtime)** :
+- `.claude/skills/apex-seo.md` — skill convention apex (auto-sync prompt)
+- `apex-ai/v13/services/integrations/seo-audit.ts` — service `seoAudit.analyze()` 100% client-side
+- Tool `seo_audit` (registry + dispatch + case) — Apex IA auto-invoque sur "SEO/audit/Core Web Vitals/schema/GEO/AI Overviews"
+- Directive prompt `core/memory.ts` (Skills 2026 ACTIFS)
+- Test : `tests/unit/seo-audit.test.ts` (4/4 ✓), tsc 0, eslint 0
+
+### SEO — extensions GRATUITES connectées (2026-05-30)
+- `.mcp.json` (racine) : serveurs MCP `nanobanana-mcp` (Gemini→images) + `firecrawl-mcp` — env `${GEMINI_API_KEY}` / `${FIRECRAWL_API_KEY}`, AUCUNE clé en clair, se connectent dès que la variable existe.
+- Skills : `seo-unlighthouse` (Lighthouse multi-pages, 0 clé, marche tout de suite), `seo-bing` (Bing Webmaster + IndexNow, env `BING_WEBMASTER_API_KEY`), `seo-firecrawl` (crawl), `seo-image-gen` (déjà présent).
+- Payants NON connectés : DataForSEO, Ahrefs, SE Ranking, Profound (comptes à créer par Kevin).

@@ -344,6 +344,40 @@ export async function dispatchGenerateMarketingCopy(params: Record<string, unkno
   };
 }
 
+export async function dispatchSeoAudit(params: Record<string, unknown>): Promise<unknown> {
+  const url = p<string>(params, 'url') ?? '';
+  if (!url) return { success: false, error: 'url requis (page à auditer)' };
+  try {
+    const { seoAudit } = await import('../integrations/seo-audit.js');
+    const result = await seoAudit.analyze({
+      url,
+      mode: p<'page' | 'geo'>(params, 'mode') ?? 'page',
+      aiSynthesis: p<boolean>(params, 'ai_synthesis') ?? true,
+    });
+    return { success: result.ok, ...result };
+  } catch (err) {
+    return { success: false, url, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function dispatchSeoAiVisibility(params: Record<string, unknown>): Promise<unknown> {
+  const brand = p<string>(params, 'brand') ?? '';
+  if (!brand) return { success: false, error: 'brand requis (marque/domaine à suivre)' };
+  try {
+    const { seoAiVisibility } = await import('../integrations/seo-ai-visibility.js');
+    const queries = p<string[]>(params, 'queries');
+    const competitors = p<string[]>(params, 'competitors');
+    const result = await seoAiVisibility.analyze({
+      brand,
+      ...(queries !== undefined ? { queries } : {}),
+      ...(competitors !== undefined ? { competitors } : {}),
+    });
+    return { success: result.ok, ...result };
+  } catch (err) {
+    return { success: false, brand, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export async function dispatchFuturisticModuleInvoke(params: Record<string, unknown>): Promise<unknown> {
   const moduleId = p<string>(params, 'module_id') ?? '';
   if (!moduleId) {

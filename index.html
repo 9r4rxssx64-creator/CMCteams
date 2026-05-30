@@ -4915,6 +4915,12 @@ function _cmcEnsureTeam(tid){
     A.teams.push(ct);
     return ct;
   }
+  // v9.768 — équipe « En déplacement » (DEPL/DEP intégral)
+  if(s==="deplacement"){
+    var dt={id:"deplacement",name:"✈ En déplacement",color:"#5a7aa8",family:"all",departureOrder:103,_auto:true};
+    A.teams.push(dt);
+    return dt;
+  }
   var fam=/^r/i.test(s)?"roulettes":/^c/i.test(s)?"cmc":"bj";
   var num=s.replace(/[^0-9]/g,"")||"?";
   var nm=fam==="roulettes"?("Roul. Éq."+num):fam==="cmc"?("CMC Éq."+num):("BJ Éq."+num);
@@ -5398,7 +5404,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.758";
+var APP_VER="v9.770";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12414,7 +12420,7 @@ function _agentHorairesCoverage(){
       });
       // v9.436 — Auto-fix : si cadres sans horaire, tenter autoFillMissingCadres (copie mois N-1)
       var action=byFam.cadres.length>0
-        ?{label:"\u2728 Auto-remplir cadres",fn:"agentActionAutoFillCadres()",auto:true,recordLesson:"Cadres sans horaire d\u00e9tect\u00e9s : auto-compl\u00e9tion depuis mois pr\u00e9c\u00e9dent (pattern RH dimanche si pas d'historique)"}
+        ?{label:"\u2728 Auto-remplir cadres",fn:"agentActionAutoFillCadres()",recordLesson:"v9.761 Kevin 'il me parle de cadre': action MANUELLE admin (jamais auto, regle #48). Cadres vides = normal sur import chefs/employes (PDF cadre separe)."}
         :{label:"\ud83d\udcc5 Voir planning",fn:"agentActionGotoPlanning()"};
       agentAppendReport("horaires",sev,empty.length+" emp. sans horaire "+MFR[m]+" ("+summary.join(" \u00b7 ")+")",empty.slice(0,15),action);
     }else{
@@ -14555,8 +14561,8 @@ function _agentImportWatch(){try{
   agentAppendReport("import-watch",sev,
     missing.length+"/"+totCrit+" cadres/chefs sans horaire"+(pdfLabel?" ("+pdfLabel+")":"")+": "+missing.slice(0,3).map(function(x){return x.name;}).join(", ")+partialNote+leaveNote,
     {missing:missing,totCrit:totCrit,year:y,month:m,pdfType:pdfType,skipPartial:skipPartial,longLeaves:longLeaves},
-    {label:"✍ Auto-fill cadres",fn:"agentActionAutoFillCadres()",auto:true,
-     recordLesson:"Cadres sans horaire detectes par import-watch — auto-completion via mois precedent"}
+    {label:"✍ Auto-fill cadres",fn:"agentActionAutoFillCadres()",
+     recordLesson:"v9.761 Kevin 'il me parle de cadre': MANUEL seulement (jamais auto, regle #48). Import chefs/employes → cadres vides normaux (PDF cadre separe)."}
   );
   // Escalade Apex si echec apres 1h (autoFillMissingCadres deja tente)
   var diag=lg("cmc_cadres_fallback_diag",null);
@@ -23765,6 +23771,25 @@ function vAccueil(){
 function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
+  // v9.765 (Kevin diag : COURTIN F/NICASTRO/COTTALORDA « · RH R » 0 jour travaillé
+  // TOUJOURS visibles dans BJ Éq.1). Garde DISPLAY : un emp sans AUCUN jour TRAVAILLÉ
+  // ce mois (codes travail non parsés = section Roulettes/CMC fragmentée) n'apparaît
+  // PAS dans une équipe de TRAVAIL (1-8/r*/c*) — il n'a pas de rotation réelle. Marche
+  // même sur données héritées (sans re-import). Les sections d'ABSENCE (formation/
+  // maladie/conges/amenage, rendues séparément) NE passent PAS ce filtre → visibles.
+  var _PLAN_ABS_CODES={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,ABS:1,FL:1,HD:1,HC:1};
+  function _planHasWork(e){
+    // Visible dans une équipe de TRAVAIL si : (a) ≥1 jour travaillé, OU (b) absence
+    // COMPLÈTE du mois (CP/M/AF tout le mois = vraie donnée, à montrer — règle #1).
+    // MASQUÉ seulement si 0 jour travaillé ET ligne INCOMPLÈTE (codes non parsés =
+    // section fragmentée, ex COURTIN F « · RH R » + 20 jours vides).
+    var r=pl[e.id]||{};
+    var filled=0,worked=0;
+    for(var _wd=1;_wd<=days;_wd++){var c=r[_wd];if(!c)continue;filled++;var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");if(!_PLAN_ABS_CODES[u])worked++;}
+    if(worked>0)return true;       // travaille → visible
+    if(filled>=days-1)return true; // absence intégrale (mois plein) → visible (règle #1)
+    return false;                  // 0 travaillé + ligne incomplète → masqué (parse cassé)
+  }
   // v9.644+646 (Kevin "j'efface le planning du mois, toujours les équipes présentes" / "l'app scintille"):
   // si A.overrides[key] vide → afficher empty state au lieu de la structure équipe.
   // v9.646 : éviter scintillement, ne pas afficher empty state tant que Firebase
@@ -24064,7 +24089,8 @@ function vPlan(){
       var te2=A.employees.filter(function(e){
         if(!isEmpActive(e,A.year,A.month))return false;
         var th=e.teamHistory&&e.teamHistory[_vKeyMa];
-        return th===tid; // v9.702 strict : pas de fallback emp.team
+        if(th!==tid)return false; // v9.702 strict : pas de fallback emp.team
+        return _planHasWork(e); // v9.765 : pas d'équipe de travail si 0 jour travaillé
       });
       if(!te2.length) return;
       _globalShown[tid]=true;
@@ -24099,9 +24125,16 @@ function vPlan(){
     {id:"formation",label:"\ud83c\udf93 Formation",color:"#7a5aa8"},
     {id:"maladie",label:"\ud83e\udd12 Maladie",color:"#8a4a4a"},
     {id:"conges",label:"\ud83c\udfd6\ufe0f Cong\u00e9s",color:"#4a8a4a"},
+    {id:"deplacement",label:"\u2708 En d\u00e9placement",color:"#5a7aa8"},
     {id:"amenage",label:"\ud83d\udd50 Horaires am\u00e9nag\u00e9s",color:"#8a8a9a"}
   ];
   var _v747KeyFam=A.year+"-"+A.month;
+  // v9.769 (Kevin diag « tout est mélangé ») — split par FAMILLE dans chaque section
+  // d'absence : un emp BJ en CP s'affiche dans « 🏖️ Congés (BJ) » et un emp Roul.
+  // en CP dans « 🏖️ Congés (Roulettes) ». Évite la confusion visuelle « pourquoi
+  // des BJ, des Roul. et des CMC dans la même section ? ». amenage reste regroupé
+  // (toujours famille=cmc en pratique).
+  var _v769FamLabels={bj:"BJ",roulettes:"Roul.",cmc:"CMC",baccara:"Bac."};
   _v747SpecialTeams.forEach(function(sp){
     if(_globalShown[sp.id])return;
     var members=A.employees.filter(function(e){
@@ -24111,11 +24144,48 @@ function vPlan(){
     });
     if(!members.length)return;
     _globalShown[sp.id]=true;
-    h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
-      +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
-      +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
-      +'</div>';
-    h+=_renderTeamBlock(sp.id,members,tc(sp.id));
+    // amenage : pas de split (toujours cmc, et label déjà spécifique)
+    if(sp.id==="amenage"){
+      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
+        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
+        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
+        +'</div>';
+      h+=_renderTeamBlock(sp.id,members,tc(sp.id));
+      return;
+    }
+    // Group members by family
+    var byFam={};
+    members.forEach(function(e){
+      var f=(e.familyHistory&&e.familyHistory[_v747KeyFam])||e.family||"bj";
+      if(!byFam[f])byFam[f]=[];
+      byFam[f].push(e);
+    });
+    // Render header + un sous-bloc par famille (ordre BJ → Roul. → CMC)
+    var famsHere=["bj","roulettes","cmc","baccara"].filter(function(f){return byFam[f];});
+    if(famsHere.length<=1){
+      // 1 seule famille → rendu simple sans split
+      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
+        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
+        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
+        +'</div>';
+      h+=_renderTeamBlock(sp.id,members,tc(sp.id));
+    }else{
+      // Plusieurs familles → header agrégé + sous-sections par famille
+      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
+        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
+        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp. ('+famsHere.map(function(f){return byFam[f].length+' '+_v769FamLabels[f];}).join(' · ')+')</span>'
+        +'</div>';
+      famsHere.forEach(function(f){
+        var subLabel=sp.label+' — '+_v769FamLabels[f];
+        h+='<div style="margin:6px 0 4px 10px;padding:6px 12px;background:'+sp.color+'15;border-left:2px solid '+sp.color+'80;border-radius:8px">'
+          +'<span style="font-size:13px;font-weight:700;color:'+sp.color+'">'+esc(subLabel)+'</span>'
+          +' <span style="font-size:12px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:2px 8px;border-radius:10px;margin-left:6px">'+byFam[f].length+'</span>'
+          +'</div>';
+        // virtual team-id by family for _renderTeamBlock — uses real members but
+        // groups under a per-family subkey for visual splitting (doesn't change data)
+        h+=_renderTeamBlock(sp.id+"_"+f,byFam[f],tc(sp.id));
+      });
+    }
   });
   FAMS_ORDER.forEach(function(fid){
     // v9.153 — respect filter chip si actif
@@ -24131,6 +24201,7 @@ function vPlan(){
     famEmps.forEach(function(e){
       var et=e.teamHistory&&e.teamHistory[_vKeyFam];
       if(!et||et==="?")return; // pas d'équipe pour CE mois → emp invisible
+      if(!_planHasWork(e))return; // v9.765 : 0 jour travaillé → pas dans une équipe de travail
       if(!byFT[et])byFT[et]=[];
       byFT[et].push(e);
       if(ftOrd.indexOf(et)<0)ftOrd.push(et);
@@ -26253,7 +26324,10 @@ function cmcExportTeamsDetectionDiag(){
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
       var rhDays=[];
-      Object.keys(r).forEach(function(d){if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));});
+      // v9.770 — RH primaire, R fallback si aucun RH (Kevin "il ne prenait en compte que les RH pas le R")
+      var _fbRDiag=[];
+      Object.keys(r).forEach(function(d){var _rc=String(r[d]).toUpperCase();if(_rc==="RH")rhDays.push(parseInt(d));else if(_rc==="R")_fbRDiag.push(parseInt(d));});
+      if(rhDays.length===0 && _fbRDiag.length>=2) rhDays = _fbRDiag;
       rhDays.sort(function(a,b){return a-b;});
       var cycle=_calcCycle(rhDays);
       var offset=cycle?(rhDays[0]-1)%cycle:null;
@@ -34505,6 +34579,20 @@ function createEmpFromImport(name,family){
   sv("employees");
 }
 
+// v9.759 (Kevin 2026-05-29 — règle #1 "tout le monde a un planning si son nom
+// est dans le PDF"). Garde-fou de validité d'un nom employé : utilisé par la
+// création INLINE pendant l'import (parser, ~l.39200) pour ne créer un employé
+// absent du roster QUE si son nom est un vrai "SURNAME + INITIALE" — jamais un
+// fragment PDF.js / "Colonne" / code (no invention).
+function _cmcIsValidEmpName(n){
+  if(!n)return false; n=String(n).trim();
+  if(n.length<3||n.length>40)return false;
+  if(/colonne/i.test(n))return false;       // artefacts PDF.js
+  if(/[\/0-9]/.test(n))return false;          // codes / chiffres
+  // SURNAME(+mots) + INITIALE 1-3 majuscules (ex "FAUTRIER M", "LANTERI MINET P")
+  return /^[A-ZÀ-Ü][A-Za-zÀ-ÿ'’\-]+(\s+[A-ZÀ-Ü][A-Za-zÀ-ÿ'’\-]+)*\s+[A-ZÀ-Ü]{1,3}$/.test(n);
+}
+
 function markAsRetired(empId,toMo){
   if(!A.user||A.user.id!==AID)return;
   var emp=empById(empId);
@@ -35062,6 +35150,1778 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
   }
 }
 
+// ============================================================================
+// v9.762 — TeamDetector (lib T1 validee, portee VERBATIM depuis
+//   tools/planning-parser-tester/lib/team-detector.js — validee 6/6 sur
+//   l'equipe juin de Kevin). Detection equipes/miroir par IDENTITE DES CODES
+//   JOURNALIERS (union-find ; RH et R = repos). NE PAS MODIFIER l'algo —
+//   toute correction se fait dans le bridge _cmcApplyValidatedTeams ci-dessous.
+//   Expose window.TeamDetector.detectTeams(employees,{minTeamSize:2}).
+// ============================================================================
+/**
+ * team-detector.js — Détection des équipes par PATTERN DE JOURS REPOS (RH/R).
+ *
+ * ALGORITHME OFFICIEL SBM (Kevin 2026-05-15 + 2026-05-28, NOTES_USER lignes 8-40,
+ * CLAUDE.md « DÉTECTION ÉQUIPES PAR JOURS REPOS ») :
+ *
+ * Le PDF SBM utilise 4 sources de délimitation (par priorité décroissante) :
+ *   1. GROS TRAIT NOIR FONCÉ entre blocs équipes (visible PDF, PERDU au copy-paste texte)
+ *      → Source PRIMAIRE selon Kevin (« en plus du gros trait normalement »)
+ *      → Détectable UNIQUEMENT via Vision IA (passes B-E) qui voit le rendu graphique
+ *      → Si fourni en input via `opts.teamSeparators` (lignes y des séparateurs),
+ *        c'est ÇA qui prime sur tout le reste.
+ *   2. NUMÉRO ÉQUIPE EXPLICITE entre POST et NOM (V1 juin 2026+, ex « BRTP+K 5 NAME »)
+ *      → Détecté côté text-parser.js (capture numérique)
+ *   3. PATTERN DE JOURS DE REPOS (RH / R) IDENTIQUE = même équipe
+ *      → ce que ce module implémente. Fonctionne sur texte natif seul.
+ *   4. COLONNE PDF (algo v9.719 CMCteams) : chaque colonne du PDF = une équipe
+ *      → fallback si signature RH ambiguë.
+ *
+ * Règle de détection (CORRIGÉE Kevin 2026-05-28) :
+ *   - Les employés ayant EXACTEMENT les mêmes jours RH/R dans le mois
+ *     appartiennent à la MÊME équipe OU à son ÉQUIPE MIROIR.
+ *   - Distinction équipe principale ⇆ miroir :
+ *       MÊMES jours RH/R (identiques !) + HORAIRES DE BASE DIFFÉRENTS
+ *       + POSITION DIFFÉRENTE dans le PDF (principale en haut, miroir plus bas).
+ *     Exemple vérité terrain (juin V1 NOTES_USER 134+) :
+ *       Équipe principale : BARONE E et al. — horaires `20/5` — RH jours X
+ *       Équipe miroir     : BONO V et al.   — horaires `22/6'` — MÊMES RH jours X
+ *     L'idée métier : 2 groupes qui se REPOSENT les mêmes jours mais qui
+ *     travaillent à des HORAIRES DIFFÉRENTS (l'un en matinée/jour, l'autre
+ *     en soirée/nuit) — couvre les amplitudes d'ouverture du casino.
+ *   - Chaque équipe a typiquement 4-6 employés (header PDF indique le compte :
+ *     « 4 RH du au » = 4 emps avec RH à cette position)
+ *
+ * Effectifs vérité terrain Kevin :
+ *   - Chefs BJ : 2-3 emps/équipe (effectifs plus petits)
+ *   - Roulettes : 5-6 emps/équipe
+ *   - Employés CMC : variable selon mois
+ *   - Cadres (Pit Boss/Sup) : PAS D'ÉQUIPES — assignation individuelle (skip)
+ *
+ * RÈGLES Kevin (CLAUDE.md erreurs #38, #44, #50, #62, #63) :
+ *   - JAMAIS écraser une cellule déjà parsée (consensus = fill-empty-only)
+ *   - JAMAIS confondre homonymes (LANDAU B ≠ LANDAU J : surname identique + initiale ≠)
+ *   - NE PAS fallback sur emp.team DEF_EMP (équipe change CHAQUE mois)
+ *   - Skip emps avec <20 cells (signature non fiable)
+ *   - Skip groupes <3 emps (faux groupements évités) — sauf chefs BJ effectif 2
+ *   - SKIP emps `family==="cadres"` (Pit Boss/Sup pas d'équipe)
+ *
+ * SORTIE :
+ *   {
+ *     ok: true,
+ *     teams: [
+ *       { id: "t1", signature: "RH:[7,14,21,28]", family: "roulettes",
+ *         firstWorkCode: "20/5", members: [{fullName}], rhDays: [7,14,21,28] }
+ *     ],
+ *     mirrors: [ { teamId, mirrorTeamId, rhOffset, reason } ],
+ *     unassigned: [{fullName, reason}],
+ *     warnings: []
+ *   }
+ */
+
+(function (root, factory) {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory();
+  else root.TeamDetector = factory();
+}(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  /** Détecte si un code est un jour de repos (RH ou R, casse insensible). */
+  function isRestCode(code) {
+    if (!code) return false;
+    const c = String(code).trim().toUpperCase();
+    return c === "RH" || c === "R";
+  }
+
+  /** Extrait la signature de jours de repos d'un employé : tableau des jours
+   *  où l'emp est en RH/R, triés croissants. */
+  function getRestSignature(days) {
+    if (!days) return [];
+    const rest = [];
+    for (const dayStr of Object.keys(days)) {
+      if (isRestCode(days[dayStr])) {
+        const d = parseInt(dayStr, 10);
+        if (!isNaN(d)) rest.push(d);
+      }
+    }
+    return rest.sort((a, b) => a - b);
+  }
+
+  /** Trouve le premier code de travail (non-statut, non-repos) dans days.
+   *  Préserve le code TEL QUEL (suffixes inclus) — règle reproduction identique. */
+  function getFirstWorkCode(days) {
+    if (!days) return null;
+    const STATUS = new Set(["RH", "R", "CP", "AF", "M", "MAL", "MT", "PAT", "AT", "ABS", "ABI",
+                            "SS", "RRT", "CRH", "CFL", "FL", "CSS", "EDC", "HD", "HC", "PRT"]);
+    const dayKeys = Object.keys(days).map(d => parseInt(d, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+    for (const d of dayKeys) {
+      const code = days[String(d)];
+      if (!code) continue;
+      const upper = String(code).trim().toUpperCase();
+      if (STATUS.has(upper)) continue;
+      return code;
+    }
+    return null;
+  }
+
+  /** Normalise un code horaire pour clustering (retire suffixes c, apostrophe,
+   *  guillemet, astérisque, deux-points en fin de code).
+   *  RAPPEL CLAUDE.md erreur #63 : on ne strip JAMAIS au stockage. Ici c'est
+   *  juste pour le clustering d'équipes (le code de base donne le « cycle »
+   *  partagé chef + croupiers). */
+  function normalizeWorkCodeForClustering(code) {
+    if (!code) return null;
+    return String(code).replace(/[c'"*:]+$/g, "").trim();
+  }
+
+  /** Trouve dans `days` la "signature étendue" :
+   *    { rhDays, firstWorkCode, firstWorkCodeNorm, cycleHint }
+   *  cycleHint = nombre de jours entre 2 RH consécutifs (utile pour matcher
+   *  les miroirs même si l'offset est juste un décalage de cycle). */
+  function getExtendedSignature(days) {
+    const rhDays = getRestSignature(days);
+    const firstWorkCode = getFirstWorkCode(days);
+    const firstWorkCodeNorm = normalizeWorkCodeForClustering(firstWorkCode);
+    let cycleHint = null;
+    if (rhDays.length >= 2) {
+      const diffs = [];
+      for (let i = 1; i < rhDays.length; i++) diffs.push(rhDays[i] - rhDays[i - 1]);
+      // Mode commun de l'intervalle entre 2 RH
+      const counts = {};
+      for (const d of diffs) counts[d] = (counts[d] || 0) + 1;
+      let max = 0;
+      for (const d of Object.keys(counts)) {
+        if (counts[d] > max) { max = counts[d]; cycleHint = parseInt(d, 10); }
+      }
+    }
+    return { rhDays, firstWorkCode, firstWorkCodeNorm, cycleHint };
+  }
+
+  /** Compare 2 signatures RH : retourne true si IDENTIQUES (même jours exactement). */
+  function rhEqual(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+
+  /** DEPRECATED (Kevin 2026-05-28) : avant je croyais que les miroirs étaient
+   *  DÉCALÉS d'un offset constant. Kevin a corrigé : ils ont les MÊMES RH/R
+   *  exactement, mais horaires base différents. La fonction reste exportée
+   *  pour les tests legacy mais le pipeline utilise désormais rhEqual + base ≠. */
+  function rhMirrorOffset(a, b) {
+    if (!a || !b || a.length !== b.length || a.length < 2) return null;
+    const offsets = [];
+    for (let i = 0; i < a.length; i++) offsets.push(b[i] - a[i]);
+    const first = offsets[0];
+    let consistent = 0;
+    for (const o of offsets) if (o === first) consistent++;
+    if (consistent / offsets.length >= 0.75 && first !== 0) return first;
+    return null;
+  }
+
+  /** Vraie règle miroir (Kevin 2026-05-28) : MÊMES jours RH/R + HORAIRES DE
+   *  BASE DIFFÉRENTS. Retourne true si A et B sont une paire miroir
+   *  (l'ordre dans le PDF distingue principale/miroir, géré par l'appelant). */
+  function isMirrorPair(A, B) {
+    if (!A || !B || !A.rhDays || !B.rhDays) return false;
+    if (!rhEqual(A.rhDays, B.rhDays)) return false;
+    if (!A.firstWorkCodeNorm || !B.firstWorkCodeNorm) return false;
+    return A.firstWorkCodeNorm !== B.firstWorkCodeNorm;
+  }
+
+  /** Algorithme principal. Reçoit une liste d'emps { fullName, days, family? }.
+   *  Retourne teams + mirrors + unassigned + warnings. */
+  /* Codes d'absence/statut (jour NON travaillé dans la rotation d'équipe, à
+   *  ignorer dans la comparaison). DEPL (déplacement/détaché) et RRT (repos
+   *  compensateur) ne font pas partie de la rotation normale → ignorés aussi
+   *  (sinon un membre détaché quelques jours est faussement séparé de son équipe
+   *  — cas LAVAGNA J, juin). */
+  const STATUS_ABS = new Set(["CP", "AF", "M", "MAL", "MT", "PAT", "AT", "ABS", "ABI",
+                              "SS", "RRT", "CRH", "CFL", "FL", "CSS", "EDC", "HD", "HC", "PRT",
+                              "DEPL", "DEP", "FORM", "STAGE"]);
+
+  /** Normalise un code journalier pour comparaison d'équipe :
+   *   RH/R → "REST" ; CP/M/AF/… → "ABS" (jour non travaillé) ; sinon le code de
+   *   base SANS suffixe (c/'/"/*), upper. Deux coéquipiers ont le MÊME code
+   *   normalisé chaque jour travaillé (ils tournent ensemble). */
+  function normalizeDayCode(code) {
+    if (!code) return null;
+    const u = String(code).trim().toUpperCase();
+    if (u === "RH" || u === "R") return "REST";
+    if (STATUS_ABS.has(u)) return "ABS";
+    return String(code).replace(/[c'"*:]+$/gi, "").trim().toUpperCase();
+  }
+
+  /** Algorithme principal (v0.4 — Kevin 2026-05-28, validé sur son équipe juin).
+   *
+   *  CLÉ D'ÉQUIPE = MÊMES CODES JOURNALIERS sur les jours TRAVAILLÉS EN COMMUN.
+   *  Robuste aux CP/absence partiels (un membre en CP la moitié du mois reste
+   *  dans l'équipe : sur ses jours travaillés, ses codes == ceux des coéquipiers)
+   *  et à la rotation (toute l'équipe tourne ensemble : 20/5→19/4→16/22→14/19→
+   *  RH…). L'ancienne signature « repos brut + 1er code » cassait sur les CP
+   *  partiels (repos tronqués → coéquipiers séparés).
+   *
+   *  Étapes : (1) normalise chaque jour ; (2) union-find : 2 emps unis si codes
+   *  identiques sur ≥minOverlap jours co-présents (dont ≥minWorkOverlap jours
+   *  travaillés) à 100% ; (3) clusters ≥minTeamSize = équipes ; (4) miroir =
+   *  2 équipes même famille, MÊMES repos, rotations horaires différentes. */
+  function detectTeams(employees, opts) {
+    opts = opts || {};
+    const minWorkDays = opts.minWorkDays || 5;        // jours travaillés min pour signature fiable
+    const minOverlap = opts.minOverlap || 6;           // jours co-présents min pour comparer
+    const minWorkOverlap = opts.minWorkOverlap || 3;   // dont jours travaillés (pas que du repos)
+    const minTeamSize = opts.minTeamSize !== undefined ? opts.minTeamSize : 2;
+    const skipFamilies = new Set(opts.skipFamilies || ["cadres"]);
+
+    const out = { ok: true, teams: [], mirrors: [], unassigned: [], warnings: [] };
+
+    // 1) Filtre + carte des codes journaliers normalisés
+    const nodes = [];
+    for (const emp of employees) {
+      if (!emp || !emp.fullName) continue;
+      if (emp.family && skipFamilies.has(emp.family)) {
+        out.unassigned.push({ fullName: emp.fullName, reason: "family=" + emp.family + " (skip — pas d'équipe)" });
+        continue;
+      }
+      const days = emp.days || {};
+      const dn = {}; let work = 0, rest = 0;
+      for (const k of Object.keys(days)) {
+        const d = parseInt(k, 10); if (isNaN(d)) continue;
+        const n = normalizeDayCode(days[k]); if (!n) continue;
+        dn[d] = n;
+        if (n === "REST") rest++; else if (n !== "ABS") work++;
+      }
+      if (work < minWorkDays) {
+        out.unassigned.push({ fullName: emp.fullName, reason: work + " jours travaillés (<" + minWorkDays + ") — statut/absence intégral ?" });
+        continue;
+      }
+      nodes.push({ emp, dn, work, rest, family: emp.family || null });
+    }
+
+    // 2) Union-find par identité des codes journaliers (jours co-travaillés)
+    const parent = nodes.map((_, i) => i);
+    function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+    function union(a, b) { parent[find(a)] = find(b); }
+    function compatible(A, B) {
+      if (A.family !== B.family) return false;
+      let overlap = 0, workOverlap = 0, match = 0;
+      for (let d = 1; d <= 31; d++) {
+        const a = A.dn[d], b = B.dn[d];
+        if (!a || !b || a === "ABS" || b === "ABS") continue;
+        overlap++;
+        if (a !== "REST" && b !== "REST") workOverlap++;
+        if (a === b) match++;
+      }
+      return overlap >= minOverlap && workOverlap >= minWorkOverlap && match === overlap;
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      for (let k = i + 1; k < nodes.length; k++) {
+        if (find(i) === find(k)) continue;
+        if (compatible(nodes[i], nodes[k])) union(i, k);
+      }
+    }
+
+    // 3) Regroupe les clusters → équipes
+    const clusters = new Map();
+    for (let i = 0; i < nodes.length; i++) {
+      const r = find(i);
+      if (!clusters.has(r)) clusters.set(r, []);
+      clusters.get(r).push(nodes[i]);
+    }
+    let teamIdx = 1;
+    const teamsArr = [];
+    for (const [, members] of clusters) {
+      if (members.length < minTeamSize) {
+        for (const n of members) out.unassigned.push({ fullName: n.emp.fullName, reason: "cluster trop petit (" + members.length + " <" + minTeamSize + ")" });
+        continue;
+      }
+      // Référence = membre le plus complet (max jours présents) → repos + rotation
+      const ref = members.slice().sort((a, b) => (b.work + b.rest) - (a.work + a.rest))[0];
+      const rhDays = Object.keys(ref.dn).filter(d => ref.dn[d] === "REST").map(Number).sort((a, b) => a - b);
+      teamsArr.push({
+        id: "t" + (teamIdx++),
+        family: ref.family,
+        members: members.map(n => ({ fullName: n.emp.fullName })),
+        rhDays: rhDays,
+        signature_rh: rhDays.slice(),
+        daySig: ref.dn,                       // rotation de référence (pour miroir)
+        firstWorkCodeNorm: getFirstWorkCode(ref.emp.days) ? normalizeWorkCodeForClustering(getFirstWorkCode(ref.emp.days)) : null
+      });
+    }
+    out.teams = teamsArr;
+
+    // 4) Miroirs : 2 équipes même famille, MÊMES repos, rotations DIFFÉRENTES
+    //    (l'union-find les a séparées car codes journaliers ≠).
+    const used = new Set();
+    for (let i = 0; i < teamsArr.length; i++) {
+      if (used.has(teamsArr[i].id)) continue;
+      for (let k = i + 1; k < teamsArr.length; k++) {
+        if (used.has(teamsArr[k].id)) continue;
+        const A = teamsArr[i], B = teamsArr[k];
+        if (A.family !== B.family) continue;
+        if (!rhEqual(A.rhDays, B.rhDays)) continue;
+        let common = 0, diff = false;
+        for (let d = 1; d <= 31; d++) {
+          const a = A.daySig[d], b = B.daySig[d];
+          if (!a || !b || a === "ABS" || b === "ABS" || a === "REST" || b === "REST") continue;
+          common++; if (a !== b) diff = true;
+        }
+        if (common >= 3 && diff) {
+          out.mirrors.push({
+            teamId: A.id, mirrorTeamId: B.id, rhDays: A.rhDays.slice(),
+            reason: "MÊMES repos [" + A.rhDays.join(",") + "] + rotations horaires différentes"
+          });
+          used.add(A.id); used.add(B.id);
+          break;
+        }
+      }
+    }
+
+    if (teamsArr.length === 0 && employees.length > 0) {
+      out.warnings.push("Aucune équipe détectée — vérifier la qualité de l'extraction des codes journaliers");
+    }
+
+    return out;
+  }
+
+  /** Helper utilitaire pour les tests : produit une signature lisible humaine. */
+  function describeTeam(team) {
+    return `${team.id} (${team.family || "?"}) — RH:[${team.rhDays.join(",")}] base:${team.firstWorkCodeNorm} — ${team.members.length} emps`;
+  }
+
+  return {
+    detectTeams,
+    getRestSignature,
+    getFirstWorkCode,
+    getExtendedSignature,
+    normalizeWorkCodeForClustering,
+    rhEqual,
+    rhMirrorOffset,  // deprecated, gardé pour tests legacy
+    isMirrorPair,
+    isRestCode,
+    describeTeam,
+    VERSION: "T1-teams-v0.3.0-family-rhgroup-mirror"
+  };
+}));
+
+// ============================================================================
+// v9.766 — Parsers GEOMETRIQUES T1 VALIDES (portes VERBATIM depuis
+//   tools/planning-parser-tester/lib/). EncadresParser (statuts M/CP/AF du au
+//   par colonnes X/Y), TextParser (grille jour-par-jour par coordonnees =
+//   recupere les sections Roulettes/CMC fragmentees que le parse-par-ligne
+//   aplati rate), CodeColors (couleurs cellules). Exposes window.EncadresParser
+//   / window.TextParser / window.CodeColors. NE PAS MODIFIER l'algo — le pont
+//   _cmcApplyGeometricParse fait l'integration ADDITIVE (remplit les cellules
+//   vides uniquement, reproduction identique). Comme TeamDetector v9.762.
+// ============================================================================
+/* ---- EncadresParser (T1, verbatim) ---- */
+/**
+ * encadres-parser.js — Parse les encadrés « N STATUT du J1 au J2 » du PDF SBM.
+ *
+ * RÔLE : reconnaître les statuts INTÉGRAUX (CP / AF / M / MAL / MT / PAT /
+ * EDC / SS / ABI / AT / CFL / CRH / ABS) qui s'appliquent à plusieurs employés
+ * sur une période (parfois mois entier, parfois sous-période 4-8 mai).
+ *
+ * RÈGLE ABSOLUE (Kevin, CLAUDE.md erreur #49) :
+ *   - JAMAIS chercher mots français longs (FORMATION/MALADIE) → cherche les
+ *     codes COURTS officiels SBM uniquement.
+ *   - Préserver caractère par caractère la donnée trouvée.
+ *   - Si emp dans 2 encadrés (CP intégral + AF 4-8) → priorité :
+ *     CP par défaut, AF surcharge sur les dates spécifiques.
+ *
+ * FORMAT PDF attendu (vérité terrain mai 2026 V2 confirmée Kevin 2026-05-19) :
+ *   « 13 FORMATION du au »  (followed by lines of names FILIPPI F, LAVAGNA J, ...)
+ *   « 2 CP du au »
+ *   « 8 CP du au »
+ *   « 7 M du au »
+ *   « 1 M du au »
+ *   « 4 M du au »
+ *   « EDC du au »
+ *
+ * Périodes acceptées : 1-31 (mois entier), 1-15, 16-31, 4-8 (sous-période courte),
+ *   tout fromDay/toDay avec 1 ≤ from ≤ to ≤ daysInMonth.
+ *
+ * SORTIE :
+ *   {
+ *     ok: true,
+ *     boxes: [
+ *       { count, code, from, to, family?, names: [{ surname, initials, fullName }] },
+ *       ...
+ *     ],
+ *     warnings: []   // si parsing partiel, periode invalide, etc.
+ *   }
+ */
+
+(function (root, factory) {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory();
+  else root.EncadresParser = factory();
+}(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  /* Codes statuts officiels SBM (CLAUDE.md erreur #49 — codes courts uniquement).
+   * Ordre = priorité de détection (les codes plus longs d'abord pour ne pas
+   * que `M` match dans `MAL`). */
+  const STATUT_CODES_LONG_FIRST = [
+    "MAL", "PAT", "ABS", "ABI", "EDC", "CFL", "CRH",
+    "CP", "AF", "AT", "MT", "SS", "M"
+  ];
+
+  /* Mots-clés long (FORMATION/MALADIE/etc.) acceptés UNIQUEMENT comme alias
+   * d'un code court — ne JAMAIS les utiliser comme source primaire. */
+  const ALIAS_LONG_TO_SHORT = {
+    "FORMATION":   "AF",
+    "MALADIE":     "M",
+    "MATERNITE":   "MT",
+    "MATERNITÉ":   "MT",
+    "PATERNITE":   "PAT",
+    "PATERNITÉ":   "PAT",
+    "CONGE":       "CP",
+    "CONGÉ":       "CP",
+    "ABSENCE":     "ABS"
+  };
+
+  /* Familles déduites depuis le contexte de la section où apparaît l'encadré.
+   * NOTES_USER : « encadré "13 FORMATION du au" section Chefs BJ ». */
+  const SECTION_HINTS = [
+    { re: /CHEF[S]?\s+BJ|BLACK\s*JACK|Chefs?\s+cartes\s+am[ée]ricaines/i, family: "bj" },
+    { re: /ROULETTES?|Jeux?\s+europ[ée]ens?|Chefs?\s+roul/i, family: "roulettes" },
+    { re: /Employ[ée]s?\s+CMC|Cartes?\s+CMC/i, family: "cmc" },
+    { re: /AM[ÉE]NAGEMENT|Horaires?\s+am[ée]nag/i, family: "amenage" },
+    { re: /PIT\s*BOSS|SUPERVISEUR|INSPECTEUR/i, family: "cadres" }
+  ];
+
+  /* Regex headers d'encadrés.
+   * Captures: (count?, code, from, to)
+   * Variations rencontrées :
+   *   « 13 FORMATION du au »         → count=13, alias FORMATION→AF, from/to absents = mois entier
+   *   « 2 CP du 1 au 31 »            → count=2, code=CP, from=1, to=31
+   *   « 3 FORMATION du 4 au 8 »      → count=3, AF, from=4, to=8
+   *   « EDC du au »                  → count manquant, code=EDC, période absente
+   *   « 7 M du au »                  → count=7, code=M, période = mois entier (par défaut)
+   */
+  const HEADER_RE = /(?:(\d{1,3})\s+)?(\b(?:FORMATION|MALADIE|MATERNIT[ÉE]|PATERNIT[ÉE]|CONG[ÉE]|ABSENCE|MAL|PAT|ABS|ABI|EDC|CFL|CRH|CP|AF|AT|MT|SS|M)\b)\s+du\s*(?:(\d{1,2})\s+au\s+(\d{1,2}))?\b/gi;
+
+  /* Détecte si une ligne est juste un nom (ou plusieurs noms séparés).
+   * Format : « NOM Initiale » ou « NOM1 NOM2 Initiale ». */
+  const NAME_LINE_RE = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,30})(?:\s+([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,30}))?\s+([A-Z]{1,3})\.?\b/g;
+
+  /* Faux positifs ligne de noms (codes / mots PDF qu'on ne veut pas matcher). */
+  const NAME_EXCLUDE = new Set([
+    "RH", "CP", "AF", "M", "MAL", "MT", "ABS", "EDC", "CMC", "CDP", "CCDP", "MCB",
+    "PIT", "BOSS", "SUPERVISEUR", "INSPECTEUR", "POKER", "NO", "LIMIT", "DU", "AU",
+    "FORMATION", "MALADIE", "MATERNITE", "PATERNITE", "CONGE", "ABSENCE",
+    "BJ", "ROULETTES", "BLACKJACK", "AMENAGEMENT", "AMÉNAGEMENT", "PNL",
+    "POSTE", "NOM", "ÉQUIPE", "EQUIPE", "TOTAL", "JOURS", "REPOS",
+    "AVRIL", "MAI", "JUIN", "JUILLET", "AOUT", "AOÛT", "SEPTEMBRE", "OCTOBRE",
+    "NOVEMBRE", "DECEMBRE", "JANVIER", "FEVRIER", "FÉVRIER", "MARS"
+  ]);
+
+  /** Résout un alias long en code court SBM, ou retourne tel quel si déjà court. */
+  function resolveCode(raw) {
+    if (!raw) return null;
+    const u = String(raw).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    if (ALIAS_LONG_TO_SHORT[u]) return ALIAS_LONG_TO_SHORT[u];
+    if (STATUT_CODES_LONG_FIRST.indexOf(u) >= 0) return u;
+    return u;
+  }
+
+  /** Devine la famille (bj/roulettes/cmc/amenage/cadres) à partir d'un contexte
+   *  textuel précédent l'encadré. Retourne null si pas de hint clair. */
+  function guessFamily(contextBefore) {
+    if (!contextBefore) return null;
+    for (const hint of SECTION_HINTS) {
+      if (hint.re.test(contextBefore)) return hint.family;
+    }
+    return null;
+  }
+
+  /** Extrait les noms d'une bande de texte (lignes qui suivent un encadré). */
+  function extractNames(text, maxNames) {
+    if (!text) return [];
+    const names = [];
+    const seen = new Set();
+    NAME_LINE_RE.lastIndex = 0;
+    let m;
+    while ((m = NAME_LINE_RE.exec(text))) {
+      const t1 = m[1] ? m[1].trim() : "";
+      const t2 = m[2] ? m[2].trim() : "";
+      const init = m[3] ? m[3].trim() : "";
+      if (NAME_EXCLUDE.has(t1) || (t2 && NAME_EXCLUDE.has(t2))) continue;
+      const surname = t2 ? (t1 + " " + t2) : t1;
+      const fullName = surname + " " + init;
+      if (seen.has(fullName)) continue;
+      seen.add(fullName);
+      names.push({ surname, initials: init, fullName });
+      if (maxNames && names.length >= maxNames) break;
+    }
+    return names;
+  }
+
+  /** Parser principal. Reçoit le rawText du PDF + le nombre de jours du mois
+   *  (pour expanser les périodes « 1-31 » par défaut). Retourne la liste
+   *  des encadrés détectés. */
+  function parseEncadres(rawText, daysInMonth) {
+    const out = { ok: true, boxes: [], warnings: [] };
+    if (!rawText) {
+      out.ok = false;
+      out.warnings.push("rawText vide");
+      return out;
+    }
+    daysInMonth = daysInMonth || 31;
+
+    HEADER_RE.lastIndex = 0;
+    let m;
+    while ((m = HEADER_RE.exec(rawText))) {
+      const countStr = m[1] || "";
+      const rawCode = m[2];
+      const fromStr = m[3] || "";
+      const toStr = m[4] || "";
+
+      const code = resolveCode(rawCode);
+      if (!code) {
+        out.warnings.push("Code statut non résolu : " + rawCode);
+        continue;
+      }
+      const count = countStr ? parseInt(countStr, 10) : null;
+      let from = fromStr ? parseInt(fromStr, 10) : 1;
+      let to = toStr ? parseInt(toStr, 10) : daysInMonth;
+      // Périodes invalides → flag warning
+      if (from < 1 || to > daysInMonth || from > to) {
+        out.warnings.push(`Période invalide pour ${code} : ${from}-${to} (daysInMonth=${daysInMonth})`);
+        from = Math.max(1, Math.min(from, daysInMonth));
+        to = Math.max(from, Math.min(to, daysInMonth));
+      }
+
+      // Contexte AVANT l'encadré pour deviner la famille
+      const ctxStart = Math.max(0, m.index - 300);
+      const contextBefore = rawText.slice(ctxStart, m.index);
+      const family = guessFamily(contextBefore);
+
+      // Noms qui SUIVENT l'encadré — extraits sur la bande après le header
+      // (200 chars × max count attendu, ou 1500 chars par défaut).
+      const expectedNames = count || 12;
+      const afterStart = m.index + m[0].length;
+      const afterLen = Math.min(rawText.length - afterStart, 200 * expectedNames + 600);
+      const after = rawText.slice(afterStart, afterStart + afterLen);
+      const names = extractNames(after, expectedNames);
+
+      out.boxes.push({
+        count: count,
+        names_found: names.length,
+        code: code,
+        from: from,
+        to: to,
+        days_count: to - from + 1,
+        family: family,
+        names: names,
+        raw_header: m[0]
+      });
+    }
+
+    return out;
+  }
+
+  /** Construit une map { fullName: { day: code } } à partir des encadrés
+   *  détectés. Applique la priorité Kevin (CP intégral + AF 4-8 → AF surcharge
+   *  sur 4-8). */
+  function expandBoxesToCells(boxes, daysInMonth) {
+    daysInMonth = daysInMonth || 31;
+    const map = {};
+    // 1ère passe : on pose le code de chaque encadré sur sa période,
+    // en respectant l'ordre d'apparition (les périodes plus courtes après
+    // surchargent les plus longues — comportement attendu par Kevin).
+    for (const box of boxes) {
+      for (const n of box.names) {
+        if (!map[n.fullName]) map[n.fullName] = {};
+        for (let d = box.from; d <= box.to; d++) {
+          map[n.fullName][String(d)] = box.code;
+        }
+      }
+    }
+    return map;
+  }
+
+  /** Token pur code-poste (B/R/T/C/P/K/E + séparateurs, ≥2 lettres). */
+  function isPosteToken(t) {
+    const letters = String(t).replace(/[.+]/g, "");
+    return letters.length >= 2 && /^[BRTPECK]+$/.test(letters);
+  }
+
+  /** Nettoie un nom pour l'AFFICHAGE (retire codes-poste tête/queue, garde la casse). */
+  function cleanDisplayName(s) {
+    let tokens = String(s || "").trim().split(/\s+/).filter(Boolean);
+    while (tokens.length > 2 && isPosteToken(tokens[0])) tokens.shift();
+    while (tokens.length > 2 && isPosteToken(tokens[tokens.length - 1])) tokens.pop();
+    if (tokens.length === 2 && isPosteToken(tokens[0]) && !isPosteToken(tokens[1])) tokens = [tokens[1]];
+    return tokens.join(" ");
+  }
+
+  /** Normalise un nom pour le matching encadré ↔ grille. Retire les codes-poste
+   *  (≥2 lettres) en tête ET en queue (« BRTPE PORASSO C » ⇒ clé == « PORASSO C »
+   *  pour matcher la grille), upper/NFD/espaces. Protège les initiales 1 lettre. */
+  function normName(s) {
+    let tokens = String(s || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
+    while (tokens.length > 2 && isPosteToken(tokens[0])) tokens.shift();
+    while (tokens.length > 2 && isPosteToken(tokens[tokens.length - 1])) tokens.pop();
+    if (tokens.length === 2 && isPosteToken(tokens[0]) && !isPosteToken(tokens[1])) tokens = [tokens[1]];
+    return tokens.join(" ");
+  }
+
+  /** APPLIQUE les encadrés aux employés (RÈGLE ABSOLUE Kevin 2026-05-26 :
+   *  « si il y a un nom, il y a des données à appliquer »).
+   *
+   *  Pour chaque encadré « N CODE du J1 au J2 » + ses noms :
+   *   - employé existant dans la grille → REMPLIT ses jours J1..J2 VIDES avec CODE
+   *     (ne JAMAIS écraser une cellule déjà lue — reproduction identique).
+   *   - employé absent de la grille → le CRÉE avec CODE sur J1..J2.
+   *
+   *  Ordre : les encadrés sont appliqués dans l'ordre du PDF — un encadré de
+   *  sous-période (ex AF 4-8) appliqué après un CP intégral surcharge bien les
+   *  jours 4-8 SEULEMENT s'ils étaient vides (priorité Kevin CP défaut + AF
+   *  surcharge → on autorise la surcharge des cellules issues d'un AUTRE
+   *  encadré, jamais d'une cellule de grille).
+   *
+   *  Retourne { employees, stats:{ filled, created, cells_added } }. */
+  function applyEncadresToEmployees(employees, boxes, daysInMonth) {
+    daysInMonth = daysInMonth || 31;
+    const out = (employees || []).map(e => ({
+      name: e.name || e.fullName,
+      days: Object.assign({}, e.days || {}),
+      brtpeck: e.brtpeck || null,
+      teamNumber: (e.teamNumber !== undefined ? e.teamNumber : null),
+      _gridDays: new Set(Object.keys(e.days || {})), // jours issus de la GRILLE (intouchables)
+      statuts: Array.isArray(e.statuts) ? e.statuts.slice() : [], // codes encadrés (section maladie/CP…)
+      source: e.source || "grid"
+    }));
+    const byName = new Map();
+    for (const e of out) byName.set(normName(e.name), e);
+
+    // Statuts d'ABSENCE intégrale (Kevin : « longue maladie = seulement dans
+    // l'encadré du haut, pas de ligne de grille »). Un employé présent TOUT LE
+    // MOIS dans un de ces encadrés n'a PAS de vraie grille → ses rares cellules
+    // de grille sont des artefacts de colonnes mélangées (ex : SANNA O en M
+    // récupérait le « R » initiale de son voisin CERETTI R).
+    const ABSENCE_FULL = new Set(["M", "MAL", "CP", "AF", "MT", "PAT", "SS", "ABI", "AT", "ABS", "EDC", "CFL", "CRH"]);
+
+    const stats = { filled: 0, created: 0, cells_added: 0, overridden: 0, dual_display: 0 };
+    for (const box of (boxes || [])) {
+      const from = box.from || 1;
+      const to = box.to || daysInMonth;
+      for (const n of (box.names || [])) {
+        const key = normName(n.fullName);
+        let emp = byName.get(key);
+        if (!emp) {
+          emp = { name: cleanDisplayName(n.fullName), days: {}, brtpeck: null, teamNumber: null, _gridDays: new Set(), statuts: [], source: "encadre" };
+          byName.set(key, emp);
+          out.push(emp);
+          stats.created++;
+        } else {
+          stats.filled++;
+        }
+        // Marqueur statut encadré → permet la SECTION « longue maladie » / CP
+        // (et le DOUBLE affichage si l'employé a aussi une équipe).
+        if (!emp.statuts) emp.statuts = [];
+        if (emp.statuts.indexOf(box.code) < 0) emp.statuts.push(box.code);
+
+        // RÈGLE Kevin 2026-05-28 : si une longue maladie a AUSSI une vraie ligne
+        // d'équipe → afficher LES DEUX (section maladie + vue équipe), même si M
+        // tout le mois → on NE touche PAS sa grille (teamNumber non null).
+        // Sinon (pas de vraie équipe) : sa grille est un artefact de colonnes
+        // mélangées (ex SANGIORGIO 30×CP, SANNA 1×R) → l'encadré PRIME.
+        const hasRealTeam = emp.teamNumber != null;
+        if (hasRealTeam) stats.dual_display++;
+        const gridCodes = new Set(Array.from(emp._gridDays).map(d => emp.days[d]));
+        const gridIsArtefact = emp._gridDays.size <= 3 || gridCodes.size <= 1; // sparse OU uniforme
+        const override = ABSENCE_FULL.has(box.code) && !hasRealTeam && gridIsArtefact;
+
+        for (let d = from; d <= to; d++) {
+          const ds = String(d);
+          if (emp._gridDays.has(ds)) {
+            // Vraie équipe OU grille non-artefact → on PROTÈGE la cellule de
+            // grille (double affichage : reste en vue équipe avec son code).
+            if (!override) continue;
+            stats.overridden++;
+          }
+          emp.days[ds] = box.code;
+          stats.cells_added++;
+        }
+      }
+    }
+    // Nettoie le champ interne avant retour
+    for (const e of out) delete e._gridDays;
+    return { employees: out, stats };
+  }
+
+  /* ───────────────────────────────────────────────────────────────────────
+   * RECONSTRUCTION GÉOMÉTRIQUE des encadrés (Kevin 2026-05-28).
+   *
+   * POURQUOI : le haut du planning SBM est une grille MULTI-COLONNES
+   * (« 9 M du au   16 CP du au » puis les noms en colonnes dessous). Quand on
+   * APLATIT le PDF en texte (parseEncadres ci-dessus), les colonnes se
+   * mélangent → on perd QUI est dans QUELLE boîte (ex : SANNA O en maladie M
+   * était collée à un faux « R »). La donnée EST dans le PDF, encodée par la
+   * POSITION VISUELLE (x/y) de chaque nom — pas par le texte.
+   *
+   * MÉTHODE : on lit les items PDF.js avec coordonnées (pages[].items[].x/y) :
+   *   1. en-tête = item code statut (M/CP/AF/…) avec « du » à sa droite, même y ;
+   *      count = nombre juste à gauche ; from/to = nombres entre du/au (défaut
+   *      = mois entier — Kevin : « M et CP tout le mois »).
+   *   2. bande X de la colonne = [leftX, leftX de l'en-tête suivant de la rangée).
+   *   3. noms de la boîte = items-nom dans cette bande X, sous l'en-tête,
+   *      du haut vers le bas, jusqu'à `count` (s'arrête sur un gros saut en y).
+   *   4. si noms trouvés < count → on FLAGUE l'écart (PDF.js a parfois lâché un
+   *      item-nom isolé) pour Vision ciblée / complétion — JAMAIS inventer.
+   *
+   * Retourne le MÊME format que parseEncadres → réutilise applyEncadresToEmployees. */
+  function parseEncadresGeometric(pages, daysInMonth) {
+    const out = { ok: true, boxes: [], warnings: [], geometric: true };
+    daysInMonth = daysInMonth || 31;
+    if (!pages || !pages.length) {
+      out.ok = false;
+      out.warnings.push("parseEncadresGeometric : pas de pages/items (PDF sans calque texte ?)");
+      return out;
+    }
+
+    const up = s => String(s).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    const isNum = s => /^\d{1,3}$/.test(String(s).trim());
+    function asCode(s) {
+      const u = up(s);
+      if (ALIAS_LONG_TO_SHORT[u]) return ALIAS_LONG_TO_SHORT[u];
+      if (STATUT_CODES_LONG_FIRST.indexOf(u) >= 0) return u;
+      return null;
+    }
+    function isNameStr(s) {
+      s = String(s).trim();
+      if (!s || s.indexOf(" ") < 0) return false;
+      const t = s.split(/\s+/);
+      const init = t[t.length - 1];
+      if (!/^[A-Z]{1,3}$/.test(init)) return false;          // initiales 1-3 lettres
+      const sur = t.slice(0, -1).join(" ");
+      if (sur.length < 2) return false;
+      if (!/^[A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\- ]+$/.test(sur)) return false;
+      if (NAME_EXCLUDE.has(up(t[0]))) return false;
+      return true;
+    }
+    function splitName(s) {
+      const t = String(s).trim().split(/\s+/).filter(Boolean);
+      const init = t.pop();
+      const surname = t.join(" ");
+      return { surname, initials: init, fullName: surname + " " + init };
+    }
+
+    for (const pg of pages) {
+      const items = (pg.items || []).filter(i => i.str && i.str.trim());
+      if (!items.length) continue;
+
+      // 1) En-têtes d'encadrés (code + « du » à droite, même y).
+      const headers = [];
+      for (const it of items) {
+        const code = asCode(it.str);
+        if (!code) continue;
+        const du = items.find(o => up(o.str) === "DU" && Math.abs(o.y - it.y) < 3 && o.x > it.x && o.x - it.x < 120);
+        if (!du) continue;
+        const au = items.find(o => up(o.str) === "AU" && Math.abs(o.y - it.y) < 3 && o.x > du.x && o.x - du.x < 120);
+        const cnt = items.filter(o => isNum(o.str) && Math.abs(o.y - it.y) < 3 && o.x < it.x && it.x - o.x < 55)
+          .sort((a, b) => b.x - a.x)[0];
+        let from = 1, to = daysInMonth;            // défaut = mois entier (M/CP tout le mois)
+        if (au) {
+          // Dates collées à « du »/« au » uniquement. Gap serré (<16px) pour NE PAS
+          // confondre la date de fin avec le numéro en tête de l'encadré suivant
+          // (ex « M du au 16 CP » : le 16 est le num de CP, PAS la fin de M).
+          const between = items.filter(o => isNum(o.str) && Math.abs(o.y - it.y) < 3 && o.x > du.x && o.x < au.x).sort((a, b) => a.x - b.x);
+          const after = items.filter(o => isNum(o.str) && Math.abs(o.y - it.y) < 3 && o.x > au.x && o.x - au.x < 16).sort((a, b) => a.x - b.x);
+          if (between[0]) from = parseInt(between[0].str, 10);
+          if (after[0]) to = parseInt(after[0].str, 10);
+        }
+        headers.push({ code, y: it.y, codeX: it.x, leftX: cnt ? cnt.x : it.x, count: cnt ? parseInt(cnt.str, 10) : null, from, to });
+      }
+      if (!headers.length) continue;
+
+      // 2) Regroupe les en-têtes par rangée (même y) → bornes X des colonnes.
+      const rows = [];
+      headers.slice().sort((a, b) => b.y - a.y || a.leftX - b.leftX).forEach(h => {
+        let r = rows.find(r => Math.abs(r.y - h.y) < 5);
+        if (!r) { r = { y: h.y, hs: [] }; rows.push(r); }
+        r.hs.push(h);
+      });
+      rows.forEach(r => {
+        r.hs.sort((a, b) => a.leftX - b.leftX);
+        r.hs.forEach((h, i) => { h.rightX = (i + 1 < r.hs.length) ? r.hs[i + 1].leftX : h.leftX + 110; });
+      });
+
+      // 3) Noms par colonne : on marche du HAUT vers le BAS dans la bande X de la
+      //    colonne, jusqu'à la fin visuelle (gros saut en y).
+      //    ⚠️ Le nombre en tête d'encadré (« 9 M », « 16 CP ») N'EST PAS un
+      //    compte de personnes (Kevin 2026-05-28 : « ce n'est pas le nombre…
+      //    peut-être le num des encadrés »). On ne plafonne donc JAMAIS par ce
+      //    nombre — on collecte la colonne entière par géométrie. Il est gardé
+      //    comme `header_num` (informatif), jamais utilisé pour couper/flaguer.
+      const nameItems = items.filter(i => isNameStr(i.str));
+      const family = guessFamily(pg.text || "");
+      const Y_STEP_MAX = 18;   // lignes de noms espacées ~8px ; >18px = fin de colonne
+      for (const h of headers) {
+        let from = h.from, to = h.to;
+        if (from < 1 || to > daysInMonth || from > to) {
+          out.warnings.push(`Période invalide ${h.code} : ${from}-${to} (daysInMonth=${daysInMonth})`);
+          from = Math.max(1, Math.min(from, daysInMonth));
+          to = Math.max(from, Math.min(to, daysInMonth));
+        }
+        // Plancher vertical : un en-tête situé PLUS BAS dans la même bande X
+        // marque la fin de cette colonne → empêche un encadré vide (« 0 EDC »)
+        // placé AU-DESSUS d'aspirer les noms de l'encadré du dessous.
+        let yFloor = -Infinity;
+        for (const h2 of headers) {
+          if (h2 === h || h2.y >= h.y) continue;
+          const overlap = h2.leftX < h.rightX && (h2.rightX || h2.leftX + 110) > h.leftX;
+          if (overlap && h2.y > yFloor) yFloor = h2.y;
+        }
+        // header_num === 0 → encadré VIDE (personne dans ce statut ce mois).
+        let names = [];
+        if (h.count !== 0) {
+          const cand = nameItems
+            .filter(n => n.x >= h.leftX - 6 && n.x < h.rightX - 6 && n.y < h.y - 1 && n.y > yFloor)
+            .sort((a, b) => b.y - a.y);
+          const picked = [];
+          let lastY = null;
+          for (const n of cand) {
+            if (lastY !== null && lastY - n.y > Y_STEP_MAX) break;   // fin de colonne
+            picked.push(n);
+            lastY = n.y;
+          }
+          names = picked.map(n => splitName(n.str.trim()));
+        }
+        out.boxes.push({
+          header_num: h.count,            // nombre en tête (NON un compte de personnes)
+          count: names.length,            // compat : nb réel de noms géométriques
+          names_found: names.length,
+          code: h.code,
+          from, to,
+          days_count: to - from + 1,
+          family,
+          names,
+          raw_header: `${h.count != null ? h.count + " " : ""}${h.code} du au`,
+          geometric: true
+        });
+      }
+    }
+    return out;
+  }
+
+  return {
+    parseEncadres,
+    parseEncadresGeometric,
+    expandBoxesToCells,
+    applyEncadresToEmployees,
+    resolveCode,
+    guessFamily,
+    extractNames,
+    normName,
+    STATUT_CODES_LONG_FIRST,
+    ALIAS_LONG_TO_SHORT,
+    VERSION: "T1-encadres-v0.4.0-geometric"
+  };
+}));
+
+/* ---- TextParser (T1, verbatim) ---- */
+/**
+ * text-parser.js — Parser texte direct PDF.js → {employees, days}.
+ *
+ * STRATÉGIE EXPERT (correction over-engineering session 2026-05-27) :
+ *
+ * Pour les PDFs SBM (tableaux natifs avec texte extractible), PDF.js suffit.
+ * Pas besoin de 4 IA Vision en parallèle + proxy + vote 4/4.
+ *
+ * Cette passe G (texte natif) :
+ *   - Prend la sortie de passes[0] (extractWithPdfJs) qui contient déjà
+ *     les items texte avec coordonnées x/y
+ *   - Reconstruit les lignes du tableau en groupant les items par y
+ *   - Détecte les noms d'employés via regex « NOM Initiale »
+ *   - Extrait pour chaque employé la séquence de codes horaires sur la ligne
+ *   - Retourne le même shape que les passes Vision : { employees, ok, latency_ms }
+ *
+ * AVANTAGES vs IA Vision :
+ *   - 0 latence réseau (purement local, 50-200ms)
+ *   - 0 coût API
+ *   - 0 timeout
+ *   - 100% déterministe (même PDF → exactement la même sortie)
+ *   - Préserve la casse, les suffixes (', ", *, :)
+ *
+ * LIMITES :
+ *   - Ne marche QUE sur PDFs natifs (texte extractible)
+ *   - PDF scanné/photo → fallback IA Vision nécessaire
+ */
+
+(function (root, factory) {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory();
+  else root.TextParser = factory();
+}(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  // Regex simple : surname 1 SEUL mot (PAS d'espace dans la classe — sinon elle
+  // mange gloutonnement « MERLO JC RH R » bug E2E). Les noms multi-mots
+  // (LE DUC, DELLA PINA, LANTERI MINET) sont gérés par NAME_RE_MULTI en amont.
+  const NAME_RE = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,30})\s+([A-Z]{1,3})\.?\b/g;
+  // Multi-token : « LANTERI MINET P », « DELLA PINA L », « DE RYCKE K ».
+  // 2 tokens maj + initiale (1-3 lettres).
+  const NAME_RE_MULTI = /\b([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,20})\s+([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ][A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ'\-]{1,20})\s+([A-Z]{1,3})\.?\b/g;
+
+  // Faux positifs courants dans les PDFs SBM
+  const EXCLUDE_NAMES = new Set([
+    "RH", "R", "CP", "AF", "M", "MAL", "MT", "ABS", "ABI", "ABP", "EDC",
+    "CMC", "CDP", "CCDP", "MCB", "SUN", "PK", "HD", "PRT", "HC", "RRT",
+    "RTP", "RTR", "RHS", "DP", "CRH", "CPS", "CPM", "CDH", "FL", "CFL",
+    "FTP", "FTR", "RFT", "FCP", "FCS", "FRH", "FFL", "CL", "CEO", "CSC",
+    "CSS", "PNE", "AMP", "MPC", "MPP", "AT", "PAT", "SS", "P", "DEPL", "DEP",
+    "PIT", "BOSS", "SUPERVISEUR", "INSPECTEUR", "POKER", "NO", "LIMIT", "DU", "AU",
+    "AVRIL", "MAI", "JUIN", "JUILLET", "AOUT", "AOÛT", "SEPTEMBRE", "OCTOBRE",
+    "NOVEMBRE", "DECEMBRE", "JANVIER", "FEVRIER", "FÉVRIER", "MARS",
+    "FORMATION", "MALADIE", "MATERNITE", "PATERNITE", "PNL",
+    "BJ", "ROUL", "ROULETTES", "BLACKJACK", "BLACK", "JACK", "AMENAGEMENT", "AMÉNAGEMENT",
+    "LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM",
+    "POSTE", "NOM", "ÉQUIPE", "EQUIPE", "TOTAL", "JOURS", "REPOS",
+    "PLANNING", "CHEF", "CHEFS", "CARTES", "EMPLOYE", "EMPLOYES", "EMPLOYÉS",
+    "MIROIR", "EQ", "ÉQ"
+  ]);
+
+  // Code poste BRTPECK en début de ligne : « .BRTCP+KE », « BRTP+E. », etc.
+  // (optionnellement suivi d'un numéro d'équipe explicite V1 juin « ... 5 NAME »).
+  // Capturé puis retiré AVANT extraction du nom — sinon le « KE » du suffixe
+  // `+KE` pollue le nom (« KE LANDAU B » au lieu de « LANDAU B »).
+  const POST_CODE_PREFIX_RE = /^\s*(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)(?:\s+(\d{1,2}))?\s+/;
+
+  // CODE_RE — couvre TOUS les codes officiels SBM (43 codes, Note 6 janv 1993).
+  // Sources : Note SBM 6 janvier 1993 (Bernard Lées) + Convention 1er avril 2015
+  //   + NOTES_USER + index.html ligne 2084 (BULLETIN_CODES).
+  //
+  // Catégories couvertes :
+  //   Présence/Repos (7) : P · RH · RTP · RTR · RRT · RHS · DP
+  //   Congés (6)         : CP · CRH · CPS · CPM · CDP · CDH
+  //   Fêtes légales (5)  : FL · CFL · FTP · FTR · RFT
+  //   À la masse (4)     : FCP · FCS · FRH · FFL
+  //   Absences (11)      : M · MAL · AT · MT · ABS · ABI · ABP · AF · CL · CEO · CSC · CSS
+  //   Sanctions (4)      : PNE · AMP · MPC · MPP
+  //   Autres (4)         : PAT · PRT · HC · EDC
+  //   Pit Boss spécifiques (2) : HD · PK
+  //   « R » seul (repos générique) : également accepté.
+  // Format horaire : <heures>/<heures> avec suffixes c/'/"/:/* + CDP/PK (postfix)
+  //   H majuscule accepté (12H30/19 cf NOTES_USER 1214).
+  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP|PK)*|P|RH|R|RTP|RTR|RRT|RHS|DP|CP|CRH|CPS|CPM|CDP|CDH|FL|CFL|FTP|FTR|RFT|FCP|FCS|FRH|FFL|M|MAL|AT|MT|ABS|ABI|ABP|AF|CL|CEO|CSC|CSS|SS|PNE|AMP|MPC|MPP|PAT|PRT|HC|EDC|HD|PK|DEPL|DEP)$/;
+
+  // Numéro d'équipe explicite (V1 juin 2026+) : « BRTP+K 5 NAME »
+  //   - Code poste BRTPECK suivi d'un espace, puis 1-2 chiffres = numéro d'équipe,
+  //     puis le nom. Capture le numéro pour le rattacher à l'employé.
+  // Ne match QUE si vraiment entre POST et NOM (pas dans la liste de codes).
+  const TEAM_NUM_AFTER_POST_RE = /(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)\s+(\d{1,2})\s+([A-ZÉÈÀÊÂÔÛÄËÏÖÜÇ])/;
+
+  // Compétences BRTPECK : code poste devant le nom (ex « .BRTCP+E. »).
+  // Capture le code complet (avec . initial/final et + optionnel).
+  const BRTPECK_RE = /\b(\.?[BRTPECK]+(?:\+[BRTPECK]+)?\.?)/;
+
+  function groupItemsByLine(items, yTolerance) {
+    yTolerance = yTolerance || 2;
+    const sorted = items.slice().sort((a, b) => (b.y || 0) - (a.y || 0));
+    const lines = [];
+    let current = null;
+    let currentY = null;
+    for (const it of sorted) {
+      if (!it.str || !it.str.trim()) continue;
+      const y = it.y || 0;
+      if (current === null || Math.abs(y - currentY) > yTolerance) {
+        current = [];
+        lines.push(current);
+        currentY = y;
+      }
+      current.push(it);
+    }
+    for (const line of lines) line.sort((a, b) => (a.x || 0) - (b.x || 0));
+    return lines;
+  }
+
+  /**
+   * Cherche un nom employé dans une ligne. Essaie d'abord multi-token (3 mots)
+   * puis simple (2 mots) pour ne pas rater « LANTERI MINET P » → « LANTERI » seul.
+   */
+  function findNameInLine(fullText) {
+    // 1) Essai multi-token : « SURNAME1 SURNAME2 Init »
+    NAME_RE_MULTI.lastIndex = 0;
+    while (true) {
+      const m = NAME_RE_MULTI.exec(fullText);
+      if (!m) break;
+      const t1 = m[1].trim();
+      const t2 = m[2].trim();
+      const t3 = m[3].trim();
+      if (EXCLUDE_NAMES.has(t1) || EXCLUDE_NAMES.has(t2)) continue;
+      // Évite faux positifs : si t2 est un code typique RH/CP/etc., c'est un surname simple
+      if (CODE_RE.test(t2)) continue;
+      // CRITIQUE (bug réel E2E « MERLO JC RH ») : si le 3e token (censé être
+      // l'initiale) est en fait un CODE (RH/R/CP/M…) ou un mot exclu, alors
+      // « t1 t2 » n'est PAS un surname à 2 mots — t2 est l'initiale réelle
+      // (ex MERLO JC) et t3 est un code. On laisse tomber le multi-token et
+      // on passe au match simple « SURNAME Init » plus bas.
+      if (EXCLUDE_NAMES.has(t3) || CODE_RE.test(t3)) break;
+      return { surname: t1 + " " + t2, initials: m[3], fullName: t1 + " " + t2 + " " + m[3], idx: m.index, length: m[0].length };
+    }
+    // 2) Fallback simple : « SURNAME Init »
+    NAME_RE.lastIndex = 0;
+    while (true) {
+      const m = NAME_RE.exec(fullText);
+      if (!m) break;
+      const surname = m[1].trim();
+      if (EXCLUDE_NAMES.has(surname) || EXCLUDE_NAMES.has(surname.replace(/\s+/g, ""))) continue;
+      return { surname, initials: m[2], fullName: surname + " " + m[2], idx: m.index, length: m[0].length };
+    }
+    return null;
+  }
+
+  /** Token "pur code-poste" : seulement lettres B/R/T/C/P/K/E (+ séparateurs +/.).
+   *  Un vrai nom de famille contient toujours d'autres lettres. */
+  function isPosteToken(t) {
+    const letters = String(t).replace(/[.+]/g, "");
+    return letters.length >= 2 && /^[BRTPECK]+$/.test(letters);
+  }
+
+  /** Normalise un nom pour la FUSION : retire les codes-poste (≥2 lettres)
+   *  en TÊTE et en QUEUE, où qu'ils soient (bug réel JUIN 2026 : « BRE DEVERINI F »
+   *  vide vs « DEVERINI F BRE » plein = même personne, doublon non fusionné).
+   *  Protège les initiales 1 lettre (homonymes LANDAU B/J, ENZA B/C, CAMPI PH/H
+   *  intacts — jamais strippées). Garde toujours ≥2 tokens (surname + initiale). */
+  function cleanNameKey(name) {
+    if (!name) return name;
+    let tokens = String(name).trim().split(/\s+/).filter(Boolean);
+    while (tokens.length > 2 && isPosteToken(tokens[0])) tokens.shift();
+    while (tokens.length > 2 && isPosteToken(tokens[tokens.length - 1])) tokens.pop();
+    // Cas « BT TULEU » (poste ≥2 + 1 seul mot de nom) → garde le nom seul.
+    if (tokens.length === 2 && isPosteToken(tokens[0]) && !isPosteToken(tokens[1])) {
+      tokens = [tokens[1]];
+    }
+    return tokens.join(" ");
+  }
+
+  function parseLineForEmployee(line, opts) {
+    opts = opts || {};
+    const minCodes = opts.minCodes || 3;  // relâché : 3 codes min (employés CP intégral peuvent avoir peu de codes visibles)
+    if (!line || line.length < 2) return null;
+    const rawText = line.map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+
+    // Strip le code-poste BRTPECK du début (sinon « +KE » pollue le nom →
+    // « KE LANDAU B »). Capture brtpeck + teamNumber explicite (V1 juin).
+    let brtpeck = null;
+    let teamNumber = null;
+    let fullText = rawText;
+    let offset = 0;
+    const pm = POST_CODE_PREFIX_RE.exec(rawText);
+    if (pm) {
+      brtpeck = pm[1];
+      if (pm[2]) teamNumber = parseInt(pm[2], 10);
+      fullText = rawText.slice(pm[0].length);
+      offset = pm[0].length;
+    }
+
+    const nameMatch = findNameInLine(fullText);
+    if (!nameMatch) return null;
+
+    // Position du nom dans la ligne (char offset → item idx).
+    // nameEndChar référencé au rawText d'origine (offset du strip ajouté).
+    let firstCodeItemIdx = -1;
+    let charCount = 0;
+    const nameEndChar = offset + nameMatch.idx + nameMatch.length;
+    for (let i = 0; i < line.length; i++) {
+      const len = (line[i].str || "").length + 1;
+      if (charCount + len > nameEndChar) {
+        firstCodeItemIdx = i + 1;
+        break;
+      }
+      charCount += len;
+    }
+    if (firstCodeItemIdx === -1) firstCodeItemIdx = line.length;
+
+    const days = {};
+    let dayIdx = 1;
+    for (let i = firstCodeItemIdx; i < line.length && dayIdx <= 31; i++) {
+      const token = (line[i].str || "").trim();
+      if (!token) continue;
+      if (CODE_RE.test(token)) {
+        days[String(dayIdx)] = token;
+        dayIdx++;
+      }
+    }
+
+    const out = {
+      name: nameMatch.fullName,
+      days,
+      raw_line_preview: fullText.slice(0, 200)
+    };
+    if (brtpeck) out.brtpeck = brtpeck;
+    if (teamNumber !== null) out.teamNumber = teamNumber;
+    if (Object.keys(days).length < minCodes) out.partial = true;
+    return out;
+  }
+
+  /**
+   * Pass 2 : recherche les noms dans le texte brut concaténé (passe lignes-libres).
+   * Récupère les employés qui ont été ratés par la pass 1 (lignes split, format atypique).
+   * Pour chaque nom trouvé, scanne les ~40 items qui suivent dans le texte source
+   * pour extraire les codes horaires associés.
+   */
+  /**
+   * Parse UNE ligne de texte brut → employé (nom + codes + brtpeck + teamNumber).
+   * Strippe d'abord le code-poste BRTPECK du début (sinon il pollue le nom),
+   * puis extrait le nom, puis les codes jour.
+   */
+  function parseRawLine(line) {
+    if (!line) return null;
+    const raw = String(line).replace(/\s+/g, " ").trim();
+    if (raw.length < 4) return null;
+
+    // 1) Strip le code-poste BRTPECK du début + capture brtpeck + teamNumber
+    let brtpeck = null;
+    let teamNumber = null;
+    let working = raw;
+    const pm = POST_CODE_PREFIX_RE.exec(raw);
+    if (pm) {
+      brtpeck = pm[1];
+      if (pm[2]) teamNumber = parseInt(pm[2], 10);
+      working = raw.slice(pm[0].length);
+    }
+
+    // 2) Extrait le nom (multi-token d'abord, puis simple)
+    const nameMatch = findNameInLine(working);
+    if (!nameMatch) return null;
+    // Refuse si le "nom" est en fait un code (ligne de codes sans nom)
+    if (EXCLUDE_NAMES.has(nameMatch.surname) || CODE_RE.test(nameMatch.surname)) return null;
+
+    // 3) Extrait les codes APRÈS le nom
+    const after = working.slice(nameMatch.idx + nameMatch.length);
+    const tokens = after.split(/\s+/);
+    const days = {};
+    let d = 1;
+    for (const t of tokens) {
+      if (d > 31) break;
+      const tok = t.trim();
+      if (!tok) continue;
+      if (CODE_RE.test(tok)) { days[String(d)] = tok; d++; }
+    }
+    if (Object.keys(days).length === 0) return null;
+
+    const out = { name: nameMatch.fullName, days, source: "pass2_raw" };
+    if (brtpeck) out.brtpeck = brtpeck;
+    if (teamNumber !== null) out.teamNumber = teamNumber;
+    return out;
+  }
+
+  /**
+   * Pass 2 : ligne par ligne (split \n). Plus fiable que le scan global —
+   * chaque ligne = un employé, le code-poste est strippé, les titres et
+   * lignes de codes purs sont rejetés.
+   */
+  function parseFromRawText(textRaw) {
+    if (!textRaw) return [];
+    const employees = [];
+    const seen = new Set();
+    const lines = String(textRaw).split(/\r?\n/);
+    for (const line of lines) {
+      const emp = parseRawLine(line);
+      if (!emp) continue;
+      if (seen.has(emp.name)) continue;
+      seen.add(emp.name);
+      employees.push(emp);
+    }
+    return employees;
+  }
+
+  function parseFromPdfJs(pdfPass) {
+    const started = Date.now();
+    const out = { passe: "G", tool: "text-parser-native", ok: false, latency_ms: 0, employees: [], error: null, raw: null };
+    try {
+      if (!pdfPass || !Array.isArray(pdfPass.pages)) {
+        out.error = {
+          code: "no_pdf_pass",
+          message: "Pas de passe A (PDF.js) à parser.",
+          detail: "pdfPass.pages absent ou non-array",
+          step: "text-parser:input_check",
+          hint: "Cette passe nécessite que extractWithPdfJs ait tourné avant."
+        };
+        return out;
+      }
+
+      // Pass 1 — par ligne via coordonnées x/y
+      const pass1Employees = [];
+      let totalLines = 0;
+      let linesWithName = 0;
+      for (const page of pdfPass.pages) {
+        const lines = groupItemsByLine(page.items || [], 2);
+        totalLines += lines.length;
+        for (const line of lines) {
+          const emp = parseLineForEmployee(line);
+          if (emp) {
+            pass1Employees.push(emp);
+            linesWithName++;
+          }
+        }
+      }
+
+      // Pass 2 — texte brut complet (rattrape les noms ratés par pass 1)
+      const pass2Employees = parseFromRawText(pdfPass.textRaw || "");
+
+      // Merge — on garde TOUJOURS l'entrée avec le PLUS de cellules remplies.
+      // CRITIQUE (bug réel test Kevin JUIN 2026) : le PDF SBM a une page
+      // « Roulements du mois » qui liste les noms SANS codes journaliers. Sans
+      // ce garde-fou, l'entrée vide (roster) écrasait l'entrée pleine (grille
+      // planning) → lignes vides. keep-most-cells résout ça.
+      const dedup = {};
+      function cellCount(e) { return e && e.days ? Object.keys(e.days).length : 0; }
+      function mergeKeepBest(emp) {
+        // Normalise le nom (retire codes-poste tête/queue) pour que les doublons
+        // « BRE DEVERINI F » / « DEVERINI F BRE » fusionnent. Affiche le nom propre.
+        emp.name = cleanNameKey(emp.name);
+        const ex = dedup[emp.name];
+        if (!ex) { dedup[emp.name] = emp; return; }
+        // Complète d'abord les cellules manquantes de l'existant avec les nouvelles
+        for (const [d, v] of Object.entries(emp.days || {})) {
+          if (!ex.days[d]) ex.days[d] = v;
+        }
+        // Si la nouvelle entrée a strictement plus de cellules, elle devient la base
+        // (mais on conserve le brtpeck/teamNumber non-null de l'une ou l'autre).
+        if (cellCount(emp) > cellCount(ex)) {
+          if (!emp.brtpeck && ex.brtpeck) emp.brtpeck = ex.brtpeck;
+          if ((emp.teamNumber === undefined || emp.teamNumber === null) && ex.teamNumber != null) emp.teamNumber = ex.teamNumber;
+          // Recompléter les cellules de l'ancien que le nouveau n'a pas
+          for (const [d, v] of Object.entries(ex.days || {})) {
+            if (!emp.days[d]) emp.days[d] = v;
+          }
+          dedup[emp.name] = emp;
+        } else {
+          if (!ex.brtpeck && emp.brtpeck) ex.brtpeck = emp.brtpeck;
+          if ((ex.teamNumber === undefined || ex.teamNumber === null) && emp.teamNumber != null) ex.teamNumber = emp.teamNumber;
+        }
+      }
+      // pass1 (coordonnées) d'abord
+      for (const emp of pass1Employees) mergeKeepBest(emp);
+      // pass2 (texte brut) ensuite — complète les noms manqués + cellules
+      let pass2Added = 0;
+      for (const emp of pass2Employees) {
+        if (!dedup[emp.name]) pass2Added++;
+        mergeKeepBest(emp);
+      }
+
+      out.employees = Object.values(dedup);
+      out.ok = true;
+      out.raw = {
+        pages_processed: pdfPass.pages.length,
+        lines_total: totalLines,
+        lines_with_name: linesWithName,
+        pass1_employees: pass1Employees.length,
+        pass2_employees: pass2Employees.length,
+        pass2_added_after_dedup: pass2Added,
+        unique_employees: out.employees.length,
+        sample_first_emp: out.employees[0] || null,
+        sample_last_emp: out.employees[out.employees.length - 1] || null
+      };
+    } catch (e) {
+      out.error = {
+        code: "text_parser_exception",
+        message: "Exception pendant le parsing texte.",
+        detail: (e && e.message) || String(e),
+        step: "text-parser:catch",
+        where: (e && e.stack ? String(e.stack) : "").split("\n").slice(0, 3).join(" | ")
+      };
+    } finally {
+      out.latency_ms = Date.now() - started;
+    }
+    return out;
+  }
+
+  return {
+    parseFromPdfJs,
+    groupItemsByLine,
+    parseLineForEmployee,
+    EXCLUDE_NAMES,
+    CODE_RE,
+    NAME_RE,
+    BRTPECK_RE,
+    TEAM_NUM_AFTER_POST_RE,
+    POST_CODE_PREFIX_RE,
+    parseRawLine,
+    parseFromRawText,
+    cleanNameKey,
+    isPosteToken,
+    VERSION: "T1-text-parser-v0.4.0-line-by-line-poststrip"
+  };
+}));
+
+/* ---- CodeColors (T1, verbatim) ---- */
+/**
+ * code-colors.js — Mapping CODE → couleur (fond + texte) cellule planning.
+ *
+ * Sources :
+ *   - NOTES_USER « Couleurs CODES (v9.105 — affinées à partir PDF SBM) » lignes 1393+
+ *   - NOTES_USER « Couleurs du PDF original SBM (v9.103) » lignes 1045+
+ *   - NOTES_USER « Nomenclature visuelle codes horaires SBM Mai V2 » lignes 215+
+ *
+ * RÈGLE Kevin : ces couleurs PROJETTENT le rendu attendu — elles ne
+ * MODIFIENT JAMAIS la cellule source. La cellule reste le code observé
+ * caractère par caractère. C'est juste une couche d'affichage UI.
+ *
+ * Convention de suffixes (priorité décroissante) :
+ *   - Suffixe `'` ou `"` ou `"'` → CONVENTION (rouge fond / jaune texte)
+ *   - Suffixe `*` → CCDP+CMC (orange)
+ *   - Suffixe `CDP` ou `c` ou `:` → préserve la couleur de base
+ *   - Code statut (RH/R/CP/...) → couleur dédiée
+ *   - Code horaire pur (22/6, 19/4, etc.) → couleur par base
+ */
+
+(function (root, factory) {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory();
+  else root.CodeColors = factory();
+}(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  /* Couleurs Convention (suffixe ' ou " — jours rajoutés direction). */
+  const CONVENTION_COLOR = { bg: "#d8342e", fg: "#ffe23a", label: "Convention" };
+
+  /* Couleurs CCDP (suffixe *). */
+  const CCDP_COLOR = { bg: "#ffe4d0", fg: "#804418", label: "CCDP + CMC" };
+  const CCDP_VIVID = { bg: "#ffb480", fg: "#a84018", label: "CCDP (variante vive)" };
+
+  /* Couleurs des horaires de base CMC (NOTES_USER ligne 1052+). */
+  const HORAIRES_BASE = {
+    "22/6":  { bg: "#fccfe0", fg: "#a82858", label: "22h-6h CMC" },
+    "19/4":  { bg: "#fff4a0", fg: "#6a5410", label: "19h-4h CMC" },
+    "16/3":  { bg: "#ffc890", fg: "#8a4a10", label: "16h-3h CMC (coupure)" },
+    "14/19": { bg: "#c4e8a8", fg: "#3a6a18", label: "14h-19h CMC" },
+    "20/5":  { bg: "#b8d4f0", fg: "#1a5090", label: "20h-5h CMC" },
+    "16/22": { bg: "#d4c4ec", fg: "#5838a0", label: "16h-22h CMC" },
+    "16/20": { bg: "#d4c4ec", fg: "#5838a0", label: "16h-20h CMC" },
+    "15/19": { bg: "#fff4a0", fg: "#6a5410", label: "15h-19h CCDP (Pit Boss)" },
+    "19/2":  { bg: "#fff4a0", fg: "#6a5410", label: "19h-2h CMC (Pit Boss)" },
+    "15/20": { bg: "#ffd0e0", fg: "#a82858", label: "15h-20h POKER NO LIMIT" },
+    "12h30/19": { bg: "#fff4a0", fg: "#6a5410", label: "12h30-19h CMC" }
+  };
+
+  /* Couleurs + DÉNOMINATION OFFICIELLE des codes statut (43 codes).
+   * Libellés conformes Convention SBM Note 6 janvier 1993 (Bernard Lées) —
+   * source : index.html racine BULLETIN_CODES. Le label s'affiche au survol
+   * du comparateur visuel (Kevin « aide-toi de la Convention pour la
+   * dénomination des jours »). */
+  const STATUT_COLORS = {
+    /* Présence / Repos */
+    "P":   { bg: "#e8f0e8", fg: "#202020", label: "Jour de Présence" },
+    "RH":  { bg: "#c8a8e0", fg: "#2a0870", label: "Repos Hebdomadaire" },
+    "R":   { bg: "#e8e8e8", fg: "#202020", label: "Repos simple" },
+    "RTP": { bg: "#ffd060", fg: "#5a3808", label: "Repos Travaillé à Payer" },
+    "RTR": { bg: "#ffd060", fg: "#5a3808", label: "Repos Travaillé à Récupérer (+ compteur)" },
+    "RRT": { bg: "#ffd850", fg: "#5a3808", label: "Récupération Repos Travaillé (- compteur)" },
+    "RHS": { bg: "#ffd850", fg: "#5a3808", label: "Récupération Heures Supplémentaires" },
+    "DP":  { bg: "#e0e0e8", fg: "#202020", label: "Jour de Disposition" },
+    /* Congés */
+    "CP":  { bg: "#f8c0d0", fg: "#6a1028", label: "Jour ouvrable de Congé Payé" },
+    "CRH": { bg: "#f0b8c8", fg: "#6a1028", label: "Repos Hebdo inclus dans Congé" },
+    "CPS": { bg: "#f8c0d0", fg: "#6a1028", label: "Congé Payé Samedi (5e pour 5 sem)" },
+    "CPM": { bg: "#f8c0d0", fg: "#6a1028", label: "1er jour Période Congé (droit fractionnement)" },
+    "CDP": { bg: "#f0b8c8", fg: "#6a1028", label: "Jour Congé Déjà Payé" },
+    "CDH": { bg: "#f0b8c8", fg: "#6a1028", label: "Repos Hebdo inclus dans Congés Déjà Payés" },
+    /* Fêtes légales */
+    "FL":  { bg: "#a8e0a8", fg: "#0c3a0c", label: "Fête Légale chômée et payée" },
+    "CFL": { bg: "#a8c0a8", fg: "#0c3a0c", label: "Fête Légale incluse dans Congé Payé" },
+    "FTP": { bg: "#80e080", fg: "#0c3a0c", label: "Fête Légale Travaillée à Payer" },
+    "FTR": { bg: "#80e080", fg: "#0c3a0c", label: "Fête Légale Travaillée à Récupérer (+ compteur)" },
+    "RFT": { bg: "#a0d0a0", fg: "#0c3a0c", label: "Récupération Fête Travaillée (- compteur)" },
+    /* À la masse */
+    "FCP": { bg: "#f0b8c0", fg: "#6a1028", label: "Idem CP (employé à la masse)" },
+    "FCS": { bg: "#f0b8c0", fg: "#6a1028", label: "Idem CPS (employé à la masse)" },
+    "FRH": { bg: "#c8a8d8", fg: "#2a0870", label: "Idem CRH (employé à la masse)" },
+    "FFL": { bg: "#a8c0a8", fg: "#0c3a0c", label: "Idem CFL (employé à la masse)" },
+    /* Absences */
+    "M":   { bg: "#ffe840", fg: "#4a3808", label: "Absence Maladie (indemnisée ou non)" },
+    "MAL": { bg: "#ffe840", fg: "#4a3808", label: "Maladie longue durée" },
+    "AT":  { bg: "#ffc850", fg: "#5a2808", label: "Accident du Travail ou Trajet" },
+    "MT":  { bg: "#ffe080", fg: "#5a3808", label: "Congé Maternité" },
+    "ABS": { bg: "#e8c8b0", fg: "#4a2808", label: "Absence tolérée non payée" },
+    "ABI": { bg: "#e88080", fg: "#5a0808", label: "Absence Injustifiée (sanction possible)" },
+    "ABP": { bg: "#e8c8b0", fg: "#4a2808", label: "Absence autorisée exceptionnellement payée" },
+    "AF":  { bg: "#a8e0a8", fg: "#0c3a0c", label: "Absence Rémunérée Formation (= Présence)" },
+    "CL":  { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé Légal événement familial (Art. 18)" },
+    "CEO": { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé d'Éducation Ouvrière" },
+    "CSC": { bg: "#c8e8c8", fg: "#0c3a0c", label: "Congé Supplémentaire Cadre" },
+    "CSS": { bg: "#d0d0d0", fg: "#202020", label: "Congé Sans Solde" },
+    /* Sanctions (rouge alerte) */
+    "PNE": { bg: "#e85050", fg: "#ffffff", label: "Préavis non Exécuté" },
+    "AMP": { bg: "#e85050", fg: "#ffffff", label: "Mise à Pied non rémunérée" },
+    "MPC": { bg: "#e85050", fg: "#ffffff", label: "Mise à Pied Conservatoire (attente décision)" },
+    "MPP": { bg: "#e8a050", fg: "#ffffff", label: "Mise à Pied Payée" },
+    /* Autres */
+    "PAT": { bg: "#b8e0f0", fg: "#0c3a58", label: "Paternité" },
+    "PRT": { bg: "#ffd060", fg: "#5a3808", label: "Prêt (mis à disposition autre service)" },
+    "HC":  { bg: "#d8e8a8", fg: "#2e3a10", label: "Heures Complémentaires" },
+    "EDC": { bg: "#e0d0f0", fg: "#4a2080", label: "En Détachement Cadre" },
+    /* Pit Boss spécifiques */
+    "HD":  { bg: "#e85050", fg: "#ffffff", label: "Hors Département / Jour férié spécial" },
+    "PK":  { bg: "#ffd0e0", fg: "#a82858", label: "Poker Cash Game" }
+  };
+
+  /* Couleurs des LIEUX SBM (badge / liseré cellule). Distinctes des couleurs
+   * d'horaire (qui colorent le fond de la cellule) — le lieu se montre en
+   * liseré + légende. Kevin 2026-05-28 « les couleurs aussi des lieux ». */
+  const LIEU_COLORS = {
+    "CMC":            { c: "#3a86ff", label: "Casino Monte-Carlo" },
+    "CCDP":           { c: "#ff7a18", label: "Café de Paris" },
+    "CDP":            { c: "#ff7a18", label: "Café de Paris" },
+    "CCDP+CMC":       { c: "#ff7a18", label: "Café de Paris + CMC" },
+    "SUN":            { c: "#ffd23f", label: "Sun Casino" },
+    "MCB":            { c: "#06d6a0", label: "Monte-Carlo Bay" },
+    "POKER NO LIMIT": { c: "#e84a8a", label: "Poker No Limit" },
+    "PNL":            { c: "#e84a8a", label: "Poker No Limit" },
+    "HD":             { c: "#9b5de5", label: "Hors Département" }
+  };
+
+  /** Couleur d'un lieu (pour liseré/badge). Retourne {c, label} ou null. */
+  function getLieuColor(lieu) {
+    if (!lieu) return null;
+    const key = String(lieu).toUpperCase().trim();
+    return LIEU_COLORS[key] || null;
+  }
+
+  /** Normalise apostrophes courbes en droites. */
+  function normalizeQuotes(s) {
+    if (!s) return s;
+    return String(s)
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’ʼ]/g, "'");
+  }
+
+  /** Détermine la couleur d'une cellule à partir de son code.
+   *  Retourne { bg, fg, label, isConvention?, isCcdp?, source }.
+   *  Si code inconnu → { bg: null, fg: null, label: "?", source: "unknown" }.
+   *
+   *  Priorité (NOTES_USER « Nomenclature visuelle ») :
+   *   1. Convention : code contient `'` ou `"` N'IMPORTE OÙ (ex `19/4'c`,
+   *      `20/5""`, `22/6'c` chef+Convention) → rouge fond / jaune texte.
+   *      Le `c` final (chef) ne doit PAS masquer le `'` (bug réel JUIN 2026).
+   *   2. CCDP : suffixe `*` (sans quote) → orange.
+   *   3. Code statut (RH/CP/M/...) → couleur dédiée.
+   *   4. Code horaire base (+ suffixe `c` chef) → couleur par horaire. */
+  function getCellColor(rawCode) {
+    if (!rawCode) return { bg: null, fg: null, label: "vide", source: "empty" };
+    const code = normalizeQuotes(String(rawCode).trim());
+
+    // 1. Convention — `'` ou `"` PRÉSENT (où que ce soit après le code horaire).
+    //    Les horaires de base (22/6, 19/4, 12h30/19) et les codes statut
+    //    (RH/CP/M) ne contiennent jamais de quote → détection fiable.
+    if (/['"]/.test(code)) {
+      const r = Object.assign({}, CONVENTION_COLOR, { isConvention: true, source: "quote_convention", code });
+      if (/c['"]*$/.test(code)) r.label = "Convention (chef)";
+      return r;
+    }
+
+    // 2. CCDP (suffixe *)
+    if (/\*/.test(code)) {
+      return Object.assign({}, CCDP_COLOR, { isCcdp: true, source: "suffix_ccdp", code });
+    }
+
+    // 3. Standalone CDP
+    if (/^CDP$/i.test(code)) {
+      return Object.assign({}, CCDP_VIVID, { isCcdp: true, source: "standalone_cdp", code });
+    }
+
+    // 4. Code statut court (RH, CP, M, etc.) — match exact upper
+    const upper = code.toUpperCase();
+    if (STATUT_COLORS[upper]) {
+      return Object.assign({}, STATUT_COLORS[upper], { source: "statut", code: upper });
+    }
+
+    // 5. Code horaire base : normaliser le suffixe c/CDP/H et lookup
+    const lowH = code.replace(/H/g, "h");
+    const normalized = lowH.replace(/[c:]+$/g, "").replace(/CDP$/i, "");
+    if (HORAIRES_BASE[normalized]) {
+      const result = Object.assign({}, HORAIRES_BASE[normalized], { source: "horaire_base", code: code });
+      if (/c$/.test(code)) result.label += " (chef)";
+      return result;
+    }
+
+    // 6. Inconnu — la cellule reste affichée (texte préservé), sans couleur.
+    return { bg: null, fg: null, label: "?", source: "unknown", code };
+  }
+
+  /** Génère un style CSS inline depuis le retour de getCellColor.
+   *  Anti-XSS : ne retourne que `background:` et `color:` hex valides. */
+  function getCellStyle(rawCode) {
+    const c = getCellColor(rawCode);
+    if (!c.bg && !c.fg) return "";
+    const styles = [];
+    if (c.bg && /^#[0-9a-fA-F]{3,8}$/.test(c.bg)) styles.push(`background:${c.bg}`);
+    if (c.fg && /^#[0-9a-fA-F]{3,8}$/.test(c.fg)) styles.push(`color:${c.fg}`);
+    return styles.join(";");
+  }
+
+  return {
+    getCellColor,
+    getCellStyle,
+    getLieuColor,
+    normalizeQuotes,
+    HORAIRES_BASE,
+    STATUT_COLORS,
+    CONVENTION_COLOR,
+    CCDP_COLOR,
+    CCDP_VIVID,
+    LIEU_COLORS,
+    VERSION: "T1-colors-v0.2.0-lieux"
+  };
+}));
+
+
+// ============================================================================
+// ============================================================================
+// v9.766 — BRIDGE production : parsers GEOMETRIQUES T1 valides au mois iy-im.
+//
+//   Recoit window._cmcPdfGeometry (collecte au PDF.js extract) avec
+//   pages[].items[]{str,x,y,w,h}. Lance :
+//     1. EncadresParser.parseEncadresGeometric -> boxes M/CP/AF du au
+//     2. TextParser.parseFromPdfJs            -> employes {name,days,brtpeck,teamNumber}
+//   Puis APPLIQUE additivement sur A.overrides[key] :
+//     - matche emp par nom EXACT normalise (homonyme safe : surname+initiale)
+//     - remplit UNIQUEMENT les cellules vides (jamais ecrase la grille production)
+//     - codes geometriques = exact PDF (reproduction identique, lesson #62)
+//     - encadres -> codes statut M/CP/AF tout le mois pour les emps en
+//       absence integrale (lesson #66)
+//
+//   Admin-only. ADDITIF (chefs section deja parsee par production reste intacte).
+//   Ne tourne PAS si pas de geometrie (paste-text imports = comportement actuel).
+// ============================================================================
+function _cmcApplyGeometricParse(iy,im){
+  if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
+  try{
+    var geo=window._cmcPdfGeometry;
+    if(!geo||!Array.isArray(geo.pages)||!geo.pages.length){
+      return{ok:false,reason:"no_geometry"};
+    }
+    if(typeof window.TextParser!=="object"||typeof window.TextParser.parseFromPdfJs!=="function"){
+      return{ok:false,reason:"no_TextParser"};
+    }
+    if(typeof window.EncadresParser!=="object"){
+      return{ok:false,reason:"no_EncadresParser"};
+    }
+    var key=iy+"-"+im;
+    if(!A.overrides)A.overrides={};
+    if(!A.overrides[key])A.overrides[key]={};
+    // days-in-month
+    var dim=new Date(iy,im+1,0).getDate();
+    // 1) TextParser geometrique (grille jour-par-jour par x/y)
+    var pdfPass={pages:geo.pages,textRaw:geo.textRaw||""};
+    var gRes=window.TextParser.parseFromPdfJs(pdfPass);
+    var geoEmps=(gRes&&gRes.ok&&Array.isArray(gRes.employees))?gRes.employees:[];
+    // 2) EncadresParser geometrique (statuts M/CP/AF du au par colonnes X/Y)
+    var encRes=null;
+    try{
+      if(typeof window.EncadresParser.parseEncadresGeometric==="function"){
+        encRes=window.EncadresParser.parseEncadresGeometric(geo.pages,dim);
+      }
+    }catch(_eg){}
+    var encBoxes=(encRes&&Array.isArray(encRes.boxes))?encRes.boxes:[];
+    // Helper de normalisation de nom (homonyme-safe: surname multi-token + initiale).
+    // Reutilise EncadresParser.normName (qui strip aussi les codes-poste BRTPECK).
+    function norm(s){
+      try{return window.EncadresParser.normName(s);}catch(_n){
+        return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();
+      }
+    }
+    // Build map of production emps by normalized name (filter actifs sur le mois)
+    var nameToEid={};
+    for(var i=0;i<A.employees.length;i++){
+      var e=A.employees[i];
+      if(!e||!e.name)continue;
+      // homonyme : on enregistre la liste, on resoudra par initiale
+      var n=norm(e.name);
+      if(!nameToEid[n])nameToEid[n]=[];
+      nameToEid[n].push(e.id);
+    }
+    // Stats
+    var stats={
+      geo_emps_total:geoEmps.length,
+      enc_boxes_total:encBoxes.length,
+      emps_matched:0,
+      emps_unmatched:0,
+      cells_filled_grid:0,
+      cells_filled_encadre:0,
+      cells_overwritten_blocked:0
+    };
+    // 3) APPLIQUE codes GRILLE (TextParser) - ADDITIF (fill empty only)
+    geoEmps.forEach(function(ge){
+      if(!ge||!ge.name)return;
+      var n=norm(ge.name);
+      var eids=nameToEid[n]||[];
+      // Si plusieurs emps avec meme nom normalise (BORGIA L vs T par ex),
+      // resolution par initiale exacte (lesson #38/#68 anti-fusion homonymes)
+      if(eids.length>1){
+        // Strip pour comparer initiale
+        var tokens=String(ge.name||"").trim().split(/\s+/).filter(Boolean);
+        var lastTok=tokens[tokens.length-1];
+        if(lastTok&&/^[A-Z]{1,3}$/.test(lastTok)){
+          var matched=eids.filter(function(id){
+            var emp=A.employees.find(function(x){return x.id===id;});
+            if(!emp||!emp.name)return false;
+            var pt=emp.name.trim().split(/\s+/).filter(Boolean);
+            return pt[pt.length-1]===lastTok;
+          });
+          if(matched.length===1){eids=matched;}else{eids=[];}
+        }else{
+          eids=[];
+        }
+      }
+      if(!eids.length){stats.emps_unmatched++;return;}
+      var eid=eids[0];
+      stats.emps_matched++;
+      if(!A.overrides[key][eid])A.overrides[key][eid]={};
+      var row=A.overrides[key][eid];
+      var days=ge.days||{};
+      Object.keys(days).forEach(function(d){
+        if(row[d]){stats.cells_overwritten_blocked++;return;}// JAMAIS ecraser grille production
+        var code=days[d];
+        if(!code)return;
+        row[d]=code;
+        stats.cells_filled_grid++;
+      });
+    });
+    // 4) APPLIQUE encadres statut (EncadresParser) - ADDITIF (fill empty only)
+    encBoxes.forEach(function(box){
+      if(!box||!Array.isArray(box.names))return;
+      var code=box.code;
+      var from=box.from||1;
+      var to=box.to||dim;
+      box.names.forEach(function(nm){
+        if(!nm||!nm.fullName)return;
+        var n=norm(nm.fullName);
+        var eids=nameToEid[n]||[];
+        if(eids.length>1){
+          // anti-fusion homonymes : refuser sauf si initiale exacte unique
+          var initial=nm.initials||"";
+          var matched=eids.filter(function(id){
+            var emp=A.employees.find(function(x){return x.id===id;});
+            if(!emp||!emp.name)return false;
+            var pt=emp.name.trim().split(/\s+/).filter(Boolean);
+            return pt[pt.length-1]===initial;
+          });
+          if(matched.length===1){eids=matched;}else{eids=[];}
+        }
+        if(!eids.length)return;
+        var eid=eids[0];
+        if(!A.overrides[key][eid])A.overrides[key][eid]={};
+        var row=A.overrides[key][eid];
+        for(var d=from;d<=to;d++){
+          var ds=String(d);
+          if(row[ds]){stats.cells_overwritten_blocked++;continue;}// JAMAIS ecraser
+          row[ds]=code;
+          stats.cells_filled_encadre++;
+        }
+      });
+    });
+    // Persist + audit
+    try{ls("cmc_ov",A.overrides);}catch(_p1){}
+    if(typeof fbWrite==="function")try{fbWrite("cmc_ov",A.overrides);}catch(_p2){}
+    try{
+      if(typeof _audit==="function"){
+        _audit("geometric_parse_v766",AID,key,
+          stats.cells_filled_grid+"+"+stats.cells_filled_encadre+" cells",
+          JSON.stringify(stats));
+      }
+    }catch(_a){}
+    console.log("[v9.766 geoParse]",key,JSON.stringify(stats));
+    return{ok:true,stats:stats};
+  }catch(e){
+    console.warn("[v9.766 geoParse]",e&&e.message);
+    return{ok:false,error:e&&e.message};
+  }
+}
+
+// v9.762 — BRIDGE production : applique le TeamDetector valide (T1) au mois iy-im.
+//   Construit la liste d'emps depuis A.overrides[key], appelle
+//   window.TeamDetector.detectTeams, mappe les ids generiques (t1,t2...) vers
+//   les ids PRODUCTION par famille (bj->1,2..., roulettes->r1..., cmc->c1...,
+//   amenage->amenage), ecrit emp.teamHistory[key] + cree les A.teams manquantes
+//   + ecrit le mapping miroir dans cmc_team_mirror_<key> (format {idA:idB,idB:idA}
+//   lu par _cmcMirrorTeam). Admin-only. NE TOUCHE JAMAIS les codes de cellules
+//   (reproduction identique) — seulement teamHistory/familyHistory/miroir.
+//   Remplace _cmcDetectTeamsByDailyCodes comme source de verite d'equipe a l'import.
+function _cmcApplyValidatedTeams(iy,im){
+  if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
+  try{
+    if(typeof window==="undefined"||!window.TeamDetector||typeof window.TeamDetector.detectTeams!=="function")
+      return{ok:false,reason:"no_TeamDetector"};
+    var key=iy+"-"+im;
+    var ov=(A.overrides&&A.overrides[key])||{};
+    if(!Object.keys(ov).length)return{ok:false,reason:"no_data"};
+    // 1) Construire la liste d'emps {fullName, days, family} depuis A.overrides[key].
+    //    fullName = emp.name + eid → UNIQUE (homonymes LANDAU B/J ont des eid distincts),
+    //    ce qui garantit la re-association exacte par id (jamais par fuzzy nom).
+    var employees=[];
+    var idToEmp={};           // eid -> emp
+    var fullNameToEid={};     // fullName brut -> eid (1:1)
+    Object.keys(ov).forEach(function(eid){
+      var cells=ov[eid];
+      if(!cells||typeof cells!=="object")return;
+      var hasCell=Object.keys(cells).some(function(d){return !!cells[d];});
+      if(!hasCell)return;
+      var emp=A.employees.find(function(e){return e.id===eid;});
+      if(!emp)return;
+      var fam=null;
+      try{if(typeof familyForMonth==="function")fam=familyForMonth(emp,iy,im,{strict:true});}catch(_){}
+      if(!fam)fam=emp.family||null;
+      var fn=(emp.name||"")+" "+eid;
+      fullNameToEid[fn]=eid;
+      idToEmp[eid]=emp;
+      employees.push({fullName:fn,days:cells,family:fam});
+    });
+    if(!employees.length)return{ok:false,reason:"no_emps"};
+    // 2) Detection via la lib validee
+    var det=window.TeamDetector.detectTeams(employees,{minTeamSize:2});
+    if(!det||!det.ok)return{ok:false,reason:"detector_failed",detail:det};
+    // 3) Mapper ids generiques (t1...) -> ids PROD par famille, sequentiels par famille
+    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
+    var genToProd={};
+    (det.teams||[]).forEach(function(t){
+      var fam=t.family||"bj";
+      var prodId;
+      if(fam==="amenage"){prodId="amenage";}
+      else{
+        famCounters[fam]=(famCounters[fam]||0)+1;
+        var n=famCounters[fam];
+        prodId=fam==="roulettes"?("r"+n):fam==="cmc"?("c"+n):fam==="baccara"?("b"+n):String(n);
+      }
+      genToProd[t.id]=prodId;
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(prodId);
+      (t.members||[]).forEach(function(mem){
+        var eid=fullNameToEid[mem.fullName];
+        var emp=eid?idToEmp[eid]:null;
+        if(!emp)return;
+        if(!emp.teamHistory)emp.teamHistory={};
+        emp.teamHistory[key]=prodId;
+        if(fam&&fam!=="amenage"){if(!emp.familyHistory)emp.familyHistory={};emp.familyHistory[key]=fam;}
+      });
+    });
+    // 4) Mapping miroir {prodIdA:prodIdB, prodIdB:prodIdA} (lu par _cmcMirrorTeam)
+    var mirrors={};
+    (det.mirrors||[]).forEach(function(mr){
+      var pa=genToProd[mr.teamId],pb=genToProd[mr.mirrorTeamId];
+      if(pa&&pb){mirrors[pa]=pb;mirrors[pb]=pa;}
+    });
+    if(Object.keys(mirrors).length){
+      try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_team_mirror_"+key,mirrors);}catch(_){}
+    }
+    // 5) Persister A.employees + A.teams une fois
+    try{ls("cmc_e",A.employees);}catch(_){}
+    try{ls("cmc_t",A.teams);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+    var assigned=(det.teams||[]).reduce(function(s,t){return s+(t.members?t.members.length:0);},0);
+    var report={teams:(det.teams||[]).length,assigned:assigned,mirrors:Object.keys(mirrors).length/2,unassigned:(det.unassigned||[]).length};
+    try{if(typeof _audit==="function")_audit("teams_detected_validated_v762",AID,key,
+      report.teams+" teams / "+report.assigned+" emps / "+report.mirrors+" mirrors",
+      JSON.stringify(report));}catch(_){}
+    console.log("[v9.762 validatedTeams] "+report.teams+" equipes, "+report.assigned+" emps, "+report.mirrors+" miroirs (lib "+(window.TeamDetector.VERSION||"?")+")");
+    return{ok:true,report:report,genToProd:genToProd,mirrors:mirrors,detector:det};
+  }catch(e){console.warn("[v9.762 validatedTeams]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
+
 function _cmcDetectTeamsByRestPattern(iy,im){
   try{
     var key=iy+"-"+im;
@@ -35160,10 +37020,15 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
       if(cellCount<10){skipReasons.low_cells++;return;}
-      var rhDays=[];
+      var rhDays=[],fbR=[];
+      // v9.770 (Kevin "il ne prenait en compte que les RH pas le R") — RH primaire,
+      // R fallback si AUCUN RH (sinon le cycle SBM standard cassé : RH+R adjacents).
       Object.keys(r).forEach(function(d){
-        if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));
+        var c=String(r[d]).toUpperCase();
+        if(c==="RH")rhDays.push(parseInt(d));
+        else if(c==="R")fbR.push(parseInt(d));
       });
+      if(rhDays.length===0 && fbR.length>=2) rhDays = fbR;
       rhDays.sort(function(a,b){return a-b;});
       if(rhDays.length<2){skipReasons.low_rh++;return;}
       var cycle=_calcCycle(rhDays);
@@ -35277,7 +37142,10 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       }
     }
     if(Object.keys(mirrors).length){
-      try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
+      // v9.762 — MERGE dans la map miroir existante (écrite par _cmcApplyValidatedTeams)
+      // au lieu d'écraser : le rest-pattern est un filet pour les emps non clusterisés,
+      // il ne doit JAMAIS effacer les miroirs validés par la lib T1.
+      try{var _existMir=lg("cmc_team_mirror_"+key,{})||{};for(var _mk in mirrors){if(!_existMir[_mk])_existMir[_mk]=mirrors[_mk];}ls("cmc_team_mirror_"+key,_existMir);}catch(_){}
     }
     // 5. Sync employees + Firebase
     try{ls("cmc_e",A.employees);}catch(_){}
@@ -35562,9 +37430,28 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
       if(!_srcTxt && window._lastImportText)_srcTxt=window._lastImportText;
       if(_srcTxt)_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
     }catch(_pdcErr){console.warn("[v9.719 pdf-column]",_pdcErr&&_pdcErr.message);}
-    // v9.757 — union-find par codes journaliers : ÉCRASE les fusions pdf-column
-    // par les vraies équipes (mêmes codes journaliers). Source de vérité principale.
-    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_dcufI){console.warn("[v9.757 dailyCodes import]",_dcufI&&_dcufI.message);}
+    // v9.762 — SOURCE DE VÉRITÉ équipe : lib T1 VALIDÉE (window.TeamDetector,
+    // validée 6/6 sur l'équipe juin de Kevin) via le bridge _cmcApplyValidatedTeams.
+    // ÉCRASE les fusions pdf-column par les vraies équipes (union-find par codes
+    // journaliers ; RH + R = repos ; miroir = mêmes repos + rotations différentes).
+    // Corrige 2 bugs de l'ancien _cmcDetectTeamsByRestPattern : (1) ne comptait que
+    // "RH" pas "R" ; (2) miroir hardcodé/faux. Le rest-pattern reste APRÈS, en
+    // filet (skip-on-explicit) pour compléter les emps non clusterisés.
+    // v9.766 — Parser GEOMETRIQUE T1 (encadres + grille) AVANT detection equipes :
+    // remplit additivement les cellules vides (sections fragmentees Roulettes/CMC + statuts
+    // M/CP/AF) pour que le team detector voie des donnees completes.
+    // ADDITIF : ne touche jamais une cellule deja parsee par la production.
+    try{
+      if(typeof _cmcApplyGeometricParse==="function"&&typeof window!=="undefined"
+         &&window._cmcPdfGeometry&&window.TextParser&&window.EncadresParser){
+        _cmcApplyGeometricParse(iy,im);
+      }
+    }catch(_geoImpErr){console.warn("[v9.766 geoParse import]",_geoImpErr&&_geoImpErr.message);}
+    try{
+      if(typeof _cmcApplyValidatedTeams==="function"&&typeof window!=="undefined"&&window.TeamDetector){
+        _cmcApplyValidatedTeams(iy,im);
+      }
+    }catch(_vtImpErr){console.warn("[v9.762 validatedTeams import]",_vtImpErr&&_vtImpErr.message);}
     // v9.648 — Détection auto équipes par pattern RH (filet de sécurité hybride :
     // SKIP les emps ayant déjà teamHistory[key] → complète seulement les non-couverts)
     try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
@@ -36202,85 +38089,33 @@ function vImport(){
     <div id="fileInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
   </div>
 
-  <!-- v9.652 (Kevin "Pourquoi pas un visuel du planning ?") — Joindre image PDF originale -->
-  <div class="card" style="padding:12px;margin-bottom:8px;border:2px solid rgba(255,140,80,.45);background:rgba(255,140,80,.06)">
-    <div style="font-size:15px;font-weight:700;color:#ff8c50;margin-bottom:6px">🖼️ Joindre image visuelle du planning</div>
-    <div style="font-size:12px;color:#a0cca0;margin-bottom:8px;line-height:1.4">Pour voir traits rouges/noirs et couleurs originales SBM à côté du texte parsé. JPG/PNG/PDF acceptés. Stocké en local + Firebase pour réf future.</div>
-    <input type="file" id="impVisualFile" accept="image/*,.pdf" style="display:none" onchange="cmcAttachVisualPlanning(this)">
-    <button onclick="document.getElementById('impVisualFile').click()" style="width:100%;min-height:52px;padding:12px;background:linear-gradient(135deg,#ff8c50,#cc6c30);border:none;border-radius:10px;font-size:15px;color:#0a0f0c;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-      🖼️ Choisir image / photo planning
-    </button>
-    <div id="cmcVisualInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
-    <div id="cmcVisualPreview" style="margin-top:10px"></div>
-    <button onclick="cmcRequestApexVision()" title="Apex lit le visuel avec Claude Vision API et compare avec le planning parsé pour détecter divergences" style="width:100%;min-height:48px;padding:10px;margin-top:10px;background:rgba(160,96,255,.15);border:1px solid rgba(160,96,255,.5);color:#c080ff;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
-      🤖 Demander à Apex de vérifier visuel vs parsing
-    </button>
-  </div>
+  <!-- v9.766 (Kevin "efface le copier-coller et le reste, j'importe un dossier") :
+       UX simplifiée — seul le fichier PDF compte. La textarea reste cachée comme
+       BUFFER interne (handleFileImport y écrit le texte extrait, doImport le lit). -->
+  <textarea id="impTxt" style="display:none" aria-hidden="true"></textarea>
 
-  <!-- v9.508 Scanner planning camera iPhone (OCR Tesseract.js, auto-tri mois/cadres/employes) -->
-  <div class="card" style="padding:12px;margin-bottom:8px;border:2px solid rgba(90,168,255,.45);background:rgba(90,168,255,.06)">
-    <div style="font-size:15px;font-weight:700;color:#5aa8ff;margin-bottom:6px">📷 Scanner planning (camera iPhone)</div>
-    <div style="font-size:12px;color:#a0cca0;margin-bottom:8px;line-height:1.4">Photo, multi-pages ou video. Reconnaissance auto du mois, cadres / employes / chefs, re-tri intelligent.</div>
-    <button onclick="cmcScanPlanningCamera()" title="Ouvre la camera arriere pour photographier ou filmer le planning, puis OCR automatique" style="width:100%;min-height:56px;padding:14px;background:linear-gradient(135deg,#5aa8ff,#3a78c8);border:none;border-radius:12px;font-size:16px;color:#04101c;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(90,168,255,.35)">
-      📷 Scanner planning
-    </button>
-    <div id="cmcScanInfo" style="margin-top:8px;font-size:13px;color:#a0cca0;min-height:16px;text-align:center"></div>
-  </div>
-
-  <!-- Coller texte (encart principal — Kevin keep) -->
+  <!-- Résultats + outils (compact) -->
   <div class="card" style="padding:12px;margin-bottom:8px">
-    <div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:6px">\u270f\ufe0f Coller le texte ${helpIcon("import","Comment importer un planning ?")}</div>
-    <div style="padding:8px 10px;background:rgba(192,120,48,.08);border:1px solid rgba(192,120,48,.25);border-radius:8px;margin-bottom:8px;font-size:12px;color:#e0a050;line-height:1.45">
-      <b>\u26a0 Superviseurs / Pit Boss</b> : copier TOUTE la page PDF (sections du bas comprises). Import en plusieurs fois OK \u2014 fusionn\u00e9.
-    </div>
-    <textarea id="impTxt" class="inp" rows="6" style="font-family:monospace;font-size:14px;resize:none"
-      placeholder="NOM,1,2,3,...&#10;DESSI F,22/6,RH,19/4,..."
-      onpaste="setTimeout(function(){previewImport();},700)"></textarea>
-    <!-- v9.613 (Kevin 2026-05-15) \u2014 UX \u00e9pur\u00e9 : 3 boutons primaires (Analyser/Appliquer/Historique)
-         + Outils avanc\u00e9s repli\u00e9s (Tests parser, Re-tenter cadres, OCR+Vision, Parser IA).
-         "Lancer 55+ tests" et "Apprentissage parser" supprim\u00e9s (redondants avec Tests/Parser IA). -->
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-      <button class="btn" onclick="previewImport()" title="Analyser le PDF avant import sans rien modifier" style="flex:1;min-width:120px;min-height:48px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.45);color:#8ab0e0;font-weight:700">
-        \ud83d\udd0d Analyser
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="sv('importversions')" title="Historique V1/V2/V3 des imports + diff + restauration" style="flex:1;min-width:160px;min-height:48px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(74,160,255,.15);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;font-weight:700">
+        📚 Historique V1/V2/V3
       </button>
-      <button class="btn gold" onclick="doImport()" title="Appliquer l'import (V1 ou V2 d\u00e9tect\u00e9 automatiquement, l'autre population est pr\u00e9serv\u00e9e)" style="flex:1;min-width:120px;min-height:48px;justify-content:center;padding:12px;font-size:14px;border-radius:10px">
-        \u2705 Appliquer
-      </button>
-      <button class="btn" onclick="sv('importversions')" title="Historique versionne V1/V2/V3 des imports + diff visualisable + restauration" style="flex:1;min-width:140px;min-height:48px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(74,160,255,.15);border:1px solid rgba(74,160,255,.5);color:#4aa0ff;font-weight:700">
-        \ud83d\udcda Historique V1/V2/V3
+      <button class="btn" onclick="cmcExportPdfSourceForDiag()" title="Copie le texte du PDF source pour diagnostic parser" style="flex:1;min-width:160px;min-height:48px;justify-content:center;padding:12px;font-size:14px;border-radius:10px;background:rgba(224,160,72,.15);border:1px solid rgba(224,160,72,.5);color:#ffd078;font-weight:700">
+        📋 Export source (diag)
       </button>
     </div>
-    <!-- v9.627 \u2014 Bouton diagnostic EXPORT mis EN PRIMAIRE (visible direct, pas dans repli)
-         car Kevin a besoin du texte PDF source pour fix parser "tous m\u00eame horaire" -->
-    <button class="btn" onclick="cmcExportPdfSourceForDiag()" title="Copie le texte PDF source dans le presse-papier \u2014 envoie \u00e0 Claude Code pour fix parser" style="display:block;width:100%;margin-top:10px;min-height:52px;padding:14px;font-size:15px;border-radius:10px;background:linear-gradient(135deg,rgba(224,160,72,.25),rgba(192,128,40,.15));border:2px solid #e0a848;color:#ffd078;font-weight:800;cursor:pointer">
-      \ud83d\udccb Exporter PDF source pour diagnostic parser
-    </button>
     <details style="margin-top:10px;padding:0;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:8px">
       <summary style="cursor:pointer;padding:10px 12px;font-size:13px;color:#a0b0c0;font-weight:700;list-style:none">
-        \ud83d\udd27 Outils avanc\u00e9s (tests parser, re-tenter cadres, OCR Vision)
+        🔧 Outils avancés (tests parser, re-tenter cadres, OCR Vision, diagnostics)
       </summary>
       <div style="display:flex;gap:8px;padding:8px 12px 12px 12px;flex-wrap:wrap">
-        <button class="btn" onclick="cmcImportTests()" title="Tester le parser cadres (55+ cas regression v9.509+)" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(160,96,255,.12);border:1px solid rgba(160,96,255,.4);color:#c080ff;font-weight:700">
-          \ud83e\uddea Tests parser
-        </button>
-        <button class="btn" onclick="_cmcRetryCadresParse(A.year,A.month);setTimeout(function(){_cmcShowRetryDiag();},800);" title="Re-tente parser cadres (5 strategies) sur le PDF source dej\u00e0 sauvegard\u00e9" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,176,32,.15);border:1px solid rgba(255,176,32,.5);color:#ffb020;font-weight:800">
-          \ud83d\udd27 Re-tenter cadres
-        </button>
-        <button class="btn" onclick="cmcRunFallbackOcrVision()" title="Si parser texte rate, lance OCR Tesseract + Claude Vision en cascade" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(160,96,255,.12);border:1px solid rgba(160,96,255,.4);color:#c080ff;font-weight:700">
-          \ud83e\udd16 OCR + Vision
-        </button>
-        <button class="btn" onclick="sv('parserlearning')" title="Voir ce que l'app a appris sur les formats PDF (v9.663)" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(74,200,160,.12);border:1px solid rgba(74,200,160,.4);color:#7adcb0;font-weight:700">
-          \ud83d\udcda Apprentissage
-        </button>
-        <button class="btn" onclick="cmcExportPitBossDiag()" title="Diagnostic Pit Boss : export horaires r\u00e9els par cadre pour comparaison PDF" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">
-          \ud83d\udd0d Diag Pit Boss horaires
-        </button>
-        <button class="btn" onclick="cmcExportTeamsDetectionDiag()" title="Diagnostic algo d\u00e9tection \u00e9quipes : signature cycle:offset:firstWork par emp + groupes form\u00e9s + raisons skip" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(192,128,255,.15);border:1px solid rgba(192,128,255,.5);color:#c080ff;font-weight:800">
-          \ud83d\udd0d Diag d\u00e9tection \u00e9quipes
-        </button>
-        <button class="btn" onclick="cmcWipeCadresForMonth()" title="Efface les horaires des cadres (Pit Boss + Superviseurs) pour ce mois \u2014 snapshot rollback gard\u00e9. Utile avant re-import V2 propre." style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,64,64,.12);border:1px solid rgba(224,64,64,.45);color:#e06060;font-weight:700">
-          \ud83d\uddd1\ufe0f Effacer cadres (ce mois)
-        </button>
+        <button class="btn" onclick="cmcImportTests()" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(160,96,255,.12);border:1px solid rgba(160,96,255,.4);color:#c080ff;font-weight:700">🧪 Tests parser</button>
+        <button class="btn" onclick="_cmcRetryCadresParse(A.year,A.month);setTimeout(function(){_cmcShowRetryDiag();},800);" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,176,32,.15);border:1px solid rgba(255,176,32,.5);color:#ffb020;font-weight:800">🔧 Re-tenter cadres</button>
+        <button class="btn" onclick="cmcRunFallbackOcrVision()" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(160,96,255,.12);border:1px solid rgba(160,96,255,.4);color:#c080ff;font-weight:700">🤖 OCR + Vision</button>
+        <button class="btn" onclick="sv('parserlearning')" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(74,200,160,.12);border:1px solid rgba(74,200,160,.4);color:#7adcb0;font-weight:700">📚 Apprentissage</button>
+        <button class="btn" onclick="cmcExportPitBossDiag()" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">🔍 Diag Pit Boss horaires</button>
+        <button class="btn" onclick="cmcExportTeamsDetectionDiag()" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(192,128,255,.15);border:1px solid rgba(192,128,255,.5);color:#c080ff;font-weight:800">🔍 Diag détection équipes</button>
+        <button class="btn" onclick="cmcWipeCadresForMonth()" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,64,64,.12);border:1px solid rgba(224,64,64,.45);color:#e06060;font-weight:700">🗑️ Effacer cadres (ce mois)</button>
       </div>
     </details>
     <div id="impRes" style="margin-top:10px;font-size:14px"></div>
@@ -36497,8 +38332,16 @@ function _doExtractPdfLines(file,onDone,onErr){
     var arr=new Uint8Array(ev.target.result);
     pdfjsLib.getDocument({data:arr}).promise.then(function(pdf){
       var allLines=[],pg=1;
+      // v9.766 — Collecte GEOMETRIQUE des items (x/y/str) par page pour le pont
+      // _cmcApplyGeometricParse (parsers T1 valides). Ne remplace PAS le texte
+      // par-ligne (gardé pour les sections qui marchent déjà). ADDITIF.
+      try{window._cmcPdfGeometry={pages:[],textRaw:"",ts:Date.now()};}catch(_g0){}
       function nextPage(){
-        if(pg>pdf.numPages){onDone(allLines.join("\n"));return;}
+        if(pg>pdf.numPages){
+          var _tr=allLines.join("\n");
+          try{if(window._cmcPdfGeometry)window._cmcPdfGeometry.textRaw=_tr;}catch(_g1){}
+          onDone(_tr);return;
+        }
         pdf.getPage(pg).then(function(page){
           // v9.67 — Extraire texte + couleurs pour détecter jours rouges (affluence)
           Promise.all([page.getTextContent(),page.getOperatorList()]).then(function(results){
@@ -36525,6 +38368,9 @@ function _doExtractPdfLines(file,onDone,onErr){
             }
             var TOL=3,rowMap={};
             var _ti=0;
+            // v9.766 — Items GEOMETRIQUES bruts (x/y/str/w/h) pour parsers T1 valides.
+            // Coordonnees PDF.js originales (pas arrondies par TOL).
+            var _geoItems=[];
             tc.items.forEach(function(it){
               if(it.str===undefined){return;} // marked content
               var y=Math.round(it.transform[5]/TOL)*TOL;
@@ -36533,6 +38379,18 @@ function _doExtractPdfLines(file,onDone,onErr){
               var col=_colorMap[_ti]||null;
               var bgCol=_bgColorMap[_ti]||null;
               _ti++;
+              // v9.766 — collecte item brut avant le filtre du texte vide
+              try{
+                if(it.str&&String(it.str).trim()){
+                  _geoItems.push({
+                    str:String(it.str),
+                    x:it.transform[4],
+                    y:it.transform[5],
+                    w:it.width||0,
+                    h:it.height||0
+                  });
+                }
+              }catch(_g2){}
               if(!t)return;
               if(!rowMap[y])rowMap[y]=[];
               rowMap[y].push({x:x,t:t,color:col,bg:bgCol});
@@ -36650,6 +38508,12 @@ function _doExtractPdfLines(file,onDone,onErr){
               }).join("\t");
               if(line.trim())allLines.push(line);
             });
+            // v9.766 — push page geometrique (items x/y/str/w/h)
+            try{
+              if(window._cmcPdfGeometry&&Array.isArray(window._cmcPdfGeometry.pages)){
+                window._cmcPdfGeometry.pages.push({pageNum:pg,items:_geoItems});
+              }
+            }catch(_g3){}
             pg++;nextPage();
           });
         });
@@ -36888,16 +38752,41 @@ function _cmcFallbackUnassignedTeams(iy,im){
   }
   function _getRhDays(empId){
     var r=ov[empId]||{};
-    var rh=[];
+    var rh=[],fallbackR=[];
+    // v9.770 (Kevin "il ne prenait en compte que les RH pas le R") — utiliser
+    // RH comme ancre primaire (RH = samedi/jour-anniversaire, R = dimanche/jour-2).
+    // Compter les 2 cassait le cycle (devenait 1 au lieu de 6 pour SBM standard).
+    // FIX correct : si l'emp n'a AUCUN RH (ex: planning où seul `R` est posté),
+    // alors basculer sur R seul comme ancre. Ainsi un emp avec uniquement R reste
+    // détecté dans son équipe (avant : exclu car rh.length=0).
     Object.keys(r).forEach(function(d){
-      if(String(r[d]).toUpperCase()==="RH")rh.push(parseInt(d));
+      var c=String(r[d]).toUpperCase();
+      if(c==="RH")rh.push(parseInt(d));
+      else if(c==="R")fallbackR.push(parseInt(d));
     });
+    if(rh.length===0 && fallbackR.length>=2) rh = fallbackR;
     rh.sort(function(a,b){return a-b;});
     return rh;
   }
   function _cellCount(empId){
     var r=ov[empId]||{};
     return Object.keys(r).filter(function(d){return !!r[d];}).length;
+  }
+  // v9.763 (Kevin diag juin : COURTIN F/NICASTRO/COTTALORDA en "· RH R" — 0 jour
+  // travaillé — polluaient BJ Éq.1). Compte les jours TRAVAILLÉS (hors RH/R/absence).
+  // Un emp sans jour travaillé n'a aucune rotation → ne doit PAS être collé à une
+  // équipe (ses codes de travail n'ont pas été parsés : section fragmentée). Même
+  // seuil que la lib validée (minWorkDays:5).
+  function _workedCount(empId){
+    var r=ov[empId]||{};
+    var ABS={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,ABS:1,FL:1,HD:1,HC:1};
+    var n=0;
+    Object.keys(r).forEach(function(d){
+      var c=r[d];if(!c)return;
+      var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");
+      if(!ABS[u])n++;
+    });
+    return n;
   }
   // 1. Index par (family, offset) → {teamId: count} pour les équipes DÉJÀ attribuées
   var teamsByFamOffset={};
@@ -36924,6 +38813,10 @@ function _cmcFallbackUnassignedTeams(iy,im){
     if(emp.family==="cadres"){skipped_cadres++;return;}
     var cells=_cellCount(emp.id);
     if(cells<10)return; // pas assez de données
+    // v9.763 — exiger ≥5 jours TRAVAILLÉS (pas juste RH/R). Sinon un emp dont les
+    // codes travail n'ont pas été parsés (section fragmentée) est faussement collé
+    // à une équipe. Affiché "sans équipe / planning incomplet" au lieu d'être pollué.
+    if(_workedCount(emp.id)<5){skipped_noRh++;return;}
     var rh=_getRhDays(emp.id);
     if(rh.length<2){skipped_noRh++;return;}
     var cycle=_calcCycleSmart(rh);
@@ -36947,41 +38840,100 @@ function _cmcFallbackUnassignedTeams(iy,im){
   });
   console.info("[v9.743 fallback] assigned="+assigned+" skipped_noRh="+skipped_noRh+" skipped_noMatch="+skipped_noMatch+" skipped_cadres="+skipped_cadres);
   // v9.744 (Kevin 2026-05-26 "Fais une équipe formation si ça dure tout le mois") :
-  // Pour les emps SANS équipe ET sans RH days (absent toute la période en AF/M/CP),
-  // créer/utiliser une équipe dédiée par code absence dominant :
-  //   • AF intégral (≥80% AF) → équipe "formation"
-  //   • M intégral → équipe "maladie"
+  // Pour les emps absents toute la période en AF/M/CP, créer/utiliser une équipe
+  // dédiée par code absence dominant :
+  //   • AF intégral (≥80% sur jours non-repos) → équipe "formation"
+  //   • M intégral  → équipe "maladie"
   //   • CP intégral → équipe "conges"
+  //   • DEPL/DEP intégral → équipe "deplacement"
   // Sinon (codes mixtes ou autres) → laisser sans équipe.
-  var absenceAssigned=0;
+  //
+  // v9.768 (Kevin diag JUIN « toujours pas bon ») — 2 corrections critiques :
+  //   (1) RATIO sur JOURS NON-REPOS (exclure RH/R du dénominateur). Avant, un emp
+  //       100% CP sur jours travaillés mais avec 10 RH/R tombait à 20/30=67% < 80%
+  //       → pas assigné à « conges » → resté collé à BJ Éq.1.
+  //   (2) RÉASSIGNER (override) un emp déjà dans une équipe de TRAVAIL (1-8/r*/c*)
+  //       vers son équipe d'ABSENCE quand il qualifie. Avant : early-return sur
+  //       teamHistory existant → emp coincé dans une fausse équipe de travail (PDF-column
+  //       assignation erronée sur emps full-absence).
+  //   Les équipes d'absence DÉJÀ posées (formation/maladie/conges/deplacement/amenage)
+  //   ne sont jamais écrasées.
+  // amenage NE compte PAS comme équipe d'absence : un aménagé TRAVAILLE
+  // (horaires adaptés), il NE doit JAMAIS être réassigné par v9.744. Le whitelist
+  // « équipes déjà en absence légitime » exclut donc amenage : si pdf-column l'a
+  // posé à « amenage », v9.744 ne touche pas. Réciproquement, un emp aménagé
+  // avec quelques jours CP/M n'a pas vocation à passer en « conges »/« maladie ».
+  var _absTeamSet={formation:1,maladie:1,conges:1,deplacement:1};
+  // v9.769 (Kevin diag JUIN « tout est mélangé ») — un emp en FORMATION/maladie/
+  // CP/déplacement « intégral » DOIT avoir ≤2 jours travaillés. Le seuil 80%
+  // de v9.744 (sans cap sur _workedCount) attrapait des emps avec 5+ jours
+  // travaillés qui sont DES TRAVAILLEURS RÉELS de leur équipe — pas des absents
+  // intégraux (MALGHERINI J / BASTIANELLI A / QUISSET Y / CHINTEMI J en JUIN).
+  // PRE-PASS NETTOYAGE : si un emp est DÉJÀ dans une équipe d'absence mais a
+  // ≥10 jours travaillés → c'est un faux positif (clairement un travailleur, pas
+  // un absent même partiel). Seuil prudent : 5 j travaillés peut être un emp en
+  // formation partielle (25 AF + 5 pratique = legitimement « formation »), donc
+  // on ne touche qu'aux cas évidents (≥10 j travaillés = ≥1/3 du mois).
+  var cleanupedFromAbsence=0;
   A.employees.forEach(function(emp){
     if(!emp||!isEmpActive(emp,iy,im))return;
-    if(emp.teamHistory&&emp.teamHistory[key])return;
+    var existing=emp.teamHistory&&emp.teamHistory[key];
+    if(!existing||!_absTeamSet[existing])return;
+    if(_workedCount(emp.id)>=10){
+      console.info("[v9.769 cleanup] "+emp.name+" : "+existing+" → retiré ("+_workedCount(emp.id)+" j travaillés ≥10, pas un absent)");
+      delete emp.teamHistory[key];
+      cleanupedFromAbsence++;
+    }
+  });
+  if(cleanupedFromAbsence){console.info("[v9.769 cleanup] "+cleanupedFromAbsence+" emp(s) retiré(s) d'équipes d'absence (≥10 j travaillés)");}
+  var absenceAssigned=0,absenceOverride=0;
+  A.employees.forEach(function(emp){
+    if(!emp||!isEmpActive(emp,iy,im))return;
     if(emp.family==="cadres")return;
+    var existing=emp.teamHistory&&emp.teamHistory[key];
+    if(existing&&_absTeamSet[existing])return; // déjà en équipe d'absence légitime
     var r=ov[emp.id]||{};
     var codes=[];
-    Object.keys(r).forEach(function(d){if(r[d])codes.push(String(r[d]).toUpperCase());});
+    Object.keys(r).forEach(function(d){if(r[d])codes.push(String(r[d]).toUpperCase().replace(/[C'"*:]+$/g,""));});
     if(codes.length<10)return;
+    // v9.768 : exclure RH/R du dénominateur → un emp 100% CP sur jours non-repos
+    // qualifie pour « conges » même s'il a quelques RH/R intercalés.
+    var workCodes=codes.filter(function(c){return c!=="RH"&&c!=="R";});
+    if(workCodes.length<7)return; // pas assez de jours non-repos pour décider
+    var workedDays=_workedCount(emp.id);
+    // v9.769 : cap PRUDENT sur jours travaillés. Un « absent dominant » (formation
+    // partielle, congé fragmenté) peut avoir 1-5 jours de travail (=pratique
+    // pendant formation, ou retour partiel après congé). Au-delà de 8 jours
+    // travaillés (>1/4 du mois), c'est un travailleur réel — pas un absent.
+    if(workedDays>8)return;
     var counts={};
-    codes.forEach(function(c){counts[c]=(counts[c]||0)+1;});
+    workCodes.forEach(function(c){counts[c]=(counts[c]||0)+1;});
     var dominantCode=null,maxCount=0;
     Object.keys(counts).forEach(function(c){
       if(counts[c]>maxCount){maxCount=counts[c];dominantCode=c;}
     });
-    var ratio=maxCount/codes.length;
+    var ratio=maxCount/workCodes.length;
     if(ratio<0.80)return; // codes mixtes, ne pas forcer une équipe absence
     var absenceTeam=null;
     if(dominantCode==="AF"||dominantCode==="FORMATION")absenceTeam="formation";
     else if(dominantCode==="M"||dominantCode==="MAL"||dominantCode==="MALADIE")absenceTeam="maladie";
     else if(dominantCode==="CP")absenceTeam="conges";
+    else if(dominantCode==="DEPL"||dominantCode==="DEP")absenceTeam="deplacement";
     if(!absenceTeam)return; // autres codes (PRT, RRT, etc.) non gérés
     if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(absenceTeam);
     if(!emp.teamHistory)emp.teamHistory={};
+    if(existing&&existing!==absenceTeam){
+      // v9.768 : OVERRIDE d'une équipe de travail erronée (COURTIN F en CP intégral
+      // collé à BJ Éq.1 par pdf-column → repasser dans « Congés »).
+      console.info("[v9.768 absence override] "+emp.name+" : "+existing+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+", "+workedDays+" j travaillés)");
+      absenceOverride++;
+    }else{
+      console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+", "+workedDays+" j travaillés)");
+    }
     emp.teamHistory[key]=absenceTeam;
     absenceAssigned++;
-    console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+")");
   });
-  console.info("[v9.744 absence] assigned="+absenceAssigned);
+  console.info("[v9.744 absence] assigned="+absenceAssigned+" override="+absenceOverride);
   // v9.746 (Kevin 2026-05-26 "On avance pas — ELIODORI J r10 mais VIGNA M r3 avec MÊME pattern") :
   // PASSE DE CONSOLIDATION — pour chaque emp avec une équipe attribuée, vérifier
   // qu'une AUTRE équipe de sa famille n'a PAS la MAJORITÉ d'emps avec EXACTEMENT
@@ -37055,6 +39007,30 @@ function _cmcFallbackUnassignedTeams(iy,im){
     }
   });
   console.info("[v9.746 consol] reattributed="+reattributed);
+  // v9.764 (Kevin diag : COURTIN F/NICASTRO/COTTALORDA « · RH R » 0 jour travaillé
+  // TOUJOURS collés à BJ Éq.1 malgré v9.763 — leur teamHistory venait d'une AUTRE
+  // passe que ce fallback). GARDE FINALE = invariant : un emp avec <5 jours TRAVAILLÉS
+  // (0 rotation réelle, codes travail non parsés = section fragmentée) ne peut PAS être
+  // dans une équipe de TRAVAIL (1-8, r*, c*) → on purge teamHistory[key]. EXCEPTION :
+  // les équipes d'ABSENCE (formation/maladie/conges/deplacement/amenage) sont CONSERVÉES
+  // (Kevin veut justement voir ces familles). v9.768 : amenage ajouté au whitelist + cette
+  // passe attrape uniquement les emps qui n'ont PAS qualifié pour v9.744 (ratio<80% ou
+  // codes mixtes ou trop peu de jours non-repos) → emps « planning vraiment cassé ».
+  try{
+    var _absT={formation:1,maladie:1,conges:1,deplacement:1,amenage:1};
+    var _purged=0;
+    A.employees.forEach(function(_e){
+      if(!_e||!_e.teamHistory||!_e.teamHistory[key])return;
+      if(!isEmpActive(_e,iy,im))return;
+      if(_absT[_e.teamHistory[key]])return; // équipe d'absence légitime → garder
+      if(_workedCount(_e.id)<5){
+        console.info("[v9.764 purge] "+_e.name+" retiré équipe travail "+_e.teamHistory[key]+" (<5 j travaillés)");
+        delete _e.teamHistory[key];
+        _purged++;
+      }
+    });
+    if(_purged){console.info("[v9.764 purge] "+_purged+" emp(s) 0-travaillé retiré(s) des équipes de travail");try{ls("cmc_e",A.employees);}catch(_){}}
+  }catch(_pgErr){console.warn("[v9.764 purge]",_pgErr&&_pgErr.message);}
   return{ok:true,assigned:assigned+absenceAssigned,consolidated:reattributed};
 }
 // ═══════════════════════════════════════════════════════════════════════════
@@ -37675,8 +39651,27 @@ function _parseEncadresStatuts(txt, key, year, month){
         unassigned.push({name:fullName,reason:"name_not_in_db",section:section.code});
         continue;
       }
-      // FORCE override : on EFFACE le tableau positionnel mal classé pour cet emp
+      // v9.770 (Kevin audit JUIN « tout est mélangé ») : NE PAS écraser une
+      // rotation parsée. L'aplatissement PDF mélange l'encadré CP/M/AF avec
+      // la grille de noms — un emp avec ≥10 cellules parsées HORS-RH/R en grille
+      // (= rotation complète lue, même si majoritairement AF/M/CP) NE PEUT PAS
+      // être réduit à un encadré intégral. EncadresParser.parseEncadresGeometric
+      // (par coordonnées X/Y) reste source de vérité pour les vrais absents.
+      // Garde STRICTE : on ne touche pas dès que cell_count ≥ 10 (proxy
+      // « grille parsée → respect du PDF source ») — couvre :
+      //   - MONTESANO M (4 j work + 23 AF + R + 22/6"' j30) ≠ AF intégral
+      //   - ELENA A, LANGELLOTTI D, PAZZAGLIA A, BATTAGLIA DE, DI LUCA L,
+      //     VOUKASSOVITCH H (formation partielle avec rotation lue)
+      //   - LANTERI E / CAISSON JC (rotation 30j → déjà couverts v9.770 v1)
       if(!A.overrides[key])A.overrides[key]={};
+      var _existRow=A.overrides[key][emp.id]||{};
+      var _cellCountExist=Object.keys(_existRow).filter(function(d){return !!_existRow[d];}).length;
+      if(_cellCountExist>=10){
+        unassigned.push({name:fullName,reason:"has_parsed_grid_"+_cellCountExist+"cells",section:section.code});
+        console.info("[encadres v9.770] SKIP "+emp.name+" (section "+section.code+") : "+_cellCountExist+" cellules grille → respect PDF, ne pas écraser");
+        continue;
+      }
+      // OK : emp absent intégral ou sparse → force override sur la sous-période
       A.overrides[key][emp.id]={};
       for(var d=fromDay;d<=Math.min(toDay,days);d++){
         A.overrides[key][emp.id][d]=section.code;
@@ -38345,7 +40340,16 @@ function doImport(){
   function _applyCodeArr(empObj,codeArr,fDay){
     if(!refData.rows[empObj.id])refData.rows[empObj.id]={};
     // v9.145b — Ne pas \u00e9craser les donn\u00e9es CSV si d\u00e9j\u00e0 peupl\u00e9es
-    if(!_touched[empObj.id]&&!_csvHandled[empObj.id]){A.overrides[key][empObj.id]={};_touched[empObj.id]=true;}
+    // v9.770 (Kevin audit JUIN MORTER L 16/3* devenait 16/3"') : ne pas effacer
+    // une grille jour-par-jour deja peuplee (>=5 cellules). Le parser ENTETE
+    // peut transformer faussement les codes CCDP (*) en Convention (') ; le
+    // parser grille a la source de verite (lit directement les codes ligne
+    // L211-L390 du PDF).
+    var _existCnt=0;
+    if(A.overrides[key][empObj.id]){
+      for(var _ek in A.overrides[key][empObj.id]){if(A.overrides[key][empObj.id][_ek])_existCnt++;}
+    }
+    if(!_touched[empObj.id]&&!_csvHandled[empObj.id]&&_existCnt<5){A.overrides[key][empObj.id]={};_touched[empObj.id]=true;}
     else if(!_touched[empObj.id]){_touched[empObj.id]=true;}
     var _curFDay=fDay,_curBase=0; // base index pour calcul dayNum avec sous-périodes
     for(var _ai=0;_ai<codeArr.length;_ai++){
@@ -38905,22 +40909,41 @@ function doImport(){
     // Hors mode entête : réinitialiser si la ligne n'est pas positionnelle
     if(!_isPosDR)_pendingEmp=null;
     var parts=rawLine.split(sep);
-    // Format espace (PDF collé sans tab/virgule) : reconstruire parts[]
-    if(sep===","&&parts.length<4){
+    // Format espace : reconstruire parts[].
+    // v9.759 (Kevin diag JUIN "FAUTRIER pas d'horaire, juste RH") — CAUSE RACINE :
+    // sep est GLOBAL (l.~38003 : sep="\t" dès qu'UNE ligne a un tab). PDF.js produit
+    // du MIXTE (sections en colonnes tab + lignes chefs space-séparées). Avant, ce
+    // fallback ne tournait QUE si sep==="," → la ligne space "BRTP+K 5 FAUTRIER M 1 30…"
+    // splittée sur \t restait en 1 cellule → nom jamais matché → 0 code appliqué.
+    // Désormais : TOUTE ligne qui split en <4 colonnes tente la reconstruction par
+    // espaces (les vraies lignes tab donnent ≥4 colonnes → fallback ignoré → 0 régression).
+    if(parts.length<4){
       var sp=rawLine.trim().split(/\s+/);
       var fromIdx=-1;
-      for(var _fi=2;_fi<Math.min(sp.length,10);_fi++){
-        if(/^\d{1,2}$/.test(sp[_fi])&&parseInt(sp[_fi])>=1&&parseInt(sp[_fi])<=31){fromIdx=_fi;break;}
+      // from/to = DEUX entiers 1-31 consécutifs (robuste : un jour isolé ne déclenche pas)
+      for(var _fi=2;_fi<Math.min(sp.length,12);_fi++){
+        if(/^\d{1,2}$/.test(sp[_fi])&&parseInt(sp[_fi])>=1&&parseInt(sp[_fi])<=31&&
+           /^\d{1,2}$/.test(sp[_fi+1]||"")&&parseInt(sp[_fi+1])>=1&&parseInt(sp[_fi+1])<=31){fromIdx=_fi;break;}
       }
-      if(fromIdx>=2&&fromIdx+1<sp.length&&/^\d{1,2}$/.test(sp[fromIdx+1])){
+      if(fromIdx>=2&&fromIdx+1<sp.length){
         // Compter les codes poste initiaux (peut y en avoir plusieurs : BRTP+KE. BRTP+KE. BASILE G)
         var _rci=0;
         while(_rci<fromIdx-1&&_isRoleCode(sp[_rci]))_rci++;
-        if(_rci>0){
-          parts=[sp.slice(0,_rci).join(" "),sp.slice(_rci,fromIdx).join(" "),sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
+        // v9.759 — numéro d'équipe isolé après les codes poste (format SBM v9.639 :
+        // POST TEAM NAME FROM TO). Ex FAUTRIER : "BRTP+K 5 FAUTRIER M 1 30 …" → team "5".
+        var _teamTok="";
+        if(_rci<fromIdx-1&&/^\d{1,2}$/.test(sp[_rci])&&parseInt(sp[_rci])>=1&&parseInt(sp[_rci])<=20){
+          _teamTok=sp[_rci];_rci++;
+        }
+        var _nameJoin=sp.slice(_rci,fromIdx).join(" ");
+        if(_teamTok){
+          // [post, team, name, from, to, ...codes] → détecteur v9.639 (nameIdx=2)
+          parts=[sp.slice(0,_rci-1).join(" "),_teamTok,_nameJoin,sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
+        } else if(_rci>0){
+          parts=[sp.slice(0,_rci).join(" "),_nameJoin,sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
         } else {
           // Pas de code poste : colonne vide pour uniformiser le format 4-colonnes
-          parts=["",sp.slice(0,fromIdx).join(" "),sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
+          parts=["",_nameJoin,sp[fromIdx],sp[fromIdx+1]].concat(sp.slice(fromIdx+2));
         }
       }
     }
@@ -39157,14 +41180,36 @@ function doImport(){
       } else {
         // Nom de famille partagé → bigram interdit, signaler pour correction manuelle
         err++;errLines.push("AMBIGU (homonymes): \""+name+"\" — "+_bSurnCount+" employ\u00e9s avec ce nom de famille, initiale non r\u00e9solue \u2014 v\u00e9rifier DEF_EMP");
-        continue;
+        // v9.760 (Kevin diag V2 "LAVAGNA J absent") : PAS de `continue` ici.
+        // Surname partagé + initiale non résolue = bigram interdit (anti-fusion J→Y/E,
+        // lessons #38/#68) MAIS l'initiale ne matche aucun homonyme → PERSONNE DISTINCTE.
+        // On laisse emp=null tomber vers la création inline ci-dessous (règle #1).
       }
     }
     if(!emp){
-      // Employe introuvable : NE PAS creer de fantome — tous les employes sont dans DEF_EMP
-      err++;errLines.push("INTROUVABLE (skipped): "+name);
-      continue;
-    } else {
+      // v9.759 (Kevin RÈGLE #1 ABSOLUE "tout le monde a un planning si son nom est
+      // dans le PDF") : nom valide non trouvé dans le roster (DEF_EMP incomplet :
+      // diag JUIN ~64 noms absents). On CRÉE l'employé INLINE et on applique ses codes
+      // dans la MÊME passe (pas de ré-import fragile → évite le bug "0 cellule").
+      // Garde-fou _cmcIsValidEmpName (regex "SURNAME + INITIALE", pas de chiffre/slash)
+      // → rejette les fragments PDF.js. Les 5 niveaux de matching (exact→normalisé→
+      // surname→prénom A.reg→bigram 0.85) ont déjà échoué AVANT ici → vrai absent.
+      if(typeof _cmcIsValidEmpName==="function"&&_cmcIsValidEmpName(name)){
+        var _newId="U_TMP_"+Date.now().toString(36).toUpperCase().slice(-5)+A.employees.length;
+        emp={id:_newId,name:name,team:_contextTeam||"1",post:"",chef:!!isRouletteChef,
+             family:(isRouletteChef?"roulettes":importFamily)||"bj",cdpShifts:[],active:true};
+        A.employees.push(emp);
+        ls("cmc_e",A.employees);
+        if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+        try{if(typeof _audit==="function")_audit("import_create_emp",(A.user&&A.user.id)||"import",_newId,"",name);}catch(_){}
+        errLines.push("CRÉÉ (absent du roster): \""+name+"\" → "+_newId);
+        // pas de continue → le bloc ci-dessous applique famille/équipe/codes
+      } else {
+        err++;errLines.push("INTROUVABLE (skipped, nom invalide): "+name);
+        continue;
+      }
+    }
+    {
       // v9.646 (Kevin "ça remet les anciennes équipes comme avant") :
       // SUPPRIMÉ le fallback _contextTeam=emp.team (DEF_EMP default).
       // Cause : Kevin et collègues changent d'équipe chaque mois. Le emp.team
@@ -39235,7 +41280,14 @@ function doImport(){
     refData.rows[emp.id]={};
     for(var di=codesStart;di<parts.length;di++){
       var _codeRaw=parts[di].trim();
+      // v9.770 (Kevin audit JUIN : "20/5\"C" vs PDF "20/5\"c") — préserver le `c`
+      // final chef minuscule AVANT toUpperCase, sinon MATTONE F / BASILE G / FOREST M
+      // / MAGAGNIN J / PASTOR P récupèrent `20/5"C` au lieu de `20/5"c` (l'algo de
+      // détection famille `_famFromCells` est case-sensitive sur `/c$/` — la version
+      // majuscule casse le clustering chef BJ et la couleur Convention).
+      var _hasChefLower=/[a-z]$/.test(_codeRaw)&&/[c]$/.test(_codeRaw);
       var code=_codeRaw.toUpperCase();
+      if(_hasChefLower&&/C$/.test(code))code=code.replace(/C$/,"c");
       if(!code||code==="0"||code==="-") continue;
       // FIDELITE (Kevin 2026-05-28) : préserver la casse 'h' minuscule (12h30/19)
       // et le ':' final (19/4:) que le toUpperCase + strip perdaient (19 nits
@@ -39329,7 +41381,13 @@ function doImport(){
       var dayNum=fromDay+(di-codesStart); // offset depuis le jour de debut de la (sous-)période
       if(dayNum<1||dayNum>days) continue;
       // v9.142 — Auto-apprentissage + ne PAS ignorer les codes horaires
+      // v9.770 (Kevin audit JUIN MILLO W décalage par CLM) — apprendre aussi
+      // les codes alpha purs courts (CLM, MAL, ABI…) si 2-5 lettres MAJ pures,
+      // sinon ils sont skippés (continue) et créent un décalage visuel quand
+      // une autre passe (géométrique) remplit le vide à la mauvaise position.
+      // Reproduction identique : le code source brut DOIT être préservé.
       if(code&&!CODES[code]&&/\d/.test(code)){learnNewCode(code);_rebuildCK();}
+      else if(code&&!CODES[code]&&/^[A-Z]{2,5}$/.test(code)){learnNewCode(code);_rebuildCK();}
       if(code&&!CODES[code]){err++;errLines.push(name+" j"+dayNum+":code inconnu '"+code+"'");continue;}
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][dayNum]=code;

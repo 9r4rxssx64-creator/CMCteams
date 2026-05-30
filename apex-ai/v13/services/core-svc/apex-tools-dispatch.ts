@@ -25,6 +25,8 @@ import {
   dispatchMcpBofipSearch,
   dispatchMcpLegalSearch,
   dispatchSecurityReview,
+  dispatchSeoAiVisibility,
+  dispatchSeoAudit,
   dispatchSkillFactoryCreate,
   dispatchVideoComposeHyperframes,
   dispatchVideoEdit,
@@ -1786,6 +1788,10 @@ class ApexToolsDispatcher {
         return await dispatchSecurityReview(params);
       case 'code_review':
         return await dispatchCodeReview(params);
+      case 'seo_audit':
+        return await dispatchSeoAudit(params);
+      case 'seo_ai_visibility':
+        return await dispatchSeoAiVisibility(params);
       case 'generate_design_system':
         return await dispatchGenerateDesignSystem(params);
       case 'generate_marketing_copy':
