@@ -4915,6 +4915,12 @@ function _cmcEnsureTeam(tid){
     A.teams.push(ct);
     return ct;
   }
+  // v9.768 — équipe « En déplacement » (DEPL/DEP intégral)
+  if(s==="deplacement"){
+    var dt={id:"deplacement",name:"✈ En déplacement",color:"#5a7aa8",family:"all",departureOrder:103,_auto:true};
+    A.teams.push(dt);
+    return dt;
+  }
   var fam=/^r/i.test(s)?"roulettes":/^c/i.test(s)?"cmc":"bj";
   var num=s.replace(/[^0-9]/g,"")||"?";
   var nm=fam==="roulettes"?("Roul. Éq."+num):fam==="cmc"?("CMC Éq."+num):("BJ Éq."+num);
@@ -5398,7 +5404,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.767";
+var APP_VER="v9.769";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24119,9 +24125,16 @@ function vPlan(){
     {id:"formation",label:"\ud83c\udf93 Formation",color:"#7a5aa8"},
     {id:"maladie",label:"\ud83e\udd12 Maladie",color:"#8a4a4a"},
     {id:"conges",label:"\ud83c\udfd6\ufe0f Cong\u00e9s",color:"#4a8a4a"},
+    {id:"deplacement",label:"\u2708 En d\u00e9placement",color:"#5a7aa8"},
     {id:"amenage",label:"\ud83d\udd50 Horaires am\u00e9nag\u00e9s",color:"#8a8a9a"}
   ];
   var _v747KeyFam=A.year+"-"+A.month;
+  // v9.769 (Kevin diag « tout est mélangé ») — split par FAMILLE dans chaque section
+  // d'absence : un emp BJ en CP s'affiche dans « 🏖️ Congés (BJ) » et un emp Roul.
+  // en CP dans « 🏖️ Congés (Roulettes) ». Évite la confusion visuelle « pourquoi
+  // des BJ, des Roul. et des CMC dans la même section ? ». amenage reste regroupé
+  // (toujours famille=cmc en pratique).
+  var _v769FamLabels={bj:"BJ",roulettes:"Roul.",cmc:"CMC",baccara:"Bac."};
   _v747SpecialTeams.forEach(function(sp){
     if(_globalShown[sp.id])return;
     var members=A.employees.filter(function(e){
@@ -24131,11 +24144,48 @@ function vPlan(){
     });
     if(!members.length)return;
     _globalShown[sp.id]=true;
-    h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
-      +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
-      +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
-      +'</div>';
-    h+=_renderTeamBlock(sp.id,members,tc(sp.id));
+    // amenage : pas de split (toujours cmc, et label déjà spécifique)
+    if(sp.id==="amenage"){
+      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
+        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
+        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
+        +'</div>';
+      h+=_renderTeamBlock(sp.id,members,tc(sp.id));
+      return;
+    }
+    // Group members by family
+    var byFam={};
+    members.forEach(function(e){
+      var f=(e.familyHistory&&e.familyHistory[_v747KeyFam])||e.family||"bj";
+      if(!byFam[f])byFam[f]=[];
+      byFam[f].push(e);
+    });
+    // Render header + un sous-bloc par famille (ordre BJ → Roul. → CMC)
+    var famsHere=["bj","roulettes","cmc","baccara"].filter(function(f){return byFam[f];});
+    if(famsHere.length<=1){
+      // 1 seule famille → rendu simple sans split
+      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
+        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
+        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
+        +'</div>';
+      h+=_renderTeamBlock(sp.id,members,tc(sp.id));
+    }else{
+      // Plusieurs familles → header agrégé + sous-sections par famille
+      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
+        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
+        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp. ('+famsHere.map(function(f){return byFam[f].length+' '+_v769FamLabels[f];}).join(' · ')+')</span>'
+        +'</div>';
+      famsHere.forEach(function(f){
+        var subLabel=sp.label+' — '+_v769FamLabels[f];
+        h+='<div style="margin:6px 0 4px 10px;padding:6px 12px;background:'+sp.color+'15;border-left:2px solid '+sp.color+'80;border-radius:8px">'
+          +'<span style="font-size:13px;font-weight:700;color:'+sp.color+'">'+esc(subLabel)+'</span>'
+          +' <span style="font-size:12px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:2px 8px;border-radius:10px;margin-left:6px">'+byFam[f].length+'</span>'
+          +'</div>';
+        // virtual team-id by family for _renderTeamBlock — uses real members but
+        // groups under a per-family subkey for visual splitting (doesn't change data)
+        h+=_renderTeamBlock(sp.id+"_"+f,byFam[f],tc(sp.id));
+      });
+    }
   });
   FAMS_ORDER.forEach(function(fid){
     // v9.153 — respect filter chip si actif
@@ -38773,41 +38823,100 @@ function _cmcFallbackUnassignedTeams(iy,im){
   });
   console.info("[v9.743 fallback] assigned="+assigned+" skipped_noRh="+skipped_noRh+" skipped_noMatch="+skipped_noMatch+" skipped_cadres="+skipped_cadres);
   // v9.744 (Kevin 2026-05-26 "Fais une équipe formation si ça dure tout le mois") :
-  // Pour les emps SANS équipe ET sans RH days (absent toute la période en AF/M/CP),
-  // créer/utiliser une équipe dédiée par code absence dominant :
-  //   • AF intégral (≥80% AF) → équipe "formation"
-  //   • M intégral → équipe "maladie"
+  // Pour les emps absents toute la période en AF/M/CP, créer/utiliser une équipe
+  // dédiée par code absence dominant :
+  //   • AF intégral (≥80% sur jours non-repos) → équipe "formation"
+  //   • M intégral  → équipe "maladie"
   //   • CP intégral → équipe "conges"
+  //   • DEPL/DEP intégral → équipe "deplacement"
   // Sinon (codes mixtes ou autres) → laisser sans équipe.
-  var absenceAssigned=0;
+  //
+  // v9.768 (Kevin diag JUIN « toujours pas bon ») — 2 corrections critiques :
+  //   (1) RATIO sur JOURS NON-REPOS (exclure RH/R du dénominateur). Avant, un emp
+  //       100% CP sur jours travaillés mais avec 10 RH/R tombait à 20/30=67% < 80%
+  //       → pas assigné à « conges » → resté collé à BJ Éq.1.
+  //   (2) RÉASSIGNER (override) un emp déjà dans une équipe de TRAVAIL (1-8/r*/c*)
+  //       vers son équipe d'ABSENCE quand il qualifie. Avant : early-return sur
+  //       teamHistory existant → emp coincé dans une fausse équipe de travail (PDF-column
+  //       assignation erronée sur emps full-absence).
+  //   Les équipes d'absence DÉJÀ posées (formation/maladie/conges/deplacement/amenage)
+  //   ne sont jamais écrasées.
+  // amenage NE compte PAS comme équipe d'absence : un aménagé TRAVAILLE
+  // (horaires adaptés), il NE doit JAMAIS être réassigné par v9.744. Le whitelist
+  // « équipes déjà en absence légitime » exclut donc amenage : si pdf-column l'a
+  // posé à « amenage », v9.744 ne touche pas. Réciproquement, un emp aménagé
+  // avec quelques jours CP/M n'a pas vocation à passer en « conges »/« maladie ».
+  var _absTeamSet={formation:1,maladie:1,conges:1,deplacement:1};
+  // v9.769 (Kevin diag JUIN « tout est mélangé ») — un emp en FORMATION/maladie/
+  // CP/déplacement « intégral » DOIT avoir ≤2 jours travaillés. Le seuil 80%
+  // de v9.744 (sans cap sur _workedCount) attrapait des emps avec 5+ jours
+  // travaillés qui sont DES TRAVAILLEURS RÉELS de leur équipe — pas des absents
+  // intégraux (MALGHERINI J / BASTIANELLI A / QUISSET Y / CHINTEMI J en JUIN).
+  // PRE-PASS NETTOYAGE : si un emp est DÉJÀ dans une équipe d'absence mais a
+  // ≥10 jours travaillés → c'est un faux positif (clairement un travailleur, pas
+  // un absent même partiel). Seuil prudent : 5 j travaillés peut être un emp en
+  // formation partielle (25 AF + 5 pratique = legitimement « formation »), donc
+  // on ne touche qu'aux cas évidents (≥10 j travaillés = ≥1/3 du mois).
+  var cleanupedFromAbsence=0;
   A.employees.forEach(function(emp){
     if(!emp||!isEmpActive(emp,iy,im))return;
-    if(emp.teamHistory&&emp.teamHistory[key])return;
+    var existing=emp.teamHistory&&emp.teamHistory[key];
+    if(!existing||!_absTeamSet[existing])return;
+    if(_workedCount(emp.id)>=10){
+      console.info("[v9.769 cleanup] "+emp.name+" : "+existing+" → retiré ("+_workedCount(emp.id)+" j travaillés ≥10, pas un absent)");
+      delete emp.teamHistory[key];
+      cleanupedFromAbsence++;
+    }
+  });
+  if(cleanupedFromAbsence){console.info("[v9.769 cleanup] "+cleanupedFromAbsence+" emp(s) retiré(s) d'équipes d'absence (≥10 j travaillés)");}
+  var absenceAssigned=0,absenceOverride=0;
+  A.employees.forEach(function(emp){
+    if(!emp||!isEmpActive(emp,iy,im))return;
     if(emp.family==="cadres")return;
+    var existing=emp.teamHistory&&emp.teamHistory[key];
+    if(existing&&_absTeamSet[existing])return; // déjà en équipe d'absence légitime
     var r=ov[emp.id]||{};
     var codes=[];
-    Object.keys(r).forEach(function(d){if(r[d])codes.push(String(r[d]).toUpperCase());});
+    Object.keys(r).forEach(function(d){if(r[d])codes.push(String(r[d]).toUpperCase().replace(/[C'"*:]+$/g,""));});
     if(codes.length<10)return;
+    // v9.768 : exclure RH/R du dénominateur → un emp 100% CP sur jours non-repos
+    // qualifie pour « conges » même s'il a quelques RH/R intercalés.
+    var workCodes=codes.filter(function(c){return c!=="RH"&&c!=="R";});
+    if(workCodes.length<7)return; // pas assez de jours non-repos pour décider
+    var workedDays=_workedCount(emp.id);
+    // v9.769 : cap PRUDENT sur jours travaillés. Un « absent dominant » (formation
+    // partielle, congé fragmenté) peut avoir 1-5 jours de travail (=pratique
+    // pendant formation, ou retour partiel après congé). Au-delà de 8 jours
+    // travaillés (>1/4 du mois), c'est un travailleur réel — pas un absent.
+    if(workedDays>8)return;
     var counts={};
-    codes.forEach(function(c){counts[c]=(counts[c]||0)+1;});
+    workCodes.forEach(function(c){counts[c]=(counts[c]||0)+1;});
     var dominantCode=null,maxCount=0;
     Object.keys(counts).forEach(function(c){
       if(counts[c]>maxCount){maxCount=counts[c];dominantCode=c;}
     });
-    var ratio=maxCount/codes.length;
+    var ratio=maxCount/workCodes.length;
     if(ratio<0.80)return; // codes mixtes, ne pas forcer une équipe absence
     var absenceTeam=null;
     if(dominantCode==="AF"||dominantCode==="FORMATION")absenceTeam="formation";
     else if(dominantCode==="M"||dominantCode==="MAL"||dominantCode==="MALADIE")absenceTeam="maladie";
     else if(dominantCode==="CP")absenceTeam="conges";
+    else if(dominantCode==="DEPL"||dominantCode==="DEP")absenceTeam="deplacement";
     if(!absenceTeam)return; // autres codes (PRT, RRT, etc.) non gérés
     if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(absenceTeam);
     if(!emp.teamHistory)emp.teamHistory={};
+    if(existing&&existing!==absenceTeam){
+      // v9.768 : OVERRIDE d'une équipe de travail erronée (COURTIN F en CP intégral
+      // collé à BJ Éq.1 par pdf-column → repasser dans « Congés »).
+      console.info("[v9.768 absence override] "+emp.name+" : "+existing+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+", "+workedDays+" j travaillés)");
+      absenceOverride++;
+    }else{
+      console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+", "+workedDays+" j travaillés)");
+    }
     emp.teamHistory[key]=absenceTeam;
     absenceAssigned++;
-    console.info("[v9.744 absence] "+emp.name+" → "+absenceTeam+" ("+Math.round(ratio*100)+"% "+dominantCode+")");
   });
-  console.info("[v9.744 absence] assigned="+absenceAssigned);
+  console.info("[v9.744 absence] assigned="+absenceAssigned+" override="+absenceOverride);
   // v9.746 (Kevin 2026-05-26 "On avance pas — ELIODORI J r10 mais VIGNA M r3 avec MÊME pattern") :
   // PASSE DE CONSOLIDATION — pour chaque emp avec une équipe attribuée, vérifier
   // qu'une AUTRE équipe de sa famille n'a PAS la MAJORITÉ d'emps avec EXACTEMENT
@@ -38886,11 +38995,12 @@ function _cmcFallbackUnassignedTeams(iy,im){
   // passe que ce fallback). GARDE FINALE = invariant : un emp avec <5 jours TRAVAILLÉS
   // (0 rotation réelle, codes travail non parsés = section fragmentée) ne peut PAS être
   // dans une équipe de TRAVAIL (1-8, r*, c*) → on purge teamHistory[key]. EXCEPTION :
-  // les équipes d'ABSENCE (formation/maladie/conges/deplacement) sont CONSERVÉES (Kevin
-  // veut justement voir ces familles). Cette passe est la dernière → quelle que soit la
-  // passe qui a (mal) assigné l'emp, l'invariant s'applique.
+  // les équipes d'ABSENCE (formation/maladie/conges/deplacement/amenage) sont CONSERVÉES
+  // (Kevin veut justement voir ces familles). v9.768 : amenage ajouté au whitelist + cette
+  // passe attrape uniquement les emps qui n'ont PAS qualifié pour v9.744 (ratio<80% ou
+  // codes mixtes ou trop peu de jours non-repos) → emps « planning vraiment cassé ».
   try{
-    var _absT={formation:1,maladie:1,conges:1,deplacement:1};
+    var _absT={formation:1,maladie:1,conges:1,deplacement:1,amenage:1};
     var _purged=0;
     A.employees.forEach(function(_e){
       if(!_e||!_e.teamHistory||!_e.teamHistory[key])return;
