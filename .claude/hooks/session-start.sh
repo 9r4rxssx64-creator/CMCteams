@@ -63,4 +63,22 @@ setup_playwright() {
 }
 setup_playwright
 
+# --- SEO : auto-config clé Google si présente dans l'env (no-op sinon) ---
+# Pont coffre→session : si GOOGLE_API_KEY (ou repli GEMINI/FIREBASE/PAGESPEED)
+# est défini dans l'environnement, on écrit la config locale pour que les scripts
+# SEO (PageSpeed/CrUX) soient prêts immédiatement. Aucune clé commitée.
+setup_seo_google() {
+  local key="${GOOGLE_API_KEY:-${PAGESPEED_API_KEY:-${GEMINI_API_KEY:-${FIREBASE_WEB_API_KEY:-}}}}"
+  if [ -z "$key" ]; then
+    echo "[hook] SEO : aucune clé Google en env (PageSpeed/CrUX inactifs — voir GOOGLE_SETUP.md)"
+    return 0
+  fi
+  local cfg_dir="$HOME/.config/claude-seo"
+  mkdir -p "$cfg_dir"
+  printf '{\n  "api_key": "%s"\n}\n' "$key" > "$cfg_dir/google-api.json"
+  chmod 600 "$cfg_dir/google-api.json" 2>/dev/null || true
+  echo "[hook] SEO : clé Google configurée depuis l'env ✓ (PageSpeed + CrUX prêts)"
+}
+setup_seo_google
+
 echo "[hook] environnement prêt — tests (unit + E2E) / lint / build / typecheck disponibles"
