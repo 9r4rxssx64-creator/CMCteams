@@ -3119,3 +3119,14 @@ phrase secrete + cocher Auto-envoi. La phrase secrete = a me donner dans le chat
 
 **A faire passer en prod** : le code app doit atteindre `main` (Pages) pour que l'app deployee ait
 la zone 0bis (auto-merge claude/* -> main).
+
+---
+## Session 2026-05-30 — Install skill SEO (CMCteams + Apex)
+
+✅ Skill SEO `AgriciDaniel/claude-seo` v2.0.0 (MIT, meilleure source) vendored dans `.claude/` :
+   25 skill folders (`seo` + 24 `seo-*`) + 18 agents `seo-*.md` + 50 scripts + schema + pdf + hooks.
+✅ Parité Apex IA : service `seo-audit.ts` + tool `seo_audit` (registry/dispatch/case) + directive prompt + skill `apex-seo.md`.
+✅ Validé : tsc 0 erreurs, eslint 0 warnings, vitest seo-audit 4/4.
+Branche : claude/seo-skill-install-2rdyZ.
+Note : build/déploiement Apex (`apex-ai-v13/`) géré par workflow auto-deploy au merge — pas de bump APP_VER manuel ici.
+Quand Kevin dit "SEO" → suivre ce skill à la lettre (CMCteams `/seo`, Apex `seo_audit`).
