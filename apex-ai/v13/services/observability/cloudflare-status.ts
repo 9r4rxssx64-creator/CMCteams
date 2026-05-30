@@ -22,6 +22,17 @@ const BANNER_ID = 'apex-cloudflare-infra-banner';
 const LAST_503_KEY = 'apex_v13_last_cloudflare_503_ts';
 const RECENT_THRESHOLD_MS = 5 * 60 * 1000; /* 5 min */
 
+/* Auto-guérison : pendant que le banner est affiché (Cloudflare 503), on resonde
+ * périodiquement un endpoint Cloudflare (Worker /health, CORS *). Dès qu'il répond
+ * 200 → Cloudflare est revenu → on efface le banner tout seul (pas d'action Kevin).
+ * Le loop ne tourne QUE pendant l'incident (anti-spam : stop dès recover/hide). */
+const REPROBE_MS = 45 * 1000;
+const PROBE_URLS = [
+  'https://apex-auth-worker.9r4rxssx64.workers.dev/health',
+  'https://apex-secrets-proxy.desarzens-kevin.workers.dev/health',
+];
+let _reprobeTimer: ReturnType<typeof setInterval> | null = null;
+
 let _banner: HTMLDivElement | null = null;
 
 export function recordHttp503(): void {
@@ -45,6 +56,26 @@ function isRecentlyDown(): boolean {
   } catch {
     return false;
   }
+}
+
+/** Resonde Cloudflare (Worker /health). Si 200 → CF revenu → efface le banner. */
+async function probeCloudflare(): Promise<boolean> {
+  for (const url of PROBE_URLS) {
+    try {
+      const r = await fetch(url, { method: 'GET', cache: 'no-store', signal: AbortSignal.timeout(8000) });
+      if (r.ok) { recordHttpOk(); return true; }
+    } catch { /* toujours down → essaie l'URL suivante */ }
+  }
+  return false;
+}
+
+function startReprobe(): void {
+  if (_reprobeTimer !== null || typeof setInterval === 'undefined') return;
+  _reprobeTimer = setInterval(() => { void probeCloudflare(); }, REPROBE_MS);
+}
+
+function stopReprobe(): void {
+  if (_reprobeTimer !== null) { clearInterval(_reprobeTimer); _reprobeTimer = null; }
 }
 
 function showBanner(): void {
@@ -83,6 +114,7 @@ function showBanner(): void {
     </div>
   `);
   document.body.appendChild(_banner);
+  startReprobe(); /* auto-guérison : efface le banner dès que Cloudflare répond 200 */
   _banner.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
     if (t.tagName === 'BUTTON') {
@@ -95,6 +127,7 @@ function showBanner(): void {
 }
 
 function hideBanner(): void {
+  stopReprobe();
   if (_banner) {
     _banner.remove();
     _banner = null;
@@ -111,5 +144,6 @@ export function init(): void {
 export const cloudflareStatus = {
   recordHttp503,
   recordHttpOk,
+  probeCloudflare,
   init,
 };
