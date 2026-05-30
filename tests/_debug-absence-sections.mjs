@@ -46,7 +46,8 @@ async function main(){
       sections[t].push({
         name: e.name,
         defFam: e.family || '?',
-        histFam: (e.familyHistory && e.familyHistory[key]) || '?'
+        histFam: (e.familyHistory && e.familyHistory[key]) || '?',
+        pdfSec: (e._pdfSection && e._pdfSection[key]) || '?'
       });
     });
     return { sections, totalEmps: window.A.employees.length };
@@ -56,8 +57,8 @@ async function main(){
   Object.keys(out.sections).forEach(s => {
     console.log('\n--- ' + s + ' (' + out.sections[s].length + ' emps) ---');
     out.sections[s].forEach(e => {
-      const mismatch = (e.defFam !== e.histFam) ? '  ⚠ MISMATCH' : '';
-      console.log('  ' + e.name.padEnd(25) + ' DEF_EMP=' + e.defFam.padEnd(10) + ' histFam=' + e.histFam + mismatch);
+      const final = e.pdfSec !== '?' ? e.pdfSec : (e.histFam !== '?' ? e.histFam : e.defFam);
+      console.log('  ' + e.name.padEnd(25) + ' DEF_EMP=' + e.defFam.padEnd(10) + ' histFam=' + String(e.histFam).padEnd(10) + ' pdfSec=' + String(e.pdfSec).padEnd(10) + ' → AFFICHÉ=' + final);
     });
   });
   await b.close();
