@@ -1493,3 +1493,8 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - Tool `seo_audit` (registry + dispatch + case) — Apex IA auto-invoque sur "SEO/audit/Core Web Vitals/schema/GEO/AI Overviews"
 - Directive prompt `core/memory.ts` (Skills 2026 ACTIFS)
 - Test : `tests/unit/seo-audit.test.ts` (4/4 ✓), tsc 0, eslint 0
+
+### SEO — extensions GRATUITES connectées (2026-05-30)
+- `.mcp.json` (racine) : serveurs MCP `nanobanana-mcp` (Gemini→images) + `firecrawl-mcp` — env `${GEMINI_API_KEY}` / `${FIRECRAWL_API_KEY}`, AUCUNE clé en clair, se connectent dès que la variable existe.
+- Skills : `seo-unlighthouse` (Lighthouse multi-pages, 0 clé, marche tout de suite), `seo-bing` (Bing Webmaster + IndexNow, env `BING_WEBMASTER_API_KEY`), `seo-firecrawl` (crawl), `seo-image-gen` (déjà présent).
+- Payants NON connectés : DataForSEO, Ahrefs, SE Ranking, Profound (comptes à créer par Kevin).

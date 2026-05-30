@@ -143,6 +143,23 @@ export const SKILLS_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
 
+  {
+    name: 'seo_ai_visibility',
+    description:
+      'Suivi de visibilité IA / Share of Voice GEO — remplaçant GRATUIT de Profound (utilise les LLM déjà configurés, pas de service payant). Pour une marque + requêtes d\'intention, mesure si la marque (et ses concurrents) est citée quand l\'IA répond → Share of Voice %, taux de présence, recommandations GEO. AUTO-UTILISER quand user dit "visibilité IA", "AI Overviews ma marque", "suis-je cité par ChatGPT/Perplexity", "share of voice IA", "LLM mentions", "GEO ranking".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        brand: { type: 'string', description: 'Marque ou domaine à suivre' },
+        queries: { type: 'array', description: 'Requêtes d\'intention à tester (optionnel, sinon générées)' },
+        competitors: { type: 'array', description: 'Concurrents à comparer (optionnel)' },
+      },
+      required: ['brand'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+
   /* ─────────── Méta skills ─────────── */
   {
     name: 'skill_factory_create',
