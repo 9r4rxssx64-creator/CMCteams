@@ -344,6 +344,22 @@ export async function dispatchGenerateMarketingCopy(params: Record<string, unkno
   };
 }
 
+export async function dispatchSeoAudit(params: Record<string, unknown>): Promise<unknown> {
+  const url = p<string>(params, 'url') ?? '';
+  if (!url) return { success: false, error: 'url requis (page à auditer)' };
+  try {
+    const { seoAudit } = await import('../integrations/seo-audit.js');
+    const result = await seoAudit.analyze({
+      url,
+      mode: p<'page' | 'geo'>(params, 'mode') ?? 'page',
+      aiSynthesis: p<boolean>(params, 'ai_synthesis') ?? true,
+    });
+    return { success: result.ok, ...result };
+  } catch (err) {
+    return { success: false, url, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export async function dispatchFuturisticModuleInvoke(params: Record<string, unknown>): Promise<unknown> {
   const moduleId = p<string>(params, 'module_id') ?? '';
   if (!moduleId) {

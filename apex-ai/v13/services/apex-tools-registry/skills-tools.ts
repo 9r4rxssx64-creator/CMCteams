@@ -125,6 +125,24 @@ export const SKILLS_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
 
+  /* ─────────── SEO (parité skill claude-seo MIT) ─────────── */
+  {
+    name: 'seo_audit',
+    description:
+      'Audit SEO on-page complet d\'une URL (parité skill claude-seo MIT). Analyse technique (title, meta, canonical, robots, viewport, hreflang), contenu/E-E-A-T (H1, hiérarchie, profondeur), Schema.org JSON-LD, Open Graph/Twitter (social), GEO (citabilité AI Overviews/ChatGPT/Perplexity), images (alt, lazy) et maillage interne. Retourne score /100 + grade + findings priorisés P0/P1/P2 + plan d\'action. AUTO-UTILISER quand user dit "SEO", "audit SEO", "référencement", "Core Web Vitals", "schema", "AI Overviews", "GEO", "page speed", "analyse cette page".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL http(s) de la page à auditer' },
+        mode: { type: 'string', enum: ['page', 'geo'], description: 'page = on-page complet (défaut), geo = focus citabilité IA' },
+        ai_synthesis: { type: 'string', description: 'true (défaut) pour ajouter une synthèse E-E-A-T/GEO via IA' },
+      },
+      required: ['url'],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+
   /* ─────────── Méta skills ─────────── */
   {
     name: 'skill_factory_create',
