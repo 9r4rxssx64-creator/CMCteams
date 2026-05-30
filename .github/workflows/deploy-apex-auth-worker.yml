@@ -136,6 +136,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
         working-directory: services/apex-auth-worker
         run: |
           set -e
@@ -143,6 +144,16 @@ jobs:
           printf '%s' "$FIREBASE_PRIVATE_KEY" | wrangler secret put FIREBASE_PRIVATE_KEY
           echo "Pushing FIREBASE_CLIENT_EMAIL ..."
           printf '%s' "$FIREBASE_CLIENT_EMAIL" | wrangler secret put FIREBASE_CLIENT_EMAIL
+          # FIREBASE_WEB_API_KEY est OPTIONNEL (clé publique) : active l'échange
+          # custom_token → id_token côté worker (Phase 5 client). Si absent → fail-open
+          # (le worker renvoie seulement custom_token, comportement actuel inchangé).
+          if [ -n "$FIREBASE_WEB_API_KEY" ]; then
+            echo "Pushing FIREBASE_WEB_API_KEY ..."
+            printf '%s' "$FIREBASE_WEB_API_KEY" | wrangler secret put FIREBASE_WEB_API_KEY
+            echo "::notice::FIREBASE_WEB_API_KEY poussé — échange id_token activé."
+          else
+            echo "::notice::FIREBASE_WEB_API_KEY absent — worker en mode custom_token seul (Phase 5 client inactive)."
+          fi
           echo "::notice::Secrets Firebase poussés au worker."
 
       - name: Deploy worker

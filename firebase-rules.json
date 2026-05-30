@@ -1,5 +1,6 @@
 {
-  "_comment": "Firebase Realtime Database Security Rules pour CMC Teams v9.81+",
+  "_DEPRECATED": "⚠️ NE PLUS PUBLIER CE FICHIER. Règles canoniques ACTIVES = firebase-rules-apex.json (couvre /cmcteams + /apex + /shops_admin_v1 avec deny racine). Ce fichier ne couvre QUE /cmcteams : le publier COUPERAIT Apex et Shops. Conservé pour historique uniquement.",
+  "_comment": "Firebase Realtime Database Security Rules pour CMC Teams v9.81+ (LEGACY — superseded by firebase-rules-apex.json le 2026-05-26)",
   "_instructions": [
     "1. Aller sur https://console.firebase.google.com/project/cmcteams-c16ab/database/cmcteams-c16ab-default-rtdb/rules",
     "2. Copier-coller ces règles",
