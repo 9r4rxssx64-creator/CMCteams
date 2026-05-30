@@ -129,7 +129,7 @@ jobs:
           " -- "'$CHUNKS'" "$IDX" "$STORY_ID" "$TITLE"
       - name: Upload chunk
         if: ${{ matrix.chunk_index < fromJson(needs.prepare.outputs.chunk_count) }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chunk-${{ matrix.chunk_index }}
           path: tools/social/output/${{ needs.prepare.outputs.story_id }}/chunk_${{ matrix.chunk_index }}/chunk.mp4

@@ -89,7 +89,7 @@ jobs:
 
       - name: Upload archive (dry-run)
         if: github.event.inputs.release_type == 'dry_run_build_only' || github.event_name == 'push'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: apex-ios-xcarchive-${{ github.run_number }}
           path: apex-ai/v13/ios/App/build/App.xcarchive
@@ -158,7 +158,7 @@ jobs:
 
       - name: Upload IPA artifact (download depuis iPhone)
         if: github.event.inputs.release_type == 'testflight'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: apex-ios-ipa-${{ github.run_number }}
           path: apex-ai/v13/ios/App/build/App.ipa

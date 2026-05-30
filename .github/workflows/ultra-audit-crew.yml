@@ -93,7 +93,7 @@ jobs:
             echo "### CSP meta apex-ai/v13/index.html: $CSP $([ "$CSP" = "1" ] && echo '✅' || echo '❌')"
           } | tee /tmp/audit/security.md >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: audit-security
@@ -153,7 +153,7 @@ jobs:
             fi
           } | tee /tmp/audit/architecture.md >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: audit-architecture
@@ -204,7 +204,7 @@ jobs:
             if [ "$E" != "0" ]; then echo "⚠️ P1 — fix errors"; fi
           } | tee /tmp/audit/code-quality.md >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: audit-code-quality
@@ -256,7 +256,7 @@ jobs:
             echo "### Bundle dist/ total: $(($TOTAL / 1024)) KB"
           } | tee /tmp/audit/performance.md >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: audit-performance
@@ -298,7 +298,7 @@ jobs:
             echo '```'
           } | tee /tmp/audit/tests.md >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: audit-tests
@@ -382,7 +382,7 @@ jobs:
             });
 
       - name: Upload combined report as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: audit-full-report-${{ steps.report.outputs.date_slug }}
           path: /tmp/full-report.md

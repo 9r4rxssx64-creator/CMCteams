@@ -25,14 +25,14 @@ jobs:
           ls -lh backups/
 
       - name: Upload backup artifact (30 days retention)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: firebase-backup-${{ github.run_number }}
           path: backups/
           retention-days: 30
 
       - name: Cleanup old workflow runs (keep last 30)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const runs = await github.rest.actions.listWorkflowRuns({
