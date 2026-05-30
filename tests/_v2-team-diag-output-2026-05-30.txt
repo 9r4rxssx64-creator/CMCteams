@@ -1,0 +1,37 @@
+=== Diag V2 Kevin 2026-05-30 22:34 (v9.772) — copie pour traçabilité ===
+
+STATS:
+- Employés actifs: 308
+- Employés avec codes: 273 (89%)
+- Emps avec équipe attribuée: 237
+- Emps SANS équipe (vraiment): 4 → DUPORT R, INZIRILLO R, NICASTRO M, PORASSO C
+- Cadres total: 21, sans horaire: 5 (V1 employees+chefs, V2 Pit Boss séparé attendu)
+
+BUG 1 — DEJANOVIC D ABSENT du diag (Kevin's prod):
+- PDF V2 source: BRTCP+KE. 1 DEJANOVIC D 1 30 + 30 codes (validé visuellement)
+- Diag V2 Kevin: DEJANOVIC absent de la liste DÉTAIL PAR EMP
+- Test isolé (V2 partial reconstruction): DEJANOVIC créé inline avec 30 codes ✅
+- Conclusion: bug spécifique au contexte plein V2 (interaction avec section CMC?)
+
+BUG 2 — Équipes BJ chefs mixent rotations:
+- Team 4 (8 emps): offsets 1+4+5 mélangés (PASSERON/PASTOR/NIGIONI J ensemble)
+- Team 5 (9 emps): offsets 0+3 mélangés (BELTRANDI/LARINI/ARCURI/VERZELLO ensemble)
+- Team 6 (8 emps): offsets 2+5 mélangés (CIOCO S/BASILE G/COZZI H ensemble)
+- Règle SBM: mêmes RH = même équipe. Là on fusionne 2-3 équipes en 1.
+
+BUG 3 — 4 emps SANS équipe:
+- DUPORT R, INZIRILLO R: sig 6:5:19/4"' et 6:5:22/6"' (compatibles avec AGACCIO S/DELLA PINA L/CUCCHI H même sig → team c8)
+- NICASTRO M: sig=null firstWork=? (parser n'extrait pas ses codes daily)
+- PORASSO C: sig=6:1:20/5 mais isolé
+
+BUG 4 — BESSI N classé "maladie" alors qu'il travaille:
+- Diag: BESSI N firstWork=20/5, RH=[2,8,14,20,26] → sig 6:1:20/5
+- teamHistory=maladie (incorrect: il a un planning normal)
+- Suspect: cross-month memory ou seuil v9.768 trop bas
+
+Données Kevin pour future référence:
+- Kevin (DESARZENS K) est en équipe 1 avec: FAUTRIER M, MARIANI M, MALENFANT PJ, DESSI F (5 emps au lieu de 6 — manque DEJANOVIC D)
+- Ground truth historique CLAUDE.md lesson #68: équipe Kevin = FAUTRIER+DEJANOVIC+MARIANI+MALENFANT+DESARZENS+DESSI (6 emps)
+
+Source: ce fichier capturé depuis le coller Kevin 2026-05-30 22:34.
+Branche: claude/branch-correction-dw8eu
