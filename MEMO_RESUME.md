@@ -3130,3 +3130,9 @@ la zone 0bis (auto-merge claude/* -> main).
 Branche : claude/seo-skill-install-2rdyZ.
 Note : build/déploiement Apex (`apex-ai-v13/`) géré par workflow auto-deploy au merge — pas de bump APP_VER manuel ici.
 Quand Kevin dit "SEO" → suivre ce skill à la lettre (CMCteams `/seo`, Apex `seo_audit`).
+
+---
+## Session 2026-05-30 (suite) — Install claude-for-legal (section avocat/droit)
+✅ Suite juridique officielle Anthropic vendorée (.claude/legal/claude-for-legal/) : 12 modules, 151 skills, 10 agents (Apache-2.0).
+✅ Orchestrateur `/legal` (.claude/skills/legal/SKILL.md) + parité Apex (apex-legal.md, mcp_legal_search).
+Branche claude/seo-skill-install-2rdyZ. PR/merge en attente reconnexion GitHub MCP.
