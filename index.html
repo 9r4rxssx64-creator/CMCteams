@@ -5404,7 +5404,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.770";
+var APP_VER="v9.772";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -41230,7 +41230,20 @@ function doImport(){
       var targetFam=isRouletteChef?"roulettes":importFamily;
       if(isRouletteChef&&!emp.chef){emp.chef=true;_changed=true;}
       if(isRouletteChef&&!emp.senior){emp.senior=true;_changed=true;}
-      if(emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;_changed=true;}
+      // v9.772 (Kevin 2026-05-30 « fais comme l'import pour les familles, maladie
+      // formation etc, pas comme tu as fait là ») — GARDE : ne pas écraser
+      // emp.family si la ligne PDF courante n'a pas de rotation réelle. Une
+      // mention de nom dans un bloc d'en-tête (« BRTP+KE.  GAZAGNE F  1  30 »
+      // sans codes) ne suffit pas à déduire la section logique de l'emp — les
+      // chefs BJ détachés en formation apparaissent dans les blocs d'en-tête de
+      // la zone Roulettes du PDF mais restent chefs BJ. Compte les codes de
+      // rotation (« <h>/<h> ») dans parts après codesStart : si <3, on est sur
+      // une ligne d'en-tête (pas de grille) → NE PAS toucher emp.family.
+      var _rotCount=0;
+      for(var _rci=codesStart;_rci<parts.length&&_rotCount<3;_rci++){
+        if(/\d{1,2}\/\d{1,2}/.test(String(parts[_rci]||"")))_rotCount++;
+      }
+      if(_rotCount>=3 && emp.family!==targetFam&&(targetFam!=="bj"||!emp.family)){emp.family=targetFam;_changed=true;}
       if(!_isDefEmp){
         // v9.409 — Fix bug historique : assigner role="pit"|"sup" pour les cadres importés
         if(targetFam==="cadres"&&_contextCadreRole&&emp.role!==_contextCadreRole){emp.role=_contextCadreRole;_changed=true;}
