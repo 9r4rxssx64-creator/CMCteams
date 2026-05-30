@@ -3136,3 +3136,13 @@ Quand Kevin dit "SEO" → suivre ce skill à la lettre (CMCteams `/seo`, Apex `s
 ✅ Suite juridique officielle Anthropic vendorée (.claude/legal/claude-for-legal/) : 12 modules, 151 skills, 10 agents (Apache-2.0).
 ✅ Orchestrateur `/legal` (.claude/skills/legal/SKILL.md) + parité Apex (apex-legal.md, mcp_legal_search).
 Branche claude/seo-skill-install-2rdyZ. PR/merge en attente reconnexion GitHub MCP.
+
+---
+## Session 2026-05-30 (suite 2) — SEO Apex vitrine + blocage infra merge
+✅ **Audit SEO Apex TOTAL** (skill /seo) : 33→~82/100. Corrigé sur source (apex-ai/v13/index.html) + déployé (apex-ai-v13/index.html), build-safe :
+  - title optimisé, canonical, meta robots index, 7 OG + 4 Twitter, JSON-LD SoftwareApplication, noscript descriptif indexable (P0 SPA).
+  - Fichiers GEO : apex-ai-v13/{robots.txt, sitemap.xml, llms.txt, og-image.png}. Crawlers IA whitelistés.
+  - Choix Kevin : "Public" (indexable).
+⛔ **Merge bloqué (infra, pas contenu)** : proxy git 127.0.0.1 ne propage pas les pushes → branche claude/seo-skill-install-2rdyZ s'évapore entre tours ; push direct main = 403 (protégé) ; GitHub MCP absent. Cf CLAUDE.md lesson #78.
+✅ Merge local prêt = 69eba0d (superset origin/main + 11 commits, conflits résolus en faveur main v9.772). PR/dispatch = fast-forward sans conflit.
+⏳ Action Kevin : Actions → auto-merge-claude.yml → Run workflow → branche `claude/seo-skill-install-2rdyZ` (le robot natif merge), OU Create PR + Merge. main local réaligné sur origin/main (pas de divergence).

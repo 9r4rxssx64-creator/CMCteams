@@ -1498,3 +1498,16 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - `.mcp.json` (racine) : serveurs MCP `nanobanana-mcp` (Gemini→images) + `firecrawl-mcp` — env `${GEMINI_API_KEY}` / `${FIRECRAWL_API_KEY}`, AUCUNE clé en clair, se connectent dès que la variable existe.
 - Skills : `seo-unlighthouse` (Lighthouse multi-pages, 0 clé, marche tout de suite), `seo-bing` (Bing Webmaster + IndexNow, env `BING_WEBMASTER_API_KEY`), `seo-firecrawl` (crawl), `seo-image-gen` (déjà présent).
 - Payants NON connectés : DataForSEO, Ahrefs, SE Ranking, Profound (comptes à créer par Kevin).
+
+---
+## SEO Apex — vitrine publique indexable (2026-05-30, branche claude/seo-skill-install-2rdyZ)
+| Fichier | Rôle | Lien (après merge) |
+|---|---|---|
+| apex-ai-v13/index.html | Meta SEO+GEO (canonical, OG, Twitter, JSON-LD, noscript indexable) | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/index.html |
+| apex-ai/v13/index.html | Source (build-safe, nonce APEX_BOOT_NONCE) | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/index.html |
+| apex-ai-v13/robots.txt | Crawlers IA whitelistés + sitemap | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/robots.txt |
+| apex-ai-v13/sitemap.xml | Sitemap | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/sitemap.xml |
+| apex-ai-v13/llms.txt | Description GEO pour IA | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/llms.txt |
+| apex-ai-v13/og-image.png | Aperçu social stable | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/og-image.png |
+| .claude/legal/claude-for-legal/ | Suite Avocat/Droit (12 modules, 151 skills) | https://github.com/9r4rxssx64-creator/cmcteams/tree/main/.claude/legal/claude-for-legal |
+| .claude/skills/{seo,legal}/ | Skills SEO + orchestrateur /legal | https://github.com/9r4rxssx64-creator/cmcteams/tree/main/.claude/skills |
