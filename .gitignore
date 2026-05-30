@@ -12,3 +12,7 @@ tools/video/assets/*.png
 
 # Worktrees éphémères des sub-agents Claude Code (copies internes du repo, jamais versionnées)
 .claude/worktrees/
+
+# Rapports d'audit générés localement (préfixe _ = output, pas source)
+tests/_audit-*.txt
+tests/_audit-*.json
