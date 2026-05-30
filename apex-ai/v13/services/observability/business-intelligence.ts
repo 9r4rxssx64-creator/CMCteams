@@ -37,9 +37,10 @@ export interface KpiSnapshot {
   errors_count: number;
   sentinels_critical: number;
   uptime_pct: number;
-  /* Engagement */
-  avg_session_min: number;
-  retention_7d_pct: number;
+  /* Engagement (null = non encore tracké → JAMAIS de valeur inventée, cf. règle
+     Kevin "JAMAIS ESTIMER". Affiché "n/d" tant que le tracking n'est pas livré). */
+  avg_session_min: number | null;
+  retention_7d_pct: number | null;
   /* Business */
   paying_users: number;
   conversion_rate_pct: number;
@@ -101,8 +102,8 @@ class BusinessIntelligence {
       errors_count: errors,
       sentinels_critical: sentinelsCritical,
       uptime_pct: this.calculateUptime(periodStart),
-      avg_session_min: 12, /* TODO Jet 9 : tracker session timestamps */
-      retention_7d_pct: 65, /* TODO Jet 9 : retention cohorts */
+      avg_session_min: null, /* non tracké (pas de session timestamps) → n/d, jamais inventé */
+      retention_7d_pct: null, /* non tracké (pas de cohortes rétention) → n/d, jamais inventé */
       paying_users: payingUsers,
       conversion_rate_pct: Math.round((payingUsers / totalUsers) * 100),
       monthly_recurring_revenue_eur: payingUsers * 19, /* Avg blend */
@@ -261,7 +262,7 @@ class BusinessIntelligence {
         recos.push(`🚨 ${anomaly.message} — escalade immédiate Kevin`);
       }
     }
-    if (kpis.retention_7d_pct < 40 && kpis.active_users > 20) {
+    if (kpis.retention_7d_pct !== null && kpis.retention_7d_pct < 40 && kpis.active_users > 20) {
       recos.push(`💔 Rétention 7j ${kpis.retention_7d_pct}% bas — onboarding ou fonction manquante ?`);
     }
     if (recos.length === 0) {

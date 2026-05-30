@@ -99,7 +99,7 @@ describe('apex-self-audit — runFullAudit basic', () => {
     const r = await apexSelfAudit.runFullAudit(false);
     expect(r.id).toMatch(/^audit_/);
     expect(r.total_score).toBeGreaterThanOrEqual(0);
-    expect(r.total_score).toBeLessThanOrEqual(20);
+    expect(r.total_score).toBeLessThanOrEqual(100); /* v13.4.256 : score pondéré /100 */
     expect(r.axes.security.score).toBeDefined();
     expect(r.axes.performance.score).toBeDefined();
     expect(r.axes.ux.score).toBeDefined();
@@ -175,15 +175,18 @@ describe('apex-self-audit — auditPerformance findings', () => {
     expect(r.findings.some((f) => f.title.includes('Storage quota warn'))).toBe(true);
   });
 
-  it('sentinelles failed >3 → finding p1', async () => {
+  it('sentinelles en exception (errored=true) → finding p1 (v13.4)', async () => {
+    /* v13.4 distingue errored=true (sentinelle crashée → P1, restart pertinent)
+       de ok=false sans errored (sentinelle qui FONCTIONNE et signale un vrai
+       problème → P2 "signalent un problème", pas une erreur de sentinelle). */
     (sentinels.list as ReturnType<typeof vi.fn>).mockReturnValueOnce([
-      { name: 's1', lastResult: { ok: false } },
-      { name: 's2', lastResult: { ok: false } },
-      { name: 's3', lastResult: { ok: false } },
-      { name: 's4', lastResult: { ok: false } },
+      { name: 's1', lastResult: { ok: false, errored: true } },
+      { name: 's2', lastResult: { ok: false, errored: true } },
+      { name: 's3', lastResult: { ok: false, errored: true } },
+      { name: 's4', lastResult: { ok: false, errored: true } },
     ]);
     const r = await apexSelfAudit.runFullAudit(false);
-    expect(r.findings.some((f) => f.title.includes('sentinelles en erreur'))).toBe(true);
+    expect(r.findings.some((f) => f.title.includes('en erreur (exception)'))).toBe(true);
   });
 
   it('intervals >50 → finding p1', async () => {

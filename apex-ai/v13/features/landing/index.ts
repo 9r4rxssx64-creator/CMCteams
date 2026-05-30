@@ -20,6 +20,7 @@ import { createCleanupScope, type CleanupScope } from '../../core/listener-clean
 import { router } from '../../core/router.js';
 import { auth } from '../../services/auth/auth.js';
 import { isFeatureEnabled } from '../../services/auth/feature-toggles.js';
+import { webauthn } from '../../services/auth/webauthn.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -99,6 +100,73 @@ async function tryAutoLogin(): Promise<boolean> {
   return false;
 }
 
+/**
+ * Règle ABSOLUE Kevin 2026-05-22 : "PIN et nom prénom pour 1ère connexion mais
+ * après reconnu auto et connecte auto FaceID". Après un login PIN réussi, si le
+ * device supporte la biométrie plateforme (Face ID / Touch ID) ET que l'user
+ * n'est pas déjà enrôlé → proposer l'enrôlement (opt-in, non-bloquant). Le PIN
+ * reste TOUJOURS le fallback. Fail-safe : tout échec/non-support = no-op silencieux.
+ * @returns true si un enrôlement a été tenté (succès ou refus user), false si non proposé.
+ */
+export async function offerBiometricEnroll(userId: string, userName: string): Promise<boolean> {
+  try {
+    if (!userId || !userName) return false;
+    /* Déjà enrôlé sur ce device → rien à faire (auto-unlock dispo au prochain boot). */
+    if (webauthn.hasEnrollment(userId)) return false;
+    /* L'user a déjà refusé une fois → ne pas re-harceler. */
+    if (localStorage.getItem(`apex_v13_biometric_declined_${userId}`) === '1') return false;
+    const avail = await webauthn.isAvailable();
+    if (!avail.supported || avail.platform !== 'platform') return false;
+    /* Proposition douce. Sur refus → mémorise pour ne plus redemander. */
+    const accept = typeof confirm === 'function'
+      ? confirm('🔐 Activer Face ID / Touch ID ?\n\nProchaine fois, déverrouille Apex sans taper ton PIN.\n(Ton PIN reste disponible en secours.)')
+      : false;
+    if (!accept) {
+      try { localStorage.setItem(`apex_v13_biometric_declined_${userId}`, '1'); } catch { /* ignore quota */ }
+      return true;
+    }
+    const r = await webauthn.register({ username: userId, displayName: userName });
+    if (r.ok) {
+      toast.success('🔐 Face ID activé — déverrouillage rapide la prochaine fois');
+    } else {
+      toast.error(`Activation biométrie impossible : ${r.reason ?? 'échec'}`);
+    }
+    return true;
+  } catch {
+    return false; /* fail-safe : jamais bloquer le login sur la biométrie */
+  }
+}
+
+/**
+ * Déverrouillage par Face ID / Touch ID sur la landing (fallback PIN conservé).
+ * Authentifie via WebAuthn le dernier user connu enrôlé, puis loginTrusted.
+ * @returns true si déverrouillage réussi (navigation effectuée), false sinon.
+ */
+export async function tryBiometricUnlock(): Promise<boolean> {
+  try {
+    const lastUid = localStorage.getItem('apex_v13_last_known_uid');
+    const lastName = localStorage.getItem('apex_v13_last_known_name');
+    if (!lastUid || !lastName) return false;
+    if (!webauthn.hasEnrollment(lastUid)) return false;
+    const r = await webauthn.authenticate(lastUid);
+    if (!r.ok) {
+      haptic.error();
+      toast.error(`Face ID : ${r.reason ?? 'échec'} — utilise ton PIN`);
+      return false;
+    }
+    const login = await auth.loginTrusted(lastUid, lastName);
+    if (login.ok) {
+      haptic.success();
+      toast.success('🔓 Déverrouillé par Face ID');
+      router.navigate('chat');
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function render(rootEl: HTMLElement): void {
   /* P1-6 : cleanup ancien scope avant re-render */
   activeLandingScope?.cleanup();
@@ -149,6 +217,9 @@ export function render(rootEl: HTMLElement): void {
           </button>
         </form>
         <div id="login-error" aria-live="polite" aria-atomic="true"></div>
+        <button type="button" id="login-biometric" class="ax-btn ax-btn-secondary ax-btn-block" style="margin-top:12px;display:none" aria-label="Déverrouiller avec Face ID ou Touch ID">
+          🔓 Déverrouiller avec Face ID / Touch ID
+        </button>
         <button type="button" id="login-reset-pin" class="ax-btn ax-btn-ghost ax-btn-block" style="margin-top:12px;font-size:13px">
           🔑 J'ai oublié mon code PIN
         </button>
@@ -169,6 +240,22 @@ export function render(rootEl: HTMLElement): void {
     haptic.tap();
     void handleLogin(rootEl);
   });
+
+  /* FaceID/TouchID : bouton déverrouillage si le dernier user connu est enrôlé.
+     Affiché seulement si biométrie dispo + credential présent. PIN reste fallback. */
+  const bioBtn = rootEl.querySelector<HTMLButtonElement>('#login-biometric');
+  if (bioBtn && activeLandingScope) {
+    const lastUid = localStorage.getItem('apex_v13_last_known_uid');
+    if (lastUid && webauthn.hasEnrollment(lastUid)) {
+      void webauthn.isAvailable().then((a) => {
+        if (a.supported && a.platform === 'platform') bioBtn.style.display = '';
+      });
+    }
+    activeLandingScope.bind(bioBtn, 'click', () => {
+      haptic.tap();
+      void tryBiometricUnlock();
+    });
+  }
 
   /* Reset PIN handler : efface PIN admin/user pour permettre re-init au prochain login */
   const resetBtn = rootEl.querySelector<HTMLButtonElement>('#login-reset-pin');
@@ -262,6 +349,11 @@ async function handleLogin(rootEl: HTMLElement): Promise<void> {
     /* Login réussi */
     haptic.success();
     toast.success('Bienvenue !');
+    /* Règle Kevin : proposer Face ID/Touch ID après 1ère connexion PIN réussie
+       (opt-in, non-bloquant, fallback PIN conservé). On lit l'uid loggé. */
+    const loggedUid = localStorage.getItem('apex_v13_last_known_uid');
+    const loggedName = localStorage.getItem('apex_v13_last_known_name') ?? name;
+    if (loggedUid) void offerBiometricEnroll(loggedUid, loggedName);
     /* Petit délai pour animation toast visible avant navigate */
     setTimeout(() => {
       router.navigate('chat');

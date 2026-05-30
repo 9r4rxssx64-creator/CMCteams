@@ -93,6 +93,37 @@ const ANTHROPIC_API_VERSION = "2023-06-01";
 // Identifiant du proxy (header X-Proxy)
 const PROXY_ID = "KDMC-AI-v1";
 
+// ── Rate-limit par IP (anti-abus facturation Anthropic) ────────────────
+// Fenêtre glissante en mémoire de l'isolate Worker. Volontairement GÉNÉREUX
+// (60 req/min/IP) pour ne JAMAIS gêner un usage légitime ; vise uniquement
+// l'abus massif. Best-effort : l'état mémoire est par-isolate (pas global
+// Cloudflare) → suffisant comme garde-fou, complété par la CORS allowlist.
+const RL_MAX_PER_MIN = 60;
+const RL_WINDOW_MS = 60 * 1000;
+const _rlHits = new Map(); // ip -> number[] (timestamps)
+
+function rateLimited(request) {
+  try {
+    const ip =
+      request.headers.get("CF-Connecting-IP") ||
+      request.headers.get("X-Forwarded-For") ||
+      "unknown";
+    const now = Date.now();
+    const arr = (_rlHits.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
+    arr.push(now);
+    _rlHits.set(ip, arr);
+    // Garde la Map bornée (évite fuite mémoire si beaucoup d'IPs distinctes).
+    if (_rlHits.size > 5000) {
+      for (const [k, v] of _rlHits) {
+        if (v.length === 0 || now - v[v.length - 1] > RL_WINDOW_MS) _rlHits.delete(k);
+      }
+    }
+    return arr.length > RL_MAX_PER_MIN;
+  } catch {
+    return false; // fail-open : un bug de rate-limit ne doit JAMAIS bloquer un user
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════
@@ -174,6 +205,15 @@ export default {
     const origin = request.headers.get("Origin") || "";
     if (!ALLOW_ORIGINS.includes(origin) && origin !== "") {
       return jsonError("Origin not allowed", 403, corsOrigin, { origin });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Rate-limit par IP (anti-abus facturation) — 429 si dépassement
+    // ─────────────────────────────────────────────────────────────
+    if (rateLimited(request)) {
+      return jsonError("Trop de requêtes, réessaie dans 1 minute", 429, corsOrigin, {
+        retry_after_s: 60,
+      });
     }
 
     // ─────────────────────────────────────────────────────────────

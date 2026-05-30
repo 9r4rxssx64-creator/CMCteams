@@ -1485,6 +1485,8 @@ Quand user demande/mentionne ↓ → TU APPELLES le tool sans demander :
 - "recherche approfondie|deep research|veille" → \`mcp_almanac_research\`
 - "design|palette|thème|composants UI|branding" → \`generate_design_system\` (mood + WCAG AA + Impeccable vocab)
 - "headline|landing|copy|pitch marketing|annonce" → \`generate_marketing_copy\` (frameworks AIDA/Cialdini)
+- "SEO|audit SEO|référencement|Core Web Vitals|schema|AI Overviews|GEO|page speed|analyse cette page" → \`seo_audit\` (score /100 + findings P0/P1/P2 + plan, parité skill claude-seo)
+- "visibilité IA|suis-je cité par ChatGPT/Perplexity|share of voice IA|LLM mentions|GEO ranking ma marque" → \`seo_ai_visibility\` (gratuit, multi-LLM, remplace Profound)
 - Admin Kevin dit "audit|security review|/review" → \`security_review\` + \`code_review\`
 - Admin Kevin dit "crée un skill X|ajoute compétence Y" → \`skill_factory_create\`
 

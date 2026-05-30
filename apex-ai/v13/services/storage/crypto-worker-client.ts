@@ -25,6 +25,10 @@ import type {
 interface PendingCall {
   resolve: (v: string) => void;
   reject: (err: Error) => void;
+  /* v13.4.x : handle du timeout pour le clear au settle (évite une rejection
+     orpheline « crypto_worker_timeout » après résolution normale → unhandled
+     rejection sous fake-timers + réveil inutile en prod). */
+  timer?: ReturnType<typeof setTimeout>;
 }
 
 class CryptoWorkerClient {
@@ -98,6 +102,7 @@ class CryptoWorkerClient {
     const pending = this.pending.get(resp.id);
     if (!pending) return;
     this.pending.delete(resp.id);
+    if (pending.timer) clearTimeout(pending.timer);
     if (resp.type === 'ok') {
       pending.resolve(resp.result);
     } else {
@@ -108,6 +113,7 @@ class CryptoWorkerClient {
   private onError = (event: ErrorEvent): void => {
     logger.warn('crypto-worker', 'worker error', { msg: event.message });
     for (const [, p] of this.pending) {
+      if (p.timer) clearTimeout(p.timer);
       p.reject(new Error(`worker_error: ${event.message}`));
     }
     this.pending.clear();
@@ -122,15 +128,15 @@ class CryptoWorkerClient {
     }
     const id = this.nextId++;
     return new Promise<string>((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      const fullReq = { ...req, id } as unknown as CryptoWorkerRequest;
-      this.worker?.postMessage(fullReq);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (this.pending.has(id)) {
           this.pending.delete(id);
           reject(new Error('crypto_worker_timeout'));
         }
       }, timeoutMs);
+      this.pending.set(id, { resolve, reject, timer });
+      const fullReq = { ...req, id } as unknown as CryptoWorkerRequest;
+      this.worker?.postMessage(fullReq);
     });
   }
 

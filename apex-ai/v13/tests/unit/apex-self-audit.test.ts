@@ -24,11 +24,22 @@ describe('apex-self-audit (P0 coverage 4→80%)', () => {
       expect(r.axes.ai_safety).toBeTruthy();
     });
 
-    it('total_score est moyenne des 6 axes', async () => {
+    it('total_score = score pondéré /100 des 6 axes (v13.4.256)', async () => {
+      /* v13.4.256 (FIX "20/100 Note F") : total_score n'est plus la moyenne /20
+         mais un score pondéré sur /100 (sécu 25, perf 20, ux 15, tests 15,
+         archi 15, ai_safety 10 — chaque axe ramené de /20 à sa pondération). */
       const r = await apexSelfAudit.runFullAudit();
-      const sum = r.axes.security.score + r.axes.performance.score + r.axes.ux.score
-        + r.axes.tests.score + r.axes.architecture.score + r.axes.ai_safety.score;
-      expect(r.total_score).toBe(Math.round(sum / 6));
+      const expected = Math.round(
+        (r.axes.security.score / 20) * 25 +
+          (r.axes.performance.score / 20) * 20 +
+          (r.axes.ux.score / 20) * 15 +
+          (r.axes.tests.score / 20) * 15 +
+          (r.axes.architecture.score / 20) * 15 +
+          (r.axes.ai_safety.score / 20) * 10,
+      );
+      expect(r.total_score).toBe(expected);
+      expect(r.total_score).toBeGreaterThanOrEqual(0);
+      expect(r.total_score).toBeLessThanOrEqual(100);
     });
 
     it('mode brutal=true génère plus de findings', async () => {

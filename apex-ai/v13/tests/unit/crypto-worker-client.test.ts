@@ -219,8 +219,12 @@ describe('services/crypto-worker-client', () => {
       cryptoWorker.cleanup();
       await cryptoWorker.ensure();
       const promise = cryptoWorker.encrypt('x', 'p');
+      /* Attache l'assertion AVANT d'avancer les timers : sinon la rejection
+         se déclenche pendant advanceTimersByTimeAsync sans handler attaché
+         → unhandled rejection (faux positif qui faisait exit 1 vitest). */
+      const assertion = expect(promise).rejects.toThrow(/crypto_worker_timeout/);
       await vi.advanceTimersByTimeAsync(15_100);
-      await expect(promise).rejects.toThrow(/crypto_worker_timeout/);
+      await assertion;
       vi.useRealTimers();
     });
 

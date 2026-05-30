@@ -1,33 +1,4 @@
-# Mémo de reprise — CMC v9.771 / Apex v13.4.261 (2026-05-30)
-
-## 📋 SESSION 2026-05-30 — CMC v9.768 → v9.771 : audit fidélité cell-par-cell JUIN_2026_V1 réel
-
-Branche `claude/branch-correction-dw8eu`. Kevin : « Tu me dis que l'import fonctionne à 100/100, aucune erreur, reproduction à l'identique ? ». Honnêteté brute : NON, et audit à la preuve.
-
-### Livré (4 PR / 5 commits poussés et mergés sur main)
-
-- **v9.768** (commit `3eac7151`, PR #496) — COURTIN F / COTTALORDA D réassignés « 🏖️ Congés » : ratio sur jours non-repos (exclut RH/R du dénominateur) + OVERRIDE d'un teamHistory de TRAVAIL existant + nouvelle équipe « ✈ En déplacement » pour DEPL/DEP intégral. Test `test:v768` (8/8) câblé `test:ci`.
-- **v9.769** (commit `39eab1ad`, PR #496) — Split affichage absence par famille dans vPlan : « 🏖️ Congés — BJ / Roul. / CMC » en sous-blocs séparés au lieu d'un seul bloc mélangé. Cap prudent v9.744 (`workedDays>8` = travailleur, pas absent). Audit deep `tests/deep-audit-import-juin.mjs` ajouté.
-- **v9.770** (commits `c657bc79` + `7d0b9bed` + `8e7140dc` + `aacb00cc`, PR #501) — **4 bugs P0 + bug RH/R + bug CLM** trouvés par `tests/audit-fidelity-doimport-juin.mjs` :
-  - `_parseEncadresStatuts` (l. 39637) écrasait rotation valide (CAISSON JC, LANTERI E → CP 30j). Fix : skip si ≥10 cellules grille parsées.
-  - `_applyCodeArr` (l. 40326) ré-effaçait grille puis transformait `16/3*` → `16/3"'` (MORTER L). Fix : check `_existCnt<5`.
-  - Casse `c` chef (l. 41258) : `20/5"c` → `20/5"C` (MATTONE F, BASILE G, FOREST M, MAGAGNIN J, PASTOR P). Fix : préserve `c` minuscule.
-  - Code `CLM` (l. 41367) skippé → MILLO W j26-27 décalés. Fix : apprend aussi codes alpha 2-5 lettres.
-  - **Bug « RH seul »** (Kevin signalé) : `_getRhDays` (3 sites) ignorait `R`. Fix : RH primaire + R fallback.
-- **v9.771** (commit en cours) — TENTATIVE `_pdfSection` géométrique (sub-agent) **annulée** : régression ORENGO N (CMC → bj) + pas de résolution pour GAZAGNE F (encadré AF Formation physiquement en zone Roulettes du PDF y=910). Conclusion : la géométrie pure ne suffit pas. **Cause racine** = ligne 41238 v9.703 du parser grille qui écrase `emp.family` vers `roulettes` pour les chefs BJ dans la zone Roulettes du PDF. À fixer prochaine itération en protégeant `emp.family` pour les emps en encadré.
-
-### Mesures finales (audit-fidelity-doimport-juin.mjs sur capture JUIN_2026_V1 réelle)
-
-- **Désaccords cellules : 70+ → 5** (-93 %), dont les 5 restants sont tous des bugs côté STD géo standalone, pas du parser PROD.
-- **Cellules standalone-only (perdues côté prod) : 196 → 0** ✓
-- **0 emp sans équipe** (249/249 placés)
-- **Coverage : BJ 98 %, Roul. 100 %, CMC 99 %**, Cadres 0 % (séparé V2)
-- `test:ci` exit 0 sur toutes les itérations (fidélité 29/29, homonymes 3/3, kevin 10/10, geometric 12/12)
-
-### Limites connues / prochaines étapes
-
-- **Cause racine encore ouverte** : v9.703 ligne 41238 écrase `emp.family` selon position visuelle dans le PDF (chefs BJ détachés en formation en zone Roulettes top → family forcée à `roulettes`). Tentative géométrique annulée car le PDF SBM met physiquement les encadrés Chefs BJ ENTRE le titre « Roulettes » et le titre « Chefs black Jack » (y=910 entre y=1167 et y=878). Solution propre = protéger `emp.family` en l'absence de grille jour-par-jour ou utiliser la position du box d'encadré (et non du nom).
-- **Tests cadres V2** : Kevin n'a pas encore d'autre capture que V1. Quand il fournira V2, ré-exécuter l'audit fidélité dessus.
+# Mémo de reprise — Parser-Tester T1 v0.7.1 / Apex v13.4.261 / CMC v9.731 (2026-05-28)
 
 ## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (5 gaps P1 + Convention SBM)
 
@@ -3148,3 +3119,14 @@ phrase secrete + cocher Auto-envoi. La phrase secrete = a me donner dans le chat
 
 **A faire passer en prod** : le code app doit atteindre `main` (Pages) pour que l'app deployee ait
 la zone 0bis (auto-merge claude/* -> main).
+
+---
+## Session 2026-05-30 — Install skill SEO (CMCteams + Apex)
+
+✅ Skill SEO `AgriciDaniel/claude-seo` v2.0.0 (MIT, meilleure source) vendored dans `.claude/` :
+   25 skill folders (`seo` + 24 `seo-*`) + 18 agents `seo-*.md` + 50 scripts + schema + pdf + hooks.
+✅ Parité Apex IA : service `seo-audit.ts` + tool `seo_audit` (registry/dispatch/case) + directive prompt + skill `apex-seo.md`.
+✅ Validé : tsc 0 erreurs, eslint 0 warnings, vitest seo-audit 4/4.
+Branche : claude/seo-skill-install-2rdyZ.
+Note : build/déploiement Apex (`apex-ai-v13/`) géré par workflow auto-deploy au merge — pas de bump APP_VER manuel ici.
+Quand Kevin dit "SEO" → suivre ce skill à la lettre (CMCteams `/seo`, Apex `seo_audit`).
