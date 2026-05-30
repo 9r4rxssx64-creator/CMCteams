@@ -101,7 +101,7 @@ jobs:
 
       - name: Open GitHub Issue
         if: steps.escalate.outputs.issue_title != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           ISSUE_TITLE: ${{ steps.escalate.outputs.issue_title }}
           ISSUE_BODY: ${{ steps.escalate.outputs.issue_body }}
