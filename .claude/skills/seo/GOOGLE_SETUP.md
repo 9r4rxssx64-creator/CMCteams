@@ -18,6 +18,16 @@ Besoin : juste une **clé API** (pas de consentement, pas de navigateur).
 
 → Débloque : LCP/INP/CLS **terrain réels** (CrUX), scores Lighthouse réels, historique 25 semaines.
 
+### ⭐ Le plus propre : ajouter la clé comme VARIABLE D'ENV (jamais collée dans le chat)
+
+Ajoute `GOOGLE_API_KEY` = ta clé dans les **secrets/variables d'environnement de ta session
+Claude Code** (même endroit que `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, etc.). Les scripts la
+lisent **automatiquement en priorité** — rien d'autre à faire, valable dans toutes les sessions.
+
+Ordre de lecture de la clé (premier trouvé gagne) :
+`GOOGLE_API_KEY` → `PAGESPEED_API_KEY` → `GEMINI_API_KEY` → `FIREBASE_WEB_API_KEY`.
+Donc si tu n'ajoutes rien, `GEMINI_API_KEY` sert déjà de repli (si PageSpeed API activée sur son projet).
+
 ## Niveau 2 — Search Console + GA4 + Indexing (positions, clics, trafic organique) — OAuth, 5 min
 
 Besoin : un fichier `client_secret.json` (OAuth) OU un compte de service. Nécessite **ton
