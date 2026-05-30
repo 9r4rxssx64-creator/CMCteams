@@ -26324,7 +26324,10 @@ function cmcExportTeamsDetectionDiag(){
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
       var rhDays=[];
-      Object.keys(r).forEach(function(d){if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));});
+      // v9.770 — RH primaire, R fallback si aucun RH (Kevin "il ne prenait en compte que les RH pas le R")
+      var _fbRDiag=[];
+      Object.keys(r).forEach(function(d){var _rc=String(r[d]).toUpperCase();if(_rc==="RH")rhDays.push(parseInt(d));else if(_rc==="R")_fbRDiag.push(parseInt(d));});
+      if(rhDays.length===0 && _fbRDiag.length>=2) rhDays = _fbRDiag;
       rhDays.sort(function(a,b){return a-b;});
       var cycle=_calcCycle(rhDays);
       var offset=cycle?(rhDays[0]-1)%cycle:null;
@@ -37017,10 +37020,15 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
       if(cellCount<10){skipReasons.low_cells++;return;}
-      var rhDays=[];
+      var rhDays=[],fbR=[];
+      // v9.770 (Kevin "il ne prenait en compte que les RH pas le R") — RH primaire,
+      // R fallback si AUCUN RH (sinon le cycle SBM standard cassé : RH+R adjacents).
       Object.keys(r).forEach(function(d){
-        if(String(r[d]).toUpperCase()==="RH")rhDays.push(parseInt(d));
+        var c=String(r[d]).toUpperCase();
+        if(c==="RH")rhDays.push(parseInt(d));
+        else if(c==="R")fbR.push(parseInt(d));
       });
+      if(rhDays.length===0 && fbR.length>=2) rhDays = fbR;
       rhDays.sort(function(a,b){return a-b;});
       if(rhDays.length<2){skipReasons.low_rh++;return;}
       var cycle=_calcCycle(rhDays);
@@ -38744,10 +38752,19 @@ function _cmcFallbackUnassignedTeams(iy,im){
   }
   function _getRhDays(empId){
     var r=ov[empId]||{};
-    var rh=[];
+    var rh=[],fallbackR=[];
+    // v9.770 (Kevin "il ne prenait en compte que les RH pas le R") — utiliser
+    // RH comme ancre primaire (RH = samedi/jour-anniversaire, R = dimanche/jour-2).
+    // Compter les 2 cassait le cycle (devenait 1 au lieu de 6 pour SBM standard).
+    // FIX correct : si l'emp n'a AUCUN RH (ex: planning où seul `R` est posté),
+    // alors basculer sur R seul comme ancre. Ainsi un emp avec uniquement R reste
+    // détecté dans son équipe (avant : exclu car rh.length=0).
     Object.keys(r).forEach(function(d){
-      if(String(r[d]).toUpperCase()==="RH")rh.push(parseInt(d));
+      var c=String(r[d]).toUpperCase();
+      if(c==="RH")rh.push(parseInt(d));
+      else if(c==="R")fallbackR.push(parseInt(d));
     });
+    if(rh.length===0 && fallbackR.length>=2) rh = fallbackR;
     rh.sort(function(a,b){return a-b;});
     return rh;
   }
@@ -41364,7 +41381,13 @@ function doImport(){
       var dayNum=fromDay+(di-codesStart); // offset depuis le jour de debut de la (sous-)période
       if(dayNum<1||dayNum>days) continue;
       // v9.142 — Auto-apprentissage + ne PAS ignorer les codes horaires
+      // v9.770 (Kevin audit JUIN MILLO W décalage par CLM) — apprendre aussi
+      // les codes alpha purs courts (CLM, MAL, ABI…) si 2-5 lettres MAJ pures,
+      // sinon ils sont skippés (continue) et créent un décalage visuel quand
+      // une autre passe (géométrique) remplit le vide à la mauvaise position.
+      // Reproduction identique : le code source brut DOIT être préservé.
       if(code&&!CODES[code]&&/\d/.test(code)){learnNewCode(code);_rebuildCK();}
+      else if(code&&!CODES[code]&&/^[A-Z]{2,5}$/.test(code)){learnNewCode(code);_rebuildCK();}
       if(code&&!CODES[code]){err++;errLines.push(name+" j"+dayNum+":code inconnu '"+code+"'");continue;}
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][dayNum]=code;
