@@ -5404,7 +5404,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.769";
+var APP_VER="v9.770";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -39634,8 +39634,27 @@ function _parseEncadresStatuts(txt, key, year, month){
         unassigned.push({name:fullName,reason:"name_not_in_db",section:section.code});
         continue;
       }
-      // FORCE override : on EFFACE le tableau positionnel mal classé pour cet emp
+      // v9.770 (Kevin audit JUIN « tout est mélangé ») : NE PAS écraser une
+      // rotation parsée. L'aplatissement PDF mélange l'encadré CP/M/AF avec
+      // la grille de noms — un emp avec ≥10 cellules parsées HORS-RH/R en grille
+      // (= rotation complète lue, même si majoritairement AF/M/CP) NE PEUT PAS
+      // être réduit à un encadré intégral. EncadresParser.parseEncadresGeometric
+      // (par coordonnées X/Y) reste source de vérité pour les vrais absents.
+      // Garde STRICTE : on ne touche pas dès que cell_count ≥ 10 (proxy
+      // « grille parsée → respect du PDF source ») — couvre :
+      //   - MONTESANO M (4 j work + 23 AF + R + 22/6"' j30) ≠ AF intégral
+      //   - ELENA A, LANGELLOTTI D, PAZZAGLIA A, BATTAGLIA DE, DI LUCA L,
+      //     VOUKASSOVITCH H (formation partielle avec rotation lue)
+      //   - LANTERI E / CAISSON JC (rotation 30j → déjà couverts v9.770 v1)
       if(!A.overrides[key])A.overrides[key]={};
+      var _existRow=A.overrides[key][emp.id]||{};
+      var _cellCountExist=Object.keys(_existRow).filter(function(d){return !!_existRow[d];}).length;
+      if(_cellCountExist>=10){
+        unassigned.push({name:fullName,reason:"has_parsed_grid_"+_cellCountExist+"cells",section:section.code});
+        console.info("[encadres v9.770] SKIP "+emp.name+" (section "+section.code+") : "+_cellCountExist+" cellules grille → respect PDF, ne pas écraser");
+        continue;
+      }
+      // OK : emp absent intégral ou sparse → force override sur la sous-période
       A.overrides[key][emp.id]={};
       for(var d=fromDay;d<=Math.min(toDay,days);d++){
         A.overrides[key][emp.id][d]=section.code;
@@ -41235,7 +41254,14 @@ function doImport(){
     refData.rows[emp.id]={};
     for(var di=codesStart;di<parts.length;di++){
       var _codeRaw=parts[di].trim();
+      // v9.770 (Kevin audit JUIN : "20/5\"C" vs PDF "20/5\"c") — préserver le `c`
+      // final chef minuscule AVANT toUpperCase, sinon MATTONE F / BASILE G / FOREST M
+      // / MAGAGNIN J / PASTOR P récupèrent `20/5"C` au lieu de `20/5"c` (l'algo de
+      // détection famille `_famFromCells` est case-sensitive sur `/c$/` — la version
+      // majuscule casse le clustering chef BJ et la couleur Convention).
+      var _hasChefLower=/[a-z]$/.test(_codeRaw)&&/[c]$/.test(_codeRaw);
       var code=_codeRaw.toUpperCase();
+      if(_hasChefLower&&/C$/.test(code))code=code.replace(/C$/,"c");
       if(!code||code==="0"||code==="-") continue;
       // FIDELITE (Kevin 2026-05-28) : préserver la casse 'h' minuscule (12h30/19)
       // et le ':' final (19/4:) que le toUpperCase + strip perdaient (19 nits
