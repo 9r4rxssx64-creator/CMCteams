@@ -40323,7 +40323,16 @@ function doImport(){
   function _applyCodeArr(empObj,codeArr,fDay){
     if(!refData.rows[empObj.id])refData.rows[empObj.id]={};
     // v9.145b — Ne pas \u00e9craser les donn\u00e9es CSV si d\u00e9j\u00e0 peupl\u00e9es
-    if(!_touched[empObj.id]&&!_csvHandled[empObj.id]){A.overrides[key][empObj.id]={};_touched[empObj.id]=true;}
+    // v9.770 (Kevin audit JUIN MORTER L 16/3* devenait 16/3"') : ne pas effacer
+    // une grille jour-par-jour deja peuplee (>=5 cellules). Le parser ENTETE
+    // peut transformer faussement les codes CCDP (*) en Convention (') ; le
+    // parser grille a la source de verite (lit directement les codes ligne
+    // L211-L390 du PDF).
+    var _existCnt=0;
+    if(A.overrides[key][empObj.id]){
+      for(var _ek in A.overrides[key][empObj.id]){if(A.overrides[key][empObj.id][_ek])_existCnt++;}
+    }
+    if(!_touched[empObj.id]&&!_csvHandled[empObj.id]&&_existCnt<5){A.overrides[key][empObj.id]={};_touched[empObj.id]=true;}
     else if(!_touched[empObj.id]){_touched[empObj.id]=true;}
     var _curFDay=fDay,_curBase=0; // base index pour calcul dayNum avec sous-périodes
     for(var _ai=0;_ai<codeArr.length;_ai++){
