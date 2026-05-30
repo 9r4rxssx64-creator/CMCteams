@@ -1498,3 +1498,10 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - `.mcp.json` (racine) : serveurs MCP `nanobanana-mcp` (Gemini→images) + `firecrawl-mcp` — env `${GEMINI_API_KEY}` / `${FIRECRAWL_API_KEY}`, AUCUNE clé en clair, se connectent dès que la variable existe.
 - Skills : `seo-unlighthouse` (Lighthouse multi-pages, 0 clé, marche tout de suite), `seo-bing` (Bing Webmaster + IndexNow, env `BING_WEBMASTER_API_KEY`), `seo-firecrawl` (crawl), `seo-image-gen` (déjà présent).
 - Payants NON connectés : DataForSEO, Ahrefs, SE Ranking, Profound (comptes à créer par Kevin).
+
+### SEO — Google APIs gratuites prêtes (2026-05-30)
+- Deps Python installées (`.claude/skills/seo/.venv`, gitignored) → scripts SEO fonctionnels.
+- `scripts/connect_google_free.sh` : connexion 1-commande PageSpeed+CrUX (clé API gratuite, sans OAuth).
+- `GOOGLE_SETUP.md` : guide 2 min (clé API) + 5 min (OAuth GSC/GA4/Indexing).
+- Clés jamais commitées (`~/.config/claude-seo/google-api.json` hors repo + `.gitignore`).
+- Action Kevin restante : fournir 1 clé Google API gratuite (PSI+CrUX) — tout le reste est auto.
