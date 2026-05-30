@@ -84,34 +84,35 @@ function showBanner(): void {
   _banner.id = BANNER_ID;
   _banner.setAttribute('role', 'status');
   _banner.setAttribute('aria-live', 'polite');
+  /* Discret : fine pastille collée en haut, une seule ligne, semi-transparente —
+   * ne recouvre pas le contenu central (Kevin "plus discret, pas en plein milieu"). */
   _banner.style.cssText = [
     'position:fixed',
-    'top:max(8px,env(safe-area-inset-top,8px))',
+    'top:max(6px,env(safe-area-inset-top,6px))',
     'left:50%',
     'transform:translateX(-50%)',
     'z-index:2147483640',
-    'max-width:min(92vw,500px)',
-    'padding:10px 14px',
-    'background:linear-gradient(135deg,rgba(247,131,34,0.95),rgba(232,184,48,0.95))',
-    'color:#000',
-    'border-radius:12px',
-    'font-size:13px',
+    'max-width:min(86vw,340px)',
+    'padding:4px 8px 4px 10px',
+    'display:flex',
+    'align-items:center',
+    'gap:8px',
+    'background:rgba(247,131,34,0.82)',
+    'color:#1a1200',
+    'border-radius:999px',
+    'font-size:11px',
     'font-weight:600',
-    'box-shadow:0 4px 16px rgba(0,0,0,0.3)',
+    'line-height:1.2',
+    'box-shadow:0 2px 8px rgba(0,0,0,0.22)',
+    'backdrop-filter:blur(6px)',
+    '-webkit-backdrop-filter:blur(6px)',
     'cursor:pointer',
-    'animation:ax-banner-slide-in 240ms ease-out',
+    'opacity:0.92',
+    'animation:ax-banner-slide-in 200ms ease-out',
   ].join(';');
   safeSetHTML(_banner, `
-    <div style="display:flex;align-items:center;gap:10px;line-height:1.4">
-      <div style="font-size:20px">☁️</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:800;font-size:13px">Cloudflare infra dégradée</div>
-        <div style="font-size:11px;opacity:0.85;margin-top:2px">
-          HTTP 503 côté Cloudflare (Bot Management + Email Routing). PAS ton token. Tap pour status →
-        </div>
-      </div>
-      <button type="button" aria-label="Fermer" style="background:rgba(0,0,0,0.15);border:none;color:#000;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0">×</button>
-    </div>
+    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">☁️ Cloudflare ralenti · pas ta clé</span>
+    <button type="button" aria-label="Fermer" style="background:rgba(0,0,0,0.18);border:none;color:#1a1200;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;padding:0">×</button>
   `);
   document.body.appendChild(_banner);
   startReprobe(); /* auto-guérison : efface le banner dès que Cloudflare répond 200 */
