@@ -5404,7 +5404,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.772";
+var APP_VER="v9.773";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -26329,6 +26329,7 @@ function cmcExportTeamsDetectionDiag(){
       Object.keys(r).forEach(function(d){var _rc=String(r[d]).toUpperCase();if(_rc==="RH")rhDays.push(parseInt(d));else if(_rc==="R")_fbRDiag.push(parseInt(d));});
       if(rhDays.length===0 && _fbRDiag.length>=2) rhDays = _fbRDiag;
       rhDays.sort(function(a,b){return a-b;});
+      var rDaysOnly=_fbRDiag.slice().sort(function(a,b){return a-b;});
       var cycle=_calcCycle(rhDays);
       var offset=cycle?(rhDays[0]-1)%cycle:null;
       var firstWork=_firstWork(r);
@@ -26346,13 +26347,22 @@ function cmcExportTeamsDetectionDiag(){
       else if(cellCount<10)skipReason="<10 cells écrites ("+cellCount+")";
       else if(rhDays.length<2)skipReason="<2 RH days ("+rhDays.length+")";
       else if(!cycle||cycle<2||cycle>15)skipReason="cycle invalide ("+cycle+")";
+      // v9.773 (Kevin "manque des R dans les plannings") — diag affiche RH ET R
+      // séparément + family dans la signature (sinon les groupes mélangent BJ/Roul/CMC
+      // qui ont mêmes RH+offset+firstWork mais sont en équipes différentes).
+      // Vrai mémoire mai/juin : on liste aussi les autres mois enregistrés.
+      var _otherKeys=[];
+      if(emp.teamHistory){
+        Object.keys(emp.teamHistory).forEach(function(k){if(k!==key)_otherKeys.push(k+':'+emp.teamHistory[k]);});
+      }
       empAnalysis.push({
         name:emp.name,id:eid,family:emp.family||"?",
-        cellCount:cellCount,rhDays:rhDays,
+        cellCount:cellCount,rhDays:rhDays,rDays:rDaysOnly,
         cycle:cycle,offset:offset,
         firstWork:firstWork,firstWorkNorm:firstWorkNorm,
-        signature:sig,skipReason:skipReason,
-        teamHistoryWritten:emp.teamHistory&&emp.teamHistory[key]||null
+        signature:sig,sigWithFam:sig?(emp.family||"?")+":"+sig:null,skipReason:skipReason,
+        teamHistoryWritten:emp.teamHistory&&emp.teamHistory[key]||null,
+        otherMonths:_otherKeys
       });
     });
 
@@ -26362,6 +26372,21 @@ function cmcExportTeamsDetectionDiag(){
       if(!a.signature)return;
       if(!bySignature[a.signature])bySignature[a.signature]=[];
       bySignature[a.signature].push(a.name);
+    });
+    // v9.773 — grouper aussi par (family, cycle, offset, firstWork) = vraie clé d'équipe
+    var bySignatureWithFam={};
+    empAnalysis.forEach(function(a){
+      if(!a.sigWithFam)return;
+      if(!bySignatureWithFam[a.sigWithFam])bySignatureWithFam[a.sigWithFam]=[];
+      bySignatureWithFam[a.sigWithFam].push(a.name);
+    });
+    // Compte mémoires cross-mois (Kevin "encore une memoir planning mai ou juin")
+    var crossMonthCount=0,crossMonthSamples=[];
+    empAnalysis.forEach(function(a){
+      if(a.otherMonths&&a.otherMonths.length){
+        crossMonthCount++;
+        if(crossMonthSamples.length<10)crossMonthSamples.push(a.name+': '+a.otherMonths.join(', '));
+      }
     });
 
     // Build report
@@ -26374,6 +26399,13 @@ function cmcExportTeamsDetectionDiag(){
       +Object.keys(bySignature).sort().map(function(s){
         return s+" ("+bySignature[s].length+" emps): "+bySignature[s].join(", ");
       }).join("\n")
+      +"\n\n=== GROUPES PAR (FAMILLE:cycle:offset:firstWork) — vraie clé d'équipe (v9.773) ===\n"
+      +Object.keys(bySignatureWithFam).sort().map(function(s){
+        return s+" ("+bySignatureWithFam[s].length+" emps): "+bySignatureWithFam[s].join(", ");
+      }).join("\n")
+      +"\n\n=== MÉMOIRE CROSS-MOIS (emps avec teamHistory pour d'autres mois — Kevin « encore une memoir mai/juin ») ===\n"
+      +"Total emps avec teamHistory d'autres mois : "+crossMonthCount+"\n"
+      +(crossMonthCount>0?"  → "+crossMonthSamples.join("\n  → ")+(crossMonthCount>10?"\n  → … +"+(crossMonthCount-10)+" autres":""):"  (aucun — pas de mémoire mai/juin)")
       +"\n\n=== EMPS SKIPPED (pas dans algo) ===\n"
       +empAnalysis.filter(function(a){return a.skipReason;}).map(function(a){
         return a.name.padEnd(28)+" → "+a.skipReason;
@@ -26393,10 +26425,13 @@ function cmcExportTeamsDetectionDiag(){
           +"avoir une équipe via PDF column ou fallback (visible au-dessus dans le détail).";
       })()
       +"\n\n=== DÉTAIL PAR EMP (signature + teamHistory final) ===\n"
+      +"Format : NOM  fam=X  cell=N  RH=[...]  R=[...]  cycle  offset  firstWork  sig  → teamHistory[mois]=X\n"
+      +"Note v9.773 : RH primaire, R fallback si aucun RH. Pour SBM standard RH+R adjacents (samedi+dimanche), seul RH est compté pour calc cycle.\n\n"
       +empAnalysis.filter(function(a){return !a.skipReason;}).map(function(a){
-        return a.name.padEnd(28)+" RH="+JSON.stringify(a.rhDays).padEnd(35)+" cycle="+a.cycle+" offset="+a.offset
+        return a.name.padEnd(28)+" fam="+a.family.padEnd(9)+" cell="+a.cellCount+" RH="+JSON.stringify(a.rhDays).padEnd(30)+" R="+JSON.stringify(a.rDays).padEnd(30)+" cycle="+a.cycle+" offset="+a.offset
           +" firstWork="+(a.firstWork||"?").padEnd(10)+" sig="+a.signature
-          +" → teamHistory["+key+"]="+(a.teamHistoryWritten||"(aucune)");
+          +" → teamHistory["+key+"]="+(a.teamHistoryWritten||"(aucune)")
+          +(a.otherMonths&&a.otherMonths.length?"  [autres mois: "+a.otherMonths.join(", ")+"]":"");
       }).join("\n");
 
     var modalId="cmcTeamsDiag_"+Date.now();
