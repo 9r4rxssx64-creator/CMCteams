@@ -2022,3 +2022,11 @@ Pour CHAQUE service manquant, Apex :
 ---
 
 > Si tu vois autre chose qui te demande une action manuelle non listée → screenshot-moi, je trouve l'automation.
+
+---
+## ⏳ ACTION EN ATTENTE (2026-05-30) — Merger la branche SEO/Legal/Apex
+**Pourquoi manuel** : proxy git sandbox ne propage pas mes pushes + GitHub MCP hors-ligne + main protégé (cf CLAUDE.md lesson #78). Ce n'est pas automatisable de mon côté cette session.
+**1 action, au choix (branche live `claude/seo-skill-install-2rdyZ`, merge = fast-forward sans conflit)** :
+- ▶️ Robot natif : https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/auto-merge-claude.yml → "Run workflow" → branche `claude/seo-skill-install-2rdyZ` → Run
+- ▶️ OU PR : https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/seo-skill-install-2rdyZ?expand=1 → Create pull request → Merge
+**Déblocage définitif futur** : reconnecter le GitHub MCP (config environnement Claude Code web) → je merge par API, zéro clic.

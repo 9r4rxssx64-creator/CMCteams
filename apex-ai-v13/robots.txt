@@ -1,0 +1,23 @@
+# APEX AI — robots.txt (vitrine publique)
+User-agent: *
+Allow: /
+
+# Crawlers IA explicitement bienvenus (GEO — citabilité ChatGPT / Perplexity / Claude / Google AI)
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-Web
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/sitemap.xml
