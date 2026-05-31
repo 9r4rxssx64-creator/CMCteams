@@ -272,6 +272,40 @@ describe('firebase massive coverage Jet 8', () => {
       fetchSpy.mockRestore();
     });
 
+    it('SSE put multi_keys remote PLUS PETIT → SKIP (anti-perte coffre #41)', async () => {
+      localStorage.setItem('apex_v13_multi_keys', JSON.stringify([
+        { id: 'a', service: 'anthropic' },
+        { id: 'b', service: 'openai' },
+        { id: 'c', service: 'tavily' },
+      ]));
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      /* Remote périmé/vide (autre device) : 1 entrée < 3 locales → doit être ignoré */
+      sse._firePut('/apex_v13_multi_keys', [{ id: 'a', service: 'anthropic' }]);
+      const stored = JSON.parse(localStorage.getItem('apex_v13_multi_keys') ?? '[]') as unknown[];
+      expect(stored.length).toBe(3);
+      /* Cas extrême : objet vide / array vide ne vide PAS le coffre */
+      sse._firePut('/apex_v13_multi_keys', []);
+      const stored2 = JSON.parse(localStorage.getItem('apex_v13_multi_keys') ?? '[]') as unknown[];
+      expect(stored2.length).toBe(3);
+      fetchSpy.mockRestore();
+    });
+
+    it('SSE put multi_keys remote PLUS GRAND → appliqué (ajout légitime)', async () => {
+      localStorage.setItem('apex_v13_multi_keys', JSON.stringify([{ id: 'a', service: 'anthropic' }]));
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+      await firebase.init();
+      const sse = MockEventSource.instances[MockEventSource.instances.length - 1]!;
+      sse._firePut('/apex_v13_multi_keys', [
+        { id: 'a', service: 'anthropic' },
+        { id: 'b', service: 'openai' },
+      ]);
+      const stored = JSON.parse(localStorage.getItem('apex_v13_multi_keys') ?? '[]') as unknown[];
+      expect(stored.length).toBe(2);
+      fetchSpy.mockRestore();
+    });
+
     it('SSE put sur FB_LOCAL key → SKIP (jamais écrit)', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
       await firebase.init();
