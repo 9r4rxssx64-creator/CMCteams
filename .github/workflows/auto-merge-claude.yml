@@ -88,8 +88,11 @@ jobs:
               const m=html.match(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g) || [];
               let combined='';
               m.forEach(s=>{
+                const open=(s.match(/<script(?:\s[^>]*)?>/)||[''])[0];
+                if(/\bsrc\s*=/.test(open)) return;
+                if(/\btype\s*=\s*\"?(application\/(ld\+json|json)|importmap|text\/template)/i.test(open)) return;
                 const c=s.replace(/<script(?:\s[^>]*)?>/,'').replace(/<\/script>/,'');
-                if(c.trim() && !c.includes('src=')) combined+=c+'\n';
+                if(c.trim()) combined+=c+'\n';
               });
               fs.writeFileSync('/tmp/check_apex_chat.js',combined);
             "
