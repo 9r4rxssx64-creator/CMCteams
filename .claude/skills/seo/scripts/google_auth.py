@@ -93,7 +93,15 @@ def load_config() -> dict:
         config["service_account_path"] = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 
     if not config["api_key"]:
-        config["api_key"] = os.environ.get("GOOGLE_API_KEY")
+        # Fallback chain (Kevin 2026-05-30) : réutilise une clé Google `AIza...`
+        # déjà présente (Gemini / Firebase Web) si GOOGLE_API_KEY absent. Valide
+        # pour PageSpeed + CrUX si l'API est activée sur le projet Google Cloud.
+        for _env in ("GOOGLE_API_KEY", "PAGESPEED_API_KEY", "GEMINI_API_KEY", "FIREBASE_WEB_API_KEY"):
+            _val = os.environ.get(_env)
+            if _val:
+                config["api_key"] = _val
+                config["api_key_source"] = _env
+                break
 
     if not config["ga4_property_id"]:
         config["ga4_property_id"] = os.environ.get("GA4_PROPERTY_ID")
