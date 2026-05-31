@@ -1,0 +1,93 @@
+name: Apex Chat E2E — tests Playwright sur prod live
+
+# Lance Playwright Chromium + WebKit iPhone sur la prod après chaque déploiement
+# messaging-app/ (cf règle CLAUDE.md "TOUJOURS TESTER END-TO-END").
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'messaging-app/index.html'
+      - 'messaging-app/sw.js'
+      - 'messaging-app/lib/**'
+      - 'messaging-app/cgu.html'
+      - 'messaging-app/privacy.html'
+      - 'messaging-app/manifest.json'
+      - 'messaging-app/e2e/**'
+      - '.github/workflows/apex-chat-e2e.yml'
+  workflow_dispatch:
+  schedule:
+    # Cron quotidien à 04:00 UTC (5h Monaco) pour détecter régression silencieuse
+    - cron: '0 4 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Smoke tests Playwright
+    runs-on: ubuntu-latest
+    # Attend ~2 min après le push pour laisser GitHub Pages déployer
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright + browsers
+        working-directory: messaging-app/e2e
+        run: |
+          npm install --no-fund --no-audit
+          npx playwright install --with-deps chromium webkit
+
+      - name: Wait for GitHub Pages deploy propagation (2 min)
+        if: github.event_name == 'push'
+        run: sleep 120
+
+      - name: Pre-flight check (HTTP 200 sur prod)
+        run: |
+          URL="${APEX_CHAT_URL:-https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/}"
+          echo "Testing $URL"
+          for i in 1 2 3 4 5; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            if [ "$CODE" = "200" ]; then
+              echo "::notice::Prod OK (HTTP $CODE)"
+              exit 0
+            fi
+            echo "Tentative $i : HTTP $CODE — retry dans 20s…"
+            sleep 20
+          done
+          echo "::error::Prod injoignable après 5 retries"
+          exit 1
+
+      - name: Run Playwright smoke tests
+        working-directory: messaging-app/e2e
+        env:
+          APEX_CHAT_URL: https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/
+        run: npx playwright test --reporter=list,json
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            messaging-app/e2e/playwright-report/
+            messaging-app/e2e/results.json
+            messaging-app/e2e/test-results/
+          retention-days: 14
+
+      - name: Job summary
+        if: always()
+        working-directory: messaging-app/e2e
+        run: |
+          if [ -f results.json ]; then
+            echo "## 🎭 Apex Chat E2E — résultats" >> $GITHUB_STEP_SUMMARY
+            PASSED=$(python3 -c "import json; d=json.load(open('results.json')); print(sum(1 for s in d.get('suites',[]) for sp in s.get('specs',[]) if sp.get('ok')))")
+            FAILED=$(python3 -c "import json; d=json.load(open('results.json')); print(sum(1 for s in d.get('suites',[]) for sp in s.get('specs',[]) if not sp.get('ok')))")
+            echo "- ✅ Tests OK : $PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "- ❌ Tests KO : $FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "- 📦 Artefacts : voir 'playwright-report-${{ github.run_id }}'" >> $GITHUB_STEP_SUMMARY
+          fi
