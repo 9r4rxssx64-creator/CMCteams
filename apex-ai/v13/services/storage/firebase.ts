@@ -876,6 +876,29 @@ class Firebase {
         return;
       }
     }
+    /* v13.4.x ANTI-PERTE COFFRE (#41) — le coffre central `apex_v13_multi_keys`
+     * est un array de credentials. Un push Firebase périmé/vide (autre device,
+     * vieux snapshot, objet {} ) NE DOIT PAS écraser un coffre local plus rempli
+     * (Kevin "coffre vide, clés disparues, même réseau OK"). On refuse tout remote
+     * qui RÉDUIT le nombre d'entrées ; les ajouts légitimes (≥ local) passent. */
+    if (key === 'apex_v13_multi_keys') {
+      try {
+        const localRaw = localStorage.getItem(key);
+        if (localRaw) {
+          const localArr: unknown = JSON.parse(localRaw);
+          const remoteArr: unknown = typeof data === 'string' ? JSON.parse(data) : data;
+          const localN = Array.isArray(localArr) ? localArr.length : 0;
+          const remoteN = Array.isArray(remoteArr) ? remoteArr.length : 0;
+          if (localN > 0 && remoteN < localN) {
+            logger.warn(
+              'firebase',
+              `Skip multi_keys overwrite : remote=${remoteN} < local=${localN} (anti-perte coffre)`,
+            );
+            return;
+          }
+        }
+      } catch { /* parse fail → laisse passer le flux normal */ }
+    }
     /* v13.3.20 : si vault key reçue chiffrée, valider decrypt avant overwrite local.
      * Évite que SSE écrase une clé locale valide par une corruption Firebase. */
     const isVaultKey = key.endsWith('_key') || key.endsWith('_token');
