@@ -204,6 +204,10 @@ class Vault {
           } catch { /* quota */ }
         }
       } catch { /* skip */ }
+      /* v13.4.x — APRÈS la liste critique : restauration UNIVERSELLE de TOUTES les
+       * clés du shadow (tout service, pas seulement VAULT_KEYS_CRITICAL). C'est le
+       * filet qui récupère un coffre vidé par un reset/clear (Kevin "clés disparues"). */
+      try { await this.restoreAllShadowKeys(); } catch { /* skip */ }
     })();
     logger.info('vault-watch', '✅ Credentials watch started (storage event + poll 30s + boot restore)');
   }
@@ -1030,6 +1034,92 @@ class Vault {
         resolve(result);
       }
     });
+  }
+
+  /**
+   * v13.4.x FIX KEVIN "coffre vide / clés disparues, récurrent même réseau OK" :
+   * énumère TOUTES les clés présentes dans le shadow IDB (pas une liste codée en
+   * dur). Cause racine #2 : `VAULT_KEYS_CRITICAL` (~22 clés) ratait les 130+ autres
+   * services possibles → jamais restaurés même si présents dans le shadow survivant.
+   * getAllKeys()/getAll() retournent dans le MÊME ordre (clé asc) → indices alignés.
+   */
+  private async readAllShadowKeysFromIdb(): Promise<Map<string, string>> {
+    const result = new Map<string, string>();
+    if (!('indexedDB' in globalThis)) return result;
+    return new Promise<Map<string, string>>((resolve) => {
+      try {
+        const req = indexedDB.open('apex_v13_vault_shadow', 1);
+        req.onupgradeneeded = (): void => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('keys')) db.createObjectStore('keys');
+        };
+        req.onsuccess = (): void => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('keys', 'readonly');
+            const store = tx.objectStore('keys');
+            const keysReq = store.getAllKeys();
+            const valsReq = store.getAll();
+            tx.oncomplete = (): void => {
+              const ks = (keysReq.result ?? []) as IDBValidKey[];
+              const vs = (valsReq.result ?? []) as unknown[];
+              for (let i = 0; i < ks.length; i++) {
+                const k = ks[i];
+                const v = vs[i];
+                if (typeof k === 'string' && typeof v === 'string') result.set(k, v);
+              }
+              db.close();
+              resolve(result);
+            };
+            tx.onerror = (): void => { db.close(); resolve(result); };
+          } catch { db.close(); resolve(result); }
+        };
+        req.onerror = (): void => resolve(result);
+      } catch {
+        resolve(result);
+      }
+    });
+  }
+
+  /**
+   * v13.4.x — Restauration UNIVERSELLE du Coffre depuis le shadow IDB.
+   * Recopie dans localStorage TOUTE clé credential présente dans le shadow mais
+   * absente/vide localement, pour N'IMPORTE QUEL service — SAUF celles volontairement
+   * supprimées (`ax_credentials_deleted`). N'écrase JAMAIS une valeur existante
+   * (idempotent + safe). Retourne le nombre de clés restaurées. C'est le filet qui
+   * récupère le coffre vidé par un reset/clear, sans dépendre d'une liste à maintenir.
+   */
+  async restoreAllShadowKeys(): Promise<number> {
+    if (typeof localStorage === 'undefined') return 0;
+    let deleted: string[] = [];
+    try {
+      const raw = JSON.parse(localStorage.getItem('ax_credentials_deleted') ?? '[]') as unknown;
+      if (Array.isArray(raw)) deleted = raw.filter((x): x is string => typeof x === 'string');
+    } catch { /* ignore */ }
+    const isCredKey = (k: string): boolean =>
+      k === 'apex_v13_multi_keys' ||
+      ((k.startsWith('ax_')) && (
+        k.endsWith('_key') || k.endsWith('_token') || k.endsWith('_pat') ||
+        k.endsWith('_secret') || k.endsWith('_sk') || k === 'ax_shared_api_key' || k === 'ax_api_key'
+      ));
+    const shadow = await this.readAllShadowKeysFromIdb();
+    let restored = 0;
+    for (const [key, value] of shadow) {
+      if (!isCredKey(key)) continue;
+      if (deleted.includes(key)) continue;
+      const cur = localStorage.getItem(key);
+      if (cur && cur !== '') continue; /* déjà présent — ne jamais écraser */
+      if (!value) continue;
+      try {
+        localStorage.setItem(key, value);
+        restored++;
+        logger.info('vault-watch', `🔄 restore universel depuis shadow IDB : ${key}`);
+      } catch { /* quota */ }
+    }
+    if (restored > 0) {
+      logger.info('vault-watch', `✅ ${restored} clé(s) Coffre restaurée(s) depuis le shadow IDB (universel)`);
+    }
+    return restored;
   }
 
   /**

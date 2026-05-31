@@ -69,6 +69,19 @@ describe('ai-key-rotation — orchestrateur rotation clés API multi-provider', 
       expect(classifyError({})).toBe('unknown');
       expect(classifyError({ status: 418 })).toBe('unknown');
     });
+
+    it('Cloudflare infra (403/503 HTML) → network, PAS auth_invalid (anti DEAD 1h)', () => {
+      /* api.anthropic.com derrière Cloudflare : un 403/503 injecté par CF NE DOIT PAS
+       * être pris pour une mauvaise clé (sinon rotation + provider DEAD 1h). */
+      expect(classifyError({ status: 403, message: 'anthropic HTTP 403: <!DOCTYPE html> Attention Required! | Cloudflare cf-ray: 8a...' })).toBe('network');
+      expect(classifyError({ status: 503, message: 'openai HTTP 503: error code: 1015 cloudflare' })).toBe('network');
+      expect(classifyError({ status: 403, message: 'Just a moment... Bot Management' })).toBe('network');
+      expect(classifyError({ message: 'Sorry, you have been blocked — Cloudflare' })).toBe('network');
+    });
+
+    it('vrai 403 provider (sans marqueur CF) → reste auth_invalid', () => {
+      expect(classifyError({ status: 403, message: 'anthropic HTTP 403: {"error":{"message":"invalid x-api-key"}}' })).toBe('auth_invalid');
+    });
   });
 
   describe('handleFailure - rotation OK (1ère clé fail → 2ème essayée)', () => {

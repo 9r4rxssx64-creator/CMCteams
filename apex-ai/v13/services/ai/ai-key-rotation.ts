@@ -145,6 +145,16 @@ function providerToVaultService(provider: RotationProvider): string {
 export function classifyError(input: { status?: number | undefined; message?: string | undefined }): FailClassification {
   const { status, message } = input;
   const msg = (message ?? '').toLowerCase();
+  /* Cloudflare infra (Bot Management / challenge / 5xx edge) renvoie une page HTML
+   * avec ces marqueurs — c'est l'INFRA Cloudflare, PAS la clé API. api.anthropic.com
+   * & co sont derrière Cloudflare : pendant un incident CF, un 403/503 injecté par CF
+   * était pris pour `auth_invalid` → rotation de clés → provider marqué DEAD 1h →
+   * Apex restait en mode dégradé bien après le retour de CF (Kevin "ça bascule pas,
+   * aucun réseau", récurrent). On le classe `network` (transitoire) : pas de pénalité
+   * clé, pas de DEAD, retry/failover immédiat, recovery dès que CF répond 200. */
+  if (/cloudflare|cf-ray|attention required|just a moment|error code:\s*1\d{3}|you have been blocked|bot management|enable cookies/i.test(msg)) {
+    return 'network';
+  }
   if (status === 401 || status === 403 || /invalid.api.key|unauthor|forbidden/i.test(msg)) {
     return 'auth_invalid';
   }
@@ -175,6 +185,12 @@ class AIKeyRotation {
   constructor() {
     this.loadStats();
     this.loadDead();
+    /* Récupération immédiate au retour réseau : un incident réseau/Cloudflare a pu
+     * marquer des providers DEAD ; dès que le réseau revient, on leur redonne leur
+     * chance (sinon Apex restait dégradé jusqu'à 1h après le retour de CF). */
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('online', () => { this.clearAllDead(); });
+    }
   }
 
   /**
@@ -512,6 +528,17 @@ class AIKeyRotation {
     this.loadDead();
     this.deadCache?.delete(service);
     this.persistDead();
+  }
+
+  /** Efface TOUS les DEAD (récupération immédiate). Appelé au retour réseau (online). */
+  clearAllDead(): void {
+    this.loadDead();
+    if (this.deadCache && this.deadCache.size > 0) {
+      const n = this.deadCache.size;
+      this.deadCache.clear();
+      this.persistDead();
+      logger.info('ai-key-rotation', `${n} provider(s) DEAD effacé(s) (réseau revenu)`);
+    }
   }
 
   private recordFail(service: string, classification: FailClassification, reason: string): void {
