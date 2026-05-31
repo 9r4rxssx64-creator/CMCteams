@@ -2030,3 +2030,11 @@ Pour CHAQUE service manquant, Apex :
 - ▶️ Robot natif : https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/auto-merge-claude.yml → "Run workflow" → branche `claude/seo-skill-install-2rdyZ` → Run
 - ▶️ OU PR : https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/seo-skill-install-2rdyZ?expand=1 → Create pull request → Merge
 **Déblocage définitif futur** : reconnecter le GitHub MCP (config environnement Claude Code web) → je merge par API, zéro clic.
+
+---
+## 📌 MÉMO À FAIRE (priorité prochaine session) — Kevin 2026-05-30
+**Reconnecter le GitHub MCP** dans la config de l'environnement Claude Code web.
+→ Sans lui : chaque livraison multi-commits = course contre le proxy git (branche qui "disparaît", push qui ne propage pas, 10 tours "encore"). Cf CLAUDE.md lesson #78.
+→ Avec lui : je crée + merge les PR par API, zéro clic Kevin, zéro friction.
+Où : config environnement Claude Code (code.claude.com/docs → MCP / GitHub integration). Connecter le serveur GitHub MCP (scope repo 9r4rxssx64-creator/cmcteams).
+**Le merge SEO/Legal/Apex de ce jour : ✅ FAIT (en prod sur main).**
