@@ -1,6 +1,13 @@
 {
-  "_comment": "MCP servers pour le skill SEO (claude-seo) — extensions GRATUITES uniquement. Aucune clé en clair : expansion ${ENV_VAR}. Le serveur se connecte automatiquement dès que la variable d'environnement est présente (sinon ignoré sans casser). Payants NON inclus (DataForSEO, Ahrefs, SE Ranking, Profound).",
+  "_comment": "MCP servers du repo — chargés AUTOMATIQUEMENT à chaque session Claude Code web (font partie du clone, cf doc code.claude.com). Aucune clé en clair : expansion ${ENV_VAR}, à définir dans les variables d'environnement Claude Code web. Un serveur dont la variable manque échoue à se connecter sans casser les autres. (1) GitHub MCP = merges/PR autonomes (répare le blocage proxy, lesson #78/#79) — requiert GH_TOKEN (PAT fine-grained scope repo: Contents RW + Pull requests RW). (2) SEO extensions GRATUITES (nanobanana, firecrawl).",
   "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GH_TOKEN}"
+      }
+    },
     "nanobanana-mcp": {
       "command": "npx",
       "args": ["-y", "@ycse/nanobanana-mcp@1.1.1"],
