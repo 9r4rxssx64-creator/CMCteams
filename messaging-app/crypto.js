@@ -13,6 +13,8 @@
   try {
     // Le module ESM expose lui-même window.ApexCrypto via son init bottom.
     await import('./lib/crypto-core.js');
+    // Étape A E2E : key-vault expose window.ApexVault (wrap/unwrap clé privée par PIN).
+    await import('./lib/key-vault.js');
     if (typeof window !== 'undefined' && window.ApexCrypto) {
       // Self-test optionnel (legacy URL hash #crypto-test)
       if (window.location && window.location.hash === '#crypto-test') {
