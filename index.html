@@ -19451,7 +19451,7 @@ function vPit(){
       var col=a.level==="warn"?"#ff8080":(a.ghost?"#9ac6ff":"#ffdc40");
       var action="";
       if(a.ghost&&a.uid&&a.tid){
-        action=' <button onclick="pitAction(\'assignEmp\',{tid:\''+a.tid+'\',uid:\''+a.uid+'\'})" style="margin-left:6px;padding:2px 8px;background:'+col+'33;border:1px solid '+col+';color:'+col+';border-radius:5px;font-size:11px;cursor:pointer;font-weight:800">Assigner \u2192</button>';
+        action=' <button onclick="pitAction(\'assignEmp\',{tid:\''+_cmcSafeId(a.tid)+'\',uid:\''+_cmcSafeId(a.uid)+'\'})" style="margin-left:6px;padding:2px 8px;background:'+col+'33;border:1px solid '+col+';color:'+col+';border-radius:5px;font-size:11px;cursor:pointer;font-weight:800">Assigner \u2192</button>';
       }else if(a.tid&&a.level==="info"&&!a.ghost){
         action=' <button onclick="pitAction(\'rotateNow\',{tid:\''+a.tid+'\'})" style="margin-left:6px;padding:2px 8px;background:'+col+'33;border:1px solid '+col+';color:'+col+';border-radius:5px;font-size:11px;cursor:pointer;font-weight:800">Rotation \u2192</button>';
       }
@@ -19555,13 +19555,13 @@ function vPit(){
     openTables.slice(0,3).forEach(function(tid){
       var t=live.tables[tid];
       if(empMatchesJeu(e,t.jeu)){
-        h+='<button onclick="pitAction(\'assignEmp\',{tid:\''+tid+'\',uid:\''+e.id+'\'})" style="flex:1;min-width:50px;padding:3px 6px;background:rgba(90,170,112,.18);border:1px solid rgba(90,170,112,.4);color:#8acc90;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">\u2192'+tid+'</button>';
+        h+='<button onclick="pitAction(\'assignEmp\',{tid:\''+_cmcSafeId(tid)+'\',uid:\''+_cmcSafeId(e.id)+'\'})" style="flex:1;min-width:50px;padding:3px 6px;background:rgba(90,170,112,.18);border:1px solid rgba(90,170,112,.4);color:#8acc90;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">\u2192'+tid+'</button>';
       }
     });
     h+='</div><div style="display:flex;gap:2px;flex-wrap:wrap;font-size:10px">';
     ["break","malade","formation","libre"].forEach(function(s){
       var lbl={break:"\u2615 Pause",malade:"\ud83e\udd12 Mal",formation:"\ud83c\udf93 Form",libre:"\ud83c\udfe0 Lib\u00e9rer"}[s];
-      h+='<button onclick="pitAction(\'setStatut\',{uid:\''+e.id+'\',s:\''+s+'\'})" style="flex:1;padding:3px 4px;background:rgba(120,120,140,.18);border:1px solid rgba(150,150,170,.35);color:#c0c0d0;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer">'+lbl+'</button>';
+      h+='<button onclick="pitAction(\'setStatut\',{uid:\''+_cmcSafeId(e.id)+'\',s:\''+_cmcSafeId(s)+'\'})" style="flex:1;padding:3px 4px;background:rgba(120,120,140,.18);border:1px solid rgba(150,150,170,.35);color:#c0c0d0;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer">'+lbl+'</button>';
     });
     h+='</div></div>';
   });
@@ -19582,7 +19582,7 @@ function vPit(){
         +'<span style="font-size:11px;font-weight:800;color:'+col+';white-space:nowrap">'+lbl+'</span>'
         +'<span style="flex:1;font-size:12px;color:#e0e8d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(e.name)+'</span>'
         +'<span style="font-size:10px;color:#8aa088;white-space:nowrap">'+(mins<60?mins+"m":Math.floor(mins/60)+"h")+'</span>'
-        +'<button onclick="pitAction(\'setStatut\',{uid:\''+uid+'\',s:\'present\'})" style="padding:2px 6px;background:rgba(90,170,112,.25);border:1px solid rgba(90,170,112,.5);color:#8acc90;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">\u21bb</button>'
+        +'<button onclick="pitAction(\'setStatut\',{uid:\''+_cmcSafeId(uid)+'\',s:\'present\'})" style="padding:2px 6px;background:rgba(90,170,112,.25);border:1px solid rgba(90,170,112,.5);color:#8acc90;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">\u21bb</button>'
         +'</div>';
     });
     h+='</div>';
