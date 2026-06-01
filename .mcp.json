@@ -3,10 +3,7 @@
   "mcpServers": {
     "github": {
       "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer ${GH_TOKEN}"
-      }
+      "url": "https://api.githubcopilot.com/mcp/"
     },
     "nanobanana-mcp": {
       "command": "npx",
