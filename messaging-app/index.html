@@ -24,6 +24,11 @@
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(self), interest-cohort=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=()">
 <link rel="manifest" href="./manifest.json">
+<!-- Perf : preconnect aux endpoints critiques (latence DNS+TLS préchargée) -->
+<link rel="preconnect" href="https://apex-chat-api.9r4rxssx64.workers.dev" crossorigin>
+<link rel="preconnect" href="https://apex-push-worker.9r4rxssx64.workers.dev" crossorigin>
+<link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+<link rel="dns-prefetch" href="https://unpkg.com">
 <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
 <link rel="apple-touch-icon" href="./icons/icon.svg">
 <!-- v1.1.170 SEO complet : canonical, robots, Twitter Cards, og enrichi, JSON-LD -->
@@ -42,7 +47,7 @@
 <meta name="twitter:title" content="Apex Chat — Messagerie privée ultra-sécurisée">
 <meta name="twitter:description" content="Chiffrement militaire post-quantum. Serveur aveugle. IA Apex intégrée.">
 <meta name="twitter:image" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/og-image.svg">
-<meta name="twitter:image:alt" content="Apex Chat logo or">
+<meta name="twitter:image:alt" content="Apex Chat — Messagerie privée ultra-sécurisée">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",

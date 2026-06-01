@@ -31,7 +31,22 @@
 <meta name="twitter:title" content="CMCteams">
 <meta name="twitter:description" content="Planning Casino de Monaco">
 <meta name="twitter:image" content="https://9r4rxssx64-creator.github.io/CMCteams/icons/icon-512.png">
+<meta name="googlebot" content="noindex,nofollow">
 <link rel="canonical" href="https://9r4rxssx64-creator.github.io/CMCteams/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "CMCteams",
+  "url": "https://9r4rxssx64-creator.github.io/CMCteams/",
+  "description": "Gestion des plannings et shifts du Casino de Monaco (SBM) : import PDF, détection automatique des équipes, congés, chat interne.",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "iOS, Android, Web",
+  "inLanguage": "fr",
+  "browserRequirements": "Requires JavaScript",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+}
+</script>
 <link rel="alternate" hreflang="fr" href="https://9r4rxssx64-creator.github.io/CMCteams/">
 <link rel="alternate" hreflang="en" href="https://9r4rxssx64-creator.github.io/CMCteams/">
 <link rel="alternate" hreflang="it" href="https://9r4rxssx64-creator.github.io/CMCteams/">
@@ -60,7 +75,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>CMC Teams</title>
+<title>CMCteams — Planning & gestion d'équipes Casino de Monaco (SBM)</title>
 <!-- v9.396 \u2014 Sentry monitoring (Loader Script, lazy-loaded, gratuit 5k events/mois) -->
 <link rel="preconnect" href="https://js-de.sentry-cdn.com" crossorigin>
 <link rel="dns-prefetch" href="https://o0.ingest.sentry.io">
@@ -5404,7 +5419,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.773";
+var APP_VER="v9.776";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11118,8 +11133,7 @@ function dc(){
   }
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   if(A.view==="import")setTimeout(function(){if(typeof renderImportRollbackBanner==="function")renderImportRollbackBanner();},50);
-  }catch(ex){console.warn("dc() error:",ex);}
-  _dcRunning=false;
+  }catch(ex){console.warn("dc() error:",ex);}finally{_dcRunning=false;}
 }
 // v9.58 — dc() debouncé via rAF pour éviter le scintillement lors de
 // rafales SSE Firebase (imports massifs : N clés reçues en cascade → 1 seul dc()).
@@ -13421,7 +13435,7 @@ function cmcDrillEmpsKpi(kind){
         icon:e.senior?"⭐":"👤",
         label:label.trim()||e.name||e.id,
         value:(e.team||"—")+(reg.poste?" · "+reg.poste:""),
-        onClick:"function(){cmcCloseDrillModal();editEmpId='"+e.id+"';sv('employees');}"
+        onClick:"function(){cmcCloseDrillModal();editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees');}"
       };
     });
     cmcDrillIntoModal({
@@ -15784,22 +15798,22 @@ function vLoginStep0(){
       <div style="font-size:14px;color:#8ab888;letter-spacing:4px;text-transform:uppercase;margin-top:6px">Casino de Monaco</div>
     </div>
     <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">${t("lastName")} *</div>
-    <input id="liNom" class="inp" type="text" placeholder="ex. DUPONT" autocapitalize="characters" autocomplete="family-name" list="liNomList"
+    <input id="liNom" class="inp" type="text" placeholder="ex. DUPONT" aria-label="Nom de famille" autocapitalize="characters" autocomplete="family-name" list="liNomList"
       style="text-transform:uppercase;margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liPrenom').focus()">
     <datalist id="liNomList">`+(function(){var seen={},opts=[];A.employees.forEach(function(e){var n=(e.name||"").split(" ")[0];if(n&&!seen[n]){seen[n]=1;opts.push('<option value="'+esc(n)+'">');}});return opts.join("");})()+`</datalist>
     <div style="font-size:15px;color:#a0c898;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700">${t("firstName")} *</div>
-    <input id="liPrenom" class="inp" type="text" placeholder="ex. Adrien" autocomplete="off"
+    <input id="liPrenom" class="inp" type="text" placeholder="ex. Adrien" aria-label="Prénom" autocomplete="off"
       style="margin-bottom:8px"
       onkeydown="if(event.key==='Enter')document.getElementById('liMat').focus()">
     <div style="font-size:15px;color:#e09848;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">${t("matricule")} * <span style="font-weight:600;color:#b0ccb0;text-transform:none;letter-spacing:0">(${t("firstConnection")})</span></div>
     <div style="font-size:14px;color:#b0ccb0;margin-bottom:6px">Format U00001</div>
     <input id="liMat" class="inp" type="text" placeholder="ex. U00071"
-      autocapitalize="characters" autocomplete="off"
+      aria-label="Matricule SBM (format U00001)" autocapitalize="characters" autocomplete="off"
       style="font-size:16px;letter-spacing:3px;font-family:monospace;text-transform:uppercase;margin-bottom:10px;background:rgba(5,16,10,.20);border-color:rgba(201,162,39,.15)"
       onkeydown="if(event.key==='Enter')document.getElementById('liMail').focus()">
     <div style="font-size:14px;color:#a0cca0;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${t("email")}</div>
-    <input id="liMail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" autocomplete="email"
+    <input id="liMail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" aria-label="Adresse e-mail (optionnel)" autocomplete="email"
       style="margin-bottom:10px" onkeydown="if(event.key==='Enter')step1()">
     <div id="lerr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px"></div>
     <button class="btn gold" onclick="step1()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">${t("continue")} &nbsp;\u2192</button>
@@ -16637,7 +16651,7 @@ function globalSearch(q){
   }
   // Employés
   A.employees.filter(function(e){return e.name.toLowerCase().indexOf(ql)>=0||e.id.toLowerCase().indexOf(ql)>=0;}).slice(0,5).forEach(function(e){
-    results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+e.id+"';sv('employees')"});
+    results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees')"});
   });
   // Codes horaires
   Object.keys(CODES).filter(function(c){return c.toLowerCase().indexOf(ql)>=0||CODES[c].l.toLowerCase().indexOf(ql)>=0;}).slice(0,3).forEach(function(c){
