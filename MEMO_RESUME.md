@@ -3146,3 +3146,19 @@ Branche claude/seo-skill-install-2rdyZ. PR/merge en attente reconnexion GitHub M
 ⛔ **Merge bloqué (infra, pas contenu)** : proxy git 127.0.0.1 ne propage pas les pushes → branche claude/seo-skill-install-2rdyZ s'évapore entre tours ; push direct main = 403 (protégé) ; GitHub MCP absent. Cf CLAUDE.md lesson #78.
 ✅ Merge local prêt = 69eba0d (superset origin/main + 11 commits, conflits résolus en faveur main v9.772). PR/dispatch = fast-forward sans conflit.
 ⏳ Action Kevin : Actions → auto-merge-claude.yml → Run workflow → branche `claude/seo-skill-install-2rdyZ` (le robot natif merge), OU Create PR + Merge. main local réaligné sur origin/main (pas de divergence).
+
+---
+## ✅ 2026-05-30 — Merge RÉUSSI + MÉMO friction GitHub
+Branche claude/seo-skill-install-2rdyZ MERGÉE sur main (f4d4a69→ff870259) via Create PR (mobile) → bot auto-merge-claude.yml → cleanup branche.
+Contenu en prod : SEO Apex vitrine + claude-for-legal (151 skills) + SEO/Google APIs + docs.
+LEÇON : la "disparition" finale de la branche = merge+cleanup réussi, PAS une perte (cf CLAUDE.md lesson #78 résolue).
+
+---
+## 2026-05-31 — Découverte : proxy git ≠ vrai GitHub (lesson #79)
+- Kevin voit vrai main = b38e20e5 ; mon proxy ls-remote disait 6b1ca9b4 (commit fantôme #523). Le proxy est EN AVANCE / désynchronisé.
+- VÉRITÉ UNIQUE = WebFetch raw.githubusercontent.com/<repo>/<branche>/<fichier>. Confirmé : llms.txt sur vrai main ✅ (les 3 features VRAIMENT livrées) ; mémo PAS sur vrai main ; mes pushes branche n'atteignent pas le vrai GitHub de façon fiable.
+- GitHub MCP toujours absent (même après autorisation app GitHub + session fraîche) → intégration au niveau clone/proxy seulement dans cet env Claude Code web.
+- Mémo (doc) rebasé proprement sur b38e20e5 (commit 31c094cc3) ; reste à merger si la branche atteint le vrai GitHub.
+
+---
+## ➡️ REPRISE : voir REPRISE_HANDOFF.md (handoff complet 2026-06-01 — état features en prod, doc en attente, blocage GitHub MCP lessons #78-80, modèle de livraison qui marche, procédure nouvelle branche).

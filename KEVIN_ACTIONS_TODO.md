@@ -2030,3 +2030,30 @@ Pour CHAQUE service manquant, Apex :
 - ▶️ Robot natif : https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/auto-merge-claude.yml → "Run workflow" → branche `claude/seo-skill-install-2rdyZ` → Run
 - ▶️ OU PR : https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/seo-skill-install-2rdyZ?expand=1 → Create pull request → Merge
 **Déblocage définitif futur** : reconnecter le GitHub MCP (config environnement Claude Code web) → je merge par API, zéro clic.
+
+---
+## 📌 MÉMO À FAIRE (priorité prochaine session) — Kevin 2026-05-30
+**Reconnecter le GitHub MCP** dans la config de l'environnement Claude Code web.
+→ Sans lui : chaque livraison multi-commits = course contre le proxy git (branche qui "disparaît", push qui ne propage pas, 10 tours "encore"). Cf CLAUDE.md lesson #78.
+→ Avec lui : je crée + merge les PR par API, zéro clic Kevin, zéro friction.
+Où : config environnement Claude Code (code.claude.com/docs → MCP / GitHub integration). Connecter le serveur GitHub MCP (scope repo 9r4rxssx64-creator/cmcteams).
+**Le merge SEO/Legal/Apex de ce jour : ✅ FAIT (en prod sur main).**
+
+---
+## 🔎 2026-05-31 — État vérifié sur le VRAI GitHub (pas le proxy)
+- ✅ Les 3 features SONT en prod sur le vrai main (vérifié WebFetch raw : apex-ai-v13/llms.txt présent).
+- ⏳ Reste le commit mémo (doc) — pas encore sur le vrai GitHub (mes pushes branche ne propagent pas de façon fiable via le proxy sandbox).
+- 🔑 Déblocage durable = GitHub MCP. CONFIRMÉ non chargé même après ton autorisation de l'app GitHub + session neuve → c'est une limite de l'environnement (intégration au niveau clone/proxy, pas d'outils mcp__github__). Action possible côté toi : recréer/relancer l'environnement Claude Code web, OU vérifier dans les réglages de l'environnement (pas "Connecteurs") qu'un serveur MCP GitHub est activable. Sinon : modèle "je prépare, tu merges en 1 clic" (qui a marché pour les 3 features).
+
+---
+## ⏳ 2026-06-01 — GitHub MCP toujours pas chargé (lesson #80)
+État vérifié (2 sessions fraîches) : `.mcp.json` correct (github URL-seule, sans header) ✅ MAIS aucun outil mcp__github__ chargé.
+Hypothèse : les Coffres d'identifiants de platform.claude.com (agent Apex AI / apex-ai-env) ≠ sessions Claude Code web (claude.ai/code, CMCteams) = 2 produits séparés. Le Coffre n'alimente pas les sessions CMCteams.
+QUESTION CLÉ pour Kevin : tes sessions CMCteams partent de **claude.ai/code** ou **platform.claude.com** ? Y a-t-il, dans claude.ai/code, une section credentials/MCP distincte où rattacher le GitHub ?
+En attendant : modèle qui MARCHE = je prépare le diff → tu édites/merges sur github.com (comme les 3 features + PR #530).
+
+---
+## ⏳ 2026-06-01 (fin) — 2 micro-actions GitHub (optionnelles, non urgentes)
+1. **Nettoyer `.mcp.json` sur main** : éditer https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.mcp.json → ligne url github : retirer `<` et `>` → `"url": "https://api.githubcopilot.com/mcp/"` → Commit to main. (Cosmétique : n'affecte ni l'app ni les features ; utile seulement pour un futur github MCP.)
+2. **Fermer la PR #532** (coincée : branche supprimée + conflit). Ses apports uniques = doc, non essentiels.
+RAPPEL : les 3 features sont en prod. Le blocage GitHub MCP est une limite d'environnement (lessons #79/#80), pas un travail en attente.

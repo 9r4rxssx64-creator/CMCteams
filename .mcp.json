@@ -1,5 +1,5 @@
 {
-  "_comment": "MCP servers du repo — chargés à chaque session Claude Code web. SEO: nanobanana + firecrawl (${ENV_VAR}). github = serveur MCP distant : le credential est fourni AUTOMATIQUEMENT par le Coffre d'identifiants <platform.claude.com> matché sur l'URL <api.githubcopilot.com> (PAS de header ici, sinon ça casse l'injection).",
+  "_comment": "MCP servers du repo — charges AUTOMATIQUEMENT a chaque session Claude Code web (font partie du clone). Expansion ${ENV_VAR} via variables d'environnement / Coffres d'identifiants. github = serveur MCP distant : le credential est fourni par le Coffre matche sur l'URL api.githubcopilot.com (PAS de header ici). SEO: nanobanana + firecrawl (gratuits, ignores si la cle manque).",
   "mcpServers": {
     "github": {
       "type": "http",

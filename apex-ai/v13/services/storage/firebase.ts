@@ -648,7 +648,13 @@ class Firebase {
       return;
     }
     try {
-      const res = await fetch(`${this.url}/apex/${encodeURIComponent(key)}.json`, {
+      /* v13.4.278 (FIX Kevin "il perd mes infos / backup ne marche pas") :
+       * encoder PAR SEGMENT pour préserver les `/` comme séparateurs de sous-arbre
+       * Firebase. Avant `encodeURIComponent(key)` transformait `vault_backup/uid/key`
+       * en clé PLATE `vault_backup%2Fuid%2Fkey` → listAll lisant `vault_backup/uid`
+       * ne trouvait jamais ses enfants → 0 clé restaurée. Sûr pour les clés FB_FIX
+       * (sans `/` → comportement identique). */
+      const res = await fetch(`${this.url}/apex/${key.split('/').map(encodeURIComponent).join('/')}.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idempotencyKey },
         body: JSON.stringify(value),
@@ -745,7 +751,9 @@ class Firebase {
   async read<T>(key: string): Promise<T | null> {
     if (!this.connected) return null;
     try {
-      const res = await fetch(`${this.url}/apex/${encodeURIComponent(key)}.json`, {
+      /* v13.4.278 : encodage par segment (cf. write) — préserve les `/` pour lire
+       * un vrai sous-arbre (ex listAll `vault_backup/<uid>` → ses enfants). */
+      const res = await fetch(`${this.url}/apex/${key.split('/').map(encodeURIComponent).join('/')}.json`, {
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) return null;
