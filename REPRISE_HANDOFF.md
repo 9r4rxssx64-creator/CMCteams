@@ -87,3 +87,8 @@ Reconnecter/rattacher le **GitHub MCP** au runtime des sessions **claude.ai/code
 
 ### Verdict
 Chantier infra GitHub MCP = bloqué par 2 murs cumulés : (a) proxy git non-propageant (lesson #79), (b) GitHub MCP non exposé aux sessions claude.ai/code (lesson #80). Le SEUL canal fiable vers le vrai GitHub = **édition/merge manuels par Kevin sur github.com**. Pour toute prochaine livraison : modèle « je prépare le diff → Kevin applique sur github.com ».
+
+---
+## 9. ✅ RÉSOLU (2026-06-01 17:22) — main .mcp.json nettoyé
+Kevin a édité `.mcp.json` directement sur main (github.com) → url github = `"https://api.githubcopilot.com/mcp/"` PROPRE (sans `<>`). Confirmé par sa capture live du fichier rendu sur main (le endpoint raw.githubusercontent peut encore montrer l'ancienne version ~15 min = cache). `.mcp.json` est donc valide sur main (3 serveurs : github, nanobanana, firecrawl).
+Restant (optionnel) : fermer la PR #532 (coincée, apports = doc). RAS sinon — 3 features en prod, .mcp.json propre.
