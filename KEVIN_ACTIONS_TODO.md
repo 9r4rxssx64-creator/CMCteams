@@ -2051,3 +2051,9 @@ Où : config environnement Claude Code (code.claude.com/docs → MCP / GitHub in
 Hypothèse : les Coffres d'identifiants de platform.claude.com (agent Apex AI / apex-ai-env) ≠ sessions Claude Code web (claude.ai/code, CMCteams) = 2 produits séparés. Le Coffre n'alimente pas les sessions CMCteams.
 QUESTION CLÉ pour Kevin : tes sessions CMCteams partent de **claude.ai/code** ou **platform.claude.com** ? Y a-t-il, dans claude.ai/code, une section credentials/MCP distincte où rattacher le GitHub ?
 En attendant : modèle qui MARCHE = je prépare le diff → tu édites/merges sur github.com (comme les 3 features + PR #530).
+
+---
+## ⏳ 2026-06-01 (fin) — 2 micro-actions GitHub (optionnelles, non urgentes)
+1. **Nettoyer `.mcp.json` sur main** : éditer https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.mcp.json → ligne url github : retirer `<` et `>` → `"url": "https://api.githubcopilot.com/mcp/"` → Commit to main. (Cosmétique : n'affecte ni l'app ni les features ; utile seulement pour un futur github MCP.)
+2. **Fermer la PR #532** (coincée : branche supprimée + conflit). Ses apports uniques = doc, non essentiels.
+RAPPEL : les 3 features sont en prod. Le blocage GitHub MCP est une limite d'environnement (lessons #79/#80), pas un travail en attente.

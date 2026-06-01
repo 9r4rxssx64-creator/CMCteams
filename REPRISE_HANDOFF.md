@@ -76,3 +76,14 @@ Où `create_pull_request`/`merge_pull_request` sont-ils « chargés » ?
 
 ## 7. 📌 ACTION KEVIN (durable, hors session)
 Reconnecter/rattacher le **GitHub MCP** au runtime des sessions **claude.ai/code CMCteams** (pas seulement l'agent Apex AI sur platform.claude.com). Tant que ce n'est pas fait, garder le modèle §4 (qui fonctionne).
+
+---
+## 8. 🔴 DERNIER ÉTAT VÉRIFIÉ (2026-06-01, fin de session)
+- **VRAI main `.mcp.json` est CASSÉ** : la ligne url github = `"url": "<https://api.githubcopilot.com/mcp/>"` (avec `<>` parasites introduits lors d'une résolution de conflit web). Vérifié WebFetch raw. **Impact = nul sur l'app/Pages** (`.mcp.json` ne sert qu'aux sessions Claude Code web ; le github MCP ne se charge de toute façon pas — séparation produit, lesson #80). À nettoyer pour que le github MCP puisse marcher un jour.
+  - FIX = éditer `.mcp.json` directement sur main (github.com/.../edit/main/.mcp.json), retirer le `<` et le `>` de la ligne url → `"url": "https://api.githubcopilot.com/mcp/"` → Commit to main. NE PAS recoller tout le fichier (le recollage réintroduit les `<>`).
+- **PR #532** (`claude/seo-skill-install-2rdyZ` → main) : COINCÉE. La branche a été SUPPRIMÉE par github-actions[bot] alors que la PR était ouverte + auto-merge activé + conflit `.mcp.json`. → la fermer (Close) ; ses seuls apports uniques = fichiers doc (lessons #78-80, mémo, REPRISE_HANDOFF.md), non essentiels.
+- **Résolution locale faite** : commit merge `276aa907c` sur la branche locale (.mcp.json propre, sans `<>`) — mais NON propagé au vrai GitHub (proxy, lesson #79). Donc le fix propre n'est PAS sur main ; seul l'edit direct §8 le mettra.
+- ✅ **Inchangé et en prod** : les 3 features (SEO Apex, Avocat/Droit, SEO/Google). Rien à refaire.
+
+### Verdict
+Chantier infra GitHub MCP = bloqué par 2 murs cumulés : (a) proxy git non-propageant (lesson #79), (b) GitHub MCP non exposé aux sessions claude.ai/code (lesson #80). Le SEUL canal fiable vers le vrai GitHub = **édition/merge manuels par Kevin sur github.com**. Pour toute prochaine livraison : modèle « je prépare le diff → Kevin applique sur github.com ».
