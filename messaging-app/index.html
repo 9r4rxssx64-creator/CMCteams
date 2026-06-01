@@ -12705,8 +12705,19 @@ async function _boot(){
   $$('.bnav-btn').forEach(b => b.addEventListener('click', () => K.sv(b.dataset.view)));
 
   // Restaurer session
-  const user = lg('user', null);
-  const token = lg('token', null);
+  let user = lg('user', null);
+  let token = lg('token', null);
+  // FIX persistance (Kevin 2026-06 « il redemande code/PIN/autorisations ») :
+  // si le localStorage a été vidé (éviction iOS Safari/PWA, nettoyage) mais que
+  // le shadow IndexedDB survit, on restaure user+token depuis IDB → évite de
+  // redemander code + PIN + autorisations. Additif : ne restaure QUE si manquant.
+  if((!user || !token) && typeof idbGet === 'function'){
+    try{
+      const iu = await idbGet('user');
+      const it = await idbGet('token');
+      if(iu && it){ user = iu; token = it; ls('user', iu); ls('token', it); }
+    }catch(_){ /* best-effort */ }
+  }
   if(user && token){
     K.user = user; K.token = token;
     if(isKevinAdmin(user.real_name || user.pseudo)){
