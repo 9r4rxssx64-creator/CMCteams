@@ -1,3 +1,43 @@
+# Mémo de reprise — Audit 3 projets + fix Apex Chat auto-reconnexion (2026-06-01)
+
+## 📋 SESSION 2026-06-01 — Audit atomique 3 projets + déploiement Apex Chat
+
+Branche `claude/verifie-Ypr17`. **Mergée sur main** (PR #535, par Kevin) → fixes en prod.
+
+### Livré (audit + fixes, vérifiés)
+- **Audit atomique externe + SEO** des 3 projets (subagents //, scores MESURÉS) :
+  Apex v13 **86→88** (11859/0, tsc 0, Lighthouse 99/SEO 100), CMCteams **72→75** (469/0),
+  Apex Chat **64→68** (770/0). Rapport : `AUDIT_VERIFIE_2026-06-01.md`.
+- **Apex v13** : fix unique test cassé `cloudflare-status.test.ts` → suite 100% verte.
+- **Apex Chat** (en prod sur main) : claim « post-quantum » → exact (ECDH P-256+AES-GCM),
+  fix PIN proposé si profil complet sans PIN, **restauration session IDB au boot**
+  (→ Kevin confirme « il me reconnecte auto » = bug code/PIN/permissions RÉSOLU),
+  Étape A crypto (key-vault.js + tests, **DORMANTE** : import commenté dans crypto.js,
+  réactivable 1 ligne après validation device), coverage 100%, SEO (preconnect/llms.txt/twitter alt).
+- **CMCteams** : XSS recherche/drill neutralisé (whitelist id), robots dédup, dc() finally.
+- **CI** : `auto-merge-claude.yml` corrigé → merge via `gh pr merge` (PR API) au lieu de
+  `git push origin main` (cause GH013).
+
+### Décisions Kevin
+1. Claim post-quantum → **reformuler exact** (fait). 2. Firebase `cmc_pw` → durci au max
+sans backend (règles déjà au plafond ; vraie correction = PBKDF2/auth-worker, plan documenté,
+pas en aveugle). 3. Crypto E2E → **plan staged A→D** (Étape A faite+dormante, B/C/D documentées).
+
+### Reste / à suivre
+- **Bump version Apex Chat v1.1.170 → v1.1.171** : préparé (commit `fe0dc9fa`) mais NON mergé
+  (poussé après le merge PR + pipeline bloqué). Cosmétique (badge + bannière MAJ). À glisser au
+  prochain déploiement Apex Chat. Le code neuf est servi quand même (SW network-first).
+- **Apex Chat Étape B** (upload prekeys → E2E réel inter-pairs) : à câbler avec validation 2 devices.
+- Leçons session ajoutées CLAUDE.md **#79-#82** (deadlock merge solo-repo, coverage 100% code mort,
+  re-auth iOS = restore IDB au boot, version bump oublié).
+
+### Infra (mur connu)
+GitHub MCP intermittent + proxy git `127.0.0.1` (push « [new branch] » non fiable, branche
+auto-supprimée) + `main` protégé (PR requise). Merge final = action Kevin (PR) ou re-co MCP.
+Vérifier propagation via `git ls-remote`, jamais les tracking refs.
+
+---
+
 # Mémo de reprise — Parser-Tester T1 v0.7.1 / Apex v13.4.261 / CMC v9.731 (2026-05-28)
 
 ## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (5 gaps P1 + Convention SBM)
