@@ -1327,6 +1327,10 @@ if(!Object.entries)Object.entries=function(o){return Object.keys(o).map(function
 var MFR=["Janvier","F\u00e9vrier","Mars","Avril","Mai","Juin","Juillet","Ao\u00fbt","Septembre","Octobre","Novembre","D\u00e9cembre"];
 var DS=["D","L","M","M","J","V","S"];
 var AID="U11804";
+// v9.777 — Sécurité : sanitize d'un id employé/équipe avant injection dans une
+// string onclick/handler (défense XSS, complète le P0-SEC-2 / CLAUDE.md #80? non #79).
+// Les ids légitimes (U#####, U_TMP_*, équipes 1-8/r*/c*) sont [A-Za-z0-9_-] → inchangés.
+function _cmcSafeId(v){ return String(v==null?'':v).replace(/[^A-Za-z0-9_-]/g,''); }
 // v9.546 — getAID() fallback dynamique : si U11804 absent mais autre admin existe (chef + family="admin"), utilise celui-la
 function getAID(){
   try{
@@ -23734,7 +23738,7 @@ function vAccueil(){
       if(!fe)return;
       var fc=(pl[fe.id]||{})[tod]||"";
       var fci=CODES[fc]||{c:"#5a7060"};
-      h+='<div onclick="editEmpId=\''+fe.id+'\';sv(\'employees\')" style="flex-shrink:0;padding:8px 10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.15);border-radius:10px;cursor:pointer;text-align:center;min-width:65px">'
+      h+='<div onclick="editEmpId=\''+_cmcSafeId(fe.id)+'\';sv(\'employees\')" style="flex-shrink:0;padding:8px 10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.15);border-radius:10px;cursor:pointer;text-align:center;min-width:65px">'
         +empAvatarHtml(fe,28,tc(fe.team))
         +'<div style="font-size:12px;font-weight:700;color:#c0d8c0;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65px">'+esc(fe.name.split(" ")[0])+'</div>'
         +'<div style="font-size:11px;color:'+fci.c+';font-weight:700">'+(fc||"\u2014")+'</div>'
@@ -31407,8 +31411,8 @@ function vAudit(){
       '<div style="margin-top:2px;font-size:13px;color:#e06060">Aucun horaire !</div>';
     var bg=type==="sansHoraire"?"rgba(180,40,40,.12)":"rgba(180,120,0,.08)";
     var border=type==="sansHoraire"?"#c04040":"#c9a227";
-    var renameBtn=type==="absentDuPDF"?'<button onclick="auditRenameEmp(\''+e.id+'\',null)" style="margin-right:6px;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.5);border-radius:5px;padding:5px 8px;font-size:14px;color:#6a92c8;cursor:pointer">Renommer</button>'
-      +'<button onclick="auditMarkPresent(\''+e.id+'\')" style="margin-right:6px;background:rgba(58,138,80,.2);border:1px solid rgba(58,138,80,.5);border-radius:5px;padding:5px 8px;font-size:14px;color:#3a8a50;cursor:pointer">Présent \u2714</button>':'';
+    var renameBtn=type==="absentDuPDF"?'<button onclick="auditRenameEmp(\''+_cmcSafeId(e.id)+'\',null)" style="margin-right:6px;background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.5);border-radius:5px;padding:5px 8px;font-size:14px;color:#6a92c8;cursor:pointer">Renommer</button>'
+      +'<button onclick="auditMarkPresent(\''+_cmcSafeId(e.id)+'\')" style="margin-right:6px;background:rgba(58,138,80,.2);border:1px solid rgba(58,138,80,.5);border-radius:5px;padding:5px 8px;font-size:14px;color:#3a8a50;cursor:pointer">Présent \u2714</button>':'';
     return '<div style="margin-bottom:6px;padding:8px 10px;background:'+bg+';border-left:3px solid '+border+';border-radius:4px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between">'
       +'<div>'
@@ -31417,7 +31421,7 @@ function vAudit(){
       +schedHtml+sugHtml
       +'</div>'
       +'<div style="display:flex;align-items:center;flex-shrink:0">'+renameBtn
-      +'<button class="btn danger" onclick="auditDelEmp(\''+e.id+'\')" style="padding:5px 10px;font-size:14px">Supprimer</button>'
+      +'<button class="btn danger" onclick="auditDelEmp(\''+_cmcSafeId(e.id)+'\')" style="padding:5px 10px;font-size:14px">Supprimer</button>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -46523,7 +46527,7 @@ function vImportVerif(){
           var isWrong=c&&!_pCodes[c]&&cons&&_base(c)!==cons;
           var st=_cellStyle(c,tc,isWrong);
           html+='<td style="padding:2px;text-align:center;'+st+';border-radius:3px;cursor:'+(isWrong?"pointer":"default")+'"'
-            +(isWrong?' title="Consensus: '+cons+'" onclick="saveOv(\''+e.id+'\','+iy+','+im+','+d+',\''+cons+'\')"':'')
+            +(isWrong?' title="Consensus: '+cons+'" onclick="saveOv(\''+_cmcSafeId(e.id)+'\','+iy+','+im+','+d+',\''+cons+'\')"':'')
             +'>'+esc(c?(_base(c).length>5?_base(c).slice(0,4):_base(c)):"")+'</td>';
         }
         html+='</tr>';
