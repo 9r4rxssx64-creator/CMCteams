@@ -13,9 +13,9 @@
 <meta name="apple-mobile-web-app-title" content="Apex Chat">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
-<meta name="description" content="Apex Chat — Messagerie privée ultra-sécurisée avec IA Apex intégrée. Chiffrement militaire post-quantum, serveur aveugle.">
+<meta name="description" content="Apex Chat — Messagerie privée ultra-sécurisée avec IA Apex intégrée. Chiffrement de bout en bout AES-256, serveur aveugle.">
 <meta property="og:title" content="Apex Chat — Messagerie privée ultra-sécurisée">
-<meta property="og:description" content="Chiffrement militaire post-quantum. Serveur aveugle. IA Apex intégrée.">
+<meta property="og:description" content="Chiffrement de bout en bout AES-256. Serveur aveugle. IA Apex intégrée.">
 <meta property="og:image" content="./og-image.svg">
 <meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/">
 <!-- Sécurité : CSP + Referrer-Policy + X-Content-Type-Options + Permissions-Policy défense en profondeur -->
@@ -45,7 +45,7 @@
 <meta property="og:image:alt" content="Apex Chat — Messagerie privée ultra-sécurisée">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Apex Chat — Messagerie privée ultra-sécurisée">
-<meta name="twitter:description" content="Chiffrement militaire post-quantum. Serveur aveugle. IA Apex intégrée.">
+<meta name="twitter:description" content="Chiffrement de bout en bout AES-256. Serveur aveugle. IA Apex intégrée.">
 <meta name="twitter:image" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/og-image.svg">
 <meta name="twitter:image:alt" content="Apex Chat — Messagerie privée ultra-sécurisée">
 <script type="application/ld+json">
@@ -55,7 +55,7 @@
   "name": "Apex Chat",
   "alternateName": "Apex Chat — Messagerie privée",
   "url": "https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/",
-  "description": "Messagerie privée ultra-sécurisée avec chiffrement militaire post-quantum (PQXDH Signal Protocol). Serveur aveugle. IA Apex intégrée.",
+  "description": "Messagerie privée ultra-sécurisée avec chiffrement de bout en bout (ECDH P-256 + AES-GCM 256). Serveur aveugle. IA Apex intégrée.",
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
@@ -72,7 +72,7 @@
     "url": "https://9r4rxssx64-creator.github.io/CMCteams/"
   },
   "featureList": [
-    "Chiffrement E2E post-quantum (PQXDH)",
+    "Chiffrement E2E (ECDH P-256 + AES-GCM 256)",
     "Appels audio/vidéo P2P chiffrés",
     "Notifications push chiffrées",
     "Service Worker offline-ready",
@@ -86,7 +86,7 @@
 <script type="module" src="./lib/visio-mesh.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
-<title>Apex Chat — Messagerie privée ultra-sécurisée post-quantum</title>
+<title>Apex Chat — Messagerie privée ultra-sécurisée (E2E)</title>
 <style>
 :root{
   --ax-bg:#08080f;--ax-bg-2:#13131c;--ax-bg-3:#1a1a26;
@@ -543,7 +543,7 @@ if('serviceWorker' in navigator){
 <div id="splash" class="splash">
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
-  <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement militaire post-quantum</span></p>
+  <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
   <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.170</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
@@ -564,7 +564,7 @@ if('serviceWorker' in navigator){
 </header>
 
 <div class="security-banner h" id="security-banner">
-  🛡 <span class="key">Chiffrement militaire post-quantum</span> · Serveur aveugle 🛰
+  🛡 <span class="key">Chiffrement de bout en bout AES-256</span> · Serveur aveugle 🛰
 </div>
 
 <main id="app" tabindex="-1" role="main" aria-label="Application Apex Chat">
