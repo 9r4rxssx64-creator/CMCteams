@@ -1,19 +1,22 @@
 {
-  "_comment": "MCP servers pour le skill SEO (claude-seo) — extensions GRATUITES uniquement. Aucune clé en clair : expansion ${ENV_VAR}. Le serveur se connecte automatiquement dès que la variable d'environnement est présente (sinon ignoré sans casser). Payants NON inclus (DataForSEO, Ahrefs, SE Ranking, Profound).",
+  "_comment": "MCP servers du repo — chargés à chaque session Claude Code web (font partie du clone). Expansion ${ENV_VAR} via variables d'environnement Claude Code. GitHub MCP = merges/PR autonomes (requiert GH_TOKEN: PAT fine-grained Contents RW + Pull requests RW). SEO: nanobanana + firecrawl (gratuits).",
   "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "<https://api.githubcopilot.com/mcp/>",
+      "headers": {
+        "Authorization": "Bearer ${GH_TOKEN}"
+      }
+    },
     "nanobanana-mcp": {
       "command": "npx",
       "args": ["-y", "@ycse/nanobanana-mcp@1.1.1"],
-      "env": {
-        "GOOGLE_AI_API_KEY": "${GEMINI_API_KEY}"
-      }
+      "env": { "GOOGLE_AI_API_KEY": "${GEMINI_API_KEY}" }
     },
     "firecrawl-mcp": {
       "command": "npx",
       "args": ["-y", "firecrawl-mcp@3.11.0"],
-      "env": {
-        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
-      }
+      "env": { "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}" }
     }
   }
 }
