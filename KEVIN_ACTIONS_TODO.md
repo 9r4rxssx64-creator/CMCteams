@@ -2044,3 +2044,10 @@ Où : config environnement Claude Code (code.claude.com/docs → MCP / GitHub in
 - ✅ Les 3 features SONT en prod sur le vrai main (vérifié WebFetch raw : apex-ai-v13/llms.txt présent).
 - ⏳ Reste le commit mémo (doc) — pas encore sur le vrai GitHub (mes pushes branche ne propagent pas de façon fiable via le proxy sandbox).
 - 🔑 Déblocage durable = GitHub MCP. CONFIRMÉ non chargé même après ton autorisation de l'app GitHub + session neuve → c'est une limite de l'environnement (intégration au niveau clone/proxy, pas d'outils mcp__github__). Action possible côté toi : recréer/relancer l'environnement Claude Code web, OU vérifier dans les réglages de l'environnement (pas "Connecteurs") qu'un serveur MCP GitHub est activable. Sinon : modèle "je prépare, tu merges en 1 clic" (qui a marché pour les 3 features).
+
+---
+## ⏳ 2026-06-01 — GitHub MCP toujours pas chargé (lesson #80)
+État vérifié (2 sessions fraîches) : `.mcp.json` correct (github URL-seule, sans header) ✅ MAIS aucun outil mcp__github__ chargé.
+Hypothèse : les Coffres d'identifiants de platform.claude.com (agent Apex AI / apex-ai-env) ≠ sessions Claude Code web (claude.ai/code, CMCteams) = 2 produits séparés. Le Coffre n'alimente pas les sessions CMCteams.
+QUESTION CLÉ pour Kevin : tes sessions CMCteams partent de **claude.ai/code** ou **platform.claude.com** ? Y a-t-il, dans claude.ai/code, une section credentials/MCP distincte où rattacher le GitHub ?
+En attendant : modèle qui MARCHE = je prépare le diff → tu édites/merges sur github.com (comme les 3 features + PR #530).
