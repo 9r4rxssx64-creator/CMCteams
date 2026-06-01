@@ -1,12 +1,9 @@
 {
-  "_comment": "MCP servers du repo — chargés à chaque session Claude Code web (font partie du clone). Expansion ${ENV_VAR} via variables d'environnement Claude Code. GitHub MCP = merges/PR autonomes (requiert GH_TOKEN: PAT fine-grained Contents RW + Pull requests RW). SEO: nanobanana + firecrawl (gratuits).",
+  "_comment": "MCP servers du repo — chargés à chaque session Claude Code web. SEO: nanobanana + firecrawl (${ENV_VAR}). github = serveur MCP distant : le credential est fourni AUTOMATIQUEMENT par le Coffre d'identifiants <platform.claude.com> matché sur l'URL <api.githubcopilot.com> (PAS de header ici, sinon ça casse l'injection).",
   "mcpServers": {
     "github": {
       "type": "http",
-      "url": "<https://api.githubcopilot.com/mcp/>",
-      "headers": {
-        "Authorization": "Bearer ${GH_TOKEN}"
-      }
+      "url": "<https://api.githubcopilot.com/mcp/>"
     },
     "nanobanana-mcp": {
       "command": "npx",
