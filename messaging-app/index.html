@@ -11588,6 +11588,14 @@ K._postLogin = function(){
     // v1.1.170 : si autorisations système jamais demandées (ancien user
     // ou migration), propose le récap groupé une seule fois.
     setTimeout(() => {
+      // FIX (Kevin 2026-06 « je peux pas écrire le pin nulle part ») : profil
+      // complet MAIS pas de PIN (cas admin/fallback local qui a sauté l'onboarding)
+      // → proposer la création du PIN (onboarding n'affiche que le champ PIN car
+      // le nom est déjà rempli). Une seule fois : dès qu'un PIN existe, plus jamais.
+      if(!K._userPinExists() && typeof K._showOnboarding === 'function'){
+        K._showOnboarding({ reason: 'Crée ton code PIN pour sécuriser et déverrouiller Apex Chat.' });
+        return;
+      }
       if(K._requestAllPermissions && !lg('perms_bulk_done_v1', false)){
         K._requestAllPermissions();
       }
