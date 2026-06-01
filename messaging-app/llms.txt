@@ -1,0 +1,25 @@
+# Apex Chat
+
+> Messagerie privée ultra-sécurisée — chiffrement de bout en bout (E2E) ECDH P-256 + AES-GCM 256, serveur aveugle, IA Apex intégrée. PWA installable (iOS/Android/Web).
+
+Apex Chat est une application de messagerie privée orientée confidentialité. Le serveur ne peut pas lire le contenu des messages (chiffrement côté client). Authentification par magic-link et biométrie (Face ID / Touch ID via WebAuthn).
+
+## Fonctionnalités
+- Messages directs et de groupe chiffrés de bout en bout
+- Messages vocaux, sondages, partage de localisation, cartes de contact
+- Réactions, mentions, hashtags, snippets de code
+- Stories, lettres 24h, capsules temporelles
+- Appels audio/vidéo P2P (WebRTC)
+- IA intégrée : résumé, reformulation, recherche sémantique, smart-reply, traduction
+- Notifications push, paiement par QR
+
+## Pages
+- [Accueil](https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/) : application
+- [Conditions d'utilisation](https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/cgu.html)
+- [Politique de confidentialité](https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/privacy.html)
+
+## Technique
+- PWA (standalone, offline-ready via Service Worker)
+- Backend : Cloudflare Workers + D1 + Durable Objects + Queues
+- Chiffrement : WebCrypto (ECDH P-256, HKDF SHA-256, AES-GCM 256)
+- Auteur : Kevin DESARZENS

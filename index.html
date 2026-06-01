@@ -31,7 +31,6 @@
 <meta name="twitter:title" content="CMCteams">
 <meta name="twitter:description" content="Planning Casino de Monaco">
 <meta name="twitter:image" content="https://9r4rxssx64-creator.github.io/CMCteams/icons/icon-512.png">
-<meta name="robots" content="noindex,nofollow">
 <meta name="googlebot" content="noindex,nofollow">
 <link rel="canonical" href="https://9r4rxssx64-creator.github.io/CMCteams/">
 <script type="application/ld+json">
@@ -11134,8 +11133,7 @@ function dc(){
   }
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   if(A.view==="import")setTimeout(function(){if(typeof renderImportRollbackBanner==="function")renderImportRollbackBanner();},50);
-  }catch(ex){console.warn("dc() error:",ex);}
-  _dcRunning=false;
+  }catch(ex){console.warn("dc() error:",ex);}finally{_dcRunning=false;}
 }
 // v9.58 — dc() debouncé via rAF pour éviter le scintillement lors de
 // rafales SSE Firebase (imports massifs : N clés reçues en cascade → 1 seul dc()).
@@ -13437,7 +13435,7 @@ function cmcDrillEmpsKpi(kind){
         icon:e.senior?"⭐":"👤",
         label:label.trim()||e.name||e.id,
         value:(e.team||"—")+(reg.poste?" · "+reg.poste:""),
-        onClick:"function(){cmcCloseDrillModal();editEmpId='"+e.id+"';sv('employees');}"
+        onClick:"function(){cmcCloseDrillModal();editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees');}"
       };
     });
     cmcDrillIntoModal({
@@ -16653,7 +16651,7 @@ function globalSearch(q){
   }
   // Employés
   A.employees.filter(function(e){return e.name.toLowerCase().indexOf(ql)>=0||e.id.toLowerCase().indexOf(ql)>=0;}).slice(0,5).forEach(function(e){
-    results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+e.id+"';sv('employees')"});
+    results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees')"});
   });
   // Codes horaires
   Object.keys(CODES).filter(function(c){return c.toLowerCase().indexOf(ql)>=0||CODES[c].l.toLowerCase().indexOf(ql)>=0;}).slice(0,3).forEach(function(c){
