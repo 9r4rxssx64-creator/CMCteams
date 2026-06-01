@@ -39,6 +39,15 @@ export const PROXY_PROVIDERS = [
   'opn-lego',
   'jwt',
   'emailjs',
+  /* v13.4.278 (Kevin "Apex doit avoir accès à tous mes secrets GitHub") :
+   * alignés sur PROXY_MAP du worker (sync-apex-secrets-to-cf-worker.yml). */
+  'xai',
+  'mistral',
+  'cohere',
+  'together',
+  'finnhub',
+  'pexels',
+  'replicate',
 ] as const;
 
 export type ProxyProvider = (typeof PROXY_PROVIDERS)[number];
