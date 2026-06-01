@@ -479,6 +479,32 @@ export function formatRelativeTime(ts: number): string {
 
 let activeQuery = '';
 
+/** v13.4.x — vrai si ≥1 clé credential flat (ax_*_key/_token/_secret/_sk) existe en
+ * localStorage (hors clés volontairement supprimées). Détecte un Coffre dont l'index
+ * central (apex_v13_multi_keys) est vide alors que les clés sont bien présentes —
+ * cas Kevin "clés en mémoire mais pas dans le coffre" (post-restore shadow IDB). */
+function hasFlatVaultKeys(): boolean {
+  try {
+    let deleted: string[] = [];
+    try {
+      const raw = JSON.parse(localStorage.getItem('ax_credentials_deleted') ?? '[]') as unknown;
+      if (Array.isArray(raw)) deleted = raw.filter((x): x is string => typeof x === 'string');
+    } catch { /* ignore */ }
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith('ax_')) continue;
+      if (!(k.endsWith('_key') || k.endsWith('_token') || k.endsWith('_secret') || k.endsWith('_sk'))) continue;
+      if (deleted.includes(k)) continue;
+      const v = localStorage.getItem(k);
+      if (v && v.length > 2) return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+/** Anti-boucle : une seule tentative de reconstruction auto de l'index par session. */
+let vaultRebuildAttempted = false;
+
 export function render(rootEl: HTMLElement): void {
   /* P1-6 : cleanup ancien scope avant re-render */
   activeVaultScope?.cleanup();
@@ -491,6 +517,25 @@ export function render(rootEl: HTMLElement): void {
   /* Wire admin feature toggle (Kevin règle 2026-05-04 — ON/OFF tout). */
   const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
   if (!guardFeatureEnabled('admin.vault', rootEl, uid)) return;
+
+  /* v13.4.x AUTO-RECOVER (Kevin "clés en mémoire mais pas dans le coffre" + "tout auto") :
+   * si l'index central est vide MAIS des clés flat ax_*_key existent (restaurées depuis
+   * le shadow IDB après un reset/clear), reconstruire l'index puis re-render. Kevin est
+   * loggé ici → passphrase prête. Garde anti-boucle : 1 seule tentative par session. */
+  if (!vaultRebuildAttempted && buildCredentialDisplays().length === 0 && hasFlatVaultKeys()) {
+    vaultRebuildAttempted = true;
+    rootEl.innerHTML = `<div style="padding:40px;text-align:center"><h2 class="ax-gs-372">🔓 Restauration du Coffre…</h2><p class="ax-gs-226">Récupération de tes clés depuis la sauvegarde locale, un instant.</p></div>`;
+    void (async () => {
+      try {
+        const r = await multiKeyVault.migrateLegacyFlatKeys();
+        logger.info('feature-vault', `auto-rebuild index : ${r.migrated} clés réinjectées dans le coffre`);
+      } catch (err: unknown) {
+        logger.warn('feature-vault', 'auto-rebuild migrate failed', { err });
+      }
+      render(rootEl);
+    })();
+    return;
+  }
 
   const stats = computeStats();
 
