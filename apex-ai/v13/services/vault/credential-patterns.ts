@@ -956,6 +956,38 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
   },
 ];
 
+/* v13.4.278 (Kevin "auto détection jusqu'à trouver le bon") — anti-faux-positif
+ * systémique. Spécificité d'un pattern = longueur du préfixe LITTÉRAL après `^`
+ * (avant toute classe / quantificateur / lookahead).
+ *   /^r8_[A-Za-z0-9]{20,}$/                       → 3   (préfixe "r8_")
+ *   /^sk-ant-api\d{2}-.../                          → 10  (préfixe "sk-ant-api")
+ *   /^(?=.*[A-Z_-])[A-Za-z0-9_-]{40}$/ (Cloudflare) → 0   (lookahead = générique)
+ *   /^[A-Za-z0-9]{32}$/ (Mistral)                   → 0   (longueur seule)
+ * → on préfère TOUJOURS le service à préfixe distinctif vs une heuristique de
+ *   longueur. Corrige toute la classe "r8_ pris pour Cloudflare 40-chars". */
+function patternSpecificity(re: RegExp): number {
+  const src = re.source.replace(/^\^/, '');
+  const m = src.match(/^([A-Za-z0-9_:@./-]+)/);
+  return m ? m[1].length : 0;
+}
+
+/* Parmi tous les patterns non-forbidden qui matchent `v`, retourne le PLUS
+ * spécifique (préfixe littéral le plus long ; égalité → 1er dans l'ordre du tableau). */
+function bestNonForbiddenMatch(v: string): CredentialPattern | null {
+  let best: CredentialPattern | null = null;
+  let bestScore = -1;
+  for (const p of CREDENTIAL_PATTERNS) {
+    if (p.category === 'forbidden') continue;
+    if (!p.regex.test(v)) continue;
+    const s = patternSpecificity(p.regex);
+    if (s > bestScore) {
+      best = p;
+      bestScore = s;
+    }
+  }
+  return best;
+}
+
 /* Détecte le pattern correspondant à une valeur, null si inconnu. */
 export function detectCredential(value: string): CredentialPattern | null {
   const trimmed = value.trim();
@@ -964,17 +996,15 @@ export function detectCredential(value: string): CredentialPattern | null {
   for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category === 'forbidden')) {
     if (p.regex.test(trimmed)) return p;
   }
-  /* Full match d'abord (clé seule) */
-  for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
-    if (p.regex.test(trimmed)) return p;
-  }
-  /* Fallback : si Kevin colle multi-line / JSON / contexte, scan le premier match trouvé
+  /* Full match (clé seule) — match le PLUS SPÉCIFIQUE, pas le 1er trouvé */
+  const full = bestNonForbiddenMatch(trimmed);
+  if (full) return full;
+  /* Fallback : si Kevin colle multi-line / JSON / contexte, scan ligne par ligne
    * (permissif, fix Kevin v13.0.78 "il s'affole pas reconnu") */
   const lines = trimmed.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
   for (const line of lines) {
-    for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
-      if (p.regex.test(line)) return p;
-    }
+    const m = bestNonForbiddenMatch(line);
+    if (m) return m;
   }
   return null;
 }
@@ -997,15 +1027,13 @@ export function detectAllCredentials(text: string): Array<{ pattern: CredentialP
     results.push({ pattern: fullMatch, value: trimmed });
     seen.add(fullMatch.storageKey);
   }
-  /* Puis chaque token */
+  /* Puis chaque token — match le PLUS SPÉCIFIQUE (pas le 1er trouvé) */
   for (const token of tokens) {
     if (token.length < 10) continue; /* skip très courts (pas un vrai token) — réduit 16→10 pour téléphones */
-    for (const p of CREDENTIAL_PATTERNS.filter((p) => p.category !== 'forbidden')) {
-      if (p.regex.test(token) && !seen.has(p.storageKey)) {
-        results.push({ pattern: p, value: token });
-        seen.add(p.storageKey);
-        break;
-      }
+    const p = bestNonForbiddenMatch(token);
+    if (p && !seen.has(p.storageKey)) {
+      results.push({ pattern: p, value: token });
+      seen.add(p.storageKey);
     }
   }
   return results;
