@@ -47,8 +47,9 @@ export function planKeyMigration({ hasCleartext, hasWrapped, pinAvailable, keysL
   if (hasWrapped && !pinAvailable && !hasCleartext) return { action: 'defer' };
   if (hasCleartext && pinAvailable) return { action: 'migrate' };
   if (hasCleartext && !pinAvailable) return { action: 'keep-cleartext' };
-  if (!hasCleartext && !hasWrapped) return { action: 'generate' };
-  return { action: 'noop' };
+  // Seul cas restant : aucune clé stockée (ni claire ni wrappée) → générer.
+  // catch-all atteignable (couvre les combinaisons sans clé) — pas de code mort.
+  return { action: 'generate' };
 }
 
 if (typeof window !== 'undefined') {

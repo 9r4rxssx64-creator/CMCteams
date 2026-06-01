@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { wrapPrivKey, unwrapPrivKey, planKeyMigration } from '../../lib/key-vault.js';
+import { wrapWithPin } from '../../lib/crypto-core.js';
 
 const PRIV = 'eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwiZCI6InRlc3QtcHJpdmF0ZS1rZXktYjY0In0';
 
@@ -41,9 +42,21 @@ describe('key-vault — wrap/unwrap', () => {
     await expect(wrapPrivKey(PRIV, '12')).rejects.toThrow('pin-too-short');
   });
 
-  it('unwrap d\'un objet invalide → throw no-wrapped-key', async () => {
-    await expect(unwrapPrivKey(null, '200807')).rejects.toThrow('no-wrapped-key');
-    await expect(unwrapPrivKey({ ct: 'x' }, '200807')).rejects.toThrow('no-wrapped-key');
+  it('unwrap d\'un objet invalide → throw no-wrapped-key (toutes branches)', async () => {
+    await expect(unwrapPrivKey(null, '200807')).rejects.toThrow('no-wrapped-key');       // !wrapped
+    await expect(unwrapPrivKey({ salt: 'x' }, '200807')).rejects.toThrow('no-wrapped-key'); // !wrapped.ct
+    await expect(unwrapPrivKey({ ct: 'x' }, '200807')).rejects.toThrow('no-wrapped-key');   // !wrapped.salt
+  });
+
+  it('pin vide (falsy) → pin-too-short (branche !pin)', async () => {
+    await expect(wrapPrivKey(PRIV, '')).rejects.toThrow('pin-too-short');
+  });
+
+  it('payload déchiffré sans champ priv → bad-payload', async () => {
+    // Crée un blob wrappé valide MAIS sans `priv` (déchiffrement réussit, contenu KO).
+    const bogus = await wrapWithPin({ foo: 1 }, '200807');
+    await expect(unwrapPrivKey({ ct: bogus.ciphertext, salt: bogus.salt }, '200807'))
+      .rejects.toThrow('bad-payload');
   });
 });
 
