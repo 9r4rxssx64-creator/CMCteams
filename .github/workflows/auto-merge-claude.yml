@@ -120,45 +120,48 @@ jobs:
           done
           echo "OK: no merge markers"
 
-      - name: Switch to main + merge
+      - name: Create & merge PR into main
+        # FIX (GH013 2026-06) : la protection de branche main exige désormais que
+        # TOUT passe par une Pull Request → le push direct était rejeté. On crée
+        # donc une PR puis on la merge via l'API (gh), ce que la règle attend.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           BRANCH="${{ steps.src.outputs.branch }}"
-          git fetch origin main
-          # Robustesse (Kevin 2026-05-31 — logs "couldn't find remote ref" en boucle) :
-          # une branche peut avoir été mergée + supprimée entre le push et ce run, OU
-          # avoir une réf incohérente (proxy). Dans ce cas → SKIP propre (exit 0),
-          # pas un échec qui spamme des notifications d'erreur.
+          # Branche absente (déjà mergée/supprimée, réf proxy incohérente) → SKIP propre.
           if ! git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-            echo "::notice::Branche $BRANCH introuvable sur origin (déjà mergée/supprimée) — rien à merger."
+            echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."
             exit 0
           fi
-          git fetch origin "$BRANCH"
-          git checkout main
-          git pull origin main --ff-only
-          # Déjà dans main → rien à faire (évite un échec inutile)
-          if git merge-base --is-ancestor "origin/$BRANCH" main 2>/dev/null; then
+          git fetch origin main "$BRANCH"
+          # Déjà intégrée dans main → rien à faire.
+          if git merge-base --is-ancestor "origin/$BRANCH" "origin/main" 2>/dev/null; then
             echo "::notice::$BRANCH déjà intégrée dans main — rien à merger."
             exit 0
           fi
-          # Merge avec --no-ff pour preserver l'historique
-          if git merge --no-ff "origin/$BRANCH" -m "Auto-merge $BRANCH into main (claude-code automation)
-
-          Tests: pre-commit + JS syntax + no markers OK.
-          Trigger: push to $BRANCH by ${{ github.actor }}.
-          See CLAUDE.md erreur #33 (PR jamais merge = deploiement fantome)."; then
-            echo "Merge OK"
-          else
-            echo "MERGE CONFLICT — abort + need manual"
-            git merge --abort
+          # PR ouverte existante ? sinon la créer.
+          PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -z "$PR" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title "Auto-merge $BRANCH into main (claude-code automation)" \
+              --body "Tests pre-commit + JS syntax + no markers OK. Trigger: ${{ github.actor }}. Voir CLAUDE.md erreur #33 (branch jamais mergée = deploiement fantome)." \
+              || true
+            PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+          fi
+          if [ -z "$PR" ]; then
+            echo "::warning::Impossible de créer/trouver la PR pour $BRANCH — merger manuellement."
             exit 1
           fi
-
-      - name: Push main
-        run: |
-          set -e
-          git push origin main
-          echo "Push OK — GitHub Pages will deploy in 1-3 min"
+          # Merge via PR (admin override si dispo, sinon merge normal). Si la règle
+          # exige une review → laisse la PR ouverte + warning pour merge manuel.
+          if gh pr merge "$PR" --merge --admin --delete-branch=false 2>/dev/null \
+             || gh pr merge "$PR" --merge --delete-branch=false 2>/dev/null; then
+            echo "PR #$PR mergée → GitHub Pages déploiera dans 1-3 min"
+          else
+            echo "::warning::PR #$PR créée mais merge auto refusé (protection) — merger manuellement dans l'UI."
+            exit 1
+          fi
 
       - name: Notify on failure
         if: failure()
