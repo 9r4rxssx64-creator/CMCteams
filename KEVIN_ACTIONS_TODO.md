@@ -2038,3 +2038,9 @@ Pour CHAQUE service manquant, Apex :
 → Avec lui : je crée + merge les PR par API, zéro clic Kevin, zéro friction.
 Où : config environnement Claude Code (code.claude.com/docs → MCP / GitHub integration). Connecter le serveur GitHub MCP (scope repo 9r4rxssx64-creator/cmcteams).
 **Le merge SEO/Legal/Apex de ce jour : ✅ FAIT (en prod sur main).**
+
+---
+## 🔎 2026-05-31 — État vérifié sur le VRAI GitHub (pas le proxy)
+- ✅ Les 3 features SONT en prod sur le vrai main (vérifié WebFetch raw : apex-ai-v13/llms.txt présent).
+- ⏳ Reste le commit mémo (doc) — pas encore sur le vrai GitHub (mes pushes branche ne propagent pas de façon fiable via le proxy sandbox).
+- 🔑 Déblocage durable = GitHub MCP. CONFIRMÉ non chargé même après ton autorisation de l'app GitHub + session neuve → c'est une limite de l'environnement (intégration au niveau clone/proxy, pas d'outils mcp__github__). Action possible côté toi : recréer/relancer l'environnement Claude Code web, OU vérifier dans les réglages de l'environnement (pas "Connecteurs") qu'un serveur MCP GitHub est activable. Sinon : modèle "je prépare, tu merges en 1 clic" (qui a marché pour les 3 features).

@@ -3152,3 +3152,10 @@ Branche claude/seo-skill-install-2rdyZ. PR/merge en attente reconnexion GitHub M
 Branche claude/seo-skill-install-2rdyZ MERGÉE sur main (f4d4a69→ff870259) via Create PR (mobile) → bot auto-merge-claude.yml → cleanup branche.
 Contenu en prod : SEO Apex vitrine + claude-for-legal (151 skills) + SEO/Google APIs + docs.
 LEÇON : la "disparition" finale de la branche = merge+cleanup réussi, PAS une perte (cf CLAUDE.md lesson #78 résolue).
+
+---
+## 2026-05-31 — Découverte : proxy git ≠ vrai GitHub (lesson #79)
+- Kevin voit vrai main = b38e20e5 ; mon proxy ls-remote disait 6b1ca9b4 (commit fantôme #523). Le proxy est EN AVANCE / désynchronisé.
+- VÉRITÉ UNIQUE = WebFetch raw.githubusercontent.com/<repo>/<branche>/<fichier>. Confirmé : llms.txt sur vrai main ✅ (les 3 features VRAIMENT livrées) ; mémo PAS sur vrai main ; mes pushes branche n'atteignent pas le vrai GitHub de façon fiable.
+- GitHub MCP toujours absent (même après autorisation app GitHub + session fraîche) → intégration au niveau clone/proxy seulement dans cet env Claude Code web.
+- Mémo (doc) rebasé proprement sur b38e20e5 (commit 31c094cc3) ; reste à merger si la branche atteint le vrai GitHub.
