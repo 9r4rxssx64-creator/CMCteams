@@ -49,8 +49,8 @@ describe('services/cloudflare-status', () => {
     it('banner contient le message Cloudflare', () => {
       recordHttp503();
       const banner = document.getElementById(BANNER_ID);
-      expect(banner?.innerHTML).toContain('Cloudflare infra dégradée');
-      expect(banner?.innerHTML).toContain('PAS ton token');
+      expect(banner?.innerHTML).toContain('Cloudflare ralenti');
+      expect(banner?.innerHTML).toContain('pas ta clé');
     });
 
     it('idempotent : 2 appels = 1 seul banner DOM', () => {
