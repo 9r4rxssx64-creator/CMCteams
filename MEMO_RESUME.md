@@ -12,6 +12,13 @@
 
 Branche `claude/verifie-Ypr17`. **Mergée sur main** (PR #535, par Kevin) → fixes en prod.
 
+> 🔒 **P0-SEC-2 CLÔTURÉ (PR #539+#541)** : `_cmcSafeId()` whitelist sur TOUS les sites
+> d'injection d'id dans un handler onclick (recherche, drill, audit rename/delete/present,
+> editEmpId, saveOv, pitAction assignEmp/setStatut). Apex v13 maskable icon = déjà présent
+> (faux positif audit). **Items restants NON déployés en aveugle** (JAMAIS RÉGRESSER) :
+> Étape B E2E (2 devices) · CORS/JWT Apex Chat (deploy-test) · fuites setInterval CMC
+> (non vérifiable test:ci) · a11y labels (bulk médiocre) · screenshots PWA (images réelles).
+
 ### Livré (audit + fixes, vérifiés)
 - **Audit atomique externe + SEO** des 3 projets (subagents //, scores MESURÉS) :
   Apex v13 **86→88** (11859/0, tsc 0, Lighthouse 99/SEO 100), CMCteams **72→75** (469/0),
