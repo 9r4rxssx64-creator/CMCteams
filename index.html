@@ -11734,6 +11734,7 @@ function startOnsiteChecks(){
   // Premier check immédiat (décalé 3s pour laisser l'app se charger)
   setTimeout(function(){runOnsiteCheck();},3000);
   // Puis toutes les 5 minutes tant que l'onglet est visible
+  if(_onsiteInt)clearInterval(_onsiteInt); // v9.778 anti-fuite : clear-avant-set
   _onsiteInt=setInterval(function(){
     if(document.visibilityState==="visible")runOnsiteCheck();
   },5*60*1000);
@@ -15551,6 +15552,7 @@ function userWatcherStart(){
   // Run initial décalé 10s
   setTimeout(function(){if(document.visibilityState==="visible")try{_agentUserWatcher();}catch(_){}},10000);
   // Puis toutes les 15 min
+  if(_userWatcherInt)clearInterval(_userWatcherInt); // v9.778 anti-fuite : clear-avant-set
   _userWatcherInt=setInterval(function(){
     if(document.visibilityState!=="visible")return;
     try{_agentUserWatcher();}catch(_){}
