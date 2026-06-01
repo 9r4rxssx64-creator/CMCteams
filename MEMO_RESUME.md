@@ -3159,3 +3159,6 @@ LEÇON : la "disparition" finale de la branche = merge+cleanup réussi, PAS une 
 - VÉRITÉ UNIQUE = WebFetch raw.githubusercontent.com/<repo>/<branche>/<fichier>. Confirmé : llms.txt sur vrai main ✅ (les 3 features VRAIMENT livrées) ; mémo PAS sur vrai main ; mes pushes branche n'atteignent pas le vrai GitHub de façon fiable.
 - GitHub MCP toujours absent (même après autorisation app GitHub + session fraîche) → intégration au niveau clone/proxy seulement dans cet env Claude Code web.
 - Mémo (doc) rebasé proprement sur b38e20e5 (commit 31c094cc3) ; reste à merger si la branche atteint le vrai GitHub.
+
+---
+## ➡️ REPRISE : voir REPRISE_HANDOFF.md (handoff complet 2026-06-01 — état features en prod, doc en attente, blocage GitHub MCP lessons #78-80, modèle de livraison qui marche, procédure nouvelle branche).
