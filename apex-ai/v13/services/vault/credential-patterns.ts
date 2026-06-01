@@ -422,7 +422,12 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
   },
   {
     name: 'Replicate',
-    regex: /^r8_[A-Za-z0-9]{40,}$/,
+    /* v13.4.278 (Kevin "collé une API Replicate, il comprend Cloudflare") :
+     * avant /^r8_[A-Za-z0-9]{40,}$/ exigeait 40 chars APRÈS r8_ (total ≥43).
+     * Or les vrais tokens Replicate font ~40 chars au total (r8_ + ~37) → ratés,
+     * puis capturés par le filtre Cloudflare 40-chars. Assoupli à {20,} : le
+     * préfixe r8_ est distinctif, et Replicate est testé AVANT Cloudflare. */
+    regex: /^r8_[A-Za-z0-9]{20,}$/,
     storageKey: 'ax_replicate_key',
     category: 'ai',
     dashboard: 'https://replicate.com/account/api-tokens',
