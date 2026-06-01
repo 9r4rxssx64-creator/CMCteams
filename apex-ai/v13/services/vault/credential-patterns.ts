@@ -968,7 +968,7 @@ export const CREDENTIAL_PATTERNS: ReadonlyArray<CredentialPattern> = [
 function patternSpecificity(re: RegExp): number {
   const src = re.source.replace(/^\^/, '');
   const m = src.match(/^([A-Za-z0-9_:@./-]+)/);
-  return m ? m[1].length : 0;
+  return m?.[1]?.length ?? 0;
 }
 
 /* Parmi tous les patterns non-forbidden qui matchent `v`, retourne le PLUS
