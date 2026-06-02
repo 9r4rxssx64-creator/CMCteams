@@ -98,6 +98,15 @@ const PROXY_TEST_PATHS: Record<string, { path: string; method: 'GET' | 'POST'; b
   finnhub: { path: '/api/v1/quote?symbol=AAPL', method: 'GET' },
 };
 
+/** v13.4.282 (Kevin « Cloudflare/Railway/Finnhub/Replicate ne fonctionnent pas ») :
+ * test FIABLE des providers servis par le proxy = vérifier leur présence dans
+ * `available_providers` du `/health` du worker (endpoint OUVERT : pas de PIN, pas
+ * de CORS, pas d'appel upstream). Le `proxyFetch` réel dépendait du PIN admin
+ * (`x-apex-pin` vs `APEX_ADMIN_PIN_SHA256`) → fragile/401. Le `/health` reflète
+ * « le worker a la clé » = ce que Kevin veut voir (vert). Couvre aussi Replicate
+ * (absent de PROXY_TEST_PATHS). */
+const PROXY_HEALTH_SERVICES = new Set(['cloudflare', 'railway', 'finnhub', 'replicate']);
+
 const STORAGE_KEY = 'apex_v13_multi_keys';
 const MAX_FAIL_BEFORE_FAILING = 3;
 const HEALTH_RECENT_TEST_MS = 24 * 60 * 60 * 1000; /* < 24h = "testé récemment" */
@@ -584,6 +593,30 @@ class MultiKeyVault {
     const plain = detailed.plaintext as string;
     const start = Date.now();
     try {
+      /* v13.4.282 — providers servis par le proxy : test via /health (membership),
+       * SANS PIN ni CORS ni appel upstream. Vert si le worker a la clé. */
+      if (PROXY_HEALTH_SERVICES.has(entry.service)) {
+        try {
+          const { apexSecretsProxy } = await import('../integrations/apex-secrets-proxy-client.js');
+          const h = await apexSecretsProxy.checkHealth();
+          if (h.ok && h.data) {
+            entry.lastTestedAt = Date.now();
+            if (h.data.available_providers.includes(entry.service)) {
+              entry.status = 'active';
+              entry.failCount = 0;
+              entry.successCount += 1;
+              entry.lastWorkedAt = Date.now();
+              await this.persist();
+              return { ok: true, latencyMs: Date.now() - start };
+            }
+            this.markEntryStatus(entry, 'failing', 'non configuré dans le proxy (clé absente côté worker)');
+            await this.persist();
+            return { ok: false, latencyMs: Date.now() - start, reason: 'non configuré (proxy)' };
+          }
+        } catch {
+          /* /health KO → on retombe sur la logique existante ci-dessous */
+        }
+      }
       let res: Response | null = null;
       /* v13.4.279 — providers CORS-bloqués : test via le proxy server-side. */
       const pt = PROXY_TEST_PATHS[entry.service];
