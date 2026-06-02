@@ -3,7 +3,7 @@
  * Mocks WebAuthn / auth / feature-toggles pour exercer chaque chemin :
  * WebAuthn ok / refusé / sans reason / throw · PIN ok / faux / throw · toggles · guardAction passant.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../../services/auth/webauthn.js', () => ({
   webauthn: {
@@ -31,6 +31,13 @@ const wa = webauthn as unknown as {
 };
 const al = auth as unknown as { login: ReturnType<typeof vi.fn> };
 const fe = isFeatureEnabled as unknown as ReturnType<typeof vi.fn>;
+
+/* CRITIQUE : un test spy sur le SINGLETON partagé `adminActionGate.verify`.
+   Sans restore, le spy fuit vers les autres fichiers du même fork (clearAllMocks
+   global n'efface que les appels, pas l'implémentation spiée). Lesson #83. */
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('admin-action-gate — branches WebAuthn', () => {
   beforeEach(() => {
