@@ -565,6 +565,36 @@ class MultiKeyVault {
     const list = this.load();
     const entry = list.find((k) => k.id === keyId);
     if (!entry) return { ok: false, latencyMs: 0, reason: 'key not found' };
+    /* v13.4.283 — providers servis par le proxy : test via /health (membership)
+     * AVANT la vérif PING_CONFIG (Replicate n'a PAS de PING_CONFIG → renvoyait
+     * « no test endpoint configured » et ne testait jamais). Sans PIN, sans CORS,
+     * sans appel upstream. Matching insensible à la casse. */
+    if (PROXY_HEALTH_SERVICES.has(entry.service.toLowerCase())) {
+      const t0 = Date.now();
+      try {
+        const { apexSecretsProxy } = await import('../integrations/apex-secrets-proxy-client.js');
+        const h = await apexSecretsProxy.checkHealth();
+        if (h.ok && h.data) {
+          entry.lastTestedAt = Date.now();
+          const present = h.data.available_providers.some(
+            (p) => p.toLowerCase() === entry.service.toLowerCase(),
+          );
+          if (present) {
+            entry.status = 'active';
+            entry.failCount = 0;
+            entry.successCount += 1;
+            entry.lastWorkedAt = Date.now();
+            await this.persist();
+            return { ok: true, latencyMs: Date.now() - t0 };
+          }
+          this.markEntryStatus(entry, 'failing', 'non configuré dans le proxy (clé absente côté worker)');
+          await this.persist();
+          return { ok: false, latencyMs: Date.now() - t0, reason: 'non configuré (proxy)' };
+        }
+      } catch {
+        /* /health KO → on continue vers la logique normale ci-dessous */
+      }
+    }
     const config = PING_CONFIGS[entry.service];
     if (!config) {
       /* Pas de ping endpoint configuré : on ne peut pas tester, on conserve unknown */
@@ -593,30 +623,6 @@ class MultiKeyVault {
     const plain = detailed.plaintext as string;
     const start = Date.now();
     try {
-      /* v13.4.282 — providers servis par le proxy : test via /health (membership),
-       * SANS PIN ni CORS ni appel upstream. Vert si le worker a la clé. */
-      if (PROXY_HEALTH_SERVICES.has(entry.service)) {
-        try {
-          const { apexSecretsProxy } = await import('../integrations/apex-secrets-proxy-client.js');
-          const h = await apexSecretsProxy.checkHealth();
-          if (h.ok && h.data) {
-            entry.lastTestedAt = Date.now();
-            if (h.data.available_providers.includes(entry.service)) {
-              entry.status = 'active';
-              entry.failCount = 0;
-              entry.successCount += 1;
-              entry.lastWorkedAt = Date.now();
-              await this.persist();
-              return { ok: true, latencyMs: Date.now() - start };
-            }
-            this.markEntryStatus(entry, 'failing', 'non configuré dans le proxy (clé absente côté worker)');
-            await this.persist();
-            return { ok: false, latencyMs: Date.now() - start, reason: 'non configuré (proxy)' };
-          }
-        } catch {
-          /* /health KO → on retombe sur la logique existante ci-dessous */
-        }
-      }
       let res: Response | null = null;
       /* v13.4.279 — providers CORS-bloqués : test via le proxy server-side. */
       const pt = PROXY_TEST_PATHS[entry.service];
