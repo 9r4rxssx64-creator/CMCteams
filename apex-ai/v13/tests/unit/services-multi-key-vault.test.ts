@@ -506,3 +506,74 @@ describe('multi-key-vault — vault integration', () => {
     expect(decrypted).toBe('plain-secret-text');
   });
 });
+
+describe('multi-key-vault — v13.4.284 infos perso (category/label/kind)', () => {
+  beforeEach(() => {
+    multiKeyVault.resetAll();
+  });
+
+  it('addKey persiste category + label + kind', async () => {
+    const e = await multiKeyVault.addKey('Adresse Nice', '12 rue X, 06000 Nice', {
+      category: 'addresses',
+      label: 'Appartement Nice',
+      kind: 'info',
+    });
+    expect(e.category).toBe('addresses');
+    expect(e.label).toBe('Appartement Nice');
+    expect(e.kind).toBe('info');
+  });
+
+  it('kind:info → témoin vert direct (status active, lastWorkedAt set)', async () => {
+    const e = await multiKeyVault.addKey('Email perso', 'kevin@example.com', {
+      category: 'identity',
+      kind: 'info',
+    });
+    expect(e.status).toBe('active');
+    expect(e.lastWorkedAt).toBeGreaterThan(0);
+  });
+
+  it('testKey sur entrée info → ok sans ping, reste active (jamais failing)', async () => {
+    const e = await multiKeyVault.addKey('Nom', 'Kevin Desarzens', { kind: 'info' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const r = await multiKeyVault.testKey(e.id);
+    expect(r.ok).toBe(true);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const after = multiKeyVault.listAll(true).find((k) => k.id === e.id);
+    expect(after?.status).toBe('active');
+    fetchSpy.mockRestore();
+  });
+
+  it('setMeta met à jour catégorie/label/kind sans toucher la valeur chiffrée', async () => {
+    const e = await multiKeyVault.addKey('divers1', 'note secrète xyz');
+    const encBefore = e.encrypted;
+    const ok = multiKeyVault.setMeta(e.id, { category: 'identity', label: 'Mon nom', kind: 'info' });
+    expect(ok).toBe(true);
+    const after = multiKeyVault.listAll(true).find((k) => k.id === e.id);
+    expect(after?.category).toBe('identity');
+    expect(after?.label).toBe('Mon nom');
+    expect(after?.kind).toBe('info');
+    expect(after?.encrypted).toBe(encBefore);
+  });
+
+  it('setMeta avec chaîne vide efface la métadonnée', async () => {
+    const e = await multiKeyVault.addKey('svc', 'val12345', { category: 'addresses', label: 'X' });
+    multiKeyVault.setMeta(e.id, { label: '' });
+    const after = multiKeyVault.listAll(true).find((k) => k.id === e.id);
+    expect(after?.label).toBeUndefined();
+    expect(after?.category).toBe('addresses');
+  });
+
+  it('category/label survivent à un reload (persistance localStorage)', async () => {
+    const e = await multiKeyVault.addKey('Appart Paris', 'adresse...', {
+      category: 'addresses',
+      label: 'Studio Paris',
+      kind: 'info',
+    });
+    // Force reload depuis localStorage (vide le cache mémoire)
+    multiKeyVault.reloadFromStorage();
+    const reloaded = multiKeyVault.listAll(true).find((k) => k.id === e.id);
+    expect(reloaded?.category).toBe('addresses');
+    expect(reloaded?.label).toBe('Studio Paris');
+    expect(reloaded?.kind).toBe('info');
+  });
+});
