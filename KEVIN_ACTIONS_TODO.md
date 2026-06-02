@@ -1,5 +1,26 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 📌 SESSION 2026-06-02 — À FAIRE ENSEMBLE (décision Kevin « on fera le 2 ensuite »)
+
+### #2 — Apex Chat Étape B : E2E réellement actif (upload prekeys)
+- **Quoi** : câbler `POST /api/keys/prekeys` (au login) + `GET /api/keys/:id/bundle`
+  (à l'ouverture d'une conv) → chiffrement E2E RÉELLEMENT actif entre pairs
+  (aujourd'hui : clés publiques jamais uploadées → fallback texte).
+- **Pourquoi ensemble** : nécessite **2 vrais appareils** (toi + Laurence / 2 navigateurs)
+  pour prouver qu'un message s'échange déchiffrable des 2 côtés. Pas validable en sandbox.
+- **Pré-requis en place** : Étape A (clé privée wrappée PIN) livrée DORMANTE
+  (`messaging-app/lib/key-vault.js` + tests) — réactivable en décommentant 1 import dans
+  `messaging-app/crypto.js`. Routes worker `/api/keys/*` déjà présentes.
+- **Plan staged** : A (fait, dormant) → B (prekeys) → C (salt HKDF par conv) → D (JWT cookie + CORS).
+
+### Dettes ouvertes (audit mesuré 2026-06-02, non bloquantes)
+- **Apex v13** : 2 tests flaky en run parallèle (`services-sentry-bridge`, `v13_4_47-dashboard-personnel`)
+  — passent en isolation, pollution d'état global entre suites à isoler.
+- **CMCteams** : surface XSS résiduelle (~10 `innerHTML` recevant des variables sans `esc()` confirmé).
+- **Apex Chat** : coverage 98.41% branches (seuil CI 100%) — ~5-6 branches WS-flow profondes restantes.
+
+---
+
 ## 🔑 SESSION 2026-05-26 14h45 — Nouveaux secrets GitHub ajoutés par Kevin
 
 Kevin a ajouté manuellement 3 secrets côté GitHub Settings/Secrets :
