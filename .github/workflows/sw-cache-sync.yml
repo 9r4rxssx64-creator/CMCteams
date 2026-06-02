@@ -25,7 +25,7 @@ jobs:
     name: Sync v12 (apex-ai/sw.js <-> apex-ai/index.html)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 1
@@ -73,7 +73,7 @@ jobs:
     needs: sync-v12
     if: always()
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 1
