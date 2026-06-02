@@ -31,6 +31,7 @@ export default defineConfig({
         '**/*.test.ts',
         '**/*.spec.ts',
         '**/types.ts',
+        '**/*-types.ts', /* fichiers type-only (interfaces/types purs, 0 statement exécutable) */
         '**/*.d.ts',
         /* Infrastructure bootstrap testée en E2E (Playwright) : */
         'core/bootstrap.ts',
