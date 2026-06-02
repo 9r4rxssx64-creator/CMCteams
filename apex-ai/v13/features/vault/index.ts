@@ -650,6 +650,17 @@ export function render(rootEl: HTMLElement): void {
         <div id="ax-vault-paste-result" class="ax-gs-249"></div>
       </section>
 
+      <details id="ax-vault-proxy-providers" style="background:rgba(34,204,119,0.05);border:1px solid rgba(34,204,119,0.18);border-radius:14px;overflow:hidden;margin-bottom:12px">
+        <summary style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;list-style:none;-webkit-tap-highlight-color:transparent;min-height:44px">
+          <span>🌐 Providers via proxy (serveur) <span id="ax-vault-proxy-count" style="color:var(--ax-text-muted);font-weight:400;font-size:13px"></span></span>
+          <span class="ax-chevron" style="color:var(--ax-text-muted)">▼</span>
+        </summary>
+        <div style="padding:0 14px 14px">
+          <p style="margin:0 0 10px;color:var(--ax-text-muted);font-size:12px">Clés stockées côté serveur (secrets GitHub → worker Cloudflare). Apex ne les détient jamais, il passe par le proxy.</p>
+          <div id="ax-vault-proxy-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </details>
+
       <div id="ax-vault-categories" style="display:flex;flex-direction:column;gap:12px"></div>
 
       <section style="margin-top:18px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px">
@@ -699,6 +710,7 @@ export function render(rootEl: HTMLElement): void {
   renderCategories(rootEl);
   attachHandlers(rootEl);
   attachScrollUx(rootEl);
+  void renderProxyProviders(rootEl);
   logger.info('feature-vault', `rendered (${stats.total} entries)`);
 }
 
@@ -739,6 +751,34 @@ function attachScrollUx(rootEl: HTMLElement): void {
       const headerBtn = rootEl.querySelector<HTMLButtonElement>('#ax-vault-test-all');
       headerBtn?.click();
     });
+  }
+}
+
+/** v13.4.283 (Kevin « pourquoi les 22 ne s'affichent pas ») : liste les providers
+ * servis par le proxy (côté serveur — clés jamais dans l'app), lus depuis le /health
+ * du worker. Affichés en vert (= worker a la clé). Visibilité sans stockage local. */
+async function renderProxyProviders(rootEl: HTMLElement): Promise<void> {
+  const list = rootEl.querySelector<HTMLDivElement>('#ax-vault-proxy-list');
+  const count = rootEl.querySelector<HTMLSpanElement>('#ax-vault-proxy-count');
+  if (!list) return;
+  try {
+    const { apexSecretsProxy } = await import('../../services/integrations/apex-secrets-proxy-client.js');
+    const h = await apexSecretsProxy.checkHealth();
+    if (!h.ok || !h.data) {
+      list.innerHTML = '<span style="color:var(--ax-text-muted);font-size:13px">Proxy injoignable</span>';
+      return;
+    }
+    const provs = h.data.available_providers;
+    if (count) count.textContent = `(${provs.length}/${h.data.total} actifs)`;
+    list.innerHTML = provs
+      .map(
+        (p) =>
+          `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:rgba(34,204,119,0.12);color:var(--ax-green);border:1px solid rgba(34,204,119,0.25);border-radius:999px;font-size:12px">● ${escapeHtml(p)}</span>`,
+      )
+      .join('');
+  } catch (err: unknown) {
+    logger.debug('feature-vault', 'renderProxyProviders failed', { err });
+    list.innerHTML = '<span style="color:var(--ax-text-muted);font-size:13px">Proxy non configuré</span>';
   }
 }
 
