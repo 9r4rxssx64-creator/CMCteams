@@ -108,7 +108,10 @@ class GlobalBackButton {
   private updateVisibility(): void {
     const btn = document.getElementById(BTN_ID);
     if (!btn) return;
-    const route = (location.hash || '#chat').replace(/^#/, '').split('?')[0] ?? 'chat';
+    /* replace(/\?.*$/,'') au lieu de split('?')[0] : évite l'accès indexé
+     * (string|undefined sous noUncheckedIndexedAccess) → pas de `?? 'chat'`
+     * inatteignable. Comportement identique : route = partie avant '?'. */
+    const route = (location.hash || '#chat').replace(/^#/, '').replace(/\?.*$/, '');
     const isChat = route === 'chat' || route === '' || route === 'chatlite';
     if (isChat) {
       btn.classList.add('is-hidden');
