@@ -9902,36 +9902,6 @@ function empMatchesActiveCasino(emp){
   return (emp.casino||"CMC")===act;
 }
 // Vue admin : configuration casinos + stats par établissement
-function vCasinos(){
-  if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty" role="status" aria-live="polite"><div class="empty-title">Acc\u00e8s admin requis</div></div></div>';
-  var cnt={};
-  A.employees.forEach(function(e){var c=e.casino||"CMC";cnt[c]=(cnt[c]||0)+1;});
-  var h='<div class="page"><div class="sec-title">\ud83c\udfe2 Casinos SBM \u2014 Multi-\u00e9tablissements</div>';
-  h+='<div style="margin:10px 0;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.2);border-radius:8px;font-size:13px;color:#d8e8d0;line-height:1.6">'
-    +'\ud83d\udcd6 <b>Convention SBM Art.10</b> : le personnel peut \u00eatre d\u00e9tach\u00e9 entre casinos SBM selon les besoins. Chaque employ\u00e9 a un casino d\u2019affectation principal.'
-    +'</div>';
-  CASINOS_SBM.forEach(function(c){
-    var n=cnt[c.id]||0;
-    h+='<div class="card" style="padding:12px;margin-bottom:10px;border-left:4px solid '+c.color+'">'
-      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
-      +'<span style="font-size:22px">'+c.icon+'</span>'
-      +'<div style="flex:1"><div style="font-size:16px;font-weight:800;color:'+c.color+'">'+esc(c.name)+'</div>'
-      +'<div style="font-size:11px;color:#a0cca0">'+esc(c.address)+'</div></div>'
-      +'<span style="font-size:13px;font-weight:700;color:#e0e8d8;background:'+c.color+'22;padding:4px 10px;border-radius:14px">'+n+' emp</span>'
-      +'</div>'
-      +'<div style="font-size:13px;color:#d0e0c8;line-height:1.5;margin-bottom:6px">'+esc(c.desc)+'</div>'
-      +'<div style="font-size:12px;color:#a0cca0">\ud83c\udfad Dress code : '+esc(c.dress)+'</div>'
-      +'<div style="font-size:12px;color:#a0cca0;margin-top:4px">\ud83c\udfb2 Jeux : '+c.jeux.map(function(j){var jc=JEUX_CA.find(function(x){return x.id===j;});return jc?jc.icon+" "+jc.label:j;}).join(" \u00b7 ")+'</div>'
-      +'<button onclick="setActiveCasino(\''+c.id+'\')" style="margin-top:8px;padding:8px 12px;background:'+c.color+'22;border:1px solid '+c.color+'55;color:'+c.color+';border-radius:7px;font-weight:700;font-size:13px;cursor:pointer">\ud83c\udfaf Filtrer planning sur ce casino</button>'
-      +'</div>';
-  });
-  // Bouton reset filtre
-  if(getActiveCasino()){
-    h+='<button onclick="setActiveCasino(null)" style="width:100%;padding:10px;background:rgba(90,170,112,.15);border:1px solid rgba(90,170,112,.4);color:#8acc90;border-radius:8px;font-weight:700;cursor:pointer">\ud83c\udf10 Afficher tous les casinos</button>';
-  }
-  h+='</div>';
-  return h;
-}
 // Bandeau filtre casino actif (affiché si filtre en place)
 function renderCasinoBanner(){
   var act=getActiveCasino();
@@ -10296,48 +10266,6 @@ function renderEventBanner(){
     +'</div></div>'
     +(evt.notes?'<div style="font-size:12px;color:#d8e8d0;margin-top:6px;padding-top:6px;border-top:1px solid '+col+'33;line-height:1.4">'+esc(evt.notes)+'</div>':"")
     +'</div>';
-}
-function vEvents(){
-  if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty" role="status" aria-live="polite"><div class="empty-title">Acc\u00e8s admin requis</div></div></div>';
-  var events=getEvents().sort(function(a,b){return a.startDate<b.startDate?-1:1;});
-  var now=new Date().toISOString().slice(0,10);
-  var h='<div class="page"><div class="sec-title">\ud83c\udfaf \u00c9v\u00e9nements Monaco</div>';
-  h+='<div style="margin:10px 0;padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.2);border-radius:8px;font-size:13px;color:#d0e0c8;line-height:1.6">'
-    +'\ud83d\udca1 Les \u00e9v\u00e9nements importants (Grand Prix, tournois, festivals) d\u00e9clenchent un bandeau sur vAccueil et informent l\u2019admin pour adapter le planning (+staff si besoin).</div>';
-  // Formulaire ajout
-  h+='<div class="card" style="padding:12px;margin-bottom:12px">'
-    +'<div style="font-size:13px;font-weight:700;color:#c9a227;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\u2795 Ajouter un \u00e9v\u00e9nement</div>'
-    +'<input id="evNew_name" class="inp" placeholder="Nom (ex: Concert privé)" style="width:100%;padding:7px 10px;margin-bottom:6px">'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
-    +'<input id="evNew_start" type="date" class="inp" style="padding:7px 10px">'
-    +'<input id="evNew_end" type="date" class="inp" style="padding:7px 10px">'
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
-    +'<select id="evNew_type" class="inp" style="padding:7px 10px"><option value="custom">Autre</option><option value="gp_f1">Grand Prix F1</option><option value="tennis">Tennis</option><option value="poker_tournament">Tournoi Poker</option><option value="festival">Festival</option><option value="national">National / Officiel</option></select>'
-    +'<input id="evNew_boost" type="number" class="inp" placeholder="Boost staff %" value="25" min="0" max="100" style="padding:7px 10px">'
-    +'</div>'
-    +'<input id="evNew_notes" class="inp" placeholder="Notes (salons, consignes)" style="width:100%;padding:7px 10px;margin-bottom:8px">'
-    +'<button onclick="(function(){var n=document.getElementById(\'evNew_name\').value.trim();var s=document.getElementById(\'evNew_start\').value;var e=document.getElementById(\'evNew_end\').value||s;if(!n||!s){toast(\'Nom + date obligatoires\',\'err\');return;}addEvent({name:n,startDate:s,endDate:e,type:document.getElementById(\'evNew_type\').value,staffBoost:parseInt(document.getElementById(\'evNew_boost\').value)||0,notes:document.getElementById(\'evNew_notes\').value,rooms:[]});dc();})()" style="width:100%;padding:10px;background:linear-gradient(135deg,#c9a227,#8a6a10);border:none;border-radius:8px;color:#0a1a0c;font-weight:800;cursor:pointer">\u2728 Ajouter</button>'
-    +'</div>';
-  // Liste
-  if(!events.length){h+='<div class="empty" role="status" aria-live="polite"><div class="empty-icon" aria-hidden="true">\ud83d\udcc5</div><div class="empty-title">Aucun \u00e9v\u00e9nement</div></div>';}
-  else{
-    events.forEach(function(e){
-      var past=e.endDate<now;
-      var active=e.startDate<=now&&e.endDate>=now;
-      var col=active?"#e04060":past?"#5a7050":"#c9a227";
-      var stLb=active?"EN COURS":past?"pass\u00e9":"\u00e0 venir";
-      h+='<div style="padding:10px 12px;margin-bottom:6px;background:'+col+'10;border:1px solid '+col+'40;border-left:3px solid '+col+';border-radius:8px;'+(past?"opacity:.7;":"")+'">'
-        +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:'+col+';font-weight:800;text-transform:uppercase">'+stLb+'</span>'
-        +'<span style="font-size:15px;font-weight:800;color:#e0e8d8;flex:1">'+esc(e.name)+'</span>'
-        +'<button onclick="if(confirm(\'Supprimer cet \u00e9v\u00e9nement ?\'))removeEvent(\''+esc(e.id)+'\');dc();" style="background:rgba(224,96,96,.15);border:1px solid rgba(224,96,96,.4);color:#e08080;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer" aria-label="Supprimer">\ud83d\uddd1</button></div>'
-        +'<div style="font-size:12px;color:#a0cca0;margin-top:2px">'+esc(e.startDate)+(e.endDate!==e.startDate?" \u2192 "+esc(e.endDate):"")+(e.staffBoost?" \u00b7 Staff +"+e.staffBoost+"%":"")+'</div>'
-        +(e.notes?'<div style="font-size:12px;color:#c0d0c0;margin-top:4px;line-height:1.4">'+esc(e.notes)+'</div>':"")
-        +'</div>';
-    });
-  }
-  h+='</div>';
-  return h;
 }
 // v9.179 — Contexte temporel : retourne le prochain shift de l'utilisateur (jusqu'à 14 jours)
 // Utilise le planning mensuel (overrides) + fallback : scan les mois suivants si besoin
