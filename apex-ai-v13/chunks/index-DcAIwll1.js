@@ -1,0 +1,333 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./monitoring-B_mTQJ5f.js","./multi-source-analyze-ajv1lZKz.js","./credential-patterns-DUMYZEMu.js","./apex-kb-Bbc5CKue.js"])))=>i.map(i=>d[i]);
+import{b as H,f as _,l as g,e as i,_ as k}from"./monitoring-B_mTQJ5f.js";import{c as M}from"./listener-cleanup-Y2rGGxxX.js";import{apexExecute as f}from"./apex-execute-DskHFhUT.js";import{a as y}from"./apex-kb-Bbc5CKue.js";import{kdmcProjectsRegistry as A}from"./kdmc-projects-registry-BbfBznOL.js";import{auth as q}from"./auth-B94C5_WZ.js";import{i as T,r as R}from"./apex-tools-dispatch-core-CNNwGVEZ.js";import{c as D}from"./csp-style-helper-BisGRi53.js";import{w as j}from"./whatsapp-DZyK3cr3.js";import{haptic as d}from"./haptic-CQFg2PXZ.js";import{s as E}from"../core/main-CA0_r9hp.js";import{toast as p}from"./toast-CRdbcLoc.js";import"./multi-source-analyze-ajv1lZKz.js";import"./credential-patterns-DUMYZEMu.js";import"./apex-tools-dispatch-skills-BkXXGxrV.js";import"./apex-tools-dispatch-data-Bbn1YxZa.js";import"./apex-tools-dispatch-finance-D84Ce07W.js";import"./apex-tools-dispatch-misc-MESY41NM.js";import"./apex-tools-misc-zF9rUe1B.js";import"./apex-tools-registry-core-BMhHY4vU.js";import"./apex-tools-registry-skills-x-mAWYry.js";let v="commerce";const I={commerce:"admin.commerce",users:"admin.users",pending:"admin.users",health:null,projects:null,executions:"admin.executions",knowledge:"admin.kb",bilan:"admin.bilan",consumption:"admin.consumption","audit-log":"admin.audit-log"};function z(){const t=_.isEnabled();return`
+    <div class="ax-admin-section">
+      <h2>Commercialisation</h2>
+      <p class="ax-muted">
+        Active le système d'abonnements pour les non-admin. Toi (Kevin admin) gardes l'accès illimité dans tous les cas.
+      </p>
+      <div class="ax-toggle-row">
+        <label class="ax-toggle">
+          <input type="checkbox" id="commerce-toggle" aria-label="Activer la commercialisation des plans payants" ${t?"checked":""}>
+          <span class="ax-toggle-slider"></span>
+          <span class="ax-toggle-label">Commercialisation ${t?"<strong>ACTIVÉE</strong>":"<strong>désactivée</strong>"}</span>
+        </label>
+      </div>
+      <div class="ax-info-card">
+        <h3>Plans disponibles</h3>
+        <ul>
+          <li><strong>free</strong> : 50 msg/jour, 1 studio, voix basique</li>
+          <li><strong>basic 9€/mois</strong> : 500 msg/jour, 5 studios, voix basique</li>
+          <li><strong>pro 29€/mois</strong> : illimité, 23 studios, voix premium, marketplace</li>
+          <li><strong>business sur devis</strong> : multi-user, marketplace 30%, white-label</li>
+          <li><strong>admin</strong> (toi Kevin) : tout illimité, jamais bloqué</li>
+        </ul>
+      </div>
+    </div>
+  `}function V(){const t=q.listUsers(),o=new Set(["admin","family","client_pro","client_free"]),c=t.map(r=>{const l=o.has(r.tier)?r.tier:"client_free";return`
+      <li class="ax-user-row">
+        <span class="ax-user-name">${i(r.name)}</span>
+        <span class="ax-tier-badge ax-tier-${l}">${i(l)}</span>
+        ${r.activated?'<span class="ax-badge ax-badge-ok">activé</span>':'<span class="ax-badge ax-badge-pending">en attente</span>'}
+        <select data-user-plan="${i(r.id)}" class="ax-select-sm">
+          <option value="free">free</option>
+          <option value="basic">basic</option>
+          <option value="pro">pro</option>
+          <option value="business">business</option>
+        </select>
+      </li>
+    `}).join("");return`
+    <div class="ax-admin-section">
+      <h2>Créer un compte</h2>
+      <form id="create-user-form" class="ax-form">
+        <label>
+          Nom complet
+          <input type="text" id="cu-name" aria-label="Nom complet du nouveau compte" required minlength="2" autocomplete="off">
+        </label>
+        <label>
+          Type de compte
+          <select id="cu-tier" required>
+            <option value="family">Famille</option>
+            <option value="client_pro">Client Pro</option>
+            <option value="client_free">Client Gratuit</option>
+          </select>
+        </label>
+        <label>
+          Email (optionnel)
+          <input type="email" id="cu-email" aria-label="Email du nouveau compte" autocomplete="off">
+        </label>
+        <label>
+          Téléphone WhatsApp (avec indicatif, ex: +33612345678)
+          <input type="tel" id="cu-whatsapp" aria-label="Numéro WhatsApp avec indicatif" autocomplete="off" placeholder="+33...">
+        </label>
+        <label>
+          Code PIN initial (optionnel — sinon le client le crée à sa 1ère connexion)
+          <input type="password" id="cu-pin" aria-label="PIN initial 4 chiffres minimum" minlength="4" autocomplete="new-password">
+        </label>
+        <button type="submit" class="ax-btn ax-btn-primary">Créer le compte</button>
+      </form>
+      <div id="create-user-result"></div>
+
+      <h2>Comptes existants (${t.length})</h2>
+      <ul class="ax-user-list">${c||`<li class="ax-muted">Aucun compte créé pour l'instant</li>`}</ul>
+    </div>
+  `}function B(){const t=j.listPending();return t.length?`
+    <div class="ax-admin-section">
+      <h2>Confirmations WhatsApp en attente</h2>
+      <p class="ax-muted">Quand le client te a envoyé son code par WhatsApp, clique "Confirmer".</p>
+      <ul class="ax-pending-list">${t.map(c=>`
+      <li class="ax-pending-row">
+        <strong>${i(c.name)}</strong>
+        <span class="ax-muted">${i(c.whatsapp)}</span>
+        <code class="ax-otp">${c.otp}</code>
+        <button class="ax-btn ax-btn-sm" data-confirm-otp="${c.otp}">Confirmer</button>
+      </li>
+    `).join("")}</ul>
+    </div>
+  `:`
+      <div class="ax-admin-section">
+        <h2>Confirmations en attente</h2>
+        <p class="ax-muted">Aucune confirmation à valider.</p>
+      </div>
+    `}function F(){return`
+    <div class="ax-admin-section" data-scrollable="true">
+      <h2>État de santé</h2>
+      <p class="ax-muted">Codes vault · Liens dashboards · Sentinelles 24/7 · Connecteurs MCP · Vault drift. Tout testé en autonomie.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
+        <button class="ax-btn-health ax-btn-health-primary" data-nav-route="admin-health-dashboard">📊 Voir dashboard santé live</button>
+        <button class="ax-btn-health" data-nav-route="admin-credentials-status">🔑 Credentials</button>
+        <button class="ax-btn-health" data-nav-route="admin-all-secrets">🔐 Mes Secrets</button>
+        <button class="ax-btn-health" data-nav-route="admin-yury-plugins">🚀 Plugins Yury</button>
+        <button class="ax-btn-health" data-nav-route="admin-shubham-skills">🎬 Shubham Skills</button>
+        <button class="ax-btn-health ax-btn-health-eco" data-nav-route="admin-autonomous">🤖 Mode Autonome</button>
+        <button class="ax-btn-health ax-btn-health-blue" data-nav-route="skills-2026">🎯 Skills 2026</button>
+        <button class="ax-btn-health ax-btn-health-purple" data-nav-route="mcp-servers">🔌 MCP Servers</button>
+        <button class="ax-btn-health ax-btn-health-eco" data-nav-route="runtime-tests">🧪 Tester TOUT (live)</button>
+        <button class="ax-btn-health ax-btn-health-blue" data-nav-route="apex-audits-live">📊 Audits Apex (historique)</button>
+        <button class="ax-btn-health" data-nav-route="audit-log-viewer" title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">🔒 Audit Log Viewer</button>
+        <button class="ax-btn-health" data-nav-route="admin-capabilities" title="Registre des capacités/compétences Apex">🧠 Capacités IA</button>
+        <button class="ax-btn-health" data-nav-route="admin-pinecone-status" title="État de l'index Pinecone (mémoire vectorielle)">🌲 Pinecone</button>
+        <button class="ax-btn-health" data-nav-route="admin-voice-diagnostic" title="Diagnostic reconnaissance + synthèse vocale">🎙 Diagnostic Voix</button>
+      </div>
+      <div id="ax-admin-health-mount" class="ax-gs-187"></div>
+      <div id="ax-admin-audits-summary" class="ax-gs-187"></div>
+    </div>
+  `}function N(){const t=A.list(),o=A.count(),c=A.countActive(),r=["active","wip","archived"],l=t.map(n=>{const e=r.includes(n.status)?n.status:"archived",a=n.tech_stack.slice(0,4).map(s=>i(s)).join(", ");return`
+        <li class="ax-project-row" data-project-id="${i(n.id)}">
+          <div class="ax-project-head">
+            <strong>${i(n.name)}</strong>
+            <span class="ax-badge ax-badge-${e}">${i(e)}</span>
+            <code class="ax-project-version">${i(n.version)}</code>
+          </div>
+          <p class="ax-muted">${i(n.description)}</p>
+          <p class="ax-project-stack"><em>stack:</em> ${a||"—"}</p>
+          <p class="ax-project-links">
+            <a href="${i(n.deploy_url)}" target="_blank" rel="noopener">🚀 Live</a>
+            ·
+            <a href="${i(n.repo_url)}" target="_blank" rel="noopener">📦 Repo</a>
+            · <span class="ax-muted">🛡 ${n.sentinels_count} sentinelles</span>
+          </p>
+          <div class="ax-project-edit">
+            <input type="text" data-project-version="${i(n.id)}"
+                   aria-label="Version du projet ${i(n.id)}"
+                   value="${i(n.version)}" placeholder="vX.Y" maxlength="20"
+                   class="ax-input-sm" autocomplete="off">
+            <select data-project-status="${i(n.id)}" class="ax-select-sm">
+              <option value="active" ${n.status==="active"?"selected":""}>active</option>
+              <option value="wip" ${n.status==="wip"?"selected":""}>wip</option>
+              <option value="archived" ${n.status==="archived"?"selected":""}>archived</option>
+            </select>
+            <button class="ax-btn ax-btn-sm" data-project-save="${i(n.id)}">💾</button>
+          </div>
+        </li>
+      `}).join("");return`
+    <div class="ax-admin-section">
+      <h2>📦 Projets KDMC (${o} — ${c} actifs/wip)</h2>
+      <p class="ax-muted">
+        Source de vérité injectée dans le system prompt IA Apex. Modifie version/statut → Apex le sait au prochain message.
+      </p>
+      <ul class="ax-project-list">${l||'<li class="ax-muted">Aucun projet enregistré</li>'}</ul>
+    </div>
+  `}function U(){return[["commerce","💳 Commerce"],["users","👥 Comptes"],["pending","📨 Attente"],["health","🩺 Santé"],["projects","📦 Projets"],["executions","⚙️ Exec"],["knowledge","📚 KB"],["bilan","📊 Bilan"],["consumption","💰 Conso"],["audit-log","🔒 Audit"]].filter(([c])=>{const r=I[c];return!r||T(r)}).map(([c,r])=>{const l=v===c;return`
+        <button class="ax-tab ax-tab-pill ax-bounce-tap${l?" is-active ax-tab-active":""}" data-tab="${c}" aria-pressed="${l?"true":"false"}">${r}</button>
+      `}).join("")}function O(){const t=f.listPendingExecutions({limit:30}),o=f.getStats(),c=f.listAllowedTasks(),r=f.listForbiddenTasks(),l={pending:"pending",dispatched:"wip",running:"wip",completed:"ok",failed:"error",cancelled:"archived",timeout:"error"},n=t.map(e=>{const a=l[e.status]??"archived",s=new Date(e.ts_created).toLocaleString(),u=e.duration_ms?`${Math.round(e.duration_ms/1e3)}s`:"—",x=e.workflow_run_url?`<a href="${i(e.workflow_run_url)}" target="_blank" rel="noopener">🔗 Workflow</a>`:'<span class="ax-muted">—</span>',b=e.status==="pending"||e.status==="dispatched";return`
+        <li class="ax-execution-row" data-exec-id="${i(e.id)}">
+          <div class="ax-exec-head">
+            <code class="ax-exec-id">${i(e.id.slice(0,18))}</code>
+            <span class="ax-badge ax-badge-${a}">${i(e.status)}</span>
+            <strong>${i(e.task)}</strong>
+          </div>
+          <p class="ax-muted">📅 ${i(s)} · ⏱ ${i(u)} · 🚀 ${i(e.src)} · 👤 ${i(e.initiated_by)}</p>
+          ${e.error?`<p class="ax-error">⚠ ${i(e.error.slice(0,200))}</p>`:""}
+          <p class="ax-exec-actions">
+            ${x}
+            ${b?` · <button class="ax-btn ax-btn-sm" data-exec-cancel="${i(e.id)}">✕ Annuler</button>`:""}
+            · <button class="ax-btn ax-btn-sm" data-exec-poll="${i(e.id)}">🔄 Refresh</button>
+          </p>
+        </li>
+      `}).join("");return`
+    <div class="ax-admin-section">
+      <h2>🤖 Exécutions autonomes (apex-execute)</h2>
+      <p class="ax-muted">
+        Pont autonome IA → Claude Code via GitHub Actions. Apex IA peut exécuter du code réel
+        (modify_file, run_test, deploy_canary…) en dispatchant un workflow CI qui utilise Claude Code Action.
+      </p>
+      <div class="ax-info-card">
+        <h3>📊 Stats</h3>
+        <ul>
+          <li><strong>Total</strong> : ${o.total}</li>
+          <li><strong>En cours</strong> : ${o.pending} pending / ${o.running} running</li>
+          <li><strong>Terminées</strong> : ${o.completed} ✅ · ${o.failed} ❌ · ${o.cancelled} 🚫</li>
+          <li><strong>Success rate</strong> : ${o.success_rate}%</li>
+          <li><strong>Avg duration</strong> : ${Math.round(o.avg_duration_ms/1e3)}s</li>
+        </ul>
+      </div>
+      <div class="ax-info-card">
+        <h3>✅ Tâches autorisées (${c.length})</h3>
+        <p>${c.map(e=>`<code>${i(e)}</code>`).join(" · ")}</p>
+        <h3>🚫 Tâches INTERDITES (${r.length})</h3>
+        <p class="ax-muted">${r.map(e=>`<code>${i(e)}</code>`).join(" · ")}</p>
+      </div>
+      <h3>📋 Historique récent</h3>
+      <ul class="ax-execution-list">${n||`<li class="ax-muted">Aucune exécution pour l'instant.</li>`}</ul>
+    </div>
+  `}function G(){const t=I[v];if(t&&!T(t))return`<div class="ax-admin-section">${R(t)}</div>`;switch(v){case"commerce":return z();case"users":return V();case"pending":return B();case"health":return F();case"projects":return N();case"executions":return O();case"knowledge":return K();case"bilan":return'<div id="ax-admin-mount-bilan" class="ax-admin-section"><p class="ax-muted">Chargement du bilan financier…</p></div>';case"consumption":return'<div id="ax-admin-mount-consumption" class="ax-admin-section"><p class="ax-muted">Chargement consommation IA…</p></div>';case"audit-log":return'<div id="ax-admin-mount-audit-log" class="ax-admin-section"><p class="ax-muted">Chargement audit log immuable…</p></div>'}}async function P(t){const o=t.querySelector("#ax-admin-audits-summary");if(o)try{const{reportsHistory:n}=await k(async()=>{const{reportsHistory:b}=await import("./apex-reports-history-DOI8Fnis.js");return{reportsHistory:b}},__vite__mapDeps([0,1,2,3]),import.meta.url),e=n.getStats(),a=e.lastLayoutTs?new Date(e.lastLayoutTs).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"jamais",s=e.lastFunctionalTs?new Date(e.lastFunctionalTs).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"jamais",u=e.recentBugs>0?"var(--ax-error)":"var(--ax-green)",x=e.recentEscalations>0?"var(--ax-sev-high)":"var(--ax-green)";o.innerHTML=`
+        <div class="ax-bounce-tap" data-nav-route="apex-audits-live" style="background:linear-gradient(135deg,rgba(106,138,255,0.10),rgba(180,90,200,0.06));border:1px solid rgba(106,138,255,0.3);border-radius:12px;padding:14px;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+            <h3 style="margin:0;color:var(--ax-blue-bright);font-size:14px;font-weight:700">📊 Apex Audits Live</h3>
+            <span class="ax-gs-107">Tap → historique complet →</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;font-size:12px;color:rgba(255,255,255,0.85)">
+            <div>📐 Layout : <b>${e.layoutCount}</b> scans<br><span class="ax-gs-23">${a}</span></div>
+            <div>🧪 Fonctionnel : <b>${e.functionalCount}</b> tests<br><span class="ax-gs-23">${s}</span></div>
+            <div>🐛 Bugs 24h : <b style="color:${u}">${e.recentBugs}</b></div>
+            <div>📤 Escaladés 24h : <b style="color:${x}">${e.recentEscalations}</b></div>
+          </div>
+        </div>
+      `}catch(n){g.warn("admin","audits summary render failed",{err:n})}const c=t.querySelector("#ax-admin-mount-bilan");if(c)try{(await k(()=>import("./financial-bilan-43M_PNQj.js"),__vite__mapDeps([0,1,2,3]),import.meta.url)).render(c)}catch(n){g.warn("admin","financial-bilan render failed",{err:n}),c.innerHTML='<p class="ax-muted">Bilan indisponible (module ko)</p>'}const r=t.querySelector("#ax-admin-mount-consumption");if(r)try{(await k(()=>import("./consumption-dashboard-ChTmuFoy.js"),__vite__mapDeps([0,1,2,3]),import.meta.url)).render(r)}catch(n){g.warn("admin","consumption-dashboard render failed",{err:n}),r.innerHTML='<p class="ax-muted">Consommation indisponible (module ko)</p>'}const l=t.querySelector("#ax-admin-mount-audit-log");if(l){if(!T("admin.audit-log")){l.innerHTML=R("admin.audit-log");return}try{const{auditLog:n}=await k(async()=>{const{auditLog:s}=await import("./monitoring-B_mTQJ5f.js").then(u=>u.x);return{auditLog:s}},__vite__mapDeps([0,1,2,3]),import.meta.url);n.init();const e=n.getEntries().slice(-100).reverse(),a=e.map(s=>`<li><code>${i(new Date(s.ts).toLocaleString())}</code> · <strong>${i(s.action)}</strong> · ${i(s.actor||"system")}</li>`).join("");l.innerHTML=`
+        <h2>🔒 Audit log immuable</h2>
+        <p class="ax-muted">${e.length} évènements récents (chain hash vérifié).</p>
+        <ul class="ax-audit-list">${a||'<li class="ax-muted">Aucun événement</li>'}</ul>
+      `}catch(n){g.warn("admin","audit-log render failed",{err:n}),l.innerHTML='<p class="ax-muted">Audit log indisponible (module ko)</p>'}}}function K(){const t=y.listRepos(),o=y.getStats(),c=t.map(r=>`
+      <li class="ax-repo-row">
+        <code>${i(r)}</code>
+        ${t.length>1?`<button class="ax-btn ax-btn-sm" data-remove-repo="${i(r)}">Retirer</button>`:""}
+      </li>
+    `).join("");return`
+    <div class="ax-admin-section">
+      <h2>📚 Base de connaissances Kevin</h2>
+      <p class="ax-muted">
+        Apex peut chercher full-text dans le code de tes repos GitHub via API
+        (5000 req/h authenticated, cache 1h).
+      </p>
+
+      <div class="ax-info-card">
+        <strong>État :</strong> ${o.repos} repos · ${o.cache_entries} entrées cache · ${o.index_entries} fichiers indexés
+        <br>
+        <strong>Token GitHub :</strong> ${o.has_token?"✅ configuré":"⚪ Configure ax_github_token dans le Coffre pour 5000 req/h"}
+      </div>
+
+      <h3>Repos suivis</h3>
+      <ul class="ax-repo-list">${c||'<li class="ax-muted">Aucun repo configuré</li>'}</ul>
+
+      <form id="add-repo-form" class="ax-form">
+        <label>
+          <span>Ajouter un repo (format : owner/repo)</span>
+          <input type="text" id="kb-add-repo" aria-label="Repo GitHub à ajouter (owner/repo)" placeholder="kevin/MyProject"
+                 maxlength="100" autocomplete="off" class="ax-input">
+        </label>
+        <button type="submit" class="ax-btn ax-btn-primary">Ajouter</button>
+      </form>
+
+      <h3>Recherche dans le code</h3>
+      <form id="kb-search-form" class="ax-form">
+        <input type="text" id="kb-search-query" aria-label="Rechercher dans le code des repos" placeholder="Cherche dans tes repos..."
+               maxlength="200" autocomplete="off" class="ax-input">
+        <button type="submit" class="ax-btn ax-btn-primary">Chercher</button>
+      </form>
+      <div id="kb-search-results" class="ax-kb-results"></div>
+
+      <div class="ax-actions">
+        <button class="ax-btn ax-btn-sm" id="kb-clear-cache">🧹 Vider le cache</button>
+      </div>
+    </div>
+  `}function W(t){t.querySelectorAll("[data-nav-route]").forEach(e=>{m.bind(e,"click",()=>{d.tap();const a=e.dataset.navRoute??"chat";window.location.hash="#"+a})}),t.querySelectorAll('[data-action="select-all"]').forEach(e=>{m.bind(e,"click",()=>{e.select()})}),t.querySelectorAll("[data-tab]").forEach(e=>{m.bind(e,"click",()=>{d.selection(),v=e.dataset.tab,h(t)})});const o=t.querySelector("#commerce-toggle");o&&m.bind(o,"change",()=>{const e=o.checked;d.medium();const a=t.querySelector(".ax-toggle-label");if(a){a.textContent="",a.append("Commercialisation ");const s=document.createElement("strong");s.textContent=e?"ACTIVÉE":"désactivée",a.append(s)}_.setEnabled(e),p.success(`Commercialisation ${e?"activée":"désactivée"}`),h(t)});const c=t.querySelector("#create-user-form");c&&m.bind(c,"submit",e=>{e.preventDefault(),Y(t)}),t.querySelectorAll("[data-user-plan]").forEach(e=>{m.bind(e,"change",()=>{const a=e.dataset.userPlan??"";a&&(_.setUserPlan(a,e.value),g.info("admin",`Plan ${e.value} → ${a}`))})}),t.querySelectorAll("[data-project-save]").forEach(e=>{m.bind(e,"click",()=>{d.tap();const a=e.dataset.projectSave??"";if(!a)return;const s=t.querySelector(`[data-project-version="${CSS.escape(a)}"]`),u=t.querySelector(`[data-project-status="${CSS.escape(a)}"]`),x=(s?.value??"").trim(),b=u?.value??"active";if(!x){p.warn("Version requise");return}A.update(a,{version:x,status:b})?(d.success(),p.success(`${a} → ${x} (${b})`),g.info("admin",`Project ${a} updated`,{version:x,status:b}),h(t)):(d.error(),p.error("Update échoué"))})}),t.querySelectorAll("[data-confirm-otp]").forEach(e=>{m.bind(e,"click",()=>{d.tap();const a=e.dataset.confirmOtp??"";if(!a)return;const s=j.confirm(a);s.ok?(d.success(),p.success("Compte activé"),g.info("admin",`Confirmed user ${s.uid}`),h(t)):(d.error(),p.error("Code OTP invalide ou expiré"))})}),t.querySelectorAll("[data-exec-cancel]").forEach(e=>{m.bind(e,"click",()=>{d.tap();const a=e.dataset.execCancel??"";if(!a)return;f.cancelExecution(a)?(d.success(),p.success("Exécution annulée"),h(t)):(d.warning(),p.warn("Annulation impossible"))})}),t.querySelectorAll("[data-exec-poll]").forEach(e=>{m.bind(e,"click",()=>{d.tap();const a=e.dataset.execPoll??"";a&&f.pollResult(a).then(s=>{s?(p.success(`Statut : ${s.status}`),h(t)):p.warn("Exécution introuvable")})})});const r=t.querySelector("#add-repo-form");r&&m.bind(r,"submit",e=>{e.preventDefault(),d.tap();const s=t.querySelector("#kb-add-repo")?.value.trim()??"";if(!s){p.warn("Indique un repo");return}const u=y.addRepo(s);u.ok?(d.success(),p.success(`Repo ajouté : ${s}`),h(t)):(d.error(),p.error(u.reason??"Erreur ajout repo"))}),t.querySelectorAll("[data-remove-repo]").forEach(e=>{m.bind(e,"click",()=>{d.tap();const a=e.dataset.removeRepo??"";a&&(y.removeRepo(a),p.success(`Repo retiré : ${a}`),h(t))})});const l=t.querySelector("#kb-search-form");l&&m.bind(l,"submit",e=>{e.preventDefault(),d.tap();const a=t.querySelector("#kb-search-query"),s=t.querySelector("#kb-search-results"),u=a?.value.trim()??"";!u||!s||(s.innerHTML='<p class="ax-muted">Recherche en cours...</p>',y.searchCode(u).then(x=>{if(x.length===0){s.innerHTML='<p class="ax-muted">Aucun résultat (configure ax_github_token pour augmenter la limite).</p>';return}s.textContent="";const b=document.createElement("ul");b.className="ax-kb-results-list",x.slice(0,20).forEach($=>{const S=document.createElement("li");S.className="ax-kb-result";const w=document.createElement("a");w.href=$.htmlUrl,w.target="_blank",w.rel="noopener";const L=document.createElement("code");L.textContent=$.path,w.append(L);const C=document.createElement("span");C.className="ax-muted",C.textContent=`${$.repo} · score ${$.score.toFixed(2)}`,S.append(w," ",C),b.append(S)}),s.append(b)}))});const n=t.querySelector("#kb-clear-cache");n&&m.bind(n,"click",()=>{d.tap();const e=y.clearCache();p.success(`Cache vidé : ${e.cleared} entrées`),h(t)})}async function Y(t){const o=t.querySelector("#cu-name")?.value.trim()??"",c=t.querySelector("#cu-tier")?.value??"family",r=t.querySelector("#cu-email")?.value.trim()??"",l=t.querySelector("#cu-whatsapp")?.value.trim()??"",n=t.querySelector("#cu-pin")?.value??"";if(!o||o.length<2){d.warning(),p.warn("Nom complet requis (min 2 caractères)");return}const e=await q.createUser({name:o,tier:c,...r&&{email:r},...l&&{whatsappPhone:l},...n&&{initialPin:n}}),a=t.querySelector("#create-user-result");if(!a)return;if(!e.ok||!e.uid){d.error();const u=e.reason??"Erreur création";a.innerHTML=`<div class="ax-error">${i(u)}</div>`,p.error(u);return}d.success(),p.success(`Compte ${o} créé`);let s="";if(l){const u=await j.requestConfirmation({uid:e.uid,name:o,whatsappPhone:l});u.ok&&u.inviteLink&&(s=`
+        <a href="${u.inviteLink}" target="_blank" rel="noopener" class="ax-btn ax-btn-primary">
+          📨 Envoyer le code via WhatsApp
+        </a>
+        <p class="ax-muted">Code OTP : <code>${u.otp}</code></p>
+      `)}a.innerHTML=`
+    <div class="ax-success">
+      Compte créé : <strong>${i(o)}</strong> (${c})
+      <p>Lien d'invitation : <input type="text" aria-label="Lien d'invitation à copier" readonly value="${e.inviteLink??""}" data-action="select-all" class="ax-gs-193"></p>
+      ${s}
+    </div>
+  `,h(t)}let m=null;function ge(){m?.cleanup(),m=null}function h(t){if(m?.cleanup(),m=M("admin"),!H.get("isAdmin")){t.innerHTML=`
+      <div class="ax-empty">
+        <h2>Accès réservé</h2>
+        <p>Cette section est réservée à l'admin Kevin.</p>
+      </div>
+    `;return}if(t.innerHTML=D.withNonce(`
+    <style>
+      @keyframes ax-fade-up {
+        0% { opacity: 0; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .ax-modernized-card { animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) backwards; }
+      .ax-bounce-tap { transition: transform 120ms cubic-bezier(0.16,1,0.3,1); }
+      .ax-bounce-tap:active { transform: scale(0.96); }
+      .ax-admin-content .ax-admin-section {
+        background: linear-gradient(135deg, rgba(20,20,35,0.65), rgba(14,14,28,0.45));
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        animation: ax-fade-up 320ms cubic-bezier(0.16,1,0.3,1) 60ms backwards;
+      }
+      .ax-admin-content h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.015em;
+      }
+      .ax-admin-content h3 {
+        /* v13.4.232 finding P1.7 — hiérarchie typo nette : h3 15px > label 13px,
+         * breathing room 18px vs 14px. Plus de confusion h3 vs labels. */
+        margin: 18px 0 8px;
+        font-size: 15px;
+        color: var(--ax-gold);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+      }
+      .ax-admin-content .ax-info-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+      }
+      .ax-admin-content .ax-muted {
+        color: rgba(255,255,255,0.55);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ax-modernized-card, .ax-admin-section { animation: none !important; transition: none !important; }
+        .ax-bounce-tap { transition: none !important; }
+      }
+    </style>
+    <div class="ax-admin ax-modernized-card" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+      <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10">
+        <div class="ax-gs-106">
+          <h1 style="margin:0;font-size:clamp(26px,5.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">👑 Centre Admin</h1>
+          <p class="ax-gs-288">Kevin · accès illimité</p>
+        </div>
+        <button class="ax-btn ax-btn-sm ax-bounce-tap" data-nav-route="chat" style="flex-shrink:0;padding:10px 16px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;transition:all 180ms;white-space:nowrap" aria-label="Retour au chat">← Chat</button>
+      </header>
+      <nav class="ax-tabs" style="display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:6px 0 12px;margin:0 -16px 14px;padding-left:16px;padding-right:16px;border-bottom:1px solid rgba(255,255,255,0.06);scrollbar-width:thin;scroll-snap-type:x mandatory;scroll-padding-left:16px">${U()}</nav>
+      <div class="ax-admin-content">${G()}</div>
+    </div>
+  `),W(t),v==="bilan"||v==="consumption"){const c=v==="bilan"?"ax-admin-mount-bilan":"ax-admin-mount-consumption",r=t.querySelector(`#${c}`);if(r){const l=r.querySelector("p.ax-muted"),n=l?E(l,"admin-table"):()=>{};P(t).finally(()=>{n()})}else P(t)}}export{ge as dispose,h as render};
