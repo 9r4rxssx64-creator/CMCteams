@@ -3082,7 +3082,7 @@ S'applique : Apex IA dans son auto-correction, Claude Code dans mes commits, tou
 10. "Login = prénom + nom toujours" → règle CLAUDE.md gravée (déjà appliquée v13.3.65) ✅
 
 ### Worker Cloudflare DÉPLOYÉ
-- URL : https://apex-secrets-proxy.desarzens-kevin.workers.dev
+- URL : https://apex-secrets-proxy.9r4rxssx64.workers.dev
 - 17 secrets GitHub syncés (Anthropic, OpenAI, Groq, Gemini, etc.)
 - 0.69ms latence, 0 erreurs
 - Auto-activation au boot Apex si admin Kevin + health OK

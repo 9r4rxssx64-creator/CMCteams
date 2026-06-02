@@ -1440,7 +1440,7 @@ grep -rln "from.*services/X\.js'\|import('.*X\.js')" .
 - `CLAUDE.md` — règle absolue "LOGIN TOUJOURS PRÉNOM + NOM" (anti-régression future)
 
 ### Worker Cloudflare DÉPLOYÉ
-- URL : https://apex-secrets-proxy.desarzens-kevin.workers.dev
+- URL : https://apex-secrets-proxy.9r4rxssx64.workers.dev
 - 13 providers actifs (anthropic, groq, gemini, deepseek, perplexity, tavily, pinecone, telegram, railway, vonage, opnLego, jwt, emailjs)
 - /health endpoint public, le reste protégé par PIN admin Kevin SHA-256
 
