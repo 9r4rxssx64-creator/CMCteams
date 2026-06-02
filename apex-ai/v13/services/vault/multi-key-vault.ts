@@ -24,6 +24,7 @@
  */
 
 import { logger } from '../../core/logger.js';
+import type { ProxyProvider } from '../integrations/apex-secrets-proxy-client.js';
 
 /* Lazy vault accessor — break circular dep multi-key-vault ↔ vault.
    vault.ts dynamic-imports multi-key-vault.ts (line ~927) ; if we keep
@@ -85,6 +86,17 @@ interface PingConfig {
   /* Statuts considérés comme "clé fonctionnelle" (ex: 200, 400 = body issue mais clé valide).
      401/403/429 par défaut → failing (sauf override). */
 }
+
+/** v13.4.279 (Kevin "Finnhub/Railway/Cloudflare ne fonctionnent pas") :
+ * ces APIs bloquent le CORS navigateur → le test direct (fetch) échoue toujours,
+ * même avec une clé valide → statut "failing/dégradé" trompeur. On les teste VIA
+ * LE PROXY apex-secrets-proxy (côté serveur Cloudflare = pas de CORS) qui injecte
+ * la clé du worker. Fallback test direct si le proxy est indisponible. */
+const PROXY_TEST_PATHS: Record<string, { path: string; method: 'GET' | 'POST'; body?: string }> = {
+  cloudflare: { path: '/client/v4/user/tokens/verify', method: 'GET' },
+  railway: { path: '/graphql/v2', method: 'POST', body: JSON.stringify({ query: '{ __typename }' }) },
+  finnhub: { path: '/api/v1/quote?symbol=AAPL', method: 'GET' },
+};
 
 const STORAGE_KEY = 'apex_v13_multi_keys';
 const MAX_FAIL_BEFORE_FAILING = 3;
@@ -572,15 +584,34 @@ class MultiKeyVault {
     const plain = detailed.plaintext as string;
     const start = Date.now();
     try {
-      const init: RequestInit = {
-        method: config.method,
-        headers: config.buildHeaders(plain),
-        signal: AbortSignal.timeout(8000),
-      };
-      if (config.body !== undefined) init.body = config.body;
-      /* v13.4.274 — buildUrl override (cas Finnhub `?token=` injecté). */
-      const targetUrl = config.buildUrl ? config.buildUrl(plain) : config.url;
-      const res = await fetch(targetUrl, init);
+      let res: Response | null = null;
+      /* v13.4.279 — providers CORS-bloqués : test via le proxy server-side. */
+      const pt = PROXY_TEST_PATHS[entry.service];
+      if (pt) {
+        try {
+          const { apexSecretsProxy } = await import('../integrations/apex-secrets-proxy-client.js');
+          if (await apexSecretsProxy.isProxyAvailable()) {
+            res = await apexSecretsProxy.proxyFetch(entry.service as ProxyProvider, pt.path, {
+              method: pt.method,
+              body: pt.body ?? null,
+              signal: AbortSignal.timeout(8000),
+            });
+          }
+        } catch {
+          res = null; /* proxy indispo → fallback direct ci-dessous */
+        }
+      }
+      if (res === null) {
+        const init: RequestInit = {
+          method: config.method,
+          headers: config.buildHeaders(plain),
+          signal: AbortSignal.timeout(8000),
+        };
+        if (config.body !== undefined) init.body = config.body;
+        /* v13.4.274 — buildUrl override (cas Finnhub `?token=` injecté). */
+        const targetUrl = config.buildUrl ? config.buildUrl(plain) : config.url;
+        res = await fetch(targetUrl, init);
+      }
       const latency = Date.now() - start;
       const status = res.status;
       entry.lastTestedAt = Date.now();
