@@ -198,6 +198,59 @@ export async function tryFirebaseRestoreConversation(
   }
 }
 
+/**
+ * v13.4.284 — Efface la conversation courante de TOUTES les couches de
+ * persistance (Kevin "J'ai effacé les messages mais ils reviennent avec les Maj").
+ *
+ * CAUSE du bug : l'ancien bouton 🗑 ne supprimait que des clés localStorage
+ * ERRONÉES (`apex_v13_chat_messages_<uid>`) — jamais `apex_v13_conversation_active`
+ * (la vraie) ni le backup Firebase `apex_v13_conversation_cloud`. Au reload / après
+ * une MAJ (cache local vidé), `tryFirebaseRestoreConversation` restaurait depuis
+ * le cloud → les messages « effacés » réapparaissaient.
+ *
+ * Ce helper coupe les debounces en cours PUIS vide les 3 couches :
+ *  1. localStorage `apex_v13_conversation_active`
+ *  2. Firebase `apex_v13_conversation_cloud` (écrit [] → restore voit vide → skip)
+ *  3. IDB pièces jointes (cleanupOrphans avec keep-set vide = tout purger)
+ *
+ * + nettoie les clés legacy pour ne rien laisser ressusciter.
+ */
+export async function clearConversationEverywhere(): Promise<void> {
+  /* Coupe les écritures en attente (sinon un debounce ré-écrit l'ancien état). */
+  if (_saveTimeout) { clearTimeout(_saveTimeout); _saveTimeout = null; }
+  if (_firebaseSyncTimeout) { clearTimeout(_firebaseSyncTimeout); _firebaseSyncTimeout = null; }
+
+  /* 1. localStorage — la VRAIE clé + clés legacy par uid. */
+  try {
+    localStorage.removeItem(CONV_STORAGE_KEY);
+    let uid = 'anon';
+    try {
+      const raw = localStorage.getItem('apex_v13_user');
+      if (raw) uid = (JSON.parse(raw) as { id?: string }).id ?? 'anon';
+    } catch { /* ignore */ }
+    localStorage.removeItem(`apex_v13_chat_messages_${uid}`);
+    localStorage.removeItem(`apex_v13_chat_pending_${uid}`);
+  } catch { /* quota/ignore */ }
+
+  /* 2. Firebase backup — écrit [] pour empêcher la résurrection au prochain boot. */
+  try {
+    const { firebase } = await import('../../services/storage/firebase.js');
+    await firebase.write(FIREBASE_PATH, []);
+  } catch (err: unknown) {
+    logger.warn('chat-persistence', 'clear Firebase skipped', { err });
+  }
+
+  /* 3. IDB pièces jointes — purge totale (aucun msgId à garder). */
+  try {
+    const { chatAttachmentsStore } = await import('../../services/ai/chat-attachments-store.js');
+    await chatAttachmentsStore.cleanupOrphans(new Set<string>());
+  } catch (err: unknown) {
+    logger.warn('chat-persistence', 'clear IDB attachments skipped', { err });
+  }
+
+  logger.info('chat-persistence', 'conversation effacée (localStorage + Firebase + IDB)');
+}
+
 /** Reset internal timeouts (utile en tests pour cleanup). */
 export function _resetPersistenceTimeoutsForTests(): void {
   if (_saveTimeout) clearTimeout(_saveTimeout);

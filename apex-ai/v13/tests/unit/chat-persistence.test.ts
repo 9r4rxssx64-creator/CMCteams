@@ -397,3 +397,62 @@ describe('chat-persistence attachments → IDB sentinel (v13.4.205)', () => {
     expect(stored[0]?.attachments).toBeUndefined();
   });
 });
+
+describe('chat-persistence clearConversationEverywhere (v13.4.284 — anti-résurrection)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetPersistenceTimeoutsForTests();
+    vi.resetModules();
+  });
+  afterEach(() => {
+    vi.doUnmock('../../services/storage/firebase.js');
+    vi.doUnmock('../../services/ai/chat-attachments-store.js');
+  });
+
+  it('supprime la VRAIE clé localStorage (apex_v13_conversation_active)', async () => {
+    const writeSpy = vi.fn().mockResolvedValue(undefined);
+    const cleanupSpy = vi.fn().mockResolvedValue(0);
+    vi.doMock('../../services/storage/firebase.js', () => ({ firebase: { write: writeSpy } }));
+    vi.doMock('../../services/ai/chat-attachments-store.js', () => ({
+      chatAttachmentsStore: { cleanupOrphans: cleanupSpy },
+    }));
+    const { clearConversationEverywhere: clearAll } = await import('../../features/chat/chat-persistence.js');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([{ id: 'm1', role: 'user', text: 'salut', ts: 1 }]));
+    await clearAll();
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  it('écrit [] dans le backup Firebase (empêche la résurrection au boot)', async () => {
+    const writeSpy = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('../../services/storage/firebase.js', () => ({ firebase: { write: writeSpy } }));
+    vi.doMock('../../services/ai/chat-attachments-store.js', () => ({
+      chatAttachmentsStore: { cleanupOrphans: vi.fn().mockResolvedValue(0) },
+    }));
+    const { clearConversationEverywhere: clearAll } = await import('../../features/chat/chat-persistence.js');
+    await clearAll();
+    expect(writeSpy).toHaveBeenCalledWith('apex_v13_conversation_cloud', []);
+  });
+
+  it('purge les pièces jointes IDB (cleanupOrphans avec keep-set vide)', async () => {
+    const cleanupSpy = vi.fn().mockResolvedValue(3);
+    vi.doMock('../../services/storage/firebase.js', () => ({ firebase: { write: vi.fn().mockResolvedValue(undefined) } }));
+    vi.doMock('../../services/ai/chat-attachments-store.js', () => ({
+      chatAttachmentsStore: { cleanupOrphans: cleanupSpy },
+    }));
+    const { clearConversationEverywhere: clearAll } = await import('../../features/chat/chat-persistence.js');
+    await clearAll();
+    expect(cleanupSpy).toHaveBeenCalledTimes(1);
+    const arg = cleanupSpy.mock.calls[0]?.[0] as Set<string>;
+    expect(arg instanceof Set).toBe(true);
+    expect(arg.size).toBe(0);
+  });
+
+  it('reste silencieux si Firebase échoue (best-effort, pas de throw)', async () => {
+    vi.doMock('../../services/storage/firebase.js', () => ({ firebase: { write: vi.fn().mockRejectedValue(new Error('offline')) } }));
+    vi.doMock('../../services/ai/chat-attachments-store.js', () => ({
+      chatAttachmentsStore: { cleanupOrphans: vi.fn().mockResolvedValue(0) },
+    }));
+    const { clearConversationEverywhere: clearAll } = await import('../../features/chat/chat-persistence.js');
+    await expect(clearAll()).resolves.toBeUndefined();
+  });
+});
