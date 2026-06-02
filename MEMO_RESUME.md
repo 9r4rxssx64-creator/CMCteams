@@ -12,6 +12,16 @@
 
 Branche `claude/verifie-Ypr17`. **Mergée sur main** (PR #535, par Kevin) → fixes en prod.
 
+> 🧹 **ÉPURATION + SIM RÉELLE (suite session)** : vues mortes supprimées (vCasinos,
+> vEvents, vCagnottes — 0 appelant, PR #545-546). Anti-fuite setInterval (#543).
+> Coverage Apex Chat 96.4→98.4% branches (#544, +18 tests notif d'appel). P0-SEC-2
+> 100% clos (#539+#541). **Simulation RÉELLE Puppeteer 6 devices : 49/54 PASS** —
+> les 5 'échecs' = lz-string CDN bloqué par le sandbox (artefact réseau, OK en prod),
+> PAS un bug ; navigation+fonctionnalités OK. **NON épuré (JAMAIS RÉGRESSER)** :
+> vPassation (feature WIP, compteurs actifs), adminold (filet secours admin), toasts
+> (feedback utile vs bruit = jugement par item) → à trancher explicitement par Kevin.
+> Déploiement par GitHub MCP (create+merge PR API) rétabli et fiable.
+
 > 🔒 **P0-SEC-2 CLÔTURÉ (PR #539+#541)** : `_cmcSafeId()` whitelist sur TOUS les sites
 > d'injection d'id dans un handler onclick (recherche, drill, audit rename/delete/present,
 > editEmpId, saveOv, pitAction assignEmp/setStatut). Apex v13 maskable icon = déjà présent
