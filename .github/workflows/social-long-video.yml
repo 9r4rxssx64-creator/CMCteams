@@ -26,7 +26,7 @@ jobs:
       chunks: ${{ steps.pick.outputs.chunks }}
       chunk_count: ${{ steps.pick.outputs.chunk_count }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
@@ -79,7 +79,7 @@ jobs:
         chunk_index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     if: ${{ fromJson(needs.prepare.outputs.chunk_count) > 0 }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
       - name: Download all chunks
         uses: actions/download-artifact@v4

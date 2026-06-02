@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploy Apex services to Cloudflare Workers
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v5
         with:

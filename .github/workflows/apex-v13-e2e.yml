@@ -20,7 +20,7 @@ jobs:
       run:
         working-directory: apex-ai/v13
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Node 20
         uses: actions/setup-node@v5
@@ -81,7 +81,7 @@ jobs:
       run:
         working-directory: services/apex-v13-backend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node 20
         uses: actions/setup-node@v5
         with:

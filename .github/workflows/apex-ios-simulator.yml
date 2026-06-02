@@ -63,7 +63,7 @@ jobs:
       APEX_E2E_PROJECT: ${{ github.event.client_payload.project || inputs.project || 'mobile-safari' }}
       APEX_E2E_REQUESTED_BY: ${{ github.event.client_payload.requested_by || 'manual_dispatch' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Node 20
         uses: actions/setup-node@v5

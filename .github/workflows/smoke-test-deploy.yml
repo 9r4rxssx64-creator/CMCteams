@@ -22,7 +22,7 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Wait for GitHub Pages deploy (3 min)
         run: sleep 180
