@@ -193,7 +193,7 @@ async function inspectCloudflareProxy(): Promise<CloudflareProxyState> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
-      url: url || 'https://apex-secrets-proxy.desarzens-kevin.workers.dev',
+      url: url || 'https://apex-secrets-proxy.9r4rxssx64.workers.dev',
       reachable: false,
       latency_ms: 0,
       http_status: 0,

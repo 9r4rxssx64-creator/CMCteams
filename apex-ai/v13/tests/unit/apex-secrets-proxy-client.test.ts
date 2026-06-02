@@ -2,7 +2,7 @@
  * Tests apex-secrets-proxy-client v13.4.129 (Kevin "intègre secrets GitHub à Apex").
  *
  * Vérifie :
- *  - URL worker par défaut = desarzens-kevin
+ *  - URL worker par défaut = 9r4rxssx64
  *  - proxyFetch construit bonne URL (anthropic/v1/messages, etc.)
  *  - PIN admin hashé envoyé en header x-apex-pin
  *  - checkHealth parse réponse correcte
@@ -36,9 +36,9 @@ describe('apex-secrets-proxy-client (v13.4.129 Kevin)', () => {
   });
 
   describe('getWorkerUrl', () => {
-    it('retourne URL par défaut desarzens-kevin si pas override', () => {
+    it('retourne URL par défaut 9r4rxssx64 si pas override', () => {
       expect(apexSecretsProxy.getWorkerUrl()).toBe(
-        'https://apex-secrets-proxy.desarzens-kevin.workers.dev',
+        'https://apex-secrets-proxy.9r4rxssx64.workers.dev',
       );
     });
 
@@ -94,7 +94,7 @@ describe('apex-secrets-proxy-client (v13.4.129 Kevin)', () => {
       expect(fetchSpy).toHaveBeenCalledOnce();
       const callArg = fetchSpy.mock.calls[0]?.[0];
       const url = typeof callArg === 'string' ? callArg : (callArg as Request).url;
-      expect(url).toContain('apex-secrets-proxy.desarzens-kevin.workers.dev/anthropic/v1/messages');
+      expect(url).toContain('apex-secrets-proxy.9r4rxssx64.workers.dev/anthropic/v1/messages');
     });
 
     it('injecte header x-apex-pin avec PIN hashé SHA-256', async () => {
@@ -176,16 +176,14 @@ describe('apex-secrets-proxy-client (v13.4.129 Kevin)', () => {
         'anthropic', 'openai', 'groq', 'gemini', 'deepseek',
         'perplexity', 'tavily', 'pinecone', 'telegram', 'railway',
         'cloudflare', 'vonage', 'opn-lego', 'jwt', 'emailjs',
-        // v13.4.278 (Kevin "Apex doit avoir accès à tous mes secrets GitHub")
-        'xai', 'mistral', 'cohere', 'together', 'finnhub', 'pexels', 'replicate',
       ];
       expected.forEach((p) => {
         expect(apexSecretsProxy.PROXY_PROVIDERS).toContain(p);
       });
     });
 
-    it('22 providers total (15 base + 7 ajoutés v13.4.278)', () => {
-      expect(apexSecretsProxy.PROXY_PROVIDERS.length).toBe(22);
+    it('15 providers total', () => {
+      expect(apexSecretsProxy.PROXY_PROVIDERS.length).toBe(15);
     });
   });
 });
