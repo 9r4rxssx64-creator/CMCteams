@@ -1,5 +1,31 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 📌 SESSION 2026-06-02 — À FAIRE ENSEMBLE (décision Kevin « on fera le 2 ensuite »)
+
+### #2 — Apex Chat Étape B : E2E réellement actif (upload prekeys)
+- **Quoi** : câbler `POST /api/keys/prekeys` (au login) + `GET /api/keys/:id/bundle`
+  (à l'ouverture d'une conv) → chiffrement E2E RÉELLEMENT actif entre pairs
+  (aujourd'hui : clés publiques jamais uploadées → fallback texte).
+- **Pourquoi ensemble** : nécessite **2 vrais appareils** (toi + Laurence / 2 navigateurs)
+  pour prouver qu'un message s'échange déchiffrable des 2 côtés. Pas validable en sandbox.
+- **Pré-requis en place** : Étape A (clé privée wrappée PIN) livrée DORMANTE
+  (`messaging-app/lib/key-vault.js` + tests) — réactivable en décommentant 1 import dans
+  `messaging-app/crypto.js`. Routes worker `/api/keys/*` déjà présentes.
+- **Plan staged** : A (fait, dormant) → B (prekeys) → C (salt HKDF par conv) → D (JWT cookie + CORS).
+
+### Dettes ouvertes (audit mesuré 2026-06-02) — ✅ TRAITÉES en autonomie 2026-06-02
+- ✅ **Apex v13** : `tests/setup.ts` → `vi.clearAllMocks()` ajouté entre tests (anti-pollution
+  d'historique d'appels). + corrigé un **test périmé** (`apex-secrets-proxy-client > 15 providers
+  total` : la source a grossi à **22** en v13.4.278, test resté à 15 → échec déguisé en "flaky").
+  Les 2 tests nommés (sentry-bridge, dashboard-personnel) passent. Gate complet revalidé.
+- ✅ **CMCteams** : audit XSS complet — **aucun vecteur exploitable** : chat/MOTD/notes/noms/profil
+  sont déjà `esc()`/`escAttr()` au rendu, ids via `_cmcSafeId()` (session précédente). Seul
+  point externe (météo open-meteo → innerHTML) durci par `Number()` (commit `13d39a939`).
+- ✅ **Apex Chat** : couverture **100%** (lignes/branches/fonctions/stmts), 799 tests — ajout
+  tests history-WS + notifyOfflineCall/Members + handleFetch url falsy (commit `f0f7e3b92`).
+
+---
+
 ## 🔑 SESSION 2026-05-26 14h45 — Nouveaux secrets GitHub ajoutés par Kevin
 
 Kevin a ajouté manuellement 3 secrets côté GitHub Settings/Secrets :

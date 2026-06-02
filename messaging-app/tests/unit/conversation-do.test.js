@@ -344,6 +344,69 @@ describe('ConversationDO — fetch WebSocket upgrade', () => {
     const session = [..._do.sessions.values()][0];
     expect(session.convId).toBe('SOME-DO-ID');
   });
+
+  // --- Historique envoyé à la connexion (couverture L155-176) ---
+  // DB où membership passe (first conversation_members) et où on contrôle l'historique messages.
+  function makeConnectDB({ historyAll = { results: [] }, historyThrow = false } = {}) {
+    return {
+      prepare: vi.fn((sql) => ({
+        sql,
+        bind: vi.fn(function () { return this; }),
+        first: vi.fn(async function () {
+          if (sql.includes('conversation_members')) return { user_id: 'kdmc', role: 'owner' };
+          return null; // system_config / users
+        }),
+        all: vi.fn(async function () {
+          if (sql.includes('FROM messages')) {
+            if (historyThrow) throw new Error('hist down');
+            return historyAll;
+          }
+          return { results: [] }; // loadConfig
+        }),
+        run: vi.fn(async () => ({ success: true })),
+      })),
+      batch: vi.fn(async () => ({ success: true })),
+    };
+  }
+
+  async function connectWS(_do, conv = 'conv1') {
+    const validJWT = await makeJWT({ sub: 'kdmc', exp: Math.floor(Date.now() / 1000) + 3600 }, SECRET);
+    return _do.fetch(wsRequest(`https://x/ws?token=${validJWT}&uid=kdmc&conv=${conv}`));
+  }
+
+  it('historique : envoi DB throw → catch silencieux, session quand même ajoutée', async () => {
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: makeConnectDB({ historyThrow: true }) }));
+    await new Promise((r) => setTimeout(r, 5));
+    const r = await connectWS(_do);
+    expect(r.status).toBe(101);
+    expect(_do.sessions.size).toBe(1);
+    const server = [..._do.sessions.keys()][0];
+    expect(server.sent.some((m) => JSON.parse(m).type === 'hello')).toBe(true);
+    expect(server.sent.some((m) => JSON.parse(m).type === 'history')).toBe(false);
+  });
+
+  it('historique : message en buffer (pendingMessages) fusionné + hist.results absent → history envoyé', async () => {
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: makeConnectDB({ historyAll: {} }) }));
+    await new Promise((r) => setTimeout(r, 5));
+    // message non encore flushé en D1, sans reply_to/view_once/expires_at (défauts)
+    _do.pendingMessages = [{ conv_id: 'conv1', id: 'pm1', sender_id: 'kdmc', ciphertext: 'c', mime: 'text/plain', ts: Date.now() }];
+    const r = await connectWS(_do);
+    expect(r.status).toBe(101);
+    const server = [..._do.sessions.keys()][0];
+    const histMsg = server.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'history');
+    expect(histMsg).toBeTruthy();
+    expect(histMsg.messages.some((m) => m.id === 'pm1' && m.reply_to === null && m.view_once === 0)).toBe(true);
+  });
+
+  it('historique : tous les messages expirés → fresh vide → pas d\'envoi history', async () => {
+    const expired = { results: [{ id: 'old', sender_id: 'k', ciphertext: 'x', mime: 'text/plain', ts: 1, expires_at: 1 }] };
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: makeConnectDB({ historyAll: expired }) }));
+    await new Promise((r) => setTimeout(r, 5));
+    const r = await connectWS(_do);
+    expect(r.status).toBe(101);
+    const server = [..._do.sessions.keys()][0];
+    expect(server.sent.some((m) => JSON.parse(m).type === 'history')).toBe(false);
+  });
 });
 
 // ----------------------------------------------------------------------------
@@ -637,6 +700,43 @@ describe('ConversationDO — broadcast & notifyOfflineMembers & flushToD1', () =
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('notifyOfflineMembers : nom expéditeur résolu (real_name) → senderName appliqué', async () => {
+    const _do = new ConversationDO(makeState(), ENV({
+      APEX_CHAT_DB: {
+        prepare: (sql) => ({
+          bind: function () { return this; },
+          all: async () => ({ results: [{ user_id: 'kdmc' }, { user_id: 'bob' }] }),
+          first: async () => (sql.includes('FROM users') ? { real_name: 'Alice', pseudo: 'al' } : null),
+        }),
+      },
+      JWT_SIGN_KEY: SECRET,
+    }));
+    await new Promise((r) => setTimeout(r, 5));
+    _do.sessions = new Map(); // bob offline
+    await _do.notifyOfflineMembers({ id: 'm', conv_id: 'c', sender_id: 'kdmc', ts: Date.now() });
+    expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['pseudo seul', { real_name: null, pseudo: 'bobby' }],
+    ['ni real_name ni pseudo → fallback', { real_name: null, pseudo: null }],
+  ])('notifyOfflineMembers : senderName %s', async (_label, userRow) => {
+    const _do = new ConversationDO(makeState(), ENV({
+      APEX_CHAT_DB: {
+        prepare: (sql) => ({
+          bind: function () { return this; },
+          all: async () => ({ results: [{ user_id: 'kdmc' }, { user_id: 'bob' }] }),
+          first: async () => (sql.includes('FROM users') ? userRow : null),
+        }),
+      },
+      JWT_SIGN_KEY: SECRET,
+    }));
+    await new Promise((r) => setTimeout(r, 5));
+    _do.sessions = new Map();
+    await _do.notifyOfflineMembers({ id: 'm', conv_id: 'c', sender_id: 'kdmc', ts: Date.now() });
+    expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
   it('notifyOfflineMembers DB error → catch silencieux', async () => {
     const _do = new ConversationDO(makeState(), ENV({
       APEX_CHAT_DB: { prepare: () => ({ bind: function () { return this; }, all: async () => { throw new Error('db'); } }) },
@@ -905,5 +1005,68 @@ describe('ConversationDO — notifyOfflineCall', () => {
     env.APEX_CHAT_DB = { prepare: () => { throw new Error('db down'); } };
     const _do = new ConversationDO(makeState(), env);
     await expect(_do.notifyOfflineCall('kev', 'conv-1', 'audio')).resolves.toBeUndefined();
+  });
+
+  it('members.results absent → aucun offline → pas de push (branche || [])', async () => {
+    const db = makeDB([{ user_id: 'bob' }]);
+    const origPrepare = db.prepare;
+    db.prepare = vi.fn((sql) => {
+      const stmt = origPrepare(sql);
+      if (sql.includes('conversation_members')) stmt.all = vi.fn(async () => ({})); // pas de .results
+      return stmt;
+    });
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: db }));
+    _do.sessions = new Map();
+    const spy = vi.spyOn(_do, '_pushToUsers').mockResolvedValue(undefined);
+    await _do.notifyOfflineCall('kev', 'conv-1', 'audio');
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('caller pseudo seul (real_name null) + callType null → nom=pseudo + callType défaut audio', async () => {
+    const db = makeDB([{ user_id: 'bob' }]);
+    const origPrepare = db.prepare;
+    db.prepare = vi.fn((sql) => {
+      const stmt = origPrepare(sql);
+      if (sql.includes('FROM users')) stmt.first = vi.fn(async () => ({ real_name: null, pseudo: 'bobby' }));
+      return stmt;
+    });
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: db }));
+    _do.sessions = new Map();
+    const spy = vi.spyOn(_do, '_pushToUsers').mockResolvedValue(undefined);
+    await _do.notifyOfflineCall('kev', 'conv-1', null);
+    const payload = spy.mock.calls[0][1];
+    expect(payload.body).toBe('bobby t\'appelle');
+    expect(payload.payload.callType).toBe('audio');
+  });
+
+  it('caller sans real_name ni pseudo → fallback "Quelqu\'un"', async () => {
+    const db = makeDB([{ user_id: 'bob' }]);
+    const origPrepare = db.prepare;
+    db.prepare = vi.fn((sql) => {
+      const stmt = origPrepare(sql);
+      if (sql.includes('FROM users')) stmt.first = vi.fn(async () => ({ real_name: null, pseudo: null }));
+      return stmt;
+    });
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: db }));
+    _do.sessions = new Map();
+    const spy = vi.spyOn(_do, '_pushToUsers').mockResolvedValue(undefined);
+    await _do.notifyOfflineCall('kev', 'conv-1', 'video');
+    expect(spy.mock.calls[0][1].body).toBe('Quelqu\'un t\'appelle');
+  });
+
+  it('caller lookup throw → catch interne, push quand même (nom défaut)', async () => {
+    const db = makeDB([{ user_id: 'bob' }]);
+    const origPrepare = db.prepare;
+    db.prepare = vi.fn((sql) => {
+      const stmt = origPrepare(sql);
+      if (sql.includes('FROM users')) stmt.first = vi.fn(async () => { throw new Error('users down'); });
+      return stmt;
+    });
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: db }));
+    _do.sessions = new Map();
+    const spy = vi.spyOn(_do, '_pushToUsers').mockResolvedValue(undefined);
+    await _do.notifyOfflineCall('kev', 'conv-1', 'audio');
+    expect(spy).toHaveBeenCalled();
+    expect(spy.mock.calls[0][1].body).toBe('Quelqu\'un t\'appelle');
   });
 });
