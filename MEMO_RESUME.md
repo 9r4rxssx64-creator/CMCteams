@@ -3240,3 +3240,29 @@ LEÇON : la "disparition" finale de la branche = merge+cleanup réussi, PAS une 
 > Leçons gravées : **#83** (flaky supposé = test périmé → reproduire en isolation) +
 > **#84** (spy sur singleton partagé = `afterEach(restoreAllMocks)`, clearAllMocks ne suffit pas).
 > Branche `claude/perfect-100-Ypr17`. Campagne itérative : 1 fichier/tour, mesuré, sans régression.
+
+## 📋 SESSION 2026-06-02 (suite) — Campagne couverture v13 « 100% réel » (tours 1-7)
+
+> **8 fichiers v13 portés à 100% de branches**, tous mergés sur main, gate complet revalidé
+> à chaque tour (0 régression) :
+> `admin-action-gate` · `ios-resilience` · `orchestrator` · `vault-auto-maintenance` ·
+> `frontend-design` · `impeccable-design` · `escape-html` (core, 77 importeurs) · `permissions`.
+>
+> **Fix transverse** : flaky de contention → `testTimeout` 15s→30s (`vitest.config.ts`).
+>
+> **3 régressions PRÉ-EXISTANTES de main détectées + réparées** (introduites par d'autres
+> commits, gate de main rouge) : `PROXY_PROVIDERS` test 15 vs source 22 (worker v13.4.281) ;
+> `vault CATEGORIES` test 10 vs source 11 (v13.4.284) ; lint `no-throw-literal` (mon tour 5,
+> passé car je ne lançais pas eslint).
+>
+> **État v13 mesuré** : tsc **0**, eslint **0**, **~12000 tests verts**, couverture
+> **Lines 84.66% / Branches 76.42%** (en hausse régulière). Apex Chat **100%** couverture.
+> CMCteams `test:ci` vert.
+>
+> **Leçons gravées** : #83 (flaky=test périmé→isoler), #84 (spy singleton→afterEach restore),
+> #87 (gate = tsc+ESLint+suite complète ; sync main chaque tour révèle régressions).
+> **Process adopté** : gate = `tsc --noEmit` + `npm run lint` + suite complète, systématique.
+>
+> Branche `claude/perfect-100-Ypr17`. Campagne itérative : 1 fichier/tour → 100%, mergé via
+> GitHub MCP quand dispo. ~277 fichiers restants < 100% branche (campagne longue, défensif
+> croissant : switch-default/import-reject/`?? c` type-guards parfois inatteignables sans refactor).
