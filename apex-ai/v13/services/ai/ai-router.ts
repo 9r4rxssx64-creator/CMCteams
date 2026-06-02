@@ -532,7 +532,7 @@ async function tryProxyRoute(
   } catch {
     return null;
   }
-  const workerBase = 'https://apex-secrets-proxy.desarzens-kevin.workers.dev';
+  const workerBase = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
   const proxyUrl = `${workerBase}/${provider}${proxyPath}`;
   return {
     url: proxyUrl,

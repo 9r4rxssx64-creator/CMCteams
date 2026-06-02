@@ -19,7 +19,7 @@
 
 import { logger } from '../../core/logger.js';
 
-const DEFAULT_WORKER_URL = 'https://apex-secrets-proxy.desarzens-kevin.workers.dev';
+const DEFAULT_WORKER_URL = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 const PROXY_URL_STORAGE_KEY = 'apex_v13_secrets_proxy_url';
 
 /* Providers disponibles via le proxy (synced avec wrangler.toml secrets) */
@@ -69,7 +69,13 @@ interface ProxyFetchOpts {
 function getWorkerUrl(): string {
   try {
     const stored = localStorage.getItem(PROXY_URL_STORAGE_KEY);
-    if (stored && stored.startsWith('https://')) return stored.replace(/\/$/, '');
+    /* v13.4.281 — ignore une URL stockée pointant vers l'ancien sous-domaine
+     * orphelin `desarzens-kevin` : le worker réel est sur `9r4rxssx64.workers.dev`
+     * (sous-domaine du compte). Sans ce garde-fou, une vieille valeur persistée
+     * masquerait le DEFAULT corrigé → Cloudflare/Finnhub restent rouges. */
+    if (stored && stored.startsWith('https://') && !stored.includes('desarzens-kevin')) {
+      return stored.replace(/\/$/, '');
+    }
   } catch { /* ignore */ }
   return DEFAULT_WORKER_URL;
 }

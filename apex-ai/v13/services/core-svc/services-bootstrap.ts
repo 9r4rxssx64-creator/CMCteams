@@ -62,6 +62,15 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
   if (bootstrapped) return [];
   bootstrapped = true;
 
+  /* v13.4.281 — self-heal des URLs worker périmées (desarzens-kevin → 9r4rxssx64),
+   * AVANT que push-auto-init / secrets-proxy ne lisent leur URL stockée. */
+  try {
+    const { healWorkerUrls } = await import('../integrations/worker-url-heal.js');
+    healWorkerUrls();
+  } catch {
+    /* non-bloquant */
+  }
+
   const tasks: Array<Promise<InitResult>> = [
     /* Performance monitoring (Web Vitals) */
     safeInit('perf-metrics', async () => {

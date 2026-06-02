@@ -29,7 +29,7 @@ const RECENT_THRESHOLD_MS = 5 * 60 * 1000; /* 5 min */
 const REPROBE_MS = 45 * 1000;
 const PROBE_URLS = [
   'https://apex-auth-worker.9r4rxssx64.workers.dev/health',
-  'https://apex-secrets-proxy.desarzens-kevin.workers.dev/health',
+  'https://apex-secrets-proxy.9r4rxssx64.workers.dev/health',
 ];
 let _reprobeTimer: ReturnType<typeof setInterval> | null = null;
 
