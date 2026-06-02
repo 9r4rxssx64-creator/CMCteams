@@ -33,14 +33,6 @@
  * Implementation : escape les 5 chars dangereux (`& < > " '`).
  */
 
-const HTML_ESCAPE_MAP: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
-};
-
 /**
  * Échappe une string pour insertion safe dans innerHTML.
  * Pure, déterministe, XSS-safe sur les 5 chars critiques.
@@ -53,7 +45,16 @@ const HTML_ESCAPE_MAP: Record<string, string> = {
  */
 export function escapeHtml(s: string | number | boolean | null | undefined): string {
   if (s === null || s === undefined) return '';
-  return String(s).replace(/[&<>"']/g, (c) => HTML_ESCAPE_MAP[c] ?? c);
+  /* Chaîne de replace (au lieu d'un map + callback) : comportement identique sur
+   * les 5 chars critiques, mais sans branche `?? c` inatteignable (la regex ne
+   * matche QUE des chars présents dans le map → 100% couvrable). '&' en premier
+   * pour ne pas double-échapper les entités produites ensuite. */
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**

@@ -43,14 +43,14 @@ function makeDisplay(overrides: Partial<CredentialDisplay> = {}): CredentialDisp
 }
 
 describe('features/vault visual — CATEGORIES', () => {
-  it('expose 10 catégories incluant "other"', () => {
-    expect(CATEGORIES.length).toBe(10);
+  it('expose 11 catégories incluant "other" (v13.4.284 : +identity +addresses)', () => {
+    expect(CATEGORIES.length).toBe(11);
     expect(CATEGORIES.find((c) => c.id === 'other')).toBeDefined();
   });
 
   it('expose les catégories clés demandées par Kevin', () => {
     const ids = CATEGORIES.map((c) => c.id);
-    for (const id of ['ai', 'finance', 'devops', 'comms', 'social', 'storage', 'ecommerce', 'crypto', 'identity']) {
+    for (const id of ['ai', 'finance', 'devops', 'comms', 'social', 'storage', 'ecommerce', 'crypto', 'identity', 'addresses']) {
       expect(ids).toContain(id);
     }
   });

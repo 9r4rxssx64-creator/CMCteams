@@ -84,6 +84,7 @@ describe('frontend-design — generate erreurs → fallback', () => {
   });
 
   it('stream throw non-Error (string) → String(err) → fallback', async () => {
+    // eslint-disable-next-line no-throw-literal -- test INTENTIONNEL : couvre la branche String(err) (throw non-Error)
     streamImpl = () => { throw 'str-boom'; };
     const out = await frontendDesign.generate({ prompt: 'z' });
     expect(out.html).toContain('ax-fallback');
