@@ -81,6 +81,10 @@ export interface CredentialDisplay {
   logoUrl?: string;
   /** Source de l'entrée pour wiring actions */
   source: 'multi-key' | 'legacy';
+  /** v13.4.284 — description « à quoi ça correspond » (libre, saisie Kevin). */
+  label?: string;
+  /** v13.4.284 — 'info' = donnée perso non testable (nom/adresse/note). */
+  kind?: 'secret' | 'info';
 }
 
 export interface CategoryDef {
@@ -168,12 +172,29 @@ export const CATEGORIES: ReadonlyArray<CategoryDef> = [
     patternCategories: ['identity'],
   },
   {
+    /* v13.4.284 (Kevin "il perd aussi les infos appartements / adresses") :
+     * catégorie dédiée — alimentée uniquement quand Kevin choisit explicitement
+     * « Adresses & appartements » dans le modal (pas de matcher par nom). */
+    id: 'addresses',
+    label: '🏠 Adresses & appartements',
+    serviceMatchers: [],
+    patternCategories: [],
+  },
+  {
     id: 'other',
     label: '📦 Autres',
     serviceMatchers: [],
     patternCategories: ['saas'],
   },
 ];
+
+/* v13.4.284 — catégories toujours visibles même vides (Kevin doit pouvoir y
+ * ajouter ses infos perso : identité, adresses, notes/divers). */
+const ALWAYS_VISIBLE_CATS = new Set(['identity', 'addresses', 'other']);
+
+/* Catégories dont le contenu est par défaut une INFO perso (non testable) et
+ * non une clé API → kind:'info' (témoin vert « enregistré »). */
+const INFO_CATEGORIES = new Set(['identity', 'addresses']);
 
 /**
  * Map service ID → catégorie UI. Match le PLUS LONG mot-clé gagne (préfère
@@ -257,14 +278,19 @@ export function buildCredentialDisplays(): CredentialDisplay[] {
   for (const k of mkAll) {
     const link = linksRegistry.get(k.service);
     const pattern = CREDENTIAL_PATTERNS.find((p) => p.storageKey.includes(k.service));
+    /* v13.4.284 — la catégorie choisie par Kevin (k.category) prime sur la
+     * déduction par nom de service → ses infos atterrissent là où il les a mises
+     * (Identité Kevin / Adresses / Autres) au lieu de finir toutes dans « Autres ». */
     const display: CredentialDisplay = {
       id: k.id,
       service: k.service,
       serviceName: link?.name ?? capitalize(k.service),
-      category: classifyService(k.service, pattern?.category),
+      category: k.category ?? classifyService(k.service, pattern?.category),
       status: k.status,
       source: 'multi-key',
     };
+    if (k.label !== undefined) display.label = k.label;
+    if (k.kind !== undefined) display.kind = k.kind;
     if (k.alias !== undefined) display.alias = k.alias;
     if (k.addedAt !== undefined) display.addedAt = k.addedAt;
     if (k.lastTestedAt !== undefined) display.lastTestedAt = k.lastTestedAt;
@@ -398,12 +424,19 @@ export function exportVaultJson(entries: ReadonlyArray<VaultEntry>): string {
  * Card HTML pour un credential (multi-key) — premium look.
  */
 export function renderCredentialCard(c: CredentialDisplay): string {
-  const statusColor = STATUS_COLORS[c.status] ?? 'var(--ax-text-muted)';
-  const statusEmoji = STATUS_EMOJIS[c.status] ?? '⚪';
+  const isInfo = c.kind === 'info';
+  /* v13.4.284 — info perso = témoin VERT « enregistré » (rien à tester). */
+  const statusColor = isInfo ? 'var(--ax-green)' : (STATUS_COLORS[c.status] ?? 'var(--ax-text-muted)');
+  const statusEmoji = isInfo ? '🟢' : (STATUS_EMOJIS[c.status] ?? '⚪');
+  const statusTitle = isInfo ? 'Enregistré' : c.status;
   const previewSafe = (c.preview ?? '').slice(0, 4) + '••••••' + (c.preview ?? '').slice(-4);
   const masked = c.preview ? previewSafe : '••••••';
   const recharge = c.rechargeUrl ?? '';
   const alias = c.alias ? `<span style="color:var(--ax-text-muted);font-size:11px">— ${escapeHtml(c.alias)}</span>` : '';
+  /* v13.4.284 — « afficher à quoi correspond » : ligne description sous le nom. */
+  const labelLine = c.label
+    ? `<div style="font-size:12px;color:var(--ax-gold-deep);margin-top:-2px">📝 ${escapeHtml(c.label)}</div>`
+    : '';
   const logoTag = c.logoUrl
     ? `<img src="${escapeHtml(c.logoUrl)}" alt="" loading="lazy" decoding="async" style="width:24px;height:24px;border-radius:6px" onerror="this.style.display='none'">`
     : '';
@@ -417,14 +450,23 @@ export function renderCredentialCard(c: CredentialDisplay): string {
   return `
     <div class="ax-cred-card" data-cred-id="${escapeHtml(c.id)}" data-service="${escapeHtml(c.service)}"
       style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;transition:all 200ms ease-out;position:relative;display:flex;flex-direction:column;gap:8px">
-      <div style="position:absolute;top:14px;right:14px;width:10px;height:10px;border-radius:50%;background:${escapeHtml(statusColor)};box-shadow:0 0 8px ${escapeHtml(statusColor)}" title="${escapeHtml(statusEmoji)} ${escapeHtml(c.status)}"></div>
+      <div style="position:absolute;top:14px;right:14px;width:10px;height:10px;border-radius:50%;background:${escapeHtml(statusColor)};box-shadow:0 0 8px ${escapeHtml(statusColor)}" title="${escapeHtml(statusEmoji)} ${escapeHtml(statusTitle)}"></div>
       <div class="ax-gs-120">
         ${logoTag}
         <strong style="font-size:15px;color:#fff">${escapeHtml(c.serviceName)}</strong>
         ${alias}
       </div>
+      ${labelLine}
       <code style="display:block;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:11px;color:var(--ax-text-muted);font-family:'SF Mono',Menlo,monospace;letter-spacing:1px">${escapeHtml(masked)}</code>
       ${metaLine}
+      ${isInfo ? `
+      <div class="ax-gs-20">
+        <span style="flex:1;min-width:120px;padding:6px 10px;background:rgba(34,204,119,0.1);color:var(--ax-green);border:1px solid rgba(34,204,119,0.25);border-radius:6px;font-size:11px;display:flex;align-items:center;justify-content:center;min-height:44px">🟢 Enregistré (chiffré)</span>
+        <button data-action="edit" data-cred-id="${escapeHtml(c.id)}" aria-label="Modifier ${escapeHtml(c.serviceName)}" title="Modifier"
+          style="min-width:44px;padding:6px 10px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">✏️</button>
+        <button data-action="delete" data-cred-id="${escapeHtml(c.id)}" aria-label="Supprimer ${escapeHtml(c.serviceName)}" title="Supprimer"
+          style="min-width:44px;padding:6px 10px;background:rgba(255,91,91,0.1);color:var(--ax-error);border:1px solid rgba(255,91,91,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">🗑</button>
+      </div>` : `
       <div class="ax-gs-20">
         <button data-action="test" data-cred-id="${escapeHtml(c.id)}" aria-label="Tester la clé ${escapeHtml(c.service)}"
           style="flex:1;min-width:80px;padding:6px 10px;background:rgba(34,204,119,0.1);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">🔄 Test</button>
@@ -437,7 +479,7 @@ export function renderCredentialCard(c: CredentialDisplay): string {
           style="min-width:44px;padding:6px 10px;background:rgba(255,255,255,0.05);color:var(--ax-text-dim);border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">✏️</button>
         <button data-action="delete" data-cred-id="${escapeHtml(c.id)}" aria-label="Supprimer la clé ${escapeHtml(c.service)}" title="Supprimer"
           style="min-width:44px;padding:6px 10px;background:rgba(255,91,91,0.1);color:var(--ax-error);border:1px solid rgba(255,91,91,0.3);border-radius:6px;cursor:pointer;font-size:11px;min-height:44px">🗑</button>
-      </div>
+      </div>`}
     </div>
   `;
 }
@@ -807,8 +849,9 @@ function renderCategories(rootEl: HTMLElement): void {
   }
   const catsHtml = CATEGORIES.map((cat) => {
     const credsInCat = getCredentialsForCategory(cat, activeQuery);
-    /* Hide empty cats sauf identity (Kevin veut toujours voir cette section) */
-    if (credsInCat.length === 0 && cat.id !== 'identity') return '';
+    /* v13.4.284 — affiche toujours Identité / Adresses / Autres même vides,
+     * pour que Kevin puisse y ajouter ses infos perso (sinon « jamais affichées »). */
+    if (credsInCat.length === 0 && !ALWAYS_VISIBLE_CATS.has(cat.id)) return '';
     const isOpen = credsInCat.length > 0;
     return `
       <details class="ax-cat" data-cat-id="${escapeHtml(cat.id)}" ${isOpen ? 'open' : ''}
@@ -1723,10 +1766,11 @@ function closeModal(rootEl: HTMLElement): void {
 
 function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
   const root = modalRoot(rootEl);
+  /* v13.4.284 — toutes les catégories proposées (y compris Adresses & Autres). */
   const catOpts = CATEGORIES
-    .filter((c) => c.id !== 'other')
     .map((c) => `<option value="${escapeHtml(c.id)}" ${presetCategory === c.id ? 'selected' : ''}>${escapeHtml(c.label)}</option>`)
     .join('');
+  const presetIsInfo = presetCategory ? INFO_CATEGORIES.has(presetCategory) : false;
   root.innerHTML = `
     <div role="dialog" aria-modal="true" aria-label="Ajouter une clé"
       style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
@@ -1743,8 +1787,20 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
           </select>
         </label>
         <label class="ax-gs-477">
-          Service (ex: anthropic, openai, stripe)
+          Type
+          <select id="ax-vault-add-kind" style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px">
+            <option value="secret" ${presetIsInfo ? '' : 'selected'}>🔑 Clé / token (testable)</option>
+            <option value="info" ${presetIsInfo ? 'selected' : ''}>📝 Info / note (nom, email, adresse…)</option>
+          </select>
+        </label>
+        <label class="ax-gs-477">
+          <span id="ax-vault-add-service-lbl">Service (ex: anthropic, openai, stripe)</span>
           <input type="text" id="ax-vault-add-service" aria-label="Nom du service" placeholder="anthropic"
+            class="ax-gs-478">
+        </label>
+        <label class="ax-gs-477">
+          Description — à quoi ça correspond (optionnel)
+          <input type="text" id="ax-vault-add-label" aria-label="Description, à quoi correspond cette information" placeholder="ex : Appartement Nice, Email perso, Token prod…"
             class="ax-gs-478">
         </label>
         <label class="ax-gs-477">
@@ -1753,7 +1809,7 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
             class="ax-gs-478">
         </label>
         <label class="ax-gs-477">
-          Valeur (clé / token)
+          <span id="ax-vault-add-value-lbl">Valeur (clé / token)</span>
           <textarea id="ax-vault-add-value" placeholder="Colle la clé ici"
             class="ax-gs-479"></textarea>
         </label>
@@ -1771,6 +1827,28 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
   const dialog = root.querySelector<HTMLDivElement>('[role="dialog"]');
   if (dialog && activeVaultScope) activeVaultScope.bind(dialog, 'click', (e) => {
     if (e.target === dialog) closeModal(rootEl);
+  });
+  /* v13.4.284 — labels dynamiques selon le type (clé vs info perso). */
+  const catSel = root.querySelector<HTMLSelectElement>('#ax-vault-add-cat');
+  const kindSel = root.querySelector<HTMLSelectElement>('#ax-vault-add-kind');
+  const svcLbl = root.querySelector<HTMLSpanElement>('#ax-vault-add-service-lbl');
+  const valLbl = root.querySelector<HTMLSpanElement>('#ax-vault-add-value-lbl');
+  const svcInput = root.querySelector<HTMLInputElement>('#ax-vault-add-service');
+  const valInput = root.querySelector<HTMLTextAreaElement>('#ax-vault-add-value');
+  const detectBtnEl = root.querySelector<HTMLButtonElement>('#ax-vault-add-detect');
+  const syncKindUi = (): void => {
+    const isInfo = kindSel?.value === 'info';
+    if (svcLbl) svcLbl.textContent = isInfo ? 'Nom de l\'info (ex : Adresse Nice, Email perso)' : 'Service (ex: anthropic, openai, stripe)';
+    if (valLbl) valLbl.textContent = isInfo ? 'Valeur / information' : 'Valeur (clé / token)';
+    if (svcInput) svcInput.placeholder = isInfo ? 'Adresse Nice' : 'anthropic';
+    if (valInput) valInput.placeholder = isInfo ? 'Colle l\'information ici (chiffrée)' : 'Colle la clé ici';
+    if (detectBtnEl) detectBtnEl.style.display = isInfo ? 'none' : '';
+  };
+  syncKindUi();
+  if (kindSel && activeVaultScope) activeVaultScope.bind(kindSel, 'change', syncKindUi);
+  /* Choisir une catégorie info → bascule le type sur « info » automatiquement. */
+  if (catSel && activeVaultScope) activeVaultScope.bind(catSel, 'change', () => {
+    if (kindSel && INFO_CATEGORIES.has(catSel.value)) { kindSel.value = 'info'; syncKindUi(); }
   });
   /* Auto-detect button */
   const addDetectBtn = root.querySelector<HTMLButtonElement>('#ax-vault-add-detect');
@@ -1806,15 +1884,22 @@ function openAddModal(rootEl: HTMLElement, presetCategory?: string): void {
       const service = root.querySelector<HTMLInputElement>('#ax-vault-add-service')?.value.trim() ?? '';
       const alias = root.querySelector<HTMLInputElement>('#ax-vault-add-alias')?.value.trim() ?? '';
       const value = root.querySelector<HTMLTextAreaElement>('#ax-vault-add-value')?.value.trim() ?? '';
+      const category = root.querySelector<HTMLSelectElement>('#ax-vault-add-cat')?.value.trim() ?? '';
+      const labelTxt = root.querySelector<HTMLInputElement>('#ax-vault-add-label')?.value.trim() ?? '';
+      const kind = (root.querySelector<HTMLSelectElement>('#ax-vault-add-kind')?.value === 'info' ? 'info' : 'secret') as 'secret' | 'info';
       if (!service || !value) {
-        toast.warn('Service et valeur requis');
+        toast.warn(kind === 'info' ? 'Nom et information requis' : 'Service et valeur requis');
         return;
       }
       try {
-        const opts: { alias?: string } = {};
+        /* v13.4.284 — persiste catégorie + description + type pour que l'info
+         * atterrisse là où Kevin l'a mise et affiche « à quoi ça correspond ». */
+        const opts: { alias?: string; category?: string; label?: string; kind?: 'secret' | 'info' } = { kind };
         if (alias) opts.alias = alias;
+        if (category) opts.category = category;
+        if (labelTxt) opts.label = labelTxt;
         await multiKeyVault.addKey(service, value, opts);
-        toast.success(`✅ Clé ${service} chiffrée + sauvegardée`);
+        toast.success(kind === 'info' ? `✅ ${service} enregistré (chiffré)` : `✅ Clé ${service} chiffrée + sauvegardée`);
         closeModal(rootEl);
         render(rootEl);
       } catch (err: unknown) {
@@ -1841,10 +1926,21 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
           <button id="ax-vault-modal-close" aria-label="Fermer"
             class="ax-gs-476">×</button>
         </div>
-        <p style="color:rgba(255,255,255,0.6);font-size:12px;margin:0 0 12px">Une nouvelle valeur remplacera l'ancienne (chiffrement AES-GCM 256).</p>
+        <p style="color:rgba(255,255,255,0.6);font-size:12px;margin:0 0 12px">Laisse la valeur vide pour ne changer que la catégorie / la description. Une nouvelle valeur remplacera l'ancienne (chiffrement AES-GCM 256).</p>
         <label class="ax-gs-477">
-          Nouvelle valeur
-          <textarea id="ax-vault-edit-value" placeholder="Colle la nouvelle clé"
+          Catégorie
+          <select id="ax-vault-edit-cat" style="width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:14px;min-height:44px">
+            ${CATEGORIES.map((c) => `<option value="${escapeHtml(c.id)}" ${(entry.category ?? classifyService(entry.service)) === c.id ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="ax-gs-477">
+          Description — à quoi ça correspond (optionnel)
+          <input type="text" id="ax-vault-edit-label" aria-label="Description" value="${escapeHtml(entry.label ?? '')}" placeholder="ex : Appartement Nice, Email perso…"
+            class="ax-gs-478">
+        </label>
+        <label class="ax-gs-477">
+          Nouvelle valeur (optionnel)
+          <textarea id="ax-vault-edit-value" placeholder="Vide = on garde la valeur actuelle"
             class="ax-gs-479"></textarea>
         </label>
         <label class="ax-gs-477">
@@ -1869,17 +1965,25 @@ function openEditModal(rootEl: HTMLElement, credId: string): void {
       haptic.tap();
       const newValue = root.querySelector<HTMLTextAreaElement>('#ax-vault-edit-value')?.value.trim() ?? '';
       const newAlias = root.querySelector<HTMLInputElement>('#ax-vault-edit-alias')?.value.trim() ?? '';
-      if (!newValue) {
-        toast.warn('Valeur requise');
-        return;
-      }
+      const newCat = root.querySelector<HTMLSelectElement>('#ax-vault-edit-cat')?.value.trim() ?? '';
+      const newLabel = root.querySelector<HTMLInputElement>('#ax-vault-edit-label')?.value.trim() ?? '';
+      const newKind: 'secret' | 'info' = INFO_CATEGORIES.has(newCat) ? 'info' : (entry.kind ?? 'secret');
       try {
-        /* Marque l'ancienne invalide + ajoute la nouvelle */
-        multiKeyVault.markInvalid(credId, 'replaced via edit');
-        const opts: { alias?: string } = {};
-        if (newAlias) opts.alias = newAlias;
-        await multiKeyVault.addKey(entry.service, newValue, opts);
-        toast.success('✅ Clé mise à jour');
+        if (newValue) {
+          /* v13.4.284 — remplace la valeur : marque l'ancienne invalide + ajoute
+           * la nouvelle en reportant catégorie / description / type. */
+          multiKeyVault.markInvalid(credId, 'replaced via edit');
+          const opts: { alias?: string; category?: string; label?: string; kind?: 'secret' | 'info' } = { kind: newKind };
+          if (newAlias) opts.alias = newAlias;
+          if (newCat) opts.category = newCat;
+          if (newLabel) opts.label = newLabel;
+          await multiKeyVault.addKey(entry.service, newValue, opts);
+          toast.success('✅ Mis à jour');
+        } else {
+          /* Valeur inchangée → on met à jour seulement les métadonnées. */
+          multiKeyVault.setMeta(credId, { category: newCat, label: newLabel, alias: newAlias, kind: newKind });
+          toast.success('✅ Catégorie / description mises à jour');
+        }
         closeModal(rootEl);
         render(rootEl);
       } catch (err: unknown) {

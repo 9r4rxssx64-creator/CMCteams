@@ -59,6 +59,14 @@ export interface KeyEntry {
   /* Si invalid → on garde history mais on ne tente plus */
   invalidReason?: string;
   invalidAt?: number;
+  /* v13.4.284 (Kevin "il perd les infos Identité/Autres/appartements, jamais
+   * affichées") : catégorie UI explicite choisie par Kevin (override de la
+   * déduction par nom de service) + label « à quoi ça correspond » + kind.
+   * kind:'info' = donnée perso non testable (nom, email, adresse, note) → témoin
+   * vert « enregistré », jamais de ping API. kind:'secret' (défaut) = clé/token. */
+  category?: string;
+  label?: string;
+  kind?: 'secret' | 'info';
 }
 
 export interface KeyTestResult {
@@ -360,7 +368,13 @@ class MultiKeyVault {
   async addKey(
     service: string,
     plaintextValue: string,
-    opts?: { alias?: string; preferredOrder?: number },
+    opts?: {
+      alias?: string;
+      preferredOrder?: number;
+      category?: string;
+      label?: string;
+      kind?: 'secret' | 'info';
+    },
   ): Promise<KeyEntry> {
     if (!service || !plaintextValue) {
       throw new Error('addKey: service and plaintextValue required');
@@ -393,7 +407,16 @@ class MultiKeyVault {
       successCount: 0,
       ...(opts?.alias !== undefined && { alias: opts.alias }),
       ...(opts?.preferredOrder !== undefined && { preferredOrder: opts.preferredOrder }),
+      ...(opts?.category !== undefined && opts.category !== '' && { category: opts.category }),
+      ...(opts?.label !== undefined && opts.label !== '' && { label: opts.label }),
+      ...(opts?.kind !== undefined && { kind: opts.kind }),
     };
+    /* kind:'info' → vert « enregistré » direct (rien à pinger). */
+    if (entry.kind === 'info') {
+      entry.status = 'active';
+      entry.successCount = 1;
+      entry.lastWorkedAt = Date.now();
+    }
     list.push(entry);
     this.cache = list;
     await this.persist();
@@ -565,6 +588,17 @@ class MultiKeyVault {
     const list = this.load();
     const entry = list.find((k) => k.id === keyId);
     if (!entry) return { ok: false, latencyMs: 0, reason: 'key not found' };
+    /* v13.4.284 — entrée info (nom/email/adresse/note) : rien à pinger, elle est
+     * « enregistrée » → témoin vert direct, jamais marquée failing/invalid. */
+    if (entry.kind === 'info') {
+      entry.status = 'active';
+      entry.failCount = 0;
+      entry.successCount += 1;
+      entry.lastTestedAt = Date.now();
+      entry.lastWorkedAt = Date.now();
+      await this.persist();
+      return { ok: true, latencyMs: 0, reason: 'info (enregistré)' };
+    }
     /* v13.4.283 — providers servis par le proxy : test via /health (membership)
      * AVANT la vérif PING_CONFIG (Replicate n'a PAS de PING_CONFIG → renvoyait
      * « no test endpoint configured » et ne testait jamais). Sans PIN, sans CORS,
@@ -843,6 +877,41 @@ class MultiKeyVault {
     if (!entry) return;
     this.markEntryStatus(entry, 'invalid', reason);
     void this.persist();
+  }
+
+  /**
+   * v13.4.284 — met à jour les métadonnées d'affichage (catégorie / label « à quoi
+   * ça correspond » / kind) sans toucher à la valeur chiffrée. Utilisé par le
+   * modal Modifier du Coffre. Champ omis = inchangé ; chaîne vide = effacé.
+   */
+  setMeta(
+    keyId: string,
+    patch: { category?: string; label?: string; alias?: string; kind?: 'secret' | 'info' },
+  ): boolean {
+    const list = this.load();
+    const entry = list.find((k) => k.id === keyId);
+    if (!entry) return false;
+    if (patch.category !== undefined) {
+      if (patch.category === '') delete entry.category;
+      else entry.category = patch.category;
+    }
+    if (patch.label !== undefined) {
+      if (patch.label === '') delete entry.label;
+      else entry.label = patch.label;
+    }
+    if (patch.alias !== undefined) {
+      if (patch.alias === '') delete entry.alias;
+      else entry.alias = patch.alias;
+    }
+    if (patch.kind !== undefined) {
+      entry.kind = patch.kind;
+      if (patch.kind === 'info' && entry.status === 'unknown') {
+        entry.status = 'active';
+        entry.lastWorkedAt = Date.now();
+      }
+    }
+    void this.persist();
+    return true;
   }
 
   /**
