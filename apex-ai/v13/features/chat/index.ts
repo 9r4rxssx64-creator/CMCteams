@@ -48,6 +48,7 @@ import { buildConversationMarkdown, buildExportFilename } from './chat-export.js
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
 import {
+  clearConversationEverywhere,
   loadPersistedConversation,
   persistConversation,
   tryFirebaseRestoreConversation,
@@ -1066,7 +1067,9 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'clear':
       conversation.length = 0;
       renderMessages(rootEl);
-      toast.success('🧹 Conversation effacée');
+      /* v13.4.284 — efface aussi local+Firebase+IDB (sinon résurrection au MAJ). */
+      void clearConversationEverywhere();
+      toast.success('🧹 Conversation effacée (partout)');
       return true;
     case 'voice': {
       const wasEnabled = isAutoReadEnabled();
@@ -1581,6 +1584,9 @@ function forkConversation(rootEl: HTMLElement): void {
   /* v13.4.175 refactor : archive load+push+save extrait dans chat-sessions-history.ts */
   archiveSession([...conversation]);
   conversation.length = 0;
+  /* v13.4.284 — persiste l'état vide pour que l'ancienne session (désormais
+   * archivée dans l'historique) ne soit pas rechargée comme « active » au reload. */
+  persistConversation(conversation);
   renderMessages(rootEl);
   toast.success('🌿 Nouvelle conversation démarrée');
 }
@@ -3376,18 +3382,15 @@ export function render(rootEl: HTMLElement): void {
   const clearBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-clear');
   clearBtn?.addEventListener('click', () => {
     haptic.tap();
-    if (!confirm('🗑 Effacer le chat actuel ?\n\nLes messages sont supprimés localement. La conversation persistante (Firebase) reste intacte.')) return;
-    /* Clear conversation in-memory + UI */
+    if (!confirm('🗑 Effacer définitivement le chat actuel ?\n\nLes messages sont supprimés PARTOUT (local + cloud Firebase + pièces jointes) et ne reviendront pas après une mise à jour.\n\n💡 Pour garder une trace, utilise plutôt « 🌿 Nouvelle conversation » qui archive l\'ancienne dans l\'historique.')) return;
+    /* v13.4.284 — efface in-memory PUIS toutes les couches (sinon Firebase
+     * ressuscite les messages au prochain boot/MAJ — bug Kevin). */
     conversation.length = 0;
-    /* Clear persisted local */
-    try {
-      const uid = (store.get('user') as { id?: string } | null)?.id ?? 'anon';
-      localStorage.removeItem(`apex_v13_chat_messages_${uid}`);
-      localStorage.removeItem(`apex_v13_chat_pending_${uid}`);
-    } catch { /* ignore quota */ }
     renderMessages(rootEl);
-    void import('../../ui/toast.js').then(({ toast }) => {
-      toast.success('🗑 Chat effacé', { duration: 2500 });
+    void clearConversationEverywhere().then(() => {
+      void import('../../ui/toast.js').then(({ toast }) => {
+        toast.success('🗑 Chat effacé partout (ne reviendra plus)', { duration: 3000 });
+      });
     });
   });
 
