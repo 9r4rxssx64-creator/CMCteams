@@ -10137,56 +10137,6 @@ function renderMyCagnotteCard(){
     +'</div>';
 }
 // Vue admin : saisie cagnottes + répartition
-function vCagnottes(){
-  if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty" role="status" aria-live="polite"><div class="empty-title">Acc\u00e8s admin requis</div></div></div>';
-  var cur=getCagnottesMonth(A.year,A.month);
-  var split=calcCagnotteSplit(A.year,A.month);
-  var h='<div class="page"><div class="sec-title">\ud83d\udcb0 Cagnottes &amp; %CA \u2014 '+MFR[A.month]+' '+A.year+'</div>';
-  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-    +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px">\u2039</button>'
-    +'<div style="flex:1;text-align:center;font-size:16px;font-weight:700;color:#c9a227">'+MFR[A.month]+' '+A.year+'</div>'
-    +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px">\u203a</button>'
-    +'</div>';
-  h+='<div style="margin:6px 0 10px;padding:10px;background:rgba(160,96,255,.08);border:1px solid rgba(160,96,255,.3);border-radius:8px;font-size:13px;color:#d0c0f0;line-height:1.6">'
-    +'\ud83d\udcd6 <b>Article 13</b> : le salaire du personnel est compos\u00e9 de 3 parts \u2014 fixe + %CA + %cagnottes. Saisissez le CA mensuel par jeu pour r\u00e9partir automatiquement.'
-    +'</div>';
-  // Formulaire par jeu
-  h+='<div class="card" style="padding:12px;margin-bottom:12px">'
-    +'<div style="font-size:13px;font-weight:700;color:#c9a227;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\u270f\ufe0f CA par jeu (en \u20ac)</div>';
-  JEUX_CA.forEach(function(j){
-    var v=cur[j.id]||"";
-    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-      +'<span style="font-size:16px;width:22px;text-align:center">'+j.icon+'</span>'
-      +'<span style="flex:1;font-size:13px;color:#d8e8d0">'+esc(j.label)+'</span>'
-      +'<input id="cag_'+j.id+'" type="number" class="inp" value="'+esc(v)+'" placeholder="0" min="0" step="1000" style="width:140px;padding:6px 10px;text-align:right">'
-      +'<span style="color:#a0cca0">\u20ac</span>'
-      +'</div>';
-  });
-  h+='<button onclick="(function(){var d={};JEUX_CA.forEach(function(j){var v=parseFloat(document.getElementById(\'cag_\'+j.id).value)||0;if(v>0)d[j.id]=v;});saveCagnottes(A.year,A.month,d);toast(\'\ud83d\udcb0 Cagnottes sauvegard\u00e9es\');dc();})()" style="width:100%;padding:11px;margin-top:8px;background:linear-gradient(135deg,#a060ff,#7040c0);border:none;border-radius:8px;color:white;font-weight:800;cursor:pointer">\ud83d\udcbe Sauvegarder CA du mois</button>'
-    +'</div>';
-  // Récap
-  if(split.total>0){
-    h+='<div class="card" style="padding:12px;margin-bottom:12px;background:rgba(160,96,255,.08)">'
-      +'<div style="font-size:13px;font-weight:700;color:#b080ff;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcca R\u00e9partition calcul\u00e9e</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
-      +'<div><div style="font-size:11px;color:#a0cca0">Cagnotte totale</div><div style="font-size:18px;font-weight:900;color:#e0c8ff">'+split.total.toLocaleString("fr-FR")+' \u20ac</div></div>'
-      +'<div><div style="font-size:11px;color:#a0cca0">Shifts totaux</div><div style="font-size:18px;font-weight:900;color:#c0b0e0">'+split.totalShifts+'</div></div>'
-      +'</div>'
-      +'<div style="max-height:400px;overflow-y:auto;border-top:1px solid rgba(160,96,255,.2);padding-top:8px">';
-    split.byEmp.forEach(function(e){
-      h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(160,96,255,.08)">'
-        +'<span style="flex:1;font-size:13px;color:#e0e8d8">'+esc(e.name)+' <span style="color:#8a6ac0;font-size:11px">('+e.niveau+')</span></span>'
-        +'<span style="font-size:12px;color:#a0cca0;width:55px;text-align:right">'+e.shifts+' j</span>'
-        +'<span style="font-size:13px;color:#e0c8ff;font-weight:700;width:85px;text-align:right">'+e.totalVariable.toLocaleString("fr-FR")+' \u20ac</span>'
-        +'</div>';
-    });
-    h+='</div></div>';
-  }else{
-    h+='<div class="empty" role="status" aria-live="polite"><div class="empty-icon" aria-hidden="true">\ud83d\udcca</div><div class="empty-title">Saisissez le CA pour voir la r\u00e9partition</div></div>';
-  }
-  h+='</div>';
-  return h;
-}
 // ═══════════════════════════════════════════════════════════════════════
 // v9.195 — MODULE ÉVÉNEMENTS MONACO (Tournois Poker + Grand Prix + Manifs)
 // ═══════════════════════════════════════════════════════════════════════
