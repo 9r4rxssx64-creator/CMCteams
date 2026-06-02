@@ -3227,3 +3227,16 @@ LEÇON : la "disparition" finale de la branche = merge+cleanup réussi, PAS une 
 
 ---
 ## ➡️ REPRISE : voir REPRISE_HANDOFF.md (handoff complet 2026-06-01 — état features en prod, doc en attente, blocage GitHub MCP lessons #78-80, modèle de livraison qui marche, procédure nouvelle branche).
+
+## 📋 SESSION 2026-06-02 (suite) — Campagne 100% réel + dettes audit
+
+> ✅ **3 dettes audit traitées + mergées main** (proxy-client test périmé 15→22, clearAllMocks,
+> Apex Chat couverture **100%**, météo CMC Number(), épuration vPassation/adminold/toasts).
+> ✅ **Axes "code-health" déjà à 100% mesuré** : Apex v13 tsc **0** / eslint **0** / **11876 tests verts** ;
+> Apex Chat couverture **100%** ; CMCteams `test:ci` vert.
+> 🎯 **Campagne couverture v13** (seul axe < 100, mesuré L84.5% / B75.9% sur ~282 fichiers restants) :
+> tour 1 = `admin-action-gate.ts` porté **100% branches** (+17 tests) + exclude `*-types.ts`.
+> Gate complet revalidé **570 fichiers / 11876 verts, 0 échec** après chaque changement.
+> Leçons gravées : **#83** (flaky supposé = test périmé → reproduire en isolation) +
+> **#84** (spy sur singleton partagé = `afterEach(restoreAllMocks)`, clearAllMocks ne suffit pas).
+> Branche `claude/perfect-100-Ypr17`. Campagne itérative : 1 fichier/tour, mesuré, sans régression.
