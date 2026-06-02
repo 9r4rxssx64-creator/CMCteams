@@ -8,8 +8,13 @@ export default defineConfig({
     environment: 'happy-dom',
     /* v13.4.133 (Kevin "100/100 réel sans mentir") : timeouts explicites pour
      * permettre `npm run test:coverage` de TERMINER sans timeout (était 600s
-     * killed). Tests individuels limités à 15s, hooks à 30s. */
-    testTimeout: 15_000,
+     * killed). Hooks à 30s.
+     * v13.4.283 (2026-06-02, fix flaky de contention) : testTimeout 15s→30s.
+     * Sous charge (4 forks × ~12000 tests), un test lent dépassait parfois 15s
+     * → échec intermittent NON déterministe (vert au re-run). C'est un timeout
+     * de contention CPU, pas de la pollution d'état. 30s par-test donne la marge ;
+     * n'allonge PAS le run global (le timeout ne se déclenche que sur un test bloqué). */
+    testTimeout: 30_000,
     hookTimeout: 30_000,
     /* v13.4.136 (Kevin "minutieusement sans régression") : pool=forks pour
      * isolation mémoire + maxForks 4 pour éviter saturation CPU sur 444 test
