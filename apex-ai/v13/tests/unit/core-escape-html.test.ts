@@ -6,7 +6,21 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { esc, escapeHtml } from '../../core/escape-html.js';
+import { esc, escapeHtml, escapeAttr } from '../../core/escape-html.js';
+
+describe('core/escape-html escapeAttr', () => {
+  it('null/undefined → ""', () => {
+    expect(escapeAttr(null)).toBe('');
+    expect(escapeAttr(undefined)).toBe('');
+  });
+  it('échappe les chars critiques (attribut)', () => {
+    expect(escapeAttr('a"<b>\'&')).toBe('a&quot;&lt;b&gt;&#39;&amp;');
+  });
+  it('number/boolean stringifiés', () => {
+    expect(escapeAttr(42)).toBe('42');
+    expect(escapeAttr(true)).toBe('true');
+  });
+});
 
 describe('core/escape-html escapeHtml (v13.4.185)', () => {
   it('escape ampersand → &amp;', () => {
