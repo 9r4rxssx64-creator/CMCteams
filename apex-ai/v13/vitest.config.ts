@@ -10,11 +10,12 @@ export default defineConfig({
      * permettre `npm run test:coverage` de TERMINER sans timeout (était 600s
      * killed). Hooks à 30s.
      * v13.4.283 (2026-06-02, fix flaky de contention) : testTimeout 15s→30s.
-     * Sous charge (4 forks × ~12000 tests), un test lent dépassait parfois 15s
-     * → échec intermittent NON déterministe (vert au re-run). C'est un timeout
-     * de contention CPU, pas de la pollution d'état. 30s par-test donne la marge ;
-     * n'allonge PAS le run global (le timeout ne se déclenche que sur un test bloqué). */
-    testTimeout: 30_000,
+     * v13.4.285 (2026-06-02) : 30s→60s. Sous charge (4 forks × ~12000 tests), de
+     * rares tests lourds (memory-watch « >1000 facts », états volumineux) frôlaient
+     * 30s (mesuré 30026ms) → échec intermittent NON déterministe (vert en isolation).
+     * 60s par-test donne 2× de marge ; n'allonge PAS le run global (le timeout ne se
+     * déclenche que sur un test réellement bloqué, pas sur les tests rapides). */
+    testTimeout: 60_000,
     hookTimeout: 30_000,
     /* v13.4.136 (Kevin "minutieusement sans régression") : pool=forks pour
      * isolation mémoire + maxForks 4 pour éviter saturation CPU sur 444 test
