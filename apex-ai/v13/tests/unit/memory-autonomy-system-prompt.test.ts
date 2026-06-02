@@ -91,3 +91,24 @@ describe('memory — system prompt autonomie totale (Kevin 2026-05-04)', () => {
     expect(ctx).toContain('Capacités exécution autonomie totale');
   });
 });
+
+describe('memory — injection journal permanent (Kevin 2026-06-02 "branche le journal dans Apex")', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    memory.reload();
+  });
+
+  it('injecte les dépôts du journal permanent dans le system prompt', () => {
+    localStorage.setItem('apex_v13_chat_journal', JSON.stringify([
+      { id: 'j1', ts: Date.now(), source: 'note', text: 'Adresse appartement Nice 12 rue X' },
+    ]));
+    const ctx = memory.buildSystemPromptContext({ id: 'kdmc_admin', name: 'Kevin' });
+    expect(ctx).toContain('Journal permanent');
+    expect(ctx).toContain('appartement Nice');
+  });
+
+  it('pas de section journal si vide', () => {
+    const ctx = memory.buildSystemPromptContext({ id: 'kdmc_admin', name: 'Kevin' });
+    expect(ctx).not.toContain('Journal permanent — ce que Kevin');
+  });
+});

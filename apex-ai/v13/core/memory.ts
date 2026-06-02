@@ -270,6 +270,28 @@ class Memory {
         }
       }
     } catch { /* skip */ }
+    /* v13.4.286 (Kevin "Apex doit savoir tout ce qu'il y a partout" + "branche le
+     * journal dans Apex") : injecte les 40 derniers dépôts du journal permanent
+     * (apex_v13_chat_journal). Les secrets y sont déjà masqués → safe à injecter.
+     * Permet à Apex de CITER ce que Kevin a déposé même après un « Effacer le chat ». */
+    try {
+      const journalRaw = localStorage.getItem('apex_v13_chat_journal');
+      if (journalRaw) {
+        const journal = JSON.parse(journalRaw) as Array<{ ts: number; source: string; text: string }>;
+        if (Array.isArray(journal) && journal.length > 0) {
+          const recent = journal.slice(-40).reverse();
+          const lines = recent.map((e) => {
+            const d = new Date(e.ts).toLocaleDateString('fr-FR');
+            return `- [${d}] ${String(e.text).slice(0, 240)}`;
+          });
+          sections.push(
+            `## Journal permanent — ce que Kevin a déposé dans le chat (${journal.length} entrées, 40 dernières)\n`
+            + `Source de vérité de tout ce que Kevin t'a confié (secrets masqués). Tu PEUX le citer.\n`
+            + lines.join('\n'),
+          );
+        }
+      }
+    } catch { /* skip */ }
     /* Capabilities device (iOS/Android/Desktop) */
     try {
       const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
