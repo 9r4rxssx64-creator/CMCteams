@@ -3724,7 +3724,7 @@ function ls(k,v){
         /* v9.541 - IDB silencieux si possible. Toast rare (30 min max) admin uniquement */
         var _idbOkCmc=false;
         try{if(typeof cmcIdbSet==="function"){cmcIdbSet(k,v);_idbOkCmc=true;}}catch(_e){_cmcSafeCatch("cmc-quota",_e);}
-        if(!_idbOkCmc){if(!window._cmcLastQuotaToast||Date.now()-window._cmcLastQuotaToast>1800000){window._cmcLastQuotaToast=Date.now();if(A&&A.user&&A.user.id===AID)toast("\u26a0\ufe0f Stockage critique \u2014 auto-clean lance","warn");}try{if(typeof cmcAggressiveCleanup==="function")cmcAggressiveCleanup();}catch(_e){_cmcSafeCatch("cmc-quota",_e);}}
+        if(!_idbOkCmc){if(!window._cmcLastQuotaToast||Date.now()-window._cmcLastQuotaToast>1800000){window._cmcLastQuotaToast=Date.now();}try{if(typeof cmcAggressiveCleanup==="function")cmcAggressiveCleanup();}catch(_e){_cmcSafeCatch("cmc-quota",_e);}}
       }
     } else {_lsOk=false;console.warn("ls() error:",k,e);}
   }
@@ -3790,7 +3790,7 @@ function _emergencyCleanup(){
     if(removed>0)localStorage.setItem("cmc_ov",JSON.stringify(ov));
   }catch(_e){_cmcSafeCatch("cmc-storage",_e);}
   console.info("[v9.120] Emergency cleanup: freed ~"+Math.round(freed/1024)+"KB");
-  if(freed>10000)toast("\ud83e\uddf9 Nettoyage auto : ~"+Math.round(freed/1024)+"KB lib\u00e9r\u00e9s",null,4000);
+  
 }
 
 /* === v9.538 (Kevin 2026-04-25 "memoire pleine") \u2014 Cleanup AGRESSIF auto 30 min === */
@@ -9480,7 +9480,6 @@ var HELP_TOPICS={
     "",
     "**Astuce** : tape dans le champ \"\ud83d\udd0d Filtrer dans cette cat\u00e9gorie\u2026\" pour trouver une action en 2 secondes.",
     "",
-    "Pour revenir \u00e0 l'ancien panneau (transition) : bouton **\u21a9 Classique** en haut."
   ]},
   "v10_palette":{title:"\u2318 Palette de commandes \u2318K",icon:"\u2318",body:[
     "La **palette \u2318K** ouvre une recherche universelle (style Linear/Vercel).",
@@ -12644,7 +12643,7 @@ function cmcMapUploadFloorPlan(){
         cmcSaveCasinoLayout(_cmcMapCurrentCasino,layout);
         toast("✓ Plan importé pour "+(typeof getCasinoName==="function"?getCasinoName(_cmcMapCurrentCasino):_cmcMapCurrentCasino));
         dc();
-      }catch(err){if(!window._cmcLastQuotaToast||Date.now()-window._cmcLastQuotaToast>1800000){window._cmcLastQuotaToast=Date.now();if(A&&A.user&&A.user.id===AID)toast("Stockage critique - cleanup auto","warn");}}
+      }catch(err){if(!window._cmcLastQuotaToast||Date.now()-window._cmcLastQuotaToast>1800000){window._cmcLastQuotaToast=Date.now();}}
     };
     r.onerror=function(){toast("Lecture du fichier impossible, réessaie","err");};
     r.readAsDataURL(f);
@@ -16556,7 +16555,6 @@ function _searchSuggestionsHTML(){
     ["⚠","Voir les conflits","sv('conflits')"],
     ["📊","Stats du mois","sv('stats')"],
     ["🤖","Toggle IA Claude","iaToggle()"],
-    ["📝","Nouvelle passation","sv('passation')"]
   ]:[
     ["📆","Mon planning","sv('monplanning')"],
     ["👤","Mon profil","sv('profil')"],
@@ -16680,7 +16678,7 @@ function _cmcBreadcrumb(){
   if(!A.user||!A.view)return "";
   var skip={accueil:1,login:1,monplanning:1,chat:1,ia:1};
   if(skip[A.view])return "";
-  var labels={planning:"📅 Planning équipe",departs:"🚪 Départs",stats:"📊 Statistiques",admin:"⚙️ Administration",adminv10:"⚙️ Administration",teams:"👥 Équipes",emps:"👤 Employés",employees:"👤 Employés",retrait:"🚫 Retraités",import:"📥 Import PDF",passwords:"🔐 Mots de passe",absences:"🏥 Absences",auditlog:"📋 Audit",convention:"📖 Convention",docs:"📄 Documents",documents:"📄 Documents",exchanges:"🔄 Échanges",echanges:"🔄 Échanges",online:"🌐 En ligne",adminsecurity:"🔒 Sécurité admin",security:"🔒 Sécurité admin",profil:"👤 Mon profil",monprofil:"👤 Mon profil",admintimework:"⏱ Mon temps",usersactivity:"👥 Activité users",consumptionlevels:"⚙️ Niveau IA",importVerif:"✅ Vérifier import",conflits:"⚠ Conflits",quilibre:"😴 Qui est libre",passation:"📝 Nouvelle passation",passations:"📖 Historique passations",rgpd:"🔒 RGPD",retardataires:"📢 Retardataires",memorypro:"🧠 Mémoire IA",sentinelhub:"🛡 Sentinelles",mapeditor:"🗺 Cartes casinos",voicepresets:"🔊 Voix",debug:"🔧 Diagnostic",statsglobal:"🌐 Stats globales",statsannuelles:"📈 Stats annuelles"};
+  var labels={planning:"📅 Planning équipe",departs:"🚪 Départs",stats:"📊 Statistiques",admin:"⚙️ Administration",adminv10:"⚙️ Administration",teams:"👥 Équipes",emps:"👤 Employés",employees:"👤 Employés",retrait:"🚫 Retraités",import:"📥 Import PDF",passwords:"🔐 Mots de passe",absences:"🏥 Absences",auditlog:"📋 Audit",convention:"📖 Convention",docs:"📄 Documents",documents:"📄 Documents",exchanges:"🔄 Échanges",echanges:"🔄 Échanges",online:"🌐 En ligne",adminsecurity:"🔒 Sécurité admin",security:"🔒 Sécurité admin",profil:"👤 Mon profil",monprofil:"👤 Mon profil",admintimework:"⏱ Mon temps",usersactivity:"👥 Activité users",consumptionlevels:"⚙️ Niveau IA",importVerif:"✅ Vérifier import",conflits:"⚠ Conflits",quilibre:"😴 Qui est libre",rgpd:"🔒 RGPD",retardataires:"📢 Retardataires",memorypro:"🧠 Mémoire IA",sentinelhub:"🛡 Sentinelles",mapeditor:"🗺 Cartes casinos",voicepresets:"🔊 Voix",debug:"🔧 Diagnostic",statsglobal:"🌐 Stats globales",statsannuelles:"📈 Stats annuelles"};
   var label=labels[A.view]||A.view;
   // v9.686 — Cas spécial : vAdminCat (vue détaillée d'une catégorie admin) → fil à 3 niveaux
   if(A.view==="admincat"){
@@ -16762,7 +16760,6 @@ function _vMainImpl(){
     case"messtats": return vMesStats();
     case"chat":     return vChat();
     case"admin":    return isAdm?vAdminV10():""; // v10 — refonte 5 catégories devient le défaut (Sprint 1 validé)
-    case"adminold": return isAdm?vAdmin():"";    // v10 — ancien panneau accessible via bouton ↩ Classique
     case"adminv10": return isAdm?vAdminV10():""; // v10 — alias (anciens liens conservés)
     case"admincat": return isAdm?vAdminCat():""; // v10 — vue détaillée catégorie admin
     case"gestionlive": return isAdm?vGestionLive():"";
@@ -16835,8 +16832,6 @@ function _vMainImpl(){
     case"debug": return isAdm?vDebug():""; // v9.91
     case"ia":       return vIA();
     case"lessonscmc": return isAdm?vLessonsLearnedCmc():""; // v9.525 - Lessons partagees Apex+CMCteams
-    case"passation":  return typeof vPassation==="function"?vPassation():_vMissingView("📋 Passation digitale","Cette vue est en cours de développement et n'est pas encore disponible.","🏠 Retour accueil","accueil"); // v9.726 — guard erreur #28
-    case"passations": return typeof vPassationsList==="function"?vPassationsList():_vMissingView("📋 Historique passations","Cette vue est en cours de développement et n'est pas encore disponible.","📋 Voir le journal d'audit","auditlog"); // v9.726 — guard erreur #28
     case"crossteamactivity": return isAdm?(typeof vCrossTeamActivity==="function"?vCrossTeamActivity():_vMissingView("📊 Activité cross-team","Cette vue est en cours de développement et n'est pas encore disponible.","📊 Voir les statistiques","stats")):""; // v9.726 — guard erreur #28
     case"rgpd":case"mes-donnees":case"vie-privee": return vRGPD(); // v9.548 - RGPD complet (export + erase + CSP + droits)
     default: return vAccueil();
@@ -22933,10 +22928,9 @@ function vAccueil(){
     var _nUpload=(typeof countPendingUploads==="function")?countPendingUploads():0;
     var _verifs=lg("cmc_verif_codes",{});
     var _nVerif=Object.keys(_verifs).filter(function(k){var c=_verifs[k];return c&&!c.used&&Date.now()<c.expiresAt;}).length;
-    var _nPass=(typeof cmcPassationsPendingCount==="function")?cmcPassationsPendingCount():0;
     var _conflicts=0;try{var _cf=(typeof detectRepoConflicts==="function")?detectRepoConflicts(A.year,A.month):null;if(_cf&&_cf.length)_conflicts=_cf.length;}catch(_){}
     var _regAlerts=(lg("cmc_reg_alerts",[])||[]).length;
-    var _totalAlerts=_nApex+_nVerif+_nPass+_conflicts+_regAlerts+_nUpload;
+    var _totalAlerts=_nApex+_nVerif+_conflicts+_regAlerts+_nUpload;
     var _miniStat=function(ic,lb,n,col,act){
       var hot=n>0;
       return '<button onclick="'+act+'" style="all:unset;cursor:pointer;flex:1;min-width:84px;padding:10px 8px;background:'+(hot?col+"18":"rgba(255,255,255,.02)")+';border:1px solid '+(hot?col+"55":"rgba(255,255,255,.06)")+';border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;transition:all .15s var(--ease)">'
@@ -22995,7 +22989,6 @@ function vAccueil(){
           +(_regAlerts>0?_miniStat("👤","Nouveaux",_regAlerts,"#e09848","sv('employees')"):"")
           +(_nVerif>0?_miniStat("🔐","Codes",_nVerif,"#7aa8d0","sv('admin')"):"")
           +(_nApex>0?_miniStat("📥","Apex",_nApex,"#c090ff","_cmcOpenApexPendingList()"):"")
-          +(_nPass>0?_miniStat("📝","Passat.",_nPass,"#c9a227","sv('passations')"):"")
           +(_nUpload>0?_miniStat("📤","Uploads",_nUpload,"#5aaa70","sv('uploadreq')"):"")
           +'</div>'
         :(function(){
@@ -30024,330 +30017,6 @@ function vAdminSecurity(){
   return h;
 }
 
-function vAdmin(){
-  var pinSet=lg("cmc_admin_pin",null);
-  // Alerte connexion : tentatives échouées depuis dernière connexion réussie
-  var _sessions=lg("cmc_admin_sessions",[]);
-  var _failsAlert=0;
-  for(var _si=_sessions.length-1;_si>=0;_si--){
-    var _se=_sessions[_si];
-    if(_se.type==="success")break;
-    if(_se.type==="pin_fail")_failsAlert++;
-  }
-  // v9.475 \u2014 R\u00e9organisation admin : 4 cat\u00e9gories (vs 8) avec sous-groupes collapsibles
-  var _iaOn=(typeof iaIsEnabled==="function")?iaIsEnabled():iaEnabled;
-  var items=[
-    /* v9.675 — Kill-switch IA (priorit\u00e9 absolue Kevin : couper conso tokens en 1 clic) */
-    {sep:"\ud83e\udd16 IA \u2014 Kill-switch tokens"+(_iaOn?"":" \u2014 \u23f8 OFF")},
-    {ic:_iaOn?"\u23f8":"\u25b6",lb:(_iaOn?"D\u00e9sactiver IA":"Activer IA")+" (Claude \u2014 \u00e9conomie tokens)",fn:"iaToggle()"},
-    {ic:"\ud83d\udd11",lb:"Configurer cl\u00e9 API Claude",fn:"iaSetApiKey()"},
-    {ic:"\ud83d\udd17",lb:"Configurer proxy s\u00e9curis\u00e9",fn:"iaSetProxy()"},
-    /* v9.540 - Passation digitale (acces 1-clic top admin) */
-    {sep:"\ud83d\udcdd PASSATION & COMMUNICATION"},
-    {ic:"\ud83d\udcdd",lb:"Nouvelle passation (fin de tourn\u00e9e)",fn:"sv('passation')"},
-    {ic:"\ud83d\udcd6",lb:"Historique passations"+((typeof cmcPassationsPendingCount==="function"&&cmcPassationsPendingCount()>0)?(" \u2014 "+cmcPassationsPendingCount()+" non lue"+(cmcPassationsPendingCount()>1?"s":"")):""),fn:"sv('passations')"},
-    /* v9.602 \u2014 Bridge Apex -> CMCteams visible dans admin (Kevin 2026-05-07 v9.601) */
-    (function(){var n=(typeof _cmcCountApexPlanningPending==="function")?_cmcCountApexPlanningPending():0;return {ic:"\ud83d\udce5",lb:"Plannings Apex re\u00e7us"+(n>0?(" \u2014 "+n+" en attente \u26a1"):" (vide)"),fn:"_cmcOpenApexPendingList()"};})(),
-    {ic:"\ud83d\udcca",lb:"Activit\u00e9 cross-team (chat stats)",fn:"sv('crossteamactivity')"},
-    {sep:"\ud83d\udc65 DONN\u00c9ES & EFFECTIFS"},
-    // Effectifs
-    {ic:"\ud83d\udc65",lb:"Employ\u00e9s",fn:"sv('employees')"},
-    {ic:"\ud83d\udc51",lb:"Chefs & ordres de d\u00e9part",fn:"sv('teams')"},
-    {ic:"\ud83c\udf92",lb:"Retrait\u00e9s",fn:"sv('retrait')"},
-    {ic:"\ud83d\udc65",lb:"D\u00e9tecter doublons",fn:"detectDuplicates()"},
-    {ic:"\ud83d\udce2",lb:"Retardataires \u00e0 relancer",fn:"sv('retardataires')"},
-    {grp:"\ud83d\udcc4 Export & sauvegardes"},
-    {ic:"\ud83d\udcc4",lb:"Exporter planning CSV",fn:"exportPlanningCSV()"},
-    {ic:"\ud83d\udcbe",lb:"Sauvegarde compl\u00e8te JSON",fn:"exportFullBackup()"},
-    {ic:"\ud83d\udce4",lb:"Restaurer une sauvegarde",fn:"importFullBackup()"},
-    {ic:"\ud83d\uddc3\ufe0f",lb:"Mois stock\u00e9s",fn:"sv('mois')"},
-    {grp:"\ud83d\udcc1 Documents"},
-    {ic:"\ud83d\udcc1",lb:"Banque de donn\u00e9es (photos, PDF)",fn:"sv('documents')"},
-    {ic:"\ud83d\udce4",lb:"Mod\u00e9ration uploads"+(countPendingUploads()>0?" \u2014 "+countPendingUploads()+" \u26a0":""),fn:"sv('uploadreq')"},
-    {grpEnd:true},
-
-    {sep:"\ud83d\udcc5 PLANNING & HORAIRES"},
-    // Planning
-    {ic:"\ud83d\udce5",lb:"Importer un planning PDF",fn:"sv('import')"},
-    {ic:"\u2705",lb:"V\u00e9rifier l\u2019import",fn:"sv('importVerif')"},
-    {ic:"\ud83d\udcda",lb:"Apprentissage parser (formats appris)",fn:"sv('parserlearning')"}, // v9.663 \u2014 redirige vers vue existante (v9.658)
-    {ic:"\ud83d\udccb",lb:"Audit & historique imports",fn:"sv('auditlog')"}, // v9.663 \u2014 redirige vers vue existante
-    {ic:"\u26a0\ufe0f",lb:"Alertes (conflits repos, s\u00e9ries)",fn:"sv('conflits')"},
-    {ic:"\ud83d\ude34",lb:"Qui est libre ? (par jour)",fn:"sv('quilibre')"},
-    {ic:"\ud83d\udd04",lb:"Dupliquer le mois pr\u00e9c\u00e9dent",fn:"duplicateMonthFromPrev()"},
-    {ic:"\ud83d\udcbe",lb:"Sauvegarder comme mod\u00e8le",fn:"saveTemplate()"},
-    {ic:"\ud83d\udd34",lb:"Marquer jours forte affluence",fn:"markAffluenceBulk()"},
-    {ic:"\ud83d\uddd1",lb:"Effacer planning du mois",fn:"clearMonth()"},
-    {grp:"\ud83d\udcca Statistiques"},
-    {ic:"\ud83d\udcca",lb:"Stats du mois",fn:"sv('stats')"},
-    {ic:"\ud83c\udf10",lb:"Stats globales (lieu/r\u00f4le/famille)",fn:"sv('statsglobal')"},
-    {ic:"\ud83d\udcc8",lb:"Stats par employ\u00e9 (archivage)",fn:"sv('statsannuelles')"},
-    {grpEnd:true},
-
-    {sep:"\ud83d\udd12 S\u00c9CURIT\u00c9 & AUDIT"},
-    {ic:"\u23f1\ufe0f",lb:"Mon temps de travail",fn:"sv('admintimework')"},
-    {ic:"\ud83d\udc65",lb:"Activit\u00e9 par utilisateur",fn:"sv('usersactivity')"},
-    {ic:"\ud83d\udee1\ufe0f",lb:"Journal s\u00e9curit\u00e9 admin",fn:"sv('security')"},
-    {ic:"\ud83d\udcca",lb:"Statistiques de connexion (IP, navigateur, lieu)",fn:"sv('connexions')"},
-    {ic:"\ud83d\udcdd",lb:"Journal des modifications",fn:"sv('auditlog')"},
-    {ic:"\ud83d\udd0d",lb:"Audit effectifs",fn:"sv('audit')"},
-    {ic:"\ud83e\udde0",lb:"M\u00e9moire pro IA (regles + lecons)",fn:"sv('memorypro')"},
-    {ic:"\ud83d\uddc2",lb:"Banque d'infos employ\u00e9s (synth\u00e8se auto)",fn:"sv('knowledgebank')"}, // v9.516
-    {ic:"\ud83d\udee1",lb:"Centre des sentinelles (12 agents)",fn:"sv('sentinelhub')"}, // v9.517
-    {ic:"\ud83d\udd12",lb:"Audit sauvegarde triple (cl\u00e9s + donn\u00e9es)",fn:"sv('persaudit')"}, // v9.519
-    {ic:"\ud83d\udcda",lb:"Lessons partagees Apex+CMCteams",fn:"sv('lessonscmc')"}, // v9.525 cross-app
-    {ic:"\ud83d\udd12",lb:"Vie privee & RGPD (export + effacement + CSP)",fn:"sv('rgpd')"}, // v9.548 RGPD 10/10
-    {ic:pinSet?"\ud83d\udd10":"\ud83d\udd13",lb:pinSet?"Modifier PIN admin":"Activer PIN admin",fn:"showPinSetup()"},
-    {ic:"\ud83d\udd13",lb:"R\u00e9init. tous les mots de passe",fn:"adminResetAllPw()"},
-
-    {sep:"\u2699\ufe0f CONFIGURATION & OUTILS"},
-    // v9.482 \u2014 Niveau IA par employe (parite Apex v12.121)
-    {ic:"\u2699\ufe0f",lb:"Niveau IA par employ\u00e9",fn:"sv('consumptionlevels')"},
-    // v9.485 \u2014 Voix premium iOS + presets fun (parite Apex v12.107)
-    {ic:"\ud83d\udd0a",lb:"Choisir voix (lecture vocale)",fn:"sv('voicepresets')"},
-    // v9.494 \u2014 Editeur cartes multi-casinos + upload floor plan
-    {ic:"\ud83d\uddfa\ufe0f",lb:"\u00c9diteur cartes casinos (4 SBM)",fn:"sv('mapeditor')"},
-    // Pr\u00e9sentation
-    {ic:"\ud83d\udcfa",lb:"Mode pr\u00e9sentation (plein \u00e9cran)",fn:"togglePresentation()"},
-    // v9.481 \u2014 Pub Apex AI (Kevin: 'fais la pub \u00e0 plusieurs endroits. Activable admin')
-    {grp:"\u26a1 Apex AI (assistant IA partenaire)"},
-    {ic:"\u26a1",lb:"Pub Apex (banner partout) \u2014 "+(_cmcApexPubEnabled()?"activ\u00e9e":"d\u00e9sactiv\u00e9e"),fn:"cmcApexPubToggle()"},
-    {ic:"\ud83d\udce2",lb:"Popup Apex (1x/jour admin) \u2014 "+(_cmcApexPubPopupEnabled()?"activ\u00e9e":"d\u00e9sactiv\u00e9e"),fn:"cmcApexPubPopupToggle()"},
-    {ic:"\u26a1",lb:"Ouvrir APEX AI",fn:"window.open('"+APEX_URL+"','_blank','noopener')"},
-    {grpEnd:true},
-    {grp:"\u26a0\ufe0f Maintenance"},
-    {ic:"\ud83d\udd27",lb:"Diagnostic & Debug (perf, erreurs)",fn:"sv('debug')"},
-    {ic:"\ud83e\uddea",lb:"Tests unitaires",fn:"runTests()"},
-    {ic:"\ud83e\uddf9",lb:"Nettoyer employ\u00e9s PDF",fn:"cleanImportedEmps()"},
-    {ic:"\u26a0\ufe0f",lb:"R\u00e9initialisation compl\u00e8te",fn:"hardReset()"},
-    {grpEnd:true}
-  ];
-  // Calcul de la dernière connexion réussie pour affichage dans l'admin
-  var _lastOk=(function(){var ss=lg("cmc_admin_sessions",[]);for(var i=ss.length-1;i>=0;i--){if(ss[i].type==="success"&&i<ss.length-1)return ss[i];}return null;})();
-  var _lastOkStr=_lastOk?(function(){var d=new Date(_lastOk.ts);return d.toLocaleDateString("fr-FR")+" \u00e0 "+String(d.getHours()).padStart(2,"0")+"h"+String(d.getMinutes()).padStart(2,"0");})():null;
-  var _regAlerts=lg("cmc_reg_alerts",[]);
-  // Dédupliquer par id (garder la plus récente entrée par employé)
-  (function(){var seen={},dedupd=[];_regAlerts.slice().reverse().forEach(function(a){if(seen[a.id])return;seen[a.id]=true;dedupd.push(a);});_regAlerts=dedupd.reverse();ls("cmc_reg_alerts",_regAlerts);})();
-  // Codes de vérification en attente (non utilisés, non expirés)
-  var _verifCodes=lg("cmc_verif_codes",{});
-  var _pendingVerif=Object.keys(_verifCodes).map(function(k){return Object.assign({empId:k},_verifCodes[k]);}).filter(function(c){return !c.used&&Date.now()<c.expiresAt;}).sort(function(a,b){return b.createdAt-a.createdAt;});
-  return '<div class="page bg-palace" style="position:relative">'
-  +'<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><div style="font-size:28px">\ud83c\uddf2\ud83c\udde8</div><div style="flex:1;min-width:0"><div class="sec-title">\ud83d\udc51 Administration</div>'
-  +'<div class="sec-sub">Casino de Monte-Carlo \u2022 '+sbmLogo(40)+'</div></div>'
-  // v10 \u2014 Sprint 1 : bouton d'opt-in vers le nouveau panneau refondu (5 cat\u00e9gories)
-  +'<button onclick="sv(\'adminv10\')" title="Essayer le nouveau panneau admin v10 (5 cat\u00e9gories, raccourcis du jour)" style="background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(255,215,0,.10));border:1px solid rgba(201,162,39,.45);color:#ffdc40;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">\u2728 Nouveau panneau v10</button>'
-  +'</div>'
-  // v9.109 — Section sync Firebase COMPACTE quand tout va bien (1 ligne)
-  // v9.136 — Firebase banner uniquement si DÉCONNECTÉ (actionnable). Sinon status visible dans topbar.
-  +(!(FB_URL&&_fbConnected)
-    ?'<div style="padding:10px 14px;background:rgba(58,100,180,.08);border:1px solid rgba(58,100,180,.25);border-radius:10px;margin-bottom:12px">'
-      +'<div style="font-size:15px;font-weight:700;color:#6090d0;margin-bottom:6px">\ud83d\udd04 '+(FB_URL?'Connexion Firebase en cours\u2026':'Firebase non connect\u00e9')+'</div>'
-      +'<div style="display:flex;gap:6px;align-items:center">'
-      +'<input id="fbUrlIn" class="inp" placeholder="https://mon-projet-default-rtdb.firebaseio.com" style="flex:1;font-size:14px;font-family:monospace;padding:6px 8px;margin-bottom:0" value="'+esc(FB_URL)+'">'
-      +'<button class="btn gold" onclick="fbSaveUrl()" style="padding:7px 12px;font-size:14px;white-space:nowrap">Connecter</button>'
-      +'</div></div>'
-    :'')
-  // v9.68 — Message du jour
-  +(function(){
-    var m=A.motd;
-    var curText=m&&m.text?m.text:"";
-    var pubInfo="";
-    if(m&&m.ts){
-      var d=new Date(m.ts);
-      var au=A.employees.filter(function(e){return e.id===m.author;})[0];
-      pubInfo='<div style="font-size:13px;color:#8abb70;margin-top:6px">\u2705 Publi\u00e9 le '+d.toLocaleDateString("fr-FR")+' \u00e0 '+String(d.getHours()).padStart(2,"0")+'h'+String(d.getMinutes()).padStart(2,"0")+(au?' par '+esc(au.name):m.author?' par '+esc(m.author)+' (supprim\u00e9)':"")+'</div>';
-    }
-    return '<div style="padding:10px 14px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3);border-radius:10px;margin-bottom:12px">'
-      +'<div style="font-size:15px;font-weight:700;color:#ffdc40;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center">\ud83d\udce2 Message du jour'+helpIcon("motd","Qu'est-ce que le message du jour ?")+'</div>'
-      +'<div style="font-size:13px;color:#a8c8a0;margin-bottom:6px">Visible par tous les employ\u00e9s sur leur accueil (max 500 caract\u00e8res)</div>'
-      +'<textarea id="motdIn" class="inp" maxlength="500" rows="3" placeholder="Ex : R\u00e9union d\u2019\u00e9quipe \u00e0 14h aujourd\u2019hui\u2026" style="width:100%;font-size:14px;padding:8px 10px;margin-bottom:6px;resize:vertical;min-height:60px;font-family:inherit">'+esc(curText)+'</textarea>'
-      +'<div style="display:flex;gap:6px">'
-      +'<button class="btn gold" onclick="adminSetMotdFromInput()" style="padding:7px 12px;font-size:14px;flex:1">\ud83d\udce2 '+(curText?"Mettre \u00e0 jour":"Publier")+'</button>'
-      +(curText?'<button class="btn ghost" onclick="if(confirm(\'Effacer le message du jour ?\'))clearMotd()" style="padding:7px 12px;font-size:14px">\ud83d\uddd1 Effacer</button>':"")
-      +'</div>'
-      +pubInfo
-      +'</div>';
-  })()
-  +(_regAlerts.length>0?'<div style="padding:10px 12px;background:rgba(192,120,48,.1);border:1px solid rgba(192,120,48,.35);border-radius:8px;margin-bottom:10px;cursor:pointer" onclick="var al=lg(\'cmc_reg_alerts\',[]);al=[];ls(\'cmc_reg_alerts\',al);dc();">'
-    +'<div style="font-size:15px;font-weight:700;color:#e09848">\ud83d\udc64 '+_regAlerts.length+' nouveau'+(
-_regAlerts.length>1?"x":"")+" employ\u00e9"+(
-_regAlerts.length>1?"s":"")+' inscrit'+(
-_regAlerts.length>1?"s":"")+" — \u00e9quipe inconnue</div>"
-    +'<div style="display:flex;flex-direction:column;gap:3px;margin-top:6px">'+_regAlerts.slice(-5).map(function(a){var d=new Date(a.ts);return '<div style="font-size:14px;color:#a08060">\u2022 '+esc(a.prenom+' '+a.nom)+' ('+esc(a.id)+') \u2014 '+d.toLocaleDateString("fr-FR")+'</div>';}).join("")+'</div>'
-    +'<div style="font-size:13px;color:#7a6040;margin-top:5px">Appuyez pour effacer \u2014 assignez leur \u00e9quipe dans la fiche Employ\u00e9s</div>'
-    +'</div>':"")
-  +(_pendingVerif.length>0?'<div style="padding:12px 14px;background:linear-gradient(135deg,rgba(74,114,168,.12),rgba(74,114,168,.06));border:2px solid rgba(74,114,168,.45);border-radius:10px;margin-bottom:12px;box-shadow:0 0 16px rgba(74,114,168,.15)">'
-    +'<div style="font-size:16px;font-weight:800;color:#a0c8f0;margin-bottom:4px;display:flex;align-items:center;gap:6px">\ud83d\udd10 Nouveaux inscrits \u2014 codes \u00e0 valider ('+_pendingVerif.length+')'+helpIcon("validation_codes","Comment valider un nouvel utilisateur ?")+'</div>'
-    +'<div style="font-size:12px;color:#8aaac0;margin-bottom:10px;font-style:italic">Transmettez le code \u00e0 l\'employ\u00e9 (SMS, WhatsApp, t\u00e9l\u00e9phone) OU validez directement avec le bouton vert.</div>'
-    +'<div style="display:flex;flex-direction:column;gap:8px">'
-    +_pendingVerif.map(function(c){
-      var minsLeft=Math.max(0,Math.ceil((c.expiresAt-Date.now())/60000));
-      var codeStr=esc(c.code);
-      var nameStr=esc((c.prenom||"")+' '+(c.nom||""));
-      return '<div style="padding:10px 12px;background:rgba(3,10,14,.28);border:1px solid rgba(74,114,168,.3);border-radius:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px">'
-        +'<div style="flex:1;min-width:140px">'
-        +'<div style="font-size:14px;font-weight:700;color:#d0e0ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nameStr+' <span style="color:#8aaac0;font-weight:normal;font-size:12px">('+esc(c.empId)+')</span></div>'
-        +'<div style="font-size:12px;color:#a0c8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u2709\ufe0f '+esc(c.email||"\u2014")+' \u00b7 \u23f1 '+minsLeft+' min</div>'
-        +'</div>'
-        +'<div style="font-family:monospace;font-size:22px;font-weight:800;color:#ffdc40;letter-spacing:4px;background:rgba(201,162,39,.15);padding:6px 14px;border-radius:8px;border:1px solid rgba(201,162,39,.35);flex-shrink:0;text-shadow:0 0 8px rgba(255,220,64,.3)">'+codeStr+'</div>'
-        +'<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+codeStr+'\').then(function(){toast(\'\ud83d\udccb Code '+codeStr+' copi\u00e9\');})" style="background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.4);color:#ffdc40;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;min-width:44px;min-height:44px" title="Copier le code">\ud83d\udccb</button>'
-        +'<button onclick="_confirmValidateNewUser(\''+esc(c.empId)+'\')" style="background:rgba(58,138,80,.25);border:1px solid rgba(58,138,80,.6);color:#7edc90;border-radius:8px;padding:8px 14px;font-size:14px;font-weight:800;cursor:pointer;flex-shrink:0;min-width:44px;min-height:44px" title="Valider sans code">\u2713 Valider</button>'
-        +'</div>';
-    }).join("")
-    +'</div>'
-    +'</div>':"")
-  +(_failsAlert>0?'<div style="padding:10px 12px;background:rgba(180,40,40,.1);border:1px solid rgba(180,40,40,.3);border-radius:8px;margin-bottom:10px;cursor:pointer" onclick="sv(\'security\')">'
-    +'<div style="font-size:15px;font-weight:700;color:#d06060">\u26a0\ufe0f '+_failsAlert+' tentative'+(
-_failsAlert>1?"s":"")+" \u00e9chou\u00e9e"+(
-_failsAlert>1?"s":"")+" sur le PIN depuis votre derni\u00e8re connexion</div>"
-    +'<div style="font-size:14px;color:#a08080;margin-top:2px">Appuyez pour voir l\'historique de s\u00e9curit\u00e9 \u2192</div>'
-    +'</div>':"")
-  // v9.136 — Dernière connexion retirée (visible dans Admin → Sécurité si besoin)
-  // Bloc photos et arrière-plans (v9.34)
-  +(function(){
-    var ph=A.photos||{};
-    var _photoKey=function(k,lbl,descr){
-      var hasImg=!!ph[k];
-      var sz=hasImg?Math.round(ph[k].length/1024)+" KB":"";
-      return '<div style="padding:10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px;display:flex;align-items:center;gap:10px">'
-        +(hasImg
-          ?'<div style="width:52px;height:52px;border-radius:8px;background:url(&quot;'+_safeUrl(ph[k])+'&quot;) center/cover;border:1px solid rgba(201,162,39,.3);flex-shrink:0"></div>'
-          :'<div style="width:52px;height:52px;border-radius:8px;background:rgba(201,162,39,.05);border:1px dashed rgba(201,162,39,.25);display:flex;align-items:center;justify-content:center;color:rgba(201,162,39,.6);font-size:22px;flex-shrink:0">\ud83d\uddbc\ufe0f</div>')
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:14px;font-weight:700;color:#c0d8c0">'+lbl+'</div>'
-        +'<div style="font-size:12px;color:#b0ccb0">'+descr+(hasImg?' \u2022 '+sz:" \u2022 aucune")+'</div>'
-        +'</div>'
-        +'<button onclick="uploadAppPhoto(\''+k+'\')" style="background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.4);border-radius:6px;padding:6px 10px;color:#5aaa70;font-size:12px;cursor:pointer;font-weight:700;white-space:nowrap">'+(hasImg?"\ud83d\udd04 Changer":"\ud83d\udcf7 Importer")+'</button>'
-        +(hasImg?'<button onclick="removeAppPhoto(\''+k+'\')" style="background:rgba(160,40,40,.1);border:1px solid rgba(160,40,40,.3);border-radius:6px;padding:6px 8px;color:#e08080;font-size:12px;cursor:pointer;margin-left:4px">\u2715</button>':"")
-        +'</div>';
-    };
-    return '<div style="padding:10px 14px;background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.18);border-radius:10px;margin-bottom:12px">'
-    +'<div style="font-size:14px;font-weight:800;color:#c9a227;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcf8 Photos & arri\u00e8re-plans</div>'
-    +'<div style="font-size:12px;color:#7a8a70;margin-bottom:10px">Importez vos propres photos du Casino de Monte-Carlo. Redimensionn\u00e9es automatiquement (max 1600\u00d71600, qualit\u00e9 82%). JPG/PNG/HEIC \u2014 fichiers jusqu\'\u00e0 15 MB.</div>'
-    +'<div style="display:flex;flex-direction:column;gap:6px">'
-    +_photoKey("chatBg","Fond du chat \u2014 Photo 1","Affich\u00e9e derri\u00e8re les bulles. Ajoutez 2 ou 3 photos pour un carousel auto.")
-    +_photoKey("chatBg2","Fond du chat \u2014 Photo 2 (optionnel)","2\u1d49 photo du carousel (30s de cycle).")
-    +_photoKey("chatBg3","Fond du chat \u2014 Photo 3 (optionnel)","3\u1d49 photo du carousel (30s de cycle).")
-    +_photoKey("accueilBg","Fond de l'accueil","Hero section de la page d'accueil")
-    +_photoKey("loginBg","Fond de connexion","\u00c9cran de login")
-    +_photoKey("planningBg","Fond du planning","Vue \u00c9quipe & D\u00e9parts")
-    +'</div>'
-    // v9.113 — Bouton pause/reprise diaporama (admin)
-    +'<div style="margin-top:10px;padding:10px;background:'+(_bgPaused?"rgba(224,160,64,.10)":"rgba(90,170,112,.10)")+';border:1px solid '+(_bgPaused?"rgba(224,160,64,.35)":"rgba(90,170,112,.30)")+';border-radius:8px;display:flex;align-items:center;gap:10px">'
-    +'<span style="font-size:22px">'+(_bgPaused?"\u23f8":"\u25b6")+'</span>'
-    +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:'+(_bgPaused?"#e0a040":"#8acc90")+'">D\u00e9filement des fonds : '+(_bgPaused?"EN PAUSE":"ACTIF (5s)")+'</div>'
-    +'<div style="font-size:12px;color:#a0cca0">'+(_bgPaused?"La photo actuelle reste affich\u00e9e en permanence":"Les photos d\u00e9filent automatiquement toutes les 5 secondes")+'</div></div>'
-    +'<button onclick="toggleBgPaused()" style="padding:8px 14px;background:'+(_bgPaused?"rgba(90,170,112,.15)":"rgba(224,160,64,.15)")+';border:1px solid '+(_bgPaused?"rgba(90,170,112,.45)":"rgba(224,160,64,.45)")+';color:'+(_bgPaused?"#8acc90":"#e0a040")+';border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">'+(_bgPaused?"\u25b6 Relancer":"\u23f8 Pause")+'</button>'
-    +'</div></div>';
-  })()
-  // v9.71 — EmailJS désactivé : les codes OTP sont communiqués à l'employé par l'admin
-  // (voir bloc "Codes de vérification en attente" plus haut dans vAdmin).
-  // Le bloc visuel EmailJS a été retiré. Les fonctions (sendVerifEmail, saveEmailJSConfig,
-  // testEmailJS, removeEmailJSConfig) restent en place mais ne sont plus exposées dans l'UI.
-  +''
-  // Bloc paramètres fonctionnalités
-  +'<div style="padding:10px 14px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.2);border-radius:10px;margin-bottom:12px">'
-  +'<div style="font-size:14px;font-weight:800;color:#5a9a70;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\u2699\ufe0f Fonctionnalit\u00e9s</div>'
-  +'<div style="display:flex;flex-direction:column;gap:8px">'
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
-  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udd14 Notifications navigateur</div>'
-  +'<div style="font-size:13px;color:#a0bca0">'+(typeof Notification==="undefined"?"\ud83d\udcf1 iOS : Partager \u2192 Sur l'\u00e9cran d'accueil":Notification.permission==="granted"?"Activ\u00e9es \u2014 alertes planning et chat":"D\u00e9sactiv\u00e9es \u2014 cliquer pour activer")+'</div></div>'
-  +(typeof Notification==="undefined"?'<span style="font-size:12px;color:#b0ccb0">\u2014</span>':(Notification.permission!=="granted"?'<button onclick="requestNotifPermission()" style="background:rgba(74,114,168,.2);border:1px solid rgba(74,114,168,.4);border-radius:20px;padding:5px 14px;color:#a0c8f0;font-weight:700;cursor:pointer;font-size:14px">Activer</button>':'<span style="font-size:14px;color:#3a8a50">\u2705 OK</span>'))
-  +'</div>'
-  // Langue
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
-  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udf10 '+t("language")+'</div>'
-  +'<div style="font-size:13px;color:#a0bca0">'+(LANGS.find(function(l){return l.id===_lang;})||LANGS[0]).label+'</div></div>'
-  +'<div style="display:flex;gap:4px">'
-  +LANGS.map(function(l){var on=_lang===l.id;return '<button onclick="setLang(\''+l.id+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:6px;padding:5px 10px;cursor:pointer;font-size:16px;min-height:44px">'+l.flag+'</button>';}).join('')
-  +'</div></div>'
-  // Thème visuel
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
-  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83c\udfa8 '+t("theme")+'</div>'
-  +'<div style="font-size:13px;color:#a0bca0">Actuel : '+(THEMES[_theme]||THEMES.casino).icon+' '+(THEMES[_theme]||THEMES.casino).label+'</div></div>'
-  +'<div style="display:flex;gap:4px">'
-  +Object.keys(THEMES).map(function(tid){var t=THEMES[tid];var on=_theme===tid;return '<button onclick="setTheme(\''+tid+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;min-height:44px;color:'+(on?'#c9a227':'#7aaa80')+'">'+t.icon+'</button>';}).join('')
-  +'</div></div>'
-  // Compte visiteur U007
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(3,10,4,.22);border:1px solid #1a2e18;border-radius:8px">'
-  +'<div><div style="font-size:14px;font-weight:700;color:#c0d8c0">\ud83d\udc64 Compte visiteur (U007)</div>'
-  +'<div style="font-size:13px;color:#a0bca0">Matricule : <b>U007</b> \u2022 Mot de passe : <b>sbm2026</b> \u2022 Vue g\u00e9n\u00e9rale uniquement</div></div>'
-  +'<button onclick="toggleVisitor()" style="background:'+(_visitorEnabled?'rgba(58,138,80,.2)':'rgba(192,64,64,.15)')+';border:1px solid '+(_visitorEnabled?'rgba(58,138,80,.5)':'rgba(192,64,64,.4)')+';border-radius:20px;padding:5px 14px;color:'+(_visitorEnabled?'#5aaa70':'#c06060')+';font-weight:700;cursor:pointer;font-size:14px;min-height:44px">'+(_visitorEnabled?'\u2705 Activ\u00e9':'\u274c D\u00e9sactiv\u00e9')+'</button>'
-  +'</div>'
-  +'</div></div>'
-  +'<div style="display:flex;flex-direction:column;gap:8px">'
-  +(function(){
-    // v9.475 — Rendu hiérarchique : sep = grande catégorie, grp = sous-groupe collapsible
-    var out="",_inGrp=false;
-    items.forEach(function(it){
-      if(it.sep){
-        if(_inGrp){out+='</div></details>';_inGrp=false;}
-        out+='<div style="font-size:14px;font-weight:800;color:#c9a227;text-transform:uppercase;letter-spacing:2px;padding:16px 4px 8px;border-top:2px solid rgba(201,162,39,.25);margin-top:6px">'+it.sep+'</div>';
-        return;
-      }
-      if(it.grp){
-        if(_inGrp){out+='</div></details>';}
-        out+='<details style="margin:6px 0 2px"><summary style="font-size:13px;font-weight:700;color:#a8902c;padding:8px 10px;cursor:pointer;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.18);border-radius:8px;list-style:none;min-height:44px;display:flex;align-items:center;gap:6px">▸ '+it.grp+'</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;padding-left:6px">';
-        _inGrp=true;
-        return;
-      }
-      if(it.grpEnd){
-        if(_inGrp){out+='</div></details>';_inGrp=false;}
-        return;
-      }
-      out+='<button class="btn ghost" onclick="'+it.fn+'" style="width:100%;justify-content:flex-start;padding:12px 16px;font-size:15px;gap:10px;color:#b0c8a8;min-height:44px">'+it.ic+' '+it.lb+'</button>';
-    });
-    if(_inGrp){out+='</div></details>';}
-    return out;
-  })()
-  +'</div>'
-  // Panneau toggles features utilisateur
-  +'<div style="padding:10px 14px;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.15);border-radius:10px;margin-bottom:12px">'
-  +'<div style="font-size:14px;font-weight:800;color:#c9a227;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udd27 Fonctionnalit\u00e9s utilisateur (on/off)</div>'
-  +'<div style="font-size:12px;color:#a0bca0;margin-bottom:8px">Activez ou d\u00e9sactivez les fonctionnalit\u00e9s pour tous les employ\u00e9s</div>'
-  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
-  +(function(){
-    var _fList=[
-      {id:"tts",ic:"\ud83d\udd0a",lb:"Lecture vocale"},
-      {id:"stt",ic:"\ud83c\udf99",lb:"Micro dict\u00e9e"},
-      {id:"likes",ic:"\u2764\ufe0f",lb:"Likes documents"},
-      {id:"favorites",ic:"\u2b50",lb:"Favoris coll\u00e8gues"},
-      {id:"requests",ic:"\ud83d\udce8",lb:"Demandes employ\u00e9s"},
-      {id:"themes",ic:"\ud83c\udfa8",lb:"Th\u00e8mes visuels"},
-      {id:"languages",ic:"\ud83c\udf10",lb:"Multi-langues"},
-      {id:"pdf",ic:"\ud83d\udcc4",lb:"Export PDF"},
-      {id:"ics",ic:"\ud83d\udcc5",lb:"Export ICS"},
-      {id:"search",ic:"\ud83d\udd0d",lb:"Recherche globale"},
-      {id:"presentation",ic:"\ud83d\udcfa",lb:"Mode pr\u00e9sentation"},
-      {id:"visitor",ic:"\ud83d\udc64",lb:"Compte visiteur"},
-      {id:"affluence",ic:"\ud83d\udcc8",lb:"Affluence calendrier"},
-      {id:"countdown",ic:"\u23f3",lb:"Compte \u00e0 rebours shift"},
-      {id:"voiceResume",ic:"\ud83d\udce2",lb:"R\u00e9sum\u00e9 vocal login"},
-      {id:"autoTheme",ic:"\ud83c\udf13",lb:"Th\u00e8me auto jour/nuit"},
-      {id:"geoloc",ic:"\ud83d\udccd",lb:"G\u00e9oloc pointages (live)"}
-    ];
-    return _fList.map(function(f){
-      var on=isFeatureOn(f.id);
-      return '<button onclick="toggleFeature(\''+f.id+'\')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:'+(on?'rgba(58,138,80,.12)':'rgba(160,40,40,.08)')+';border:1px solid '+(on?'rgba(58,138,80,.35)':'rgba(160,40,40,.25)')+';border-radius:8px;cursor:pointer;text-align:left;min-height:44px">'
-        +'<span style="font-size:16px">'+f.ic+'</span>'
-        +'<span style="flex:1;font-size:13px;font-weight:700;color:'+(on?'#a0cca0':'#e0a0a0')+'">'+f.lb+'</span>'
-        +'<span style="font-size:12px;font-weight:800;color:'+(on?'#5aaa70':'#e08080')+'">'+(on?'ON':'OFF')+'</span>'
-        +'</button>';
-    }).join('');
-  })()
-  +'</div></div>'
-  +'<div id="pinBox" style="display:none;margin-top:12px;padding:14px;background:rgba(6,16,10,.22);border:1px solid rgba(201,162,39,.18);border-radius:10px">'
-  +'<div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:10px;display:flex;align-items:center">\ud83d\udd10 Code PIN admin'+helpIcon("pin_admin","Comment \u00e7a marche ?")+'</div>'
-  +'<div style="font-size:14px;color:#a0cca0;margin-bottom:10px">Si activ\u00e9, ce code sera demand\u00e9 \u00e0 chaque connexion admin (en plus du matricule).</div>'
-  +'<div style="display:flex;flex-direction:column;gap:8px">'
-  +'<input id="pin1" class="inp" type="password" inputmode="numeric" placeholder="Nouveau code (min. 4 chiffres)" style="letter-spacing:4px;font-size:16px">'
-  +'<input id="pin2" class="inp" type="password" inputmode="numeric" placeholder="Confirmer le code" style="letter-spacing:4px;font-size:16px">'
-  +'<button class="btn gold" onclick="savePinCode()" style="width:100%;justify-content:center">Activer ce code</button>'
-  +'<button class="btn danger" onclick="removePinCode()" style="width:100%;justify-content:center;padding:10px">Supprimer le code PIN</button>'
-  +'<button class="btn ghost" onclick="showPinSetup()" style="width:100%;justify-content:center">Annuler</button>'
-  +'</div></div>'
-  +'</div>';
-}
 
 // ========================================================================
 // v10 — Refonte UX admin : sidebar 5 catégories (opt-in via sv('adminv10'))
@@ -30362,7 +30031,6 @@ function _adminCatsV10(){
   var nRetraites=A.employees.filter(function(e){return e.toMo;}).length;
   var nApex=(typeof _cmcCountApexPlanningPending==="function")?_cmcCountApexPlanningPending():0;
   var nUploads=(typeof countPendingUploads==="function")?countPendingUploads():0;
-  var nPassations=(typeof cmcPassationsPendingCount==="function")?cmcPassationsPendingCount():0;
   return {
     team:{
       ic:"👥", title:"Équipes & Employés",
@@ -30461,8 +30129,6 @@ function _adminCatsV10(){
     },
     // Raccourcis du jour (non rendus comme catégorie ; utilisés dans vAdminV10 home)
     _shortcuts:{
-      passation:{ic:"📝",lb:"Nouvelle passation",fn:"sv('passation')",sub:"Fin de tournée"},
-      historique:{ic:"📖",lb:"Historique passations",fn:"sv('passations')",sub:nPassations>0?(nPassations+" non lue"+(nPassations>1?"s":"")):"À jour"},
       apex:{ic:"📥",lb:"Plannings Apex reçus",fn:"_cmcOpenApexPendingList()",sub:nApex>0?(nApex+" en attente ⚡"):"Vide"},
       crossteam:{ic:"📊",lb:"Activité cross-team",fn:"sv('crossteamactivity')",sub:"Chat stats"}
     }
@@ -30558,7 +30224,6 @@ function vAdminV10(){
     +'<div style="font-size:24px;font-weight:800;color:#c9a227;font-family:Cormorant Garamond,Garamond,serif;line-height:1.1">Administration</div>'
     +'<div style="font-size:12px;color:#9bb89b;letter-spacing:.5px;text-transform:uppercase;margin-top:2px">Casino de Monte-Carlo · '+APP_VER+'</div>'
     +'</div>'
-    +'<button onclick="sv(\'adminold\')" title="Revenir à la version classique (v9.x)" style="background:transparent;border:1px solid rgba(201,162,39,.25);color:#a8902c;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-weight:700">↩ Classique</button>'
     +'</div>'
 
     // Banner Firebase si déconnecté
@@ -30597,8 +30262,6 @@ function vAdminV10(){
     +'<div style="margin-bottom:18px">'
     +'<div style="font-size:11px;font-weight:800;color:#9bb89b;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;padding-left:4px">Aujourd’hui</div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">'
-    +renderShortcut(sc.passation,"#c9a227")
-    +renderShortcut(sc.historique,"#5aaa70")
     +renderShortcut(sc.apex,"#a060ff")
     +renderShortcut(sc.crossteam,"#4a72a8")
     +'</div></div>'
