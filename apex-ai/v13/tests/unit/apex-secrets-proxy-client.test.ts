@@ -176,14 +176,16 @@ describe('apex-secrets-proxy-client (v13.4.129 Kevin)', () => {
         'anthropic', 'openai', 'groq', 'gemini', 'deepseek',
         'perplexity', 'tavily', 'pinecone', 'telegram', 'railway',
         'cloudflare', 'vonage', 'opn-lego', 'jwt', 'emailjs',
+        // v13.4.278 (Kevin "Apex doit avoir accès à tous mes secrets GitHub")
+        'xai', 'mistral', 'cohere', 'together', 'finnhub', 'pexels', 'replicate',
       ];
       expected.forEach((p) => {
         expect(apexSecretsProxy.PROXY_PROVIDERS).toContain(p);
       });
     });
 
-    it('15 providers total', () => {
-      expect(apexSecretsProxy.PROXY_PROVIDERS.length).toBe(15);
+    it('22 providers total (15 base + 7 ajoutés v13.4.278) — aligné sur la source', () => {
+      expect(apexSecretsProxy.PROXY_PROVIDERS.length).toBe(22);
     });
   });
 });
