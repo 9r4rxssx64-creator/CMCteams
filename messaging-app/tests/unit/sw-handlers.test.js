@@ -156,6 +156,12 @@ describe('sw-handlers — handleFetch routing', () => {
     expect(r.body).toBe('ok:https://api.anthropic.com/v1/x');
   });
 
+  it('requête non-GET (POST) → fetch direct sans cache', async () => {
+    const event = { request: { method: 'POST', url: 'https://x.com/api/send' } };
+    await sw.handleFetch(event, deps);
+    expect(deps.fetch).toHaveBeenCalled();
+  });
+
   // v1.1.35 — règle Kevin "MAJ auto forcée" : version-check URLs DOIVENT bypass SW cache
   it('version-check URL avec ?_v= → skip SW cache, fetch direct', async () => {
     deps.fetch = vi.fn(async (req) => new MockResponse('fresh-from-network', { status: 200 }));
@@ -318,6 +324,41 @@ describe('sw-handlers — handlePush', () => {
       expect.objectContaining({ icon: './manifest.json', badge: './manifest.json' }),
     );
   });
+
+  it('push d\'appel (payload.type=call) → callActions + vibrate appel + requireInteraction', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const event = { data: { json: () => ({ title: '📞', body: 'appel', payload: { type: 'call', convId: 'c1' } }) } };
+    await sw.handlePush(event, { registration });
+    const opts = registration.showNotification.mock.calls[0][1];
+    expect(opts.actions).toEqual([
+      { action: 'answer_call', title: '✅ Répondre' },
+      { action: 'reject_call', title: '❌ Refuser' },
+    ]);
+    expect(opts.vibrate).toEqual([200, 100, 200, 100, 200]);
+    expect(opts.requireInteraction).toBe(true);
+  });
+
+  it('push message avec convId → defaultActions reply/vu', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const event = { data: { json: () => ({ title: 'M', body: 'msg', payload: { convId: 'c2' } }) } };
+    await sw.handlePush(event, { registration });
+    const opts = registration.showNotification.mock.calls[0][1];
+    expect(opts.actions).toEqual([
+      { action: 'reply', title: '💬 Répondre' },
+      { action: 'mark_read', title: '✅ Vu' },
+    ]);
+    expect(opts.vibrate).toEqual([100, 50, 100]);
+  });
+
+  it('push avec actions explicites + renotify=true → utilise les actions fournies', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const custom = [{ action: 'x', title: 'X' }];
+    const event = { data: { json: () => ({ title: 'A', body: 'b', renotify: true, actions: custom }) } };
+    await sw.handlePush(event, { registration });
+    const opts = registration.showNotification.mock.calls[0][1];
+    expect(opts.actions).toBe(custom);
+    expect(opts.renotify).toBe(true);
+  });
 });
 
 // ----------------------------------------------------------------------------
@@ -390,6 +431,105 @@ describe('sw-handlers — handleNotificationClick', () => {
     const event = { action: 'open', notification: { close: vi.fn(), data: {} } };
     await sw.handleNotificationClick(event, { clients });
     expect(clients.openWindow).toHaveBeenCalledWith('./');
+  });
+
+  it('action=reject_call → postMessage call-reject au client messaging-app', async () => {
+    const postMessage = vi.fn();
+    const clients = {
+      matchAll: vi.fn(async () => [{ url: 'https://x.com/messaging-app/', postMessage }]),
+    };
+    const event = {
+      action: 'reject_call',
+      notification: { close: vi.fn(), data: { convId: 'conv-9' } },
+    };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'call-reject', convId: 'conv-9' });
+    expect(r).toBeTruthy();
+  });
+
+  it('action=reject_call sans client matching → null', async () => {
+    const clients = { matchAll: vi.fn(async () => [{ url: 'https://other.com/', postMessage: vi.fn() }]) };
+    const event = { action: 'reject_call', notification: { close: vi.fn(), data: { convId: 'conv-9' } } };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(r).toBeNull();
+  });
+
+  it('action=answer_call → focus + postMessage call-answer', async () => {
+    const focus = vi.fn();
+    const postMessage = vi.fn();
+    const clients = {
+      matchAll: vi.fn(async () => [{ url: 'https://x.com/messaging-app/', focus, postMessage }]),
+      openWindow: vi.fn(),
+    };
+    const event = {
+      action: 'answer_call',
+      notification: { close: vi.fn(), data: { convId: 'conv-7', callType: 'video', callerName: 'Kev' } },
+    };
+    await sw.handleNotificationClick(event, { clients });
+    expect(focus).toHaveBeenCalled();
+    expect(postMessage).toHaveBeenCalledWith({ type: 'call-answer', convId: 'conv-7', callType: 'video', callerName: 'Kev' });
+    expect(clients.openWindow).not.toHaveBeenCalled();
+  });
+
+  it('action=answer_call sans client matching → openWindow ./?call=', async () => {
+    const clients = {
+      matchAll: vi.fn(async () => []),
+      openWindow: vi.fn(async () => ({ id: 'call-tab' })),
+    };
+    const event = { action: 'answer_call', notification: { close: vi.fn(), data: { convId: 'conv-7' } } };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(clients.openWindow).toHaveBeenCalledWith('./?call=conv-7');
+    expect(r.id).toBe('call-tab');
+  });
+
+  it('action=mark_read → postMessage mark-conv-read au client', async () => {
+    const postMessage = vi.fn();
+    const clients = { matchAll: vi.fn(async () => [{ url: 'https://x.com/messaging-app/', postMessage }]) };
+    const event = { action: 'mark_read', notification: { close: vi.fn(), data: { convId: 'c-3' } } };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'mark-conv-read', convId: 'c-3' });
+    expect(r).toBeTruthy();
+  });
+
+  it('action=mark_read client matching mais sans convId → null (boucle sans match)', async () => {
+    const clients = { matchAll: vi.fn(async () => [{ url: 'https://x.com/messaging-app/', postMessage: vi.fn() }]) };
+    const event = { action: 'mark_read', notification: { close: vi.fn(), data: {} } };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(r).toBeNull();
+  });
+
+  it('action=answer_call sans client ET sans openWindow → null', async () => {
+    const clients = { matchAll: vi.fn(async () => []) }; // pas d'openWindow dispo
+    const event = { action: 'answer_call', notification: { close: vi.fn(), data: { convId: 'c-7' } } };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(r).toBeNull();
+  });
+
+  it('answer_call client matching SANS callType/callerName → fallbacks audio/""', async () => {
+    const focus = vi.fn();
+    const postMessage = vi.fn();
+    const clients = { matchAll: vi.fn(async () => [{ url: 'https://x.com/messaging-app/', focus, postMessage }]) };
+    const event = { action: 'answer_call', notification: { close: vi.fn(), data: { convId: 'c-7' } } };
+    await sw.handleNotificationClick(event, { clients });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'call-answer', convId: 'c-7', callType: 'audio', callerName: '' });
+  });
+
+  it('action=reply → postMessage reply-to-conv', async () => {
+    const focus = vi.fn();
+    const postMessage = vi.fn();
+    const clients = { matchAll: vi.fn(async () => [{ url: 'https://x.com/messaging-app/', focus, postMessage }]), openWindow: vi.fn() };
+    const event = { action: 'reply', notification: { close: vi.fn(), data: { convId: 'c-5' } } };
+    await sw.handleNotificationClick(event, { clients });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'reply-to-conv', convId: 'c-5' });
+  });
+
+  it('isCall=true (data.type=call) sans action → traité comme answer_call', async () => {
+    const focus = vi.fn();
+    const postMessage = vi.fn();
+    const clients = { matchAll: vi.fn(async () => [{ url: 'https://x.com/messaging-app/', focus, postMessage }]) };
+    const event = { action: '', notification: { close: vi.fn(), data: { type: 'call', convId: 'c-2' } } };
+    await sw.handleNotificationClick(event, { clients });
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'call-answer', convId: 'c-2' }));
   });
 });
 

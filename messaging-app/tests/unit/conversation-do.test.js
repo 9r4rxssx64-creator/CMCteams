@@ -858,3 +858,52 @@ describe('ConversationDO — WS event handlers (message + close)', () => {
     // Pas de crash, no broadcast
   });
 });
+
+// ----------------------------------------------------------------------------
+// ConversationDO — notifyOfflineCall (push d'appel aux membres hors-ligne)
+// ----------------------------------------------------------------------------
+describe('ConversationDO — notifyOfflineCall', () => {
+  it('membre offline → _pushToUsers avec payload call', async () => {
+    const env = ENV({ APEX_CHAT_DB: makeDB([{ user_id: 'bob' }]) });
+    const _do = new ConversationDO(makeState(), env);
+    _do.sessions = new Map(); // personne connecté → bob est offline
+    const spy = vi.spyOn(_do, '_pushToUsers').mockResolvedValue(undefined);
+    await _do.notifyOfflineCall('kev', 'conv-1', 'video');
+    expect(spy).toHaveBeenCalledWith(['bob'], expect.objectContaining({ tag: 'call-conv-1' }));
+    expect(spy.mock.calls[0][1].payload.type).toBe('call');
+  });
+
+  it('aucun membre offline → pas de push', async () => {
+    const env = ENV({ APEX_CHAT_DB: makeDB([{ user_id: 'kev' }]) }); // seul le caller
+    const _do = new ConversationDO(makeState(), env);
+    _do.sessions = new Map();
+    const spy = vi.spyOn(_do, '_pushToUsers').mockResolvedValue(undefined);
+    await _do.notifyOfflineCall('kev', 'conv-1', 'audio');
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('caller résolu (real_name) + callType audio → payload audio + bon nom', async () => {
+    const db = makeDB([{ user_id: 'bob' }]);
+    const origPrepare = db.prepare;
+    db.prepare = vi.fn((sql) => {
+      const stmt = origPrepare(sql);
+      if (sql.includes('FROM users')) stmt.first = vi.fn(async () => ({ real_name: 'Alice', pseudo: 'al' }));
+      return stmt;
+    });
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: db }));
+    _do.sessions = new Map();
+    const spy = vi.spyOn(_do, '_pushToUsers').mockResolvedValue(undefined);
+    await _do.notifyOfflineCall('kev', 'conv-1', 'audio');
+    const payload = spy.mock.calls[0][1];
+    expect(payload.title).toContain('audio');
+    expect(payload.body).toBe('Alice t\'appelle');
+    expect(payload.payload.callType).toBe('audio');
+  });
+
+  it('DB throw → catch silencieux (pas de crash)', async () => {
+    const env = ENV();
+    env.APEX_CHAT_DB = { prepare: () => { throw new Error('db down'); } };
+    const _do = new ConversationDO(makeState(), env);
+    await expect(_do.notifyOfflineCall('kev', 'conv-1', 'audio')).resolves.toBeUndefined();
+  });
+});
