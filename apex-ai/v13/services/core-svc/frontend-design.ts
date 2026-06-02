@@ -210,7 +210,11 @@ PAS de markdown, PAS d'explications hors JSON.`;
   }
 
   private fallbackSkeleton(spec: DesignSpec, framework: Framework, tStart: number, rawText: string): DesignOutput {
-    const safePrompt = spec.prompt.replace(/[<>"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
+    const safePrompt = spec.prompt
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
     return {
       html: `<div class="ax-fallback"><h2>${safePrompt}</h2><p>Génération IA indisponible. Skeleton de secours.</p></div>`,
       css: `.ax-fallback{font-family:Georgia,serif;background:#0f0f1a;color:#e8b830;padding:24px;border-radius:14px;border:1px solid rgba(232,184,48,0.3)}`,
