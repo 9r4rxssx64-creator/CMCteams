@@ -162,6 +162,15 @@ describe('sw-handlers — handleFetch routing', () => {
     expect(deps.fetch).toHaveBeenCalled();
   });
 
+  // Couverture branche L149 : req.url falsy → urlStr = '' (fallback || '')
+  it('GET sans url → urlStr vide → routage normal sans crash', async () => {
+    deps.URL = function () { return { hostname: 'api.anthropic.com', pathname: '/v1/x' }; };
+    const event = { request: { method: 'GET' } }; // url undefined
+    const r = await sw.handleFetch(event, deps);
+    expect(deps.fetch).toHaveBeenCalled();
+    expect(r).toBeTruthy();
+  });
+
   // v1.1.35 — règle Kevin "MAJ auto forcée" : version-check URLs DOIVENT bypass SW cache
   it('version-check URL avec ?_v= → skip SW cache, fetch direct', async () => {
     deps.fetch = vi.fn(async (req) => new MockResponse('fresh-from-network', { status: 200 }));
