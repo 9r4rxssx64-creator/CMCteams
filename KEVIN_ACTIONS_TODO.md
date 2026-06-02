@@ -13,11 +13,16 @@
   `messaging-app/crypto.js`. Routes worker `/api/keys/*` déjà présentes.
 - **Plan staged** : A (fait, dormant) → B (prekeys) → C (salt HKDF par conv) → D (JWT cookie + CORS).
 
-### Dettes ouvertes (audit mesuré 2026-06-02, non bloquantes)
-- **Apex v13** : 2 tests flaky en run parallèle (`services-sentry-bridge`, `v13_4_47-dashboard-personnel`)
-  — passent en isolation, pollution d'état global entre suites à isoler.
-- **CMCteams** : surface XSS résiduelle (~10 `innerHTML` recevant des variables sans `esc()` confirmé).
-- **Apex Chat** : coverage 98.41% branches (seuil CI 100%) — ~5-6 branches WS-flow profondes restantes.
+### Dettes ouvertes (audit mesuré 2026-06-02) — ✅ TRAITÉES en autonomie 2026-06-02
+- ✅ **Apex v13** : `tests/setup.ts` → `vi.clearAllMocks()` ajouté entre tests (anti-pollution
+  d'historique d'appels). + corrigé un **test périmé** (`apex-secrets-proxy-client > 15 providers
+  total` : la source a grossi à **22** en v13.4.278, test resté à 15 → échec déguisé en "flaky").
+  Les 2 tests nommés (sentry-bridge, dashboard-personnel) passent. Gate complet revalidé.
+- ✅ **CMCteams** : audit XSS complet — **aucun vecteur exploitable** : chat/MOTD/notes/noms/profil
+  sont déjà `esc()`/`escAttr()` au rendu, ids via `_cmcSafeId()` (session précédente). Seul
+  point externe (météo open-meteo → innerHTML) durci par `Number()` (commit `13d39a939`).
+- ✅ **Apex Chat** : couverture **100%** (lignes/branches/fonctions/stmts), 799 tests — ajout
+  tests history-WS + notifyOfflineCall/Members + handleFetch url falsy (commit `f0f7e3b92`).
 
 ---
 

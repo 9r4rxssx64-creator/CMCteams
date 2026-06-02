@@ -10,7 +10,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory as FakeIDBFactory } from 'fake-indexeddb';
 import { webcrypto } from 'node:crypto';
-import { beforeEach } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 
 if (!globalThis.crypto || !globalThis.crypto.subtle) {
   Object.defineProperty(globalThis, 'crypto', {
@@ -21,6 +21,16 @@ if (!globalThis.crypto || !globalThis.crypto.subtle) {
 }
 
 beforeEach(() => {
+  /* v13.4.280 (dette audit #1 — tests flaky en parallèle) : efface l'historique
+     d'appels des mocks entre tests (mock.calls/results) pour éviter qu'un compteur
+     d'appels d'un test précédent ne pollue un test suivant dans le même fork.
+     N'altère PAS les implémentations ni les timers (sans risque pour les tests qui
+     ré-établissent leurs mocks dans leur propre beforeEach). */
+  try {
+    vi.clearAllMocks();
+  } catch {
+    /* ignore */
+  }
   /* Reset localStorage entre tests pour isolation stricte */
   try {
     localStorage.clear();
