@@ -805,7 +805,26 @@ function renderCategories(rootEl: HTMLElement): void {
 
 /* ──────────────────────────── Handlers ──────────────────────────── */
 
+/* v13.4.280 (Kevin "les tests doivent se faire auto pour vert ou autre") :
+ * auto-test de TOUTES les clés à l'ouverture du Coffre. Throttle 2 min pour
+ * éviter le spam ET la boucle (le re-render rappelle attachHandlers mais le
+ * throttle bloque le 2e test). Statuts vert/rouge/dégradé live, sans clic. */
+let lastCoffreAutoTest = 0;
+
 function attachHandlers(rootEl: HTMLElement): void {
+  /* Auto-test à l'ouverture (background, throttlé). */
+  if (Date.now() - lastCoffreAutoTest > 120000) {
+    lastCoffreAutoTest = Date.now();
+    void (async () => {
+      try {
+        const r = await multiKeyVault.healthCheckAll();
+        if (r.tested > 0) render(rootEl); /* throttle bloque le re-test au re-render */
+      } catch (err: unknown) {
+        logger.debug('feature-vault', 'auto-test coffre skipped', { err });
+      }
+    })();
+  }
+
   /* Search live (debounced) */
   const searchEl = rootEl.querySelector<HTMLInputElement>('#ax-vault-search');
   if (searchEl) {
