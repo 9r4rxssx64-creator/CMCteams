@@ -1,0 +1,35 @@
+name: La Détente — Catalogue Printify (blueprint/variant IDs)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'shops/la-detente/scripts/ld-printify-catalog.mjs'
+      - '.github/workflows/la-detente-printify-catalog.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Découverte catalogue Printify
+        env:
+          PRINTIFY_API_KEY: ${{ secrets.PRINTIFY_API_KEY }}
+        run: node shops/la-detente/scripts/ld-printify-catalog.mjs
+      - name: Commit printify-catalog.json
+        run: |
+          git config user.name "kdmc-bot"; git config user.email "bot@kdmc.local"
+          BR="claude/printify-catalog-${{ github.run_id }}"
+          git checkout -b "$BR"
+          git add shops/la-detente/printify-catalog.json || true
+          if git diff --cached --quiet; then echo "rien"; else
+            git commit -m "La Détente — catalogue Printify (blueprint/variant IDs) [skip ci]"
+            git push -u origin "$BR"; echo "Poussé $BR (auto-merge)."
+          fi
