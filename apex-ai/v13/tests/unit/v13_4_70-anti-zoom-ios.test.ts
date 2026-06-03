@@ -4,8 +4,41 @@
  * Triple protection anti-zoom iPhone PWA (Kevin "Toujours en zoom" v13.4.46).
  * Critique UX iOS Safari : gesturestart bloqué, multi-touch bloqué, double-tap bloqué.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { antiZoomIOS } from '../../services/core-svc/anti-zoom-ios.js';
+
+describe('v13.4.70 anti-zoom-ios — checkAndResetZoom (campagne 100%)', () => {
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); document.querySelector('meta[name="viewport"]')?.remove(); });
+
+  it('zoom détecté (scale>1.01) + meta sans content → reset (branches 69 & 78 ??)', () => {
+    vi.stubGlobal('visualViewport', { scale: 1.5 });
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'viewport'); // PAS de content → getAttribute(content) ?? ''
+    document.head.appendChild(meta);
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    (antiZoomIOS as unknown as { checkAndResetZoom(): void }).checkAndResetZoom();
+    expect(meta.getAttribute('content')).toContain('maximum-scale=1');
+  });
+
+  it('scale présent mais ≤ 1.01 → pas de reset (branche `> 1.01` false 69:39)', () => {
+    vi.stubGlobal('visualViewport', { scale: 1.0 });
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'viewport');
+    meta.setAttribute('content', 'origform');
+    document.head.appendChild(meta);
+    (antiZoomIOS as unknown as { checkAndResetZoom(): void }).checkAndResetZoom();
+    expect(meta.getAttribute('content')).toBe('origform'); // inchangé (pas de zoom)
+  });
+
+  it('vv.scale falsy (0) → court-circuit `vv.scale &&` (branche 69:39)', () => {
+    vi.stubGlobal('visualViewport', { scale: 0 });
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'viewport'); meta.setAttribute('content', 'keepme');
+    document.head.appendChild(meta);
+    (antiZoomIOS as unknown as { checkAndResetZoom(): void }).checkAndResetZoom();
+    expect(meta.getAttribute('content')).toBe('keepme');
+  });
+});
 
 describe('v13.4.70 anti-zoom-ios — API publique', () => {
   afterEach(() => {
