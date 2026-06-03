@@ -228,6 +228,22 @@ var LDREAL=[
  _rb("ldr06","T-shirt « Fusils Croisés » — photo réelle","real-crossed-shotguns","#3a4a3f",29.9,36.0,["fusils","croisés","trophée","réaliste","photo"]),
  _rb("ldr07","T-shirt « Carabine Sport Cœur » — photo réelle","real-ar15-heart","#15171a",30.9,37.0,["ar15","carabine","sport","cœur","réaliste","photo"])
 ];P=P.concat(LDREAL);
+/* Déclinaisons HOODIE + CASQUETTE des vraies images d'armes */
+var _REALD=[
+ {r:"real-shotgun-clays",n:"Fusil & Plateaux",c:"#3a4a3f",t:["ball-trap","fusil","plateau"]},
+ {r:"real-shotgun-rose",n:"Fusil & Rose",c:"#15171a",t:["fusil","rose","chasse"]},
+ {r:"real-rifle-heart",n:"Carabine Cœur",c:"#15171a",t:["carabine","chasse","cœur"]},
+ {r:"real-revolver-rose",n:"Revolver & Rose",c:"#15171a",t:["revolver","rose"]},
+ {r:"real-cartridges",n:"Cartouches",c:"#15171a",t:["cartouches","munitions","chasse"]},
+ {r:"real-crossed-shotguns",n:"Fusils Croisés",c:"#3a4a3f",t:["fusils","croisés","trophée"]},
+ {r:"real-ar15-heart",n:"Carabine Sport Cœur",c:"#15171a",t:["ar15","carabine","sport","cœur"]}
+];
+function _rbG(id,nm,real,color,price,orig,garment,mat,tags){return {id:id,name:nm,cat:"designs",price:price,origPrice:orig,img:"img/designs/"+real+".png",rating:5.0,reviews:0,desc:nm+" — vraie image d'arme photoréaliste, édition La Détente. "+mat+".",material:mat,tags:tags,sizes:(garment==="cap"?["Unique"]:["S","M","L","XL","XXL"]),stock:34,shipping:"standard",garment:garment,garmentColor:color,motif:real,placement:"chest",_new:true};}
+var LDREAL2=[];
+_REALD.forEach(function(d,i){var n=i+1;
+ LDREAL2.push(_rbG("ldrh"+n,"Hoodie « "+d.n+" » — photo réelle",d.r,d.c,59.9,72.0,"hoodie","Molleton gratté 280 g/m²",d.t.concat(["hoodie","réaliste","photo"])));
+ LDREAL2.push(_rbG("ldrc"+n,"Casquette « "+d.n+" » — photo réelle",d.r,d.c,22.9,28.0,"cap","Sergé coton",d.t.concat(["casquette","réaliste","photo"])));
+});P=P.concat(LDREAL2);
 var QUALITIES=[{id:"standard",label:"Standard",sub:"Bon prix · impression rapide",mult:1,mat:"Coton 150–180 g/m² · impression durable",supplier:"Printify"},{id:"bio",label:"Bio coton ✦",sub:"Coton bio GOTS · France",mult:1.25,mat:"Coton bio GOTS 180 g/m² · encres à l'eau · made in France",supplier:"T-Pop"}];
 function qOf(id){var r;QUALITIES.forEach(function(q){if(q.id===id)r=q});return r||QUALITIES[0];}
 function qPrice(base,id){return Math.round(base*qOf(id).mult*10)/10;}
@@ -796,7 +812,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.25.0"
+        data-version="v1.26.0"
         data-color="#e8b830"
         defer></script>
 
