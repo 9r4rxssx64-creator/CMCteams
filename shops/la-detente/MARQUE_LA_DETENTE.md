@@ -111,6 +111,11 @@ Atelier de création + **montage multi-calques** :
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
 ## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES + vraies images
+- ✅ **Upgrade « boutique pro »** (cache `v1.8.0`, inspiré des meilleures boutiques merch/POD) :
+  **bandeau promo** dismissible · **livraison offerte dès 60 €** + **barre de progression** dans le panier
+  (sinon 4,90 €) · **fiche produit** = sélecteur de **taille** + **quantité** + **📏 guide des tailles** (modal)
+  + bloc **réassurance** (livraison/retours/paiement/bio) · **favoris** (cœur sur cartes + ❤ header + page
+  « Mes favoris ») · badges **Nouveau** / **★ Top** sur les cartes · **filtre par couleur** sur la liste produits.
 - ✅ **Bibliothèque de designs** (`bibliotheque.html`, cache `v1.7.0`) : page galerie des **18 motifs**
   (signature + 12 maison + variantes), prévisualisation sur n'importe quel vêtement/couleur, recherche +
   filtres par catégorie, **téléchargement PNG HD + SVG vectoriel**, et bouton **« 🎨 Studio »** par motif
