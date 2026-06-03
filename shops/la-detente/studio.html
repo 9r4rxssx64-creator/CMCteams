@@ -143,6 +143,11 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
       </div>
       <div class="hint">Importe <b>plusieurs</b> images et textes : ils se superposent en calques (montage).</div>
     </div>
+    <div class="grp" id="aiGrp"><h3>🎨 Générer un design IA</h3>
+      <textarea id="aiPrompt" rows="2" placeholder="Ex : pistolet noir avec une rose rouge dans le canon" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui;resize:vertical"></textarea>
+      <button class="btn primary" id="aiBtn" style="width:100%;margin-top:6px" onclick="Studio.aiGen()">✨ Générer</button>
+      <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
+    </div>
     <div class="grp"><h3>Emblèmes marque</h3><div class="emblems" id="emblems"></div></div>
   </div>
 
@@ -418,8 +423,36 @@ function init(){
  var sb=$("stageBox");["dragover","drop"].forEach(function(ev){sb.addEventListener(ev,function(e){e.preventDefault()})});
  sb.addEventListener("drop",function(e){var fs=e.dataTransfer&&e.dataTransfer.files;if(fs)Array.prototype.forEach.call(fs,addImageFile)});
  $("modal").addEventListener("click",function(e){if(e.target.id==="modal")closeModal()});
+ _loadAiCfg();
 }
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim};
+var _aiCfg=null;
+function _loadAiCfg(){
+ fetch("proxy-config.json?_="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(c){
+  _aiCfg=c; if(!c||!c.worker_url){var g=$("aiGrp");if(g)g.style.display="none";}
+ }).catch(function(){var g=$("aiGrp");if(g)g.style.display="none";});
+}
+function _addAiImage(dataUri){
+ var img=new Image();
+ function add(w,h){addLayer({type:"image",href:dataUri,orig:dataUri,w:w,h:h,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});}
+ img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;add(ar>=1?42:42*ar, ar>=1?42/ar:42);};
+ img.onerror=function(){add(42,42);};
+ img.src=dataUri;
+}
+function aiGen(){
+ var p=($("aiPrompt").value||"").trim(), hint=$("aiHint"), btn=$("aiBtn");
+ if(!p){hint.textContent="Écris une description.";return;}
+ if(!_aiCfg||!_aiCfg.worker_url){hint.textContent="Service IA non configuré (worker en attente de déploiement).";return;}
+ btn.disabled=true; var old=btn.textContent; btn.textContent="… génération";
+ hint.textContent="L'IA dessine ton design (10-20 s)…";
+ fetch(_aiCfg.worker_url,{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":_aiCfg.app_tag||"ld-studio-v1"},body:JSON.stringify({prompt:p})})
+  .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+  .then(function(res){
+    if(res.ok&&res.j&&res.j.image){_addAiImage(res.j.image);hint.textContent="✅ Ajouté ("+(res.j.model||"IA")+"). Astuce : ✂️ Retirer le fond pour l'isoler.";}
+    else{hint.textContent="⚠️ "+((res.j&&(res.j.error||res.j.detail))||"échec génération");}
+  }).catch(function(e){hint.textContent="⚠️ Réseau : "+e.message;})
+  .then(function(){btn.disabled=false;btn.textContent=old;});
+}
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen};
 })();
 Studio.init();
 </script>
