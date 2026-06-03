@@ -27,11 +27,11 @@ jobs:
       - name: Publier la capture (toujours)
         if: always()
         run: |
-          if [ -f tools/la-detente-e2e/studio-test.png ]; then
+          if ls tools/la-detente-e2e/*.png >/dev/null 2>&1; then
             git config user.name "kdmc-bot"; git config user.email "bot@kdmc.local"
             BR="claude/e2e-shot-${{ github.run_id }}"
             git checkout -b "$BR"
-            git add -f tools/la-detente-e2e/studio-test.png
+            git add -f tools/la-detente-e2e/*.png
             git commit -m "La Détente — capture test E2E studio [skip ci]" || echo "rien"
             git push -u origin "$BR" || echo "push KO"
             echo "Capture sur $BR"
