@@ -415,7 +415,9 @@ function autoTrim(id){var l=get(id);if(!l)return;var im=new Image();im.onload=fu
 function init(){
  renderGarments();renderPlacement();renderSwatches();renderEmblems();
  // seed with brand emblem
- var _qm=(new URLSearchParams(location.search)).get("motif");var _ev=EMBLEMS.map(function(e){return e[0]});addLayer({type:"emblem",sym:(_qm&&_ev.indexOf(_qm)>=0)?_qm:"emblem",scale:1});
+ var _sp=new URLSearchParams(location.search), _qd=_sp.get("design");
+ if(_qd&&/^[a-z0-9-]+$/.test(_qd)){var _u="img/designs/"+_qd+".png";var _im=new Image();_im.onload=function(){var ar=(_im.width&&_im.height)?_im.width/_im.height:1;addLayer({type:"image",href:_u,orig:_u,w:ar>=1?44:44*ar,h:ar>=1?44/ar:44,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});};_im.onerror=function(){};_im.src=_u;}
+ else{var _qm=_sp.get("motif");var _ev=EMBLEMS.map(function(e){return e[0]});addLayer({type:"emblem",sym:(_qm&&_ev.indexOf(_qm)>=0)?_qm:"emblem",scale:1});}
  initDrag();
  $("upl").addEventListener("change",function(e){Array.prototype.forEach.call(e.target.files,addImageFile);e.target.value=""});
  $("upldir").addEventListener("change",function(e){var n=0;Array.prototype.forEach.call(e.target.files,function(f){if(/^image\//.test(f.type||"")){addImageFile(f);n++}});toast(n+" image(s) importée(s) du dossier");e.target.value=""});
