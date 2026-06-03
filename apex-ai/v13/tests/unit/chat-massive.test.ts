@@ -9,18 +9,25 @@ import { store } from '../../core/store.js';
 describe('chat features massive coverage Jet 8 final', () => {
   let root: HTMLElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     document.body.innerHTML = '<div id="apex-root"></div>';
     root = document.getElementById('apex-root')!;
     store.init({ appVer: 'v13.0.0' });
     store.set('user', { id: 'kdmc_admin', name: 'Kevin', tier: 'admin' });
     store.set('isAdmin', true);
+    /* Le test « Enter → submit » déclenche un vrai processQueue → aiRouter.stream
+     * → getApiKey → localStorage. Sous charge (suite complète), cette chaîne async
+     * se règle APRÈS le teardown de l'env → unhandled rejection « localStorage is not
+     * defined ». On neutralise le stream réel (le fichier ne teste pas ai-router). */
+    const { aiRouter } = await import('../../services/ai/ai-router.js');
+    vi.spyOn(aiRouter, 'stream').mockResolvedValue(undefined);
     vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   describe('paste-key handler modal-sheet flow', () => {
