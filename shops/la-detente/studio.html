@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<!-- La Détente — Studio (admin) v1.0.0 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Studio — La Détente (admin)</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#dc2626">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#dc2626;--bg:#0e1012;--panel:#17191c;--panel2:#1f2227;--text:#f1f2f3;--muted:#9aa0a6;--border:#2a2d31;--r:12px;--rs:8px}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+.topbar{height:54px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;z-index:5}
+.brand{font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.brand .tag{font-size:10px;background:var(--p);padding:2px 6px;border-radius:6px;font-weight:700}
+.topbar .sp{flex:1}
+.btn{padding:9px 14px;border-radius:var(--rs);font-weight:700;font-size:13px;background:var(--panel2);border:1px solid var(--border);transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--p)}
+.btn.primary{background:var(--p);border-color:var(--p);color:#fff}
+.btn.primary:hover{opacity:.92}
+.btn.ghost{background:transparent}
+.wrap{display:flex;height:calc(100% - 54px)}
+.side{width:264px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:14px}
+.side.right{border-right:none;border-left:1px solid var(--border)}
+.stage-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 90% at 50% 0,#dc262611,#0e1012 70%);overflow:auto;padding:24px}
+#stageBox{width:min(80vh,560px);aspect-ratio:1;background:#0b0d0f;border:1px solid var(--border);border-radius:var(--r);box-shadow:0 10px 40px rgba(0,0,0,.5);position:relative;touch-action:none}
+#stage{width:100%;height:100%;display:block;border-radius:var(--r)}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:6px 0 10px}
+.grp{margin-bottom:20px}
+.swatches,.garments{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);cursor:pointer}
+.sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
+.gbtn{flex:1 0 30%;padding:8px 4px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border);font-size:11px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.gbtn.on{border-color:var(--p);color:#fff}
+.gbtn svg{width:28px;height:28px}
+.addrow{display:flex;flex-direction:column;gap:8px}
+.addrow .btn{width:100%;text-align:left;display:flex;align-items:center;gap:8px}
+.emblems{display:flex;flex-wrap:wrap;gap:8px}
+.emblems .eb{width:46px;height:46px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border);padding:4px}
+.emblems .eb:hover{border-color:var(--p)}
+.emblems .eb svg{width:100%;height:100%}
+.layers{display:flex;flex-direction:column;gap:6px}
+.lyr{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border);font-size:12px;cursor:pointer}
+.lyr.sel{border-color:var(--p);background:#dc26261a}
+.lyr .ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px}
+.lyr .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lyr .x{color:var(--muted);font-size:14px;padding:2px 4px}
+.lyr .x:hover{color:#ef4444}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.field input[type=range]{width:100%;accent-color:var(--p)}
+.field input[type=text],.field input[type=number],.field select,.field textarea{width:100%;padding:8px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border)}
+.row2{display:flex;gap:8px}.row2>*{flex:1}
+.mini{padding:7px;font-size:12px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border)}
+.mini:hover{border-color:var(--p)}
+.empty{color:var(--muted);font-size:12px;text-align:center;padding:14px;border:1px dashed var(--border);border-radius:var(--rs)}
+.hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);border:1px solid var(--border);padding:12px 18px;border-radius:100px;font-size:13px;font-weight:600;transition:.3s;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.modal.show{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%}
+.modal h2{font-size:18px;margin-bottom:16px}
+@media(max-width:860px){.side{width:200px}.side.right{width:220px}}
+@media(max-width:680px){
+ .wrap{flex-direction:column;height:auto;overflow:auto}
+ .side{width:100%;border:none;border-bottom:1px solid var(--border);max-height:none}
+ .side.right{order:3}.stage-wrap{order:2;min-height:60vh}
+ body{overflow:auto}
+}
+</style>
+</head>
+<body>
+<!-- sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="redG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4d4d"/><stop offset=".55" stop-color="#e11d1d"/><stop offset="1" stop-color="#a30d0d"/></linearGradient>
+<linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3d42"/><stop offset="1" stop-color="#141517"/></linearGradient>
+<symbol id="heart" viewBox="0 0 100 100"><path d="M50 88 C18 64 6 46 6 30 C6 15 18 6 31 6 C40 6 47 11 50 18 C53 11 60 6 69 6 C82 6 94 15 94 30 C94 46 82 64 50 88 Z" fill="url(#redG)"/><path d="M30 16 C22 18 16 24 15 33" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/></symbol>
+<symbol id="ar15" viewBox="0 0 200 70"><g fill="url(#steel)"><rect x="150" y="26" width="44" height="7" rx="2"/><rect x="188" y="23" width="9" height="13" rx="2"/><rect x="92" y="24" width="62" height="13" rx="3"/><rect x="60" y="20" width="40" height="14" rx="3"/><rect x="58" y="17" width="44" height="4" rx="2"/><path d="M150 24 l5 -10 l5 10 Z"/><path d="M70 34 l10 0 l-3 22 l-9 0 Z"/><path d="M80 34 h20 v6 a10 10 0 0 1 -20 0 Z" fill="#141517"/><path d="M96 36 l16 0 l5 30 l-15 0 Z"/><path d="M60 22 l-44 4 l0 6 l8 2 l0 8 l30 -4 Z"/><rect x="14" y="26" width="8" height="14" rx="2"/></g></symbol>
+<symbol id="emblem" viewBox="0 0 240 240"><circle cx="120" cy="118" r="112" fill="#101214" stroke="#dc2626" stroke-width="3"/><use href="#heart" x="62" y="48" width="116" height="116"/><g transform="translate(120 120) rotate(-22) translate(-100 -35)"><use href="#ar15" width="200" height="70"/></g><text x="120" y="206" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="30" letter-spacing="2" fill="#f2f2f2">LA DÉTENTE</text><text x="120" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="11" letter-spacing="5" fill="#dc2626">TIR · PRÉCISION · ENTRE AMIS</text></symbol>
+<symbol id="th-tir" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#f2f2f2" stroke-width="5"/><circle cx="50" cy="50" r="28" fill="none" stroke="#f2f2f2" stroke-width="5"/><use href="#heart" x="33" y="33" width="34" height="34"/></symbol>
+<symbol id="th-prec" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#f2f2f2" stroke-width="4"/><path d="M50 4v22M50 74v22M4 50h22M74 50h22" stroke="#f2f2f2" stroke-width="4" stroke-linecap="round"/><use href="#heart" x="36" y="36" width="28" height="28"/></symbol>
+<symbol id="th-chasse" viewBox="0 0 100 100"><path d="M30 50c-10-6-14-20-10-30 8 4 12 10 14 18M70 50c10-6 14-20 10-30-8 4-12 10-14 18" fill="none" stroke="#f2f2f2" stroke-width="5" stroke-linecap="round"/><use href="#heart" x="32" y="40" width="36" height="36"/></symbol>
+<symbol id="th-balltrap" viewBox="0 0 100 100"><ellipse cx="50" cy="40" rx="40" ry="13" fill="none" stroke="#f2f2f2" stroke-width="5"/><ellipse cx="50" cy="40" rx="22" ry="7" fill="#f2f2f2" opacity=".25"/><use href="#heart" x="34" y="52" width="32" height="32"/></symbol>
+<symbol id="g-tee" viewBox="0 0 100 100"><path d="M50 14 L34 14 L14 26 L20 40 L30 36 L30 88 L70 88 L70 36 L80 40 L86 26 L66 14 Z M40 14 a10 8 0 0 0 20 0" fill="currentColor"/></symbol>
+<symbol id="g-hoodie" viewBox="0 0 100 100"><path d="M50 12 L34 16 L12 28 L18 44 L28 40 L28 90 L72 90 L72 40 L82 44 L88 28 L66 16 Z" fill="currentColor"/><path d="M40 14 q10 10 20 0 l0 14 q-10 6 -20 0 Z" fill="#000" opacity=".25"/></symbol>
+<symbol id="g-polo" viewBox="0 0 100 100"><path d="M50 14 L36 14 L16 26 L22 40 L30 36 L30 88 L70 88 L70 36 L78 40 L84 26 L64 14 Z" fill="currentColor"/><path d="M44 14 l6 12 l6 -12 l-2 -4 l-8 0 Z" fill="#000" opacity=".2"/></symbol>
+<symbol id="g-cap" viewBox="0 0 100 100"><path d="M16 62 a34 30 0 0 1 68 0 Z" fill="currentColor"/><path d="M82 62 l14 8 l-2 8 l-30 -8 Z" fill="currentColor"/></symbol>
+<symbol id="g-tote" viewBox="0 0 100 100"><path d="M30 30 h40 v54 h-40 Z" fill="currentColor"/><path d="M38 30 a12 12 0 0 1 24 0" fill="none" stroke="currentColor" stroke-width="4"/></symbol>
+<symbol id="g-bandana" viewBox="0 0 100 100"><path d="M50 22 L82 54 L50 86 L18 54 Z" fill="currentColor"/></symbol>
+<clipPath id="cl-circle" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".5"/></clipPath>
+<clipPath id="cl-square" clipPathUnits="objectBoundingBox"><rect x="0" y="0" width="1" height="1"/></clipPath>
+<clipPath id="cl-rounded" clipPathUnits="objectBoundingBox"><rect x="0" y="0" width="1" height="1" rx=".18" ry=".18"/></clipPath>
+<clipPath id="cl-heart" clipPathUnits="objectBoundingBox"><path d="M.5 .95 C.1 .65 .02 .42 .02 .26 C.02 .1 .16 .02 .3 .1 C.4 .16 .5 .28 .5 .28 C.5 .28 .6 .16 .7 .1 C.84 .02 .98 .1 .98 .26 C.98 .42 .9 .65 .5 .95 Z"/></clipPath>
+<clipPath id="cl-shield" clipPathUnits="objectBoundingBox"><path d="M.5 .02 L.95 .15 L.95 .55 C.95 .8 .75 .95 .5 .99 C.25 .95 .05 .8 .05 .55 L.05 .15 Z"/></clipPath>
+<clipPath id="cl-star" clipPathUnits="objectBoundingBox"><polygon points="0.5,0.02 0.61,0.37 0.98,0.37 0.68,0.59 0.79,0.95 0.5,0.72 0.21,0.95 0.32,0.59 0.02,0.37 0.39,0.37"/></clipPath>
+<clipPath id="cl-hex" clipPathUnits="objectBoundingBox"><polygon points="0.25,0.03 0.75,0.03 1,0.5 0.75,0.97 0.25,0.97 0,0.5"/></clipPath>
+<filter id="duo-red"><feColorMatrix type="matrix" values=".33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.09 0.88"/><feFuncG type="table" tableValues="0.04 0.12"/><feFuncB type="table" tableValues="0.04 0.12"/></feComponentTransfer></filter>
+</defs></svg>
+
+<div class="topbar">
+  <div class="brand"><svg style="width:26px;height:26px" viewBox="0 0 240 240"><use href="#emblem"/></svg>Studio<span class="tag">LA DÉTENTE</span></div>
+  <div class="sp"></div>
+  <button class="btn ghost" onclick="Studio.openProjects()">📁 Projets</button>
+  <button class="btn ghost" onclick="Studio.exportPrint()">⬇️ Fichier impression</button>
+  <button class="btn ghost" onclick="Studio.exportMockup()">🖼️ Mockup PNG</button>
+  <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
+  <a class="btn" href="index.html" title="Retour boutique">↩</a>
+</div>
+
+<div class="wrap">
+  <!-- LEFT: garment + add layers -->
+  <div class="side">
+    <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div></div>
+    <div class="grp"><h3>Couleur</h3><div class="swatches" id="swatches"></div></div>
+    <div class="grp"><h3>Ajouter un calque</h3>
+      <div class="addrow">
+        <button class="btn" onclick="document.getElementById('upl').click()">🖼️ Importer image(s)…</button>
+        <input type="file" id="upl" accept="image/*,.svg,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none">
+        <button class="btn" onclick="document.getElementById('upldir').click()">📁 Importer un dossier…</button>
+        <input type="file" id="upldir" webkitdirectory directory multiple style="display:none">
+        <button class="btn" onclick="Studio.addText()">🔤 Ajouter du texte</button>
+      </div>
+      <div class="hint">Importe <b>plusieurs</b> images et textes : ils se superposent en calques (montage).</div>
+    </div>
+    <div class="grp"><h3>Emblèmes marque</h3><div class="emblems" id="emblems"></div></div>
+  </div>
+
+  <!-- CENTER: stage -->
+  <div class="stage-wrap">
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg></div>
+  </div>
+
+  <!-- RIGHT: layers + properties -->
+  <div class="side right">
+    <div class="grp"><h3>Calques</h3><div class="layers" id="layers"></div></div>
+    <div class="grp" id="propsWrap"><h3>Propriétés</h3><div id="props"><div class="empty">Sélectionne un calque</div></div></div>
+    <div class="grp"><h3>Zone d'impression</h3>
+      <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="zoneChk" checked onchange="Studio.render()"> Afficher le repère</label>
+      <div class="hint">Garde ton design dans le repère pour une impression nette.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+var Studio=(function(){
+"use strict";
+var GARMENTS=[
+ {id:"tee",sym:"g-tee",name:"T-shirt",zone:[28,30,44,40]},
+ {id:"hoodie",sym:"g-hoodie",name:"Hoodie",zone:[30,40,40,34]},
+ {id:"polo",sym:"g-polo",name:"Polo",zone:[34,34,32,30]},
+ {id:"cap",sym:"g-cap",name:"Casquette",zone:[34,30,32,20]},
+ {id:"tote",sym:"g-tote",name:"Tote bag",zone:[32,34,36,40]},
+ {id:"bandana",sym:"g-bandana",name:"Bandana",zone:[36,42,28,26]}
+];
+var COLORS=["#15171a","#ffffff","#2f4538","#3a4636","#1d3a5f","#0f1722","#5b1a1a","#7a5c1e","#8a8d92","#d22"];
+var EMBLEMS=[["emblem","Emblème"],["heart","Cœur"],["th-tir","Cible"],["th-prec","Précision"],["th-chasse","Chasse"],["th-balltrap","Ball-Trap"]];
+var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script MT"];
+
+var st={garment:"tee",color:"#15171a",layers:[],sel:null,uid:1};
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function toast(m){var e=$("toast");e.textContent=m;e.className="toast show";clearTimeout(toast._t);toast._t=setTimeout(function(){e.className="toast"},2600)}
+function gobj(){return GARMENTS.filter(function(g){return g.id===st.garment})[0]}
+
+/* ---------- RENDER ---------- */
+function layerSVG(l){
+ var t='transform="translate('+l.x+' '+l.y+') rotate('+l.rot+') scale('+l.scale+')"';
+ var o='opacity="'+l.op+'"';
+ if(l.type==="image"){
+   var f=l.f||{};
+   var css='filter:brightness('+(f.br==null?1:f.br)+') contrast('+(f.ct==null?1:f.ct)+') saturate('+(f.sat==null?1:f.sat)+') grayscale('+(f.gray||0)+') invert('+(f.inv||0)+')'+(l.duo?' url(#duo-red)':'')+';';
+   if(l.blend&&l.blend!=="normal")css+='mix-blend-mode:'+l.blend+';';
+   var fx=l.flipH?-1:1, fy=l.flipV?-1:1;
+   var tr='transform="translate('+l.x+' '+l.y+') rotate('+l.rot+') scale('+(l.scale*fx)+' '+(l.scale*fy)+')"';
+   var clip=(l.shape&&l.shape!=="none")?(' clip-path="url(#cl-'+l.shape+')"'):"";
+   return '<image href="'+l.href+'" x="'+(-l.w/2)+'" y="'+(-l.h/2)+'" width="'+l.w+'" height="'+l.h+'" '+tr+' '+o+' style="'+css+'"'+clip+' preserveAspectRatio="'+(l.shape&&l.shape!=="none"?"xMidYMid slice":"xMidYMid meet")+'"/>';
+ }
+ if(l.type==="emblem") return '<use href="#'+l.sym+'" x="-20" y="-20" width="40" height="40" '+t+' '+o+'/>';
+ if(l.type==="text"){
+   var stroke=l.outline>0?(' stroke="'+l.ocolor+'" stroke-width="'+l.outline+'" paint-order="stroke"'):"";
+   return '<text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-family="'+esc(l.font)+'" font-weight="'+(l.bold?"900":"400")+'" font-size="'+l.size+'" fill="'+l.color+'"'+stroke+' '+t+' '+o+'>'+esc(l.text)+'</text>';
+ }
+ return "";
+}
+function spriteDefs(){ // inline defs for export
+ return document.querySelector('svg defs').outerHTML;
+}
+function stageInner(forExport,withGarment){
+ var g=gobj();
+ var s='';
+ if(!forExport){s+='<rect x="0" y="0" width="100" height="100" rx="3" fill="#d2d5d9"/>';}
+ if(withGarment!==false){s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
+ st.layers.forEach(function(l){s+=layerSVG(l)});
+ if(!forExport && $("zoneChk").checked){
+   var z=g.zone;
+   s+='<rect x="'+z[0]+'" y="'+z[1]+'" width="'+z[2]+'" height="'+z[3]+'" fill="none" stroke="#dc2626" stroke-width="0.5" stroke-dasharray="2 1.5" opacity="0.8"/>';
+ }
+ if(!forExport && st.sel!=null){
+   var l=st.layers.filter(function(x){return x.id===st.sel})[0];
+   if(l){var hw=(l.type==="text"?l.size:l.type==="image"?l.w:40)*l.scale*0.6+6;
+     s+='<rect x="'+(l.x-hw)+'" y="'+(l.y-hw)+'" width="'+(hw*2)+'" height="'+(hw*2)+'" fill="none" stroke="#fff" stroke-width="0.4" stroke-dasharray="1.5 1" opacity=".7"/>';}
+ }
+ return s;
+}
+function render(){
+ var stage=$("stage");
+ stage.innerHTML=spriteDefs()+stageInner(false);
+ renderLayers(); renderProps();
+}
+/* ---------- PANELS ---------- */
+function renderGarments(){
+ $("garments").innerHTML=GARMENTS.map(function(g){
+  return '<button class="gbtn'+(g.id===st.garment?' on':'')+'" onclick="Studio.setGarment(\''+g.id+'\')"><svg viewBox="0 0 100 100" style="color:#9aa0a6"><use href="#'+g.sym+'"/></svg>'+g.name+'</button>';
+ }).join("");
+}
+function renderSwatches(){
+ $("swatches").innerHTML=COLORS.map(function(c){
+  return '<div class="sw'+(c===st.color?' on':'')+'" style="background:'+c+'" onclick="Studio.setColor(\''+c+'\')" title="'+c+'"></div>';
+ }).join("")+'<input type="color" value="'+st.color+'" oninput="Studio.setColor(this.value)" style="width:30px;height:30px;border:none;background:none;cursor:pointer" title="Couleur libre">';
+}
+function renderEmblems(){
+ $("emblems").innerHTML=EMBLEMS.map(function(e){
+  return '<button class="eb" title="'+e[1]+'" onclick="Studio.addEmblem(\''+e[0]+'\')"><svg viewBox="0 0 '+(e[0]==="emblem"?"240 240":"100 100")+'"><use href="#'+e[0]+'"/></svg></button>';
+ }).join("");
+}
+function renderLayers(){
+ var c=$("layers");
+ if(!st.layers.length){c.innerHTML='<div class="empty">Aucun calque.<br>Importe une image, ajoute du texte ou un emblème.</div>';return}
+ c.innerHTML=st.layers.slice().reverse().map(function(l){
+  var ico=l.type==="image"?"🖼️":l.type==="text"?"🔤":"🎯";
+  var nm=l.type==="text"?l.text:l.type==="emblem"?("Emblème "+l.sym.replace("th-","")):"Image";
+  return '<div class="lyr'+(l.id===st.sel?' sel':'')+'" onclick="Studio.select('+l.id+')"><span class="ico">'+ico+'</span><span class="nm">'+esc(nm)+'</span>'
+   +'<span class="x" title="Monter" onclick="event.stopPropagation();Studio.move('+l.id+',1)">▲</span>'
+   +'<span class="x" title="Descendre" onclick="event.stopPropagation();Studio.move('+l.id+',-1)">▼</span>'
+   +'<span class="x" title="Dupliquer" onclick="event.stopPropagation();Studio.dup('+l.id+')">⧉</span>'
+   +'<span class="x" title="Supprimer" onclick="event.stopPropagation();Studio.del('+l.id+')">✕</span></div>';
+ }).join("");
+}
+function renderProps(){
+ var w=$("props");
+ var l=st.layers.filter(function(x){return x.id===st.sel})[0];
+ if(!l){w.innerHTML='<div class="empty">Sélectionne un calque</div>';return}
+ var h='';
+ if(l.type==="text"){
+  h+=field("Texte",'<textarea rows="2" oninput="Studio.upd('+l.id+',\'text\',this.value)">'+esc(l.text)+'</textarea>');
+  h+=field("Police",'<select onchange="Studio.upd('+l.id+',\'font\',this.value)">'+FONTS.map(function(f){return '<option'+(f===l.font?' selected':'')+'>'+f+'</option>'}).join("")+'</select>');
+  h+='<div class="row2">'+field("Couleur",'<input type="color" value="'+l.color+'" oninput="Studio.upd('+l.id+',\'color\',this.value)">')+field("Gras",'<select onchange="Studio.upd('+l.id+',\'bold\',this.value===\'1\')"><option value="0"'+(!l.bold?' selected':'')+'>Non</option><option value="1"'+(l.bold?' selected':'')+'>Oui</option></select>')+'</div>';
+  h+=rng("Taille",l.id,"size",l.size,4,40,1);
+  h+='<div class="row2">'+field("Contour",'<input type="range" min="0" max="3" step="0.2" value="'+l.outline+'" oninput="Studio.upd('+l.id+',\'outline\',+this.value)">')+field("Coul. contour",'<input type="color" value="'+l.ocolor+'" oninput="Studio.upd('+l.id+',\'ocolor\',this.value)">')+'</div>';
+ }
+ if(l.type==="image"){
+  var f=l.f||{};
+  h+='<div class="row2">'+field("Largeur",'<input type="number" step="1" value="'+l.w.toFixed(0)+'" oninput="Studio.setSize('+l.id+',\'w\',+this.value)">')+field("Hauteur",'<input type="number" step="1" value="'+l.h.toFixed(0)+'" oninput="Studio.setSize('+l.id+',\'h\',+this.value)">')+'</div>';
+  h+=field("Forme",'<select onchange="Studio.upd('+l.id+',\'shape\',this.value)">'+["none|Libre","circle|Cercle","rounded|Arrondi","square|Carré","heart|Cœur ❤️","shield|Bouclier","star|Étoile","hex|Hexagone"].map(function(o){var a=o.split("|");return '<option value="'+a[0]+'"'+(l.shape===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join("")+'</select>');
+  h+='<div class="row2"><button class="mini" onclick="Studio.flip('+l.id+',\'H\')">⇄ Miroir H</button><button class="mini" onclick="Studio.flip('+l.id+',\'V\')">⇅ Miroir V</button></div>';
+  h+='<h3 style="margin-top:14px">Auto-logo</h3>';
+  h+=field("Seuil fond ("+(l._thr||30)+")",'<input type="range" min="5" max="140" step="1" value="'+(l._thr||30)+'" oninput="Studio.setThr('+l.id+',+this.value)">');
+  h+='<div class="row2"><button class="mini" onclick="Studio.bgRemove('+l.id+')">✂️ Retirer le fond</button><button class="mini" onclick="Studio.autoTrim('+l.id+')">⌗ Recadrer</button></div>';
+  h+='<button class="mini" style="width:100%;margin-top:8px" onclick="Studio.resetImg('+l.id+')">↺ Image d\'origine</button>';
+  h+='<h3 style="margin-top:14px">Filtres</h3>';
+  h+=rngF(l.id,"br","Luminosité",f.br==null?1:f.br,0,2,0.05)+rngF(l.id,"ct","Contraste",f.ct==null?1:f.ct,0,2,0.05)+rngF(l.id,"sat","Saturation",f.sat==null?1:f.sat,0,2,0.05)+rngF(l.id,"gray","Noir & blanc",f.gray||0,0,1,0.05);
+  h+='<div class="row2"><button class="mini" onclick="Studio.toggle('+l.id+',\'duo\')" style="'+(l.duo?"border-color:var(--p);color:#fff":"")+'">🎨 Duotone</button><button class="mini" onclick="Studio.toggleF('+l.id+',\'inv\')" style="'+(f.inv?"border-color:var(--p);color:#fff":"")+'">◐ Négatif</button></div>';
+  h+=field("Fusion",'<select onchange="Studio.upd('+l.id+',\'blend\',this.value)">'+["normal|Normal","multiply|Multiplier","screen|Écran","overlay|Superposition"].map(function(o){var a=o.split("|");return '<option value="'+a[0]+'"'+(l.blend===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join("")+'</select>');
+ }
+ h+=rng("Échelle",l.id,"scale",l.scale,0.2,4,0.05);
+ h+=rng("Rotation",l.id,"rot",l.rot,-180,180,1);
+ h+=rng("Opacité",l.id,"op",l.op,0.1,1,0.05);
+ h+='<div class="row2"><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button></div>';
+ w.innerHTML=h;
+}
+function field(lab,inner){return '<div class="field"><label>'+lab+'</label>'+inner+'</div>'}
+function rng(lab,id,prop,val,mn,mx,st_){return field(lab+' ('+(+val).toFixed(prop==="rot"?0:2)+')','<input type="range" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+val+'" oninput="Studio.upd('+id+',\''+prop+'\',+this.value)">')}
+
+/* ---------- LAYER OPS ---------- */
+function addLayer(l){l.id=st.uid++;l.x=l.x||50;l.y=l.y||(gobj().zone[1]+gobj().zone[3]/2);l.rot=l.rot||0;l.scale=l.scale||1;l.op=l.op==null?1:l.op;st.layers.push(l);st.sel=l.id;render()}
+function addText(){addLayer({type:"text",text:"TON TEXTE",font:"Arial Black",bold:true,color:"#ffffff",size:11,outline:0,ocolor:"#000000"})}
+function addEmblem(sym){addLayer({type:"emblem",sym:sym,scale:1})}
+function addImageFile(file){if(!file||!/^image\//.test(file.type||"")&&!/\.svg$/i.test(file.name||""))return;var r=new FileReader();r.onload=function(e){var src=e.target.result;var img=new Image();img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?36:36*ar,hh=ar>=1?36/ar:36;addLayer({type:"image",href:src,orig:src,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.onerror=function(){addLayer({type:"image",href:src,orig:src,w:36,h:36,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.src=src};r.readAsDataURL(file)}
+function select(id){st.sel=id;render()}
+function upd(id,prop,val){var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l[prop]=val;render()}
+function move(id,dir){var i=st.layers.findIndex(function(x){return x.id===id});var j=i+dir;if(j<0||j>=st.layers.length)return;var t=st.layers[i];st.layers[i]=st.layers[j];st.layers[j]=t;render()}
+function dup(id){var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;var c=JSON.parse(JSON.stringify(l));c.id=st.uid++;c.x+=6;c.y+=6;st.layers.push(c);st.sel=c.id;render()}
+function del(id){st.layers=st.layers.filter(function(x){return x.id!==id});if(st.sel===id)st.sel=null;render()}
+function center(id){upd(id,"x",50);var l=st.layers.filter(function(x){return x.id===id})[0];l.y=gobj().zone[1]+gobj().zone[3]/2;render()}
+function toZone(id){var z=gobj().zone;var l=st.layers.filter(function(x){return x.id===id})[0];l.x=z[0]+z[2]/2;l.y=z[1]+z[3]/2;render()}
+function setGarment(g){st.garment=g;renderGarments();render()}
+function setColor(c){st.color=c;renderSwatches();render()}
+
+/* ---------- DRAG on stage ---------- */
+function initDrag(){
+ var box=$("stageBox");var drag=null;
+ function pt(ev){var r=box.getBoundingClientRect();var cx=(ev.touches?ev.touches[0].clientX:ev.clientX);var cy=(ev.touches?ev.touches[0].clientY:ev.clientY);return{x:(cx-r.left)/r.width*100,y:(cy-r.top)/r.height*100}}
+ function down(ev){var p=pt(ev);
+   // pick topmost layer near point
+   for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+4;
+     if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){st.sel=l.id;drag={id:l.id,dx:l.x-p.x,dy:l.y-p.y};render();ev.preventDefault();return}}
+   st.sel=null;render();
+ }
+ function mv(ev){if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));render();ev.preventDefault()}
+ function up(){drag=null}
+ box.addEventListener("mousedown",down);window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
+ box.addEventListener("touchstart",down,{passive:false});window.addEventListener("touchmove",mv,{passive:false});window.addEventListener("touchend",up);
+}
+
+/* ---------- EXPORT ---------- */
+function buildSVG(size,withGarment,bg){
+ var inner=stageInner(true,withGarment);
+ var rect=bg?'<rect width="100" height="100" fill="'+bg+'"/>':'';
+ return '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 100 100">'+spriteDefs()+rect+inner+'</svg>';
+}
+function svgToPng(svg,size,cb){
+ var blob=new Blob([svg],{type:"image/svg+xml;charset=utf-8"});
+ var url=URL.createObjectURL(blob);var img=new Image();
+ img.onload=function(){var c=document.createElement("canvas");c.width=size;c.height=size;var ctx=c.getContext("2d");ctx.drawImage(img,0,0,size,size);URL.revokeObjectURL(url);cb(c.toDataURL("image/png"))};
+ img.onerror=function(){URL.revokeObjectURL(url);toast("Erreur export (image)")};
+ img.src=url;
+}
+function download(data,name){var a=document.createElement("a");a.href=data;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function exportMockup(){if(!st.layers.length)return toast("Ajoute au moins un calque");svgToPng(buildSVG(1200,true),1200,function(d){download(d,"la-detente-mockup-"+st.garment+".png");toast("Mockup PNG téléchargé ✅")})}
+function exportPrint(){if(!st.layers.length)return toast("Ajoute au moins un calque");svgToPng(buildSVG(2000,false,null),2000,function(d){download(d,"la-detente-impression.png");toast("Fichier d'impression HD (transparent) téléchargé ✅")})}
+
+/* ---------- ADD TO SHOP ---------- */
+function addToShop(){
+ if(!st.layers.length)return toast("Ajoute un design d'abord");
+ var CATMAP={tee:"tshirts",hoodie:"sweats",polo:"polos",cap:"casquettes",tote:"accessoires",bandana:"accessoires"};
+ modal('<h2>Ajouter à la boutique</h2>'
+  +'<div class="field"><label>Nom du produit</label><input id="m_name" type="text" value="'+esc(gobj().name+" personnalisé")+'"></div>'
+  +'<div class="row2"><div class="field"><label>Prix (€)</label><input id="m_price" type="number" step="0.5" value="'+({tee:24.9,hoodie:49.9,polo:34.9,cap:19.9,tote:16.9,bandana:12.9})[st.garment]+'"></div>'
+  +'<div class="field"><label>Prix barré (€)</label><input id="m_orig" type="number" step="0.5" value="'+({tee:32,hoodie:64,polo:42,cap:25,tote:21,bandana:16})[st.garment]+'"></div></div>'
+  +'<div class="hint">Le produit sera enregistré localement avec son mockup + son fichier d\'impression (pour le bon de production fournisseur).</div>'
+  +'<div class="row2" style="margin-top:14px"><button class="mini" onclick="Studio.closeModal()">Annuler</button><button class="btn primary" onclick="Studio._saveProduct(\''+CATMAP[st.garment]+'\')">Enregistrer</button></div>');
+}
+function _saveProduct(cat){
+ var name=$("m_name").value||"Produit personnalisé";var price=+$("m_price").value||24.9;var orig=+$("m_orig").value||price;
+ toast("Génération des visuels…");
+ svgToPng(buildSVG(900,true),900,function(mock){
+  svgToPng(buildSVG(2000,false,null),2000,function(print){
+   var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
+   arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,price:price,origPrice:orig,
+     img:mock,printFile:print,rating:5,reviews:0,desc:name+" — création La Détente (Studio). Tailles S à XXL.",
+     material:"Coton premium",tags:["personnalisé","studio","la détente"],sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",ts:Date.now()});
+   localStorage.setItem("ld_custom_products",JSON.stringify(arr));
+   closeModal();toast("Produit ajouté à la boutique ✅ ("+arr.length+" créa)");
+  });
+ });
+}
+
+/* ---------- PROJECTS ---------- */
+function saveProject(){
+ var name=prompt("Nom du projet :","Projet "+new Date().toLocaleDateString("fr-FR"));if(!name)return;
+ var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");
+ arr.push({name:name,ts:Date.now(),data:{garment:st.garment,color:st.color,layers:st.layers,uid:st.uid}});
+ localStorage.setItem("ld_studio_projects",JSON.stringify(arr));toast("Projet sauvegardé ✅");openProjects();
+}
+function loadProject(i){var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");var p=arr[i];if(!p)return;st.garment=p.data.garment;st.color=p.data.color;st.layers=p.data.layers;st.uid=p.data.uid||(st.layers.length+1);st.sel=null;closeModal();renderGarments();renderSwatches();render();toast("Projet chargé")}
+function delProject(i){var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");arr.splice(i,1);localStorage.setItem("ld_studio_projects",JSON.stringify(arr));openProjects()}
+function openProjects(){
+ var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");
+ var list=arr.length?arr.map(function(p,i){return '<div class="lyr"><span class="nm">'+esc(p.name)+'</span><button class="mini" onclick="Studio.loadProject('+i+')">Ouvrir</button><span class="x" onclick="Studio.delProject('+i+')">✕</span></div>'}).join(""):'<div class="empty">Aucun projet</div>';
+ modal('<h2>📁 Projets</h2><div class="layers" style="margin-bottom:14px">'+list+'</div><button class="btn primary" style="width:100%" onclick="Studio.saveProject()">💾 Sauvegarder le projet actuel</button> <button class="mini" style="width:100%;margin-top:8px" onclick="Studio.closeModal()">Fermer</button>');
+}
+function modal(html){$("modalBox").innerHTML=html;$("modal").className="modal show"}
+function closeModal(){$("modal").className="modal"}
+
+/* ---------- IMAGE TOOLS ---------- */
+function get(id){return st.layers.filter(function(x){return x.id===id})[0]}
+function rngF(id,key,lab,val,mn,mx,st_){return field(lab+' ('+(+val).toFixed(2)+')','<input type="range" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+val+'" oninput="Studio.updF('+id+',\''+key+'\',+this.value)">')}
+function updF(id,key,val){var l=get(id);if(!l)return;l.f=l.f||{};l.f[key]=val;render()}
+function toggle(id,prop){var l=get(id);if(!l)return;l[prop]=!l[prop];render()}
+function toggleF(id,key){var l=get(id);if(!l)return;l.f=l.f||{};l.f[key]=l.f[key]?0:1;render()}
+function setSize(id,which,val){var l=get(id);if(!l||!val)return;l[which]=Math.max(2,val);render()}
+function flip(id,ax){var l=get(id);if(!l)return;if(ax==="H")l.flipH=!l.flipH;else l.flipV=!l.flipV;render()}
+function setThr(id,v){var l=get(id);if(!l)return;l._thr=v;renderProps()}
+function resetImg(id){var l=get(id);if(!l||!l.orig)return;l.href=l.orig;toast("Image réinitialisée");render()}
+function bgRemove(id){var l=get(id);if(!l)return;var thr=l._thr||30;var im=new Image();im.onload=function(){var w=im.naturalWidth||300,hh=im.naturalHeight||300;var c=document.createElement("canvas");c.width=w;c.height=hh;var x=c.getContext("2d");x.drawImage(im,0,0);var d;try{d=x.getImageData(0,0,w,hh)}catch(e){toast("Image non traitable");return}var p=d.data;var cs=[0,(w-1)*4,(hh-1)*w*4,((hh-1)*w+(w-1))*4];var r=0,g=0,b=0;cs.forEach(function(o){r+=p[o];g+=p[o+1];b+=p[o+2]});r/=4;g/=4;b/=4;for(var i=0;i<p.length;i+=4){var dr=p[i]-r,dg=p[i+1]-g,db=p[i+2]-b;if(Math.sqrt(dr*dr+dg*dg+db*db)<thr)p[i+3]=0}x.putImageData(d,0,0);l.href=c.toDataURL("image/png");toast("Fond retiré ✂️");render();autoTrim(id)};im.onerror=function(){toast("Chargement image impossible")};im.src=l.orig||l.href}
+function autoTrim(id){var l=get(id);if(!l)return;var im=new Image();im.onload=function(){var w=im.naturalWidth,hh=im.naturalHeight;if(!w||!hh)return;var c=document.createElement("canvas");c.width=w;c.height=hh;var x=c.getContext("2d");x.drawImage(im,0,0);var d;try{d=x.getImageData(0,0,w,hh).data}catch(e){return}var minx=w,miny=hh,maxx=0,maxy=0,found=false;for(var y=0;y<hh;y++){for(var xx=0;xx<w;xx++){if(d[(y*w+xx)*4+3]>12){found=true;if(xx<minx)minx=xx;if(xx>maxx)maxx=xx;if(y<miny)miny=y;if(y>maxy)maxy=y}}}if(!found)return;var cw=maxx-minx+1,ch=maxy-miny+1;var c2=document.createElement("canvas");c2.width=cw;c2.height=ch;c2.getContext("2d").drawImage(c,minx,miny,cw,ch,0,0,cw,ch);l.href=c2.toDataURL("image/png");var ar=cw/ch;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base;render()};im.src=l.href}
+
+/* ---------- INIT ---------- */
+function init(){
+ renderGarments();renderSwatches();renderEmblems();
+ // seed with brand emblem
+ addLayer({type:"emblem",sym:"emblem",scale:1});
+ initDrag();
+ $("upl").addEventListener("change",function(e){Array.prototype.forEach.call(e.target.files,addImageFile);e.target.value=""});
+ $("upldir").addEventListener("change",function(e){var n=0;Array.prototype.forEach.call(e.target.files,function(f){if(/^image\//.test(f.type||"")){addImageFile(f);n++}});toast(n+" image(s) importée(s) du dossier");e.target.value=""});
+ // drag & drop n'importe quelle image sur le plan de travail
+ var sb=$("stageBox");["dragover","drop"].forEach(function(ev){sb.addEventListener(ev,function(e){e.preventDefault()})});
+ sb.addEventListener("drop",function(e){var fs=e.dataTransfer&&e.dataTransfer.files;if(fs)Array.prototype.forEach.call(fs,addImageFile)});
+ $("modal").addEventListener("click",function(e){if(e.target.id==="modal")closeModal()});
+}
+return {init:init,setGarment:setGarment,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim};
+})();
+Studio.init();
+</script>
+</body>
+</html>
