@@ -204,3 +204,18 @@ Atelier de création + **montage multi-calques** :
 - Workflows : `la-detente-worker-deploy.yml`, `la-detente-ai-designs.yml` (dispatch + auto-run sur merge main).
 
 ⚠️ À tester par Kevin (navigateur réel) : endpoint worker depuis le studio (le fetch automatisé hors-navigateur est filtré 403).
+
+---
+
+## 🛠️ Studio pro + qualités + coupes (v1.15 → v1.20)
+
+- **Worker Gemini** (autonome) : génération de designs IA à la volée dans le studio (clé en secret worker).
+- **Sélecteur Qualité à la commande** : **Standard → Printify** (pas cher, meilleure marge) · **Bio coton ✦ → T-Pop** (coton bio FR). Prix auto, qualité suivie dans le panier. Tarifs définitifs à fixer par fournisseur.
+- **White-label** : envoi « au nom de ta boutique » (T-Pop inclus ; Printify bon de livraison à ta marque).
+- **Coupes studio** : T-shirt, Débardeur, Polo, Chemise, Hoodie, Sweat zippé, Jogging, Short, Casquette, Tote, Bandana (+ palette couleurs étendue).
+- **Éditeur photo pro** (calque image → ✏️ Retoucher) : **gomme manuelle**, **gomme magique** (efface fond OU objet en 1 clic, tolérance réglable), **recadrer**, restaurer.
+- **Presse-papier calques** : copier / couper / coller (Ctrl+C/X/V), **annuler/refaire** (Ctrl+Z/Y), Suppr, déplacement flèches, dupliquer (Ctrl+D).
+- **Fix** : débordement horizontal (studio + boutique).
+- **Catalogue** : les **vraies images produit + infos détaillées viendront des fournisseurs** (Printify/T-Pop génèrent des mockups photoréalistes à partir des designs uploadés). Les mockups SVG actuels sont des placeholders.
+
+À venir (proposés) : templates slogans, textures vintage, export PDF 300 dpi, « créer un produit en 1 clic » depuis le studio.

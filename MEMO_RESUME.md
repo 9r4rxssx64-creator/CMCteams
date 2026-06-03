@@ -3300,3 +3300,18 @@ LEÇON : la "disparition" finale de la branche = merge+cleanup réussi, PAS une 
 > Branche `claude/perfect-100-Ypr17`. Campagne itérative : 1 fichier/tour → 100%, mergé via
 > GitHub MCP quand dispo. ~277 fichiers restants < 100% branche (campagne longue, défensif
 > croissant : switch-default/import-reject/`?? c` type-guards parfois inatteignables sans refactor).
+
+---
+
+## 🧵 La Détente (boutique textile) — session 2026-06-03
+
+Boutique POD `shops/la-detente/` (cache v1.20.0). Faits cette session :
+- Logos premium (emblème badge or + cœur glossy + AR15 acier + motifs argent).
+- MAJ auto forcée (SW network-first + auto-reload). Studio sécurisé Kevin+Laurence (PIN PBKDF2 + Face ID + device-trust).
+- Worker Cloudflare Gemini autonome `https://ld-gemini-proxy.9r4rxssx64.workers.dev` (génération designs IA dans le studio).
+- 8 designs IA (modèles Kevin) → bibliothèque + 12 produits « Designs ★ ».
+- Sélecteur Qualité à la commande (Standard=Printify / Bio coton=T-Pop) + white-label.
+- Studio : +5 coupes (chemise/jogging/short/débardeur/sweat zippé), éditeur photo (gomme/magique/recadrer), copier-coller, undo/redo, raccourcis. Fix overflow.
+- Docs : MARQUE_LA_DETENTE.md + FOURNISSEURS_LA_DETENTE.md à jour.
+- Workflows : `la-detente-worker-deploy.yml`, `la-detente-ai-designs.yml`, `la-detente-ai-images.yml`.
+- ⚠️ À tester par Kevin (navigateur) : worker depuis le studio. Catalogue images réelles = via fournisseurs plus tard.
