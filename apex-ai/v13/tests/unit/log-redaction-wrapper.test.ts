@@ -317,4 +317,34 @@ describe('LogRedactionWrapper — P0 sécu OWASP ASVS L2 V7.1.1', () => {
       spy.mockRestore();
     });
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    it('redactValue(Error sans stack) → stack undefined (branche 167)', () => {
+      const w = new LogRedactionWrapper();
+      const e = new Error('boom');
+      delete (e as { stack?: string }).stack;
+      /* stack source absent → branche `: undefined` (l.167) ; le nouvel Error a son
+       * propre stack auto-généré, donc on vérifie le message, pas l'absence de stack. */
+      const r = w.redactValue(e) as Error;
+      expect(r).toBeInstanceOf(Error);
+      expect(r.message).toBe('boom');
+    });
+
+    it('installGlobal : console undefined → early return (branche 205)', () => {
+      const w = new LogRedactionWrapper();
+      vi.stubGlobal('console', undefined);
+      expect(() => w.installGlobal()).not.toThrow();
+      vi.unstubAllGlobals();
+      expect(w.isInstalled()).toBe(false);
+    });
+
+    it('restoreGlobal : console undefined → early return (branche 250)', () => {
+      const w = new LogRedactionWrapper();
+      w.installGlobal(); // installed=true + originalConsole set
+      vi.stubGlobal('console', undefined);
+      expect(() => w.restoreGlobal()).not.toThrow(); // early return à 250
+      vi.unstubAllGlobals();
+      w.restoreGlobal(); // nettoyage : restaure le console réel patché par installGlobal
+    });
+  });
 });
