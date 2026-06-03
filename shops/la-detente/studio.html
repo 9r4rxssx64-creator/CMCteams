@@ -28,7 +28,7 @@ button{cursor:pointer;border:none;background:none}
 .side{width:264px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:14px}
 .side.right{border-right:none;border-left:1px solid var(--border)}
 .stage-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 90% at 50% 0,#dc262611,#0e1012 70%);overflow:auto;padding:24px}
-#stageBox{width:min(80vh,560px);aspect-ratio:1;background:#0b0d0f;border:1px solid var(--border);border-radius:var(--r);box-shadow:0 10px 40px rgba(0,0,0,.5);position:relative;touch-action:none}
+#stageBox{width:min(92vw,80vh,560px);aspect-ratio:1;background:#0b0d0f;border:1px solid var(--border);border-radius:var(--r);box-shadow:0 10px 40px rgba(0,0,0,.5);position:relative;touch-action:none}
 #stage{width:100%;height:100%;display:block;border-radius:var(--r)}
 h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:6px 0 10px}
 .grp{margin-bottom:20px}
@@ -155,7 +155,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:6"><button onclick="Studio.zoomBy(0.8)" title="Zoom +" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">＋</button><button onclick="Studio.zoomBy(1.25)" title="Zoom −" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">−</button><button onclick="Studio.zoomReset()" title="Réinitialiser le zoom" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:14px;cursor:pointer">⟲</button></div></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
@@ -246,6 +246,7 @@ function stageInner(forExport,withGarment){
 function render(){
  var stage=$("stage");
  stage.innerHTML=spriteDefs()+stageInner(false);
+ if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
  renderLayers(); renderProps();
 }
 /* ---------- PANELS ---------- */
@@ -331,17 +332,23 @@ function renderPlacement(){var el=document.getElementById("placement");if(!el)re
 function setColor(c){st.color=c;renderSwatches();render()}
 
 /* ---------- DRAG on stage ---------- */
+function _clampVB(){if(!st.vb)return;var v=st.vb;v.w=Math.max(20,Math.min(100,v.w));v.h=v.w;v.x=Math.max(0,Math.min(100-v.w,v.x));v.y=Math.max(0,Math.min(100-v.h,v.y))}
+function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h)}
+function zoomBy(fr){if(!st.vb)st.vb={x:0,y:0,w:100,h:100};var v=st.vb;var cx=v.x+v.w/2,cy=v.y+v.h/2;var nw=Math.max(20,Math.min(100,v.w*fr));st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();_applyVB()}
+function zoomReset(){st.vb={x:0,y:0,w:100,h:100};_applyVB()}
 function initDrag(){
- var box=$("stageBox");var drag=null;
- function pt(ev){var r=box.getBoundingClientRect();var cx=(ev.touches?ev.touches[0].clientX:ev.clientX);var cy=(ev.touches?ev.touches[0].clientY:ev.clientY);return{x:(cx-r.left)/r.width*100,y:(cy-r.top)/r.height*100}}
- function down(ev){var p=pt(ev);
+ var box=$("stageBox");var drag=null;var _pinch=null;
+ function _pinchStart(ev){var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var v=st.vb||{x:0,y:0,w:100,h:100};var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;_pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),w:v.w,cx:v.x+mx*v.w,cy:v.y+my*v.h};drag=null}
+ function _pinchMove(ev){if(!_pinch)return;var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var nd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1;var nw=Math.max(20,Math.min(100,_pinch.w*(_pinch.d/nd)));var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;st.vb={x:_pinch.cx-mx*nw,y:_pinch.cy-my*nw,w:nw,h:nw};_clampVB();_applyVB()}
+ function pt(ev){var r=box.getBoundingClientRect();var cx=(ev.touches?ev.touches[0].clientX:ev.clientX);var cy=(ev.touches?ev.touches[0].clientY:ev.clientY);var v=st.vb||{x:0,y:0,w:100,h:100};return{x:v.x+(cx-r.left)/r.width*v.w,y:v.y+(cy-r.top)/r.height*v.h}}
+ function down(ev){if(ev.touches&&ev.touches.length>=2){_pinchStart(ev);ev.preventDefault();return}var p=pt(ev);
    // pick topmost layer near point
-   for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+4;
+   for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=Math.max((l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+4,(st.vb?st.vb.w:100)*0.06);
      if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){snap();st.sel=l.id;drag={id:l.id,dx:l.x-p.x,dy:l.y-p.y};render();ev.preventDefault();return}}
    st.sel=null;render();
  }
- function mv(ev){if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));render();ev.preventDefault()}
- function up(){drag=null}
+ function mv(ev){if(ev.touches&&ev.touches.length>=2){_pinchMove(ev);if(ev.preventDefault)ev.preventDefault();return}if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));render();ev.preventDefault()}
+ function up(){drag=null;_pinch=null}
  box.addEventListener("mousedown",down);window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
  box.addEventListener("touchstart",down,{passive:false});window.addEventListener("touchmove",mv,{passive:false});window.addEventListener("touchend",up);
 }
@@ -534,7 +541,7 @@ function _iceBind(){var cv=ICE.canvas,down=false,start=null;
  cv.onmousedown=pd;cv.onmousemove=pm;window.addEventListener("mouseup",pu);
  cv.addEventListener("touchstart",pd,{passive:false});cv.addEventListener("touchmove",pm,{passive:false});cv.addEventListener("touchend",pu)}
 function iceApply(){var l=get(ICE.id);if(!l){closeModal();return}snap();try{l.href=ICE.canvas.toDataURL("image/png");var ar=ICE.canvas.width/ICE.canvas.height||1;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base}catch(e){toast("Erreur retouche")}closeModal();render();toast("Photo retouchée ✅")}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
