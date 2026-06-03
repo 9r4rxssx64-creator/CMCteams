@@ -140,5 +140,19 @@ describe('services/apex-tools-handlers/cloud', () => {
       mockedReadKey.mockResolvedValue('cf_secret');
       await expect(handleCloudflareTask('delete_account', {})).rejects.toThrow(/Task Cloudflare inconnue/);
     });
+
+    it('list_zones HTTP !ok → throw (branche !res.ok)', async () => {
+      mockedReadKey.mockResolvedValue('cf_secret');
+      fetchSpy.mockResolvedValueOnce(new Response('err', { status: 500 }));
+      await expect(handleCloudflareTask('list_zones', {})).rejects.toThrow(/Cloudflare HTTP 500/);
+    });
+  });
+
+  describe('campagne 100% — branches !res.ok restantes', () => {
+    it('Vercel list_deployments HTTP !ok → throw (branche !res.ok)', async () => {
+      mockedReadKey.mockResolvedValue('vercel_secret');
+      fetchSpy.mockResolvedValueOnce(new Response('err', { status: 502 }));
+      await expect(handleVercelTask('list_deployments', {})).rejects.toThrow(/Vercel HTTP 502/);
+    });
   });
 });

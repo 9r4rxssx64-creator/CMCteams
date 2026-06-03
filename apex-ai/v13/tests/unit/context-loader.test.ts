@@ -1,9 +1,26 @@
 /**
  * Tests context-loader.ts (68.1% → 95%+).
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { contextLoader } from '../../services/ai/context-loader.js';
 import { persistentMemory } from '../../services/storage/persistent-memory-store.js';
+
+afterEach(() => { vi.restoreAllMocks(); });
+
+describe('context-loader — catch branches (campagne 100%)', () => {
+  it('persistentMemory.list throw → user_facts [] (catch loadFactsForPrompt)', async () => {
+    vi.spyOn(persistentMemory, 'list').mockRejectedValue(new Error('db down'));
+    contextLoader.invalidate();
+    const ctx = await contextLoader.load();
+    expect(ctx.user_facts).toEqual([]);
+  });
+  it('persistentMemory.topForPrompt throw → recent_memory [] (catch loadRecentMemory)', async () => {
+    vi.spyOn(persistentMemory, 'topForPrompt').mockRejectedValue(new Error('db down'));
+    contextLoader.invalidate();
+    const ctx = await contextLoader.load();
+    expect(ctx.recent_memory).toEqual([]);
+  });
+});
 
 describe('context-loader (P0 coverage)', () => {
   beforeEach(() => {
