@@ -189,3 +189,18 @@ Atelier de création + **montage multi-calques** :
    `sitemap.xml`, `og.png` (screenshot emblème).
 6. Tests (screenshots mobile 375px + desktop, node --check tous blocs) → commit → push branche
    `claude/textile-shop-ar15-heart-mMJ0j` → PR.
+
+---
+
+## 🔥 Session 2026-06-03 — Designs Kevin + Worker IA + sécurité studio (v1.13→v1.17)
+
+- **Logos premium** (v1.13) : emblème badge or + cœur glossy 3D + AR15 acier + motifs argent (bibliothèque/studio/boutique). Emblème de présentation conservé.
+- **MAJ auto forcée** (v1.14) : service worker network-first pour les pages + auto-reload sur nouvelle version + check 60s. **1 refresh** la 1ʳᵉ fois pour adopter.
+- **Studio sécurisé** (v1.14) : accès réservé **Kevin + Laurence** (prénom+nom + PIN PBKDF2 200k, device-trust, Face ID, lockout progressif). Échelle logo min 0.04.
+- **Worker Cloudflare Gemini** (autonome) : `https://ld-gemini-proxy.9r4rxssx64.workers.dev` — clé en secret worker, déploiement auto (wrangler + secrets CF), URL commitée dans `proxy-config.json`. Studio : panneau « 🎨 Générer un design IA » (derrière le login).
+- **Designs (modèles Kevin)** générés via Gemini (nano-banana-pro / gemini-3-pro-image), fond transparent : `img/designs/` = rose-pistol, rose-shotgun, hearts-ar15/shotgun/pistol/revolver, clays-perazzi, crest.
+- **Bibliothèque** (v1.16) : ces designs remplacent les motifs SVG ; studio ouvre un design via `?design=`.
+- **12 produits vendables** (v1.17) catégorie « Designs ★ » : `ld200`→`ld211` (tee/hoodie/tote), mockups composités dans `img/products/`.
+- Workflows : `la-detente-worker-deploy.yml`, `la-detente-ai-designs.yml` (dispatch + auto-run sur merge main).
+
+⚠️ À tester par Kevin (navigateur réel) : endpoint worker depuis le studio (le fetch automatisé hors-navigateur est filtré 403).
