@@ -314,7 +314,11 @@ function renderProps(){
  h+=rng("Échelle",l.id,"scale",l.scale,0.04,4,0.02);
  h+=rng("Rotation",l.id,"rot",l.rot,-180,180,1);
  h+=rng("Opacité",l.id,"op",l.op,0.1,1,0.05);
- h+='<div class="row2"><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button></div>';
+ h+='<h3 style="margin-top:14px">🎯 Réglage précis</h3>';
+ h+='<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Placement</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+placeKeys().map(function(k){return '<button class="mini" style="flex:1 0 30%;'+(k===st.placement?'border-color:var(--p);color:#fff':'')+'" onclick="Studio.placeAndMove('+l.id+',\''+k+'\')">'+(PLBL[k]||k)+'</button>'}).join("")+'</div>';
+ h+='<div class="row2"><button class="mini" onclick="Studio.scaleBy('+l.id+',0.9)">➖ Réduire</button><button class="mini" onclick="Studio.scaleBy('+l.id+',1.1)">➕ Agrandir</button></div>';
+ h+='<div style="font-size:11px;color:var(--muted);margin:8px 0 4px">Déplacement fin (cadrage)</div><div style="display:grid;grid-template-columns:repeat(3,46px);gap:6px"><span></span><button class="mini" onclick="Studio.nudge('+l.id+',0,-2)">↑</button><span></span><button class="mini" onclick="Studio.nudge('+l.id+',-2,0)">←</button><button class="mini" onclick="Studio.center('+l.id+')">⊕</button><button class="mini" onclick="Studio.nudge('+l.id+',2,0)">→</button><span></span><button class="mini" onclick="Studio.nudge('+l.id+',0,2)">↓</button><span></span></div>';
+ h+='<div class="row2" style="margin-top:8px"><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button></div>';
  w.innerHTML=h;
 }
 function field(lab,inner){return '<div class="field"><label>'+lab+'</label>'+inner+'</div>'}
@@ -332,6 +336,9 @@ function dup(id){snap();var l=st.layers.filter(function(x){return x.id===id})[0]
 function del(id){snap();st.layers=st.layers.filter(function(x){return x.id!==id});if(st.sel===id)st.sel=null;render()}
 function center(id){upd(id,"x",50);var l=st.layers.filter(function(x){return x.id===id})[0];var _z=curZone();l.y=_z[1]+_z[3]/2;render()}
 function toZone(id){var z=curZone();var l=st.layers.filter(function(x){return x.id===id})[0];l.x=z[0]+z[2]/2;l.y=z[1]+z[3]/2;render()}
+function nudge(id,dx,dy){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,(l.x==null?50:l.x)+dx));l.y=Math.max(0,Math.min(100,(l.y==null?50:l.y)+dy));render()}
+function scaleBy(id,f){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.scale=Math.max(0.04,Math.min(6,(l.scale||1)*f));render()}
+function placeAndMove(id,k){if(PLACE[st.garment]&&PLACE[st.garment][k]){st.placement=k;renderPlacement();}toZone(id);}
 function setGarment(g){st.garment=g;st.placement=placeKeys()[0];renderGarments();renderPlacement();render()}
 function setPlacement(k){st.placement=k;renderPlacement();render()}
 function renderPlacement(){var el=document.getElementById("placement");if(!el)return;el.innerHTML=placeKeys().map(function(k){return '<button class="gbtn'+(k===st.placement?" on":"")+'" onclick="Studio.setPlacement(\''+k+'\')">'+(PLBL[k]||k)+'</button>'}).join("")}
@@ -549,7 +556,7 @@ function _iceBind(){var cv=ICE.canvas,down=false,start=null;
  cv.onmousedown=pd;cv.onmousemove=pm;window.addEventListener("mouseup",pu);
  cv.addEventListener("touchstart",pd,{passive:false});cv.addEventListener("touchmove",pm,{passive:false});cv.addEventListener("touchend",pu)}
 function iceApply(){var l=get(ICE.id);if(!l){closeModal();return}snap();try{l.href=ICE.canvas.toDataURL("image/png");var ar=ICE.canvas.width/ICE.canvas.height||1;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base}catch(e){toast("Erreur retouche")}closeModal();render();toast("Photo retouchée ✅")}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
