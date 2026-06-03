@@ -25,4 +25,21 @@
       fetch(FB+"/"+path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),keepalive:true}).catch(function(){});
     }catch(_){}
   };
+  /* Produits publiés par l'admin (catalogue Printify → boutique), visibles par TOUS.
+     Path isolé shops_admin_v1/products/<shop>/<id>. */
+  function ppath(shop,id){return BASE+"/products/"+encodeURIComponent(shop)+(id?"/"+encodeURIComponent(id):"")+".json";}
+  window.kdmcPublishProduct=function(shop,prod){
+    if(!shop||!prod||!prod.id)return Promise.reject();
+    return fetch(FB+"/"+ppath(shop,prod.id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(prod)});
+  };
+  window.kdmcDeleteProduct=function(shop,id){
+    if(!shop||!id)return Promise.reject();
+    return fetch(FB+"/"+ppath(shop,id),{method:"DELETE"});
+  };
+  window.kdmcFetchProducts=function(shop,cb){
+    fetch(FB+"/"+ppath(shop)).then(function(r){return r.ok?r.json():null}).then(function(j){
+      var arr=[];if(j&&typeof j==="object"){Object.keys(j).forEach(function(k){if(j[k]&&typeof j[k]==="object")arr.push(j[k])})}
+      try{cb(arr)}catch(_){}
+    }).catch(function(){try{cb([])}catch(_){}});
+  };
 })();
