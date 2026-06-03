@@ -1,10 +1,22 @@
 # 🧵 La Détente — Fournisseurs textile (où coller tes logos)
 
-> Recherche 2026. Le **thème chasse / tir / ball‑trap vient de TES logos** (créés dans le Studio) :
-> tu as juste besoin de vêtements à imprimer dans les bonnes couleurs (noir, kaki, olive, camo).
-> 3 routes selon ton besoin : **(1) éco/bio sans stock**, **(2) chinois meilleur prix**, **(3) blanks camo/chasse**.
+## 🎯 STRATÉGIE RETENUE — 2 qualités, le client choisit à la commande
+
+La fiche produit propose un **sélecteur « Qualité »** (câblé v1.18) : le client choisit **Standard** ou **Bio coton ✦** au moment de commander, et le prix s'adapte automatiquement. Chaque qualité = **un fournisseur** :
+
+| Qualité (côté client) | Fournisseur | Pourquoi | Coût/marge | Compte |
+|---|---|---|---|---|
+| **Standard** (bon prix) | **Printify** (route un imprimeur **Guangdong / Chine** ou EU au choix) | Le moins cher, catalogue énorme, dropship auto, ton logo. Délais + longs (honnête). | Base la moins chère → **meilleure marge** | gratuit, paie à la commande — https://www.printify.com |
+| **Bio coton ✦** (+25 %) | **T‑Pop** (France, Barjac) | **Coton bio GOTS**, encres à l'eau **vegan**, **OEKO‑TEX**, colis **sans plastique**, marque blanche (ton logo étiquette/colis/facture), expédition EU rapide. | Base un peu + chère → prix bio +25 % côté client | gratuit, sans minimum — https://www.tpop.com |
+
+**Flux « entre amis » (sans abonnement)** : l'ami commande sur la boutique + choisit sa qualité → te paie (PayPal/Revolut/virement) → tu passes la commande chez **Printify** (Standard) ou **T‑Pop** (Bio) avec son adresse → livraison directe chez lui. Marge = ton prix − coût POD.
+
+**Action Kevin (la seule manuelle)** : créer **1 compte Printify** + **1 compte T‑Pop** (gratuit), uploader les designs HD (export Studio / `img/designs/`). Je prépare déjà tout le reste (catalogue, prix, mapping qualité→fournisseur).
+
+⚠️ Imagerie armes : T‑Pop / processeurs EU peuvent restreindre l'imagerie d'arme **réaliste** — nos designs sont **illustrés/sticker** (passe bien). Printify (providers US/CN) plus permissif. Toujours commander **1 échantillon** avant de vendre.
 
 ---
+
 
 ## 1) 🌿 ÉCO / BIO / COTON — Print‑on‑demand (recommandé, zéro stock, tu colles ton logo)
 
