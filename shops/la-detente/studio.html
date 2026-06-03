@@ -314,7 +314,7 @@ function field(lab,inner){return '<div class="field"><label>'+lab+'</label>'+inn
 function rng(lab,id,prop,val,mn,mx,st_){return field(lab+' ('+(+val).toFixed(prop==="rot"?0:2)+')','<input type="range" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+val+'" oninput="Studio.upd('+id+',\''+prop+'\',+this.value)">')}
 
 /* ---------- LAYER OPS ---------- */
-function addLayer(l){l.id=st.uid++;l.x=l.x||50;l.y=l.y||(curZone()[1]+curZone()[3]/2);l.rot=l.rot||0;l.scale=l.scale||1;l.op=l.op==null?1:l.op;st.layers.push(l);st.sel=l.id;render()}
+function addLayer(l){snap();l.id=st.uid++;l.x=l.x||50;l.y=l.y||(curZone()[1]+curZone()[3]/2);l.rot=l.rot||0;l.scale=l.scale||1;l.op=l.op==null?1:l.op;st.layers.push(l);st.sel=l.id;render()}
 function addText(){addLayer({type:"text",text:"TON TEXTE",font:"Arial Black",bold:true,color:"#ffffff",size:11,outline:0,ocolor:"#000000"})}
 function addEmblem(sym){addLayer({type:"emblem",sym:sym,scale:1})}
 function addImageFile(file){if(!file||!/^image\//.test(file.type||"")&&!/\.svg$/i.test(file.name||""))return;var r=new FileReader();r.onload=function(e){var src=e.target.result;var img=new Image();img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?36:36*ar,hh=ar>=1?36/ar:36;addLayer({type:"image",href:src,orig:src,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.onerror=function(){addLayer({type:"image",href:src,orig:src,w:36,h:36,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.src=src};r.readAsDataURL(file)}
