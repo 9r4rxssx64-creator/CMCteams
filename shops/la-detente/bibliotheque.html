@@ -115,26 +115,17 @@ var GARMENTS=[["tee","T-shirt"],["hoodie","Hoodie"],["polo","Polo"],["cap","Casq
 var COLORS=["#15171a","#ececec","#3a4a3f","#3a4636","#0f1722","#1c2733","#3a0f12","#1c1e22"];
 var BOX={tee:[34,32,32,32],hoodie:[34,40,32,32],polo:[36,36,28,28],cap:[40,26,20,20],tote:[33,30,34,34],bandana:[36,40,28,28]};
 var MOTIFS=[
- {id:"emblem",name:"Emblème AR15 Cœur",cat:"Signature",tags:["signature","ar15","cœur","tir"]},
- {id:"heart",name:"Cœur Rouge",cat:"Signature",tags:["minimal","cœur","entre amis"]},
- {id:"th-visejuste",name:"Badge « Vise Juste »",cat:"Badge",tags:["badge","tir","vise juste"]},
- {id:"th-entreamis",name:"Badge « Entre Amis »",cat:"Badge",tags:["badge","entre amis"]},
- {id:"th-tir",name:"Cible",cat:"Tir",tags:["tir","cible"]},
- {id:"th-prec",name:"Précision",cat:"Tir",tags:["tir","précision","viseur"]},
- {id:"th-arrows",name:"Flèches croisées",cat:"Tir",tags:["tir","flèches"]},
- {id:"th-balltrap",name:"Ball-Trap",cat:"Ball-Trap",tags:["ball-trap","plateau"]},
- {id:"th-clay",name:"Plateau",cat:"Ball-Trap",tags:["ball-trap","plateau"]},
- {id:"th-chasse",name:"Chasse (bois)",cat:"Chasse",tags:["chasse","bois"]},
- {id:"th-stag",name:"Cerf",cat:"Chasse",tags:["chasse","cerf"]},
- {id:"th-antler",name:"Bois de Cerf",cat:"Chasse",tags:["chasse","bois","cerf"]},
- {id:"th-shells",name:"Cartouches",cat:"Chasse",tags:["chasse","cartouches"]},
- {id:"th-duck",name:"Canard",cat:"Chasse",tags:["chasse","canard"]},
- {id:"th-feather",name:"Plume",cat:"Nature",tags:["nature","plume"]},
- {id:"th-pine",name:"Sapin",cat:"Nature",tags:["nature","forêt","sapin"]},
- {id:"th-mountain",name:"Montagne",cat:"Nature",tags:["nature","montagne"]},
- {id:"th-paw",name:"Empreinte",cat:"Nature",tags:["nature","empreinte"]}
+ {id:"emblem",name:"Emblème La Détente",cat:"Signature",tags:["signature","ar15","cœur","présentation"]},
+ {id:"crest",name:"Crest La Détente",cat:"Signature",img:"img/designs/crest.png",tags:["crest","insigne","tir","chasse"]},
+ {id:"rose-pistol",name:"Pistolet & Rose",cat:"Cœur",img:"img/designs/rose-pistol.png",tags:["pistolet","rose","entre amis","amour"]},
+ {id:"rose-shotgun",name:"Fusil & Rose",cat:"Cœur",img:"img/designs/rose-shotgun.png",tags:["fusil","rose","perazzi","amour"]},
+ {id:"hearts-ar15",name:"AR15 Cœurs",cat:"Cœur",img:"img/designs/hearts-ar15.png",tags:["ar15","cœurs","tir"]},
+ {id:"hearts-shotgun",name:"Fusil Cœurs",cat:"Cœur",img:"img/designs/hearts-shotgun.png",tags:["fusil","cœurs","ball-trap"]},
+ {id:"hearts-pistol",name:"Pistolet Cœurs",cat:"Cœur",img:"img/designs/hearts-pistol.png",tags:["pistolet","cœurs"]},
+ {id:"hearts-revolver",name:"Revolver Cœurs",cat:"Cœur",img:"img/designs/hearts-revolver.png",tags:["revolver","cœurs"]},
+ {id:"clays-perazzi",name:"Perazzi & Plateaux",cat:"Ball-Trap",img:"img/designs/clays-perazzi.png",tags:["ball-trap","plateau","perazzi","fusil"]}
 ];
-var CATS=["Tous","Signature","Badge","Tir","Ball-Trap","Chasse","Nature"];
+var CATS=["Tous","Signature","Cœur","Ball-Trap"];
 var st={q:"",cat:"Tous",garment:"tee",color:"#15171a"};
 
 function esc(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&quot;")}
@@ -142,7 +133,13 @@ function norm(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[�
 function toast(m){var e=document.getElementById("toast");e.textContent=m;e.className="toast show";clearTimeout(toast._t);toast._t=setTimeout(function(){e.className="toast"},2600)}
 
 function gMock(g,color,motif){var box=BOX[g]||[34,34,32,32];if(motif==="emblem"&&g!=="cap"){box=[box[0]-2,box[1]-1,box[2]+4,box[3]+4];}
- return '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><g style="color:'+color+'"><use href="#g-'+g+'"/></g><use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/></svg>';}
+ var mt=motif?'<use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/>':'';
+ return '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><g style="color:'+color+'"><use href="#g-'+g+'"/></g>'+mt+'</svg>';}
+function thumbHTML(m){
+ if(m.img){var box=BOX[st.garment]||[34,34,32,32];var cx=box[0]+box[2]/2, cy=box[1]+box[3]/2, w=box[2]*1.05;
+  return '<div style="position:relative;width:100%;height:100%">'+gMock(st.garment,st.color,null)
+   +'<img src="'+m.img+'" alt="'+esc(m.name)+'" style="position:absolute;left:'+cx+'%;top:'+cy+'%;width:'+w+'%;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35))"></div>';}
+ return gMock(st.garment,st.color,m.id);}
 
 function filtered(){var q=norm(st.q);return MOTIFS.filter(function(m){
  if(st.cat!=="Tous"&&m.cat!==st.cat)return false;
@@ -154,13 +151,14 @@ function render(){
  document.getElementById("count").textContent=list.length+" design"+(list.length>1?"s":"")+" · vêtement : "+(GARMENTS.filter(function(x){return x[0]===st.garment})[0][1]);
  document.getElementById("empty").style.display=list.length?"none":"block";
  document.getElementById("grid").innerHTML=list.map(function(m){
-  return '<div class="card"><div class="thumb">'+gMock(st.garment,st.color,m.id)+'</div>'
+  var studioHref=m.img?('./studio.html?design='+m.id):('./studio.html?motif='+m.id);
+  var dl=m.img?('<a class="go" style="background:#23272e" href="'+m.img+'" download>⬇️ PNG</a>'):('<button onclick="LB.png(\''+m.id+'\')">⬇️ PNG</button><button onclick="LB.svg(\''+m.id+'\')">⬇️ SVG</button>');
+  return '<div class="card"><div class="thumb">'+thumbHTML(m)+'</div>'
    +'<div class="cbody"><div class="cname">'+esc(m.name)+'</div>'
    +'<div class="ctags">'+m.tags.slice(0,3).map(function(t){return '<span class="ctag">'+esc(t)+'</span>'}).join("")+'</div>'
    +'<div class="cact">'
-   +'<a class="go" href="./studio.html?motif='+m.id+'">🎨 Studio</a>'
-   +'<button onclick="LB.png(\''+m.id+'\')">⬇️ PNG</button>'
-   +'<button onclick="LB.svg(\''+m.id+'\')">⬇️ SVG</button>'
+   +'<a class="go" href="'+studioHref+'">🎨 Studio</a>'
+   +dl
    +'</div></div></div>';
  }).join("");
 }
