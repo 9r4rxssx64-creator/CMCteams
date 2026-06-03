@@ -42,4 +42,14 @@
       try{cb(arr)}catch(_){}
     }).catch(function(){try{cb([])}catch(_){}});
   };
+  /* Logos gérés par l'admin (bibliothèque de logos publiée). Path shops_admin_v1/logos/<shop>/<id>. */
+  function lpath(shop,id){return BASE+"/logos/"+encodeURIComponent(shop)+(id?"/"+encodeURIComponent(id):"")+".json";}
+  window.kdmcPublishLogo=function(shop,logo){if(!shop||!logo||!logo.id)return Promise.reject();return fetch(FB+"/"+lpath(shop,logo.id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(logo)});};
+  window.kdmcDeleteLogo=function(shop,id){if(!shop||!id)return Promise.reject();return fetch(FB+"/"+lpath(shop,id),{method:"DELETE"});};
+  window.kdmcFetchLogos=function(shop,cb){
+    fetch(FB+"/"+lpath(shop)).then(function(r){return r.ok?r.json():null}).then(function(j){
+      var arr=[];if(j&&typeof j==="object"){Object.keys(j).forEach(function(k){if(j[k]&&typeof j[k]==="object")arr.push(j[k])})}
+      try{cb(arr)}catch(_){}
+    }).catch(function(){try{cb([])}catch(_){}});
+  };
 })();
