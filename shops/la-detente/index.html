@@ -166,6 +166,25 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .newcol-banner button{padding:12px 22px;background:#fff;color:#111;border:none;border-radius:100px;font-weight:800;font-size:14px;cursor:pointer;transition:transform .15s}
 .newcol-banner button:hover{transform:translateY(-2px)}
 @media(max-width:760px){.newcol-banner{padding:20px 16px}.newcol-banner h2{font-size:20px}}
+.adm-head{position:sticky;top:0;z-index:6;background:var(--bg);padding:10px 0 6px;border-bottom:1px solid var(--border)}
+.adm-title{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:800;margin-bottom:8px}
+.adm-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.adm-tab{flex-shrink:0;padding:9px 14px;border-radius:100px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.adm-tab.on{background:var(--p);color:#fff;border-color:var(--p)}
+.adm-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+@media(max-width:620px){.adm-kpis{grid-template-columns:repeat(2,1fr)}}
+.adm-kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+.adm-kpi b{display:block;font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.adm-kpi span{font-size:11.5px;color:var(--muted)}
+.adm-kpi.accent{background:linear-gradient(135deg,#dc2626,#7f1010);border-color:#dc2626}
+.adm-kpi.accent b,.adm-kpi.accent span{color:#fff}
+.adm-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.adm-card h3{font-size:14px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.adm-qa{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.adm-qa button{padding:13px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700;font-size:13px;cursor:pointer;text-align:left}
+.adm-qa button:hover{border-color:var(--p)}
+.adm-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.adm-row:last-child{border-bottom:none}
 .hero{background-image:linear-gradient(90deg,rgba(14,16,18,.94),rgba(14,16,18,.55) 58%,rgba(14,16,18,.18)),url('img/hero.png');background-size:cover;background-position:right center;background-repeat:no-repeat}
 .promobar{background:linear-gradient(90deg,#3a0f12,#dc2626,#3a0f12);color:#fff;font-size:12.5px;font-weight:600;text-align:center;padding:8px 34px;position:relative}.promobar .x{position:absolute;right:10px;top:50%;transform:translateY(-50%);opacity:.85;cursor:pointer;font-size:14px}.card-img{position:relative}.badge-stack{position:absolute;top:8px;left:8px;z-index:2;display:flex;flex-direction:column;gap:4px;align-items:flex-start}.card-badge.badge-new{background:#16a34a;color:#fff}.card-badge.badge-top{background:#f59e0b;color:#111}.card-wish{position:absolute;top:8px;right:8px;z-index:3;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:15px;border:none;cursor:pointer;transition:.15s;line-height:1}.card-wish:hover{background:rgba(0,0,0,.78);transform:scale(1.12)}.sizebtn{min-width:48px;padding:11px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700;cursor:pointer;transition:.12s}.sizebtn:hover{border-color:var(--p)}.sizebtn.on{background:var(--p);border-color:var(--p);color:#fff}.ship-prog{height:7px;border-radius:100px;background:var(--border);overflow:hidden}.ship-prog>i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .3s}.reassure{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:18px 0 4px}.reassure>div{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted)}.cfilter{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:18px}.cfilter .sw2{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:0}.cfilter .sw2.on{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
 </style>
@@ -232,7 +251,7 @@ function esc(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"
 function pimg(v,a){v=v==null?"":v;return (/^(https?:|data:)/.test(v)||/\.(png|jpe?g|webp|gif|svg|avif)$/i.test(v))?'<img src="'+esc(v)+'" alt="'+esc(a)+'" loading="lazy">':(v||"📦")}
 function toast(m,t){var e=document.getElementById("toast");e.innerHTML=(t==="error"?"❌":"✅")+" "+esc(m);e.className="toast show";clearTimeout(toast._t);toast._t=setTimeout(function(){e.className="toast"},3e3)}
 function sv(v,p){S.view=v;S.vp=p;S.page=1;if(v==="product"&&p)pushRecent(p);dc();scrollTo({top:0,behavior:"smooth"})}
-function dc(){var a=document.getElementById("app");if(!a)return;a.innerHTML=promobar()+hdr()+({home:vHome,products:vProducts,product:vProduct,cart:vCartPage,about:vAbout,contact:vContact,wishlist:vWishlist,orders:vOrders,lookbook:vLookbook,printify:vPrintifyCatalog}[S.view]||vHome)()+footer();cartBadge();wishBadge();
+function dc(){var a=document.getElementById("app");if(!a)return;a.innerHTML=promobar()+hdr()+({home:vHome,products:vProducts,product:vProduct,cart:vCartPage,about:vAbout,contact:vContact,wishlist:vWishlist,orders:vOrders,lookbook:vLookbook,printify:vAdmin}[S.view]||vHome)()+footer();cartBadge();wishBadge();
 document.querySelectorAll(".nav-item").forEach(function(el){el.classList.toggle("active",el.dataset.cat===(S.cat||"all"))});
 if(S.view==="home"||S.view==="products"){document.querySelectorAll(".card").forEach(function(c,i){c.style.animationDelay=i*30+"ms"})}}
 function hdr(){return '<div class="hdr"><div class="hdr-inner">'
@@ -808,6 +827,58 @@ window._ldPublished=[];
 function ldMergePublished(arr,silent){window._ldPublished=(arr||[]).slice();try{localStorage.setItem("ld_published_cache",JSON.stringify(arr||[]))}catch(_){}
  (arr||[]).forEach(function(prod){if(!prod||!prod.id)return;prod.sizes=prod.sizes||["S","M","L","XL","XXL"];prod.rating=prod.rating||5;prod.reviews=prod.reviews||0;var ex=P.findIndex(function(x){return x.id===prod.id});if(ex>=0)P[ex]=prod;else P.unshift(prod);});}
 function ldPubMore(){_ldBpShown+=48;dc()}
+var _ldAdminTab="dashboard";
+function _admKpi(b,s,accent){return '<div class="adm-kpi'+(accent?' accent':'')+'"><b>'+b+'</b><span>'+esc(s)+'</span></div>';}
+function ldSetPubName(id,val){val=(val||"").trim();if(!val)return;var p=(window._ldPublished||[]).find(function(x){return x.id===id});if(!p)return;p.name=val;var ix=P.findIndex(function(x){return x.id===id});if(ix>=0)P[ix].name=val;try{localStorage.setItem("ld_published_cache",JSON.stringify(window._ldPublished))}catch(_){}if(window.kdmcPublishProduct)kdmcPublishProduct(STORE_ID,p).catch(function(){});toast("Nom mis à jour");}
+function vAdmin(){
+ if(!LD_ADMIN)return '<div class="section" style="text-align:center;padding:70px 16px"><span style="font-size:54px">🔒</span><h2 style="margin-top:10px">Accès réservé à l\'admin</h2><p style="color:var(--muted)">Ajoute <b>?ld_admin=200807</b> à l\'URL pour activer le mode admin.</p></div>';
+ var tabs=[["dashboard","📊 Tableau de bord"],["catalog","🗂️ Catalogue"],["products","🏷️ Mes produits"],["orders","📦 Commandes"],["settings","⚙️ Réglages"]];
+ var head='<div class="section" style="padding-bottom:0"><div class="adm-head"><div class="adm-title">⚙️ Admin — La Détente</div><div class="adm-tabs">'+tabs.map(function(t){return '<button class="adm-tab'+(_ldAdminTab===t[0]?' on':'')+'" onclick="_ldAdminTab=\''+t[0]+'\';dc();scrollTo({top:0})">'+t[1]+'</button>'}).join("")+'</div></div></div>';
+ if(_ldAdminTab==="catalog")return head+vPrintifyCatalog();
+ var body=({dashboard:_admDash,products:_admProducts,orders:_admOrders,settings:_admSettings}[_ldAdminTab]||_admDash)();
+ return head+'<div class="section" style="padding-top:12px">'+body+'</div>';
+}
+function _admDash(){
+ var pub=window._ldPublished||[];var orders=getOrders();var ca=orders.reduce(function(s,o){return s+(o.total||0)},0);
+ var pend=orders.filter(function(o){return (o.status||"pending")==="pending"}).length;
+ var k='<div class="adm-kpis">'+_admKpi(pub.length,"Produits publiés")+_admKpi(orders.length,"Commandes")+_admKpi(fmtP(ca),"Chiffre d'affaires",true)+_admKpi(pend,"À traiter")+'</div>';
+ var qa='<div class="adm-card"><h3>⚡ Actions rapides</h3><div class="adm-qa">'
+  +'<button onclick="_ldAdminTab=\'catalog\';dc();scrollTo({top:0})">🗂️ Choisir un produit<br><span style="font-weight:400;color:var(--muted);font-size:11px">1408 produits Printify</span></button>'
+  +'<button onclick="window.open(\'studio.html\',\'_blank\')">🎨 Studio<br><span style="font-weight:400;color:var(--muted);font-size:11px">créer un logo</span></button>'
+  +'<button onclick="_ldAdminTab=\'products\';dc();scrollTo({top:0})">🏷️ Mes produits<br><span style="font-weight:400;color:var(--muted);font-size:11px">'+pub.length+' en boutique</span></button>'
+  +'<button onclick="_ldAdminTab=\'orders\';dc();scrollTo({top:0})">📦 Commandes<br><span style="font-weight:400;color:var(--muted);font-size:11px">'+orders.length+' au total</span></button>'
+  +'</div></div>';
+ var rp=pub.slice(0,6);
+ var rph=rp.length?'<div class="adm-card"><h3>🆕 Derniers produits publiés</h3>'+rp.map(function(p){return '<div class="adm-row"><div style="width:38px;height:38px;border-radius:8px;overflow:hidden;flex:none;background:#15171a">'+pimg(p.img,p.name)+'</div><div style="flex:1;min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.name)+'</div></div><b style="color:var(--p)">'+fmtP(p.price)+'</b></div>'}).join("")+'</div>':'<div class="adm-card"><h3>🆕 Produits</h3><p style="color:var(--muted);font-size:13px;margin-bottom:10px">Boutique vide. Crée ton 1er produit depuis le catalogue.</p><button onclick="_ldAdminTab=\'catalog\';dc();scrollTo({top:0})" style="padding:11px 20px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🗂️ Ouvrir le catalogue</button></div>';
+ var ro=orders.slice().reverse().slice(0,4);
+ var roh=ro.length?'<div class="adm-card"><h3>📦 Dernières commandes</h3>'+ro.map(orderRow).join("")+'</div>':'';
+ return k+qa+rph+roh;
+}
+function _admProducts(){
+ var pub=window._ldPublished||[];
+ if(!pub.length)return '<div class="adm-card"><h3>🏷️ Mes produits</h3><p style="color:var(--muted)">Aucun produit publié. Va dans <b>🗂️ Catalogue</b>, choisis un objet, applique un logo, publie.</p><button onclick="_ldAdminTab=\'catalog\';dc();scrollTo({top:0})" style="margin-top:12px;padding:11px 20px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🗂️ Ouvrir le catalogue</button></div>';
+ return '<div class="adm-card"><h3>🏷️ Mes produits ('+pub.length+')<button onclick="ldClearPublished()" style="margin-left:auto;font-size:11px;padding:5px 11px;background:transparent;border:1px solid var(--border);border-radius:100px;color:var(--muted);cursor:pointer">Tout retirer</button></h3>'
+  +pub.map(function(p){return '<div class="adm-row"><div style="width:46px;height:46px;border-radius:8px;overflow:hidden;flex:none;background:#15171a">'+pimg(p.img,p.name)+'</div>'
+   +'<div style="flex:1;min-width:0"><input value="'+esc(p.name)+'" onchange="ldSetPubName(\''+p.id+'\',this.value)" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-size:12px;margin-bottom:5px"><div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.5" value="'+p.price+'" onchange="ldSetPubPrice(\''+p.id+'\',this.value)" style="width:78px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-weight:700">€<span style="font-size:11px;color:var(--muted);margin-left:auto">'+esc((p._printify&&p._printify.category)||p.cat||"")+'</span></div></div>'
+   +'<button onclick="ldRemovePublished(\''+p.id+'\')" style="flex:none;background:#7f1010;color:#fff;border:none;border-radius:8px;padding:9px 11px;font-weight:700;cursor:pointer">🗑</button></div>'}).join("")
+  +'</div>';
+}
+function _admOrders(){
+ var orders=getOrders().slice().reverse();
+ if(!orders.length)return '<div class="adm-card"><h3>📦 Commandes</h3><p style="color:var(--muted)">Aucune commande pour le moment. Elles arriveront ici dès le 1er achat.</p></div>';
+ var btn='padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700;font-size:12px;cursor:pointer';
+ return '<div class="adm-card"><h3>📦 Commandes ('+orders.length+')</h3>'+orders.map(function(o){return orderRow(o)+'<div style="display:flex;gap:6px;margin:-6px 0 14px;flex-wrap:wrap"><button style="'+btn+'" onclick="ldOpenSheet(\''+o.id+'\')">📄 Bon</button><button style="'+btn+'" onclick="ldOpenSupplierOrders(\''+o.id+'\')">📤 Fournisseur</button><button style="'+btn+';background:#0070ba;color:#fff;border-color:#0070ba" onclick="ldPrintifyAuto(\''+o.id+'\',this)">🚀 Printify</button></div>'}).join("")+'</div>';
+}
+function _admSettings(){
+ var oc=window._ldOrderCfg;
+ return '<div class="adm-card"><h3>🏭 Printify</h3>'
+  +'<div class="adm-row"><span>Connexion API</span><b style="margin-left:auto;color:#22c55e">🟢 boutique 27791653</b></div>'
+  +'<div class="adm-row"><span>Worker d\'envoi commande</span><b style="margin-left:auto">'+(oc&&oc.worker_url?'🟢 actif':'🟡 non déployé')+'</b></div>'
+  +(oc&&oc.worker_url?'<div style="font-size:11px;color:var(--muted);word-break:break-all;margin-top:8px">'+esc(oc.worker_url)+'</div>':'<a href="https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/la-detente-printify-order-deploy.yml" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;padding:10px 18px;background:var(--p);color:#fff;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px">▶️ Déployer le worker</a>')
+  +'</div>'
+  +'<div class="adm-card"><h3>🔗 Liens</h3><div class="adm-row"><a href="https://printify.com/app/orders" target="_blank" rel="noopener" style="color:var(--p)">Commandes Printify ↗</a></div><div class="adm-row"><a href="bibliotheque.html" style="color:var(--p)">Bibliothèque de designs ↗</a></div><div class="adm-row"><a href="studio.html" style="color:var(--p)">Studio de création ↗</a></div></div>'
+  +'<div class="adm-card"><h3>👤 Mode admin</h3><button onclick="localStorage.removeItem(\'ld_admin\');location.href=\'index.html\'" style="padding:11px 18px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text);font-weight:700;cursor:pointer">🚪 Quitter le mode admin</button></div>';
+}
 function vPrintifyCatalog(){
  if(!LD_ADMIN)return '<div class="section" style="text-align:center;padding:70px 16px"><span style="font-size:54px">🔒</span><h2 style="margin-top:10px">Accès réservé à l\'admin</h2><p style="color:var(--muted)">Cette page sert à choisir les produits Printify et les publier en boutique.</p></div>';
  if(!_ldBp){ldLoadBlueprints(function(j){dc()});return '<div class="section" style="text-align:center;padding:70px"><span style="font-size:40px">⏳</span><h2>Chargement du catalogue Printify…</h2><p style="color:var(--muted)">1408 produits</p></div>';}
@@ -898,7 +969,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.32.0"
+        data-version="v1.33.0"
         data-color="#e8b830"
         defer></script>
 
