@@ -167,7 +167,9 @@ class SkillsWatch {
 
   getLastReport(watchId: 'skills-watch' | 'mcp-health-watch'): SkillsWatchReport | null {
     const filtered = this.reports.filter((r) => r.watch_id === watchId);
-    return filtered.length > 0 ? (filtered[filtered.length - 1] ?? null) : null;
+    /* `filtered[len-1] ?? null` couvre les 2 cas (vide → undefined → null ;
+     * non-vide → dernier) sans le ternary + `?? null` redondant (branche morte). */
+    return filtered[filtered.length - 1] ?? null;
   }
 
   private recordReport(report: SkillsWatchReport): void {
