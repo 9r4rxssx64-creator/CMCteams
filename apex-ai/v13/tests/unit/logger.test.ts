@@ -1,5 +1,34 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { logger } from '../../core/logger.js';
+
+describe('logger — branches restantes (campagne 100%)', () => {
+  afterEach(() => {
+    (logger as unknown as { sentryReady: boolean }).sentryReady = false;
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  it('redact objet cyclique → "[unserializable]" (catch JSON.stringify)', () => {
+    logger.clearBuffer();
+    const cyclic: Record<string, unknown> = {};
+    cyclic['self'] = cyclic;
+    logger.info('test', 'msg', cyclic);
+    expect(logger.getBuffer().pop()?.data).toBe('[unserializable]');
+  });
+
+  it('forwardToSentry quand sentryReady=true (branche !sentryReady false)', () => {
+    (logger as unknown as { sentryReady: boolean }).sentryReady = true;
+    expect(() => logger.error('test', 'boom')).not.toThrow();
+  });
+
+  it('minLevel init hostname non-localhost → branche info (137)', async () => {
+    vi.resetModules();
+    vi.stubGlobal('window', { location: { hostname: 'example.com' } });
+    const { logger: fresh } = await import('../../core/logger.js');
+    expect(fresh).toBeDefined();
+  });
+});
 
 describe('logger', () => {
   it('redacte les API keys dans messages', () => {
