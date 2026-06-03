@@ -111,6 +111,12 @@ Atelier de création + **montage multi-calques** :
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
 ## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES + vraies images
+- ✅ **v1.9.0 — social proof + client (options 1 & 3)** : **avis clients** sur fiche produit
+  (affichage + formulaire étoiles/texte, stockés localement) · **récemment vus** (home + fiche) ·
+  **stock/urgence** (« 🔥 Plus que X en stock ») · **lot −10 % dès 3 articles** (auto, affiché panier) ·
+  **Mes commandes & suivi** (page + recherche par n° KDMC, statuts) · **Lookbook** (galerie éditoriale).
+  Liens footer (📸 Lookbook / 📦 Mes commandes / ❤️ Favoris) + bouton « Suivre ma commande » sur la
+  confirmation. Cache `v1.9.0`. (Carte cadeau volontairement écartée : logistique/argent réel, hors « entre amis ».)
 - ✅ **Upgrade « boutique pro »** (cache `v1.8.0`, inspiré des meilleures boutiques merch/POD) :
   **bandeau promo** dismissible · **livraison offerte dès 60 €** + **barre de progression** dans le panier
   (sinon 4,90 €) · **fiche produit** = sélecteur de **taille** + **quantité** + **📏 guide des tailles** (modal)
