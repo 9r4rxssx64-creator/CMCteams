@@ -252,10 +252,10 @@ var LD_BEST=[
  _bb("ldb_hoodie_clays","Hoodie « Fusil & Plateaux » ⭐","sweats","hoodie","real-shotgun-clays",54.9,67.0,77),
  _bb("ldb_hoodie_eco","Hoodie EcoSmart « Carabine Sport » ⭐","sweats","hoodie","real-ar15-heart",56.9,69.0,536),
  _bb("ldb_sweat_crossed","Sweat « Fusils Croisés » ⭐","sweats","hoodie","real-crossed-shotguns",46.9,57.0,2789),
- _bb("ldb_ls_rifle","Manches longues « Carabine Cœur » ⭐","tshirts","tee","real-rifle-heart",33.9,41.0,2904),
+ _bb("ldb_ls_rifle","Manches longues « Carabine Cœur » ⭐","tshirts","tee","real-rifle-heart",33.9,41.0,2799),
  _bb("ldb_cap_cart","Casquette Dad Hat « Cartouches » ⭐","casquettes","cap","real-cartridges",23.9,29.0,5383),
  _bb("ldb_cap_crest","Casquette Dad Hat « Crest » ⭐","casquettes","cap","crest",23.9,29.0,5383),
- _bb("ldb_tote_ar15","Tote « AR15 Cœurs » ⭐","accessoires","tote","hearts-ar15",18.9,23.0,1990),
+ _bb("ldb_tote_ar15","Tote « AR15 Cœurs » ⭐","accessoires","tote","hearts-ar15",18.9,23.0,1313),
  _bb("ldb_tee_crest","T-shirt « Crest » ⭐","tshirts","tee","crest",28.9,35.0,6)
 ];P=P.concat(LD_BEST);
 var QUALITIES=[{id:"standard",label:"Standard",sub:"Bon prix · impression rapide",mult:1,mat:"Coton 150–180 g/m² · impression durable",supplier:"Printify"},{id:"bio",label:"Bio coton ✦",sub:"Coton bio · organic",mult:1.25,mat:"Coton bio / organic 180 g/m² · encres à l'eau",supplier:"Printify"}];
@@ -824,56 +824,76 @@ function getMyOrders(){return JSON.parse(localStorage.getItem("kdmc_orders_"+STO
 var LD_ADMIN=false;
 (function(){try{var u=new URLSearchParams(location.search);var a=u.get("ld_admin");if(a==="200807"){localStorage.setItem("ld_admin","1");}if(a==="0"){localStorage.removeItem("ld_admin");}if(localStorage.getItem("ld_admin")==="1")LD_ADMIN=true;}catch(_){}})();
 var LD_DESIGNS=[{id:"real-shotgun-clays",name:"Fusil & Plateaux (photo)"},{id:"real-shotgun-rose",name:"Fusil & Rose (photo)"},{id:"real-rifle-heart",name:"Carabine Cœur (photo)"},{id:"real-revolver-rose",name:"Revolver & Rose (photo)"},{id:"real-cartridges",name:"Cartouches (photo)"},{id:"real-crossed-shotguns",name:"Fusils Croisés (photo)"},{id:"real-ar15-heart",name:"Carabine Sport (photo)"},{id:"crest",name:"Crest La Détente"},{id:"rose-pistol",name:"Pistolet & Rose"},{id:"rose-shotgun",name:"Fusil & Rose"},{id:"hearts-ar15",name:"AR15 Cœurs"},{id:"hearts-shotgun",name:"Fusil Cœurs"},{id:"hearts-pistol",name:"Pistolet Cœurs"},{id:"hearts-revolver",name:"Revolver Cœurs"},{id:"clays-perazzi",name:"Perazzi & Plateaux"}];
-var _ldBp=null,_ldBpCat="tshirt",_ldBpQ="";
+var _ldBp=null,_ldBpCat="top",_ldBpQ="",_ldBpShown=48,_ldBpSort="az",_ldBpAll=false;
+var LD_CAT_ICON={top:"⭐",tshirt:"👕",longsleeve:"🧥",hoodie:"🧥",sweatshirt:"🧶",polo:"🎽",tank:"🎽",jacket:"🧥",pants:"👖",hat:"🧢",bag:"🎒",mug:"☕",home:"🏠",accessory:"🎁",kids:"🧒",other:"📦"};
 function _ldNorm(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")}
-function ldLoadBlueprints(cb){if(_ldBp)return cb(_ldBp);fetch("printify-blueprints.json").then(function(r){return r.ok?r.json():null}).then(function(j){_ldBp=j;cb(j)}).catch(function(){cb(null)})}
-function ldPriceSuggest(c){return {tshirt:27.9,longsleeve:32.9,hoodie:54.9,sweatshirt:46.9,polo:34.9,tank:24.9,jacket:59.9,pants:44.9,kids:22.9,hat:22.9,bag:18.9,mug:16.9,home:24.9,accessory:14.9,other:24.9}[c]||24.9}
+function ldLoadBlueprints(cb){if(_ldBp)return cb(_ldBp);
+ try{var c=JSON.parse(localStorage.getItem("ld_bp_cache")||"null");if(c&&c.t&&(Date.now()-c.t<86400000)&&c.j){_ldBp=c.j;cb(c.j);return;}}catch(_){}
+ fetch("printify-blueprints.json").then(function(r){return r.ok?r.json():null}).then(function(j){_ldBp=j;try{localStorage.setItem("ld_bp_cache",JSON.stringify({t:Date.now(),j:j}))}catch(_){}cb(j)}).catch(function(){cb(null)})}
+function ldPriceSuggest(c){return {tshirt:27.9,longsleeve:32.9,hoodie:54.9,sweatshirt:46.9,polo:34.9,tank:24.9,jacket:59.9,pants:44.9,kids:22.9,hat:22.9,bag:18.9,mug:16.9,home:24.9,accessory:14.9,other:24.9,top:28.9}[c]||24.9}
 function ldBoutiqueCat(c){return {tshirt:"tshirts",longsleeve:"tshirts",tank:"tshirts",kids:"tshirts",hoodie:"sweats",sweatshirt:"sweats",jacket:"sweats",polo:"polos",hat:"casquettes"}[c]||"accessoires"}
 function ldPubGarment(c){return {hoodie:"hoodie",sweatshirt:"hoodie",jacket:"hoodie",hat:"cap",polo:"polo"}[c]||"tee"}
+function _ldGuessCat(it){var t=_ldNorm(it.title);if(/hood/.test(t))return"hoodie";if(/sweatshirt|crewneck/.test(t))return"sweatshirt";if(/long ?sleeve/.test(t))return"longsleeve";if(/tank/.test(t))return"tank";if(/polo/.test(t))return"polo";if(/\b(hat|cap|beanie)\b/.test(t))return"hat";if(/\b(bag|tote)\b/.test(t))return"bag";if(/mug|bottle|tumbler/.test(t))return"mug";return"tshirt";}
 window._ldPublished=[];
 function ldMergePublished(arr,silent){window._ldPublished=(arr||[]).slice();try{localStorage.setItem("ld_published_cache",JSON.stringify(arr||[]))}catch(_){}
  (arr||[]).forEach(function(prod){if(!prod||!prod.id)return;prod.sizes=prod.sizes||["S","M","L","XL","XXL"];prod.rating=prod.rating||5;prod.reviews=prod.reviews||0;var ex=P.findIndex(function(x){return x.id===prod.id});if(ex>=0)P[ex]=prod;else P.unshift(prod);});}
+function ldPubMore(){_ldBpShown+=48;dc()}
 function vPrintifyCatalog(){
  if(!LD_ADMIN)return '<div class="section" style="text-align:center;padding:70px 16px"><span style="font-size:54px">🔒</span><h2 style="margin-top:10px">Accès réservé à l\'admin</h2><p style="color:var(--muted)">Cette page sert à choisir les produits Printify et les publier en boutique.</p></div>';
  if(!_ldBp){ldLoadBlueprints(function(j){dc()});return '<div class="section" style="text-align:center;padding:70px"><span style="font-size:40px">⏳</span><h2>Chargement du catalogue Printify…</h2><p style="color:var(--muted)">1408 produits</p></div>';}
  var cats=_ldBp.categories,catKeys=Object.keys(cats);if(!cats[_ldBpCat])_ldBpCat=catKeys[0];
- var items=cats[_ldBpCat].items,q=_ldNorm(_ldBpQ);
- var filtered=q?items.filter(function(it){return _ldNorm(it.title+" "+it.brand).indexOf(q)>=0}):items;
- window._ldBpList=filtered.slice(0,80);
- var tabs=catKeys.map(function(k){return '<button onclick="_ldBpCat=\''+k+'\';dc()" style="padding:8px 13px;border-radius:100px;border:1px solid '+(_ldBpCat===k?"var(--p)":"var(--border)")+';background:'+(_ldBpCat===k?"var(--p)":"var(--card)")+';color:'+(_ldBpCat===k?"#fff":"var(--text)")+';font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap">'+esc(cats[k].label)+' '+cats[k].items.length+'</button>'}).join("");
- var grid=window._ldBpList.map(function(it,i){return '<div class="card"><div class="card-img" style="background:#fff">'+(it.image?'<img src="'+esc(it.image)+'" loading="lazy" alt="" style="object-fit:contain">':'📦')+'</div><div class="card-body"><div class="card-title" style="font-size:12.5px;line-height:1.3">'+esc(it.title)+'</div><div style="font-size:11px;color:var(--muted);margin:2px 0 6px">'+esc(it.brand)+'</div><button class="card-cta" onclick="ldPublishModal('+i+')">➕ Mettre en boutique</button></div></div>'}).join("");
+ var q=_ldNorm(_ldBpQ);
+ var src;if(_ldBpAll&&q){src=[];catKeys.forEach(function(k){if(k!=="top")cats[k].items.forEach(function(it){src.push(it)})});}else{src=cats[_ldBpCat].items;}
+ var filtered=q?src.filter(function(it){return _ldNorm(it.title+" "+it.brand).indexOf(q)>=0}):src;
+ if(_ldBpSort==="brand")filtered=filtered.slice().sort(function(a,b){return (a.brand||"").localeCompare(b.brand||"")});
+ var shown=filtered.slice(0,_ldBpShown);window._ldBpList=shown;
+ var topIds=(_ldBp.top_ids||[]);
+ var tabs=catKeys.map(function(k){var on=_ldBpCat===k;return '<button onclick="_ldBpCat=\''+k+'\';_ldBpShown=48;dc()" style="padding:8px 12px;border-radius:100px;border:1px solid '+(on?"var(--p)":"var(--border)")+';background:'+(on?"var(--p)":"var(--card)")+';color:'+(on?"#fff":"var(--text)")+';font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap">'+(LD_CAT_ICON[k]||"")+' '+esc(cats[k].label.replace("⭐ ",""))+' '+cats[k].items.length+'</button>'}).join("");
+ var grid=shown.map(function(it,i){var isTop=it.top||topIds.indexOf(it.id)>=0;return '<div class="card"><div class="card-img" style="background:#fff;position:relative">'+(isTop?'<span style="position:absolute;top:6px;left:6px;z-index:2;background:#dc2626;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px">⭐ TOP</span>':'')+(it.image?'<img src="'+esc(it.image)+'" loading="lazy" alt="" style="object-fit:contain">':'📦')+'</div><div class="card-body"><div class="card-title" style="font-size:12.5px;line-height:1.3">'+esc(it.title)+'</div><div style="font-size:11px;color:var(--muted);margin:2px 0 6px">'+esc(it.brand||"—")+'</div><button class="card-cta" onclick="ldPublishModal('+i+')">➕ Mettre en boutique</button></div></div>'}).join("");
  var pub=(window._ldPublished||[]);
- var pubHtml=pub.length?'<div class="section"><div class="section-title">✅ Mes produits publiés ('+pub.length+')</div><div class="grid">'+pub.map(function(p){return '<div class="card"><div class="card-img">'+pimg(p.img,p.name)+'</div><div class="card-body"><div class="card-title" style="font-size:12.5px">'+esc(p.name)+'</div><div style="color:var(--p);font-weight:700">'+fmtP(p.price)+'</div><button class="card-cta" style="background:#7f1010" onclick="ldRemovePublished(\''+p.id+'\')">🗑 Retirer</button></div></div>'}).join("")+'</div></div>':'';
- return '<div class="section"><div class="section-title">⚙️ Catalogue Printify — choisis tes produits</div>'
- +'<p style="color:var(--muted);font-size:13px;margin-bottom:12px">Choisis un produit, applique un de tes designs, publie-le. Visible par tous les clients (qualité + taille au choix à la commande).</p>'
- +'<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px">'+tabs+'</div>'
- +'<input value="'+esc(_ldBpQ)+'" oninput="_ldBpQ=this.value;dc();var e=document.getElementById(\'ldbpq\');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}" id="ldbpq" placeholder="🔍 Rechercher (ex: Gildan, organic, premium)…" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin-bottom:6px">'
- +'<div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">'+filtered.length+' produits'+(filtered.length>80?' (80 affichés)':'')+'</div>'
- +'<div class="grid">'+grid+'</div></div>'+pubHtml;
+ var pubHtml=pub.length?'<div class="section"><div class="section-title">✅ Mes produits publiés ('+pub.length+') <button onclick="ldClearPublished()" style="float:right;font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:100px;color:var(--muted);cursor:pointer">Tout retirer</button></div><div class="grid">'+pub.map(function(p){return '<div class="card"><div class="card-img">'+pimg(p.img,p.name)+'</div><div class="card-body"><div class="card-title" style="font-size:12px;line-height:1.3">'+esc(p.name)+'</div><div style="display:flex;align-items:center;gap:6px;margin:4px 0"><input type="number" step="0.5" value="'+p.price+'" onchange="ldSetPubPrice(\''+p.id+'\',this.value)" style="width:72px;padding:5px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700">€</div><button class="card-cta" style="background:#7f1010" onclick="ldRemovePublished(\''+p.id+'\')">🗑 Retirer</button></div></div>'}).join("")+'</div></div>':'';
+ return '<div class="section"><div class="section-title">⚙️ Catalogue Printify — '+_ldBp.total+' produits</div>'
+ +'<p style="color:var(--muted);font-size:13px;margin-bottom:10px">Choisis un produit (★ = vraies meilleures ventes Printify), applique un design, publie. Visible par tous · qualité + taille au choix à la commande.</p>'
+ +'<div style="position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0">'
+ +'<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px">'+tabs+'</div>'
+ +'<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center">'
+ +'<input value="'+esc(_ldBpQ)+'" oninput="_ldBpQ=this.value;_ldBpShown=48;dc();var e=document.getElementById(\'ldbpq\');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}" id="ldbpq" placeholder="🔍 Rechercher (Gildan, organic, premium, mug…)" style="flex:1;min-width:160px;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text)">'
+ +'<select onchange="_ldBpSort=this.value;dc()" style="padding:9px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text)"><option value="az"'+(_ldBpSort==="az"?" selected":"")+'>A→Z</option><option value="brand"'+(_ldBpSort==="brand"?" selected":"")+'>Marque</option></select>'
+ +'<label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;white-space:nowrap"><input type="checkbox" '+(_ldBpAll?"checked":"")+' onchange="_ldBpAll=this.checked;_ldBpShown=48;dc()">toutes catég.</label>'
+ +'</div></div>'
+ +'<div style="font-size:11.5px;color:var(--muted);margin:8px 0 10px">'+filtered.length+' produits'+(_ldBpAll&&q?' (toutes catégories)':'')+' · '+shown.length+' affichés</div>'
+ +'<div class="grid">'+grid+'</div>'
+ +(filtered.length>shown.length?'<div style="text-align:center;margin-top:16px"><button onclick="ldPubMore()" style="padding:12px 28px;background:var(--card);border:1px solid var(--p);color:var(--text);border-radius:100px;font-weight:700;cursor:pointer">Charger plus ('+(filtered.length-shown.length)+' restants)</button></div>':'')
+ +'</div>'+pubHtml;
 }
-function ldPublishModal(i){var it=(window._ldBpList||[])[i];if(!it)return;var cat=_ldBpCat;
+function _ldUpdMock(){var d=document.getElementById("ld_pub_design"),o=document.getElementById("ld_pub_overlay"),p=document.getElementById("ld_pub_prev");if(!d)return;var v=d.value;if(o)o.src="img/designs/"+v+".png";if(p)p.src="img/designs/"+v+".png";var pl=(document.getElementById("ld_pub_place")||{}).value,ov=document.getElementById("ld_pub_overlay");if(ov){var top=pl==="back"?"40%":pl==="center"?"52%":"44%";var w=pl==="center"?"56%":"46%";ov.style.top=top;ov.style.width=w;ov.style.height=w;}}
+function ldPublishModal(i){var it=(window._ldBpList||[])[i];if(!it)return;var cat=(_ldBpCat==="top"||_ldBpAll)?_ldGuessCat(it):_ldBpCat;var d0=LD_DESIGNS[0].id;
  var m=document.createElement("div");m.id="ldPubModal";m.style.cssText="position:fixed;inset:0;z-index:10003;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
- m.innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:460px;width:100%;max-height:92vh;overflow:auto">'
+ m.innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:470px;width:100%;max-height:93vh;overflow:auto">'
  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h2 style="font-size:18px">➕ Mettre en boutique</h2><span onclick="document.getElementById(\'ldPubModal\').remove()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
- +'<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px"><div style="width:64px;height:64px;border-radius:8px;background:#fff;flex-shrink:0;overflow:hidden">'+(it.image?'<img src="'+esc(it.image)+'" style="width:100%;height:100%;object-fit:contain">':'📦')+'</div><div><div style="font-weight:700;font-size:14px">'+esc(it.title)+'</div><div style="font-size:11px;color:var(--muted)">'+esc(it.brand)+' · Printify #'+it.id+'</div></div></div>'
- +'<label style="font-size:12px;color:var(--muted)">Design à imprimer</label>'
- +'<div style="display:flex;gap:10px;align-items:center;margin:5px 0 12px"><img id="ld_pub_prev" src="img/designs/'+LD_DESIGNS[0].id+'.png" style="width:74px;height:74px;object-fit:contain;background:#1a1a1a;border-radius:8px;flex-shrink:0">'
- +'<select id="ld_pub_design" onchange="var e=document.getElementById(\'ld_pub_prev\');if(e)e.src=\'img/designs/\'+this.value+\'.png\'" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)">'+LD_DESIGNS.map(function(d){return '<option value="'+d.id+'">'+esc(d.name)+'</option>'}).join("")+'</select></div>'
- +'<label style="font-size:12px;color:var(--muted)">Nom en boutique</label><input id="ld_pub_name" value="'+esc(it.title.replace(/^(unisex|mens|womens)\s+/i,"")+" La Détente")+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin:5px 0 10px">'
- +'<label style="font-size:12px;color:var(--muted)">Prix de vente (€)</label><input id="ld_pub_price" type="number" step="0.5" value="'+ldPriceSuggest(cat)+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin:5px 0 14px">'
- +'<button onclick="ldDoPublish('+it.id+',\''+cat+'\')" style="width:100%;padding:13px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer">🚀 Publier en boutique</button></div>';
+ +'<div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+esc(it.title)+' · '+esc(it.brand||"")+' · <a href="https://printify.com/app/products" target="_blank" rel="noopener" style="color:var(--p)">Printify #'+it.id+'</a></div>'
+ +'<div id="ld_pub_mock" style="position:relative;width:160px;height:160px;margin:0 auto 12px;background:#fff;border-radius:12px;overflow:hidden">'+(it.image?'<img id="ld_pub_prev" src="'+esc(it.image)+'" style="width:100%;height:100%;object-fit:contain">':'<div id="ld_pub_prev"></div>')+'<img id="ld_pub_overlay" src="img/designs/'+d0+'.png" style="position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:46%;height:46%;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))"></div>'
+ +'<label style="font-size:12px;color:var(--muted)">Design (aperçu live ci-dessus)</label>'
+ +'<select id="ld_pub_design" onchange="_ldUpdMock()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin:5px 0 10px">'+LD_DESIGNS.map(function(d){return '<option value="'+d.id+'">'+esc(d.name)+'</option>'}).join("")+'</select>'
+ +'<div style="display:flex;gap:8px;margin-bottom:10px"><div style="flex:1"><label style="font-size:12px;color:var(--muted)">Emplacement</label><select id="ld_pub_place" onchange="_ldUpdMock()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)"><option value="chest">Poitrine</option><option value="center">Centre</option><option value="back">Dos</option></select></div><div style="flex:1"><label style="font-size:12px;color:var(--muted)">Prix (€)</label><input id="ld_pub_price" type="number" step="0.5" value="'+ldPriceSuggest(cat)+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)"></div></div>'
+ +'<label style="font-size:12px;color:var(--muted)">Nom en boutique</label><input id="ld_pub_name" value="'+esc(it.title.replace(/^(unisex|mens|womens|adult)\s+/i,"")+" La Détente")+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin:5px 0 14px">'
+ +'<button onclick="ldDoPublish('+it.id+',\''+cat+'\')" style="width:100%;padding:13px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer">🚀 Publier en boutique</button>'
+ +'<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Visible par tous les clients · expédié au nom de La Détente</div></div>';
  document.body.appendChild(m);m.onclick=function(e){if(e.target===m)m.remove()};
 }
 function ldDoPublish(bp,cat){
  var design=(document.getElementById("ld_pub_design")||{}).value||LD_DESIGNS[0].id;
  var name=((document.getElementById("ld_pub_name")||{}).value||"").trim()||"Produit La Détente";
  var price=parseFloat((document.getElementById("ld_pub_price")||{}).value)||ldPriceSuggest(cat);
+ var place=(document.getElementById("ld_pub_place")||{}).value||"chest";
  var id="ldp_"+bp+"_"+design;
- var prod={id:id,name:name,cat:ldBoutiqueCat(cat),price:price,origPrice:Math.round(price*1.22*10)/10,img:"img/designs/"+design+".png",rating:5,reviews:0,desc:name+" — impression à la demande premium, design La Détente. Qualité et taille au choix à la commande. Expédié au nom de la boutique.",material:"Print-on-demand premium",tags:["printify",design,cat],sizes:(cat==="hat"?["Unique"]:["S","M","L","XL","XXL"]),stock:50,shipping:"standard",garment:ldPubGarment(cat),garmentColor:"#15171a",motif:design,placement:"chest",_new:true,_printify:{blueprint_id:bp,category:cat,design:design},ts:Date.now()};
+ var prod={id:id,name:name,cat:ldBoutiqueCat(cat),price:price,origPrice:Math.round(price*1.22*10)/10,img:"img/designs/"+design+".png",rating:5,reviews:0,desc:name+" — impression à la demande premium, design La Détente. Qualité et taille au choix à la commande. Expédié au nom de la boutique.",material:"Print-on-demand premium",tags:["printify",design,cat],sizes:(cat==="hat"?["Unique"]:["S","M","L","XL","XXL"]),stock:50,shipping:"standard",garment:ldPubGarment(cat),garmentColor:"#15171a",motif:design,placement:place,_new:true,_printify:{blueprint_id:bp,category:cat,design:design,placement:place},ts:Date.now()};
  ldMergePublished((window._ldPublished||[]).filter(function(x){return x.id!==id}).concat([prod]));
  var done=function(){toast("✅ Publié : "+name);var mm=document.getElementById("ldPubModal");if(mm)mm.remove();dc();};
  if(window.kdmcPublishProduct){kdmcPublishProduct(STORE_ID,prod).then(done).catch(function(){toast("Publié localement (cloud KO, réessaie)","error");done()});}else done();
 }
+function ldSetPubPrice(id,val){var v=parseFloat(val);if(!v)return;var p=(window._ldPublished||[]).find(function(x){return x.id===id});if(!p)return;p.price=v;p.origPrice=Math.round(v*1.22*10)/10;var ix=P.findIndex(function(x){return x.id===id});if(ix>=0){P[ix].price=v;P[ix].origPrice=p.origPrice;}try{localStorage.setItem("ld_published_cache",JSON.stringify(window._ldPublished))}catch(_){}if(window.kdmcPublishProduct)kdmcPublishProduct(STORE_ID,p).catch(function(){});toast("Prix mis à jour : "+fmtP(v));}
+function ldClearPublished(){if(!confirm("Retirer TOUS les produits publiés ?"))return;(window._ldPublished||[]).slice().forEach(function(p){var ix=P.findIndex(function(x){return x.id===p.id});if(ix>=0)P.splice(ix,1);if(window.kdmcDeleteProduct)kdmcDeleteProduct(STORE_ID,p.id).catch(function(){});});window._ldPublished=[];try{localStorage.setItem("ld_published_cache","[]")}catch(_){}toast("Tout retiré");dc();}
 function ldRemovePublished(id){if(!confirm("Retirer ce produit de la boutique ?"))return;
  window._ldPublished=(window._ldPublished||[]).filter(function(x){return x.id!==id});
  try{localStorage.setItem("ld_published_cache",JSON.stringify(window._ldPublished))}catch(_){}
@@ -890,7 +910,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.28.0"
+        data-version="v1.29.0"
         data-color="#e8b830"
         defer></script>
 
