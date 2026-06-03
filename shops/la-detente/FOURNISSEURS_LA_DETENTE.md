@@ -217,3 +217,25 @@ Le **studio** propose maintenant ces coupes : T-shirt, Débardeur, Polo, Chemise
 > ⚠️ Indicatif : confirme les **vrais prix par produit** dans ton compte (variante, couleur, destination, TVA selon ton statut Monaco/France). On figera alors les **prix de vente définitifs** pour viser une marge cible (ex. 45–60 %).
 
 **Sources prix (2026)** : [TPOP — tee bio Rocker 11,90 € / Made in France 19,70 € HT](https://www.tpop.com/en/blog/nouveau-t-shirt-en-coton-bio-a-petit-prix-en-print-on-demand) · [Comparatif prix UE Gelato/Printful/Printify](https://marketing4ecommerce.net/en/gelato-printful-printify-comparative/) · [Printful pricing](https://www.printful.com/blog/gelato-vs-printify) · [Printify pricing & fees 2026](https://chayaani.com/blog/printify-pricing-fees-guide-2026)
+
+---
+
+## 🤖 Commande fournisseur AUTOMATIQUE (v1.24.0)
+
+À chaque commande payée, la boutique génère **automatiquement un bon de commande par fournisseur**,
+réparti selon la qualité choisie par le client :
+
+| Qualité client | Fournisseur routé | Portail |
+|---|---|---|
+| **Standard** | Printify | https://printify.com/app/orders |
+| **Bio coton ✦** | T-Pop | https://www.tpop.com/fr/compte/commandes |
+
+**Contenu auto du bon** (par fournisseur) : articles à produire (vêtement, couleur, taille, motif,
+emplacement, fichier d'impression `img/print/<id>.png`), **adresse client pour livraison directe
+(dropshipping)**, et mention **white-label** « colis + bordereau au nom de La Détente ».
+
+**Actions 1 clic** (modale « 📤 Commandes fournisseurs ») : ✉️ Envoyer (mailto pré-rempli) ·
+📋 Copier · ⬇️ CSV · 🌐 Ouvrir le portail · ✉️ Tout envoyer. Email fournisseur mémorisé par
+fournisseur (`ld_supplier_email_<sup>`). Accessible depuis la confirmation de commande **et** le
+bon de production. Quand un compte fournisseur (clé API Printify/T-Pop) sera fourni par Kevin,
+ce flux pourra être basculé en transmission **100 % API** (un seul branchement à ajouter).
