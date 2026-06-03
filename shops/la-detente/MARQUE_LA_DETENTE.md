@@ -138,8 +138,13 @@ Atelier de création + **montage multi-calques** :
   - `processOrder` enrichi : commande locale (`kdmc_orders_la-detente`) + **EmailJS** (taille + adresse +
     bon de production envoyés) + push dashboard **méta-only (aucune PII)** inchangé.
   - Boutons panier « Payer » → « 📦 Commander » (vCartPage + tiroir panier, bug guillemet parasite corrigé).
-- ⏳ **RESTE (Phase 3)** : pont fournisseur **T-Pop** (API/email auto du bon de production + fichier
-  impression HD), suivi statut commande, et option paiement intégré si besoin.
+- ✅ **Phase 3 — Handoff fournisseur + hero image** (cache `v1.4.0`) :
+  - Sur le **bon de production** : champ **email fournisseur** (mémorisé `ld_supplier_email`) +
+    bouton **« ✉️ Envoyer au fournisseur »** (mailto pré-rempli avec le bon complet) +
+    **« ⬇️ Export CSV »** (commande + livraison, prêt import T-Pop/atelier). 100 % autonome, sans backend.
+  - **Image hero** réelle sur l'accueil (`img/hero.png` : emblème LA DÉTENTE, fond cinématique noir/rouge).
+- ⏳ **RESTE** : la SEULE étape humaine = Kevin crée un compte **T-Pop** (KYC). Ensuite, brancher l'API
+  T-Pop (envoi auto du CSV + fichier impression HD) + suivi de statut — automatisable une fois le compte créé.
 
 ## 🛠️ SÉQUENCE DE BUILD (Phase 1+2)
 1. Corriger bug `vProducts` + polish boutons + lien Studio (admin) depuis la boutique.
