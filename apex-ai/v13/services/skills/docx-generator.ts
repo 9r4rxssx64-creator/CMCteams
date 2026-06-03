@@ -153,8 +153,12 @@ function buildDocumentXml(content: string): string {
 export const docxGenerator = {
   async generate(input: DocxGenerateInput): Promise<DocxGenerateOutput> {
     try {
+      /* `custom` est toujours une clé de TEMPLATES → `!templateFn` n'est vrai que
+       * pour un template inconnu (jamais 'custom'). Le `&& !== 'custom'` était donc
+       * une branche morte ; on garde un seul guard qui narrow templateFn → defined,
+       * ce qui élimine aussi le `?.`/`?? ''` défensif jamais atteint. */
       const templateFn = TEMPLATES[input.template];
-      if (!templateFn && input.template !== 'custom') {
+      if (!templateFn) {
         return {
           success: false,
           filename: '',
@@ -168,7 +172,7 @@ export const docxGenerator = {
       const content =
         input.template === 'custom' && input.customHtml
           ? input.customHtml
-          : (templateFn?.(input.data) ?? '');
+          : templateFn(input.data);
 
       const JSZipCtor = (await loadJSZip()) as (new () => Record<string, unknown>) | null;
       if (!JSZipCtor) {
