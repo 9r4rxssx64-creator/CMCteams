@@ -11,7 +11,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--p:#dc2626;--bg:#0e1012;--panel:#17191c;--panel2:#1f2227;--text:#f1f2f3;--muted:#9aa0a6;--border:#2a2d31;--r:12px;--rs:8px}
-html,body{height:100%}
+html,body{height:100%;max-width:100%;overflow-x:hidden}
 body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:none;background:none}
@@ -68,7 +68,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 .modal h2{font-size:18px;margin-bottom:16px}
 @media(max-width:860px){.side{width:200px}.side.right{width:220px}}
 @media(max-width:680px){
- .wrap{flex-direction:column;height:auto;overflow:auto}
+ .wrap{flex-direction:column;height:auto;overflow-x:hidden;overflow-y:auto}
  .side{width:100%;border:none;border-bottom:1px solid var(--border);max-height:none}
  .side.right{order:3}.stage-wrap{order:2;min-height:60vh}
  body{overflow:auto}
@@ -121,6 +121,8 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
   <a class="btn ghost" href="bibliotheque.html">📚 Bibliothèque</a>
   <a class="btn ghost" href="index.html">← Boutique</a>
   <button class="btn ghost" onclick="Studio.openProjects()">📁 Projets</button>
+  <button class="btn ghost" title="Annuler (Ctrl+Z)" onclick="Studio.undo()">↩︎</button>
+  <button class="btn ghost" title="Refaire (Ctrl+Y)" onclick="Studio.redo()">↪︎</button>
   <button class="btn ghost" onclick="Studio.exportPrint()">⬇️ Fichier impression</button>
   <button class="btn ghost" onclick="Studio.exportMockup()">🖼️ Mockup PNG</button>
   <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
@@ -295,6 +297,7 @@ function renderProps(){
   h+='<h3 style="margin-top:14px">Auto-logo</h3>';
   h+=field("Seuil fond ("+(l._thr||30)+")",'<input type="range" min="5" max="140" step="1" value="'+(l._thr||30)+'" oninput="Studio.setThr('+l.id+',+this.value)">');
   h+='<div class="row2"><button class="mini" onclick="Studio.bgRemove('+l.id+')">✂️ Retirer le fond</button><button class="mini" onclick="Studio.autoTrim('+l.id+')">⌗ Recadrer</button></div>';
+  h+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);color:#fff" onclick="Studio.imgEdit('+l.id+')">✏️ Retoucher (gomme · magique · recadrer)</button>';
   h+='<button class="mini" style="width:100%;margin-top:8px" onclick="Studio.resetImg('+l.id+')">↺ Image d\'origine</button>';
   h+='<h3 style="margin-top:14px">Filtres</h3>';
   h+=rngF(l.id,"br","Luminosité",f.br==null?1:f.br,0,2,0.05)+rngF(l.id,"ct","Contraste",f.ct==null?1:f.ct,0,2,0.05)+rngF(l.id,"sat","Saturation",f.sat==null?1:f.sat,0,2,0.05)+rngF(l.id,"gray","Noir & blanc",f.gray||0,0,1,0.05);
@@ -318,8 +321,8 @@ function addImageFile(file){if(!file||!/^image\//.test(file.type||"")&&!/\.svg$/
 function select(id){st.sel=id;render()}
 function upd(id,prop,val){var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l[prop]=val;render()}
 function move(id,dir){var i=st.layers.findIndex(function(x){return x.id===id});var j=i+dir;if(j<0||j>=st.layers.length)return;var t=st.layers[i];st.layers[i]=st.layers[j];st.layers[j]=t;render()}
-function dup(id){var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;var c=JSON.parse(JSON.stringify(l));c.id=st.uid++;c.x+=6;c.y+=6;st.layers.push(c);st.sel=c.id;render()}
-function del(id){st.layers=st.layers.filter(function(x){return x.id!==id});if(st.sel===id)st.sel=null;render()}
+function dup(id){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;var c=JSON.parse(JSON.stringify(l));c.id=st.uid++;c.x+=6;c.y+=6;st.layers.push(c);st.sel=c.id;render()}
+function del(id){snap();st.layers=st.layers.filter(function(x){return x.id!==id});if(st.sel===id)st.sel=null;render()}
 function center(id){upd(id,"x",50);var l=st.layers.filter(function(x){return x.id===id})[0];var _z=curZone();l.y=_z[1]+_z[3]/2;render()}
 function toZone(id){var z=curZone();var l=st.layers.filter(function(x){return x.id===id})[0];l.x=z[0]+z[2]/2;l.y=z[1]+z[3]/2;render()}
 function setGarment(g){st.garment=g;st.placement=placeKeys()[0];renderGarments();renderPlacement();render()}
@@ -334,7 +337,7 @@ function initDrag(){
  function down(ev){var p=pt(ev);
    // pick topmost layer near point
    for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+4;
-     if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){st.sel=l.id;drag={id:l.id,dx:l.x-p.x,dy:l.y-p.y};render();ev.preventDefault();return}}
+     if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){snap();st.sel=l.id;drag={id:l.id,dx:l.x-p.x,dy:l.y-p.y};render();ev.preventDefault();return}}
    st.sel=null;render();
  }
  function mv(ev){if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));render();ev.preventDefault()}
@@ -430,7 +433,7 @@ function init(){
  var sb=$("stageBox");["dragover","drop"].forEach(function(ev){sb.addEventListener(ev,function(e){e.preventDefault()})});
  sb.addEventListener("drop",function(e){var fs=e.dataTransfer&&e.dataTransfer.files;if(fs)Array.prototype.forEach.call(fs,addImageFile)});
  $("modal").addEventListener("click",function(e){if(e.target.id==="modal")closeModal()});
- _loadAiCfg();
+ _loadAiCfg();document.addEventListener("keydown",_studioKey);
 }
 var _aiCfg=null;
 function _loadAiCfg(){
@@ -459,7 +462,79 @@ function aiGen(){
   }).catch(function(e){hint.textContent="⚠️ Réseau : "+e.message;})
   .then(function(){btn.disabled=false;btn.textContent=old;});
 }
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen};
+/* ===== Historique (annuler/refaire) + presse-papier ===== */
+st._hist=[];st._fut=[];
+function _snapState(){return JSON.stringify({layers:st.layers,uid:st.uid,sel:st.sel})}
+function snap(){try{st._hist.push(_snapState());if(st._hist.length>50)st._hist.shift();st._fut=[]}catch(e){}}
+function undo(){if(!st._hist.length){toast("Rien à annuler");return}st._fut.push(_snapState());var s=JSON.parse(st._hist.pop());st.layers=s.layers;st.uid=s.uid;st.sel=s.sel;render()}
+function redo(){if(!st._fut.length){toast("Rien à refaire");return}st._hist.push(_snapState());var s=JSON.parse(st._fut.pop());st.layers=s.layers;st.uid=s.uid;st.sel=s.sel;render()}
+var _clip=null;
+function copyLayer(){var l=get(st.sel);if(!l){toast("Sélectionne un calque");return}_clip=JSON.parse(JSON.stringify(l));toast("Copié 📋")}
+function cutLayer(){var l=get(st.sel);if(!l){toast("Sélectionne un calque");return}_clip=JSON.parse(JSON.stringify(l));del(st.sel);toast("Coupé ✂️")}
+function pasteLayer(){if(!_clip){toast("Rien à coller");return}snap();var c=JSON.parse(JSON.stringify(_clip));c.id=st.uid++;c.x=Math.min(95,(c.x||50)+6);c.y=Math.min(95,(c.y||50)+6);st.layers.push(c);st.sel=c.id;render();toast("Collé 📌")}
+function _studioKey(e){
+ var tn=(e.target&&e.target.tagName)||"";if(/^(INPUT|TEXTAREA|SELECT)$/.test(tn))return;
+ var g=$("studioGate");if(g&&g.style.display!=="none")return;
+ var md=$("modal");if(md&&md.className.indexOf("show")>=0)return;
+ var meta=e.ctrlKey||e.metaKey,k=(e.key||"").toLowerCase();
+ if(meta&&k==="z"){e.preventDefault();if(e.shiftKey)redo();else undo();return}
+ if(meta&&k==="y"){e.preventDefault();redo();return}
+ if(meta&&k==="c"){copyLayer();return}
+ if(meta&&k==="x"){e.preventDefault();cutLayer();return}
+ if(meta&&k==="v"){e.preventDefault();pasteLayer();return}
+ if(meta&&k==="d"){e.preventDefault();if(st.sel!=null)dup(st.sel);return}
+ var l=get(st.sel);if(!l)return;
+ if(e.key==="Delete"||e.key==="Backspace"){e.preventDefault();del(st.sel);return}
+ var step=e.shiftKey?2:0.5;
+ if(e.key==="ArrowLeft"){e.preventDefault();l.x=Math.max(0,l.x-step);render()}
+ else if(e.key==="ArrowRight"){e.preventDefault();l.x=Math.min(100,l.x+step);render()}
+ else if(e.key==="ArrowUp"){e.preventDefault();l.y=Math.max(0,l.y-step);render()}
+ else if(e.key==="ArrowDown"){e.preventDefault();l.y=Math.min(100,l.y+step);render()}
+}
+/* ===== Éditeur photo : gomme manuelle / gomme magique (fond ou objet) / recadrer ===== */
+var ICE={canvas:null,ctx:null,id:null,tool:"gomme",brush:28,tol:36,hist:[],last:null};
+function imgEdit(id){var l=get(id);if(!l||l.type!=="image"){toast("Sélectionne une image");return}
+ modal('<div style="width:min(94vw,720px)"><div style="font-weight:800;font-size:16px;margin-bottom:8px">✏️ Retoucher la photo</div>'
+ +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+ +'<button class="mini" id="iceTb-gomme" onclick="Studio.iceTool(\'gomme\')">🧽 Gomme</button>'
+ +'<button class="mini" id="iceTb-magique" onclick="Studio.iceTool(\'magique\')">✨ Gomme magique</button>'
+ +'<button class="mini" id="iceTb-recadrer" onclick="Studio.iceTool(\'recadrer\')">✂️ Recadrer</button>'
+ +'<button class="mini" onclick="Studio.iceUndo()">↩︎ Annuler</button>'
+ +'<button class="mini" onclick="Studio.iceReset()">↺ Original</button></div>'
+ +'<div id="iceWrap" style="position:relative;background:repeating-conic-gradient(#2a2f36 0% 25%,#1b1f24 0% 50%) 50%/16px 16px;border:1px solid #333;border-radius:8px;overflow:hidden;display:flex;justify-content:center"><canvas id="iceCanvas" style="max-width:100%;max-height:58vh;touch-action:none;cursor:crosshair;display:block"></canvas><div id="iceCropBox" style="position:absolute;border:2px dashed var(--p);background:rgba(220,38,38,.12);display:none;pointer-events:none"></div></div>'
+ +'<div style="display:flex;gap:16px;align-items:center;margin-top:10px;flex-wrap:wrap">'
+ +'<label style="font-size:12px;color:#9aa0a6">Pinceau <input type="range" min="6" max="90" value="'+ICE.brush+'" oninput="Studio.iceBrush(+this.value)"></label>'
+ +'<label style="font-size:12px;color:#9aa0a6">Tolérance <input type="range" min="8" max="140" value="'+ICE.tol+'" oninput="Studio.iceTol(+this.value)"></label></div>'
+ +'<div style="font-size:11.5px;color:#9aa0a6;margin-top:6px">Gomme : peins pour effacer. Magique : clique sur le fond ou un objet pour l\'effacer d\'un coup. Recadrer : trace un cadre.</div>'
+ +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="mini" onclick="Studio.closeModal()">Fermer</button><button class="btn primary" onclick="Studio.iceApply()">✅ Appliquer</button></div></div>');
+ var im=new Image();
+ im.onload=function(){var max=1000;var w=im.naturalWidth||300,h=im.naturalHeight||300;var sc=Math.min(1,max/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cv=$("iceCanvas");cv.width=cw;cv.height=ch;var x=cv.getContext("2d");x.clearRect(0,0,cw,ch);x.drawImage(im,0,0,cw,ch);ICE.canvas=cv;ICE.ctx=x;ICE.id=id;ICE.hist=[];ICE.last=null;_iceBind();iceTool(ICE.tool)};
+ im.onerror=function(){toast("Image illisible")};
+ im.src=l.orig||l.href;
+}
+function _icePush(){try{ICE.hist.push(ICE.ctx.getImageData(0,0,ICE.canvas.width,ICE.canvas.height));if(ICE.hist.length>15)ICE.hist.shift()}catch(e){}}
+function iceUndo(){if(!ICE.hist.length){toast("Rien à annuler");return}ICE.ctx.putImageData(ICE.hist.pop(),0,0)}
+function iceReset(){var l=get(ICE.id);if(!l)return;var im=new Image();im.onload=function(){_icePush();var cv=ICE.canvas;cv.width=cv.width;ICE.ctx=cv.getContext("2d");ICE.ctx.drawImage(im,0,0,cv.width,cv.height)};im.src=l.orig||l.href}
+function iceBrush(v){ICE.brush=v}
+function iceTol(v){ICE.tol=v}
+function iceTool(t){ICE.tool=t;["gomme","magique","recadrer"].forEach(function(n){var b=$("iceTb-"+n);if(b)b.style.cssText=(n===t)?"border-color:var(--p);color:#fff":""});if(t!=="recadrer"){var cb=$("iceCropBox");if(cb)cb.style.display="none"}}
+function _iceXY(ev){var cv=ICE.canvas,r=cv.getBoundingClientRect();var t=(ev.touches&&ev.touches[0])||(ev.changedTouches&&ev.changedTouches[0])||ev;var cx=t.clientX,cy=t.clientY;return{x:(cx-r.left)/r.width*cv.width,y:(cy-r.top)/r.height*cv.height,rx:cx-r.left,ry:cy-r.top,rw:r.width}}
+function _iceErase(p){var cv=ICE.canvas,r=cv.getBoundingClientRect();var rad=ICE.brush*(cv.width/(r.width||cv.width));var x=ICE.ctx;x.save();x.globalCompositeOperation="destination-out";x.beginPath();x.arc(p.x,p.y,rad,0,Math.PI*2);x.fill();x.restore()}
+function _iceMagic(p){_icePush();var w=ICE.canvas.width,h=ICE.canvas.height,x=ICE.ctx;var d=x.getImageData(0,0,w,h),data=d.data;var sx=Math.round(p.x),sy=Math.round(p.y);if(sx<0||sy<0||sx>=w||sy>=h)return;var si=(sy*w+sx)*4,sr=data[si],sg=data[si+1],sb=data[si+2];var tol=ICE.tol,stack=[sy*w+sx],seen=new Uint8Array(w*h);while(stack.length){var idx=stack.pop();if(seen[idx])continue;seen[idx]=1;var o=idx*4;if(data[o+3]===0)continue;var dr=data[o]-sr,dg=data[o+1]-sg,db=data[o+2]-sb;if(dr*dr+dg*dg+db*db>tol*tol)continue;data[o+3]=0;var ix=idx%w,iy=(idx-ix)/w;if(ix+1<w)stack.push(idx+1);if(ix-1>=0)stack.push(idx-1);if(iy+1<h)stack.push(idx+w);if(iy-1>=0)stack.push(idx-w)}x.putImageData(d,0,0)}
+function _iceDoCrop(sx,sy,w,h){_icePush();var cv=ICE.canvas;var tmp=document.createElement("canvas");tmp.width=cv.width;tmp.height=cv.height;tmp.getContext("2d").drawImage(cv,0,0);cv.width=w;cv.height=h;ICE.ctx=cv.getContext("2d");ICE.ctx.clearRect(0,0,w,h);ICE.ctx.drawImage(tmp,sx,sy,w,h,0,0,w,h);ICE.hist=[];toast("Recadré ✂️")}
+function _iceBind(){var cv=ICE.canvas,down=false,start=null;
+ function pd(ev){ev.preventDefault();down=true;var p=_iceXY(ev);ICE.last=p;
+   if(ICE.tool==="magique"){_iceMagic(p);down=false;return}
+   if(ICE.tool==="recadrer"){start=p;var cb=$("iceCropBox");cb.style.display="block";cb.style.left=p.rx+"px";cb.style.top=p.ry+"px";cb.style.width="0px";cb.style.height="0px";return}
+   _icePush();_iceErase(p)}
+ function pm(ev){if(!down)return;ev.preventDefault();var p=_iceXY(ev);ICE.last=p;
+   if(ICE.tool==="recadrer"&&start){var cb=$("iceCropBox");cb.style.left=Math.min(start.rx,p.rx)+"px";cb.style.top=Math.min(start.ry,p.ry)+"px";cb.style.width=Math.abs(p.rx-start.rx)+"px";cb.style.height=Math.abs(p.ry-start.ry)+"px";return}
+   if(ICE.tool==="gomme")_iceErase(p)}
+ function pu(){if(!down)return;down=false;if(ICE.tool==="recadrer"&&start&&ICE.last){var p=ICE.last;var sxc=Math.min(start.x,p.x),syc=Math.min(start.y,p.y),wc=Math.abs(p.x-start.x),hc=Math.abs(p.y-start.y);start=null;$("iceCropBox").style.display="none";if(wc>6&&hc>6)_iceDoCrop(Math.round(sxc),Math.round(syc),Math.round(wc),Math.round(hc))}}
+ cv.onmousedown=pd;cv.onmousemove=pm;window.addEventListener("mouseup",pu);
+ cv.addEventListener("touchstart",pd,{passive:false});cv.addEventListener("touchmove",pm,{passive:false});cv.addEventListener("touchend",pu)}
+function iceApply(){var l=get(ICE.id);if(!l){closeModal();return}snap();try{l.href=ICE.canvas.toDataURL("image/png");var ar=ICE.canvas.width/ICE.canvas.height||1;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base}catch(e){toast("Erreur retouche")}closeModal();render();toast("Photo retouchée ✅")}
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
