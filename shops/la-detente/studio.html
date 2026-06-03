@@ -76,6 +76,18 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 </style>
 </head>
 <body>
+<div id="studioGate" style="position:fixed;inset:0;z-index:2147483600;background:radial-gradient(circle at 50% 35%,#15171a,#070809);display:flex;align-items:center;justify-content:center;font-family:system-ui,Arial">
+<div style="width:min(92vw,380px);background:#1b1f24;border:1px solid #2a2f36;border-radius:18px;padding:26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.6);text-align:center">
+<svg viewBox="0 0 240 240" style="width:96px;height:96px;margin:0 auto 6px"><use href="#emblem"/></svg>
+<div style="font:800 18px system-ui;color:#fff">Studio La Détente</div>
+<div style="font:500 12.5px system-ui;color:#9aa0a6;margin:4px 0 16px">Accès réservé aux créateurs</div>
+<input id="sgName" type="text" autocomplete="name" placeholder="Prénom et nom" style="width:100%;box-sizing:border-box;margin-bottom:9px;padding:12px;border-radius:10px;border:1px solid #333;background:#0f1216;color:#fff;font-size:15px">
+<input id="sgPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Code" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid #333;background:#0f1216;color:#fff;font-size:15px" onkeydown="if(event.key==='Enter')Gate.go()">
+<button onclick="Gate.go()" style="width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff4d4d,#b30d0d);color:#fff;font:800 15px system-ui;cursor:pointer">Entrer</button>
+<div id="sgMsg" style="min-height:18px;margin-top:10px;font:600 12.5px system-ui;color:#ff7a7a"></div>
+<div id="sgBio" style="display:none;margin-top:6px"><button onclick="Gate.bio()" style="background:none;border:1px solid #2a2f36;color:#cfcfcf;border-radius:8px;padding:8px 12px;font:600 12px system-ui;cursor:pointer">🔓 Déverrouiller avec Face ID / Touch ID</button></div>
+<div style="margin-top:14px"><a href="index.html" style="color:#6b7178;font:500 12px system-ui;text-decoration:none">← Retour à la boutique</a></div>
+</div></div>
 <!-- sprite -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="redG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6b6b"/><stop offset=".5" stop-color="#e11d1d"/><stop offset="1" stop-color="#8e0a0a"/></linearGradient>
@@ -279,7 +291,7 @@ function renderProps(){
   h+='<div class="row2"><button class="mini" onclick="Studio.toggle('+l.id+',\'duo\')" style="'+(l.duo?"border-color:var(--p);color:#fff":"")+'">🎨 Duotone</button><button class="mini" onclick="Studio.toggleF('+l.id+',\'inv\')" style="'+(f.inv?"border-color:var(--p);color:#fff":"")+'">◐ Négatif</button></div>';
   h+=field("Fusion",'<select onchange="Studio.upd('+l.id+',\'blend\',this.value)">'+["normal|Normal","multiply|Multiplier","screen|Écran","overlay|Superposition"].map(function(o){var a=o.split("|");return '<option value="'+a[0]+'"'+(l.blend===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join("")+'</select>');
  }
- h+=rng("Échelle",l.id,"scale",l.scale,0.2,4,0.05);
+ h+=rng("Échelle",l.id,"scale",l.scale,0.04,4,0.02);
  h+=rng("Rotation",l.id,"rot",l.rot,-180,180,1);
  h+=rng("Opacité",l.id,"op",l.op,0.1,1,0.05);
  h+='<div class="row2"><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button></div>';
@@ -410,6 +422,52 @@ function init(){
 return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim};
 })();
 Studio.init();
+</script>
+<script>(function(){if(!("serviceWorker" in navigator))return;var had=!!navigator.serviceWorker.controller,rl=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(!had){had=true;return}if(rl)return;rl=true;location.reload()});navigator.serviceWorker.register("sw.js").then(function(reg){function chk(){try{reg.update()}catch(e){}if(reg.waiting)reg.waiting.postMessage("skipWaiting")}setInterval(chk,60000);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()});window.addEventListener("focus",chk)})})();</script>
+<script>
+var Gate=(function(){
+ var SALT="la-detente-studio-v1", EXPECT="1969fb5c6e01414bf39f502eb6db47a4a3897e4d1c28a0361d20022c51d7c596";
+ var TRUST="ld_studio_trust_v1", FAILS="ld_studio_fails_v1", CRED="ld_studio_cred_v1", TTL=60*864e5;
+ function norm(s){return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(function(t){return t.length>=2})}
+ function whoIs(name){var t=norm(name);var h=function(x){return t.indexOf(x)>=0};
+   if(h("kevin")&&h("desarzens"))return "kevin";
+   if(h("laurence")&&(h("saintpolit")||(h("saint")&&h("polit"))))return "laurence";
+   return null;}
+ function lg(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
+ function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+ function devHash(){var s=navigator.userAgent+"|"+screen.width+"x"+screen.height+"|"+(navigator.language||"");var h=0;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0}return h.toString(16)}
+ async function pbkdf2(pin){var enc=new TextEncoder();var key=await crypto.subtle.importKey("raw",enc.encode(pin),{name:"PBKDF2"},false,["deriveBits"]);var bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:enc.encode(SALT),iterations:200000,hash:"SHA-256"},key,256);var b=new Uint8Array(bits);return Array.prototype.map.call(b,function(x){return("0"+x.toString(16)).slice(-2)}).join("")}
+ function lockLeft(){var f=lg(FAILS,{n:0,until:0});return Math.max(0,(f.until||0)-Date.now())}
+ function bumpFail(){var f=lg(FAILS,{n:0,until:0});f.n=(f.n||0)+1;var w=[0,0,0,0,0,30,120,600,3600,86400];var s=w[Math.min(f.n,w.length-1)]||86400;f.until=Date.now()+s*1000;ls(FAILS,f);return f}
+ function clearFail(){ls(FAILS,{n:0,until:0})}
+ function grant(uid){ls(TRUST,{uid:uid,ts:Date.now(),dev:devHash()});clearFail();var g=document.getElementById("studioGate");if(g)g.style.display="none";document.body.style.overflow="";try{if(typeof Studio!=="undefined"&&Studio.render)Studio.render()}catch(e){}}
+ function msg(m,ok){var e=document.getElementById("sgMsg");if(e){e.textContent=m||"";e.style.color=ok?"#7ee08a":"#ff7a7a"}}
+ function trusted(){var t=lg(TRUST,null);if(!t)return null;if(Date.now()-t.ts>TTL)return null;if(t.dev&&t.dev!==devHash())return null;return t.uid}
+ async function go(){
+   var ll=lockLeft();if(ll>0){msg("Trop d'essais. Réessaie dans "+Math.ceil(ll/1000)+"s.");return}
+   var who=whoIs(document.getElementById("sgName").value);
+   if(!who){bumpFail();msg("Accès réservé aux créateurs (prénom + nom).");return}
+   var pin=document.getElementById("sgPin").value||"";
+   if(pin.length<4){msg("Entre ton code.");return}
+   try{var h=await pbkdf2(pin);if(h===EXPECT){msg("Bienvenue 👋",true);grant(who);try{if(!lg(CRED,null))await enrollBio(who)}catch(e){}}else{var f=bumpFail();msg("Code incorrect ("+f.n+").");}}catch(e){msg("Erreur, réessaie.")}
+ }
+ function offerBio(){try{if(window.PublicKeyCredential){document.getElementById("sgBio").style.display="block"}}catch(e){}}
+ async function enrollBio(uid){try{if(!window.PublicKeyCredential)return;var ok=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();if(!ok)return;var id=crypto.getRandomValues(new Uint8Array(16));var cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"La Détente Studio"},user:{id:id,name:uid,displayName:uid},pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required"},timeout:60000}});if(cred){var raw=new Uint8Array(cred.rawId);ls(CRED,{uid:uid,id:Array.prototype.slice.call(raw)})}}catch(e){}}
+ async function bio(){try{var c=lg(CRED,null);if(!c){msg("Active d'abord Face ID après connexion.");return}var idb=new Uint8Array(c.id);var as=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:idb}],userVerification:"required",timeout:60000}});if(as){grant(c.uid)}}catch(e){msg("Échec Face ID, utilise ton code.")}}
+ function boot(){
+   var u=trusted();
+   if(u){var g=document.getElementById("studioGate");if(g)g.style.display="none";return}
+   document.body.style.overflow="hidden";
+   var c=lg(CRED,null);if(c){var b=document.getElementById("sgBio");if(b)b.style.display="block";try{bio()}catch(e){}}
+   var n=document.getElementById("sgName");if(n)setTimeout(function(){n.focus()},200);
+ }
+ // expose enroll on grant via button
+ var _grant=grant;grant=function(uid){_grant(uid);};
+ document.addEventListener("DOMContentLoaded",boot); if(document.readyState!=="loading")boot();
+ return {go:go,bio:bio,enroll:enrollBio};
+})();
+// bouton Face ID enroll après connexion (apparait dans sgBio: réutilise pour enrôler si pas encore)
+document.addEventListener("click",function(e){},false);
 </script>
 </body>
 </html>

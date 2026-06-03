@@ -1,6 +1,16 @@
-/* KDMC Shops — Service Worker La Détente. Cache nommé par boutique + nettoyage scopé. */
-var CACHE='kdmc-la-detente-v1.13.0';
+/* KDMC Shops — Service Worker La Détente. MAJ auto forcée : network-first pour les
+   pages (toujours la dernière version en ligne), cache-first pour les assets, fallback offline. */
+var CACHE='kdmc-la-detente-v1.14.0';
 var PRE=['./','studio.html','bibliotheque.html','/CMCteams/shops/legal/cgv.html'];
-self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRE)}));self.skipWaiting()});
+self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRE).catch(function(){})}));self.skipWaiting()});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE&&(k.indexOf('kdmc-la-detente-')===0||k==='kdmc-v1')}).map(function(k){return caches.delete(k)}))}));self.clients.claim()});
-self.addEventListener('fetch',function(e){if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(function(r){return r||fetch(e.request).then(function(res){if(res.ok){var c=res.clone();caches.open(CACHE).then(function(ca){ca.put(e.request,c)})}return res}).catch(function(){return caches.match('./')})}))});
+self.addEventListener('message',function(e){if(e.data==='skipWaiting')self.skipWaiting()});
+self.addEventListener('fetch',function(e){
+  var req=e.request; if(req.method!=='GET')return;
+  var isNav=req.mode==='navigate'||(req.headers.get('accept')||'').indexOf('text/html')>=0;
+  if(isNav){
+    e.respondWith(fetch(req).then(function(res){if(res&&res.status===200){var c=res.clone();caches.open(CACHE).then(function(ca){ca.put(req,c)})}return res}).catch(function(){return caches.match(req).then(function(m){return m||caches.match('./')})}));
+  }else{
+    e.respondWith(caches.match(req).then(function(r){return r||fetch(req).then(function(res){if(res&&res.status===200){var c=res.clone();caches.open(CACHE).then(function(ca){ca.put(req,c)})}return res})}));
+  }
+});
