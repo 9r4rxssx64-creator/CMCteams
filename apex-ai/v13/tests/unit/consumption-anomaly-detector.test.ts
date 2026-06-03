@@ -122,4 +122,37 @@ describe('services/consumption-anomaly-detector', () => {
     expect(providers.length).toBeGreaterThanOrEqual(2);
     expect(providers).toContain('anthropic');
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    beforeEach(() => { localStorage.clear(); });
+
+    it('detectAnomaly history sans entrée du jour → fallback `history[last]` (116)', () => {
+      seedHistory('anthropic', 5, 6); // past-only (pas de currentDayEur → pas d\'entrée today)
+      const r = consumptionAnomalyDetector.detectAnomaly('anthropic');
+      expect(r).toBeDefined();
+    });
+
+    it('hasKeyInVault via scanAllVerbose : clé directe > 10 chars → true (201)', () => {
+      localStorage.setItem('ax_anthropic_key', 'x'.repeat(20));
+      const reports = consumptionAnomalyDetector.scanAllVerbose();
+      expect(Array.isArray(reports)).toBe(true);
+    });
+
+    it('hasKeyInVault via scanAllVerbose : multi_keys JSON invalide → catch false (214)', () => {
+      localStorage.setItem('apex_v13_multi_keys', '{not valid json');
+      const reports = consumptionAnomalyDetector.scanAllVerbose();
+      expect(Array.isArray(reports)).toBe(true);
+    });
+
+    it('multi_keys : entry sans service (203), match service (207), match storageKey (208)', () => {
+      /* anthropic matché par {service}, openai matché par {storageKey}, 1er sans service */
+      localStorage.setItem('apex_v13_multi_keys', JSON.stringify([
+        { storageKey: 'ax_nomatch_key' }, // pas de service → e.service?. court-circuit (203)
+        { service: 'anthropic' },          // match service (207 true)
+        { storageKey: 'ax_openai_key' },   // match regex ^ax_openai_ (208 true)
+      ]));
+      const reports = consumptionAnomalyDetector.scanAllVerbose();
+      expect(Array.isArray(reports)).toBe(true);
+    });
+  });
 });

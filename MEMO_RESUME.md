@@ -2,8 +2,8 @@
 
 > **Objectif Kevin** : 100% réel partout (mesuré jamais estimé), autonome, sans régression. Gate à CHAQUE tour : `tsc --noEmit` + `eslint --max-warnings=0` + suite vitest COMPLÈTE (EXIT=0 ET 0 ligne `Unhandled/Errors`, pas seulement « 0 failed » — cf. leçon #89). Merge réel vérifié sur le vrai GitHub à chaque tour (auto-merge bot).
 >
-> **Fait cette session (tours 19→28, tous mergés sur main, suite 595 fichiers / ~12150 tests verte, 0 unhandled)** :
-> - **14 fichiers portés à 100% de branches** : skills `pptx`/`xlsx`/`pdf`/`docx`/`video-use`/`futuristic-modules` ; `core/errors`, `core-svc/apex-tools`, `apex-tools-handlers/ai` + `cloud`, `integrations/oauth-providers-registry` + `ios-simulator`, `ai/context-loader`, `sentinels/autonomous-watch`, `core-svc/anti-zoom-ios`.
+> **Fait cette session (tours 19→31, tous mergés sur main, suite 595 fichiers / ~12165 tests verte, 0 unhandled)** :
+> - **18 fichiers portés à 100% de branches** : skills `pptx`/`xlsx`/`pdf`/`docx`/`video-use`/`futuristic-modules` ; `core/errors`, `core/logger`, `core-svc/apex-tools`, `apex-tools-handlers/ai` + `cloud` + `payments`, `integrations/oauth-providers-registry` + `ios-simulator`, `ai/context-loader`, `sentinels/autonomous-watch`, `core-svc/anti-zoom-ios`, `observability/log-redaction-wrapper` + `consumption-anomaly-detector`.
 > - **2 refactos comportement-identique** pour rendre des branches mortes testables : `docx-generator` (retrait `&& !==custom` + `?.`/`?? ''`), `futuristic-modules` (extraction `dispatchRoute` → cases mcp/default/catch).
 > - **Bug suite réel corrigé** : `chat-massive.test.ts` fuyait un `processQueue→aiRouter.stream→getApiKey→localStorage` APRÈS teardown → vitest sortait en **code 1 malgré tous tests verts**. Fix = `vi.mock` module (Proxy override `stream`), pas un spyOn restauré trop tôt. → **leçon #89 + raffinement** dans CLAUDE.md.
 > - **Test inefficace réparé** : `ios-simulator` persist-throw (`localStorage.setItem = fn` ne prend pas en happy-dom → `vi.stubGlobal`).
