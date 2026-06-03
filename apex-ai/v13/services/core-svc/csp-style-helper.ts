@@ -94,8 +94,8 @@ class CspStyleHelper {
    */
   extractStyles(html: string): { cleanHtml: string; styles: string[] } {
     const styles: string[] = [];
-    const cleanHtml = html.replace(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi, (_match, css) => {
-      styles.push(typeof css === 'string' ? css : '');
+    const cleanHtml = html.replace(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi, (_match, css: string) => {
+      styles.push(css); /* groupe capturant → toujours string (pas de branche morte ?? '') */
       return '';
     });
     return { cleanHtml, styles };
