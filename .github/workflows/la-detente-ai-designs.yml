@@ -4,6 +4,11 @@ name: La Détente — Designs IA (modèles Kevin → bibliothèque)
 # via GEMINI_API_KEY, fond rendu transparent, et pousse sur une branche claude/* (auto-merge).
 on:
   workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'shops/la-detente/scripts/ld-ai-designs.mjs'
+      - '.github/workflows/la-detente-ai-designs.yml'
 
 permissions:
   contents: write
