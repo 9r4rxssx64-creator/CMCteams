@@ -17,7 +17,8 @@
 - Studio : [studio.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/studio.html) · [edit](https://github.com/9r4rxssx64-creator/cmcteams/edit/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/studio.html)
 - Cadrage marque : [MARQUE_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/MARQUE_LA_DETENTE.md)
 
-**État** : Phase 1 (boutique + Studio) ✅ · Studio emplacements + thèmes ✅ · Phase 2 (checkout taille+adresse + bon de production) ✅ · Phase 3 (handoff fournisseur : envoi + Export CSV) ✅ · Image hero ✅ · **12 designs maison** (Cerf, Cartouches, Bois de cerf, Plateau, Plume, Canard, Empreinte, Sapin, Flèches, Montagne, badges Vise Juste & Entre Amis) → **60 produits** ✅ · Doc fournisseurs (`FOURNISSEURS_LA_DETENTE.md`) ✅. **Reste** : créer 1 compte fournisseur (KYC Kevin). Cache PWA `kdmc-la-detente-v1.6.0`.
+**État** : Phase 1 (boutique + Studio) ✅ · Studio emplacements + thèmes ✅ · Phase 2 (checkout taille+adresse + bon de production) ✅ · Phase 3 (handoff fournisseur : envoi + Export CSV) ✅ · Image hero ✅ · **12 designs maison** → **60 produits** ✅ · **Bibliothèque de designs** (`bibliotheque.html`, 18 motifs, PNG/SVG, deep-link Studio) ✅ · Studio 18 motifs ✅ · Doc fournisseurs (`FOURNISSEURS_LA_DETENTE.md`) ✅. **Reste** : créer 1 compte fournisseur (KYC Kevin). Cache PWA `kdmc-la-detente-v1.7.0`.
+- 📚 Bibliothèque : https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/bibliotheque.html
 - 🧵 Fournisseurs : [FOURNISSEURS_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/FOURNISSEURS_LA_DETENTE.md)
 
 ## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (branche claude/schedule-import-integration-szasM)

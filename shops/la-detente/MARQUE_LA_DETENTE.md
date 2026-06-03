@@ -111,6 +111,11 @@ Atelier de création + **montage multi-calques** :
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
 ## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES + vraies images
+- ✅ **Bibliothèque de designs** (`bibliotheque.html`, cache `v1.7.0`) : page galerie des **18 motifs**
+  (signature + 12 maison + variantes), prévisualisation sur n'importe quel vêtement/couleur, recherche +
+  filtres par catégorie, **téléchargement PNG HD + SVG vectoriel**, et bouton **« 🎨 Studio »** par motif
+  (deep‑link `studio.html?motif=ID`). Liée depuis la boutique (header 📚 + footer) et le Studio.
+  Le **Studio** embarque désormais les **18 motifs** dans sa galerie (avant : 6).
 - ✅ **12 designs maison** (cache `v1.6.0`) dans le style marque (motif blanc + cœur rouge), ajoutés au
   sprite SVG → **60 produits** au total en **vraies images PNG**. Motifs :
   🦌 Cerf · ✕ Cartouches · 🌿 Bois de cerf · 🎯 Plateau · 🪶 Plume · 🦆 Canard ·
