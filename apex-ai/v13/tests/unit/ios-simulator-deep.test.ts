@@ -166,22 +166,40 @@ describe('iosSimulator — openPreview', () => {
     vi.doUnmock('../../ui/modal-sheet.js');
   });
 
-  it('persist localStorage throw → no throw (catch silencieux)', async () => {
-    const open = vi.fn();
+  it('persist localStorage.setItem throw → catch silencieux (branche 116)', async () => {
     vi.doMock('../../ui/modal-sheet.js', () => ({
-      modalSheet: { open, closeAll: vi.fn() },
+      modalSheet: { open: vi.fn(), closeAll: vi.fn() },
     }));
-    /* Force localStorage.setItem throw */
-    const orig = localStorage.setItem;
-    localStorage.setItem = function () { throw new Error('quota'); };
-    try {
-      vi.resetModules();
-      const { iosSimulator: fresh } = await import('../../services/integrations/ios-simulator.js');
-      await expect(fresh.openPreview('<h1>x</h1>')).resolves.toBeUndefined();
-      /* persist a échoué silencieusement → openPreview résout malgré tout */
-    } finally {
-      localStorage.setItem = orig;
-      vi.doUnmock('../../ui/modal-sheet.js');
-    }
+    vi.resetModules();
+    const { iosSimulator: fresh } = await import('../../services/integrations/ios-simulator.js');
+    /* happy-dom : `localStorage.setItem = fn` ne prend pas (non-writable) → stubGlobal
+     * pour que setItem JETTE réellement et atteigne le catch persist. */
+    vi.stubGlobal('localStorage', {
+      getItem: () => '[]',
+      setItem: () => { throw new Error('quota'); },
+      removeItem: () => {}, clear: () => {},
+    });
+    await expect(fresh.openPreview('<h1>x</h1>')).resolves.toBeUndefined();
+    vi.unstubAllGlobals();
+    vi.doUnmock('../../ui/modal-sheet.js');
+  });
+
+  it('buildFrameHtml avec url → src="..." (branche src.url 87)', () => {
+    const html = (
+      iosSimulator as unknown as {
+        buildFrameHtml(s: { url?: string; srcdoc?: string }, o: Record<string, unknown>): string;
+      }
+    ).buildFrameHtml({ url: 'https://example.com/app' }, {});
+    expect(html).toContain('src="https://example.com/app"');
+    expect(html).not.toContain('srcdoc=');
+  });
+
+  it('buildFrameHtml sans url ni srcdoc → `?? ""` (branche srcdoc nullish 87:31)', () => {
+    const html = (
+      iosSimulator as unknown as {
+        buildFrameHtml(s: { url?: string; srcdoc?: string }, o: Record<string, unknown>): string;
+      }
+    ).buildFrameHtml({}, {});
+    expect(html).toContain('srcdoc=""');
   });
 });
