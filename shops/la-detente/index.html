@@ -244,7 +244,7 @@ _REALD.forEach(function(d,i){var n=i+1;
  LDREAL2.push(_rbG("ldrh"+n,"Hoodie « "+d.n+" » — photo réelle",d.r,d.c,59.9,72.0,"hoodie","Molleton gratté 280 g/m²",d.t.concat(["hoodie","réaliste","photo"])));
  LDREAL2.push(_rbG("ldrc"+n,"Casquette « "+d.n+" » — photo réelle",d.r,d.c,22.9,28.0,"cap","Sergé coton",d.t.concat(["casquette","réaliste","photo"])));
 });P=P.concat(LDREAL2);
-var QUALITIES=[{id:"standard",label:"Standard",sub:"Bon prix · impression rapide",mult:1,mat:"Coton 150–180 g/m² · impression durable",supplier:"Printify"},{id:"bio",label:"Bio coton ✦",sub:"Coton bio GOTS · France",mult:1.25,mat:"Coton bio GOTS 180 g/m² · encres à l'eau · made in France",supplier:"T-Pop"}];
+var QUALITIES=[{id:"standard",label:"Standard",sub:"Bon prix · impression rapide",mult:1,mat:"Coton 150–180 g/m² · impression durable",supplier:"Printify"},{id:"bio",label:"Bio coton ✦",sub:"Coton bio · organic",mult:1.25,mat:"Coton bio / organic 180 g/m² · encres à l'eau",supplier:"Printify"}];
 function qOf(id){var r;QUALITIES.forEach(function(q){if(q.id===id)r=q});return r||QUALITIES[0];}
 function qPrice(base,id){return Math.round(base*qOf(id).mult*10)/10;}
 function tierSelectorHtml(p,qt){return '<div style="margin:16px 0"><div style="font-weight:700;font-size:14px;margin-bottom:8px">Qualité <span style="font-weight:500;color:var(--muted);font-size:12px">— tu choisis à la commande</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+QUALITIES.map(function(q){var sel=qt===q.id;return '<button onclick="S.pdpTier=\''+q.id+'\';dc()" style="flex:1;min-width:150px;text-align:left;padding:10px 12px;border-radius:12px;cursor:pointer;border:2px solid '+(sel?"var(--p)":"var(--border)")+';background:'+(sel?"rgba(220,38,38,.08)":"var(--bg)")+';color:var(--text)"><div style="font-weight:800;font-size:13.5px">'+q.label+'</div><div style="font-size:11.5px;color:var(--muted);margin:2px 0 4px">'+q.sub+'</div><div style="font-weight:800;font-size:15px">'+fmtP(qPrice(p.price,q.id))+'</div></button>';}).join("")+'</div><div style="font-size:11.5px;color:var(--muted);margin-top:6px">'+esc(qOf(qt).mat)+'</div></div>';}
@@ -536,8 +536,7 @@ function ldExportCSV(){var s=window._ldCurSheet||{};var ck=S.checkout||ldGetCk()
    (Standard → Printify · Bio → T-Pop), prêt à transmettre en 1 clic — expédié au nom de
    la boutique « La Détente » (white-label). Adresse client + fichier d'impression inclus. */
 var LD_SUPPLIERS={
- "Printify":{name:"Printify",tier:"standard",portal:"https://printify.com/app/orders",note:"POD réseau · prix bas · white-label « La Détente »"},
- "T-Pop":{name:"T-Pop",tier:"bio",portal:"https://www.tpop.com/en/integrations",note:"Coton bio GOTS · made in France · packaging neutre (commande manuelle — pas d'API)"}
+ "Printify":{name:"Printify",tier:"standard",portal:"https://printify.com/app/orders",note:"POD · standard pas cher + coton bio/organic · white-label « La Détente » · API auto"}
 };
 function ldSupKey(s){return "ld_supplier_email_"+String(s).toLowerCase().replace(/[^a-z]/g,"")}
 function ldSupEmail(s){return localStorage.getItem(ldSupKey(s))||localStorage.getItem("ld_supplier_email")||""}
@@ -812,7 +811,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.26.0"
+        data-version="v1.27.0"
         data-color="#e8b830"
         defer></script>
 

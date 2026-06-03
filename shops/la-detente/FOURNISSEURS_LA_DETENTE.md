@@ -228,9 +228,9 @@ réparti selon la qualité choisie par le client :
 | Qualité client | Fournisseur routé | Portail |
 |---|---|---|
 | **Standard** | Printify | https://printify.com/app/orders |
-| **Bio coton ✦** | T-Pop (manuel — pas d'API) | https://www.tpop.com/en/integrations |
+| **Bio coton ✦** | Printify (organic) | https://printify.com/app/orders |
 
-> ⚠️ **T-Pop n'a PAS d'API publique** : il ne se connecte que via Shopify / WooCommerce / Etsy (login) ou en saisie manuelle. Pour du **100 % auto**, on passe par **Printify** (API + coton bio/organic dispo) pour les deux qualités ; T-Pop reste possible en **manuel** (flux copier/CSV/email déjà en place) si tu veux garder le made-in-France.
+> ✅ **Fournisseur unique = Printify** (T-Pop retiré le 2026-06-03 — pas d'API). Printify gère le **standard pas cher** ET le **coton bio / organic**, avec **API** → commandes **100 % automatiques** et expédition **white-label « La Détente »**. Clé dans le secret GitHub `PRINTIFY_API_KEY`, boutique `shop_id 27791653` (validée en CI).
 
 **Contenu auto du bon** (par fournisseur) : articles à produire (vêtement, couleur, taille, motif,
 emplacement, fichier d'impression `img/print/<id>.png`), **adresse client pour livraison directe
