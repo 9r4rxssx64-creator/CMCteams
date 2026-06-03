@@ -18,7 +18,12 @@
 > https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/textile-shop-ar15-heart-mMJ0j?expand=1
 > Vérifié sur le **vrai** GitHub (raw) que la branche contient bien le travail (lesson #79).
 >
-> **RESTE — Phase 3** : pont fournisseur **T-Pop** (envoi auto du bon + fichier impression HD), suivi statut.
+> **AUSSI livré (même journée, tout sur main, mergé via GitHub MCP)** :
+> - **Phase 3 handoff fournisseur** : bon de production → email fournisseur (mailto) + **Export CSV** (prêt T-Pop/atelier). Sans backend.
+> - **Image hero** réelle (`img/hero.png`) + **pack 6 designs** (Cerf, Cartouches, Bois de cerf, Plateau, Plume, Canard) → **47 produits** en vraies images. Cache `v1.5.0`.
+> - **Doc fournisseurs** `shops/la-detente/FOURNISSEURS_LA_DETENTE.md` (éco/bio, chinois, camo, lin, basiques unis tee/polo/sweat/jogging + grossistes).
+>
+> **RESTE — Phase 3 (suite)** : brancher l'**API T-Pop** (envoi auto CSV + fichier impression HD) + suivi statut — dès que Kevin a créé son compte fournisseur (seule étape KYC). Kevin choisit le fournisseur plus tard.
 
 ---
 
