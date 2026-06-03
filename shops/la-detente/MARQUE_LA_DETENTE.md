@@ -111,10 +111,10 @@ Atelier de création + **montage multi-calques** :
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
 ## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES + vraies images
-- ✅ **Pack 6 nouveaux designs** (cache `v1.5.0`) dans le style marque (motif blanc + cœur rouge),
-  ajoutés au sprite SVG + **13 nouveaux produits** (tee/hoodie/polo/casquette/tote/bandana) avec
-  **vraies images PNG** : 🦌 **Cerf**, ✕ **Cartouches** (croisées), 🌿 **Bois de cerf**, 🎯 **Plateau**
-  (ball‑trap), 🪶 **Plume**, 🦆 **Canard**. Catalogue total : **47 produits**.
+- ✅ **12 designs maison** (cache `v1.6.0`) dans le style marque (motif blanc + cœur rouge), ajoutés au
+  sprite SVG → **60 produits** au total en **vraies images PNG**. Motifs :
+  🦌 Cerf · ✕ Cartouches · 🌿 Bois de cerf · 🎯 Plateau · 🪶 Plume · 🦆 Canard ·
+  🐾 Empreinte · 🌲 Sapin · ➹ Flèches · ⛰ Montagne · 🎯 **Badge « Vise Juste »** · ❤ **Badge « Entre Amis »**.
 - ✅ **Vraies images boutique** (Kevin 2026-06-03 « vraies images avec les logos créés, catégories avec
   vraies images ») : les 34 mockups catalogue rendus en **fichiers PNG réels** (`img/products/ld*.png`,
   fond dégradé noir/rouge + ombre, vrai emblème LA DÉTENTE) ; **grille Catégories** sur la home avec
