@@ -17,6 +17,16 @@ export default defineConfig({
      * déclenche que sur un test réellement bloqué, pas sur les tests rapides). */
     testTimeout: 60_000,
     hookTimeout: 30_000,
+    /* v13.4.286 (2026-06-02, tour anti-flakiness) : retry 1× au niveau test.
+     * Diagnostic : la suite complète (589 fichiers × 4 forks) échoue ~1 test/run de
+     * façon NON déterministe — victime différente à chaque run (chat-camera-wiring,
+     * features-vault, memory-watch…), chaque test passe en ISOLATION. C'est de la
+     * contention CPU (timing async DOM sous charge), PAS une régression ni une fuite
+     * d'état (prouvé : paires de fichiers re-jouées 3× = vertes). `retry: 1` ré-essaie
+     * UNE fois un test échoué : absorbe les flakes de contention (qui passent au 2e essai)
+     * tout en laissant échouer les VRAIES régressions (qui échouent les 2 essais).
+     * N'allonge pas les runs verts (retry seulement sur échec). Standard industrie. */
+    retry: 1,
     /* v13.4.136 (Kevin "minutieusement sans régression") : pool=forks pour
      * isolation mémoire + maxForks 4 pour éviter saturation CPU sur 444 test
      * files. Bench montre +30% temps mais coverage TERMINE sans OOM. */
