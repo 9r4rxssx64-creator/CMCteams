@@ -1,0 +1,270 @@
+import{a as b,l as p,i as U,b as Y,e as f}from"./monitoring-D1PZH0XM.js";import{c as K}from"./listener-cleanup-Y2rGGxxX.js";import{m as V,r as X}from"../core/main-0W048uZb.js";import{multiKeyVault as Q}from"./multi-key-vault-B4kDbwJs.js";import{aiRouter as R}from"./ai-router-BfVkYvz6.js";import{haptic as L}from"./haptic-CQFg2PXZ.js";import{modalSheet as x}from"./modal-sheet-oR7SW-wv.js";import{toast as S}from"./toast-CRdbcLoc.js";import"./multi-source-analyze-DpM3Rj_4.js";import"./credential-patterns-DUMYZEMu.js";import"./apex-kb-CwGmaUpO.js";import"./economy-mode-C9M_tvJv.js";import"./chat-fallback-D7ACdzGS.js";import"./apex-tools-dispatch-core-BaJE5oKr.js";import"./apex-tools-dispatch-skills-rRDRU6bm.js";import"./apex-tools-dispatch-data-Bw6UpRXC.js";import"./apex-tools-dispatch-finance-D84Ce07W.js";import"./apex-tools-dispatch-misc-DIuYJ66O.js";import"./apex-tools-misc-B8pjrqPZ.js";import"./apex-tools-registry-core-BMhHY4vU.js";import"./apex-tools-registry-skills-x-mAWYry.js";const F="apex_v13_security_review_last",C="apex_v13_security_review_history",B=20,Z=[{name:"Anthropic API key",rx:/sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/},{name:"OpenAI API key",rx:/sk-(?:proj-)?[A-Za-z0-9_-]{40,}/},{name:"Google API key",rx:/AIza[A-Za-z0-9_-]{33,}/},{name:"GitHub PAT",rx:/gh[opsu]_[A-Za-z0-9]{36,}/},{name:"Stripe secret",rx:/sk_(?:live|test)_[A-Za-z0-9]{24,}/},{name:"Slack token",rx:/xox[bpao]-[A-Za-z0-9-]{20,}/},{name:"AWS access key",rx:/AKIA[0-9A-Z]{16}/},{name:"Telegram bot token",rx:/\d{8,}:[A-Za-z0-9_-]{35,}/}];class W{async runFullScan(){const e=Date.now(),t=[];let s=0,r=0;s++;const n=this.scanPlaintextSecrets();n.length===0&&r++,t.push(...n),s++;const o=this.scanCspViolations();o?t.push(o):r++,s++;const a=this.scanVaultDrift();a.length===0&&r++,t.push(...a),s++;const c=this.scanDomInjection();c?t.push(c):r++,s++;const u=this.scanRedactionDisabled();u?t.push(u):r++,s++;const m=await this.scanAuditIntegrity();m?t.push(m):r++,s++;const l=this.scanSessionLeak();l?t.push(l):r++;const y=this.computeScore(t,s),d={scannedAt:Date.now(),durationMs:Date.now()-e,score:y,findings:t,totalChecks:s,passedChecks:r};return this.persistReport(d),b.record("security-review.scan",{details:{score:y,findings:t.length,critical:t.filter(h=>h.severity==="critical").length,high:t.filter(h=>h.severity==="high").length}}),p.info("security-review",`Scan complete: score=${y}/100 · ${t.length} findings`),d}getLastReport(){try{const e=localStorage.getItem(F);return e?JSON.parse(e):null}catch{return null}}history(){try{const e=localStorage.getItem(C)??"[]",t=JSON.parse(e);return Array.isArray(t)?t:[]}catch{return[]}}scanPlaintextSecrets(){const e=[],t=["apex_v13_vault_","apex_v13_encrypted_","apex_v13_obf_"];try{for(let s=0;s<localStorage.length;s++){const r=localStorage.key(s);if(!r||t.some(o=>r.startsWith(o)))continue;const n=localStorage.getItem(r);if(!(!n||n.length<20)){for(const o of Z)if(o.rx.test(n)){e.push({category:"secret-exposure",severity:"critical",msg:`Secret "${o.name}" en clair dans localStorage`,detail:`Clé : ${r}`,fix:"Migrer vers multi-key-vault chiffré AES-GCM-256"});break}}}}catch(s){p.warn("security-review","plaintext scan failed",{err:s})}return e}scanCspViolations(){try{const e=U.getStats(),t=Object.values(e).reduce((n,o)=>n+o.count,0);if(t===0)return null;const s=Object.values(e).filter(n=>Date.now()-n.lastSeen<3600*1e3);return s.length===0?null:{category:"csp-violation",severity:t>50?"high":t>10?"medium":"low",msg:`${t} violations CSP enregistrées (${s.length} dans la dernière heure)`,fix:"Ouvrir csp-monitor dashboard, valider whitelist suggestions"}}catch(e){return p.warn("security-review","csp scan failed",{err:e}),null}}scanVaultDrift(){const e=[];try{const t=["anthropic","openai","github","stripe","cloudflare"];for(const s of t){const r=Q.getStats(s);if(r.total===0)continue;const n=r.active===0?"red":r.invalid+r.failing>0?"yellow":"green";n==="red"?e.push({category:"vault-drift",severity:"high",msg:`Vault "${s}" en état RED (toutes clés en panne)`,detail:`${r.invalid} invalides · ${r.failing} failing sur ${r.total} clés`,fix:`Régénérer une nouvelle clé sur dashboard ${s} et l'ajouter au vault`}):n==="yellow"&&r.invalid>0&&e.push({category:"vault-drift",severity:"medium",msg:`Vault "${s}" : ${r.invalid} clé(s) invalide(s)`,fix:"Faire rotation manuelle ou healthCheckAll"})}}catch(t){p.warn("security-review","vault scan failed",{err:t})}return e}scanDomInjection(){if(typeof document>"u")return null;try{const e=Array.from(document.querySelectorAll("script")),t=["cdn.jsdelivr.net","unpkg.com","cdn.skypack.dev","esm.sh"],s=e.filter(r=>{const n=r.getAttribute("src")??"";if(!n)return!1;try{const o=new URL(n,window.location.origin);return o.origin===window.location.origin?!1:!t.some(a=>o.hostname.endsWith(a))}catch{return!0}});return s.length===0?null:{category:"dom-injection",severity:"high",msg:`${s.length} script tag(s) externe(s) non-trustés détectés`,detail:s.slice(0,3).map(r=>r.getAttribute("src")??"").join(" · "),fix:"Vérifier CSP script-src + retirer scripts inutiles"}}catch(e){return p.warn("security-review","dom scan failed",{err:e}),null}}scanRedactionDisabled(){try{const e=localStorage.getItem("apex_v13_redact_disabled");return e==="true"||e==="1"?{category:"pii-redaction",severity:"high",msg:"PII redaction outbound DÉSACTIVÉE (flag apex_v13_redact_disabled)",fix:"Réactiver pii-redaction (clé localStorage à supprimer)"}:null}catch{return null}}async scanAuditIntegrity(){try{const e=await b.verifyChainIntegrity();return e.valid?null:{category:"audit-integrity",severity:"critical",msg:`Audit log chain INVALIDE (broken at index ${e.brokenAt}/${e.totalEntries})`,fix:"Audit log tampered → escalade Claude Code via ax_claude_todo"}}catch(e){return p.warn("security-review","audit integrity check failed",{err:e}),null}}scanSessionLeak(){try{const e=localStorage.getItem("apex_v13_lastact");if(!e)return null;const t=Number.parseInt(e,10);if(!Number.isFinite(t))return null;const s=Date.now()-t,r=1440*60*1e3;return s>r?{category:"session-leak",severity:"medium",msg:`Session active depuis plus de 24h (${Math.round(s/36e5)}h)`,fix:"Forcer logout et re-login pour purger session stale"}:null}catch{return null}}computeScore(e,t){if(t===0)return 100;let s=0;for(const r of e)switch(r.severity){case"critical":s+=25;break;case"high":s+=15;break;case"medium":s+=8;break;case"low":s+=3;break;case"info":s+=1;break}return Math.max(0,100-s)}persistReport(e){try{localStorage.setItem(F,JSON.stringify(e));const t=localStorage.getItem(C)??"[]",s=JSON.parse(t),r=Array.isArray(s)?s:[];r.push(e);const n=r.slice(-B);localStorage.setItem(C,JSON.stringify(n))}catch(t){p.warn("security-review","persist failed",{err:t})}}}const ee=new W,te=3e4,P="ax_crew_runs_history",se=50,j={anthropic:"reasoning",openai:"code-quality",gemini:"vision",groq:"speed",openrouter:"general",mistral:"multilingual"};class re{async run(e){const t=Date.now(),s=e.mode??"consensus",r=e.timeoutMs??te;if(e.members.length<2)throw new Error("Crew Experts requires at least 2 members");const n=e.members.map(d=>this.runMember(d,e.task,e.systemPrompt,s,r,e.signal)),a=(await Promise.allSettled(n)).map((d,h)=>{const v=e.members[h];if(!v)throw new Error("member undefined");if(d.status==="fulfilled")return d.value;const A=d.reason instanceof Error?d.reason.message:String(d.reason);return{provider:v.provider,expertise:v.expertise??j[v.provider],text:"",latencyMs:0,ok:!1,error:A.slice(0,200)}}),c=this.synthesize(a,s),u=this.detectConflicts(a),m=a.filter(d=>d.ok),l=m.length>=Math.ceil(a.length/2),y={task:e.task.slice(0,500),mode:s,responses:a,synthesis:c,conflicts:u,consensus:l,totalLatencyMs:Date.now()-t,ts:Date.now()};return this.persistHistory(y),b.record("crew.run",{details:{mode:s,members:e.members.length,successful:m.length,latencyMs:y.totalLatencyMs,consensus:l}}),p.info("crew-experts",`${m.length}/${e.members.length} providers OK · ${y.totalLatencyMs}ms · consensus=${l}`),y}async runMember(e,t,s,r,n,o){const a=Date.now(),c=e.expertise??j[e.provider],u=new AbortController,m=setTimeout(()=>u.abort(),n);o&&o.addEventListener("abort",()=>u.abort(),{once:!0});const l=this.buildMemberPrompt(s,c,r,e.systemPromptOverride);let y="",d;try{if(await R.stream([{role:"user",content:t}],l,h=>{h.text&&(y+=h.text)},h=>{d=h}),clearTimeout(m),d)throw d;return{provider:e.provider,expertise:c,text:y,latencyMs:Date.now()-a,ok:!0}}catch(h){clearTimeout(m);const v=h instanceof Error?h.message:String(h);return{provider:e.provider,expertise:c,text:y,latencyMs:Date.now()-a,ok:!1,error:v.slice(0,200)}}}buildMemberPrompt(e,t,s,r){if(r)return r;let n="";return s==="specialized"?n=`
+
+Ton expertise spécifique : ${t}. Concentre-toi sur cet angle.`:s==="debate"?n=`
+
+Mode débat : défends ton point de vue (expertise=${t}). Sois précis sur les divergences.`:n=`
+
+Mode consensus : donne ta meilleure réponse en intégrant ton expertise (${t}).`,e+n}synthesize(e,t){const s=e.filter(n=>n.ok&&n.text);if(s.length===0)return"⚠️ Aucun expert n'a répondu. Réessaie.";if(s.length===1){const n=s[0];return n?n.text:""}const r=[];if(t==="specialized"||t==="debate"){r.push(`## Synthèse ${s.length} experts
+`);for(const n of s)r.push(`### ${this.providerName(n.provider)} (${n.expertise})
+${n.text}
+`)}else{const n=[...s].sort((c,u)=>u.text.length-c.text.length),o=n[0];if(!o)return"";r.push(o.text);const a=n.slice(1);a.length>0&&r.push(`
+---
+*Aussi consulté : ${a.map(c=>this.providerName(c.provider)).join(", ")}*`)}return r.join(`
+`)}detectConflicts(e){const t=e.filter(u=>u.ok&&u.text);if(t.length<2)return[];const s=[],r=t.map(u=>u.text.length),n=Math.max(...r),o=Math.min(...r);o>0&&n/o>3&&s.push(`Divergence longueur : ${o}c → ${n}c (3×+)`);const a=["oui","safe","sécurisé","recommandé","préférable"],c=["non","dangereux","éviter","déconseillé","risqué"];for(let u=0;u<t.length-1;u++)for(let m=u+1;m<t.length;m++){const l=t[u],y=t[m];if(!l||!y)continue;const d=l.text.toLowerCase(),h=y.text.toLowerCase(),v=a.some(g=>d.includes(g)),A=c.some(g=>d.includes(g)),M=a.some(g=>h.includes(g)),T=c.some(g=>h.includes(g));(v&&T||A&&M)&&s.push(`${this.providerName(l.provider)} vs ${this.providerName(y.provider)} : avis opposés`)}return s}providerName(e){return{anthropic:"Claude",openai:"GPT",gemini:"Gemini",groq:"Groq",openrouter:"OpenRouter",mistral:"Mistral"}[e]}persistHistory(e){try{const t=localStorage.getItem(P)??"[]",s=JSON.parse(t),r=Array.isArray(s)?s:[];r.push(e);const n=r.slice(-se);localStorage.setItem(P,JSON.stringify(n))}catch(t){p.warn("crew-experts","history persist failed",{err:t})}}history(){try{const e=localStorage.getItem(P)??"[]",t=JSON.parse(e);return Array.isArray(t)?t:[]}catch{return[]}}shouldUseCrew(e){const t=e.toLowerCase();return!!(/\b(audit|expert|complet|consulte|exhaustif|approfondi|concert|tous?\s+les?\s+angles)\b/i.test(t)||e.length>600||/\b(suppress|delete|effac|paiement|payer|valid|critique)\b/i.test(t)&&e.length>100)}defaultMembers(e="specialized"){return e==="specialized"?[{provider:"anthropic",expertise:"security"},{provider:"openai",expertise:"code-quality"},{provider:"gemini",expertise:"perf"},{provider:"groq",expertise:"ux"}]:[{provider:"anthropic"},{provider:"openai"},{provider:"gemini"}]}}const ne=new re,I="apex_v13_code_review_history",ie=30,J={"claude-md-compliance":{provider:"anthropic",expertise:"reasoning"},"bug-detection":{provider:"openai",expertise:"code-quality"},"redundancy-check":{provider:"gemini",expertise:"analysis"},"git-history-context":{provider:"groq",expertise:"speed"},"code-patterns":{provider:"openrouter",expertise:"general"}},q=["claude-md-compliance","bug-detection","redundancy-check","git-history-context","code-patterns"];class oe{async review(e){const t=Date.now(),s=e.confidenceThreshold??80,r=await this.normalizeDiff(e.diff),n=r.slice(0,500),c=(V.getDocsContext()["CLAUDE.md"]?.content??"").slice(0,4e3),u=q.map(g=>({...J[g],systemPromptOverride:this.buildRolePrompt(g,c)})),m=this.buildTaskPrompt(r);let l;try{l=await ne.run({task:m,systemPrompt:"Code reviewer expert.",members:u,mode:e.specialized===!1?"consensus":"specialized"})}catch(g){const $=g instanceof Error?g.message:String(g);p.warn("code-review-multi-agent","crew run failed",{err:$}),l={task:m.slice(0,500),mode:"specialized",responses:[],synthesis:"Erreur lors du lancement des agents.",conflicts:[],consensus:!1,totalLatencyMs:Date.now()-t,ts:Date.now()}}const y=q.map((g,$)=>{const w=l.responses[$];if(!w)return{role:g,provider:J[g].provider,findings:[],confidence:0,rawText:"",ok:!1,error:"no response"};const N=this.parseAgentFindings(w.text),H=this.estimateConfidence(w.text,N);return{role:g,provider:w.provider,findings:N,confidence:H,rawText:w.text,ok:w.ok,...w.error&&{error:w.error}}}),d=y.filter(g=>g.ok&&g.confidence>=s),h=d.reduce((g,$)=>g+$.findings.length,0),v=d.reduce((g,$)=>g+$.findings.filter(w=>w.severity==="critical").length,0),A=this.computeScore(d),M=this.buildConsensus(d,l.synthesis),T={diffPreview:n,agents:y,consensus:M,finalScore:A,totalFindings:h,criticalFindings:v,reviewedAt:Date.now(),durationMs:Date.now()-t};return this.persistReport(T),b.record("code-review.run",{details:{agents:d.length,findings:h,critical:v,score:A,latencyMs:T.durationMs}}),p.info("code-review-multi-agent",`Review complete: ${d.length}/${y.length} agents · ${h} findings · score=${A}`),T}history(){try{const e=localStorage.getItem(I)??"[]",t=JSON.parse(e);return Array.isArray(t)?t:[]}catch{return[]}}async normalizeDiff(e){if(typeof e=="string")return e;try{const t=e.sha?`${e.url}/${e.sha}.diff`:e.url,s=await fetch(t,{method:"GET"});if(!s.ok)throw new Error(`fetch diff failed: HTTP ${s.status}`);return await s.text()}catch(t){return p.warn("code-review-multi-agent","fetch diff failed",{err:t}),`[Erreur fetch diff: ${e.url}]`}}buildRolePrompt(e,t){const s=`Tu es un reviewer expert. Réponds STRICTEMENT en JSON suivant le format :
+{
+  "findings": [
+    {"severity": "critical|high|medium|low|info", "msg": "...", "line": 42, "fix": "..."}
+  ],
+  "confidence": 85,
+  "summary": "..."
+}
+Sois précis, factuel, sans surplus.`;switch(e){case"claude-md-compliance":return`Audit le diff vs RÈGLES PERMANENTES CLAUDE.md. Repère les violations.
+
+EXTRAIT CLAUDE.md (top règles) :
+${t||"[CLAUDE.md non disponible]"}
+
+${s}`;case"bug-detection":return`Cherche bugs : null/undefined refs, off-by-one, race conditions, promises non catch,
+async leaks, edge cases non gérés, conditions impossibles, type mismatches.
+
+${s}`;case"redundancy-check":return`Cherche : duplication code, fonctions mortes, imports inutilisés, conditions toujours
+true/false, branches mortes, anti-patterns DRY.
+
+${s}`;case"git-history-context":return`Imagine que ce diff fait partie d'une longue série de commits. Cherche signes de :
+régression sur fix précédent, modif d'un fichier critique sans test, changement de signature
+public sans migration. Sois pragmatique.
+
+${s}`;case"code-patterns":return`Audit best practices : sécurité (XSS, injection, secrets en clair), perf (boucles
+nested O(n²), DOM querySelector dans loop), accessibilité (aria-labels manquants), TypeScript
+(any, ts-ignore, type assertions).
+
+${s}`}}buildTaskPrompt(e){return`Review ce diff selon ton rôle. Réponds en JSON UNIQUEMENT.
+
+\`\`\`diff
+${e.length>8e3?e.slice(0,8e3)+`
+[... diff tronqué]`:e}
+\`\`\``}parseAgentFindings(e){if(!e)return[];try{const t=e.match(/\{[\s\S]*"findings"[\s\S]*\}/);if(!t)return[];const s=JSON.parse(t[0]);return Array.isArray(s.findings)?s.findings.filter(r=>typeof r=="object"&&r!==null).map(r=>{const n=String(r.severity??"info"),c={severity:["info","low","medium","high","critical"].includes(n)?n:"info",msg:String(r.msg??"").slice(0,300)};return typeof r.line=="number"&&(c.line=r.line),typeof r.fix=="string"&&(c.fix=String(r.fix).slice(0,300)),c}).filter(r=>r.msg.length>0):[]}catch{return[]}}estimateConfidence(e,t){if(!e)return 0;try{const s=e.match(/"confidence"\s*:\s*(\d+)/);if(s&&s[1]){const r=Number.parseInt(s[1],10);if(Number.isFinite(r)&&r>=0&&r<=100)return r}}catch{}return e.length<50?30:e.length<200?50:t.length>0?75:65}computeScore(e){if(e.length===0)return 100;let t=0;for(const s of e)for(const r of s.findings)switch(r.severity){case"critical":t+=20;break;case"high":t+=12;break;case"medium":t+=6;break;case"low":t+=2;break;case"info":t+=1;break}return Math.max(0,100-t)}buildConsensus(e,t){if(e.length===0)return"Aucun agent valide n'a répondu (confidence < threshold).";const s=[];s.push(`✅ ${e.length} agents valides ont participé`);const r=e.reduce((n,o)=>n+o.findings.length,0);if(r===0)s.push("🟢 Aucune anomalie détectée.");else{s.push(`⚠️ ${r} findings au total :`);for(const n of e)n.findings.length!==0&&s.push(`  • [${n.role}] ${n.findings.length} finding(s)`)}return t&&t.length<500&&s.push(`
+${t}`),s.join(`
+`)}persistReport(e){try{const t=localStorage.getItem(I)??"[]",s=JSON.parse(t),r=Array.isArray(s)?s:[];r.push(e);const n=r.slice(-ie);localStorage.setItem(I,JSON.stringify(n))}catch(t){p.warn("code-review-multi-agent","persist failed",{err:t})}}}const ae=new oe,z="apex_v13_superpowers_sessions",ce=20,O=["brainstorm","plan","dev","test","review","ship","reflect"],le={brainstorm:{system:`Tu es un dev senior. Explore 3-5 approches DIFFÉRENTES pour résoudre la tâche.
+Pour chacune : 1 phrase pitch, pros/cons, complexité (S/M/L), risques.
+Format Markdown structuré.`,userTpl:i=>`Tâche : ${i}
+
+Génère 3-5 options possibles.`},plan:{system:`Tu es architecte logiciel. Produis un design doc + ADR (Architecture Decision Record).
+Sections : Contexte · Décision · Conséquences · Alternatives rejetées.
+Format Markdown.`,userTpl:(i,e)=>`Tâche : ${i}
+
+Brainstorm précédent :
+${e}
+
+Choisis la meilleure option et écris le design doc.`},dev:{system:`Tu es dev senior. Implémente la solution.
+Donne le code complet (TypeScript strict, pas any), prêt à coller.
+Inclus les imports.`,userTpl:(i,e)=>`Tâche : ${i}
+
+Plan :
+${e}
+
+Écris le code de la solution.`},test:{system:`Tu es QA expert. Écris les tests vitest qui couvrent : happy path, edge cases, erreurs.
+Min 5 cas. Format TypeScript prêt à coller.`,userTpl:(i,e)=>`Tâche : ${i}
+
+Code :
+${e}
+
+Écris les tests vitest associés.`},review:{system:`Tu es reviewer expert. Audit le code + tests : sécurité, perf, lisibilité, conformité.
+Format : ✅ OK / ⚠️ Suggestion / ❌ Problème + ligne.`,userTpl:(i,e)=>`Tâche : ${i}
+
+Code + tests :
+${e}
+
+Fais une review honnête.`},ship:{system:`Tu es release manager. Génère :
+- Numéro de version (semver)
+- Message commit (titre court + bullets)
+- Checklist deploy (build, tests, sync apex-ai-v13/)`,userTpl:(i,e)=>`Tâche : ${i}
+
+Code finalisé :
+${e}
+
+Prépare la release.`},reflect:{system:`Tu es coach senior. Tire les leçons :
+- Qu'a-t-on appris ?
+- Patterns réutilisables ?
+- Pièges à éviter ?
+- Améliorations futures ?
+Format Markdown bullets.`,userTpl:(i,e)=>`Tâche : ${i}
+
+Déroulé :
+${e}
+
+Quelles leçons retient-on ?`}};class ue{start(e){const t=`sp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`,s={sessionId:t,taskName:e,createdAt:Date.now(),updatedAt:Date.now(),currentStep:"brainstorm",completedSteps:[],outputs:{brainstorm:null,plan:null,dev:null,test:null,review:null,ship:null,reflect:null},status:"active"};return this.persistSession(s),b.record("superpowers.start",{details:{sessionId:t,taskName:e.slice(0,100)}}),p.info("superpowers",`New session ${t} : ${e}`),t}async advance(e){const t=this.getState(e);if(!t)return p.warn("superpowers",`Session ${e} introuvable`),null;if(t.status!=="active")return p.warn("superpowers",`Session ${e} status=${t.status} → skip`),null;const s=Date.now(),r=t.currentStep,n=le[r],o=this.buildPrevOutputsContext(t);let a="",c;try{await R.stream([{role:"user",content:n.userTpl(t.taskName,o)}],n.system,l=>{l.text&&(a+=l.text)},l=>{c=l})}catch(l){c=l instanceof Error?l:new Error(String(l))}(c||!a)&&(p.warn("superpowers",`Step ${r} failed`,{err:c?.message}),a=`[Step ${r} failed: ${c?.message??"no response"}]`);const u={step:r,output:a,ts:Date.now(),durationMs:Date.now()-s};t.outputs[r]=u,t.completedSteps.push(r),t.updatedAt=Date.now();const m=O.indexOf(r)+1;if(m>=O.length)t.status="completed";else{const l=O[m];l&&(t.currentStep=l)}return this.persistSession(t),b.record("superpowers.advance",{details:{sessionId:e,step:r,durationMs:u.durationMs}}),p.info("superpowers",`Session ${e} : step ${r} done (${u.durationMs}ms)`),u}getState(e){return this.listSessions().find(s=>s.sessionId===e)??null}listSessions(){try{const e=localStorage.getItem(z)??"[]",t=JSON.parse(e);return Array.isArray(t)?t.slice().sort((s,r)=>r.updatedAt-s.updatedAt):[]}catch{return[]}}cancel(e){const t=this.getState(e);return!t||t.status!=="active"?!1:(t.status="cancelled",t.updatedAt=Date.now(),this.persistSession(t),b.record("superpowers.cancel",{details:{sessionId:e}}),!0)}buildPrevOutputsContext(e){const t=[];for(const s of e.completedSteps.slice(-3)){const r=e.outputs[s];r&&t.push(`### ${s}
+${r.output.slice(0,1500)}`)}return t.join(`
+
+`)}persistSession(e){try{const t=this.listSessions(),s=t.findIndex(n=>n.sessionId===e.sessionId);s>=0?t[s]=e:t.push(e);const r=t.slice(0,ce);localStorage.setItem(z,JSON.stringify(r))}catch(t){p.warn("superpowers","persist failed",{err:t})}}}const D=new ue,E="apex_v13_frontend_designs_history",pe=15,de=[{rx:/font-family:\s*['"]?Inter['"]?/gi,replacement:"font-family: Georgia, 'Times New Roman', serif",reason:"Inter banni (slop)"},{rx:/font-family:\s*['"]?Roboto['"]?/gi,replacement:"font-family: Georgia, serif",reason:"Roboto banni (slop)"},{rx:/color:\s*#007bff/gi,replacement:"color: #c9a227",reason:"Bootstrap blue banni (slop)"},{rx:/background:\s*#28a745/gi,replacement:"background: #c9a227",reason:"Bootstrap green banni (slop)"}];class ge{async generate(e){const t=Date.now(),s=e.framework??"vanilla",r=this.buildSystemPrompt(s,e),n=`Crée un composant pour : ${e.prompt}
+
+Retourne STRICTEMENT en JSON : {"html": "...", "css": "...", "js": "..."}`;let o="",a;try{await R.stream([{role:"user",content:n}],r,l=>{l.text&&(o+=l.text)},l=>{a=l})}catch(l){a=l instanceof Error?l:new Error(String(l))}if(a||!o)return p.warn("frontend-design","IA generation failed, fallback skeleton",{err:a?.message}),this.fallbackSkeleton(e,s,t,o);let c;try{const l=o.match(/\{[\s\S]*"html"[\s\S]*\}/);if(!l)throw new Error("JSON manquant");c=JSON.parse(l[0])}catch(l){return p.warn("frontend-design","parse failed, fallback",{err:l}),this.fallbackSkeleton(e,s,t,o)}const u={html:this.sanitizeHtml(c.html??""),css:this.applyAntiSlop(c.css??""),js:this.sanitizeJs(c.js??"")},m={html:u.html,css:u.css,js:u.js,framework:s,generatedAt:Date.now(),durationMs:Date.now()-t,rawText:o.slice(0,5e3)};return this.persistOutput(e,m),b.record("frontend-design.generate",{details:{framework:s,prompt:e.prompt.slice(0,100),durationMs:m.durationMs}}),p.info("frontend-design",`Generated ${s} component (${m.durationMs}ms)`),m}history(){try{const e=localStorage.getItem(E)??"[]",t=JSON.parse(e);return Array.isArray(t)?t:[]}catch{return[]}}buildPreviewSrcdoc(e){const t=e.framework==="react"?`<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+         <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+         <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>`:"",s=e.framework==="react"?"text/babel":"text/javascript";return`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apex Frontend Preview</title>
+${t}
+<style>${e.css}</style>
+</head>
+<body>
+${e.html}
+<script type="${s}">${e.js}<\/script>
+</body>
+</html>`}buildSystemPrompt(e,t){const s=t.brandColors,r=s?.primary??"#c9a227",n=s?.secondary??"#e8b830",o=s?.bg??"#0f0f1a",a=t.targetWidth??"mobile";return`Tu es un designer frontend SENIOR niveau Apple/Linear (production-grade).
+
+ANTI-SLOP STRICT (interdiction absolue) :
+ - PAS de fonts génériques : ban Inter, Roboto, Open Sans, Helvetica
+ - PAS de couleurs Bootstrap par défaut (#007bff, #28a745, etc.)
+ - PAS de box-shadow flat sans intention
+ - PAS de border-radius 4px (= flat = mort)
+ - PAS de transitions linear (toujours cubic-bezier intentionnel)
+
+OBLIGATOIRE :
+ - Typographie distinctive : Georgia/serif premium OU system-ui CURATED
+ - Palette brand Apex : primary=${r}, secondary=${n}, bg=${o}
+ - Animations cubic-bezier(0.16, 1, 0.3, 1) ou (0.34, 1.56, 0.64, 1)
+ - border-radius >= 12px (ou 0 = brutalist intentionnel)
+ - Mobile-first ${a} → touch targets >= 44px
+ - Accessibilité : aria-label sur tous les boutons
+ - prefers-reduced-motion respecté
+
+Framework cible : ${e}
+${e==="react"?"Utilise JSX, hooks, pas de class components.":"HTML5 + CSS3 + JS vanilla, pas de jQuery."}
+
+Output : JSON STRICT { "html": "...", "css": "...", "js": "..." }
+PAS de markdown, PAS d'explications hors JSON.`}applyAntiSlop(e){let t=e;for(const s of de)t=t.replace(s.rx,s.replacement);return t}sanitizeHtml(e){return e.replace(/<script[\s\S]*?<\/script>/gi,"")}sanitizeJs(e){return e.replace(/\beval\s*\(/g,"/* eval blocked */(").replace(/document\.write\s*\(/g,"/* doc.write blocked */(")}fallbackSkeleton(e,t,s,r){return{html:`<div class="ax-fallback"><h2>${e.prompt.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}</h2><p>Génération IA indisponible. Skeleton de secours.</p></div>`,css:".ax-fallback{font-family:Georgia,serif;background:#0f0f1a;color:#e8b830;padding:24px;border-radius:14px;border:1px solid rgba(232,184,48,0.3)}",js:"/* fallback no-op */",framework:t,generatedAt:Date.now(),durationMs:Date.now()-s,rawText:r.slice(0,500)}}persistOutput(e,t){try{const s=localStorage.getItem(E)??"[]",r=JSON.parse(s),n=Array.isArray(r)?r:[];n.push({spec:e,output:t});const o=n.slice(-pe);localStorage.setItem(E,JSON.stringify(o))}catch(s){p.warn("frontend-design","persist failed",{err:s})}}}const G=new ge,_="apex_v13_gstack_roles_history",me=25,fe={CEO:`Tu es CEO. Décide vite, priorise, justifie en 3 bullets max :
+- Impact business
+- Priorité (P0/P1/P2)
+- ROI estimé
+Pas de blabla, factuel.`,Designer:`Tu es designer senior (niveau Apple/Linear).
+Anti-slop strict : pas Inter/Roboto, pas couleurs Bootstrap.
+Format : sketch ASCII + palette couleurs + interactions clés.
+Mobile-first 375px obligatoire.`,Engineer:`Tu es senior engineer TypeScript strict.
+Pas de any, pas de @ts-ignore, pas de eval.
+Code prêt à coller, imports explicites, typage exhaustif.
+Si plusieurs fichiers : nomme chacun en commentaire.`,QA:`Tu es QA expert vitest.
+Min 5 tests : happy path, edge cases, errors, async, mocks.
+Format prêt à coller. describe/it/expect cohérent.`,ReleaseManager:`Tu es release manager.
+Output strict :
+- Version semver
+- Commit message (titre + bullets)
+- Checklist deploy : build, tests, sync apex-ai-v13/, push, vérif data-app-ver
+- Risques/rollback`,Reviewer:`Tu es reviewer honnête sans complaisance.
+Format : ✅ OK / ⚠️ Suggestion / ❌ Problème + ligne précise.
+Sécu / perf / lisibilité / TypeScript / accessibilité.
+Score honnête /100.`,Reflector:`Tu es coach senior. Tire les leçons :
+- 3 patterns réutilisables ?
+- 2 pièges évités ?
+- 1 amélioration future ?
+- Score qualité du process /10.
+Format Markdown bullets.`};class he{async spawnRole(e,t){const s=Date.now(),r=fe[e];let n="",o;try{await R.stream([{role:"user",content:t}],r,c=>{c.text&&(n+=c.text)},c=>{o=c})}catch(c){o=c instanceof Error?c:new Error(String(c))}const a={role:e,task:t.slice(0,500),output:n,durationMs:Date.now()-s,ts:Date.now(),ok:!o&&n.length>0,...o&&{error:o.message.slice(0,200)}};return b.record("gstack.role",{details:{role:e,durationMs:a.durationMs,ok:a.ok}}),p.info("gstack-roles",`Role ${e} done (${a.durationMs}ms · ok=${a.ok})`),a}async runFullPipeline(e){const t=Date.now(),s=["CEO","Designer","Engineer","QA","ReleaseManager","Reviewer","Reflector"],r=[];for(const a of s){const c=this.enrichTaskWithContext(e,r),u=await this.spawnRole(a,c);r.push(u)}const n=this.buildSynthesis(r),o={task:e.slice(0,500),roles:r,finalSynthesis:n,totalDurationMs:Date.now()-t,ts:Date.now()};return this.persistResult(o),b.record("gstack.pipeline",{details:{task:e.slice(0,100),rolesCount:s.length,successful:r.filter(a=>a.ok).length,durationMs:o.totalDurationMs}}),p.info("gstack-roles",`Pipeline done: ${r.filter(a=>a.ok).length}/${s.length} OK · ${o.totalDurationMs}ms`),o}history(){try{const e=localStorage.getItem(_)??"[]",t=JSON.parse(e);return Array.isArray(t)?t:[]}catch{return[]}}listRoles(){return[{role:"CEO",description:"Décision business, priorités, ROI"},{role:"Designer",description:"UX/UI, anti-slop, brand"},{role:"Engineer",description:"Implémentation TypeScript strict"},{role:"QA",description:"Tests vitest exhaustifs"},{role:"ReleaseManager",description:"Versioning, changelog, deploy"},{role:"Reviewer",description:"Code review honnête"},{role:"Reflector",description:"Lessons learned"}]}enrichTaskWithContext(e,t){if(t.length===0)return e;const s=t.slice(-3).map(r=>`### ${r.role}
+${r.output.slice(0,1200)}`).join(`
+
+`);return`Tâche : ${e}
+
+Contexte (rôles précédents) :
+${s}`}buildSynthesis(e){const t=e.filter(r=>r.ok);if(t.length===0)return"Pipeline a échoué : aucun rôle n'a produit de résultat.";const s=[];s.push(`## Synthèse pipeline (${t.length}/${e.length} rôles OK)
+`);for(const r of t){const n=r.output.slice(0,200).replace(/\n/g," ");s.push(`**${r.role}** (${r.durationMs}ms) : ${n}...`)}return s.join(`
+`)}persistResult(e){try{const t=localStorage.getItem(_)??"[]",s=JSON.parse(t),r=Array.isArray(s)?s:[];r.push(e);const n=r.slice(-me);localStorage.setItem(_,JSON.stringify(n))}catch(t){p.warn("gstack-roles","persist failed",{err:t})}}}const ye=new he;let k=null;function Ve(){k?.cleanup(),k=null}const ve=[{id:"security-review",emoji:"🔒",name:"Security Review",description:"Scan runtime exhaustif : secrets en clair, CSP violations, vault drift, audit integrity.",status:"installed",buttonLabel:"Lancer scan"},{id:"code-review-5-agents",emoji:"👥",name:"Code Review 5 Agents",description:"5 IA en parallèle (CLAUDE.md compliance / bugs / redondance / git history / patterns).",status:"configurable",buttonLabel:"Reviewer un diff"},{id:"frontend-design",emoji:"🎨",name:"Frontend Design",description:"Génère un composant UI production-grade depuis prompt avec anti-slop strict.",status:"configurable",buttonLabel:"Générer composant"},{id:"superpowers",emoji:"⚡",name:"Superpowers",description:"7-step methodology : brainstorm → plan → dev → test → review → ship → reflect.",status:"configurable",buttonLabel:"Démarrer session"},{id:"gstack-roles",emoji:"🏛",name:"GStack Roles",description:"7 rôles spécialisés (CEO/Designer/Engineer/QA/Release/Reviewer/Reflector).",status:"configurable",buttonLabel:"Lancer pipeline"}];function Se(i){const e=i.status==="installed"?'<span style="background:rgba(34,204,119,0.15);color:#22cc77;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;letter-spacing:0.02em">✅ Actif</span>':'<span style="background:rgba(232,184,48,0.15);color:#e8b830;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;letter-spacing:0.02em">⚙️ Config</span>';return`
+    <article class="ax-yury-card ax-gs-295" data-plugin-id="${f(i.id)}">
+      <header class="ax-gs-204">
+        <div class="ax-gs-120">
+          <span class="ax-gs-201" aria-hidden="true">${f(i.emoji)}</span>
+          <h3 class="ax-gs-296">${f(i.name)}</h3>
+        </div>
+        ${e}
+      </header>
+      <p class="ax-gs-297">${f(i.description)}</p>
+      <button class="ax-btn ax-bounce-tap ax-gs-298" data-launch="${f(i.id)}" aria-label="Lancer ${f(i.name)}">
+        ${f(i.buttonLabel)}
+      </button>
+    </article>
+  `}function we(){return`
+    <div class="ax-yury-plugins ax-gs-299">
+      <header class="ax-gs-202">
+        <div>
+          <h1 class="ax-gs-300">🚀 Yury Plugins (équivalents Apex)</h1>
+          <p class="ax-gs-301">5 services applicatifs natifs PWA, pas Claude Code</p>
+        </div>
+        <button class="ax-btn ax-bounce-tap ax-gs-302" data-back-admin aria-label="Retour Admin">← Admin</button>
+      </header>
+      <div class="ax-yury-grid ax-gs-203">
+        ${ve.map(Se).join("")}
+      </div>
+    </div>
+  `}async function be(){S.info("🔒 Scan en cours...");try{const i=await ee.runFullScan(),e=i.findings.length>0?i.findings.map(t=>`
+        <li class="ax-gs-304">
+          <strong style="color:${t.severity==="critical"?"#ff5566":t.severity==="high"?"#ffaa44":"#e8b830"}">[${f(t.severity)}]</strong>
+          <span>${f(t.msg)}</span>
+          ${t.fix?`<p class="ax-gs-306">Fix : ${f(t.fix)}</p>`:""}
+        </li>`).join(""):'<li class="ax-gs-205">🟢 Aucune vulnérabilité détectée.</li>';x.open({title:`🔒 Security Review — Score ${i.score}/100`,content:`
+        <div class="ax-gs-12">
+          <p class="ax-gs-311">
+            ${i.passedChecks}/${i.totalChecks} checks passés · ${i.findings.length} findings · ${Math.round(i.durationMs)}ms
+          </p>
+          <ul class="ax-gs-307">${e}</ul>
+        </div>
+      `,actions:[{label:"Fermer",variant:"ghost",onClick:()=>x.closeAll()}]})}catch(i){p.warn("yury-plugins","security review failed",{err:i}),S.error("Scan échoué — vérifie les logs")}}async function xe(){const i=window.prompt("Colle le diff à reviewer (ou laisse vide pour démo) :","");if(i!==null){S.info("👥 Lancement des 5 agents...");try{const e=await ae.review({diff:i||`+const test = "demo";
+-const old = "removed";`}),t=e.agents.map(s=>`
+      <li class="ax-gs-304">
+        <strong>[${f(s.role)}]</strong> · ${f(s.provider)} · confidence ${s.confidence}/100
+        <p class="ax-gs-306">${s.findings.length} finding(s)</p>
+      </li>`).join("");x.open({title:`👥 Code Review — Score ${e.finalScore}/100`,content:`
+        <div class="ax-gs-12">
+          <p class="ax-gs-311">
+            ${e.totalFindings} findings · ${e.criticalFindings} critical · ${Math.round(e.durationMs)}ms
+          </p>
+          <h3 class="ax-gs-308">Agents</h3>
+          <ul style="list-style:none;padding:0;margin:0 0 14px">${t}</ul>
+          <h3 class="ax-gs-308">Consensus</h3>
+          <pre class="ax-gs-309">${f(e.consensus)}</pre>
+        </div>
+      `,actions:[{label:"Fermer",variant:"ghost",onClick:()=>x.closeAll()}]})}catch(e){p.warn("yury-plugins","code review failed",{err:e}),S.error("Review échouée — vérifie clés IA")}}}async function $e(){const i=window.prompt("Décris le composant UI à générer :","Bouton CTA premium avec hover doux");if(i){S.info("🎨 Génération en cours...");try{const e=await G.generate({prompt:i,framework:"vanilla"}),s=G.buildPreviewSrcdoc(e).replace(/"/g,"&quot;").replace(/</g,"&lt;");x.open({title:`🎨 Frontend Design — ${e.framework}`,content:`
+        <div class="ax-gs-12">
+          <p class="ax-gs-303">
+            Généré en ${Math.round(e.durationMs)}ms · framework ${f(e.framework)}
+          </p>
+          <iframe sandbox="allow-scripts" srcdoc="${s}" style="width:100%;height:300px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:#fff" aria-label="Aperçu du composant généré"></iframe>
+          <details class="ax-gs-187">
+            <summary style="cursor:pointer;color:#e8b830;font-weight:600">Voir le code</summary>
+            <pre style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.85);padding:12px;border-radius:10px;font-size:11px;white-space:pre-wrap;max-height:30vh;overflow:auto;margin-top:8px"><strong>HTML:</strong>
+${f(e.html)}
+
+<strong>CSS:</strong>
+${f(e.css)}
+
+<strong>JS:</strong>
+${f(e.js)}</pre>
+          </details>
+        </div>
+      `,actions:[{label:"Fermer",variant:"ghost",onClick:()=>x.closeAll()}]})}catch(e){p.warn("yury-plugins","frontend design failed",{err:e}),S.error("Génération échouée")}}}async function Ae(){const i=window.prompt("Nom de la tâche pour la session Superpowers :","Refactor auth flow");if(!i)return;const e=D.start(i);S.info(`⚡ Session ${e} démarrée — avancement step 1/7...`);try{const t=await D.advance(e),s=D.getState(e);x.open({title:`⚡ Superpowers — ${f(i)}`,content:`
+        <div class="ax-gs-12">
+          <p class="ax-gs-303">
+            Session ${f(e)} · step actuel : <strong>${f(s?.currentStep??"-")}</strong>
+          </p>
+          <h3 class="ax-gs-308">Output ${f(t?.step??"?")}</h3>
+          <pre class="ax-gs-312">${f(t?.output??"(pas de sortie)")}</pre>
+          <p style="color:rgba(255,255,255,0.55);font-size:12px;margin-top:10px">
+            Re-lance la vue pour avancer au step suivant.
+          </p>
+        </div>
+      `,actions:[{label:"Fermer",variant:"ghost",onClick:()=>x.closeAll()}]})}catch(t){p.warn("yury-plugins","superpowers advance failed",{err:t}),S.error("Step échoué")}}async function ke(){const i=window.prompt("Tâche pour le pipeline GStack 7 rôles :","Implémenter dark mode toggle");if(i){S.info("🏛 Pipeline 7 rôles en cours (peut prendre 30-60s)...");try{const e=await ye.runFullPipeline(i),t=e.roles.map(s=>`
+      <li class="ax-gs-304">
+        <strong style="color:${s.ok?"#22cc77":"#ff5566"}">[${f(s.role)}]</strong>
+        ${s.ok?"✅":"❌"} · ${Math.round(s.durationMs)}ms
+        <p class="ax-gs-306">${f(s.output.slice(0,200))}...</p>
+      </li>`).join("");x.open({title:`🏛 GStack Pipeline — ${e.roles.filter(s=>s.ok).length}/7 OK`,content:`
+        <div class="ax-gs-12">
+          <p class="ax-gs-311">
+            ${Math.round(e.totalDurationMs/1e3)}s total
+          </p>
+          <ul style="list-style:none;padding:0;margin:0 0 14px;max-height:50vh;overflow-y:auto">${t}</ul>
+        </div>
+      `,actions:[{label:"Fermer",variant:"ghost",onClick:()=>x.closeAll()}]})}catch(e){p.warn("yury-plugins","gstack pipeline failed",{err:e}),S.error("Pipeline échoué")}}}function Te(i){if(!k)return;i.querySelectorAll("[data-launch]").forEach(t=>{k.bind(t,"click",()=>{L.tap();const s=t.dataset.launch??"";switch(s){case"security-review":be();break;case"code-review-5-agents":xe();break;case"frontend-design":$e();break;case"superpowers":Ae();break;case"gstack-roles":ke();break;default:S.warn(`Plugin ${s} non implémenté`)}})});const e=i.querySelector("[data-back-admin]");e&&k.bind(e,"click",()=>{L.tap(),X.navigate("admin")})}function Xe(i){if(k?.cleanup(),k=K("admin-yury-plugins"),!Y.get("isAdmin")){i.innerHTML=`
+      <div class="ax-empty ax-gs-188">
+        <h2>Accès réservé</h2>
+        <p>Cette section est réservée à l'admin Kevin.</p>
+      </div>
+    `;return}i.innerHTML=we(),Te(i)}export{Ve as dispose,Xe as render};
