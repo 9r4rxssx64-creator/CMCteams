@@ -195,3 +195,25 @@ Le **studio** propose maintenant ces coupes : T-shirt, Débardeur, Polo, Chemise
 **Pour rivaliser avec les meilleurs (niveau pro)** : (a) **livraison EU rapide** (Gelato/Printful EU), (b) **white-label** systématique (T-Pop/Printful), (c) **mockups photoréalistes** auto du fournisseur (catalogue réel), (d) **automatisation** commande→fournisseur (Shopify + API quand le volume monte), (e) **1 échantillon** validé par produit avant mise en vente.
 
 **Sources (2026)** : [Gelato — eco POD](https://www.gelato.com/blog/best-eco-friendly-print-on-demand) · [Printful — best POD UK/EU](https://www.printful.com/uk/blog/best-print-on-demand-companies) · [dodropshipping — eco POD](https://dodropshipping.com/best-eco-friendly-print-on-demand-suppliers/) · [Merchize — POD EU](https://merchize.com/print-on-demand-in-eu/) · [Printful vs Printify vs Gelato](https://www.printful.com/blog/gelato-vs-printify) · [Marketing4eCommerce — comparatif UE](https://marketing4ecommerce.net/en/gelato-printful-printify-comparative/)
+
+---
+
+## 💶 TARIFS « TOUT COMPRIS » (indicatif 2026 — à confirmer sur chaque site)
+
+> « Tout compris » = **coût de base du vêtement + impression + livraison EU** (hors ta marge, hors abonnement). Indicatif pour un **t‑shirt classique** livré en Europe ; varie selon variante/destination/TVA. **Tu vérifies sur le site** (tarifs exacts par produit).
+
+| Fournisseur | T‑shirt imprimé **livré EU (tout compris)** | Hoodie livré EU (indicatif) | Abonnement | Remarque |
+|---|---|---|---|---|
+| **Printify** ⭐ | **~10–15 €** *(le moins cher ; imprimeur EU ou CN au choix)* | ~22–30 € | **Gratuit** (Premium 39 $/mo = remises en option) | base la + basse |
+| **Gelato** ⭐ | **~12–16 €** *(prod locale EU, livraison rapide)* | ~24–32 € | **Gratuit** (Gelato+ ~24 $/mo) | −10 à −20 % vs Printful |
+| **Printful** | **~14–19 €** *(base 9,25–13,50 € + port EU 4,4–6 €)* | ~28–38 € | **Gratuit** | qualité + white‑label inclus |
+| **T‑Pop** 🌿 | **~16–20 €** *(tee bio 11,90–13,60 € TTC + port)* ; *Made in France ~24–28 €* | ~30–40 € | **Gratuit, sans minimum** | bio GOTS, FR ; prix **HT + 20 % TVA** |
+
+**Ta marge = ton prix de vente − coût tout compris.** Exemples avec les prix boutique actuels :
+- T‑shirt **Standard** vendu **26,90 €** − ~12 € (Printify) ≈ **~15 € de marge** (~55 %).
+- T‑shirt **Bio coton ✦** vendu **~33 €** − ~18 € (T‑Pop) ≈ **~15 € de marge** (~45 %).
+- Hoodie vendu **49,90–55 €** − ~26–32 € ≈ **~20–24 € de marge**.
+
+> ⚠️ Indicatif : confirme les **vrais prix par produit** dans ton compte (variante, couleur, destination, TVA selon ton statut Monaco/France). On figera alors les **prix de vente définitifs** pour viser une marge cible (ex. 45–60 %).
+
+**Sources prix (2026)** : [TPOP — tee bio Rocker 11,90 € / Made in France 19,70 € HT](https://www.tpop.com/en/blog/nouveau-t-shirt-en-coton-bio-a-petit-prix-en-print-on-demand) · [Comparatif prix UE Gelato/Printful/Printify](https://marketing4ecommerce.net/en/gelato-printful-printify-comparative/) · [Printful pricing](https://www.printful.com/blog/gelato-vs-printify) · [Printify pricing & fees 2026](https://chayaani.com/blog/printify-pricing-fees-guide-2026)
