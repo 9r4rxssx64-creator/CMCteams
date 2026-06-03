@@ -6,28 +6,42 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { store } from '../../core/store.js';
 
+/* Le test « Enter → submit » déclenche un vrai processQueue() async (features/chat)
+ * → aiRouter.stream → getApiKey → localStorage. Non-`await`é par le test, il se règle
+ * APRÈS le teardown de l'env sous charge → unhandled rejection « localStorage is not
+ * defined » → vitest sort en code 1 (lesson #89). Un spyOn restauré en afterEach ne
+ * suffit PAS : restoreAllMocks ré-expose le vrai stream AVANT que la chaîne (qui await
+ * d'abord buildSystemPromptDeep) ne l'atteigne. On mocke donc le MODULE (scope fichier,
+ * stable contre restoreMocks, jamais de fuite cross-fichier) via un Proxy qui ne
+ * remplace QUE stream → aucune touche localStorage, peu importe quand processQueue finit. */
+vi.mock('../../services/ai/ai-router.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../services/ai/ai-router.js')>();
+  return {
+    ...actual,
+    aiRouter: new Proxy(actual.aiRouter, {
+      get(target, prop, receiver) {
+        if (prop === 'stream') return async (): Promise<void> => {};
+        return Reflect.get(target, prop, receiver) as unknown;
+      },
+    }),
+  };
+});
+
 describe('chat features massive coverage Jet 8 final', () => {
   let root: HTMLElement;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     localStorage.clear();
     document.body.innerHTML = '<div id="apex-root"></div>';
     root = document.getElementById('apex-root')!;
     store.init({ appVer: 'v13.0.0' });
     store.set('user', { id: 'kdmc_admin', name: 'Kevin', tier: 'admin' });
     store.set('isAdmin', true);
-    /* Le test « Enter → submit » déclenche un vrai processQueue → aiRouter.stream
-     * → getApiKey → localStorage. Sous charge (suite complète), cette chaîne async
-     * se règle APRÈS le teardown de l'env → unhandled rejection « localStorage is not
-     * defined ». On neutralise le stream réel (le fichier ne teste pas ai-router). */
-    const { aiRouter } = await import('../../services/ai/ai-router.js');
-    vi.spyOn(aiRouter, 'stream').mockResolvedValue(undefined);
     vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.restoreAllMocks();
   });
 
   describe('paste-key handler modal-sheet flow', () => {

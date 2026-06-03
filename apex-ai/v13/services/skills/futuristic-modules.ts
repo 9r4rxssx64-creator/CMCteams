@@ -330,7 +330,26 @@ export const futuristicModules = {
     logger.info('skill.futuristic.invoke', moduleId, { category: route.category, delegate: route.delegate });
 
     try {
-      switch (route.delegate) {
+      return await this.dispatchRoute(moduleId, route, params);
+    } catch (err) {
+      return {
+        success: false,
+        module_id: moduleId,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  },
+
+  /**
+   * Délégation selon route.delegate — extrait de invoke() pour testabilité
+   * (cases mcp/default + catch invoke). Comportement identique.
+   */
+  async dispatchRoute(
+    moduleId: string,
+    route: ModuleRoute,
+    params: Record<string, unknown>,
+  ): Promise<FuturisticInvokeOutput> {
+    switch (route.delegate) {
         case 'replicate': {
           /* INVOCATION REELLE Replicate API si token Vault disponible */
           const token = this.getReplicateToken();
@@ -408,13 +427,6 @@ export const futuristicModules = {
           };
         }
       }
-    } catch (err) {
-      return {
-        success: false,
-        module_id: moduleId,
-        error: err instanceof Error ? err.message : String(err),
-      };
-    }
   },
 
   /**
