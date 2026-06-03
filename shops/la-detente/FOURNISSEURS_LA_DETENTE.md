@@ -228,7 +228,9 @@ réparti selon la qualité choisie par le client :
 | Qualité client | Fournisseur routé | Portail |
 |---|---|---|
 | **Standard** | Printify | https://printify.com/app/orders |
-| **Bio coton ✦** | T-Pop | https://www.tpop.com/fr/compte/commandes |
+| **Bio coton ✦** | T-Pop (manuel — pas d'API) | https://www.tpop.com/en/integrations |
+
+> ⚠️ **T-Pop n'a PAS d'API publique** : il ne se connecte que via Shopify / WooCommerce / Etsy (login) ou en saisie manuelle. Pour du **100 % auto**, on passe par **Printify** (API + coton bio/organic dispo) pour les deux qualités ; T-Pop reste possible en **manuel** (flux copier/CSV/email déjà en place) si tu veux garder le made-in-France.
 
 **Contenu auto du bon** (par fournisseur) : articles à produire (vêtement, couleur, taille, motif,
 emplacement, fichier d'impression `img/print/<id>.png`), **adresse client pour livraison directe
