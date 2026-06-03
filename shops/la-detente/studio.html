@@ -125,6 +125,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
   <button class="btn ghost" title="Refaire (Ctrl+Y)" onclick="Studio.redo()">↪︎</button>
   <button class="btn ghost" onclick="Studio.exportPrint()">⬇️ Fichier impression</button>
   <button class="btn ghost" onclick="Studio.exportMockup()">🖼️ Mockup PNG</button>
+  <button class="btn ghost" onclick="Studio.exportPDF()" title="PDF prêt impression 300 dpi">📄 PDF 300 dpi</button>
   <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
   <a class="btn" href="index.html" title="Retour boutique">↩</a>
 </div>
@@ -367,17 +368,19 @@ function svgToPng(svg,size,cb){
  img.src=url;
 }
 function download(data,name){var a=document.createElement("a");a.href=data;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function _loadJsPDF(cb){if(window.jspdf&&window.jspdf.jsPDF)return cb();var sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";sc.onload=function(){cb()};sc.onerror=function(){toast("PDF indisponible (réseau)")};document.head.appendChild(sc)}
+function exportPDF(){if(!st.layers.length)return toast("Ajoute au moins un calque");toast("Génération PDF 300 dpi…");svgToPng(buildSVG(3543,false,null),3543,function(png){_loadJsPDF(function(){try{var J=window.jspdf.jsPDF;var doc=new J({unit:"mm",format:[300,300],orientation:"portrait"});doc.addImage(png,"PNG",0,0,300,300);doc.save("la-detente-impression-300dpi.pdf");toast("PDF 300 dpi téléchargé ✅ (30×30 cm, prêt impression)")}catch(e){toast("Erreur PDF : "+e.message)}})})}
 function exportMockup(){if(!st.layers.length)return toast("Ajoute au moins un calque");svgToPng(buildSVG(1200,true),1200,function(d){download(d,"la-detente-mockup-"+st.garment+".png");toast("Mockup PNG téléchargé ✅")})}
 function exportPrint(){if(!st.layers.length)return toast("Ajoute au moins un calque");svgToPng(buildSVG(2000,false,null),2000,function(d){download(d,"la-detente-impression.png");toast("Fichier d'impression HD (transparent) téléchargé ✅")})}
 
 /* ---------- ADD TO SHOP ---------- */
 function addToShop(){
  if(!st.layers.length)return toast("Ajoute un design d'abord");
- var CATMAP={tee:"tshirts",hoodie:"sweats",polo:"polos",cap:"casquettes",tote:"accessoires",bandana:"accessoires"};
+ var CATMAP={tee:"tshirts",hoodie:"sweats",polo:"polos",cap:"casquettes",tote:"accessoires",bandana:"accessoires",tank:"tshirts",shirt:"tshirts",zip:"sweats",jogger:"accessoires",short:"accessoires"};
  modal('<h2>Ajouter à la boutique</h2>'
   +'<div class="field"><label>Nom du produit</label><input id="m_name" type="text" value="'+esc(gobj().name+" personnalisé")+'"></div>'
-  +'<div class="row2"><div class="field"><label>Prix (€)</label><input id="m_price" type="number" step="0.5" value="'+({tee:24.9,hoodie:49.9,polo:34.9,cap:19.9,tote:16.9,bandana:12.9})[st.garment]+'"></div>'
-  +'<div class="field"><label>Prix barré (€)</label><input id="m_orig" type="number" step="0.5" value="'+({tee:32,hoodie:64,polo:42,cap:25,tote:21,bandana:16})[st.garment]+'"></div></div>'
+  +'<div class="row2"><div class="field"><label>Prix (€)</label><input id="m_price" type="number" step="0.5" value="'+({tee:24.9,hoodie:49.9,polo:34.9,cap:19.9,tote:16.9,bandana:12.9,tank:22.9,shirt:29.9,zip:52.9,jogger:39.9,short:29.9})[st.garment]+'"></div>'
+  +'<div class="field"><label>Prix barré (€)</label><input id="m_orig" type="number" step="0.5" value="'+({tee:32,hoodie:64,polo:42,cap:25,tote:21,bandana:16,tank:29,shirt:37,zip:66,jogger:49,short:37})[st.garment]+'"></div></div>'
   +'<div class="field"><label>Thème / Collection</label><input id="m_theme" type="text" placeholder="ex : Ball-Trap, Chasse, Édition été…" value=""></div>'+'<div class="hint">Le produit sera enregistré localement avec son mockup + son fichier d\'impression (pour le bon de production fournisseur).</div>'
   +'<div class="row2" style="margin-top:14px"><button class="mini" onclick="Studio.closeModal()">Annuler</button><button class="btn primary" onclick="Studio._saveProduct(\''+CATMAP[st.garment]+'\')">Enregistrer</button></div>');
 }
@@ -541,7 +544,7 @@ function _iceBind(){var cv=ICE.canvas,down=false,start=null;
  cv.onmousedown=pd;cv.onmousemove=pm;window.addEventListener("mouseup",pu);
  cv.addEventListener("touchstart",pd,{passive:false});cv.addEventListener("touchmove",pm,{passive:false});cv.addEventListener("touchend",pu)}
 function iceApply(){var l=get(ICE.id);if(!l){closeModal();return}snap();try{l.href=ICE.canvas.toDataURL("image/png");var ar=ICE.canvas.width/ICE.canvas.height||1;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base}catch(e){toast("Erreur retouche")}closeModal();render();toast("Photo retouchée ✅")}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>

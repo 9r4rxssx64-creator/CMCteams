@@ -88,8 +88,16 @@ try {
   ok(vbw2 === 100, 'zoom reset → 100');
 
   // exports présents
-  const expOk = await p.evaluate(() => typeof Studio.exportMockup==='function' && typeof Studio.exportPrint==='function' && typeof Studio.addToShop==='function');
-  ok(expOk, 'export mockup/print + ajouter boutique présents');
+  const expOk = await p.evaluate(() => typeof Studio.exportMockup==='function' && typeof Studio.exportPrint==='function' && typeof Studio.exportPDF==='function' && typeof Studio.addToShop==='function');
+  ok(expOk, 'exports (mockup/print/PDF) + ajouter boutique présents');
+
+  // créer un produit en 1 clic → boutique
+  await p.click('button:has-text("Ajouter à la boutique")');
+  await p.waitForSelector('#m_name', { timeout:5000 });
+  await p.click('button:has-text("Enregistrer")');
+  await p.waitForTimeout(900);
+  const nProd = await p.evaluate(() => JSON.parse(localStorage.getItem('ld_custom_products')||'[]').length);
+  ok(nProd >= 1, 'créer un produit 1-clic → '+nProd+' produit(s) boutique');
 
   fs.mkdirSync('tools/la-detente-e2e', { recursive:true });
   await p.screenshot({ path:'tools/la-detente-e2e/studio-test.png' });
