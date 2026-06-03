@@ -318,4 +318,21 @@ describe('oauth-providers-registry (13 providers)', () => {
       expect(p?.scopes.some((s) => s.includes('googleapis.com'))).toBe(true);
     });
   });
+
+  describe('computeStatus — catch (campagne 100%)', () => {
+    it('vault.readKey throw synchrone → catch → status par défaut (pas de throw)', async () => {
+      /* throw SYNCHRONE → le `.catch(()=>'')` chaîné n'est jamais atteint → outer catch (322) */
+      vi.spyOn(vault, 'readKey').mockImplementation(() => { throw new Error('vault down'); });
+      const status = await oauthProvidersRegistry.getProviderStatus('gmail');
+      expect(status).not.toBeNull();
+      expect(status?.configured).toBe(false);
+    });
+
+    it('vault.readKey throw non-Error (string) → catch log String(err)', async () => {
+      // eslint-disable-next-line no-throw-literal -- test du chemin String(err) (non-Error)
+      vi.spyOn(vault, 'readKey').mockImplementation(() => { throw 'vault-str'; });
+      const status = await oauthProvidersRegistry.getProviderStatus('gmail');
+      expect(status?.configured).toBe(false);
+    });
+  });
 });
