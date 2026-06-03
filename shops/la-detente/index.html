@@ -158,6 +158,7 @@ input,select,textarea{font-size:16px}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav-item:focus-visible,.card:focus-visible{outline:2px solid var(--p);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}@media(max-width:760px){.cat-grid{grid-template-columns:repeat(2,1fr);gap:10px}}.cat-tile{position:relative;border-radius:14px;overflow:hidden;cursor:pointer;aspect-ratio:4/3;border:1px solid var(--border)}.cat-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}.cat-tile:hover img{transform:scale(1.05)}.cat-tile-ov{position:absolute;inset:0;display:flex;align-items:flex-end;padding:12px;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.72))}.cat-tile-ov span{color:#fff;font-weight:800;font-size:15px;letter-spacing:.3px}
+.hero{background-image:linear-gradient(90deg,rgba(14,16,18,.94),rgba(14,16,18,.55) 58%,rgba(14,16,18,.18)),url('img/hero.png');background-size:cover;background-position:right center;background-repeat:no-repeat}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"La Détente — Textile entre amis","description":"Vêtements personnalisés au motif AR15 + cœur rouge : tir, précision, chasse, ball-trap. T-shirts, sweats, polos, casquettes. Designs personnalisables.","url":"https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/","image":"https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/img/og.png","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
@@ -444,15 +445,16 @@ function ldOpenSheet(orderId){
  var snap=(window._ldSheets||{})[orderId];
  var html=snap?snap.html:buildProductionSheetHTML(orderId);
  var text=snap?snap.text:buildProductionSheetText(orderId);
+ window._ldCurSheet={orderId:orderId,text:text};
  var old=document.getElementById("sheetModal");if(old)old.remove();
  var m=document.createElement("div");m.id="sheetModal";
  m.style.cssText="position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
  m.innerHTML='<div style="background:#fff;color:#111;border-radius:14px;max-width:660px;width:100%;max-height:92vh;overflow:auto;padding:22px">'
  +'<div id="sheetBody">'+html+'</div>'
- +'<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">'
+ +'<div style="display:flex;gap:8px;align-items:center;margin-top:14px"><label style="font-size:12px;color:#555;white-space:nowrap">✉️ Fournisseur</label><input id="ld_sup_email" type="email" value="'+esc(ldGetSupplierEmail())+'" placeholder="email fournisseur (T-Pop, atelier…)" style="flex:1;padding:9px;border:1px solid #ccc;border-radius:8px;color:#111;background:#fff"></div>' +'<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">'
  +'<button onclick="ldPrintSheet()" style="flex:1;min-width:140px;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🖨️ Imprimer / PDF</button>'
  +'<button onclick="var t=document.getElementById(\'sheetTextHolder\');t.select();try{navigator.clipboard.writeText(t.value)}catch(_){document.execCommand(\'copy\')}toast(\'Bon copié ✅\')" style="flex:1;min-width:140px;padding:12px;background:#222;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">📋 Copier</button>'
- +'<button onclick="document.getElementById(\'sheetModal\').remove()" style="padding:12px 16px;background:#eee;color:#111;border:none;border-radius:10px;font-weight:700;cursor:pointer">Fermer</button></div>'
+ +'<button onclick="ldEmailSupplier()" style="flex:1;min-width:150px;padding:12px;background:#0a7d2c;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">✉️ Envoyer au fournisseur</button>' +'<button onclick="ldExportCSV()" style="flex:1;min-width:130px;padding:12px;background:#444;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">⬇️ Export CSV</button>' +'<button onclick="document.getElementById(\'sheetModal\').remove()" style="padding:12px 16px;background:#eee;color:#111;border:none;border-radius:10px;font-weight:700;cursor:pointer">Fermer</button></div>'
  +'<textarea id="sheetTextHolder" style="position:absolute;left:-9999px;top:-9999px">'+esc(text)+'</textarea></div>';
  document.body.appendChild(m);m.onclick=function(e){if(e.target===m)m.remove()};
 }
@@ -462,6 +464,23 @@ function ldPrintSheet(){var body=document.getElementById("sheetBody");if(!body)r
  w.document.write('<!doctype html><meta charset=utf-8><title>Bon de production</title><body style="margin:24px">'+body.innerHTML+'</body>');
  w.document.close();w.focus();setTimeout(function(){try{w.print()}catch(_){}},300);
 }
+
+/* === PHASE 3 — Handoff fournisseur (envoi auto + export) === */
+function ldGetSupplierEmail(){return localStorage.getItem("ld_supplier_email")||""}
+function ldSaveSupplierEmail(){var e=document.getElementById("ld_sup_email");if(e){localStorage.setItem("ld_supplier_email",(e.value||"").trim())}}
+function ldEmailSupplier(){ldSaveSupplierEmail();var s=window._ldCurSheet||{};var to=ldGetSupplierEmail();
+ if(!to){toast("Indique l'email du fournisseur d'abord","error");var f=document.getElementById("ld_sup_email");if(f)f.focus();return}
+ var sub="Bon de production La Détente "+(s.orderId||"");
+ var href="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(s.text||"");
+ window.location.href=href;toast("Email fournisseur prêt à envoyer ✉️")}
+function ldExportCSV(){var s=window._ldCurSheet||{};var ck=S.checkout||ldGetCk();
+ var rows=[["#","Produit","Vetement","Couleur","Theme/Motif","Emplacement","Taille","Qte","Prix"]];
+ S.cart.forEach(function(it,i){var sp=ldItemSpec(it);rows.push([i+1,sp.name,sp.garment,sp.color,sp.theme,sp.place,sp.size,sp.qty,sp.price])});
+ rows.push([]);rows.push(["LIVRAISON",ck.name||"",ck.addr||"",(ck.zip||"")+" "+(ck.city||""),ck.country||"France",ck.email||"",ck.phone||""]);
+ var csv=rows.map(function(r){return r.map(function(c){c=String(c==null?"":c);return /[",;\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(";")}).join("\n");
+ var a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent("﻿"+csv);
+ a.download="commande-la-detente-"+String(s.orderId||"brouillon").replace(/[^\w-]/g,"")+".csv";
+ document.body.appendChild(a);a.click();a.remove();toast("Export CSV téléchargé ✅")}
 
 /* Pub tracking events */
 function trackPurchase(orderId,total,items){
