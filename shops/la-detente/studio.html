@@ -156,7 +156,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
       <button class="btn primary" id="aiBtn" style="width:100%;margin-top:6px" onclick="Studio.aiGen()">✨ Générer</button>
       <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
     </div>
-    <div class="grp"><h3>Emblèmes marque</h3><div class="emblems" id="emblems"></div></div>
+    <div class="grp"><h3>Motifs rapides</h3><div class="emblems" id="emblems"></div></div>
   </div>
 
   <!-- CENTER: stage -->
@@ -197,7 +197,7 @@ var GARMENTS=[
 var PLACE={tee:{chest:[28,30,44,40],back:[24,24,52,52],"left-chest":[55,31,16,14],sleeve:[12,30,14,12]},hoodie:{chest:[30,40,40,32],"left-chest":[55,40,14,12],sleeve:[10,40,14,12]},polo:{"left-chest":[52,33,15,13],chest:[34,34,32,28],back:[26,26,48,46]},cap:{front:[34,30,32,20]},tote:{center:[32,34,36,40]},bandana:{center:[36,42,28,26]},tank:{chest:[30,30,40,40],back:[26,24,48,50],"left-chest":[55,31,15,13]},shirt:{"left-chest":[52,32,15,13],chest:[34,36,32,30],back:[26,26,48,46]},zip:{chest:[31,44,38,28],"left-chest":[55,42,14,12],back:[26,30,48,42]},jogger:{"left-thigh":[35,50,16,16],hip:[34,30,18,10]},short:{"left-thigh":[35,50,16,14],hip:[34,33,18,10]}};
 var PLBL={chest:"Poitrine",back:"Dos","left-chest":"Cœur (gauche)",sleeve:"Manche",front:"Avant",center:"Centre","left-thigh":"Cuisse (gauche)",hip:"Hanche"};
 var COLORS=["#15171a","#ffffff","#2f4538","#3a4636","#5a6650","#0f1722","#1d3a5f","#3a0f12","#5b1a1a","#7a5c1e","#b08d57","#8a8d92","#c9c4ba","#d22","#dc2626"];
-var EMBLEMS=[["emblem","Emblème"],["heart","Cœur"],["th-visejuste","Vise Juste"],["th-entreamis","Entre Amis"],["th-tir","Cible"],["th-prec","Précision"],["th-arrows","Flèches"],["th-balltrap","Ball-Trap"],["th-clay","Plateau"],["th-chasse","Chasse"],["th-stag","Cerf"],["th-antler","Bois de Cerf"],["th-shells","Cartouches"],["th-duck","Canard"],["th-feather","Plume"],["th-pine","Sapin"],["th-mountain","Montagne"],["th-paw","Empreinte"]];
+var EMBLEMS=[["heart","Cœur"],["th-visejuste","Vise Juste"],["th-entreamis","Entre Amis"],["th-tir","Cible"],["th-prec","Précision"],["th-arrows","Flèches"],["th-balltrap","Ball-Trap"],["th-clay","Plateau"],["th-chasse","Chasse"],["th-stag","Cerf"],["th-antler","Bois de Cerf"],["th-shells","Cartouches"],["th-duck","Canard"],["th-feather","Plume"],["th-pine","Sapin"],["th-mountain","Montagne"],["th-paw","Empreinte"]];
 var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script MT"];
 
 var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1};
@@ -447,7 +447,7 @@ function init(){
  // seed with brand emblem
  var _sp=new URLSearchParams(location.search), _qd=_sp.get("design");
  if(_qd&&/^[a-z0-9-]+$/.test(_qd)){var _u="img/designs/"+_qd+".png";var _im=new Image();_im.onload=function(){var ar=(_im.width&&_im.height)?_im.width/_im.height:1;addLayer({type:"image",href:_u,orig:_u,w:ar>=1?44:44*ar,h:ar>=1?44/ar:44,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});};_im.onerror=function(){};_im.src=_u;}
- else{var _qm=_sp.get("motif");var _ev=EMBLEMS.map(function(e){return e[0]});addLayer({type:"emblem",sym:(_qm&&_ev.indexOf(_qm)>=0)?_qm:"emblem",scale:1});}
+ else{var _qm=_sp.get("motif");if(_qm&&EMBLEMS.map(function(e){return e[0]}).indexOf(_qm)>=0)addLayer({type:"emblem",sym:_qm,scale:1});/* sinon : canvas vierge, l'utilisateur crée son logo */}
  initDrag();
  $("upl").addEventListener("change",function(e){Array.prototype.forEach.call(e.target.files,addImageFile);e.target.value=""});
  $("upldir").addEventListener("change",function(e){var n=0;Array.prototype.forEach.call(e.target.files,function(f){if(/^image\//.test(f.type||"")){addImageFile(f);n++}});toast(n+" image(s) importée(s) du dossier");e.target.value=""});
