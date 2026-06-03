@@ -761,7 +761,7 @@ if(modal)modal.innerHTML='<div style="background:var(--card);border-radius:16px;
 +'<p style="color:var(--muted);margin-bottom:16px">Numéro : <strong style="color:var(--p)">'+orderId+'</strong></p>'
 +'<p style="color:var(--muted);margin-bottom:8px">Total : <strong>'+fmtP(total)+'</strong> via '+method+'</p>'
 +'<p style="color:var(--muted);font-size:13px;margin-bottom:24px">Un email de confirmation vous sera envoyé.</p>'
-+'<button onclick="ldOpenSheet(\''+orderId+'\')" style="padding:14px 24px;background:#222;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">📄 Bon de production</button>'+'<button onclick="ldOpenSupplierOrders(\''+orderId+'\')" style="padding:14px 24px;background:#0a7d2c;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">📤 Commandes fournisseurs</button>'+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'orders\')" style="padding:14px 24px;background:#222;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">📦 Suivre ma commande</button>'+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'home\')" style="padding:14px 32px;background:var(--p);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">Continuer mes achats</button>'
++'<button onclick="ldOpenSheet(\''+orderId+'\')" style="padding:14px 24px;background:#222;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">📄 Bon de production</button>'+'<button onclick="ldOpenSupplierOrders(\''+orderId+'\')" style="padding:14px 24px;background:#0a7d2c;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">📤 Commandes fournisseurs</button>'+'<button onclick="ldPrintifyAuto(\''+orderId+'\',this)" style="padding:14px 24px;background:#0070ba;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">🚀 Envoyer à Printify (auto)</button>'+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'orders\')" style="padding:14px 24px;background:#222;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">📦 Suivre ma commande</button>'+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'home\')" style="padding:14px 32px;background:var(--p);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">Continuer mes achats</button>'
 +'</div>';
 return orderId}
 
@@ -902,6 +902,24 @@ function ldRemovePublished(id){if(!confirm("Retirer ce produit de la boutique ?"
  toast("Produit retiré");dc();}
 try{var _pc=JSON.parse(localStorage.getItem("ld_published_cache")||"[]");if(_pc&&_pc.length)ldMergePublished(_pc);}catch(_){}
 if(window.kdmcFetchProducts)kdmcFetchProducts(STORE_ID,function(arr){if(arr&&arr.length){ldMergePublished(arr);if(typeof dc==="function")dc();}});
+/* Worker de commande Printify (envoi auto) */
+window._ldOrderCfg=null;
+try{fetch("printify-order-config.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.worker_url)window._ldOrderCfg=j;}).catch(function(){});}catch(_){}
+function _ldCountryName(c){return c||"France"}
+function ldPrintifyAuto(orderId,btn){
+ var cfg=window._ldOrderCfg;
+ if(!cfg||!cfg.worker_url){toast("Envoi auto Printify bientôt actif (worker en cours de déploiement). Utilise 📤 Commandes fournisseurs en attendant.","info");return;}
+ var order=(getOrders()||[]).filter(function(o){return o.id===orderId})[0];
+ if(!order){toast("Commande introuvable","error");return;}
+ var ck=order.shipping||S.checkout||ldGetCk();
+ var items=(order.items||[]).map(function(it){var p=(typeof pBy==="function"&&pBy(it.id))||{};var pr=p._printify||{};return {blueprint_id:pr.blueprint_id||null,garment:it.garment||p.garment||"tee",design:it.theme||it.motif||p.motif||pr.design||"crest",size:it.size||"M",color:(COLOR_NAMES[it.garmentColor||p.garmentColor]||"Noir"),quantity:it.qty||1,placement:it.placement||pr.placement||"chest"};});
+ if(btn){btn.disabled=true;btn.textContent="⏳ Envoi…";}
+ fetch(cfg.worker_url+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:orderId,items:items,address:ck})})
+ .then(function(r){return r.json()}).then(function(j){
+   if(j&&j.ok){toast("🚀 Commande envoyée à Printify"+(j.printify_order_id?" (#"+j.printify_order_id+")":"")+" — à valider dans ton compte Printify");if(btn){btn.textContent="✅ Envoyé à Printify";}}
+   else{toast("Printify : "+((j&&j.detail)||"erreur")+(j&&j.warnings&&j.warnings.length?" ("+j.warnings.join(", ")+")":""),"error");if(btn){btn.disabled=false;btn.textContent="🚀 Réessayer Printify";}}
+ }).catch(function(){toast("Réseau KO, réessaie","error");if(btn){btn.disabled=false;btn.textContent="🚀 Réessayer Printify";}});
+}
 
 loadCart();dc();startAbandonWatch();
 window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",scrollY>400)});
@@ -910,7 +928,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.30.0"
+        data-version="v1.31.0"
         data-color="#e8b830"
         defer></script>
 
