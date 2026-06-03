@@ -152,3 +152,46 @@ Le **studio** propose maintenant ces coupes : T-shirt, Débardeur, Polo, Chemise
 - **Printify** : **bon de livraison à ta marque** inclus ; **étiquettes de col personnalisées** et **inserts** en option (selon l'imprimeur). L'ami reçoit un colis neutre/à ton nom.
 
 **Rentabilité** : la marge = ton prix de vente − coût POD. On fixera les **prix définitifs par fournisseur** une fois tes comptes ouverts (coûts réels par produit/matière). Le multiplicateur actuel (Bio +25 %) est **provisoire**, ajustable en 1 ligne.
+
+---
+
+# 📊 COMPARATIF DÉTAILLÉ FOURNISSEURS (recherche 2026, pour que tu choisisses)
+
+> Objectif : boutiques **performantes, niveau commercial pro, concurrentes des meilleurs**.
+> Tu vérifies tout sur les sites officiels (liens). Aucun MOQ, tu paies à la commande, expédition directe chez l'ami.
+
+## Tableau comparatif
+
+| Fournisseur | Production | Catalogue | Coupes larges (polo/jogging/short/chemise) | Bio / éco | White-label « au nom de ta boutique » | Livraison EU/Monaco | Prix base | Abonnement | Idéal pour |
+|---|---|---|---|---|---|---|---|---|---|
+| **Printify** ⭐ | Réseau mondial (EU + CN + US) | **~1 300 produits** (le + large) | ✅✅ très large | ⚠️ filtre « eco » (Stanley/Stella) | ✅ colis neutre + options (étiquette col, inserts) | ✅ via imprimeur EU | **Le + bas** | Gratuit (5 boutiques) ; Premium 34,99 $/mo (remises) | **Prix + choix max** (Standard) |
+| **Gelato** ⭐ | **Local 32+ pays (dont EU)** | ~250 produits | ✅ correcte | ✅ durable, faible CO₂ | ✅ (add-ons brand payants) | ✅✅ **le + rapide EU** | Compétitif | Gratuit ; Gelato+ ~23,99 $/mo | **Vitesse EU + scaling pro** |
+| **Printful** | Usines propres (EU : Espagne/Lettonie) | Curé, qualité régulière | ✅ bonne | ✅ ligne éco/bio | ✅✅ **le meilleur** (étiquette col, pack-ins, message, suivi à ta marque, **inclus**) | ✅ EU | + cher | Gratuit | **Image de marque premium** |
+| **T-Pop** ⭐ | **France (Barjac)** | Bio (tees/sweats/access.) | ⚠️ limité | ✅✅ **bio GOTS, encres eau, vegan, OEKO-TEX, colis sans plastique** | ✅✅ **inclus** (étiquette + colis + facture à ta marque) | ✅✅ FR/EU rapide | Moyen | Gratuit, **sans minimum** | **Bio premium « entre amis »** |
+| **Teemill** | UK (énergie renouvelable) | **52 produits GOTS** | ⚠️ limité | ✅✅ GOTS, circular | ✅ | ⚠️ UK→EU douane (Brexit) | Moyen | Gratuit | Bio circulaire (si UK ok) |
+| **Shirtigo** | Allemagne (100 % renouvelable) | Textiles bio + **Stanley/Stella** | ✅ correcte | ✅✅ vegan, plastic-free | ✅ | ✅ EU | Moyen | Gratuit | Bio EU + marque |
+| **Inkthreadable** | UK | **220+ produits** | ✅ correcte | ✅ bio, OEKO-TEX | ✅ | ⚠️ UK→EU douane | Moyen | Gratuit | Catalogue bio UK |
+
+## Détail par fournisseur
+
+**🥇 Printify** — *le levier prix + choix.* ~1 300 produits (t-shirts, polos, **joggings, shorts, chemises**, vestes, sportswear, accessoires, déco) chez des imprimeurs au choix (EU pour la vitesse, CN pour le prix plancher). Mockups photoréalistes auto à l'upload du design. Colis neutre + options de marque (étiquette de col, inserts). **→ Tier « Standard / meilleure marge ».** Vérifier : https://www.printify.com
+
+**🥇 Gelato** — *le levier vitesse EU + scaling.* Production **locale dans 32+ pays** (France/EU) → livraison rapide, faible CO₂, idéal Monaco/UE. ~250 produits, qualité régulière, intégrations e-commerce solides (Shopify, etc.). Branding en option payante. **→ Excellent pour une boutique pro qui veut livrer vite en Europe.** Vérifier : https://www.gelato.com
+
+**🥇 Printful** — *le levier image de marque.* Usines en propre (Espagne/Lettonie pour l'EU) = **qualité la plus régulière**. **White-label le plus abouti et inclus** : étiquette de col à ta marque, pack-ins, message personnalisé, suivi de commande à ton nom. Catalogue curé (un peu + cher). **→ Quand tu veux l'expérience « grande marque ».** Vérifier : https://www.printful.com
+
+**🌿 T-Pop** — *le bio français « entre amis ».* **Coton bio GOTS**, encres à l'eau **vegan**, **OEKO-TEX**, colis **sans plastique**, **marque blanche incluse** (étiquette + colis + **facture** à ta boutique), **sans minimum**, expédition FR/EU rapide. Gamme + limitée (tees/sweats/hoodies/accessoires). **→ Tier « Bio coton ✦ ».** Vérifier : https://www.tpop.com
+
+**🌿 Shirtigo / Teemill / Inkthreadable** — alternatives bio (Stanley/Stella, GOTS, énergie renouvelable). Shirtigo (DE) reste **dans l'UE** (pas de douane) ; Teemill/Inkthreadable sont **UK** (douane possible vers Monaco/UE depuis le Brexit, à vérifier). Vérifier : https://www.shirtigo.com · https://www.teemill.com · https://www.inkthreadable.co.uk
+
+## 🎯 Ma reco pour toi (à valider)
+
+1. **Standard (prix + catalogue large)** → **Printify** *(ou **Gelato** si tu privilégies la vitesse de livraison EU)*.
+2. **Bio coton ✦ (premium éco, FR)** → **T-Pop**.
+3. **Option « marque premium »** (plus tard, pour monter en gamme) → **Printful**.
+
+> La boutique mappe déjà **Standard→Printify** et **Bio→T-Pop** (le client choisit à la commande). On peut **basculer Standard sur Gelato** en 1 ligne si tu préfères la vitesse EU. **Tarifs définitifs** = on les fige avec les coûts réels de TES comptes.
+
+**Pour rivaliser avec les meilleurs (niveau pro)** : (a) **livraison EU rapide** (Gelato/Printful EU), (b) **white-label** systématique (T-Pop/Printful), (c) **mockups photoréalistes** auto du fournisseur (catalogue réel), (d) **automatisation** commande→fournisseur (Shopify + API quand le volume monte), (e) **1 échantillon** validé par produit avant mise en vente.
+
+**Sources (2026)** : [Gelato — eco POD](https://www.gelato.com/blog/best-eco-friendly-print-on-demand) · [Printful — best POD UK/EU](https://www.printful.com/uk/blog/best-print-on-demand-companies) · [dodropshipping — eco POD](https://dodropshipping.com/best-eco-friendly-print-on-demand-suppliers/) · [Merchize — POD EU](https://merchize.com/print-on-demand-in-eu/) · [Printful vs Printify vs Gelato](https://www.printful.com/blog/gelato-vs-printify) · [Marketing4eCommerce — comparatif UE](https://marketing4ecommerce.net/en/gelato-printful-printify-comparative/)
