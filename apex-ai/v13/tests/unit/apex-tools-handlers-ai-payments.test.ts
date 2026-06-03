@@ -280,4 +280,17 @@ describe('apex-tools-handlers — AI + payments', () => {
       await expect(handlePaypalTask('create_order', {})).rejects.toThrow(/Task PayPal inconnue/);
     });
   });
+
+  describe('handleOpenaiTask — branche prompt `?? ""`', () => {
+    it('ni messages ni prompt → content = String(?? "")', async () => {
+      mockedReadKey.mockResolvedValue('sk-openai');
+      fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+      const r = await handleOpenaiTask('chat', {}) as { ok: boolean };
+      expect(r.ok).toBe(true);
+      const body = JSON.parse((fetchSpy.mock.calls[0]?.[1] as RequestInit).body as string) as {
+        messages: Array<{ content: string }>;
+      };
+      expect(body.messages[0]?.content).toBe('');
+    });
+  });
 });

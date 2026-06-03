@@ -40,6 +40,19 @@ describe('errors — capture & triggerRescue', () => {
   });
 });
 
+describe('errors — installGlobalHandlers', () => {
+  it('window error event sans .error → capture(new Error(message)) (branche `|| new Error`)', () => {
+    (errors as unknown as { installed: boolean }).installed = false;
+    errors.installGlobalHandlers();
+    const spy = vi.spyOn(errors, 'capture').mockImplementation(() => {});
+    window.dispatchEvent(new ErrorEvent('error', { message: 'no-error-obj', error: null }));
+    expect(spy).toHaveBeenCalled();
+    const arg = spy.mock.calls[0]?.[0];
+    expect(arg).toBeInstanceOf(Error);
+    expect((arg as Error).message).toBe('no-error-obj');
+  });
+});
+
 describe('errors — toUserMessage isAdmin', () => {
   it('user id kdmc_admin (sans role) → admin debug (branche || user?.id)', () => {
     localStorage.setItem('apex_v13_user', JSON.stringify({ id: 'kdmc_admin' }));

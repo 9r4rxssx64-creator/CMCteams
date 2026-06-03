@@ -270,4 +270,16 @@ describe('Apex Tools Dispatcher (executor Jet 8)', () => {
       }
     });
   });
+
+  describe('toAnthropicFormat (campagne 100% — branche filterTier)', () => {
+    it('sans filterTier → tous les tools (branche : APEX_TOOLS)', () => {
+      const out = apexTools.toAnthropicFormat();
+      expect(out.length).toBe(apexTools.list().length);
+      expect((out[0] as { name: string }).name).toBeTruthy();
+    });
+    it('avec filterTier → listForTier (branche ? )', () => {
+      const out = apexTools.toAnthropicFormat('client_free');
+      expect(out.length).toBe(apexTools.listForTier('client_free').length);
+    });
+  });
 });
