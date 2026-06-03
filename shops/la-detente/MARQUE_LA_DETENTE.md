@@ -111,6 +111,14 @@ Atelier de création + **montage multi-calques** :
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
 ## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES + vraies images
+- ✅ **v1.11.0 — Refonte visuels « premium » (Kevin : « ça fait cheap »)** : vêtements SVG
+  réalistes (dégradés tissu lumière/ombre, col côtelé, plis, capuche/poche hoodie, col+boutons polo,
+  ombre de contact, fond **studio** neutre) au lieu des aplats. **Toutes les images régénérées**
+  (64 produits + 7 catégories + 4 packs + 6 lifestyle) en HD. Sprite synchronisé sur boutique +
+  bibliothèque + studio. Cache `v1.11.0`.
+  ⚠ **IA images Gemini** : clé du MCP invalide + aucune clé dans l'env → pour de vraies **photos IA**
+  il faut une **clé Gemini valide** (https://aistudio.google.com/apikey) ; le réseau Google est joignable
+  d'ici (HTTP 403 = clé manquante seulement), donc une clé collée → génération directe possible (curl).
 - ✅ **v1.10.0 — Packs thématiques + Photos lifestyle** : **4 packs** (Chasse, Tir & Ball-Trap,
   Entre Amis, Hiver) en catégorie « 🎁 Packs », prix de lot **−15 %**, fiche « Contenu du pack »
   (pièces incluses + économie), visuels composites. **6 scènes lifestyle éditoriales** rendues
