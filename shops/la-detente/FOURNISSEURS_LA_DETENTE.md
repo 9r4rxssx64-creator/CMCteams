@@ -126,3 +126,29 @@ est prêt à envoyer/importer chez le fournisseur.
 
 *Sources : graphiste.com (Top POD FR), tpop.com, printful.com, printify.com, thecleverbusiness.com (China POD),
 ensun.io, europages.co.uk, jesttextiles.com, ekwholesale.co.uk. MAJ 2026‑06.*
+
+---
+
+## 👕 Catalogue large (t-shirt, polo, chemise, jogging, short…) + envoi « au nom de ta boutique »
+
+**Couverture par fournisseur :**
+
+| Type de vêtement | Standard (Printify) | Bio coton ✦ (T-Pop) |
+|---|---|---|
+| T-shirt, débardeur | ✅ (plein de matières/coupes) | ✅ coton bio |
+| Polo | ✅ | ⚠️ limité |
+| **Chemise** | ✅ | ⚠️ limité |
+| Sweat / Hoodie / **Sweat zippé** | ✅ | ✅ bio |
+| **Jogging / pantalon** | ✅ | ⚠️ limité |
+| **Short** | ✅ | ⚠️ limité |
+| Casquette, tote, accessoires | ✅ | ✅ |
+
+→ **Printify** = le catalogue le **plus large** (t-shirt, polo, chemise, jogging, short, veste… + nombreuses **matières** : coton, coton bio, polyester, mélange, lourd 240 g…). **T-Pop** = gamme **bio** (t-shirts/sweats/accessoires) pour le tier « Bio coton ✦ ».
+
+Le **studio** propose maintenant ces coupes : T-shirt, Débardeur, Polo, Chemise, Hoodie, Sweat zippé, Jogging, Short, Casquette, Tote, Bandana — pour créer tes designs dessus.
+
+**Envoi au nom de ta boutique (white-label)** :
+- **T-Pop** : marque blanche **incluse** — ton logo sur l'**étiquette de col**, le **colis** et la **facture**, expéditeur = ta boutique. Aucune pub T-Pop.
+- **Printify** : **bon de livraison à ta marque** inclus ; **étiquettes de col personnalisées** et **inserts** en option (selon l'imprimeur). L'ami reçoit un colis neutre/à ton nom.
+
+**Rentabilité** : la marge = ton prix de vente − coût POD. On fixera les **prix définitifs par fournisseur** une fois tes comptes ouverts (coûts réels par produit/matière). Le multiplicateur actuel (Bio +25 %) est **provisoire**, ajustable en 1 ligne.
