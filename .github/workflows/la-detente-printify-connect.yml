@@ -1,0 +1,41 @@
+name: La Détente — Connexion Printify (test clé + shop_id)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'shops/la-detente/scripts/ld-printify-connect.mjs'
+      - '.github/workflows/la-detente-printify-connect.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  printify-connect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Test clé Printify + récupération shop_id
+        env:
+          PRINTIFY_API_KEY: ${{ secrets.PRINTIFY_API_KEY }}
+        run: |
+          echo "Clé présente : $([ -n "$PRINTIFY_API_KEY" ] && echo oui || echo NON)"
+          node shops/la-detente/scripts/ld-printify-connect.mjs
+      - name: Commit printify-config.json sur une branche claude/*
+        run: |
+          git config user.name "kdmc-bot"
+          git config user.email "bot@kdmc.local"
+          BR="claude/printify-connect-${{ github.run_id }}"
+          git checkout -b "$BR"
+          git add shops/la-detente/printify-config.json || true
+          if git diff --cached --quiet; then
+            echo "Pas de config à committer."
+          else
+            git commit -m "La Détente — config Printify (shop_id) [skip ci]"
+            git push -u origin "$BR"
+            echo "Poussé sur $BR (auto-merge)."
+          fi

@@ -537,7 +537,7 @@ function ldExportCSV(){var s=window._ldCurSheet||{};var ck=S.checkout||ldGetCk()
    la boutique « La Détente » (white-label). Adresse client + fichier d'impression inclus. */
 var LD_SUPPLIERS={
  "Printify":{name:"Printify",tier:"standard",portal:"https://printify.com/app/orders",note:"POD réseau · prix bas · white-label « La Détente »"},
- "T-Pop":{name:"T-Pop",tier:"bio",portal:"https://www.tpop.com/fr/compte/commandes",note:"Coton bio GOTS · made in France · packaging neutre à ton nom"}
+ "T-Pop":{name:"T-Pop",tier:"bio",portal:"https://www.tpop.com/en/integrations",note:"Coton bio GOTS · made in France · packaging neutre (commande manuelle — pas d'API)"}
 };
 function ldSupKey(s){return "ld_supplier_email_"+String(s).toLowerCase().replace(/[^a-z]/g,"")}
 function ldSupEmail(s){return localStorage.getItem(ldSupKey(s))||localStorage.getItem("ld_supplier_email")||""}
