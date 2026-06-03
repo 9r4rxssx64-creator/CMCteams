@@ -1529,3 +1529,21 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 | apex-ai-v13/og-image.png | Aperçu social stable | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/og-image.png |
 | .claude/legal/claude-for-legal/ | Suite Avocat/Droit (12 modules, 151 skills) | https://github.com/9r4rxssx64-creator/cmcteams/tree/main/.claude/legal/claude-for-legal |
 | .claude/skills/{seo,legal}/ | Skills SEO + orchestrateur /legal | https://github.com/9r4rxssx64-creator/cmcteams/tree/main/.claude/skills |
+
+---
+
+## 🧵 La Détente — boutique textile (POD, entre amis)
+
+**Live :**
+- 🛍️ Boutique : https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/
+- 🎨 Studio (login Kevin/Laurence) : https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/studio.html
+- 📚 Bibliothèque : https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/bibliotheque.html
+
+**Fichiers clés :**
+- Boutique : [index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/index.html)
+- Studio : [studio.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/studio.html)
+- Bibliothèque : [bibliotheque.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/bibliotheque.html)
+- Worker Gemini : [worker/worker.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/worker/worker.js) · URL : https://ld-gemini-proxy.9r4rxssx64.workers.dev
+- Designs IA : `shops/la-detente/img/designs/` · Produits : `shops/la-detente/img/products/`
+- Doc marque : [MARQUE_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/MARQUE_LA_DETENTE.md) · Fournisseurs : [FOURNISSEURS_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/FOURNISSEURS_LA_DETENTE.md)
+- Workflows : `.github/workflows/la-detente-{worker-deploy,ai-designs,ai-images}.yml`
