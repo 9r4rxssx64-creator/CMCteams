@@ -93,6 +93,24 @@ describe('services/autonomous-watch', () => {
     expect(s).toHaveProperty('lastTickAt');
     expect(s).toHaveProperty('active');
   });
+
+  describe('trackLifecycle (campagne 100%)', () => {
+    type Priv = { trackLifecycle(): Promise<void>; timer: ReturnType<typeof setInterval> | null };
+    it('timer null → early return (branche !this.timer)', async () => {
+      autonomousWatch.stop();
+      await (autonomousWatch as unknown as Priv).trackLifecycle();
+      expect(autonomousWatch.getStats().active).toBe(false);
+    });
+
+    it('import service-lifecycle throw → catch silencieux (branche 75)', async () => {
+      vi.doMock('../../services/core-svc/service-lifecycle.js', () => { throw new Error('lifecycle boom'); });
+      const priv = autonomousWatch as unknown as Priv;
+      priv.timer = setInterval(() => {}, 1_000_000);
+      await expect(priv.trackLifecycle()).resolves.toBeUndefined();
+      autonomousWatch.stop();
+      vi.doUnmock('../../services/core-svc/service-lifecycle.js');
+    });
+  });
 });
 
 describe('services/sentinel-auto-repair', () => {
