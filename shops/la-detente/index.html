@@ -689,7 +689,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
         data-color="#e8b830"
         defer></script>
 
-<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js')</script>
+<script>(function(){if(!('serviceWorker' in navigator))return;var had=!!navigator.serviceWorker.controller,rl=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!had){had=true;return}if(rl)return;rl=true;location.reload()});navigator.serviceWorker.register('sw.js').then(function(reg){function chk(){try{reg.update()}catch(e){}if(reg.waiting)reg.waiting.postMessage('skipWaiting')}setInterval(chk,60000);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')chk()});window.addEventListener('focus',chk)})})();</script>
 <a href="studio.html" title="Studio de création (admin)" style="position:fixed;left:12px;bottom:74px;z-index:9000;background:linear-gradient(135deg,#ff4d4d,#b30d0d);color:#fff;font:700 12px system-ui;padding:9px 14px;border-radius:100px;text-decoration:none;box-shadow:0 6px 20px rgba(220,38,38,.5)">🎨 Studio</a>
 </body>
 </html>
