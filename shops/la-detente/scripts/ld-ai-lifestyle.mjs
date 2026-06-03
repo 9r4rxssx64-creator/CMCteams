@@ -23,21 +23,53 @@ const THEMES = [
     prompt:'Photorealistic premium dark studio backdrop with subtle deep red rim lighting and smooth gradient, matte black surface foreground, high-end product photography ambiance, cinematic and minimal. No people, no text, no logos, no weapons.' }
 ];
 
+const API = 'https://generativelanguage.googleapis.com/v1beta';
+let IMG_MODELS = null;
+async function discoverImageModels(){
+  if (IMG_MODELS) return IMG_MODELS;
+  // 1) on liste ce que la clé peut faire et on garde les modèles "image"
+  const preferred = ['gemini-2.5-flash-image','gemini-2.0-flash-preview-image-generation','gemini-2.0-flash-exp-image-generation','gemini-2.0-flash-exp'];
+  let listed = [];
+  try {
+    const r = await fetch(`${API}/models?key=${KEY}&pageSize=200`);
+    const j = await r.json();
+    if (j.models) {
+      listed = j.models
+        .filter(m => /image/i.test(m.name) || (m.supportedGenerationMethods||[]).includes('predict') || /image/i.test((m.description||'')))
+        .map(m => m.name.replace('models/',''));
+      console.log('  modèles image détectés :', listed.join(', ') || '(aucun explicite)');
+    } else { console.log('  ListModels:', JSON.stringify(j).slice(0,200)); }
+  } catch(e){ console.log('  ListModels KO:', e.message); }
+  // ordre : préférés présents, puis le reste des "image" listés, puis fallback Imagen predict
+  const ordered = [];
+  for (const m of preferred) if (listed.includes(m) && !ordered.includes(m)) ordered.push(m);
+  for (const m of listed) if (!ordered.includes(m)) ordered.push(m);
+  for (const m of preferred) if (!ordered.includes(m)) ordered.push(m); // tente même si pas listé
+  IMG_MODELS = ordered.length ? ordered : preferred;
+  return IMG_MODELS;
+}
 async function genBg(t){
-  const models = ['imagen-3.0-generate-002','imagen-3.0-fast-generate-001'];
+  const models = await discoverImageModels();
   for (const model of models){
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${KEY}`;
+    const isImagen = /^imagen/.test(model);
+    const url = `${API}/models/${model}:${isImagen?'predict':'generateContent'}?key=${KEY}`;
+    const body = isImagen
+      ? { instances:[{prompt:t.prompt}], parameters:{ sampleCount:1, aspectRatio:'4:3' } }
+      : { contents:[{ role:'user', parts:[{ text:t.prompt }] }], generationConfig:{ responseModalities:['TEXT','IMAGE'] } };
     let res, txt;
-    try {
-      res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ instances:[{prompt:t.prompt}], parameters:{ sampleCount:1, aspectRatio:'4:3' } }) });
-      txt = await res.text();
-    } catch(e){ console.error('  réseau KO', model, e.message); continue; }
-    if (!res.ok){ console.error(`  ${model} HTTP ${res.status}: ${txt.slice(0,180)}`); continue; }
-    let j; try { j = JSON.parse(txt); } catch(_){ console.error('  parse KO'); continue; }
-    const pr = j.predictions && j.predictions[0];
-    const b64 = pr && (pr.bytesBase64Encoded || (pr.image && pr.image.imageBytes));
-    if (!b64){ console.error('  pas d\'image', model, txt.slice(0,150)); continue; }
+    try { res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }); txt = await res.text(); }
+    catch(e){ console.error('  réseau KO', model, e.message); continue; }
+    if (!res.ok){ console.error(`  ${model} HTTP ${res.status}: ${txt.slice(0,160)}`); continue; }
+    let j; try { j = JSON.parse(txt); } catch(_){ console.error('  parse KO', model); continue; }
+    let b64 = null;
+    if (isImagen) { const pr = j.predictions && j.predictions[0]; b64 = pr && (pr.bytesBase64Encoded || (pr.image && pr.image.imageBytes)); }
+    else {
+      const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+      const ip = parts.find(p => p.inlineData || p.inline_data);
+      b64 = ip && ((ip.inlineData && ip.inlineData.data) || (ip.inline_data && ip.inline_data.data));
+      if (!b64){ const fr=j.candidates&&j.candidates[0]&&j.candidates[0].finishReason; console.error('  pas d\'image', model, fr?('finish='+fr):txt.slice(0,140)); continue; }
+    }
+    if (!b64){ console.error('  pas d\'image', model, txt.slice(0,140)); continue; }
     const path = '/tmp/bg-'+t.f+'.png';
     fs.writeFileSync(path, Buffer.from(b64,'base64'));
     console.log(`  ✅ fond généré (${model})`);
