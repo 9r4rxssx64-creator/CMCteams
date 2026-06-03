@@ -111,6 +111,12 @@ Atelier de création + **montage multi-calques** :
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
 ## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES + vraies images
+- ✅ **v1.10.0 — Packs thématiques + Photos lifestyle** : **4 packs** (Chasse, Tir & Ball-Trap,
+  Entre Amis, Hiver) en catégorie « 🎁 Packs », prix de lot **−15 %**, fiche « Contenu du pack »
+  (pièces incluses + économie), visuels composites. **6 scènes lifestyle éditoriales** rendues
+  (vêtement + ambiance + props + signature) dans le **Lookbook**, cliquables vers la sélection.
+  *(IA images Gemini indisponible — clé API invalide — donc scènes rendues déterministes, fidèles à la marque.)*
+  Cache `v1.10.0`.
 - ✅ **v1.9.0 — social proof + client (options 1 & 3)** : **avis clients** sur fiche produit
   (affichage + formulaire étoiles/texte, stockés localement) · **récemment vus** (home + fiche) ·
   **stock/urgence** (« 🔥 Plus que X en stock ») · **lot −10 % dès 3 articles** (auto, affiché panier) ·
