@@ -293,4 +293,30 @@ describe('apex-tools-handlers — AI + payments', () => {
       expect(body.messages[0]?.content).toBe('');
     });
   });
+
+  describe('handleStripeTask — branches `?? défaut` (campagne 100%)', () => {
+    it('create_payment_intent sans amount → `?? 0`', async () => {
+      mockedReadKey.mockResolvedValue('sk_stripe');
+      fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+      await handleStripeTask('create_payment_intent', {});
+      const body = (fetchSpy.mock.calls[0]?.[1] as RequestInit).body as string;
+      expect(body).toContain('amount=0');
+    });
+
+    it('refund (confirm:true) sans payment_intent → `?? ""`', async () => {
+      mockedReadKey.mockResolvedValue('sk_stripe');
+      fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+      await handleStripeTask('refund', { confirm: true });
+      const body = (fetchSpy.mock.calls[0]?.[1] as RequestInit).body as string;
+      expect(body).toContain('payment_intent=');
+    });
+
+    it('transfer (confirm:true) sans amount → `?? 0`', async () => {
+      mockedReadKey.mockResolvedValue('sk_stripe');
+      fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+      await handleStripeTask('transfer', { confirm: true });
+      const body = (fetchSpy.mock.calls[0]?.[1] as RequestInit).body as string;
+      expect(body).toContain('amount=0');
+    });
+  });
 });
