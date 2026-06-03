@@ -1,3 +1,27 @@
+# Mémo de reprise — Boutique « La Détente » : Studio + Checkout/Bon de production (2026-06-03)
+
+## 📋 SESSION 2026-06-03 — La Détente (textile perso Kevin), branche `claude/textile-shop-ar15-heart-mMJ0j`
+
+> Boutique textile perso (motif AR15 + cœur rouge), vente entre amis, print-on-demand sans stock.
+>
+> **FAIT cette session (tout testé Playwright + node --check, poussé sur la branche) :**
+> - **Studio création récurrente** : sélecteur d'**emplacement** par vêtement (Poitrine/Dos/Cœur gauche/
+>   Manche/Avant/Centre) qui déplace la zone d'impression + champ **Thème/Collection** → produit stocke
+>   `placement`/`theme`/`garmentColor`/`motif`. (Réponse à « créer d'autres motifs régulièrement, choisir
+>   textiles, logo sur la poitrine, créer les thèmes ».)
+> - **Phase 2 Checkout + Bon de production** : `showCheckout()` (taille par article S→XXL + adresse de
+>   livraison validée, pré-remplie via `ld_checkout`) → **bon de production** imprimable/PDF + copiable
+>   (Vêtement/Couleur/Thème/Emplacement/Taille/Qté + bloc livraison) → `processOrder` enrichi (EmailJS
+>   envoie taille+adresse+bon ; push dashboard méta-only sans PII). Cache PWA `v1.2.0`.
+>
+> **⚠️ BLOCKER MISE EN LIGNE** : GitHub MCP indisponible dans la session → **merge = 1 clic Kevin** :
+> https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/textile-shop-ar15-heart-mMJ0j?expand=1
+> Vérifié sur le **vrai** GitHub (raw) que la branche contient bien le travail (lesson #79).
+>
+> **RESTE — Phase 3** : pont fournisseur **T-Pop** (envoi auto du bon + fichier impression HD), suivi statut.
+
+---
+
 # Mémo de reprise — Audit 3 projets + fix Apex Chat auto-reconnexion (2026-06-01)
 
 ## 📋 SESSION 2026-06-01 — Audit atomique 3 projets + déploiement Apex Chat

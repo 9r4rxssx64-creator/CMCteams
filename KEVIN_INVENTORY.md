@@ -1,7 +1,23 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-05-28** (Parser-Tester T1 v0.7.1 — Convention SBM 43 codes)
+> Dernière mise à jour : **2026-06-03** (Boutique « La Détente » — Studio + Checkout/Bon de production)
+
+## 🎯 La Détente — boutique textile perso (motif AR15 + cœur) — branche `claude/textile-shop-ar15-heart-mMJ0j`
+
+**🧪 Tester (après merge — live GitHub Pages)**
+- 🛍️ Boutique : https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/
+- 🎨 Studio (admin) : https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/studio.html
+
+**▶️ Mettre en ligne (1 clic)** — créer + fusionner la PR :
+- https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/textile-shop-ar15-heart-mMJ0j?expand=1
+
+**🔧 Code (voir / modifier)**
+- Boutique : [index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/index.html) · [edit](https://github.com/9r4rxssx64-creator/cmcteams/edit/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/index.html)
+- Studio : [studio.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/studio.html) · [edit](https://github.com/9r4rxssx64-creator/cmcteams/edit/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/studio.html)
+- Cadrage marque : [MARQUE_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/textile-shop-ar15-heart-mMJ0j/shops/la-detente/MARQUE_LA_DETENTE.md)
+
+**État** : Phase 1 (boutique + Studio) ✅ · Studio emplacements + thèmes ✅ · Phase 2 (checkout taille+adresse + bon de production) ✅ · Phase 3 (pont fournisseur T-Pop) ⏳. Cache PWA `kdmc-la-detente-v1.2.0`.
 
 ## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (branche claude/schedule-import-integration-szasM)
 

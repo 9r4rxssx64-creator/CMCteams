@@ -110,14 +110,30 @@ Atelier de création + **montage multi-calques** :
   navigation (clic) avant push.
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
-## 📌 ÉTAT (2026-06-03)
-- ✅ **FAIT** : boutique « La Détente » (rebrand complet, thème noir/rouge, 34 produits mockups SVG,
-  bugs corrigés, paiement panier réparé) ; **Studio admin** (`studio.html`) multi-calques + montage +
+## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES
+- ✅ **Phase 1** : boutique « La Détente » (rebrand complet, thème noir/rouge, 34 produits mockups SVG,
+  bugs corrigés, paiement panier réparé) ; **Studio admin** (`studio.html` v1.2.0) multi-calques + montage +
   upload image/dossier/drag&drop + **auto-logo (retrait fond + recadrage)** + **formes** (cercle/cœur/
   bouclier/étoile/hexa) + filtres + duotone + miroir + fusion + export **mockup** + **fichier impression
   HD transparent** + « Ajouter à la boutique » ; merge produits custom ; manifest/sw/parent/sitemap/og.png.
-- ⏳ **RESTE (Phase 2)** : checkout **adresse + taille** + commande privée + **bon de production**
-  (récap produit/taille/emplacement/fichier impression/adresse) pour T-Pop. **Phase 3** : pont fournisseur.
+- ✅ **Studio — création récurrente** (Kevin 2026-06-03 « créer d'autres motifs régulièrement, choisir
+  textiles, logo sur la poitrine, créer les thèmes ») : **sélecteur d'emplacement** par vêtement
+  (Poitrine / Dos / Cœur gauche / Manche / Avant casquette / Centre) qui repositionne la zone d'impression
+  + champ **Thème / Collection** à l'enregistrement → stocké sur le produit (`placement`, `theme`,
+  `garmentColor`, `motif`). Création illimitée de nouveaux motifs/thèmes sur n'importe quel textile.
+- ✅ **Phase 2 — Checkout + Bon de production** (cache `kdmc-la-detente-v1.2.0`) :
+  - `showCheckout()` : étape AVANT paiement → **sélecteur de taille par article** (S→XXL) +
+    **formulaire adresse de livraison** (nom, email, tél, rue, CP, ville, pays, note) avec validation
+    FR claire (toasts), pré-rempli depuis `localStorage ld_checkout`.
+  - **Bon de production** (`buildProductionSheetHTML`/`Text`, `ldOpenSheet`/`ldPrintSheet`) : tableau
+    N°/Produit/**Vêtement**/**Couleur**/**Thème·Motif**/**Emplacement**/**Taille**/Qté + total +
+    **bloc livraison** complet → **Imprimer/PDF** + **Copier** (texte) → prêt à envoyer au fournisseur.
+    Aperçu « brouillon » dispo dans le checkout + bouton « 📄 Bon de production » sur la confirmation.
+  - `processOrder` enrichi : commande locale (`kdmc_orders_la-detente`) + **EmailJS** (taille + adresse +
+    bon de production envoyés) + push dashboard **méta-only (aucune PII)** inchangé.
+  - Boutons panier « Payer » → « 📦 Commander » (vCartPage + tiroir panier, bug guillemet parasite corrigé).
+- ⏳ **RESTE (Phase 3)** : pont fournisseur **T-Pop** (API/email auto du bon de production + fichier
+  impression HD), suivi statut commande, et option paiement intégré si besoin.
 
 ## 🛠️ SÉQUENCE DE BUILD (Phase 1+2)
 1. Corriger bug `vProducts` + polish boutons + lien Studio (admin) depuis la boutique.
