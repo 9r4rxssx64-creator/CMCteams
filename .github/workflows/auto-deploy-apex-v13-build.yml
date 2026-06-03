@@ -26,6 +26,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: auto-deploy-apex-v13
@@ -77,7 +78,14 @@ jobs:
           grep -oE 'data-app-ver="[^"]*"' apex-ai-v13/index.html | head -1
           grep "CACHE_VERSION" apex-ai-v13/sw.js | head -1
 
-      - name: Commit and push if changed
+      - name: Commit + merge build via PR (main protégé → pas de push direct)
+        # v13.4.288 (Kevin 2026-06-03 "c'est fait ?") — CAUSE du gap 282→287 :
+        # `main` est protégé ("Require a pull request") → un `git push origin main`
+        # direct est REJETÉ → le déploiement échouait silencieusement (bloqué à v282).
+        # Fix : on merge le build via une PR + `gh pr merge --admin`, exactement
+        # comme auto-merge-claude.yml (qui, lui, fonctionne). Cf. CLAUDE.md #79/#86.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "apex-deploy-bot"
           git config user.email "apex-deploy-bot@noreply.github.com"
@@ -86,9 +94,31 @@ jobs:
             echo "No changes to deploy"
             exit 0
           fi
-          # Extraire APP_VER pour message commit (1re occurrence de l'attribut
-          # data-app-ver="…" uniquement — évite la ligne <script> getAttribute)
+          # Extraire APP_VER (1re occurrence de l'attribut data-app-ver="…").
           APP_VER=$(grep -oE 'data-app-ver="[^"]*"' apex-ai-v13/index.html | head -1 | sed 's/.*="\([^"]*\)"/\1/')
+          BRANCH="auto-deploy/apex-v13-build"
+          git checkout -B "$BRANCH"
           git commit -m "Auto-deploy Apex ${APP_VER} build → apex-ai-v13/ [skip ci]" \
             -m "Source apex-ai/v13/ → build dist/ → deployed apex-ai-v13/ (auto)."
-          git push origin main
+          git push -f origin "$BRANCH"
+          # PR ouverte existante ? sinon la créer (head force-pushé = head à jour).
+          PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -z "$PR" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title "Auto-deploy Apex ${APP_VER} build" \
+              --body "Build dist/ → apex-ai-v13/ (auto). Ne touche que apex-ai-v13/** → pas de re-trigger. [skip ci]" \
+              || true
+            PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+          fi
+          if [ -z "$PR" ]; then
+            echo "::warning::PR introuvable pour $BRANCH — déploiement bloqué."
+            exit 1
+          fi
+          # Merge via PR (admin override si dispo, sinon merge normal).
+          if gh pr merge "$PR" --merge --admin --delete-branch 2>/dev/null \
+             || gh pr merge "$PR" --merge --delete-branch 2>/dev/null; then
+            echo "Déploiement Apex ${APP_VER} mergé → GitHub Pages dans 1-3 min"
+          else
+            echo "::warning::PR #$PR créée mais merge refusé (protection) — merger manuellement."
+            exit 1
+          fi
