@@ -23,6 +23,7 @@
 > - **Image hero** réelle (`img/hero.png`) + **12 designs maison** (Cerf, Cartouches, Bois de cerf, Plateau, Plume, Canard, Empreinte, Sapin, Flèches, Montagne, badges « Vise Juste » & « Entre Amis ») → **60 produits** en vraies images. Cache `v1.6.0`.
 > - **Doc fournisseurs** `shops/la-detente/FOURNISSEURS_LA_DETENTE.md` (éco/bio, chinois, camo, lin, basiques unis tee/polo/sweat/jogging + grossistes).
 > - **Bibliothèque de designs** `bibliotheque.html` (18 motifs, preview vêtement/couleur, recherche+filtres, download PNG HD/SVG, deep-link `studio.html?motif=ID`). Studio enrichi à 18 motifs. Liens header+footer boutique. Cache `v1.7.0`.
+> - **Upgrade boutique pro v1.8.0** (inspiré meilleures boutiques merch) : bandeau promo, livraison offerte dès 60€ + barre progression panier, fiche produit taille+quantité+guide des tailles+réassurance, favoris (cœur cartes + ❤ header + page), badges Nouveau/Top, filtre couleur. Testé Playwright (toutes features OK).
 >
 > **RESTE — Phase 3 (suite)** : brancher l'**API T-Pop** (envoi auto CSV + fichier impression HD) + suivi statut — dès que Kevin a créé son compte fournisseur (seule étape KYC). Kevin choisit le fournisseur plus tard.
 
