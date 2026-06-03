@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.0.0 -->
+<!-- La Détente — Studio (admin) v1.2.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -353,7 +353,7 @@ function _saveProduct(cat){
  svgToPng(buildSVG(900,true),900,function(mock){
   svgToPng(buildSVG(2000,false,null),2000,function(print){
    var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
-   arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,price:price,origPrice:orig,
+   arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
      img:mock,printFile:print,rating:5,reviews:0,desc:name+" — création La Détente (Studio). Tailles S à XXL.",
      material:"Coton premium",placement:st.placement,theme:((document.getElementById('m_theme')||{}).value||'Personnalisé'),tags:["personnalisé","studio","la détente",((document.getElementById('m_theme')||{}).value||'').toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",ts:Date.now()});
    localStorage.setItem("ld_custom_products",JSON.stringify(arr));

@@ -203,7 +203,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 var STORE_ID="la-detente";
 var STORE_NAME="La Détente";
 var CATS=[{"id":"tshirts","name":"T-shirts","icon":"👕"},{"id":"sweats","name":"Sweats & Hoodies","icon":"🧥"},{"id":"polos","name":"Polos","icon":"🎽"},{"id":"casquettes","name":"Casquettes & Bobs","icon":"🧢"},{"id":"accessoires","name":"Accessoires","icon":"🎒"},{"id":"perso","name":"Personnalisé","icon":"✨"}];
-function gMock(g,color,motif){var box={tee:[34,32,32,32],hoodie:[34,40,32,32],polo:[36,36,28,28],cap:[40,26,20,20],tote:[33,30,34,34],bandana:[36,40,28,28]}[g]||[34,34,32,32];if(motif==="emblem"&&g!=="cap"){box=[box[0]-2,box[1]-1,box[2]+4,box[3]+4];}return '<svg style="width:100%;height:100%;display:block" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+'<g style="color:'+color+'"><use href="#g-'+g+'"/></g>'+'<use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/></svg>';}function _b(id,name,cat,g,color,motif,price,orig,mat,rate,rev,stock,tags){return {id:id,name:name,cat:cat,price:price,origPrice:orig,img:gMock(g,color,motif),rating:rate,reviews:rev,desc:name+" — \u00e9dition La D\u00e9tente. "+mat+", impression haute t\u00e9nacit\u00e9, motif c\u0153ur rouge. Tailles S \u00e0 XXL. Entre amis, vise juste.​",material:mat,tags:tags,sizes:["S","M","L","XL","XXL"],stock:stock,shipping:"standard"};}var P=[_b("ld001","T-shirt « AR15 Cœur » Noir","tshirts","tee","#15171a","emblem",24.9,32.0,"Coton bio 180\u202fg/m\u00b2",4.9,87,40,["tir","ar15","cœur","entre amis"]),_b("ld002","T-shirt « AR15 Cœur » Blanc","tshirts","tee","#ececec","emblem",24.9,32.0,"Coton bio 180\u202fg/m\u00b2",4.8,64,38,["tir","ar15","cœur"]),_b("ld003","T-shirt « Précision » Noir","tshirts","tee","#15171a","th-prec",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.8,52,44,["précision","viseur","cœur"]),_b("ld004","T-shirt « Ball-Trap » Kaki","tshirts","tee","#3a4a3f","th-balltrap",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.7,41,36,["ball-trap","plateau","cœur"]),_b("ld005","T-shirt « Chasse » Kaki","tshirts","tee","#3a4a3f","th-chasse",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.8,49,33,["chasse","bois","cœur"]),_b("ld006","T-shirt « Cœur Rouge » Minimal","tshirts","tee","#15171a","heart",21.9,27.0,"Coton bio 180\u202fg/m\u00b2",4.9,118,60,["cœur","minimal","entre amis"]),_b("ld007","T-shirt « Cible » Noir","tshirts","tee","#15171a","th-tir",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.7,38,42,["tir","cible","cœur"]),_b("ld008","T-shirt « Cœur Rouge » Blanc","tshirts","tee","#ececec","heart",21.9,27.0,"Coton bio 180\u202fg/m\u00b2",4.8,73,55,["cœur","minimal"]),_b("ld020","Hoodie « AR15 Cœur » Noir","sweats","hoodie","#15171a","emblem",49.9,64.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.9,76,28,["tir","ar15","cœur","hoodie"]),_b("ld021","Hoodie « Ball-Trap » Kaki","sweats","hoodie","#3a4636","th-balltrap",49.9,64.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.8,44,24,["ball-trap","cœur"]),_b("ld022","Hoodie « Chasse » Kaki","sweats","hoodie","#3a4636","th-chasse",49.9,64.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.8,51,22,["chasse","cœur"]),_b("ld023","Sweat « Précision » Noir","sweats","hoodie","#15171a","th-prec",44.9,55.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.7,39,30,["précision","cœur"]),_b("ld024","Hoodie « Cœur Rouge » Minimal","sweats","hoodie","#15171a","heart",46.9,58.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.9,92,34,["cœur","minimal"]),_b("ld025","Sweat « Cible » Noir","sweats","hoodie","#15171a","th-tir",44.9,55.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.7,33,26,["tir","cible","cœur"]),_b("ld040","Polo « AR15 Cœur » Marine","polos","polo","#0f1722","emblem",34.9,42.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.8,40,30,["tir","ar15","cœur","polo"]),_b("ld041","Polo « Précision » Gris ardoise","polos","polo","#1c2733","th-prec",32.9,39.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.7,28,32,["précision","cœur"]),_b("ld042","Polo « Chasse » Kaki","polos","polo","#3a4636","th-chasse",32.9,39.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.8,31,27,["chasse","cœur"]),_b("ld043","Polo « Cœur Rouge » Marine","polos","polo","#0f1722","heart",31.9,38.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.8,55,40,["cœur","minimal","polo"]),_b("ld044","Polo « Ball-Trap » Ardoise","polos","polo","#1c2733","th-balltrap",32.9,39.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.6,22,29,["ball-trap","cœur"]),_b("ld060","Casquette « Cible » Noire","casquettes","cap","#15171a","th-tir",19.9,25.0,"Sergé coton",4.8,67,50,["tir","cible","cœur","casquette"]),_b("ld061","Casquette « AR15 Cœur » Noire","casquettes","cap","#15171a","emblem",19.9,25.0,"Sergé coton",4.8,58,46,["tir","ar15","cœur"]),_b("ld062","Casquette « Chasse » Kaki","casquettes","cap","#3a4636","th-chasse",19.9,25.0,"Sergé coton",4.7,42,44,["chasse","cœur"]),_b("ld063","Casquette « Cœur Rouge »","casquettes","cap","#15171a","heart",18.9,23.0,"Sergé coton",4.9,80,58,["cœur","minimal"]),_b("ld064","Casquette « Précision »","casquettes","cap","#15171a","th-prec",19.9,25.0,"Sergé coton",4.6,29,47,["précision","cœur"]),_b("ld065","Casquette « Ball-Trap » Kaki","casquettes","cap","#3a4636","th-balltrap",19.9,25.0,"Sergé coton",4.7,35,40,["ball-trap","cœur"]),_b("ld080","Tote bag « AR15 Cœur »","accessoires","tote","#1c1e22","emblem",16.9,21.0,"Toile coton 340\u202fg/m\u00b2",4.8,48,60,["tir","cœur","tote","accessoire"]),_b("ld081","Tote bag « Cœur Rouge »","accessoires","tote","#1c1e22","heart",15.9,19.0,"Toile coton 340\u202fg/m\u00b2",4.9,62,65,["cœur","minimal","tote"]),_b("ld082","Tote bag « Ball-Trap »","accessoires","tote","#1c1e22","th-balltrap",16.9,21.0,"Toile coton 340\u202fg/m\u00b2",4.6,21,52,["ball-trap","cœur","tote"]),_b("ld083","Bandana « Cœur Rouge »","accessoires","bandana","#3a0f12","heart",12.9,16.0,"Microfibre douce",4.7,30,70,["cœur","bandana","chasse"]),_b("ld084","Bandana « Chasse » Kaki","accessoires","bandana","#3a4636","th-chasse",12.9,16.0,"Microfibre douce",4.6,18,55,["chasse","cœur","bandana"]),_b("ld900","Ton design — T-shirt personnalisé","perso","tee","#15171a","heart",26.9,34.0,"Coton bio 180\u202fg/m\u00b2",5.0,12,99,["personnalisé","ton design","studio","custom"]),_b("ld901","Ton design — Hoodie personnalisé","perso","hoodie","#15171a","heart",52.9,66.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",5.0,9,99,["personnalisé","ton design","studio"]),_b("ld902","Ton design — Casquette personnalisée","perso","cap","#15171a","heart",21.9,27.0,"Sergé coton",5.0,7,99,["personnalisé","ton design","studio"]),_b("ld903","Ton design — Tote personnalisé","perso","tote","#1c1e22","heart",17.9,22.0,"Toile coton 340\u202fg/m\u00b2",5.0,5,99,["personnalisé","ton design","studio"])];
+function gMock(g,color,motif){var box={tee:[34,32,32,32],hoodie:[34,40,32,32],polo:[36,36,28,28],cap:[40,26,20,20],tote:[33,30,34,34],bandana:[36,40,28,28]}[g]||[34,34,32,32];if(motif==="emblem"&&g!=="cap"){box=[box[0]-2,box[1]-1,box[2]+4,box[3]+4];}return '<svg style="width:100%;height:100%;display:block" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+'<g style="color:'+color+'"><use href="#g-'+g+'"/></g>'+'<use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/></svg>';}function _b(id,name,cat,g,color,motif,price,orig,mat,rate,rev,stock,tags){return {id:id,name:name,cat:cat,price:price,origPrice:orig,img:gMock(g,color,motif),rating:rate,reviews:rev,desc:name+" — \u00e9dition La D\u00e9tente. "+mat+", impression haute t\u00e9nacit\u00e9, motif c\u0153ur rouge. Tailles S \u00e0 XXL. Entre amis, vise juste.​",material:mat,tags:tags,sizes:["S","M","L","XL","XXL"],stock:stock,shipping:"standard",garment:g,garmentColor:color,motif:motif,placement:"chest"};}var P=[_b("ld001","T-shirt « AR15 Cœur » Noir","tshirts","tee","#15171a","emblem",24.9,32.0,"Coton bio 180\u202fg/m\u00b2",4.9,87,40,["tir","ar15","cœur","entre amis"]),_b("ld002","T-shirt « AR15 Cœur » Blanc","tshirts","tee","#ececec","emblem",24.9,32.0,"Coton bio 180\u202fg/m\u00b2",4.8,64,38,["tir","ar15","cœur"]),_b("ld003","T-shirt « Précision » Noir","tshirts","tee","#15171a","th-prec",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.8,52,44,["précision","viseur","cœur"]),_b("ld004","T-shirt « Ball-Trap » Kaki","tshirts","tee","#3a4a3f","th-balltrap",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.7,41,36,["ball-trap","plateau","cœur"]),_b("ld005","T-shirt « Chasse » Kaki","tshirts","tee","#3a4a3f","th-chasse",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.8,49,33,["chasse","bois","cœur"]),_b("ld006","T-shirt « Cœur Rouge » Minimal","tshirts","tee","#15171a","heart",21.9,27.0,"Coton bio 180\u202fg/m\u00b2",4.9,118,60,["cœur","minimal","entre amis"]),_b("ld007","T-shirt « Cible » Noir","tshirts","tee","#15171a","th-tir",23.9,29.0,"Coton bio 180\u202fg/m\u00b2",4.7,38,42,["tir","cible","cœur"]),_b("ld008","T-shirt « Cœur Rouge » Blanc","tshirts","tee","#ececec","heart",21.9,27.0,"Coton bio 180\u202fg/m\u00b2",4.8,73,55,["cœur","minimal"]),_b("ld020","Hoodie « AR15 Cœur » Noir","sweats","hoodie","#15171a","emblem",49.9,64.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.9,76,28,["tir","ar15","cœur","hoodie"]),_b("ld021","Hoodie « Ball-Trap » Kaki","sweats","hoodie","#3a4636","th-balltrap",49.9,64.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.8,44,24,["ball-trap","cœur"]),_b("ld022","Hoodie « Chasse » Kaki","sweats","hoodie","#3a4636","th-chasse",49.9,64.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.8,51,22,["chasse","cœur"]),_b("ld023","Sweat « Précision » Noir","sweats","hoodie","#15171a","th-prec",44.9,55.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.7,39,30,["précision","cœur"]),_b("ld024","Hoodie « Cœur Rouge » Minimal","sweats","hoodie","#15171a","heart",46.9,58.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.9,92,34,["cœur","minimal"]),_b("ld025","Sweat « Cible » Noir","sweats","hoodie","#15171a","th-tir",44.9,55.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",4.7,33,26,["tir","cible","cœur"]),_b("ld040","Polo « AR15 Cœur » Marine","polos","polo","#0f1722","emblem",34.9,42.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.8,40,30,["tir","ar15","cœur","polo"]),_b("ld041","Polo « Précision » Gris ardoise","polos","polo","#1c2733","th-prec",32.9,39.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.7,28,32,["précision","cœur"]),_b("ld042","Polo « Chasse » Kaki","polos","polo","#3a4636","th-chasse",32.9,39.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.8,31,27,["chasse","cœur"]),_b("ld043","Polo « Cœur Rouge » Marine","polos","polo","#0f1722","heart",31.9,38.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.8,55,40,["cœur","minimal","polo"]),_b("ld044","Polo « Ball-Trap » Ardoise","polos","polo","#1c2733","th-balltrap",32.9,39.0,"Piqu\u00e9 coton 210\u202fg/m\u00b2",4.6,22,29,["ball-trap","cœur"]),_b("ld060","Casquette « Cible » Noire","casquettes","cap","#15171a","th-tir",19.9,25.0,"Sergé coton",4.8,67,50,["tir","cible","cœur","casquette"]),_b("ld061","Casquette « AR15 Cœur » Noire","casquettes","cap","#15171a","emblem",19.9,25.0,"Sergé coton",4.8,58,46,["tir","ar15","cœur"]),_b("ld062","Casquette « Chasse » Kaki","casquettes","cap","#3a4636","th-chasse",19.9,25.0,"Sergé coton",4.7,42,44,["chasse","cœur"]),_b("ld063","Casquette « Cœur Rouge »","casquettes","cap","#15171a","heart",18.9,23.0,"Sergé coton",4.9,80,58,["cœur","minimal"]),_b("ld064","Casquette « Précision »","casquettes","cap","#15171a","th-prec",19.9,25.0,"Sergé coton",4.6,29,47,["précision","cœur"]),_b("ld065","Casquette « Ball-Trap » Kaki","casquettes","cap","#3a4636","th-balltrap",19.9,25.0,"Sergé coton",4.7,35,40,["ball-trap","cœur"]),_b("ld080","Tote bag « AR15 Cœur »","accessoires","tote","#1c1e22","emblem",16.9,21.0,"Toile coton 340\u202fg/m\u00b2",4.8,48,60,["tir","cœur","tote","accessoire"]),_b("ld081","Tote bag « Cœur Rouge »","accessoires","tote","#1c1e22","heart",15.9,19.0,"Toile coton 340\u202fg/m\u00b2",4.9,62,65,["cœur","minimal","tote"]),_b("ld082","Tote bag « Ball-Trap »","accessoires","tote","#1c1e22","th-balltrap",16.9,21.0,"Toile coton 340\u202fg/m\u00b2",4.6,21,52,["ball-trap","cœur","tote"]),_b("ld083","Bandana « Cœur Rouge »","accessoires","bandana","#3a0f12","heart",12.9,16.0,"Microfibre douce",4.7,30,70,["cœur","bandana","chasse"]),_b("ld084","Bandana « Chasse » Kaki","accessoires","bandana","#3a4636","th-chasse",12.9,16.0,"Microfibre douce",4.6,18,55,["chasse","cœur","bandana"]),_b("ld900","Ton design — T-shirt personnalisé","perso","tee","#15171a","heart",26.9,34.0,"Coton bio 180\u202fg/m\u00b2",5.0,12,99,["personnalisé","ton design","studio","custom"]),_b("ld901","Ton design — Hoodie personnalisé","perso","hoodie","#15171a","heart",52.9,66.0,"Molleton gratt\u00e9 280\u202fg/m\u00b2",5.0,9,99,["personnalisé","ton design","studio"]),_b("ld902","Ton design — Casquette personnalisée","perso","cap","#15171a","heart",21.9,27.0,"Sergé coton",5.0,7,99,["personnalisé","ton design","studio"]),_b("ld903","Ton design — Tote personnalisé","perso","tote","#1c1e22","heart",17.9,22.0,"Toile coton 340\u202fg/m\u00b2",5.0,5,99,["personnalisé","ton design","studio"])];
 try{var _c=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");if(_c&&_c.length){_c.forEach(function(q){q.sizes=q.sizes||["S","M","L","XL","XXL"];q.rating=q.rating||5;q.reviews=q.reviews||0});P=_c.concat(P);}}catch(_){}
 var S={view:"home",vp:null,cart:[],search:"",cat:"all",sort:"popular",page:1,pp:12};
 function esc(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -298,7 +298,7 @@ return '<div class="section" style="max-width:700px;margin:0 auto"><div class="s
 +'<span style="margin-left:auto;font-weight:700">'+fmtP(item.price*item.qty)+'</span></div></div>'
 +'<span onclick="rmCart(\''+item.id+'\');dc()" style="color:#ef4444;cursor:pointer;font-size:18px;padding:8px">✕</span></div>'}).join("")
 +'<div style="margin-top:24px;padding:20px;background:var(--bg);border-radius:var(--r)"><div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700"><span>Total</span><span style="color:var(--p)">'+fmtP(total)+'</span></div>'
-+'<button onclick="showPayment('+total+')" style="width:100%;padding:16px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:16px;font-weight:700;border:none;cursor:pointer;margin-top:16px">💳 Payer '+fmtP(total)+'</button></div></div>'}
++'<button onclick="showCheckout('+total+')" style="width:100%;padding:16px;background:var(--p);color:#fff;border-radius:var(--rs);font-size:16px;font-weight:700;border:none;cursor:pointer;margin-top:16px">📦 Commander — '+fmtP(total)+'</button></div></div>'}
 function vAbout(){return '<div class="section" style="max-width:700px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:16px">À propos de '+esc(STORE_NAME)+'</h1><p style="color:var(--muted);line-height:1.8">'+esc(STORE_NAME)+' est une boutique en ligne KDMC dédiée à vous offrir les meilleurs produits de qualité à des prix accessibles. Notre mission : rendre le shopping en ligne simple, sûr et agréable.</p>'
 +'<div class="trust" style="margin-top:32px"><div class="trust-item"><span class="trust-icon">🏆</span>Qualité Premium</div><div class="trust-item"><span class="trust-icon">💯</span>Satisfaction garantie</div><div class="trust-item"><span class="trust-icon">🌍</span>Livraison mondiale</div></div></div>'}
 function vContact(){return '<div class="section" style="max-width:500px;margin:0 auto"><h1 style="font-size:28px;margin-bottom:24px">📧 Contactez-nous</h1>'
@@ -311,7 +311,7 @@ function loadCart(){S.cart=JSON.parse(localStorage.getItem("kdmc_cart_"+STORE_ID
 function saveCart(){localStorage.setItem("kdmc_cart_"+STORE_ID,JSON.stringify(S.cart));cartBadge();renderCartPanel()}
 function addCart(id){var p=P.find(function(x){return x.id===id});if(!p)return;
 var ex=S.cart.find(function(x){return x.id===id});
-if(ex){ex.qty++}else{S.cart.push({id:p.id,name:p.name,price:p.price,img:p.img,qty:1})}
+if(ex){ex.qty++}else{S.cart.push({id:p.id,name:p.name,price:p.price,img:p.img,qty:1,size:"M",garment:p.garment,garmentColor:p.garmentColor,motif:p.motif,placement:p.placement,theme:p.theme})}
 saveCart();toast(p.name+" ajouté au panier")}
 function rmCart(id){S.cart=S.cart.filter(function(x){return x.id!==id});saveCart()}
 function cartQty(id,d){var it=S.cart.find(function(x){return x.id===id});if(it){it.qty=Math.max(1,it.qty+d);saveCart();dc()}}
@@ -324,7 +324,7 @@ ci.innerHTML=S.cart.map(function(it){return '<div class="cart-item"><div class="
 +'<div class="cart-item-rm" onclick="rmCart(\''+it.id+'\');renderCartPanel()">Supprimer</div></div></div>'}).join("");
 var total=S.cart.reduce(function(s,i){return s+i.price*i.qty},0);
 cf.innerHTML='<div class="cart-total"><span>Total</span><span class="amount">'+fmtP(total)+'</span></div>'
-+'<button class="btn-checkout" onclick="showPayment('+total+')">💳 Commander — '+fmtP(total)+'"</button>'}
++'<button class="btn-checkout" onclick="showCheckout('+total+')">💳 Commander — '+fmtP(total)+'</button>'}
 function nlSub(){var e=document.getElementById("nlEmail");if(!e||e.value.indexOf("@")<1)return toast("Email invalide","error");
 var email=e.value;
 if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_newsletter",{to_email:email,store:STORE_NAME,message:"Nouvel abonné newsletter "+STORE_NAME}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
@@ -363,6 +363,104 @@ document.querySelector("#payModal .gap-12,#payModal [style*=flex-direction]").ap
 
 
 
+/* === PHASE 2 — Checkout (taille + adresse) + Bon de production === */
+var PLBL2={chest:"Poitrine",back:"Dos","left-chest":"Cœur gauche",sleeve:"Manche",front:"Avant",center:"Centre"};
+function pBy(id){return P.find(function(x){return x.id===id})}
+function ldSizes(it){var p=pBy(it.id);return (p&&p.sizes)||["S","M","L","XL","XXL"]}
+function ldGetCk(){try{return JSON.parse(localStorage.getItem("ld_checkout")||"{}")}catch(_){return {}}}
+function ldField(id,label,val,ph,type,req){return '<div style="margin-bottom:10px"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">'+esc(label)+(req?' *':'')+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+esc(val||'')+'" placeholder="'+esc(ph||'')+'" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text)"></div>'}
+function ldSetSize(idx,v){if(S.cart[idx]){S.cart[idx].size=v;saveCart()}}
+function ldItemSpec(it){var p=pBy(it.id)||{};return {name:it.name,price:it.price,qty:it.qty,garment:it.garment||p.garment||"—",color:it.garmentColor||p.garmentColor||"—",theme:it.theme||p.theme||it.motif||p.motif||"—",place:(function(k){return PLBL2[k]||k||"Poitrine"})(it.placement||p.placement||"chest"),size:it.size||"M"}}
+function showCheckout(total){
+ if(!S.cart.length)return toast("Votre panier est vide","error");
+ var ck=ldGetCk();
+ var rows=S.cart.map(function(it,idx){
+   var sizes=ldSizes(it),cur=it.size||"M";
+   var opts=sizes.map(function(s){return '<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>'}).join("");
+   return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
+   +'<div style="width:42px;height:42px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden">'+(it.img||"📦")+'</div>'
+   +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div><div style="font-size:11px;color:var(--muted)">'+esc(it.theme||"")+' · Qté '+it.qty+'</div></div>'
+   +'<select onchange="ldSetSize('+idx+',this.value)" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700">'+opts+'</select></div>';
+ }).join("");
+ var m=document.createElement("div");m.id="ckModal";
+ m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
+ m.innerHTML='<div style="background:var(--card);border-radius:16px;padding:22px;max-width:480px;width:100%;border:1px solid var(--border);max-height:92vh;overflow-y:auto">'
+ +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="font-size:20px;font-weight:800">📦 Tailles & livraison</h2><span onclick="document.getElementById(\'ckModal\').remove()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
+ +'<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Choisis ta taille pour chaque article :</div>'+rows
+ +'<div style="margin-top:18px;font-weight:700;font-size:14px">Adresse de livraison</div><div style="margin-top:10px">'
+ +ldField("ck_name","Prénom & nom",ck.name,"Jean Dupont","text",1)
+ +ldField("ck_email","Email",ck.email,"jean@email.com","email",1)
+ +ldField("ck_phone","Téléphone",ck.phone,"+33 6 12 34 56 78","tel",0)
+ +ldField("ck_addr","Adresse",ck.addr,"12 rue des Amis","text",1)
+ +'<div style="display:flex;gap:10px">'+ldField("ck_zip","Code postal",ck.zip,"06000","text",1)+ldField("ck_city","Ville",ck.city,"Nice","text",1)+'</div>'
+ +ldField("ck_country","Pays",ck.country||"France","France","text",1)
+ +ldField("ck_notes","Note (optionnel)",ck.notes,"Ex : sonner à l’interphone","text",0)+'</div>'
+ +'<button onclick="ldPreviewSheet()" style="width:100%;padding:11px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:10px;font-weight:600;cursor:pointer;margin-top:4px">📄 Aperçu du bon de production</button>'
+ +'<button onclick="ldCheckoutNext('+total+')" style="width:100%;padding:15px;background:var(--p);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-top:10px">Continuer vers le paiement →</button></div>';
+ document.body.appendChild(m);m.onclick=function(e){if(e.target===m)m.remove()};
+}
+function ldReadCk(){var g=function(id){var e=document.getElementById(id);return e?e.value.trim():""};return {name:g("ck_name"),email:g("ck_email"),phone:g("ck_phone"),addr:g("ck_addr"),zip:g("ck_zip"),city:g("ck_city"),country:g("ck_country")||"France",notes:g("ck_notes")}}
+function ldCheckoutNext(total){
+ var ck=ldReadCk();
+ if(!ck.name)return toast("Indique ton prénom et nom","error");
+ if(!ck.email||ck.email.indexOf("@")<1)return toast("Indique un email valide","error");
+ if(!ck.addr||!ck.zip||!ck.city)return toast("Complète l’adresse (rue, code postal, ville)","error");
+ S.checkout=ck;localStorage.setItem("ld_checkout",JSON.stringify(ck));
+ var cm=document.getElementById("ckModal");if(cm)cm.remove();
+ showPayment(total);
+}
+function buildProductionSheetHTML(orderId){
+ var ck=S.checkout||ldGetCk();
+ var rows=S.cart.map(function(it,i){var s=ldItemSpec(it);
+   return '<tr><td>'+(i+1)+'</td><td>'+esc(s.name)+'</td><td>'+esc(s.garment)+'</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #ccc;background:'+esc(s.color)+';vertical-align:middle"></span> '+esc(s.color)+'</td><td>'+esc(s.theme)+'</td><td>'+esc(s.place)+'</td><td style="font-weight:700">'+esc(s.size)+'</td><td style="text-align:center">'+s.qty+'</td></tr>';
+ }).join("");
+ var total=S.cart.reduce(function(a,b){return a+b.price*b.qty},0);
+ return '<h1 style="font:700 20px sans-serif;margin:0 0 4px">Bon de production — La Détente</h1>'
+ +'<div style="font:12px sans-serif;color:#555;margin-bottom:14px">Commande '+esc(orderId||"(brouillon)")+' · '+new Date().toLocaleString("fr-FR")+'</div>'
+ +'<table style="width:100%;border-collapse:collapse;font:12px sans-serif" border="1" cellpadding="6"><thead style="background:#f3f3f3"><tr><th>#</th><th>Produit</th><th>Vêtement</th><th>Couleur</th><th>Thème/Motif</th><th>Emplacement</th><th>Taille</th><th>Qté</th></tr></thead><tbody>'+rows+'</tbody></table>'
+ +'<div style="font:700 14px sans-serif;text-align:right;margin-top:8px">Total : '+fmtP(total)+'</div>'
+ +'<h2 style="font:700 15px sans-serif;margin:18px 0 6px">Livraison</h2>'
+ +'<div style="font:13px sans-serif;line-height:1.6"><b>'+esc(ck.name||"")+'</b><br>'+esc(ck.addr||"")+'<br>'+esc((ck.zip||"")+" "+(ck.city||""))+'<br>'+esc(ck.country||"France")+'<br>📧 '+esc(ck.email||"")+(ck.phone?' · 📞 '+esc(ck.phone):"")+(ck.notes?'<br>📝 '+esc(ck.notes):"")+'</div>';
+}
+function buildProductionSheetText(orderId){
+ var ck=S.checkout||ldGetCk(),L=[];
+ L.push("BON DE PRODUCTION — La Détente");
+ L.push("Commande "+(orderId||"(brouillon)")+" · "+new Date().toLocaleString("fr-FR"));L.push("");
+ S.cart.forEach(function(it,i){var s=ldItemSpec(it);
+  L.push((i+1)+". "+s.name);
+  L.push("   Vêtement : "+s.garment+" | Couleur : "+s.color+" | Thème/Motif : "+s.theme);
+  L.push("   Emplacement : "+s.place+" | Taille : "+s.size+" | Qté : "+s.qty);
+ });
+ var total=S.cart.reduce(function(a,b){return a+b.price*b.qty},0);
+ L.push("");L.push("Total : "+fmtP(total));L.push("");
+ L.push("LIVRAISON :");L.push(ck.name||"");L.push(ck.addr||"");L.push((ck.zip||"")+" "+(ck.city||""));L.push(ck.country||"France");
+ L.push("Email : "+(ck.email||""));if(ck.phone)L.push("Tél : "+ck.phone);if(ck.notes)L.push("Note : "+ck.notes);
+ return L.join("\n");
+}
+function ldPreviewSheet(){S.checkout=ldReadCk();ldOpenSheet("(brouillon)")}
+function ldOpenSheet(orderId){
+ var snap=(window._ldSheets||{})[orderId];
+ var html=snap?snap.html:buildProductionSheetHTML(orderId);
+ var text=snap?snap.text:buildProductionSheetText(orderId);
+ var old=document.getElementById("sheetModal");if(old)old.remove();
+ var m=document.createElement("div");m.id="sheetModal";
+ m.style.cssText="position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
+ m.innerHTML='<div style="background:#fff;color:#111;border-radius:14px;max-width:660px;width:100%;max-height:92vh;overflow:auto;padding:22px">'
+ +'<div id="sheetBody">'+html+'</div>'
+ +'<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">'
+ +'<button onclick="ldPrintSheet()" style="flex:1;min-width:140px;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🖨️ Imprimer / PDF</button>'
+ +'<button onclick="var t=document.getElementById(\'sheetTextHolder\');t.select();try{navigator.clipboard.writeText(t.value)}catch(_){document.execCommand(\'copy\')}toast(\'Bon copié ✅\')" style="flex:1;min-width:140px;padding:12px;background:#222;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">📋 Copier</button>'
+ +'<button onclick="document.getElementById(\'sheetModal\').remove()" style="padding:12px 16px;background:#eee;color:#111;border:none;border-radius:10px;font-weight:700;cursor:pointer">Fermer</button></div>'
+ +'<textarea id="sheetTextHolder" style="position:absolute;left:-9999px;top:-9999px">'+esc(text)+'</textarea></div>';
+ document.body.appendChild(m);m.onclick=function(e){if(e.target===m)m.remove()};
+}
+function ldPrintSheet(){var body=document.getElementById("sheetBody");if(!body)return;
+ var w=window.open("","_blank");
+ if(!w){toast("Autorise les pop-ups pour imprimer","error");return}
+ w.document.write('<!doctype html><meta charset=utf-8><title>Bon de production</title><body style="margin:24px">'+body.innerHTML+'</body>');
+ w.document.close();w.focus();setTimeout(function(){try{w.print()}catch(_){}},300);
+}
+
 /* Pub tracking events */
 function trackPurchase(orderId,total,items){
 if(typeof gtag==="function"){gtag("event","purchase",{transaction_id:orderId,value:total,currency:"EUR",items:items.map(function(i){return{item_id:i.id,item_name:i.name,price:i.price,quantity:i.qty}})})}
@@ -385,8 +483,11 @@ function decrementStock(id){var p=P.find(function(x){return x.id===id});if(p&&p.
 function processOrder(method){
 var orderId=genOrderId();
 var total=S.cart.reduce(function(s,i){return s+i.price*i.qty},0);
-var items=S.cart.map(function(i){return {id:i.id,name:i.name,price:i.price,qty:i.qty}});
-var order={id:orderId,items:items,total:total,method:method,ts:Date.now(),status:"pending"};
+var ck=S.checkout||ldGetCk();
+var items=S.cart.map(function(i){return {id:i.id,name:i.name,price:i.price,qty:i.qty,size:i.size||"M",garment:i.garment,garmentColor:i.garmentColor,placement:i.placement,theme:i.theme}});
+var sheetHTML=buildProductionSheetHTML(orderId),sheetText=buildProductionSheetText(orderId);
+window._ldSheets=window._ldSheets||{};window._ldSheets[orderId]={html:sheetHTML,text:sheetText};
+var order={id:orderId,items:items,total:total,method:method,ts:Date.now(),status:"pending",shipping:ck,sheet:sheetText};
 
 /* Sauvegarder commande */
 var orders=JSON.parse(localStorage.getItem("kdmc_orders_"+STORE_ID)||"[]");
@@ -400,7 +501,8 @@ if(typeof emailjs!=="undefined"){
 emailjs.init("nUsorWTtC");
 emailjs.send("service_318elaz","template_order_confirm",{
 order_id:orderId,store:STORE_NAME,total:fmtP(total),method:method,
-items:items.map(function(i){return i.name+" x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),
+items:items.map(function(i){return i.name+" ["+(i.size||"M")+"] x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),
+customer:ck.name||"",email:ck.email||"",shipping:[ck.name,ck.addr,(ck.zip||"")+" "+(ck.city||""),ck.country||"France",ck.phone].filter(Boolean).join("\n"),production:sheetText,
 timestamp:new Date().toLocaleString("fr-FR")
 }).catch(function(){})}
 
@@ -418,7 +520,7 @@ if(modal)modal.innerHTML='<div style="background:var(--card);border-radius:16px;
 +'<p style="color:var(--muted);margin-bottom:16px">Numéro : <strong style="color:var(--p)">'+orderId+'</strong></p>'
 +'<p style="color:var(--muted);margin-bottom:8px">Total : <strong>'+fmtP(total)+'</strong> via '+method+'</p>'
 +'<p style="color:var(--muted);font-size:13px;margin-bottom:24px">Un email de confirmation vous sera envoyé.</p>'
-+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'home\')" style="padding:14px 32px;background:var(--p);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">Continuer mes achats</button>'
++'<button onclick="ldOpenSheet(\''+orderId+'\')" style="padding:14px 24px;background:#222;color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin:0 6px 10px">📄 Bon de production</button>'+'<button onclick="document.getElementById(\'payModal\').remove();sv(\'home\')" style="padding:14px 32px;background:var(--p);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">Continuer mes achats</button>'
 +'</div>';
 return orderId}
 
