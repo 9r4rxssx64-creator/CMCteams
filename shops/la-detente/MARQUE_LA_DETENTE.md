@@ -110,7 +110,13 @@ Atelier de création + **montage multi-calques** :
   navigation (clic) avant push.
 - Polish : boutons rouges avec `color:#000` → passer en **blanc** (`#fff`) pour rendu pro.
 
-## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES
+## 📌 ÉTAT (2026-06-03) — Phase 1 + Phase 2 FAITES + vraies images
+- ✅ **Vraies images boutique** (Kevin 2026-06-03 « vraies images avec les logos créés, catégories avec
+  vraies images ») : les 34 mockups catalogue rendus en **fichiers PNG réels** (`img/products/ld*.png`,
+  fond dégradé noir/rouge + ombre, vrai emblème LA DÉTENTE) ; **grille Catégories** sur la home avec
+  6 **vraies images** (`img/cat/*.png`) cliquables → filtre. `pimg()` gère les chemins fichiers.
+  Les produits du **Studio** stockent déjà un PNG réel du design (`img:` via `svgToPng`). Cache PWA v1.3.0.
+
 - ✅ **Phase 1** : boutique « La Détente » (rebrand complet, thème noir/rouge, 34 produits mockups SVG,
   bugs corrigés, paiement panier réparé) ; **Studio admin** (`studio.html` v1.2.0) multi-calques + montage +
   upload image/dossier/drag&drop + **auto-logo (retrait fond + recadrage)** + **formes** (cercle/cœur/
