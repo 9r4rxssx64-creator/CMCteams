@@ -15,7 +15,9 @@ html,body{height:100%;max-width:100%;overflow-x:hidden}
 body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:none;background:none}
-.topbar{height:54px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;z-index:5}
+.topbar{height:54px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;z-index:5;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
+.topbar::-webkit-scrollbar{height:0}
+.topbar>*{flex-shrink:0}
 .brand{font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
 .brand .tag{font-size:10px;background:var(--p);padding:2px 6px;border-radius:6px;font-weight:700}
 .topbar .sp{flex:1}
@@ -70,7 +72,10 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 @media(max-width:680px){
  .wrap{flex-direction:column;height:auto;overflow-x:hidden;overflow-y:auto}
  .side{width:100%;border:none;border-bottom:1px solid var(--border);max-height:none}
- .side.right{order:3}.stage-wrap{order:2;min-height:60vh}
+ /* L'aperçu du produit en PREMIER (sinon il est poussé sous la liste d'options) */
+ .stage-wrap{order:0;min-height:46vh;max-height:64vh;padding:12px;position:sticky;top:0;z-index:3}
+ .side{order:1}.side.right{order:2}
+ #stageBox{width:min(86vw,52vh)}
  body{overflow:auto}
 }
 </style>
