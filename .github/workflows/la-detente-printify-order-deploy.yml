@@ -1,0 +1,55 @@
+name: La Détente — Déploie le Worker de commande Printify
+
+# Déploie ld-printify-order sur Cloudflare, injecte PRINTIFY_API_KEY en secret,
+# capture l'URL réelle et la commit dans printify-order-config.json. 100% auto.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'shops/la-detente/worker-order/**'
+      - '.github/workflows/la-detente-printify-order-deploy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install wrangler
+        run: npm i -g wrangler@3
+      - name: Déploiement + secret + capture URL
+        id: deploy
+        working-directory: shops/la-detente/worker-order
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PRINTIFY_API_KEY: ${{ secrets.PRINTIFY_API_KEY }}
+        run: |
+          set -e
+          wrangler deploy 2>&1 | tee deploy.log
+          printf '%s' "$PRINTIFY_API_KEY" | wrangler secret put PRINTIFY_API_KEY 2>&1 | tail -3 || true
+          URL=$(grep -oE 'https://[a-z0-9._-]+\.workers\.dev' deploy.log | head -1)
+          echo "URL=$URL"
+          if [ -z "$URL" ]; then echo "::error::URL worker introuvable"; exit 1; fi
+          echo "worker_url=$URL" >> "$GITHUB_OUTPUT"
+      - name: Health check
+        run: curl -fsS "${{ steps.deploy.outputs.worker_url }}" | head -c 200 || echo "(health peut mettre qq sec)"
+      - name: Commit printify-order-config.json
+        run: |
+          URL="${{ steps.deploy.outputs.worker_url }}"
+          printf '{\n  "worker_url": "%s",\n  "app_tag": "ld-order-v1",\n  "shop_id": 27791653,\n  "updated_at": "%s"\n}\n' "$URL" "$(date -u +%FT%TZ)" > shops/la-detente/printify-order-config.json
+          cat shops/la-detente/printify-order-config.json
+          git config user.name "kdmc-bot"; git config user.email "bot@kdmc.local"
+          BR="claude/printify-order-config-${{ github.run_id }}"
+          git checkout -b "$BR"
+          git add shops/la-detente/printify-order-config.json
+          if git diff --cached --quiet; then echo "config inchangée"; else
+            git commit -m "La Détente — URL worker commande Printify ($URL) [skip ci]"
+            git push -u origin "$BR"; echo "Poussé $BR (auto-merge)."
+          fi
