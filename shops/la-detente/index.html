@@ -292,7 +292,7 @@ if(featured.length<6)featured=P.slice(0,6);
 var best=P.slice().sort(function(a,b){return b.rating-a.rating}).slice(0,6);
 var nouv=P.filter(function(p){return p.cat==="designs"&&(/^ldr/.test(p.id)||/^ld2\d/.test(p.id))}).sort(function(a,b){return (/^ldr/.test(b.id)?1:0)-(/^ldr/.test(a.id)?1:0)}).slice(0,8);
 var bestsell=P.filter(function(p){return p._best}).slice(0,10);
-var LD_FAV=["crest","real-shotgun-clays","real-shotgun-rose","real-rifle-heart","real-crossed-shotguns","real-cartridges","real-revolver-rose","real-ar15-heart","rose-pistol","hearts-ar15","clays-perazzi","hearts-revolver"];
+var LD_FAV=["real-shotgun-clays","real-shotgun-rose","real-rifle-heart","real-crossed-shotguns","real-cartridges","real-revolver-rose","real-ar15-heart","rose-pistol","hearts-ar15","clays-perazzi","hearts-revolver"];
 return '<div class="hero"><h1>Vise juste, <em>entre amis</em></h1>'
 +'<p>T-shirts, sweats, polos & casquettes au motif AR15 + cœur rouge — tir, précision, chasse, ball-trap. Et ton propre design sur le textile de ton choix.</p>'
 +'<div class="hero-stats"><div class="hero-stat"><strong>'+P.length+'+</strong><span>Produits</span></div>'
@@ -817,7 +817,7 @@ function getMyOrders(){return JSON.parse(localStorage.getItem("kdmc_orders_"+STO
 /* ===== ADMIN — Catalogue Printify → boutique (publication GLOBALE via Firebase) ===== */
 var LD_ADMIN=false;
 (function(){try{var u=new URLSearchParams(location.search);var a=u.get("ld_admin");if(a==="200807"){localStorage.setItem("ld_admin","1");}if(a==="0"){localStorage.removeItem("ld_admin");}if(localStorage.getItem("ld_admin")==="1")LD_ADMIN=true;}catch(_){}})();
-var LD_DESIGNS=[{id:"real-shotgun-clays",name:"Fusil & Plateaux (photo)"},{id:"real-shotgun-rose",name:"Fusil & Rose (photo)"},{id:"real-rifle-heart",name:"Carabine Cœur (photo)"},{id:"real-revolver-rose",name:"Revolver & Rose (photo)"},{id:"real-cartridges",name:"Cartouches (photo)"},{id:"real-crossed-shotguns",name:"Fusils Croisés (photo)"},{id:"real-ar15-heart",name:"Carabine Sport (photo)"},{id:"crest",name:"Crest La Détente"},{id:"rose-pistol",name:"Pistolet & Rose"},{id:"rose-shotgun",name:"Fusil & Rose"},{id:"hearts-ar15",name:"AR15 Cœurs"},{id:"hearts-shotgun",name:"Fusil Cœurs"},{id:"hearts-pistol",name:"Pistolet Cœurs"},{id:"hearts-revolver",name:"Revolver Cœurs"},{id:"clays-perazzi",name:"Perazzi & Plateaux"}];
+var LD_DESIGNS=[{id:"real-shotgun-clays",name:"Fusil & Plateaux (photo)"},{id:"real-shotgun-rose",name:"Fusil & Rose (photo)"},{id:"real-rifle-heart",name:"Carabine Cœur (photo)"},{id:"real-revolver-rose",name:"Revolver & Rose (photo)"},{id:"real-cartridges",name:"Cartouches (photo)"},{id:"real-crossed-shotguns",name:"Fusils Croisés (photo)"},{id:"real-ar15-heart",name:"Carabine Sport (photo)"},{id:"rose-pistol",name:"Pistolet & Rose"},{id:"rose-shotgun",name:"Fusil & Rose"},{id:"hearts-ar15",name:"AR15 Cœurs"},{id:"hearts-shotgun",name:"Fusil Cœurs"},{id:"hearts-pistol",name:"Pistolet Cœurs"},{id:"hearts-revolver",name:"Revolver Cœurs"},{id:"clays-perazzi",name:"Perazzi & Plateaux"}];
 window._ldCustomLogos=[];
 function _ldHidden(){try{return JSON.parse(localStorage.getItem("ld_logos_hidden")||"[]")}catch(_){return[]}}
 function _ldSetHidden(a){try{localStorage.setItem("ld_logos_hidden",JSON.stringify(a))}catch(_){}}
@@ -994,7 +994,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.35.0"
+        data-version="v1.36.0"
         data-color="#e8b830"
         defer></script>
 
