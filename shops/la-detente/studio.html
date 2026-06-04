@@ -145,7 +145,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
   <button class="btn ghost" onclick="Studio.exportPrint()">⬇️ Fichier impression</button>
   <button class="btn ghost" onclick="Studio.exportMockup()">🖼️ Mockup PNG</button>
   <button class="btn ghost" onclick="Studio.exportPDF()" title="PDF prêt impression 300 dpi">📄 PDF 300 dpi</button>
-  <button class="btn" onclick="Studio.saveAsLogo()">💾 Enregistrer comme logo</button>
+  <button class="btn" onclick="Studio.finishCreation()">💾 Enregistrer / Ranger</button>
   <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
   <a class="btn" href="index.html" title="Retour boutique">↩</a>
 </div>
@@ -316,6 +316,54 @@ function webSearch(){var q=($("webq")||{}).value;q=(q||"").trim();if(q.length<2)
  }).catch(function(){if(b){b.disabled=false;b.textContent="🔎 Chercher sur le web";}if(r)r.innerHTML='<div class="hint">Recherche indisponible (réseau). Réessaie ou utilise l\'IA.</div>';});
 }
 function saveAsLogo(){if(!st.layers.length){toast("Ajoute au moins un calque");return;}var nm=prompt("Nom du logo :","Logo La Détente");if(nm===null)return;svgToPng(buildSVG(1024,false,null),1024,function(data){var logo={id:"logo_"+Date.now().toString(36),name:(nm||"Logo").slice(0,40),img:data,ts:Date.now()};try{var arr=JSON.parse(localStorage.getItem("ld_logos_cache")||"[]");arr.push(logo);localStorage.setItem("ld_logos_cache",JSON.stringify(arr));}catch(_){}if(window.kdmcPublishLogo){window.kdmcPublishLogo("la-detente",logo).then(function(){toast("✅ Logo enregistré (boutique + studio)")}).catch(function(){toast("✅ Logo enregistré localement")});}else{toast("✅ Logo enregistré — dispo ici et dans Admin → Logos");}renderMyLogos();});}
+/* ===== Fin de création : ranger (auto-organisé) ou effacer ===== */
+function _autoCat(){
+ var hay="",hasText=false,hasImg=false,firstText="";
+ st.layers.forEach(function(l){
+  if(l.type==="text"){hasText=true;hay+=" "+(l.text||"");if(!firstText&&(l.text||"").trim())firstText=l.text.trim();}
+  else if(l.type==="image"){hasImg=true;hay+=" "+(l.orig||l.href||"");}
+  else if(l.type==="emblem"){hay+=" "+(l.sym||"");}
+ });
+ var n=hay.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+ function has(re){return re.test(n);}
+ var cat="Mes créations",tags=[];
+ if(has(/ball.?trap|plateau|clay|perazzi/)){cat="Ball-Trap";tags.push("ball-trap");}
+ else if(has(/cerf|deer|stag|sanglier|boar|canard|duck|faisan|pheasant|renard|fox|lievre|hare|aigle|eagle|chasse|animal|paw|pine|feather|antler/)){cat="Chasse & Animaux";tags.push("chasse");}
+ else if(has(/ar15|fusil|carabine|pistolet|revolver|glock|arme|gun|shotgun|rifle|crossed|cartridge|cartouche|tir/)){cat="Armes & Tir";tags.push("tir");}
+ else if(has(/coeur|cœur|heart|rose|amour|entre.?amis/)){cat="Cœur & Entre amis";tags.push("cœur");}
+ else if(hasText&&!hasImg){cat="Textes & Slogans";tags.push("texte");}
+ if(has(/coeur|cœur|heart/)&&tags.indexOf("cœur")<0)tags.push("cœur");
+ if(hasText)tags.push("texte");if(hasImg)tags.push("image");
+ tags=tags.filter(function(t,i){return tags.indexOf(t)===i;});if(!tags.length)tags=["ma création"];
+ return {cat:cat,tags:tags,name:(firstText||cat).slice(0,30)};
+}
+function finishCreation(){
+ if(!st.layers.length){toast("Ajoute au moins un calque pour créer");return;}
+ var ac=_autoCat();
+ svgToPng(buildSVG(420,false,null),420,function(thumb){
+  modal('<h2 style="margin:0 0 6px;font-size:17px">✅ Ta création est prête</h2>'
+   +'<div style="display:flex;gap:14px;align-items:center;margin:8px 0 14px">'
+   +'<img src="'+thumb+'" style="width:84px;height:84px;border-radius:10px;border:1px solid var(--border);background:#0b0d0f;object-fit:contain;flex:none">'
+   +'<div style="font-size:12px;color:var(--muted);line-height:1.55">Rangée automatiquement dans :<br><b style="color:#fff;font-size:14px">📚 '+esc(ac.cat)+'</b></div></div>'
+   +'<label style="font-size:11px;color:var(--muted)">Nom (optionnel)</label>'
+   +'<input id="finishName" value="'+esc(ac.name)+'" maxlength="50" style="width:100%;box-sizing:border-box;margin:5px 0 14px;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:10px;font:500 13px system-ui">'
+   +'<div style="display:flex;flex-direction:column;gap:8px">'
+   +'<button class="btn primary" style="width:100%" onclick="Studio.saveToLibrary()">📚 Enregistrer dans la bibliothèque</button>'
+   +'<button class="btn" style="width:100%;border-color:#7a2230;background:#3a1118;color:#ffd0d0" onclick="Studio.clearCanvas()">🗑 Effacer et recommencer</button>'
+   +'<button class="btn ghost" style="width:100%" onclick="Studio.closeModal()">↩︎ Continuer l\'édition</button>'
+   +'</div>');
+ });
+}
+function saveToLibrary(){
+ var nm=(($("finishName")||{}).value||"").trim();var ac=_autoCat();
+ svgToPng(buildSVG(1024,false,null),1024,function(data){
+  var logo={id:"logo_"+Date.now().toString(36),name:(nm||ac.name||"Création").slice(0,50),img:data,ts:Date.now(),cat:ac.cat,tags:ac.tags,source:"studio"};
+  try{var arr=JSON.parse(localStorage.getItem("ld_logos_cache")||"[]");arr.push(logo);localStorage.setItem("ld_logos_cache",JSON.stringify(arr));}catch(_){}
+  if(window.kdmcPublishLogo){window.kdmcPublishLogo("la-detente",logo).catch(function(){});}
+  renderMyLogos();closeModal();toast("📚 Rangé dans « "+ac.cat+" »");
+ });
+}
+function clearCanvas(){snap();st.layers=[];st.sel=null;render();closeModal();toast("🗑 Création effacée — à toi de jouer");}
 function renderLayers(){
  var c=$("layers");
  if(!st.layers.length){c.innerHTML='<div class="empty">Aucun calque.<br>Importe une image, ajoute du texte ou un emblème.</div>';return}
@@ -646,7 +694,7 @@ function _iceBind(){var cv=ICE.canvas,down=false,start=null;
  cv.onmousedown=pd;cv.onmousemove=pm;window.addEventListener("mouseup",pu);
  cv.addEventListener("touchstart",pd,{passive:false});cv.addEventListener("touchmove",pm,{passive:false});cv.addEventListener("touchend",pu)}
 function iceApply(){var l=get(ICE.id);if(!l){closeModal();return}snap();try{l.href=ICE.canvas.toDataURL("image/png");var ar=ICE.canvas.width/ICE.canvas.height||1;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base}catch(e){toast("Erreur retouche")}closeModal();render();toast("Photo retouchée ✅")}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
