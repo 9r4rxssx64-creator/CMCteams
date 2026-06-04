@@ -17,7 +17,7 @@ function cors(origin) {
   const ok = ALLOW.includes(origin);
   return {
     'Access-Control-Allow-Origin': ok ? origin : ALLOW[0],
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, x-ld-app',
     'Content-Type': 'application/json'
   };
@@ -32,6 +32,44 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'GET' && url.pathname === '/') {
       return J({ ok: true, service: 'ld-printify-order', shop_id: SHOP_ID }, 200, origin);
+    }
+    // COÛT RÉEL : crée un produit-sonde, lit le cost réel, le supprime
+    if (request.method === 'GET' && url.pathname === '/cost') {
+      const KEY = env.PRINTIFY_API_KEY;
+      if (!KEY) return J({ ok: false, detail: 'clé serveur absente' }, 500, origin);
+      const bp = parseInt(url.searchParams.get('bp') || '0', 10);
+      if (!bp) return J({ ok: false, detail: 'paramètre bp manquant' }, 400, origin);
+      const H = { 'Authorization': 'Bearer ' + KEY, 'User-Agent': 'LaDetente-KDMC/1.0', 'Content-Type': 'application/json' };
+      try {
+        const pr = await fetch(`${API}/catalog/blueprints/${bp}/print_providers.json`, { headers: H });
+        if (!pr.ok) return J({ ok: false, detail: 'providers HTTP ' + pr.status, where: 'providers' }, 502, origin);
+        const providers = await pr.json();
+        if (!providers.length) return J({ ok: false, detail: 'aucun print provider pour ce produit' }, 422, origin);
+        const pp = providers[0].id;
+        const vr = await fetch(`${API}/catalog/blueprints/${bp}/print_providers/${pp}/variants.json`, { headers: H });
+        if (!vr.ok) return J({ ok: false, detail: 'variants HTTP ' + vr.status, where: 'variants' }, 502, origin);
+        const variants = (await vr.json()).variants || [];
+        if (!variants.length) return J({ ok: false, detail: 'aucune variante' }, 422, origin);
+        let imgId = null;
+        try {
+          const up = await fetch(`${API}/uploads/images.json`, { method: 'POST', headers: H, body: JSON.stringify({ file_name: 'ld-probe.png', url: IMG_BASE + 'crest.png' }) });
+          if (up.ok) { const uj = await up.json(); imgId = uj.id; }
+        } catch (_) {}
+        const vids = variants.map(v => v.id);
+        const body = {
+          title: 'LD cost probe ' + bp, description: 'probe', blueprint_id: bp, print_provider_id: pp,
+          variants: variants.map(v => ({ id: v.id, price: 2000, is_enabled: true })),
+          print_areas: imgId ? [{ variant_ids: vids, placeholders: [{ position: 'front', images: [{ id: imgId, x: 0.5, y: 0.5, scale: 1, angle: 0 }] }] }] : []
+        };
+        const cr = await fetch(`${API}/shops/${SHOP_ID}/products.json`, { method: 'POST', headers: H, body: JSON.stringify(body) });
+        const ctxt = await cr.text();
+        if (!cr.ok) return J({ ok: false, detail: 'création produit-sonde HTTP ' + cr.status + ' : ' + ctxt.slice(0, 300), where: 'create' }, 502, origin);
+        let prod; try { prod = JSON.parse(ctxt); } catch (_) { prod = {}; }
+        const costs = (prod.variants || []).map(v => v.cost).filter(c => typeof c === 'number' && c > 0);
+        if (prod.id) { try { await fetch(`${API}/shops/${SHOP_ID}/products/${prod.id}.json`, { method: 'DELETE', headers: H }); } catch (_) {} }
+        if (!costs.length) return J({ ok: false, detail: 'coût absent de la réponse produit', where: 'cost' }, 502, origin);
+        return J({ ok: true, blueprint_id: bp, print_provider_id: pp, min_cost: Math.min(...costs) / 100, max_cost: Math.max(...costs) / 100, currency: 'shop' }, 200, origin);
+      } catch (e) { return J({ ok: false, detail: String(e && e.message || e), where: 'exception' }, 500, origin); }
     }
     if (request.method !== 'POST' || url.pathname !== '/order') return J({ ok: false, detail: 'not found' }, 404, origin);
     if (!ALLOW.includes(origin)) return J({ ok: false, detail: 'origin refusée' }, 403, origin);
