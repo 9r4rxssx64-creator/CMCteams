@@ -342,6 +342,7 @@ function renderProps(){
   h+=field("Seuil fond ("+(l._thr||30)+")",'<input type="range" min="5" max="140" step="1" value="'+(l._thr||30)+'" oninput="Studio.setThr('+l.id+',+this.value)">');
   h+='<div class="row2"><button class="mini" onclick="Studio.bgRemove('+l.id+')">✂️ Retirer le fond</button><button class="mini" onclick="Studio.autoTrim('+l.id+')">⌗ Recadrer</button></div>';
   h+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);color:#fff" onclick="Studio.imgEdit('+l.id+')">✏️ Retoucher (gomme · magique · recadrer)</button>';
+  if(_aiCfg&&_aiCfg.worker_url)h+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);background:#dc26261a;color:#fff" onclick="Studio.aiEdit('+l.id+')">✨ Modifier avec l\'IA (transforme la photo)</button>';
   h+='<button class="mini" style="width:100%;margin-top:8px" onclick="Studio.resetImg('+l.id+')">↺ Image d\'origine</button>';
   h+='<h3 style="margin-top:14px">Filtres</h3>';
   h+=rngF(l.id,"br","Luminosité",f.br==null?1:f.br,0,2,0.05)+rngF(l.id,"ct","Contraste",f.ct==null?1:f.ct,0,2,0.05)+rngF(l.id,"sat","Saturation",f.sat==null?1:f.sat,0,2,0.05)+rngF(l.id,"gray","Noir & blanc",f.gray||0,0,1,0.05);
@@ -521,6 +522,48 @@ function aiGen(){
   }).catch(function(e){hint.textContent="⚠️ Réseau : "+e.message;})
   .then(function(){btn.disabled=false;btn.textContent=old;});
 }
+/* ===== Édition d'une PHOTO importée par l'IA (image-to-image) ===== */
+function _rasterize(src,max,cb){
+ var img=new Image();try{img.crossOrigin="anonymous"}catch(_){}
+ img.onload=function(){
+  var w=img.naturalWidth||512,hh=img.naturalHeight||512;
+  var sc=Math.min(1,(max||1024)/Math.max(w,hh));
+  var cw=Math.max(1,Math.round(w*sc)),ch=Math.max(1,Math.round(hh*sc));
+  var c=document.createElement("canvas");c.width=cw;c.height=ch;
+  try{c.getContext("2d").drawImage(img,0,0,cw,ch);cb(c.toDataURL("image/jpeg",0.92));}catch(e){cb(null);}
+ };
+ img.onerror=function(){cb(null)};
+ img.src=src;
+}
+function aiEdit(id){
+ var l=get(id);if(!l||l.type!=="image"){toast("Sélectionne une image");return}
+ if(!_aiCfg||!_aiCfg.worker_url){toast("Service IA non configuré (worker en attente de déploiement)","info");return}
+ var chips=["Style gravure noir & blanc","Style cartoon vectoriel net","Fond transparent, sujet isolé","Style aquarelle artistique","Style tatouage chasse","Couleurs plus vives et contrastées","Style croquis au crayon","Ajoute un cœur rouge discret"];
+ modal('<h2 style="margin:0 0 10px;font-size:17px">✨ Modifier la photo avec l\'IA</h2>'
+  +'<p style="font-size:12px;color:var(--muted);margin:0 0 10px">Décris ce que l\'IA doit faire sur l\'image sélectionnée : modifier, styliser, nettoyer, transformer…</p>'
+  +'<textarea id="aiEditP" rows="3" placeholder="Ex : transforme cette photo en style gravure noir et blanc" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:10px;font:500 13px system-ui;resize:vertical"></textarea>'
+  +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">'+chips.map(function(c){return '<button class="mini" onclick="var t=document.getElementById(\'aiEditP\');t.value=this.textContent;t.focus()">'+c+'</button>'}).join("")+'</div>'
+  +'<div id="aiEditHint" style="font-size:12px;color:var(--muted);min-height:16px;margin-bottom:8px"></div>'
+  +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" onclick="Studio.closeModal()">Annuler</button><button class="btn primary" id="aiEditBtn" onclick="Studio.aiEditRun('+id+')">✨ Modifier</button></div>');
+}
+function aiEditRun(id){
+ var l=get(id);if(!l)return;
+ var tp=$("aiEditP"),hint=$("aiEditHint"),btn=$("aiEditBtn");
+ var p=((tp&&tp.value)||"").trim();
+ if(!p){if(hint)hint.textContent="Écris une consigne.";return}
+ if(!_aiCfg||!_aiCfg.worker_url){if(hint)hint.textContent="Service IA non configuré.";return}
+ if(btn){btn.disabled=true;btn.textContent="… traitement";}
+ if(hint)hint.textContent="L'IA retravaille ta photo (10-25 s)…";
+ _rasterize(l.href,1024,function(data){
+  if(!data){if(hint)hint.textContent="⚠️ Cette image (web) interdit la copie. Importe une photo via 📁/🖼️ pour la modifier.";if(btn){btn.disabled=false;btn.textContent="✨ Modifier";}return}
+  fetch(_aiCfg.worker_url,{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":_aiCfg.app_tag||"ld-studio-v1"},body:JSON.stringify({prompt:p,image:data})})
+   .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+   .then(function(res){
+     if(res.ok&&res.j&&res.j.image){snap();if(!l.orig)l.orig=l.href;l.href=res.j.image;render();closeModal();toast("✅ Photo modifiée par l'IA ("+(res.j.model||"IA")+")");}
+     else{if(hint)hint.textContent="⚠️ "+((res.j&&(res.j.detail||res.j.error))||"échec");if(btn){btn.disabled=false;btn.textContent="✨ Modifier";}}
+   }).catch(function(e){if(hint)hint.textContent="⚠️ Réseau : "+e.message;if(btn){btn.disabled=false;btn.textContent="✨ Modifier";}});
+ });
+}
 /* ===== Historique (annuler/refaire) + presse-papier ===== */
 st._hist=[];st._fut=[];
 function _snapState(){return JSON.stringify({layers:st.layers,uid:st.uid,sel:st.sel})}
@@ -593,7 +636,7 @@ function _iceBind(){var cv=ICE.canvas,down=false,start=null;
  cv.onmousedown=pd;cv.onmousemove=pm;window.addEventListener("mouseup",pu);
  cv.addEventListener("touchstart",pd,{passive:false});cv.addEventListener("touchmove",pm,{passive:false});cv.addEventListener("touchend",pu)}
 function iceApply(){var l=get(ICE.id);if(!l){closeModal();return}snap();try{l.href=ICE.canvas.toDataURL("image/png");var ar=ICE.canvas.width/ICE.canvas.height||1;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base}catch(e){toast("Erreur retouche")}closeModal();render();toast("Photo retouchée ✅")}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
