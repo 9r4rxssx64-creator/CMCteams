@@ -75,4 +75,15 @@ Pour chaque produit, Printify propose plusieurs ateliers. Choisis-en un **en Eur
 - [ ] 1 commande test passée → validée dans Printify
 
 > Liens directs : [Paiement](https://printify.com/app/account/payment) · [Réglages compte/branding](https://printify.com/app/account/settings) · [Mes commandes](https://printify.com/app/orders) · [Mes produits](https://printify.com/app/products)
-</content>
+
+---
+
+## 9. 🇪🇺 GPSR (sécurité produits UE — OBLIGATOIRE pour vendre en France/UE)
+Depuis déc. 2024, vendre en UE exige une « personne responsable UE ».
+- Choisis **« EU (sell in the EU and United Kingdom) »** ✅ (sinon les ventes UE sont bloquées → tu perds la France).
+- Section **« EU responsible person »** : laisse les détails par défaut (Kdmc · desarzens.kevin@gmail.com · Monaco) ou « Add my details ». Affiché aux acheteurs pour la conformité — normal.
+- ❌ Ne choisis PAS « Non-EU » (restreint les ventes UE/UK).
+
+## 📨 Emails boutique
+- Contacts + alertes commande envoyés à **desarzens.kevin@gmail.com** (via EmailJS).
+- ⚠️ Vérifie que tes **modèles EmailJS** (`template_contact`, `template_order_confirm`) ont le champ **« To »** = `{{to_email}}` (sinon mets ton email en dur dans le « To » du modèle), sinon l'email n'arrive pas.

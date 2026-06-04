@@ -241,6 +241,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 <script>
 var STORE_ID="la-detente";
 var STORE_NAME="La Détente";
+var LD_ADMIN_EMAIL="desarzens.kevin@gmail.com"; /* reçoit contacts + alertes commande */
 var CATS=[{"id":"designs","name":"Designs ★","icon":"🔥"},{"id":"bio","name":"Bio Stanley/Stella","icon":"🌱"},{"id":"tshirts","name":"T-shirts","icon":"👕"},{"id":"sweats","name":"Sweats & Hoodies","icon":"🧥"},{"id":"polos","name":"Polos","icon":"🎽"},{"id":"casquettes","name":"Casquettes & Bobs","icon":"🧢"},{"id":"accessoires","name":"Accessoires","icon":"🎒"},{"id":"packs","name":"Packs","icon":"🎁"},{"id":"perso","name":"Personnalisé","icon":"✨"}];
 function gMock(g,color,motif){var box={tee:[34,32,32,32],hoodie:[34,40,32,32],polo:[36,36,28,28],cap:[40,26,20,20],tote:[33,30,34,34],bandana:[36,40,28,28]}[g]||[34,34,32,32];if(motif==="emblem"&&g!=="cap"){box=[box[0]-2,box[1]-1,box[2]+4,box[3]+4];}return '<svg style="width:100%;height:100%;display:block" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+'<g style="color:'+color+'"><use href="#g-'+g+'"/></g>'+'<use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/></svg>';}function _b(id,name,cat,g,color,motif,price,orig,mat,rate,rev,stock,tags){return {id:id,name:name,cat:cat,price:price,origPrice:orig,img:gMock(g,color,motif),rating:rate,reviews:rev,desc:name+" — \u00e9dition La D\u00e9tente. "+mat+", impression haute t\u00e9nacit\u00e9, motif c\u0153ur rouge. Tailles S \u00e0 XXL. Entre amis, vise juste.​",material:mat,tags:tags,sizes:["S","M","L","XL","XXL"],stock:stock,shipping:"standard",garment:g,garmentColor:color,motif:motif,placement:"chest"};}var P=[];
 try{var _c=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");if(_c&&_c.length){_c.forEach(function(q){q.sizes=q.sizes||["S","M","L","XL","XXL"];q.rating=q.rating||5;q.reviews=q.reviews||0});P=_c.concat(P);}}catch(_){}
@@ -461,7 +462,7 @@ e.value=""}
 function sendContact(){
 var name=document.querySelector('[type=text]');var email=document.querySelector('[type=email]');var msg=document.querySelector('textarea');
 if(!name||!email||!msg||!email.value)return toast("Remplissez tous les champs","error");
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_contact",{from_name:name.value,from_email:email.value,message:msg.value,store:STORE_NAME}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_contact",{to_email:LD_ADMIN_EMAIL,reply_to:email.value,from_name:name.value,from_email:email.value,message:msg.value,store:STORE_NAME}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
 function notifyPayment(total){
 if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_payment",{store:STORE_NAME,amount:fmtP(total),items:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),timestamp:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
 function showPayment(total){
@@ -801,6 +802,7 @@ items.forEach(function(i){decrementStock(i.id)});
 if(typeof emailjs!=="undefined"){
 emailjs.init("nUsorWTtC");
 emailjs.send("service_318elaz","template_order_confirm",{
+to_email:LD_ADMIN_EMAIL,admin_email:LD_ADMIN_EMAIL,reply_to:(ck.email||LD_ADMIN_EMAIL),
 order_id:orderId,store:STORE_NAME,total:fmtP(total),method:method,
 items:items.map(function(i){return i.name+" ["+(i.size||"M")+"] x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),
 customer:ck.name||"",email:ck.email||"",shipping:[ck.name,ck.addr,(ck.zip||"")+" "+(ck.city||""),ck.country||"France",ck.phone].filter(Boolean).join("\n"),production:sheetText,
@@ -1082,7 +1084,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.50.0"
+        data-version="v1.51.0"
         data-color="#e8b830"
         defer></script>
 
