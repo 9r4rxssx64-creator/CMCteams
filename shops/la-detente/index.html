@@ -372,7 +372,7 @@ return '<div class="hero"><h1>Vise juste, <em>entre amis</em></h1>'
 +'<div class="trust-item"><span class="trust-icon">⭐</span>Satisfaction garantie</div></div>'+recentHtml(null)
 +(nouv.length?'<div class="section newcol"><div class="newcol-banner"><div><span class="newcol-tag">★ NOUVEAUTÉ</span><h2>Nouvelle collection — Vraies armes ★</h2><p>Vraies photos d\'armes : fusil & plateaux de ball-trap, fusil & rose, carabine, fusils croisés… imprimées sur le textile de ton choix.</p><button onclick="S.cat=\'designs\';S.page=1;sv(\'products\')">Voir la collection →</button></div></div><div class="grid">'+nouv.map(cardHtml).join("")+'</div></div>':'')
 +(bestsell.length?'<div class="section"><div class="section-title">🔥 Meilleures ventes ⭐</div><div class="grid">'+bestsell.map(cardHtml).join("")+'</div></div>':'')
-+(LD_ADMIN?('<div class="section newcol"><div class="newcol-banner"><div><span class="newcol-tag">✨ CRÉE TON PRODUIT</span><h2>Choisis ton objet, ton logo, ta taille</h2><p>Objets du vrai catalogue (t-shirt, hoodie, casquette, mug, tote…), appose un logo, ajuste-le (poitrine, dos, cœur, centre), teste le visuel puis commande. La qualité et la taille se choisissent à la commande.</p><a href="studio.html" style="display:inline-block;padding:13px 26px;background:#fff;color:#111;border-radius:100px;font-weight:800;text-decoration:none">🎨 Ouvrir le studio</a></div></div></div>'):'')
+
 +(LD_ADMIN?((function(){var L=(typeof ldEffLogos==="function"?ldEffLogos():[]).filter(function(x){return x.custom;}).slice(0,12);if(!L.length)return '';return '<div class="section"><div class="section-title">✨ Mes logos favoris</div><div class="grid">'+L.map(function(l){return '<a href="studio.html'+(l.custom?"":"?design="+l.id)+'" class="card" style="text-decoration:none;color:inherit"><div class="card-img" style="background:#15171a;display:flex;align-items:center;justify-content:center"><img src="'+l.img+'" loading="lazy" alt="" style="object-fit:contain;padding:12px;max-height:100%"></div><div class="card-body"><div class="card-title" style="font-size:12.5px">'+esc(l.name)+'</div><div style="font-size:11px;color:var(--muted);margin:2px 0 6px">À personnaliser dans le studio</div><button class="card-cta">🎨 Créer mon produit</button></div></a>'}).join("")+'</div></div>';})()):'')
 +(P.length?'<div class="section"><div class="section-title">🛍️ En boutique</div><div class="grid">'+P.slice(0,12).map(cardHtml).join("")+'</div></div>':'')
 +'<div class="section"><div class="section-title">🗂️ Catégories</div><div class="cat-grid">'+CATS.map(function(c){return '<div class="cat-tile" onclick="S.cat=\''+c.id+'\';S.page=1;sv(\'products\')"><img src="img/cat/'+c.id+'.png" alt="'+esc(c.name)+'" loading="lazy"><div class="cat-tile-ov"><span>'+c.icon+' '+esc(c.name)+'</span></div></div>'}).join("")+'</div></div>'
@@ -1113,7 +1113,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.52.0"
+        data-version="v1.52.1"
         data-color="#e8b830"
         defer></script>
 
