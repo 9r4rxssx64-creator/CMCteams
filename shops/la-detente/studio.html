@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.5.0 -->
+<!-- La Détente — Studio (admin) v1.6.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -219,8 +219,20 @@ var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script 
 
 /* Photos RÉELLES du produit (récupérées de Printify par le workflow printify-mockups). Repli auto sur le dessin si absentes. */
 var MOCK={tee:"img/mockups/tee.png",hoodie:"img/mockups/hoodie.png",polo:"img/mockups/polo.png",cap:"img/mockups/cap.png",tote:"img/mockups/tote.png",tank:"img/mockups/tank.png",shirt:"img/mockups/shirt.png",zip:"img/mockups/zip.png",bandana:"img/mockups/bandana.png",jogger:"img/mockups/jogger.png",short:"img/mockups/short.png"};
-var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:false,mockReady:{},pf:null,pfReady:false,pfPhoto:""};
-function preloadMocks(){Object.keys(MOCK).forEach(function(g){var im=new Image();im.onload=function(){st.mockReady[g]=true;paintRealBtn()};im.onerror=function(){st.mockReady[g]=false;paintRealBtn()};im.src=MOCK[g];});}
+var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:true,mockReady:{},pf:null,pfReady:false,pfPhoto:""};
+function preloadMocks(){Object.keys(MOCK).forEach(function(g){if(!MOCK[g])return;var im=new Image();im.onload=function(){st.mockReady[g]=true;render()};im.onerror=function(){st.mockReady[g]=false;paintRealBtn()};im.src=MOCK[g];});}
+/* AUTO via API Printify : mappe chaque vêtement de base à une VRAIE photo produit (catalogue généré par l'API) */
+function loadDefaultMocks(){
+ fetch("printify-blueprints.json").then(function(r){return r.ok?r.json():null}).then(function(j){
+  if(!j||!j.categories)return;var all=[];Object.keys(j.categories).forEach(function(k){(j.categories[k].items||[]).forEach(function(it){all.push(it)})});
+  var byId={};all.forEach(function(it){byId[it.id]=it});
+  function im(id){return byId[id]&&byId[id].image;}
+  function kw(re){var h=all.filter(function(it){return it.image&&re.test((it.title||"").toLowerCase())});return h[0]&&h[0].image;}
+  var M={tee:im(6)||kw(/heavy cotton tee|unisex.*(tee|t-shirt)/),hoodie:im(77)||kw(/hoodie/),cap:im(5383)||kw(/dad hat|\bcap\b|trucker/),tote:im(1313)||kw(/tote/),polo:kw(/polo/),tank:kw(/tank/),shirt:kw(/long ?sleeve/)||kw(/sweatshirt/),zip:kw(/full-?zip|zip[- ]?up|zip hoodie/),bandana:kw(/bandana/),jogger:kw(/jogger|sweatpant/),short:kw(/shorts?/)};
+  Object.keys(M).forEach(function(g){if(M[g])MOCK[g]=M[g];});
+  preloadMocks();
+ }).catch(function(){});
+}
 function realAvailable(){return !!((st.pf&&st.pfReady&&st.pfPhoto)||(MOCK[st.garment]&&st.mockReady[st.garment]));}
 function toggleRealPhoto(){if(!realAvailable()){toast("📸 Photo réelle pas encore dispo pour ce produit — active Printify (token)");return}st.realphoto=!st.realphoto;render();}
 function paintRealBtn(){var b=document.getElementById("realBtn");if(!b)return;var ok=realAvailable();b.textContent=st.realphoto?"✏️ Revenir au dessin":"📸 Photo réelle du produit";b.style.opacity=ok?"1":".5";b.title=ok?"Voir ton design sur la vraie photo du produit (Printify)":"Photos réelles indisponibles tant que le token Printify n'est pas configuré";}
@@ -426,16 +438,21 @@ function addToShop(){
 }
 function _saveProduct(cat){
  var name=$("m_name").value||"Produit personnalisé";var price=+$("m_price").value||24.9;var orig=+$("m_orig").value||price;
+ var theme=(document.getElementById('m_theme')||{}).value||'Personnalisé';
+ var realImg=st.realphoto?((st.pf&&st.pf.image)?st.pf.image:(st.mockReady[st.garment]?MOCK[st.garment]:null)):null;
  toast("Génération des visuels…");
- svgToPng(buildSVG(900,true),900,function(mock){
-  svgToPng(buildSVG(2000,false,null),2000,function(print){
-   var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
-   arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
-     img:mock,printFile:print,rating:5,reviews:0,desc:name+" — création La Détente (Studio). Tailles S à XXL.",
-     material:(st.pf?("Print-on-demand · "+(st.pf.brand||"Printify")):"Coton premium"),placement:st.placement,theme:((document.getElementById('m_theme')||{}).value||'Personnalisé'),tags:["personnalisé","studio","la détente",((document.getElementById('m_theme')||{}).value||'').toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()});
-   localStorage.setItem("ld_custom_products",JSON.stringify(arr));
-   closeModal();toast("Produit ajouté à la boutique ✅ ("+arr.length+" créa)");
-  });
+ function save(mockImg,print){
+  var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
+  arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
+    img:mockImg,printFile:print,rating:5,reviews:0,desc:name+" — création La Détente (Studio). Tailles S à XXL.",
+    material:(st.pf?("Print-on-demand · "+(st.pf.brand||"Printify")):"Coton premium"),placement:st.placement,theme:theme,tags:["personnalisé","studio","la détente",theme.toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()});
+  localStorage.setItem("ld_custom_products",JSON.stringify(arr));
+  closeModal();toast("Produit ajouté à la boutique ✅ ("+arr.length+" créa)");
+ }
+ /* fichier d'impression = design transparent (sans photo distante → pas de canvas taint) */
+ svgToPng(buildSVG(2000,false,null),2000,function(print){
+  if(realImg){save(realImg,print);return;} /* vraie photo produit en vignette */
+  svgToPng(buildSVG(900,true),900,function(mock){save(mock,print);});
  });
 }
 
@@ -471,7 +488,7 @@ function autoTrim(id){var l=get(id);if(!l)return;var im=new Image();im.onload=fu
 
 /* ---------- INIT ---------- */
 function init(){
- renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();
+ renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();loadDefaultMocks();
  // seed with brand emblem
  var _sp=new URLSearchParams(location.search), _qd=_sp.get("design");
  if(_qd&&/^[a-z0-9-]+$/.test(_qd)){var _u="img/designs/"+_qd+".png";var _im=new Image();_im.onload=function(){var ar=(_im.width&&_im.height)?_im.width/_im.height:1;addLayer({type:"image",href:_u,orig:_u,w:ar>=1?44:44*ar,h:ar>=1?44/ar:44,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});};_im.onerror=function(){};_im.src=_u;}
@@ -484,6 +501,7 @@ function init(){
  sb.addEventListener("drop",function(e){var fs=e.dataTransfer&&e.dataTransfer.files;if(fs)Array.prototype.forEach.call(fs,addImageFile)});
  $("modal").addEventListener("click",function(e){if(e.target.id==="modal")closeModal()});
  _loadAiCfg();document.addEventListener("keydown",_studioKey);
+ render();
 }
 var _aiCfg=null;
 function _loadAiCfg(){
