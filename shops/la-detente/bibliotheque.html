@@ -89,38 +89,31 @@ a{color:inherit;text-decoration:none}
 </div>
 
 <section style="margin:14px 0 6px;padding:14px 16px;background:#15171a;border:1px solid #2a2f34;border-radius:14px">
-  <div style="font-weight:800;margin-bottom:4px">🔎 Images libres de droit — recherche web (multi-sources)</div>
-  <div style="color:#9aa0a6;font-size:13px;margin-bottom:10px">Cherche un visuel pour la boutique. ⚠️ Vérifie toujours la <b>licence affichée</b> sur la page de l'image, et n'ajoute à la galerie que des images dont tu as les droits.</div>
-  <input id="fiq" type="text" value="âne" placeholder="ex: âne, cerf, fusil, plateau, cartouche…" style="width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid #2a2f34;background:#0e1013;color:#fff;font-size:15px;margin-bottom:8px">
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-    <button onclick="document.getElementById('fiq').value='âne'" style="padding:5px 10px;border-radius:999px;border:1px solid #2a2f34;background:#1d2127;color:#cfd3da;cursor:pointer;font-size:12px">âne</button>
-    <button onclick="document.getElementById('fiq').value='cerf'" style="padding:5px 10px;border-radius:999px;border:1px solid #2a2f34;background:#1d2127;color:#cfd3da;cursor:pointer;font-size:12px">cerf</button>
-    <button onclick="document.getElementById('fiq').value='sanglier'" style="padding:5px 10px;border-radius:999px;border:1px solid #2a2f34;background:#1d2127;color:#cfd3da;cursor:pointer;font-size:12px">sanglier</button>
-    <button onclick="document.getElementById('fiq').value='fusil de chasse'" style="padding:5px 10px;border-radius:999px;border:1px solid #2a2f34;background:#1d2127;color:#cfd3da;cursor:pointer;font-size:12px">fusil</button>
-    <button onclick="document.getElementById('fiq').value='cartouche chasse'" style="padding:5px 10px;border-radius:999px;border:1px solid #2a2f34;background:#1d2127;color:#cfd3da;cursor:pointer;font-size:12px">cartouche</button>
-    <button onclick="document.getElementById('fiq').value='chien de chasse'" style="padding:5px 10px;border-radius:999px;border:1px solid #2a2f34;background:#1d2127;color:#cfd3da;cursor:pointer;font-size:12px">chien</button>
-  </div>
-  <div style="font-size:11px;color:#7d848f;margin:2px 0 5px;letter-spacing:.6px">📷 PHOTOS — usage commercial, sans attribution</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-    <button onclick="window.open('https://pixabay.com/images/search/'+encodeURIComponent((document.getElementById('fiq').value||'âne').trim())+'/','_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Pixabay</button>
-    <button onclick="window.open('https://www.pexels.com/search/'+encodeURIComponent((document.getElementById('fiq').value||'âne').trim())+'/','_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Pexels</button>
-    <button onclick="window.open('https://unsplash.com/s/photos/'+encodeURIComponent((document.getElementById('fiq').value||'âne').trim()),'_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Unsplash</button>
-    <button onclick="window.open('https://stocksnap.io/search/'+encodeURIComponent((document.getElementById('fiq').value||'âne').trim()),'_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">StockSnap</button>
-    <button onclick="window.open('https://burst.shopify.com/photos/search?q='+encodeURIComponent((document.getElementById('fiq').value||'âne').trim()),'_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Burst</button>
-  </div>
-  <div style="font-size:11px;color:#7d848f;margin:2px 0 5px;letter-spacing:.6px">🏛️ DOMAINE PUBLIC &amp; CC0 — filtre la licence sur la page</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-    <button onclick="window.open('https://openverse.org/search/?q='+encodeURIComponent((document.getElementById('fiq').value||'âne').trim())+'&license_type=commercial','_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Openverse</button>
-    <button onclick="window.open('https://commons.wikimedia.org/w/index.php?title=Special:MediaSearch&type=image&search='+encodeURIComponent((document.getElementById('fiq').value||'âne').trim()),'_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Wikimedia Commons</button>
-    <button onclick="window.open('https://www.rawpixel.com/search/'+encodeURIComponent((document.getElementById('fiq').value||'âne').trim()),'_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Rawpixel</button>
-  </div>
-  <div style="font-size:11px;color:#7d848f;margin:2px 0 5px;letter-spacing:.6px">✒️ VECTEURS / SVG — CC0 / domaine public</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap">
-    <button onclick="window.open('https://openclipart.org/search/?query='+encodeURIComponent((document.getElementById('fiq').value||'âne').trim()),'_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">Openclipart</button>
-    <button onclick="window.open('https://freesvg.org/?s='+encodeURIComponent((document.getElementById('fiq').value||'âne').trim()),'_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">FreeSVG</button>
-    <button onclick="window.open('https://www.svgrepo.com/vectors/'+encodeURIComponent((document.getElementById('fiq').value||'âne').trim())+'/','_blank')" style="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer">SVG Repo</button>
-  </div>
+  <div style="font-weight:800;margin-bottom:4px">🔎 Images libres de droit — recherche web (≈25 sources)</div>
+  <div style="color:#9aa0a6;font-size:13px;margin-bottom:10px">Cherche un visuel pour la boutique sur de nombreuses banques gratuites. ⚠️ Vérifie toujours la <b>licence affichée</b> sur la page, et n'ajoute à la galerie que des images dont tu as les droits.</div>
+  <input id="fiq" type="text" value="âne" placeholder="ex: âne aquarelle, cerf, fusil, plateau, cartouche…" style="width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid #2a2f34;background:#0e1013;color:#fff;font-size:15px;margin-bottom:8px">
+  <div id="fichips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+  <div id="figroups"></div>
 </section>
+<script>
+(function(){
+  var CHIPS=["âne","âne aquarelle","âne rigolo","cerf","biche","chevreuil","sanglier","renard","lièvre","faisan","canard colvert","perdrix","bécasse","chien de chasse","labrador","cheval","montagne","forêt","fusil de chasse","carabine","cartouche","douille","plateau ball-trap","cible","plume","bois de cerf","empreinte patte","trophée chasse","camouflage"];
+  var GROUPS=[
+   {t:"📷 PHOTOS — usage commercial, sans attribution", s:[["Pixabay","https://pixabay.com/images/search/{q}/"],["Pexels","https://www.pexels.com/search/{q}/"],["Unsplash","https://unsplash.com/s/photos/{q}"],["StockSnap","https://stocksnap.io/search/{q}"],["Burst","https://burst.shopify.com/photos/search?q={q}"],["Kaboompics","https://kaboompics.com/gallery?search={q}"],["Life of Pix","https://www.lifeofpix.com/?s={q}"],["ISO Republic","https://isorepublic.com/?s={q}"],["Picography","https://picography.co/?s={q}"],["Negative Space","https://negativespace.co/?s={q}"],["FreeStocks","https://freestocks.org/?s={q}"]]},
+   {t:"🏛️ DOMAINE PUBLIC / CC0 / MUSÉES — filtre la licence sur la page", s:[["Openverse","https://openverse.org/search/?q={q}&license_type=commercial"],["Wikimedia Commons","https://commons.wikimedia.org/w/index.php?title=Special:MediaSearch&type=image&search={q}"],["Rawpixel","https://www.rawpixel.com/search/{q}"],["Flickr (CC)","https://www.flickr.com/search/?text={q}&license=4,5,9,10"],["The Met","https://www.metmuseum.org/art/collection/search?showOnly=openAccess&q={q}"],["Smithsonian","https://www.si.edu/search/collection-images?edan_q={q}"],["Art Institute","https://www.artic.edu/collection?q={q}"]]},
+   {t:"🎨 ILLUSTRATIONS — Freepik/Vecteezy : attribution requise en gratuit", s:[["Pixabay Illus.","https://pixabay.com/illustrations/search/{q}/"],["Freepik","https://www.freepik.com/search?query={q}"],["Vecteezy","https://www.vecteezy.com/free-vector/{q}"]]},
+   {t:"✒️ VECTEURS / SVG — CC0 / domaine public", s:[["Openclipart","https://openclipart.org/search/?query={q}"],["FreeSVG","https://freesvg.org/?s={q}"],["SVG Repo","https://www.svgrepo.com/vectors/{q}/"],["Pixabay Vecteurs","https://pixabay.com/vectors/search/{q}/"]]}
+  ];
+  var q=document.getElementById('fiq');
+  function getQ(){return encodeURIComponent((q.value||'âne').trim());}
+  var CHIP_CSS="padding:5px 10px;border-radius:999px;border:1px solid #2a2f34;background:#1d2127;color:#cfd3da;cursor:pointer;font-size:12px";
+  var BTN_CSS="padding:8px 12px;border-radius:9px;border:1px solid #2a2f34;background:#1d2127;color:#e7e9ee;font-weight:700;cursor:pointer";
+  document.getElementById('fichips').innerHTML=CHIPS.map(function(c){return '<button type="button" data-c="'+c+'" style="'+CHIP_CSS+'">'+c+'</button>';}).join('');
+  document.getElementById('fichips').addEventListener('click',function(e){var b=e.target.closest('button[data-c]');if(b)q.value=b.getAttribute('data-c');});
+  document.getElementById('figroups').innerHTML=GROUPS.map(function(g){return '<div style="font-size:11px;color:#7d848f;margin:8px 0 5px;letter-spacing:.5px">'+g.t+'</div><div style="display:flex;gap:6px;flex-wrap:wrap">'+g.s.map(function(s){return '<button type="button" data-u="'+s[1]+'" style="'+BTN_CSS+'">'+s[0]+'</button>';}).join('')+'</div>';}).join('');
+  document.getElementById('figroups').addEventListener('click',function(e){var b=e.target.closest('button[data-u]');if(b)window.open(b.getAttribute('data-u').replace('{q}',getQ()),'_blank');});
+})();
+</script>
 
 <div class="ctrl">
   <div class="search">🔎 <input id="q" type="text" placeholder="Rechercher un design (cerf, badge, ball-trap…)" oninput="LB.search(this.value)"></div>
