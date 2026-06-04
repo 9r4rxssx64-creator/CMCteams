@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.4.0 -->
+<!-- La Détente — Studio (admin) v1.5.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -67,6 +67,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
 .modal.show{display:flex}
 .modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%}
+.modal .box.wide{max-width:940px;max-height:90vh;overflow:auto}
 .modal h2{font-size:18px;margin-bottom:16px}
 @media(max-width:860px){.side{width:200px}.side.right{width:220px}}
 @media(max-width:680px){
@@ -139,8 +140,10 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
   <!-- LEFT: garment + add layers -->
   <div class="side">
     <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div>
+      <button class="btn primary" style="width:100%;margin-top:8px" onclick="Studio.openCatalog()">🛍️ Catalogue Printify — créer sur un vrai produit</button>
+      <div id="pfSel" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
       <button class="btn" id="realBtn" style="width:100%;margin-top:8px" onclick="Studio.toggleRealPhoto()">📸 Photo réelle du produit</button>
-      <div class="hint">Bascule entre le dessin et la <b>vraie photo du produit</b> (Printify). Ton design reste posé dans la zone d'impression.</div>
+      <div class="hint">Choisis n'importe quel produit du <b>catalogue Printify complet</b> (1408), crée ton design dessus, puis « Ajouter à la boutique ». Bascule dessin / vraie photo avec le bouton ci-dessus.</div>
     </div>
     <div class="grp"><h3>Emplacement</h3><div class="garments" id="placement"></div></div>
     <div class="grp"><h3>🌀 All-Over / Graffiti</h3>
@@ -216,9 +219,9 @@ var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script 
 
 /* Photos RÉELLES du produit (récupérées de Printify par le workflow printify-mockups). Repli auto sur le dessin si absentes. */
 var MOCK={tee:"img/mockups/tee.png",hoodie:"img/mockups/hoodie.png",polo:"img/mockups/polo.png",cap:"img/mockups/cap.png",tote:"img/mockups/tote.png",tank:"img/mockups/tank.png",shirt:"img/mockups/shirt.png",zip:"img/mockups/zip.png",bandana:"img/mockups/bandana.png",jogger:"img/mockups/jogger.png",short:"img/mockups/short.png"};
-var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:false,mockReady:{}};
+var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:false,mockReady:{},pf:null,pfReady:false,pfPhoto:""};
 function preloadMocks(){Object.keys(MOCK).forEach(function(g){var im=new Image();im.onload=function(){st.mockReady[g]=true;paintRealBtn()};im.onerror=function(){st.mockReady[g]=false;paintRealBtn()};im.src=MOCK[g];});}
-function realAvailable(){return !!(MOCK[st.garment]&&st.mockReady[st.garment]);}
+function realAvailable(){return !!((st.pf&&st.pfReady&&st.pfPhoto)||(MOCK[st.garment]&&st.mockReady[st.garment]));}
 function toggleRealPhoto(){if(!realAvailable()){toast("📸 Photo réelle pas encore dispo pour ce produit — active Printify (token)");return}st.realphoto=!st.realphoto;render();}
 function paintRealBtn(){var b=document.getElementById("realBtn");if(!b)return;var ok=realAvailable();b.textContent=st.realphoto?"✏️ Revenir au dessin":"📸 Photo réelle du produit";b.style.opacity=ok?"1":".5";b.title=ok?"Voir ton design sur la vraie photo du produit (Printify)":"Photos réelles indisponibles tant que le token Printify n'est pas configuré";}
 
@@ -257,7 +260,8 @@ function stageInner(forExport,withGarment){
  var s='';
  if(!forExport){s+='<rect x="0" y="0" width="100" height="100" rx="3" fill="#d2d5d9"/>';}
  if(withGarment!==false){
-   if(st.realphoto&&MOCK[st.garment]&&st.mockReady[st.garment]){s+='<image href="'+MOCK[st.garment]+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
+   if(st.realphoto&&st.pf&&st.pfReady&&st.pfPhoto){s+='<image href="'+st.pfPhoto+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
+   else if(st.realphoto&&MOCK[st.garment]&&st.mockReady[st.garment]){s+='<image href="'+MOCK[st.garment]+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
    else{s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
  }
  st.layers.forEach(function(l){s+=layerSVG(l)});
@@ -277,6 +281,7 @@ function render(){
  stage.innerHTML=spriteDefs()+stageInner(false);
  if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
  renderLayers(); renderProps(); paintRealBtn();
+ var ps=document.getElementById("pfSel");if(ps)ps.innerHTML=st.pf?('🛍️ Produit : <b>'+esc(st.pf.title)+'</b> '+esc(st.pf.brand||"")+' <span style="color:var(--p)">#'+st.pf.id+'</span>'):"";
 }
 /* ---------- PANELS ---------- */
 function renderGarments(){
@@ -413,11 +418,11 @@ function addToShop(){
  if(!st.layers.length)return toast("Ajoute un design d'abord");
  var CATMAP={tee:"tshirts",hoodie:"sweats",polo:"polos",cap:"casquettes",tote:"accessoires",bandana:"accessoires",tank:"tshirts",shirt:"tshirts",zip:"sweats",jogger:"accessoires",short:"accessoires"};
  modal('<h2>Ajouter à la boutique</h2>'
-  +'<div class="field"><label>Nom du produit</label><input id="m_name" type="text" value="'+esc(gobj().name+" personnalisé")+'"></div>'
+  +'<div class="field"><label>Nom du produit</label><input id="m_name" type="text" value="'+esc((st.pf?st.pf.title:gobj().name)+" personnalisé")+'"></div>'
   +'<div class="row2"><div class="field"><label>Prix (€)</label><input id="m_price" type="number" step="0.5" value="'+({tee:24.9,hoodie:49.9,polo:34.9,cap:19.9,tote:16.9,bandana:12.9,tank:22.9,shirt:29.9,zip:52.9,jogger:39.9,short:29.9})[st.garment]+'"></div>'
   +'<div class="field"><label>Prix barré (€)</label><input id="m_orig" type="number" step="0.5" value="'+({tee:32,hoodie:64,polo:42,cap:25,tote:21,bandana:16,tank:29,shirt:37,zip:66,jogger:49,short:37})[st.garment]+'"></div></div>'
   +'<div class="field"><label>Thème / Collection</label><input id="m_theme" type="text" placeholder="ex : Ball-Trap, Chasse, Édition été…" value=""></div>'+'<div class="hint">Le produit sera enregistré localement avec son mockup + son fichier d\'impression (pour le bon de production fournisseur).</div>'
-  +'<div class="row2" style="margin-top:14px"><button class="mini" onclick="Studio.closeModal()">Annuler</button><button class="btn primary" onclick="Studio._saveProduct(\''+CATMAP[st.garment]+'\')">Enregistrer</button></div>');
+  +'<div class="row2" style="margin-top:14px"><button class="mini" onclick="Studio.closeModal()">Annuler</button><button class="btn primary" onclick="Studio._saveProduct(\''+(st.pf?st.pf.cat:CATMAP[st.garment])+'\')">Enregistrer</button></div>');
 }
 function _saveProduct(cat){
  var name=$("m_name").value||"Produit personnalisé";var price=+$("m_price").value||24.9;var orig=+$("m_orig").value||price;
@@ -427,7 +432,7 @@ function _saveProduct(cat){
    var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
    arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
      img:mock,printFile:print,rating:5,reviews:0,desc:name+" — création La Détente (Studio). Tailles S à XXL.",
-     material:"Coton premium",placement:st.placement,theme:((document.getElementById('m_theme')||{}).value||'Personnalisé'),tags:["personnalisé","studio","la détente",((document.getElementById('m_theme')||{}).value||'').toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",ts:Date.now()});
+     material:(st.pf?("Print-on-demand · "+(st.pf.brand||"Printify")):"Coton premium"),placement:st.placement,theme:((document.getElementById('m_theme')||{}).value||'Personnalisé'),tags:["personnalisé","studio","la détente",((document.getElementById('m_theme')||{}).value||'').toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()});
    localStorage.setItem("ld_custom_products",JSON.stringify(arr));
    closeModal();toast("Produit ajouté à la boutique ✅ ("+arr.length+" créa)");
   });
@@ -449,7 +454,7 @@ function openProjects(){
  modal('<h2>📁 Projets</h2><div class="layers" style="margin-bottom:14px">'+list+'</div><button class="btn primary" style="width:100%" onclick="Studio.saveProject()">💾 Sauvegarder le projet actuel</button> <button class="mini" style="width:100%;margin-top:8px" onclick="Studio.closeModal()">Fermer</button>');
 }
 function modal(html){$("modalBox").innerHTML=html;$("modal").className="modal show"}
-function closeModal(){$("modal").className="modal"}
+function closeModal(){$("modal").className="modal";var mb=$("modalBox");if(mb)mb.classList.remove("wide");}
 
 /* ---------- IMAGE TOOLS ---------- */
 function get(id){return st.layers.filter(function(x){return x.id===id})[0]}
@@ -604,7 +609,50 @@ function scatter(mode){
  st.sel=null;render();
  toast(n+" motifs en all-over 🌀 — choisis un produit All-Over Print (AOP)");
 }
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+/* ---------- CATALOGUE PRINTIFY COMPLET (créer sur un vrai produit) ---------- */
+var _pfCat=null,_pfPick={q:"",cat:""};
+function pfGuessGarment(catKey,title){var t=(catKey+" "+(title||"")).toLowerCase();
+ if(/hood/.test(t))return "hoodie";if(/sweat|crew|jacket|\bzip\b/.test(t))return "hoodie";
+ if(/polo/.test(t))return "polo";if(/\b(cap|hat|beanie|trucker|snapback|bucket|visor)\b/.test(t))return "cap";
+ if(/tank/.test(t))return "tank";if(/long ?sleeve|shirt/.test(t))return "shirt";
+ if(/tote|\bbag\b|pouch|backpack/.test(t))return "tote";if(/bandana/.test(t))return "bandana";
+ if(/jogger|sweatpant|legging|\bpants\b/.test(t))return "jogger";if(/short/.test(t))return "short";return "tee";}
+function pfBoutiqueCat(it){var t=((it.title||"")+" "+(it.brand||"")).toLowerCase();
+ if(/hood|sweat|crew|jacket|\bzip\b/.test(t))return "sweats";if(/polo/.test(t))return "polos";
+ if(/\b(cap|hat|beanie|trucker|snapback|bucket)\b/.test(t))return "casquettes";
+ if(/mug|bottle|tumbler|can /.test(t))return "mugs";
+ if(/poster|canvas|pillow|blanket|flag|towel|\bmat\b|tapestry/.test(t))return "maison";
+ if(/tote|\bbag\b|backpack|pouch|sock|sticker|phone|case|\bpin\b|magnet|apron|keychain/.test(t))return "accessoires";
+ if(/legging|jogger|sweatpant|short|\bpants\b/.test(t))return "bas";
+ if(/kids|toddler|baby|youth|infant/.test(t))return "enfants";
+ if(/tee|t-?shirt|tank|long ?sleeve|shirt|jersey/.test(t))return "tshirts";return "autres";}
+function openCatalog(){if(_pfCat){renderCatModal();return;}toast("Chargement du catalogue Printify…");
+ fetch("printify-blueprints.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(!j||!j.categories){toast("Catalogue indisponible");return;}_pfCat=j;renderCatModal();}).catch(function(){toast("Catalogue indisponible (réseau)");});}
+function renderCatModal(){
+ var cats=_pfCat.categories,keys=Object.keys(cats);if(!_pfPick.cat||!cats[_pfPick.cat])_pfPick.cat=keys[0];
+ var q=(_pfPick.q||"").toLowerCase().trim(),src;
+ if(q){src=[];keys.forEach(function(k){if(k==="top")return;(cats[k].items||[]).forEach(function(it){src.push(it)});});}else src=cats[_pfPick.cat].items||[];
+ var seen={},items=[];src.forEach(function(it){if(seen[it.id])return;seen[it.id]=1;if(!q||((it.title+" "+(it.brand||"")).toLowerCase().indexOf(q)>=0))items.push(it);});
+ var shown=items.slice(0,60);window._pfShown=shown;
+ var chips=keys.map(function(k){var on=!q&&_pfPick.cat===k;return '<button onclick="Studio.pfCat(\''+k+'\')" style="padding:6px 10px;border-radius:100px;border:1px solid '+(on?"var(--p)":"var(--border)")+';background:'+(on?"var(--p)":"var(--panel2)")+';color:'+(on?"#fff":"#cfd3da")+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">'+esc(cats[k].label.replace("⭐ ",""))+' '+(cats[k].items||[]).length+'</button>';}).join("");
+ var grid=shown.map(function(it,i){return '<div onclick="Studio.pickProduct('+i+')" style="cursor:pointer;background:#0b0d0f;border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="background:#fff;aspect-ratio:1;display:flex;align-items:center;justify-content:center">'+(it.image?'<img src="'+esc(it.image)+'" loading="lazy" style="width:100%;height:100%;object-fit:contain">':"📦")+'</div><div style="padding:7px"><div style="font-size:11.5px;line-height:1.25;height:30px;overflow:hidden">'+esc(it.title)+'</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+esc(it.brand||"")+'</div></div></div>';}).join("");
+ var html='<div class="pickwrap"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0">🛍️ Catalogue Printify <span style="font-size:12px;color:var(--muted);font-weight:400">'+(_pfCat.total||"")+' produits</span></h2><span onclick="Studio.closeModal()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
+  +'<input id="pfq" value="'+esc(_pfPick.q)+'" oninput="Studio.pfSearch(this.value)" placeholder="🔍 Rechercher (mug, hoodie, Gildan, organic…)" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0e1013;color:#fff;margin-bottom:8px">'
+  +(q?"":'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px">'+chips+'</div>')
+  +'<div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">'+items.length+' produits · '+shown.length+' affichés · clique pour créer dessus</div>'
+  +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px">'+grid+'</div></div>';
+ var mb=$("modalBox");mb.classList.add("wide");mb.innerHTML=html;$("modal").className="modal show";
+}
+function pfCat(k){_pfPick.cat=k;_pfPick.q="";renderCatModal();}
+function pfSearch(v){_pfPick.q=v;renderCatModal();var i=document.getElementById("pfq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}}
+function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
+ st.pf={id:it.id,title:it.title,image:it.image||"",brand:it.brand||"",cat:pfBoutiqueCat(it)};
+ var g=pfGuessGarment(_pfPick.cat,it.title);st.garment=g;if(PLACE[g])st.placement=Object.keys(PLACE[g])[0];
+ st.realphoto=true;st.pfReady=false;st.pfPhoto=it.image||"";
+ if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
+ closeModal();renderGarments();renderPlacement();render();
+ toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
+return {init:init,setGarment:setGarment,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
