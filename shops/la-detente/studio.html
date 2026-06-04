@@ -157,7 +157,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
   <div class="side">
     <details class="grp grp-macro" name="ld-left" open><summary>🎽 Produit</summary>
       <div class="sublab">👕 Vêtement</div><div class="garments" id="garments"></div>
-      <button class="btn primary" style="width:100%;margin-top:8px" onclick="Studio.openCatalog()">🛍️ Catalogue Printify — créer sur un vrai produit</button>
+      <button class="btn primary" style="width:100%;margin-top:8px" onclick="Studio.openCatalog()">🛍️ Catalogue produits — créer sur un vrai produit</button>
       <div id="pfSel" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
       <button class="btn" id="realBtn" style="width:100%;margin-top:8px" onclick="Studio.toggleRealPhoto()">📸 Photo réelle du produit</button>
       <div class="sublab">📍 Emplacement</div><div class="garments" id="placement"></div>
@@ -260,8 +260,8 @@ function loadDefaultMocks(){
  }).catch(function(){});
 }
 function realAvailable(){return !!((st.pf&&st.pfReady&&st.pfPhoto)||(MOCK[st.garment]&&st.mockReady[st.garment]));}
-function toggleRealPhoto(){if(!realAvailable()){toast("📸 Photo réelle pas encore dispo pour ce produit — active Printify (token)");return}st.realphoto=!st.realphoto;render();}
-function paintRealBtn(){var b=document.getElementById("realBtn");if(!b)return;var ok=realAvailable();b.textContent=st.realphoto?"✏️ Revenir au dessin":"📸 Photo réelle du produit";b.style.opacity=ok?"1":".5";b.title=ok?"Voir ton design sur la vraie photo du produit (Printify)":"Photos réelles indisponibles tant que le token Printify n'est pas configuré";}
+function toggleRealPhoto(){if(!realAvailable()){toast("📸 Photo réelle pas encore dispo pour ce produit — active le fournisseur (token)");return}st.realphoto=!st.realphoto;render();}
+function paintRealBtn(){var b=document.getElementById("realBtn");if(!b)return;var ok=realAvailable();b.textContent=st.realphoto?"✏️ Revenir au dessin":"📸 Photo réelle du produit";b.style.opacity=ok?"1":".5";b.title=ok?"Voir ton design sur la vraie photo du produit":"Photos réelles indisponibles tant que le token fournisseur n'est pas configuré";}
 
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -538,7 +538,7 @@ function _saveProduct(cat){
   var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
   arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
     img:mockImg,printFile:print,rating:5,reviews:0,desc:name+" — création La Détente (Studio). Tailles S à XXL.",
-    material:(st.pf?("Print-on-demand · "+(st.pf.brand||"Printify")):"Coton premium"),placement:st.placement,theme:theme,tags:["personnalisé","studio","la détente",theme.toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()});
+    material:(st.pf?("Print-on-demand · "+(st.pf.brand||"")):"Coton premium"),placement:st.placement,theme:theme,tags:["personnalisé","studio","la détente",theme.toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()});
   localStorage.setItem("ld_custom_products",JSON.stringify(arr));
   closeModal();toast("Produit ajouté à la boutique ✅ ("+arr.length+" créa)");
  }
@@ -780,7 +780,7 @@ function pfBoutiqueCat(it){var t=((it.title||"")+" "+(it.brand||"")).toLowerCase
  if(/legging|jogger|sweatpant|short|\bpants\b/.test(t))return "bas";
  if(/kids|toddler|baby|youth|infant/.test(t))return "enfants";
  if(/tee|t-?shirt|tank|long ?sleeve|shirt|jersey/.test(t))return "tshirts";return "autres";}
-function openCatalog(){if(_pfCat){renderCatModal();return;}toast("Chargement du catalogue Printify…");
+function openCatalog(){if(_pfCat){renderCatModal();return;}toast("Chargement du catalogue…");
  fetch("printify-blueprints.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(!j||!j.categories){toast("Catalogue indisponible");return;}_pfCat=j;renderCatModal();}).catch(function(){toast("Catalogue indisponible (réseau)");});}
 function renderCatModal(){
  var cats=_pfCat.categories,keys=Object.keys(cats);if(!_pfPick.cat||!cats[_pfPick.cat])_pfPick.cat=keys[0];
@@ -790,7 +790,7 @@ function renderCatModal(){
  var shown=items.slice(0,60);window._pfShown=shown;
  var chips=keys.map(function(k){var on=!q&&_pfPick.cat===k;return '<button onclick="Studio.pfCat(\''+k+'\')" style="padding:6px 10px;border-radius:100px;border:1px solid '+(on?"var(--p)":"var(--border)")+';background:'+(on?"var(--p)":"var(--panel2)")+';color:'+(on?"#fff":"#cfd3da")+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">'+esc(cats[k].label.replace("⭐ ",""))+' '+(cats[k].items||[]).length+'</button>';}).join("");
  var grid=shown.map(function(it,i){return '<div onclick="Studio.pickProduct('+i+')" style="cursor:pointer;background:#0b0d0f;border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="background:#fff;aspect-ratio:1;display:flex;align-items:center;justify-content:center">'+(it.image?'<img src="'+esc(it.image)+'" loading="lazy" style="width:100%;height:100%;object-fit:contain">':"📦")+'</div><div style="padding:7px"><div style="font-size:11.5px;line-height:1.25;height:30px;overflow:hidden">'+esc(it.title)+'</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+esc(it.brand||"")+'</div></div></div>';}).join("");
- var html='<div class="pickwrap"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0">🛍️ Catalogue Printify <span style="font-size:12px;color:var(--muted);font-weight:400">'+(_pfCat.total||"")+' produits</span></h2><span onclick="Studio.closeModal()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
+ var html='<div class="pickwrap"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0">🛍️ Catalogue <span style="font-size:12px;color:var(--muted);font-weight:400">'+(_pfCat.total||"")+' produits</span></h2><span onclick="Studio.closeModal()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
   +'<input id="pfq" value="'+esc(_pfPick.q)+'" oninput="Studio.pfSearch(this.value)" placeholder="🔍 Rechercher (mug, hoodie, Gildan, organic…)" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0e1013;color:#fff;margin-bottom:8px">'
   +(q?"":'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px">'+chips+'</div>')
   +'<div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">'+items.length+' produits · '+shown.length+' affichés · clique pour créer dessus</div>'
