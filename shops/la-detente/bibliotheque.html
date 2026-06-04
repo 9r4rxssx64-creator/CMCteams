@@ -154,8 +154,22 @@ var MOTIFS=[
  {id:"yrk-monogramme-acier",name:"Y·R·K Monogramme — Acier",cat:"Bande Y·R·K",img:"img/designs/yrk-monogramme-acier.png",tags:["yann","rémy","kevin","monogramme","cœur"]},
  {id:"yrk-monogramme-or",name:"Y·R·K Monogramme — Or",cat:"Bande Y·R·K",img:"img/designs/yrk-monogramme-or.png",tags:["yann","rémy","kevin","monogramme","or"]}
 ];
-var CATS=["Tous","Photo réelle","Emblèmes","Bande Y·R·K","Signature","Cœur","Ball-Trap"];
+var CATS=["Tous","⭐ Mes créations","Photo réelle","Emblèmes","Bande Y·R·K","Signature","Cœur","Ball-Trap"];
 var st={q:"",cat:"Tous",garment:"tee",color:"#15171a"};
+/* Créations enregistrées depuis le studio (rangées auto par catégorie) */
+function loadMine(){
+ var seen={};MOTIFS.forEach(function(m){seen[m.id]=1});
+ function add(arr){if(!arr||!arr.length)return;var changed=false;arr.forEach(function(l){if(!l||!l.id||!l.img||seen[l.id])return;seen[l.id]=1;changed=true;MOTIFS.push({id:l.id,name:l.name||"Ma création",img:l.img,cat:l.cat||"Mes créations",tags:(l.tags&&l.tags.length?l.tags:["ma création"]),mine:true});});
+  if(changed){(arr||[]).forEach(function(l){if(l&&l.cat&&CATS.indexOf(l.cat)<0&&l.mine!==false)CATS.push(l.cat)});renderCats();render();}}
+ try{add(JSON.parse(localStorage.getItem("ld_logos_cache")||"[]"))}catch(_){}
+ if(window.kdmcFetchLogos)window.kdmcFetchLogos("la-detente",function(a){add(a)});
+}
+function delMine(id){
+ if(!confirm("Supprimer cette création de ta bibliothèque ?"))return;
+ try{var arr=JSON.parse(localStorage.getItem("ld_logos_cache")||"[]").filter(function(x){return x.id!==id});localStorage.setItem("ld_logos_cache",JSON.stringify(arr));}catch(_){}
+ if(window.kdmcDeleteLogo)window.kdmcDeleteLogo("la-detente",id).catch(function(){});
+ MOTIFS=MOTIFS.filter(function(m){return m.id!==id});render();toast("🗑 Création supprimée");
+}
 
 function esc(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&quot;")}
 function norm(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")}
@@ -171,7 +185,8 @@ function thumbHTML(m){
  return gMock(st.garment,st.color,m.id);}
 
 function filtered(){var q=norm(st.q);return MOTIFS.filter(function(m){
- if(st.cat!=="Tous"&&m.cat!==st.cat)return false;
+ if(st.cat==="⭐ Mes créations"){if(!m.mine)return false;}
+ else if(st.cat!=="Tous"&&m.cat!==st.cat)return false;
  if(!q)return true;
  return norm(m.name).indexOf(q)>=0||m.tags.some(function(t){return norm(t).indexOf(q)>=0})||norm(m.cat).indexOf(q)>=0;});}
 
@@ -182,6 +197,7 @@ function render(){
  document.getElementById("grid").innerHTML=list.map(function(m){
   var studioHref=m.img?('./studio.html?design='+m.id):('./studio.html?motif='+m.id);
   var dl=m.img?('<a class="go" style="background:#23272e" href="'+m.img+'" download>⬇️ PNG</a>'):('<button onclick="LB.png(\''+m.id+'\')">⬇️ PNG</button><button onclick="LB.svg(\''+m.id+'\')">⬇️ SVG</button>');
+  if(m.mine)dl+='<button onclick="LB.delMine(\''+m.id+'\')" title="Supprimer de ma bibliothèque" style="background:#3a1118;border-color:#7a2230;color:#ffd0d0">🗑</button>';
   return '<div class="card"><div class="thumb">'+thumbHTML(m)+'</div>'
    +'<div class="cbody"><div class="cname">'+esc(m.name)+'</div>'
    +'<div class="ctags">'+m.tags.slice(0,3).map(function(t){return '<span class="ctag">'+esc(t)+'</span>'}).join("")+'</div>'
@@ -218,10 +234,12 @@ window.LB={
  setCat:function(c){st.cat=c;renderCats();render()},
  setGarment:function(g){st.garment=g;renderGarments();render()},
  setColor:function(c){st.color=c;renderSwatches();render()},
- png:pngExport, svg:svgExport
+ png:pngExport, svg:svgExport, delMine:delMine
 };
 renderCats();renderGarments();renderSwatches();render();
 </script>
+<script src="../_shared/firebase-orders.js"></script>
+<script>loadMine();</script>
 <script>(function(){if(!("serviceWorker" in navigator))return;var had=!!navigator.serviceWorker.controller,rl=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(!had){had=true;return}if(rl)return;rl=true;location.reload()});navigator.serviceWorker.register("sw.js").then(function(reg){function chk(){try{reg.update()}catch(e){}if(reg.waiting)reg.waiting.postMessage("skipWaiting")}setInterval(chk,60000);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()});window.addEventListener("focus",chk)})})();</script>
 </body>
 </html>
