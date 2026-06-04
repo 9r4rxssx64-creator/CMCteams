@@ -215,4 +215,42 @@ describe('stream-partial-saver — quota fallback', () => {
 
     Storage.prototype.setItem = orig;
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    const priv = streamPartialSaver as unknown as { current: unknown; persist(): void };
+    afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); priv.current = null; });
+
+    it('discard : removeItem throw → catch (107)', () => {
+      vi.stubGlobal('localStorage', {
+        removeItem: () => { throw new Error('x'); }, setItem: () => {}, getItem: () => null,
+      });
+      expect(() => streamPartialSaver.discard()).not.toThrow();
+    });
+
+    it('complete : setTimeout removeItem throw → catch (77)', () => {
+      vi.useFakeTimers();
+      vi.stubGlobal('localStorage', {
+        setItem: () => {}, removeItem: () => { throw new Error('x'); }, getItem: () => null,
+      });
+      streamPartialSaver.start({ provider: 'p', messages: [], system: '' });
+      streamPartialSaver.complete();
+      expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
+    });
+
+    it('persist : current null → early return (112)', () => {
+      priv.current = null;
+      expect(() => priv.persist()).not.toThrow();
+    });
+
+    it('persist : quota → trim partial_text → 2e setItem throw → catch (115)', () => {
+      vi.stubGlobal('localStorage', {
+        setItem: () => { throw new Error('quota'); }, getItem: () => null, removeItem: () => {},
+      });
+      priv.current = {
+        ts_start: 0, ts_last_chunk: 0, provider: 'p',
+        partial_text: 'x'.repeat(11000), messages_sent: [], system: '', completed: false,
+      };
+      expect(() => priv.persist()).not.toThrow();
+    });
+  });
 });

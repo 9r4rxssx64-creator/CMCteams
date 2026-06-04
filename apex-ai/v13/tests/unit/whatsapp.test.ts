@@ -93,4 +93,24 @@ describe('whatsapp service (tests Jet 6.5)', () => {
       expect(whatsapp.listPending()).toEqual([]);
     });
   });
+
+  describe('catches localStorage corrompu (campagne 100% — branches atteignables)', () => {
+    it('requestConfirmation : persist JSON invalide → catch (67), ne throw pas', async () => {
+      localStorage.setItem('ax_kevin_whatsapp_phone', '+33612345678');
+      localStorage.setItem('apex_v13_pending_confirms', '{bad json');
+      const r = await whatsapp.requestConfirmation({ uid: 'u1', name: 'T', whatsappPhone: '+33611111111' });
+      expect(r).toBeDefined();
+    });
+
+    it('confirm : JSON invalide → catch (100) → ok=false', () => {
+      localStorage.setItem('apex_v13_pending_confirms', '{bad json');
+      const r = whatsapp.confirm('ABCDEF-GHJKMN');
+      expect(r.ok).toBe(false);
+    });
+
+    it('listPending : JSON invalide → catch (110) → []', () => {
+      localStorage.setItem('apex_v13_pending_confirms', '{bad json');
+      expect(whatsapp.listPending()).toEqual([]);
+    });
+  });
 });
