@@ -46,6 +46,8 @@ details.grp>:not(summary){padding-left:12px;padding-right:12px}
 details.grp[open]>:last-child{padding-bottom:12px}
 details.grp>:nth-child(2){padding-top:11px}
 details.grp h3{display:none}
+.sublab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 7px;display:flex;align-items:center;gap:6px}
+details.grp>.sublab:nth-child(2){margin-top:3px}
 .swatches,.garments{display:flex;flex-wrap:wrap;gap:8px}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);cursor:pointer}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
@@ -151,10 +153,13 @@ details.grp h3{display:none}
 <div class="wrap">
   <!-- LEFT: garment + add layers -->
   <div class="side">
-    <details class="grp" name="ld-left" open><summary>🎽 Vêtement</summary><div class="garments" id="garments"></div></details>
-    <details class="grp" name="ld-left"><summary>📍 Emplacement</summary><div class="garments" id="placement"></div></details>
-    <details class="grp" name="ld-left"><summary>🎨 Couleur</summary><div class="swatches" id="swatches"></div></details>
-    <details class="grp" name="ld-left"><summary>➕ Ajouter un calque</summary>
+    <details class="grp grp-macro" name="ld-left" open><summary>🎽 Produit</summary>
+      <div class="sublab">👕 Vêtement</div><div class="garments" id="garments"></div>
+      <div class="sublab">📍 Emplacement</div><div class="garments" id="placement"></div>
+      <div class="sublab">🎨 Couleur</div><div class="swatches" id="swatches"></div>
+    </details>
+    <details class="grp grp-macro" name="ld-left"><summary>➕ Création</summary>
+      <div class="sublab">🖼️ Ajouter un calque</div>
       <div class="addrow">
         <button class="btn" onclick="document.getElementById('upl').click()">🖼️ Importer image(s)…</button>
         <input type="file" id="upl" accept="image/*,.svg,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none">
@@ -162,21 +167,23 @@ details.grp h3{display:none}
         <input type="file" id="upldir" webkitdirectory directory multiple style="display:none">
         <button class="btn" onclick="Studio.addText()">🔤 Ajouter du texte</button>
       </div>
-      <div class="hint">Importe <b>plusieurs</b> images et textes : ils se superposent en calques (montage).</div>
+      <div class="hint">Importe <b>plusieurs</b> images et textes : ils se superposent en calques (montage). Astuce : sélectionne une image puis « ✨ Modifier avec l'IA » à droite pour la retravailler.</div>
+      <div id="aiGrp">
+        <div class="sublab">✨ Générer un design IA</div>
+        <textarea id="aiPrompt" rows="2" placeholder="Ex : pistolet noir avec une rose rouge dans le canon" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui;resize:vertical"></textarea>
+        <button class="btn primary" id="aiBtn" style="width:100%;margin-top:6px" onclick="Studio.aiGen()">✨ Générer</button>
+        <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
+      </div>
     </details>
-    <details class="grp" name="ld-left" id="aiGrp"><summary>✨ Générer un design IA</summary>
-      <textarea id="aiPrompt" rows="2" placeholder="Ex : pistolet noir avec une rose rouge dans le canon" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui;resize:vertical"></textarea>
-      <button class="btn primary" id="aiBtn" style="width:100%;margin-top:6px" onclick="Studio.aiGen()">✨ Générer</button>
-      <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
-    </details>
-    <details class="grp" name="ld-left"><summary>⭐ Mes logos créés</summary><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div></details>
-    <details class="grp" name="ld-left"><summary>🖼️ Images réelles</summary><div class="emblems" id="realLib"></div>
+    <details class="grp grp-macro" name="ld-left"><summary>🎨 Bibliothèque</summary>
+      <div class="sublab">⭐ Mes logos créés</div><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div>
+      <div class="sublab">🖼️ Images réelles</div><div class="emblems" id="realLib"></div>
       <input id="webq" placeholder="🔎 Chercher sur le web (cerf, aigle, fusil…)" style="width:100%;margin-top:8px;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" onkeydown="if(event.key==='Enter')Studio.webSearch()">
       <button class="btn" id="webBtn" style="width:100%;margin-top:6px" onclick="Studio.webSearch()">🔎 Chercher sur le web</button>
       <div class="emblems" id="webResults" style="margin-top:8px"></div>
       <div class="hint" id="webHint">Images du web (licence commerciale). Touche le résultat pour l'ajouter. Astuce : « ✂️ Retirer le fond » sur le calque pour un rendu net, ou utilise la génération IA.</div>
+      <div class="sublab">⚡ Motifs rapides</div><div class="emblems" id="emblems"></div>
     </details>
-    <details class="grp" name="ld-left"><summary>⚡ Motifs rapides</summary><div class="emblems" id="emblems"></div></details>
   </div>
 
   <!-- CENTER: stage -->
