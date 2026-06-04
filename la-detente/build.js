@@ -8,7 +8,7 @@ const path = require('path');
 const sharp = require('sharp');
 
 const ROOT = __dirname;
-const DIR = { emb: path.join(ROOT, 'emblemes'), logo: path.join(ROOT, 'logo'), mock: path.join(ROOT, 'mockups') };
+const DIR = { emb: path.join(ROOT, 'emblemes'), logo: path.join(ROOT, 'logo'), mock: path.join(ROOT, 'mockups'), print: path.join(ROOT, 'print') };
 Object.values(DIR).forEach(d => fs.mkdirSync(d, { recursive: true }));
 
 const FONT = "'Liberation Sans','DejaVu Sans',Arial,sans-serif";
@@ -418,6 +418,124 @@ function mockTshirt(size = 1600) {
   </svg>`;
 }
 
+/* ===================================================== MONOCHROME (1 encre)
+ * Pour broderie / sérigraphie / tampon. Fond transparent, une seule couleur. */
+function heartFlat(cx, cy, scale, color) {
+  return `<g transform="translate(${cx},${cy}) scale(${scale})"><path d="${heartPath()}" fill="${color}"/></g>`;
+}
+function monoMark(concept, color, size = 1600) {
+  let guns = '', h = '';
+  const G = (m) => `fill="none" stroke="${color}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"`;
+  if (concept === 'ar15') {
+    guns = `<g transform="translate(500,520) scale(1.42) translate(-183,-88)">${gAR15('none', color, 8)}</g>`;
+    h = heartFlat(500, 360, 1.5, color);
+  } else if (concept === 'glock') {
+    guns = `<g transform="translate(500,545) scale(1.7) translate(-120,-86)">${gGlock('none', color, 7)}</g>`;
+    h = heartFlat(500, 330, 1.45, color);
+  } else if (concept === 'shotgun') {
+    guns = `<g transform="translate(500,560) scale(1.4) translate(-183,-77)">${gShotgun('none', color, 8)}</g>`;
+    h = heartFlat(500, 330, 1.45, color);
+  } else {
+    guns = `<g transform="translate(500,545) rotate(-29) scale(1.3) translate(-183,-88)">${gAR15('none', color, 8)}</g>`
+      + `<g transform="translate(500,545) rotate(29) scale(1.3) translate(-183,-77)">${gShotgun('none', color, 8)}</g>`;
+    h = heartFlat(500, 545, 1.8, color);
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${size}" viewBox="0 0 1000 1000">
+    <circle cx="500" cy="500" r="466" fill="none" stroke="${color}" stroke-width="14"/>
+    <circle cx="500" cy="500" r="430" fill="none" stroke="${color}" stroke-width="4"/>
+    ${arcText(500, 500, 392, -90, 150, 'TIR · BALL-TRAP · CHASSE', { size: 44, fill: color })}
+    ${guns}${h}
+    <rect x="300" y="772" width="400" height="74" rx="10" fill="${color}"/>
+    <text x="500" y="824" font-family="${FONT}" font-weight="bold" font-size="52" letter-spacing="3" text-anchor="middle" fill="#ffffff">LA DÉTENTE</text>
+  </svg>`;
+}
+
+/* ============================================ LOGO HORIZONTAL (multi-palette) */
+function logoHoriz(palKey, size = 2000) {
+  const conf = {
+    noirRouge: { bg1: '#16171c', bg2: '#070809', wm1: '#ffffff', wm2: '#c7ccd4', accent: '#e51f2b', tag: '#c9ccd3', embStyle: 'metal', tcol: '#ffffff' },
+    camo: { bg1: '#222818', bg2: '#0c0f08', wm1: '#ede6cd', wm2: '#a7af79', accent: '#d72a25', tag: '#cdd0b4', embStyle: 'patch', tcol: '#1a1f12' },
+    noirOr: { bg1: '#16141b', bg2: '#07060a', wm1: '#fff3c4', wm2: '#c59b32', accent: '#e51f2b', tag: '#cdbd86', embStyle: 'metal', tcol: '#15140f' }
+  }[palKey];
+  const p = PAL[palKey];
+  const e = emblemContentGroup('crossed', conf.embStyle, palKey, 'lh' + palKey, { noName: true, noTop: true });
+  const H = Math.round(size * 9 / 16);
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${H}" viewBox="0 0 1600 900">
+   <defs>${e.defs}
+     <linearGradient id="bgL${palKey}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${conf.bg1}"/><stop offset="100%" stop-color="${conf.bg2}"/></linearGradient>
+     <linearGradient id="wm${palKey}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${conf.wm1}"/><stop offset="100%" stop-color="${conf.wm2}"/></linearGradient>
+   </defs>
+   <rect width="1600" height="900" fill="url(#bgL${palKey})"/>
+   <rect x="40" y="40" width="1520" height="820" rx="26" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+   <g transform="translate(70,180) scale(0.54)">${e.markup}</g>
+   <g transform="translate(640,0)">
+     <path d="${heartPath()}" transform="translate(30,278) scale(0.46)" fill="${conf.accent}"/>
+     <text x="78" y="300" font-family="${FONT}" font-weight="bold" font-size="44" letter-spacing="6" fill="${conf.accent}">ON VISE AU CŒUR</text>
+     <text x="0" y="430" font-family="${FONT}" font-weight="bold" font-size="196" letter-spacing="2" fill="url(#wm${palKey})">LA</text>
+     <text x="0" y="616" font-family="${FONT}" font-weight="bold" font-size="176" letter-spacing="1" fill="url(#wm${palKey})">DÉTENTE</text>
+     <rect x="6" y="464" width="720" height="6" fill="${conf.accent}"/>
+     <text x="8" y="706" font-family="${FONT}" font-weight="bold" font-size="46" letter-spacing="11" fill="${conf.tag}">TIR · BALL-TRAP · CHASSE</text>
+   </g>
+  </svg>`;
+}
+
+/* ====================================================== CHARTE GRAPHIQUE */
+function brandSheet(size = 1600) {
+  const e = emblemContentGroup('crossed', 'metal', 'noirRouge', 'bsemb', { noName: true, noTop: true });
+  const sw = (x, y, c, hex, name) => `<g transform="translate(${x},${y})">
+     <rect width="150" height="150" rx="14" fill="${c}" stroke="#2a2d34" stroke-width="2"/>
+     <text x="75" y="186" font-family="${FONT}" font-weight="bold" font-size="22" text-anchor="middle" fill="#e7e9ee">${name}</text>
+     <text x="75" y="214" font-family="${FONT}" font-size="20" text-anchor="middle" fill="#8a909b">${hex}</text>
+   </g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${Math.round(size * 1.32)}" viewBox="0 0 1600 2112">
+   <defs>${e.defs}
+     <linearGradient id="bsbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#15171c"/><stop offset="100%" stop-color="#0a0b0e"/></linearGradient>
+     <linearGradient id="bswm" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#c7ccd4"/></linearGradient>
+   </defs>
+   <rect width="1600" height="2112" fill="url(#bsbg)"/>
+   <text x="80" y="120" font-family="${FONT}" font-weight="bold" font-size="40" letter-spacing="6" fill="#e51f2b">CHARTE GRAPHIQUE</text>
+   <text x="80" y="172" font-family="${FONT}" font-size="26" letter-spacing="4" fill="#8a909b">LA DÉTENTE — armurerie · tir sportif · ball-trap · chasse</text>
+   <line x1="80" y1="200" x2="1520" y2="200" stroke="#262932" stroke-width="2"/>
+
+   <text x="80" y="262" font-family="${FONT}" font-weight="bold" font-size="26" letter-spacing="2" fill="#cfd3da">1 · LOGO PRINCIPAL</text>
+   <g transform="translate(150,300) scale(0.46)">${e.markup}</g>
+   <g transform="translate(560,300)">
+     <path d="${heartPath()}" transform="translate(26,150) scale(0.4)" fill="#e51f2b"/>
+     <text x="66" y="168" font-family="${FONT}" font-weight="bold" font-size="34" letter-spacing="5" fill="#e51f2b">ON VISE AU CŒUR</text>
+     <text x="0" y="290" font-family="${FONT}" font-weight="bold" font-size="150" letter-spacing="2" fill="url(#bswm)">LA</text>
+     <text x="0" y="430" font-family="${FONT}" font-weight="bold" font-size="132" letter-spacing="1" fill="url(#bswm)">DÉTENTE</text>
+     <rect x="4" y="316" width="540" height="6" fill="#e51f2b"/>
+     <text x="6" y="500" font-family="${FONT}" font-weight="bold" font-size="34" letter-spacing="9" fill="#c9ccd3">TIR · BALL-TRAP · CHASSE</text>
+   </g>
+
+   <text x="80" y="900" font-family="${FONT}" font-weight="bold" font-size="26" letter-spacing="2" fill="#cfd3da">2 · PALETTE</text>
+   ${sw(80, 940, '#e51f2b', '#E51F2B', 'Rouge cœur')}
+   ${sw(300, 940, '#0a0b0e', '#0A0B0E', 'Noir')}
+   ${sw(520, 940, '#d4af37', '#D4AF37', 'Or')}
+   ${sw(740, 940, '#586331', '#586331', 'Olive')}
+   ${sw(960, 940, '#c7ccd4', '#C7CCD4', 'Acier')}
+   ${sw(1180, 940, '#efe7d2', '#EFE7D2', 'Crème')}
+
+   <text x="80" y="1320" font-family="${FONT}" font-weight="bold" font-size="26" letter-spacing="2" fill="#cfd3da">3 · VERSIONS 1 COULEUR (broderie / sérigraphie)</text>
+   <rect x="80" y="1360" width="420" height="420" rx="16" fill="#0a0b0e" stroke="#262932" stroke-width="2"/>
+   <g transform="translate(290,1570) scale(0.38) translate(-500,-500)">${monoInner('crossed', '#ffffff')}</g>
+   <rect x="540" y="1360" width="420" height="420" rx="16" fill="#f3f1ea" stroke="#cfcdc4" stroke-width="2"/>
+   <g transform="translate(750,1570) scale(0.38) translate(-500,-500)">${monoInner('crossed', '#111317')}</g>
+   <rect x="1000" y="1360" width="420" height="420" rx="16" fill="#586331" stroke="#3c4422" stroke-width="2"/>
+   <g transform="translate(1210,1570) scale(0.38) translate(-500,-500)">${monoInner('crossed', '#f3f1ea')}</g>
+
+   <text x="80" y="1880" font-family="${FONT}" font-weight="bold" font-size="26" letter-spacing="2" fill="#cfd3da">4 · TYPOGRAPHIE</text>
+   <text x="80" y="1946" font-family="${FONT}" font-weight="bold" font-size="64" fill="#e7e9ee">Aa Bb Cc — LA DÉTENTE 0123</text>
+   <text x="80" y="2010" font-family="${FONT}" font-size="28" fill="#8a909b">Sans-serif bold condensé · titres en capitales · slogan en rouge accent</text>
+   <text x="80" y="2070" font-family="${FONT}" font-size="24" fill="#5d636e">Sources vectorielles SVG fournies · couleurs RVB (conversion CMJN par l'imprimeur)</text>
+  </svg>`;
+}
+/* contenu mono sans <svg> wrapper, pour intégration */
+function monoInner(concept, color) {
+  const full = monoMark(concept, color, 1000);
+  return full.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+}
+
 /* =============================================================== RENDER */
 async function render(svg, outPath) {
   await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(outPath);
@@ -452,5 +570,24 @@ const MATRIX = [
   await render(mockSign(), path.join(DIR.mock, 'mockup-enseigne-boutique.png'));
   await render(mockTshirt(), path.join(DIR.mock, 'mockup-tshirt.png'));
   console.log('mockups  ✓');
+
+  // variantes de logo horizontal
+  await render(logoHoriz('camo'), path.join(DIR.logo, 'logo-horizontal__camo.png'));
+  await render(logoHoriz('noirOr'), path.join(DIR.logo, 'logo-horizontal__noir-or.png'));
+  console.log('variantes ✓');
+
+  // kit imprimeur : monochrome 1 couleur (noir + blanc, fond transparent)
+  for (const c of ['crossed', 'ar15', 'glock', 'shotgun']) {
+    await render(monoMark(c, '#111317'), path.join(DIR.print, `mono-${c}-noir.png`));
+    await render(monoMark(c, '#ffffff'), path.join(DIR.print, `mono-${c}-blanc.png`));
+  }
+  // masters haute résolution (3000 px)
+  await render(logoHoriz('noirRouge', 3000), path.join(DIR.print, 'master-logo-horizontal-3000.png'));
+  await render(logoSeal(3000), path.join(DIR.print, 'master-sceau-3000.png'));
+  await render(emblemSVG('crossed', 'metal', 'noirRouge', 3000), path.join(DIR.print, 'master-embleme-croise-3000.png'));
+  // charte graphique
+  await render(brandSheet(), path.join(DIR.print, 'charte-graphique.png'));
+  console.log('print    ✓');
+
   console.log('\nTERMINÉ.');
 })();
