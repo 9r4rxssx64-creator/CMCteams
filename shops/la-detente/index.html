@@ -410,7 +410,7 @@ return '<div class="pdp"><div class="pdp-back" onclick="sv(\'products\')">← Re
 +'<div style="display:flex;align-items:center;gap:14px;margin:14px 0"><span style="font-weight:700;font-size:14px">Quantité</span><div style="display:flex;align-items:center;gap:10px"><button onclick="S.pdpQty=Math.max(1,(S.pdpQty||1)-1);dc()" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:18px;cursor:pointer">−</button><span style="min-width:24px;text-align:center;font-weight:700">'+(S.pdpQty||1)+'</span><button onclick="S.pdpQty=(S.pdpQty||1)+1;dc()" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:18px;cursor:pointer">+</button></div></div>'
 +'<button class="btn-add" onclick="addCartSized(\''+p.id+'\',S.pdpSize,S.pdpQty,S.pdpTier,S.pdpColor,S.pdpLogo,S.pdpPlace)">🛒 Ajouter au panier — '+fmtP(pPrice)+'</button>'
 +''
-+'<div class="reassure"><div>🚚 Livraison offerte dès '+fmtP(FREE_SHIP)+'</div><div>↩️ Retours sous 30 jours</div><div>🔒 Paiement sécurisé</div><div>🌿 Coton bio / impression durable</div></div>'
++'<div class="reassure"><div>🚚 Expédition rapide</div><div>↩️ Retours sous 30 jours</div><div>🔒 Paiement sécurisé</div><div>🌿 Coton bio / impression durable</div></div>'
 +'<div style="margin-top:16px;display:flex;gap:16px;font-size:13px;color:var(--muted)"><span>🔒 Paiement sécurisé</span><span>↩️ Retours 30j</span></div>'
 +'</div></div>'
 +(related.length?'<div style="margin-top:40px"><div class="section-title">Produits similaires</div><div class="grid">'+related.map(cardHtml).join("")+"</div></div>":"")+reviewsBlockHtml(p.id)+recentHtml(p.id)
@@ -693,10 +693,10 @@ function ldSupCSV(idx){var o=_ldSupAt(idx);if(!o)return;var ck=S.checkout||ldGet
 var FREE_SHIP=60,SHIP_FEE=4.9;
 var COLOR_NAMES={"#15171a":"Noir","#ececec":"Blanc","#3a4a3f":"Kaki","#3a4636":"Kaki","#0f1722":"Marine","#1c2733":"Ardoise","#3a0f12":"Bordeaux","#1c1e22":"Anthracite"};
 function cartSubtotal(){return S.cart.reduce(function(s,i){return s+i.price*i.qty},0)}
-function cartShip(){var s=cartSubtotal();return (s<=0||s>=FREE_SHIP)?0:SHIP_FEE}
+function cartShip(){return cartSubtotal()>0?SHIP_FEE:0}
 function cartTotal(){return cartSubtotal()-bulkDiscount()+cartShip()}
-function shipProgressHtml(){var s=cartSubtotal();if(s<=0)return "";if(s>=FREE_SHIP)return '<div style="font-size:12.5px;color:#22c55e;font-weight:700;margin:0 0 8px">🚚 Livraison offerte débloquée !</div>';var left=FREE_SHIP-s,pct=Math.min(100,Math.round(s/FREE_SHIP*100));return '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Plus que <b style="color:var(--text)">'+fmtP(left)+'</b> pour la <b>livraison offerte</b> 🚚</div><div class="ship-prog"><i style="width:'+pct+'%"></i></div>';}
-function promobar(){if(localStorage.getItem("ld_promo_hide")==="1")return "";return '<div class="promobar">🚚 Livraison offerte dès '+fmtP(FREE_SHIP)+' &nbsp;·&nbsp; ↩️ Retours 30 jours &nbsp;·&nbsp; 🔒 Paiement sécurisé &nbsp;·&nbsp; ❤ Entre amis<span class="x" onclick="localStorage.setItem(\'ld_promo_hide\',\'1\');dc()" title="Fermer">✕</span></div>';}
+function shipProgressHtml(){return "";}
+function promobar(){if(localStorage.getItem("ld_promo_hide")==="1")return "";return '<div class="promobar">🚚 Expédition rapide &nbsp;·&nbsp; ↩️ Retours 30 jours &nbsp;·&nbsp; 🔒 Paiement sécurisé &nbsp;·&nbsp; ❤ Entre amis<span class="x" onclick="localStorage.setItem(\'ld_promo_hide\',\'1\');dc()" title="Fermer">✕</span></div>';}
 function wishBadge(){var b=document.getElementById("wish-badge");if(b){var n=JSON.parse(localStorage.getItem("kdmc_wish_"+STORE_ID)||"[]").length;b.textContent=n;b.style.display=n>0?"flex":"none"}}
 function addCartSized(id,size,qty,tier,color,logo,place){var p=P.find(function(x){return x.id===id});if(!p)return;qty=Math.max(1,qty||1);tier=tier||"standard";var q=qOf(tier);var price=qPrice(p.price,tier);size=size||"M";color=color||p.garmentColor;logo=logo||p.motif;place=place||p.placement||"chest";var cn=({"#15171a":"Noir","#ececec":"Blanc","#0f1722":"Marine","#3a4636":"Kaki","#3a4a3f":"Kaki","#1c2733":"Ardoise"})[color]||"";var lg=(typeof ldEffLogos==="function"?ldEffLogos().filter(function(l){return l.id===logo})[0]:null);var lname=lg?lg.name:"";var nm=p.name+(tier!=="standard"?" · "+q.label:"")+(cn&&color!==p.garmentColor?" · "+cn:"")+(logo&&logo!==p.motif&&lname?" · "+lname:"");var cimg=(lg?lg.img:p.img);var ex=S.cart.find(function(x){return x.id===id&&x.size===size&&x.tier===tier&&x.garmentColor===color&&x.motif===logo&&x.placement===place});if(ex){ex.qty+=qty}else{S.cart.push({id:p.id,name:nm,price:price,img:cimg,qty:qty,size:size,tier:tier,material:q.mat,supplier:q.supplier,garment:p.garment,garmentColor:color,motif:logo,placement:place,theme:lname||p.theme})}saveCart();toast(nm+" ("+size+") ajouté au panier");if(typeof trackAddToCartPub==="function")trackAddToCartPub(p.id,price,nm)}
 function vWishlist(){var w=JSON.parse(localStorage.getItem("kdmc_wish_"+STORE_ID)||"[]");var items=P.filter(function(p){return w.indexOf(p.id)>=0});
@@ -1082,7 +1082,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.47.0"
+        data-version="v1.48.0"
         data-color="#e8b830"
         defer></script>
 
