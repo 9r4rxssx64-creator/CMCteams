@@ -63,6 +63,10 @@
   <p class="note">Aperçus produit : patch sur casquette, planche de stickers, enseigne de boutique, t-shirt.</p>
   <div class="grid big" id="mockups"></div>
 
+  <h2>Kit imprimeur &amp; charte — <span class="g">prêt à produire</span></h2>
+  <p class="note">Charte graphique, masters HD 3000 px, et versions <b>1 couleur</b> (fond transparent) pour broderie / sérigraphie / tampon. Conversion CMJN par l'imprimeur depuis les SVG.</p>
+  <div class="grid big" id="print"></div>
+
 </div>
 <footer>
   18 visuels générés en vectoriel → PNG HD + SVG · Dossier <b>la-detente/</b><br>
@@ -85,7 +89,19 @@ const E=[
 ];
 const L=[
  ['logo-horizontal__noir-rouge','Logo horizontal','Enseigne / site / en-tête','Noir & rouge'],
+ ['logo-horizontal__camo','Logo horizontal','Variante chasse','Camo / olive'],
+ ['logo-horizontal__noir-or','Logo horizontal','Variante premium','Noir & or'],
  ['logo-sceau-rond__noir-or','Sceau rond','Tampon / médaillon','Noir & or'],
+];
+const PR=[
+ ['charte-graphique','Charte graphique','Logo · palette · mono · typo',''],
+ ['master-logo-horizontal-3000','Master logo HD','3000 px',''],
+ ['master-sceau-3000','Master sceau HD','3000 px',''],
+ ['master-embleme-croise-3000','Master emblème HD','3000 px',''],
+ ['mono-crossed-noir','Mono — armes croisées','1 couleur',''],
+ ['mono-ar15-noir','Mono — AR15','1 couleur',''],
+ ['mono-glock-noir','Mono — Glock','1 couleur',''],
+ ['mono-shotgun-noir','Mono — ball-trap','1 couleur',''],
 ];
 const M=[
  ['mockup-casquette-patch','Casquette brodée','Patch frontal camo',''],
@@ -94,7 +110,7 @@ const M=[
  ['mockup-tshirt','T-shirt','Emblème poitrine',''],
 ];
 function card(dir,[f,title,style,pal]){
-  const svg = dir==='emblemes';
+  const svg = true;
   return `<div class="card"><div class="im"><img loading="lazy" src="${dir}/${f}.png" alt="${title}"></div>
    <div class="meta"><b>${title}</b><div class="tags">${style?`<span class="t s">${style}</span>`:''}${pal?`<span class="t c">${pal}</span>`:''}</div>
    <div class="dl"><a href="${dir}/${f}.png" download>PNG</a>${svg?` · <a href="${dir}/${f}.svg" download>SVG</a>`:''}</div></div></div>`;
@@ -102,6 +118,7 @@ function card(dir,[f,title,style,pal]){
 document.getElementById('logos').innerHTML=L.map(x=>card('logo',x)).join('');
 document.getElementById('emblemes').innerHTML=E.map(x=>card('emblemes',x)).join('');
 document.getElementById('mockups').innerHTML=M.map(x=>card('mockups',x)).join('');
+document.getElementById('print').innerHTML=PR.map(x=>card('print',x)).join('');
 </script>
 </body>
 </html>
