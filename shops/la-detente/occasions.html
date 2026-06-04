@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
-<!-- La Détente — Modèles & Occasions personnalisables v1.0.0 -->
+<!-- La Détente — Modèles & Occasions personnalisables v1.1.0 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -120,11 +120,36 @@ var TPL=[
  {id:"fiancailles",theme:"events",event:"FIANÇAILLES",big:"PAIR",sub:"Ils se sont dit oui 💍",motif:"rings",pal:"pastel"},
 
  {id:"departcol",theme:"pro",event:"BON VENT",big:"NAME",sub:"Tu vas nous manquer 👋",motif:"champagne",pal:"party"},
- {id:"promotion",theme:"pro",event:"FÉLICITATIONS",big:"NAME",sub:"Promu(e) ! 🚀",motif:"trophy",pal:"party"},
+ {id:"promotion",theme:"pro",event:"FÉLICITATIONS",big:"NAME",sub:"Promu(e) ! 🚀",motif:"rocket",pal:"party"},
  {id:"bienvenue",theme:"pro",event:"BIENVENUE",big:"NAME",sub:"Dans l'équipe 🤝",motif:"medal",pal:"club"},
  {id:"inauguration",theme:"pro",event:"INAUGURATION",big:"NAME",sub:"Nouvelle aventure 🥂",motif:"champagne",pal:"classic"},
  {id:"merci",theme:"pro",event:"MERCI",big:"NAME",sub:"Pour tout ❤",motif:"medal",pal:"classic"},
- {id:"retraitecol",theme:"pro",event:"BONNE RETRAITE",big:"NAME",sub:"Profite bien 🏖️",motif:"trophy",pal:"classic"}
+ {id:"retraitecol",theme:"pro",event:"BONNE RETRAITE",big:"NAME",sub:"Profite bien 🏖️",motif:"trophy",pal:"classic"},
+
+ {id:"paques",theme:"fetes",event:"JOYEUSES PÂQUES",big:"NAME",sub:"Cloches & chocolats 🐰",motif:"egg",pal:"pastel"},
+ {id:"muguet",theme:"fetes",event:"1ER MAI",big:"NAME",sub:"Bon muguet 🌼",motif:"flower",pal:"nature"},
+ {id:"fetemusique",theme:"fetes",event:"FÊTE DE LA MUSIQUE",big:"NAME",sub:"Ça envoie 🎶",motif:"star",pal:"party"},
+ {id:"galette",theme:"fetes",event:"TIRAGE DES ROIS",big:"NAME",sub:"Qui aura la fève 👑",motif:"crown",pal:"classic"},
+
+ {id:"babyshower",theme:"events",event:"BABY SHOWER",big:"NAME",sub:"C'est bientôt 👶",motif:"baby",pal:"pastel"},
+ {id:"communion",theme:"events",event:"COMMUNION DE",big:"NAME",sub:"Grand jour ✝",motif:"star",pal:"pastel"},
+ {id:"soireeclub",theme:"events",event:"SOIRÉE",big:"NAME",sub:"On fête ça 🥂",motif:"champagne",pal:"party"},
+ {id:"gendereveal",theme:"events",event:"GARÇON OU FILLE ?",big:"NAME",sub:"Bientôt la réponse 🎈",motif:"balloons",pal:"pastel"},
+
+ {id:"grandsparents",theme:"famille",event:"FÊTE DES GRANDS-PARENTS",big:"NAME",sub:"On vous aime ❤",motif:"heart",pal:"classic"},
+ {id:"couple",theme:"famille",event:"NOUS DEUX",big:"PAIR",sub:"Depuis {NUM} ans ❤",motif:"heart",pal:"pastel"},
+ {id:"meilleureamie",theme:"famille",event:"MEILLEURE AMIE",big:"NAME",sub:"Pour la vie 💖",motif:"heart",pal:"pastel"},
+ {id:"frangins",theme:"famille",event:"FRÈRES & SŒURS",big:"NAME",sub:"La team familiale 👊",motif:"star",pal:"club"},
+
+ {id:"tireurelite",theme:"club",event:"TIREUR D'ÉLITE",big:"NAME",sub:"Précision absolue 🎯",motif:"target",pal:"classic"},
+ {id:"battue",theme:"club",event:"BATTUE",big:"NAME",sub:"Saison de chasse 🦌",motif:"deer",pal:"nature"},
+ {id:"podiumclub",theme:"club",event:"PODIUM",big:"NAME",sub:"Champion 🏆",motif:"podium",pal:"classic"},
+ {id:"concours",theme:"club",event:"CONCOURS DE TIR",big:"NAME",sub:"Que le meilleur gagne 🎯",motif:"target",pal:"nature"},
+
+ {id:"teambuilding",theme:"pro",event:"TEAM BUILDING",big:"NAME",sub:"Esprit d'équipe 🤝",motif:"medal",pal:"party"},
+ {id:"employemois",theme:"pro",event:"EMPLOYÉ DU MOIS",big:"NAME",sub:"Bravo ! 🏅",motif:"medal",pal:"classic"},
+ {id:"objectif",theme:"pro",event:"OBJECTIF ATTEINT",big:"NAME",sub:"On l'a fait 🚀",motif:"rocket",pal:"party"},
+ {id:"anniversaireboite",theme:"pro",event:"NOS {NUM} ANS",big:"NUM",sub:"L'entreprise fête ça 🎉",motif:"champagne",pal:"classic"}
 ];
 
 /* ----------------- helpers ----------------- */
@@ -153,6 +178,11 @@ function motif(id,ink,accent){
   case"star":return '<polygon points="50,22 58,44 82,44 63,58 70,80 50,66 30,80 37,58 18,44 42,44" fill="'+A+'"/>';
   case"target":return '<g fill="none" stroke="'+A+'" stroke-width="5"><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="18"/></g><circle cx="50" cy="50" r="7" fill="'+K+'"/>';
   case"clay":return '<g><ellipse cx="46" cy="48" rx="26" ry="10" transform="rotate(-18 46 48)" fill="'+A+'"/><ellipse cx="46" cy="46" rx="13" ry="4" transform="rotate(-18 46 48)" fill="'+K+'" opacity=".5"/><g stroke="'+A+'" stroke-width="3" stroke-linecap="round" opacity=".7"><line x1="70" y1="40" x2="86" y2="34"/><line x1="72" y1="50" x2="88" y2="50"/></g></g>';
+  case"deer":return '<g fill="'+A+'"><path d="M50 80 L37 56 Q50 48 63 56 Z"/><ellipse cx="50" cy="56" rx="13" ry="11"/></g><g stroke="'+A+'" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M40 46 C34 30 28 32 26 22 M40 46 C36 36 30 36 30 28 M60 46 C66 30 72 32 74 22 M60 46 C64 36 70 36 70 28"/></g><g fill="'+K+'"><circle cx="45" cy="56" r="1.8"/><circle cx="55" cy="56" r="1.8"/></g>';
+  case"flower":return '<g fill="'+A+'"><ellipse cx="50" cy="28" rx="6" ry="11"/><ellipse cx="50" cy="54" rx="6" ry="11"/><ellipse cx="36" cy="41" rx="11" ry="6"/><ellipse cx="64" cy="41" rx="11" ry="6"/></g><circle cx="50" cy="41" r="6" fill="'+K+'"/><path d="M50 50 v30" stroke="'+A+'" stroke-width="3"/>';
+  case"egg":return '<g><ellipse cx="50" cy="54" rx="20" ry="26" fill="'+A+'"/><path d="M30 50 q10 6 20 0 t20 0 M30 62 q10 6 20 0 t20 0" stroke="'+K+'" stroke-width="3" fill="none" opacity=".55"/><circle cx="44" cy="44" r="2.5" fill="'+K+'" opacity=".5"/><circle cx="57" cy="46" r="2" fill="'+K+'" opacity=".5"/></g>';
+  case"rocket":return '<g fill="'+A+'"><path d="M50 22 C62 34 62 54 56 66 H44 C38 54 38 34 50 22 Z"/><path d="M44 60 L34 72 L44 68 Z"/><path d="M56 60 L66 72 L56 68 Z"/></g><circle cx="50" cy="44" r="5" fill="'+K+'"/><path d="M46 70 q4 14 8 0" fill="'+K+'" opacity=".7"/>';
+  case"podium":return '<g fill="'+A+'"><rect x="42" y="44" width="16" height="34"/><rect x="24" y="56" width="16" height="22"/><rect x="60" y="62" width="16" height="16"/></g><g fill="'+K+'" font-family="Arial" font-weight="900" font-size="12" text-anchor="middle"><text x="50" y="60">1</text><text x="32" y="70">2</text><text x="68" y="73">3</text></g>';
   default:return '<polygon points="50,24 58,46 82,46 63,60 70,82 50,68 30,82 37,60 18,46 42,46" fill="'+A+'"/>';
  }
 }

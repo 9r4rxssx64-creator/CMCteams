@@ -37,7 +37,16 @@ input,textarea,select{font:inherit}img{max-width:100%;height:auto}
 .search-box{flex:1;max-width:400px;position:relative}
 .search-box input{width:100%;padding:10px 16px 10px 36px;border-radius:100px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px}
 .search-box input:focus{outline:none;border-color:var(--p)}
-.search-box::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px}
+.search-box::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none}
+.search-sugg{position:absolute;top:46px;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.20);z-index:300;overflow:hidden;max-height:64vh;overflow-y:auto;text-align:left}
+.search-sugg .ss-h{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:9px 14px 4px;font-weight:700}
+.search-sugg .ss-it{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:14px;color:var(--text)}
+.search-sugg .ss-it:hover{background:var(--bg)}
+.search-sugg .ss-ic{width:22px;text-align:center;font-size:16px}
+.search-sugg .ss-tag{margin-left:auto;font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:100px;white-space:nowrap}
+.search-sugg .ss-all{padding:11px 14px;font-weight:700;font-size:13px;cursor:pointer;border-top:1px solid var(--border);color:var(--p)}
+.search-sugg .ss-all:hover{background:var(--bg)}
+.search-sugg .ss-empty{padding:14px;color:var(--muted);font-size:13px}
 .nav-actions{display:flex;gap:8px;align-items:center}
 .cart-btn{position:relative;font-size:22px;padding:8px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
 .cart-badge{position:absolute;top:2px;right:2px;background:var(--p);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:100px;display:none;align-items:center;justify-content:center;padding:0 4px}
@@ -256,12 +265,49 @@ document.querySelectorAll(".nav-item").forEach(function(el){el.classList.toggle(
 if(S.view==="home"||S.view==="products"){document.querySelectorAll(".card").forEach(function(c,i){c.style.animationDelay=i*30+"ms"})}}
 function hdr(){return '<div class="hdr"><div class="hdr-inner">'
 +'<div class="logo" onclick="sv(\'home\')"><svg style="width:24px;height:24px;vertical-align:-5px;margin-right:7px" viewBox="0 0 240 240" aria-hidden="true"><use href="#emblem"/></svg>'+esc(STORE_NAME)+'<span>KDMC</span></div>'
-+'<div class="search-box"><input type="text" aria-label="Rechercher un produit" placeholder="Rechercher..." value="'+esc(S.search)+'" oninput="S.search=this.value;S.page=1;dc();this.focus()" id="searchIn"></div>'
++'<div class="search-box"><input type="text" aria-label="Rechercher un produit, un thème, une occasion" placeholder="Rechercher : tir, chasse, cœur, anniversaire, Monaco…" value="'+esc(S.search)+'" oninput="onSearch(this.value)" onfocus="if(_norm(this.value).length>=1){S.sugg=true;var d=document.querySelector(\'.search-sugg\');if(!d)onSearch(this.value)}" onblur="setTimeout(function(){var d=document.querySelector(\'.search-sugg\');if(d)d.style.display=\'none\'},160)" id="searchIn">'+searchSuggestHtml()+'</div>'
 +'<div class="nav-actions">'+(LD_ADMIN?'<div class="cart-btn" onclick="sv(\'printify\')" title="Catalogue Printify (admin)" style="background:rgba(220,38,38,.18)">⚙️</div>':'')+'<a href="occasions.html" class="cart-btn" title="Modèles & Occasions" style="text-decoration:none">🎉</a><a href="bibliotheque.html" class="cart-btn" title="Bibliothèque de designs" style="text-decoration:none">📚</a><a href="studio.html" class="cart-btn" title="Studio (créer)" style="text-decoration:none">🎨</a><div class="cart-btn" onclick="sv(\'wishlist\')" title="Mes favoris">❤<span class="cart-badge" id="wish-badge" style="background:#16a34a">0</span></div><div class="cart-btn" onclick="toggleCart()">🛒<span class="cart-badge" id="cart-badge">0</span></div></div>'
 +'</div></div>'
 +'<div class="nav"><div class="nav-item'+(S.cat==='all'?' active':'')+'" data-cat="all" onclick="S.cat=\'all\';S.page=1;sv(\'products\')">Tous</div>'
 +CATS.map(function(c){return '<div class="nav-item" data-cat="'+c.id+'" onclick="S.cat=\''+c.id+'\';S.page=1;sv(\'products\')">'+c.icon+" "+esc(c.name)+"</div>"}).join("")
 +"</div>"}
+/* ---------- MOTEUR DE RECHERCHE PAR THÈMES ---------- */
+function _norm(s){return String(s==null?"":s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")}
+var THEMES_IDX=[
+ {ic:"🎯",lbl:"Tir / Précision",q:"precision",kw:["tir","precision","cible","stand","vise","viser","sportif"]},
+ {ic:"🔫",lbl:"AR15 / Carabine",q:"carabine",kw:["ar15","carabine","fusil","arme"]},
+ {ic:"🔫",lbl:"Glock / Pistolet",q:"pistolet",kw:["glock","pistolet","poing"]},
+ {ic:"💥",lbl:"Ball-Trap",q:"ball-trap",kw:["ball","trap","balltrap","plateau","clay","argile"]},
+ {ic:"🦌",lbl:"Chasse",q:"chasse",kw:["chasse","cerf","gibier","battue","sanglier","chasseur"]},
+ {ic:"❤️",lbl:"Cœur rouge",q:"coeur",kw:["coeur","heart","amour","rouge"]},
+ {ic:"🌿",lbl:"Camo / Olive",q:"camo",kw:["camo","camouflage","olive","militaire"]},
+ {ic:"🥇",lbl:"Noir & Or",q:"or",kw:["or","gold","dore","premium"]},
+ {ic:"🅈",lbl:"Bande Y·R·K (initiales)",href:"bibliotheque.html",kw:["yrk","yann","remy","kevin","initiale","bande","crew","team","equipe"]},
+ {ic:"🛡️",lbl:"Emblèmes / Patchs",href:"bibliotheque.html",kw:["embleme","patch","blason","logo","badge","crest","cartouche"]},
+ {ic:"🇲🇨",lbl:"Monaco / Palais / Casino",href:"bibliotheque.html",kw:["monaco","palais","casino","monte carlo","grimaldi"]},
+ {ic:"🎂",lbl:"Anniversaire (modèle)",href:"occasions.html",kw:["anniversaire","anniv","birthday","ans"]},
+ {ic:"🎯",lbl:"EVG / EVJF (modèle)",href:"occasions.html",kw:["evg","evjf","enterrement","vie de jeune"]},
+ {ic:"🏆",lbl:"Bonne retraite (modèle)",href:"occasions.html",kw:["retraite"]},
+ {ic:"💍",lbl:"Mariage / Fiançailles (modèle)",href:"occasions.html",kw:["mariage","marie","fiancaille","noces","alliance"]},
+ {ic:"👶",lbl:"Naissance / Baptême (modèle)",href:"occasions.html",kw:["naissance","bapteme","bebe","baby","shower","communion"]},
+ {ic:"🎄",lbl:"Noël & Fêtes (modèle)",href:"occasions.html",kw:["noel","nouvel an","valentin","halloween","paque","fete","muguet","patrick","carnaval"]},
+ {ic:"🏢",lbl:"Pro & Équipe (modèle)",href:"occasions.html",kw:["pro","collegue","promotion","bienvenue","team building","merci","inauguration","employe","depart"]},
+ {ic:"🎨",lbl:"Créer / Personnaliser (Studio)",href:"studio.html",kw:["studio","creer","personnalise","graffiti","all over","allover","meli","melo","prenom","nom"]}
+];
+function themeMatches(qr){var q=_norm(qr);if(q.length<1)return[];var out=[];THEMES_IDX.forEach(function(t,i){var hit=_norm(t.lbl).indexOf(q)!==-1||t.kw.some(function(k){k=_norm(k);return k.indexOf(q)!==-1||q.indexOf(k)!==-1});if(hit)out.push({t:t,i:i})});return out.slice(0,6)}
+function pickTheme(i){var t=THEMES_IDX[i];S.sugg=false;if(t.href){location.href=t.href;return}S.search=t.q||"";S.cat="all";S.page=1;sv("products")}
+function onSearch(v){S.search=v;S.sugg=true;S.page=1;dc();var n=document.getElementById("searchIn");if(n){try{n.focus();var L=n.value.length;n.setSelectionRange(L,L)}catch(e){}}}
+function searchSuggestHtml(){
+ if(!S.sugg||_norm(S.search).length<1)return"";
+ var th=themeMatches(S.search),q=_norm(S.search);
+ var prods=q.length>1?P.filter(function(p){return _norm(p.name).indexOf(q)!==-1||(p.tags||[]).some(function(t){return _norm(t).indexOf(q)!==-1})}).slice(0,4):[];
+ if(!th.length&&!prods.length)return '<div class="search-sugg"><div class="ss-empty">Aucun résultat. Essaie un thème : tir, chasse, ball-trap, cœur, camo, Y·R·K, anniversaire, retraite, Monaco…</div></div>';
+ var h='<div class="search-sugg">';
+ if(th.length){h+='<div class="ss-h">Thèmes & occasions</div>'+th.map(function(o){var badge=o.t.href==="occasions.html"?"Modèle":o.t.href==="studio.html"?"Studio":o.t.href==="bibliotheque.html"?"Bibliothèque":"Produits";return '<div class="ss-it" onmousedown="event.preventDefault();pickTheme('+o.i+')"><span class="ss-ic">'+o.t.ic+'</span><span>'+esc(o.t.lbl)+'</span><span class="ss-tag">'+badge+'</span></div>'}).join("")}
+ if(prods.length){h+='<div class="ss-h">Produits</div>'+prods.map(function(p){return '<div class="ss-it" onmousedown="event.preventDefault();S.sugg=false;sv(\'product\',\''+p.id+'\')"><span class="ss-ic">🛍️</span><span>'+esc(p.name)+'</span><span class="ss-tag">'+fmtP(p.price)+'</span></div>'}).join("")}
+ h+='<div class="ss-all" onmousedown="event.preventDefault();S.sugg=false;S.cat=\'all\';sv(\'products\')">🔍 Voir tous les résultats « '+esc(S.search)+' »</div>';
+ return h+'</div>';
+}
 function footer(){return '<div class="footer"><div class="footer-inner">'
 +'<div><h4>'+esc(STORE_NAME)+'</h4><a href="#" onclick="sv(\'about\');return false">À propos</a><a href="#" onclick="sv(\'contact\');return false">Contact</a><a href="../legal/livraison.html">Livraison</a><a href="../legal/cgv.html">CGV</a></div>'
 +'<div><h4>Catégories</h4>'+CATS.slice(0,5).map(function(c){return '<a href="#" onclick="S.cat=\''+c.id+'\';sv(\'products\');return false">'+c.icon+" "+esc(c.name)+"</a>"}).join("")+'</div>'+'<div><h4>Créer</h4><a href="occasions.html">🎉 Modèles &amp; Occasions</a><a href="bibliotheque.html">📚 Bibliothèque de designs</a><a href="studio.html">🎨 Studio</a></div>'+'<div><h4>La boutique</h4><a href="#" onclick="sv(\'lookbook\');return false">📸 Lookbook</a><a href="#" onclick="sv(\'orders\');return false">📦 Mes commandes</a><a href="#" onclick="sv(\'wishlist\');return false">❤️ Mes favoris</a></div>'
@@ -994,7 +1040,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.36.0"
+        data-version="v1.37.0"
         data-color="#e8b830"
         defer></script>
 

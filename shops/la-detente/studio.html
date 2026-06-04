@@ -140,6 +140,16 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
   <div class="side">
     <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div></div>
     <div class="grp"><h3>Emplacement</h3><div class="garments" id="placement"></div></div>
+    <div class="grp"><h3>🌀 All-Over / Graffiti</h3>
+      <div class="hint">Couvre <b>tout le vêtement</b> façon graffiti / méli-mélo (écriture & motifs dans tous les sens). Idéal pour un produit <b>All-Over Print (AOP)</b>.</div>
+      <label style="font-size:12px;display:block;margin:8px 0 2px">Densité (<span id="aoVal">28</span> motifs)</label>
+      <input type="range" id="aoDensity" min="8" max="80" step="1" value="28" oninput="var e=document.getElementById('aoVal');if(e)e.textContent=this.value" style="width:100%">
+      <div class="addrow" style="margin-top:8px">
+        <button class="btn" onclick="Studio.scatter('sel')">🌀 Motif sélectionné</button>
+        <button class="btn" onclick="Studio.scatter('all')">🔀 Tout en graffiti</button>
+        <button class="btn ghost" onclick="Studio.clearScatter()">🧹 Nettoyer le all-over</button>
+      </div>
+    </div>
     <div class="grp"><h3>Couleur</h3><div class="swatches" id="swatches"></div></div>
     <div class="grp"><h3>Ajouter un calque</h3>
       <div class="addrow">
@@ -556,7 +566,32 @@ function _iceBind(){var cv=ICE.canvas,down=false,start=null;
  cv.onmousedown=pd;cv.onmousemove=pm;window.addEventListener("mouseup",pu);
  cv.addEventListener("touchstart",pd,{passive:false});cv.addEventListener("touchmove",pm,{passive:false});cv.addEventListener("touchend",pu)}
 function iceApply(){var l=get(ICE.id);if(!l){closeModal();return}snap();try{l.href=ICE.canvas.toDataURL("image/png");var ar=ICE.canvas.width/ICE.canvas.height||1;var base=Math.max(l.w,l.h);l.w=ar>=1?base:base*ar;l.h=ar>=1?base/ar:base}catch(e){toast("Erreur retouche")}closeModal();render();toast("Photo retouchée ✅")}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+/* ---------- ALL-OVER / GRAFFITI ---------- */
+function clearScatter(){snap();st.layers=st.layers.filter(function(l){return !l._scatter});if(st.sel!=null&&!st.layers.some(function(l){return l.id===st.sel}))st.sel=null;render();toast("All-over nettoyé 🧹");}
+function scatter(mode){
+ var motifs=st.layers.filter(function(l){return !l._scatter});
+ if(mode==="sel"){var s=st.layers.filter(function(x){return x.id===st.sel&&!x._scatter});motifs=s.length?s:motifs.slice(-1);}
+ if(!motifs.length){toast("Ajoute d'abord un motif (image, texte ou emblème)");return;}
+ snap();
+ st.layers=st.layers.filter(function(l){return !l._scatter});
+ var dens=Math.max(8,Math.min(80,+(($("aoDensity")||{}).value)||28));
+ var cols=Math.max(2,Math.round(Math.sqrt(dens*0.8))),rows=Math.ceil(dens/cols),n=0;
+ for(var r=0;r<rows;r++){for(var c=0;c<cols;c++){
+   if(n>=dens)break;
+   var b=JSON.parse(JSON.stringify(motifs[n%motifs.length]));
+   b.id=st.uid++;b._scatter=true;
+   var gx=(c+0.5)/cols*100,gy=(r+0.5)/rows*100;
+   b.x=Math.max(3,Math.min(97,gx+(Math.random()-0.5)*(100/cols)*0.9));
+   b.y=Math.max(4,Math.min(96,gy+(Math.random()-0.5)*(100/rows)*0.9));
+   b.rot=Math.round((Math.random()-0.5)*90);
+   b.scale=Math.max(0.06,Math.min(3,(b.scale||1)*(0.45+Math.random()*0.55)));
+   b.op=Math.min(1,(b.op==null?1:b.op)*(0.8+Math.random()*0.2));
+   st.layers.unshift(b);n++;
+ }}
+ st.sel=null;render();
+ toast(n+" motifs en all-over 🌀 — choisis un produit All-Over Print (AOP)");
+}
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,scatter:scatter,clearScatter:clearScatter,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
