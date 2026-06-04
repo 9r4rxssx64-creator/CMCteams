@@ -80,6 +80,7 @@ a{color:inherit;text-decoration:none}
   <div class="brand">🎯 La Détente <span class="tag">BIBLIOTHÈQUE</span></div>
   <div class="sp"></div>
   <a class="lnk" href="./index.html">← Boutique</a>
+  <a class="lnk" href="./occasions.html">🎉 Modèles</a>
   <a class="lnk primary" href="./studio.html">🎨 Studio</a>
 </div>
 
@@ -208,21 +209,28 @@ function filtered(){var q=norm(st.q);return MOTIFS.filter(function(m){
  if(!q)return true;
  return norm(m.name).indexOf(q)>=0||m.tags.some(function(t){return norm(t).indexOf(q)>=0})||norm(m.cat).indexOf(q)>=0;});}
 
-function render(){
- var list=filtered();
- document.getElementById("count").textContent=list.length+" design"+(list.length>1?"s":"")+" · vêtement : "+(GARMENTS.filter(function(x){return x[0]===st.garment})[0][1]);
- document.getElementById("empty").style.display=list.length?"none":"block";
- document.getElementById("grid").innerHTML=list.map(function(m){
+function cardHTML(m){
   var studioHref=m.img?('./studio.html?design='+m.id):('./studio.html?motif='+m.id);
   var dl=m.img?('<a class="go" style="background:#23272e" href="'+m.img+'" download>⬇️ PNG</a>'):('<button onclick="LB.png(\''+m.id+'\')">⬇️ PNG</button><button onclick="LB.svg(\''+m.id+'\')">⬇️ SVG</button>');
   return '<div class="card"><div class="thumb">'+thumbHTML(m)+'</div>'
    +'<div class="cbody"><div class="cname">'+esc(m.name)+'</div>'
    +'<div class="ctags">'+m.tags.slice(0,3).map(function(t){return '<span class="ctag">'+esc(t)+'</span>'}).join("")+'</div>'
-   +'<div class="cact">'
-   +'<a class="go" href="'+studioHref+'">🎨 Studio</a>'
-   +dl
-   +'</div></div></div>';
- }).join("");
+   +'<div class="cact"><a class="go" href="'+studioHref+'">🎨 Studio</a>'+dl+'</div></div></div>';
+}
+function render(){
+ var list=filtered();
+ document.getElementById("count").textContent=list.length+" design"+(list.length>1?"s":"")+" · vêtement : "+(GARMENTS.filter(function(x){return x[0]===st.garment})[0][1]);
+ document.getElementById("empty").style.display=list.length?"none":"block";
+ var g=document.getElementById("grid");
+ if(st.cat!=="Tous"||st.q){ g.innerHTML=list.map(cardHTML).join(""); return; }
+ var html="";
+ CATS.filter(function(c){return c!=="Tous"}).forEach(function(c){
+  var items=MOTIFS.filter(function(m){return m.cat===c});
+  if(!items.length)return;
+  html+='<div style="grid-column:1/-1;font-weight:800;font-size:15px;letter-spacing:.4px;margin:16px 2px 0;color:#e7e9ee;border-left:4px solid #dc2626;padding-left:10px">'+c+' <span style="color:#7d848f;font-weight:600;font-size:12px">('+items.length+')</span></div>';
+  html+=items.map(cardHTML).join("");
+ });
+ g.innerHTML=html;
 }
 function renderCats(){document.getElementById("cats").innerHTML=CATS.map(function(c){return '<button class="chip'+(c===st.cat?" on":"")+'" onclick="LB.setCat(\''+c+'\')">'+c+'</button>'}).join("")}
 function renderGarments(){document.getElementById("garments").innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap">'+GARMENTS.map(function(g){return '<button class="gbtn'+(g[0]===st.garment?" on":"")+'" onclick="LB.setGarment(\''+g[0]+'\')">'+g[1]+'</button>'}).join("")+'</div>'}
