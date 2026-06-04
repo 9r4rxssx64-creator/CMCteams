@@ -989,7 +989,7 @@ function vPrintifyCatalog(){
  +'</div>'+pubHtml;
 }
 function _ldUpdMock(){var d=document.getElementById("ld_pub_design"),ov=document.getElementById("ld_pub_overlay");if(!d)return;var v=d.value;if(ov)ov.src=ldLogoImg(v);var pl=(document.getElementById("ld_pub_place")||{}).value;if(ov){var top=pl==="back"?"40%":pl==="center"?"52%":"44%";var w=pl==="center"?"56%":"46%";ov.style.top=top;ov.style.width=w;ov.style.height=w;}}
-function ldPublishModal(i){var it=(window._ldBpList||[])[i];if(!it)return;var cat=(_ldBpCat==="top"||_ldBpAll)?_ldGuessCat(it):_ldBpCat;var d0=(ldEffLogos()[0]||{id:"crest"}).id;
+function ldPublishModal(i){var it=(window._ldBpList||[])[i];if(!it)return;var cat=(_ldBpCat==="top"||_ldBpCat==="stanley"||_ldBpAll)?_ldGuessCat(it):_ldBpCat;var d0=(ldEffLogos()[0]||{id:"crest"}).id;
  var m=document.createElement("div");m.id="ldPubModal";m.style.cssText="position:fixed;inset:0;z-index:10003;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
  m.innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:470px;width:100%;max-height:93vh;overflow:auto">'
  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h2 style="font-size:18px">➕ Mettre en boutique</h2><span onclick="document.getElementById(\'ldPubModal\').remove()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
@@ -1053,7 +1053,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.39.0"
+        data-version="v1.40.0"
         data-color="#e8b830"
         defer></script>
 

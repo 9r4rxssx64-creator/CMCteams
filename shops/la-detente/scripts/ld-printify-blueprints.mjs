@@ -53,7 +53,9 @@ const TOP_IDS = [6, 1234, 77, 536, 2789, 535, 5383, 1313, 600, 1933, 2799, 1436]
   // Catégorie spéciale « ⭐ Top Printify » = vraies meilleures ventes, en tête
   const byId = {}; bps.forEach(b => { byId[b.id] = b; });
   const topItems = TOP_IDS.map(id => byId[id]).filter(Boolean).map(b => ({ id: b.id, title: b.title, brand: b.brand || '', model: b.model || '', image: (b.images && b.images[0]) || '', top: true }));
-  const ordered = { top: { label: '⭐ Top Printify', items: topItems } };
+  // Catégorie dédiée « Stanley/Stella » = tous les blueprints bio S&S, regroupés
+  const ssItems = bps.filter(b => /stanley|stella/i.test(b.brand || '')).map(b => ({ id: b.id, title: b.title, brand: b.brand || '', model: b.model || '', image: (b.images && b.images[0]) || '' })).sort((a, b) => a.title.localeCompare(b.title));
+  const ordered = { top: { label: '⭐ Top Printify', items: topItems }, stanley: { label: '🌱 Stanley/Stella (bio)', items: ssItems } };
   Object.keys(groups).forEach(k => { ordered[k] = groups[k]; });
   const cfg = {
     generated_at: new Date().toISOString(),

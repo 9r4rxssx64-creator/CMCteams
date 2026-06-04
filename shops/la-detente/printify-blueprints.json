@@ -118,6 +118,116 @@
         }
       ]
     },
+    "stanley": {
+      "label": "🌱 Stanley/Stella (bio)",
+      "items": [
+        {
+          "id": 469,
+          "title": "Men’s Presenter V-neck",
+          "brand": "Stanley Stella",
+          "model": "STTM562",
+          "image": "https://images.printify.com/66daed0462ae6428c60b4a59"
+        },
+        {
+          "id": 3760,
+          "title": "Unisex Cooper Dry Hooded Sweatshirt",
+          "brand": "Stanley Stella",
+          "model": "SXU028",
+          "image": "https://images.printify.com/69b03414edd00bc6ef075cd1"
+        },
+        {
+          "id": 1954,
+          "title": "Unisex Crafter Organic Mid-Light T-Shirt",
+          "brand": "Stanley Stella",
+          "model": "SATU007",
+          "image": "https://images.printify.com/685b9040ddd2c28a610632f2"
+        },
+        {
+          "id": 1462,
+          "title": "Unisex Creator 2.0 T-shirt",
+          "brand": "Stanley Stella",
+          "model": "STTU169",
+          "image": "https://images.printify.com/66c46449877a9d79240440a3"
+        },
+        {
+          "id": 1576,
+          "title": "Unisex Cruiser 2.0 Hoodie",
+          "brand": "Stanley Stella",
+          "model": "SASU003",
+          "image": "https://images.printify.com/66e045139eab918e110acbc3"
+        },
+        {
+          "id": 1949,
+          "title": "Unisex Drummer 2.0 Organic Mid-Weight Hoodie",
+          "brand": "Stanley Stella",
+          "model": "SASU009",
+          "image": "https://images.printify.com/68628cad826c73a8d404b1a2"
+        },
+        {
+          "id": 1603,
+          "title": "Unisex Freestyler Dry Handfeel Heavy Tee",
+          "brand": "Stanley Stella",
+          "model": "STTU788",
+          "image": "https://images.printify.com/696a283dfc6f2edf4e0c42a2"
+        },
+        {
+          "id": 2674,
+          "title": "Unisex Organic  Changer 2.0  Sweatshirt",
+          "brand": "Stanley Stella",
+          "model": "SASU004",
+          "image": "https://images.printify.com/68efa415445a1af7e009e3f2"
+        },
+        {
+          "id": 2689,
+          "title": "Unisex Organic Oversized Sweatshirt Radder 2.0",
+          "brand": "Stanley Stella",
+          "model": "SASU025",
+          "image": "https://images.printify.com/69eb4d93165781c32000bdf2"
+        },
+        {
+          "id": 2683,
+          "title": "Unisex Organic Relaxed Slammer Hoodie",
+          "brand": "Stanley Stella",
+          "model": "SASU024",
+          "image": "https://images.printify.com/6977344b72025813dc01c842"
+        },
+        {
+          "id": 2694,
+          "title": "Unisex Organic Side Pocket Sounder Hoodie",
+          "brand": "Stanley Stella",
+          "model": "SASU012",
+          "image": "https://images.printify.com/69eb4ce03f6cd4a126076c10"
+        },
+        {
+          "id": 664,
+          "title": "Unisex Rocker T-Shirt",
+          "brand": "Stanley Stella",
+          "model": "STTU758",
+          "image": "https://images.printify.com/66dae3aec9160b60d30a6278"
+        },
+        {
+          "id": 1952,
+          "title": "Unisex Roller 2.0 Organic Mid-Weight Sweatshirt",
+          "brand": "Stanley Stella",
+          "model": "SASU010",
+          "image": "https://images.printify.com/684c21d484e5e612e6086292"
+        },
+        {
+          "id": 1953,
+          "title": "Women's Alma Organic Crew Neck Sweatshirt",
+          "brand": "Stanley Stella",
+          "model": "SASW036",
+          "image": "https://images.printify.com/68514fc4c9a024cf37038e72"
+        },
+        {
+          "id": 2679,
+          "title": "Women's Organic Mid-Weight Nora Hoodie",
+          "brand": "Stanley Stella",
+          "model": "SASW035",
+          "image": "https://images.printify.com/69c1dcce61446955ae0d7f80"
+        }
+      ]
+    },
     "hoodie": {
       "label": "Hoodies",
       "items": [
