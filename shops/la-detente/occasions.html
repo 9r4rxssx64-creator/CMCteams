@@ -73,7 +73,7 @@
 
 <script>
 /* ----------------- données ----------------- */
-var THEMES=[["fetes","🎉 Fêtes"],["events","🥂 Événements"],["famille","👪 Famille"],["club","🎯 Club & Tir"]];
+var THEMES=[["fetes","🎉 Fêtes"],["events","🥂 Événements"],["famille","👪 Famille"],["club","🎯 Club & Tir"],["pro","🏢 Pro & Équipe"]];
 var PAL={
   festive:{bg1:"#211842",bg2:"#0b0712",ring:"#f4c430",accent:"#ffd34d",ink:"#ffffff",sub:"#d7c6ef"},
   party:{bg1:"#13233a",bg2:"#070d18",ring:"#36c5ff",accent:"#62d0ff",ink:"#ffffff",sub:"#a9c6e0"},
@@ -108,7 +108,23 @@ var TPL=[
  {id:"champion",theme:"club",event:"CHAMPION DE BALL-TRAP",big:"NAME",sub:"100/100 🎯",motif:"clay",pal:"nature"},
  {id:"tir",theme:"club",event:"TIR CLUB",big:"NAME",sub:"On vise au cœur ❤",motif:"target",pal:"club"},
  {id:"evgtir",theme:"club",event:"EVG — TIR & POTES",big:"NAME",sub:"Le marié 🤵",motif:"rifle",pal:"nature"},
- {id:"chasse",theme:"club",event:"ÉQUIPE DE CHASSE",big:"NAME",sub:"Saison ouverte 🦌",motif:"target",pal:"nature"}
+ {id:"chasse",theme:"club",event:"ÉQUIPE DE CHASSE",big:"NAME",sub:"Saison ouverte 🦌",motif:"target",pal:"nature"},
+
+ {id:"stpatrick",theme:"fetes",event:"JOYEUSE ST-PATRICK",big:"NAME",sub:"Trinque ! 🍀",motif:"champagne",pal:"nature"},
+ {id:"nanchinois",theme:"fetes",event:"NOUVEL AN",big:"NAME",sub:"Bonne année 🧧",motif:"star",pal:"festive"},
+ {id:"14juillet",theme:"fetes",event:"VIVE LA FRANCE",big:"NAME",sub:"14 juillet 🎆",motif:"star",pal:"club"},
+
+ {id:"naissance",theme:"events",event:"BIENVENUE BÉBÉ",big:"NAME",sub:"Né(e) le {NUM} 👶",motif:"baby",pal:"pastel"},
+ {id:"annivmariage",theme:"events",event:"ANNIVERSAIRE DE MARIAGE",big:"PAIR",sub:"{NUM} ans 💍",motif:"rings",pal:"classic"},
+ {id:"retablissement",theme:"events",event:"BON RÉTABLISSEMENT",big:"NAME",sub:"Repose-toi bien ❤",motif:"heart",pal:"pastel"},
+ {id:"fiancailles",theme:"events",event:"FIANÇAILLES",big:"PAIR",sub:"Ils se sont dit oui 💍",motif:"rings",pal:"pastel"},
+
+ {id:"departcol",theme:"pro",event:"BON VENT",big:"NAME",sub:"Tu vas nous manquer 👋",motif:"champagne",pal:"party"},
+ {id:"promotion",theme:"pro",event:"FÉLICITATIONS",big:"NAME",sub:"Promu(e) ! 🚀",motif:"trophy",pal:"party"},
+ {id:"bienvenue",theme:"pro",event:"BIENVENUE",big:"NAME",sub:"Dans l'équipe 🤝",motif:"medal",pal:"club"},
+ {id:"inauguration",theme:"pro",event:"INAUGURATION",big:"NAME",sub:"Nouvelle aventure 🥂",motif:"champagne",pal:"classic"},
+ {id:"merci",theme:"pro",event:"MERCI",big:"NAME",sub:"Pour tout ❤",motif:"medal",pal:"classic"},
+ {id:"retraitecol",theme:"pro",event:"BONNE RETRAITE",big:"NAME",sub:"Profite bien 🏖️",motif:"trophy",pal:"classic"}
 ];
 
 /* ----------------- helpers ----------------- */
