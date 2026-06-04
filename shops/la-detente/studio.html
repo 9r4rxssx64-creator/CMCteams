@@ -188,7 +188,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:6"><button onclick="Studio.zoomBy(0.8)" title="Zoom +" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">＋</button><button onclick="Studio.zoomBy(1.25)" title="Zoom −" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">−</button><button onclick="Studio.zoomReset()" title="Réinitialiser le zoom" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:14px;cursor:pointer">⟲</button></div></div>
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:6"><button onclick="Studio.zoomBy(0.8)" title="Zoom +" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">＋</button><button onclick="Studio.zoomBy(1.25)" title="Zoom −" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">−</button><button onclick="Studio.zoomReset()" title="Réinitialiser le zoom" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:14px;cursor:pointer">⟲</button></div></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
@@ -282,6 +282,8 @@ function render(){
  stage.innerHTML=spriteDefs()+stageInner(false);
  if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
  renderLayers(); renderProps();
+ var _sl=st.layers.filter(function(x){return x.id===st.sel})[0];
+ var _fab=$("aiFab");if(_fab)_fab.style.display=(_sl&&_sl.type==="image"&&_aiCfg&&_aiCfg.worker_url)?"block":"none";
 }
 /* ---------- PANELS ---------- */
 function renderGarments(){
@@ -543,9 +545,10 @@ function _rasterize(src,max,cb){
  img.src=src;
 }
 function aiEdit(id){
- var l=get(id);if(!l||l.type!=="image"){toast("Sélectionne une image");return}
+ if(id==null)id=st.sel;
+ var l=get(id);if(!l||l.type!=="image"){toast("Sélectionne d'abord une image (importée ou ajoutée)");return}
  if(!_aiCfg||!_aiCfg.worker_url){toast("Service IA non configuré (worker en attente de déploiement)","info");return}
- var chips=["Style gravure noir & blanc","Style cartoon vectoriel net","Fond transparent, sujet isolé","Style aquarelle artistique","Style tatouage chasse","Couleurs plus vives et contrastées","Style croquis au crayon","Ajoute un cœur rouge discret"];
+ var chips=["Style gravure noir & blanc","Style cartoon vectoriel net","Fond transparent, sujet isolé","Style aquarelle artistique","Style tatouage chasse","Couleurs plus vives et contrastées","Style croquis au crayon","Ajoute un cœur rouge discret","Style pop art","Ligne minimaliste (one-line)","Effet vintage rétro délavé","Style néon lumineux","Fond uni noir profond","Look premium luxe doré","Silhouette ultra-contrastée","Motif camouflage militaire","Peinture à l'huile","Netteté HD, plus de détails","Style pochoir 2 couleurs","Effet broderie / patch brodé"];
  modal('<h2 style="margin:0 0 10px;font-size:17px">✨ Modifier la photo avec l\'IA</h2>'
   +'<p style="font-size:12px;color:var(--muted);margin:0 0 10px">Décris ce que l\'IA doit faire sur l\'image sélectionnée : modifier, styliser, nettoyer, transformer…</p>'
   +'<textarea id="aiEditP" rows="3" placeholder="Ex : transforme cette photo en style gravure noir et blanc" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:10px;font:500 13px system-ui;resize:vertical"></textarea>'
