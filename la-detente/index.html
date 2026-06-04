@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LA DÉTENTE — Pack identité visuelle</title>
+<style>
+  :root{ --red:#e51f2b; --gold:#d4af37; --ink:#0b0c0f; --pan:#15171c; --line:#262932; --txt:#eef0f4; --sub:#9aa0ab; }
+  *{box-sizing:border-box} body{margin:0;background:radial-gradient(120% 90% at 50% -10%,#1b1d24,#08090c 60%);color:var(--txt);font-family:'Liberation Sans',Arial,system-ui,sans-serif}
+  header{padding:54px 22px 26px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:clamp(34px,7vw,66px);letter-spacing:3px}
+  h1 .red{color:var(--red)} .slogan{color:var(--red);font-weight:bold;letter-spacing:6px;margin:10px 0 4px}
+  .sub{color:var(--sub);letter-spacing:8px;font-size:14px}
+  .wrap{max-width:1280px;margin:0 auto;padding:30px 18px 80px}
+  h2{font-size:22px;letter-spacing:2px;margin:46px 0 6px;border-left:4px solid var(--red);padding-left:12px}
+  h2 .g{color:var(--gold)} .note{color:var(--sub);font-size:14px;margin:0 0 18px;padding-left:16px}
+  .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+  .grid.big{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
+  .card{background:var(--pan);border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:.18s;display:flex;flex-direction:column}
+  .card:hover{transform:translateY(-4px);border-color:#3a3f4b;box-shadow:0 14px 34px #0008}
+  .card .im{background:
+      linear-gradient(45deg,#1c1e24 25%,transparent 25%),linear-gradient(-45deg,#1c1e24 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#1c1e24 75%),linear-gradient(-45deg,transparent 75%,#1c1e24 75%);
+      background-size:26px 26px;background-position:0 0,0 13px,13px -13px,-13px 0;padding:18px;display:flex;align-items:center;justify-content:center}
+  .card img{width:100%;height:auto;display:block;border-radius:8px}
+  .meta{padding:12px 14px 14px} .meta b{display:block;font-size:15px;letter-spacing:.4px}
+  .tags{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+  .t{font-size:11px;letter-spacing:.6px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--sub)}
+  .t.s{color:#cfe} .t.c{} .dl{margin-top:9px;font-size:12px}
+  .dl a{color:var(--sub);text-decoration:none;border-bottom:1px dotted #444} .dl a:hover{color:var(--red)}
+  footer{color:var(--sub);text-align:center;padding:30px;border-top:1px solid var(--line);font-size:13px;line-height:1.7}
+  .chip{display:inline-block;background:#1d1f25;border:1px solid var(--line);border-radius:999px;padding:5px 12px;margin:4px;color:#dfe2e8;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>LA <span class="red">DÉTENTE</span></h1>
+  <div class="slogan">♥ ON VISE AU CŒUR</div>
+  <div class="sub">TIR · BALL-TRAP · CHASSE</div>
+  <p style="max-width:680px;margin:18px auto 0;color:var(--sub);line-height:1.6">
+    Pack identité visuelle « armes + cœur » — 12 emblèmes (4 concepts × 3 styles),
+    2 logos et 4 mockups. Chaque emblème est fourni en <b>PNG haute résolution</b> ET en
+    <b>SVG vectoriel</b> (modifiable / exploitable imprimeur). Jeu de mots : la <i>détente</i>
+    de l'arme &amp; la <i>détente</i> entre potes.
+  </p>
+  <div style="margin-top:14px">
+    <span class="chip">Slogans : « On vise au cœur »</span>
+    <span class="chip">« Vise juste, tire au cœur »</span>
+    <span class="chip">« Entre potes &amp; passionnés »</span>
+  </div>
+</header>
+<div class="wrap">
+
+  <h2>Logos &amp; verrouillage de marque</h2>
+  <p class="note">Le logo horizontal pour enseigne / site / en-tête, et le sceau rond doré pour tampon / médaillon.</p>
+  <div class="grid big" id="logos"></div>
+
+  <h2>Emblèmes — <span class="g">12 déclinaisons</span></h2>
+  <p class="note">Concepts : armes croisées · AR15 · Glock · fusil ball-trap. Styles : patch tactique · vectoriel moderne · métal/3D. Palettes : noir &amp; rouge · camo/olive · noir &amp; or.</p>
+  <div class="grid" id="emblemes"></div>
+
+  <h2>Mockups — <span class="g">mise en situation</span></h2>
+  <p class="note">Aperçus produit : patch sur casquette, planche de stickers, enseigne de boutique, t-shirt.</p>
+  <div class="grid big" id="mockups"></div>
+
+</div>
+<footer>
+  18 visuels générés en vectoriel → PNG HD + SVG · Dossier <b>la-detente/</b><br>
+  Besoin d'une variante (autre couleur, vrai fichier imprimeur CMJN, version monochrome, ajout d'un autre membre/arme) ? Demande-la.
+</footer>
+<script>
+const E=[
+ ['01a-armes-croisees__patch__noir-rouge','Armes croisées','Patch tactique','Noir & rouge'],
+ ['01b-armes-croisees__vectoriel__camo','Armes croisées','Vectoriel moderne','Camo / olive'],
+ ['01c-armes-croisees__metal__noir-or','Armes croisées','Métal / 3D','Noir & or'],
+ ['02a-ar15__patch__camo','AR15 + cœur','Patch tactique','Camo / olive'],
+ ['02b-ar15__vectoriel__noir-rouge','AR15 + cœur','Vectoriel moderne','Noir & rouge'],
+ ['02c-ar15__metal__noir-or','AR15 + cœur','Métal / 3D','Noir & or'],
+ ['03a-glock__patch__noir-or','Glock + cœur','Patch tactique','Noir & or'],
+ ['03b-glock__vectoriel__noir-rouge','Glock + cœur','Vectoriel moderne','Noir & rouge'],
+ ['03c-glock__metal__gunmetal','Glock + cœur','Métal / 3D','Gunmetal'],
+ ['04a-balltrap__patch__camo','Fusil ball-trap','Patch tactique','Camo / olive'],
+ ['04b-balltrap__vectoriel__camo','Fusil ball-trap','Vectoriel moderne','Camo / olive'],
+ ['04c-balltrap__metal__noir-or','Fusil ball-trap','Métal / 3D','Noir & or'],
+];
+const L=[
+ ['logo-horizontal__noir-rouge','Logo horizontal','Enseigne / site / en-tête','Noir & rouge'],
+ ['logo-sceau-rond__noir-or','Sceau rond','Tampon / médaillon','Noir & or'],
+];
+const M=[
+ ['mockup-casquette-patch','Casquette brodée','Patch frontal camo',''],
+ ['mockup-planche-stickers','Planche de stickers','4 emblèmes die-cut',''],
+ ['mockup-enseigne-boutique','Enseigne de boutique','Devanture cadre doré',''],
+ ['mockup-tshirt','T-shirt','Emblème poitrine',''],
+];
+function card(dir,[f,title,style,pal]){
+  const svg = dir==='emblemes';
+  return `<div class="card"><div class="im"><img loading="lazy" src="${dir}/${f}.png" alt="${title}"></div>
+   <div class="meta"><b>${title}</b><div class="tags">${style?`<span class="t s">${style}</span>`:''}${pal?`<span class="t c">${pal}</span>`:''}</div>
+   <div class="dl"><a href="${dir}/${f}.png" download>PNG</a>${svg?` · <a href="${dir}/${f}.svg" download>SVG</a>`:''}</div></div></div>`;
+}
+document.getElementById('logos').innerHTML=L.map(x=>card('logo',x)).join('');
+document.getElementById('emblemes').innerHTML=E.map(x=>card('emblemes',x)).join('');
+document.getElementById('mockups').innerHTML=M.map(x=>card('mockups',x)).join('');
+</script>
+</body>
+</html>
