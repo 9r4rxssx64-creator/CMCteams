@@ -110,6 +110,18 @@ describe('ai-safety', () => {
       const r = aiSafety.crossCheckHallucination('', '');
       expect(r.consistent).toBe(true);
     });
+    it('divergence mineure (Jaccard 0.3–0.6) → flag minor_divergence', () => {
+      /* A={paris,france,europe,capitale} B={paris,france,londres,berlin}
+         intersection=2, union=6 → Jaccard 0.33 ∈ [0.3,0.6) */
+      const r = aiSafety.crossCheckHallucination(
+        'paris france europe capitale',
+        'paris france londres berlin',
+      );
+      expect(r.consistent).toBe(false);
+      expect(r.flag).toBe('minor_divergence');
+      expect(r.similarity).toBeGreaterThanOrEqual(0.3);
+      expect(r.similarity).toBeLessThan(0.6);
+    });
   });
 
   describe('extractCitations (contrôle 6)', () => {
