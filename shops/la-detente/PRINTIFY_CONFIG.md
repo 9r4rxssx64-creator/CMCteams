@@ -75,7 +75,6 @@ Pour chaque produit, Printify propose plusieurs ateliers. Choisis-en un **en Eur
 - [ ] 1 commande test passée → validée dans Printify
 
 > Liens directs : [Paiement](https://printify.com/app/account/payment) · [Réglages compte/branding](https://printify.com/app/account/settings) · [Mes commandes](https://printify.com/app/orders) · [Mes produits](https://printify.com/app/products)
-</content>
 
 ---
 
