@@ -20,7 +20,15 @@ const DESIGNS = [
   { id:'real-revolver-rose', p:'A classic blued-steel revolver with polished walnut grips lying flat, a single red rose with green stem placed elegantly beside it, a few petals around.'+STYLE },
   { id:'real-cartridges', p:'A premium flat-lay macro photograph of high-quality shotgun shells and hunting rifle cartridges (brass bases, deep red and green hulls) neatly arranged in a fan, one shell embossed with a small glossy red heart.'+STYLE },
   { id:'real-crossed-shotguns', p:'Two finely engraved over-and-under shotguns crossed in an X like a heraldic trophy, with a small concentric red-and-black target and a single orange clay pigeon at the crossing point, symmetrical coat-of-arms composition.'+STYLE },
-  { id:'real-ar15-heart', p:'A modern sport target rifle (black AR-style competition rifle with a telescopic optic and adjustable stock) displayed cleanly in side profile as a catalog piece, with a small glossy red heart emblem on the magazine well.'+STYLE }
+  { id:'real-ar15-heart', p:'A modern sport target rifle (black AR-style competition rifle with a telescopic optic and adjustable stock) displayed cleanly in side profile as a catalog piece, with a small glossy red heart emblem on the magazine well.'+STYLE },
+  { id:'real-deer', p:'A majestic red deer stag with large antlers standing proudly in side profile, realistic wildlife photography, rich brown fur.'+STYLE },
+  { id:'real-stag-head', p:'A powerful red deer stag head with large branching antlers, front three-quarter view, realistic wildlife trophy portrait.'+STYLE },
+  { id:'real-boar', p:'A wild boar in side profile, dark bristly fur and tusks, realistic European hunting wildlife photography.'+STYLE },
+  { id:'real-duck', p:'A flying mallard duck with wings spread, realistic wildlife photography, green head, in mid-flight side view.'+STYLE },
+  { id:'real-pheasant', p:'A colorful ring-necked pheasant standing in side profile, iridescent plumage, realistic wildlife photography.'+STYLE },
+  { id:'real-fox', p:'A red fox sitting alertly in side profile, bushy tail, realistic wildlife photography.'+STYLE },
+  { id:'real-hare', p:'A brown european hare sitting alert in side profile, realistic wildlife photography.'+STYLE },
+  { id:'real-eagle', p:'A golden eagle with wings spread wide in flight, talons forward, realistic majestic wildlife photography.'+STYLE }
 ];
 
 async function pickModel(){
