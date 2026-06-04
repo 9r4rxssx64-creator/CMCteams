@@ -1,7 +1,8 @@
 /* La Détente — Worker proxy Gemini (génération de designs à la volée pour le studio).
    La clé GEMINI_API_KEY vit dans les secrets du Worker (jamais exposée au navigateur).
    Auth : Origin sur allowlist + en-tête applicatif. Sortie : { ok, model, image(dataURI) }.
-   Tout auto : l'URL du worker est commitée dans proxy-config.json par le workflow de déploiement. */
+   Tout auto : l'URL du worker est commitée dans proxy-config.json par le workflow de déploiement.
+   Redéploiement 2026-06-04 : réinjection de GEMINI_API_KEY (depuis les secrets GitHub) dans le Worker. */
 
 const ALLOW_ORIGINS = [
   'https://9r4rxssx64-creator.github.io',
