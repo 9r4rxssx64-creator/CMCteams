@@ -255,6 +255,10 @@ P=P.concat([
  _b("ld-bio-tote","Tote Bio — Emblème La Détente","accessoires","tote","#c9c4ba","emblem",17.9,23,"Coton bio certifié · impression DTG dans la zone",4.9,33,99,["bio","organic","coton bio","tote","sac","eco"])
 ]);
 P.forEach(function(p){var t=(p.tags||[]).join(" ");if(/\baop\b|all-over/.test(t))p._aop=true;if(/\bbio\b|organic|coton bio/.test(t))p._bio=true;});
+/* Vraies photos produits Printify (au lieu des visuels SVG moches) */
+var LD_REALIMG={"ld-aop-tee":"https://images.printify.com/66d81786ae1f0775ec0aef82","ld-aop-tote":"https://images.printify.com/66cdad7e4535d849640e155b","ld-bio-tee":"https://images.printify.com/66c46449877a9d79240440a3","ld-bio-hoodie":"https://images.printify.com/66e045139eab918e110acbc3","ld-bio-tote":"https://images.printify.com/66cdad7e4535d849640e155b","ld-aop-bandana":"https://images.printify.com/69c40511f89645f00907e330"};
+var LD_RENAME={"ld-aop-bandana":["Casquette La Détente","casquettes","cap"]};
+P.forEach(function(p){if(LD_REALIMG[p.id])p.img=LD_REALIMG[p.id];var r=LD_RENAME[p.id];if(r){p.name=r[0];p.cat=r[1];p.garment=r[2];p._aop=false;}});
 /* Auto-création de catégorie : toute catégorie d'un produit publié apparaît dans le menu */
 function ldCatLabel(id){var M={tshirts:["T-shirts","👕"],sweats:["Sweats & Hoodies","🧥"],polos:["Polos","🎽"],casquettes:["Casquettes & Bobs","🧢"],accessoires:["Accessoires","🎒"],bas:["Bas & Joggings","👖"],mugs:["Mugs & Bouteilles","☕"],maison:["Maison & Déco","🏠"],enfants:["Enfants & Bébé","🧸"],bio:["Bio Stanley/Stella","🌱"],packs:["Packs","🎁"],perso:["Personnalisé","✨"],designs:["Designs ★","🔥"],autres:["Autres","📦"]};return M[id]||[id.charAt(0).toUpperCase()+id.slice(1),"🏷️"];}
 function ldEnsureCat(id){if(!id||id==="all")return;if(CATS.some(function(c){return c.id===id}))return;var m=ldCatLabel(id);var ins=CATS.length-2;CATS.splice(ins<1?CATS.length:ins,0,{id:id,name:m[0],icon:m[1]});}
@@ -1078,7 +1082,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.46.0"
+        data-version="v1.47.0"
         data-color="#e8b830"
         defer></script>
 
