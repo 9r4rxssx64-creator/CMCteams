@@ -148,6 +148,49 @@ function lockup2(key){
   body+=`<text x="800" y="775" font-family="${FONT}" font-weight="bold" font-size="32" letter-spacing="9" text-anchor="middle" fill="#7d848f">TIR · BALL-TRAP · CHASSE</text>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1125" viewBox="0 0 1600 900"><defs>${defs}</defs>${body}</svg>`;
 }
+/* ============================ VERSIONS DORÉES PREMIUM ============================ */
+const FONT_SERIF = "'DejaVu Serif','Liberation Serif',Georgia,serif";
+function goldStops(id){return `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff7d6"/><stop offset="20%" stop-color="#f3d98a"/><stop offset="50%" stop-color="#d8b23f"/><stop offset="78%" stop-color="#a87f24"/><stop offset="100%" stop-color="#6e4f12"/></linearGradient>`;}
+function star5(cx,cy,r,fill){let p=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*0.45:r;p.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1));}return `<polygon points="${p.join(' ')}" fill="${fill}" stroke="#6e4f12" stroke-width="1.5"/>`;}
+function leafAt(x,y,rot,fill){return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="8" ry="19" transform="rotate(${rot.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${fill}" stroke="#6e4f12" stroke-width="1"/>`;}
+function laurel(cx,cy,R,fill){let o='<g>';for(let i=0;i<8;i++){const dL=112+i*13,aL=dL*Math.PI/180,lx=cx+R*Math.cos(aL),ly=cy+R*Math.sin(aL);o+=leafAt(lx,ly,dL+90,fill);const dR=68-i*13,aR=dR*Math.PI/180,rx=cx+R*Math.cos(aR),ry=cy+R*Math.sin(aR);o+=leafAt(rx,ry,dR-90,fill);}return o+'</g>';}
+function studs(cx,cy,r,fill){let o='';for(let a=0;a<360;a+=30){const rad=a*Math.PI/180;o+=`<circle cx="${(cx+r*Math.cos(rad)).toFixed(1)}" cy="${(cy+r*Math.sin(rad)).toFixed(1)}" r="6" fill="${fill}" stroke="#6e4f12" stroke-width="1"/>`;}return o;}
+
+function crestOrPremium(key,opt){
+  opt=opt||{};const fam=opt.serif?FONT_SERIF:FONT;const p=PAL.noirOr;let defs='',body='';
+  defs+=`<radialGradient id="cbp${key}" cx="50%" cy="40%" r="72%"><stop offset="0%" stop-color="#1b1810"/><stop offset="68%" stop-color="#0d0b06"/><stop offset="100%" stop-color="#040302"/></radialGradient>`+goldStops('gp'+key);
+  const gold=`url(#gp${key})`;
+  const shield='M500,40 L890,232 L890,616 C890,800 712,902 500,958 C288,902 110,800 110,616 L110,232 Z';
+  body+=`<path d="${shield}" fill="url(#cbp${key})" stroke="${gold}" stroke-width="24" stroke-linejoin="round"/>`;
+  body+=`<path d="${shield}" fill="none" stroke="#fff7d6" stroke-width="3" stroke-opacity=".55" stroke-linejoin="round"/>`;
+  body+=`<path d="M500,94 L846,260 L846,606 C846,772 690,862 500,910 C310,862 154,772 154,606 L154,260 Z" fill="none" stroke="${gold}" stroke-width="5" opacity=".75"/>`;
+  body+=star5(500,158,28,gold);
+  body+=`<text x="500" y="338" font-family="${fam}" font-weight="bold" font-size="150" letter-spacing="14" text-anchor="middle" fill="${gold}" stroke="#3a2908" stroke-width="2">Y·R·K</text>`;
+  body+=`<g transform="translate(500,582) rotate(-28) scale(1.02) translate(-183,-88)">${rifle(gold,'#3a2908',2)}</g>`;
+  body+=`<g transform="translate(500,582) rotate(28) scale(1.02) translate(-183,-77)">${shotgun(gold)}</g>`;
+  if(opt.laurel)body+=laurel(500,600,300,gold);
+  const h=heart(500,582,1.62,p,'hcp'+key,true);defs+=h.defs;body+=h.body;
+  body+=ribbon(500,840,404,p,'LA DÉTENTE',true,'crp'+key);
+  body+=`<path d="M180,255 L500,118 L820,255" fill="none" stroke="#fff" stroke-opacity=".10" stroke-width="16" stroke-linecap="round"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1000 1000"><defs>${defs}</defs>${body}</svg>`;
+}
+function monoOrPremium(key,opt){
+  opt=opt||{};const p=PAL.noirOr;let defs='',body='';
+  defs+=`<radialGradient id="mbp${key}" cx="50%" cy="42%" r="62%"><stop offset="0%" stop-color="#1b1810"/><stop offset="70%" stop-color="#0c0a06"/><stop offset="100%" stop-color="#040302"/></radialGradient>`+goldStops('mg'+key);
+  const gold=`url(#mg${key})`;
+  body+=`<circle cx="500" cy="500" r="492" fill="${gold}"/><circle cx="500" cy="500" r="492" fill="none" stroke="#3a2908" stroke-width="3"/>`;
+  body+=`<circle cx="500" cy="500" r="470" fill="none" stroke="#fff7d6" stroke-width="2" opacity=".6"/>`;
+  body+=`<circle cx="500" cy="500" r="452" fill="url(#mbp${key})"/><circle cx="500" cy="500" r="452" fill="none" stroke="${gold}" stroke-width="6"/>`;
+  body+=studs(500,500,449,gold);
+  body+=`<g font-family="${FONT}" font-weight="bold" text-anchor="middle" fill="${gold}" stroke="#3a2908" stroke-width="3">
+     <text x="352" y="606" font-size="300">Y</text><text x="648" y="606" font-size="300">K</text><text x="500" y="648" font-size="392">R</text></g>`;
+  const h=heart(500,316,1.22,p,'mhp'+key,true);defs+=h.defs;body+=h.body;
+  if(opt.laurel)body+=laurel(500,560,300,gold);
+  body+=arcText(500,500,430,-90,150,'YANN · RÉMY · KEVIN',{size:42,fill:gold});
+  body+=arcText(500,500,430,90,140,'LA DÉTENTE',{size:56,fill:gold},true);
+  body+=`<path d="M150,300 A492,492 0 0 1 850,300" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width="12" stroke-linecap="round"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1000 1000"><defs>${defs}</defs>${body}</svg>`;
+}
 async function render(svg,name){await sharp(Buffer.from(svg)).png({compressionLevel:9}).toFile(path.join(OUT,name+'.png'));fs.writeFileSync(path.join(OUT,name+'.svg'),svg);console.log('✓',name);}
 (async()=>{
   await render(patch('noirRouge','a'),'yrk-patch-noir-rouge');
@@ -160,5 +203,10 @@ async function render(svg,name){await sharp(Buffer.from(svg)).png({compressionLe
   await render(monoInterlock('noirRouge','i'),'yrk-monogramme-acier');
   await render(monoInterlock('noirOr','j'),'yrk-monogramme-or');
   await render(lockup2('k'),'yrk-lockup-horizontal');
+  // --- versions dorées premium (va plus loin) ---
+  await render(crestOrPremium('p1',{serif:true,laurel:true}),'yrk-crest-or-prestige');
+  await render(crestOrPremium('p2',{serif:false,laurel:false}),'yrk-crest-or-deluxe');
+  await render(monoOrPremium('p3',{laurel:true}),'yrk-monogramme-or-medaille');
+  await render(monoOrPremium('p4',{laurel:false}),'yrk-monogramme-or-prestige');
   console.log('TERMINÉ');
 })();
