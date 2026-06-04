@@ -45,6 +45,20 @@ Pour chaque produit, Printify propose plusieurs ateliers. Choisis-en un **en Eur
 
 ---
 
+## 💶 Coûts & conditions Printify (important)
+- ✅ **Aucun minimum de commande (pas de MOQ)** — tu peux faire produire **1 seul article**. Pas de stock à avancer.
+- ✅ **Aucun frais mensuel obligatoire** — le plan **gratuit** suffit pour vendre.
+- 💳 **Tu paies seulement à la commande** : coût de production **+ livraison**, prélevés quand **tu valides** la commande (en mode Manual).
+- 🚚 **Livraison** : facturée par commande, varie selon l'atelier + le pays (calculée par Printify). Souvent **port offert au client dès 60 €** côté boutique = à toi de couvrir la marge.
+- ⏱️ **Délais** : production ~**2 à 7 jours ouvrés** + livraison (selon atelier/pays). Choisir un atelier **UE** = plus rapide vers France/Monaco.
+- ⭐ **Printify Premium** (~**24,99 $/mois**, optionnel) : **~20 % de remise** sur les produits + plus de connexions. Rentable **seulement en volume** — inutile au démarrage.
+- 🧾 **Échantillons** : tu peux commander un **sample** (souvent à prix réduit) pour vérifier la qualité avant de vendre.
+- ❌ **Pas d'engagement / pas d'exclusivité** — tu arrêtes quand tu veux.
+
+> En clair : **zéro risque pour démarrer** (pas de stock, pas d'abonnement, 1 pièce possible). Tu n'avances jamais d'argent avant d'avoir vendu.
+
+---
+
 ## 🔄 Le flux complet une fois configuré
 1. Client achète sur ta boutique → te paie (PayPal / Revolut / virement).
 2. La commande arrive dans Printify (**on-hold**).
