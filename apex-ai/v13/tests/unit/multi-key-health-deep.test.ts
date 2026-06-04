@@ -264,4 +264,30 @@ describe('multi-key-health — showToast best-effort', () => {
     /* Pas d'assertion stricte — juste s'assurer pas de throw */
     expect(true).toBe(true);
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('runAutoFix : provider non-dead → continue (177)', async () => {
+      (multiKeyHealth as unknown as { lastSummary: unknown }).lastSummary = { services_dead: 1 };
+      (aiKeyRotation.isProviderDead as ReturnType<typeof vi.fn>).mockReturnValue(false);
+      const r = await multiKeyHealth.runAutoFix();
+      expect(r).toBeDefined();
+    });
+
+    it('appendLog : setItem throw → catch (262)', () => {
+      vi.stubGlobal('localStorage', {
+        getItem: () => '[]', setItem: () => { throw new Error('quota'); }, removeItem: () => {}, clear: () => {},
+      });
+      const priv = multiKeyHealth as unknown as { appendLog(e: unknown): void };
+      expect(() => priv.appendLog({ ts: 0, provider: 'p', status: 'dead', detail: 'x' })).not.toThrow();
+    });
+
+    it('resetForTests : removeItem throw → catch (249)', () => {
+      vi.stubGlobal('localStorage', {
+        removeItem: () => { throw new Error('x'); }, getItem: () => null, setItem: () => {}, clear: () => {},
+      });
+      expect(() => multiKeyHealth.resetForTests()).not.toThrow();
+    });
+  });
 });
