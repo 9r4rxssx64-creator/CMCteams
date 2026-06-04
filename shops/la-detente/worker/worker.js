@@ -39,23 +39,39 @@ export default {
     try { body = await req.json(); } catch (e) { return json({ error: 'JSON invalide', detail: e.message }, 400, h); }
     let prompt = String(body.prompt || '').slice(0, 1500).trim();
     if (!prompt) return json({ error: 'prompt requis' }, 400, h);
-    // style sticker premium + fond blanc (le studio rend le blanc transparent côté client)
-    const styled = prompt + '. Professional vector sticker illustration, bold clean black outline, vivid saturated colors, subtle cel shading, centered, isolated on a pure flat white background, no scene, no extra text.';
+
+    // Mode édition image-to-image : si une image (data URI) est fournie, on la passe à Gemini
+    // avec l'instruction, pour qu'il la RETRAVAILLE (modifier/styliser) au lieu de créer du neuf.
+    let inputImage = null;
+    if (typeof body.image === 'string' && /^data:image\//.test(body.image)) {
+      const m = body.image.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+      if (m) inputImage = { mimeType: m[1], data: m[2] };
+    }
+
+    let parts;
+    if (inputImage) {
+      const edit = prompt + '. Modifie/retravaille l\'image fournie selon cette consigne. Conserve le sujet principal et la composition sauf indication contraire. Rendu net, haute qualité, prêt pour impression textile.';
+      parts = [{ inlineData: { mimeType: inputImage.mimeType, data: inputImage.data } }, { text: edit }];
+    } else {
+      // style sticker premium + fond blanc (le studio rend le blanc transparent côté client)
+      const styled = prompt + '. Professional vector sticker illustration, bold clean black outline, vivid saturated colors, subtle cel shading, centered, isolated on a pure flat white background, no scene, no extra text.';
+      parts = [{ text: styled }];
+    }
 
     const errors = [];
     for (const model of MODELS) {
       try {
         const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: styled }] }], generationConfig: { responseModalities: ['IMAGE'] } })
+          body: JSON.stringify({ contents: [{ role: 'user', parts: parts }], generationConfig: { responseModalities: ['IMAGE'] } })
         });
         const t = await r.text();
         if (!r.ok) { errors.push(`${model}:${r.status}`); continue; }
         const j = JSON.parse(t);
-        const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
-        const ip = parts.find(p => p.inlineData || p.inline_data);
+        const cparts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+        const ip = cparts.find(p => p.inlineData || p.inline_data);
         const b64 = ip && ((ip.inlineData && ip.inlineData.data) || (ip.inline_data && ip.inline_data.data));
-        if (b64) return json({ ok: true, model, image: 'data:image/png;base64,' + b64 }, 200, h);
+        if (b64) return json({ ok: true, model, mode: inputImage ? 'edit' : 'gen', image: 'data:image/png;base64,' + b64 }, 200, h);
         const fr = j.candidates && j.candidates[0] && j.candidates[0].finishReason;
         errors.push(`${model}:noimg${fr ? '(' + fr + ')' : ''}`);
       } catch (e) { errors.push(`${model}:${e.message}`); }
