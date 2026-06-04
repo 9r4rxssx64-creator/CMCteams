@@ -71,6 +71,32 @@ export default {
         return J({ ok: true, blueprint_id: bp, print_provider_id: pp, min_cost: Math.min(...costs) / 100, max_cost: Math.max(...costs) / 100, currency: 'shop' }, 200, origin);
       } catch (e) { return J({ ok: false, detail: String(e && e.message || e), where: 'exception' }, 500, origin); }
     }
+    // PORT RÉEL : tarif de livraison Printify pour un produit + pays
+    if (request.method === 'GET' && url.pathname === '/shipping') {
+      const KEY = env.PRINTIFY_API_KEY;
+      if (!KEY) return J({ ok: false, detail: 'clé serveur absente' }, 500, origin);
+      const bp = parseInt(url.searchParams.get('bp') || '0', 10);
+      const country = (url.searchParams.get('country') || 'FR').toUpperCase();
+      if (!bp) return J({ ok: false, detail: 'paramètre bp manquant' }, 400, origin);
+      const H = { 'Authorization': 'Bearer ' + KEY, 'User-Agent': 'LaDetente-KDMC/1.0' };
+      try {
+        const pr = await fetch(`${API}/catalog/blueprints/${bp}/print_providers.json`, { headers: H });
+        if (!pr.ok) return J({ ok: false, detail: 'providers HTTP ' + pr.status }, 502, origin);
+        const providers = await pr.json();
+        if (!providers.length) return J({ ok: false, detail: 'aucun provider' }, 422, origin);
+        const pp = providers[0].id;
+        const sh = await fetch(`${API}/catalog/blueprints/${bp}/print_providers/${pp}/shipping.json`, { headers: H });
+        if (!sh.ok) return J({ ok: false, detail: 'shipping HTTP ' + sh.status }, 502, origin);
+        const data = await sh.json();
+        const profiles = data.profiles || [];
+        function pick(cc) { return profiles.find(p => (p.countries || []).includes(cc)); }
+        const prof = pick(country) || pick('REST_OF_THE_WORLD') || profiles[0];
+        if (!prof) return J({ ok: false, detail: 'aucun profil de livraison' }, 502, origin);
+        const first = prof.first_item ? prof.first_item.cost / 100 : null;
+        const add = prof.additional_items ? prof.additional_items.cost / 100 : null;
+        return J({ ok: true, blueprint_id: bp, country, first_item: first, additional_item: add, currency: (prof.first_item && prof.first_item.currency) || 'EUR' }, 200, origin);
+      } catch (e) { return J({ ok: false, detail: String(e && e.message || e), where: 'exception' }, 500, origin); }
+    }
     if (request.method !== 'POST' || url.pathname !== '/order') return J({ ok: false, detail: 'not found' }, 404, origin);
     if (!ALLOW.includes(origin)) return J({ ok: false, detail: 'origin refusée' }, 403, origin);
     if (request.headers.get('x-ld-app') !== APP_TAG) return J({ ok: false, detail: 'app tag invalide' }, 403, origin);
