@@ -716,7 +716,7 @@ function processOrder(method){
 var orderId=genOrderId();
 var total=cartTotal();var _ship=cartShip();
 var ck=S.checkout||ldGetCk();
-var items=S.cart.map(function(i){return {id:i.id,name:i.name,price:i.price,qty:i.qty,size:i.size||"M",garment:i.garment,garmentColor:i.garmentColor,placement:i.placement,theme:i.theme}});
+var items=S.cart.map(function(i){return {id:i.id,name:i.name,price:i.price,qty:i.qty,size:i.size||"M",garment:i.garment,garmentColor:i.garmentColor,placement:i.placement,theme:i.theme,motif:i.motif,logoImg:(i.img&&/^data:image/.test(i.img))?i.img:""}});
 var sheetHTML=buildProductionSheetHTML(orderId),sheetText=buildProductionSheetText(orderId);
 window._ldSheets=window._ldSheets||{};window._ldSheets[orderId]={html:sheetHTML,text:sheetText};
 /* Bon de commande fournisseur AUTO (par fournisseur, white-label) */
@@ -978,7 +978,7 @@ function ldPrintifyAuto(orderId,btn){
  var order=(getOrders()||[]).filter(function(o){return o.id===orderId})[0];
  if(!order){toast("Commande introuvable","error");return;}
  var ck=order.shipping||S.checkout||ldGetCk();
- var items=(order.items||[]).map(function(it){var p=(typeof pBy==="function"&&pBy(it.id))||{};var pr=p._printify||{};return {blueprint_id:pr.blueprint_id||null,garment:it.garment||p.garment||"tee",design:it.theme||it.motif||p.motif||pr.design||"crest",size:it.size||"M",color:(COLOR_NAMES[it.garmentColor||p.garmentColor]||"Noir"),quantity:it.qty||1,placement:it.placement||pr.placement||"chest"};});
+ var items=(order.items||[]).map(function(it){var p=(typeof pBy==="function"&&pBy(it.id))||{};var pr=p._printify||{};return {blueprint_id:pr.blueprint_id||null,garment:it.garment||p.garment||"tee",design:it.motif||p.motif||pr.design||"crest",design_data:it.logoImg||"",size:it.size||"M",color:(COLOR_NAMES[it.garmentColor||p.garmentColor]||"Noir"),quantity:it.qty||1,placement:it.placement||pr.placement||"chest"};});
  if(btn){btn.disabled=true;btn.textContent="⏳ Envoi…";}
  fetch(cfg.worker_url+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:orderId,items:items,address:ck})})
  .then(function(r){return r.json()}).then(function(j){
@@ -994,7 +994,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.36.0"
+        data-version="v1.38.0"
         data-color="#e8b830"
         defer></script>
 

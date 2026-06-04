@@ -77,6 +77,20 @@ export default {
       return hit;
     }
 
+    // Upload base64 → Printify (logos perso), retourne une URL hébergée utilisable en print_areas
+    const upCache = {};
+    async function designSrc(it, design) {
+      const dd = it.design_data || '';
+      if (/^data:image\//.test(dd)) {
+        const key = design || dd.slice(0, 40);
+        if (upCache[key]) return upCache[key];
+        const b64 = dd.split(',')[1] || '';
+        const ur = await fetch(`${API}/uploads/images.json`, { method: 'POST', headers: H, body: JSON.stringify({ file_name: (design || 'logo') + '.png', contents: b64 }) });
+        if (ur.ok) { const uj = await ur.json(); const src = uj.preview_url || uj.id; upCache[key] = src; return src; }
+        warnings.push('upload base64 KO (' + ur.status + ')');
+      }
+      return IMG_BASE + design + '.png';
+    }
     const lineItems = [];
     const warnings = [];
     for (const it of items) {
@@ -87,9 +101,10 @@ export default {
         const { pp, variants } = await resolve(bp);
         const v = pickVariant(variants, colorEn, it.size || 'M');
         if (!v) { warnings.push('variante introuvable ' + bp); continue; }
+        const src = await designSrc(it, design);
         lineItems.push({
           print_provider_id: pp, blueprint_id: bp, variant_id: v.id,
-          print_areas: { front: IMG_BASE + design + '.png' },
+          print_areas: { front: src },
           quantity: Math.max(1, it.quantity || 1)
         });
       } catch (e) { warnings.push(e.message); }
