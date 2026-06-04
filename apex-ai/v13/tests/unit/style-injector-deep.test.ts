@@ -270,3 +270,45 @@ describe('StyleInjector — singleton instance', () => {
     expect(typeof StyleInjector).toBe('function');
   });
 });
+
+describe('StyleInjector — branches restantes (campagne 100%)', () => {
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+  it('getNonce : document undefined → null (61)', () => {
+    const inj = new StyleInjector() as unknown as { getNonce(): string | null };
+    vi.stubGlobal('document', undefined);
+    expect(inj.getNonce()).toBeNull();
+  });
+
+  it('getNonce : querySelector throw → catch null (66)', () => {
+    const inj = new StyleInjector() as unknown as { getNonce(): string | null };
+    vi.spyOn(document, 'querySelector').mockImplementation(() => { throw new Error('dom'); });
+    expect(inj.getNonce()).toBeNull();
+  });
+
+  it('update : replaceSync throw → catch false (136)', () => {
+    const inj = new StyleInjector();
+    (inj as unknown as { sheets: Map<string, unknown> }).sheets.set('x', {
+      id: 'x', css: '', sheet: { replaceSync: () => { throw new Error('r'); } },
+    });
+    expect(inj.update('x', 'body{}')).toBe(false);
+  });
+
+  it('update : sheet sans .sheet ni .el → return false (136)', () => {
+    const inj = new StyleInjector();
+    (inj as unknown as { sheets: Map<string, unknown> }).sheets.set('y', { id: 'y', css: '' });
+    expect(inj.update('y', 'body{}')).toBe(false);
+  });
+
+  it('remove : adoptedStyleSheets accès throw → catch (150)', () => {
+    const inj = new StyleInjector();
+    (inj as unknown as { sheets: Map<string, unknown> }).sheets.set('x', { id: 'x', css: '', sheet: {} });
+    const orig = Object.getOwnPropertyDescriptor(document, 'adoptedStyleSheets');
+    Object.defineProperty(document, 'adoptedStyleSheets', {
+      get() { throw new Error('no adopted'); }, configurable: true,
+    });
+    expect(() => inj.remove('x')).not.toThrow();
+    if (orig) Object.defineProperty(document, 'adoptedStyleSheets', orig);
+    else delete (document as { adoptedStyleSheets?: unknown }).adoptedStyleSheets;
+  });
+});
