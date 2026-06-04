@@ -84,6 +84,16 @@ Depuis déc. 2024, vendre en UE exige une « personne responsable UE ».
 - Section **« EU responsible person »** : laisse les détails par défaut (Kdmc · desarzens.kevin@gmail.com · Monaco) ou « Add my details ». Affiché aux acheteurs pour la conformité — normal.
 - ❌ Ne choisis PAS « Non-EU » (restreint les ventes UE/UK).
 
-## 📨 Emails boutique
-- Contacts + alertes commande envoyés à **desarzens.kevin@gmail.com** (via EmailJS).
-- ⚠️ Vérifie que tes **modèles EmailJS** (`template_contact`, `template_order_confirm`) ont le champ **« To »** = `{{to_email}}` (sinon mets ton email en dur dans le « To » du modèle), sinon l'email n'arrive pas.
+## 📨 Emails boutique (EmailJS — réglage réel)
+Contacts, alertes commande, paiements et newsletter sont tous envoyés à **desarzens.kevin@gmail.com**.
+
+Réglages **réels** câblés dans la boutique :
+- **Service** : `service_4s16z8l` (Gmail, compte kevin desarzens).
+- **Modèle utilisé** : `template_fzva9uf` (« Contact Us ») — le **même** pour les 4 types d'envoi (contact, commande, paiement, newsletter). Chaque email contient un champ **`{{message}}`** avec tout le détail (n° commande, articles, client, adresse…).
+
+✅ **À vérifier une seule fois dans EmailJS** (https://dashboard.emailjs.com → Email Templates → « Contact Us » `template_fzva9uf`) :
+1. Onglet **Settings** du modèle → champ **« To Email »** = `desarzens.kevin@gmail.com` (ou `{{to_email}}`). C'est CE champ qui décide du destinataire.
+2. Onglet **Content** → le corps doit afficher au moins **`{{message}}`** (idéalement aussi `{{title}}`, `{{from_name}}`, `{{reply_to}}`). Si `{{message}}` est présent, tu reçois TOUT (commande + contact) lisible.
+3. **Reply-To** = `{{reply_to}}` → tu réponds directement au client depuis Gmail.
+
+> Pas besoin de créer 4 modèles : un seul « Contact Us » suffit, la boutique compose le bon texte à chaque fois. (Quota gratuit : 200 emails/mois.)
