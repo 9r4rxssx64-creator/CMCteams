@@ -34,6 +34,18 @@ button{cursor:pointer;border:none;background:none}
 #stage{width:100%;height:100%;display:block;border-radius:var(--r)}
 h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:6px 0 10px}
 .grp{margin-bottom:20px}
+details.grp{margin-bottom:9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--panel2);overflow:hidden}
+details.grp>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text);user-select:none;-webkit-tap-highlight-color:transparent}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary::after{content:"▸";margin-left:auto;color:var(--muted);font-size:13px;transition:transform .18s}
+details.grp[open]>summary::after{transform:rotate(90deg)}
+details.grp[open]>summary{border-bottom:1px solid var(--border);color:#fff}
+details.grp>summary:hover{background:#ffffff08}
+details.grp>summary:active{background:#ffffff12}
+details.grp>:not(summary){padding-left:12px;padding-right:12px}
+details.grp[open]>:last-child{padding-bottom:12px}
+details.grp>:nth-child(2){padding-top:11px}
+details.grp h3{display:none}
 .swatches,.garments{display:flex;flex-wrap:wrap;gap:8px}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);cursor:pointer}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
@@ -139,10 +151,10 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 <div class="wrap">
   <!-- LEFT: garment + add layers -->
   <div class="side">
-    <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div></div>
-    <div class="grp"><h3>Emplacement</h3><div class="garments" id="placement"></div></div>
-    <div class="grp"><h3>Couleur</h3><div class="swatches" id="swatches"></div></div>
-    <div class="grp"><h3>Ajouter un calque</h3>
+    <details class="grp" name="ld-left" open><summary>🎽 Vêtement</summary><div class="garments" id="garments"></div></details>
+    <details class="grp" name="ld-left"><summary>📍 Emplacement</summary><div class="garments" id="placement"></div></details>
+    <details class="grp" name="ld-left"><summary>🎨 Couleur</summary><div class="swatches" id="swatches"></div></details>
+    <details class="grp" name="ld-left"><summary>➕ Ajouter un calque</summary>
       <div class="addrow">
         <button class="btn" onclick="document.getElementById('upl').click()">🖼️ Importer image(s)…</button>
         <input type="file" id="upl" accept="image/*,.svg,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none">
@@ -151,20 +163,20 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
         <button class="btn" onclick="Studio.addText()">🔤 Ajouter du texte</button>
       </div>
       <div class="hint">Importe <b>plusieurs</b> images et textes : ils se superposent en calques (montage).</div>
-    </div>
-    <div class="grp" id="aiGrp"><h3>🎨 Générer un design IA</h3>
+    </details>
+    <details class="grp" name="ld-left" id="aiGrp"><summary>✨ Générer un design IA</summary>
       <textarea id="aiPrompt" rows="2" placeholder="Ex : pistolet noir avec une rose rouge dans le canon" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui;resize:vertical"></textarea>
       <button class="btn primary" id="aiBtn" style="width:100%;margin-top:6px" onclick="Studio.aiGen()">✨ Générer</button>
       <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
-    </div>
-    <div class="grp"><h3>⭐ Mes logos créés</h3><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div></div>
-    <div class="grp"><h3>🖼️ Images réelles</h3><div class="emblems" id="realLib"></div>
+    </details>
+    <details class="grp" name="ld-left"><summary>⭐ Mes logos créés</summary><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div></details>
+    <details class="grp" name="ld-left"><summary>🖼️ Images réelles</summary><div class="emblems" id="realLib"></div>
       <input id="webq" placeholder="🔎 Chercher sur le web (cerf, aigle, fusil…)" style="width:100%;margin-top:8px;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" onkeydown="if(event.key==='Enter')Studio.webSearch()">
       <button class="btn" id="webBtn" style="width:100%;margin-top:6px" onclick="Studio.webSearch()">🔎 Chercher sur le web</button>
       <div class="emblems" id="webResults" style="margin-top:8px"></div>
       <div class="hint" id="webHint">Images du web (licence commerciale). Touche le résultat pour l'ajouter. Astuce : « ✂️ Retirer le fond » sur le calque pour un rendu net, ou utilise la génération IA.</div>
-    </div>
-    <div class="grp"><h3>Motifs rapides</h3><div class="emblems" id="emblems"></div></div>
+    </details>
+    <details class="grp" name="ld-left"><summary>⚡ Motifs rapides</summary><div class="emblems" id="emblems"></div></details>
   </div>
 
   <!-- CENTER: stage -->
@@ -174,12 +186,12 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 
   <!-- RIGHT: layers + properties -->
   <div class="side right">
-    <div class="grp"><h3>Calques</h3><div class="layers" id="layers"></div></div>
-    <div class="grp" id="propsWrap"><h3>Propriétés</h3><div id="props"><div class="empty">Sélectionne un calque</div></div></div>
-    <div class="grp"><h3>Zone d'impression</h3>
+    <details class="grp" open><summary>🗂 Calques</summary><div class="layers" id="layers"></div></details>
+    <details class="grp" id="propsWrap" open><summary>🎛 Propriétés</summary><div id="props"><div class="empty">Sélectionne un calque</div></div></details>
+    <details class="grp"><summary>🖨 Zone d'impression</summary>
       <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="zoneChk" checked onchange="Studio.render()"> Afficher le repère</label>
       <div class="hint">Garde ton design dans le repère pour une impression nette.</div>
-    </div>
+    </details>
   </div>
 </div>
 
@@ -311,6 +323,7 @@ function renderLayers(){
 function renderProps(){
  var w=$("props");
  var l=st.layers.filter(function(x){return x.id===st.sel})[0];
+ var pw=document.getElementById("propsWrap");if(pw&&l)pw.open=true;
  if(!l){w.innerHTML='<div class="empty">Sélectionne un calque</div>';return}
  var h='';
  if(l.type==="text"){
