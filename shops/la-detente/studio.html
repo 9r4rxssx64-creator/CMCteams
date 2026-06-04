@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Studio — La Détente (admin)</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dc2626">
@@ -80,16 +80,16 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
 .modal.show{display:flex}
-.modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%}
+.modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal h2{font-size:18px;margin-bottom:16px}
 @media(max-width:860px){.side{width:200px}.side.right{width:220px}}
 @media(max-width:680px){
  .wrap{flex-direction:column;height:auto;overflow-x:hidden;overflow-y:auto}
  .side{width:100%;border:none;border-bottom:1px solid var(--border);max-height:none}
  /* L'aperçu du produit en PREMIER (sinon il est poussé sous la liste d'options) */
- .stage-wrap{order:0;min-height:46vh;max-height:64vh;padding:12px;position:sticky;top:0;z-index:3}
+ .stage-wrap{order:0;min-height:42vh;max-height:56vh;padding:10px;position:sticky;top:0;z-index:3}
  .side{order:1}.side.right{order:2}
- #stageBox{width:min(86vw,52vh)}
+ #stageBox{width:min(80vw,46vh)}
  body{overflow:auto}
 }
 </style>
