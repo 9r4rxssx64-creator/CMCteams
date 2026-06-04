@@ -690,12 +690,12 @@ function ldSupCSV(idx){var o=_ldSupAt(idx);if(!o)return;var ck=S.checkout||ldGet
  document.body.appendChild(a);a.click();a.remove();toast("CSV "+o.name+" téléchargé ✅");}
 
 /* === PRO SHOP UPGRADE v1.8.0 (best-in-class merch features) === */
-var FREE_SHIP=60,SHIP_FEE=4.9;
+var LD_SHIP={FR:{first:4.9,add:1.9,lbl:"France"},MC:{first:4.9,add:1.9,lbl:"Monaco"},EU:{first:6.9,add:2.4,lbl:"Europe"},WORLD:{first:12.9,add:4.9,lbl:"International"}};function shipZone(c){c=(c||"").toLowerCase();if(/monaco|^mc$/.test(c))return"MC";if(/belg|suisse|swiss|luxemb|espagn|spain|itali|allemagn|german|portug|pays-bas|netherl|autrich|irland|gr[eè]ce|greece|pologne|poland|su[eè]de|sweden|danemark|denmark|finland|tch[eè]que|czech|hongr|hungar|roumanie|romania|bulgar|croat|slov|eston|letton|latvia|litua|lithuan|malte|malta|chypre|cyprus/.test(c))return"EU";if(/france|^fr$/.test(c)||!c)return"FR";return"WORLD";}function _shipZoneNow(){return shipZone((S.checkout&&S.checkout.country)||(typeof ldGetCk==="function"?(ldGetCk()||{}).country:"")||"France");}function cartQtyTotal(){return S.cart.reduce(function(s,i){return s+(i.qty||1)},0)}
 var COLOR_NAMES={"#15171a":"Noir","#ececec":"Blanc","#3a4a3f":"Kaki","#3a4636":"Kaki","#0f1722":"Marine","#1c2733":"Ardoise","#3a0f12":"Bordeaux","#1c1e22":"Anthracite"};
 function cartSubtotal(){return S.cart.reduce(function(s,i){return s+i.price*i.qty},0)}
-function cartShip(){return cartSubtotal()>0?SHIP_FEE:0}
+function cartShip(){var n=cartQtyTotal();if(n<=0)return 0;var z=LD_SHIP[_shipZoneNow()]||LD_SHIP.FR;return Math.round((z.first+z.add*Math.max(0,n-1))*100)/100;}
 function cartTotal(){return cartSubtotal()-bulkDiscount()+cartShip()}
-function shipProgressHtml(){return "";}
+function shipProgressHtml(){if(cartQtyTotal()<=0)return "";var z=LD_SHIP[_shipZoneNow()]||LD_SHIP.FR;return '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">\ud83d\ude9a Livraison '+z.lbl+' : '+fmtP(z.first)+' + '+fmtP(z.add)+'/article suppl. <span style="opacity:.85">(tarif Printify estimatif \u2014 port exact confirm\u00e9 \u00e0 la commande)</span></div>';}
 function promobar(){if(localStorage.getItem("ld_promo_hide")==="1")return "";return '<div class="promobar">🚚 Expédition rapide &nbsp;·&nbsp; ↩️ Retours 30 jours &nbsp;·&nbsp; 🔒 Paiement sécurisé &nbsp;·&nbsp; ❤ Entre amis<span class="x" onclick="localStorage.setItem(\'ld_promo_hide\',\'1\');dc()" title="Fermer">✕</span></div>';}
 function wishBadge(){var b=document.getElementById("wish-badge");if(b){var n=JSON.parse(localStorage.getItem("kdmc_wish_"+STORE_ID)||"[]").length;b.textContent=n;b.style.display=n>0?"flex":"none"}}
 function addCartSized(id,size,qty,tier,color,logo,place){var p=P.find(function(x){return x.id===id});if(!p)return;qty=Math.max(1,qty||1);tier=tier||"standard";var q=qOf(tier);var price=qPrice(p.price,tier);size=size||"M";color=color||p.garmentColor;logo=logo||p.motif;place=place||p.placement||"chest";var cn=({"#15171a":"Noir","#ececec":"Blanc","#0f1722":"Marine","#3a4636":"Kaki","#3a4a3f":"Kaki","#1c2733":"Ardoise"})[color]||"";var lg=(typeof ldEffLogos==="function"?ldEffLogos().filter(function(l){return l.id===logo})[0]:null);var lname=lg?lg.name:"";var nm=p.name+(tier!=="standard"?" · "+q.label:"")+(cn&&color!==p.garmentColor?" · "+cn:"")+(logo&&logo!==p.motif&&lname?" · "+lname:"");var cimg=(lg?lg.img:p.img);var ex=S.cart.find(function(x){return x.id===id&&x.size===size&&x.tier===tier&&x.garmentColor===color&&x.motif===logo&&x.placement===place});if(ex){ex.qty+=qty}else{S.cart.push({id:p.id,name:nm,price:price,img:cimg,qty:qty,size:size,tier:tier,material:q.mat,supplier:q.supplier,garment:p.garment,garmentColor:color,motif:logo,placement:place,theme:lname||p.theme})}saveCart();toast(nm+" ("+size+") ajouté au panier");if(typeof trackAddToCartPub==="function")trackAddToCartPub(p.id,price,nm)}
@@ -1082,7 +1082,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.48.0"
+        data-version="v1.49.0"
         data-color="#e8b830"
         defer></script>
 
