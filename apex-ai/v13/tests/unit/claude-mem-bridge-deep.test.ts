@@ -326,3 +326,35 @@ describe('claude-mem-bridge — runSlashCommand', () => {
     expect(r.error).toContain('unknown_action');
   });
 });
+
+describe('claude-mem-bridge — branches atteignables restantes (campagne 100%)', () => {
+  beforeEach(() => { authIsAdminSyncMock.mockReturnValue(true); localStorage.clear(); });
+  afterEach(() => { vi.clearAllMocks(); localStorage.clear(); });
+
+  it('recordLesson : memory.recordLesson throw non-Error (string) → String(err) (78)', () => {
+    // eslint-disable-next-line no-throw-literal -- test du chemin String(err) (non-Error)
+    memoryRecordLessonMock.mockImplementation(() => { throw 'str-lesson'; });
+    const r = claudeMemBridge.recordLesson('cat', 'titre', 'texte', 'warn');
+    expect(r.ok).toBe(false);
+    expect(r.error).toBe('str-lesson');
+  });
+
+  it('export : apex_v13_user JSON invalide → catch interne → user_id null (130)', () => {
+    localStorage.setItem('apex_v13_user', '{bad json');
+    const r = claudeMemBridge.export() as { user_id: string | null };
+    expect(r.user_id).toBeNull();
+  });
+
+  it('export : pas de apex_v13_user → getItem null → `?? "null"` (130)', () => {
+    localStorage.removeItem('apex_v13_user');
+    const r = claudeMemBridge.export() as { user_id: string | null };
+    expect(r.user_id).toBeNull();
+  });
+
+  it('export : window.localStorage absent → ternaire else → user_id null (130 window.localStorage)', () => {
+    vi.stubGlobal('window', {}); // window défini mais sans localStorage
+    const r = claudeMemBridge.export() as { user_id: string | null };
+    expect(r.user_id).toBeNull();
+    vi.unstubAllGlobals();
+  });
+});

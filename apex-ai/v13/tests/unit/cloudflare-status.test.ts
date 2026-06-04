@@ -143,4 +143,42 @@ describe('services/cloudflare-status', () => {
       expect(cloudflareStatus.init).toBeDefined();
     });
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('recordHttp503 : setItem throw → catch quota (41)', () => {
+      vi.stubGlobal('localStorage', {
+        setItem: () => { throw new Error('quota'); }, getItem: () => null, removeItem: () => {}, clear: () => {},
+      });
+      expect(() => recordHttp503()).not.toThrow();
+    });
+
+    it('recordHttpOk : removeItem throw → catch (48)', () => {
+      vi.stubGlobal('localStorage', {
+        removeItem: () => { throw new Error('quota'); }, getItem: () => null, setItem: () => {}, clear: () => {},
+      });
+      expect(() => recordHttpOk()).not.toThrow();
+    });
+
+    it('init : isRecentlyDown getItem throw → catch false (56)', () => {
+      vi.stubGlobal('localStorage', {
+        getItem: () => { throw new Error('ls'); }, setItem: () => {}, removeItem: () => {}, clear: () => {},
+      });
+      expect(() => init()).not.toThrow();
+    });
+
+    it('init : valeur stockée récente → isRecentlyDown true + getItem non-null (`?? "0"` côté gauche)', () => {
+      vi.stubGlobal('localStorage', {
+        getItem: () => String(Date.now()), setItem: () => {}, removeItem: () => {}, clear: () => {},
+      });
+      expect(() => init()).not.toThrow();
+    });
+
+    it('startReprobe : setInterval undefined → guard return (73)', () => {
+      /* recordHttp503 → showBanner → startReprobe ; setInterval absent → garde d\'environnement */
+      vi.stubGlobal('setInterval', undefined);
+      expect(() => recordHttp503()).not.toThrow();
+    });
+  });
 });

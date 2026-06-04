@@ -181,5 +181,20 @@ describe('apex-e2e-trigger (v13.4.140 coverage)', () => {
       const r = await getLastE2EResult();
       expect(r.found).toBe(false);
     });
+
+    it('entrées sans champ ts → `?? 0` dans le sort (140)', async () => {
+      mockFirebase.read.mockResolvedValue({ a: { status: 'ok' }, b: { status: 'fail' } });
+      const r = await getLastE2EResult();
+      expect(r.found).toBe(true);
+    });
+  });
+
+  describe('branches restantes (campagne 100%)', () => {
+    it('triggerE2EWebkit : fetch throw non-Error (string) → String(err) (109)', async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue('str-fetch');
+      const r = await triggerE2EWebkit();
+      expect(r.ok).toBe(false);
+      expect(r.error).toBe('str-fetch');
+    });
   });
 });

@@ -290,4 +290,43 @@ describe('services/crypto-worker-client', () => {
       expect(cryptoWorker.isAvailable()).toBe(false);
     });
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    it('onMessage : id sans pending → return (103)', () => {
+      const priv = cryptoWorker as unknown as { onMessage(e: MessageEvent<unknown>): void };
+      expect(() =>
+        priv.onMessage({ data: { id: 999999, type: 'ok', result: 1 } } as MessageEvent<unknown>),
+      ).not.toThrow();
+    });
+
+    it('cleanup : worker.terminate throw → catch (173)', () => {
+      (cryptoWorker as unknown as { worker: unknown }).worker = { terminate: () => { throw new Error('t'); } };
+      expect(() => cryptoWorker.cleanup()).not.toThrow();
+    });
+
+    it('ensure : déjà permanentlyUnavailable → return false (48)', async () => {
+      (cryptoWorker as unknown as { permanentlyUnavailable: boolean }).permanentlyUnavailable = true;
+      const r = await cryptoWorker.ensure();
+      expect(r).toBe(false);
+      cryptoWorker.cleanup();
+    });
+
+    it('ensure : ready timeout (3s) + terminate throw → catch (83)', async () => {
+      vi.useFakeTimers();
+      cryptoWorker.cleanup();
+      class NoReadyThrowTerm {
+        addEventListener(): void {}
+        removeEventListener(): void {}
+        postMessage(): void {}
+        terminate(): void { throw new Error('term'); }
+      }
+      (globalThis as { Worker?: unknown }).Worker = NoReadyThrowTerm as unknown as typeof Worker;
+      const p = cryptoWorker.ensure();
+      await vi.advanceTimersByTimeAsync(3000);
+      const r = await p;
+      expect(r).toBe(false);
+      vi.useRealTimers();
+      cryptoWorker.cleanup();
+    });
+  });
 });

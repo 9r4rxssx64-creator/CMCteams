@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Studio — La Détente (admin)</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dc2626">
@@ -34,6 +34,20 @@ button{cursor:pointer;border:none;background:none}
 #stage{width:100%;height:100%;display:block;border-radius:var(--r)}
 h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:6px 0 10px}
 .grp{margin-bottom:20px}
+details.grp{margin-bottom:9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--panel2);overflow:hidden}
+details.grp>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text);user-select:none;-webkit-tap-highlight-color:transparent}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary::after{content:"▸";margin-left:auto;color:var(--muted);font-size:13px;transition:transform .18s}
+details.grp[open]>summary::after{transform:rotate(90deg)}
+details.grp[open]>summary{border-bottom:1px solid var(--border);color:#fff}
+details.grp>summary:hover{background:#ffffff08}
+details.grp>summary:active{background:#ffffff12}
+details.grp>:not(summary){padding-left:12px;padding-right:12px}
+details.grp[open]>:last-child{padding-bottom:12px}
+details.grp>:nth-child(2){padding-top:11px}
+details.grp h3{display:none}
+.sublab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 7px;display:flex;align-items:center;gap:6px}
+details.grp>.sublab:nth-child(2){margin-top:3px}
 .swatches,.garments{display:flex;flex-wrap:wrap;gap:8px}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);cursor:pointer}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
@@ -66,7 +80,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 .toast.show{transform:translateX(-50%) translateY(0)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
 .modal.show{display:flex}
-.modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%}
+.modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal .box.wide{max-width:940px;max-height:90vh;overflow:auto}
 .modal h2{font-size:18px;margin-bottom:16px}
 @media(max-width:860px){.side{width:200px}.side.right{width:220px}}
@@ -74,9 +88,9 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
  .wrap{flex-direction:column;height:auto;overflow-x:hidden;overflow-y:auto}
  .side{width:100%;border:none;border-bottom:1px solid var(--border);max-height:none}
  /* L'aperçu du produit en PREMIER (sinon il est poussé sous la liste d'options) */
- .stage-wrap{order:0;min-height:46vh;max-height:64vh;padding:12px;position:sticky;top:0;z-index:3}
+ .stage-wrap{order:0;min-height:42vh;max-height:56vh;padding:10px;position:sticky;top:0;z-index:3}
  .side{order:1}.side.right{order:2}
- #stageBox{width:min(86vw,52vh)}
+ #stageBox{width:min(80vw,46vh)}
  body{overflow:auto}
 }
 </style>
@@ -132,6 +146,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
   <button class="btn ghost" onclick="Studio.exportPrint()">⬇️ Fichier impression</button>
   <button class="btn ghost" onclick="Studio.exportMockup()">🖼️ Mockup PNG</button>
   <button class="btn ghost" onclick="Studio.exportPDF()" title="PDF prêt impression 300 dpi">📄 PDF 300 dpi</button>
+  <button class="btn" onclick="Studio.finishCreation()">💾 Enregistrer / Ranger</button>
   <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
   <a class="btn" href="index.html" title="Retour boutique">↩</a>
 </div>
@@ -139,15 +154,14 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 <div class="wrap">
   <!-- LEFT: garment + add layers -->
   <div class="side">
-    <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div>
+    <details class="grp grp-macro" name="ld-left" open><summary>🎽 Produit</summary>
+      <div class="sublab">👕 Vêtement</div><div class="garments" id="garments"></div>
       <button class="btn primary" style="width:100%;margin-top:8px" onclick="Studio.openCatalog()">🛍️ Catalogue Printify — créer sur un vrai produit</button>
       <div id="pfSel" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
       <button class="btn" id="realBtn" style="width:100%;margin-top:8px" onclick="Studio.toggleRealPhoto()">📸 Photo réelle du produit</button>
-      <div class="hint">Choisis n'importe quel produit du <b>catalogue Printify complet</b> (1408), crée ton design dessus, puis « Ajouter à la boutique ». Bascule dessin / vraie photo avec le bouton ci-dessus.</div>
-    </div>
-    <div class="grp"><h3>Emplacement</h3><div class="garments" id="placement"></div></div>
-    <div class="grp"><h3>🌀 All-Over / Graffiti</h3>
-      <div class="hint">Couvre <b>tout le vêtement</b> façon graffiti / méli-mélo (motifs dans tous les sens). ⚠️ « Imprimé partout » ne rend qu'à l'impression sur un produit <b>All-Over Print (AOP)</b> en <b>polyester</b> (donc <b>pas</b> en coton bio).</div>
+      <div class="sublab">📍 Emplacement</div><div class="garments" id="placement"></div>
+      <div class="sublab">🌀 All-Over / Graffiti</div>
+      <div class="hint">Couvre <b>tout le vêtement</b> façon graffiti / méli-mélo. ⚠️ « Imprimé partout » ne rend qu'à l'impression sur un produit <b>All-Over Print (AOP)</b> en <b>polyester</b>.</div>
       <label style="font-size:12px;display:block;margin:8px 0 2px">Densité (<span id="aoVal">28</span> motifs)</label>
       <input type="range" id="aoDensity" min="8" max="80" step="1" value="28" oninput="var e=document.getElementById('aoVal');if(e)e.textContent=this.value" style="width:100%">
       <div class="addrow" style="margin-top:8px">
@@ -155,10 +169,11 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
         <button class="btn" onclick="Studio.scatter('all')">🔀 Tout en graffiti</button>
         <button class="btn ghost" onclick="Studio.clearScatter()">🧹 Nettoyer le all-over</button>
       </div>
-      <a class="btn" href="index.html?q=aop" style="display:block;text-align:center;margin-top:8px;text-decoration:none">🛍️ Voir les produits AOP de la boutique</a>
-    </div>
-    <div class="grp"><h3>Couleur</h3><div class="swatches" id="swatches"></div></div>
-    <div class="grp"><h3>Ajouter un calque</h3>
+      <a class="btn" href="index.html?q=aop" style="display:block;text-align:center;margin-top:8px;text-decoration:none">🛍️ Voir les produits AOP</a>
+      <div class="sublab">🎨 Couleur</div><div class="swatches" id="swatches"></div>
+    </details>
+    <details class="grp grp-macro" name="ld-left"><summary>➕ Création</summary>
+      <div class="sublab">🖼️ Ajouter un calque</div>
       <div class="addrow">
         <button class="btn" onclick="document.getElementById('upl').click()">🖼️ Importer image(s)…</button>
         <input type="file" id="upl" accept="image/*,.svg,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none">
@@ -166,34 +181,44 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
         <input type="file" id="upldir" webkitdirectory directory multiple style="display:none">
         <button class="btn" onclick="Studio.addText()">🔤 Ajouter du texte</button>
       </div>
-      <div class="hint">Importe <b>plusieurs</b> images et textes : ils se superposent en calques (montage).</div>
-    </div>
-    <div class="grp" id="aiGrp"><h3>🎨 Générer un design IA</h3>
-      <textarea id="aiPrompt" rows="2" placeholder="Ex : pistolet noir avec une rose rouge dans le canon" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui;resize:vertical"></textarea>
-      <button class="btn primary" id="aiBtn" style="width:100%;margin-top:6px" onclick="Studio.aiGen()">✨ Générer</button>
-      <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
-    </div>
-    <div class="grp"><h3>Motifs rapides</h3><div class="emblems" id="emblems"></div></div>
+      <div class="hint">Importe <b>plusieurs</b> images et textes : ils se superposent en calques (montage). Astuce : sélectionne une image puis « ✨ Modifier avec l'IA » à droite pour la retravailler.</div>
+      <div id="aiGrp">
+        <div class="sublab">✨ Générer un design IA</div>
+        <textarea id="aiPrompt" rows="2" placeholder="Ex : pistolet noir avec une rose rouge dans le canon" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui;resize:vertical"></textarea>
+        <button class="btn primary" id="aiBtn" style="width:100%;margin-top:6px" onclick="Studio.aiGen()">✨ Générer</button>
+        <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
+      </div>
+    </details>
+    <details class="grp grp-macro" name="ld-left"><summary>🎨 Bibliothèque</summary>
+      <div class="sublab">⭐ Mes logos créés</div><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div>
+      <div class="sublab">🖼️ Images réelles</div><div class="emblems" id="realLib"></div>
+      <input id="webq" placeholder="🔎 Chercher sur le web (cerf, aigle, fusil…)" style="width:100%;margin-top:8px;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" onkeydown="if(event.key==='Enter')Studio.webSearch()">
+      <button class="btn" id="webBtn" style="width:100%;margin-top:6px" onclick="Studio.webSearch()">🔎 Chercher sur le web</button>
+      <div class="emblems" id="webResults" style="margin-top:8px"></div>
+      <div class="hint" id="webHint">Images du web (licence commerciale). Touche le résultat pour l'ajouter. Astuce : « ✂️ Retirer le fond » sur le calque pour un rendu net, ou utilise la génération IA.</div>
+      <div class="sublab">⚡ Motifs rapides</div><div class="emblems" id="emblems"></div>
+    </details>
   </div>
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:6"><button onclick="Studio.zoomBy(0.8)" title="Zoom +" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">＋</button><button onclick="Studio.zoomBy(1.25)" title="Zoom −" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">−</button><button onclick="Studio.zoomReset()" title="Réinitialiser le zoom" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:14px;cursor:pointer">⟲</button></div></div>
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:6"><button onclick="Studio.zoomBy(0.8)" title="Zoom +" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">＋</button><button onclick="Studio.zoomBy(1.25)" title="Zoom −" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">−</button><button onclick="Studio.zoomReset()" title="Réinitialiser le zoom" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:14px;cursor:pointer">⟲</button></div></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
   <div class="side right">
-    <div class="grp"><h3>Calques</h3><div class="layers" id="layers"></div></div>
-    <div class="grp" id="propsWrap"><h3>Propriétés</h3><div id="props"><div class="empty">Sélectionne un calque</div></div></div>
-    <div class="grp"><h3>Zone d'impression</h3>
+    <details class="grp" open><summary>🗂 Calques</summary><div class="layers" id="layers"></div></details>
+    <details class="grp" id="propsWrap" open><summary>🎛 Propriétés</summary><div id="props"><div class="empty">Sélectionne un calque</div></div></details>
+    <details class="grp"><summary>🖨 Zone d'impression</summary>
       <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="zoneChk" checked onchange="Studio.render()"> Afficher le repère</label>
       <div class="hint">Garde ton design dans le repère pour une impression nette.</div>
-    </div>
+    </details>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 <div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<script src="../_shared/firebase-orders.js" defer></script>
 
 <script>
 var Studio=(function(){
@@ -294,6 +319,8 @@ function render(){
  if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
  renderLayers(); renderProps(); paintRealBtn();
  var ps=document.getElementById("pfSel");if(ps)ps.innerHTML=st.pf?('🛍️ Produit : <b>'+esc(st.pf.title)+'</b> '+esc(st.pf.brand||"")+' <span style="color:var(--p)">#'+st.pf.id+'</span>'):"";
+ var _sl=st.layers.filter(function(x){return x.id===st.sel})[0];
+ var _fab=$("aiFab");if(_fab)_fab.style.display=(_sl&&_sl.type==="image"&&_aiCfg&&_aiCfg.worker_url)?"block":"none";
 }
 /* ---------- PANELS ---------- */
 function renderGarments(){
@@ -311,6 +338,69 @@ function renderEmblems(){
   return '<button class="eb" title="'+e[1]+'" onclick="Studio.addEmblem(\''+e[0]+'\')"><svg viewBox="0 0 '+(e[0]==="emblem"?"240 240":"100 100")+'"><use href="#'+e[0]+'"/></svg></button>';
  }).join("");
 }
+var REAL_LIB=[["real-shotgun-clays","Fusil & Plateaux"],["real-shotgun-rose","Fusil & Rose"],["real-rifle-heart","Carabine"],["real-revolver-rose","Revolver & Rose"],["real-cartridges","Cartouches"],["real-crossed-shotguns","Fusils Croisés"],["real-ar15-heart","AR15"],["rose-pistol","Pistolet & Rose"],["hearts-ar15","AR15 Cœurs"],["hearts-shotgun","Fusil Cœurs"],["hearts-pistol","Pistolet Cœurs"],["hearts-revolver","Revolver Cœurs"],["clays-perazzi","Perazzi"],["real-deer","Cerf"],["real-boar","Sanglier"],["real-duck","Canard"],["real-pheasant","Faisan"],["real-fox","Renard"],["real-hare","Lièvre"],["real-eagle","Aigle"],["real-stag-head","Tête de cerf"]];
+function renderRealLib(){var el=$("realLib");if(!el)return;el.innerHTML=REAL_LIB.map(function(e){return '<button class="eb" title="'+e[1]+'" onclick="Studio.addImageURL(\'img/designs/'+e[0]+'.png\')"><img src="img/designs/'+e[0]+'.png" style="width:100%;height:100%;object-fit:contain" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join("");}
+function _myLogos(){try{return JSON.parse(localStorage.getItem("ld_logos_cache")||"[]")}catch(_){return[]}}
+function renderMyLogos(){var el=$("myLogos");if(!el)return;var L=_myLogos();var h=$("myLogosHint");el.innerHTML=L.length?L.map(function(l,i){return '<button class="eb" title="'+esc(l.name||"Logo")+'" onclick="Studio.addMyLogo('+i+')"><img src="'+l.img+'" style="width:100%;height:100%;object-fit:contain"></button>';}).join(""):'';if(h)h.style.display=L.length?"none":"block";}
+function addMyLogo(i){var L=_myLogos();if(L[i])addImageURL(L[i].img);}
+function syncMyLogos(){if(window.kdmcFetchLogos)window.kdmcFetchLogos("la-detente",function(arr){if(arr&&arr.length){try{var cur=_myLogos();var ids={};cur.forEach(function(x){ids[x.id]=1});arr.forEach(function(a){if(a&&a.id&&!ids[a.id])cur.push(a)});localStorage.setItem("ld_logos_cache",JSON.stringify(cur));}catch(_){}renderMyLogos();}});}
+function addImageURL(url){if(!url)return;var img=new Image();try{img.crossOrigin="anonymous"}catch(_){}img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?42:42*ar,hh=ar>=1?42/ar:42;addLayer({type:"image",href:url,orig:url,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée ✅");};img.onerror=function(){var i2=new Image();i2.onload=function(){addLayer({type:"image",href:url,orig:url,w:42,h:42,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée (sans CORS — l'export pourra nécessiter l'IA ou une image locale)","info");};i2.onerror=function(){toast("Image inaccessible","error")};i2.src=url;};img.src=url;}
+function webSearch(){var q=($("webq")||{}).value;q=(q||"").trim();if(q.length<2){toast("Tape ce que tu cherches","error");return;}var b=$("webBtn");if(b){b.disabled=true;b.textContent="⏳ Recherche…";}var r=$("webResults");if(r)r.innerHTML="";
+ fetch("https://api.openverse.org/v1/images/?q="+encodeURIComponent(q)+"&license_type=commercial&mature=false&page_size=12").then(function(x){return x.ok?x.json():null}).then(function(j){
+  if(b){b.disabled=false;b.textContent="🔎 Chercher sur le web";}
+  var res=(j&&j.results)||[];if(!res.length){if(r)r.innerHTML='<div class="hint">Aucun résultat. Essaie un autre mot, ou utilise la génération IA.</div>';return;}
+  if(r)r.innerHTML=res.map(function(im){var th=im.thumbnail||im.url;var full=im.url||im.thumbnail;return '<button class="eb" title="'+(esc(im.title||"")+" — "+esc(im.license||"")).slice(0,80)+'" onclick="Studio.addImageURL(\''+String(full).replace(/'/g,"%27")+'\')"><img src="'+th+'" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join("");
+ }).catch(function(){if(b){b.disabled=false;b.textContent="🔎 Chercher sur le web";}if(r)r.innerHTML='<div class="hint">Recherche indisponible (réseau). Réessaie ou utilise l\'IA.</div>';});
+}
+function saveAsLogo(){if(!st.layers.length){toast("Ajoute au moins un calque");return;}var nm=prompt("Nom du logo :","Logo La Détente");if(nm===null)return;svgToPng(buildSVG(1024,false,null),1024,function(data){var logo={id:"logo_"+Date.now().toString(36),name:(nm||"Logo").slice(0,40),img:data,ts:Date.now()};try{var arr=JSON.parse(localStorage.getItem("ld_logos_cache")||"[]");arr.push(logo);localStorage.setItem("ld_logos_cache",JSON.stringify(arr));}catch(_){}if(window.kdmcPublishLogo){window.kdmcPublishLogo("la-detente",logo).then(function(){toast("✅ Logo enregistré (boutique + studio)")}).catch(function(){toast("✅ Logo enregistré localement")});}else{toast("✅ Logo enregistré — dispo ici et dans Admin → Logos");}renderMyLogos();});}
+/* ===== Fin de création : ranger (auto-organisé) ou effacer ===== */
+function _autoCat(){
+ var hay="",hasText=false,hasImg=false,firstText="";
+ st.layers.forEach(function(l){
+  if(l.type==="text"){hasText=true;hay+=" "+(l.text||"");if(!firstText&&(l.text||"").trim())firstText=l.text.trim();}
+  else if(l.type==="image"){hasImg=true;hay+=" "+(l.orig||l.href||"");}
+  else if(l.type==="emblem"){hay+=" "+(l.sym||"");}
+ });
+ var n=hay.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+ function has(re){return re.test(n);}
+ var cat="Mes créations",tags=[];
+ if(has(/ball.?trap|plateau|clay|perazzi/)){cat="Ball-Trap";tags.push("ball-trap");}
+ else if(has(/cerf|deer|stag|sanglier|boar|canard|duck|faisan|pheasant|renard|fox|lievre|hare|aigle|eagle|chasse|animal|paw|pine|feather|antler/)){cat="Chasse & Animaux";tags.push("chasse");}
+ else if(has(/ar15|fusil|carabine|pistolet|revolver|glock|arme|gun|shotgun|rifle|crossed|cartridge|cartouche|tir/)){cat="Armes & Tir";tags.push("tir");}
+ else if(has(/coeur|cœur|heart|rose|amour|entre.?amis/)){cat="Cœur & Entre amis";tags.push("cœur");}
+ else if(hasText&&!hasImg){cat="Textes & Slogans";tags.push("texte");}
+ if(has(/coeur|cœur|heart/)&&tags.indexOf("cœur")<0)tags.push("cœur");
+ if(hasText)tags.push("texte");if(hasImg)tags.push("image");
+ tags=tags.filter(function(t,i){return tags.indexOf(t)===i;});if(!tags.length)tags=["ma création"];
+ return {cat:cat,tags:tags,name:(firstText||cat).slice(0,30)};
+}
+function finishCreation(){
+ if(!st.layers.length){toast("Ajoute au moins un calque pour créer");return;}
+ var ac=_autoCat();
+ svgToPng(buildSVG(420,false,null),420,function(thumb){
+  modal('<h2 style="margin:0 0 6px;font-size:17px">✅ Ta création est prête</h2>'
+   +'<div style="display:flex;gap:14px;align-items:center;margin:8px 0 14px">'
+   +'<img src="'+thumb+'" style="width:84px;height:84px;border-radius:10px;border:1px solid var(--border);background:#0b0d0f;object-fit:contain;flex:none">'
+   +'<div style="font-size:12px;color:var(--muted);line-height:1.55">Rangée automatiquement dans :<br><b style="color:#fff;font-size:14px">📚 '+esc(ac.cat)+'</b></div></div>'
+   +'<label style="font-size:11px;color:var(--muted)">Nom (optionnel)</label>'
+   +'<input id="finishName" value="'+esc(ac.name)+'" maxlength="50" style="width:100%;box-sizing:border-box;margin:5px 0 14px;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:10px;font:500 13px system-ui">'
+   +'<div style="display:flex;flex-direction:column;gap:8px">'
+   +'<button class="btn primary" style="width:100%" onclick="Studio.saveToLibrary()">📚 Enregistrer dans la bibliothèque</button>'
+   +'<button class="btn" style="width:100%;border-color:#7a2230;background:#3a1118;color:#ffd0d0" onclick="Studio.clearCanvas()">🗑 Effacer et recommencer</button>'
+   +'<button class="btn ghost" style="width:100%" onclick="Studio.closeModal()">↩︎ Continuer l\'édition</button>'
+   +'</div>');
+ });
+}
+function saveToLibrary(){
+ var nm=(($("finishName")||{}).value||"").trim();var ac=_autoCat();
+ svgToPng(buildSVG(1024,false,null),1024,function(data){
+  var logo={id:"logo_"+Date.now().toString(36),name:(nm||ac.name||"Création").slice(0,50),img:data,ts:Date.now(),cat:ac.cat,tags:ac.tags,source:"studio"};
+  try{var arr=JSON.parse(localStorage.getItem("ld_logos_cache")||"[]");arr.push(logo);localStorage.setItem("ld_logos_cache",JSON.stringify(arr));}catch(_){}
+  if(window.kdmcPublishLogo){window.kdmcPublishLogo("la-detente",logo).catch(function(){});}
+  renderMyLogos();closeModal();toast("📚 Rangé dans « "+ac.cat+" »");
+ });
+}
+function clearCanvas(){snap();st.layers=[];st.sel=null;render();closeModal();toast("🗑 Création effacée — à toi de jouer");}
 function renderLayers(){
  var c=$("layers");
  if(!st.layers.length){c.innerHTML='<div class="empty">Aucun calque.<br>Importe une image, ajoute du texte ou un emblème.</div>';return}
@@ -327,6 +417,7 @@ function renderLayers(){
 function renderProps(){
  var w=$("props");
  var l=st.layers.filter(function(x){return x.id===st.sel})[0];
+ var pw=document.getElementById("propsWrap");if(pw&&l)pw.open=true;
  if(!l){w.innerHTML='<div class="empty">Sélectionne un calque</div>';return}
  var h='';
  if(l.type==="text"){
@@ -345,6 +436,7 @@ function renderProps(){
   h+=field("Seuil fond ("+(l._thr||30)+")",'<input type="range" min="5" max="140" step="1" value="'+(l._thr||30)+'" oninput="Studio.setThr('+l.id+',+this.value)">');
   h+='<div class="row2"><button class="mini" onclick="Studio.bgRemove('+l.id+')">✂️ Retirer le fond</button><button class="mini" onclick="Studio.autoTrim('+l.id+')">⌗ Recadrer</button></div>';
   h+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);color:#fff" onclick="Studio.imgEdit('+l.id+')">✏️ Retoucher (gomme · magique · recadrer)</button>';
+  if(_aiCfg&&_aiCfg.worker_url)h+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);background:#dc26261a;color:#fff" onclick="Studio.aiEdit('+l.id+')">✨ Modifier avec l\'IA (transforme la photo)</button>';
   h+='<button class="mini" style="width:100%;margin-top:8px" onclick="Studio.resetImg('+l.id+')">↺ Image d\'origine</button>';
   h+='<h3 style="margin-top:14px">Filtres</h3>';
   h+=rngF(l.id,"br","Luminosité",f.br==null?1:f.br,0,2,0.05)+rngF(l.id,"ct","Contraste",f.ct==null?1:f.ct,0,2,0.05)+rngF(l.id,"sat","Saturation",f.sat==null?1:f.sat,0,2,0.05)+rngF(l.id,"gray","Noir & blanc",f.gray||0,0,1,0.05);
@@ -488,7 +580,7 @@ function autoTrim(id){var l=get(id);if(!l)return;var im=new Image();im.onload=fu
 
 /* ---------- INIT ---------- */
 function init(){
- renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();loadDefaultMocks();
+ renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();loadDefaultMocks();renderRealLib();renderMyLogos();syncMyLogos();
  // seed with brand emblem
  var _sp=new URLSearchParams(location.search), _qd=_sp.get("design");
  if(_qd&&/^[a-z0-9-]+$/.test(_qd)){var _u="img/designs/"+_qd+".png";var _im=new Image();_im.onload=function(){var ar=(_im.width&&_im.height)?_im.width/_im.height:1;addLayer({type:"image",href:_u,orig:_u,w:ar>=1?44:44*ar,h:ar>=1?44/ar:44,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});};_im.onerror=function(){};_im.src=_u;}
@@ -529,6 +621,49 @@ function aiGen(){
     else{hint.textContent="⚠️ "+((res.j&&(res.j.error||res.j.detail))||"échec génération");}
   }).catch(function(e){hint.textContent="⚠️ Réseau : "+e.message;})
   .then(function(){btn.disabled=false;btn.textContent=old;});
+}
+/* ===== Édition d'une PHOTO importée par l'IA (image-to-image) ===== */
+function _rasterize(src,max,cb){
+ var img=new Image();try{img.crossOrigin="anonymous"}catch(_){}
+ img.onload=function(){
+  var w=img.naturalWidth||512,hh=img.naturalHeight||512;
+  var sc=Math.min(1,(max||1024)/Math.max(w,hh));
+  var cw=Math.max(1,Math.round(w*sc)),ch=Math.max(1,Math.round(hh*sc));
+  var c=document.createElement("canvas");c.width=cw;c.height=ch;
+  try{c.getContext("2d").drawImage(img,0,0,cw,ch);cb(c.toDataURL("image/jpeg",0.92));}catch(e){cb(null);}
+ };
+ img.onerror=function(){cb(null)};
+ img.src=src;
+}
+function aiEdit(id){
+ if(id==null)id=st.sel;
+ var l=get(id);if(!l||l.type!=="image"){toast("Sélectionne d'abord une image (importée ou ajoutée)");return}
+ if(!_aiCfg||!_aiCfg.worker_url){toast("Service IA non configuré (worker en attente de déploiement)","info");return}
+ var chips=["Style gravure noir & blanc","Style cartoon vectoriel net","Fond transparent, sujet isolé","Style aquarelle artistique","Style tatouage chasse","Couleurs plus vives et contrastées","Style croquis au crayon","Ajoute un cœur rouge discret","Style pop art","Ligne minimaliste (one-line)","Effet vintage rétro délavé","Style néon lumineux","Fond uni noir profond","Look premium luxe doré","Silhouette ultra-contrastée","Motif camouflage militaire","Peinture à l'huile","Netteté HD, plus de détails","Style pochoir 2 couleurs","Effet broderie / patch brodé"];
+ modal('<h2 style="margin:0 0 10px;font-size:17px">✨ Modifier la photo avec l\'IA</h2>'
+  +'<p style="font-size:12px;color:var(--muted);margin:0 0 10px">Décris ce que l\'IA doit faire sur l\'image sélectionnée : modifier, styliser, nettoyer, transformer…</p>'
+  +'<textarea id="aiEditP" rows="3" placeholder="Ex : transforme cette photo en style gravure noir et blanc" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:10px;font:500 13px system-ui;resize:vertical"></textarea>'
+  +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">'+chips.map(function(c){return '<button class="mini" onclick="var t=document.getElementById(\'aiEditP\');t.value=this.textContent;t.focus()">'+c+'</button>'}).join("")+'</div>'
+  +'<div id="aiEditHint" style="font-size:12px;color:var(--muted);min-height:16px;margin-bottom:8px"></div>'
+  +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" onclick="Studio.closeModal()">Annuler</button><button class="btn primary" id="aiEditBtn" onclick="Studio.aiEditRun('+id+')">✨ Modifier</button></div>');
+}
+function aiEditRun(id){
+ var l=get(id);if(!l)return;
+ var tp=$("aiEditP"),hint=$("aiEditHint"),btn=$("aiEditBtn");
+ var p=((tp&&tp.value)||"").trim();
+ if(!p){if(hint)hint.textContent="Écris une consigne.";return}
+ if(!_aiCfg||!_aiCfg.worker_url){if(hint)hint.textContent="Service IA non configuré.";return}
+ if(btn){btn.disabled=true;btn.textContent="… traitement";}
+ if(hint)hint.textContent="L'IA retravaille ta photo (10-25 s)…";
+ _rasterize(l.href,1024,function(data){
+  if(!data){if(hint)hint.textContent="⚠️ Cette image (web) interdit la copie. Importe une photo via 📁/🖼️ pour la modifier.";if(btn){btn.disabled=false;btn.textContent="✨ Modifier";}return}
+  fetch(_aiCfg.worker_url,{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":_aiCfg.app_tag||"ld-studio-v1"},body:JSON.stringify({prompt:p,image:data})})
+   .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+   .then(function(res){
+     if(res.ok&&res.j&&res.j.image){snap();if(!l.orig)l.orig=l.href;l.href=res.j.image;render();closeModal();toast("✅ Photo modifiée par l'IA ("+(res.j.model||"IA")+")");}
+     else{if(hint)hint.textContent="⚠️ "+((res.j&&(res.j.detail||res.j.error))||"échec");if(btn){btn.disabled=false;btn.textContent="✨ Modifier";}}
+   }).catch(function(e){if(hint)hint.textContent="⚠️ Réseau : "+e.message;if(btn){btn.disabled=false;btn.textContent="✨ Modifier";}});
+ });
 }
 /* ===== Historique (annuler/refaire) + presse-papier ===== */
 st._hist=[];st._fut=[];
@@ -670,7 +805,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>

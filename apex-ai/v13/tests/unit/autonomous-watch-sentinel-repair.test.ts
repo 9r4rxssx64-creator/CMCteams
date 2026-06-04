@@ -210,4 +210,39 @@ describe('services/sentinel-auto-repair', () => {
       expect(r.msg).toContain('Reset 1 stale writes');
     });
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('securityRebuildChain : autoRepair throw non-Error (string) → String(err) (52)', async () => {
+      mockAuditLog.autoRepair.mockRejectedValue('str-corrupt');
+      const r = await sentinelAutoRepair.securityRebuildChain();
+      expect(r.ok).toBe(false);
+      expect(r.msg).toContain('str-corrupt');
+    });
+
+    it('conflictMergeResolve : setItem throw → catch quota silencieux (78)', async () => {
+      const stale = JSON.stringify([{ status: 'flushing', ts: 0, key: 'x' }]);
+      vi.stubGlobal('localStorage', {
+        getItem: () => stale,
+        setItem: () => { throw new Error('quota'); },
+        removeItem: () => {}, clear: () => {},
+      });
+      const r = await sentinelAutoRepair.conflictMergeResolve();
+      expect(r.ok).toBe(true); // setItem échoue mais reset comptabilisé → ok
+      expect(r.msg).toContain('Reset 1 stale writes');
+    });
+
+    it('conflictMergeResolve : getItem throw non-Error (string) → outer catch String(err) (96)', async () => {
+      vi.stubGlobal('localStorage', {
+        // eslint-disable-next-line no-throw-literal -- test du chemin String(err) (non-Error)
+        getItem: () => { throw 'str-ls'; },
+        setItem: () => {}, removeItem: () => {}, clear: () => {},
+      });
+      const r = await sentinelAutoRepair.conflictMergeResolve();
+      expect(r.ok).toBe(false);
+      expect(r.msg).toContain('merge fail');
+      expect(r.msg).toContain('str-ls');
+    });
+  });
 });

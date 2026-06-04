@@ -226,8 +226,9 @@ class AISafety {
     if (tokensA.size === 0 && tokensB.size === 0) return { consistent: true, similarity: 1, method: 'jaccard_heuristic' };
     /* Jaccard similarity */
     const intersection = [...tokensA].filter((t) => tokensB.has(t)).length;
+    /* Le guard ci-dessus garantit ≥1 set non-vide → union ≥ 1 (jamais 0 ici). */
     const union = new Set([...tokensA, ...tokensB]).size;
-    const similarity = union === 0 ? 0 : intersection / union;
+    const similarity = intersection / union;
     if (similarity < 0.3) {
       void auditLog.record('ai-safety.hallucination', { details: { similarity, lenA: responseA.length, lenB: responseB.length, method: 'jaccard_heuristic' } });
       return { consistent: false, similarity, method: 'jaccard_heuristic', flag: 'major_divergence' };
