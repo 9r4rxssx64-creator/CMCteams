@@ -241,7 +241,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 <script>
 var STORE_ID="la-detente";
 var STORE_NAME="La Détente";
-var CATS=[{"id":"designs","name":"Designs ★","icon":"🔥"},{"id":"bio","name":"Bio Stanley/Stella","icon":"🌱"},{"id":"tshirts","name":"T-shirts","icon":"👕"},{"id":"sweats","name":"Sweats & Hoodies","icon":"🧥"},{"id":"polos","name":"Polos","icon":"🎽"},{"id":"casquettes","name":"Casquettes & Bobs","icon":"🧢"},{"id":"accessoires","name":"Accessoires","icon":"🎒"},{"id":"packs","name":"Packs","icon":"🎁"},{"id":"perso","name":"Personnalisé","icon":"✨"}];
+var CATS=[{"id":"designs","name":"Designs ★","icon":"🔥"},{"id":"bio","name":"Bio Stanley/Stella","icon":"🌱"},{"id":"tshirts","name":"T-shirts","icon":"👕"},{"id":"sweats","name":"Sweats & Hoodies","icon":"🧥"},{"id":"polos","name":"Polos","icon":"🎽"},{"id":"casquettes","name":"Casquettes & Bobs","icon":"🧢"},{"id":"accessoires","name":"Accessoires","icon":"🎒"},{"id":"bas","name":"Bas & Joggings","icon":"👖"},{"id":"mugs","name":"Mugs & Bouteilles","icon":"☕"},{"id":"maison","name":"Maison & Déco","icon":"🏠"},{"id":"enfants","name":"Enfants & Bébé","icon":"🧸"},{"id":"autres","name":"Autres","icon":"📦"},{"id":"packs","name":"Packs","icon":"🎁"},{"id":"perso","name":"Personnalisé","icon":"✨"}];
 function gMock(g,color,motif){var box={tee:[34,32,32,32],hoodie:[34,40,32,32],polo:[36,36,28,28],cap:[40,26,20,20],tote:[33,30,34,34],bandana:[36,40,28,28]}[g]||[34,34,32,32];if(motif==="emblem"&&g!=="cap"){box=[box[0]-2,box[1]-1,box[2]+4,box[3]+4];}return '<svg style="width:100%;height:100%;display:block" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+'<g style="color:'+color+'"><use href="#g-'+g+'"/></g>'+'<use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/></svg>';}function _b(id,name,cat,g,color,motif,price,orig,mat,rate,rev,stock,tags){return {id:id,name:name,cat:cat,price:price,origPrice:orig,img:gMock(g,color,motif),rating:rate,reviews:rev,desc:name+" — \u00e9dition La D\u00e9tente. "+mat+", impression haute t\u00e9nacit\u00e9, motif c\u0153ur rouge. Tailles S \u00e0 XXL. Entre amis, vise juste.​",material:mat,tags:tags,sizes:["S","M","L","XL","XXL"],stock:stock,shipping:"standard",garment:g,garmentColor:color,motif:motif,placement:"chest"};}var P=[];
 try{var _c=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");if(_c&&_c.length){_c.forEach(function(q){q.sizes=q.sizes||["S","M","L","XL","XXL"];q.rating=q.rating||5;q.reviews=q.reviews||0});P=_c.concat(P);}}catch(_){}
 P.forEach(function(p){if(/^ld\d/.test(p.id))p.img="img/products/"+p.id+".png"});
@@ -273,6 +273,34 @@ function ldIntegrateStanley(items){
       _bio:true,_new:true,_printify:{blueprint_id:it.id,category:cat,design:"crest",placement:"chest"}});
   });
   if(add.length){P=P.concat(add);}
+  return add.length;
+}
+/* Intègre TOUT le catalogue Printify (toutes catégories) dans la boutique, vraies photos + fabricable */
+function ldIntegrateCatalog(cats){
+  if(!cats)return 0;
+  var MAP={tshirt:"tshirts",longsleeve:"tshirts",tank:"tshirts",hoodie:"sweats",sweatshirt:"sweats",jacket:"sweats",polo:"polos",hat:"casquettes",bag:"accessoires",accessory:"accessoires",pants:"bas",mug:"mugs",home:"maison",kids:"enfants",other:"autres"};
+  var PRICE={tshirts:29.9,sweats:49.9,polos:39.9,casquettes:24.9,accessoires:19.9,bas:44.9,mugs:16.9,maison:29.9,enfants:24.9,autres:24.9};
+  var GAR={tshirts:"tee",sweats:"hoodie",polos:"polo",casquettes:"cap",accessoires:"tote",bas:"jogger",mugs:"tote",maison:"tote",enfants:"tee",autres:"tee"};
+  var add=[],ids={};
+  Object.keys(cats).forEach(function(k){
+    if(k==="top"||k==="stanley")return;
+    var bcat=MAP[k]||"autres";
+    (cats[k].items||[]).forEach(function(it){
+      if(/stanley|stella/i.test(it.brand||""))return;
+      var id="ld-pf-"+it.id;if(ids[id]||P.some(function(p){return p.id===id}))return;ids[id]=1;
+      var nm=(it.title||"").replace(/^(unisex|men'?s|women'?s|adult|youth)\s+/i,"").replace(/\s+/g," ").trim()||("Produit #"+it.id);
+      var price=PRICE[bcat]||24.9,g=GAR[bcat]||"tee";
+      var oneSize=(bcat==="casquettes"||bcat==="mugs"||bcat==="maison"||bcat==="accessoires");
+      add.push({id:id,name:nm,cat:bcat,price:price,origPrice:Math.round(price*1.25*10)/10,
+        img:(it.image?it.image:gMock(g,"#15171a","heart")),rating:4.8,reviews:0,
+        desc:nm+" — "+(it.brand||"Printify")+". Impression à la demande premium, design La Détente au choix sur la fiche produit. Qualité + taille à la commande. Expédié au nom de la boutique.",
+        material:"Print-on-demand premium · "+(it.brand||""),tags:["printify",(it.brand||"").toLowerCase(),k],
+        sizes:(oneSize?["Unique"]:["S","M","L","XL","XXL"]),stock:50,shipping:"standard",
+        garment:g,garmentColor:"#15171a",motif:"heart",placement:"chest",
+        _printify:{blueprint_id:it.id,category:k,design:"crest",placement:"chest"}});
+    });
+  });
+  if(add.length)P=P.concat(add);
   return add.length;
 }
 /* DESIGNS PHOTORÉALISTES — vraies images d'armes (Gemini), affichées telles quelles sur la carte */
@@ -1049,7 +1077,7 @@ if(window.kdmcFetchLogos)kdmcFetchLogos(STORE_ID,function(arr){if(arr&&arr.lengt
 /* Worker de commande Printify (envoi auto) */
 window._ldOrderCfg=null;
 try{fetch("printify-order-config.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.worker_url)window._ldOrderCfg=j;}).catch(function(){});}catch(_){}
-try{fetch("printify-blueprints.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.categories&&j.categories.stanley){var n=ldIntegrateStanley(j.categories.stanley.items);if(n&&typeof dc==="function")dc();}}).catch(function(){});}catch(_){}
+try{fetch("printify-blueprints.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.categories){var n=0;if(j.categories.stanley)n+=ldIntegrateStanley(j.categories.stanley.items);n+=ldIntegrateCatalog(j.categories);if(n&&typeof dc==="function")dc();}}).catch(function(){});}catch(_){}
 function _ldCountryName(c){return c||"France"}
 function ldPrintifyAuto(orderId,btn){
  var cfg=window._ldOrderCfg;
@@ -1074,7 +1102,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.41.0"
+        data-version="v1.42.0"
         data-color="#e8b830"
         defer></script>
 
