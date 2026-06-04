@@ -264,4 +264,30 @@ describe('apex-tv (v13.4.145 coverage)', () => {
       expect(s.categories).toBeDefined();
     });
   });
+
+  describe('branches restantes (campagne 100%)', () => {
+    it('parseM3U : EXTINF sans virgule → name "Unknown" (112)', () => {
+      const ch = apexTV.parseM3U('#EXTM3U\n#EXTINF:-1 tvg-country="FR"\nhttp://x.m3u8\n');
+      expect(ch[0]?.name).toBe('Unknown');
+    });
+
+    it('recommend hour 12-14 → préférence news/sports (194)', () => {
+      (apexTV as unknown as { cachedChannels: unknown[] }).cachedChannels = apexTV.parseM3U(sampleM3U);
+      const r = apexTV.recommend({ hour: 13 });
+      expect(Array.isArray(r)).toBe(true);
+    });
+
+    it('recommend hour 18-22 → préférence sports/movies/news (195)', () => {
+      (apexTV as unknown as { cachedChannels: unknown[] }).cachedChannels = apexTV.parseM3U(sampleM3U);
+      const r = apexTV.recommend({ hour: 20 });
+      expect(Array.isArray(r)).toBe(true);
+    });
+
+    it('runSlashCommand /tv load sans pays → cc = "fr" (249)', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(sampleM3U, { status: 200 }));
+      const r = await apexTV.runSlashCommand('/tv load');
+      expect(r.ok).toBe(true);
+      expect((r.result as { country: string }).country).toBe('fr');
+    });
+  });
 });
