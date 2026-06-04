@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.3.0 -->
+<!-- La Détente — Studio (admin) v1.4.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -138,7 +138,10 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 <div class="wrap">
   <!-- LEFT: garment + add layers -->
   <div class="side">
-    <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div></div>
+    <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div>
+      <button class="btn" id="realBtn" style="width:100%;margin-top:8px" onclick="Studio.toggleRealPhoto()">📸 Photo réelle du produit</button>
+      <div class="hint">Bascule entre le dessin et la <b>vraie photo du produit</b> (Printify). Ton design reste posé dans la zone d'impression.</div>
+    </div>
     <div class="grp"><h3>Emplacement</h3><div class="garments" id="placement"></div></div>
     <div class="grp"><h3>🌀 All-Over / Graffiti</h3>
       <div class="hint">Couvre <b>tout le vêtement</b> façon graffiti / méli-mélo (motifs dans tous les sens). ⚠️ « Imprimé partout » ne rend qu'à l'impression sur un produit <b>All-Over Print (AOP)</b> en <b>polyester</b> (donc <b>pas</b> en coton bio).</div>
@@ -211,7 +214,13 @@ var COLORS=["#15171a","#ffffff","#2f4538","#3a4636","#5a6650","#0f1722","#1d3a5f
 var EMBLEMS=[["heart","Cœur"],["th-visejuste","Vise Juste"],["th-entreamis","Entre Amis"],["th-tir","Cible"],["th-prec","Précision"],["th-arrows","Flèches"],["th-balltrap","Ball-Trap"],["th-clay","Plateau"],["th-chasse","Chasse"],["th-stag","Cerf"],["th-antler","Bois de Cerf"],["th-shells","Cartouches"],["th-duck","Canard"],["th-feather","Plume"],["th-pine","Sapin"],["th-mountain","Montagne"],["th-paw","Empreinte"]];
 var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script MT"];
 
-var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1};
+/* Photos RÉELLES du produit (récupérées de Printify par le workflow printify-mockups). Repli auto sur le dessin si absentes. */
+var MOCK={tee:"img/mockups/tee.png",hoodie:"img/mockups/hoodie.png",polo:"img/mockups/polo.png",cap:"img/mockups/cap.png",tote:"img/mockups/tote.png",tank:"img/mockups/tank.png",shirt:"img/mockups/shirt.png",zip:"img/mockups/zip.png",bandana:"img/mockups/bandana.png",jogger:"img/mockups/jogger.png",short:"img/mockups/short.png"};
+var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:false,mockReady:{}};
+function preloadMocks(){Object.keys(MOCK).forEach(function(g){var im=new Image();im.onload=function(){st.mockReady[g]=true;paintRealBtn()};im.onerror=function(){st.mockReady[g]=false;paintRealBtn()};im.src=MOCK[g];});}
+function realAvailable(){return !!(MOCK[st.garment]&&st.mockReady[st.garment]);}
+function toggleRealPhoto(){if(!realAvailable()){toast("📸 Photo réelle pas encore dispo pour ce produit — active Printify (token)");return}st.realphoto=!st.realphoto;render();}
+function paintRealBtn(){var b=document.getElementById("realBtn");if(!b)return;var ok=realAvailable();b.textContent=st.realphoto?"✏️ Revenir au dessin":"📸 Photo réelle du produit";b.style.opacity=ok?"1":".5";b.title=ok?"Voir ton design sur la vraie photo du produit (Printify)":"Photos réelles indisponibles tant que le token Printify n'est pas configuré";}
 
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -247,7 +256,10 @@ function stageInner(forExport,withGarment){
  var g=gobj();
  var s='';
  if(!forExport){s+='<rect x="0" y="0" width="100" height="100" rx="3" fill="#d2d5d9"/>';}
- if(withGarment!==false){s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
+ if(withGarment!==false){
+   if(st.realphoto&&MOCK[st.garment]&&st.mockReady[st.garment]){s+='<image href="'+MOCK[st.garment]+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
+   else{s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
+ }
  st.layers.forEach(function(l){s+=layerSVG(l)});
  if(!forExport && $("zoneChk").checked){
    var z=curZone();
@@ -264,7 +276,7 @@ function render(){
  var stage=$("stage");
  stage.innerHTML=spriteDefs()+stageInner(false);
  if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
- renderLayers(); renderProps();
+ renderLayers(); renderProps(); paintRealBtn();
 }
 /* ---------- PANELS ---------- */
 function renderGarments(){
@@ -454,7 +466,7 @@ function autoTrim(id){var l=get(id);if(!l)return;var im=new Image();im.onload=fu
 
 /* ---------- INIT ---------- */
 function init(){
- renderGarments();renderPlacement();renderSwatches();renderEmblems();
+ renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();
  // seed with brand emblem
  var _sp=new URLSearchParams(location.search), _qd=_sp.get("design");
  if(_qd&&/^[a-z0-9-]+$/.test(_qd)){var _u="img/designs/"+_qd+".png";var _im=new Image();_im.onload=function(){var ar=(_im.width&&_im.height)?_im.width/_im.height:1;addLayer({type:"image",href:_u,orig:_u,w:ar>=1?44:44*ar,h:ar>=1?44/ar:44,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});};_im.onerror=function(){};_im.src=_u;}
@@ -592,7 +604,7 @@ function scatter(mode){
  st.sel=null;render();
  toast(n+" motifs en all-over 🌀 — choisis un produit All-Over Print (AOP)");
 }
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,scatter:scatter,clearScatter:clearScatter,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
