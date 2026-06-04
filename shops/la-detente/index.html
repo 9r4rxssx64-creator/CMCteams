@@ -195,7 +195,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .adm-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
 .adm-row:last-child{border-bottom:none}
 .hero{background-image:linear-gradient(90deg,rgba(14,16,18,.94),rgba(14,16,18,.55) 58%,rgba(14,16,18,.18)),url('img/hero.png');background-size:cover;background-position:right center;background-repeat:no-repeat}
-.promobar{background:linear-gradient(90deg,#3a0f12,#dc2626,#3a0f12);color:#fff;font-size:12.5px;font-weight:600;text-align:center;padding:8px 34px;position:relative}.promobar .x{position:absolute;right:10px;top:50%;transform:translateY(-50%);opacity:.85;cursor:pointer;font-size:14px}.card-img{position:relative}.badge-stack{position:absolute;top:8px;left:8px;z-index:2;display:flex;flex-direction:column;gap:4px;align-items:flex-start}.card-badge.badge-new{background:#16a34a;color:#fff}.card-badge.badge-top{background:#f59e0b;color:#111}.card-wish{position:absolute;top:8px;right:8px;z-index:3;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:15px;border:none;cursor:pointer;transition:.15s;line-height:1}.card-wish:hover{background:rgba(0,0,0,.78);transform:scale(1.12)}.sizebtn{min-width:48px;padding:11px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700;cursor:pointer;transition:.12s}.sizebtn:hover{border-color:var(--p)}.sizebtn.on{background:var(--p);border-color:var(--p);color:#fff}.ship-prog{height:7px;border-radius:100px;background:var(--border);overflow:hidden}.ship-prog>i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .3s}.reassure{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:18px 0 4px}.reassure>div{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted)}.cfilter{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:18px}.cfilter .sw2{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:0}.cfilter .sw2.on{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
+.promobar{background:linear-gradient(90deg,#3a0f12,#dc2626,#3a0f12);color:#fff;font-size:12.5px;font-weight:600;text-align:center;padding:8px 34px;position:relative}.promobar .x{position:absolute;right:10px;top:50%;transform:translateY(-50%);opacity:.85;cursor:pointer;font-size:14px}.card-img{position:relative}.badge-stack{position:absolute;top:8px;left:8px;z-index:2;display:flex;flex-direction:column;gap:4px;align-items:flex-start}.card-badge.badge-new{background:#16a34a;color:#fff}.card-badge.badge-top{background:#f59e0b;color:#111}.card-badge.badge-aop{background:#7c3aed;color:#fff}.card-badge.badge-bio{background:#15803d;color:#fff}.card-wish{position:absolute;top:8px;right:8px;z-index:3;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:15px;border:none;cursor:pointer;transition:.15s;line-height:1}.card-wish:hover{background:rgba(0,0,0,.78);transform:scale(1.12)}.sizebtn{min-width:48px;padding:11px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700;cursor:pointer;transition:.12s}.sizebtn:hover{border-color:var(--p)}.sizebtn.on{background:var(--p);border-color:var(--p);color:#fff}.ship-prog{height:7px;border-radius:100px;background:var(--border);overflow:hidden}.ship-prog>i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .3s}.reassure{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:18px 0 4px}.reassure>div{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted)}.cfilter{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:18px}.cfilter .sw2{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:0}.cfilter .sw2.on{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"La Détente — Textile entre amis","description":"Vêtements personnalisés au motif AR15 + cœur rouge : tir, précision, chasse, ball-trap. T-shirts, sweats, polos, casquettes. Designs personnalisables.","url":"https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/","image":"https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/img/og.png","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
@@ -245,6 +245,16 @@ var CATS=[{"id":"designs","name":"Designs ★","icon":"🔥"},{"id":"tshirts","n
 function gMock(g,color,motif){var box={tee:[34,32,32,32],hoodie:[34,40,32,32],polo:[36,36,28,28],cap:[40,26,20,20],tote:[33,30,34,34],bandana:[36,40,28,28]}[g]||[34,34,32,32];if(motif==="emblem"&&g!=="cap"){box=[box[0]-2,box[1]-1,box[2]+4,box[3]+4];}return '<svg style="width:100%;height:100%;display:block" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+'<g style="color:'+color+'"><use href="#g-'+g+'"/></g>'+'<use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/></svg>';}function _b(id,name,cat,g,color,motif,price,orig,mat,rate,rev,stock,tags){return {id:id,name:name,cat:cat,price:price,origPrice:orig,img:gMock(g,color,motif),rating:rate,reviews:rev,desc:name+" — \u00e9dition La D\u00e9tente. "+mat+", impression haute t\u00e9nacit\u00e9, motif c\u0153ur rouge. Tailles S \u00e0 XXL. Entre amis, vise juste.​",material:mat,tags:tags,sizes:["S","M","L","XL","XXL"],stock:stock,shipping:"standard",garment:g,garmentColor:color,motif:motif,placement:"chest"};}var P=[];
 try{var _c=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");if(_c&&_c.length){_c.forEach(function(q){q.sizes=q.sizes||["S","M","L","XL","XXL"];q.rating=q.rating||5;q.reviews=q.reviews||0});P=_c.concat(P);}}catch(_){}
 P.forEach(function(p){if(/^ld\d/.test(p.id))p.img="img/products/"+p.id+".png"});
+/* PRODUITS AOP (sublimation polyester, imprimé partout) + BIO (coton bio Stanley/Stella, DTG) */
+P=P.concat([
+ _b("ld-aop-bandana","Bandana All-Over — Camo Détente","accessoires","bandana","#3a4636","th-clay",19.9,26,"Polyester microfibre · sublimation intégrale (AOP, imprimé partout)",4.8,37,99,["aop","all-over","bandana","camo","ball-trap","tir"]),
+ _b("ld-aop-tote","Tote bag All-Over — Méli-mélo","accessoires","tote","#15171a","emblem",22.9,29,"Polyester recyclé · sublimation intégrale (AOP, motif partout)",4.9,21,99,["aop","all-over","tote","sac","graffiti"]),
+ _b("ld-aop-tee","T-shirt All-Over — Graffiti Tir","tshirts","tee","#1d3a5f","th-tir",32.9,42,"Polyester respirant 100% · sublimation intégrale (AOP, tout le tissu)",4.8,54,99,["aop","all-over","tshirt","graffiti","tir","precision"]),
+ _b("ld-bio-tee","T-shirt Bio — Cœur AR15","tshirts","tee","#15171a","heart",26.9,34,"Coton bio Stanley/Stella 180 g/m² · encres à l'eau (DTG)",4.9,88,99,["bio","organic","coton bio","coeur","ar15","eco"]),
+ _b("ld-bio-hoodie","Hoodie Bio — Vise Juste","sweats","hoodie","#283019","th-visejuste",49.9,64,"Coton bio Stanley/Stella molletonné · encres à l'eau (DTG)",4.8,42,99,["bio","organic","coton bio","hoodie","eco","tir"]),
+ _b("ld-bio-tote","Tote Bio — Emblème La Détente","accessoires","tote","#c9c4ba","emblem",17.9,23,"Coton bio certifié · impression DTG dans la zone",4.9,33,99,["bio","organic","coton bio","tote","sac","eco"])
+]);
+P.forEach(function(p){var t=(p.tags||[]).join(" ");if(/\baop\b|all-over/.test(t))p._aop=true;if(/\bbio\b|organic|coton bio/.test(t))p._bio=true;});
 /* DESIGNS PHOTORÉALISTES — vraies images d'armes (Gemini), affichées telles quelles sur la carte */
 
 /* Déclinaisons HOODIE + CASQUETTE des vraies images d'armes */
@@ -274,6 +284,8 @@ function hdr(){return '<div class="hdr"><div class="hdr-inner">'
 /* ---------- MOTEUR DE RECHERCHE PAR THÈMES ---------- */
 function _norm(s){return String(s==null?"":s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")}
 var THEMES_IDX=[
+ {ic:"🌀",lbl:"Tout-imprimé / All-Over (AOP)",q:"aop",kw:["aop","all over","allover","tout imprime","integrale","sublimation","edge","partout","graffiti"]},
+ {ic:"🌱",lbl:"Coton Bio / Éco",q:"bio",kw:["bio","organic","eco","coton bio","ecolo","stanley","stella","ethique"]},
  {ic:"🎯",lbl:"Tir / Précision",q:"precision",kw:["tir","precision","cible","stand","vise","viser","sportif"]},
  {ic:"🔫",lbl:"AR15 / Carabine",q:"carabine",kw:["ar15","carabine","fusil","arme"]},
  {ic:"🔫",lbl:"Glock / Pistolet",q:"pistolet",kw:["glock","pistolet","poing"]},
@@ -326,7 +338,7 @@ switch(S.sort){case"price-asc":r.sort(function(a,b){return a.price-b.price});bre
 return r}
 function cardHtml(p){var d=disc(p.origPrice,p.price);
 return '<div class="card" onclick="sv(\'product\',\''+p.id+'\')"><div class="card-img">'
-+'<div class="badge-stack">'+(d>=20?'<span class="card-badge badge-sale">-'+d+'%</span>':'')+(p._new?'<span class="card-badge badge-new">Nouveau</span>':'')+(p.rating>=4.9?'<span class="card-badge badge-top">★ Top</span>':'')+'</div>'
++'<div class="badge-stack">'+(d>=20?'<span class="card-badge badge-sale">-'+d+'%</span>':'')+(p._aop?'<span class="card-badge badge-aop">🌀 AOP</span>':'')+(p._bio?'<span class="card-badge badge-bio">🌱 Bio</span>':'')+(p._new?'<span class="card-badge badge-new">Nouveau</span>':'')+(p.rating>=4.9?'<span class="card-badge badge-top">★ Top</span>':'')+'</div>'
 +'<button class="card-wish" title="Ajouter aux favoris" onclick="event.stopPropagation();toggleWish(\''+p.id+'\');dc()">'+(isWished(p.id)?'❤️':'🤍')+'</button>'
 +pimg(p.img,p.name)+'</div><div class="card-body"><div class="card-title">'+esc(p.name)+'</div>'
 +'<div class="card-meta">'+stars(p.rating)+' <span>('+p.reviews+')</span></div>'
@@ -1033,6 +1045,7 @@ function ldPrintifyAuto(orderId,btn){
  }).catch(function(){toast("Réseau KO, réessaie","error");if(btn){btn.disabled=false;btn.textContent="🚀 Réessayer Printify";}});
 }
 
+try{var _uq=new URLSearchParams(location.search).get("q");if(_uq){S.search=_uq;S.cat="all";S.view="products";S.sugg=false;}}catch(_){}
 loadCart();dc();startAbandonWatch();
 window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",scrollY>400)});
 if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-accept" onclick="localStorage.setItem(\'kdmc_cookie_ok\',1);this.closest(\'.cookie\').remove()">Accepter</button><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button></div>';document.body.appendChild(ck)}
@@ -1040,7 +1053,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.37.0"
+        data-version="v1.38.0"
         data-color="#e8b830"
         defer></script>
 

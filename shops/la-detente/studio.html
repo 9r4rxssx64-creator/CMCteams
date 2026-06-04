@@ -141,7 +141,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
     <div class="grp"><h3>Vêtement</h3><div class="garments" id="garments"></div></div>
     <div class="grp"><h3>Emplacement</h3><div class="garments" id="placement"></div></div>
     <div class="grp"><h3>🌀 All-Over / Graffiti</h3>
-      <div class="hint">Couvre <b>tout le vêtement</b> façon graffiti / méli-mélo (écriture & motifs dans tous les sens). Idéal pour un produit <b>All-Over Print (AOP)</b>.</div>
+      <div class="hint">Couvre <b>tout le vêtement</b> façon graffiti / méli-mélo (motifs dans tous les sens). ⚠️ « Imprimé partout » ne rend qu'à l'impression sur un produit <b>All-Over Print (AOP)</b> en <b>polyester</b> (donc <b>pas</b> en coton bio).</div>
       <label style="font-size:12px;display:block;margin:8px 0 2px">Densité (<span id="aoVal">28</span> motifs)</label>
       <input type="range" id="aoDensity" min="8" max="80" step="1" value="28" oninput="var e=document.getElementById('aoVal');if(e)e.textContent=this.value" style="width:100%">
       <div class="addrow" style="margin-top:8px">
@@ -149,6 +149,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
         <button class="btn" onclick="Studio.scatter('all')">🔀 Tout en graffiti</button>
         <button class="btn ghost" onclick="Studio.clearScatter()">🧹 Nettoyer le all-over</button>
       </div>
+      <a class="btn" href="index.html?q=aop" style="display:block;text-align:center;margin-top:8px;text-decoration:none">🛍️ Voir les produits AOP de la boutique</a>
     </div>
     <div class="grp"><h3>Couleur</h3><div class="swatches" id="swatches"></div></div>
     <div class="grp"><h3>Ajouter un calque</h3>
