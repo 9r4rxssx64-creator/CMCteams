@@ -5,6 +5,8 @@
    Auth : Origin allowlist + header x-ld-app. */
 const SHOP_ID = 27791653;
 const API = 'https://api.printify.com/v1';
+const FIREBASE_URL = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
+const PUSH_SUB_PATH = '/ld_detente/push_sub.json';
 const IMG_BASE = 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/img/designs/';
 const ALLOW = ['https://9r4rxssx64-creator.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
 const APP_TAG = 'ld-order-v1';
@@ -96,6 +98,13 @@ export default {
         const add = prof.additional_items ? prof.additional_items.cost / 100 : null;
         return J({ ok: true, blueprint_id: bp, country, first_item: first, additional_item: add, currency: (prof.first_item && prof.first_item.currency) || 'EUR' }, 200, origin);
       } catch (e) { return J({ ok: false, detail: String(e && e.message || e), where: 'exception' }, 500, origin); }
+    }
+    // TEST ALERTE : envoie une notif push de test à l'admin abonné
+    if (request.method === 'GET' && url.pathname === '/push-test') {
+      try {
+        const n = await sendOrderPush(env, '🔔 Test alerte La Détente', 'Si tu vois cette notification, les alertes commande fonctionnent ✅');
+        return J({ ok: n > 0, sent: n, detail: n > 0 ? 'push envoyé' : 'aucun abonnement (active les alertes d\'abord) ou clés VAPID manquantes' }, 200, origin);
+      } catch (e) { return J({ ok: false, detail: String(e && e.message || e) }, 500, origin); }
     }
     if (request.method !== 'POST' || url.pathname !== '/order') return J({ ok: false, detail: 'not found' }, 404, origin);
     if (!ALLOW.includes(origin)) return J({ ok: false, detail: 'origin refusée' }, 403, origin);
@@ -198,7 +207,93 @@ export default {
     const txt = await r.text();
     if (!r.ok) return J({ ok: false, detail: 'Printify HTTP ' + r.status + ' : ' + txt.slice(0, 300), warnings }, 502, origin);
     let pj; try { pj = JSON.parse(txt); } catch (_) { pj = {}; }
-    // Statut "on-hold" : Kevin valide/paie dans Printify. (Pas d'envoi auto en production.)
-    return J({ ok: true, printify_order_id: pj.id || null, lines: lineItems.length, warnings, status: 'on-hold (à valider dans Printify)' }, 200, origin);
+    // 🔔 Alerte push admin (best-effort, ne bloque pas la commande)
+    try {
+      const tot = body.total ? (' — ' + body.total + ' €') : '';
+      await sendOrderPush(env, '🛍️ Nouvelle commande', (a.name || 'Client') + ' · ' + lineItems.length + ' article(s)' + tot);
+    } catch (_) {}
+    // Statut "on-hold" : Kevin valide/paie. (Pas d'envoi auto en production.)
+    return J({ ok: true, printify_order_id: pj.id || null, lines: lineItems.length, warnings, status: 'on-hold (à valider)' }, 200, origin);
   }
 };
+
+/* ===================== WEB PUSH (VAPID, aes128gcm) ===================== */
+async function fbGetSub() {
+  try {
+    const r = await fetch(FIREBASE_URL + PUSH_SUB_PATH);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (_) { return null; }
+}
+async function sendOrderPush(env, title, bodyTxt) {
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return 0;
+  const sub = await fbGetSub();
+  if (!sub || !sub.endpoint || !sub.keys) return 0;
+  const payload = { title: title, body: bodyTxt, url: 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=200807', tag: 'ld-order' };
+  try { await sendOnePush(env, sub, payload); return 1; } catch (_) { return 0; }
+}
+async function sendOnePush(env, subscription, payload) {
+  const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
+  const endpointUrl = new URL(subscription.endpoint);
+  const jwt = await buildVapidJwt(env, endpointUrl.origin);
+  const encrypted = await encryptPayload(payloadBytes, subscription.keys);
+  const vapidPubB64 = base64urlEncode(base64urlDecode(env.VAPID_PUBLIC_KEY));
+  const headers = {
+    'Content-Type': 'application/octet-stream',
+    'Content-Encoding': 'aes128gcm',
+    'TTL': '86400',
+    'Authorization': `vapid t=${jwt}, k=${vapidPubB64}`,
+    'Urgency': 'high'
+  };
+  const r = await fetch(subscription.endpoint, { method: 'POST', headers, body: encrypted });
+  return r.status;
+}
+async function buildVapidJwt(env, audience) {
+  const header = { typ: 'JWT', alg: 'ES256' };
+  const exp = Math.floor(Date.now() / 1000) + 12 * 60 * 60;
+  const payload = { aud: audience, exp, sub: 'mailto:' + (env.VAPID_EMAIL || 'desarzens.kevin@gmail.com') };
+  const headerB64 = base64urlEncode(new TextEncoder().encode(JSON.stringify(header)));
+  const payloadB64 = base64urlEncode(new TextEncoder().encode(JSON.stringify(payload)));
+  const unsigned = headerB64 + '.' + payloadB64;
+  const privKey = await importVapidPrivateKey(env.VAPID_PRIVATE_KEY, env.VAPID_PUBLIC_KEY);
+  const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: { name: 'SHA-256' } }, privKey, new TextEncoder().encode(unsigned));
+  return unsigned + '.' + base64urlEncode(new Uint8Array(sig));
+}
+async function importVapidPrivateKey(privB64, pubB64) {
+  const d = base64urlDecode(privB64);
+  const pub = base64urlDecode(pubB64);
+  if (pub.length !== 65 || pub[0] !== 0x04) throw new Error('VAPID public key must be uncompressed (65 bytes, starts 0x04)');
+  if (d.length !== 32) throw new Error('VAPID private key must be 32 bytes raw');
+  const jwk = { kty: 'EC', crv: 'P-256', d: base64urlEncode(d), x: base64urlEncode(pub.slice(1, 33)), y: base64urlEncode(pub.slice(33, 65)), ext: true };
+  return crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+}
+async function encryptPayload(plaintext, subKeys) {
+  const clientPubBytes = base64urlDecode(subKeys.p256dh);
+  const authSecret = base64urlDecode(subKeys.auth);
+  const localKeys = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const localPubRaw = new Uint8Array(await crypto.subtle.exportKey('raw', localKeys.publicKey));
+  const clientPubKey = await crypto.subtle.importKey('raw', clientPubBytes, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const sharedSecret = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: clientPubKey }, localKeys.privateKey, 256));
+  const keyInfo = concat(new TextEncoder().encode('WebPush: info\0'), clientPubBytes, localPubRaw);
+  const ikm = await hkdf(authSecret, sharedSecret, keyInfo, 32);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, new TextEncoder().encode('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = await hkdf(salt, ikm, new TextEncoder().encode('Content-Encoding: nonce\0'), 12);
+  const padded = new Uint8Array(plaintext.length + 1);
+  padded.set(plaintext, 0); padded[plaintext.length] = 0x02;
+  const cekKey = await crypto.subtle.importKey('raw', cek, { name: 'AES-GCM', length: 128 }, false, ['encrypt']);
+  const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, cekKey, padded));
+  const rs = new Uint8Array(4); new DataView(rs.buffer).setUint32(0, 4096, false);
+  return concat(salt, rs, new Uint8Array([localPubRaw.length]), localPubRaw, cipher);
+}
+async function hkdf(salt, ikm, info, length) {
+  const saltKey = await crypto.subtle.importKey('raw', salt, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const prk = new Uint8Array(await crypto.subtle.sign('HMAC', saltKey, ikm));
+  const prkKey = await crypto.subtle.importKey('raw', prk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const t1Input = new Uint8Array(info.length + 1); t1Input.set(info, 0); t1Input[info.length] = 0x01;
+  const t1 = new Uint8Array(await crypto.subtle.sign('HMAC', prkKey, t1Input));
+  return t1.slice(0, length);
+}
+function concat(...arrays) { let total = 0; for (const a of arrays) total += a.length; const out = new Uint8Array(total); let off = 0; for (const a of arrays) { out.set(a, off); off += a.length; } return out; }
+function base64urlEncode(bytes) { return btoa(String.fromCharCode.apply(null, bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function base64urlDecode(str) { const s = String(str || '').replace(/-/g, '+').replace(/_/g, '/'); const pad = s.length % 4 === 0 ? '' : '='.repeat(4 - (s.length % 4)); const bin = atob(s + pad); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }

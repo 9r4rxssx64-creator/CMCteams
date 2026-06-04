@@ -456,15 +456,15 @@ cf.innerHTML=shipProgressHtml()+bulkHintHtml()+'<div class="cart-total"><span>To
 +'<button class="btn-checkout" onclick="showCheckout('+cartTotal()+')">💳 Commander — '+fmtP(cartTotal())+'</button>'}
 function nlSub(){var e=document.getElementById("nlEmail");if(!e||e.value.indexOf("@")<1)return toast("Email invalide","error");
 var email=e.value;
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_newsletter",{to_email:email,store:STORE_NAME,message:"Nouvel abonné newsletter "+STORE_NAME}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
+if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — Newsletter",email:email,from_name:STORE_NAME,from_email:email,title:"Nouvel abonné newsletter",message:"Nouvel abonné newsletter "+STORE_NAME+" : "+email,store:STORE_NAME,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
 e.value=""}
 /* INIT */
 function sendContact(){
 var name=document.querySelector('[type=text]');var email=document.querySelector('[type=email]');var msg=document.querySelector('textarea');
 if(!name||!email||!msg||!email.value)return toast("Remplissez tous les champs","error");
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_contact",{to_email:LD_ADMIN_EMAIL,reply_to:email.value,from_name:name.value,from_email:email.value,message:msg.value,store:STORE_NAME}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,reply_to:email.value,name:name.value,email:email.value,from_name:name.value,from_email:email.value,title:"Message contact "+STORE_NAME,message:msg.value,store:STORE_NAME,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
 function notifyPayment(total){
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_payment",{store:STORE_NAME,amount:fmtP(total),items:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),timestamp:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — Paiement",title:"Paiement initié",message:"Paiement initié "+STORE_NAME+" — "+fmtP(total)+"\n"+S.cart.map(function(i){return i.name+" x"+i.qty}).join("\n"),store:STORE_NAME,amount:fmtP(total),time:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
 function showPayment(total){
 var m=document.createElement("div");m.id="payModal";
 m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
@@ -801,12 +801,17 @@ items.forEach(function(i){decrementStock(i.id)});
 /* Email confirmation client + notif Kevin */
 if(typeof emailjs!=="undefined"){
 emailjs.init("nUsorWTtC");
-emailjs.send("service_318elaz","template_order_confirm",{
+var _ordItems=items.map(function(i){return i.name+" ["+(i.size||"M")+"] x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n");
+var _ordShip=[ck.name,ck.addr,(ck.zip||"")+" "+(ck.city||""),ck.country||"France",ck.phone].filter(Boolean).join("\n");
+emailjs.send("service_4s16z8l","template_fzva9uf",{
 to_email:LD_ADMIN_EMAIL,admin_email:LD_ADMIN_EMAIL,reply_to:(ck.email||LD_ADMIN_EMAIL),
+name:"🛍️ Commande "+orderId,email:(ck.email||LD_ADMIN_EMAIL),from_name:(ck.name||"Client"),from_email:(ck.email||LD_ADMIN_EMAIL),
+title:"Nouvelle commande "+STORE_NAME+" — "+fmtP(total),
 order_id:orderId,store:STORE_NAME,total:fmtP(total),method:method,
-items:items.map(function(i){return i.name+" ["+(i.size||"M")+"] x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),
-customer:ck.name||"",email:ck.email||"",shipping:[ck.name,ck.addr,(ck.zip||"")+" "+(ck.city||""),ck.country||"France",ck.phone].filter(Boolean).join("\n"),production:sheetText,
-timestamp:new Date().toLocaleString("fr-FR")
+items:_ordItems,
+customer:ck.name||"",shipping:_ordShip,production:sheetText,
+message:"NOUVELLE COMMANDE "+STORE_NAME+"\n\nN° : "+orderId+"\nTotal : "+fmtP(total)+"\nPaiement : "+method+"\n\nARTICLES :\n"+_ordItems+"\n\nCLIENT :\n"+(ck.name||"")+"\n"+_ordShip+"\n\nÀ PRODUIRE :\n"+sheetText,
+time:new Date().toLocaleString("fr-FR")
 }).catch(function(){})}
 
 /* Push commande au dashboard admin (méta uniquement, aucune PII) */
@@ -965,9 +970,33 @@ function _admOrders(){
  var btn='padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700;font-size:12px;cursor:pointer';
  return '<div class="adm-card"><h3>📦 Commandes ('+orders.length+')</h3>'+orders.map(function(o){return orderRow(o)+'<div style="display:flex;gap:6px;margin:-6px 0 14px;flex-wrap:wrap"><button style="'+btn+'" onclick="ldOpenSheet(\''+o.id+'\')">📄 Bon</button><button style="'+btn+'" onclick="ldOpenSupplierOrders(\''+o.id+'\')">📤 Fournisseur</button><button style="'+btn+';background:#0070ba;color:#fff;border-color:#0070ba" onclick="ldPrintifyAuto(\''+o.id+'\',this)">🚀 Envoyer en production</button></div>'}).join("")+'</div>';
 }
+function ldPushConfig(cb){if(window._ldPushCfg)return cb(window._ldPushCfg);fetch("push-config.json?_="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){window._ldPushCfg=j;cb(j)}).catch(function(){cb(null)});}
+function _urlB64ToU8(b){var p="=".repeat((4-b.length%4)%4);var s=(b+p).replace(/-/g,"+").replace(/_/g,"/");var raw=atob(s);var arr=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);return arr;}
+function ldEnableAlerts(){
+ if(!("serviceWorker" in navigator)||!("PushManager" in window)){toast("Notifications non supportées ici","error");return;}
+ ldPushConfig(function(cfg){
+  if(!cfg||!cfg.vapid_public){toast("Alertes pas encore prêtes (worker à déployer)","error");return;}
+  Notification.requestPermission().then(function(perm){
+   if(perm!=="granted"){toast("Autorise les notifications (Réglages iPhone)","error");return;}
+   navigator.serviceWorker.ready.then(function(reg){
+    reg.pushManager.getSubscription().then(function(ex){
+     (ex?Promise.resolve(ex):reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_urlB64ToU8(cfg.vapid_public)})).then(function(sub){
+      fetch("https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/ld_detente/push_sub.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)}).then(function(){localStorage.setItem("ld_alerts","1");toast("🔔 Alertes commande activées ✅");dc();}).catch(function(){toast("Abonné mais sauvegarde KO","error");});
+     }).catch(function(e){toast("Abonnement échoué: "+(e&&e.message||e),"error");});
+    });
+   });
+  });
+ });
+}
+function ldTestAlert(){var oc=window._ldOrderCfg;var url=oc&&oc.worker_url;if(!url){toast("Worker non déployé — déploie d'abord","error");return;}toast("Envoi du test…");fetch(url.replace(/\/$/,"")+"/push-test").then(function(r){return r.json()}).then(function(j){toast(j&&j.ok?"Test envoyé ✅ — regarde tes notifs":"Test: "+((j&&j.detail)||"échec"),(j&&j.ok)?"":"error");}).catch(function(e){toast("Test KO: "+(e&&e.message||e),"error");});}
 function _admSettings(){
  var oc=window._ldOrderCfg;
- return '<div class="adm-card"><h3>🏭 Production</h3>'
+ return '<div class="adm-card"><h3>🔔 Alertes commande (notif iPhone)</h3>'
+  +'<p style="color:var(--muted);font-size:13px;margin-bottom:10px">Une notification sur ton tél à <b>chaque commande</b>, même app fermée. Ajoute d\'abord la boutique à ton <b>écran d\'accueil</b>.</p>'
+  +'<button onclick="ldEnableAlerts()" style="padding:11px 18px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🔔 Activer les alertes</button> <button onclick="ldTestAlert()" style="padding:11px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-weight:700;cursor:pointer">🧪 Tester</button>'
+  +(localStorage.getItem("ld_alerts")==="1"?'<div style="font-size:12px;color:#16a34a;margin-top:8px">✅ Alertes activées sur cet appareil</div>':'')
+  +'</div>'
+  +'<div class="adm-card"><h3>🏭 Production</h3>'
   +'<div class="adm-row"><span>Connexion fournisseur</span><b style="margin-left:auto;color:#22c55e">🟢 boutique 27791653</b></div>'
   +'<div class="adm-row"><span>Worker d\'envoi commande</span><b style="margin-left:auto">'+(oc&&oc.worker_url?'🟢 actif':'🟡 non déployé')+'</b></div>'
   +(oc&&oc.worker_url?'<div style="font-size:11px;color:var(--muted);word-break:break-all;margin-top:8px">'+esc(oc.worker_url)+'</div>':'<a href="https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/la-detente-printify-order-deploy.yml" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;padding:10px 18px;background:var(--p);color:#fff;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px">▶️ Déployer le worker</a>')
@@ -1084,7 +1113,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.51.0"
+        data-version="v1.52.0"
         data-color="#e8b830"
         defer></script>
 
