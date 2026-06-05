@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.6.2 -->
+<!-- La Détente — Studio (admin) v1.6.3 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<script>/* Garde-fou : Studio réservé à l'admin (clients redirigés vers la boutique) */(function(){try{var u=new URLSearchParams(location.search);if(u.get("ld_admin")==="200807")localStorage.setItem("ld_admin","1");if(localStorage.getItem("ld_admin")!=="1"){location.replace("index.html");}}catch(e){}})();</script>
+<script>/* Garde-fou : Studio réservé à l'admin connecté (clients/non-connectés redirigés). Aucun code en clair. */(function(){try{var t=localStorage.getItem("ld_admin_trust")==="1"||localStorage.getItem("ld_admin")==="1";if(t){localStorage.setItem("ld_admin_trust","1");}else{location.replace("index.html?ld_admin=1");}}catch(e){location.replace("index.html");}})();</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Studio — La Détente (admin)</title>
 <meta name="robots" content="noindex,nofollow">

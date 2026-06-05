@@ -229,7 +229,7 @@ async function sendOrderPush(env, title, bodyTxt) {
   if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return 0;
   const sub = await fbGetSub();
   if (!sub || !sub.endpoint || !sub.keys) return 0;
-  const payload = { title: title, body: bodyTxt, url: 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=200807', tag: 'ld-order' };
+  const payload = { title: title, body: bodyTxt, url: 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1', tag: 'ld-order' };
   try { await sendOnePush(env, sub, payload); return 1; } catch (_) { return 0; }
 }
 async function sendOnePush(env, subscription, payload) {
