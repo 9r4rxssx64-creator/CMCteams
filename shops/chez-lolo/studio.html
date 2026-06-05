@@ -535,11 +535,11 @@ function _saveProduct(cat){
  var realImg=st.realphoto?((st.pf&&st.pf.image)?st.pf.image:(st.mockReady[st.garment]?MOCK[st.garment]:null)):null;
  toast("Génération des visuels…");
  function save(mockImg,print){
-  var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
+  var arr=JSON.parse(localStorage.getItem("cl_custom_products")||"[]");
   arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
     img:mockImg,printFile:print,rating:5,reviews:0,desc:name+" — création Chez Lolo (Studio). Tailles S à XXL.",
     material:(st.pf?("Print-on-demand · "+(st.pf.brand||"")):"Coton premium"),placement:st.placement,theme:theme,tags:["personnalisé","studio","la détente",theme.toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()});
-  localStorage.setItem("ld_custom_products",JSON.stringify(arr));
+  localStorage.setItem("cl_custom_products",JSON.stringify(arr));
   closeModal();toast("Produit ajouté à la boutique ✅ ("+arr.length+" créa)");
  }
  /* fichier d'impression = design transparent (sans photo distante → pas de canvas taint) */
