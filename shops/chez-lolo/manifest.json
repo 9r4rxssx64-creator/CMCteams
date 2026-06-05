@@ -1,12 +1,16 @@
 {
-  "name": "CHEZ LOLO — KDMC",
-  "short_name": "CHEZ LOLO",
-  "description": "Boutique en ligne CHEZ LOLO — KDMC Monaco",
+  "name": "Chez Lolo",
+  "short_name": "Chez Lolo",
+  "description": "Vêtements au motif AR15 + cœur rouge — tir, précision, chasse, ball-trap. Designs personnalisables. KDMC Monaco.",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#0f0f0f",
-  "theme_color": "#7c8c3c",
+  "background_color": "#0e1012",
+  "theme_color": "#dc2626",
   "icons": [
-    {"src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫒</text></svg>", "sizes": "any", "type": "image/svg+xml"}
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }
