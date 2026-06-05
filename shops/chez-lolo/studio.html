@@ -552,14 +552,14 @@ function _saveProduct(cat){
 /* ---------- PROJECTS ---------- */
 function saveProject(){
  var name=prompt("Nom du projet :","Projet "+new Date().toLocaleDateString("fr-FR"));if(!name)return;
- var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");
+ var arr=JSON.parse(localStorage.getItem("cl_studio_projects")||"[]");
  arr.push({name:name,ts:Date.now(),data:{garment:st.garment,color:st.color,layers:st.layers,uid:st.uid}});
- localStorage.setItem("ld_studio_projects",JSON.stringify(arr));toast("Projet sauvegardé ✅");openProjects();
+ localStorage.setItem("cl_studio_projects",JSON.stringify(arr));toast("Projet sauvegardé ✅");openProjects();
 }
-function loadProject(i){var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");var p=arr[i];if(!p)return;st.garment=p.data.garment;st.color=p.data.color;st.layers=p.data.layers;st.uid=p.data.uid||(st.layers.length+1);st.sel=null;closeModal();renderGarments();renderSwatches();render();toast("Projet chargé")}
-function delProject(i){var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");arr.splice(i,1);localStorage.setItem("ld_studio_projects",JSON.stringify(arr));openProjects()}
+function loadProject(i){var arr=JSON.parse(localStorage.getItem("cl_studio_projects")||"[]");var p=arr[i];if(!p)return;st.garment=p.data.garment;st.color=p.data.color;st.layers=p.data.layers;st.uid=p.data.uid||(st.layers.length+1);st.sel=null;closeModal();renderGarments();renderSwatches();render();toast("Projet chargé")}
+function delProject(i){var arr=JSON.parse(localStorage.getItem("cl_studio_projects")||"[]");arr.splice(i,1);localStorage.setItem("cl_studio_projects",JSON.stringify(arr));openProjects()}
 function openProjects(){
- var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");
+ var arr=JSON.parse(localStorage.getItem("cl_studio_projects")||"[]");
  var list=arr.length?arr.map(function(p,i){return '<div class="lyr"><span class="nm">'+esc(p.name)+'</span><button class="mini" onclick="Studio.loadProject('+i+')">Ouvrir</button><span class="x" onclick="Studio.delProject('+i+')">✕</span></div>'}).join(""):'<div class="empty">Aucun projet</div>';
  modal('<h2>📁 Projets</h2><div class="layers" style="margin-bottom:14px">'+list+'</div><button class="btn primary" style="width:100%" onclick="Studio.saveProject()">💾 Sauvegarder le projet actuel</button> <button class="mini" style="width:100%;margin-top:8px" onclick="Studio.closeModal()">Fermer</button>');
 }
