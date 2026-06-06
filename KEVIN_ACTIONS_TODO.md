@@ -2083,3 +2083,12 @@ En attendant : modèle qui MARCHE = je prépare le diff → tu édites/merges su
 1. **Nettoyer `.mcp.json` sur main** : éditer https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.mcp.json → ligne url github : retirer `<` et `>` → `"url": "https://api.githubcopilot.com/mcp/"` → Commit to main. (Cosmétique : n'affecte ni l'app ni les features ; utile seulement pour un futur github MCP.)
 2. **Fermer la PR #532** (coincée : branche supprimée + conflit). Ses apports uniques = doc, non essentiels.
 RAPPEL : les 3 features sont en prod. Le blocage GitHub MCP est une limite d'environnement (lessons #79/#80), pas un travail en attente.
+
+---
+
+## ☐ (2026-06-06) Apex Chat — imposer l'OTP SMS réel (1 ligne, zéro risque)
+Quand l'envoi **SMS Vonage** est confirmé fonctionnel : passer `ALLOW_TEST_OTP = "true"` → `"false"`
+dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
+→ Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
+toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
+**Claude doit me le rappeler.**

@@ -3335,3 +3335,14 @@ Boutique POD `shops/la-detente/` (cache v1.20.0). Faits cette session :
 - Docs : MARQUE_LA_DETENTE.md + FOURNISSEURS_LA_DETENTE.md à jour.
 - Workflows : `la-detente-worker-deploy.yml`, `la-detente-ai-designs.yml`, `la-detente-ai-images.yml`.
 - ⚠️ À tester par Kevin (navigateur) : worker depuis le studio. Catalogue images réelles = via fournisseurs plus tard.
+
+---
+
+## 2026-06-06 — Ultra-review + amélioration Apex Chat (crew 6 agents) → v1.1.172
+Branche `claude/apex-chat-review-It5lo` (12 commits, poussés + vérifiés API GitHub @ d8101e9/76de268).
+Audit crew (archi/sécu/backend/UX/tests/E2E) → 9 P0 + P1. **Batch P0+P1 livré intégralement**, 813 tests verts (+17 nouveaux).
+Corrigé : E2E réel (échange clés), OTP durci (backdoor gaté ALLOW_TEST_OTP + bypass Kevin protégé),
+push réparé, quotas KV, system_config NOT NULL, hash OTP, Letters/Time Capsule, force_logout REST+WS,
+read-receipt, outbox offline+replay, Stripe revocation, dédup DM, fuite localStorage inter-comptes,
+clavier qui se ferme (focus preserve + append incrémental bulles), WCAG/aria-live, couverture honnête.
+**Action Kevin en attente** : flip `ALLOW_TEST_OTP=false` une fois Vonage confirmé (cf. KEVIN_ACTIONS_TODO.md).
