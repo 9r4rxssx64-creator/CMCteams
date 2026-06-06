@@ -105,8 +105,8 @@
   --cmc-blue:#4a72a8;
   --cmc-text:#ffffff;                /* v9.110 : blanc pur pour lisibilité max */
   --cmc-text-soft:#e0f0d0;           /* v9.110 : presque blanc, teinté vert léger */
-  --cmc-text-dim:#b8d4a8;            /* v9.110 : plus clair qu'avant */
-  --cmc-text-faint:#b8d4a8;
+  --cmc-text-dim:#cce6bd;            /* v9.783 : éclairci pour contraste WCAG AA+ sur fond sombre (≈7:1) */
+  --cmc-text-faint:#c2dcb2;          /* v9.783 : éclairci (≈6.3:1) */
   --cmc-bg-dark:#0a1408;
   --cmc-bg-panel:rgba(40,70,44,.55);
   --cmc-border:rgba(201,162,39,.16);
@@ -180,7 +180,7 @@ input,select,button,textarea{font-family:inherit}
 .empty-icon{font-size:56px;margin-bottom:12px;opacity:.6}
 .empty-title{font-size:var(--fs-md);font-weight:700;color:var(--cmc-text-soft);margin-bottom:6px}
 .empty-sub{font-size:var(--fs-sm);color:var(--cmc-text-faint);line-height:1.5}
-.empty-cta{margin-top:14px;display:inline-block;padding:8px 18px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.35);border-radius:var(--r-md);color:var(--cmc-gold);font-weight:700;font-size:var(--fs-sm);cursor:pointer;text-decoration:none}
+.empty-cta{margin-top:14px;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 22px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.35);border-radius:var(--r-md);color:var(--cmc-gold);font-weight:700;font-size:var(--fs-sm);cursor:pointer;text-decoration:none}
 /* === SKELETON LOADING === */
 .skel{background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 100%);background-size:200% 100%;animation:shimmer 1.6s linear infinite;border-radius:var(--r-sm)}
 .skel-line{height:14px;margin-bottom:8px}
@@ -653,7 +653,7 @@ body:not(.has-accueil-bg) #bnav{
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
 }
 .nt{
-  flex:1 1 auto;padding:10px 6px 9px;border:none;background:transparent;min-height:44px;min-width:36px;
+  flex:1 1 auto;padding:10px 6px 9px;border:none;background:transparent;min-height:44px;min-width:44px;
   display:flex;flex-direction:column;align-items:center;gap:2px;justify-content:center;
   font-size:14px;color:#90c090;border-top:2px solid transparent;
   cursor:pointer;position:relative;text-transform:uppercase;letter-spacing:.5px;
@@ -661,7 +661,7 @@ body:not(.has-accueil-bg) #bnav{
 }
 /* v9.70 : compact sur petits écrans (iPhone SE 375px, Galaxy S22 360px) */
 @media (max-width:419px){
-  .nt{padding:7px 2px 6px;font-size:10px;min-width:34px;letter-spacing:.1px;gap:0}
+  .nt{padding:7px 2px 6px;font-size:10px;min-width:44px;letter-spacing:.1px;gap:0}
   .nt em{font-size:19px!important}
   .nt-lb{display:none} /* cacher les labels, ne garder que les emojis */
 }
@@ -817,7 +817,7 @@ body:not(.has-accueil-bg) .card{background:rgba(16,34,20,.90)}
 .chat-status-bar{padding:6px 12px;border-top:1px solid rgba(255,255,255,.05);font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0;background:rgba(0,0,0,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,.8)}
 .chat-datesep{text-align:center;font-size:12px;font-weight:700;color:#ffffff;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:3px 14px;margin:10px auto 6px;user-select:none;pointer-events:none;letter-spacing:1px;display:table;text-shadow:0 1px 2px rgba(0,0,0,.9)}
 /* Boutons d'action chat : TOUJOURS visibles (pas hover-only) → fonctionnalité intuitive mobile */
-.chat-act-btn{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.15);cursor:pointer;font-size:15px;color:rgba(255,255,255,.85);padding:0;line-height:1;min-width:34px;min-height:34px;border-radius:50%;transition:color .18s,background .18s,transform .15s;display:inline-flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.chat-act-btn{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.15);cursor:pointer;font-size:15px;color:rgba(255,255,255,.85);padding:0;line-height:1;min-width:44px;min-height:44px;border-radius:50%;transition:color .18s,background .18s,transform .15s;display:inline-flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .chat-act-btn:hover{background:rgba(255,220,90,.25);color:#ffdc40;border-color:rgba(255,220,90,.5)}
 .chat-act-btn:active{background:rgba(255,220,90,.35);color:#ffdc40;transform:scale(.92)}
 .nbadge-dm{background:#4a2880!important;color:#c090ff!important}
@@ -4159,7 +4159,7 @@ function fbWrite(k,v,_retry){
   var _v=v;
   if(k==="cmc_pw"&&v&&typeof v==="object"){_v={};for(var _pk in v){if(v.hasOwnProperty(_pk)){var _e=v[_pk];_v[_pk]={h:_e.h,setBy:_e.setBy,setAt:_e.setAt};}}}
   if(!_retry){_fbPendingWrites++;_fbShowSyncBadge();}
-  fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{
+  fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json"+_fbAuthQS(),{
     method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(_v)
   }).then(function(r){
     if(!_retry){_fbPendingWrites=Math.max(0,_fbPendingWrites-1);_fbShowSyncBadge();}
@@ -4634,9 +4634,9 @@ function sendNotif(title,body,opts){
 /** Start Firebase EventSource listener with auto-reconnect+jitter. @returns {void} */
 function fbStartListening(){
   if(!FB_URL||_fbEs)return;
-  var url=FB_URL+FB_PATH+".json";
+  var url=FB_URL+FB_PATH+".json"+_fbAuthQS();
   // v9.445 — Diag explicite 403 "Host not in allowlist" avant SSE (sinon le SSE echoue silencieusement)
-  if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0||t.indexOf("Host")>=0){toast("\u26a0 Firebase bloqué : domaine non autorisé. Console Firebase \u2192 APIs \u2192 clé Web \u2192 retirer restrictions domaine.","err");console.error("Firebase 403 Host not in allowlist. Domaine GitHub Pages a ajouter dans console.cloud.google.com credentials.");}});}}).catch(function(){});}
+  if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+(url.indexOf("?")>=0?"&":"?")+"shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0||t.indexOf("Host")>=0){toast("\u26a0 Firebase bloqué : domaine non autorisé. Console Firebase \u2192 APIs \u2192 clé Web \u2192 retirer restrictions domaine.","err");console.error("Firebase 403 Host not in allowlist. Domaine GitHub Pages a ajouter dans console.cloud.google.com credentials.");}});}}).catch(function(){});}
   try{
     // v9.101 — Fermer l'ancien EventSource pour \u00e9viter listeners dupliqu\u00e9s
     if(_fbEs){try{_fbEs.close();}catch(_){}}
@@ -4698,7 +4698,7 @@ function fbLoadAll(){
   // Chargement initial de toutes les clés depuis Firebase
   if(!FB_URL)return;
   // v9.117 — Vérif r.ok avant .json() (évite crash si HTTP 403/500 retourne du HTML)
-  fetch(FB_URL+FB_PATH+".json")
+  fetch(FB_URL+FB_PATH+".json"+_fbAuthQS())
     .then(function(r){
       if(!r.ok)throw new Error("Firebase HTTP "+r.status);
       return r.json();
@@ -4727,21 +4727,49 @@ function fbPushAll(){
       }
     }
   }
-  fetch(FB_URL+FB_PATH+".json",{
+  fetch(FB_URL+FB_PATH+".json"+_fbAuthQS(),{
     method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(all)
   }).then(function(r){
     if(r.ok){toast("\u2705 Données envoyées vers Firebase — tous les appareils vont se mettre à jour");fbStartListening();}
-    else{toast("\u274c Erreur Firebase : "+r.status+" — vérifiez l'URL et les règles","err");}
-  }).catch(function(e){toast("\u274c Erreur réseau Firebase : "+e.message,"err");});
+    else{try{console.error("[fb push] HTTP "+r.status);}catch(_){}toast("\u26a0\ufe0f Sauvegarde en ligne impossible pour l'instant. Tes données restent sur l'appareil.","err");}
+  }).catch(function(e){try{console.error("[fb push] network",e&&e.message);}catch(_){}toast("\u26a0\ufe0f Pas de connexion au serveur. Tes données sont gardées en local, réessaie plus tard.","err");});
 }
 
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+// ── v9.784 — Auth anonyme Firebase (étape 1 durcissement P0) ───────────────────
+// Clé Web publique du projet (peut aussi être collée par l'admin dans cmc_fb_apikey).
+// VIDE par défaut → fallback gracieux : l'app fonctionne exactement comme avant.
+var FB_WEB_APIKEY="";
+var _fbAuthToken=null,_fbAuthTimer=null;
+/** Query string ?auth= si un token anonyme est présent, sinon "" (compatible règles ouvertes actuelles). */
+function _fbAuthQS(){return _fbAuthToken?"?auth="+encodeURIComponent(_fbAuthToken):"";}
+/** Sign-in anonyme via Identity Toolkit REST. Sans clé → no-op (fallback). @param {Function} [cb] called(ok). */
+function cmcFbAnonAuth(cb){
+  var key=(localStorage.getItem("cmc_fb_apikey")||FB_WEB_APIKEY||"").trim();
+  if(!key){_fbAuthToken=null;if(cb)cb(false);return;}
+  fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(key),
+    {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})})
+   .then(function(r){return r.ok?r.json():null;})
+   .then(function(d){
+     if(d&&d.idToken){
+       var wasAuthed=!!_fbAuthToken;
+       _fbAuthToken=d.idToken;
+       var ms=(parseInt(d.expiresIn||"3600",10)*1000)-120000;
+       if(_fbAuthTimer)clearTimeout(_fbAuthTimer);
+       _fbAuthTimer=setTimeout(function(){cmcFbAnonAuth();},Math.max(60000,ms));
+       // Token rafraîchi alors que le SSE tourne → ré-ouvrir avec le nouveau token
+       if(wasAuthed&&typeof _fbEs!=="undefined"&&_fbEs){try{fbStop();}catch(_){}try{fbStartListening();}catch(_){}}
+       if(cb)cb(true);
+     }else{_fbAuthToken=null;if(cb)cb(false);}
+   })
+   .catch(function(e){try{console.warn("[fb anon auth]",e&&e.message);}catch(_){}_fbAuthToken=null;if(cb)cb(false);});
+}
 /** Initialize Firebase: load all + start SSE listener. @returns {void} */
 function fbInit(){
   FB_URL=(localStorage.getItem("cmc_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");
   if(!FB_URL)return;
-  fbLoadAll();
-  fbStartListening();
+  // v9.784 — tente l'auth anonyme d'abord (no-op sans clé → fallback), puis charge/écoute
+  cmcFbAnonAuth(function(){fbLoadAll();fbStartListening();});
 }
 
 function fbSaveUrl(){
@@ -6022,7 +6050,7 @@ function _cmcImportApexPlanning(id){
     }
     // Marquer processed Firebase + nettoyage local
     _cmcMarkApexPlanningProcessed(id,"imported");
-  }catch(e){if(typeof toast==="function")toast("Erreur import Apex : "+e.message,"err");}
+  }catch(e){try{console.error("[apex import]",e&&e.message);}catch(_){}if(typeof toast==="function")toast("\u26a0\ufe0f Import depuis Apex impossible. Réessaie ou vérifie le contenu.","err");}
   try{localStorage.removeItem("_apex_pending_"+id);}catch(_){}
   var el=document.getElementById("apexPlanningToast_"+id);
   if(el)el.remove();
@@ -9073,7 +9101,7 @@ function hardReset(){
     localStorage.setItem("cmc_fam_restored_v116","1");
   }catch(_){}
 }());
-(function _postMigrationFamilies(){ /* no-op v9.116 */ }());
+/* v9.783 — _postMigrationFamilies no-op supprimé (code mort vérifié) */
 // Nettoyage codes invalides dans les overrides existants (ex : "19" généré par bug de parsing)
 (function(){
   var _changed=false;
@@ -15894,7 +15922,7 @@ function testEmailJS(){
     })
   }).then(function(r){
     if(r.ok){toast("\u2705 Email de test envoy\u00e9 \u00e0 "+testEmail+" \u2014 v\u00e9rifiez votre bo\u00eete (et spams)");}
-    else{r.text().then(function(t){toast("\u274c Erreur EmailJS : "+r.status+" \u2014 "+t.slice(0,80),"err");});}
+    else{r.text().then(function(t){try{console.error("[emailjs] HTTP "+r.status,t.slice(0,200));}catch(_){}toast("\u26a0\ufe0f Impossible d'envoyer l'email. Réessaie ou préviens Kevin.","err");});}
   }).catch(function(e){toast("\u274c Erreur r\u00e9seau : "+e.message,"err");});
 }
 function stepRegister(){
@@ -16485,6 +16513,13 @@ function doLogout(){
   try{if(typeof stopOnsiteChecks==="function")stopOnsiteChecks();}catch(_){}
   // v9.414 — Arrêter user-watcher (telemetry)
   try{if(typeof userWatcherStop==="function")userWatcherStop();}catch(_){}
+  // v9.783 — Anti-fuite : nettoyer les intervals globaux restants au logout (session 8h)
+  try{
+    if(typeof _clockInt!=="undefined"&&_clockInt){clearInterval(_clockInt);_clockInt=null;}
+    if(window._cmcAhInt){clearInterval(window._cmcAhInt);window._cmcAhInt=null;}
+    if(window._tvInt){clearInterval(window._tvInt);window._tvInt=null;}
+    if(typeof _cmcMapRefreshInt!=="undefined"&&_cmcMapRefreshInt){clearInterval(_cmcMapRefreshInt);_cmcMapRefreshInt=null;}
+  }catch(_){}
   A.user=null;localStorage.removeItem("cmc_uid");render();
 }
 /** Admin impersonates an employee view (read-only). @param {string} id Employee id. @returns {void} */
