@@ -34,7 +34,8 @@ Le contenu collé est **classé automatiquement** (clé API, IBAN, lien… déte
 | `coffre-fort/sw.js`, `manifest.json` | PWA installable + cache offline |
 | `coffre-fort/memo/01-secrets-github.pdf` | Mémo : tous les secrets GitHub (champs remplissables) |
 | `coffre-fort/memo/02-liens-utiles.pdf` | Mémo : dashboards/consoles/billing |
-| `coffre-fort/memo/03-liens-projets.pdf` | Mémo : repos + URL live de tous les projets |
+| `coffre-fort/memo/03-liens-projets.pdf` | Mémo : adresses **kd-mc.com** + actuelle + dépôt de chaque projet |
+| `coffre-fort/memo/04-adresses-kdmc.pdf` | Mémo : cartographie du domaine **kd-mc.com** (sites + serveurs) |
 | `tools/memo-pdf/generate_pdfs.py` | Générateur des 3 PDF |
 | `services/coffre-r2/` | Worker Cloudflare R2 (upload/download chiffré) |
 | `.github/workflows/deploy-coffre-r2.yml` | Crée le bucket + déploie + écrit l'URL dans config.json (auto) |

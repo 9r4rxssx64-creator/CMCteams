@@ -108,40 +108,61 @@ LINKS = [
     ("EmailJS", "https://dashboard.emailjs.com/admin", "Emails transactionnels"),
 ]
 
+# Domaine kd-mc.com (Cloudflare Registrar, 2026-06-06). Belle adresse par projet.
+# (name, version, repo, nouvelle_adresse_kd-mc, ancienne_adresse, extra)
 PROJECTS = [
-    ("APEX AI v13 (orchestrateur)", "v13.4.x",
-     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/apex-ai/v13",
-     "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/",
-     "Workers : apex-secrets-proxy / apex-auth-worker / apex-push-worker (.9r4rxssx64.workers.dev)"),
-    ("APEX AI v12 (legacy stable)", "v12.785",
-     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/apex-ai",
-     "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/", ""),
+    ("Accueil KDMC (portfolio)", "v1.0",
+     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/kdmc-home",
+     "https://kd-mc.com", "(nouvelle page d'accueil)",
+     "www.kd-mc.com pointe aussi ici"),
     ("CMCteams (planning casino)", "v9.78x",
      "https://github.com/9r4rxssx64-creator/cmcteams",
-     "https://9r4rxssx64-creator.github.io/CMCteams/",
+     "https://cmcteams.kd-mc.com", "https://9r4rxssx64-creator.github.io/CMCteams/",
      "Firebase : cmcteams-c16ab (RTDB europe-west1)"),
+    ("APEX AI v13 (orchestrateur)", "v13.4.x",
+     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/apex-ai/v13",
+     "https://apex-ai.kd-mc.com", "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/",
+     "v12 legacy : .../apex-ai/"),
     ("Apex Chat (messagerie)", "v1.1.x",
      "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/messaging-app",
-     "https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/", ""),
-    ("iRemoteHub (télécommande)", "v0.1",
-     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/iRemoteHub",
-     "https://9r4rxssx64-creator.github.io/CMCteams/iRemoteHub/", ""),
-    ("e-KDMC (hub 5 boutiques)", "v1.11",
-     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops",
-     "https://9r4rxssx64-creator.github.io/CMCteams/shops/index.html", ""),
+     "https://apex-chat.kd-mc.com", "https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/", ""),
     ("La Détente (boutique textile)", "v1.11.0",
      "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/la-detente",
-     "https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/",
-     "Studio : .../shops/la-detente/studio.html"),
-    ("Boutiques (Chez Lolo, Tech Hub, EcoCraft, Digital Vault, Pawsome)", "v1.11.0",
+     "https://la-detente.kd-mc.com", "https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/",
+     "Studio : .../studio.html"),
+    ("Chez Lolo (boutique)", "v1.11.0",
+     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/chez-lolo",
+     "https://chez-lolo.kd-mc.com", "https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/", ""),
+    ("e-KDMC (hub boutiques)", "v1.11",
      "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops",
-     "https://9r4rxssx64-creator.github.io/CMCteams/shops/<nom>/", ""),
+     "(via kd-mc.com)", "https://9r4rxssx64-creator.github.io/CMCteams/shops/index.html", ""),
+    ("iRemoteHub (télécommande)", "v0.1",
+     "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/iRemoteHub",
+     "(à brancher)", "https://9r4rxssx64-creator.github.io/CMCteams/iRemoteHub/", ""),
     ("Social Video Pipeline (auto-publish)", "v1.0",
      "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/tools/social",
-     "(GitHub Actions uniquement)", ""),
-    ("Coffre-fort perso (nouveau)", "v1.0",
+     "(CI/CD)", "(GitHub Actions uniquement)", ""),
+    ("Coffre-fort perso", "v1.0",
      "https://github.com/9r4rxssx64-creator/cmcteams/tree/main/coffre-fort",
-     "https://9r4rxssx64-creator.github.io/CMCteams/coffre-fort/", ""),
+     "(à brancher)", "https://9r4rxssx64-creator.github.io/CMCteams/coffre-fort/", ""),
+]
+
+# Cartographie kd-mc.com (source : KDMC_ADRESSES.md). (belle_adresse, cible, type)
+KDMC_SITES = [
+    ("https://kd-mc.com", "Accueil — portfolio des projets"),
+    ("https://cmcteams.kd-mc.com", "CMCteams — planning casino"),
+    ("https://apex-ai.kd-mc.com", "Apex AI v13 — assistant"),
+    ("https://apex-chat.kd-mc.com", "Apex Chat — messagerie"),
+    ("https://la-detente.kd-mc.com", "La Détente — boutique textile"),
+    ("https://chez-lolo.kd-mc.com", "Chez Lolo — boutique"),
+]
+KDMC_SERVERS = [
+    ("https://api.kd-mc.com", "apex-v13-backend.9r4rxssx64.workers.dev"),
+    ("https://chat-api.kd-mc.com", "apex-chat-api.9r4rxssx64.workers.dev"),
+    ("https://push.kd-mc.com", "apex-push-worker.9r4rxssx64.workers.dev"),
+    ("https://auth.kd-mc.com", "apex-auth-worker.9r4rxssx64.workers.dev"),
+    ("https://secrets.kd-mc.com", "apex-secrets-proxy.9r4rxssx64.workers.dev"),
+    ("https://vault.kd-mc.com", "apex-vault-svc.9r4rxssx64.workers.dev"),
 ]
 
 
@@ -247,8 +268,8 @@ class Doc:
             c.drawRightString(PAGE_W - MARGIN - 8, self.y - 9, note)
         self.y -= row_h + 1.5
 
-    def project_row(self, name, ver, repo, live, extra):
-        row_h = 27 * mm
+    def project_row(self, name, ver, repo, newaddr, old, extra):
+        row_h = 34 * mm
         self.ensure(row_h)
         c = self.c
         c.setFillColor(CARD)
@@ -259,28 +280,43 @@ class Doc:
         c.setFillColor(MUTED)
         c.setFont("Helvetica", 8)
         c.drawRightString(PAGE_W - MARGIN - 8, self.y - 10, ver)
+        # nouvelle adresse kd-mc.com (vedette)
+        c.setFillColor(GOLD)
+        c.setFont("Helvetica-Bold", 7.5)
+        c.drawString(MARGIN + 7, self.y - 22, "Adresse :")
+        c.setFillColor(LINK if newaddr.startswith("http") else MUTED)
+        c.setFont("Helvetica-Bold", 8)
+        c.drawString(MARGIN + 46, self.y - 22, newaddr)
+        if newaddr.startswith("http"):
+            c.linkURL(newaddr, (MARGIN + 46, self.y - 24.5, PAGE_W - MARGIN - 6, self.y - 19), relative=0)
+        c.setFillColor(MUTED); c.setFont("Helvetica-Oblique", 6.5)
+        c.drawRightString(PAGE_W - MARGIN - 8, self.y - 22, "bientôt en ligne")
+        # ancienne adresse (valide)
+        c.setFillColor(TEXT); c.setFont("Helvetica-Bold", 7)
+        c.drawString(MARGIN + 7, self.y - 31, "Actuelle :")
+        c.setFillColor(LINK if old.startswith("http") else MUTED); c.setFont("Helvetica", 6.8)
+        c.drawString(MARGIN + 45, self.y - 31, old if len(old) < 86 else old[:83] + "…")
+        if old.startswith("http"):
+            c.linkURL(old, (MARGIN + 45, self.y - 33, PAGE_W - MARGIN - 6, self.y - 28), relative=0)
         # repo
-        c.setFillColor(TEXT)
-        c.setFont("Helvetica-Bold", 7.5)
-        c.drawString(MARGIN + 7, self.y - 22, "Code :")
-        c.setFillColor(LINK)
-        c.setFont("Helvetica", 7.5)
-        c.drawString(MARGIN + 32, self.y - 22, repo if len(repo) < 82 else repo[:79] + "…")
-        c.linkURL(repo, (MARGIN + 32, self.y - 24.5, PAGE_W - MARGIN - 6, self.y - 19), relative=0)
-        # live
-        c.setFillColor(TEXT)
-        c.setFont("Helvetica-Bold", 7.5)
-        c.drawString(MARGIN + 7, self.y - 32, "Live :")
-        c.setFillColor(LINK if live.startswith("http") else MUTED)
-        c.setFont("Helvetica", 7.5)
-        c.drawString(MARGIN + 32, self.y - 32, live if len(live) < 82 else live[:79] + "…")
-        if live.startswith("http"):
-            c.linkURL(live, (MARGIN + 32, self.y - 34.5, PAGE_W - MARGIN - 6, self.y - 29), relative=0)
-        if extra:
-            c.setFillColor(MUTED)
-            c.setFont("Helvetica-Oblique", 7)
-            c.drawString(MARGIN + 7, self.y - 42, extra if len(extra) < 95 else extra[:92] + "…")
+        c.setFillColor(MUTED); c.setFont("Helvetica", 6.5)
+        c.drawString(MARGIN + 7, self.y - 39.5, "Code: " + (repo[:92] if len(repo) < 92 else repo[:89] + "…"))
+        c.linkURL(repo, (MARGIN + 7, self.y - 41.5, PAGE_W - MARGIN - 6, self.y - 36.5), relative=0)
         self.y -= row_h + 2
+
+    def addr_row(self, addr, target):
+        row_h = 14 * mm
+        self.ensure(row_h)
+        c = self.c
+        c.setFillColor(CARD)
+        c.roundRect(MARGIN, self.y - row_h + 3, CONTENT_W, row_h - 3, 4, fill=1, stroke=0)
+        c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 9.5)
+        c.drawString(MARGIN + 7, self.y - 9, addr)
+        if addr.startswith("http"):
+            c.linkURL(addr, (MARGIN + 7, self.y - 11.5, MARGIN + 240, self.y - 5), relative=0)
+        c.setFillColor(MUTED); c.setFont("Helvetica", 7.5)
+        c.drawString(MARGIN + 7, self.y - 19, "-> " + target)
+        self.y -= row_h + 1.5
 
     def save(self):
         self._footer()
@@ -319,8 +355,8 @@ def build_links():
 
 def build_projects():
     d = Doc(os.path.join(OUT_DIR, "03-liens-projets.pdf"),
-            "Projets — liens code & live",
-            "Tous tes projets : dépôt GitHub + URL en ligne. Liens cliquables.")
+            "Projets — adresses kd-mc.com & code",
+            "Nouvelles belles adresses (kd-mc.com) + adresse actuelle (valide) + dépôt. Liens cliquables.")
     d.section("Projets actifs")
     for p in PROJECTS:
         d.project_row(*p)
@@ -328,15 +364,31 @@ def build_projects():
     return len(PROJECTS)
 
 
+def build_addresses():
+    d = Doc(os.path.join(OUT_DIR, "04-adresses-kdmc.pdf"),
+            "Adresses kd-mc.com — cartographie",
+            "Domaine kd-mc.com (Cloudflare Registrar). 1 belle adresse par projet. Anciennes adresses encore valides.")
+    d.section("Sites (une adresse par projet)")
+    for a, t in KDMC_SITES:
+        d.addr_row(a, t)
+    d.section("Serveurs / API (coulisses, optionnel)")
+    for a, t in KDMC_SERVERS:
+        d.addr_row(a, t)
+    return d.save() or (len(KDMC_SITES) + len(KDMC_SERVERS))
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     n1 = build_secrets()
     n2 = build_links()
     n3 = build_projects()
+    build_addresses()
+    n4 = len(KDMC_SITES) + len(KDMC_SERVERS)
     print("OK -> %s" % OUT_DIR)
     print("  01-secrets-github.pdf : %d secrets" % n1)
     print("  02-liens-utiles.pdf   : %d liens" % n2)
-    print("  03-liens-projets.pdf  : %d projets" % n3)
+    print("  03-liens-projets.pdf  : %d projets (adresses kd-mc.com)" % n3)
+    print("  04-adresses-kdmc.pdf  : %d adresses" % n4)
 
 
 if __name__ == "__main__":
