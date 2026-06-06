@@ -1,14 +1,12 @@
 {
   "_OBJECTIF": "Règles DURCIES pour /cmcteams — ferme le P0 sécurité (lecture/écriture ouvertes à quiconque a l'URL). NE PAS PUBLIER tant que l'étape 1 (auth anonyme côté app) n'est pas déployée ET vérifiée en prod, sinon l'app casse (catastrophe #54 'déploiement aveugle').",
   "_PREREQUIS_AVANT_PUBLICATION": [
-    "ÉTAPE 1 (code app, à faire AVANT) :",
-    "  a) Activer 'Anonymous' dans Firebase Console > Authentication > Sign-in method (1 clic Kevin).",
-    "  b) Ajouter la clé Firebase Web (apiKey AIza... du projet cmcteams-c16ab) dans la config app.",
-    "  c) Au boot : signInAnonymously() via Identity Toolkit REST, récupérer l'idToken.",
-    "  d) Appender '?auth=<idToken>' sur TOUTES les requêtes RTDB : fbWrite (PUT), fbLoadAll (GET), fbStartListening (EventSource SSE).",
-    "  e) FALLBACK GRACIEUX : si signInAnonymously échoue (réseau, anon non activé) → continuer SANS auth (compatible règles ouvertes actuelles). Aucune régression.",
-    "  f) Déployer, vérifier en prod que l'auth anonyme réussit (indicateur visible) sur iPhone Kevin + 1 employé.",
-    "ÉTAPE 2 (publier ces règles) : seulement après que l'étape 1 tourne en prod sans erreur.",
+    "ÉTAPE 1 — CODE APP : ✅ FAIT en v9.784 (cmcFbAnonAuth + _fbAuthQS + ?auth= sur fbWrite/fbLoadAll/fbPushAll/fbStartListening + fallback gracieux total).",
+    "RESTE 2 actions Kevin (1 clic + 1 collage) AVANT de publier ces règles :",
+    "  a) Activer 'Anonymous' dans Firebase Console > Authentication > Sign-in method (1 clic).",
+    "  b) Renseigner la clé Firebase Web (apiKey AIza... du projet cmcteams-c16ab) : soit dans la constante FB_WEB_APIKEY du code, soit localStorage 'cmc_fb_apikey'.",
+    "  c) Vérifier en prod (iPhone Kevin + 1 employé) que la sync marche TOUJOURS (auth anonyme active). Tant que (a)/(b) absents → l'app reste en mode sans-auth, identique à aujourd'hui (0 régression).",
+    "ÉTAPE 2 (publier ces règles) : seulement après (a)+(b)+(c) OK en prod.",
     "",
     "NOTE de franchise : l'auth anonyme bloque le scraping trivial (curl direct de l'URL) mais NE prouve PAS l'identité (n'importe qui avec la clé Web publique peut obtenir un token). Pour une vraie protection par identité employé → Phase 5 custom-tokens backend (gros chantier, cf CLAUDE.md règle SÉCURITÉ MAXIMALE)."
   ],

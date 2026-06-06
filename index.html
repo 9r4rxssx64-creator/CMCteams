@@ -4159,7 +4159,7 @@ function fbWrite(k,v,_retry){
   var _v=v;
   if(k==="cmc_pw"&&v&&typeof v==="object"){_v={};for(var _pk in v){if(v.hasOwnProperty(_pk)){var _e=v[_pk];_v[_pk]={h:_e.h,setBy:_e.setBy,setAt:_e.setAt};}}}
   if(!_retry){_fbPendingWrites++;_fbShowSyncBadge();}
-  fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{
+  fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json"+_fbAuthQS(),{
     method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(_v)
   }).then(function(r){
     if(!_retry){_fbPendingWrites=Math.max(0,_fbPendingWrites-1);_fbShowSyncBadge();}
@@ -4634,9 +4634,9 @@ function sendNotif(title,body,opts){
 /** Start Firebase EventSource listener with auto-reconnect+jitter. @returns {void} */
 function fbStartListening(){
   if(!FB_URL||_fbEs)return;
-  var url=FB_URL+FB_PATH+".json";
+  var url=FB_URL+FB_PATH+".json"+_fbAuthQS();
   // v9.445 — Diag explicite 403 "Host not in allowlist" avant SSE (sinon le SSE echoue silencieusement)
-  if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+"?shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0||t.indexOf("Host")>=0){toast("\u26a0 Firebase bloqué : domaine non autorisé. Console Firebase \u2192 APIs \u2192 clé Web \u2192 retirer restrictions domaine.","err");console.error("Firebase 403 Host not in allowlist. Domaine GitHub Pages a ajouter dans console.cloud.google.com credentials.");}});}}).catch(function(){});}
+  if(!window._fbDiagDone){window._fbDiagDone=true;fetch(url+(url.indexOf("?")>=0?"&":"?")+"shallow=true").then(function(r){if(r.status===403){return r.text().then(function(t){if(t.indexOf("allowlist")>=0||t.indexOf("Host")>=0){toast("\u26a0 Firebase bloqué : domaine non autorisé. Console Firebase \u2192 APIs \u2192 clé Web \u2192 retirer restrictions domaine.","err");console.error("Firebase 403 Host not in allowlist. Domaine GitHub Pages a ajouter dans console.cloud.google.com credentials.");}});}}).catch(function(){});}
   try{
     // v9.101 — Fermer l'ancien EventSource pour \u00e9viter listeners dupliqu\u00e9s
     if(_fbEs){try{_fbEs.close();}catch(_){}}
@@ -4698,7 +4698,7 @@ function fbLoadAll(){
   // Chargement initial de toutes les clés depuis Firebase
   if(!FB_URL)return;
   // v9.117 — Vérif r.ok avant .json() (évite crash si HTTP 403/500 retourne du HTML)
-  fetch(FB_URL+FB_PATH+".json")
+  fetch(FB_URL+FB_PATH+".json"+_fbAuthQS())
     .then(function(r){
       if(!r.ok)throw new Error("Firebase HTTP "+r.status);
       return r.json();
@@ -4727,7 +4727,7 @@ function fbPushAll(){
       }
     }
   }
-  fetch(FB_URL+FB_PATH+".json",{
+  fetch(FB_URL+FB_PATH+".json"+_fbAuthQS(),{
     method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(all)
   }).then(function(r){
     if(r.ok){toast("\u2705 Données envoyées vers Firebase — tous les appareils vont se mettre à jour");fbStartListening();}
@@ -4736,12 +4736,40 @@ function fbPushAll(){
 }
 
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+// ── v9.784 — Auth anonyme Firebase (étape 1 durcissement P0) ───────────────────
+// Clé Web publique du projet (peut aussi être collée par l'admin dans cmc_fb_apikey).
+// VIDE par défaut → fallback gracieux : l'app fonctionne exactement comme avant.
+var FB_WEB_APIKEY="";
+var _fbAuthToken=null,_fbAuthTimer=null;
+/** Query string ?auth= si un token anonyme est présent, sinon "" (compatible règles ouvertes actuelles). */
+function _fbAuthQS(){return _fbAuthToken?"?auth="+encodeURIComponent(_fbAuthToken):"";}
+/** Sign-in anonyme via Identity Toolkit REST. Sans clé → no-op (fallback). @param {Function} [cb] called(ok). */
+function cmcFbAnonAuth(cb){
+  var key=(localStorage.getItem("cmc_fb_apikey")||FB_WEB_APIKEY||"").trim();
+  if(!key){_fbAuthToken=null;if(cb)cb(false);return;}
+  fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(key),
+    {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})})
+   .then(function(r){return r.ok?r.json():null;})
+   .then(function(d){
+     if(d&&d.idToken){
+       var wasAuthed=!!_fbAuthToken;
+       _fbAuthToken=d.idToken;
+       var ms=(parseInt(d.expiresIn||"3600",10)*1000)-120000;
+       if(_fbAuthTimer)clearTimeout(_fbAuthTimer);
+       _fbAuthTimer=setTimeout(function(){cmcFbAnonAuth();},Math.max(60000,ms));
+       // Token rafraîchi alors que le SSE tourne → ré-ouvrir avec le nouveau token
+       if(wasAuthed&&typeof _fbEs!=="undefined"&&_fbEs){try{fbStop();}catch(_){}try{fbStartListening();}catch(_){}}
+       if(cb)cb(true);
+     }else{_fbAuthToken=null;if(cb)cb(false);}
+   })
+   .catch(function(e){try{console.warn("[fb anon auth]",e&&e.message);}catch(_){}_fbAuthToken=null;if(cb)cb(false);});
+}
 /** Initialize Firebase: load all + start SSE listener. @returns {void} */
 function fbInit(){
   FB_URL=(localStorage.getItem("cmc_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");
   if(!FB_URL)return;
-  fbLoadAll();
-  fbStartListening();
+  // v9.784 — tente l'auth anonyme d'abord (no-op sans clé → fallback), puis charge/écoute
+  cmcFbAnonAuth(function(){fbLoadAll();fbStartListening();});
 }
 
 function fbSaveUrl(){
@@ -5423,7 +5451,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.783";
+var APP_VER="v9.784";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
