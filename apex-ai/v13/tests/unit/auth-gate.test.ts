@@ -57,8 +57,17 @@ describe('Auth Gate (validation accès clients + admin protection + SSO)', () =>
       expect(authGate.isAdminKevinAlias('kevin.desarzens@gmail.com')).toBe(true);
     });
 
-    it('reconnaît "KDMC"', () => {
-      expect(authGate.isAdminKevinAlias('KDMC')).toBe(true);
+    /* SÉCU v13.4.290 (erreur #38) : alias mono-token interdits (anti-impersonation). */
+    it('REJETTE "KDMC" seul (code court mono-token)', () => {
+      expect(authGate.isAdminKevinAlias('KDMC')).toBe(false);
+    });
+
+    it('REJETTE "Kevin" seul (prénom seul)', () => {
+      expect(authGate.isAdminKevinAlias('Kevin')).toBe(false);
+    });
+
+    it('REJETTE "DESARZENS" seul (nom seul)', () => {
+      expect(authGate.isAdminKevinAlias('DESARZENS')).toBe(false);
     });
 
     it('REJETTE "kevin durand" (autre Kevin)', () => {
