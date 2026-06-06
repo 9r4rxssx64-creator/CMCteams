@@ -5423,7 +5423,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.782";
+var APP_VER="v9.783";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -26551,7 +26551,7 @@ function _cmcDetectIdenticalScheduleBug(key){
       var maxS=null,maxN=0;
       Object.keys(freq).forEach(function(s){if(freq[s]>maxN){maxN=freq[s];maxS=s;}});
       var pct=maxN/schedulesNonEmpty.length;
-      var threshold=label==="cadres"?0.6:0.7;
+      var threshold=label==="cadres"?0.75:0.7; // v9.783 (detente) : cadres 0.6->0.75 (rotations chef partagees legitimes, Convention SBM art.11)
       if(pct>=threshold && maxN>=3){
         return {bug:true,scope:label,identicalCount:maxN,totalEmps:schedulesNonEmpty.length,sample:maxS,pct:Math.round(pct*100)};
       }
@@ -31502,7 +31502,12 @@ function detectRepoConflicts(y,m){
       else if(/^\d/.test(c))totalWork++;
     }
     // Règle 1 : Convention SBM art.17.5 — min 10j repos / 6 semaines ≈ 5j repos / mois
-    if(totalWork>0&&totalRepo<Math.ceil(daysInMonth/7)){
+    // v9.783 (detente) : seuil PROPORTIONNEL aux jours de presence (travail+repos),
+    // pas au calendrier. Un emp present seulement sur une sous-periode (1-15 / 16-31,
+    // ou bloc CP intra-mois) n'est plus faussement signale "repos insuffisant".
+    var _presDays=totalWork+totalRepo;
+    var _minRepos=Math.ceil((_presDays>0?_presDays:daysInMonth)/7);
+    if(totalWork>0&&totalRepo<_minRepos){
       conflicts.push({emp:emp,type:"repos_insuffisant",msg:emp.name+" : seulement "+totalRepo+" repos sur "+daysInMonth+"j ("+totalWork+" jours travaill\u00e9s)",severity:"high"});
     }
     // R\u00e8gle 2 : d\u00e9tecter 7+ jours cons\u00e9cutifs sans repos
@@ -31510,13 +31515,13 @@ function detectRepoConflicts(y,m){
     for(var d2=1;d2<=daysInMonth;d2++){
       var c2=(row[d2]||"").toUpperCase().trim();
       if(/^\d/.test(c2)){consec++;if(consec>maxConsec)maxConsec=consec;}
-      else if(c2==="R"||c2==="RH")consec=0;
+      else consec=0; // v9.783 (detente) : TOUT code non-travail (R/RH + absences CP/AF/M + vide) brise la serie. Avant, une absence "pontait" deux blocs de travail = faux positif 7j consecutifs.
     }
     if(maxConsec>=7){
       conflicts.push({emp:emp,type:"max_jours_consec",msg:emp.name+" : "+maxConsec+" jours cons\u00e9cutifs de travail sans repos",severity:"critical"});
     }
     // Règle 3 : jours vides nombreux (data manquante)
-    if(emptyDays>daysInMonth/2){
+    if(emptyDays>daysInMonth*0.6){ // v9.783 (detente) : 50%->60% (sections PDF fragmentees, reduit le bruit)
       conflicts.push({emp:emp,type:"donnees_manquantes",msg:emp.name+" : "+emptyDays+" jours non renseign\u00e9s",severity:"info"});
     }
     // Règle 4 : horaire de travail intercalé dans une période CP/AF/M (incohérence import)
@@ -36962,7 +36967,9 @@ function _cmcImportConfidenceScore(iy,im){
 function _cmcMaybeAutoVisionFallback(iy,im,confidence){
   try{
     if(!A.user||A.user.id!==AID)return; // admin only
-    if(!confidence||confidence.severity==="ok")return;
+    // v9.783 (detente) : auto-Vision + toasts "joins image" SEULEMENT si score < 70
+    // (severite critical). Avant : tout score < 90 declenchait => spam sur imports 70-89% OK.
+    if(!confidence||confidence.severity!=="critical")return;
     var key=iy+"-"+im;
     // Throttle : 1 seul auto-trigger Vision par import (évite spam)
     var lastTrigger=lg("cmc_vision_auto_last_"+key,0);
