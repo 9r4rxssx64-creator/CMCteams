@@ -1,3 +1,25 @@
+# Mémo de reprise — SESSION 2026-06-06 : Boutique « Chez Lolo » refonte complète (branche `claude/lolo-crew-review-tDzp7`, **tout mergé sur main via GitHub MCP**)
+
+> **Contexte** : Chez Lolo était un clone inachevé — `index.html` = ancienne boutique cosmétique « Glow Wellness » (100 produits) alors que manifest/studio venaient d'un clone AR15 `la-detente`. Décision Kevin : **vider le catalogue, garder des catégories (textile/cosmétique/goodies), tout corriger, cohérence totale, 100% réel autonome**.
+>
+> **Livré et MERGÉ sur main (4 PR : #849, #851, #853 + 1ʳᵉ passe)** :
+> 1. **Identité multi-univers** : catalogue vidé (`P=[]`), catégories Textile/Cosmétiques/Goodies/Accessoires, textes/OG/Twitter/schema.org/hero/à-propos/footer/panier neutralisés, `manifest.json` cohérent (theme `#7c8c3c`, bg `#faf8f0`, icône 🛍️), studio tag « LA DÉTENTE »→« CHEZ LOLO », `sw.js` notificationclick `chez-lolo`.
+> 2. **`bibliotheque.html` CRÉÉE** (lien mort réparé) : galerie créations/logos/projets depuis localStorage.
+> 3. **Sécurité CSP** sur index/studio/bibliotheque (`connect-src` restreint = anti-exfiltration) + referrer + nosniff + object-src none.
+> 4. **➕ Ajout produit autonome** pour Lolo (`clAddProductForm`/`clSaveNewProduct`) : formulaire catégorie/prix/stock/fournisseur/image → `cl_custom_products` → apparaît direct en boutique, zéro code.
+> 5. **Image OG à la marque** (Pillow déterministe, texte exact) remplaçant l'AR15 hérité (était byte-identique à la-detente).
+> 6. **Auto-commande Printify** (v2.0.5) : frontend POST `/order` au worker partagé (design base64 + garment + couleur FR + adresse), statut on-hold, email/queue en secours. Worker `la-detente/worker-order/worker.js` **généralisé par shop** (label/shopName/pushUrl via payload, défauts = La Détente → la-detente intact), auto-déployé.
+>
+> **Vérifs réelles** : `node --check` tous blocs verts, 0 produit fantôme, 0 handler orphelin, 8/8 liens internes OK, propagation **confirmée via API GitHub** (pas le proxy — leçons #79/#86).
+>
+> **Découvertes infra cette session** :
+> - ✅ **GitHub MCP fonctionne** (`mcp__github__*`) — create_pull_request + merge_pull_request par API → fini la friction proxy/auto-merge (leçons #78-86). Merges vérifiés sur le vrai main.
+> - ⚠️ **Égress réseau sandboxé** : `curl` vers `*.workers.dev` = « Host not in allowlist ». Impossible d'interroger le catalogue Printify d'ici → blueprints garments manquants NON mappés (pas d'invention d'IDs).
+>
+> **Reste (Kevin, ~2 min)** : placer 1 commande POD test → vérifier commande on-hold sur printify.com/app/orders. Optionnel : mapper blueprints polo/tank/shirt/zip/jogger/short/bandana (fallback actuel = tee + warning, sûr car on-hold).
+
+---
+
 # Mémo de reprise — Campagne couverture Apex v13 100% réel (2026-06-03, branche `claude/perfect-100-Ypr17`)
 
 > **Objectif Kevin** : 100% réel partout (mesuré jamais estimé), autonome, sans régression. Gate à CHAQUE tour : `tsc --noEmit` + `eslint --max-warnings=0` + suite vitest COMPLÈTE (EXIT=0 ET 0 ligne `Unhandled/Errors`, pas seulement « 0 failed » — cf. leçon #89). Merge réel vérifié sur le vrai GitHub à chaque tour (auto-merge bot).

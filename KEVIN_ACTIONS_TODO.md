@@ -1,5 +1,24 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🛍️ CHEZ LOLO (2026-06-06) — refonte mergée, 1 validation restante
+
+### ✅ Fait & en prod (aucune action) : refonte multi-univers, catalogue vidé + catégories, CSP/sécurité, bibliotheque.html, bouton ➕ Produit (ajout sans code), image OG marque, auto-commande Printify (worker généralisé).
+
+### ⏳ #A — Valider la chaîne Printify (toi, ~2 min)
+- Sur la boutique : **Studio → « Ajouter à la boutique »** un design → panier → commander (PayPal/Revolut).
+- Vérifier qu'une commande **on-hold** apparaît sur https://printify.com/app/orders
+- Si un warning « à vérifier » s'affiche (garment polo/tank/shirt/zip/jogger/short/bandana) → me le dire, j'ajoute le blueprint manquant.
+- ℹ️ Statut on-hold = **aucun débit auto**, tu valides/paies dans Printify. Garments sûrs aujourd'hui : t-shirt, hoodie, casquette, tote.
+
+### 🟡 #B — (Optionnel) Mapper les blueprints Printify manquants
+- Bloqué côté sandbox (pas d'accès réseau au catalogue Printify d'ici → je n'invente pas d'IDs).
+- Option : je te livre un mini-endpoint `/blueprints?q=` dans le worker pour découvrir les vrais IDs, OU tu me donnes les `blueprint_id` Printify des garments voulus et je les câble.
+
+### 🟢 #C — (Optionnel) Printify sales channel
+- `printify-config.json` : `sales_channel: disconnected` (le shop existe, connecté API). Les commandes passent par l'API worker → pas besoin de publier une vitrine Printify, sauf si tu veux le canal natif.
+
+---
+
 ## 📌 SESSION 2026-06-02 — À FAIRE ENSEMBLE (décision Kevin « on fera le 2 ensuite »)
 
 ### #2 — Apex Chat Étape B : E2E réellement actif (upload prekeys)

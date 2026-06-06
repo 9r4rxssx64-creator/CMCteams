@@ -1,7 +1,31 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-06-03** (Boutique « La Détente » — Studio + Checkout/Bon de production)
+> Dernière mise à jour : **2026-06-06** (Boutique « Chez Lolo » — refonte multi-univers + sécurité + ajout produit + OG + auto-commande Printify)
+
+## 🛍️ Chez Lolo — boutique multi-univers (textile/cosmétiques/goodies/accessoires) — **mergé sur main**
+
+**🧪 Action immédiate / tester**
+- 🛍️ Boutique live : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/
+- 🎨 Studio (créer designs) : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/studio.html
+- 📚 Bibliothèque (créations/logos/projets) : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/bibliotheque.html
+- 📦 Commandes Printify (valider on-hold) : https://printify.com/app/orders
+
+**🔧 Code modifié / créé**
+- index.html : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/index.html
+- studio.html : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/studio.html
+- bibliotheque.html (NOUVEAU) : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/bibliotheque.html
+- img/og.png (NOUVELLE image marque) : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/img/og.png
+- manifest.json : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/manifest.json
+- sw.js (v2.0.5) : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/sw.js
+- Worker Printify généralisé : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/worker-order/worker.js
+
+**📜 PR mergées (via GitHub MCP)**
+- #849 refonte multi-univers + CSP + ajout produit : https://github.com/9r4rxssx64-creator/cmcteams/pull/849
+- #851 image OG marque : https://github.com/9r4rxssx64-creator/cmcteams/pull/851
+- #853 auto-commande Printify + worker généralisé : https://github.com/9r4rxssx64-creator/cmcteams/pull/853
+
+---
 
 ## 🎯 La Détente — boutique textile perso (motif AR15 + cœur) — branche `claude/textile-shop-ar15-heart-mMJ0j`
 
