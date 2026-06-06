@@ -5423,7 +5423,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.784";
+var APP_VER="v9.785";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -27260,6 +27260,72 @@ function cmcRunFallbackOcrVision(){
   });
 }
 
+// v9.785 — Routes parserintel/parsercompare câblées sur les VRAIES vues existantes
+// (élimine les stubs "vue indisponible" — architecture : zéro route morte).
+function vParserIntelligence(){return (typeof vParserLearning==="function")?vParserLearning():"";}
+function vParserCompare(){return (typeof vImportVersions==="function")?vImportVersions():"";}
+
+// v9.785 — Vue admin RÉELLE : activité cross-team (statistiques du chat par équipe).
+// Élimine la dernière route morte (crossteamactivity). Données réelles depuis cmc_chat.
+function vCrossTeamActivity(){
+  if(!A.user||A.user.id!==AID){sv("accueil");return "";}
+  var msgs=((A.chatMsgs&&A.chatMsgs.length)?A.chatMsgs:lg("cmc_chat",[]))||[];
+  msgs=msgs.filter(function(m){return m&&!m.del;});
+  var now=Date.now(),D=86400000;
+  var n24=0,n7=0,n30=0,nPub=0,nDm=0;
+  var byTeam={},byUser={};
+  msgs.forEach(function(m){
+    var ts=m.ts||0;
+    if(now-ts<=D)n24++;
+    if(now-ts<=7*D)n7++;
+    if(now-ts<=30*D)n30++;
+    if(m.to)nDm++;else nPub++;
+    var t=m.team||"—";
+    if(!byTeam[t])byTeam[t]={n:0,users:{},last:0};
+    byTeam[t].n++;byTeam[t].users[m.uid||m.name||"?"]=1;
+    if(ts>byTeam[t].last)byTeam[t].last=ts;
+    var u=m.name||m.uid||"?";
+    byUser[u]=(byUser[u]||0)+1;
+  });
+  var teams=Object.keys(byTeam).map(function(t){return {id:t,n:byTeam[t].n,u:Object.keys(byTeam[t].users).length,last:byTeam[t].last};}).sort(function(a,b){return b.n-a.n;});
+  var topUsers=Object.keys(byUser).map(function(u){return {u:u,n:byUser[u]};}).sort(function(a,b){return b.n-a.n;}).slice(0,8);
+  function rel(ts){if(!ts)return "—";var s=Math.round((now-ts)/1000);if(s<60)return "à l'instant";if(s<3600)return "il y a "+Math.round(s/60)+" min";if(s<86400)return "il y a "+Math.round(s/3600)+" h";return "il y a "+Math.round(s/86400)+" j";}
+  function tname(id){if(id==="—")return "(sans équipe / direct)";var g=(typeof gt==="function")?gt(id):null;return g&&g.name?g.name:id;}
+  var h='<div class="page">';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+    +'<button class="btn ghost" onclick="sv(\'admin\')" style="padding:5px 10px;font-size:15px">←</button>'
+    +'<div style="font-size:20px;font-weight:800;color:#c9a227">📊 Activité cross-team</div></div>';
+  if(!msgs.length){
+    h+='<div class="empty" role="status"><div class="empty-icon">💭</div><div class="empty-title">Aucun message</div><div class="empty-sub">Le chat n\'a pas encore d\'activité à analyser.</div></div></div>';
+    return h;
+  }
+  // KPI cliquables (ouvrent le chat)
+  var kpis=[["💬 Total",msgs.length],["🕛 24 h",n24],["📅 7 j",n7],["🗓 30 j",n30],["📢 Publics",nPub],["🔒 Privés",nDm]];
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
+  kpis.forEach(function(k){h+='<div onclick="sv(\'chat\')" style="cursor:pointer;background:rgba(201,162,39,.10);border:1px solid rgba(201,162,39,.30);border-radius:10px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:#ffdc40;font-family:JetBrains Mono,monospace">'+k[1]+'</div><div style="font-size:11px;color:#a0cca0;margin-top:2px">'+k[0]+'</div></div>';});
+  h+='</div>';
+  // Tableau par équipe
+  h+='<div class="card" style="padding:12px;margin-bottom:14px"><div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:8px">Par équipe ('+teams.length+')</div>';
+  h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="color:#a0cca0;text-align:left">'
+    +'<th style="padding:4px 6px">Équipe</th><th style="padding:4px 6px">Messages</th><th style="padding:4px 6px">Membres actifs</th><th style="padding:4px 6px">Dernier</th></tr></thead><tbody>';
+  teams.forEach(function(t){
+    h+='<tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:6px;font-weight:600">'+esc(tname(t.id))+'</td>'
+      +'<td style="padding:6px;color:#ffdc40;font-weight:700">'+t.n+'</td><td style="padding:6px">'+t.u+'</td>'
+      +'<td style="padding:6px;color:#a0cca0">'+rel(t.last)+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+  // Top contributeurs
+  h+='<div class="card" style="padding:12px"><div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:8px">Top contributeurs</div>';
+  topUsers.forEach(function(x){
+    var pct=Math.round(x.n/msgs.length*100);
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">'+esc(x.u)+'</div>'
+      +'<div style="width:90px;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,#c9a227,#ffdc40)"></div></div>'
+      +'<div style="width:46px;text-align:right;font-size:12px;color:#ffdc40;font-weight:700">'+x.n+'</div></div>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
 // Vue admin : historique versions V1/V2/V3 avec diff visualisable
 function vImportVersions(){
   if(!A.user||A.user.id!==AID)return"";
@@ -28221,7 +28287,7 @@ function vChat(){
       +'<button onclick="if(confirm(\'Vider tout le chat ? (irr\u00e9versible)\')){A.chatMsgs=[];ls(\'cmc_chat\',[]);toast(\'Chat vid\u00e9\');dc();}" style="background:rgba(160,40,40,.35);border:1px solid rgba(220,80,80,.55);border-radius:6px;padding:4px 10px;font-size:13px;color:#ffc0c0;cursor:pointer;font-weight:700;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">\ud83d\uddd1 Vider</button>';
   }
   // Bouton recherche (toggle)
-  h+='<button onclick="A.chatSearchOpen=!A.chatSearchOpen;dc();setTimeout(function(){var i=document.getElementById(\'chatSearchIn\');if(i)i.focus();},30);" title="Rechercher" style="background:'+(A.chatSearchOpen||searchQ?"rgba(201,162,39,.25)":"rgba(0,0,0,.35)")+';border:1px solid '+(A.chatSearchOpen||searchQ?"rgba(201,162,39,.6)":"rgba(201,162,39,.3)")+';border-radius:6px;color:'+(A.chatSearchOpen||searchQ?"#ffdc40":"#d8e8c8")+';font-size:16px;cursor:pointer;padding:0;min-width:36px;min-height:36px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">\ud83d\udd0d</button>';
+  h+='<button onclick="A.chatSearchOpen=!A.chatSearchOpen;dc();setTimeout(function(){var i=document.getElementById(\'chatSearchIn\');if(i)i.focus();},30);" title="Rechercher" style="background:'+(A.chatSearchOpen||searchQ?"rgba(201,162,39,.25)":"rgba(0,0,0,.35)")+';border:1px solid '+(A.chatSearchOpen||searchQ?"rgba(201,162,39,.6)":"rgba(201,162,39,.3)")+';border-radius:6px;color:'+(A.chatSearchOpen||searchQ?"#ffdc40":"#d8e8c8")+';font-size:16px;cursor:pointer;padding:0;min-width:44px;min-height:44px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">\ud83d\udd0d</button>';
   h+='</div></div>';
   // Barre de recherche (si ouverte)
   if(A.chatSearchOpen||searchQ){
@@ -43171,7 +43237,7 @@ function _cmcRenderScanPages(state){
   var html=state.pages.map(function(p,i){
     var preview=p.thumb?'<img src="'+esc(p.thumb)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;background:#000">':'<div style="width:48px;height:48px;background:#1a2a1e;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">📄</div>';
     var st=p.status==="ok"?'<span style="color:#7edc90">OK '+(p.text?p.text.length:0)+' car</span>':p.status==="err"?'<span style="color:#e88080">Erreur '+esc(p.error||"erreur").slice(0,50)+'</span>':'<span style="color:#c9a227">OCR '+esc(p.progress||"...")+'</span>';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,.04);border-radius:8px">'+preview+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Page '+(i+1)+'</div><div style="font-size:11px;color:#a0cca0">'+st+'</div></div><button onclick="_cmcRemoveScanPage('+i+')" style="min-width:36px;min-height:36px;background:transparent;border:none;color:#e88080;cursor:pointer;font-size:16px" title="Supprimer cette page">x</button></div>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,.04);border-radius:8px">'+preview+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Page '+(i+1)+'</div><div style="font-size:11px;color:#a0cca0">'+st+'</div></div><button onclick="_cmcRemoveScanPage('+i+')" style="min-width:44px;min-height:44px;background:transparent;border:none;color:#e88080;cursor:pointer;font-size:16px" title="Supprimer cette page">x</button></div>';
   }).join("");
   box.innerHTML=html;
   var imp=document.getElementById("cmcScanImport");
