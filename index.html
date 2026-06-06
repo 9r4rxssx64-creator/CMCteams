@@ -105,8 +105,8 @@
   --cmc-blue:#4a72a8;
   --cmc-text:#ffffff;                /* v9.110 : blanc pur pour lisibilité max */
   --cmc-text-soft:#e0f0d0;           /* v9.110 : presque blanc, teinté vert léger */
-  --cmc-text-dim:#b8d4a8;            /* v9.110 : plus clair qu'avant */
-  --cmc-text-faint:#b8d4a8;
+  --cmc-text-dim:#cce6bd;            /* v9.783 : éclairci pour contraste WCAG AA+ sur fond sombre (≈7:1) */
+  --cmc-text-faint:#c2dcb2;          /* v9.783 : éclairci (≈6.3:1) */
   --cmc-bg-dark:#0a1408;
   --cmc-bg-panel:rgba(40,70,44,.55);
   --cmc-border:rgba(201,162,39,.16);
@@ -180,7 +180,7 @@ input,select,button,textarea{font-family:inherit}
 .empty-icon{font-size:56px;margin-bottom:12px;opacity:.6}
 .empty-title{font-size:var(--fs-md);font-weight:700;color:var(--cmc-text-soft);margin-bottom:6px}
 .empty-sub{font-size:var(--fs-sm);color:var(--cmc-text-faint);line-height:1.5}
-.empty-cta{margin-top:14px;display:inline-block;padding:8px 18px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.35);border-radius:var(--r-md);color:var(--cmc-gold);font-weight:700;font-size:var(--fs-sm);cursor:pointer;text-decoration:none}
+.empty-cta{margin-top:14px;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 22px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.35);border-radius:var(--r-md);color:var(--cmc-gold);font-weight:700;font-size:var(--fs-sm);cursor:pointer;text-decoration:none}
 /* === SKELETON LOADING === */
 .skel{background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 100%);background-size:200% 100%;animation:shimmer 1.6s linear infinite;border-radius:var(--r-sm)}
 .skel-line{height:14px;margin-bottom:8px}
@@ -653,7 +653,7 @@ body:not(.has-accueil-bg) #bnav{
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
 }
 .nt{
-  flex:1 1 auto;padding:10px 6px 9px;border:none;background:transparent;min-height:44px;min-width:36px;
+  flex:1 1 auto;padding:10px 6px 9px;border:none;background:transparent;min-height:44px;min-width:44px;
   display:flex;flex-direction:column;align-items:center;gap:2px;justify-content:center;
   font-size:14px;color:#90c090;border-top:2px solid transparent;
   cursor:pointer;position:relative;text-transform:uppercase;letter-spacing:.5px;
@@ -661,7 +661,7 @@ body:not(.has-accueil-bg) #bnav{
 }
 /* v9.70 : compact sur petits écrans (iPhone SE 375px, Galaxy S22 360px) */
 @media (max-width:419px){
-  .nt{padding:7px 2px 6px;font-size:10px;min-width:34px;letter-spacing:.1px;gap:0}
+  .nt{padding:7px 2px 6px;font-size:10px;min-width:44px;letter-spacing:.1px;gap:0}
   .nt em{font-size:19px!important}
   .nt-lb{display:none} /* cacher les labels, ne garder que les emojis */
 }
@@ -817,7 +817,7 @@ body:not(.has-accueil-bg) .card{background:rgba(16,34,20,.90)}
 .chat-status-bar{padding:6px 12px;border-top:1px solid rgba(255,255,255,.05);font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0;background:rgba(0,0,0,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,.8)}
 .chat-datesep{text-align:center;font-size:12px;font-weight:700;color:#ffffff;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:3px 14px;margin:10px auto 6px;user-select:none;pointer-events:none;letter-spacing:1px;display:table;text-shadow:0 1px 2px rgba(0,0,0,.9)}
 /* Boutons d'action chat : TOUJOURS visibles (pas hover-only) → fonctionnalité intuitive mobile */
-.chat-act-btn{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.15);cursor:pointer;font-size:15px;color:rgba(255,255,255,.85);padding:0;line-height:1;min-width:34px;min-height:34px;border-radius:50%;transition:color .18s,background .18s,transform .15s;display:inline-flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.chat-act-btn{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.15);cursor:pointer;font-size:15px;color:rgba(255,255,255,.85);padding:0;line-height:1;min-width:44px;min-height:44px;border-radius:50%;transition:color .18s,background .18s,transform .15s;display:inline-flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .chat-act-btn:hover{background:rgba(255,220,90,.25);color:#ffdc40;border-color:rgba(255,220,90,.5)}
 .chat-act-btn:active{background:rgba(255,220,90,.35);color:#ffdc40;transform:scale(.92)}
 .nbadge-dm{background:#4a2880!important;color:#c090ff!important}
@@ -4731,8 +4731,8 @@ function fbPushAll(){
     method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(all)
   }).then(function(r){
     if(r.ok){toast("\u2705 Données envoyées vers Firebase — tous les appareils vont se mettre à jour");fbStartListening();}
-    else{toast("\u274c Erreur Firebase : "+r.status+" — vérifiez l'URL et les règles","err");}
-  }).catch(function(e){toast("\u274c Erreur réseau Firebase : "+e.message,"err");});
+    else{try{console.error("[fb push] HTTP "+r.status);}catch(_){}toast("\u26a0\ufe0f Sauvegarde en ligne impossible pour l'instant. Tes données restent sur l'appareil.","err");}
+  }).catch(function(e){try{console.error("[fb push] network",e&&e.message);}catch(_){}toast("\u26a0\ufe0f Pas de connexion au serveur. Tes données sont gardées en local, réessaie plus tard.","err");});
 }
 
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
@@ -5423,7 +5423,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.782";
+var APP_VER="v9.783";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -6022,7 +6022,7 @@ function _cmcImportApexPlanning(id){
     }
     // Marquer processed Firebase + nettoyage local
     _cmcMarkApexPlanningProcessed(id,"imported");
-  }catch(e){if(typeof toast==="function")toast("Erreur import Apex : "+e.message,"err");}
+  }catch(e){try{console.error("[apex import]",e&&e.message);}catch(_){}if(typeof toast==="function")toast("\u26a0\ufe0f Import depuis Apex impossible. Réessaie ou vérifie le contenu.","err");}
   try{localStorage.removeItem("_apex_pending_"+id);}catch(_){}
   var el=document.getElementById("apexPlanningToast_"+id);
   if(el)el.remove();
@@ -9073,7 +9073,7 @@ function hardReset(){
     localStorage.setItem("cmc_fam_restored_v116","1");
   }catch(_){}
 }());
-(function _postMigrationFamilies(){ /* no-op v9.116 */ }());
+/* v9.783 — _postMigrationFamilies no-op supprimé (code mort vérifié) */
 // Nettoyage codes invalides dans les overrides existants (ex : "19" généré par bug de parsing)
 (function(){
   var _changed=false;
@@ -15894,7 +15894,7 @@ function testEmailJS(){
     })
   }).then(function(r){
     if(r.ok){toast("\u2705 Email de test envoy\u00e9 \u00e0 "+testEmail+" \u2014 v\u00e9rifiez votre bo\u00eete (et spams)");}
-    else{r.text().then(function(t){toast("\u274c Erreur EmailJS : "+r.status+" \u2014 "+t.slice(0,80),"err");});}
+    else{r.text().then(function(t){try{console.error("[emailjs] HTTP "+r.status,t.slice(0,200));}catch(_){}toast("\u26a0\ufe0f Impossible d'envoyer l'email. Réessaie ou préviens Kevin.","err");});}
   }).catch(function(e){toast("\u274c Erreur r\u00e9seau : "+e.message,"err");});
 }
 function stepRegister(){
@@ -16485,6 +16485,13 @@ function doLogout(){
   try{if(typeof stopOnsiteChecks==="function")stopOnsiteChecks();}catch(_){}
   // v9.414 — Arrêter user-watcher (telemetry)
   try{if(typeof userWatcherStop==="function")userWatcherStop();}catch(_){}
+  // v9.783 — Anti-fuite : nettoyer les intervals globaux restants au logout (session 8h)
+  try{
+    if(typeof _clockInt!=="undefined"&&_clockInt){clearInterval(_clockInt);_clockInt=null;}
+    if(window._cmcAhInt){clearInterval(window._cmcAhInt);window._cmcAhInt=null;}
+    if(window._tvInt){clearInterval(window._tvInt);window._tvInt=null;}
+    if(typeof _cmcMapRefreshInt!=="undefined"&&_cmcMapRefreshInt){clearInterval(_cmcMapRefreshInt);_cmcMapRefreshInt=null;}
+  }catch(_){}
   A.user=null;localStorage.removeItem("cmc_uid");render();
 }
 /** Admin impersonates an employee view (read-only). @param {string} id Employee id. @returns {void} */
