@@ -5,8 +5,9 @@
 > Structure : **une belle adresse par projet** (sous-domaine par app).
 > Dernière mise à jour : **2026-06-06** — branche `claude/kdmc-custom-domain-7hNn9`.
 >
-> **Statut global : CODÉ ✅ — pas encore déployé** (en attente fusion sur `main` →
-> le déploiement DNS+SSL se lance tout seul). Les anciennes adresses restent valides.
+> **Statut global : DÉPLOYÉ ✅ (2026-06-06 21:41 UTC)** — worker `kdmc-router` en ligne,
+> les 7 belles adresses attachées (custom domains Cloudflare créés sans erreur).
+> DNS + certificat SSL : propagation ~1-2 min. Les anciennes adresses restent valides.
 
 ---
 
@@ -14,12 +15,12 @@
 
 | Projet | 🌟 Nouvelle adresse | Ancienne adresse (toujours valide) | Statut |
 |---|---|---|---|
-| **Accueil KDMC** | https://kd-mc.com | — (nouvelle page portfolio) | ⏳ à déployer |
-| **CMCteams** | https://cmcteams.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/ | ⏳ à déployer |
-| **Apex-ai** | https://apex-ai.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/ | ⏳ à déployer |
-| **Apex-chat** | https://apex-chat.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/ | ⏳ à déployer |
-| **La détente** | https://la-detente.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/la-detente/ | ⏳ à déployer |
-| **Chez-lolo** | https://chez-lolo.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/ | ⏳ à déployer |
+| **Accueil KDMC** | https://kd-mc.com | — (nouvelle page portfolio) | ✅ en ligne |
+| **CMCteams** | https://cmcteams.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/ | ✅ en ligne |
+| **Apex-ai** | https://apex-ai.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/ | ✅ en ligne |
+| **Apex-chat** | https://apex-chat.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/ | ✅ en ligne |
+| **La détente** | https://la-detente.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/la-detente/ | ✅ en ligne |
+| **Chez-lolo** | https://chez-lolo.kd-mc.com | https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/ | ✅ en ligne |
 
 > `www.kd-mc.com` pointe aussi sur la page d'accueil.
 > Comment ça marche : 1 worker Cloudflare unique (`services/kdmc-router`) reçoit la
