@@ -1070,3 +1070,83 @@ describe('ConversationDO — notifyOfflineCall', () => {
     expect(spy.mock.calls[0][1].body).toBe('Quelqu\'un t\'appelle');
   });
 });
+
+// ----------------------------------------------------------------------------
+// v1.1.172 FIX P1 (audit crew) — /admin/inject-message (Letters) + révocation WS
+// ----------------------------------------------------------------------------
+describe('ConversationDO — /admin/inject-message (Letters delayed delivery)', () => {
+  it('403 si X-Apex-Internal manquant / faux', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
+      method: 'POST', headers: { 'X-Apex-Internal': 'WRONG' },
+      body: JSON.stringify({ conv_id: 'c1', sender_id: 'u1', ciphertext: 'hi' }),
+    }));
+    expect(r.status).toBe(403);
+  });
+
+  it('400 si champs requis manquants', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
+      method: 'POST', headers: { 'X-Apex-Internal': 'admin-secret' },
+      body: JSON.stringify({ sender_id: 'u1' }),
+    }));
+    expect(r.status).toBe(400);
+  });
+
+  it('200 + persiste (flushToD1) + broadcast quand token valide', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    _do.sessions = new Map();
+    const flushSpy = vi.spyOn(_do, 'flushToD1').mockResolvedValue(undefined);
+    const bcastSpy = vi.spyOn(_do, 'broadcast').mockImplementation(() => {});
+    vi.spyOn(_do, 'notifyOfflineMembers').mockResolvedValue(undefined);
+    const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
+      method: 'POST', headers: { 'X-Apex-Internal': 'admin-secret' },
+      body: JSON.stringify({ conv_id: 'c1', sender_id: 'u1', ciphertext: 'lettre' }),
+    }));
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.ok).toBe(true);
+    expect(j.id).toBeTruthy();
+    expect(flushSpy).toHaveBeenCalled();      // durable AVANT d'acquitter
+    expect(bcastSpy).toHaveBeenCalled();       // diffusé aux connectés
+    expect(_do.pendingMessages.some((m) => m.ciphertext === 'lettre')).toBe(true);
+  });
+});
+
+describe('ConversationDO — révocation WS (force_logout / ban honorés)', () => {
+  function dbWithUser(acct) {
+    const db = makeDB([{ user_id: 'kdmc', role: 'owner' }]);
+    const orig = db.prepare;
+    db.prepare = vi.fn((sql) => {
+      const stmt = orig(sql);
+      if (sql.includes('FROM users')) stmt.first = vi.fn(async () => acct);
+      return stmt;
+    });
+    return db;
+  }
+
+  it('ferme (rejet, aucune session) si user banni', async () => {
+    const token = await makeJWT({ sub: 'kdmc', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 }, SECRET);
+    const env = ENV({ APEX_CHAT_DB: dbWithUser({ is_banned: 1, status: 'active', last_force_logout_at: null }) });
+    const _do = new ConversationDO(makeState(), env);
+    await _do.fetch(wsRequest(`https://x/ws?token=${token}&uid=kdmc&conv=c1`));
+    expect(_do.sessions.size).toBe(0);
+  });
+
+  it('ferme (rejet) si JWT antérieur au dernier force_logout', async () => {
+    const iatSec = Math.floor((Date.now() - 100000) / 1000);
+    const token = await makeJWT({ sub: 'kdmc', iat: iatSec, exp: Math.floor(Date.now() / 1000) + 3600 }, SECRET);
+    const env = ENV({ APEX_CHAT_DB: dbWithUser({ is_banned: 0, status: 'active', last_force_logout_at: Date.now() }) });
+    const _do = new ConversationDO(makeState(), env);
+    await _do.fetch(wsRequest(`https://x/ws?token=${token}&uid=kdmc&conv=c1`));
+    expect(_do.sessions.size).toBe(0);
+  });
+
+  it('accepte (session établie) si compte sain', async () => {
+    const token = await makeJWT({ sub: 'kdmc', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 }, SECRET);
+    const env = ENV({ APEX_CHAT_DB: dbWithUser({ is_banned: 0, status: 'active', last_force_logout_at: null }) });
+    const _do = new ConversationDO(makeState(), env);
+    await _do.fetch(wsRequest(`https://x/ws?token=${token}&uid=kdmc&conv=c1`));
+    expect(_do.sessions.size).toBe(1);
+  });
+});
