@@ -3,6 +3,9 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.firebasedatabase.app https://api.emailjs.com https://*.workers.dev https://api.printify.com https://api.openverse.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>CHEZ LOLO — Textile, cosmétiques & goodies | KDMC Monaco</title>
@@ -630,7 +633,7 @@ var modal=document.getElementById("payModal");
 if(modal){
 modal.innerHTML='<div style="background:var(--card);border-radius:16px;padding:40px;max-width:440px;width:100%;border:1px solid var(--border);text-align:center">'
 +'<div style="font-size:48px;margin-bottom:16px">✅</div>'
-+'<h2 style="font-size:22px;font-weight:800;margin-bottom:8px;font-family:Playfair Display,Georgia,serif">Commande confirmée !</h2>'
++'<h2 style="font-size:22px;font-weight:800;margin-bottom:8px;font-family:Playfair Display,Georgia,serif">Commande enregistrée !</h2>'
 +'<p style="color:var(--muted);margin-bottom:16px">Numéro : <strong style="color:var(--p);font-family:monospace">'+esc(orderId)+'</strong></p>'
 +'<p style="color:var(--muted);margin-bottom:8px">Total : <strong>'+fmtP(total)+'</strong> via '+esc(method)+'</p>'
 +'<p style="color:var(--muted);font-size:13px;margin-bottom:24px">Un email de confirmation vous sera envoyé.<br>Merci de votre confiance 🫒</p>'
@@ -825,6 +828,7 @@ function clInstallAdminUI(){
   var bar=document.createElement("div");bar.id="clAdminBar";
   bar.style.cssText="position:fixed;left:10px;bottom:74px;z-index:9000;display:flex;gap:6px;flex-wrap:wrap;max-width:74vw";
   bar.innerHTML='<a href="studio.html" title="Studio de création" style="background:linear-gradient(135deg,#ff7eb3,#b5179e);color:#fff;font:700 12px system-ui;padding:9px 14px;border-radius:100px;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.35)">🎨 Studio</a>'
+   +'<button onclick="clAddProductForm()" title="Ajouter un produit (textile, cosmétique, goodies…)" style="background:linear-gradient(135deg,#7c8c3c,#5d6b2a);color:#fff;border:none;border-radius:100px;font:700 12px system-ui;padding:9px 14px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)">➕ Produit</button>'
    +'<button onclick="clShowPodOrders()" title="Commandes à imprimer" style="background:rgba(20,20,24,.92);color:#fff;border:1px solid #555;border-radius:100px;font:700 12px system-ui;padding:9px 12px;cursor:pointer">🖨️ À produire</button>'
    +'<button onclick="ldAccessPanel()" style="background:rgba(20,20,24,.92);color:#fff;border:1px solid #555;border-radius:100px;font:700 12px system-ui;padding:9px 12px;cursor:pointer">👥 Accès</button>'
    +'<button onclick="ldShowStorage()" title="Stockage" style="background:rgba(20,20,24,.92);color:#fff;border:1px solid #555;border-radius:100px;font:700 13px system-ui;padding:9px 12px;cursor:pointer">📦</button>'
@@ -859,6 +863,49 @@ if(typeof ldAdminLogout==="function"){var _o=ldAdminLogout;ldAdminLogout=functio
    return r;
  };
 }());
+/* ➕ Ajout produit simple (textile / cosmétique / goodies / accessoires) — sans code, pour Lolo */
+function clAddProductForm(){
+  if(typeof LD_ADMIN!=="undefined" && !LD_ADMIN){toast&&toast("Réservé admin");return;}
+  var old=document.getElementById("clAddProdModal");if(old)old.remove();
+  var opts=(typeof CATS!=="undefined"?CATS:[]).map(function(c){return '<option value="'+c.id+'">'+c.icon+' '+esc(c.name)+'</option>'}).join("");
+  var m=document.createElement("div");m.id="clAddProdModal";
+  m.style.cssText="position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto";
+  m.innerHTML='<div style="background:#fffef9;color:#3d3527;border-radius:16px;padding:22px;max-width:440px;width:100%;border:1px solid #d4ccb8;max-height:92vh;overflow:auto">'
+    +'<h2 style="font-size:20px;font-weight:800;margin:0 0 14px">➕ Nouveau produit</h2>'
+    +'<label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Nom *</label><input id="np_name" type="text" placeholder="T-shirt coton bio" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:12px;font-size:15px">'
+    +'<label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Catégorie *</label><select id="np_cat" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:12px;font-size:15px;background:#fff">'+opts+'</select>'
+    +'<div style="display:flex;gap:10px"><div style="flex:1"><label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Prix € *</label><input id="np_price" type="number" min="0" step="0.5" inputmode="decimal" placeholder="29.90" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:12px;font-size:15px"></div>'
+    +'<div style="flex:1"><label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Prix barré €</label><input id="np_orig" type="number" min="0" step="0.5" inputmode="decimal" placeholder="(option)" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:12px;font-size:15px"></div></div>'
+    +'<div style="display:flex;gap:10px"><div style="flex:1"><label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Stock</label><input id="np_stock" type="number" min="0" step="1" inputmode="numeric" value="20" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:12px;font-size:15px"></div>'
+    +'<div style="flex:1"><label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Fournisseur</label><input id="np_supplier" type="text" placeholder="(option)" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:12px;font-size:15px"></div></div>'
+    +'<label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Image (URL)</label><input id="np_img" type="url" placeholder="https://…  (laisse vide = emoji catégorie)" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:12px;font-size:15px">'
+    +'<label style="display:block;font-size:12px;font-weight:700;color:#8a7e6b;margin-bottom:4px">Description</label><textarea id="np_desc" rows="2" placeholder="Quelques mots…" style="width:100%;padding:10px;border:1px solid #d4ccb8;border-radius:10px;margin-bottom:16px;font-size:15px;resize:vertical"></textarea>'
+    +'<div style="display:flex;gap:10px"><button onclick="clSaveNewProduct()" style="flex:1;padding:13px;background:#7c8c3c;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">✅ Ajouter à la boutique</button>'
+    +'<button onclick="document.getElementById(\'clAddProdModal\').remove()" style="padding:13px 18px;background:transparent;color:#3d3527;border:1px solid #d4ccb8;border-radius:10px;font-size:15px;cursor:pointer">Annuler</button></div>'
+    +'</div>';
+  m.onclick=function(e){if(e.target===m)m.remove()};
+  document.body.appendChild(m);
+}
+function clSaveNewProduct(){
+  function v(id){var el=document.getElementById(id);return el?el.value.trim():"";}
+  var name=v("np_name"), cat=v("np_cat"), price=parseFloat(v("np_price")), orig=parseFloat(v("np_orig"));
+  if(!name){toast&&toast("Nom requis","error");return;}
+  if(!(price>=0)){toast&&toast("Prix requis","error");return;}
+  var stock=parseInt(v("np_stock"),10); if(!(stock>=0))stock=0;
+  var supplier=v("np_supplier"), img=v("np_img"), desc=v("np_desc");
+  var prod={id:"cust"+Date.now().toString(36),name:name,cat:cat||"goodies",price:price,
+    origPrice:(orig>price?orig:0),img:img||"",stock:stock,rating:5,reviews:0,
+    desc:desc||name,supplier:supplier||"",tags:["nouveau"],createdAt:Date.now()};
+  var arr;try{arr=JSON.parse(localStorage.getItem("cl_custom_products")||"[]")||[]}catch(e){arr=[]}
+  arr.push(prod);
+  try{localStorage.setItem("cl_custom_products",JSON.stringify(arr));}catch(e){toast&&toast("Stockage plein","error");return;}
+  try{if(window.ldIdbSet)window.ldIdbSet("products",arr);}catch(_){}
+  try{if(window.kdmcPublishProduct)window.kdmcPublishProduct("chez-lolo",prod);}catch(_){}
+  if(typeof P!=="undefined" && !P.some(function(x){return x.id===prod.id}))P.unshift(prod);
+  var mm=document.getElementById("clAddProdModal");if(mm)mm.remove();
+  toast&&toast("Produit ajouté ✅ ("+arr.length+" créa)");
+  if(typeof dc==="function")dc();
+}
 /* boot */
 (function(){
  try{ldAuthSyncNow&&ldAuthSyncNow();}catch(_){}
@@ -875,7 +922,7 @@ if(typeof ldAdminLogout==="function"){var _o=ldAdminLogout;ldAdminLogout=functio
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="chez-lolo"
-        data-version="v2.0.1"
+        data-version="v2.0.4"
         data-color="#e8b830"
         defer></script>
 
