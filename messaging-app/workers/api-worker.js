@@ -586,7 +586,10 @@ export async function handleVerifyOtp(request, env) {
 
   // Mode 1 : OTP Vonage (priorité)
   if (otp) {
-    const otpHash = await sha256(otp + ':' + phone);
+    // v1.1.172 FIX P0 : send-otp hashe sha256(otp+':'+cleanPhone) (numéro
+    // NORMALISÉ), la vérif hashait le `phone` BRUT → tout numéro saisi en
+    // format national (0612…) ne validait jamais. On hashe cleanPhone partout.
+    const otpHash = await sha256(otp + ':' + cleanPhone);
     const pending = await env.APEX_CHAT_DB.prepare(
       'SELECT * FROM otp_pending WHERE phone_hash=?'
     ).bind(phoneHash).first();
@@ -934,9 +937,11 @@ async function handleAdminSetUserToggle(request, env) {
   }
   try {
     const key = `user_toggle:${targetUid}:${feature}`;
+    // v1.1.172 FIX P0 : system_config.updated_at est NOT NULL → l'INSERT
+    // (key,value) seul violait la contrainte → toggles per-user jamais persistés.
     await env.APEX_CHAT_DB.prepare(
-      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
-    ).bind(key, JSON.stringify(value)).run();
+      'INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)'
+    ).bind(key, JSON.stringify(value), Date.now(), auth.sub).run();
     return json({ ok: true, uid: targetUid, feature, value });
   } catch (e) {
     return err('Échec save toggle', 500, 'db_write_failed', {
@@ -3598,15 +3603,22 @@ export async function handlePushSubscribe(request, env) {
     return err('Subscription incomplète', 400);
   }
   try {
+    // v1.1.172 FIX P0 : l'INSERT visait des colonnes inexistantes (id, ua) et
+    // omettait device_id NOT NULL + created_at NOT NULL → AUCUNE souscription
+    // n'était jamais enregistrée → 0 push envoyé. On aligne sur le schéma réel
+    // (PK user_id, device_id). device_id = hash stable de l'endpoint pour que
+    // re-souscrire le même device fasse un upsert propre.
+    const now = Date.now();
+    const deviceId = (await sha256(sub.endpoint)).slice(0, 32);
     // Upsert : remove existing for same endpoint, then insert fresh
     await env.APEX_CHAT_DB?.prepare(
       'DELETE FROM push_subscriptions WHERE endpoint=?'
     ).bind(sub.endpoint).run();
     await env.APEX_CHAT_DB?.prepare(
-      'INSERT INTO push_subscriptions (id, user_id, endpoint, vapid_p256dh, vapid_auth, last_seen, ua) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO push_subscriptions (user_id, device_id, endpoint, vapid_p256dh, vapid_auth, user_agent, last_seen, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
-      crypto.randomUUID(), auth.sub, sub.endpoint, sub.keys.p256dh, sub.keys.auth,
-      Date.now(), (request.headers.get('user-agent') || '').slice(0, 200)
+      auth.sub, deviceId, sub.endpoint, sub.keys.p256dh, sub.keys.auth,
+      (request.headers.get('user-agent') || '').slice(0, 200), now, now
     ).run();
     return json({ ok: true });
   } catch (e) {
@@ -3648,8 +3660,8 @@ export async function handleAdminForceUpdate(request, env) {
   const ts = Date.now();
   try {
     await env.APEX_CHAT_DB?.prepare(
-      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
-    ).bind('force_update_ts', String(ts)).run();
+      'INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)'
+    ).bind('force_update_ts', String(ts), ts, auth.sub).run();
     // Audit log
     try {
       await env.APEX_CHAT_DB?.prepare(
@@ -3688,8 +3700,8 @@ export async function handleAdminForceUpdateViaToken(request, env) {
   const ts = Date.now();
   try {
     await env.APEX_CHAT_DB?.prepare(
-      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
-    ).bind('force_update_ts', String(ts)).run();
+      'INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)'
+    ).bind('force_update_ts', String(ts), ts, 'cron:deploy').run();
     try {
       await env.APEX_CHAT_DB?.prepare(
         'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
