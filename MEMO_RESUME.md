@@ -1,3 +1,21 @@
+# Mémo de reprise — Domaine kd-mc.com (2026-06-06, branche `claude/kdmc-custom-domain-7hNn9`)
+
+> **Objectif Kevin** : un nom de domaine KDMC, une belle adresse par projet.
+> **Acheté** : `kd-mc.com` sur Cloudflare Registrar (zone dans son compte).
+> **Codé + poussé** : `services/kdmc-router` (worker reverse-proxy belle-adresse→GitHub Pages)
+> + `wrangler.toml` routes `custom_domain` (DNS+SSL auto) + workflow `deploy-kdmc-router.yml`
+> + `kdmc-home/index.html` (accueil portfolio) + origines `kd-mc.com` autorisées sur les 3
+> workers qui filtraient (apex-v13-backend, cmc-parser-proxy, ld-gemini-proxy ; les autres
+> sont CORS `*`). Syntaxe validée, commit `04bb6fb` confirmé sur le vrai GitHub.
+> **Adresses** : voir **KDMC_ADRESSES.md** (source de vérité, toujours à jour).
+> **Décision Kevin = « Go »** → fusion sur `main` + déploiement en cours.
+> **⚠️ À surveiller** : le `CLOUDFLARE_API_TOKEN` doit avoir Zone DNS Edit + Workers Routes
+> Edit sur kd-mc.com pour la création auto des belles adresses (sinon 1 case à cocher).
+> **Reste (optionnel/cosmétique)** : belles adresses serveurs `api/push/…kd-mc.com` ;
+> canonical/OG des pages → kd-mc.com une fois validé en live.
+
+---
+
 # Mémo de reprise — Campagne couverture Apex v13 100% réel (2026-06-03, branche `claude/perfect-100-Ypr17`)
 
 > **Objectif Kevin** : 100% réel partout (mesuré jamais estimé), autonome, sans régression. Gate à CHAQUE tour : `tsc --noEmit` + `eslint --max-warnings=0` + suite vitest COMPLÈTE (EXIT=0 ET 0 ligne `Unhandled/Errors`, pas seulement « 0 failed » — cf. leçon #89). Merge réel vérifié sur le vrai GitHub à chaque tour (auto-merge bot).

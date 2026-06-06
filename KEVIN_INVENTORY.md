@@ -1,7 +1,21 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-06-03** (Boutique « La Détente » — Studio + Checkout/Bon de production)
+> Dernière mise à jour : **2026-06-06** (Domaine personnalisé **kd-mc.com** — belle adresse par projet)
+
+## 🌐 Domaine kd-mc.com — une belle adresse par projet — branche `claude/kdmc-custom-domain-7hNn9`
+
+> 📋 **Liste complète + statut des adresses : [KDMC_ADRESSES.md](KDMC_ADRESSES.md)** (source de vérité).
+
+**🌟 Adresses (après déploiement)** : kd-mc.com (accueil) · cmcteams.kd-mc.com ·
+apex-ai.kd-mc.com · apex-chat.kd-mc.com · la-detente.kd-mc.com · chez-lolo.kd-mc.com
+
+**🔧 Fichiers créés / modifiés**
+- [`services/kdmc-router/worker.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/services/kdmc-router/worker.js) — routeur reverse-proxy (belle adresse → bon site)
+- [`services/kdmc-router/wrangler.toml`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/services/kdmc-router/wrangler.toml) — routes custom_domain (DNS+SSL auto)
+- [`.github/workflows/deploy-kdmc-router.yml`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/.github/workflows/deploy-kdmc-router.yml) — déploiement autonome
+- [`kdmc-home/index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/kdmc-home/index.html) — page d'accueil portfolio
+- Origines `kd-mc.com` autorisées : `services/apex-v13-backend/src/index.js`, `tools/planning-parser-tester/worker/index.ts`, `shops/la-detente/worker/worker.js`
 
 ## 🎯 La Détente — boutique textile perso (motif AR15 + cœur) — branche `claude/textile-shop-ar15-heart-mMJ0j`
 
