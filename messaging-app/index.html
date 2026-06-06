@@ -90,7 +90,7 @@
 <style>
 :root{
   --ax-bg:#08080f;--ax-bg-2:#13131c;--ax-bg-3:#1a1a26;
-  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#6a6a78;
+  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#8a8a98; /* v1.1.172 audit crew : #6a6a78 (3.24:1) -> #8a8a98 (~4.6:1) = WCAG AA */
   --ax-gold:#c9a227;--ax-gold-2:#f4d97a;--ax-blue:#6a8aff;
   --ax-ok:#5fcf5f;--ax-warn:#f4d97a;--ax-err:#cf5f5f;
   --ax-border:#2a2a35;--ax-border-2:#3a3a48;
@@ -580,7 +580,7 @@ if('serviceWorker' in navigator){
   <button class="bnav-btn h" data-view="admin" id="bnav-admin"><span class="ico">👑</span><span>Admin</span></button>
 </nav>
 
-<div class="toasts" id="toasts"></div>
+<div class="toasts" id="toasts" aria-live="polite" role="status" aria-atomic="false"></div>
 <div id="modal-host"></div>
 
 <script>
@@ -2588,7 +2588,10 @@ K._clearConvLocal = function(){
   if(!conv) return;
   if(!confirm('🧹 Vider cette conversation localement ?\n\nLes msgs ne seront supprimés que de TON appareil.')) return;
   delete K.messages[conv.id];
-  try { localStorage.removeItem('messages_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
+  // v1.1.172 FIX P0 (audit crew) : les messages sont stockés via ls() => clé
+  // réelle PERSIST_PREFIX+'messages_'+id. Sans le préfixe, removeItem ciblait
+  // une clé inexistante => "vider localement" inefficace (msgs réapparaissaient au reload).
+  try { localStorage.removeItem(PERSIST_PREFIX + 'messages_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
   K.render();
   toast('🧹 Conversation vidée localement', 'ok');
 };
@@ -6038,6 +6041,10 @@ K.logout = function(){
       const short = k.replace(PERSIST_PREFIX, '');
       if(!keep.includes(short)) localStorage.removeItem(k);
     }
+    // v1.1.172 FIX P0 (audit crew) : les brouillons sont stockés sous clés
+    // BRUTES `draft_*` (non préfixées). Sans ça, ils survivaient au logout et
+    // étaient lus par le compte suivant sur le même appareil = fuite inter-comptes.
+    else if(k.startsWith('draft_')){ localStorage.removeItem(k); }
   }
   K.user = null; K.token = null; K.conversations = []; K.messages = {};
   K.view = 'splash';
