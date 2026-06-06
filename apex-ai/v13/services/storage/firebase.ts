@@ -18,6 +18,7 @@
 
 import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
+import { firebaseAuthBridge } from '../auth/firebase-auth-bridge.js';
 
 const FB_DEFAULT = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -153,6 +154,21 @@ export const FB_LOCAL: readonly string[] = [
 class Firebase {
   private url = FB_DEFAULT;
   private connected = false;
+
+  /* v13.4.291 (P1 sécu ultra-review) — Attache le token d'auth Phase 5 (RTDB `?auth=`)
+   * quand il est disponible. RÉTRO-COMPATIBLE : si pas de token (getToken() === ''),
+   * renvoie '' → URL identique à avant → ZÉRO régression (cf. firebase-auth-bridge.ts).
+   * Débloque le durcissement des règles (database.rules.json auth.uid). */
+  private authSuffix(hasQuery: boolean): string {
+    let token = '';
+    try {
+      token = firebaseAuthBridge.getToken();
+    } catch {
+      token = '';
+    }
+    if (!token) return '';
+    return `${hasQuery ? '&' : '?'}auth=${encodeURIComponent(token)}`;
+  }
   private sse: EventSource | null = null;
   private queue: Array<{ key: string; value: unknown; ts: number }> = [];
   /* P0 fix audit Cure53/NCC : tracker tous les listeners SSE pour removeEventListener au disconnect.
@@ -198,7 +214,7 @@ class Firebase {
 
     /* Test ping */
     try {
-      const ping = await fetch(`${this.url}/.json?shallow=true`, {
+      const ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
@@ -302,7 +318,7 @@ class Firebase {
    */
   private async attemptReconnect(): Promise<boolean> {
     try {
-      const ping = await fetch(`${this.url}/.json?shallow=true`, {
+      const ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
@@ -474,7 +490,7 @@ class Firebase {
       const stale = Date.now() - this.lastEventTs > STALE_EVENT_THRESHOLD_MS;
       if (!stale) return;
       /* Stale event → ping de vérification. Si fail, reconnect. */
-      void fetch(`${this.url}/.json?shallow=true`, {
+      void fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       })
@@ -524,7 +540,7 @@ class Firebase {
     for (const key of VAULT_KEYS) {
       try {
         if (localStorage.getItem(key)) continue; /* Déjà présent local */
-        const url = `${this.url}/apex/${key}.json`;
+        const url = `${this.url}/apex/${key}.json${this.authSuffix(false)}`;
         const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!r.ok) continue;
         const value = await r.json() as unknown;
@@ -573,7 +589,7 @@ class Firebase {
           result.skipped += 1;
           continue;
         }
-        const url = `${this.url}/apex/${key}.json`;
+        const url = `${this.url}/apex/${key}.json${this.authSuffix(false)}`;
         const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!r.ok) {
           result.skipped += 1;
@@ -654,7 +670,7 @@ class Firebase {
        * en clé PLATE `vault_backup%2Fuid%2Fkey` → listAll lisant `vault_backup/uid`
        * ne trouvait jamais ses enfants → 0 clé restaurée. Sûr pour les clés FB_FIX
        * (sans `/` → comportement identique). */
-      const res = await fetch(`${this.url}/apex/${key.split('/').map(encodeURIComponent).join('/')}.json`, {
+      const res = await fetch(`${this.url}/apex/${key.split('/').map(encodeURIComponent).join('/')}.json${this.authSuffix(false)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idempotencyKey },
         body: JSON.stringify(value),
@@ -753,7 +769,7 @@ class Firebase {
     try {
       /* v13.4.278 : encodage par segment (cf. write) — préserve les `/` pour lire
        * un vrai sous-arbre (ex listAll `vault_backup/<uid>` → ses enfants). */
-      const res = await fetch(`${this.url}/apex/${key.split('/').map(encodeURIComponent).join('/')}.json`, {
+      const res = await fetch(`${this.url}/apex/${key.split('/').map(encodeURIComponent).join('/')}.json${this.authSuffix(false)}`, {
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) return null;
@@ -768,7 +784,7 @@ class Firebase {
     /* Cleanup tout SSE précédent (close + remove listeners) avant d'en recréer un nouveau */
     this.cleanupSSE();
     try {
-      this.sse = new EventSource(`${this.url}/apex.json`);
+      this.sse = new EventSource(`${this.url}/apex.json${this.authSuffix(false)}`);
       const putListener: EventListener = (event) => {
         /* Mark sign of life pour watchdog. */
         this.lastEventTs = Date.now();
