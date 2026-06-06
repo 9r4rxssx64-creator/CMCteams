@@ -1,5 +1,16 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🌐 2026-06-06 — Domaine kd-mc.com (belle adresse par projet)
+
+- ✅ **Acheté** : `kd-mc.com` sur Cloudflare (fait par Kevin).
+- ✅ **Codé + poussé** : routeur + accueil + workflow + origines autorisées (branche `claude/kdmc-custom-domain-7hNn9`).
+- 🔄 **En cours** : déploiement (« Go » de Kevin) → fusion main + workflow Cloudflare.
+- ⚠️ **Action Kevin POSSIBLE (1 case, seulement si le déploiement le signale)** :
+  donner à la clé `CLOUDFLARE_API_TOKEN` les droits **Zone DNS Edit + Workers Routes Edit**
+  sur `kd-mc.com` → https://dash.cloudflare.com/profile/api-tokens (sinon les belles
+  adresses ne s'attachent pas). Je préviens précisément après lecture des logs.
+- 📋 Adresses + statut live : **KDMC_ADRESSES.md**.
+
 ## 📌 SESSION 2026-06-02 — À FAIRE ENSEMBLE (décision Kevin « on fera le 2 ensuite »)
 
 ### #2 — Apex Chat Étape B : E2E réellement actif (upload prekeys)
