@@ -57,6 +57,23 @@
       "ax_uid": { ".write": false }
     },
 
+    "coffre_vault": {
+      "_comment": "Coffre-fort perso — chemin ISOLÉ. Données chiffrées E2E (zero-knowledge) : le serveur ne voit que du ciphertext. Scopé par uid (hash prénom+nom).",
+      ".read": true,
+      ".write": true,
+      "$uid": {
+        ".validate": "$uid.matches(/^u_[a-z0-9]+$/)",
+        "salt": { ".validate": "newData.isString() && newData.val().length < 64" },
+        "verify": { ".validate": "newData.isString() && newData.val().length < 4096" },
+        "meta": { ".validate": "newData.isString() && newData.val().length < 5242880" },
+        "chunks": {
+          "$id": {
+            ".validate": "$id.matches(/^it_[a-z0-9_\\-]+$/) && (newData.val() === null || (newData.isString() && newData.val().length < 1048576))"
+          }
+        }
+      }
+    },
+
     "shops_admin_v1": {
       "orders": {
         ".read": true,

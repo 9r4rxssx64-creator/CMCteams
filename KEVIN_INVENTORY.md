@@ -1561,3 +1561,11 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - Designs IA : `shops/la-detente/img/designs/` · Produits : `shops/la-detente/img/products/`
 - Doc marque : [MARQUE_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/MARQUE_LA_DETENTE.md) · Fournisseurs : [FOURNISSEURS_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/FOURNISSEURS_LA_DETENTE.md)
 - Workflows : `.github/workflows/la-detente-{worker-deploy,ai-designs,ai-images}.yml`
+
+## 🔐 Coffre-fort perso + 3 PDF mémo (2026-06-06)
+- App coffre : [coffre-fort/index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/index.html) · Live : https://9r4rxssx64-creator.github.io/CMCteams/coffre-fort/
+- README : [coffre-fort/README.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/README.md)
+- PDF mémo (remplissables) : [01-secrets-github.pdf](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/memo/01-secrets-github.pdf) · [02-liens-utiles.pdf](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/memo/02-liens-utiles.pdf) · [03-liens-projets.pdf](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/memo/03-liens-projets.pdf)
+- Générateur PDF : [tools/memo-pdf/generate_pdfs.py](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/memo-pdf/generate_pdfs.py)
+- Worker R2 : [services/coffre-r2/src/index.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/coffre-r2/src/index.js) · Workflow : `.github/workflows/deploy-coffre-r2.yml`
+- Test réel : [tests/coffre/e2e.test.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/coffre/e2e.test.mjs) (9/9 ✅)

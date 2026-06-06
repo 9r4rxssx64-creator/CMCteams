@@ -3354,6 +3354,14 @@ Boutique POD `shops/la-detente/` (cache v1.20.0). Faits cette session :
 - Workflows : `la-detente-worker-deploy.yml`, `la-detente-ai-designs.yml`, `la-detente-ai-images.yml`.
 - ⚠️ À tester par Kevin (navigateur) : worker depuis le studio. Catalogue images réelles = via fournisseurs plus tard.
 
+## Session 2026-06-06 — 🔐 Coffre-fort perso + PDF mémo (branche claude/secure-vault-app-EN8yR)
+- **4 PDF remplissables** dans `coffre-fort/memo/` : 51 secrets GitHub, 31 liens utiles, 10 projets (adresses kd-mc.com), cartographie kd-mc.com. Générateur `tools/memo-pdf/generate_pdfs.py` (+ mode `COFFRE_PDF_LIVE=1`).
+- **Coffre-fort** `coffre-fort/index.html` : page autonome, E2E zero-knowledge (AES-256 + PBKDF2 200k), Face ID/PIN/phrase, 6 sections + section « Mémos PDF » intégrée, auto-classement, export chiffré, kill-switch, auto-lock. Local + Firebase (chemin isolé `coffre_vault/<uid>`) + R2 (toute taille).
+- **R2** : worker `services/coffre-r2/` + `deploy-coffre-r2.yml` → bucket créé + worker déployé (`coffre-r2.9r4rxssx64.workers.dev`, /health OK, URL auto-commitée dans config.json).
+- **Adresses** : domaine kd-mc.com intégré aux PDF (source `KDMC_ADRESSES.md`) + workflow `coffre-pdf-refresh.yml` (régénère en mode live dès que kd-mc.com répond).
+- **Tests réels** : `node tests/coffre/e2e.test.mjs` → 9/9 ✅.
+- ⚠️ À faire côté Kevin : publier les règles Firebase màj (chemin `coffre_vault`).
+
 ---
 
 ## 2026-06-06 — Ultra-review + amélioration Apex Chat (crew 6 agents) → v1.1.172

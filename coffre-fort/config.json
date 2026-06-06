@@ -1,0 +1,8 @@
+{
+  "version": "v1.0.0",
+  "firebase_url": "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
+  "firebase_path": "coffre_vault",
+  "r2_worker_url": "https://coffre-r2.9r4rxssx64.workers.dev",
+  "r2_inline_max_bytes": 5242880,
+  "note": "r2_worker_url est rempli automatiquement par le workflow deploy-coffre-r2.yml. Si vide, les fichiers > 5 Mo restent stockés localement (IndexedDB) avec sauvegarde/export."
+}
