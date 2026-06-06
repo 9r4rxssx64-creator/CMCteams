@@ -377,16 +377,22 @@ export async function handleSendOtp(request, env) {
     }
   }
 
-  // Fallback ultime : retourner OTP dans la réponse (mode "dev/cercle privé")
-  // → Le client affiche le code à l'utilisateur en gros pour qu'il le saisisse
+  // Fallback : si aucun SMS n'est parti. v1.1.172 FIX P1/P2 (audit crew) :
+  // renvoyer l'OTP en clair dans la réponse = contournement total de l'OTP
+  // (quiconque connaît un numéro récupère le code). On ne l'expose QUE si
+  // ALLOW_TEST_OTP === 'true' (mode cercle privé assumé). Sinon, on échoue
+  // proprement sans fuiter le code.
   if (smsProvider === 'none') {
-    return json({
-      ok: true,
-      sessionId: phoneHash,
-      provider: 'inline',
-      _dev_otp: otp,  // visible dans la réponse JSON
-      _dev_note: 'SMS indispo (' + (smsError || 'config') + '). Code affiche ci-dessous (mode cercle prive).',
-      _show_code_in_app: true
+    if (env.ALLOW_TEST_OTP === 'true') {
+      return json({
+        ok: true, sessionId: phoneHash, provider: 'inline',
+        _dev_otp: otp,
+        _dev_note: 'SMS indispo (' + (smsError || 'config') + '). Code affiche (mode cercle prive).',
+        _show_code_in_app: true
+      });
+    }
+    return err('Envoi du SMS impossible pour le moment, réessaie', 502, 'sms_unavailable', {
+      detail: smsError || 'aucun provider SMS disponible'
     });
   }
 
@@ -482,8 +488,12 @@ export async function handleVerifyOtp(request, env) {
   // signup direct (zéro OTP) sinon. Mode "cercle privé" où l'admin vet
   // les utilisateurs socialement (via la fiche admin).
   if (otp === '000000') {
-    // Cas 1 : pas Kevin → signup direct (création / récupération compte normal)
-    if (!kevinSecret || phoneNorm !== kevinSecret) {
+    // Cas 1 : pas Kevin → signup direct (mode "cercle privé").
+    // v1.1.172 FIX P0 (audit crew) : ce signup-direct universel est un
+    // contournement d'auth (n'importe quel numéro). On le gate derrière
+    // ALLOW_TEST_OTP (var wrangler). À 'false' → l'OTP SMS réel est imposé
+    // (le bypass admin Kevin ci-dessous reste, lui, toujours actif).
+    if ((!kevinSecret || phoneNorm !== kevinSecret) && env.ALLOW_TEST_OTP === 'true') {
       let step = 'direct_init';
       try {
         step = 'select_existing';
@@ -539,7 +549,11 @@ export async function handleVerifyOtp(request, env) {
         return err('Création compte échouée', 500, 'signup_fail', e);
       }
     }
-    // Cas 2 : c'est Kevin (numéro = secret) → bypass admin (logique existante)
+    // Cas 2 : c'est Kevin (numéro = secret) → bypass admin (TOUJOURS actif).
+    // v1.1.172 : garde explicite — n'exécute le bypass QUE pour le vrai numéro
+    // Kevin. Sans ça, avec ALLOW_TEST_OTP off + Cas 1 sauté, un inconnu tomberait
+    // ici et se ferait passer pour kdmc_admin.
+    if (kevinSecret && phoneNorm === kevinSecret) {
     if (!env.KEVIN_PHONE_E164) {
       return err('Bypass admin indisponible', 503, 'kevin_phone_unset',
         'Secret KEVIN_PHONE_E164 absent du Worker — config GitHub/Cloudflare requise');
@@ -582,6 +596,8 @@ export async function handleVerifyOtp(request, env) {
       e.step = 'bypass:' + step;
       return err('Connexion admin échouée', 500, 'bypass_fail', e);
     }
+    } // fin garde "c'est le vrai Kevin"
+    // Sinon (non-Kevin + ALLOW_TEST_OTP off) : on retombe sur l'OTP réel (Mode 1).
   }
 
   // Mode 1 : OTP Vonage (priorité)
