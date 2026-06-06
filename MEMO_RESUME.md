@@ -3335,3 +3335,11 @@ Boutique POD `shops/la-detente/` (cache v1.20.0). Faits cette session :
 - Docs : MARQUE_LA_DETENTE.md + FOURNISSEURS_LA_DETENTE.md à jour.
 - Workflows : `la-detente-worker-deploy.yml`, `la-detente-ai-designs.yml`, `la-detente-ai-images.yml`.
 - ⚠️ À tester par Kevin (navigateur) : worker depuis le studio. Catalogue images réelles = via fournisseurs plus tard.
+
+## Session 2026-06-06 — 🔐 Coffre-fort perso + 3 PDF mémo (branche claude/secure-vault-app-EN8yR)
+- **3 PDF remplissables** dans `coffre-fort/memo/` : 51 secrets GitHub (champs à remplir), 31 liens utiles (cliquables), 10 projets. Générateur `tools/memo-pdf/generate_pdfs.py`.
+- **Coffre-fort** `coffre-fort/index.html` : page autonome, E2E zero-knowledge (AES-256 + PBKDF2 200k), Face ID/PIN/phrase, 6 sections, auto-classement, export chiffré, kill-switch, auto-lock. Local + Firebase (chemin isolé `coffre_vault/<uid>`) + R2 (toute taille).
+- **R2** : worker `services/coffre-r2/` + workflow `deploy-coffre-r2.yml` (crée le bucket + déploie + écrit l'URL dans config.json, autonome). MCP Cloudflare = 403 (pas d'accès R2) → le workflow gère via CLOUDFLARE_API_TOKEN.
+- **Tests réels** : `node tests/coffre/e2e.test.mjs` → 9/9 ✅.
+- Règles Firebase : sous-arbre isolé `coffre_vault` ajouté (validation + E2E reste la défense).
+- ⚠️ À faire côté Kevin : (1) publier les règles Firebase mises à jour ; (2) le worker R2 se déploie au prochain run Actions sur la branche.
