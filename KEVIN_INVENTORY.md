@@ -3,6 +3,25 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-06-03** (Boutique « La Détente » — Studio + Checkout/Bon de production)
 
+## 🔬 Ultra-review Apex (2026-06-06) — branche `claude/apex-ultra-review-crew-MZ8nS`
+
+**▶️ Action immédiate (1 clic)**
+- [Créer/voir la PR vers main](https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/apex-ultra-review-crew-MZ8nS?expand=1)
+- [⚙️ Workflow deploy-firebase-rules (lancer quand prêt, taper DEPLOY)](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-firebase-rules.yml)
+
+**🔧 Fichiers créés/modifiés**
+- [features/crypto/index.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/features/crypto/index.ts) — boutons fonctionnels (adresses publiques)
+- [features/workflow/index.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/features/workflow/index.ts) — boutons → chat
+- [services/auth/auth-gate.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/services/auth/auth-gate.ts) — anti-impersonation
+- [services/storage/firebase.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/services/storage/firebase.ts) — `?auth=` RTDB
+- [database.rules.json](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/database.rules.json) · [firebase.json](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/firebase.json)
+- [features/chat/chat-badges.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/features/chat/chat-badges.ts) · [features/chat/chat-autoread.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/features/chat/chat-autoread.ts)
+- [.github/workflows/deploy-firebase-rules.yml](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/.github/workflows/deploy-firebase-rules.yml)
+- Tests : [features-crypto-workflow](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/tests/unit/features-crypto-workflow.test.ts) · [firebase-auth-attach](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/apex-ultra-review-crew-MZ8nS/apex-ai/v13/tests/unit/firebase-auth-attach.test.ts)
+
+---
+
+
 ## 🎯 La Détente — boutique textile perso (motif AR15 + cœur) — branche `claude/textile-shop-ar15-heart-mMJ0j`
 
 **🧪 Tester (après merge — live GitHub Pages)**

@@ -1,3 +1,29 @@
+# Mémo de reprise — Ultra-review crew Apex v13 (2026-06-06, branche `claude/apex-ultra-review-crew-MZ8nS`)
+
+> **Objectif Kevin** : ultra-review + crew vérification + amélioration Apex, « tout 💯 réel, autonome ». Gate à chaque commit : `tsc --noEmit` + `eslint --max-warnings=0` + `vite build` + tests impactés verts. Liens cliquables. Tests fonctionnels réels.
+
+## Mesures réelles (jamais estimées)
+- `tsc --noEmit` = 0 · `eslint --max-warnings=0` = 0 · `vite build` = OK (~7-10s)
+- Suite complète `pool=threads` = **12 218 / 12 231 verts (99,97%)**. Les 4 échecs = cause unique `sanitizeHtml`/DOMPurify sous happy-dom (sandbox), environnemental, vert en CI, anti-XSS confirmé. Note sandbox : le pool de **forks** ne résout pas `happy-dom` (node_modules imbriqués) → utiliser `--pool=threads` (+ symlink `node_modules/happy-dom`) pour mesurer.
+
+## Crew 6 agents — scores réels /20
+Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthouse mobile 99/100, CLS 0) · UX/a11y 19,5 · Tests/qualité 15,5. Global ~84/100.
+**5 findings P1 = FAUX POSITIFS** (vérifiés, leçon #59) : live-transcription déjà échappé · touch targets/skip-link/aria déjà à 44px · polling 60s = règle MAJ-auto-force · 30 services « sans tests » → tous testés.
+
+## Livré (réel, fix+test+verts+poussé)
+- v13.4.289 — 7 boutons morts crypto/workflow → fonctionnels (+7 tests fonctionnels réels)
+- v13.4.290 — auth-gate anti-impersonation (alias mono-token retirés + garde) + `database.rules.json`/`firebase.json` versionnés (+ régression auth-gate ; test KDMC→false)
+- v13.4.291 — `firebase.ts` attache `?auth=` RTDB (8 sites, rétro-compatible, débloque durcissement rules) (+3 tests)
+- CI `deploy-firebase-rules.yml` — déploiement règles RTDB 1-clic gaté (secrets FIREBASE_PRIVATE_KEY/CLIENT_EMAIL, projet cmcteams-c16ab)
+- v13.4.292 — refactor monolithe chat étape 1 : `chat-badges.ts` (renderProviderBadge/renderToolPills)
+- v13.4.293 — refactor monolithe chat étape 2 : `chat-autoread.ts` (auto-read TTS). chat/index.ts 3888 → 3811 lignes.
+
+## Reste (séquencé, ne rien casser)
+1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
+4. Continuer refacto chat (handleSlashCommand ~714 lignes, lightbox, render ~1800) par étapes testées.
+
+---
+
 # Mémo de reprise — Campagne couverture Apex v13 100% réel (2026-06-03, branche `claude/perfect-100-Ypr17`)
 
 > **Objectif Kevin** : 100% réel partout (mesuré jamais estimé), autonome, sans régression. Gate à CHAQUE tour : `tsc --noEmit` + `eslint --max-warnings=0` + suite vitest COMPLÈTE (EXIT=0 ET 0 ligne `Unhandled/Errors`, pas seulement « 0 failed » — cf. leçon #89). Merge réel vérifié sur le vrai GitHub à chaque tour (auto-merge bot).
