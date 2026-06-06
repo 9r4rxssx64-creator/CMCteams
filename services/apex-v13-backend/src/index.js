@@ -28,6 +28,19 @@ const APEX_ORIGIN = 'https://9r4rxssx64-creator.github.io';
 const APEX_PATH = '/CMCteams/apex-ai-v13/';
 const ALLOWED_ORIGINS = new Set([APEX_ORIGIN]);
 
+/* Domaine personnalisé KDMC : autorise kd-mc.com et tous ses sous-domaines
+   (apex-ai.kd-mc.com, cmcteams.kd-mc.com, …) en plus de l'URL GitHub Pages. */
+function isAllowedOrigin(o) {
+  if (!o) return false;
+  if (ALLOWED_ORIGINS.has(o) || o.includes('localhost')) return true;
+  try {
+    const h = new URL(o).hostname;
+    return h === 'kd-mc.com' || h.endsWith('.kd-mc.com');
+  } catch {
+    return false;
+  }
+}
+
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; /* 10 min */
 const RATE_LIMIT_MAX = 100; /* 100 req / 10 min / IP */
 
@@ -42,7 +55,7 @@ export default {
     }
 
     /* CORS strict */
-    if (!ALLOWED_ORIGINS.has(origin) && !origin.includes('localhost')) {
+    if (!isAllowedOrigin(origin)) {
       return jsonError(403, 'Origin not allowed', origin);
     }
 

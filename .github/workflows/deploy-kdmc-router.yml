@@ -1,0 +1,53 @@
+name: KDMC — Déploie le routeur de domaine kd-mc.com (autonome)
+
+# Déploie le worker "kdmc-router" qui donne à chaque projet sa belle adresse
+# (sous-domaine par projet) en reverse-proxyfiant vers GitHub Pages.
+# Les routes custom_domain (wrangler.toml) auto-provisionnent DNS + SSL sur la
+# zone kd-mc.com déjà présente dans le compte Cloudflare. 100% auto.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'services/kdmc-router/**'
+      - '.github/workflows/deploy-kdmc-router.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      - name: Install wrangler
+        run: npm i -g wrangler@3
+
+      - name: Déploiement du routeur (+ custom domains kd-mc.com)
+        id: deploy
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          echo "Deploy kdmc-router…"
+          wrangler deploy 2>&1 | tee deploy.log
+          echo "----"
+          echo "Si une route custom_domain échoue avec un message de permission,"
+          echo "le token CLOUDFLARE_API_TOKEN doit inclure Zone:DNS:Edit +"
+          echo "Workers Routes:Edit sur la zone kd-mc.com."
+
+      - name: Health check des belles adresses
+        run: |
+          for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
+                   apex-chat.kd-mc.com la-detente.kd-mc.com chez-lolo.kd-mc.com; do
+            echo "== https://$H =="
+            curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
+              || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"
+          done
