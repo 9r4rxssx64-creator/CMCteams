@@ -5423,7 +5423,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.783";
+var APP_VER="v9.784";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10896,9 +10896,9 @@ function render(){
     var _noPad=(A.view==="chat"||A.view==="ia")?' style="padding-bottom:0"':"";
     app.innerHTML='<a href="#content" class="skip-link">Aller au contenu principal</a>'+_viewAsBanner+'<div id="topbar" role="banner" style="'+(_viewAs?'margin-top:32px':'')+'">'+vTopbar()+'</div><main id="content" role="main" aria-live="polite"'+_noPad+'>'+_cmcBreadcrumb()+vMain()+'</main><div id="accessModalWrap">'+renderAccessModal()+'</div>'+vNav()+vIaFab();
     requestAnimationFrame(function(){window.scrollTo(0,0);});
-    setTimeout(adjGrid,50);
-    if(A.view==="departs")setTimeout(adjDeparts,300);
-    if(A.view==="monplanning")setTimeout(adjMonPlanning,100);
+    if(A.view==="planning")setTimeout(adjGrid,50); // v9.784 : scroll grille seulement en vue planning (coherent avec dc())
+    else if(A.view==="departs")setTimeout(adjDeparts,300);
+    else if(A.view==="monplanning")setTimeout(adjMonPlanning,100);
   }catch(e){
     app.innerHTML='<div style="min-height:100vh;background:rgba(10,26,12,.22);padding:24px;color:#c9a227;font-family:monospace">'
       +'<div style="font-size:18px;font-weight:800;margin-bottom:16px">\u26a0\ufe0f Erreur d\'affichage</div>'
@@ -16788,8 +16788,8 @@ function _vMainImpl(){
     case"geo":      return isAdm?vGeoAdmin():""; // v9.210
     case"geolocation": return isAdm?vGeolocationCMC():""; // v9.487 — multi-casinos precision live
     case"pit":      return vPit(); // v9.211 — pit boss live (admin + cadres)
-    case"pitmap":   return typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
-    case"pitmapview": return typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
+    case"pitmap":   return (A.user&&A.user.id===AID&&typeof vMapEditor==="function")?vMapEditor():typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
+    case"pitmapview": return (A.user&&A.user.id===AID&&typeof vMapEditor==="function")?vMapEditor():typeof vPitMapView==="function"?vPitMapView():_vMissingView("🗺️ Carte Pit Boss","Cette vue est en cours de développement et n'est pas encore disponible.","👁 Voir Pit Boss live","pit"); // v9.726 — guard erreur #28
     case"quotidienne": return vQuotidienne(); // v9.312 — réunion direction
     case"endshiftdash": return vEndShiftDashboard(); // v9.339 — dashboard fins de shift
     case"dayhistory":  return vDayHistory(); // v9.342 — historique du jour
