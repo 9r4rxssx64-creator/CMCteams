@@ -858,6 +858,14 @@ if(typeof ldAdminLogout==="function"){var _o=ldAdminLogout;ldAdminLogout=functio
      var lines=pod.map(function(i){return "• "+i.name+" ["+i.size+"] x"+i.qty+" — vêtement:"+i.garment+" couleur:"+i.color+" emplacement:"+i.placement;}).join("\n");
      if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — à imprimer",title:"🎨 PRODUIT À IMPRIMER (Printify) — "+STORE_NAME,store:STORE_NAME,message:"PRODUITS PERSONNALISÉS À PRODUIRE VIA TON PRINTIFY :\n\n"+lines+"\n\nCLIENT :\n"+(ck.name||"")+"\n"+(ck.addr||"")+"\n"+((ck.zip||"")+" "+(ck.city||""))+"\n"+(ck.country||"France")+"\n\n→ Tu valides puis tu places la commande dans ton Printify."}).catch(function(){});}
      var q=[];try{q=JSON.parse(localStorage.getItem("cl_pod_orders")||"[]")}catch(_){}q.push({ts:Date.now(),items:pod,ship:ck});localStorage.setItem("cl_pod_orders",JSON.stringify(q.slice(-100)));
+     /* 🚀 Auto-création commande Printify via worker partagé (statut on-hold, aucun débit auto). L'email ci-dessus reste la trace de secours. */
+     (function(){
+       var cfg=window._clOrderCfg; if(!cfg||!cfg.worker_url)return;
+       var HEXFR={"#15171a":"Noir","#0f1722":"Marine","#1d3a5f":"Marine","#ffffff":"Blanc","#c9c4ba":"Blanc","#2f4538":"Vert","#3a4636":"Kaki","#5a6650":"Kaki","#3a0f12":"Bordeaux","#5b1a1a":"Bordeaux","#7a5c1e":"Sable","#b08d57":"Sable","#8a8d92":"Ardoise"};
+       var its=pod.map(function(i){return {name:i.name,garment:i.garment,design_data:i.printImg,size:i.size,color:HEXFR[String(i.color||"").toLowerCase()]||"Noir",placement:i.placement,quantity:i.qty};});
+       fetch(cfg.worker_url.replace(/\/$/,"")+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:r,shop:"chez-lolo",shopName:STORE_NAME,label:STORE_NAME+" "+(r||""),pushUrl:"https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/index.html?ld_admin=1",items:its,address:{name:ck.name||"",addr:ck.addr||"",zip:ck.zip||"",city:ck.city||"",email:ck.email||"",phone:ck.phone||"",country:ck.country||"France"}})})
+       .then(function(x){return x.json()}).then(function(j){ if(j&&j.ok&&typeof toast==="function")toast("🚀 Commande envoyée en production Printify"+(j.printify_order_id?" (#"+j.printify_order_id+")":"")+(j.warnings&&j.warnings.length?(" — à vérifier : "+j.warnings.join(", ")):"")); }).catch(function(){});
+     })();
      if(LD_ADMIN)setTimeout(clInstallAdminUI,100);
    }catch(_){}}
    return r;
@@ -916,13 +924,14 @@ function clSaveNewProduct(){
    else if(u.get("ld_admin")!==null&&!LD_ADMIN){setTimeout(ldAdminPrompt,300);}
  }catch(_){}
  try{clLoadPublished();}catch(_){}
+ try{fetch("printify-order-config.json").then(function(rp){return rp.ok?rp.json():null}).then(function(j){if(j&&j.worker_url)window._clOrderCfg=j;}).catch(function(){});}catch(_){}
  setTimeout(clInstallAdminUI,500);
 }());
 </script>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="chez-lolo"
-        data-version="v2.0.4"
+        data-version="v2.0.5"
         data-color="#e8b830"
         defer></script>
 
