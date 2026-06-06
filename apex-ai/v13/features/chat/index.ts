@@ -44,6 +44,7 @@ import { toast } from '../../ui/toast.js';
 import { renderMessageActions } from './chat-actions-render.js';
 import { type AlbumImage, renderImageAlbum } from './chat-album.js';
 import { buildMessagesForApi } from './chat-api-format.js';
+import { isAutoReadEnabled, setAutoReadEnabled, maybeAutoReadAssistant } from './chat-autoread.js';
 import { renderProviderBadge, renderToolPills } from './chat-badges.js';
 import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
@@ -1731,30 +1732,15 @@ function openMemoryModal(rootEl: HTMLElement): void {
 }
 
 /* Storage keys pour préférences voice chat (Kevin règle : auto-read toggle) */
-const AUTO_READ_KEY = 'apex_v13_chat_auto_read';
 
 /**
  * Lit la préférence "auto-read" (lecture automatique des réponses assistant).
  * Exposé pour tests.
  */
-export function isAutoReadEnabled(): boolean {
-  try {
-    return localStorage.getItem(AUTO_READ_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Active/désactive auto-read.
- */
-export function setAutoReadEnabled(enabled: boolean): void {
-  try {
-    localStorage.setItem(AUTO_READ_KEY, enabled ? '1' : '0');
-  } catch {
-    /* ignore quota errors */
-  }
-}
+/* v13.4.293 refactor monolithe : isAutoReadEnabled / setAutoReadEnabled /
+ * maybeAutoReadAssistant extraits vers chat-autoread.ts. Importés en haut +
+ * re-exportés ici (façade backward-compat : tests + callers internes inchangés). */
+export { isAutoReadEnabled, setAutoReadEnabled, maybeAutoReadAssistant };
 
 /**
  * Handler pour bouton 🔊 — lecture vocale d'un message assistant.
@@ -1876,20 +1862,6 @@ async function handleExportPdfAction(msg: DisplayMessage): Promise<void> {
  * dès la fin du streaming. Lazy-load voice service.
  * Exposé pour tests.
  */
-export async function maybeAutoReadAssistant(msg: DisplayMessage): Promise<void> {
-  if (msg.role !== 'assistant' || msg.streaming) return;
-  if (!msg.text || msg.text.length === 0) return;
-  if (!isAutoReadEnabled()) return;
-  try {
-    const { speak, getActiveVoice, stopAll } = await import('../../services/ai/voice.js');
-    stopAll();
-    const voiceId = getActiveVoice();
-    await speak(msg.text, voiceId);
-  } catch (err: unknown) {
-    /* Silent fail — auto-read est best-effort */
-    logger.warn('chat', 'auto-read failed', { err });
-  }
-}
 
 /**
  * Génère le HTML des pills tool_use pour un message.
