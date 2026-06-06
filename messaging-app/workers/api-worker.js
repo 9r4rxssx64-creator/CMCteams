@@ -1078,6 +1078,26 @@ export async function handleCreateConversation(request, env) {
   if (!['dm', 'group', 'community', 'channel'].includes(type)) return err('Type invalide');
   if (!Array.isArray(members) || members.length < 1) return err('Membres requis');
 
+  // v1.1.172 FIX P1 (audit crew) : dédup DM côté serveur. Avant, chaque appel
+  // créait une nouvelle conv → doublons de DM (réconciliés péniblement côté
+  // client). On réutilise le DM existant entre les 2 mêmes users s'il y en a un.
+  if (type === 'dm') {
+    const peer = members.find((m) => m && m !== auth.sub) || members[0];
+    if (peer) {
+      try {
+        const existing = await env.APEX_CHAT_DB.prepare(
+          `SELECT c.id, c.type, c.name, c.created_at FROM conversations c
+             JOIN conversation_members a ON a.conv_id = c.id AND a.user_id = ?
+             JOIN conversation_members b ON b.conv_id = c.id AND b.user_id = ?
+           WHERE c.type = 'dm' AND c.archived_at IS NULL LIMIT 1`
+        ).bind(auth.sub, peer).first();
+        if (existing) {
+          return json({ ok: true, conversation: existing, deduped: true });
+        }
+      } catch (e) { /* en cas d'erreur, on crée normalement ci-dessous */ }
+    }
+  }
+
   const id = crypto.randomUUID();
   const doId = `do_${id}`;
   const ts = Date.now();
@@ -2971,6 +2991,14 @@ export async function handlePremiumCheckout(request, env) {
     fdParams.set('metadata[user_id]', auth.sub);
     fdParams.set('metadata[plan]', plan);
     fdParams.set('metadata[apex_version]', 'v1.1.24');
+    // v1.1.172 FIX P1 (audit crew) : propager user_id/plan sur l'OBJET subscription
+    // (pas seulement la session). Sans ça, customer.subscription.deleted /
+    // payment_failed avaient sub.metadata.user_id = undefined → premium JAMAIS
+    // révoqué après annulation. (Mode subscription uniquement.)
+    if (planDef.interval) {
+      fdParams.set('subscription_data[metadata][user_id]', auth.sub);
+      fdParams.set('subscription_data[metadata][plan]', plan);
+    }
     // Trial 7 jours gratuit pour monthly (1er abo seulement)
     if (plan === 'monthly') {
       fdParams.set('subscription_data[trial_period_days]', '7');
@@ -3084,7 +3112,21 @@ export async function handlePremiumWebhook(request, env) {
     }
   } else if (event.type === 'customer.subscription.deleted' || event.type === 'invoice.payment_failed') {
     const sub = event.data?.object;
-    const userId = sub?.metadata?.user_id;
+    let userId = sub?.metadata?.user_id;
+    // v1.1.172 FIX P1 (audit crew) : fallback robuste — résoudre l'user via
+    // stripe_customer_id si le metadata est absent (anciens abonnements créés
+    // avant le fix checkout). Sans ça, le premium n'était jamais révoqué.
+    if (!userId) {
+      const customerId = sub?.customer || event.data?.object?.customer;
+      if (customerId) {
+        try {
+          const row = await env.APEX_CHAT_DB?.prepare(
+            'SELECT id FROM users WHERE stripe_customer_id=?'
+          ).bind(customerId).first();
+          if (row) userId = row.id;
+        } catch (e) { /* skip */ }
+      }
+    }
     if (userId) {
       try {
         await env.APEX_CHAT_DB?.prepare(

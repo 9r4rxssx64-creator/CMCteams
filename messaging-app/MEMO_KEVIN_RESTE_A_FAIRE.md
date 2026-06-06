@@ -135,3 +135,26 @@
 
 > 🎯 Apex Chat est commercialement viable dès maintenant pour ton cercle privé.
 > Architecture A→B→C : bascule sans refactor quand tu veux ouvrir au grand public.
+
+---
+
+## 🔔 ACTION KEVIN À FAIRE PLUS TARD (noté 2026-06-06, audit crew Apex Chat v1.1.172)
+
+### ☐ Imposer l'OTP SMS réel (1 ligne, zéro risque de verrouillage)
+**Quoi** : passer `ALLOW_TEST_OTP = "true"` → `"false"` dans
+`messaging-app/workers/wrangler.toml` (section `[vars]`), puis redéployer le worker.
+
+**Effet** : désactive le code de secours `000000` (signup direct universel) et la
+fuite du code OTP en clair → impose l'OTP SMS réel à TOUT le monde.
+
+**⚠️ Pré-requis AVANT de flipper** : vérifier que l'envoi SMS **Vonage** fonctionne
+réellement (secrets `VONAGE_API_KEY` + `VONAGE_API_SECRET` configurés côté Worker).
+Sinon les non-Kevin ne pourront plus s'inscrire (toi tu restes toujours connectable
+via le bypass `KEVIN_PHONE_E164`, quoi qu'il arrive).
+
+**Pourquoi c'est en flag et pas déjà fait** : je ne peux pas tester l'envoi SMS live
+depuis le sandbox → j'ai laissé le défaut `"true"` pour ne PAS risquer de te
+verrouiller (règle "ne jamais casser le login"). Le code sécurisé est prêt, il
+n'attend que ton GO une fois Vonage confirmé.
+
+Claude me rappellera cette action.
