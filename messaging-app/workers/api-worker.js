@@ -974,15 +974,84 @@ async function handleListConversations(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
+  // v1.1.172 FIX P0 (audit crew) : joindre la clé publique du pair (DM) pour
+  // que le client puisse établir la session E2E. Sans ça, peer_pubkey restait
+  // null → aucune session → fallback texte clair. La sous-requête prend l'AUTRE
+  // membre (DM = 1 seul autre). Pour les groupes, le client n'utilise pas ce
+  // champ (chiffrement de groupe géré séparément).
   const convs = await env.APEX_CHAT_DB.prepare(
-    `SELECT c.*, cm.last_read_msg_id, cm.notif_level, cm.role
+    `SELECT c.*, cm.last_read_msg_id, cm.notif_level, cm.role,
+       (SELECT u.identity_key_pub FROM conversation_members m2
+          JOIN users u ON u.id = m2.user_id
+          WHERE m2.conv_id = c.id AND m2.user_id != ? LIMIT 1) AS peer_pubkey,
+       (SELECT m2.user_id FROM conversation_members m2
+          WHERE m2.conv_id = c.id AND m2.user_id != ? LIMIT 1) AS peer_id
      FROM conversations c
      INNER JOIN conversation_members cm ON cm.conv_id = c.id
      WHERE cm.user_id = ? AND c.archived_at IS NULL
      ORDER BY c.last_msg_ts DESC`
-  ).bind(auth.sub).all();
+  ).bind(auth.sub, auth.sub, auth.sub).all();
 
-  return json({ ok: true, conversations: convs.results || [] });
+  // Ne pas exposer le placeholder comme une vraie clé.
+  const rows = (convs.results || []).map((c) => {
+    if (c.peer_pubkey === 'PENDING_PQXDH' || c.peer_pubkey === 'PENDING') c.peer_pubkey = null;
+    return c;
+  });
+  return json({ ok: true, conversations: rows });
+}
+
+// v1.1.172 FIX P0 (audit crew) — distribution des clés publiques E2E.
+// Sans ces 2 routes, l'« E2E » était cosmétique : la pubkey n'était jamais
+// publiée et aucun bundle n'était récupérable → repli texte clair en D1.
+
+// POST /api/keys/prekeys — publie/maj la clé publique d'identité du user courant.
+async function handleUploadPrekeys(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const body = await request.json().catch(() => ({}));
+  const idk = body.identity_key_pub;
+  if (!idk || typeof idk !== 'string' || idk.length < 8 || idk.length > 4000 || idk.startsWith('PENDING')) {
+    return err('identity_key_pub invalide', 400, 'bad_pubkey', { len: idk ? String(idk).length : 0 });
+  }
+  // Champs optionnels (placeholder PQXDH tant que Kyber n'est pas activé).
+  const pq = (typeof body.pq_key_pub === 'string' && body.pq_key_pub.length <= 4000) ? body.pq_key_pub : null;
+  const signed = (typeof body.prekey_signed === 'string' && body.prekey_signed.length <= 4000) ? body.prekey_signed : null;
+  try {
+    await env.APEX_CHAT_DB.prepare(
+      `UPDATE users SET identity_key_pub=?,
+         pq_key_pub=COALESCE(?, pq_key_pub),
+         prekey_signed=COALESCE(?, prekey_signed)
+       WHERE id=?`
+    ).bind(idk, pq, signed, auth.sub).run();
+    return json({ ok: true });
+  } catch (e) {
+    return err('Échec publication clé', 500, 'db_write_failed', {
+      detail: e?.message, where: (e?.stack || '').split('\n')[1] || '',
+    });
+  }
+}
+
+// GET /api/keys/:userId/bundle — récupère la clé publique d'un pair (auth requise).
+async function handleKeyBundle(userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const row = await env.APEX_CHAT_DB.prepare(
+    'SELECT id, identity_key_pub, pq_key_pub, prekey_signed FROM users WHERE id=?'
+  ).bind(userId).first();
+  if (!row) return err('Utilisateur introuvable', 404, 'no_user');
+  const idk = row.identity_key_pub;
+  if (!idk || idk === 'PENDING_PQXDH' || idk === 'PENDING') {
+    return err('Clé pas encore publiée par ce contact', 409, 'key_pending', { user_id: userId });
+  }
+  return json({
+    ok: true,
+    bundle: {
+      user_id: row.id,
+      identity_key_pub: idk,
+      pq_key_pub: row.pq_key_pub && !String(row.pq_key_pub).startsWith('PENDING') ? row.pq_key_pub : null,
+      prekey_signed: row.prekey_signed && !String(row.prekey_signed).startsWith('PENDING') ? row.prekey_signed : null,
+    },
+  });
 }
 
 export async function handleCreateConversation(request, env) {
@@ -3853,6 +3922,11 @@ export default {
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
       if (adminUserMatch && method === 'GET') return await handleAdminGetFullUser(adminUserMatch[1], request, env);
+
+      // E2E keys (v1.1.172 FIX P0 audit crew — distribution clés publiques)
+      if (path === '/api/keys/prekeys' && method === 'POST') return await handleUploadPrekeys(request, env);
+      const keyBundleMatch = path.match(/^\/api\/keys\/([a-zA-Z0-9_-]+)\/bundle$/);
+      if (keyBundleMatch && method === 'GET') return await handleKeyBundle(keyBundleMatch[1], request, env);
 
       // Conversations
       if (path === '/api/conversations' && method === 'GET') return await handleListConversations(request, env);

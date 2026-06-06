@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.171",
+  "softwareVersion": "v1.1.172",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.171';
+const __APEX_CHAT_VERSION__ = 'v1.1.172';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.171</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.172</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.171</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.172</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -5969,11 +5969,51 @@ async function _ensureCryptoKeys(){
       ls('crypto_priv', privB64); // pas de PIN défini → comportement legacy inchangé
     }
     _logTelemetry('ok', 'crypto-keys-generated', { pub: pubB64.slice(0,20)+'...' });
-    // TODO Étape B : upload pubkey au serveur via /api/keys/prekeys
+    // v1.1.172 FIX P0 (audit crew) : PUBLIER la clé publique au serveur, sinon
+    // les pairs ne peuvent jamais établir de session E2E (le repli était texte clair).
+    K._publishPubkey();
   }catch(e){
     _safeCatch('crypto-generate', e);
   }
 }
+
+// v1.1.172 FIX P0 (audit crew) — publie la clé publique d'identité au serveur.
+// Idempotent (marqueur crypto_pub_published) + best-effort (no-op sans token).
+K._publishPubkey = async function(){
+  try{
+    const pub = lg('crypto_pub', null);
+    if(!pub || !K.token) return;                       // besoin d'être authentifié
+    if(lg('crypto_pub_published', null) === pub) return; // déjà publiée
+    const r = await K._api('POST', '/api/keys/prekeys', { identity_key_pub: pub });
+    if(r && r.ok){ ls('crypto_pub_published', pub); _logTelemetry('ok', 'pubkey-published', {}); }
+  }catch(e){ _safeCatch('publish-pubkey', e); }  // jamais bloquant
+};
+
+// v1.1.172 FIX P0 (audit crew) — garantit une session E2E pour une conv (DM).
+// Établit depuis conv.peer_pubkey ; sinon récupère le bundle du pair just-in-time
+// via GET /api/keys/:peer_id/bundle. Retourne true si une session est active.
+K._ensureSession = async function(conv){
+  try{
+    if(!window.ApexCrypto || !conv) return false;
+    if(ApexCrypto.getSessionKey(conv.id)) return true;
+    if(!K._cryptoKeys) { try{ await _ensureCryptoKeys(); }catch(_){ } }
+    if(!K._cryptoKeys) return false;
+    let peerPub = conv.peer_pubkey || null;
+    if(!peerPub && conv.peer_id && K.token){
+      try{
+        const r = await K._api('GET', '/api/keys/' + encodeURIComponent(conv.peer_id) + '/bundle');
+        if(r && r.ok && r.bundle && r.bundle.identity_key_pub){
+          peerPub = r.bundle.identity_key_pub;
+          conv.peer_pubkey = peerPub; // cache local
+        }
+      }catch(e){ /* 409 key_pending = le pair n'a pas encore publié sa clé */ }
+    }
+    if(!peerPub) return false;
+    const peerKey = await ApexCrypto.importPublicKey(peerPub);
+    await ApexCrypto.establishSession(conv.id, K._cryptoKeys.privateKey, peerKey);
+    return !!ApexCrypto.getSessionKey(conv.id);
+  }catch(e){ _safeCatch('ensure-session', e); return false; }
+};
 
 // Étape A E2E : migre une clé privée stockée EN CLAIR vers une forme wrappée par PIN.
 // Best-effort, ne bloque jamais ; en cas d'échec on garde le clair (zéro lockout).
@@ -6683,13 +6723,9 @@ K.openConv = async function(convId){
     if(last && last.id) K._sendReadReceipt(convId, last.id);
   }, 800);
 
-  // Phase 2 : établir session E2E si pas déjà fait
-  try{
-    if(window.ApexCrypto && !ApexCrypto.getSessionKey(convId) && K._cryptoKeys && conv.peer_pubkey){
-      const peerKey = await ApexCrypto.importPublicKey(conv.peer_pubkey);
-      await ApexCrypto.establishSession(convId, K._cryptoKeys.privateKey, peerKey);
-    }
-  }catch(e){ _safeCatch('establish-session', e); }
+  // Phase 2 : établir session E2E (peer_pubkey joint par le serveur OU bundle
+  // récupéré just-in-time). v1.1.172 FIX P0 (audit crew).
+  try{ await K._ensureSession(conv); }catch(e){ _safeCatch('establish-session', e); }
 
   K.sv('chat', conv);
 };
@@ -6708,10 +6744,13 @@ K._sendMsg = async function(){
     else { text = result; input.value = result; }
   }
 
-  // Phase 2 : chiffrer E2E si session active
+  // Phase 2 : chiffrer E2E. v1.1.172 FIX P0 (audit crew) : on GARANTIT d'abord
+  // la session (établit / récupère le bundle du pair) AVANT de chiffrer, au lieu
+  // de retomber silencieusement en clair.
   let ciphertext = null;
   let displayText = text;
   try{
+    await K._ensureSession(conv);
     if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
       ciphertext = await ApexCrypto.encryptForConv(conv.id, text);
       // Le texte clair reste local (pour affichage), le ciphertext part au serveur
@@ -11545,6 +11584,10 @@ K._profileIncomplete = function(u){
 
 K._postLogin = function(){
   if(!K.user) return;
+  // v1.1.172 FIX P0 (audit crew) : publier la clé publique E2E dès le login —
+  // couvre les users dont la clé existait déjà localement (avant cette version)
+  // mais n'avait jamais été poussée au serveur. Best-effort, non bloquant.
+  setTimeout(() => { try { K._publishPubkey && K._publishPubkey(); } catch(_) {} }, 800);
   // v1.1.170 Kevin "Toujours tout auto rappel toi" — sync auto des conv
   // serveur à CHAQUE login (récupère conv DM créée par ensureCorePair sans
   // intervention user) + dédup conv locales fantômes. Boucle de fond aussi.
