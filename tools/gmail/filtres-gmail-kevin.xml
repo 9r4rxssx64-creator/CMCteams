@@ -2,54 +2,51 @@
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>
   <title>Filtres Gmail — Kevin DESARZENS (tri auto)</title>
 
-  <!-- 🔐 Sécurité & Comptes — LABEL + ARCHIVE auto -->
+  <!-- 🔐 Sécurité & Comptes — LABEL + reste en réception (codes de connexion à voir vite) -->
   <entry>
     <category term='filter'></category>
     <title>Securite</title>
     <content></content>
     <apps:property name='from' value='accounts.google.com OR notify.cloudflare.com OR idp.vonage.com OR nordaccount.com OR obsidian.md OR noreply-findmydevice@google.com OR google-noreply@google.com OR subito.it'/>
     <apps:property name='label' value='🔐 Sécurité &amp; Comptes'/>
-    <apps:property name='shouldArchive' value='true'/>
+    <apps:property name='sizeOperator' value='s_sl'/>
+    <apps:property name='sizeUnit' value='s_smb'/>
   </entry>
 
-  <!-- 🏦 Banque & Finance — LABEL + ARCHIVE auto -->
+  <!-- 🏦 Banque & Finance — LABEL + reste en réception (important) -->
   <entry>
     <category term='filter'></category>
     <title>Banque</title>
     <content></content>
     <apps:property name='from' value='paypal.fr OR stripe.com OR link.com'/>
     <apps:property name='label' value='🏦 Banque &amp; Finance'/>
-    <apps:property name='shouldArchive' value='true'/>
   </entry>
 
-  <!-- 💳 Factures & Paiements — LABEL + ARCHIVE auto -->
+  <!-- 💳 Factures & Paiements — LABEL + reste en réception (important) -->
   <entry>
     <category term='filter'></category>
     <title>Factures</title>
     <content></content>
     <apps:property name='from' value='invoice+statements@mail.anthropic.com OR payments-noreply@google.com'/>
     <apps:property name='label' value='💳 Factures &amp; Paiements'/>
-    <apps:property name='shouldArchive' value='true'/>
   </entry>
 
-  <!-- 📑 Administratif & Impôts — LABEL + ARCHIVE auto -->
+  <!-- 📑 Administratif & Impôts — LABEL + reste en réception (perso/important) -->
   <entry>
     <category term='filter'></category>
     <title>Administratif</title>
     <content></content>
     <apps:property name='from' value='support@mail.anthropic.com OR feedback@anthropic.com OR feedback+noreply@anthropic.com OR kevind@monaco.mc OR sbm.mc'/>
     <apps:property name='label' value='📑 Administratif &amp; Impôts'/>
-    <apps:property name='shouldArchive' value='true'/>
   </entry>
 
-  <!-- 🛍️ Boutiques Printify — LABEL + ARCHIVE auto -->
+  <!-- 🛍️ Boutiques Printify — LABEL + reste en réception (business) -->
   <entry>
     <category term='filter'></category>
     <title>Boutiques</title>
     <content></content>
     <apps:property name='from' value='tpop.com OR printify.com'/>
     <apps:property name='label' value='🛍️ Boutiques Printify'/>
-    <apps:property name='shouldArchive' value='true'/>
   </entry>
 
   <!-- 🛠️ Outils & SaaS — LABEL + ARCHIVE auto (sort de la réception) -->
