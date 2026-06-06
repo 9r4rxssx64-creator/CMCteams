@@ -613,6 +613,9 @@ function renderHome(){
     '<button class="iconbtn" title="Verrouiller" onclick="CF.lock()">🔒</button></div>'+
   (!bioEnrolled()&&ST.profile? '<div class="card" style="border-color:#6b5316;background:#1c1708"><div class="row"><div class="grow"><b>😊 Activer Face ID</b><div class="small muted">Déverrouillage rapide à la prochaine ouverture.</div></div><button class="primary" onclick="CF.enableBioNow()">Activer</button></div></div>':'')+
   '<div class="secgrid">'+tiles+'</div>'+
+  '<div class="card"><div class="row"><div class="grow"><b>📋 Mes mémos PDF</b>'+
+    '<div class="small muted">Listes pratiques remplissables (secrets, liens, adresses kd-mc.com).</div></div>'+
+    '<button class="iconbtn" title="Ouvrir les mémos" onclick="CF.memos()">📂</button></div></div>'+
   '<div class="statline"><span>'+ST.meta.items.length+' éléments</span><span>'+fmtBytes(totalBytes)+'</span></div>'+
   '<button class="fab" title="Ajouter" onclick="CF.add()">＋</button>';
 }
@@ -675,7 +678,21 @@ window.CF={
     q.oninput=function(){ var v=normName(q.value); if(!v){ r.innerHTML=""; return; }
       var res=ST.meta.items.filter(function(it){ return normName(it.title+" "+it.section+" "+it.type).indexOf(v)>=0; }).slice(0,30);
       r.innerHTML=res.length? res.map(itemCard).join("") : '<div class="muted small">Aucun résultat</div>'; }; },
-  settings:function(){ openSettings(); }
+  settings:function(){ openSettings(); },
+  memos:function(){
+    var L=[
+      ["01-secrets-github.pdf","🔑 Secrets GitHub (à remplir)"],
+      ["02-liens-utiles.pdf","🔗 Liens utiles (dashboards)"],
+      ["03-liens-projets.pdf","🚀 Projets — adresses kd-mc.com"],
+      ["04-adresses-kdmc.pdf","🌐 Cartographie kd-mc.com"]
+    ];
+    var rows=L.map(function(m){ var u="memo/"+m[0];
+      return '<div class="item"><div class="hd"><span>📄</span><span class="ti">'+m[1]+'</span></div>'+
+        '<div class="acts"><a class="pill" style="min-height:38px;display:inline-flex;align-items:center;padding:0 12px" href="'+u+'" target="_blank" rel="noopener">👁 Ouvrir</a>'+
+        '<a class="pill" style="min-height:38px;display:inline-flex;align-items:center;padding:0 12px" href="'+u+'" download>⬇️ Télécharger</a></div></div>'; }).join("");
+    modal('<h3>📋 Mes mémos PDF</h3><p class="small muted">Remplissables (champs de saisie). Tu peux aussi recopier une valeur dans une section du coffre pour la chiffrer.</p>'+rows+
+      '<button style="width:100%;margin-top:10px" onclick="this.closest(\'.modal\').remove()">Fermer</button>');
+  }
 };
 
 function openAddSheet(sec){

@@ -13,6 +13,9 @@ Usage : python3 tools/memo-pdf/generate_pdfs.py
 Sortie : coffre-fort/memo/*.pdf
 """
 import os
+# Mode "live" : passe à 1 quand kd-mc.com est déployé (kd-mc.com répond).
+# Le workflow coffre-pdf-refresh.yml détecte le live et régénère avec COFFRE_PDF_LIVE=1.
+LIVE = os.environ.get("COFFRE_PDF_LIVE") == "1"
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.colors import HexColor
@@ -289,11 +292,11 @@ class Doc:
         c.drawString(MARGIN + 46, self.y - 22, newaddr)
         if newaddr.startswith("http"):
             c.linkURL(newaddr, (MARGIN + 46, self.y - 24.5, PAGE_W - MARGIN - 6, self.y - 19), relative=0)
-        c.setFillColor(MUTED); c.setFont("Helvetica-Oblique", 6.5)
-        c.drawRightString(PAGE_W - MARGIN - 8, self.y - 22, "bientôt en ligne")
+        c.setFillColor(GOLD if LIVE else MUTED); c.setFont("Helvetica-Oblique", 6.5)
+        c.drawRightString(PAGE_W - MARGIN - 8, self.y - 22, "en ligne" if LIVE else "bientôt en ligne")
         # ancienne adresse (valide)
         c.setFillColor(TEXT); c.setFont("Helvetica-Bold", 7)
-        c.drawString(MARGIN + 7, self.y - 31, "Actuelle :")
+        c.drawString(MARGIN + 7, self.y - 31, "Ancienne :" if LIVE else "Actuelle :")
         c.setFillColor(LINK if old.startswith("http") else MUTED); c.setFont("Helvetica", 6.8)
         c.drawString(MARGIN + 45, self.y - 31, old if len(old) < 86 else old[:83] + "…")
         if old.startswith("http"):
@@ -356,7 +359,8 @@ def build_links():
 def build_projects():
     d = Doc(os.path.join(OUT_DIR, "03-liens-projets.pdf"),
             "Projets — adresses kd-mc.com & code",
-            "Nouvelles belles adresses (kd-mc.com) + adresse actuelle (valide) + dépôt. Liens cliquables.")
+            ("Adresses kd-mc.com EN LIGNE + ancienne (redirige) + dépôt. Liens cliquables." if LIVE
+             else "Nouvelles belles adresses (kd-mc.com) + adresse actuelle (valide) + dépôt. Liens cliquables."))
     d.section("Projets actifs")
     for p in PROJECTS:
         d.project_row(*p)
@@ -367,7 +371,8 @@ def build_projects():
 def build_addresses():
     d = Doc(os.path.join(OUT_DIR, "04-adresses-kdmc.pdf"),
             "Adresses kd-mc.com — cartographie",
-            "Domaine kd-mc.com (Cloudflare Registrar). 1 belle adresse par projet. Anciennes adresses encore valides.")
+            ("Domaine kd-mc.com EN LIGNE (Cloudflare). 1 belle adresse par projet." if LIVE
+             else "Domaine kd-mc.com (Cloudflare Registrar). 1 belle adresse par projet. Anciennes adresses encore valides."))
     d.section("Sites (une adresse par projet)")
     for a, t in KDMC_SITES:
         d.addr_row(a, t)
