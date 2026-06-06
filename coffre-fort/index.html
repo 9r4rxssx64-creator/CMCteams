@@ -627,6 +627,7 @@ function itemCard(it){
     '<div class="meta">'+ago(it.updated||it.created)+(it.storage==="r2"?' · ☁︎ cloud':it.storage==="idb"?' · appareil':'')+'</div>'+
     '<div class="acts">'+
       (it.type==="text"?'<button onclick="CF.copyItem(\''+it.id+'\')">📋 Copier</button><button onclick="CF.viewItem(\''+it.id+'\')">👁 Voir</button>':'<button onclick="CF.download(\''+it.id+'\')">⬇️ Télécharger</button>')+
+      '<button onclick="CF.move(\''+it.id+'\')" title="Déplacer vers une autre catégorie">↪ Déplacer</button>'+
       '<button class="danger" onclick="CF.del(\''+it.id+'\')">🗑</button>'+
     '</div></div>';
 }
@@ -670,6 +671,16 @@ window.CF={
     var blob=new Blob([bytes],{type:it.mime||"application/octet-stream"});
     var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=it.title; a.click();
     setTimeout(function(){URL.revokeObjectURL(a.href);},2000); toast("⬇️ "+it.title); },
+  move:function(id){ var it=ST.meta.items.find(function(x){return x.id===id;}); if(!it) return;
+    var btns=SECTIONS.map(function(s){ var cur=s.id===it.section;
+      return '<button class="'+(cur?'primary':'')+'" style="width:100%;margin-top:8px;justify-content:flex-start;text-align:left" '+
+        (cur?'disabled':'onclick="CF.moveTo(\''+id+'\',\''+s.id+'\')"')+'>'+s.ico+' '+s.nm+(cur?'  (actuel)':'')+'</button>'; }).join("");
+    modal('<h3>↪ Déplacer «'+esc(it.title)+'»</h3><p class="small muted">Choisis la nouvelle catégorie. Le contenu reste chiffré, rien n\'est perdu.</p>'+btns+
+      '<button style="width:100%;margin-top:12px" onclick="this.closest(\'.modal\').remove()">Annuler</button>'); },
+  moveTo:async function(id, sid){ var it=ST.meta.items.find(function(x){return x.id===id;}); if(!it) return;
+    it.section=sid; it.updated=Date.now(); await audit("move", it.title+" -> "+sid); await saveMeta();
+    var m=document.querySelector(".modal"); if(m) m.remove();
+    var sec=SECTIONS.find(function(s){return s.id===sid;})||{nm:sid}; toast("↪ Déplacé vers "+sec.nm); render(); },
   del:function(id){ var it=ST.meta.items.find(function(x){return x.id===id;});
     var m=modal('<h3>Supprimer ?</h3><p class="small muted">«'+esc(it.title)+'» sera définitivement supprimé.</p><div class="row" style="margin-top:12px"><button class="grow" onclick="this.closest(\'.modal\').remove()">Annuler</button><button class="grow danger" id="dl_y">Supprimer</button></div>');
     m.querySelector("#dl_y").onclick=async function(){ await delItem(id); m.remove(); render(); toast("🗑 Supprimé"); }; },

@@ -100,6 +100,21 @@ async function main() {
   const wrong = await page.evaluate(async () => await window.__CF_TEST__.tryUnlockPassphrase('mauvaise-phrase'));
   ok(wrong === false, 'mauvaise phrase secrète refusée');
 
+  console.log('\n[6] Déplacer un élément entre catégories');
+  // re-déverrouille (le test [5] a tenté une mauvaise phrase mais l'état restait unlocked depuis [4])
+  await page.evaluate(async () => {
+    if (!window.__CF_TEST__.ST.unlocked) await window.__CF_TEST__.tryUnlockPassphrase('MonChat-Adore-Le-Cafe-2026!');
+    window.CF.moveTo(window.__CF_TEST__.ST.meta.items[0].id, 'notes');
+  });
+  await page.waitForTimeout(300);
+  const moved = await page.evaluate(() => window.__CF_TEST__.ST.meta.items[0].section);
+  ok(moved === 'notes', 'élément déplacé vers une autre catégorie (codes → notes)');
+  const movedPersist = await page.evaluate(async () => {
+    const it = window.__CF_TEST__.ST.meta.items[0];
+    return await window.__CF_TEST__.getTextItem(it); // toujours déchiffrable après déplacement
+  });
+  ok(movedPersist === 'sk-ant-api03-TEST-VALUE-xyz', 'contenu intact après déplacement');
+
   await browser.close();
   server.close();
   console.log(`\n${fails === 0 ? '✅ TOUS LES TESTS PASSENT' : '❌ ' + fails + ' échec(s)'}`);
