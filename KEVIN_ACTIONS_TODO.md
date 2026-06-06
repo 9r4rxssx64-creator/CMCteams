@@ -1,5 +1,23 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🛍️ CHEZ LOLO (2026-06-06) — refonte mergée, 1 validation restante
+
+### ✅ Fait & en prod (aucune action) : refonte multi-univers, catalogue vidé + catégories, CSP/sécurité, bibliotheque.html, bouton ➕ Produit (ajout sans code), image OG marque, auto-commande Printify (worker généralisé).
+
+### ⏳ #A — Valider la chaîne Printify (toi, ~2 min)
+- Boutique → **Studio → « Ajouter à la boutique »** un design → panier → commander (PayPal/Revolut).
+- Vérifier la commande **on-hold** sur https://printify.com/app/orders
+- Si warning « à vérifier » (garment polo/tank/shirt/zip/jogger/short/bandana) → me le dire, j'ajoute le blueprint.
+- ℹ️ on-hold = **aucun débit auto**. Garments sûrs aujourd'hui : t-shirt, hoodie, casquette, tote.
+
+### 🟡 #B (optionnel) — Mapper les blueprints Printify manquants
+- Bloqué côté sandbox (pas d'accès réseau au catalogue Printify d'ici → je n'invente pas d'IDs).
+- Option : mini-endpoint worker `/blueprints?q=` pour découvrir les vrais IDs, OU tu me donnes les `blueprint_id`.
+
+### 🟢 #C (optionnel) — Printify sales channel
+- `printify-config.json` : `sales_channel: disconnected` (shop connecté API). Commandes via worker → pas besoin sauf si tu veux le canal natif.
+
+
 ## 🌐 2026-06-06 — Domaine kd-mc.com (belle adresse par projet)
 
 - ✅ **Acheté** : `kd-mc.com` sur Cloudflare (fait par Kevin).

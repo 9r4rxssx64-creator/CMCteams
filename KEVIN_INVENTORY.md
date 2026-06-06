@@ -3,6 +3,23 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-06-06** (Domaine personnalisé **kd-mc.com** — belle adresse par projet)
 
+## 🛍️ Chez Lolo — boutique multi-univers (textile/cosmétiques/goodies/accessoires) — **mergé sur main 2026-06-06**
+
+**🧪 Action immédiate / tester**
+- 🛍️ Boutique live : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/
+- 🎨 Studio (créer designs) : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/studio.html
+- 📚 Bibliothèque : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/bibliotheque.html
+- 📦 Commandes Printify (valider on-hold) : https://printify.com/app/orders
+
+**🔧 Code modifié / créé**
+- index.html : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/index.html
+- bibliotheque.html (NOUVEAU) : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/bibliotheque.html
+- img/og.png (NOUVELLE image marque) : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/img/og.png
+- studio.html · manifest.json · sw.js (v2.0.5) : dossier https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/chez-lolo
+- Worker Printify généralisé : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/worker-order/worker.js
+
+**📜 PR mergées (via GitHub MCP)** : [#849](https://github.com/9r4rxssx64-creator/cmcteams/pull/849) · [#851](https://github.com/9r4rxssx64-creator/cmcteams/pull/851) · [#853](https://github.com/9r4rxssx64-creator/cmcteams/pull/853)
+
 ## 🌐 Domaine kd-mc.com — une belle adresse par projet — branche `claude/kdmc-custom-domain-7hNn9`
 
 > 📋 **Liste complète + statut des adresses : [KDMC_ADRESSES.md](KDMC_ADRESSES.md)** (source de vérité).

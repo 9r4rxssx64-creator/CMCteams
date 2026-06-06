@@ -1,3 +1,21 @@
+# Mémo de reprise — SESSION 2026-06-06 : Boutique « Chez Lolo » refonte complète (branche `claude/lolo-crew-review-tDzp7`, **tout mergé sur main via GitHub MCP**)
+
+> **Contexte** : Chez Lolo était un clone inachevé — `index.html` = ancienne boutique cosmétique « Glow Wellness » (100 produits) alors que manifest/studio venaient d'un clone AR15 `la-detente`. Décision Kevin : **vider le catalogue, garder des catégories (textile/cosmétique/goodies), tout corriger, cohérence totale, 100% réel autonome**.
+>
+> **Livré et MERGÉ sur main (PR #849, #851, #853, #857 + 1ʳᵉ passe)** :
+> 1. **Identité multi-univers** : catalogue vidé (`P=[]`), catégories Textile/Cosmétiques/Goodies/Accessoires, textes/OG/Twitter/schema.org/hero/à-propos/footer/panier neutralisés, `manifest.json` cohérent (theme `#7c8c3c`, icône 🛍️), studio tag « LA DÉTENTE »→« CHEZ LOLO », `sw.js` notificationclick `chez-lolo`.
+> 2. **`bibliotheque.html` CRÉÉE** (lien mort réparé) : galerie créations/logos/projets.
+> 3. **Sécurité CSP** sur index/studio/bibliotheque (`connect-src` restreint) + referrer + nosniff.
+> 4. **➕ Ajout produit autonome** (`clAddProductForm`/`clSaveNewProduct`) → `cl_custom_products` → boutique, zéro code.
+> 5. **Image OG à la marque** (Pillow déterministe) remplaçant l'AR15 hérité.
+> 6. **Auto-commande Printify** (v2.0.5) : frontend POST `/order` au worker (design base64 + garment + couleur FR + adresse), on-hold, email/queue secours. Worker `la-detente/worker-order/worker.js` **généralisé par shop** (défauts = La Détente → la-detente intact), auto-déployé.
+>
+> **Infra** : ✅ GitHub MCP opérationnel (merge par API + vérif main). ⚠️ Égress sandbox bloqué (`*.workers.dev` « Host not in allowlist ») → blueprints garments manquants NON mappés (pas d'invention).
+>
+> **Reste (Kevin ~2 min)** : 1 commande POD test → vérifier on-hold sur printify.com/app/orders (cf. KEVIN_ACTIONS_TODO #A).
+
+---
+
 # Mémo de reprise — Domaine kd-mc.com (2026-06-06, branche `claude/kdmc-custom-domain-7hNn9`)
 
 > **Objectif Kevin** : un nom de domaine KDMC, une belle adresse par projet.
