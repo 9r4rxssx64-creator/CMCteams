@@ -1,5 +1,5 @@
 /* Coffre-fort perso — Service Worker. Network-first (MAJ auto), fallback cache offline. */
-var CACHE_VERSION = 'coffre-v1.0.1';
+var CACHE_VERSION = 'coffre-v1.0.2';
 var CORE = ['./','index.html','config.json','manifest.json'];
 
 self.addEventListener('install', function(e){

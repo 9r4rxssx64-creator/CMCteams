@@ -16,14 +16,14 @@
     --gold:#e8b830; --gold2:#c9a227; --bg:#0b1409; --bg2:#0e1b12;
     --card:#13251a; --card2:#16301f; --line:#214030; --text:#f1efe6;
     --muted:#9bb0a2; --ok:#43c47a; --warn:#ffba49; --err:#ff6b6b; --link:#7fc7ff;
-    --r:14px; --sa-b:env(safe-area-inset-bottom,0px);
+    --r:14px; --sa-b:env(safe-area-inset-bottom,0px); --sa-t:env(safe-area-inset-top,0px);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;max-width:100vw;overflow-x:hidden}
   body{background:linear-gradient(180deg,#0b1409,#0a1410 60%,#08110c);color:var(--text);
     font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     min-height:100vh;-webkit-text-size-adjust:100%}
-  .wrap{max-width:760px;margin:0 auto;padding:14px 14px calc(28px + var(--sa-b))}
+  .wrap{max-width:760px;margin:0 auto;padding:calc(14px + var(--sa-t)) 14px calc(28px + var(--sa-b))}
   h1,h2,h3{margin:0 0 .4em}
   button{font:inherit;cursor:pointer;border:none;border-radius:11px;min-height:46px;padding:0 16px;
     background:var(--card2);color:var(--text);border:1px solid var(--line)}
@@ -107,7 +107,7 @@
    Aucune donnée en clair n'est stockée ni envoyée.
    ============================================================ */
 (function(){
-const VERSION = "v1.0.1";
+const VERSION = "v1.0.2";
 const ENC = new TextEncoder(), DEC = new TextDecoder();
 const $ = function(id){ return document.getElementById(id); };
 const APP = $("app");
