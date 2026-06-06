@@ -6388,8 +6388,21 @@ K.render = function(){
   const app = $('#app');
   if(!app) return;
 
-  // Update bottom nav active state
-  $$('.bnav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === K.view));
+  // v1.1.172 FIX P0 UX (audit crew) : préserver le champ texte focalisé À TRAVERS
+  // le re-render complet. Sans ça, quand un message arrive pendant que l'user tape,
+  // le <textarea> est recréé → clavier iOS se ferme + texte en cours + curseur perdus.
+  let _pf = null;
+  const _ae = document.activeElement;
+  if(_ae && _ae.id && (_ae.tagName === 'TEXTAREA' || _ae.tagName === 'INPUT')){
+    _pf = { id: _ae.id, value: _ae.value, start: _ae.selectionStart, end: _ae.selectionEnd };
+  }
+
+  // Update bottom nav active state + aria-current (a11y)
+  $$('.bnav-btn').forEach(b => {
+    const on = b.dataset.view === K.view;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-current', on ? 'page' : 'false');
+  });
 
   switch(K.view){
     case 'chats': renderChats(app); break;
@@ -6408,6 +6421,18 @@ K.render = function(){
     case 'admin-timeline': renderAdminTimeline(app); break;
     case 'admin-map': renderAdminMap(app); break;
     default: app.innerHTML = '<p>Vue inconnue</p>';
+  }
+
+  // Restaure le champ focalisé (texte en cours + position du curseur + focus).
+  if(_pf){
+    const el = document.getElementById(_pf.id);
+    if(el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')){
+      try{
+        if(typeof _pf.value === 'string' && el.value !== _pf.value) el.value = _pf.value;
+        el.focus({ preventScroll: true });
+        if(_pf.start != null && el.setSelectionRange) el.setSelectionRange(_pf.start, _pf.end);
+      }catch(_e){ /* best-effort */ }
+    }
   }
 };
 
