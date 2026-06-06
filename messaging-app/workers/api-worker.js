@@ -1443,9 +1443,12 @@ async function handleAdminCommand(request, env) {
       break;
 
     case 'forceLogout':
-      // Invalider tous les JWT du user (Phase ultérieure : table jwt_blacklist)
-      // Pour Phase 6 : suspendre temporairement le user
-      await env.APEX_CHAT_DB.prepare("UPDATE users SET last_seen=? WHERE id=?").bind(0, params.userId).run();
+      // v1.1.172 FIX P1 (audit crew) : poser last_force_logout_at = maintenant.
+      // getAuthUser (REST) ET ConversationDO.fetch (WS) rejettent désormais tout
+      // JWT dont iat < last_force_logout_at → la déconnexion forcée est RÉELLE
+      // (REST + WebSocket), plus seulement cosmétique (last_seen=0 ne révoquait rien).
+      await env.APEX_CHAT_DB.prepare("UPDATE users SET last_seen=?, last_force_logout_at=? WHERE id=?")
+        .bind(0, Date.now(), params.userId).run();
       result = { ok: true };
       break;
 
@@ -4008,22 +4011,35 @@ export default {
             ).bind(body.letter_id).first();
             if (letter && letter.deliver_at <= Date.now()) {
               const doStub = env.CONVERSATION_DO.get(env.CONVERSATION_DO.idFromName('do_' + letter.conv_id));
-              await doStub.fetch(new Request('https://internal/admin/inject-message', {
-                method: 'POST',
-                headers: { 'X-Apex-Internal': env.APEX_CHAT_ADMIN_TOKEN || '' },
-                body: JSON.stringify({
-                  sender_id: letter.sender_id,
-                  ciphertext: letter.ciphertext,
-                  mime: 'text/plain'
-                })
-              })).catch(() => {});
-              await env.APEX_CHAT_DB.prepare('UPDATE letters_queue SET delivered=1 WHERE id=?').bind(letter.id).run();
+              // v1.1.172 FIX P1 (audit crew) : passer conv_id + ne marquer
+              // delivered=1 QUE si l'injection réussit réellement (avant : .catch
+              // avalait l'échec puis delivered=1 quand même → lettre perdue).
+              let injected = false;
+              try {
+                const resp = await doStub.fetch(new Request('https://internal/admin/inject-message', {
+                  method: 'POST',
+                  headers: { 'X-Apex-Internal': env.APEX_CHAT_ADMIN_TOKEN || '' },
+                  body: JSON.stringify({
+                    conv_id: letter.conv_id,
+                    sender_id: letter.sender_id,
+                    ciphertext: letter.ciphertext,
+                    mime: 'text/plain'
+                  })
+                }));
+                injected = resp.ok;
+              } catch (e) {
+                console.error('[letters-deliver] inject failed:', e.message);
+              }
+              if (injected) {
+                await env.APEX_CHAT_DB.prepare('UPDATE letters_queue SET delivered=1 WHERE id=?').bind(letter.id).run();
+              }
+              // sinon : laissé delivered=0 → le cron 5 min réessaiera (livraison garantie)
             }
             break;
           }
 
           case 'timecapsule-open': {
-            // Time Capsule : push notif quand date arrivée
+            // Time Capsule : la capsule "s'ouvre" automatiquement à l'échéance.
             const capsule = await env.APEX_CHAT_DB.prepare(
               'SELECT * FROM time_capsules WHERE id=? AND opened_at IS NULL'
             ).bind(body.capsule_id).first();
@@ -4034,6 +4050,12 @@ export default {
                 tag: 'capsule-' + capsule.id,
                 payload: { capsuleId: capsule.id, senderId: capsule.sender_id }
               }, env);
+              // v1.1.172 FIX P1 (audit crew) : poser opened_at → stoppe le
+              // re-queue/push INFINI toutes les 5 min (le SELECT filtre opened_at
+              // IS NULL). Le contenu reste révélé via /api/time-capsules/:id/open.
+              await env.APEX_CHAT_DB.prepare(
+                'UPDATE time_capsules SET opened_at=? WHERE id=? AND opened_at IS NULL'
+              ).bind(Date.now(), capsule.id).run();
             }
             break;
           }
