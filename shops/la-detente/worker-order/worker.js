@@ -188,8 +188,8 @@ export default {
     const first = tokens[0] || 'Client';
     const last = tokens.slice(1).join(' ') || 'La Détente';
     const orderBody = {
-      external_id: String(body.orderId || ('LD-' + Date.now())).slice(0, 40),
-      label: 'La Détente ' + (body.orderId || ''),
+      external_id: String(body.orderId || ((body.shopPrefix || 'LD') + '-' + Date.now())).slice(0, 40),
+      label: (body.label || ('La Détente ' + (body.orderId || ''))).slice(0, 80),
       line_items: lineItems,
       shipping_method: 1,
       is_printify_express: false,
@@ -210,7 +210,7 @@ export default {
     // 🔔 Alerte push admin (best-effort, ne bloque pas la commande)
     try {
       const tot = body.total ? (' — ' + body.total + ' €') : '';
-      await sendOrderPush(env, '🛍️ Nouvelle commande', (a.name || 'Client') + ' · ' + lineItems.length + ' article(s)' + tot);
+      await sendOrderPush(env, (body.shopName || 'La Détente') + ' — 🛍️ Nouvelle commande', (a.name || 'Client') + ' · ' + lineItems.length + ' article(s)' + tot, body.pushUrl);
     } catch (_) {}
     // Statut "on-hold" : Kevin valide/paie. (Pas d'envoi auto en production.)
     return J({ ok: true, printify_order_id: pj.id || null, lines: lineItems.length, warnings, status: 'on-hold (à valider)' }, 200, origin);
@@ -225,11 +225,11 @@ async function fbGetSub() {
     return await r.json();
   } catch (_) { return null; }
 }
-async function sendOrderPush(env, title, bodyTxt) {
+async function sendOrderPush(env, title, bodyTxt, url) {
   if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return 0;
   const sub = await fbGetSub();
   if (!sub || !sub.endpoint || !sub.keys) return 0;
-  const payload = { title: title, body: bodyTxt, url: 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1', tag: 'ld-order' };
+  const payload = { title: title, body: bodyTxt, url: url || 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1', tag: 'ld-order' };
   try { await sendOnePush(env, sub, payload); return 1; } catch (_) { return 0; }
 }
 async function sendOnePush(env, subscription, payload) {
