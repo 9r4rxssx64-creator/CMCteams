@@ -6591,52 +6591,15 @@ function renderChats(app){
   `;
 }
 
-function renderChat(app){
-  const conv = K.viewData;
-  if(!conv){ K.sv('chats'); return; }
-  const msgs = K.messages[conv.id] || [];
-  app.innerHTML = `
-    <div class="chat-header">
-      <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
-      <div class="avatar">${esc((K._convName(conv) || '?')[0].toUpperCase())}</div>
-      <div style="flex:1;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
-        <div style="font-weight:600">${esc(K._convName(conv))}</div>
-        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
-      </div>
-      <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
-      <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
-      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
-      <button class="topbar-btn" onclick="K._openConvActionsMenu('${esc(conv.id)}', event)" aria-label="Actions">⋯</button>
-    </div>
-    ${(() => {
-      const lastRead = lg('lastread_' + conv.id, 0);
-      const unread = msgs.filter(m => m.from !== K.user?.id && (m.ts || 0) > lastRead).length;
-      if(unread < 3) return '';
-      return `<div onclick="K._scrollToFirstUnread('${esc(conv.id)}')"
-        style="background:var(--ax-gold);color:var(--ax-bg);padding:6px 12px;text-align:center;cursor:pointer;font-size:.85em;font-weight:600;border-radius:0 0 8px 8px;margin:0 8px;animation:pulse 2s infinite">
-        ⬇ ${unread} messages non-lus · Voir le 1er
-      </div>`;
-    })()}
-    ${(() => {
-      const pinned = (K.messages[conv.id] || []).filter(m => m.pinned);
-      if(!pinned.length) return '';
-      return `<div class="pinned-banner" onclick="K._showPinnedList()">
-        📌 ${pinned.length} message${pinned.length > 1 ? 's' : ''} épinglé${pinned.length > 1 ? 's' : ''}
-        <span style="color:var(--ax-text-3);font-size:.85em;margin-left:6px">${esc((pinned[0].text || '').slice(0, 60))}…</span>
-      </div>`;
-    })()}
-    ${K._renderTzWarning ? K._renderTzWarning(conv) : ''}
-    <div class="chat-messages" id="chat-msgs">
-      ${msgs.length === 0 ? `
-        <div class="msg system">${K._e2eActive(conv)
-          ? '🛡 Cette conversation est chiffrée bout-en-bout. Personne d\'autre que toi et tes destinataires ne peut lire les messages.'
-          : '🔒 Conversation chiffrée pendant le transit. Le chiffrement bout-en-bout s\'activera dès l\'échange des clés avec ton correspondant.'}</div>
-      ` : msgs.map(m => {
-        const isMine = m.from === K.user.id;
-        const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
-        const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
-        const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
-        return `
+// v1.1.172 FIX P0 UX (audit crew) — rendu d'UNE bulle (source unique réutilisée
+// par renderChat ET par l'append incrémental). Évite de re-décoder toutes les
+// images base64 + re-parser tout le markdown de l'historique à chaque message.
+K._renderBubble = function(m, conv, msgs){
+  const isMine = m.from === K.user.id;
+  const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
+  const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
+  const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
+  return `
         <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}${K._selectedMsgs && K._selectedMsgs.has(m.id) ? ' msg-selected' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')" onclick="if(K._selectedMsgs && K._selectedMsgs.size > 0){event.stopPropagation();K._toggleSelectMsg('${esc(m.id)}')}">
           ${m.reply_to ? `<div class="reply-quote" onclick="K._scrollToMsg('${esc(m.reply_to.id)}')">
             <div style="color:var(--ax-gold);font-size:.72em;font-weight:600">↩ ${esc(m.reply_to.from_name || '')}</div>
@@ -6679,7 +6642,67 @@ function renderChat(app){
           ` : ''}
           ${K._renderSeenBy ? K._renderSeenBy(m, conv) : ''}
         </div>
-      `;}).join('')}
+      `;
+};
+
+// Append incrémental d'une seule bulle dans #chat-msgs (sans re-render complet).
+// Renvoie true si l'append a réussi (vue chat de la bonne conv + conteneur présent).
+K._appendBubble = function(conv, m){
+  if(!(K.view === 'chat' && K.viewData?.id === conv.id)) return false;
+  const box = document.getElementById('chat-msgs');
+  if(!box) return false;
+  // Retirer l'état vide (msg system) si présent
+  const sysEmpty = box.querySelector('.msg.system');
+  if(sysEmpty && (K.messages[conv.id] || []).length <= 1) sysEmpty.remove();
+  if(box.querySelector(`[data-msg-id="${(window.CSS && CSS.escape) ? CSS.escape(m.id) : m.id}"]`)) return true; // déjà rendu
+  const nearBottom = (box.scrollHeight - box.scrollTop - box.clientHeight) < 120;
+  box.insertAdjacentHTML('beforeend', K._renderBubble(m, conv, K.messages[conv.id] || []));
+  if(nearBottom){ box.scrollTop = box.scrollHeight; }   // ne saute pas si l'user lit plus haut
+  try{ K._renderStaticWaveforms && K._renderStaticWaveforms(); }catch(_e){_safeCatch('silent',_e)}
+  return true;
+};
+
+function renderChat(app){
+  const conv = K.viewData;
+  if(!conv){ K.sv('chats'); return; }
+  const msgs = K.messages[conv.id] || [];
+  app.innerHTML = `
+    <div class="chat-header">
+      <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
+      <div class="avatar">${esc((K._convName(conv) || '?')[0].toUpperCase())}</div>
+      <div style="flex:1;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
+        <div style="font-weight:600">${esc(K._convName(conv))}</div>
+        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
+      </div>
+      <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
+      <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
+      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
+      <button class="topbar-btn" onclick="K._openConvActionsMenu('${esc(conv.id)}', event)" aria-label="Actions">⋯</button>
+    </div>
+    ${(() => {
+      const lastRead = lg('lastread_' + conv.id, 0);
+      const unread = msgs.filter(m => m.from !== K.user?.id && (m.ts || 0) > lastRead).length;
+      if(unread < 3) return '';
+      return `<div onclick="K._scrollToFirstUnread('${esc(conv.id)}')"
+        style="background:var(--ax-gold);color:var(--ax-bg);padding:6px 12px;text-align:center;cursor:pointer;font-size:.85em;font-weight:600;border-radius:0 0 8px 8px;margin:0 8px;animation:pulse 2s infinite">
+        ⬇ ${unread} messages non-lus · Voir le 1er
+      </div>`;
+    })()}
+    ${(() => {
+      const pinned = (K.messages[conv.id] || []).filter(m => m.pinned);
+      if(!pinned.length) return '';
+      return `<div class="pinned-banner" onclick="K._showPinnedList()">
+        📌 ${pinned.length} message${pinned.length > 1 ? 's' : ''} épinglé${pinned.length > 1 ? 's' : ''}
+        <span style="color:var(--ax-text-3);font-size:.85em;margin-left:6px">${esc((pinned[0].text || '').slice(0, 60))}…</span>
+      </div>`;
+    })()}
+    ${K._renderTzWarning ? K._renderTzWarning(conv) : ''}
+    <div class="chat-messages" id="chat-msgs">
+      ${msgs.length === 0 ? `
+        <div class="msg system">${K._e2eActive(conv)
+          ? '🛡 Cette conversation est chiffrée bout-en-bout. Personne d\'autre que toi et tes destinataires ne peut lire les messages.'
+          : '🔒 Conversation chiffrée pendant le transit. Le chiffrement bout-en-bout s\'activera dès l\'échange des clés avec ton correspondant.'}</div>
+      ` : msgs.map(m => K._renderBubble(m, conv, msgs)).join('')}
     </div>
     <div id="smart-reply-chips" style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;overflow-x:auto"></div>
     <div class="chat-input">
@@ -7217,7 +7240,16 @@ async function _handleWsMessage(data, convId){
       if(!K.messages[convId].some(m => m.id === msg.id)){
         K.messages[convId].push(msg);
         ls('messages_' + convId, K.messages[convId]);
-        if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        if(K.view === 'chat' && K.viewData?.id === convId){
+          // v1.1.172 FIX P0 UX (audit crew) : append incrémental (1 bulle) au lieu
+          // d'un re-render complet → plus de scintillement ni de re-décodage de
+          // toutes les images base64 / re-parse markdown sur longues convs.
+          // Fallback render complet si l'append échoue.
+          if(!K._appendBubble(K.viewData, msg)) K.render();
+          try{
+            if(msg.from !== K.user?.id) void K._renderSmartReplyChips(convId, msg);
+          }catch(_e){_safeCatch('silent',_e)}
+        }
         else K._notifyIncoming(convId, msg);
       }
       break;
