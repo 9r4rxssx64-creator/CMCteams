@@ -1,5 +1,5 @@
 {
-  "version": "v1.0.1",
+  "version": "v1.0.2",
   "firebase_url": "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
   "firebase_path": "coffre_vault",
   "r2_worker_url": "https://coffre-r2.9r4rxssx64.workers.dev",
