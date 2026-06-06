@@ -107,7 +107,7 @@
    Aucune donnée en clair n'est stockée ni envoyée.
    ============================================================ */
 (function(){
-const VERSION = "v1.0.0";
+const VERSION = "v1.0.1";
 const ENC = new TextEncoder(), DEC = new TextDecoder();
 const $ = function(id){ return document.getElementById(id); };
 const APP = $("app");
@@ -551,23 +551,24 @@ function renderSetup(){
   '<div class="title">Coffre-fort perso</div>'+
   '<div class="sub">Crée ton coffre ultra-sécurisé. Tes données sont chiffrées sur ton appareil — personne d\'autre ne peut les lire.</div>'+
   '<div class="card">'+
-    '<label>Prénom</label><input id="su_p" autocomplete="given-name">'+
-    '<label>Nom</label><input id="su_n" autocomplete="family-name">'+
-    '<label>Phrase secrète maître (longue, mémorable)</label>'+
-    '<input id="su_pass" type="password" autocomplete="new-password" placeholder="ex: MonChat-Adore-Le-Café-2026!">'+
-    '<label>Confirme la phrase secrète</label>'+
-    '<input id="su_pass2" type="password" autocomplete="new-password">'+
-    '<label>Code PIN rapide (6 chiffres, optionnel)</label>'+
-    '<input id="su_pin" class="pininp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••">'+
-    '<div class="warnbox" style="margin-top:12px">⚠️ Ta phrase secrète n\'est <b>jamais</b> envoyée nulle part. Si tu l\'oublies, <b>personne</b> (pas même nous) ne peut récupérer tes données. Note-la dans un endroit sûr.</div>'+
+    '<label>Prénom</label><input id="su_p" autocomplete="given-name" autocapitalize="words">'+
+    '<label>Nom</label><input id="su_n" autocomplete="family-name" autocapitalize="words">'+
+    '<label>Phrase secrète maître (tu la retaperas pour ouvrir le coffre)</label>'+
+    '<div class="row"><input class="grow" id="su_pass" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ex: mon chat aime le cafe 2026"><button type="button" class="iconbtn" title="Afficher" onclick="CF.peek(\'su_pass\',this)">👁</button></div>'+
+    '<div class="small muted" id="su_cnt">0 caractère — minimum 8</div>'+
+    '<label>Code PIN rapide (6 chiffres, optionnel — pour rouvrir vite)</label>'+
+    '<div class="row"><input class="grow pininp" id="su_pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="••••••"><button type="button" class="iconbtn" title="Afficher" onclick="CF.peek(\'su_pin\',this)">👁</button></div>'+
+    '<div class="warnbox" style="margin-top:12px">⚠️ Touche 👁 pour vérifier ce que tu tapes. Ta phrase secrète n\'est <b>jamais</b> envoyée nulle part : si tu l\'oublies, <b>personne</b> ne peut récupérer tes données. Note-la dans un endroit sûr.</div>'+
     '<button class="primary" id="su_go" style="width:100%;margin-top:14px">Créer mon coffre 🔐</button>'+
   '</div></div>';
+  var pc=$("su_pass"); if(pc) pc.oninput=function(){ var n=pc.value.length;
+    $("su_cnt").textContent=n+" caractère"+(n>1?"s":"")+(n<8?" — encore "+(8-n)+" minimum":" — OK ✓");
+    $("su_cnt").style.color=n<8?"var(--muted)":"var(--ok)"; };
   $("su_go").onclick=async function(){
     var p=$("su_p").value.trim(), n=$("su_n").value.trim(),
-        pass=$("su_pass").value, pass2=$("su_pass2").value, pin=$("su_pin").value.trim();
+        pass=$("su_pass").value, pin=$("su_pin").value.trim();
     if(p.length<2||n.length<2){ toast("Prénom ET nom requis","err"); return; }
-    if(pass.length<8){ toast("Phrase secrète : 8 caractères minimum","err"); return; }
-    if(pass!==pass2){ toast("Les deux phrases ne correspondent pas","err"); return; }
+    if(pass.length<8){ toast("Phrase secrète : 8 caractères minimum (touche 👁 pour vérifier)","err"); return; }
     if(pin && !/^\d{6}$/.test(pin)){ toast("Le PIN doit faire 6 chiffres","err"); return; }
     this.disabled=true; this.textContent="Chiffrement…";
     try{ await doSetup(p,n,pass,pin||null);
@@ -583,8 +584,8 @@ function renderLock(){
   '<div class="sub" id="lk_sub">Déverrouille avec Face ID, ton PIN ou ta phrase secrète.</div>'+
   '<div class="card">'+
     (bioEnrolled()? '<button class="primary" id="lk_bio" style="width:100%">😊 Face ID / Touch ID</button>':'')+
-    (localStorage.getItem(LS.pinWrap)? '<label>Code PIN</label><input id="lk_pin" class="pininp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••">':'')+
-    '<label>Phrase secrète</label><input id="lk_pass" type="password" autocomplete="current-password">'+
+    (localStorage.getItem(LS.pinWrap)? '<label>Code PIN</label><input id="lk_pin" class="pininp" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="••••••">':'')+
+    '<label>Phrase secrète</label><div class="row"><input class="grow" id="lk_pass" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><button type="button" class="iconbtn" title="Afficher" onclick="CF.peek(\'lk_pass\',this)">👁</button></div>'+
     '<button class="primary" id="lk_go" style="width:100%;margin-top:12px">Déverrouiller</button>'+
     '<button class="ghost small" id="lk_reset" style="width:100%;margin-top:8px;color:#ff8f8f">Réinitialiser ce coffre…</button>'+
   '</div></div>';
@@ -645,6 +646,8 @@ function renderSection(sid){
 
 /* ====== actions exposées ====== */
 window.CF={
+  peek:function(id,btn){ var el=$(id); if(!el) return; var hid=el.type==="password";
+    el.type=hid?"text":"password"; if(btn) btn.textContent=hid?"🙈":"👁"; el.focus(); },
   about:function(){ modal('<h3>🔐 Coffre-fort perso '+VERSION+'</h3>'+
     '<p class="small muted">Chiffrement de bout en bout (AES-256 + PBKDF2 200k). Tes données ne quittent ton appareil que <b>chiffrées</b>. '+(r2On()?'Cloud R2 actif (toute taille).':'Mode local + Firebase (≤5 Mo en cloud).')+'</p>'+
     '<p class="small muted">UID: '+esc(ST.uid||"—")+'</p>'+

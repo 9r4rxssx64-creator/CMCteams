@@ -63,8 +63,12 @@ async function main() {
   await page.fill('#su_p', 'Kevin');
   await page.fill('#su_n', 'Desarzens');
   await page.fill('#su_pass', 'MonChat-Adore-Le-Cafe-2026!');
-  await page.fill('#su_pass2', 'MonChat-Adore-Le-Cafe-2026!');
   await page.fill('#su_pin', '200807');
+  // [2b] bouton 👁 afficher/masquer la phrase secrète
+  await page.click('button[onclick*="su_pass"]');
+  const shown = await page.evaluate(() => document.getElementById('su_pass').type === 'text');
+  ok(shown, 'bouton 👁 affiche la phrase secrète');
+  await page.click('button[onclick*="su_pass"]');
   await page.click('#su_go');
   await page.waitForSelector('.secgrid', { timeout: 8000 }).catch(()=>{});
   // ferme une éventuelle modale Face ID
