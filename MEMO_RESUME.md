@@ -1,3 +1,27 @@
+# Mémo de reprise — Ultra-review CMCteams (2026-06-06, branche `claude/cmcteams-crew-review-QZUyo`)
+
+> **Objectif Kevin** : audit le plus puissant (8 axes) + améliorations, autonome, sans régression, scores RÉELS mesurés.
+
+### ✅ Fait cette session (3 commits mergeables, 85/85 tests PASS à chaque étape, vérifié sur le vrai GitHub — version déployée `v9.784`)
+- **Audit crew 8 axes, scores RÉELS** : Boutons/nav 18 · Fonctionnel 16 · Sécu 15 · UX 14 · Perf ~13 (mesuré, ≠ 9 estimé) · Archi 12 · Fluidité 10 · Tests 20 → **~70/100**.
+- **4 faux positifs du crew écartés après vérif** (clearMotd OK, PIN lockout OK, pas d'exfiltration mots de passe, CSS/JS non inversés) — règle « vérifier avant d'agir » (#59).
+- **1 fausse alerte perf corrigée par MESURE** : rendu grille réel **46 ms** (≠ 700 ms estimés), **390 cellules** (≠ 8000) → pas de refacto risquée. Règle « JAMAIS ESTIMER ».
+- **v9.783** : quick-wins UX (touch targets ≥44px, contraste WCAG AA+, 4 messages d'erreur en langage simple + détail technique en `console.error`) + perf (nettoyage intervals au logout, anti-fuite session 8h) + code mort no-op retiré.
+- **v9.784** : sécu P0 Firebase — **auth anonyme étape 1** (`cmcFbAnonAuth` + `?auth=` sur read/write/SSE) avec **fallback gracieux TOTAL** (sans clé Web → comportement identique, #54 respecté) + `firebase-rules-hardened.json` prêt à publier.
+- **Docs** : CLAUDE.md historique v9.783/v9.784 à jour.
+
+### 📊 Tri fonctions orphelines (audit archi #28 — caractérisé, NON supprimé)
+- **1408 fonctions nommées**, **126 candidates 0 call-site**, **0 vue orpheline** (toutes routées = archi saine).
+- Vérif ciblée : ces 126 ont 1 seule occurrence (= définition seule, jamais appelées même en `onclick`).
+- 2 catégories : **doublons morts** (ex `_idbGet/_idbSet` ancien ≠ `cmcIdbSet`/`cmcIdbGet` vivant) + **features à moitié câblées** (`exportICS`, `webShare`, `cmcTripleSave`).
+- ⚠️ **Backlog P1** : tri manuel 1-par-1 avant toute suppression (règle #59, jamais à l'aveugle). Pas fait cette session (risque > gain sans validation Kevin).
+
+### ⏳ Reste à faire
+- **Action Kevin (2 gestes)** pour fermer le P0 sécu Firebase — voir KEVIN_ACTIONS_TODO.md.
+- **Merge** de la branche : https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/cmcteams-crew-review-QZUyo?expand=1
+
+---
+
 # Mémo de reprise — Campagne couverture Apex v13 100% réel (2026-06-03, branche `claude/perfect-100-Ypr17`)
 
 > **Objectif Kevin** : 100% réel partout (mesuré jamais estimé), autonome, sans régression. Gate à CHAQUE tour : `tsc --noEmit` + `eslint --max-warnings=0` + suite vitest COMPLÈTE (EXIT=0 ET 0 ligne `Unhandled/Errors`, pas seulement « 0 failed » — cf. leçon #89). Merge réel vérifié sur le vrai GitHub à chaque tour (auto-merge bot).

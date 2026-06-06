@@ -1,5 +1,24 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 📌 SESSION 2026-06-06 — Ultra-review CMCteams (branche `claude/cmcteams-crew-review-QZUyo`)
+
+### ✅ Tes décisions notées cette session
+- **Perf grille** : tu as choisi **« Laisser tel quel »** (mesurée à 46 ms, acceptable) → **pas de refacto risquée** du cœur d'édition. Décision respectée.
+
+### ▶️ Action immédiate (1 clic) — mettre la review en ligne
+- **Merger la branche** : https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/cmcteams-crew-review-QZUyo?expand=1
+
+### 🔒 Pour fermer le P0 sécurité Firebase (2 gestes — non automatisable, c'est ta console)
+> Tant que non fait : l'auth anonyme reste en **fallback gracieux** (l'app marche exactement comme avant, aucune régression). Ces 2 gestes ACTIVENT le durcissement.
+1. **Activer Anonymous** : https://console.firebase.google.com/project/cmcteams-c16ab/authentication/providers → activer « Anonyme ».
+2. **Me coller la clé Web Firebase** (Paramètres projet → Général → Application Web → `apiKey`) → je la câble (`FB_WEB_APIKEY`) puis je publie [le ruleset durci](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/cmcteams-crew-review-QZUyo/firebase-rules-hardened.json) qui bloque les accès non authentifiés.
+
+### 🔧 Backlog P1 (je peux le faire, demande ta validation)
+- **Tri des 126 fonctions orphelines** (0 call-site, caractérisées : doublons morts + features à moitié câblées). Tri manuel 1-par-1 obligatoire avant suppression (jamais à l'aveugle). Dis « trie les orphelines » quand tu veux que je lance un crew dédié.
+
+---
+
+
 ## 📌 SESSION 2026-06-02 — À FAIRE ENSEMBLE (décision Kevin « on fera le 2 ensuite »)
 
 ### #2 — Apex Chat Étape B : E2E réellement actif (upload prekeys)

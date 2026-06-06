@@ -3,6 +3,21 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-06-03** (Boutique « La Détente » — Studio + Checkout/Bon de production)
 
+## 🔍 Ultra-review CMCteams (2026-06-06) — branche `claude/cmcteams-crew-review-QZUyo`
+
+**▶️ Mettre en ligne (1 clic)** — créer + fusionner la PR :
+- https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/cmcteams-crew-review-QZUyo?expand=1
+
+**🔒 Fichier sécu créé** (ruleset Firebase durci, prêt à publier après tes 2 gestes console) :
+- [firebase-rules-hardened.json](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/cmcteams-crew-review-QZUyo/firebase-rules-hardened.json)
+
+**🔧 Code modifié** (`index.html` v9.784 — UX/perf/sécu) :
+- [Voir index.html @ branche](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/cmcteams-crew-review-QZUyo/index.html)
+
+**📜 Commits** : [b6059cf](https://github.com/9r4rxssx64-creator/cmcteams/commit/b6059cf) · [50698a8](https://github.com/9r4rxssx64-creator/cmcteams/commit/50698a8) · [b6bb313](https://github.com/9r4rxssx64-creator/cmcteams/commit/b6bb313)
+
+---
+
 ## 🎯 La Détente — boutique textile perso (motif AR15 + cœur) — branche `claude/textile-shop-ar15-heart-mMJ0j`
 
 **🧪 Tester (après merge — live GitHub Pages)**
