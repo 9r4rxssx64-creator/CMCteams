@@ -79,6 +79,56 @@ export class ConversationDO {
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    // v1.1.172 FIX P1 (audit crew) : injection serveur→conv (Letters 24h /
+    // delayed delivery). Avant, le cron letters-deliver POSTait ici une route
+    // INEXISTANTE → 426, échec avalé, letters_queue marqué delivered=1 quand même
+    // → message perdu silencieusement. On implémente la route + on persiste en D1
+    // AVANT de répondre (livraison durable, broadcastée aux connectés).
+    if (url.pathname.endsWith('/admin/inject-message')) {
+      const internal = request.headers.get('X-Apex-Internal') || '';
+      const expected = this.env.APEX_CHAT_ADMIN_TOKEN || '';
+      if (!expected || internal !== expected) {
+        return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), {
+          status: 403, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      let body = {};
+      try { body = await request.json(); } catch (_) {}
+      if (!body.conv_id || !body.sender_id || !body.ciphertext) {
+        return new Response(JSON.stringify({ ok: false, error: 'conv_id, sender_id, ciphertext requis' }), {
+          status: 400, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      try {
+        await this.state.blockConcurrencyWhile(async () => {
+          this.seq++;
+          await this.state.storage.put('seq', this.seq);
+        });
+        const rec = {
+          id: crypto.randomUUID(),
+          conv_id: body.conv_id,
+          sender_id: body.sender_id,
+          ciphertext: body.ciphertext,
+          mime: body.mime || 'text/plain',
+          ts: Date.now(),
+          reply_to: null, thread_root: null, view_once: 0,
+          expires_at: body.expires_at || null,
+          seq: this.seq
+        };
+        this.pendingMessages.push(rec);
+        this.broadcast({ type: 'message', ...rec });
+        await this.notifyOfflineMembers(rec);
+        await this.flushToD1();   // durable AVANT d'acquitter
+        return new Response(JSON.stringify({ ok: true, id: rec.id }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ ok: false, error: e.message }), {
+          status: 500, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     // WebSocket upgrade
     if (request.headers.get('Upgrade') !== 'websocket') {
       return new Response('WebSocket required', { status: 426 });
@@ -123,6 +173,21 @@ export class ConversationDO {
       if (!member) {
         server.accept();
         server.close(1008, 'Not a member');
+        return new Response(null, { status: 101, webSocket: client });
+      }
+      // v1.1.172 FIX P1 (audit crew) : honorer la révocation côté WebSocket.
+      // Avant, force_logout/ban n'avait AUCUN effet sur une session WS active
+      // (elle survivait jusqu'à expiration du JWT = 30j). On rejoue le même
+      // contrôle que getAuthUser (REST) : banni / supprimé / JWT antérieur au
+      // dernier force_logout → on coupe.
+      const acct = await this.env.APEX_CHAT_DB.prepare(
+        'SELECT is_banned, status, last_force_logout_at FROM users WHERE id=?'
+      ).bind(userId).first();
+      if (acct && (acct.is_banned || acct.status === 'deleted' ||
+          (acct.last_force_logout_at && jwtPayload.iat &&
+           acct.last_force_logout_at > jwtPayload.iat * 1000))) {
+        server.accept();
+        server.close(1008, 'Session révoquée');
         return new Response(null, { status: 101, webSocket: client });
       }
     } catch (e) {
@@ -288,7 +353,7 @@ export class ConversationDO {
         // Marquer last_read_msg_id
         await this.env.APEX_CHAT_DB.prepare(
           'UPDATE conversation_members SET last_read_msg_id=? WHERE conv_id=? AND user_id=?'
-        ).bind(msg.message_id, this.state.id.toString(), session.userId).run().catch(() => {});
+        ).bind(msg.message_id, session.convId, session.userId).run().catch(() => {});
 
         this.broadcast({
           type: 'read',

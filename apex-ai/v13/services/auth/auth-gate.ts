@@ -46,9 +46,8 @@ const ADMIN_KEVIN_ALIASES = [
   'DESARZENS Kevin',
   'Desarzens Kevin',
   'kevin.desarzens@gmail.com',
-  'kevin.desarzens',
-  'KDMC',
-  'KD',
+  /* PAS d'alias mono-token (KDMC/KD/prénom seul) : impersonation interdite
+     (CLAUDE.md règle LOGIN PRÉNOM+NOM, erreur #38). Seuls email + ≥2 tokens. */
 ];
 
 /* LAURENCE_ID est référencé indirectement via shouldUseEmbeddedChat (hardcoded match) */
@@ -62,9 +61,8 @@ const LAURENCE_ALIASES = [
   'SAINT POLIT Laurence',
   'Laurence Saintpolit',
   'SAINTPOLIT Laurence',
-  'laurence',
-  'Laurence',
-  'LAURENCE',
+  /* PAS de "laurence" seul : prénom seul = impersonation interdite
+     (CLAUDE.md règle LOGIN PRÉNOM+NOM, erreur #38). */
 ];
 
 const SSO_TOKEN_TTL_MS = 8 * 60 * 60 * 1000; /* 8h alignée session TTL */
@@ -169,6 +167,11 @@ class AuthGate {
    */
   private matchAliases(name: string, aliases: readonly string[]): boolean {
     if (!name) return false;
+    /* Garde sécu (erreur #38 CLAUDE.md) : refuser tout input mono-token
+       (prénom seul / nom seul / code court) sauf email. Empêche l'impersonation
+       même si un alias mono-token est réintroduit par erreur plus tard. */
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(name.trim());
+    if (!isEmail && name.trim().split(/\s+/).filter(Boolean).length < 2) return false;
     const normalize = (s: string): string =>
       s
         .toLowerCase()

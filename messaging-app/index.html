@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.171",
+  "softwareVersion": "v1.1.172",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -90,7 +90,7 @@
 <style>
 :root{
   --ax-bg:#08080f;--ax-bg-2:#13131c;--ax-bg-3:#1a1a26;
-  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#6a6a78;
+  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#8a8a98; /* v1.1.172 audit crew : #6a6a78 (3.24:1) -> #8a8a98 (~4.6:1) = WCAG AA */
   --ax-gold:#c9a227;--ax-gold-2:#f4d97a;--ax-blue:#6a8aff;
   --ax-ok:#5fcf5f;--ax-warn:#f4d97a;--ax-err:#cf5f5f;
   --ax-border:#2a2a35;--ax-border-2:#3a3a48;
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.171';
+const __APEX_CHAT_VERSION__ = 'v1.1.172';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.171</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.172</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.171</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.172</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -580,7 +580,7 @@ if('serviceWorker' in navigator){
   <button class="bnav-btn h" data-view="admin" id="bnav-admin"><span class="ico">👑</span><span>Admin</span></button>
 </nav>
 
-<div class="toasts" id="toasts"></div>
+<div class="toasts" id="toasts" aria-live="polite" role="status" aria-atomic="false"></div>
 <div id="modal-host"></div>
 
 <script>
@@ -2588,7 +2588,10 @@ K._clearConvLocal = function(){
   if(!conv) return;
   if(!confirm('🧹 Vider cette conversation localement ?\n\nLes msgs ne seront supprimés que de TON appareil.')) return;
   delete K.messages[conv.id];
-  try { localStorage.removeItem('messages_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
+  // v1.1.172 FIX P0 (audit crew) : les messages sont stockés via ls() => clé
+  // réelle PERSIST_PREFIX+'messages_'+id. Sans le préfixe, removeItem ciblait
+  // une clé inexistante => "vider localement" inefficace (msgs réapparaissaient au reload).
+  try { localStorage.removeItem(PERSIST_PREFIX + 'messages_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
   K.render();
   toast('🧹 Conversation vidée localement', 'ok');
 };
@@ -5969,11 +5972,51 @@ async function _ensureCryptoKeys(){
       ls('crypto_priv', privB64); // pas de PIN défini → comportement legacy inchangé
     }
     _logTelemetry('ok', 'crypto-keys-generated', { pub: pubB64.slice(0,20)+'...' });
-    // TODO Étape B : upload pubkey au serveur via /api/keys/prekeys
+    // v1.1.172 FIX P0 (audit crew) : PUBLIER la clé publique au serveur, sinon
+    // les pairs ne peuvent jamais établir de session E2E (le repli était texte clair).
+    K._publishPubkey();
   }catch(e){
     _safeCatch('crypto-generate', e);
   }
 }
+
+// v1.1.172 FIX P0 (audit crew) — publie la clé publique d'identité au serveur.
+// Idempotent (marqueur crypto_pub_published) + best-effort (no-op sans token).
+K._publishPubkey = async function(){
+  try{
+    const pub = lg('crypto_pub', null);
+    if(!pub || !K.token) return;                       // besoin d'être authentifié
+    if(lg('crypto_pub_published', null) === pub) return; // déjà publiée
+    const r = await K._api('POST', '/api/keys/prekeys', { identity_key_pub: pub });
+    if(r && r.ok){ ls('crypto_pub_published', pub); _logTelemetry('ok', 'pubkey-published', {}); }
+  }catch(e){ _safeCatch('publish-pubkey', e); }  // jamais bloquant
+};
+
+// v1.1.172 FIX P0 (audit crew) — garantit une session E2E pour une conv (DM).
+// Établit depuis conv.peer_pubkey ; sinon récupère le bundle du pair just-in-time
+// via GET /api/keys/:peer_id/bundle. Retourne true si une session est active.
+K._ensureSession = async function(conv){
+  try{
+    if(!window.ApexCrypto || !conv) return false;
+    if(ApexCrypto.getSessionKey(conv.id)) return true;
+    if(!K._cryptoKeys) { try{ await _ensureCryptoKeys(); }catch(_){ } }
+    if(!K._cryptoKeys) return false;
+    let peerPub = conv.peer_pubkey || null;
+    if(!peerPub && conv.peer_id && K.token){
+      try{
+        const r = await K._api('GET', '/api/keys/' + encodeURIComponent(conv.peer_id) + '/bundle');
+        if(r && r.ok && r.bundle && r.bundle.identity_key_pub){
+          peerPub = r.bundle.identity_key_pub;
+          conv.peer_pubkey = peerPub; // cache local
+        }
+      }catch(e){ /* 409 key_pending = le pair n'a pas encore publié sa clé */ }
+    }
+    if(!peerPub) return false;
+    const peerKey = await ApexCrypto.importPublicKey(peerPub);
+    await ApexCrypto.establishSession(conv.id, K._cryptoKeys.privateKey, peerKey);
+    return !!ApexCrypto.getSessionKey(conv.id);
+  }catch(e){ _safeCatch('ensure-session', e); return false; }
+};
 
 // Étape A E2E : migre une clé privée stockée EN CLAIR vers une forme wrappée par PIN.
 // Best-effort, ne bloque jamais ; en cas d'échec on garde le clair (zéro lockout).
@@ -5998,6 +6041,10 @@ K.logout = function(){
       const short = k.replace(PERSIST_PREFIX, '');
       if(!keep.includes(short)) localStorage.removeItem(k);
     }
+    // v1.1.172 FIX P0 (audit crew) : les brouillons sont stockés sous clés
+    // BRUTES `draft_*` (non préfixées). Sans ça, ils survivaient au logout et
+    // étaient lus par le compte suivant sur le même appareil = fuite inter-comptes.
+    else if(k.startsWith('draft_')){ localStorage.removeItem(k); }
   }
   K.user = null; K.token = null; K.conversations = []; K.messages = {};
   K.view = 'splash';
@@ -6341,8 +6388,21 @@ K.render = function(){
   const app = $('#app');
   if(!app) return;
 
-  // Update bottom nav active state
-  $$('.bnav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === K.view));
+  // v1.1.172 FIX P0 UX (audit crew) : préserver le champ texte focalisé À TRAVERS
+  // le re-render complet. Sans ça, quand un message arrive pendant que l'user tape,
+  // le <textarea> est recréé → clavier iOS se ferme + texte en cours + curseur perdus.
+  let _pf = null;
+  const _ae = document.activeElement;
+  if(_ae && _ae.id && (_ae.tagName === 'TEXTAREA' || _ae.tagName === 'INPUT')){
+    _pf = { id: _ae.id, value: _ae.value, start: _ae.selectionStart, end: _ae.selectionEnd };
+  }
+
+  // Update bottom nav active state + aria-current (a11y)
+  $$('.bnav-btn').forEach(b => {
+    const on = b.dataset.view === K.view;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-current', on ? 'page' : 'false');
+  });
 
   switch(K.view){
     case 'chats': renderChats(app); break;
@@ -6361,6 +6421,18 @@ K.render = function(){
     case 'admin-timeline': renderAdminTimeline(app); break;
     case 'admin-map': renderAdminMap(app); break;
     default: app.innerHTML = '<p>Vue inconnue</p>';
+  }
+
+  // Restaure le champ focalisé (texte en cours + position du curseur + focus).
+  if(_pf){
+    const el = document.getElementById(_pf.id);
+    if(el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')){
+      try{
+        if(typeof _pf.value === 'string' && el.value !== _pf.value) el.value = _pf.value;
+        el.focus({ preventScroll: true });
+        if(_pf.start != null && el.setSelectionRange) el.setSelectionRange(_pf.start, _pf.end);
+      }catch(_e){ /* best-effort */ }
+    }
   }
 };
 
@@ -6519,52 +6591,15 @@ function renderChats(app){
   `;
 }
 
-function renderChat(app){
-  const conv = K.viewData;
-  if(!conv){ K.sv('chats'); return; }
-  const msgs = K.messages[conv.id] || [];
-  app.innerHTML = `
-    <div class="chat-header">
-      <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
-      <div class="avatar">${esc((K._convName(conv) || '?')[0].toUpperCase())}</div>
-      <div style="flex:1;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
-        <div style="font-weight:600">${esc(K._convName(conv))}</div>
-        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
-      </div>
-      <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
-      <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
-      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
-      <button class="topbar-btn" onclick="K._openConvActionsMenu('${esc(conv.id)}', event)" aria-label="Actions">⋯</button>
-    </div>
-    ${(() => {
-      const lastRead = lg('lastread_' + conv.id, 0);
-      const unread = msgs.filter(m => m.from !== K.user?.id && (m.ts || 0) > lastRead).length;
-      if(unread < 3) return '';
-      return `<div onclick="K._scrollToFirstUnread('${esc(conv.id)}')"
-        style="background:var(--ax-gold);color:var(--ax-bg);padding:6px 12px;text-align:center;cursor:pointer;font-size:.85em;font-weight:600;border-radius:0 0 8px 8px;margin:0 8px;animation:pulse 2s infinite">
-        ⬇ ${unread} messages non-lus · Voir le 1er
-      </div>`;
-    })()}
-    ${(() => {
-      const pinned = (K.messages[conv.id] || []).filter(m => m.pinned);
-      if(!pinned.length) return '';
-      return `<div class="pinned-banner" onclick="K._showPinnedList()">
-        📌 ${pinned.length} message${pinned.length > 1 ? 's' : ''} épinglé${pinned.length > 1 ? 's' : ''}
-        <span style="color:var(--ax-text-3);font-size:.85em;margin-left:6px">${esc((pinned[0].text || '').slice(0, 60))}…</span>
-      </div>`;
-    })()}
-    ${K._renderTzWarning ? K._renderTzWarning(conv) : ''}
-    <div class="chat-messages" id="chat-msgs">
-      ${msgs.length === 0 ? `
-        <div class="msg system">${K._e2eActive(conv)
-          ? '🛡 Cette conversation est chiffrée bout-en-bout. Personne d\'autre que toi et tes destinataires ne peut lire les messages.'
-          : '🔒 Conversation chiffrée pendant le transit. Le chiffrement bout-en-bout s\'activera dès l\'échange des clés avec ton correspondant.'}</div>
-      ` : msgs.map(m => {
-        const isMine = m.from === K.user.id;
-        const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
-        const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
-        const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
-        return `
+// v1.1.172 FIX P0 UX (audit crew) — rendu d'UNE bulle (source unique réutilisée
+// par renderChat ET par l'append incrémental). Évite de re-décoder toutes les
+// images base64 + re-parser tout le markdown de l'historique à chaque message.
+K._renderBubble = function(m, conv, msgs){
+  const isMine = m.from === K.user.id;
+  const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
+  const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
+  const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
+  return `
         <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}${K._selectedMsgs && K._selectedMsgs.has(m.id) ? ' msg-selected' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')" onclick="if(K._selectedMsgs && K._selectedMsgs.size > 0){event.stopPropagation();K._toggleSelectMsg('${esc(m.id)}')}">
           ${m.reply_to ? `<div class="reply-quote" onclick="K._scrollToMsg('${esc(m.reply_to.id)}')">
             <div style="color:var(--ax-gold);font-size:.72em;font-weight:600">↩ ${esc(m.reply_to.from_name || '')}</div>
@@ -6607,7 +6642,67 @@ function renderChat(app){
           ` : ''}
           ${K._renderSeenBy ? K._renderSeenBy(m, conv) : ''}
         </div>
-      `;}).join('')}
+      `;
+};
+
+// Append incrémental d'une seule bulle dans #chat-msgs (sans re-render complet).
+// Renvoie true si l'append a réussi (vue chat de la bonne conv + conteneur présent).
+K._appendBubble = function(conv, m){
+  if(!(K.view === 'chat' && K.viewData?.id === conv.id)) return false;
+  const box = document.getElementById('chat-msgs');
+  if(!box) return false;
+  // Retirer l'état vide (msg system) si présent
+  const sysEmpty = box.querySelector('.msg.system');
+  if(sysEmpty && (K.messages[conv.id] || []).length <= 1) sysEmpty.remove();
+  if(box.querySelector(`[data-msg-id="${(window.CSS && CSS.escape) ? CSS.escape(m.id) : m.id}"]`)) return true; // déjà rendu
+  const nearBottom = (box.scrollHeight - box.scrollTop - box.clientHeight) < 120;
+  box.insertAdjacentHTML('beforeend', K._renderBubble(m, conv, K.messages[conv.id] || []));
+  if(nearBottom){ box.scrollTop = box.scrollHeight; }   // ne saute pas si l'user lit plus haut
+  try{ K._renderStaticWaveforms && K._renderStaticWaveforms(); }catch(_e){_safeCatch('silent',_e)}
+  return true;
+};
+
+function renderChat(app){
+  const conv = K.viewData;
+  if(!conv){ K.sv('chats'); return; }
+  const msgs = K.messages[conv.id] || [];
+  app.innerHTML = `
+    <div class="chat-header">
+      <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
+      <div class="avatar">${esc((K._convName(conv) || '?')[0].toUpperCase())}</div>
+      <div style="flex:1;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
+        <div style="font-weight:600">${esc(K._convName(conv))}</div>
+        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
+      </div>
+      <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
+      <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
+      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
+      <button class="topbar-btn" onclick="K._openConvActionsMenu('${esc(conv.id)}', event)" aria-label="Actions">⋯</button>
+    </div>
+    ${(() => {
+      const lastRead = lg('lastread_' + conv.id, 0);
+      const unread = msgs.filter(m => m.from !== K.user?.id && (m.ts || 0) > lastRead).length;
+      if(unread < 3) return '';
+      return `<div onclick="K._scrollToFirstUnread('${esc(conv.id)}')"
+        style="background:var(--ax-gold);color:var(--ax-bg);padding:6px 12px;text-align:center;cursor:pointer;font-size:.85em;font-weight:600;border-radius:0 0 8px 8px;margin:0 8px;animation:pulse 2s infinite">
+        ⬇ ${unread} messages non-lus · Voir le 1er
+      </div>`;
+    })()}
+    ${(() => {
+      const pinned = (K.messages[conv.id] || []).filter(m => m.pinned);
+      if(!pinned.length) return '';
+      return `<div class="pinned-banner" onclick="K._showPinnedList()">
+        📌 ${pinned.length} message${pinned.length > 1 ? 's' : ''} épinglé${pinned.length > 1 ? 's' : ''}
+        <span style="color:var(--ax-text-3);font-size:.85em;margin-left:6px">${esc((pinned[0].text || '').slice(0, 60))}…</span>
+      </div>`;
+    })()}
+    ${K._renderTzWarning ? K._renderTzWarning(conv) : ''}
+    <div class="chat-messages" id="chat-msgs">
+      ${msgs.length === 0 ? `
+        <div class="msg system">${K._e2eActive(conv)
+          ? '🛡 Cette conversation est chiffrée bout-en-bout. Personne d\'autre que toi et tes destinataires ne peut lire les messages.'
+          : '🔒 Conversation chiffrée pendant le transit. Le chiffrement bout-en-bout s\'activera dès l\'échange des clés avec ton correspondant.'}</div>
+      ` : msgs.map(m => K._renderBubble(m, conv, msgs)).join('')}
     </div>
     <div id="smart-reply-chips" style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;overflow-x:auto"></div>
     <div class="chat-input">
@@ -6683,13 +6778,9 @@ K.openConv = async function(convId){
     if(last && last.id) K._sendReadReceipt(convId, last.id);
   }, 800);
 
-  // Phase 2 : établir session E2E si pas déjà fait
-  try{
-    if(window.ApexCrypto && !ApexCrypto.getSessionKey(convId) && K._cryptoKeys && conv.peer_pubkey){
-      const peerKey = await ApexCrypto.importPublicKey(conv.peer_pubkey);
-      await ApexCrypto.establishSession(convId, K._cryptoKeys.privateKey, peerKey);
-    }
-  }catch(e){ _safeCatch('establish-session', e); }
+  // Phase 2 : établir session E2E (peer_pubkey joint par le serveur OU bundle
+  // récupéré just-in-time). v1.1.172 FIX P0 (audit crew).
+  try{ await K._ensureSession(conv); }catch(e){ _safeCatch('establish-session', e); }
 
   K.sv('chat', conv);
 };
@@ -6708,10 +6799,13 @@ K._sendMsg = async function(){
     else { text = result; input.value = result; }
   }
 
-  // Phase 2 : chiffrer E2E si session active
+  // Phase 2 : chiffrer E2E. v1.1.172 FIX P0 (audit crew) : on GARANTIT d'abord
+  // la session (établit / récupère le bundle du pair) AVANT de chiffrer, au lieu
+  // de retomber silencieusement en clair.
   let ciphertext = null;
   let displayText = text;
   try{
+    await K._ensureSession(conv);
     if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
       ciphertext = await ApexCrypto.encryptForConv(conv.id, text);
       // Le texte clair reste local (pour affichage), le ciphertext part au serveur
@@ -6756,23 +6850,61 @@ K._sendMsg = async function(){
   input.value = '';
   K.render();
 
-  // Phase 3 : envoyer via WebSocket
-  if(K.ws && K.ws.readyState === WebSocket.OPEN){
+  // Phase 3 : envoyer via WebSocket (sinon mettre en outbox pour replay)
+  const wire = { type: 'message', ciphertext: ciphertext || text, mime: 'text/plain', ts: msg.ts, id: msg.id };
+  if(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === conv.id){
     try{
-      K.ws.send(JSON.stringify({
-        type: 'message',
-        ciphertext: ciphertext || text,  // fallback texte clair si pas de session
-        mime: 'text/plain',
-        ts: msg.ts
-      }));
+      K.ws.send(JSON.stringify(wire));
       toast(ciphertext ? '🛡 Envoyé chiffré E2E' : '📨 Envoyé', 'ok', 1000);
     }catch(e){
       _safeCatch('ws-send', e);
-      toast('Envoi local (offline) — sera synchro plus tard', 'warn', 1500);
+      // v1.1.172 FIX P0 (audit crew) : échec d'envoi → outbox (replay à la reconnexion)
+      K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id });
+      toast('📭 En attente — partira à la reconnexion', 'warn', 1800);
     }
   } else {
-    toast('Mode local (pas de WS) — message stocké', 'info', 1500);
+    // v1.1.172 FIX P0 (audit crew) : pas de WS → outbox persistée (avant : message perdu).
+    K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id });
+    toast('📭 Hors-ligne — message en attente d\'envoi', 'info', 1800);
   }
+};
+
+// ============================================================================
+//  Outbox offline — v1.1.172 FIX P0 (audit crew)
+//  Les messages écrits sans WS sont persistés puis rejoués à l'ouverture du WS
+//  de leur conversation (le WS est par-conv) OU au retour réseau (online).
+// ============================================================================
+K._outboxAdd = function(item){
+  try{
+    const box = lg('outbox', []);
+    if(box.some(x => x.id === item.id)) return;   // dédup par id stable
+    box.push(item);
+    while(box.length > 300) box.shift();           // cap mémoire
+    ls('outbox', box);
+  }catch(e){ _safeCatch('outbox-add', e); }
+};
+K._outboxRemove = function(id){
+  try{ ls('outbox', lg('outbox', []).filter(x => x.id !== id)); }catch(e){ _safeCatch('outbox-rm', e); }
+};
+K._outboxCountFor = function(convId){
+  try{ return lg('outbox', []).filter(x => x.conv_id === convId).length; }catch(_){ return 0; }
+};
+// Rejoue les items d'une conv si son WS est ouvert. Renvoie le nb envoyé.
+K._flushOutboxFor = function(convId){
+  if(!(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === convId)) return 0;
+  const box = lg('outbox', []);
+  const mine = box.filter(x => x.conv_id === convId);
+  if(!mine.length) return 0;
+  let sent = 0;
+  for(const it of mine){
+    try{
+      K.ws.send(JSON.stringify({ type: 'message', ciphertext: it.ciphertext, mime: it.mime || 'text/plain', ts: it.ts, id: it.id }));
+      K._outboxRemove(it.id);
+      sent++;
+    }catch(e){ _safeCatch('outbox-flush', e); break; }  // garde le reste pour la prochaine fois
+  }
+  if(sent > 0) toast('📤 ' + sent + ' message' + (sent>1?'s':'') + ' en attente envoyé' + (sent>1?'s':''), 'ok', 1800);
+  return sent;
 };
 
 // ============================================================================
@@ -6937,10 +7069,14 @@ K._openWs = async function(convId){
       `?token=${encodeURIComponent(K.token)}&uid=${encodeURIComponent(K.user.id)}&conv=${encodeURIComponent(convId)}`;
 
     K.ws = new WebSocket(wsUrl);
+    K._wsConvId = convId;   // v1.1.172 : conv liée au WS courant (pour flush outbox)
 
     K.ws.addEventListener('open', () => {
       _logTelemetry('ok', 'ws-open', { convId });
       K._wsRetry = 0;   // reconnexion réussie → reset backoff
+      // v1.1.172 FIX P0 (audit crew) : rejouer les messages écrits hors-ligne
+      // pour cette conversation dès que le WS est (re)connecté.
+      try{ K._flushOutboxFor(convId); }catch(_e){_safeCatch('silent',_e)}
       if(K.view === 'chat' && K.viewData?.id === convId && typeof K._updatePresenceHeader === 'function'){
         try{ K._updatePresenceHeader(); }catch(_e){_safeCatch('silent',_e)}
       }
@@ -6960,6 +7096,7 @@ K._openWs = async function(convId){
     K.ws.addEventListener('close', (e) => {
       _logTelemetry('info', 'ws-close', { convId, code: e.code, reason: e.reason });
       K.ws = null;
+      K._wsConvId = null;
       if(K.wsPing){ clearInterval(K.wsPing); K.wsPing = null; }
       if(e.code === 1000) return;   // fermeture volontaire
       console.warn('[WS] fermé — code', e.code, 'motif:', e.reason || '(vide)');
@@ -7103,7 +7240,16 @@ async function _handleWsMessage(data, convId){
       if(!K.messages[convId].some(m => m.id === msg.id)){
         K.messages[convId].push(msg);
         ls('messages_' + convId, K.messages[convId]);
-        if(K.view === 'chat' && K.viewData?.id === convId) K.render();
+        if(K.view === 'chat' && K.viewData?.id === convId){
+          // v1.1.172 FIX P0 UX (audit crew) : append incrémental (1 bulle) au lieu
+          // d'un re-render complet → plus de scintillement ni de re-décodage de
+          // toutes les images base64 / re-parse markdown sur longues convs.
+          // Fallback render complet si l'append échoue.
+          if(!K._appendBubble(K.viewData, msg)) K.render();
+          try{
+            if(msg.from !== K.user?.id) void K._renderSmartReplyChips(convId, msg);
+          }catch(_e){_safeCatch('silent',_e)}
+        }
         else K._notifyIncoming(convId, msg);
       }
       break;
@@ -11545,6 +11691,10 @@ K._profileIncomplete = function(u){
 
 K._postLogin = function(){
   if(!K.user) return;
+  // v1.1.172 FIX P0 (audit crew) : publier la clé publique E2E dès le login —
+  // couvre les users dont la clé existait déjà localement (avant cette version)
+  // mais n'avait jamais été poussée au serveur. Best-effort, non bloquant.
+  setTimeout(() => { try { K._publishPubkey && K._publishPubkey(); } catch(_) {} }, 800);
   // v1.1.170 Kevin "Toujours tout auto rappel toi" — sync auto des conv
   // serveur à CHAQUE login (récupère conv DM créée par ensureCorePair sans
   // intervention user) + dédup conv locales fantômes. Boucle de fond aussi.
@@ -12693,6 +12843,9 @@ async function _boot(){
     $('#conn-status').textContent = '●';
     $('#conn-status').style.color = 'var(--ax-ok)';
     toast('Connexion rétablie', 'ok', 1500);
+    // v1.1.172 FIX P0 (audit crew) : si un WS est déjà ouvert, rejouer l'outbox
+    // de sa conv ; sinon le flush se fera à la prochaine ouverture WS (open handler).
+    try{ if(K._wsConvId) K._flushOutboxFor(K._wsConvId); }catch(_e){_safeCatch('silent',_e)}
   });
   window.addEventListener('offline', () => {
     K.isOnline = false;

@@ -995,3 +995,23 @@ Apex Chat hérite **toutes** les règles permanentes des projets Kevin :
 
 > Ce fichier est mis à jour à CHAQUE décision Kevin pour ne rien perdre.
 > Lu en début de chaque session Claude Code pour cohérence.
+
+---
+
+## v1.1.172 (2026-06-06) — Audit crew complet (6 agents) + batch P0+P1
+
+**Scores crew mesurés (avant fixes)** : Sécu 6.5/20 · Backend 9/20 · E2E 9/20 · Archi 11/20 · UX 13.5/20 · Tests 14/20 · Perf 15/20.
+
+**Livré (8 batches, 12 commits, 813 tests verts, +17 nouveaux tests) :**
+- **E2E RÉEL** : endpoints `POST /api/keys/prekeys` + `GET /api/keys/:id/bundle`, jointure `peer_pubkey`,
+  publication clé au login, session just-in-time, fin du repli texte-clair silencieux.
+- **OTP durci** : backdoor `000000` gaté derrière `ALLOW_TEST_OTP` (var wrangler, défaut "true"),
+  bypass Kevin protégé (garde numéro explicite), leak `_dev_otp` coupé en mode sécurisé.
+- **Backend** : `APEX_CHAT_KV` bindé (quotas), `system_config` NOT NULL, push_subscriptions schéma, hash OTP cleanPhone.
+- **DO/crons** : Letters (route `/admin/inject-message`), Time Capsule (opened_at), force_logout REST+WS, read-receipt convId.
+- **Offline** : outbox + replay (ws open / online). **Stripe** : révocation premium. **Dédup DM** serveur.
+- **UX/P0** : fuite brouillons inter-comptes fermée, _clearConvLocal réparé, clavier ne se ferme plus
+  (focus préservé dans render + append incrémental des bulles), WCAG AA, aria-live/aria-current, couverture honnête (78.7% réel).
+
+**Reste (différé honnête)** : aucun P0/P1 majeur restant. P2 : nettoyage 7 fonctions mortes.
+**Action Kevin** : flip `ALLOW_TEST_OTP=false` quand Vonage confirmé (cf. MEMO_KEVIN_RESTE_A_FAIRE.md).

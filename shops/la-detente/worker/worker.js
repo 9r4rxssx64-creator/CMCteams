@@ -5,6 +5,7 @@
 
 const ALLOW_ORIGINS = [
   'https://9r4rxssx64-creator.github.io',
+  'https://la-detente.kd-mc.com', 'https://chez-lolo.kd-mc.com',
   'http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:5500'
 ];
 const APP_TAG = 'ld-studio-v1';

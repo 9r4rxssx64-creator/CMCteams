@@ -45,6 +45,13 @@ const ALLOWED_ORIGINS = [
 
 function isTrustedOrigin(origin: string | null): boolean {
   if (!origin) return false;
+  // Domaine personnalisé KDMC : kd-mc.com + tous ses sous-domaines.
+  try {
+    const h = new URL(origin).hostname;
+    if (h === "kd-mc.com" || h.endsWith(".kd-mc.com")) return true;
+  } catch {
+    /* origine non parsable : on retombe sur l'allowlist ci-dessous */
+  }
   return ALLOWED_ORIGINS.some((o) => origin.startsWith(o));
 }
 

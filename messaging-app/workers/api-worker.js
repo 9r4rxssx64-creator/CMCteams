@@ -377,16 +377,22 @@ export async function handleSendOtp(request, env) {
     }
   }
 
-  // Fallback ultime : retourner OTP dans la réponse (mode "dev/cercle privé")
-  // → Le client affiche le code à l'utilisateur en gros pour qu'il le saisisse
+  // Fallback : si aucun SMS n'est parti. v1.1.172 FIX P1/P2 (audit crew) :
+  // renvoyer l'OTP en clair dans la réponse = contournement total de l'OTP
+  // (quiconque connaît un numéro récupère le code). On ne l'expose QUE si
+  // ALLOW_TEST_OTP === 'true' (mode cercle privé assumé). Sinon, on échoue
+  // proprement sans fuiter le code.
   if (smsProvider === 'none') {
-    return json({
-      ok: true,
-      sessionId: phoneHash,
-      provider: 'inline',
-      _dev_otp: otp,  // visible dans la réponse JSON
-      _dev_note: 'SMS indispo (' + (smsError || 'config') + '). Code affiche ci-dessous (mode cercle prive).',
-      _show_code_in_app: true
+    if (env.ALLOW_TEST_OTP === 'true') {
+      return json({
+        ok: true, sessionId: phoneHash, provider: 'inline',
+        _dev_otp: otp,
+        _dev_note: 'SMS indispo (' + (smsError || 'config') + '). Code affiche (mode cercle prive).',
+        _show_code_in_app: true
+      });
+    }
+    return err('Envoi du SMS impossible pour le moment, réessaie', 502, 'sms_unavailable', {
+      detail: smsError || 'aucun provider SMS disponible'
     });
   }
 
@@ -482,8 +488,12 @@ export async function handleVerifyOtp(request, env) {
   // signup direct (zéro OTP) sinon. Mode "cercle privé" où l'admin vet
   // les utilisateurs socialement (via la fiche admin).
   if (otp === '000000') {
-    // Cas 1 : pas Kevin → signup direct (création / récupération compte normal)
-    if (!kevinSecret || phoneNorm !== kevinSecret) {
+    // Cas 1 : pas Kevin → signup direct (mode "cercle privé").
+    // v1.1.172 FIX P0 (audit crew) : ce signup-direct universel est un
+    // contournement d'auth (n'importe quel numéro). On le gate derrière
+    // ALLOW_TEST_OTP (var wrangler). À 'false' → l'OTP SMS réel est imposé
+    // (le bypass admin Kevin ci-dessous reste, lui, toujours actif).
+    if ((!kevinSecret || phoneNorm !== kevinSecret) && env.ALLOW_TEST_OTP === 'true') {
       let step = 'direct_init';
       try {
         step = 'select_existing';
@@ -539,7 +549,11 @@ export async function handleVerifyOtp(request, env) {
         return err('Création compte échouée', 500, 'signup_fail', e);
       }
     }
-    // Cas 2 : c'est Kevin (numéro = secret) → bypass admin (logique existante)
+    // Cas 2 : c'est Kevin (numéro = secret) → bypass admin (TOUJOURS actif).
+    // v1.1.172 : garde explicite — n'exécute le bypass QUE pour le vrai numéro
+    // Kevin. Sans ça, avec ALLOW_TEST_OTP off + Cas 1 sauté, un inconnu tomberait
+    // ici et se ferait passer pour kdmc_admin.
+    if (kevinSecret && phoneNorm === kevinSecret) {
     if (!env.KEVIN_PHONE_E164) {
       return err('Bypass admin indisponible', 503, 'kevin_phone_unset',
         'Secret KEVIN_PHONE_E164 absent du Worker — config GitHub/Cloudflare requise');
@@ -582,11 +596,16 @@ export async function handleVerifyOtp(request, env) {
       e.step = 'bypass:' + step;
       return err('Connexion admin échouée', 500, 'bypass_fail', e);
     }
+    } // fin garde "c'est le vrai Kevin"
+    // Sinon (non-Kevin + ALLOW_TEST_OTP off) : on retombe sur l'OTP réel (Mode 1).
   }
 
   // Mode 1 : OTP Vonage (priorité)
   if (otp) {
-    const otpHash = await sha256(otp + ':' + phone);
+    // v1.1.172 FIX P0 : send-otp hashe sha256(otp+':'+cleanPhone) (numéro
+    // NORMALISÉ), la vérif hashait le `phone` BRUT → tout numéro saisi en
+    // format national (0612…) ne validait jamais. On hashe cleanPhone partout.
+    const otpHash = await sha256(otp + ':' + cleanPhone);
     const pending = await env.APEX_CHAT_DB.prepare(
       'SELECT * FROM otp_pending WHERE phone_hash=?'
     ).bind(phoneHash).first();
@@ -934,9 +953,11 @@ async function handleAdminSetUserToggle(request, env) {
   }
   try {
     const key = `user_toggle:${targetUid}:${feature}`;
+    // v1.1.172 FIX P0 : system_config.updated_at est NOT NULL → l'INSERT
+    // (key,value) seul violait la contrainte → toggles per-user jamais persistés.
     await env.APEX_CHAT_DB.prepare(
-      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
-    ).bind(key, JSON.stringify(value)).run();
+      'INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)'
+    ).bind(key, JSON.stringify(value), Date.now(), auth.sub).run();
     return json({ ok: true, uid: targetUid, feature, value });
   } catch (e) {
     return err('Échec save toggle', 500, 'db_write_failed', {
@@ -969,15 +990,84 @@ async function handleListConversations(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
+  // v1.1.172 FIX P0 (audit crew) : joindre la clé publique du pair (DM) pour
+  // que le client puisse établir la session E2E. Sans ça, peer_pubkey restait
+  // null → aucune session → fallback texte clair. La sous-requête prend l'AUTRE
+  // membre (DM = 1 seul autre). Pour les groupes, le client n'utilise pas ce
+  // champ (chiffrement de groupe géré séparément).
   const convs = await env.APEX_CHAT_DB.prepare(
-    `SELECT c.*, cm.last_read_msg_id, cm.notif_level, cm.role
+    `SELECT c.*, cm.last_read_msg_id, cm.notif_level, cm.role,
+       (SELECT u.identity_key_pub FROM conversation_members m2
+          JOIN users u ON u.id = m2.user_id
+          WHERE m2.conv_id = c.id AND m2.user_id != ? LIMIT 1) AS peer_pubkey,
+       (SELECT m2.user_id FROM conversation_members m2
+          WHERE m2.conv_id = c.id AND m2.user_id != ? LIMIT 1) AS peer_id
      FROM conversations c
      INNER JOIN conversation_members cm ON cm.conv_id = c.id
      WHERE cm.user_id = ? AND c.archived_at IS NULL
      ORDER BY c.last_msg_ts DESC`
-  ).bind(auth.sub).all();
+  ).bind(auth.sub, auth.sub, auth.sub).all();
 
-  return json({ ok: true, conversations: convs.results || [] });
+  // Ne pas exposer le placeholder comme une vraie clé.
+  const rows = (convs.results || []).map((c) => {
+    if (c.peer_pubkey === 'PENDING_PQXDH' || c.peer_pubkey === 'PENDING') c.peer_pubkey = null;
+    return c;
+  });
+  return json({ ok: true, conversations: rows });
+}
+
+// v1.1.172 FIX P0 (audit crew) — distribution des clés publiques E2E.
+// Sans ces 2 routes, l'« E2E » était cosmétique : la pubkey n'était jamais
+// publiée et aucun bundle n'était récupérable → repli texte clair en D1.
+
+// POST /api/keys/prekeys — publie/maj la clé publique d'identité du user courant.
+async function handleUploadPrekeys(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const body = await request.json().catch(() => ({}));
+  const idk = body.identity_key_pub;
+  if (!idk || typeof idk !== 'string' || idk.length < 8 || idk.length > 4000 || idk.startsWith('PENDING')) {
+    return err('identity_key_pub invalide', 400, 'bad_pubkey', { len: idk ? String(idk).length : 0 });
+  }
+  // Champs optionnels (placeholder PQXDH tant que Kyber n'est pas activé).
+  const pq = (typeof body.pq_key_pub === 'string' && body.pq_key_pub.length <= 4000) ? body.pq_key_pub : null;
+  const signed = (typeof body.prekey_signed === 'string' && body.prekey_signed.length <= 4000) ? body.prekey_signed : null;
+  try {
+    await env.APEX_CHAT_DB.prepare(
+      `UPDATE users SET identity_key_pub=?,
+         pq_key_pub=COALESCE(?, pq_key_pub),
+         prekey_signed=COALESCE(?, prekey_signed)
+       WHERE id=?`
+    ).bind(idk, pq, signed, auth.sub).run();
+    return json({ ok: true });
+  } catch (e) {
+    return err('Échec publication clé', 500, 'db_write_failed', {
+      detail: e?.message, where: (e?.stack || '').split('\n')[1] || '',
+    });
+  }
+}
+
+// GET /api/keys/:userId/bundle — récupère la clé publique d'un pair (auth requise).
+async function handleKeyBundle(userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const row = await env.APEX_CHAT_DB.prepare(
+    'SELECT id, identity_key_pub, pq_key_pub, prekey_signed FROM users WHERE id=?'
+  ).bind(userId).first();
+  if (!row) return err('Utilisateur introuvable', 404, 'no_user');
+  const idk = row.identity_key_pub;
+  if (!idk || idk === 'PENDING_PQXDH' || idk === 'PENDING') {
+    return err('Clé pas encore publiée par ce contact', 409, 'key_pending', { user_id: userId });
+  }
+  return json({
+    ok: true,
+    bundle: {
+      user_id: row.id,
+      identity_key_pub: idk,
+      pq_key_pub: row.pq_key_pub && !String(row.pq_key_pub).startsWith('PENDING') ? row.pq_key_pub : null,
+      prekey_signed: row.prekey_signed && !String(row.prekey_signed).startsWith('PENDING') ? row.prekey_signed : null,
+    },
+  });
 }
 
 export async function handleCreateConversation(request, env) {
@@ -987,6 +1077,26 @@ export async function handleCreateConversation(request, env) {
   const { type, name, members } = await request.json();
   if (!['dm', 'group', 'community', 'channel'].includes(type)) return err('Type invalide');
   if (!Array.isArray(members) || members.length < 1) return err('Membres requis');
+
+  // v1.1.172 FIX P1 (audit crew) : dédup DM côté serveur. Avant, chaque appel
+  // créait une nouvelle conv → doublons de DM (réconciliés péniblement côté
+  // client). On réutilise le DM existant entre les 2 mêmes users s'il y en a un.
+  if (type === 'dm') {
+    const peer = members.find((m) => m && m !== auth.sub) || members[0];
+    if (peer) {
+      try {
+        const existing = await env.APEX_CHAT_DB.prepare(
+          `SELECT c.id, c.type, c.name, c.created_at FROM conversations c
+             JOIN conversation_members a ON a.conv_id = c.id AND a.user_id = ?
+             JOIN conversation_members b ON b.conv_id = c.id AND b.user_id = ?
+           WHERE c.type = 'dm' AND c.archived_at IS NULL LIMIT 1`
+        ).bind(auth.sub, peer).first();
+        if (existing) {
+          return json({ ok: true, conversation: existing, deduped: true });
+        }
+      } catch (e) { /* en cas d'erreur, on crée normalement ci-dessous */ }
+    }
+  }
 
   const id = crypto.randomUUID();
   const doId = `do_${id}`;
@@ -1438,9 +1548,12 @@ async function handleAdminCommand(request, env) {
       break;
 
     case 'forceLogout':
-      // Invalider tous les JWT du user (Phase ultérieure : table jwt_blacklist)
-      // Pour Phase 6 : suspendre temporairement le user
-      await env.APEX_CHAT_DB.prepare("UPDATE users SET last_seen=? WHERE id=?").bind(0, params.userId).run();
+      // v1.1.172 FIX P1 (audit crew) : poser last_force_logout_at = maintenant.
+      // getAuthUser (REST) ET ConversationDO.fetch (WS) rejettent désormais tout
+      // JWT dont iat < last_force_logout_at → la déconnexion forcée est RÉELLE
+      // (REST + WebSocket), plus seulement cosmétique (last_seen=0 ne révoquait rien).
+      await env.APEX_CHAT_DB.prepare("UPDATE users SET last_seen=?, last_force_logout_at=? WHERE id=?")
+        .bind(0, Date.now(), params.userId).run();
       result = { ok: true };
       break;
 
@@ -2878,6 +2991,14 @@ export async function handlePremiumCheckout(request, env) {
     fdParams.set('metadata[user_id]', auth.sub);
     fdParams.set('metadata[plan]', plan);
     fdParams.set('metadata[apex_version]', 'v1.1.24');
+    // v1.1.172 FIX P1 (audit crew) : propager user_id/plan sur l'OBJET subscription
+    // (pas seulement la session). Sans ça, customer.subscription.deleted /
+    // payment_failed avaient sub.metadata.user_id = undefined → premium JAMAIS
+    // révoqué après annulation. (Mode subscription uniquement.)
+    if (planDef.interval) {
+      fdParams.set('subscription_data[metadata][user_id]', auth.sub);
+      fdParams.set('subscription_data[metadata][plan]', plan);
+    }
     // Trial 7 jours gratuit pour monthly (1er abo seulement)
     if (plan === 'monthly') {
       fdParams.set('subscription_data[trial_period_days]', '7');
@@ -2991,7 +3112,21 @@ export async function handlePremiumWebhook(request, env) {
     }
   } else if (event.type === 'customer.subscription.deleted' || event.type === 'invoice.payment_failed') {
     const sub = event.data?.object;
-    const userId = sub?.metadata?.user_id;
+    let userId = sub?.metadata?.user_id;
+    // v1.1.172 FIX P1 (audit crew) : fallback robuste — résoudre l'user via
+    // stripe_customer_id si le metadata est absent (anciens abonnements créés
+    // avant le fix checkout). Sans ça, le premium n'était jamais révoqué.
+    if (!userId) {
+      const customerId = sub?.customer || event.data?.object?.customer;
+      if (customerId) {
+        try {
+          const row = await env.APEX_CHAT_DB?.prepare(
+            'SELECT id FROM users WHERE stripe_customer_id=?'
+          ).bind(customerId).first();
+          if (row) userId = row.id;
+        } catch (e) { /* skip */ }
+      }
+    }
     if (userId) {
       try {
         await env.APEX_CHAT_DB?.prepare(
@@ -3598,15 +3733,22 @@ export async function handlePushSubscribe(request, env) {
     return err('Subscription incomplète', 400);
   }
   try {
+    // v1.1.172 FIX P0 : l'INSERT visait des colonnes inexistantes (id, ua) et
+    // omettait device_id NOT NULL + created_at NOT NULL → AUCUNE souscription
+    // n'était jamais enregistrée → 0 push envoyé. On aligne sur le schéma réel
+    // (PK user_id, device_id). device_id = hash stable de l'endpoint pour que
+    // re-souscrire le même device fasse un upsert propre.
+    const now = Date.now();
+    const deviceId = (await sha256(sub.endpoint)).slice(0, 32);
     // Upsert : remove existing for same endpoint, then insert fresh
     await env.APEX_CHAT_DB?.prepare(
       'DELETE FROM push_subscriptions WHERE endpoint=?'
     ).bind(sub.endpoint).run();
     await env.APEX_CHAT_DB?.prepare(
-      'INSERT INTO push_subscriptions (id, user_id, endpoint, vapid_p256dh, vapid_auth, last_seen, ua) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO push_subscriptions (user_id, device_id, endpoint, vapid_p256dh, vapid_auth, user_agent, last_seen, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
-      crypto.randomUUID(), auth.sub, sub.endpoint, sub.keys.p256dh, sub.keys.auth,
-      Date.now(), (request.headers.get('user-agent') || '').slice(0, 200)
+      auth.sub, deviceId, sub.endpoint, sub.keys.p256dh, sub.keys.auth,
+      (request.headers.get('user-agent') || '').slice(0, 200), now, now
     ).run();
     return json({ ok: true });
   } catch (e) {
@@ -3648,8 +3790,8 @@ export async function handleAdminForceUpdate(request, env) {
   const ts = Date.now();
   try {
     await env.APEX_CHAT_DB?.prepare(
-      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
-    ).bind('force_update_ts', String(ts)).run();
+      'INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)'
+    ).bind('force_update_ts', String(ts), ts, auth.sub).run();
     // Audit log
     try {
       await env.APEX_CHAT_DB?.prepare(
@@ -3688,8 +3830,8 @@ export async function handleAdminForceUpdateViaToken(request, env) {
   const ts = Date.now();
   try {
     await env.APEX_CHAT_DB?.prepare(
-      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
-    ).bind('force_update_ts', String(ts)).run();
+      'INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)'
+    ).bind('force_update_ts', String(ts), ts, 'cron:deploy').run();
     try {
       await env.APEX_CHAT_DB?.prepare(
         'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
@@ -3838,6 +3980,11 @@ export default {
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
       if (adminUserMatch && method === 'GET') return await handleAdminGetFullUser(adminUserMatch[1], request, env);
+
+      // E2E keys (v1.1.172 FIX P0 audit crew — distribution clés publiques)
+      if (path === '/api/keys/prekeys' && method === 'POST') return await handleUploadPrekeys(request, env);
+      const keyBundleMatch = path.match(/^\/api\/keys\/([a-zA-Z0-9_-]+)\/bundle$/);
+      if (keyBundleMatch && method === 'GET') return await handleKeyBundle(keyBundleMatch[1], request, env);
 
       // Conversations
       if (path === '/api/conversations' && method === 'GET') return await handleListConversations(request, env);
@@ -3996,22 +4143,35 @@ export default {
             ).bind(body.letter_id).first();
             if (letter && letter.deliver_at <= Date.now()) {
               const doStub = env.CONVERSATION_DO.get(env.CONVERSATION_DO.idFromName('do_' + letter.conv_id));
-              await doStub.fetch(new Request('https://internal/admin/inject-message', {
-                method: 'POST',
-                headers: { 'X-Apex-Internal': env.APEX_CHAT_ADMIN_TOKEN || '' },
-                body: JSON.stringify({
-                  sender_id: letter.sender_id,
-                  ciphertext: letter.ciphertext,
-                  mime: 'text/plain'
-                })
-              })).catch(() => {});
-              await env.APEX_CHAT_DB.prepare('UPDATE letters_queue SET delivered=1 WHERE id=?').bind(letter.id).run();
+              // v1.1.172 FIX P1 (audit crew) : passer conv_id + ne marquer
+              // delivered=1 QUE si l'injection réussit réellement (avant : .catch
+              // avalait l'échec puis delivered=1 quand même → lettre perdue).
+              let injected = false;
+              try {
+                const resp = await doStub.fetch(new Request('https://internal/admin/inject-message', {
+                  method: 'POST',
+                  headers: { 'X-Apex-Internal': env.APEX_CHAT_ADMIN_TOKEN || '' },
+                  body: JSON.stringify({
+                    conv_id: letter.conv_id,
+                    sender_id: letter.sender_id,
+                    ciphertext: letter.ciphertext,
+                    mime: 'text/plain'
+                  })
+                }));
+                injected = resp.ok;
+              } catch (e) {
+                console.error('[letters-deliver] inject failed:', e.message);
+              }
+              if (injected) {
+                await env.APEX_CHAT_DB.prepare('UPDATE letters_queue SET delivered=1 WHERE id=?').bind(letter.id).run();
+              }
+              // sinon : laissé delivered=0 → le cron 5 min réessaiera (livraison garantie)
             }
             break;
           }
 
           case 'timecapsule-open': {
-            // Time Capsule : push notif quand date arrivée
+            // Time Capsule : la capsule "s'ouvre" automatiquement à l'échéance.
             const capsule = await env.APEX_CHAT_DB.prepare(
               'SELECT * FROM time_capsules WHERE id=? AND opened_at IS NULL'
             ).bind(body.capsule_id).first();
@@ -4022,6 +4182,12 @@ export default {
                 tag: 'capsule-' + capsule.id,
                 payload: { capsuleId: capsule.id, senderId: capsule.sender_id }
               }, env);
+              // v1.1.172 FIX P1 (audit crew) : poser opened_at → stoppe le
+              // re-queue/push INFINI toutes les 5 min (le SELECT filtre opened_at
+              // IS NULL). Le contenu reste révélé via /api/time-capsules/:id/open.
+              await env.APEX_CHAT_DB.prepare(
+                'UPDATE time_capsules SET opened_at=? WHERE id=? AND opened_at IS NULL'
+              ).bind(Date.now(), capsule.id).run();
             }
             break;
           }
