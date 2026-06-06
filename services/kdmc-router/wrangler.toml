@@ -1,0 +1,16 @@
+name = "kdmc-router"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+# Chaque custom_domain auto-provisionne le DNS + le certificat SSL sur la zone
+# kd-mc.com (déjà dans le compte Cloudflare de Kevin). Aucune manip DNS manuelle.
+routes = [
+  { pattern = "kd-mc.com", custom_domain = true },
+  { pattern = "www.kd-mc.com", custom_domain = true },
+  { pattern = "cmcteams.kd-mc.com", custom_domain = true },
+  { pattern = "apex-ai.kd-mc.com", custom_domain = true },
+  { pattern = "apex-chat.kd-mc.com", custom_domain = true },
+  { pattern = "la-detente.kd-mc.com", custom_domain = true },
+  { pattern = "chez-lolo.kd-mc.com", custom_domain = true },
+]
