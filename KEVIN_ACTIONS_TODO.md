@@ -3,12 +3,12 @@
 ## 🌐 2026-06-06 — Domaine kd-mc.com (belle adresse par projet)
 
 - ✅ **Acheté** : `kd-mc.com` sur Cloudflare (fait par Kevin).
-- ✅ **Codé + poussé** : routeur + accueil + workflow + origines autorisées (branche `claude/kdmc-custom-domain-7hNn9`).
-- 🔄 **En cours** : déploiement (« Go » de Kevin) → fusion main + workflow Cloudflare.
-- ⚠️ **Action Kevin POSSIBLE (1 case, seulement si le déploiement le signale)** :
-  donner à la clé `CLOUDFLARE_API_TOKEN` les droits **Zone DNS Edit + Workers Routes Edit**
-  sur `kd-mc.com` → https://dash.cloudflare.com/profile/api-tokens (sinon les belles
-  adresses ne s'attachent pas). Je préviens précisément après lecture des logs.
+- ✅ **Codé + poussé + fusionné main** (PR #845/#846, branche `claude/kdmc-custom-domain-7hNn9`).
+- ✅ **DÉPLOYÉ + VÉRIFIÉ EN LIGNE** (2026-06-06 21:44 UTC) : les 7 belles adresses
+  répondent **HTTP 200** (health check réseau GitHub). Token Cloudflare suffisant →
+  **aucune action Kevin requise**.
+- ⏭️ **Optionnel (plus tard)** : belles adresses serveurs `api/push/auth/...kd-mc.com` ;
+  canonical/OG des pages → kd-mc.com.
 - 📋 Adresses + statut live : **KDMC_ADRESSES.md**.
 
 ## 📌 SESSION 2026-06-02 — À FAIRE ENSEMBLE (décision Kevin « on fera le 2 ensuite »)
