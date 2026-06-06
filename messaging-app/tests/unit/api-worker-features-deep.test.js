@@ -444,6 +444,50 @@ describe('handleCreateConversation kevin_invisible activé', () => {
     expect([200, 400]).toContain(r.status);
   });
 
+  // v1.1.172 FIX P1 (audit crew) — dédup DM serveur
+  it('DM déjà existant → réutilisé (deduped:true), pas de doublon créé', async () => {
+    const env = ENV();
+    let inserted = false;
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => {
+        if (sql.includes('SELECT last_force_logout_at')) return { is_admin: 0, status: 'active', is_banned: 0 };
+        if (sql.includes("type = 'dm'")) return { id: 'existing-dm', type: 'dm', name: null, created_at: 1 };
+        return null;
+      },
+      all: async () => ({ results: [] }),
+      run: async () => { if (sql.includes('INSERT INTO conversations')) inserted = true; return { success: true }; },
+    }));
+    const token = await userToken();
+    const req = makeReq('POST', '/api/conversations', { type: 'dm', members: ['peer'] }, token);
+    const r = await handleCreateConversation(req, env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.conversation.id).toBe('existing-dm');
+    expect(j.deduped).toBe(true);
+    expect(inserted).toBe(false);   // AUCUNE nouvelle conv insérée
+  });
+
+  it('DM inexistant → crée normalement (pas de dedup)', async () => {
+    const env = ENV();
+    let inserted = false;
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => {
+        if (sql.includes('SELECT last_force_logout_at')) return { is_admin: 0, status: 'active', is_banned: 0 };
+        if (sql.includes('FROM users WHERE is_admin')) return null;
+        return null;   // aucun DM existant
+      },
+      all: async () => ({ results: [] }),
+      run: async () => { if (sql.includes('INSERT INTO conversations')) inserted = true; return { success: true }; },
+    }));
+    const token = await userToken();
+    const req = makeReq('POST', '/api/conversations', { type: 'dm', members: ['peer2'] }, token);
+    const r = await handleCreateConversation(req, env);
+    expect(r.status).toBe(200);
+    expect(inserted).toBe(true);
+  });
+
   it('création par admin Kevin lui-même → skip kevin_invisible self-add', async () => {
     const env = ENV();
     env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
