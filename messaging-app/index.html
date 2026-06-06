@@ -6802,23 +6802,61 @@ K._sendMsg = async function(){
   input.value = '';
   K.render();
 
-  // Phase 3 : envoyer via WebSocket
-  if(K.ws && K.ws.readyState === WebSocket.OPEN){
+  // Phase 3 : envoyer via WebSocket (sinon mettre en outbox pour replay)
+  const wire = { type: 'message', ciphertext: ciphertext || text, mime: 'text/plain', ts: msg.ts, id: msg.id };
+  if(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === conv.id){
     try{
-      K.ws.send(JSON.stringify({
-        type: 'message',
-        ciphertext: ciphertext || text,  // fallback texte clair si pas de session
-        mime: 'text/plain',
-        ts: msg.ts
-      }));
+      K.ws.send(JSON.stringify(wire));
       toast(ciphertext ? '🛡 Envoyé chiffré E2E' : '📨 Envoyé', 'ok', 1000);
     }catch(e){
       _safeCatch('ws-send', e);
-      toast('Envoi local (offline) — sera synchro plus tard', 'warn', 1500);
+      // v1.1.172 FIX P0 (audit crew) : échec d'envoi → outbox (replay à la reconnexion)
+      K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id });
+      toast('📭 En attente — partira à la reconnexion', 'warn', 1800);
     }
   } else {
-    toast('Mode local (pas de WS) — message stocké', 'info', 1500);
+    // v1.1.172 FIX P0 (audit crew) : pas de WS → outbox persistée (avant : message perdu).
+    K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id });
+    toast('📭 Hors-ligne — message en attente d\'envoi', 'info', 1800);
   }
+};
+
+// ============================================================================
+//  Outbox offline — v1.1.172 FIX P0 (audit crew)
+//  Les messages écrits sans WS sont persistés puis rejoués à l'ouverture du WS
+//  de leur conversation (le WS est par-conv) OU au retour réseau (online).
+// ============================================================================
+K._outboxAdd = function(item){
+  try{
+    const box = lg('outbox', []);
+    if(box.some(x => x.id === item.id)) return;   // dédup par id stable
+    box.push(item);
+    while(box.length > 300) box.shift();           // cap mémoire
+    ls('outbox', box);
+  }catch(e){ _safeCatch('outbox-add', e); }
+};
+K._outboxRemove = function(id){
+  try{ ls('outbox', lg('outbox', []).filter(x => x.id !== id)); }catch(e){ _safeCatch('outbox-rm', e); }
+};
+K._outboxCountFor = function(convId){
+  try{ return lg('outbox', []).filter(x => x.conv_id === convId).length; }catch(_){ return 0; }
+};
+// Rejoue les items d'une conv si son WS est ouvert. Renvoie le nb envoyé.
+K._flushOutboxFor = function(convId){
+  if(!(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === convId)) return 0;
+  const box = lg('outbox', []);
+  const mine = box.filter(x => x.conv_id === convId);
+  if(!mine.length) return 0;
+  let sent = 0;
+  for(const it of mine){
+    try{
+      K.ws.send(JSON.stringify({ type: 'message', ciphertext: it.ciphertext, mime: it.mime || 'text/plain', ts: it.ts, id: it.id }));
+      K._outboxRemove(it.id);
+      sent++;
+    }catch(e){ _safeCatch('outbox-flush', e); break; }  // garde le reste pour la prochaine fois
+  }
+  if(sent > 0) toast('📤 ' + sent + ' message' + (sent>1?'s':'') + ' en attente envoyé' + (sent>1?'s':''), 'ok', 1800);
+  return sent;
 };
 
 // ============================================================================
@@ -6983,10 +7021,14 @@ K._openWs = async function(convId){
       `?token=${encodeURIComponent(K.token)}&uid=${encodeURIComponent(K.user.id)}&conv=${encodeURIComponent(convId)}`;
 
     K.ws = new WebSocket(wsUrl);
+    K._wsConvId = convId;   // v1.1.172 : conv liée au WS courant (pour flush outbox)
 
     K.ws.addEventListener('open', () => {
       _logTelemetry('ok', 'ws-open', { convId });
       K._wsRetry = 0;   // reconnexion réussie → reset backoff
+      // v1.1.172 FIX P0 (audit crew) : rejouer les messages écrits hors-ligne
+      // pour cette conversation dès que le WS est (re)connecté.
+      try{ K._flushOutboxFor(convId); }catch(_e){_safeCatch('silent',_e)}
       if(K.view === 'chat' && K.viewData?.id === convId && typeof K._updatePresenceHeader === 'function'){
         try{ K._updatePresenceHeader(); }catch(_e){_safeCatch('silent',_e)}
       }
@@ -7006,6 +7048,7 @@ K._openWs = async function(convId){
     K.ws.addEventListener('close', (e) => {
       _logTelemetry('info', 'ws-close', { convId, code: e.code, reason: e.reason });
       K.ws = null;
+      K._wsConvId = null;
       if(K.wsPing){ clearInterval(K.wsPing); K.wsPing = null; }
       if(e.code === 1000) return;   // fermeture volontaire
       console.warn('[WS] fermé — code', e.code, 'motif:', e.reason || '(vide)');
@@ -12743,6 +12786,9 @@ async function _boot(){
     $('#conn-status').textContent = '●';
     $('#conn-status').style.color = 'var(--ax-ok)';
     toast('Connexion rétablie', 'ok', 1500);
+    // v1.1.172 FIX P0 (audit crew) : si un WS est déjà ouvert, rejouer l'outbox
+    // de sa conv ; sinon le flush se fera à la prochaine ouverture WS (open handler).
+    try{ if(K._wsConvId) K._flushOutboxFor(K._wsConvId); }catch(_e){_safeCatch('silent',_e)}
   });
   window.addEventListener('offline', () => {
     K.isOnline = false;
