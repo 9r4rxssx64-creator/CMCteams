@@ -1,5 +1,19 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🛡️ CMCteams SÉCURITÉ (2026-06-07) — fermer la DB Firebase ouverte (Chantier 2)
+
+### #A — Vérifier le worker d'auth (30 s) → débloque la fermeture de la DB
+- Ouvre **https://apex-auth-worker.9r4rxssx64.workers.dev/health** → doit afficher `{"ok":true,"version":"v1.0",...}`.
+- Pourquoi : CMCteams parle à Firebase sans auth → DB ouverte → identités employés (`cmc_reg`) + mots de passe hashés (`cmc_pw`) lisibles par quiconque a l'URL. Je ne peux pas tester le worker depuis mon environnement (réseau bloqué).
+- Après : dis-moi **« go Phase A »** → je code l'auth (fail-open, flag OFF), tu testes sur ton device (canary), puis durcissement règles `/cmcteams`.
+
+### #B — (plus tard) Publier les règles `/cmcteams` durcies
+- 1 copier-coller console Firebase (je prépare le diff exact, **seulement le sous-bloc `/cmcteams`**, sans toucher Apex/Shops), rollback armé. APRÈS validation Phase A.
+
+### ✅ Déjà corrigé (aucune action) : fuite de ta clé Anthropic en clair dans Firebase → retirée + scrub (v9.787, en prod).
+
+---
+
 ## 🛍️ CHEZ LOLO (2026-06-06) — refonte mergée, 1 validation restante
 
 ### ✅ Fait & en prod (aucune action) : refonte multi-univers, catalogue vidé + catégories, CSP/sécurité, bibliotheque.html, bouton ➕ Produit (ajout sans code), image OG marque, auto-commande Printify (worker généralisé).

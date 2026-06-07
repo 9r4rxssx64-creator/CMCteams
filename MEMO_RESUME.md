@@ -1,3 +1,19 @@
+# Mémo de reprise — CMCteams sécu/archi/détente (2026-06-07, branche `claude/crew-verification-relaxation-pbk6H`)
+
+> **Objectif Kevin** : ultra-review + crew vérif + amélioration de la « détente » (assouplir vérifs trop strictes), puis 100/100 par axe. Mesuré, autonome, sans régression, **isolation CMCteams stricte** (index.html/sw.js/tests — jamais Apex/boutique/workflows partagés). Gate : `node --check` + `test:ci` (Playwright runtime) + vérif merge sur le **vrai** GitHub (API).
+>
+> **Fait (tout mergé sur main, test:ci 28 suites/0 FAIL) — v9.783→v9.787** :
+> - **v9.783 Détente** : `detectRepoConflicts` (R1 repos proportionnel présence ; R2 vrai bug absence/vide brise série ; R3 50→60%) ; identical-bug cadres 60→75% ; auto-Vision si score<70. Filets absolus préservés.
+> - **v9.784** : route `pitmap`→`vMapEditor()` ; scroll grille seulement vue planning. `test:v784` 5/5.
+> - **v9.785 Archi 0 route morte** : `vCrossTeamActivity()` neuve + `vParserIntelligence/Compare` → vraies vues. UX 36→44px. `test:v785` 7/7.
+> - **v9.786 Sécu** : re-audit (2,5/5 du crew = ERRONÉ ; rate-limit/TTL/CSP existent → ~4/5) ; noopener + stack admin-only.
+> - **v9.787 FUITE SECRET corrigée** : clé Anthropic n'est plus poussée en clair vers Firebase ouvert (`_adminCfgBackup`) + scrub. `test:v787` 4/4.
+> - **Plan** `PLAN_EXECUTION_SECU_ARCHI.md` (3 chantiers).
+>
+> **Chantier 2 (Firebase Auth — vrai gap restant)** : DB ouverte → PII employés lisibles. Infra serveur **déjà construite/vérifiée** (`apex-auth-worker /login-cmc` + parité hash `cmc-hash.js`). Règles = fichier PARTAGÉ Apex+CMCteams+Shops. Bloquants : worker injoignable du sandbox + Firebase 401 sur token invalide même règles ouvertes → plumbing fail-open. **Prochain pas** : Kevin vérifie `apex-auth-worker.9r4rxssx64.workers.dev/health` → « go Phase A » (code fail-open + flag OFF + test + canary device, puis durcissement règles `/cmcteams` publié par Kevin, rollback armé).
+
+---
+
 # Mémo de reprise — SESSION 2026-06-06 : Boutique « Chez Lolo » refonte complète (branche `claude/lolo-crew-review-tDzp7`, **tout mergé sur main via GitHub MCP**)
 
 > **Contexte** : Chez Lolo était un clone inachevé — `index.html` = ancienne boutique cosmétique « Glow Wellness » (100 produits) alors que manifest/studio venaient d'un clone AR15 `la-detente`. Décision Kevin : **vider le catalogue, garder des catégories (textile/cosmétique/goodies), tout corriger, cohérence totale, 100% réel autonome**.
