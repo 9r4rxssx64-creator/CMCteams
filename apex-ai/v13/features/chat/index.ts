@@ -26,21 +26,15 @@ import {
   SLASH_COMMANDS,
 } from '../../services/admin/slash-commands.js';
 import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
-import {
-  generateFollowUps,
-  isFollowUpsEnabled,
-} from '../../services/ai/suggestions.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
 import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
 import { commerce } from '../../services/integrations/commerce.js';
 import { haptic } from '../../ui/haptic.js';
-import { renderMarkdownEnriched, wireMarkdownActions } from '../../ui/markdown.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
 /* v13.4.165-172 refactor : modules extraits depuis chat/index.ts pour testabilité. */
-import { renderMessageActions } from './chat-actions-render.js';
 import { buildMessagesForApi } from './chat-api-format.js';
 import { wireAttachments } from './chat-attach-wiring.js';
 import { isAutoReadEnabled, setAutoReadEnabled, maybeAutoReadAssistant } from './chat-autoread.js';
@@ -48,7 +42,7 @@ import { renderProviderBadge, renderToolPills } from './chat-badges.js';
 import { wireCameraButton } from './chat-camera-wiring.js';
 import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
 import { wireChatInput } from './chat-input-wiring.js';
-import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
+import { escapeHtml } from './chat-markdown.js';
 import { wireMicButton, wireWakeButton } from './chat-mic-wiring.js';
 import { wireLogoAndModeToggle, wireMenuButton, wireSettingsAndPasteKey } from './chat-misc-wiring.js';
 import {
@@ -57,10 +51,8 @@ import {
   persistConversation,
   tryFirebaseRestoreConversation,
 } from './chat-persistence.js';
-import {
-  renderFollowUps,
-  renderSlashAutocomplete,
-} from './chat-renderers.js';
+import { renderMessages, updateAssistantBubble, wireScrollToBottomFab, setRenderLoopConversation } from './chat-render-loop.js';
+import { renderSlashAutocomplete } from './chat-renderers.js';
 import { searchConversation, buildSearchResultMessage } from './chat-search.js';
 import { archiveSession, loadSessionsHistory } from './chat-sessions-history.js';
 import {
@@ -128,6 +120,9 @@ let isProcessing = false;
   if (persisted.length) {
     conversation.push(...(persisted as DisplayMessage[]));
   }
+
+/* v13.4.305 : lie la boucle de rendu (chat-render-loop.ts) a la conversation (réf stable). */
+setRenderLoopConversation(conversation);
 }
 
 /* v13.4.165 refactor : escapeHtml + renderMarkdownLight extraits vers chat-markdown.ts
@@ -1411,114 +1406,6 @@ async function handleExportPdfAction(msg: DisplayMessage): Promise<void> {
  * (façade backward-compat : tests + callers internes inchangés). */
 export { renderProviderBadge, renderToolPills };
 
-function updateAssistantBubble(rootEl: HTMLElement, msg: DisplayMessage): void {
-  const bubble = rootEl.querySelector(`[data-msg-id="${msg.id}"] .ax-msg-body`);
-  if (bubble) {
-    /* Pendant streaming → markdown light pour vitesse / hors → enrichi */
-    const md = msg.streaming ? renderMarkdownLight(msg.text) : renderMarkdownEnriched(msg.text);
-    bubble.innerHTML =
-      renderToolPills(msg) +
-      md +
-      (msg.streaming ? '<span class="ax-cursor">▌</span>' : '') +
-      renderMessageActions(msg);
-    /* Smart scroll : ne force PAS si user a scrollé manuellement vers le haut */
-    smartAutoScroll(rootEl);
-  } else {
-    renderMessages(rootEl);
-  }
-}
-
-/**
- * Smart auto-scroll v13.3.48 — ne force pas si user a scrollé volontairement haut.
- * Considère "user scrollé" si distance bottom > 200px.
- */
-function smartAutoScroll(rootEl: HTMLElement): void {
-  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
-  if (!scroll) return;
-  const distFromBottom = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight;
-  if (distFromBottom < 200) {
-    scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
-  }
-  /* v13.3.72 Kevin (style Claude Code): show/hide scroll-to-bottom FAB */
-  const fab = rootEl.querySelector<HTMLElement>('#ax-scroll-bottom');
-  if (fab) {
-    if (distFromBottom > 240) fab.classList.add('visible');
-    else fab.classList.remove('visible');
-  }
-}
-
-/**
- * v13.3.72 Kevin: wire scroll-to-bottom FAB (apparaît si user scrollé > 240px depuis bottom).
- */
-function wireScrollToBottomFab(rootEl: HTMLElement): void {
-  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
-  const fab = rootEl.querySelector<HTMLElement>('#ax-scroll-bottom');
-  if (!scroll || !fab) return;
-  const updateFabVisibility = (): void => {
-    const dist = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight;
-    if (dist > 240) fab.classList.add('visible');
-    else fab.classList.remove('visible');
-  };
-  scroll.addEventListener('scroll', updateFabVisibility, { passive: true });
-  fab.addEventListener('click', () => {
-    scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
-    fab.classList.remove('visible');
-  });
-}
-
-function renderMessages(rootEl: HTMLElement): void {
-  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
-  if (!scroll) return;
-  /* v13.3.48 — Identifier le DERNIER assistant message non-streaming pour follow-ups */
-  let lastAssistantNonStreamingIdx = -1;
-  for (let i = conversation.length - 1; i >= 0; i--) {
-    const m = conversation[i];
-    if (m && m.role === 'assistant' && !m.streaming && m.text.trim().length > 0) {
-      lastAssistantNonStreamingIdx = i;
-      break;
-    }
-  }
-  const html = conversation
-    .map((m, idx) => {
-      /* Streaming indicator amélioré : typing dots animés si pas encore de texte, sinon cursor blink */
-      let trail = '';
-      if (m.streaming) {
-        if (m.text.length === 0) {
-          trail = `
-            <span class="ax-typing" aria-label="Apex réfléchit">
-              <span class="ax-typing-dot"></span>
-              <span class="ax-typing-dot"></span>
-              <span class="ax-typing-dot"></span>
-            </span>
-          `;
-        } else {
-          trail = '<span class="ax-cursor">▌</span>';
-        }
-      }
-      const pills = renderToolPills(m);
-      const providerBadge = renderProviderBadge(m);
-      const actions = renderMessageActions(m);
-      /* v13.3.48 — Follow-up chips uniquement sur DERNIER message assistant terminé */
-      let followUps = '';
-      if (idx === lastAssistantNonStreamingIdx && isFollowUpsEnabled()) {
-        const lastUser = [...conversation].reverse().find((mm) => mm && mm.role === 'user')?.text;
-        followUps = renderFollowUps(generateFollowUps(m.text, lastUser));
-      }
-      /* Pendant streaming : markdown light, hors : enrichi */
-      const md = m.streaming ? renderMarkdownLight(m.text) : renderMarkdownEnriched(m.text);
-      return `
-        <div class="ax-msg ax-msg-${m.role} ax-modernized-msg ax-slide-up-fade" data-msg-id="${m.id}">
-          <div class="ax-msg-body">${pills}${md}${trail}${providerBadge}${actions}${followUps}</div>
-        </div>
-      `;
-    })
-    .join('');
-  scroll.innerHTML = html;
-  /* Smart scroll : ne force pas si user a scrollé volontairement haut */
-  smartAutoScroll(rootEl);
-  /* Wire markdown actions (copy code blocks) — idempotent */
-  wireMarkdownActions(scroll);
-}
 
 export function render(rootEl: HTMLElement): void {
   /* v13.4.13 fix memory leak Kevin : si Kevin upload photo puis quitte chat
