@@ -16,14 +16,14 @@ Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthou
 - v13.4.291 — `firebase.ts` attache `?auth=` RTDB (8 sites, rétro-compatible, débloque durcissement rules) (+3 tests)
 - CI `deploy-firebase-rules.yml` — déploiement règles RTDB 1-clic gaté (secrets FIREBASE_PRIVATE_KEY/CLIENT_EMAIL, projet cmcteams-c16ab)
 - v13.4.292 — refactor monolithe chat étape 1 : `chat-badges.ts` (renderProviderBadge/renderToolPills)
-- v13.4.292-300 — refactor monolithe chat (9 étapes testées, façade re-export + injection, zéro régression) :
-  `chat-badges` · `chat-autoread` · `chat-lightbox` · `chat-slash-handlers` (SlashCtx) · `chat-view-template` ·
-  `chat-mic-wiring` (mic+wake) · `chat-camera-wiring` · `chat-misc-wiring` (logo+mode-toggle).
-  **chat/index.ts 3888 → 2585 lignes (−1303, −33,5%)**. Tests chat 364/364 verts à chaque étape.
+- v13.4.292-302 — refactor monolithe chat (11 étapes testées, façade + injection, zéro régression) :
+  badges · autoread · lightbox · slash-handlers(SlashCtx) · view-template · mic-wiring(mic+wake) · camera-wiring ·
+  misc-wiring(logo+mode-toggle · menu · settings+paste-key via rerender).
+  **chat/index.ts 3888 → 2302 lignes (−1586, −40,8%)**. Tests chat 364/364 verts à chaque étape (flakes contention #88 écartés par re-run).
 
 ## Reste (séquencé, ne rien casser)
 1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
-4. Refacto chat — blocs SÛRS épuisés (-33,5%). Reste le CŒUR couplé de `render` : submit form (~310l), attach/file/album (~160l, réassigne `pendingAttachments`), drag-drop, paste, menu/clear/settings (touchent `conversation`/`renderMessages`). Nécessite un objet contexte partagé `ChatRenderCtx` { getConversation, pushUser, processQueue, getPending/setPending, pushAlbum } à CONCEVOIR d'abord (étape design dédiée), puis extraire submit/attach par petits pas testés. Risque régression réel → ne pas rusher.
+4. Refacto chat — blocs autonomes épuisés (-40,8%). Reste le CŒUR couplé de `render` : submit form (~310l), attach/file/album (~160l, réassigne `pendingAttachments`), drag-drop, paste, menu/clear/settings (touchent `conversation`/`renderMessages`). Nécessite un objet contexte partagé `ChatRenderCtx` { getConversation, pushUser, processQueue, getPending/setPending, pushAlbum } à CONCEVOIR d'abord (étape design dédiée), puis extraire submit/attach par petits pas testés. Risque régression réel → ne pas rusher.
 
 ---
 
