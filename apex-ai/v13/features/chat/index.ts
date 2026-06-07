@@ -15,31 +15,27 @@
  */
 
 import { APP_VER } from '../../core/bootstrap.js';
-import { errors } from '../../core/errors.js';
-import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
-import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
 import {
   parseSlashCommand,
   helpText,
   SLASH_COMMANDS,
 } from '../../services/admin/slash-commands.js';
-import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
+import { aiRouter } from '../../services/ai/ai-router.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
 import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
-import { commerce } from '../../services/integrations/commerce.js';
 import { haptic } from '../../ui/haptic.js';
 import { modalSheet } from '../../ui/modal-sheet.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { toast } from '../../ui/toast.js';
 
 /* v13.4.165-172 refactor : modules extraits depuis chat/index.ts pour testabilité. */
-import { buildMessagesForApi } from './chat-api-format.js';
 import { wireAttachments } from './chat-attach-wiring.js';
 import { isAutoReadEnabled, setAutoReadEnabled, maybeAutoReadAssistant } from './chat-autoread.js';
 import { renderProviderBadge, renderToolPills } from './chat-badges.js';
 import { wireCameraButton } from './chat-camera-wiring.js';
+import { processQueue, setEngineState } from './chat-engine.js';
 import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
 import { wireChatInput } from './chat-input-wiring.js';
 import { escapeHtml } from './chat-markdown.js';
@@ -51,7 +47,7 @@ import {
   persistConversation,
   tryFirebaseRestoreConversation,
 } from './chat-persistence.js';
-import { renderMessages, updateAssistantBubble, wireScrollToBottomFab, setRenderLoopConversation, pushAssistantMessage } from './chat-render-loop.js';
+import { renderMessages, wireScrollToBottomFab, setRenderLoopConversation, pushAssistantMessage } from './chat-render-loop.js';
 import { renderSlashAutocomplete } from './chat-renderers.js';
 import { searchConversation, buildSearchResultMessage } from './chat-search.js';
 import { archiveSession, loadSessionsHistory } from './chat-sessions-history.js';
@@ -67,7 +63,6 @@ import { buildChatShellHtml } from './chat-view-template.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
  * Garde max 30 derniers messages user/assistant. Drop les plus anciens. */
-const MAX_CONTEXT_MESSAGES = 30;
 
 export interface DisplayMessage {
   id: string;
@@ -112,7 +107,6 @@ var pendingAttachmentPromises: Array<Promise<void>> = [];
  * Évite "Cannot access 'conversation' before initialization" en isolation Vitest. */
 const conversation: DisplayMessage[] = [];
 const queue: string[] = [];
-let isProcessing = false;
 
 /* Init populée APRÈS const conversation (pas de TDZ : conversation déjà bound) */
 {
@@ -123,6 +117,7 @@ let isProcessing = false;
 
 /* v13.4.305 : lie la boucle de rendu (chat-render-loop.ts) a la conversation (réf stable). */
 setRenderLoopConversation(conversation);
+setEngineState(conversation, queue, pendingAttachments, pendingAttachmentPromises);
 }
 
 /* v13.4.165 refactor : escapeHtml + renderMarkdownLight extraits vers chat-markdown.ts
@@ -391,10 +386,6 @@ async function proposeSmartTVSetup(
  * chat-renderers.ts (façade backward-compat, imports déjà en haut du fichier). */
 export { renderFollowUps, renderSlashAutocomplete } from './chat-renderers.js';
 
-function buildSystemPrompt(): string {
-  const user = store.get('user');
-  return memory.buildSystemPromptContext(user);
-}
 
 /**
  * v13.3.30 (Kevin règle "mémoire long terme + relecture profonde tous docs")
@@ -404,359 +395,6 @@ function buildSystemPrompt(): string {
  *
  * Si fail (timeout, parse err) → fallback sur version sync.
  */
-async function buildSystemPromptDeep(): Promise<string> {
-  try {
-    const user = store.get('user') as { id: string; name: string } | null;
-    /* v13.4.7 fix Kevin "Apex redemande action admin" : timeout 1500ms → 3000ms.
-     * Avec timeout 1500ms, sur iPhone Safari PWA réseau lent, deep prompt timeout
-     * trop souvent → fallback minimal sans contexte profond → IA hallucine
-     * "es-tu admin ?". 3000ms = budget plus safe. */
-    return await Promise.race([
-      memory.buildSystemPromptDeep(user),
-      new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 3000)),
-    ]);
-  } catch (err: unknown) {
-    logger.warn('chat', 'buildSystemPromptDeep fallback (sync)', { err });
-    return buildSystemPrompt();
-  }
-}
-
-/**
- * v13.3.30 (Kevin règle "extract facts à chaque message user")
- *
- * Auto-extract facts critiques du message user → push persistent_memory_<uid>.
- * Détecte aussi mots-clés règles permanentes ("automatise", "100/100", "max")
- * et record l'auto-rappel dans lessons.
- *
- * Non-bloquant : tourne en arrière-plan, ne ralentit pas le streaming IA.
- */
-async function autoExtractAndLearn(text: string): Promise<void> {
-  if (!text || text.length < 5) return;
-  try {
-    const user = store.get('user') as { id: string; name: string } | null;
-    const userId = user?.id ?? 'anon';
-    /* 1. Extract facts → persistent_memory_<uid> */
-    const result = await memory.extractFactsFromMessage(text, userId);
-    if (result.extracted > 0) {
-      logger.info('chat.extract', `${result.extracted} facts extracted from user message`, {
-        categories: result.facts.map((f) => f.category),
-      });
-    }
-
-    /* 2. Détection mots-clés règles permanentes — log auto-rappel
-     *    Si Kevin dit "automatise", "100/100", "tout au max", ce sont des règles
-     *    absolues CLAUDE.md → injecte un trigger dans lessons pour next session. */
-    const ruleTriggers = [
-      { kw: /\b(automatise|autonomie|tout seul)\b/i, rule: 'Automatise tout en autonomie (jamais demander si Apex peut faire)' },
-      { kw: /\b100\s*\/\s*100|tout.{0,10}max(imum)?\b/i, rule: '100/100 réel chaque axe — jamais demi-mesure, niveau expert pro 200€/h' },
-      { kw: /\b(rappelle.toi|n'oublie pas|note (le|ça))\b/i, rule: 'Mémoire permanente — Kevin rappelle une règle à graver' },
-    ];
-    for (const trig of ruleTriggers) {
-      if (trig.kw.test(text)) {
-        await memory.recordSessionLearning(
-          'rule-reminder',
-          `Kevin rappel : ${trig.rule}`,
-          `Message user : ${text.slice(0, 200)}`,
-          'info',
-        );
-      }
-    }
-  } catch (err: unknown) {
-    logger.warn('chat', 'autoExtractAndLearn failed', { err });
-  }
-}
-
-/**
- * Détecte intent dans message user → propose meilleur outil sur bureau
- * (Kevin règle CLAUDE.md : "outils auto-apparents par contexte").
- */
-async function detectAndSuggestTool(text: string, rootEl: HTMLElement): Promise<void> {
-  try {
-    const { apexToolsDispatch } = await import('../../services/core-svc/apex-tools-dispatch.js');
-    const intentRes = await apexToolsDispatch.execute('detect_intent', { text }, 'admin');
-    if (!intentRes.ok || !intentRes.result) return;
-    const intent = (intentRes.result as { intent?: string; confidence?: number }).intent;
-    const confidence = (intentRes.result as { confidence?: number }).confidence ?? 0;
-    if (!intent || intent === 'unknown' || confidence < 0.7) return;
-
-    /* Kevin règle "1-clic ouverture URL" : si intent = open_url → trigger directement modal pop-up
-       avec lien direct cliquable (pas window.open auto sans confirmation) */
-    if (intent === 'open_url' || intent === 'open_browser') {
-      /* Extract URL ou domain depuis text */
-      const urlMatch = text.match(/(https?:\/\/[^\s]+)/i);
-      const domainMatch = text.match(/\b([a-z0-9-]+\.(com|fr|io|net|org|app|dev|ai|co))\b/i);
-      const url = urlMatch?.[1] ?? domainMatch?.[1] ?? 'https://www.google.com';
-      void apexToolsDispatch.execute('open_url', { url }, 'admin');
-      return;
-    }
-
-    const { smartToolsSuggester } = await import('../../services/ai/smart-tools-suggester.js');
-    const tool = smartToolsSuggester.suggestForIntent(intent);
-    if (!tool) return;
-
-    /* Kevin 2026-05-07 : "modules apparaissent tout seuls" → toggle opt-out + dedup
-     * Toggle Réglages : ax_settings.tools_auto_embed (default true).
-     * Si false → toast seulement, pas de card dans chat. */
-    let autoEmbed = true;
-    try {
-      const settings = JSON.parse(localStorage.getItem('ax_settings') ?? '{}') as Record<string, unknown>;
-      if (settings['tools_auto_embed'] === false) autoEmbed = false;
-    } catch { /* default true */ }
-
-    /* Dedup : ne pas re-pousser le même tool déjà visible dans les 10 derniers msgs. */
-    const recentToolIds = conversation.slice(-10).filter(m => m.role === 'tool_card').map(m => (m as DisplayMessage & { toolId?: string }).toolId);
-    if (recentToolIds.includes(tool.id)) return;
-
-    /* Toast non-intrusif "🎯 Outil détecté : Studio Mix" — TOUJOURS affiché */
-    const { toast } = await import('../../ui/toast.js');
-    toast.info(`${tool.emoji} ${tool.name} disponible — tape pour ouvrir`, { duration: 5000 });
-
-    /* Track usage potentiel */
-    const user = store.get('user');
-    if (user?.id) smartToolsSuggester.recordUsage(tool.id, user.id);
-
-    /* Card dans chat : seulement si toggle ON (default true) */
-    if (autoEmbed) pushSuggestedTool(rootEl, tool);
-  } catch (err: unknown) {
-    /* Silent fail — non-bloquant pour chat */
-    logger.warn('chat', 'detectAndSuggestTool failed', { err });
-  }
-}
-
-function pushSuggestedTool(rootEl: HTMLElement, tool: { id: string; emoji: string; name: string; description: string; cta_label: string; cta_target: string }): void {
-  const scroll = rootEl.querySelector<HTMLElement>('.ax-chat-scroll');
-  if (!scroll) return;
-  const cardId = `tool_${tool.id}_${Date.now()}`;
-  const card = document.createElement('div');
-  card.className = 'ax-msg ax-msg-tool ax-slide-up-fade';
-  card.id = cardId;
-  card.innerHTML = `
-    <div class="ax-tool-card" style="position:relative;padding-right:52px">
-      <button class="ax-tool-dismiss" aria-label="Fermer" title="Ne plus suggérer dans cette conversation" style="position:absolute;top:6px;right:6px;width:44px;height:44px;min-width:44px;min-height:44px;border:0;background:rgba(255,255,255,0.08);color:var(--ax-text-dim);border-radius:50%;cursor:pointer;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center">✕</button>
-      <div class="ax-tool-icon">${tool.emoji}</div>
-      <div class="ax-tool-info">
-        <strong>${escapeHtml(tool.name)}</strong>
-        <p style="margin:4px 0 0;color:var(--ax-text-dim);font-size:13px">${escapeHtml(tool.description)}</p>
-      </div>
-      <button class="ax-btn ax-btn-primary ax-btn-sm" data-tool-cta="${escapeHtml(tool.cta_target)}">${escapeHtml(tool.cta_label)}</button>
-    </div>
-  `;
-  scroll.appendChild(card);
-  /* Track dans conversation pour dedup (role 'tool_card' → exclu API IA) */
-  conversation.push({ id: cardId, role: 'tool_card', text: tool.name, ts: Date.now(), toolId: tool.id } as DisplayMessage & { toolId: string });
-  /* Wire dismiss + CTA */
-  card.querySelector<HTMLButtonElement>('.ax-tool-dismiss')?.addEventListener('click', () => {
-    card.classList.add('ax-fade-out');
-    setTimeout(() => card.remove(), 180);
-  });
-  card.querySelector<HTMLButtonElement>('[data-tool-cta]')?.addEventListener('click', (e) => {
-    const target = (e.currentTarget as HTMLElement).getAttribute('data-tool-cta');
-    if (target) location.hash = target;
-  });
-  scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
-}
-
-async function processQueue(rootEl: HTMLElement): Promise<void> {
-  if (isProcessing || queue.length === 0) return;
-  isProcessing = true;
-  const text = queue.shift();
-  if (text === undefined) {
-    isProcessing = false;
-    return;
-  }
-
-  const user = store.get('user');
-  /* v13.4.131 (Kevin "Apex IA chat réservée admin") :
-   * v13.4.132 (Kevin "Active le chat IA pour Laurence") :
-   * Whitelist : admin Kevin + Laurence ont accès IA chat.
-   * Autres users (clients pro/free, famille) → bloqués (coût tokens API). */
-  const AI_CHAT_WHITELIST = new Set(['kdmc_admin', 'laurence_sp']);
-  if (!user?.id || !AI_CHAT_WHITELIST.has(user.id)) {
-    pushAssistantMessage(
-      rootEl,
-      "🔒 L'assistant IA est réservé à Kevin et Laurence. Tu peux lire l'historique mais pas envoyer de message à l'IA.",
-    );
-    queue.length = 0; /* purge messages non-admin pour éviter accumulation */
-    isProcessing = false;
-    return;
-  }
-  const consume = commerce.consumeMessage(user?.id ?? null);
-  if (!consume.allowed) {
-    pushAssistantMessage(rootEl, "Tu as atteint ta limite quotidienne. Passe en plan supérieur ou réessaie demain.");
-    isProcessing = false;
-    return;
-  }
-
-  /* WIRE smart-tools-suggester : detect intent + propose outil sur bureau
-   * (Kevin demande explicite : "musique → studio mix sur bureau") */
-  void detectAndSuggestTool(text, rootEl);
-
-  /* v13.3.30 — Auto-extract facts + auto-rappel règles (non-bloquant)
-   * Wire de extractFactsFromMessage Kevin règle absolue mémoire long terme. */
-  void autoExtractAndLearn(text);
-
-  /* Sprint 13.3.71 — emit chat:message:user pour message-fact-extractor + autres listeners.
-   * Kevin règle absolue "extraction continue à chaque message user". */
-  try {
-    const u = store.get('user') as { id: string } | null;
-    events.emit('chat:message:user', {
-      uid: u?.id ?? 'anon',
-      text,
-      ts: Date.now(),
-    });
-  } catch (err: unknown) {
-    logger.warn('chat', 'chat:message:user emit failed', { err });
-  }
-
-  /* v13.4.11/12 fix Kevin "Apex aveugle aux pièces jointes" :
-   * Attendre que tous les FileReader en cours soient terminés (anti race),
-   * puis prend snapshot pendingAttachments + vide queue. Le message porte
-   * ses attachments, la queue est vide pour le prochain message. */
-  if (pendingAttachmentPromises.length > 0) {
-    try { await Promise.all(pendingAttachmentPromises); }
-    catch (err: unknown) { logger.warn('chat', 'await pending attachments fail', { err }); }
-  }
-  const takenAttachments = pendingAttachments.length > 0 ? [...pendingAttachments] : undefined;
-  pendingAttachments.length = 0;
-  /* v13.4.12 — Reset UI : masquer la div attachments et la vider visuellement
-   * (chips encore visibles sinon = confusion utilisateur). */
-  const attDivClear = rootEl.querySelector<HTMLDivElement>('#ax-chat-attachments');
-  if (attDivClear) {
-    attDivClear.innerHTML = '';
-    attDivClear.style.display = 'none';
-  }
-  const fileInputClear = rootEl.querySelector<HTMLInputElement>('#ax-chat-file-input');
-  if (fileInputClear) fileInputClear.value = '';
-
-  const userMsg: DisplayMessage = {
-    id: `u_${Date.now()}`,
-    role: 'user',
-    text,
-    ts: Date.now(),
-    ...(takenAttachments ? { attachments: takenAttachments } : {}),
-  };
-  conversation.push(userMsg);
-  persistConversation(conversation);
-
-  const assistantMsg: DisplayMessage = {
-    id: `a_${Date.now()}`,
-    role: 'assistant',
-    text: '',
-    ts: Date.now(),
-    streaming: true,
-  };
-  conversation.push(assistantMsg);
-  store.set('isStreaming', true);
-  renderMessages(rootEl);
-
-  /* v13.4.13 — utilise buildMessagesForApi helper exporté (testable réel). */
-  const messages = buildMessagesForApi(
-    conversation,
-    assistantMsg,
-    MAX_CONTEXT_MESSAGES,
-  ) as ChatMessage[];
-
-  /* v13.3.30 — Deep prompt avec docs + facts + lessons (Kevin règle mémoire long terme) */
-  const sysPrompt = await buildSystemPromptDeep();
-  /* v13.4.273 (Kevin "tout soit bien en place avec eco token") :
-   * mesure latence client-side du premier au dernier chunk pour badge UI. */
-  const streamT0 = Date.now();
-  await aiRouter.stream(
-    messages,
-    sysPrompt,
-    (chunk) => {
-      /* P0 Kevin v13.1.0 : tool_use pills discrètes inline (pas card massive) */
-      if (chunk.type === 'tool_use_start' && chunk.toolName) {
-        if (!assistantMsg.toolPills) assistantMsg.toolPills = [];
-        assistantMsg.toolPills.push({ name: chunk.toolName, status: 'running' });
-        updateAssistantBubble(rootEl, assistantMsg);
-        return;
-      }
-      if (chunk.type === 'tool_use_done') {
-        /* Marque toutes les pills running comme done (batch terminé) */
-        if (assistantMsg.toolPills) {
-          for (const pill of assistantMsg.toolPills) {
-            if (pill.status === 'running') pill.status = 'done';
-          }
-        }
-        assistantMsg.toolBatchCount = (assistantMsg.toolBatchCount ?? 0) + (chunk.toolCount ?? 0);
-        updateAssistantBubble(rootEl, assistantMsg);
-        return;
-      }
-      if (chunk.text) {
-        assistantMsg.text += chunk.text;
-        updateAssistantBubble(rootEl, assistantMsg);
-      }
-      if (chunk.done) {
-        delete assistantMsg.streaming;
-        /* v13.4.273 : capture provider + latence pour badge sous la réponse */
-        if (chunk.provider) assistantMsg.provider = chunk.provider;
-        assistantMsg.latencyMs = Date.now() - streamT0;
-        /* Coût estimé approximatif : longueur réponse en tokens × cost table provider */
-        try {
-          const estimatedOutTokens = Math.ceil(assistantMsg.text.length / 4);
-          const COST_TABLE_EUR_PER_M: Record<string, number> = {
-            anthropic: 8.0, openai: 6.0, groq: 0, gemini: 0, openrouter: 0, openclaw: 0,
-          };
-          const cost = (COST_TABLE_EUR_PER_M[chunk.provider ?? 'anthropic'] ?? 0) * estimatedOutTokens / 1_000_000;
-          assistantMsg.costEur = cost;
-        } catch {
-          /* skip si pas calculable */
-        }
-        store.set('isStreaming', false);
-        renderMessages(rootEl);
-        /* v13.3.53 : persist conversation après streaming complet (Kevin "perds chat à chaque MAJ") */
-        persistConversation(conversation);
-        /* Auto-read si setting activé (Kevin demande "il puisse me lire les choses") */
-        void maybeAutoReadAssistant(assistantMsg);
-      }
-    },
-    (err) => {
-      const userMsg = errors.toUserMessage(err);
-      const errMsg = err instanceof Error ? err.message : String(err);
-      const recoverable = /timeout|abort|fetch failed|network|5\d{2}|rate.?limit|429/i.test(errMsg);
-      logger.warn('chat', 'AI stream error', { errMsg, recoverable, userText: text.slice(0, 80) });
-      /* Auto-retry 1× après 3s si erreur récupérable ET pas de texte déjà streamé (Kevin règle "ZÉRO blocage user") */
-      if (recoverable && !assistantMsg.text) {
-        assistantMsg.text = `${userMsg} ⏳ Retry auto dans 3s…`;
-        renderMessages(rootEl);
-        setTimeout(() => {
-          /* Cleanup placeholder + re-queue user message */
-          const idx = conversation.indexOf(assistantMsg);
-          if (idx >= 0) conversation.splice(idx, 1);
-          delete assistantMsg.streaming;
-          store.set('isStreaming', false);
-          queue.unshift(text);
-          isProcessing = false;
-          void processQueue(rootEl);
-        }, 3000);
-        return;
-      }
-      /* Erreur non récupérable OU réponse partielle déjà reçue → message clair.
-       *
-       * v13.3.75 (Kevin urgent "réponse partielle préservée" alors que tools réussissent) :
-       * Si tools ont été appelés (toolBatchCount > 0) mais pas de texte final →
-       * proposer relance plutôt que message générique frustrant. */
-      const hadTools = (assistantMsg.toolBatchCount ?? 0) > 0;
-      const hasText = !!assistantMsg.text && assistantMsg.text.trim().length > 30;
-      let finalMsg: string;
-      if (hadTools && !hasText) {
-        finalMsg = `🛠 ${assistantMsg.toolBatchCount} outil(s) exécuté(s) ✅ mais la réponse texte n'a pas terminé. Tape "continue" ou relance ta question pour la suite.`;
-      } else if (hasText) {
-        finalMsg = `${assistantMsg.text}\n\n---\n⚠ ${userMsg} (réponse partielle préservée)`;
-      } else {
-        finalMsg = userMsg;
-      }
-      assistantMsg.text = finalMsg;
-      delete assistantMsg.streaming;
-      store.set('isStreaming', false);
-      renderMessages(rootEl);
-    },
-  );
-
-  isProcessing = false;
-  if (queue.length) void processQueue(rootEl);
-}
 
 
 /**
