@@ -1,7 +1,20 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-06-06** (Domaine personnalisé **kd-mc.com** — belle adresse par projet)
+> Dernière mise à jour : **2026-06-07** (CMCteams — détente vérifs + sécu + plan archi, v9.783→v9.787)
+
+## 🛡️ CMCteams — session sécu/archi/détente (2026-06-07, mergé sur main, v9.787)
+
+**🧪 Tester (live, après MAJ auto)** : https://9r4rxssx64-creator.github.io/CMCteams/ (badge v9.787 ; Admin → 📊 Activité cross-team = nouvelle vue ; bouton « Tables Live » → carte)
+
+**🔧 Fichiers**
+- `index.html` — détente `detectRepoConflicts` ; routes vivantes (`vCrossTeamActivity`/`vParserIntelligence`/`vParserCompare`/`pitmap`→`vMapEditor`) ; sécu (noopener, stack admin-only) ; **fix fuite clé IA** (`_adminCfgBackup`)
+- [`PLAN_EXECUTION_SECU_ARCHI.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/PLAN_EXECUTION_SECU_ARCHI.md) — plan 3 chantiers
+- `tests/runtime-audit-v784-routes.mjs` (5/5) · `v785-routes.mjs` (7/7) · `v787-secret-leak.mjs` (4/4) — câblés `test:ci` (28/0)
+
+**📜 PR mergées (vrai GitHub)** : #856 routes · #866 sécu · #872/#876/#877 plan+docs · #874 fuite secret
+
+**⏳ En attente Kevin** : vérifier `apex-auth-worker.9r4rxssx64.workers.dev/health` → « go Phase A » (cf. KEVIN_ACTIONS_TODO #A)
 
 ## 🛍️ Chez Lolo — boutique multi-univers (textile/cosmétiques/goodies/accessoires) — **mergé sur main 2026-06-06**
 
