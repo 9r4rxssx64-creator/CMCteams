@@ -25,6 +25,12 @@ export function setRenderLoopConversation(conversation: DisplayMessage[]): void 
   _conv = conversation;
 }
 
+/** Pousse un message assistant dans la conversation + re-render. */
+export function pushAssistantMessage(rootEl: HTMLElement, text: string): void {
+  _conv.push({ id: `a_${Date.now()}`, role: 'assistant', text, ts: Date.now() });
+  renderMessages(rootEl);
+}
+
 export function updateAssistantBubble(rootEl: HTMLElement, msg: DisplayMessage): void {
   const bubble = rootEl.querySelector(`[data-msg-id="${msg.id}"] .ax-msg-body`);
   if (bubble) {

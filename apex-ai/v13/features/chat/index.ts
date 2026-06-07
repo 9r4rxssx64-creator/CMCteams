@@ -51,7 +51,7 @@ import {
   persistConversation,
   tryFirebaseRestoreConversation,
 } from './chat-persistence.js';
-import { renderMessages, updateAssistantBubble, wireScrollToBottomFab, setRenderLoopConversation } from './chat-render-loop.js';
+import { renderMessages, updateAssistantBubble, wireScrollToBottomFab, setRenderLoopConversation, pushAssistantMessage } from './chat-render-loop.js';
 import { renderSlashAutocomplete } from './chat-renderers.js';
 import { searchConversation, buildSearchResultMessage } from './chat-search.js';
 import { archiveSession, loadSessionsHistory } from './chat-sessions-history.js';
@@ -758,10 +758,6 @@ async function processQueue(rootEl: HTMLElement): Promise<void> {
   if (queue.length) void processQueue(rootEl);
 }
 
-function pushAssistantMessage(rootEl: HTMLElement, text: string): void {
-  conversation.push({ id: `a_${Date.now()}`, role: 'assistant', text, ts: Date.now() });
-  renderMessages(rootEl);
-}
 
 /**
  * v13.3.79 (Kevin 2026-05-08 18:00) — Détecte commandes wake-word texte
