@@ -5423,7 +5423,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.786";
+var APP_VER="v9.787";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -43711,7 +43711,9 @@ function iaSetProxy(){
 function _adminCfgBackup(){
   if(!A.user||A.user.id!==AID||!FB_URL)return;
   var cfg={
-    iaKey:iaApiKey||"",
+    /* v9.787 SÉCU : iaKey N'EST PLUS poussé vers Firebase (DB ouverte = fuite du secret
+       Anthropic lisible par quiconque a l'URL). La clé reste device-local (localStorage
+       FB_LOCAL) + fallback cross-app Apex (ax_shared_api_key). */
     iaProxy:iaProxyUrl||"",
     fbUrl:localStorage.getItem("cmc_fb_url")||"",
     theme:localStorage.getItem("cmc_theme")||"",
@@ -43730,8 +43732,11 @@ function _adminCfgRestore(silent){
     .then(function(cfg){
       if(!cfg||typeof cfg!=="object")return;
       var restored=[];
-      if(cfg.iaKey&&!localStorage.getItem("cmc_ia_key")){
-        localStorage.setItem("cmc_ia_key",cfg.iaKey);iaApiKey=cfg.iaKey;restored.push("cl\u00e9 API");
+      if(cfg.iaKey){
+        // v9.787 S\u00c9CU : migration \u2014 r\u00e9cup\u00e8re la cl\u00e9 l\u00e9gu\u00e9e UNE fois en local, puis SCRUB Firebase
+        // (re-PUT sans iaKey efface la cl\u00e9 de la DB ouverte).
+        if(!localStorage.getItem("cmc_ia_key")){localStorage.setItem("cmc_ia_key",cfg.iaKey);iaApiKey=cfg.iaKey;restored.push("cl\u00e9 API (migr\u00e9e en local)");}
+        try{_adminCfgBackup();}catch(_e){}
       }
       if(cfg.iaProxy&&!localStorage.getItem("cmc_ia_proxy")){
         localStorage.setItem("cmc_ia_proxy",cfg.iaProxy);iaProxyUrl=cfg.iaProxy;restored.push("proxy");
