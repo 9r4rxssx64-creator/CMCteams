@@ -1,3 +1,16 @@
+# ⛔ BRANCHE EN ATTENTE — NE PAS MERGER (décision Kevin 2026-06-07)
+
+> Cette branche `claude/cmcteams-crew-review-QZUyo` est **111 commits derrière main** (base périmée v9.784)
+> et **collisionne avec une session sécu Firebase active** (`session_01B1pgynKFKmJRuNE337FEVV`).
+> **MERGER LA RÉGRESSERAIT 111 commits dont un fix sécurité** (lesson #77). INTERDIT.
+>
+> **À faire quand la session sécu est finie** : repartir d'un main FRAÎCHE, relancer le tri orphelines
+> (`/tmp/triage3.py` logique), re-retirer les ~53 mortes encore présentes (remover 1-par-1 + `node --check`
+> + `test:ci` après chaque lot), recâbler les 4 features palette (export ICS perso/équipe, partage, QR),
+> bump APP_VER **au-dessus** du main courant, PR propre. Le travail de cette branche = RÉFÉRENCE, pas à merger.
+
+---
+
 # Mémo de reprise — Ultra-review CMCteams (2026-06-06, branche `claude/cmcteams-crew-review-QZUyo`)
 
 > **Objectif Kevin** : audit le plus puissant (8 axes) + améliorations, autonome, sans régression, scores RÉELS mesurés.
