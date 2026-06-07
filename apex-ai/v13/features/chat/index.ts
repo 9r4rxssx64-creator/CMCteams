@@ -51,7 +51,7 @@ import { buildConversationMarkdown, buildExportFilename } from './chat-export.js
 import { openImageLightbox } from './chat-lightbox.js';
 import { escapeHtml, renderMarkdownLight } from './chat-markdown.js';
 import { wireMicButton, wireWakeButton } from './chat-mic-wiring.js';
-import { wireLogoAndModeToggle } from './chat-misc-wiring.js';
+import { wireLogoAndModeToggle, wireMenuButton } from './chat-misc-wiring.js';
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
 import {
   clearConversationEverywhere,
@@ -2161,68 +2161,7 @@ export function render(rootEl: HTMLElement): void {
 
   /* Menu hamburger ☰ : drawer modal avec navigation rapide
    * Fix Kevin v13.0.40 "le bouton paramètres et les trois traits ne fonctionnent pas" */
-  const menuBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-menu');
-  menuBtn?.addEventListener('click', () => {
-    haptic.tap();
-    const isAdminUser = store.get('isAdmin');
-    const sheet = modalSheet.open({
-      title: '☰ Menu',
-      content: `
-        <div class="ax-gs-123">
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="chat">💬 Chat</button>
-          ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="admin">👑 Centre Admin</button>' : ''}
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studios">🎨 Studios</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-music">🎚 Mix Musique</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-video">🎬 Vidéo</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-cv">📄 CV</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-invoice">🧾 Facture</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-contract">📋 Contrat</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="pro">💼 Pro</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="remote">📡 Télécommande</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="browser">🌐 Browser</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="domotique">🏠 Domotique</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="workflow">⚡ Workflows</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="crypto">₿ Crypto</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="notes">📝 Bloc-notes</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="calendar">📅 Calendrier</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="calculators">🧮 Calculatrices</button>
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="archive">🗄 Archive</button>
-          ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="billing">💳 Comptes &amp; Factures</button>' : ''}
-          ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="sentinels">🛡 Sentinelles</button>' : ''}
-          <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="settings">⚙️ Réglages</button>
-          <button class="ax-btn ax-gs-360" data-menu-action="paste-key">🔑 Coller une clé API</button>
-          <button class="ax-btn" data-menu-action="logout" style="width:100%;text-align:left;padding:14px;color:var(--ax-error)">🚪 Déconnexion</button>
-        </div>
-      `,
-      actions: [
-        { label: 'Fermer', variant: 'ghost', onClick: () => sheet.close() },
-      ],
-    });
-    /* Wire boutons du drawer après render */
-    setTimeout(() => {
-      document.querySelectorAll<HTMLButtonElement>('[data-menu-nav]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const target = btn.dataset['menuNav'] ?? '';
-          haptic.tap();
-          sheet.close();
-          if (target) location.hash = `#${target}`;
-        });
-      });
-      document.querySelectorAll<HTMLButtonElement>('[data-menu-action]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const action = btn.dataset['menuAction'] ?? '';
-          haptic.tap();
-          sheet.close();
-          if (action === 'paste-key') {
-            /* Trigger paste flow réutilisant la modal existante */
-            rootEl.querySelector<HTMLButtonElement>('#ax-paste-key-nav')?.click();
-          } else if (action === 'logout') {
-            rootEl.querySelector<HTMLButtonElement>('#ax-logout-nav')?.click();
-          }
-        });
-      });
-    }, 50);
-  });
+  wireMenuButton(rootEl);
 
   /* v13.3.78 Kevin: bouton 🗑 effacer chat (conversation courante) */
   const memoryBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-memory');
