@@ -2,10 +2,11 @@
 
 ## 🛡️ CMCteams SÉCURITÉ (2026-06-07) — fermer la DB Firebase ouverte (Chantier 2)
 
-### #A — Vérifier le worker d'auth (30 s) → débloque la fermeture de la DB
-- Ouvre **https://apex-auth-worker.9r4rxssx64.workers.dev/health** → doit afficher `{"ok":true,"version":"v1.0",...}`.
-- Pourquoi : CMCteams parle à Firebase sans auth → DB ouverte → identités employés (`cmc_reg`) + mots de passe hashés (`cmc_pw`) lisibles par quiconque a l'URL. Je ne peux pas tester le worker depuis mon environnement (réseau bloqué).
-- Après : dis-moi **« go Phase A »** → je code l'auth (fail-open, flag OFF), tu testes sur ton device (canary), puis durcissement règles `/cmcteams`.
+### #A — ✅ Worker confirmé vivant + Phase A LIVRÉE (v9.788). → CANARY sur ton device
+- **À faire (1 paste, sur TON iPhone uniquement)** : CMCteams → Admin → bandeau config → champ **« 🔐 Auth Firebase »** → colle la **clé Web API Firebase** (publique, `AIza…`, depuis [Console Firebase → Paramètres projet → Général](https://console.firebase.google.com/project/cmcteams-c16ab/settings/general)) → bouton **Activer**.
+- Effet : SEUL ton device s'authentifie (token attaché). Le champ doit afficher **« ACTIVE sur ce device ✓ »**. Vérifie que tout marche normalement (planning, chat, import) pendant 1 jour.
+- **Fail-open garanti** : si la clé est refusée / réseau KO, l'app fonctionne comme avant (rien de cassé). Pour annuler : vide le champ + Activer.
+- Quand OK → dis-moi : j'active globalement (clé dans le code) puis on durcit les règles (#B).
 
 ### #B — (plus tard) Publier les règles `/cmcteams` durcies
 - 1 copier-coller console Firebase (je prépare le diff exact, **seulement le sous-bloc `/cmcteams`**, sans toucher Apex/Shops), rollback armé. APRÈS validation Phase A.
