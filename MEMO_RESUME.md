@@ -16,10 +16,11 @@ Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthou
 - v13.4.291 — `firebase.ts` attache `?auth=` RTDB (8 sites, rétro-compatible, débloque durcissement rules) (+3 tests)
 - CI `deploy-firebase-rules.yml` — déploiement règles RTDB 1-clic gaté (secrets FIREBASE_PRIVATE_KEY/CLIENT_EMAIL, projet cmcteams-c16ab)
 - v13.4.292 — refactor monolithe chat étape 1 : `chat-badges.ts` (renderProviderBadge/renderToolPills)
-- v13.4.292-302 — refactor monolithe chat (11 étapes testées, façade + injection, zéro régression) :
-  badges · autoread · lightbox · slash-handlers(SlashCtx) · view-template · mic-wiring(mic+wake) · camera-wiring ·
-  misc-wiring(logo+mode-toggle · menu · settings+paste-key via rerender).
-  **chat/index.ts 3888 → 2302 lignes (−1586, −40,8%)**. Tests chat 364/364 verts à chaque étape (flakes contention #88 écartés par re-run).
+- v13.4.292-303 — refactor monolithe chat (12 étapes testées, zéro régression) :
+  badges · autoread · lightbox · slash-handlers(SlashCtx) · view-template · mic-wiring · camera-wiring ·
+  misc-wiring(logo/mode/menu/settings+paste via rerender) · **attach-wiring** (cœur couplé : pendingAttachments
+  passés en RÉFÉRENCE STABLE mutée in-place + autoAnalyzeDeviceImage injecté).
+  **chat/index.ts 3888 → 2088 lignes (−1800, −46,3%)**. Tests chat 364/364 verts à chaque étape.
 
 ## Reste (séquencé, ne rien casser)
 1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
