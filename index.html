@@ -3823,16 +3823,6 @@ function cmcIdbSet(key,value){return _cmcIdbOpen().then(function(db){return new 
 function cmcIdbGet(key){return _cmcIdbOpen().then(function(db){return new Promise(function(res){try{var tx=db.transaction(CMC_IDB_STORE,"readonly");var req=tx.objectStore(CMC_IDB_STORE).get(key);req.onsuccess=function(){res(req.result);};req.onerror=function(){res(null);}}catch(_){res(null);}});}).catch(function(){return null;});}
 // Cles critiques CMCteams (donnees metier casino : on ne peut pas les perdre)
 var CMC_CRITICAL_KEYS=["cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_ov","cmc_chat","cmc_audit","cmc_chefs_t","cmc_chef_eq","cmc_known_identities","cmc_timings","cmc_exchanges","cmc_day_notes","cmc_templates","cmc_features","cmc_learned_codes"];
-function cmcTripleSave(key,value){
-  var result={ls:false,fb:false,idb:false};
-  try{
-    if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf(key)>=0&&typeof ls==="function"){ls(key,value);result.ls=true;result.fb=true;}
-    else{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));result.ls=true;}
-  }catch(e){console.error("[TRIPLE-CMC] localStorage fail:",e&&e.message);}
-  try{cmcIdbSet(key,value).then(function(ok){if(ok)result.idb=true;});}catch(_e){_cmcSafeCatch("cmc-idb",_e);}
-  setTimeout(function(){try{var lsCheck=localStorage.getItem(key);var expected=typeof value==="string"?value:JSON.stringify(value);if(!lsCheck){if(typeof toast==="function")toast("Sauvegarde "+key+" incomplete, retry","warn");try{localStorage.setItem(key,expected);}catch(_e){_cmcSafeCatch("cmc-idb",_e);}}}catch(_e){_cmcSafeCatch("cmc-idb",_e);}},120);
-  return result;
-}
 function cmcRestoreFromAll(criticalKeys){
   criticalKeys=criticalKeys||CMC_CRITICAL_KEYS;
   var restored=0,sources={};
@@ -4602,23 +4592,6 @@ function fmtRelative(ts){
   }catch(_){return fmtDate(ts);}
 }
 // v9.365 — Compression natif (CompressionStream) pour backups volumineux
-async function compressStr(str){
-  try{
-    if(!("CompressionStream" in window))return null;
-    var stream=new Blob([str]).stream().pipeThrough(new CompressionStream("gzip"));
-    var buf=await new Response(stream).arrayBuffer();
-    return btoa(String.fromCharCode.apply(null,new Uint8Array(buf)));
-  }catch(_){return null;}
-}
-async function decompressStr(b64){
-  try{
-    if(!("DecompressionStream" in window))return null;
-    var binary=atob(b64);
-    var bytes=new Uint8Array(binary.length);for(var i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
-    var stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-    return await new Response(stream).text();
-  }catch(_){return null;}
-}
 /** Send browser notif if permission granted AND app in background. @param {string} title. @param {string} body. @param {Object} [opts]. @returns {void} */
 function sendNotif(title,body,opts){
   if(!("Notification" in window)||Notification.permission!=="granted")return false;
@@ -5112,15 +5085,6 @@ function verifyPw(pw,stored){
   return false;
 }
 // v9.79 — Migrer un hash v1 vers v2 au login r\u00e9ussi (transparent)
-function _migratePwToV2(uid,clearPw){
-  if(!uid||!clearPw)return;
-  if(!A.passwords||!A.passwords[uid])return;
-  var rec=A.passwords[uid];
-  if(rec.h&&rec.h.indexOf("v2:")===0)return; // d\u00e9j\u00e0 migr\u00e9
-  var newHash=hashPwV2(clearPw);
-  A.passwords[uid]=Object.assign({},rec,{h:newHash,migratedAt:Date.now(),migrationFrom:rec.h?rec.h.slice(0,3):"djb2"});
-  ls("cmc_pw",A.passwords);
-}
 // v9.79 — Device fingerprint basique (pour d\u00e9tection anomalie connexion)
 function _deviceFingerprint(){
   try{
@@ -5451,7 +5415,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.784";
+var APP_VER="v9.785";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22599,45 +22563,6 @@ function _idbInit(){
     }catch(e){resolve(null);}
   });
 }
-function _idbSet(key,value){
-  return _idbInit().then(function(db){
-    if(!db){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(e){return false;}}
-    return new Promise(function(resolve){
-      var tx=db.transaction("kv","readwrite");
-      tx.objectStore("kv").put(value,key);
-      tx.oncomplete=function(){resolve(true);};
-      tx.onerror=function(){resolve(false);};
-    });
-  });
-}
-function _idbGet(key){
-  return _idbInit().then(function(db){
-    if(!db){try{var v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch(e){return null;}}
-    return new Promise(function(resolve){
-      var tx=db.transaction("kv","readonly");
-      var req=tx.objectStore("kv").get(key);
-      req.onsuccess=function(){resolve(req.result||null);};
-      req.onerror=function(){resolve(null);};
-    });
-  });
-}
-function _idbDelete(key){
-  return _idbInit().then(function(db){
-    if(!db){try{localStorage.removeItem(key);return true;}catch(e){return false;}}
-    return new Promise(function(resolve){
-      var tx=db.transaction("kv","readwrite");
-      tx.objectStore("kv").delete(key);
-      tx.oncomplete=function(){resolve(true);};
-      tx.onerror=function(){resolve(false);};
-    });
-  });
-}
-function _idbSize(){
-  return _idbInit().then(function(db){
-    if(!db||!navigator.storage||!navigator.storage.estimate)return {quota:null,usage:null};
-    return navigator.storage.estimate().then(function(est){return{quota:est.quota,usage:est.usage,pct:est.quota?(est.usage/est.quota*100).toFixed(1):null};});
-  });
-}
 
 // v9.86 — Lazy-loader pour constantes lourdes (économise RAM au démarrage)
 // Usage: _lazyLoad('SALON_PHOTOS', () => eval("window.SALON_PHOTOS")) → retourne promise
@@ -31624,16 +31549,6 @@ function vRepoConflicts(){
   }
   return h+'</div>';
 }
-function reloadSeed(){
-  if(!A.user||A.user.id!==AID)return;
-  if(!confirm("Recharger le planning Avril 2026 depuis les données pré-chargées ?\nCela écrasera toutes les modifications manuelles."))return;
-  A.overrides["2026-3"]=JSON.parse(JSON.stringify(SEED_APR2026));
-  ls("cmc_ov",A.overrides);
-  A.teams=JSON.parse(JSON.stringify(DEF_TEAMS));ls("cmc_t",A.teams);
-  CHEFS_T=JSON.parse(JSON.stringify(DEF_CHEFS_T));ls("cmc_chefs_t",CHEFS_T);
-  for(var _y2=2025;_y2<=2028;_y2++){for(var _m2=0;_m2<12;_m2++){localStorage.removeItem("cmc_ci_"+_y2+"_"+_m2);}}
-  toast("Planning Avril 2026 rechargé — 241 employés");dc();
-}
 
 // v9.47 \u2014 Vue "Qui est libre le X/Y" : filtre par jour, affiche employ\u00e9s en repos/cong\u00e9/formation
 // v9.53 \u2014 D\u00e9tecte les employ\u00e9s "retardataires" (inactivit\u00e9, non-inscription, pas de photo, pas d'email)
@@ -38800,23 +38715,6 @@ function _cmcAutoRecoverImports(){
 }
 
 // v9.123 — Nettoyage d'urgence des overrides (purge les codes non-reconnus)
-function _cleanOverridesNow(){
-  if(!A.user||A.user.id!==AID)return{cleaned:0};
-  var cleaned=0;
-  Object.keys(A.overrides||{}).forEach(function(mk){
-    var ov=A.overrides[mk]||{};
-    Object.keys(ov).forEach(function(eid){
-      var row=ov[eid]||{};
-      Object.keys(row).forEach(function(d){
-        var c=row[d];
-        if(c&&!CODES[c]){delete row[d];cleaned++;}
-      });
-      if(Object.keys(row).length===0)delete ov[eid];
-    });
-  });
-  if(cleaned>0){ls("cmc_ov",A.overrides);fbWrite("cmc_ov",A.overrides);}
-  return{cleaned:cleaned};
-}
 
 // Rollback : restaure l'état avant le dernier import d'un mois donné
 function rollbackLastImport(iy,im){
@@ -42879,14 +42777,6 @@ var THEMES={
   clair:{label:"Monaco Clair",icon:"\u2600\ufe0f",bg:"#f0ede4",text:"#1a2a1c",card:"rgba(255,255,255,.75)"},
   nuit:{label:"Nuit",icon:"\ud83c\udf19",bg:"#08080c",text:"#c8d0e0",card:"rgba(16,18,28,.35)"}
 };
-function setTheme(t){
-  // v9.113 — Unifié : casino/nuit → dark, clair → light
-  var mapping={casino:"dark",clair:"light",nuit:"dark",dark:"dark",light:"light",auto:"auto"};
-  var target=mapping[t]||"dark";
-  _setTheme(target); // applique data-theme + toast
-  _theme=t;
-  dc();
-}
 // v9.113 — Appliquer le thème au démarrage via le système unifié (data-theme)
 (function(){try{
   var mapping={casino:"dark",clair:"light",nuit:"dark",dark:"dark",light:"light",auto:"auto"};
