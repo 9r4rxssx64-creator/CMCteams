@@ -16,6 +16,12 @@
 - 2 catégories : **doublons morts** (ex `_idbGet/_idbSet` ancien ≠ `cmcIdbSet`/`cmcIdbGet` vivant) + **features à moitié câblées** (`exportICS`, `webShare`, `cmcTripleSave`).
 - ⚠️ **Backlog P1** : tri manuel 1-par-1 avant toute suppression (règle #59, jamais à l'aveugle). Pas fait cette session (risque > gain sans validation Kevin).
 
+### ✅ « Tout » Kevin (2026-06-06) — nettoyage + recâblage (v9.785→v9.787, test:ci exit 0 / 469 PASS à chaque lot)
+- **53 fonctions mortes retirées** (11 doublons + 42 helpers), retrait 1-par-1 + rollback auto, `node --check` + `test:ci` verts après chaque lot. **7 IIFE + features-like + `looksLikeName` GARDÉES** (s'exécutent ou potentiellement voulues).
+- **4 features recâblées** via palette `⌘K` (export ICS perso/équipe, partage, QR app) — deps vérifiées.
+- **Non câblées (volontaire)** : visio/caméra/PIN/EmailJS/templates/favoris → besoin UI dédiée + test iPhone réel (pas de bouton cassé à l'aveugle).
+- Rapport : `AUDIT_ORPHELINES_CMCteams.md` (section ✅ RÉALISÉ en tête).
+
 ### ⏳ Reste à faire
 - **Action Kevin (2 gestes)** pour fermer le P0 sécu Firebase — voir KEVIN_ACTIONS_TODO.md.
 - **Merge** de la branche : https://github.com/9r4rxssx64-creator/cmcteams/compare/main...claude/cmcteams-crew-review-QZUyo?expand=1

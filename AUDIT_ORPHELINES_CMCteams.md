@@ -1,5 +1,16 @@
 # 🧹 AUDIT — Fonctions orphelines CMCteams (`index.html`)
 
+> ## ✅ RÉALISÉ (2026-06-06, « Tout » Kevin) — v9.785→v9.787
+> - **53 fonctions mortes retirées** (validé `node --check` + `test:ci` exit 0 après chaque lot, retrait 1-par-1 avec rollback auto) : 11 doublons (`_idb*`, `setTheme`, `compress*`, `cmcTripleSave`, migrations) + 42 helpers UI/util.
+> - **7 IIFE exclues** (s'exécutent au boot : `_v705/707/715`, `migrateEmployees`, `_restoreFamiliesFromDefEmp`, `_cmcBootForceUpdateCheck`, `splitTwoEmpLines`) — **gardées** (ce ne sont pas des mortes).
+> - **`looksLikeName` gardée** (corps au parse risqué).
+> - **Features-like GARDÉES** (potentiellement voulues/deps) : toggles per-user, chiffrement, lessons/mémoire, geofence/shift, audit, QR/vidéo.
+> - **4 features C1 RECÂBLÉES** via palette `⌘K` (deps vérifiées) : export ICS perso + équipe, partage natif, QR de l'app.
+> - **NON câblées (volontaire)** : visio, scan caméra, PIN, EmailJS, templates, affluence, favoris → nécessitent UI dédiée + **test sur iPhone réel** (pas de bouton cassé à l'aveugle, règle « test end-to-end »). Restent disponibles pour une session avec device.
+>
+> _Section ci-dessous = état d'origine de l'audit (pré-action)._
+
+
 > Généré 2026-06-06 — branche `claude/cmcteams-crew-review-QZUyo` — audit architecture (règle #28 *Declaration ≠ Deployment*).
 > **Méthode** : tokenisation complète du HTML, comptage exact des call-sites (onclick inclus). **Aucune suppression faite** — ce rapport sert à décider (règle #59 « vérifier avant d'agir » + « réactiver ce qu'on a désactivé »).
 
