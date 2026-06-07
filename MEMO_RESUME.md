@@ -16,14 +16,15 @@ Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthou
 - v13.4.291 — `firebase.ts` attache `?auth=` RTDB (8 sites, rétro-compatible, débloque durcissement rules) (+3 tests)
 - CI `deploy-firebase-rules.yml` — déploiement règles RTDB 1-clic gaté (secrets FIREBASE_PRIVATE_KEY/CLIENT_EMAIL, projet cmcteams-c16ab)
 - v13.4.292 — refactor monolithe chat étape 1 : `chat-badges.ts` (renderProviderBadge/renderToolPills)
-- v13.4.292-305 — refactor monolithe chat (14 étapes testées, zéro régression) :
-  10 modules UI/wiring + input-wiring(MOTEUR submit) + **chat-render-loop** (renderMessages/updateAssistantBubble/
-  smartAutoScroll/FAB via init-pattern setRenderLoopConversation).
-  **chat/index.ts 3888 → 1675 lignes (−2213, −56,9%)**. Tests chat 364/364 verts à chaque étape.
+- v13.4.292-307 — refactor monolithe chat (15 étapes testées, zéro régression) :
+  badges·autoread·lightbox·slash-handlers·view-template·mic·camera·misc(logo/mode/menu/settings)·attach·
+  **input(submit)**·**render-loop**(+pushAssistantMessage)·**engine**(processQueue moteur IA + buildSystemPromptDeep
+  + autoExtract + detectAndSuggestTool, via setEngineState réfs stables, corps verbatim).
+  **chat/index.ts 3888 → 1309 lignes (−2579, −66,3%)**. 16 modules chat-*. Tests 364/364 verts à chaque étape.
 
 ## Reste (séquencé, ne rien casser)
 1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
-4. Refacto chat — 56,9% extrait (submit + render loop). Reste surtout processQueue (moteur streaming IA). Reste le CŒUR couplé de `render` : submit form (~310l), attach/file/album (~160l, réassigne `pendingAttachments`), drag-drop, paste, menu/clear/settings (touchent `conversation`/`renderMessages`). Nécessite un objet contexte partagé `ChatRenderCtx` { getConversation, pushUser, processQueue, getPending/setPending, pushAlbum } à CONCEVOIR d'abord (étape design dédiée), puis extraire submit/attach par petits pas testés. Risque régression réel → ne pas rusher.
+4. Refacto chat — 66,3% extrait (submit + render loop + MOTEUR IA processQueue). Reste : handleSlashCommand (dispatcher), openMemoryModal, regenerateLastAssistant, autoAnalyzeDeviceImage(+broadlink/tv), handleWakeWordTextTrigger + shell render() (composition root wire*). C'est la logique de composition légitime du module. Reste le CŒUR couplé de `render` : submit form (~310l), attach/file/album (~160l, réassigne `pendingAttachments`), drag-drop, paste, menu/clear/settings (touchent `conversation`/`renderMessages`). Nécessite un objet contexte partagé `ChatRenderCtx` { getConversation, pushUser, processQueue, getPending/setPending, pushAlbum } à CONCEVOIR d'abord (étape design dédiée), puis extraire submit/attach par petits pas testés. Risque régression réel → ne pas rusher.
 
 ---
 
