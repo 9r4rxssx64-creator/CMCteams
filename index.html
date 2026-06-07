@@ -5361,7 +5361,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.786";
+var APP_VER="v9.787";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9524,6 +9524,11 @@ var CMD_PALETTE_ACTIONS=[
   {cat:"Navigation",icon:"\ud83d\udc64",label:"Mon profil",keywords:["profil","moi","mon","compte"],fn:function(){sv("profil");}},
   {cat:"Navigation",icon:"\ud83d\udcd6",label:"Convention collective",keywords:["convention","loi","regles"],fn:function(){sv("convention");}},
   {cat:"Navigation",icon:"\ud83d\udcca",label:"Mes stats",keywords:["stats","statistiques","heures"],fn:function(){sv("messtats");}},
+  // Outils (v9.787 \u2014 features auto-contenues recablees depuis le tri orphelines, deps verifiees)
+  {cat:"Outils",icon:"\ud83d\udcc5",label:"Exporter mon planning (.ics)",keywords:["export","ics","calendrier","agenda","planning","apple","google"],fn:function(){if(A.user&&A.user.id)exportICS(A.user.id,A.year,A.month);else toast("Connecte-toi d'abord","err");}},
+  {cat:"Outils",icon:"\ud83d\udcc5",label:"Exporter le planning d'une \u00e9quipe (.ics)",adminOnly:true,keywords:["export","ics","equipe","team","calendrier"],fn:function(){var t=A.user&&teamForMonth(A.user,A.year,A.month);if(t)exportTeamICS(t);else toast("Aucune \u00e9quipe ce mois pour ton compte","err");}},
+  {cat:"Outils",icon:"\ud83d\udce4",label:"Partager CMC Teams",keywords:["partager","share","envoyer","lien","url"],fn:function(){webShare("CMC Teams","Planning casino",location.href);}},
+  {cat:"Outils",icon:"\ud83d\udd33",label:"QR code de l'app",keywords:["qr","code","scanner","lien","ouvrir"],fn:function(){showQRCode(location.href,"CMC Teams");}},
   // Admin uniquement
   {cat:"Admin",icon:"\u2699\ufe0f",label:"Panneau admin",adminOnly:true,keywords:["admin","config","param"],fn:function(){sv("admin");}},
   {cat:"Admin",icon:"\ud83d\udc65",label:"Gestion employ\u00e9s",adminOnly:true,keywords:["employes","emp","personnel"],fn:function(){sv("employees");}},
