@@ -17,25 +17,36 @@
 
 ---
 
-## CHANTIER 1 — Vault clé IA (chiffrement au repos)  🟢 risque FAIBLE · ROI élevé
+## CHANTIER 1 — Vault clé IA (chiffrement au repos)  🟠 risque MOYEN (revu) · ROI moyen
 **Gap** : `cmc_ia_key` lisible en clair (DevTools / vol fichier). **Cible** : chiffrée AES-GCM, jamais en clair.
 
-### Étapes
-1. Porter le pattern Apex (`services/vault`) en mini-helper CMCteams : `cmcEncryptSecret(plain, passphrase)` / `cmcDecryptSecret(enc, passphrase)` via WebCrypto AES-GCM-256 + PBKDF2 200k. Passphrase = PIN admin dérivé (déjà saisi au login) — pas de nouvelle saisie Kevin.
-2. À l'écriture de la clé (`iaSetKey`/réglages) → stocker `cmc_ia_key_enc` (chiffré) + supprimer `cmc_ia_key` clair.
-3. À la lecture (1 seul site : `apiKey=...||localStorage.getItem("cmc_ia_key")`) → `cmcDecryptSecret(cmc_ia_key_enc)` en mémoire, jamais re-persisté en clair.
-4. Migration auto au boot : si `cmc_ia_key` clair présent → chiffrer + effacer le clair (one-shot, idempotent).
-5. Retirer `cmc_ia_key` de tout export/log ; garder `axRedact`-style sur les toasts.
+> ⚠️ **Scope corrigé après mesure (2026-06-07)** : initialement estimé « 1 site de lecture » —
+> **FAUX**. Mesuré : **9+ sites de lecture synchrones** (`12482, 27135, 37047, 42664,
+> 43394, 43455, 43562, 43680, 47648`) + cache mémoire global `iaApiKey` + chaîne de
+> fallback cross-app `_resolveIaKey` (lit `ax_shared_api_key`/`ax_api_key` et **re-persiste**
+> `cmc_ia_key`) + restore config (43733) + bouton reset (1265/8959). WebCrypto AES-GCM est
+> **asynchrone** → pas de decrypt synchrone possible ; l'obfuscation XOR synchrone est un
+> **anti-pattern documenté** (lesson #55 : a cassé le vault Apex au force-update). Donc ce
+> n'est PAS un bolt-on : il faut gérer l'ordre async au boot + migrer chaque site.
+
+### Étapes (revues, sûres)
+1. Helper `cmcEncryptSecret`/`cmcDecryptSecret` WebCrypto AES-GCM-256 + PBKDF2 (passphrase = PIN admin dérivé, pas de saisie en plus).
+2. **Boot async d'abord** : au login admin, décrypter `cmc_ia_key_enc` → peupler le cache mémoire `iaApiKey` AVANT tout appel IA. Garde : si IA appelée avant fin du decrypt → attendre la promesse (flag `_iaKeyReady`).
+3. **Tous les fallbacks `||localStorage.getItem("cmc_ia_key")` → `||iaApiKey`** (le cache mémoire déchiffré), JAMAIS lire le localStorage chiffré directement. Migrer les 9 sites un par un.
+4. `_resolveIaKey` (cross-app) : chiffrer avant re-persist ; ne jamais réécrire en clair.
+5. Écriture (`43685`) : `cmc_ia_key_enc` chiffré + `iaApiKey` mémoire + supprimer `cmc_ia_key` clair.
+6. Migration boot one-shot : `cmc_ia_key` clair → chiffrer → effacer (idempotent). **Dual-read 1 version** (lire l'ancien clair si présent) avant suppression définitive.
+7. Reset button (1265/8959) : préserver `cmc_ia_key_enc` au lieu de `cmc_ia_key`.
 
 ### Risque / Rollback
-- Risque : si decrypt échoue (PIN changé) → clé IA indisponible → fallback « ressaisir la clé » (l'IA n'est pas critique au planning). Pas de perte de données planning.
-- Rollback : garder la lecture du `cmc_ia_key` clair legacy 1 version (dual-read) avant suppression définitive.
+- Risque : race boot (IA appelée avant decrypt) → géré par flag `_iaKeyReady` + await. Si decrypt KO (PIN changé) → fallback « ressaisir la clé » (IA non critique au planning).
+- Rollback : dual-read clair legacy 1 version.
 
 ### Validation mesurée
-- Test runtime `test:vault-ia` : setKey → reload page → getKey === valeur ; `localStorage.cmc_ia_key` absent ; `cmc_ia_key_enc` présent et ≠ clair.
+- Test runtime `test:vault-ia` : setKey → reload → getKey === valeur ; `cmc_ia_key` clair absent ; `cmc_ia_key_enc` ≠ clair ; un appel IA simulé récupère bien la clé déchiffrée. + les 9 sites lisent `iaApiKey`.
 - `test:ci` vert.
 
-**Effort : ~1 session. Isolation : index.html only.**
+**Effort : 1 session dédiée et soignée (pas un bolt-on). Isolation : index.html only.**
 
 ---
 
