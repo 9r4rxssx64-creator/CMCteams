@@ -56,20 +56,26 @@
 ### Pré-requis bloquant
 L'app DOIT s'authentifier AVANT de durcir les règles, sinon **prod 100% cassée** (lecture/écriture refusées). Donc séquence stricte, jamais l'inverse.
 
+### ✅ État VÉRIFIÉ (2026-06-07) — l'infra serveur est DÉJÀ construite
+- **`apex-auth-worker` expose déjà `POST /login-cmc`** ({uid, password} → lit `cmcteams/cmc_pw/<uid>` en service-account → vérifie → renvoie `id_token` + `refresh_token`). Endpoint `/refresh` aussi.
+- **Parité hash CONFIRMÉE** : `services/apex-auth-worker/src/cmc-hash.js` = copie verbatim des 3 schémas de l'app (DJB2 legacy, `s1:` 10000 rounds sel statique, `v2:` 15000 rounds sel dynamique) + test `cmc-hash.test.mjs`. Donc tous les mots de passe employés seront vérifiés correctement.
+- **URL worker** : `https://apex-auth-worker.9r4rxssx64.workers.dev` · **CORS** `*` (github.io OK).
+- Règles actives = `firebase-rules-apex.json` (**PARTAGÉ Apex+CMCteams+Shops**) ; `/cmcteams` = `.read:true/.write:true` (PII employés `cmc_reg` + `cmc_pw` hashés lisibles par tous) ; `cmc_admin_pin`/`cmc_ia_key` déjà `.write:false`.
+
+### ⚠️ Pièges à NE PAS rater (sinon prod cassée)
+- **Firebase RTDB rejette en 401 tout `?auth=<token>` invalide/expiré MÊME règles ouvertes.** Le plumbing DOIT : n'ajouter `?auth=` que si token valide non-expiré ; sur tout 401 → DROP token + retry SANS auth (fail-open réel) ; refresh avant expiry (1h).
+- À confirmer hors sandbox (worker injoignable d'ici) : worker **déployé** + secret **`FIREBASE_WEB_API_KEY` présent** (sinon `/login-cmc` renvoie `custom_token` mais PAS d'`id_token` → pas d'auth).
+- Rules partagées → ne modifier QUE le sous-bloc `/cmcteams` ; publication MANUELLE console (Kevin) ; ancienne version en rollback.
+
 ### Étapes (ordre impératif)
-1. **Phase A — Auth transparente (aucune UI en plus)**
-   - Activer Firebase **Anonymous Auth** (ou custom-token via worker) sur le projet `cmcteams-c16ab`.
-   - Dans l'app : obtenir un idToken au boot, l'ajouter à TOUTES les requêtes REST (`?auth=<idToken>`) et au SSE (`EventSource(url?auth=...)`). Refresh token avant expiration (1h).
-   - **Rules encore ouvertes à ce stade** → aucun impact prod, on prépare juste le terrain.
-   - Validation : logs réseau montrent `?auth=` partout ; app fonctionne identique.
-2. **Phase B — Rules en mode CANARY (dual)**
-   - Écrire `firebase-rules.json` strict : `".read"/".write": "auth != null"` au niveau racine `/cmcteams`, + validation par sous-clé (ex: `cmc_pw` lisible seulement si admin custom-claim).
-   - Déployer sur un **chemin de test** (`/cmcteams_canary`) d'abord ; faire pointer une build canary dessus ; valider lecture/écriture OK avec auth.
-3. **Phase C — Bascule prod + rollback armé**
-   - Déployer les rules strictes sur `/cmcteams`. Garder l'ancien `firebase-rules.json` (ouvert) prêt à redéployer en 1 commande si incident.
-   - Surveiller 24-48h (sentinelle `fb-auth-watch` : si taux d'erreurs 401/permission monte → rollback auto).
-4. **Phase D — Claims admin**
-   - Custom claim `role=admin` sur l'uid Kevin (via worker/CI), rules `cmc_pw`/`cmc_audit` = admin-only.
+1. **Phase A — Auth transparente, FAIL-OPEN, derrière flag `cmc_fb_auth_enabled`**
+   - Au login employé réussi (check client actuel conservé), POST `{uid, password}` → `/login-cmc` → stocker `id_token`/`refresh_token` (mémoire + FB_LOCAL).
+   - Helper `_fbAuthParam()` ajoute `?auth=`/`&auth=` UNIQUEMENT si token valide. `fbWrite` + EventSource SSE + lectures REST threadés.
+   - Sur 401 Firebase → drop token + retry sans auth. Refresh timer < 1h.
+   - **Rules encore ouvertes → zéro impact.** Flag OFF par défaut → inerte tant que non validé en prod.
+   - Validation : sur device test, flag ON → réseau montre `?auth=` + app identique ; flag OFF → comportement actuel.
+2. **Phase B — Rules canary** (cf. plan) puis **Phase C — bascule + rollback armé**.
+3. **Phase D — claims admin** (custom claim role=admin pour `cmc_pw`/`cmc_audit` admin-only).
 
 ### Risque / Rollback
 - Risque : un device non migré (vieux cache) perd l'accès → mitigé par MAJ auto network-first (v9.615) + phase canary.
