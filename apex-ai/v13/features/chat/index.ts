@@ -62,6 +62,13 @@ import {
 } from './chat-renderers.js';
 import { searchConversation, buildSearchResultMessage } from './chat-search.js';
 import { archiveSession, loadSessionsHistory } from './chat-sessions-history.js';
+import {
+  type SlashCtx,
+  handleResumeCommand, handleStatuslineCommand, handleOodaCommand,
+  handleUltraReviewCommand, handleDiagCommand, handleTestCommand,
+  handleLoopCommand, handlePlanCommand, handleRulesCommand,
+  handleAutonomousCommand,
+} from './chat-slash-handlers.js';
 import { saveCodeSnippet, listCodeSnippets } from './chat-snippets.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
@@ -814,6 +821,11 @@ export function handleWakeWordTextTrigger(_rootEl: HTMLElement, text: string): b
  * Retourne true si le message a été traité comme commande, false sinon.
  */
 export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
+  /* v13.4.295 — contexte injecté pour les handlers extraits (chat-slash-handlers.ts). */
+  const slashCtx: SlashCtx = {
+    pushAssistant: (t: string) => pushAssistantMessage(rootEl, t),
+    getConversationLength: () => conversation.length,
+  };
   /* v13.4.5 — Alias `/auto` et `/autonome` redirigés vers `/autonomous` (Kevin "mode autonome"). */
   const aliasMap: Record<string, string> = {
     auto: 'autonomous', autonome: 'autonomous',
@@ -930,45 +942,45 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       return true;
     /* v13.4.3 — IA IRL TikTok */
     case 'loop':
-      void handleLoopCommand(rootEl, args);
+      void handleLoopCommand(slashCtx, args);
       return true;
     case 'plan':
       if (!args) {
         pushAssistantMessage(rootEl, 'Usage : `/plan <objectif>` — génère un plan structuré.');
         return true;
       }
-      void handlePlanCommand(rootEl, args);
+      void handlePlanCommand(slashCtx, args);
       return true;
     case 'rules':
-      void handleRulesCommand(rootEl, args);
+      void handleRulesCommand(slashCtx, args);
       return true;
     /* v13.4.5 — Mode autonome Apex */
     case 'autonomous':
-      void handleAutonomousCommand(rootEl, args);
+      void handleAutonomousCommand(slashCtx, args);
       return true;
     /* v13.4.245 — commandes audit/diagnostic */
     case 'ultrareview':
-      void handleUltraReviewCommand(rootEl);
+      void handleUltraReviewCommand(slashCtx);
       return true;
     case 'diag':
-      void handleDiagCommand(rootEl);
+      void handleDiagCommand(slashCtx);
       return true;
     case 'test':
-      void handleTestCommand(rootEl);
+      void handleTestCommand(slashCtx);
       return true;
     /* v13.4.252 — resume / statusline / ooda */
     case 'resume':
-      void handleResumeCommand(rootEl);
+      void handleResumeCommand(slashCtx);
       return true;
     case 'statusline':
-      void handleStatuslineCommand(rootEl);
+      void handleStatuslineCommand(slashCtx);
       return true;
     case 'ooda':
       if (!args) {
         pushAssistantMessage(rootEl, 'Usage : `/ooda <objectif>` — analyse Observe-Orient-Decide-Act.');
         return true;
       }
-      void handleOodaCommand(rootEl, args);
+      void handleOodaCommand(slashCtx, args);
       return true;
     default:
       return false;
@@ -976,283 +988,9 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
 }
 
 /* v13.4.252 — /resume : reprend la boucle autonome en pause. */
-async function handleResumeCommand(rootEl: HTMLElement): Promise<void> {
-  try {
-    const { autonomousLoop } = await import('../../services/admin/autonomous-loop.js');
-    autonomousLoop.resume();
-    const snap = autonomousLoop.list();
-    pushAssistantMessage(rootEl, `▶️ Boucle autonome reprise — ${snap.tasks.length} tâche(s) en file.`);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur resume : ${msg}`);
-  }
-}
-
-/* v13.4.252 — /statusline : état synthétique d'Apex. */
-async function handleStatuslineCommand(rootEl: HTMLElement): Promise<void> {
-  const online = typeof navigator !== 'undefined' && navigator.onLine ? '🟢 en ligne' : '🔴 hors ligne';
-  let loop = '—';
-  try {
-    const { autonomousLoop } = await import('../../services/admin/autonomous-loop.js');
-    const snap = autonomousLoop.list();
-    loop = snap.paused
-      ? `⏸ pausée (${snap.tasks.length})`
-      : (snap.intervalActive ? `▶ active (${snap.tasks.length})` : `⏹ arrêtée (${snap.tasks.length})`);
-  } catch {
-    /* boucle indisponible */
-  }
-  pushAssistantMessage(
-    rootEl,
-    '### 📟 Statut Apex\n\n'
-    + `- **Version** : \`${APP_VER}\`\n`
-    + `- **Réseau** : ${online}\n`
-    + `- **Boucle autonome** : ${loop}\n`
-    + `- **Conversation** : ${conversation.length} message(s)`,
-  );
-}
-
-/* v13.4.252 — /ooda : analyse OODA, réutilise le générateur de plan. */
-async function handleOodaCommand(rootEl: HTMLElement, objective: string): Promise<void> {
-  await handlePlanCommand(rootEl, `Analyse OODA (Observe → Orient → Decide → Act) : ${objective}`);
-}
-
-/* v13.4.245 — /ultrareview : audit complet Apex (8 axes, mode brutal). Admin only. */
-async function handleUltraReviewCommand(rootEl: HTMLElement): Promise<void> {
-  try {
-    const { auth } = await import('../../services/auth/auth.js');
-    if (!auth.isAdminSync()) {
-      pushAssistantMessage(rootEl, '🔒 `/ultrareview` est réservé à l\'admin.');
-      return;
-    }
-    pushAssistantMessage(rootEl, '🔍 Audit complet Apex en cours… (8 axes, mode brutal — patiente quelques secondes)');
-    const { apexSelfAudit } = await import('../../services/admin/apex-self-audit.js');
-    const r = await apexSelfAudit.runFullAudit(true);
-    const axes = Object.entries(r.axes)
-      .map(([k, v]) => `- **${k}** : ${v.score}/100 _(${v.findings_count} finding${v.findings_count > 1 ? 's' : ''})_`)
-      .join('\n');
-    const steps = r.next_steps.length
-      ? '\n\n**Prochaines étapes**\n' + r.next_steps.map((s) => `- ${s}`).join('\n')
-      : '';
-    pushAssistantMessage(
-      rootEl,
-      `### 🔍 Ultra-review Apex — ${r.total_score}/100\n\n`
-      + `${r.total_findings} finding(s) · ${r.auto_fixed_count} auto-corrigé(s) · `
-      + `${r.escalated_count} escaladé(s) · ${(r.duration_ms / 1000).toFixed(1)} s\n\n`
-      + `${axes}${steps}`,
-    );
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur ultrareview : ${msg}`);
-  }
-}
-
-/* v13.4.245 — /diag : diagnostic runtime Apex (santé live). Admin only. */
-async function handleDiagCommand(rootEl: HTMLElement): Promise<void> {
-  try {
-    const { auth } = await import('../../services/auth/auth.js');
-    if (!auth.isAdminSync()) {
-      pushAssistantMessage(rootEl, '🔒 `/diag` est réservé à l\'admin.');
-      return;
-    }
-    pushAssistantMessage(rootEl, '🩺 Diagnostic runtime en cours…');
-    const { apexRuntimeDiagnostic } = await import('../../services/admin/apex-runtime-diagnostic.js');
-    const r = await apexRuntimeDiagnostic.runAll();
-    const fails = r.checks.filter((c) => !c.ok)
-      .map((c) => `- ❌ **${c.label}** — ${c.detail}`).join('\n');
-    pushAssistantMessage(
-      rootEl,
-      `### 🩺 Diagnostic runtime — ${r.version}\n\n`
-      + `✅ ${r.okCount} OK · ❌ ${r.failCount} échec(s)\n\n`
-      + `${r.summary}${fails ? '\n\n' + fails : ''}`,
-    );
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur diag : ${msg}`);
-  }
-}
-
-/* v13.4.245 — /test : auto-tests runtime. Admin only. */
-async function handleTestCommand(rootEl: HTMLElement): Promise<void> {
-  try {
-    const { auth } = await import('../../services/auth/auth.js');
-    if (!auth.isAdminSync()) {
-      pushAssistantMessage(rootEl, '🔒 `/test` est réservé à l\'admin.');
-      return;
-    }
-    pushAssistantMessage(rootEl, '🧪 Auto-tests runtime en cours…');
-    const { autoTestRunner } = await import('../../services/admin/auto-test-runner.js');
-    const r = await autoTestRunner.runAll();
-    const fails = r.results.filter((t) => t.status === 'fail')
-      .map((t) => `- ❌ ${t.name}${t.error ? ' — ' + t.error : ''}`).join('\n');
-    pushAssistantMessage(
-      rootEl,
-      `### 🧪 Auto-tests — ${r.passed}/${r.total} OK\n\n`
-      + `✅ ${r.passed} · ❌ ${r.failed} · ⏭ ${r.skipped} · ${(r.durationMs / 1000).toFixed(1)} s`
-      + `${fails ? '\n\n' + fails : ''}`,
-    );
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur test : ${msg}`);
-  }
-}
-
-/* v13.4.3 — Slash command /loop */
-async function handleLoopCommand(rootEl: HTMLElement, args: string): Promise<void> {
-  try {
-    const { autonomousLoop } = await import('../../services/admin/autonomous-loop.js');
-    autonomousLoop.start();
-    const sub = (args || '').trim().toLowerCase();
-    if (sub === '' || sub === 'list') {
-      const snap = autonomousLoop.list();
-      const lines = snap.tasks.map((t, i) =>
-        `- **${i + 1}.** [${t.status}] ${t.task.slice(0, 80)}${t.retries > 0 ? ` _(retries: ${t.retries})_` : ''}`,
-      );
-      const body = lines.length === 0 ? '_Queue vide._' : lines.join('\n');
-      const status = snap.paused ? '⏸ Pausé' : (snap.intervalActive ? '▶ Actif' : '⏹ Arrêté');
-      pushAssistantMessage(rootEl, `### Loop autonome (${status}, ${snap.tasks.length}/50)\n\n${body}`);
-      return;
-    }
-    if (sub === 'pause' || sub === 'resume') {
-      if (sub === 'pause') autonomousLoop.pause();
-      else autonomousLoop.resume();
-      pushAssistantMessage(rootEl, `🔁 Loop ${sub === 'pause' ? 'pausé' : 'repris'}.`);
-      return;
-    }
-    if (sub === 'clear') {
-      autonomousLoop.clear();
-      pushAssistantMessage(rootEl, '🧹 Queue loop effacée.');
-      return;
-    }
-    /* sinon = nouvelle task */
-    const entry = autonomousLoop.add(args);
-    pushAssistantMessage(rootEl, `🔁 Tâche ajoutée à la queue : **${entry.task}**\n\nID : \`${entry.id}\`. Tape \`/loop list\` pour voir la queue.`);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur loop : ${msg}`);
-  }
-}
-
-/* v13.4.3 — Slash command /plan */
-async function handlePlanCommand(rootEl: HTMLElement, objective: string): Promise<void> {
-  pushAssistantMessage(rootEl, '🗺 Génération du plan en cours…');
-  try {
-    const { planMode } = await import('../../services/admin/plan-mode.js');
-    const plan = await planMode.generate(objective);
-    const stepsTxt = plan.steps
-      .map((s, i) => `${i + 1}. **[${s.risk}]** ${s.title}${s.files.length ? ` — _${s.files.join(', ')}_` : ''}`)
-      .join('\n');
-    const md = `### 🗺 Plan généré (${plan.steps.length} steps, ${plan.durationMs}ms)\n\n**Objectif :** ${plan.objective}\n\n**Résumé :** ${plan.summary || '_(non précisé)_'}\n\n${stepsTxt}\n\n_Pour exécuter, tape ton message suivant — le plan sera passé en context. Pour annuler : \`planMode.revoke()\` console._`;
-    pushAssistantMessage(rootEl, md);
-    /* v13.4.3 affichage modal preview avec bouton Exécuter */
-    try {
-      const { modalSheet: ms } = await import('../../ui/modal-sheet.js');
-      ms.open({
-        title: '🗺 Plan validé ?',
-        content: `<div style="font-family:system-ui;padding:12px"><p class="ax-gs-303">${escapeHtml(plan.summary || plan.objective)}</p><pre class="ax-gs-312">${escapeHtml(stepsTxt)}</pre></div>`,
-        actions: [
-          { label: 'Annuler', variant: 'ghost', onClick: () => { planMode.revoke(); ms.closeAll(); } },
-          { label: '✅ Plan validé', variant: 'primary', onClick: () => ms.closeAll() },
-        ],
-      });
-    } catch { /* modal optional */ }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur plan : ${msg}`);
-  }
-}
-
-/* v13.4.3 — Slash command /rules */
-async function handleRulesCommand(rootEl: HTMLElement, args: string): Promise<void> {
-  try {
-    const { rulesEngine } = await import('../../services/core-svc/rules-engine.js');
-    const k = (args || '').trim();
-    const rules = k ? rulesEngine.filter(k) : rulesEngine.top(10);
-    const md = rulesEngine.renderMarkdown(rules);
-    pushAssistantMessage(rootEl, md);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur rules : ${msg}`);
-  }
-}
-
-/* v13.4.5 — Slash command /autonomous (mode autonome session-driven) */
-async function handleAutonomousCommand(rootEl: HTMLElement, args: string): Promise<void> {
-  try {
-    const { apexAutonomousMode } = await import('../../services/admin/apex-autonomous-mode.js');
-    const { autonomousWatch } = await import('../../services/sentinels/autonomous-watch.js');
-    autonomousWatch.start();
-    const sub = (args || '').trim();
-    const subLower = sub.toLowerCase();
-
-    if (subLower === 'status' || subLower === 'list' || subLower === '') {
-      const s = apexAutonomousMode.getActiveSession();
-      if (!s) {
-        const history = apexAutonomousMode.getHistory(3);
-        const histLines = history.length
-          ? history
-              .map(
-                (h, i) =>
-                  `${i + 1}. **${h.status}** — ${h.initialObjective.slice(0, 80)} (${h.iterations} iter, ${h.tokensConsumed} tokens)`,
-              )
-              .join('\n')
-          : '_Aucune session passée._';
-        pushAssistantMessage(
-          rootEl,
-          `### 🤖 Mode Autonome\n\n**État :** Inactif.\n\nLance avec \`/autonomous <objectif>\`.\n\n#### Dernières sessions\n${histLines}`,
-        );
-        return;
-      }
-      const queue = s.taskQueue.length;
-      const done = s.tasksCompleted.filter((t) => t.status === 'done').length;
-      const fail = s.tasksCompleted.filter((t) => t.status === 'failed').length;
-      const ageMin = Math.round((Date.now() - s.startedAt) / 60000);
-      const recentLogs = s.logs.slice(-5).map((l) => `- ${l.level === 'error' ? '❌' : l.level === 'warn' ? '⚠️' : '✅'} ${l.msg.slice(0, 100)}`).join('\n');
-      pushAssistantMessage(
-        rootEl,
-        `### 🤖 Mode Autonome — ${s.status.toUpperCase()}\n\n` +
-          `**Objectif :** ${s.initialObjective.slice(0, 200)}\n\n` +
-          `- ⏱ Démarré il y a ${ageMin} min\n` +
-          `- 🔁 Itérations : ${s.iterations}\n` +
-          `- ✅ Tâches faites : ${done} (${fail} fails)\n` +
-          `- 📋 Queue : ${queue}\n` +
-          `- 📊 Tokens : ${s.tokensConsumed}\n\n` +
-          `#### Logs récents\n${recentLogs || '_(aucun)_'}\n\n` +
-          `_Stop : \`/autonomous stop\`_`,
-      );
-      return;
-    }
-
-    if (subLower === 'stop' || subLower === 'kill') {
-      apexAutonomousMode.stop(undefined, 'slash-stop');
-      pushAssistantMessage(rootEl, '🛑 Mode autonome arrêté.');
-      return;
-    }
-    if (subLower === 'pause') {
-      apexAutonomousMode.pause();
-      pushAssistantMessage(rootEl, '⏸ Mode autonome pausé. Reprends avec `/autonomous resume`.');
-      return;
-    }
-    if (subLower === 'resume') {
-      apexAutonomousMode.resume();
-      pushAssistantMessage(rootEl, '▶️ Mode autonome repris.');
-      return;
-    }
-
-    /* Nouvelle session */
-    const session = await apexAutonomousMode.start(sub);
-    pushAssistantMessage(
-      rootEl,
-      `🤖 **Mode autonome activé.**\n\n` +
-        `**Objectif :** ${session.initialObjective.slice(0, 300)}\n\n` +
-        `Je prends le relais — tu peux fermer l'app, je continue jusqu'à fin ou épuisement forfait Anthropic. ` +
-        `Tu seras notifié sur Telegram quand quota épuisé.\n\n` +
-        `Suivi : \`/autonomous status\`. Arrêt : \`/autonomous stop\`.`,
-    );
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    pushAssistantMessage(rootEl, `⚠️ Erreur mode autonome : ${msg}`);
-  }
-}
+/* v13.4.295 refactor monolithe : les 10 handlers de slash-commands
+ * (resume/statusline/ooda/ultrareview/diag/test/loop/plan/rules/autonomous)
+ * extraits vers chat-slash-handlers.ts (contexte injecté SlashCtx). */
 
 /**
  * v13.3.48 — Régénère la dernière réponse assistant en re-soumettant le dernier message user.
