@@ -1506,9 +1506,6 @@ var DEPTS=[
    descr:"Service en salle, valets du Casino (futur)"}
 ];
 var DEPT=DEPTS[0]; // D\u00e9partement actif (Jeux de table = seul utilis\u00e9 pour l'instant)
-function getDeptLabel(did){var d=DEPTS.find(function(x){return x.id===did;});return d?d.label:"?";}
-function getDeptColor(did){var d=DEPTS.find(function(x){return x.id===did;});return d?d.color:"#888";}
-function getDeptIcon(did){var d=DEPTS.find(function(x){return x.id===did;});return d?d.icon:"\ud83c\udfb2";}
 var FAMILIES=[
   {id:"bj",       label:"Jeux am\u00e9ricains", short:"Am\u00e9r.",  icon:"\ud83c\udccf", color:"#c9a227", games:"Blackjack, Craps, Roulette am\u00e9ricaine"},
   {id:"roulettes",label:"Jeux europ\u00e9en",   short:"Europ.", icon:"\ud83c\udfb0", color:"#c04040", games:"Roulette anglaise, Roulette europ\u00e9enne"},
@@ -1519,7 +1516,6 @@ var FAMILIES=[
 function getFamLabel(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.label:fid;}
 function getFamColor(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.color:"#888";}
 function getFamIcon(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.icon:"\ud83c\udfb2";}
-function getFamShort(fid){var f=FAMILIES.find(function(x){return x.id===fid;});return f?f.short:fid;}
 // ── GROUPES CONTRACTUELS SBM (v9.42) ───────────────────────────────────────
 // Statut de l'employ\u00e9 selon la convention collective (art. 26 retraite, art. 13 prime).
 // "ferme"  = Noyau historique (pr\u00e9 1993). Mobilit\u00e9 limit\u00e9e, avantages retraite, prime 1er mai 280\u20ac.
@@ -1528,7 +1524,6 @@ var GROUPES=[
   {id:"ouvert",label:"Groupe ouvert",short:"Ouvert",color:"#3a8a50",icon:"\ud83d\udd13",descr:"Polyvalent : peut tourner sur plusieurs familles de jeux. Prime 1er mai 150\u20ac."},
   {id:"ferme",label:"Groupe ferm\u00e9",short:"Ferm\u00e9",color:"#a06840",icon:"\ud83d\udd12",descr:"Noyau historique (pr\u00e9-1993). Mobilit\u00e9 restreinte, avantages retraite \u00e9tendus, prime 1er mai 280\u20ac."}
 ];
-function getGroupeLabel(gid){if(!gid)return "";var g=GROUPES.find(function(x){return x.id===gid;});return g?g.label:gid;}
 function getGroupeColor(gid){var g=GROUPES.find(function(x){return x.id===gid;});return g?g.color:"#7a8a80";}
 function getGroupeIcon(gid){var g=GROUPES.find(function(x){return x.id===gid;});return g?g.icon:"";}
 // ── Lieux de travail (Casino, Café de Paris, etc.) ──────────────────────────
@@ -1541,7 +1536,6 @@ var VENUES=[
   {id:"mba", l:"Monte-Carlo Bay",       c:"#3a8a50"}
 ];
 function getVenueLabel(id){var v=VENUES.find(function(x){return x.id===id;});return v?v.l:"";}
-function getVenueColor(id){var v=VENUES.find(function(x){return x.id===id;});return v?v.c:"#888";}
 // ── Rôles / postes hiérarchiques ──────────────────────────────────────────────
 // Liste extensible des positions occupées par les employés
 var ROLES=[
@@ -1685,7 +1679,6 @@ var ROLE_SHIFTS={
   }
 };
 function getRoleShifts(roleId){return ROLE_SHIFTS[roleId]||null;}
-function getRoleShiftCodes(roleId){var r=ROLE_SHIFTS[roleId];return r?r.shiftCodes:[];}
 // ── Compétences jeux (initiales du code poste PDF) ────────────────────────────
 var COMPETENCES=[
   {id:"B",  l:"Blackjack",                c:"#c9a227"},
@@ -1831,7 +1824,6 @@ function toggleEmpPinkComp(empId){
   dc();
 }
 // v9.136 — Alias admin plus explicite (même logique, nom plus clair)
-function toggleGroupeOuvert(empId){return toggleEmpPinkComp(empId);}
 
 // v9.136 — Date de la Convention Collective SBM (pour auto-détection GO nouveaux)
 var CONVENTION_DATE=new Date(2015,3,1).getTime(); // 1er avril 2015
@@ -3096,7 +3088,6 @@ function cmcCadreBadgeHtml(emp){
     +icon+'</span>';
 }
 // v9.600 — Toggle migration cadres unifiés (off par défaut, admin Kevin opt-in)
-function cmcIsCadresUnifiedMode(){return lg("cmc_cadres_unified",false)===true;}
 
 // ════════════════════════════════════════════════════════════════════════════
 // v9.709 — REGISTRE SECTEURS (Kevin "Plus tard on intégrera d'autres plannings,
@@ -3678,7 +3669,6 @@ var EP={
   "RICORDO B":         {s:["22/6","19/4","14/19","20/5","16/22","16/3"],d:["20/5","16/3"],i:0},
   "LEMONNIER PH":      {s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:["16/3"],i:0}
 };
-function getEP(e){return EP[e.name]||{s:["22/6","19/4","16/3","14/19","20/5","16/22"],d:[],i:0};}
 
 // Utilitaires
 function getDays(y,m){return new Date(y,m+1,0).getDate();}
@@ -3823,16 +3813,6 @@ function cmcIdbSet(key,value){return _cmcIdbOpen().then(function(db){return new 
 function cmcIdbGet(key){return _cmcIdbOpen().then(function(db){return new Promise(function(res){try{var tx=db.transaction(CMC_IDB_STORE,"readonly");var req=tx.objectStore(CMC_IDB_STORE).get(key);req.onsuccess=function(){res(req.result);};req.onerror=function(){res(null);}}catch(_){res(null);}});}).catch(function(){return null;});}
 // Cles critiques CMCteams (donnees metier casino : on ne peut pas les perdre)
 var CMC_CRITICAL_KEYS=["cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_ov","cmc_chat","cmc_audit","cmc_chefs_t","cmc_chef_eq","cmc_known_identities","cmc_timings","cmc_exchanges","cmc_day_notes","cmc_templates","cmc_features","cmc_learned_codes"];
-function cmcTripleSave(key,value){
-  var result={ls:false,fb:false,idb:false};
-  try{
-    if(typeof FB_FIX!=="undefined"&&FB_FIX.indexOf(key)>=0&&typeof ls==="function"){ls(key,value);result.ls=true;result.fb=true;}
-    else{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));result.ls=true;}
-  }catch(e){console.error("[TRIPLE-CMC] localStorage fail:",e&&e.message);}
-  try{cmcIdbSet(key,value).then(function(ok){if(ok)result.idb=true;});}catch(_e){_cmcSafeCatch("cmc-idb",_e);}
-  setTimeout(function(){try{var lsCheck=localStorage.getItem(key);var expected=typeof value==="string"?value:JSON.stringify(value);if(!lsCheck){if(typeof toast==="function")toast("Sauvegarde "+key+" incomplete, retry","warn");try{localStorage.setItem(key,expected);}catch(_e){_cmcSafeCatch("cmc-idb",_e);}}}catch(_e){_cmcSafeCatch("cmc-idb",_e);}},120);
-  return result;
-}
 function cmcRestoreFromAll(criticalKeys){
   criticalKeys=criticalKeys||CMC_CRITICAL_KEYS;
   var restored=0,sources={};
@@ -4204,8 +4184,6 @@ function _rebuildIndexes(){
 }
 // Helper accesseurs O(1) exposés pour usage futur (remplace A.employees.find)
 function empById(id){return _empsById[id]||null;}
-function teamById(id){return _teamsById[id]||null;}
-function empsByTeam(tid){return _empsTeamIndex[tid]||[];}
 function fbApplyData(k,v){
   k=fbRestoreKey(k);
   if(!fbShouldSync(k))return;
@@ -4554,13 +4532,6 @@ var _idleCb=window.requestIdleCallback||function(cb){return setTimeout(function(
 var _cancelIdle=window.cancelIdleCallback||clearTimeout;
 function runIdle(fn,timeout){return _idleCb(fn,{timeout:timeout||2000});}
 // v9.367 — IntersectionObserver pour lazy rendering
-function onceVisible(el,cb){
-  if(!el||!("IntersectionObserver" in window)){cb();return;}
-  var io=new IntersectionObserver(function(entries){
-    entries.forEach(function(e){if(e.isIntersecting){io.disconnect();cb();}});
-  },{rootMargin:"100px"});
-  io.observe(el);
-}
 // v9.368 — Network Information API : adapter selon connexion
 function getNetworkInfo(){
   try{
@@ -4569,13 +4540,8 @@ function getNetworkInfo(){
     return {effectiveType:c.effectiveType||"unknown",saveData:!!c.saveData,downlink:c.downlink||null,rtt:c.rtt||null};
   }catch(_){return {effectiveType:"unknown",saveData:false};}
 }
-function isSlowNetwork(){
-  var n=getNetworkInfo();
-  return n.effectiveType==="slow-2g"||n.effectiveType==="2g"||n.saveData;
-}
 // v9.369 — Page Visibility avancé : pause crons quand hidden
 var _visiblePauseListeners=[];
-function onVisibilityChange(cb){_visiblePauseListeners.push(cb);}
 document.addEventListener("visibilitychange",function(){
   var hidden=document.hidden;
   _visiblePauseListeners.forEach(function(cb){try{cb(hidden);}catch(_){}});
@@ -4602,23 +4568,6 @@ function fmtRelative(ts){
   }catch(_){return fmtDate(ts);}
 }
 // v9.365 — Compression natif (CompressionStream) pour backups volumineux
-async function compressStr(str){
-  try{
-    if(!("CompressionStream" in window))return null;
-    var stream=new Blob([str]).stream().pipeThrough(new CompressionStream("gzip"));
-    var buf=await new Response(stream).arrayBuffer();
-    return btoa(String.fromCharCode.apply(null,new Uint8Array(buf)));
-  }catch(_){return null;}
-}
-async function decompressStr(b64){
-  try{
-    if(!("DecompressionStream" in window))return null;
-    var binary=atob(b64);
-    var bytes=new Uint8Array(binary.length);for(var i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
-    var stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-    return await new Response(stream).text();
-  }catch(_){return null;}
-}
 /** Send browser notif if permission granted AND app in background. @param {string} title. @param {string} body. @param {Object} [opts]. @returns {void} */
 function sendNotif(title,body,opts){
   if(!("Notification" in window)||Notification.permission!=="granted")return false;
@@ -4923,14 +4872,6 @@ function empHasPresenceForMonth(emp,y,m){
   return false;
 }
 // Raccourci : retourne le label "Équipe du mois" pour affichage
-function teamForMonthLabel(emp,y,m){
-  var key=y+"-"+m;
-  var tid=teamForMonth(emp,y,m);
-  if(!tid)return"Non d\u00e9finie";
-  var t=gt(tid);var name=t?t.name:"\u00c9q."+tid;
-  var fromImport=emp.teamHistory&&emp.teamHistory[key];
-  return name+(fromImport?"":" (derni\u00e8re connue)");
-}
 // Convertit un moOff en "Mois AAAA" pour l'affichage
 function moToLabel(mo){
   var mIdx=mo+2,y2=2026+Math.floor(mIdx/12),m2=((mIdx%12)+12)%12;
@@ -5066,28 +5007,6 @@ function _genSecurePassword(length){
   return pw.join("");
 }
 // v9.87 — Score de force d'un mot de passe (0-100)
-function _pwStrength(pw){
-  if(!pw)return {score:0,label:"Vide",color:"#666"};
-  var score=0;
-  if(pw.length>=8)score+=15;
-  if(pw.length>=12)score+=15;
-  if(pw.length>=16)score+=10;
-  if(/[a-z]/.test(pw))score+=10;
-  if(/[A-Z]/.test(pw))score+=15;
-  if(/[0-9]/.test(pw))score+=15;
-  if(/[^a-zA-Z0-9]/.test(pw))score+=20;
-  // Bonus : diversit\u00e9 (unique chars / total)
-  var unique=new Set(pw.split("")).size;
-  if(unique/pw.length>0.7)score+=5;
-  // P\u00e9nalit\u00e9s
-  if(/^[0-9]+$/.test(pw))score-=20; // que des chiffres
-  if(/^(.)\1+$/.test(pw))score=0; // que 1 char r\u00e9p\u00e9t\u00e9
-  if(["password","motdepasse","azerty","qwerty","123456"].indexOf(pw.toLowerCase())>=0)score=0;
-  score=Math.max(0,Math.min(100,score));
-  var label=score<30?"Faible":score<50?"Moyen":score<70?"Bon":score<85?"Fort":"Excellent";
-  var color=score<30?"#e06060":score<50?"#e0a040":score<70?"#d4b840":score<85?"#7edc90":"#5aff90";
-  return{score:score,label:label,color:color};
-}
 
 // v9.79 — Hash v2 avec sel DYNAMIQUE par user (recommand\u00e9 pour tous nouveaux mdp)
 // Le sel est g\u00e9n\u00e9r\u00e9 al\u00e9atoirement et stock\u00e9 avec le hash : {h:"v2:<salt>:<hash>", ...}
@@ -5129,15 +5048,6 @@ function verifyPw(pw,stored){
   return false;
 }
 // v9.79 — Migrer un hash v1 vers v2 au login r\u00e9ussi (transparent)
-function _migratePwToV2(uid,clearPw){
-  if(!uid||!clearPw)return;
-  if(!A.passwords||!A.passwords[uid])return;
-  var rec=A.passwords[uid];
-  if(rec.h&&rec.h.indexOf("v2:")===0)return; // d\u00e9j\u00e0 migr\u00e9
-  var newHash=hashPwV2(clearPw);
-  A.passwords[uid]=Object.assign({},rec,{h:newHash,migratedAt:Date.now(),migrationFrom:rec.h?rec.h.slice(0,3):"djb2"});
-  ls("cmc_pw",A.passwords);
-}
 // v9.79 — Device fingerprint basique (pour d\u00e9tection anomalie connexion)
 function _deviceFingerprint(){
   try{
@@ -5468,7 +5378,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.788";
+var APP_VER="v9.789";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -6284,12 +6194,6 @@ function previewDoc(id){
     +'</div></div>';
 }
 
-function updateDocNotes(id,notes){
-  if(!A.user||A.user.id!==AID)return;
-  var d=(A.docs||[]).find(function(x){return x.id===id;});
-  if(!d)return;
-  d.notes=notes;ls("cmc_docs",A.docs);
-}
 
 // Toggle priv\u00e9/partag\u00e9 sur un document
 function toggleDocShared(id){
@@ -9606,14 +9510,6 @@ function helpIcon(key,label){
 
 // v9.88 — UX polish : helpers r\u00e9utilisables
 // Empty state avec ic\u00f4ne + texte + CTA optionnel
-function emptyState(icon,title,subtitle,ctaLabel,ctaAction){
-  return '<div style="text-align:center;padding:40px 20px;color:#8aaac0">'
-    +'<div style="font-size:48px;margin-bottom:10px;opacity:.6">'+(icon||"\ud83d\udcdd")+'</div>'
-    +'<div style="font-size:16px;font-weight:700;color:#c0d8c0;margin-bottom:4px">'+esc(title||"Aucune donn\u00e9e")+'</div>'
-    +(subtitle?'<div style="font-size:13px;color:#8aaac0;margin-bottom:14px;max-width:320px;margin-left:auto;margin-right:auto;line-height:1.5">'+esc(subtitle)+'</div>':'')
-    +(ctaLabel&&ctaAction?'<button onclick="'+ctaAction+'" style="background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);color:#ffdc40;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer">'+esc(ctaLabel)+'</button>':'')
-    +'</div>';
-}
 // Loading skeleton (blocs gris pulsants)
 function skeleton(lines,width){
   lines=lines||3;var w=width||"100%";
@@ -9632,11 +9528,6 @@ function confirmDanger(message,confirmWord){
   return input.trim().toUpperCase()===confirmWord.toUpperCase();
 }
 // Badge de statut (connect\u00e9 / hors-ligne / occup\u00e9)
-function statusBadge(status,label){
-  var col=status==="online"?"#5aaa70":status==="busy"?"#e0a040":status==="offline"?"#7a8a70":"#a0a0a0";
-  var ic=status==="online"?"\ud83d\udfe2":status==="busy"?"\ud83d\udfe0":status==="offline"?"\u26aa":"\u26aa";
-  return '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:'+col+'18;border:1px solid '+col+'50;border-radius:12px;font-size:11px;color:'+col+';font-weight:700">'+ic+' '+esc(label||status)+'</span>';
-}
 
 // v9.82 — COMMAND PALETTE (⌘K / Ctrl+K) — navigation et actions rapides
 var CMD_PALETTE_ACTIONS=[
@@ -9650,6 +9541,11 @@ var CMD_PALETTE_ACTIONS=[
   {cat:"Navigation",icon:"\ud83d\udc64",label:"Mon profil",keywords:["profil","moi","mon","compte"],fn:function(){sv("profil");}},
   {cat:"Navigation",icon:"\ud83d\udcd6",label:"Convention collective",keywords:["convention","loi","regles"],fn:function(){sv("convention");}},
   {cat:"Navigation",icon:"\ud83d\udcca",label:"Mes stats",keywords:["stats","statistiques","heures"],fn:function(){sv("messtats");}},
+  // Outils (v9.789 \u2014 features auto-contenues recablees depuis le tri orphelines, deps verifiees)
+  {cat:"Outils",icon:"\ud83d\udcc5",label:"Exporter mon planning (.ics)",keywords:["export","ics","calendrier","agenda","planning","apple","google"],fn:function(){if(A.user&&A.user.id)exportICS(A.user.id,A.year,A.month);else toast("Connecte-toi d'abord","err");}},
+  {cat:"Outils",icon:"\ud83d\udcc5",label:"Exporter le planning d'une \u00e9quipe (.ics)",adminOnly:true,keywords:["export","ics","equipe","team","calendrier"],fn:function(){var t=A.user&&teamForMonth(A.user,A.year,A.month);if(t)exportTeamICS(t);else toast("Aucune \u00e9quipe ce mois pour ton compte","err");}},
+  {cat:"Outils",icon:"\ud83d\udce4",label:"Partager CMC Teams",keywords:["partager","share","envoyer","lien","url"],fn:function(){webShare("CMC Teams","Planning casino",location.href);}},
+  {cat:"Outils",icon:"\ud83d\udd33",label:"QR code de l'app",keywords:["qr","code","scanner","lien","ouvrir"],fn:function(){showQRCode(location.href,"CMC Teams");}},
   // Admin uniquement
   {cat:"Admin",icon:"\u2699\ufe0f",label:"Panneau admin",adminOnly:true,keywords:["admin","config","param"],fn:function(){sv("admin");}},
   {cat:"Admin",icon:"\ud83d\udc65",label:"Gestion employ\u00e9s",adminOnly:true,keywords:["employes","emp","personnel"],fn:function(){sv("employees");}},
@@ -9929,9 +9825,7 @@ var CASINOS_SBM=[
    desc:"Petit casino de l\u2019h\u00f4tel MC Bay. Client\u00e8le r\u00e9sidents + touristes."}
 ];
 function getCasino(id){return CASINOS_SBM.find(function(c){return c.id===id;})||CASINOS_SBM[0];}
-function getCasinoColor(id){return (getCasino(id)||{}).color||"#c9a227";}
 function getCasinoName(id){return (getCasino(id)||{}).name||id;}
-function getCasinoIcon(id){return (getCasino(id)||{}).icon||"\u2666\ufe0f";}
 // Casino actif de filtrage UI (persisté localStorage, ne sync pas Firebase)
 function getActiveCasino(){return localStorage.getItem("cmc_active_casino")||null;}
 function setActiveCasino(id){
@@ -10813,20 +10707,6 @@ function _toastNext(){
 var _bgSlides=[],_bgIdx=0,_bgLayer="A",_bgTimer=null,_bgSig="";
 // v9.113 — Pause du diaporama des fonds (admin peut figer une photo)
 var _bgPaused=localStorage.getItem("cmc_bg_paused")==="1";
-function toggleBgPaused(){
-  if(!A.user||A.user.id!==AID){toast("\u26a0 R\u00e9serv\u00e9 admin","err");return;}
-  _bgPaused=!_bgPaused;
-  localStorage.setItem("cmc_bg_paused",_bgPaused?"1":"0");
-  if(_bgPaused){
-    if(_bgTimer){clearInterval(_bgTimer);_bgTimer=null;}
-    toast("\u23f8 D\u00e9filement des fonds mis en pause \u2014 la photo actuelle reste affich\u00e9e");
-  }else{
-    _bgSig=""; // force re-init
-    _startBgSlideshow();
-    toast("\u25b6 D\u00e9filement des fonds relanc\u00e9 (changement toutes les 5s)");
-  }
-  dc();
-}
 function _collectBgPhotos(){
   var photos=[];
   var ph=A.photos||{};
@@ -10881,12 +10761,6 @@ function _startBgSlideshow(){
     hide.style.opacity="0";
     _bgLayer=_bgLayer==="A"?"B":"A";
   },5000);
-}
-function _stopBgSlideshow(){
-  if(_bgTimer){clearInterval(_bgTimer);_bgTimer=null;}
-  _bgSig="";
-  var a=document.getElementById("bgA"),b=document.getElementById("bgB");
-  if(a)a.style.opacity="0";if(b)b.style.opacity="0";
 }
 
 function render(){
@@ -11762,7 +11636,6 @@ function agentActionPurgeOrphans(){
   dc();
 }
 function agentActionGotoImportAnomalies(){sv("importanom");}
-function agentActionGotoConflicts(){if(typeof sv==="function")sv("import");}
 // v9.417 — Actions de navigation rapides depuis rapports agents
 function agentActionGotoPlanning(){if(typeof sv==="function")sv("planning");}
 function agentActionGotoAbsences(){if(typeof sv==="function")sv("absences");}
@@ -15664,15 +15537,6 @@ function vLogin(){
   return vLoginStep0();
 }
 
-function loginProgress(step,total){
-  var h='<div style="display:flex;align-items:center;gap:6px;justify-content:center;margin:8px 0 14px">';
-  for(var i=1;i<=total;i++){
-    var done=i<step,cur=i===step;
-    h+='<div style="width:'+(cur?'28':'8')+'px;height:8px;border-radius:4px;background:'+(done?'#c9a227':cur?'linear-gradient(90deg,#c9a227,#d4b840)':'rgba(255,255,255,.12)')+';transition:width .3s"></div>';
-  }
-  h+='<span style="font-size:11px;color:rgba(255,255,255,.3);margin-left:6px">Étape '+step+'/'+total+'</span>';
-  return h+'</div>';
-}
 function vLoginStep0(){
   return `<div class="login-bg">
   <div class="login-table-svg">
@@ -17936,11 +17800,6 @@ function empMatchesJeu(emp,jeu){
   return (emp.post||"").toUpperCase().indexOf(comp)>=0;
 }
 // Durée rotation selon emp (senior=40, sinon 60, roulette europ=20)
-function pitRotDur(emp,jeu){
-  if(jeu==="roul_eur")return 20;
-  if(emp&&(emp.senior||isSenior(emp)))return 40;
-  return 60;
-}
 // Compute pur : retourne {alerts:[...], coverage:{tid:pct}, releasable:[uid]}
 function pitCompute(){
   var live=A.live||getLiveState();
@@ -22196,17 +22055,8 @@ function renderFloatingChips(count,containerH){
 }
 
 // Bouton-jeton : wraps un bouton dans un jeton cliquable
-function chipButton(value,label,onclick,size){
-  var s=size||52;
-  return '<button onclick="'+onclick+'" style="background:none;border:none;cursor:pointer;padding:0;position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:'+(s+4)+'px;min-height:'+(s+4)+'px;transition:transform .15s,filter .15s" onmouseenter="this.style.transform=\'scale(1.12)\';this.style.filter=\'brightness(1.15) drop-shadow(0 0 8px rgba(201,162,39,.5))\'" onmouseleave="this.style.transform=\'none\';this.style.filter=\'none\'" aria-label="'+esc(label)+'">'
-    +renderChip(value,s,label)+'</button>';
-}
 
 // Bouton-plaque : wraps un bouton plaque rectangulaire
-function plaqueButton(label,onclick,w,h){
-  return '<button onclick="'+onclick+'" style="background:none;border:none;cursor:pointer;padding:0;transition:transform .15s,filter .15s" onmouseenter="this.style.transform=\'translateY(-2px)\';this.style.filter=\'brightness(1.1) drop-shadow(0 4px 12px rgba(201,162,39,.4))\'" onmouseleave="this.style.transform=\'none\';this.style.filter=\'none\'" aria-label="'+esc(label)+'">'
-    +renderPlaque(0,w||140,h||48,label)+'</button>';
-}
 // Helper KPI card pour le dashboard RH admin (v9.45)
 function _hrKpi(icon,num,label,col){
   return '<div style="padding:8px 6px;background:'+col+'0c;border:1px solid '+col+'28;border-radius:8px;text-align:center">'
@@ -22616,45 +22466,6 @@ function _idbInit(){
     }catch(e){resolve(null);}
   });
 }
-function _idbSet(key,value){
-  return _idbInit().then(function(db){
-    if(!db){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(e){return false;}}
-    return new Promise(function(resolve){
-      var tx=db.transaction("kv","readwrite");
-      tx.objectStore("kv").put(value,key);
-      tx.oncomplete=function(){resolve(true);};
-      tx.onerror=function(){resolve(false);};
-    });
-  });
-}
-function _idbGet(key){
-  return _idbInit().then(function(db){
-    if(!db){try{var v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch(e){return null;}}
-    return new Promise(function(resolve){
-      var tx=db.transaction("kv","readonly");
-      var req=tx.objectStore("kv").get(key);
-      req.onsuccess=function(){resolve(req.result||null);};
-      req.onerror=function(){resolve(null);};
-    });
-  });
-}
-function _idbDelete(key){
-  return _idbInit().then(function(db){
-    if(!db){try{localStorage.removeItem(key);return true;}catch(e){return false;}}
-    return new Promise(function(resolve){
-      var tx=db.transaction("kv","readwrite");
-      tx.objectStore("kv").delete(key);
-      tx.oncomplete=function(){resolve(true);};
-      tx.onerror=function(){resolve(false);};
-    });
-  });
-}
-function _idbSize(){
-  return _idbInit().then(function(db){
-    if(!db||!navigator.storage||!navigator.storage.estimate)return {quota:null,usage:null};
-    return navigator.storage.estimate().then(function(est){return{quota:est.quota,usage:est.usage,pct:est.quota?(est.usage/est.quota*100).toFixed(1):null};});
-  });
-}
 
 // v9.86 — Lazy-loader pour constantes lourdes (économise RAM au démarrage)
 // Usage: _lazyLoad('SALON_PHOTOS', () => eval("window.SALON_PHOTOS")) → retourne promise
@@ -22669,15 +22480,6 @@ function _lazyLoad(name,loader){
 }
 
 // v9.86 — Throttle helper (limite fréquence d'appel d'une fonction coûteuse)
-function _throttle(fn,wait){
-  var last=0,t=null;
-  return function(){
-    var now=Date.now(),args=arguments,ctx=this;
-    var remaining=wait-(now-last);
-    if(remaining<=0){last=now;fn.apply(ctx,args);}
-    else{if(t)clearTimeout(t);t=setTimeout(function(){last=Date.now();fn.apply(ctx,args);t=null;},remaining);}
-  };
-}
 
 // v9.85 — Suggestions proactives IA : détecte problèmes et propose actions
 // Appelé dans vAccueil, affiche un banner si quelque chose d'important à savoir
@@ -29456,24 +29258,6 @@ function chatToggleReaction(ts,emoji){
   ls("cmc_chat",A.chatMsgs);
   dc();
 }
-function _renderReactions(m){
-  if(!m.reactions||!Object.keys(m.reactions).length)return"";
-  var me=A.user?A.user.id:null;
-  var h='<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">';
-  Object.keys(m.reactions).forEach(function(e){
-    var uids=m.reactions[e]||[];
-    if(!uids.length)return;
-    var mine=me&&uids.indexOf(me)>=0;
-    h+='<button onclick="chatToggleReaction('+m.ts+',\''+e+'\')" style="background:'+(mine?"rgba(201,162,39,.2)":"rgba(255,255,255,.08)")+';border:1px solid '+(mine?"rgba(201,162,39,.5)":"rgba(255,255,255,.15)")+';border-radius:12px;padding:1px 7px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;color:'+(mine?"#ffdc40":"#e0e8d8")+'" title="'+uids.length+' '+(uids.length>1?"r\u00e9actions":"r\u00e9action")+'">'+e+'<span style="font-weight:700">'+uids.length+'</span></button>';
-  });
-  return h+'</div>';
-}
-function _renderReactionPicker(ts){
-  var emojis=["\ud83d\udc4d","\u2705","\u2764\ufe0f","\ud83d\udcaa","\ud83d\ude02","\ud83c\udfaf","\ud83d\udd25","\ud83d\udc4f"];
-  return '<div class="reaction-picker" style="display:none;position:absolute;background:rgba(20,40,25,.95);backdrop-filter:blur(10px);border:1px solid rgba(201,162,39,.3);border-radius:24px;padding:4px 8px;gap:2px;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,.5)">'
-    +emojis.map(function(e){return '<button onclick="chatToggleReaction('+ts+',\''+e+'\');event.stopPropagation();" style="background:transparent;border:none;font-size:20px;cursor:pointer;padding:4px;border-radius:50%;transition:transform .15s" onmouseenter="this.style.transform=\'scale(1.3)\'" onmouseleave="this.style.transform=\'none\'">'+e+'</button>';}).join("")
-    +'</div>';
-}
 
 function chatReadMsg(ts){
   // v9.106 — Lire un message \u00e0 voix haute (bouton \ud83d\udd0a)
@@ -30917,54 +30701,9 @@ function _metaphone(s){
 
 // v9.78 — Match multi-strat\u00e9gie pour un nom : retourne candidate + confidence
 // Combine bigram (ressemblance lettres), Levenshtein (\u00e9ditions), et Metaphone (phon\u00e9tique)
-function _matchName(query,candidates){
-  var q=query.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  if(!q||!candidates||!candidates.length)return null;
-  var qMeta=_metaphone(q);
-  var best=null,bestScore=0;
-  candidates.forEach(function(c){
-    var cn=c.name||c;
-    var cnNorm=cn.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    if(q===cnNorm)return best={cand:c,score:1,method:"exact"};
-    var bg=_strSim(q,cnNorm);
-    var lev=_levenshtein(q,cnNorm);
-    var levScore=lev<=Math.max(1,Math.floor(cnNorm.length*0.15))?1-lev/cnNorm.length:0;
-    var metaMatch=qMeta&&_metaphone(cnNorm)===qMeta?0.9:0;
-    var score=Math.max(bg,levScore,metaMatch);
-    if(score>bestScore){bestScore=score;best={cand:c,score:score,method:bg>=score?"bigram":levScore>=score?"levenshtein":"metaphone",lev:lev};}
-  });
-  return best&&best.score>=0.7?best:null;
-}
 
 // v9.78 — Validation sommes d'un import : compte jours travaill\u00e9s/repos/cong\u00e9s
 // et d\u00e9tecte \u00e9cart > tol\u00e9rance avec une r\u00e9f\u00e9rence pr\u00e9vue
-function _validateImportSums(overrides,expectedEmps,totalDays){
-  var counts={work:0,rest:0,conge:0,maladie:0,unknown:0,codes:{}};
-  Object.keys(overrides||{}).forEach(function(eid){
-    var days=overrides[eid]||{};
-    Object.keys(days).forEach(function(d){
-      var c=days[d]||"";
-      if(!c)return;
-      counts.codes[c]=(counts.codes[c]||0)+1;
-      if(c==="RH"||c==="R"||c==="RRT")counts.rest++;
-      else if(c==="CP")counts.conge++;
-      else if(c==="M"||c==="AT"||c==="MT")counts.maladie++;
-      else if(typeof CODES!=="undefined"&&CODES[c])counts.work++;
-      else counts.unknown++;
-    });
-  });
-  // V\u00e9rifications de coh\u00e9rence
-  var totalEmps=Object.keys(overrides||{}).length;
-  var totalCells=counts.work+counts.rest+counts.conge+counts.maladie+counts.unknown;
-  var expectedCells=totalEmps*(totalDays||31);
-  var coverage=expectedCells?totalCells/expectedCells:0;
-  var warnings=[];
-  if(coverage<0.7)warnings.push("Couverture faible: "+(coverage*100).toFixed(0)+"% ("+totalCells+"/"+expectedCells+" cellules)");
-  if(counts.unknown>0)warnings.push(counts.unknown+" cellules avec codes inconnus");
-  if(counts.rest===0&&totalEmps>5)warnings.push("Aucun jour de repos d\u00e9tect\u00e9 \u2014 suspect");
-  if(expectedEmps&&Math.abs(totalEmps-expectedEmps)/expectedEmps>0.1)warnings.push("Effectif d\u00e9vie: "+totalEmps+" vs "+expectedEmps+" attendus");
-  return{counts:counts,totalEmps:totalEmps,totalCells:totalCells,expectedCells:expectedCells,coverage:coverage,warnings:warnings};
-}
 
 function runAudit(y,m){
   y=y||A.year;m=m||A.month;
@@ -31720,16 +31459,6 @@ function vRepoConflicts(){
       +'</div>';
   }
   return h+'</div>';
-}
-function reloadSeed(){
-  if(!A.user||A.user.id!==AID)return;
-  if(!confirm("Recharger le planning Avril 2026 depuis les données pré-chargées ?\nCela écrasera toutes les modifications manuelles."))return;
-  A.overrides["2026-3"]=JSON.parse(JSON.stringify(SEED_APR2026));
-  ls("cmc_ov",A.overrides);
-  A.teams=JSON.parse(JSON.stringify(DEF_TEAMS));ls("cmc_t",A.teams);
-  CHEFS_T=JSON.parse(JSON.stringify(DEF_CHEFS_T));ls("cmc_chefs_t",CHEFS_T);
-  for(var _y2=2025;_y2<=2028;_y2++){for(var _m2=0;_m2<12;_m2++){localStorage.removeItem("cmc_ci_"+_y2+"_"+_m2);}}
-  toast("Planning Avril 2026 rechargé — 241 employés");dc();
 }
 
 // v9.47 \u2014 Vue "Qui est libre le X/Y" : filtre par jour, affiche employ\u00e9s en repos/cong\u00e9/formation
@@ -34068,11 +33797,7 @@ function _planAttachDrag(){
   if(!svg)return;
   var etab=svg.getAttribute("data-etab");
   var pt=svg.createSVGPoint();
-  function toSvgCoords(e){
-    pt.x=e.clientX;pt.y=e.clientY;
-    return pt.matrixTransform(svg.getScreenCTM().inverse());
-  }
-  var dragTid=null;
+    var dragTid=null;
   Array.prototype.forEach.call(svg.querySelectorAll(".plan-table"),function(g){
     var tid=g.getAttribute("data-tid");
     g.addEventListener("mousedown",function(e){e.preventDefault();dragTid=tid;g.style.cursor="grabbing";});
@@ -34220,20 +33945,6 @@ function _cmcMapTouchEnd(e){
   _panStart=null;
 }
 
-function _cmcMapLongStart(e,zoneId){
-  if(_longPressTimer){clearTimeout(_longPressTimer);}
-  _longPressMoved=false;
-  var t=(e.touches&&e.touches[0])||e;
-  var px=t.clientX||0,py=t.clientY||0;
-  _longPressTimer=setTimeout(function(){
-    if(_longPressMoved)return;
-    try{if(navigator.vibrate)navigator.vibrate(50);}catch(_){}
-    _cmcShowZoneMenu(zoneId,px,py);
-  },500);
-}
-function _cmcMapLongEnd(){
-  if(_longPressTimer){clearTimeout(_longPressTimer);_longPressTimer=null;}
-}
 
 function _cmcShowZoneMenu(zoneId,x,y){
   var prev=document.getElementById("cmcZoneMenu");
@@ -38899,23 +38610,6 @@ function _cmcAutoRecoverImports(){
 }
 
 // v9.123 — Nettoyage d'urgence des overrides (purge les codes non-reconnus)
-function _cleanOverridesNow(){
-  if(!A.user||A.user.id!==AID)return{cleaned:0};
-  var cleaned=0;
-  Object.keys(A.overrides||{}).forEach(function(mk){
-    var ov=A.overrides[mk]||{};
-    Object.keys(ov).forEach(function(eid){
-      var row=ov[eid]||{};
-      Object.keys(row).forEach(function(d){
-        var c=row[d];
-        if(c&&!CODES[c]){delete row[d];cleaned++;}
-      });
-      if(Object.keys(row).length===0)delete ov[eid];
-    });
-  });
-  if(cleaned>0){ls("cmc_ov",A.overrides);fbWrite("cmc_ov",A.overrides);}
-  return{cleaned:cleaned};
-}
 
 // Rollback : restaure l'état avant le dernier import d'un mois donné
 function rollbackLastImport(iy,im){
@@ -39499,12 +39193,7 @@ function cmcStructuredParser(rawText, year, month){
   var currentSection=null;
   // Codes horaires connus pour identifier lignes data
   var CODE_RE=/^(20\/5|19\/4|16\/22|14\/19|22\/6|16\/3|RH|R|CP|M|AF|RRT|PRT|DEPL|DELPT|EDC|PAT|MT|AT)[\*'"c]*$/;
-  function isCodeOrDay(tok){
-    if(!tok)return false;
-    var t=tok.replace(/[\*'"c]+$/,'').replace(/^['"]+|['"]+$/g,'');
-    return CODE_RE.test(t)||/^[A-Z][A-Z\/]*[0-9]*$/.test(t);
-  }
-  function looksLikeName(tok){
+    function looksLikeName(tok){
     return /^[A-Z][A-Z\s\-']+[A-Z]$/.test(tok)||/^[A-Z][A-Z]+\s[A-Z]+$/.test(tok);
   }
   function looksLikeComp(tok){
@@ -42691,7 +42380,6 @@ function bulkSelPickCode(){
   document.getElementById("ov").style.display="block";
 }
 function uT(id,f,v){if(!A.user||A.user.id!==AID)return;var t=A.teams.find(function(x){return x.id===id;});if(t){t[f]=v;ls("cmc_t",A.teams);}}
-function chTeam(id,team){if(!A.user||A.user.id!==AID)return;var e=A.employees.find(function(x){return x.id===id;});if(e){e.team=team;sav();}}
 function delEmp(id){
   if(!A.user||A.user.id!==AID)return;
   if(!confirm("Supprimer cet employ\u00e9 d\u00e9finitivement ?"))return;
@@ -42799,7 +42487,6 @@ function _trackView(uid,view){
   _visitStats[uid]["v_"+(view||"?")] = (_visitStats[uid]["v_"+(view||"?")] || 0) + 1;
   ls("cmc_visit_stats",_visitStats);
 }
-function getVisitStats(uid){return _visitStats[uid]||{logins:0,views:0,lastLogin:0,lastView:0};}
 // v9.67 — Thèmes visuels
 // v9.67 — Système multi-langues (i18n)
 var _lang=localStorage.getItem("cmc_lang")||"fr";
@@ -42978,14 +42665,6 @@ var THEMES={
   clair:{label:"Monaco Clair",icon:"\u2600\ufe0f",bg:"#f0ede4",text:"#1a2a1c",card:"rgba(255,255,255,.75)"},
   nuit:{label:"Nuit",icon:"\ud83c\udf19",bg:"#08080c",text:"#c8d0e0",card:"rgba(16,18,28,.35)"}
 };
-function setTheme(t){
-  // v9.113 — Unifié : casino/nuit → dark, clair → light
-  var mapping={casino:"dark",clair:"light",nuit:"dark",dark:"dark",light:"light",auto:"auto"};
-  var target=mapping[t]||"dark";
-  _setTheme(target); // applique data-theme + toast
-  _theme=t;
-  dc();
-}
 // v9.113 — Appliquer le thème au démarrage via le système unifié (data-theme)
 (function(){try{
   var mapping={casino:"dark",clair:"light",nuit:"dark",dark:"dark",light:"light",auto:"auto"};
@@ -43024,15 +42703,6 @@ document.addEventListener("keydown",function(e){
   else if(e.key==="/"||e.key==="f"&&e.ctrlKey){toggleSearch();e.preventDefault();}
 });
 
-function toggleVisitor(){
-  if(!A.user||A.user.id!==AID)return;
-  _visitorEnabled=!_visitorEnabled;
-  localStorage.setItem("cmc_visitor_enabled",_visitorEnabled?"1":"0");
-  // Si désactivé, déconnecter le visiteur s'il est connecté
-  if(!_visitorEnabled&&A.user&&A.user.id===_VISITOR_ID){doLogout();}
-  toast(_visitorEnabled?"\u2705 Compte visiteur activ\u00e9 (U007 / sbm2026)":"\ud83d\udd12 Compte visiteur d\u00e9sactiv\u00e9");
-  dc();
-}
 var _ttsLang="fr-FR";
 var _ttsSpeaking=false;
 /* v9.485 — Voix premium iOS + presets fun (parite Apex v12.107) */
