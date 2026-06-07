@@ -233,3 +233,69 @@ export function wireMicButton(rootEl: HTMLElement): void {
     }
   });
 }
+
+
+/** Câble le bouton wake word "Dis Apex" (#ax-chat-wake). */
+export function wireWakeButton(rootEl: HTMLElement): void {
+  /* Wake word "Dis Apex" : SpeechRecognition continuous (fix v13.3.23 Kevin bug 19:10)
+   * - Vérifie permission micro avant start (modal settings si denied)
+   * - Affiche transcript live dans textarea (preview avant détection wake)
+   * - Erreurs 'aborted'/'no-speech' silencieuses (lifecycle iOS) */
+  const wakeBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-wake');
+  wakeBtn?.addEventListener('click', () => {
+    haptic.tap();
+    void (async () => {
+      try {
+        const { voicePrint, checkMicrophonePermission } = await import('../../services/ai/voice-print.js');
+        if (!voicePrint.isSupported()) {
+          toast.warn('Wake word non supporté par ton navigateur');
+          return;
+        }
+        if (voicePrint.isListening()) {
+          voicePrint.stopWakeWord();
+          if (wakeBtn) {
+            wakeBtn.style.background = '';
+            wakeBtn.style.animation = '';
+          }
+          toast.success('Wake word arrêté');
+          return;
+        }
+        /* Pre-check permission micro */
+        const perm = await checkMicrophonePermission();
+        if (perm === 'denied') {
+          toast.warn('🚫 Micro refusé — autorise dans Réglages iOS > Apex > Microphone', {
+            duration: 7000,
+          });
+          return;
+        }
+        /* v13.4.192 fix Kevin "le micro fonctionne mais en permanence, pas comme Siri" :
+         * AVANT : onWakeInterim écrivait le transcript en temps réel dans placeholder
+         *         → Kevin voyait "écrire en permanence" avant le wake word.
+         * APRÈS : aucune écriture jusqu'à détection effective de "Dis Apex".
+         * Indicateur visuel discret : ondulation icon 👂 mais aucun texte affiché. */
+        const r = voicePrint.startWakeWord((transcript: string) => {
+          /* Wake word DÉTECTÉ → maintenant on capture + soumet */
+          const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
+          if (ta) {
+            ta.value = transcript;
+            ta.placeholder = 'Demande, dicte ou colle…';
+            const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
+            form?.requestSubmit();
+            toast.info('🎙 Dis Apex détecté → envoi…', { duration: 2000 });
+          }
+        });
+        if (r.ok && wakeBtn) {
+          /* Indicateur visuel : icon 👂 verte pulsante. Pas de texte placeholder. */
+          wakeBtn.style.background = 'linear-gradient(135deg,var(--ax-green),var(--ax-green))';
+          wakeBtn.style.animation = 'ax-wake-pulse 1.8s ease-in-out infinite';
+          toast.success('👂 Écoute passive activée — dis "Dis Apex" pour parler', { duration: 4000 });
+        } else {
+          toast.warn(`Wake word fail : ${r.reason ?? 'inconnu'}`);
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'erreur';
+        toast.warn(`Wake word erreur : ${msg}`);
+      }
+    })();
+  });
+}
