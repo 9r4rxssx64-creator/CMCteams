@@ -16,13 +16,14 @@ Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthou
 - v13.4.291 — `firebase.ts` attache `?auth=` RTDB (8 sites, rétro-compatible, débloque durcissement rules) (+3 tests)
 - CI `deploy-firebase-rules.yml` — déploiement règles RTDB 1-clic gaté (secrets FIREBASE_PRIVATE_KEY/CLIENT_EMAIL, projet cmcteams-c16ab)
 - v13.4.292 — refactor monolithe chat étape 1 : `chat-badges.ts` (renderProviderBadge/renderToolPills)
-- v13.4.292-296 — refactor monolithe chat (5 étapes testées, façade re-export + injection, zéro régression) :
-  `chat-badges.ts` · `chat-autoread.ts` · `chat-lightbox.ts` · `chat-slash-handlers.ts` (SlashCtx) · `chat-view-template.ts` (shell HTML/CSS).
-  **chat/index.ts 3888 → 3014 lignes (−874, −22,5%)**. Tests chat 364/364 verts à chaque étape.
+- v13.4.292-299 — refactor monolithe chat (8 étapes testées, façade re-export + injection, zéro régression) :
+  `chat-badges` · `chat-autoread` · `chat-lightbox` · `chat-slash-handlers` (SlashCtx) · `chat-view-template` (shell) ·
+  `chat-mic-wiring` (wireMicButton + wireWakeButton) · `chat-camera-wiring`.
+  **chat/index.ts 3888 → 2664 lignes (−1224, −31,5%)**. Tests chat 364/364 verts à chaque étape.
 
 ## Reste (séquencé, ne rien casser)
 1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
-4. Continuer refacto chat : reste le WIRING de `render` (event handlers : input submit, paste, camera, nav, FAB) — plus couplé à l'état module (conversation/queue/processQueue), à extraire par petits pas testés (handlers wire* → chat-wiring.ts avec contexte injecté).
+4. Continuer refacto chat : reste le CŒUR couplé de `render` (submit form, attach/file/album avec pendingAttachments, drag-drop, paste, logo long-press, nav) — partage l'état module (conversation/queue/processQueue/pendingAttachments/pushAlbumToChat). Nécessite un objet contexte partagé (ChatRenderCtx) — à concevoir puis extraire par petits pas testés.
 
 ---
 
