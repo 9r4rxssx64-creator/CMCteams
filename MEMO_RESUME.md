@@ -16,13 +16,13 @@ Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthou
 - v13.4.291 — `firebase.ts` attache `?auth=` RTDB (8 sites, rétro-compatible, débloque durcissement rules) (+3 tests)
 - CI `deploy-firebase-rules.yml` — déploiement règles RTDB 1-clic gaté (secrets FIREBASE_PRIVATE_KEY/CLIENT_EMAIL, projet cmcteams-c16ab)
 - v13.4.292 — refactor monolithe chat étape 1 : `chat-badges.ts` (renderProviderBadge/renderToolPills)
-- v13.4.292-295 — refactor monolithe chat (4 étapes testées, façade re-export, zéro régression) :
-  `chat-badges.ts` · `chat-autoread.ts` · `chat-lightbox.ts` · `chat-slash-handlers.ts` (10 handlers via contexte injecté SlashCtx).
-  **chat/index.ts 3888 → 3333 lignes (−555, −14,3%)**. Tests chat 364/364 verts.
+- v13.4.292-296 — refactor monolithe chat (5 étapes testées, façade re-export + injection, zéro régression) :
+  `chat-badges.ts` · `chat-autoread.ts` · `chat-lightbox.ts` · `chat-slash-handlers.ts` (SlashCtx) · `chat-view-template.ts` (shell HTML/CSS).
+  **chat/index.ts 3888 → 3014 lignes (−874, −22,5%)**. Tests chat 364/364 verts à chaque étape.
 
 ## Reste (séquencé, ne rien casser)
 1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
-4. Continuer refacto chat : reste le cœur `render` (~1800 lignes) — extraction par sous-vues (header/input/scroll/wiring), plus délicat (état module), à faire par petits pas testés.
+4. Continuer refacto chat : reste le WIRING de `render` (event handlers : input submit, paste, camera, nav, FAB) — plus couplé à l'état module (conversation/queue/processQueue), à extraire par petits pas testés (handlers wire* → chat-wiring.ts avec contexte injecté).
 
 ---
 
