@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.172",
+  "softwareVersion": "v1.1.173",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -90,7 +90,7 @@
 <style>
 :root{
   --ax-bg:#08080f;--ax-bg-2:#13131c;--ax-bg-3:#1a1a26;
-  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#8a8a98; /* v1.1.172 audit crew : #6a6a78 (3.24:1) -> #8a8a98 (~4.6:1) = WCAG AA */
+  --ax-text:#e8e8f0;--ax-text-2:#a8a8b8;--ax-text-3:#8a8a98; /* v1.1.173 audit crew : #6a6a78 (3.24:1) -> #8a8a98 (~4.6:1) = WCAG AA */
   --ax-gold:#c9a227;--ax-gold-2:#f4d97a;--ax-blue:#6a8aff;
   --ax-ok:#5fcf5f;--ax-warn:#f4d97a;--ax-err:#cf5f5f;
   --ax-border:#2a2a35;--ax-border-2:#3a3a48;
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.172';
+const __APEX_CHAT_VERSION__ = 'v1.1.173';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.172</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.173</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.172</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.173</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2588,7 +2588,7 @@ K._clearConvLocal = function(){
   if(!conv) return;
   if(!confirm('🧹 Vider cette conversation localement ?\n\nLes msgs ne seront supprimés que de TON appareil.')) return;
   delete K.messages[conv.id];
-  // v1.1.172 FIX P0 (audit crew) : les messages sont stockés via ls() => clé
+  // v1.1.173 FIX P0 (audit crew) : les messages sont stockés via ls() => clé
   // réelle PERSIST_PREFIX+'messages_'+id. Sans le préfixe, removeItem ciblait
   // une clé inexistante => "vider localement" inefficace (msgs réapparaissaient au reload).
   try { localStorage.removeItem(PERSIST_PREFIX + 'messages_' + conv.id); } catch(_e){_safeCatch('silent',_e)}
@@ -5972,7 +5972,7 @@ async function _ensureCryptoKeys(){
       ls('crypto_priv', privB64); // pas de PIN défini → comportement legacy inchangé
     }
     _logTelemetry('ok', 'crypto-keys-generated', { pub: pubB64.slice(0,20)+'...' });
-    // v1.1.172 FIX P0 (audit crew) : PUBLIER la clé publique au serveur, sinon
+    // v1.1.173 FIX P0 (audit crew) : PUBLIER la clé publique au serveur, sinon
     // les pairs ne peuvent jamais établir de session E2E (le repli était texte clair).
     K._publishPubkey();
   }catch(e){
@@ -5980,7 +5980,7 @@ async function _ensureCryptoKeys(){
   }
 }
 
-// v1.1.172 FIX P0 (audit crew) — publie la clé publique d'identité au serveur.
+// v1.1.173 FIX P0 (audit crew) — publie la clé publique d'identité au serveur.
 // Idempotent (marqueur crypto_pub_published) + best-effort (no-op sans token).
 K._publishPubkey = async function(){
   try{
@@ -5992,7 +5992,7 @@ K._publishPubkey = async function(){
   }catch(e){ _safeCatch('publish-pubkey', e); }  // jamais bloquant
 };
 
-// v1.1.172 FIX P0 (audit crew) — garantit une session E2E pour une conv (DM).
+// v1.1.173 FIX P0 (audit crew) — garantit une session E2E pour une conv (DM).
 // Établit depuis conv.peer_pubkey ; sinon récupère le bundle du pair just-in-time
 // via GET /api/keys/:peer_id/bundle. Retourne true si une session est active.
 K._ensureSession = async function(conv){
@@ -6041,7 +6041,7 @@ K.logout = function(){
       const short = k.replace(PERSIST_PREFIX, '');
       if(!keep.includes(short)) localStorage.removeItem(k);
     }
-    // v1.1.172 FIX P0 (audit crew) : les brouillons sont stockés sous clés
+    // v1.1.173 FIX P0 (audit crew) : les brouillons sont stockés sous clés
     // BRUTES `draft_*` (non préfixées). Sans ça, ils survivaient au logout et
     // étaient lus par le compte suivant sur le même appareil = fuite inter-comptes.
     else if(k.startsWith('draft_')){ localStorage.removeItem(k); }
@@ -6179,13 +6179,32 @@ K._handleAuthPhone = async function(){
     return;
   }
 
-  // v1.1.170 Kevin "enlève l'histoire du code etc, pour tous" :
-  // pas de SMS, pas d'étape OTP — on passe direct à la création de compte
-  // avec otp:'000000' (mode "cercle privé" — Kevin contrôle qui rejoint).
-  // L'admin vérifie le numéro dans la fiche après coup.
-  K.authData = { phone: cleanPhone, name, otp: '000000', _no_otp: true };
-  K.authStep = 'pseudo';
-  renderAuthStep();
+  // v1.1.173 (audit crew) — OTP SMS RÉEL. send-otp tente Vonage → TextBelt.
+  // Filet anti-blocage : si ALLOW_TEST_OTP="true" et SMS indispo, le serveur
+  // renvoie le code dans _dev_otp (pré-rempli à l'écran) → personne n'est bloqué.
+  // Kevin + invités ne passent jamais ici (bypass plus haut). Le champ code a
+  // autocomplete="one-time-code" → iOS propose le code du SMS en 1 tap.
+  K.authData = { phone: cleanPhone, name };
+  try{
+    toast('Envoi du code par SMS…', 'info', 1500);
+    const r = await fetch(API_BASE + '/api/auth/send-otp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: cleanPhone, name })
+    });
+    const result = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(result.detail || result.message || ('Erreur ' + r.status));
+    if(result._dev_otp){
+      K.authData._dev_otp = result._dev_otp;
+      K.authData._dev_show = true;
+      toast('SMS indispo — code affiché à l\'écran', 'warn', 3000);
+    } else {
+      toast('📩 Code envoyé par SMS', 'ok', 2000);
+    }
+    K.authStep = 'otp';
+    renderAuthStep();
+  }catch(e){
+    toast(e.message || 'Envoi impossible, réessaie', 'err', 4000);
+  }
   return;
 
   // === [LEGACY OTP — désactivé v1.1.170] Tentative worker avec timeout 8s ===
@@ -6388,7 +6407,7 @@ K.render = function(){
   const app = $('#app');
   if(!app) return;
 
-  // v1.1.172 FIX P0 UX (audit crew) : préserver le champ texte focalisé À TRAVERS
+  // v1.1.173 FIX P0 UX (audit crew) : préserver le champ texte focalisé À TRAVERS
   // le re-render complet. Sans ça, quand un message arrive pendant que l'user tape,
   // le <textarea> est recréé → clavier iOS se ferme + texte en cours + curseur perdus.
   let _pf = null;
@@ -6591,7 +6610,7 @@ function renderChats(app){
   `;
 }
 
-// v1.1.172 FIX P0 UX (audit crew) — rendu d'UNE bulle (source unique réutilisée
+// v1.1.173 FIX P0 UX (audit crew) — rendu d'UNE bulle (source unique réutilisée
 // par renderChat ET par l'append incrémental). Évite de re-décoder toutes les
 // images base64 + re-parser tout le markdown de l'historique à chaque message.
 K._renderBubble = function(m, conv, msgs){
@@ -6779,7 +6798,7 @@ K.openConv = async function(convId){
   }, 800);
 
   // Phase 2 : établir session E2E (peer_pubkey joint par le serveur OU bundle
-  // récupéré just-in-time). v1.1.172 FIX P0 (audit crew).
+  // récupéré just-in-time). v1.1.173 FIX P0 (audit crew).
   try{ await K._ensureSession(conv); }catch(e){ _safeCatch('establish-session', e); }
 
   K.sv('chat', conv);
@@ -6799,7 +6818,7 @@ K._sendMsg = async function(){
     else { text = result; input.value = result; }
   }
 
-  // Phase 2 : chiffrer E2E. v1.1.172 FIX P0 (audit crew) : on GARANTIT d'abord
+  // Phase 2 : chiffrer E2E. v1.1.173 FIX P0 (audit crew) : on GARANTIT d'abord
   // la session (établit / récupère le bundle du pair) AVANT de chiffrer, au lieu
   // de retomber silencieusement en clair.
   let ciphertext = null;
@@ -6858,19 +6877,19 @@ K._sendMsg = async function(){
       toast(ciphertext ? '🛡 Envoyé chiffré E2E' : '📨 Envoyé', 'ok', 1000);
     }catch(e){
       _safeCatch('ws-send', e);
-      // v1.1.172 FIX P0 (audit crew) : échec d'envoi → outbox (replay à la reconnexion)
+      // v1.1.173 FIX P0 (audit crew) : échec d'envoi → outbox (replay à la reconnexion)
       K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id });
       toast('📭 En attente — partira à la reconnexion', 'warn', 1800);
     }
   } else {
-    // v1.1.172 FIX P0 (audit crew) : pas de WS → outbox persistée (avant : message perdu).
+    // v1.1.173 FIX P0 (audit crew) : pas de WS → outbox persistée (avant : message perdu).
     K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id });
     toast('📭 Hors-ligne — message en attente d\'envoi', 'info', 1800);
   }
 };
 
 // ============================================================================
-//  Outbox offline — v1.1.172 FIX P0 (audit crew)
+//  Outbox offline — v1.1.173 FIX P0 (audit crew)
 //  Les messages écrits sans WS sont persistés puis rejoués à l'ouverture du WS
 //  de leur conversation (le WS est par-conv) OU au retour réseau (online).
 // ============================================================================
@@ -7069,12 +7088,12 @@ K._openWs = async function(convId){
       `?token=${encodeURIComponent(K.token)}&uid=${encodeURIComponent(K.user.id)}&conv=${encodeURIComponent(convId)}`;
 
     K.ws = new WebSocket(wsUrl);
-    K._wsConvId = convId;   // v1.1.172 : conv liée au WS courant (pour flush outbox)
+    K._wsConvId = convId;   // v1.1.173 : conv liée au WS courant (pour flush outbox)
 
     K.ws.addEventListener('open', () => {
       _logTelemetry('ok', 'ws-open', { convId });
       K._wsRetry = 0;   // reconnexion réussie → reset backoff
-      // v1.1.172 FIX P0 (audit crew) : rejouer les messages écrits hors-ligne
+      // v1.1.173 FIX P0 (audit crew) : rejouer les messages écrits hors-ligne
       // pour cette conversation dès que le WS est (re)connecté.
       try{ K._flushOutboxFor(convId); }catch(_e){_safeCatch('silent',_e)}
       if(K.view === 'chat' && K.viewData?.id === convId && typeof K._updatePresenceHeader === 'function'){
@@ -7241,7 +7260,7 @@ async function _handleWsMessage(data, convId){
         K.messages[convId].push(msg);
         ls('messages_' + convId, K.messages[convId]);
         if(K.view === 'chat' && K.viewData?.id === convId){
-          // v1.1.172 FIX P0 UX (audit crew) : append incrémental (1 bulle) au lieu
+          // v1.1.173 FIX P0 UX (audit crew) : append incrémental (1 bulle) au lieu
           // d'un re-render complet → plus de scintillement ni de re-décodage de
           // toutes les images base64 / re-parse markdown sur longues convs.
           // Fallback render complet si l'append échoue.
@@ -11691,7 +11710,7 @@ K._profileIncomplete = function(u){
 
 K._postLogin = function(){
   if(!K.user) return;
-  // v1.1.172 FIX P0 (audit crew) : publier la clé publique E2E dès le login —
+  // v1.1.173 FIX P0 (audit crew) : publier la clé publique E2E dès le login —
   // couvre les users dont la clé existait déjà localement (avant cette version)
   // mais n'avait jamais été poussée au serveur. Best-effort, non bloquant.
   setTimeout(() => { try { K._publishPubkey && K._publishPubkey(); } catch(_) {} }, 800);
@@ -12843,7 +12862,7 @@ async function _boot(){
     $('#conn-status').textContent = '●';
     $('#conn-status').style.color = 'var(--ax-ok)';
     toast('Connexion rétablie', 'ok', 1500);
-    // v1.1.172 FIX P0 (audit crew) : si un WS est déjà ouvert, rejouer l'outbox
+    // v1.1.173 FIX P0 (audit crew) : si un WS est déjà ouvert, rejouer l'outbox
     // de sa conv ; sinon le flush se fera à la prochaine ouverture WS (open handler).
     try{ if(K._wsConvId) K._flushOutboxFor(K._wsConvId); }catch(_e){_safeCatch('silent',_e)}
   });
