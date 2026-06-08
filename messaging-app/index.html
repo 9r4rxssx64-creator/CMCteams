@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.174",
+  "softwareVersion": "v1.1.175",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.174';
+const __APEX_CHAT_VERSION__ = 'v1.1.175';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.174</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.175</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.174</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.175</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6479,6 +6479,7 @@ K.render = function(){
     case 'admin': renderAdmin(app); break;
     case 'admin-users': renderAdminUsers(app); break;
     case 'admin-live-users': renderAdminLiveUsers(app); break;
+    case 'admin-connections': renderAdminConnections(app); break;
     case 'admin-toggles': renderAdminToggles(app); break;
     case 'admin-sentinels': renderAdminSentinels(app); break;
     case 'admin-audit': renderAdminAudit(app); break;
@@ -10022,6 +10023,11 @@ function renderAdmin(app){
         <div class="stat">${lg('signalements',[]).length}</div>
         <div class="lbl">Signalements</div>
       </div>
+      <div class="admin-tile" onclick="K.sv('admin-connections')">
+        <div class="ico">🔔</div>
+        <div class="stat" style="color:var(--ax-gold)">LOG</div>
+        <div class="lbl">Connexions</div>
+      </div>
     </div>
 
     <div class="admin-section-title">🤖 Assistant Apex admin</div>
@@ -10194,6 +10200,57 @@ async function renderAdminLiveUsers(app){
       <button class="btn btn-block" onclick="K.sv('admin-invite-book')">📋 Inviter</button>
       <button class="btn btn-block btn-out" onclick="K.openInvite()">📤 1-clic</button>
     </div>
+  `;
+}
+
+// Connexion-tracking — historique des connexions (devices + lieux) par personne.
+async function renderAdminConnections(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  let conns = [];
+  let backendErr = null;
+  try{
+    const r = await K._api('GET', '/api/admin/connections');
+    if(r && r.ok && Array.isArray(r.connections)) conns = r.connections;
+  }catch(e){ backendErr = e.message; }
+
+  // Groupe par user_id
+  const byUser = {};
+  for(const c of conns){
+    const uid = c.user_id || '?';
+    (byUser[uid] = byUser[uid] || []).push(c);
+  }
+  const userIds = Object.keys(byUser).sort((a,b) =>
+    (Math.max(...byUser[b].map(c=>c.last_seen||0))) - (Math.max(...byUser[a].map(c=>c.last_seen||0)))
+  );
+  const fmt = ts => ts ? new Date(ts).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <button class="topbar-btn" onclick="K.sv('admin')" aria-label="Retour">⬅</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🔔 Connexions</h2>
+      <button class="btn btn-sm btn-out" onclick="K.render()" aria-label="Actualiser">🔄</button>
+    </div>
+    ${backendErr ? `<p style="color:var(--ax-warn);font-size:.78em">⚠ Backend indisponible (${esc(String(backendErr).slice(0,80))})</p>` : ''}
+    <div class="card" style="margin-bottom:12px;text-align:center">
+      <strong style="font-size:1.3em;color:var(--ax-gold)">${userIds.length}</strong>
+      <span style="font-size:.78em;color:var(--ax-text-3)"> personnes · ${conns.length} appareils/lieux</span>
+    </div>
+    ${userIds.length === 0 ? `<p style="color:var(--ax-text-3);text-align:center;padding:24px">📭 Aucune connexion enregistrée pour l'instant.</p>` :
+      userIds.map(uid => {
+        const list = byUser[uid].slice().sort((a,b)=>(b.last_seen||0)-(a.last_seen||0));
+        const lastSeen = Math.max(...list.map(c=>c.last_seen||0));
+        return `<div class="card" style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <strong style="flex:1">${esc(uid)}</strong>
+            <span style="font-size:.72em;color:var(--ax-text-3)">${esc(fmt(lastSeen))}</span>
+          </div>
+          ${list.map(c => `<div style="font-size:.82em;padding:5px 0;border-top:1px solid rgba(255,255,255,.06);display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            <span>${esc((c.device||'')==='mobile'?'📱':'💻')} ${esc(c.os||'?')}/${esc(c.browser||'?')}</span>
+            <span style="color:var(--ax-text-2)">📍 ${esc(c.city||'?')}, ${esc(c.country||'?')}</span>
+            <span style="margin-left:auto;color:var(--ax-text-3)">${esc(String(c.hits||1))}× · ${esc(fmt(c.last_seen))}</span>
+          </div>`).join('')}
+        </div>`;
+      }).join('')}
   `;
 }
 
