@@ -751,7 +751,7 @@ Si réponse "je crois" → vérifier d'abord, push ensuite.
 `.github/workflows/sync-apex-secrets-to-cf-worker.yml` documente le mapping
 3-niveaux qui doit matcher (workflow env → wrangler secret put → worker env.X).
 
-### 7. Liste secrets Kevin connus (mémorisée pour futures sessions, MAJ 2026-05-26)
+### 7. Liste secrets Kevin connus (liste COMPLÈTE vérifiée par Kevin, MAJ 2026-06-08 — 40 secrets)
 
 **IA / API providers** :
 ANTHROPIC_API_KEY, **OPEN_AI_API_KEY** (underscore), GROQ_API_KEY,
@@ -759,7 +759,7 @@ GEMINI_API_KEY, DEEPSEEK_API_KEY, **PERPLEXITI_API_KEY** (typo),
 MISTRAL_API_KEY, COHERE_API_KEY, XAI_API_KEY, TOGETHER_API_KEY,
 TAVILY_API_KEY, PINECONE_API_KEY, FINNHUB_API_KEY, PEXELS_API_KEY,
 TELEGRAM_API_KEY, VONAGE_API_KEY, VONAGE_API_SECRET, EMAILJS_PRIVATE_KEY,
-API_OPEN_LEGO.
+API_OPEN_LEGO, **AX_REPLICATE_KEY** (Replicate image/vidéo gen, ajouté 2026-06).
 
 **Infra deploy / CI** :
 CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, RAILWAY_TOKEN,
@@ -768,8 +768,11 @@ AGENT_SECRET, AGENT_SECRET_VERCEL.
 **Apex auth** :
 APEX_ADMIN_PIN_SHA256, APEX_ADMIN_PIN_SHA, APEX_CHAT_ADMIN_TOKEN, JWT_SECRET.
 
-**Firebase Admin SDK** (ajoutés 2026-05-26 pour apex-auth-worker Phase 5) :
-FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL.
+**Firebase (apex-auth-worker Phase 5)** :
+FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL (Service Account JSON, ajoutés
+2026-05-26), **FIREBASE_WEB_API_KEY** (clé Web PUBLIQUE, ajoutée 2026-06 —
+active l'échange custom_token → id_token côté worker pour `?auth=` RTDB ;
+JAMAIS en wrangler `[vars]` sinon conflit avec le `wrangler secret put`).
 
 **Push notifications iPhone** (ajoutés 2026-05-26 pour apex-push-worker) :
 VAPID_PRIVATE_KEY, PUSH_ADMIN_TOKEN (fige ADMIN_TOKEN entre runs),
@@ -777,6 +780,9 @@ AX_PUSH_ADMIN_TOKEN (backup), AX_VAPID_PUBLIC (backup).
 
 **YouTube / social** :
 YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN.
+
+**E-commerce / Shops** :
+**PRINTIFY_API_KEY** (print-on-demand, projet Chez Lolo, ajouté 2026-06).
 
 **Recommandation** : utiliser `grep -oE 'secrets\.[A-Z_]+' .github/workflows/*.yml | sort -u`
 pour avoir la liste exhaustive consommée par les workflows.
