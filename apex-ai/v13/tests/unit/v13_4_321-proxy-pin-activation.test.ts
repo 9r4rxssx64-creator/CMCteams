@@ -1,11 +1,12 @@
 /**
  * v13.4.321 — Activation IA en 1 tap (Kevin « tout auto » / « mets mon code »).
- * Le code est validé localement (hash == apex_v13_pin) AVANT d'être stocké chiffré
- * dans ax_pin_kdmc_admin (auth proxy). Aucun code faux stocké. Câblé dans test:ci.
+ * v13.4.322 (Kevin « code incorrect » alors que le code est bon) : on NE valide
+ * plus localement (apex_v13_pin absent/instable au login trusted). Le code est
+ * stocké chiffré dans ax_pin_kdmc_admin et le PROXY est la source de vérité
+ * (sha256(code) == APEX_ADMIN_PIN_SHA256 côté serveur). Câblé dans test:ci.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { auth } from '../../services/auth/auth.js';
 import { activateWithCode, needsProxyPinActivation, promptProxyPinActivation } from '../../services/auth/proxy-pin-activation.js';
 
 describe('v13.4.321 — activation IA 1-tap', () => {
@@ -36,19 +37,17 @@ describe('v13.4.321 — activation IA 1-tap', () => {
     expect(needsProxyPinActivation()).toBe(false);
   });
 
-  it('activateWithCode : refuse un mauvais code, accepte le bon, stocke chiffré', async () => {
-    localStorage.setItem('apex_v13_pin', await auth.hashPin('200807', 'kdmc_admin'));
-    expect((await activateWithCode('000000')).ok).toBe(false); /* mauvais → rien stocké */
-    expect(localStorage.getItem('ax_pin_kdmc_admin')).toBeNull();
-
+  it('activateWithCode : stocke le code chiffré (validation déléguée au proxy)', async () => {
+    /* v322 : plus de validation locale — le code est stocké, le proxy valide. */
     const good = await activateWithCode('200807');
     expect(good.ok).toBe(true);
     const { vault } = await import('../../services/vault/vault.js');
     expect(await vault.readKey('ax_pin_kdmc_admin')).toBe('200807'); /* stocké pour le proxy */
   });
 
-  it('activateWithCode : refuse un code trop court', async () => {
+  it('activateWithCode : refuse un code trop court (<4)', async () => {
     expect((await activateWithCode('12')).ok).toBe(false);
+    expect(localStorage.getItem('ax_pin_kdmc_admin')).toBeNull();
   });
 
   it('overlay : ne s’affiche PAS si non nécessaire (proxy off)', () => {
@@ -56,9 +55,8 @@ describe('v13.4.321 — activation IA 1-tap', () => {
     expect(document.getElementById('apex-pin-activate')).toBeNull();
   });
 
-  it('overlay : s’affiche quand nécessaire, bon code → stocke + se ferme', async () => {
+  it('overlay : s’affiche quand nécessaire, code saisi → stocke + se ferme', async () => {
     localStorage.setItem('apex_v13_use_secrets_proxy', 'true');
-    localStorage.setItem('apex_v13_pin', await auth.hashPin('200807', 'kdmc_admin'));
     promptProxyPinActivation();
     const input = document.getElementById('apex-pin-activate-input') as HTMLInputElement | null;
     expect(input).toBeTruthy();
