@@ -169,6 +169,17 @@ const ALLOWED_TASKS: ReadonlySet<AllowedTask> = new Set<AllowedTask>([
   'run_ios_e2e',
 ]);
 
+/**
+ * Event_type repository_dispatch ciblé selon la task.
+ * - run_ios_e2e → 'apex_e2e_request' (déclenche apex-ios-simulator.yml = Playwright
+ *   WebKit iPhone, l'équivalent "test visuel" qu'a Claude Code).
+ * - tout le reste → 'apex-execute' (apex-execute.yml, runner générique).
+ * v13.4.316 — corrige Erreur #28 (run_ios_e2e partait en 'apex-execute' → jamais lancé).
+ */
+export function eventTypeForTask(task: AllowedTask): 'apex_e2e_request' | 'apex-execute' {
+  return task === 'run_ios_e2e' ? 'apex_e2e_request' : 'apex-execute';
+}
+
 const FORBIDDEN_TASKS: ReadonlySet<string> = new Set<string>([
   'delete_file',
   'force_push',
@@ -1182,8 +1193,14 @@ class ApexExecuteService {
     if (!token) {
       return { ok: false, reason: 'GitHub token absent (vault key ax_github_token requis)' };
     }
+    /* v13.4.316 (Kevin "vérifie qu'Apex utilise bien ces outils comme toi") —
+     * Erreur #28 corrigée : run_ios_e2e DOIT viser apex-ios-simulator.yml qui
+     * écoute event_type 'apex_e2e_request' (npx playwright test WebKit iPhone).
+     * Avant, TOUS les tasks partaient en 'apex-execute' → le workflow Playwright
+     * iPhone d'Apex ne se déclenchait JAMAIS (sa parité "visuel" était morte). */
+    const eventType = eventTypeForTask(req.task);
     const payload = {
-      event_type: 'apex-execute',
+      event_type: eventType,
       client_payload: {
         exec_id: req.id,
         task: req.task,
