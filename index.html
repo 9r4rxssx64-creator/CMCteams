@@ -5388,7 +5388,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.793";
+var APP_VER="v9.794";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -16531,8 +16531,9 @@ function vTopbar(){
   }
   var _syncDot='';
   if(FB_URL){
-    var _ts=_lastSyncTs?Math.round((Date.now()-_lastSyncTs)/1000):0;
-    var _syncTitle=_fbConnected?("Firebase connect\u00e9 \u2014 "+(_ts<60?_ts+"s":Math.floor(_ts/60)+"m")):(_fbRetries>10?"Firebase d\u00e9connect\u00e9 \u2014 retry manuel requis":"Firebase : connexion en cours\u2026");
+    // v9.794 anti-scintillement : titre STABLE (pas de secondes live qui changeaient
+    // a chaque rendu \u2192 defaisaient le garde diff \u2192 repaint/flash de la barre du haut).
+    var _syncTitle=_fbConnected?"Firebase connect\u00e9":(_fbRetries>10?"Firebase d\u00e9connect\u00e9 \u2014 retry manuel requis":"Firebase : connexion en cours\u2026");
     var _sDotCol=_fbConnected?"#5aaa70":"#c9a227";
     _syncDot='<span title="'+_syncTitle+'" onclick="flushSyncQueue()" style="display:inline-flex;align-items:center;justify-content:center;width:10px;height:10px;border-radius:50%;background:'+_sDotCol+';flex-shrink:0;box-shadow:0 0 6px '+_sDotCol+'80;cursor:pointer"'+(_fbConnected?'':';animation:pulseDot 1.5s ease-in-out infinite')+'></span>';
   }
