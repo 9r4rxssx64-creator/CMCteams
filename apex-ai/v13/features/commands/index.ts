@@ -14,6 +14,7 @@ import {
   customCommandPrompt,
   listCustomCommands,
   removeCustomCommand,
+  restoreCustomCommandsFromCloud,
   type CustomCommand,
 } from '../../services/admin/custom-commands.js';
 import { SLASH_COMMANDS, type SlashCommand } from '../../services/admin/slash-commands.js';
@@ -125,6 +126,13 @@ export function render(rootEl: HTMLElement): void {
   }
   html += '</div>';
   rootEl.innerHTML = html;
+
+  /* Restaure les commandes perso depuis Firebase si le local est vide (nouvel
+   * appareil) — 1× par montage. Re-render si la liste a changé. */
+  if (!rootEl.dataset['ccCloudTried']) {
+    rootEl.dataset['ccCloudTried'] = '1';
+    void restoreCustomCommandsFromCloud().then((changed) => { if (changed) render(rootEl); });
+  }
 
   /* Listener délégué unique (idempotent — survit aux re-render innerHTML). */
   if (!rootEl.dataset['cmdMemoBound']) {
