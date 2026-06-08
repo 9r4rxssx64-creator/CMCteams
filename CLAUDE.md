@@ -345,6 +345,36 @@ version partielle ou rapide.
 7. **Performance** — bundle, LCP/INP/CLS, intervals zombies, memory leaks.
 8. **UX / accessibilité** — touch targets ≥44px, contraste, aria, mobile 375px.
 
+### 🔬 PASSE DE STABILITÉ MESURÉE — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-06-08, ABSOLUE)
+
+> **"Fais la passe de stabilité dédiée et intègre-la à 'fais ton audit'."** — Kevin 2026-06-08
+
+L'axe 5 (Fluidité) NE PEUT PLUS être « à l'œil ». À CHAQUE « fais l'audit », exécuter
+une passe de stabilité **mesurée au navigateur réel** (Playwright/Chromium), jamais estimée :
+
+1. **Compter les re-renders au repos** : wrapper `render()` ET `dc()` avec des compteurs,
+   se placer sur la vue testée (surtout Admin + Accueil + Planning), attendre 8 s SANS
+   interaction → `render_calls` et `dc_calls` doivent être ≈ **0**. >0 au repos = boucle.
+2. **Compter les mutations DOM par zone** : `MutationObserver` (childList+attributes+
+   characterData, subtree) sur `#topbar`, `#content`, `#bnav` pendant 6-8 s au repos →
+   doit être ≈ **0**. Tout nœud qui mute >2-3×/s au repos = clignotement → identifier
+   le nœud exact (`m.target.id`) puis la **pile d'appel** (`new Error().stack`).
+3. **Tout updater DOM doit être IDEMPOTENT** : avant `el.textContent=`/`el.style.X=`/
+   `innerHTML=`, comparer à la valeur courante et **ne muter que si elle change**.
+   Vaut pour : badges (sync, alertes), horloge, indicateurs connexion, `dc()` (garde
+   diff HTML v9.793), `_updateSyncBadge`/`_fbShowSyncBadge` (v9.795), tout futur badge.
+4. **Pièges connus à vérifier** (cf. leçon #94) : (a) une valeur volatile dans le HTML
+   rendu (secondes live, `Date.now()`) défait tout garde diff → la bannir du rendu ;
+   (b) un re-render partiel (`#content`) ne couvre PAS les éléments hors `#content`
+   (`#topbar`, `#bnav`) — les mesurer séparément ; (c) une rafale de retries réseau
+   peut marteler un updater non-idempotent → flicker sans aucun `dc()`.
+5. **Méthode = la preuve** : reporter les chiffres AVANT/APRÈS (ex « 295 → 13 mutations/6s »).
+   Un fix anti-scintillement sans mesure DOM avant/après n'est PAS validé (règle #73).
+
+Référence Playwright (session admin simulée) :
+`addInitScript(()=>{localStorage.setItem('cmc_uid','U11804');localStorage.setItem('cmc_lastact',String(Date.now()));})`
+puis MutationObserver sur `#topbar`, tally par `m.type+m.target.id`, top offenders + stack.
+
 ### Autonome + mesuré
 
 - Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
@@ -9533,3 +9563,5 @@ CMCteams, tous workflows GitHub Actions, tous projets futurs.
 92. **GitHub MCP FONCTIONNE dans cet environnement Claude Code web — merge par API, fin de la friction proxy (Claude Code, 2026-06-06, shops/chez-lolo)** — contrairement aux leçons #78/#79/#80/#86 (proxy git `127.0.0.1` non-propageant, auto-merge bot bloqué, MCP « absent »), les outils `mcp__github__*` se sont chargés et sont pleinement opérationnels : `get_me`, `get_file_contents` (ref=branche/main), `list_commits`, `create_pull_request`, `merge_pull_request` (squash), `actions_list`. J'ai livré 4 PR Chez Lolo (#849/#851/#853/#857) **créées + mergées par API**, vérifiées sur le vrai main via `get_file_contents`/`list_commits` (SHA témoin). **OBLIGATIONS** : (a) quand le GitHub MCP est chargé (le vérifier via ToolSearch en début de session), **l'utiliser pour merger** (create_pull_request → merge_pull_request) au lieu du proxy `git push` (peut ne pas propager) ou de l'auto-merge bot (peut être bloqué, cf. #86) ; (b) **toujours vérifier la propagation réelle** après merge via `get_file_contents` au `ref=main` (fichier témoin léger comme `sw.js`), JAMAIS via `git show origin/main` du proxy (leçon #79) ; (c) un merge MCP peut renvoyer **405 « merge conflicts »** si une autre session a bougé main (docs surtout) → repartir d'un `git checkout -B <br> origin/main` à jour, ré-appliquer les éditions, **renuméroter les leçons** (collision #90/#91 vécue avec la session kd-mc), re-PR ; (d) le MCP peut flapper (disparu/réapparu en session) — si absent, retomber sur « je prépare le diff, Kevin merge ». ✅
 
 93. **ÉGRESS RÉSEAU SANDBOXÉ — `curl`/fetch sortant bloqué (« Host not in allowlist »), NE PAS inventer de données non vérifiables (Claude Code, 2026-06-06, Printify blueprints)** — pour mapper les `blueprint_id` Printify des garments manquants (polo/tank/shirt/zip/jogger/short/bandana) de Chez Lolo, `curl https://ld-printify-order.9r4rxssx64.workers.dev/` → **« Host not in allowlist »** (sandbox CCR bloque l'égress vers `*.workers.dev` et tiers). Impossible de récupérer les vrais IDs d'ici. **DÉCISION CONFORME** (« reproduction à l'identique », « jamais estimer/inventer », « pas de Security Theater ») : NE PAS baker d'IDs devinés (mauvais blueprint = commande Printify fausse). Laissé le fallback **sûr** (garment inconnu → tee + `warning` + statut **on-hold** = Kevin valide avant débit) + action documentée KEVIN_ACTIONS_TODO #B. **OBLIGATIONS** : (a) tout enrichissement de données externes (IDs catalogue, prix, variantes) vient d'une **source vérifiable** ; égress bloqué → livrer le **mécanisme de découverte** (endpoint worker `/blueprints?q=`) + demander la donnée à Kevin, pas deviner ; (b) fallback honnête + warning + garde-fou (on-hold) > donnée inventée « complète ». ✅
+
+94. **CLIGNOTEMENT BARRE DU HAUT = mutation DOM en boucle par un updater NON-IDEMPOTENT, hors de tout `dc()` (CMCteams v9.793→795, Kevin 2026-06-08 « ça clignote tjs en haut »)** — Après avoir posé un garde diff-HTML sur `dc()`/`#content` (v9.793) + stabilisé le titre de connexion (v9.794), Kevin voyait TOUJOURS la barre du haut clignoter, dans Admin, **seul utilisateur connecté**. Méthode qui a tranché (Playwright, session admin simulée) : (1) wrap `render()`+`dc()` → **0 appel** en 8 s au repos (donc PAS un re-render) ; (2) `MutationObserver` sur `#topbar` → **295 mutations/6s** (~49/s) malgré 0 dc/render ; (3) tally par nœud → `childList:SPAN#syncBadge` 295× ; (4) `new Error().stack` dans l'updater → `_updateSyncBadge ← fbWrite ← setTimeout retry (l.4154)`. **CAUSE RACINE** : une rafale de retries d'écriture Firebase (échec réseau) appelait `_updateSyncBadge`/`_fbShowSyncBadge` ~58×/s, qui réécrivaient `el.textContent`/`el.style` du badge **même quand la valeur était inchangée** (« ⏳ 2 en attente ») → 58 mutations DOM/s = flicker. Le `#topbar` est un élément **séparé de `#content`** → le garde v9.793 (sur `#content`) ne le couvrait pas. **FIX v9.795** : les deux updaters rendus **idempotents** (ne muter que si `el.textContent`/`display` change réellement). Re-mesure : **295 → 13 mutations/6s** (−95 %). **OBLIGATIONS PERMANENTES** : (a) un fix anti-scintillement se VALIDE par mutations DOM avant/après (MutationObserver), pas par comptage de `dc()` (règle #73 renforcée) ; (b) TOUT updater DOM (badge, horloge, indicateur) doit être idempotent : `if(el.textContent!==t)el.textContent=t` ; (c) ne pas oublier les zones HORS `#content` (`#topbar`, `#bnav`) quand on mesure/garde ; (d) une valeur volatile dans le HLML rendu (secondes live `Date.now()`, cf v9.794) défait n'importe quel garde diff → la bannir du rendu ; (e) un flicker SANS aucun `dc()`/`render()` = chercher un updater direct en boucle (souvent alimenté par une rafale réseau/agent), pas le moteur de rendu. ❌→✅

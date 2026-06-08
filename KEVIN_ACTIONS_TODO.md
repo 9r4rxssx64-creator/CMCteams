@@ -2,14 +2,20 @@
 
 ## 🛡️ CMCteams SÉCURITÉ (2026-06-07) — fermer la DB Firebase ouverte (Chantier 2)
 
-### #A — ✅ Worker confirmé vivant + Phase A LIVRÉE (v9.788). → CANARY sur ton device
-- **À faire (1 paste, sur TON iPhone uniquement)** : CMCteams → Admin → bandeau config → champ **« 🔐 Auth Firebase »** → colle la **clé Web API Firebase** (publique, `AIza…`, depuis [Console Firebase → Paramètres projet → Général](https://console.firebase.google.com/project/cmcteams-c16ab/settings/general)) → bouton **Activer**.
-- Effet : SEUL ton device s'authentifie (token attaché). Le champ doit afficher **« ACTIVE sur ce device ✓ »**. Vérifie que tout marche normalement (planning, chat, import) pendant 1 jour.
-- **Fail-open garanti** : si la clé est refusée / réseau KO, l'app fonctionne comme avant (rien de cassé). Pour annuler : vide le champ + Activer.
-- Quand OK → dis-moi : j'active globalement (clé dans le code) puis on durcit les règles (#B).
+### #A — ✅ FAIT (2026-06-08). Canary validé + auth activée pour TOUS les appareils.
+- ✅ Canary : clé Web API collée sur l'iPhone de Kevin → **ACTIVE ✓** (après fix CSP).
+- ✅ **v9.791** : CSP autorise `identitytoolkit/securetoken.googleapis.com` (l'auth échouait « Load failed » car le domaine était bloqué).
+- ✅ **v9.792** : clé Web publique embarquée → **tous les appareils s'authentifient** (anonyme) à leur prochaine MAJ. Fail-open conservé.
+- ✅ **v9.790** : l'app affiche la **cause exacte** des erreurs auth (plus de message muet).
+- ✅ Connexion anonyme activée dans la console Firebase (Anonymous = Enabled).
+- ✅ Bonus scintillement : **v9.793/794/795** — garde diff `dc()` + barre du haut stable + badge sync idempotent (mesuré 295→13 mutations/6s, −95 %). Cf. leçon CLAUDE.md #94.
 
-### #B — (plus tard) Publier les règles `/cmcteams` durcies
-- 1 copier-coller console Firebase (je prépare le diff exact, **seulement le sous-bloc `/cmcteams`**, sans toucher Apex/Shops), rollback armé. APRÈS validation Phase A.
+### #B — ⏳ DERNIÈRE ÉTAPE sécurité : durcir les règles `/cmcteams` (après propagation)
+- **Attendre** que les appareils des employés récupèrent la v9.792 (quelques heures — sinon on bloque ceux sans auth).
+- Puis : 1 copier-coller console Firebase (je prépare le **diff exact**, **seulement le sous-bloc `/cmcteams`**, sans toucher Apex/Shops), **rollback armé** → base fermée 🟢.
+
+### #C — 🟡 (perf/batterie, à vérifier) Éléments coincés dans la file de sync
+- Si « ⏳ N en attente » persiste dans la barre sur un appareil **connecté** (point vert), ce sont des écritures réellement bloquées → me le dire, j'investigue la clé fautive. (Le clignotement, lui, est déjà corrigé v9.795.)
 
 ### ✅ Déjà corrigé (aucune action) : fuite de ta clé Anthropic en clair dans Firebase → retirée + scrub (v9.787, en prod).
 
