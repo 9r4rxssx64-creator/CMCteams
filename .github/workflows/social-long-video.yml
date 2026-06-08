@@ -27,7 +27,7 @@ jobs:
       chunk_count: ${{ steps.pick.outputs.chunk_count }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
       - name: Pick story and split
@@ -80,7 +80,7 @@ jobs:
     if: ${{ fromJson(needs.prepare.outputs.chunk_count) > 0 }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
       - run: sudo apt-get update -qq && sudo apt-get install -y espeak-ng ffmpeg
