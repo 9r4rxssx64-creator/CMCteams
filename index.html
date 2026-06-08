@@ -4009,8 +4009,14 @@ function _syncQueueAdd(k,v){_syncQueue[k]={v:v,ts:Date.now()};ls("cmc_sync_queue
 function _syncQueueRemove(k){delete _syncQueue[k];ls("cmc_sync_queue",_syncQueue);_updateSyncBadge();}
 function _updateSyncBadge(){
   var el=document.getElementById("syncBadge");
+  if(!el)return;
   var n=Object.keys(_syncQueue).length;
-  if(el){el.style.display=n>0?"inline":"none";el.textContent="\u23f3 "+n+" en attente";}
+  // v9.795 anti-flicker : ne muter le DOM que si la valeur change (les retries d'\u00e9criture
+  // appelaient ceci ~58\u00d7/s avec le M\u00caME compte \u2192 58 mutations/s = clignotement barre du haut).
+  var disp=n>0?"inline":"none";
+  var txt="\u23f3 "+n+" en attente";
+  if(el.style.display!==disp)el.style.display=disp;
+  if(el.textContent!==txt)el.textContent=txt;
 }
 /** Flush offline sync queue to Firebase. @returns {void} */
 function flushSyncQueue(){
@@ -4112,8 +4118,10 @@ var _fbPendingWrites=0;
 function _fbShowSyncBadge(){
   var el=document.getElementById("syncBadge");
   if(!el)return;
-  el.style.display=_fbPendingWrites>0?"inline-flex":"none";
-  if(_fbPendingWrites>0)el.textContent="\u2b06 Sync "+_fbPendingWrites+"...";
+  // v9.795 anti-flicker : idempotent (pas de mutation DOM si inchang\u00e9)
+  var disp=_fbPendingWrites>0?"inline-flex":"none";
+  if(el.style.display!==disp)el.style.display=disp;
+  if(_fbPendingWrites>0){var t="\u2b06 Sync "+_fbPendingWrites+"...";if(el.textContent!==t)el.textContent=t;}
 }
 /** Write to Firebase Realtime DB at FB_PATH. Uses circuit breaker + queue offline. @param {string} k Key. @param {*} v Value. @returns {void} */
 function fbWrite(k,v,_retry){
@@ -5388,7 +5396,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.794";
+var APP_VER="v9.795";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
