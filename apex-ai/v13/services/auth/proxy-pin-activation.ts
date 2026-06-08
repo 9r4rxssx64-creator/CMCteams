@@ -6,9 +6,10 @@
  * Kevin force-quit l'app (= re-login auto SANS code) → code jamais stocké → IA KO.
  *
  * Solution sans déconnexion : quand l'IA est KO ET que le code manque, on affiche
- * un mini-écran « Tape ton code pour activer l'IA ». Le code est VALIDÉ localement
- * (hash PBKDF2 == `apex_v13_pin`) avant d'être stocké (chiffré vault) → le proxy
- * peut alors s'authentifier. Aucune donnée fausse stockée (validation préalable).
+ * un mini-écran « Tape ton code pour activer l'IA ». Le code est stocké chiffré
+ * (vault) dans `ax_pin_kdmc_admin` → le proxy s'authentifie. v13.4.322 : PLUS de
+ * validation locale (apex_v13_pin absent/instable au login trusted → faux « code
+ * incorrect ») — le PROXY est la source de vérité (sha256(code)==APEX_ADMIN_PIN_SHA256).
  */
 
 import { events } from '../../core/events.js';
@@ -41,21 +42,19 @@ export function needsProxyPinActivation(): boolean {
 }
 
 /**
- * Valide le code (hash == apex_v13_pin) puis le stocke (chiffré) dans
- * `ax_pin_kdmc_admin` pour l'auth proxy. Ne stocke RIEN si le code est faux.
+ * Stocke le code (chiffré) dans `ax_pin_kdmc_admin` pour l'auth proxy.
+ * v13.4.322 (Kevin « code incorrect » alors que le code est bon) : on NE valide
+ * plus contre `apex_v13_pin` (absent/instable selon l'historique de login trusted)
+ * — c'est le PROXY (sha256(code) == APEX_ADMIN_PIN_SHA256 côté serveur) qui est la
+ * vraie source de vérité. On stocke + on laisse le proxy valider au prochain message.
  */
 export async function activateWithCode(code: string): Promise<{ ok: boolean; error?: string }> {
   const c = (code || '').trim();
   if (c.length < 4) return { ok: false, error: 'Code trop court.' };
   try {
-    const uid = ls('apex_v13_uid') || ADMIN_UID;
-    const { auth } = await import('./auth.js');
-    const hash = await auth.hashPin(c, uid);
-    const stored = ls('apex_v13_pin');
-    if (!stored || hash !== stored) return { ok: false, error: 'Code incorrect.' };
     const { vault } = await import('../vault/vault.js');
     await vault.setKey('ax_pin_kdmc_admin', c);
-    logger.info('proxy-pin-activation', 'code admin stocké → auth proxy activée');
+    logger.info('proxy-pin-activation', 'code admin stocké → auth proxy (validé par le serveur au prochain appel)');
     return { ok: true };
   } catch (err: unknown) {
     logger.warn('proxy-pin-activation', 'activate failed', { err });
