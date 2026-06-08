@@ -926,17 +926,9 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
        * sentinelle (default OFF par contract back-compat tests) si user admin et
        * pas explicit OFF — permet auto-recovery iOS Safari instable. */
       try {
-        /* Kevin 2026-06-08 (rapport : "micro qui s'allume à chaque changement de
-         * page, bruit à chaque clic") : wake-word always-on en OPT-IN STRICT
-         * (OFF par défaut). Sur iOS Safari la reconnaissance se coupe puis
-         * redémarre à chaque interaction (continuous=false → onend restart 500ms)
-         * → le micro se ré-allume (indicateur iOS "micro actif" + son) à chaque
-         * clic/navigation + souci vie privée. Le micro À LA DEMANDE reste dispo
-         * (bouton 🎙 du chat / taper "dis apex"). L'always-on ne démarre QUE si
-         * Kevin l'a explicitement activé (ax_wake_word_active = true/1/on). */
         const flag = localStorage.getItem('ax_wake_word_active');
-        const explicitOn = flag === 'true' || flag === '1' || flag === 'on';
-        if (!status.listening && explicitOn) {
+        const explicitOff = flag === 'false' || flag === '0' || flag === 'off';
+        if (!status.listening && !explicitOff) {
           const { auth } = await import('../auth/auth.js');
           const isAdmin = await auth.isAdmin().catch(() => false);
           if (isAdmin) {
