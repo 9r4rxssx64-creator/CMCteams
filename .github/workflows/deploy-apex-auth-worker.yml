@@ -102,8 +102,11 @@ jobs:
           echo "Listing existing KV namespaces..."
           LIST_OUT=$(wrangler kv namespace list 2>&1 || true)
           echo "$LIST_OUT"
-          # Nom canonique wrangler : <worker-name>-<binding> = apex-auth-worker-AUTH_KV
-          EXISTING_ID=$(echo "$LIST_OUT" | jq -r '.[]? | select(.title == "apex-auth-worker-AUTH_KV") | .id' 2>/dev/null | head -1)
+          # Titre KV selon version wrangler : "AUTH_KV" (binding seul, wrangler récent)
+          # OU "apex-auth-worker-AUTH_KV" (ancien <worker>-<binding>). On matche les 2
+          # pour rester idempotent quelle que soit la version (corrige les runs en échec
+          # 2026-05-26 → 2026-06-02 : create tentait de recréer un namespace existant).
+          EXISTING_ID=$(echo "$LIST_OUT" | jq -r '.[]? | select(.title == "AUTH_KV" or .title == "apex-auth-worker-AUTH_KV") | .id' 2>/dev/null | head -1)
 
           if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
             KV_ID="$EXISTING_ID"
