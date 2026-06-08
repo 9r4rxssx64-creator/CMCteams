@@ -5388,7 +5388,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.792";
+var APP_VER="v9.793";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10920,7 +10920,13 @@ function dc(){
     }
     _dcLastView=A.view;_dcLastYM=_curYM;
   }catch(_){}
-  c.innerHTML=_cmcBreadcrumb()+vMain();
+  // v9.793 anti-scintillement Kevin "scintille de temps en temps, surtout la barre du haut" :
+  // les échos temps-réel (SSE/agents/sentinelles) relancent dc() avec un rendu IDENTIQUE.
+  // On compare le HTML produit : s'il est inchangé → on NE réécrit PAS innerHTML → aucun
+  // repaint → plus de flash. Préserve aussi une saisie en cours + le récap d'import.
+  // Un vrai changement (nav, nouvelle donnée) produit un HTML différent → réécriture normale.
+  var _cmcNewHtml=_cmcBreadcrumb()+vMain();
+  if(c._cmcLastHtml!==_cmcNewHtml){c.innerHTML=_cmcNewHtml;c._cmcLastHtml=_cmcNewHtml;}
   // v9.171 — FAB visibilité (login/logout)
   try{_updateFabVisibility();}catch(_){}
   // Chat/IA : pas de padding-bottom (la barre de saisie est dans le flex)
