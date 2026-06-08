@@ -261,6 +261,22 @@ class Auth {
       this.clearFails(user.id);
     }
 
+    /* v13.4.314 (Kevin "tout vert mais toutes les IA KO") — Erreur #28 corrigée :
+     * le proxy Cloudflare apex-secrets-proxy s'authentifie avec sha256(PIN admin
+     * EN CLAIR) lu depuis le vault (ax_pin_kdmc_admin), mais RIEN ne l'y écrivait
+     * → proxyFetch/tryProxyRoute renvoyaient null → appels IA en DIRECT sans clé
+     * locale → 401 « clé invalide » → "Toutes les IA sont KO". On stocke donc le
+     * PIN (chiffré AES-GCM via vault.setKey) au login PIN admin pour activer
+     * l'auth proxy (clés server-side). Le PIN n'est JAMAIS en clair localStorage. */
+    if (user.isAdmin) {
+      try {
+        const { vault } = await import('../vault/vault.js');
+        await vault.setKey('ax_pin_kdmc_admin', pin);
+      } catch (err: unknown) {
+        logger.warn('auth', 'store admin pin for proxy auth failed (non bloquant)', { err });
+      }
+    }
+
     store.set('user', { id: user.id, name: user.name, email: user.email });
     store.set('isAdmin', user.isAdmin);
     try {
