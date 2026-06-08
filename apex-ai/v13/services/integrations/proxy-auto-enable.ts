@@ -20,6 +20,22 @@ import { logger } from '../../core/logger.js';
 const FLAG_KEY = 'apex_v13_use_secrets_proxy';
 const ADMIN_UID = 'kdmc_admin';
 
+/* v13.4.323 (Kevin « il n'est pas sur Anthropic de base ») : pendant une panne
+ * proxy (auth/CORS), les providers (dont Anthropic) sont marqués DEAD 1h, marque
+ * PERSISTÉE en localStorage → survit aux reloads → Apex reste bloqué sur le
+ * fallback (OpenAI) même après réparation. Quand le proxy est actif au boot, on
+ * efface 1× les marques DEAD pour que Claude (préféré) soit re-tenté à neuf. */
+let deadClearedThisBoot = false;
+async function clearStaleDeadOnce(): Promise<void> {
+  if (deadClearedThisBoot) return;
+  deadClearedThisBoot = true;
+  try {
+    const { aiKeyRotation } = await import('../ai/ai-key-rotation.js');
+    aiKeyRotation.clearAllDead();
+    logger.info('proxy-auto-enable', 'marques DEAD effacées (proxy actif) → providers re-tentés à neuf');
+  } catch { /* ignore */ }
+}
+
 async function isAdminKevin(): Promise<boolean> {
   try {
     const { store } = await import('../../core/store.js');
@@ -47,8 +63,9 @@ async function autoEnableIfReady(): Promise<{ enabled: boolean; reason: string }
     if (flag === 'false' || flag === '0') {
       return { enabled: false, reason: 'opt_out_user' };
     }
-    /* Déjà ON → rien à faire */
+    /* Déjà ON → rien à faire (mais on purge les marques DEAD stale 1×). */
     if (flag === 'true' || flag === '1') {
+      void clearStaleDeadOnce();
       return { enabled: true, reason: 'already_enabled' };
     }
   } catch { /* localStorage indispo */ }
@@ -67,6 +84,7 @@ async function autoEnableIfReady(): Promise<{ enabled: boolean; reason: string }
     return { enabled: false, reason: 'localstorage_fail' };
   }
   logger.info('proxy-auto-enable', '🔒 Proxy Cloudflare activé automatiquement (admin Kevin + health OK)');
+  void clearStaleDeadOnce();
   /* Toast info non-bloquant */
   try {
     const { toast } = await import('../../ui/toast.js');
