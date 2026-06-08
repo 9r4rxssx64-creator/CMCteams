@@ -41,11 +41,16 @@ async function getAccessToken(){
       key = '-----BEGIN PRIVATE KEY-----\n' + body.match(/.{1,64}/g).join('\n') + '\n-----END PRIVATE KEY-----\n';
     }
   }
-  const beginsPEM = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/.test(key);
-  console.log('   clé diag: len=' + key.length + ' beginsPEM=' + beginsPEM + (beginsPEM ? ' header="' + (key.match(/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/) || [''])[0] + '"' : ' first8="' + key.slice(0, 8).replace(/[^ -~]/g, '?') + '" wasJSON=' + raw.startsWith('{')));
-  if (!beginsPEM) throw new Error("FIREBASE_PRIVATE_KEY : format non reconnu (ni PEM, ni JSON SA, ni base64). len=" + key.length);
-  // validation crypto explicite (erreur claire si la clé est corrompue)
-  try { crypto.createPrivateKey(key); } catch (e) { throw new Error("Clé privée illisible par crypto : " + e.message); }
+  // Construire des CANDIDATS PEM et garder celui que crypto accepte (PKCS#8 vs PKCS#1/RSA).
+  const bodyOnly = key.replace(/-----[^-]+-----/g, '').replace(/\s/g, '');
+  const wrap = (label, b) => '-----BEGIN ' + label + '-----\n' + (b.match(/.{1,64}/g) || []).join('\n') + '\n-----END ' + label + '-----\n';
+  const candidates = [];
+  if (/-----BEGIN/.test(key)) candidates.push(key);
+  if (/^[A-Za-z0-9+/=]+$/.test(bodyOnly) && bodyOnly.length > 800) { candidates.push(wrap('PRIVATE KEY', bodyOnly)); candidates.push(wrap('RSA PRIVATE KEY', bodyOnly)); }
+  let keyObj = null, used = '';
+  for (const c of candidates) { try { keyObj = crypto.createPrivateKey(c); used = (c.match(/-----BEGIN ([A-Z0-9 ]+)-----/) || ['', '?'])[1]; key = c; break; } catch (_) {} }
+  console.log('   clé diag: candidats=' + candidates.length + ' bodyLen=' + bodyOnly.length + ' → ' + (keyObj ? ('OK (' + used + ')') : 'AUCUN accepté'));
+  if (!keyObj) throw new Error("FIREBASE_PRIVATE_KEY : aucun format PEM accepté par crypto (PKCS#8/PKCS#1). Vérifier le secret.");
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const claim = b64url(JSON.stringify({
@@ -54,7 +59,7 @@ async function getAccessToken(){
     aud: 'https://oauth2.googleapis.com/token',
     iat: now, exp: now + 3600
   }));
-  const signed = crypto.createSign('RSA-SHA256').update(header + '.' + claim).sign(key);
+  const signed = crypto.createSign('RSA-SHA256').update(header + '.' + claim).sign(keyObj);
   const jwt = header + '.' + claim + '.' + b64url(signed);
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
