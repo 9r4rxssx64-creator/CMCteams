@@ -96,6 +96,7 @@ export function makeDONamespace() {
 
 export const ENV = (overrides = {}) => ({
   JWT_SIGN_KEY: SECRET,
+  ALLOW_TEST_OTP: 'true',            // v1.1.172 — mode cercle privé (défaut wrangler)
   APEX_CHAT_ADMIN_TOKEN: 'admin-secret',
   APEX_CHAT_ADMIN_PHONE_E164: '+33672280277',
   APEX_CHAT_DB: makeDB(),

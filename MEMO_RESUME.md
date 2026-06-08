@@ -24,6 +24,57 @@ Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthou
 ## Reste (séquencé, ne rien casser)
 1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
 4. Refacto chat — 83,2% extrait. Reste : shell render() (~265l, composition root = appels wire*), regenerateLastAssistant (34l, injecté), handleWakeWordTextTrigger (33l, testé), type DisplayMessage, ~20 re-exports façade, boot init. = composition root légitime du module, à conserver. Reste le CŒUR couplé de `render` : submit form (~310l), attach/file/album (~160l, réassigne `pendingAttachments`), drag-drop, paste, menu/clear/settings (touchent `conversation`/`renderMessages`). Nécessite un objet contexte partagé `ChatRenderCtx` { getConversation, pushUser, processQueue, getPending/setPending, pushAlbum } à CONCEVOIR d'abord (étape design dédiée), puis extraire submit/attach par petits pas testés. Risque régression réel → ne pas rusher.
+---
+
+# Mémo de reprise — CMCteams sécu/archi/détente (2026-06-07, branche `claude/crew-verification-relaxation-pbk6H`)
+
+> **Objectif Kevin** : ultra-review + crew vérif + amélioration de la « détente » (assouplir vérifs trop strictes), puis 100/100 par axe. Mesuré, autonome, sans régression, **isolation CMCteams stricte** (index.html/sw.js/tests — jamais Apex/boutique/workflows partagés). Gate : `node --check` + `test:ci` (Playwright runtime) + vérif merge sur le **vrai** GitHub (API).
+>
+> **Fait (tout mergé sur main, test:ci 28 suites/0 FAIL) — v9.783→v9.787** :
+> - **v9.783 Détente** : `detectRepoConflicts` (R1 repos proportionnel présence ; R2 vrai bug absence/vide brise série ; R3 50→60%) ; identical-bug cadres 60→75% ; auto-Vision si score<70. Filets absolus préservés.
+> - **v9.784** : route `pitmap`→`vMapEditor()` ; scroll grille seulement vue planning. `test:v784` 5/5.
+> - **v9.785 Archi 0 route morte** : `vCrossTeamActivity()` neuve + `vParserIntelligence/Compare` → vraies vues. UX 36→44px. `test:v785` 7/7.
+> - **v9.786 Sécu** : re-audit (2,5/5 du crew = ERRONÉ ; rate-limit/TTL/CSP existent → ~4/5) ; noopener + stack admin-only.
+> - **v9.787 FUITE SECRET corrigée** : clé Anthropic n'est plus poussée en clair vers Firebase ouvert (`_adminCfgBackup`) + scrub. `test:v787` 4/4.
+> - **Plan** `PLAN_EXECUTION_SECU_ARCHI.md` (3 chantiers).
+>
+> **Chantier 2 (Firebase Auth — vrai gap restant)** : DB ouverte → PII employés lisibles. Infra serveur **déjà construite/vérifiée** (`apex-auth-worker /login-cmc` + parité hash `cmc-hash.js`). Règles = fichier PARTAGÉ Apex+CMCteams+Shops. Bloquants : worker injoignable du sandbox + Firebase 401 sur token invalide même règles ouvertes → plumbing fail-open. **Prochain pas** : Kevin vérifie `apex-auth-worker.9r4rxssx64.workers.dev/health` → « go Phase A » (code fail-open + flag OFF + test + canary device, puis durcissement règles `/cmcteams` publié par Kevin, rollback armé).
+
+---
+
+# Mémo de reprise — SESSION 2026-06-06 : Boutique « Chez Lolo » refonte complète (branche `claude/lolo-crew-review-tDzp7`, **tout mergé sur main via GitHub MCP**)
+
+> **Contexte** : Chez Lolo était un clone inachevé — `index.html` = ancienne boutique cosmétique « Glow Wellness » (100 produits) alors que manifest/studio venaient d'un clone AR15 `la-detente`. Décision Kevin : **vider le catalogue, garder des catégories (textile/cosmétique/goodies), tout corriger, cohérence totale, 100% réel autonome**.
+>
+> **Livré et MERGÉ sur main (PR #849, #851, #853, #857 + 1ʳᵉ passe)** :
+> 1. **Identité multi-univers** : catalogue vidé (`P=[]`), catégories Textile/Cosmétiques/Goodies/Accessoires, textes/OG/Twitter/schema.org/hero/à-propos/footer/panier neutralisés, `manifest.json` cohérent (theme `#7c8c3c`, icône 🛍️), studio tag « LA DÉTENTE »→« CHEZ LOLO », `sw.js` notificationclick `chez-lolo`.
+> 2. **`bibliotheque.html` CRÉÉE** (lien mort réparé) : galerie créations/logos/projets.
+> 3. **Sécurité CSP** sur index/studio/bibliotheque (`connect-src` restreint) + referrer + nosniff.
+> 4. **➕ Ajout produit autonome** (`clAddProductForm`/`clSaveNewProduct`) → `cl_custom_products` → boutique, zéro code.
+> 5. **Image OG à la marque** (Pillow déterministe) remplaçant l'AR15 hérité.
+> 6. **Auto-commande Printify** (v2.0.5) : frontend POST `/order` au worker (design base64 + garment + couleur FR + adresse), on-hold, email/queue secours. Worker `la-detente/worker-order/worker.js` **généralisé par shop** (défauts = La Détente → la-detente intact), auto-déployé.
+>
+> **Infra** : ✅ GitHub MCP opérationnel (merge par API + vérif main). ⚠️ Égress sandbox bloqué (`*.workers.dev` « Host not in allowlist ») → blueprints garments manquants NON mappés (pas d'invention).
+>
+> **Reste (Kevin ~2 min)** : 1 commande POD test → vérifier on-hold sur printify.com/app/orders (cf. KEVIN_ACTIONS_TODO #A).
+
+---
+
+# Mémo de reprise — Domaine kd-mc.com (2026-06-06, branche `claude/kdmc-custom-domain-7hNn9`)
+
+> **Objectif Kevin** : un nom de domaine KDMC, une belle adresse par projet.
+> **Acheté** : `kd-mc.com` sur Cloudflare Registrar (zone dans son compte).
+> **Codé + poussé** : `services/kdmc-router` (worker reverse-proxy belle-adresse→GitHub Pages)
+> + `wrangler.toml` routes `custom_domain` (DNS+SSL auto) + workflow `deploy-kdmc-router.yml`
+> + `kdmc-home/index.html` (accueil portfolio) + origines `kd-mc.com` autorisées sur les 3
+> workers qui filtraient (apex-v13-backend, cmc-parser-proxy, ld-gemini-proxy ; les autres
+> sont CORS `*`). Syntaxe validée, commit `04bb6fb` confirmé sur le vrai GitHub.
+> **Adresses** : voir **KDMC_ADRESSES.md** (source de vérité, toujours à jour).
+> **Décision Kevin = « Go »** → fusion sur `main` + déploiement en cours.
+> **⚠️ À surveiller** : le `CLOUDFLARE_API_TOKEN` doit avoir Zone DNS Edit + Workers Routes
+> Edit sur kd-mc.com pour la création auto des belles adresses (sinon 1 case à cocher).
+> **Reste (optionnel/cosmétique)** : belles adresses serveurs `api/push/…kd-mc.com` ;
+> canonical/OG des pages → kd-mc.com une fois validé en live.
 
 ---
 
@@ -3364,3 +3415,22 @@ Boutique POD `shops/la-detente/` (cache v1.20.0). Faits cette session :
 - Docs : MARQUE_LA_DETENTE.md + FOURNISSEURS_LA_DETENTE.md à jour.
 - Workflows : `la-detente-worker-deploy.yml`, `la-detente-ai-designs.yml`, `la-detente-ai-images.yml`.
 - ⚠️ À tester par Kevin (navigateur) : worker depuis le studio. Catalogue images réelles = via fournisseurs plus tard.
+
+## Session 2026-06-06 — 🔐 Coffre-fort perso + PDF mémo (branche claude/secure-vault-app-EN8yR)
+- **4 PDF remplissables** dans `coffre-fort/memo/` : 51 secrets GitHub, 31 liens utiles, 10 projets (adresses kd-mc.com), cartographie kd-mc.com. Générateur `tools/memo-pdf/generate_pdfs.py` (+ mode `COFFRE_PDF_LIVE=1`).
+- **Coffre-fort** `coffre-fort/index.html` : page autonome, E2E zero-knowledge (AES-256 + PBKDF2 200k), Face ID/PIN/phrase, 6 sections + section « Mémos PDF » intégrée, auto-classement, export chiffré, kill-switch, auto-lock. Local + Firebase (chemin isolé `coffre_vault/<uid>`) + R2 (toute taille).
+- **R2** : worker `services/coffre-r2/` + `deploy-coffre-r2.yml` → bucket créé + worker déployé (`coffre-r2.9r4rxssx64.workers.dev`, /health OK, URL auto-commitée dans config.json).
+- **Adresses** : domaine kd-mc.com intégré aux PDF (source `KDMC_ADRESSES.md`) + workflow `coffre-pdf-refresh.yml` (régénère en mode live dès que kd-mc.com répond).
+- **Tests réels** : `node tests/coffre/e2e.test.mjs` → 9/9 ✅.
+- ⚠️ À faire côté Kevin : publier les règles Firebase màj (chemin `coffre_vault`).
+
+---
+
+## 2026-06-06 — Ultra-review + amélioration Apex Chat (crew 6 agents) → v1.1.172
+Branche `claude/apex-chat-review-It5lo` (12 commits, poussés + vérifiés API GitHub @ d8101e9/76de268).
+Audit crew (archi/sécu/backend/UX/tests/E2E) → 9 P0 + P1. **Batch P0+P1 livré intégralement**, 813 tests verts (+17 nouveaux).
+Corrigé : E2E réel (échange clés), OTP durci (backdoor gaté ALLOW_TEST_OTP + bypass Kevin protégé),
+push réparé, quotas KV, system_config NOT NULL, hash OTP, Letters/Time Capsule, force_logout REST+WS,
+read-receipt, outbox offline+replay, Stripe revocation, dédup DM, fuite localStorage inter-comptes,
+clavier qui se ferme (focus preserve + append incrémental bulles), WCAG/aria-live, couverture honnête.
+**Action Kevin en attente** : flip `ALLOW_TEST_OTP=false` une fois Vonage confirmé (cf. KEVIN_ACTIONS_TODO.md).

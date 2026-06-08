@@ -1,6 +1,6 @@
 /* KDMC Shops — Service Worker Chez Lolo. MAJ auto forcée : network-first pour les
    pages (toujours la dernière version en ligne), cache-first pour les assets, fallback offline. */
-var CACHE='kdmc-chez-lolo-v2.0.1';
+var CACHE='kdmc-chez-lolo-v2.0.5';
 var PRE=['./','studio.html','bibliotheque.html','/CMCteams/shops/legal/cgv.html'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRE).catch(function(){})}));self.skipWaiting()});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE&&(k.indexOf('kdmc-chez-lolo-')===0||k==='kdmc-v1')}).map(function(k){return caches.delete(k)}))}));self.clients.claim()});
@@ -14,7 +14,7 @@ self.addEventListener('push',function(e){
 self.addEventListener('notificationclick',function(e){
   e.notification.close();
   var u=(e.notification.data&&e.notification.data.url)||'./index.html';
-  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(cl){for(var i=0;i<cl.length;i++){if(cl[i].url.indexOf('la-detente')>=0&&'focus'in cl[i])return cl[i].focus();}if(self.clients.openWindow)return self.clients.openWindow(u);}));
+  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(cl){for(var i=0;i<cl.length;i++){if(cl[i].url.indexOf('chez-lolo')>=0&&'focus'in cl[i])return cl[i].focus();}if(self.clients.openWindow)return self.clients.openWindow(u);}));
 });
 self.addEventListener('fetch',function(e){
   var req=e.request; if(req.method!=='GET')return;

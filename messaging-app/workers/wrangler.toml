@@ -50,6 +50,15 @@ bucket_name = "apex-chat-media"
 binding = "APEX_CHAT_CACHE"
 id = "5d46f8fa642a4a5399d90fd00a379ab1"  # APEX_CHAT_CACHE (Kevin créé v1.1.131)
 
+# v1.1.172 FIX P0 (audit crew) : le code lit env.APEX_CHAT_KV (quotas premium
+# checkPremiumOrQuota/consumeQuota) mais ce binding n'existait pas → quotas
+# jamais comptés (fail-open, IA illimitée gratuite = dérive de coûts). On binde
+# APEX_CHAT_KV sur le MÊME namespace que le cache (clés quota:* sans collision
+# avec le cache IA). Aucun namespace à créer côté Kevin.
+[[kv_namespaces]]
+binding = "APEX_CHAT_KV"
+id = "5d46f8fa642a4a5399d90fd00a379ab1"  # réutilise APEX_CHAT_CACHE
+
 # Queues producers
 [[queues.producers]]
 queue = "apex-chat-telemetry"
@@ -100,6 +109,12 @@ APEX_CHAT_BASE_URL = "https://9r4rxssx64-creator.github.io/CMCteams/messaging-ap
 APEX_HANDOFF_FIREBASE_URL = "https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app"
 ADMIN_MODE = "A"  # A | B | C — bascule via D1.system_config (cette var = fallback)
 KEVIN_INVISIBLE_ADMIN = "true"
+# v1.1.172 (audit crew) : "true" = mode cercle privé (signup direct via code
+# 000000, OTP affiché en clair si SMS KO). "false" = OTP SMS RÉEL imposé pour
+# tout le monde (le bypass admin KEVIN_PHONE_E164 reste actif dans tous les cas).
+# Passer à "false" UNE FOIS que l'envoi SMS Vonage est confirmé fonctionnel
+# (sinon les non-Kevin ne peuvent plus s'inscrire). Flag = zéro risque de lockout.
+ALLOW_TEST_OTP = "true"
 AUTH_PROVIDER = "firebase"  # firebase | vonage
 TURN_PROVIDER = "p2p-only"  # p2p-only | local-coturn | cloudflare-calls
 JWT_ISSUER = "apex-chat"

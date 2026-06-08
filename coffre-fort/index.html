@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="theme-color" content="#0b1409">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>🔐 Coffre-fort perso</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root{
+    --gold:#e8b830; --gold2:#c9a227; --bg:#0b1409; --bg2:#0e1b12;
+    --card:#13251a; --card2:#16301f; --line:#214030; --text:#f1efe6;
+    --muted:#9bb0a2; --ok:#43c47a; --warn:#ffba49; --err:#ff6b6b; --link:#7fc7ff;
+    --r:14px; --sa-b:env(safe-area-inset-bottom,0px); --sa-t:env(safe-area-inset-top,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;max-width:100vw;overflow-x:hidden}
+  body{background:linear-gradient(180deg,#0b1409,#0a1410 60%,#08110c);color:var(--text);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;-webkit-text-size-adjust:100%}
+  .wrap{max-width:760px;margin:0 auto;padding:calc(14px + var(--sa-t)) 14px calc(28px + var(--sa-b))}
+  h1,h2,h3{margin:0 0 .4em}
+  button{font:inherit;cursor:pointer;border:none;border-radius:11px;min-height:46px;padding:0 16px;
+    background:var(--card2);color:var(--text);border:1px solid var(--line)}
+  button.primary{background:linear-gradient(135deg,#e8b830,#c9920f);color:#1a1205;font-weight:700;border:none}
+  button.ghost{background:transparent}
+  button.danger{background:transparent;border:1px solid #5a2020;color:#ff8f8f}
+  button:active{transform:translateY(1px)}
+  input,textarea,select{font:inherit;width:100%;background:#0c1812;border:1px solid var(--line);
+    color:var(--text);border-radius:11px;padding:12px;outline:none}
+  input:focus,textarea:focus{border-color:var(--gold)}
+  textarea{min-height:96px;resize:vertical}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px;font-weight:600;letter-spacing:.3px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:12px 0}
+  .row{display:flex;gap:10px;align-items:center}
+  .row.wrap{flex-wrap:wrap}
+  .grow{flex:1;min-width:0}
+  .muted{color:var(--muted)}
+  .small{font-size:12.5px}
+  .center{text-align:center}
+  .hide{display:none!important}
+  .badge{position:fixed;left:10px;bottom:calc(8px + var(--sa-b));z-index:50;font-size:10px;
+    background:rgba(20,40,28,.85);color:var(--gold);border:1px solid var(--line);border-radius:8px;
+    padding:4px 8px;backdrop-filter:blur(6px)}
+  .lock-screen{min-height:80vh;display:flex;flex-direction:column;justify-content:center}
+  .logo{font-size:46px;text-align:center;margin-bottom:8px}
+  .title{font-size:22px;font-weight:800;text-align:center;background:linear-gradient(135deg,#f5d36b,#e8b830);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--muted);text-align:center;margin:4px 0 18px;font-size:13px}
+  /* sections */
+  .secgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .sectile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;
+    display:flex;flex-direction:column;gap:4px;min-height:74px;position:relative}
+  .sectile .ico{font-size:24px}
+  .sectile .nm{font-weight:700;font-size:14px}
+  .sectile .ct{position:absolute;top:10px;right:12px;font-size:12px;color:var(--gold);font-weight:700}
+  .topbar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .topbar .ttl{font-weight:800;font-size:18px;flex:1}
+  .iconbtn{min-height:42px;min-width:42px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0}
+  .item .hd{display:flex;gap:8px;align-items:center}
+  .item .ti{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .tp{font-size:11px;color:var(--muted)}
+  .item .meta{font-size:11px;color:var(--muted);margin-top:3px}
+  .item .acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .item .acts button{min-height:38px;font-size:13px;padding:0 11px}
+  .pill{font-size:10px;border:1px solid var(--line);border-radius:20px;padding:2px 8px;color:var(--muted)}
+  .toast{position:fixed;left:50%;bottom:calc(70px + var(--sa-b));transform:translateX(-50%);
+    background:#14281c;border:1px solid var(--gold2);color:var(--text);padding:11px 16px;border-radius:12px;
+    z-index:200;max-width:90vw;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:13.5px}
+  .modal{position:fixed;inset:0;background:rgba(4,9,6,.74);z-index:300;display:flex;align-items:flex-end;
+    justify-content:center;backdrop-filter:blur(4px)}
+  .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;
+    max-width:760px;max-height:92vh;overflow:auto;padding:18px 16px calc(20px + var(--sa-b))}
+  @media(min-width:560px){.modal{align-items:center}.sheet{border-radius:18px}}
+  .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .seg button{flex:1;border:none;border-radius:0;background:transparent;min-height:42px}
+  .seg button.on{background:var(--gold);color:#1a1205;font-weight:700}
+  .warnbox{background:#2a1f0a;border:1px solid #6b5316;border-radius:10px;padding:10px;font-size:12.5px;color:#ffd98a}
+  .okdot{color:var(--ok)} .errdot{color:var(--err)} .warndot{color:var(--warn)}
+  .pininp{letter-spacing:8px;text-align:center;font-size:22px}
+  a{color:var(--link)}
+  .fab{position:fixed;right:16px;bottom:calc(18px + var(--sa-b));z-index:60;width:58px;height:58px;border-radius:50%;
+    font-size:28px;background:linear-gradient(135deg,#e8b830,#c9920f);color:#1a1205;border:none;
+    box-shadow:0 10px 26px rgba(0,0,0,.5)}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted)}
+  .drop.over{border-color:var(--gold);color:var(--gold)}
+  .statline{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+  progress{width:100%;height:8px;border-radius:6px;overflow:hidden}
+</style>
+</head>
+<body>
+<div class="badge" id="verBadge" onclick="CF.about()">🔐 …</div>
+<div class="wrap" id="app"><div class="center muted" style="margin-top:40vh">Chargement…</div></div>
+
+<script>
+"use strict";
+/* ============================================================
+   COFFRE-FORT PERSO — page autonome, zero-knowledge E2E.
+   Local-first (localStorage + IndexedDB) + sync best-effort
+   (Firebase chiffré + Cloudflare R2 pour les gros fichiers).
+   Aucune donnée en clair n'est stockée ni envoyée.
+   ============================================================ */
+(function(){
+const VERSION = "v1.0.2";
+const ENC = new TextEncoder(), DEC = new TextDecoder();
+const $ = function(id){ return document.getElementById(id); };
+const APP = $("app");
+
+/* ---- état runtime (jamais persisté en clair) ---- */
+var ST = {
+  cfg:null, uid:null, profile:null,
+  MK:null,                 // CryptoKey master (mémoire seule)
+  unlocked:false,
+  meta:{ items:[], updated:0 }, // index déchiffré en mémoire
+  section:null,
+  idleTimer:null, clipTimer:null,
+  pinFails:0
+};
+const SECTIONS = [
+  {id:"codes",  ico:"🔑", nm:"Codes & Identifiants"},
+  {id:"banque", ico:"🏦", nm:"Banque"},
+  {id:"docs",   ico:"📄", nm:"Documents"},
+  {id:"photos", ico:"📷", nm:"Photos"},
+  {id:"dossiers",ico:"📁",nm:"Dossiers"},
+  {id:"notes",  ico:"📝", nm:"Notes"}
+];
+const LS = {
+  salt:"cf_salt", verify:"cf_verify", profile:"cf_profile", uid:"cf_uid",
+  meta:"cf_meta",            // index chiffré (CFENC1:)
+  pinWrap:"cf_pin_wrap", pinSalt:"cf_pin_salt", pinFails:"cf_pin_fails",
+  bioWrap:"cf_bio_wrap", bioCred:"cf_bio_cred",
+  audit:"cf_audit", duressWrap:"cf_duress_wrap"
+};
+
+/* ============================================================
+   CRYPTO  (Web Crypto : PBKDF2 200k + AES-GCM-256)
+   ============================================================ */
+function rand(n){ return crypto.getRandomValues(new Uint8Array(n)); }
+function abToB64(buf){
+  var bytes=new Uint8Array(buf), bin="", CH=0x8000;
+  for(var i=0;i<bytes.length;i+=CH){ bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+CH)); }
+  return btoa(bin);
+}
+function b64ToAb(b64){
+  var bin=atob(b64), len=bin.length, out=new Uint8Array(len);
+  for(var i=0;i<len;i++) out[i]=bin.charCodeAt(i);
+  return out;
+}
+async function deriveKey(passphrase, salt, iter){
+  var base=await crypto.subtle.importKey("raw",ENC.encode(passphrase),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2",salt:salt,iterations:iter||200000,hash:"SHA-256"},
+    base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+/* enc/dec avec une CryptoKey AES déjà dérivée — bon marché (par item) */
+async function encWithKey(key, bytes){
+  var iv=rand(12);
+  var ct=await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,bytes);
+  return "CFENC1:"+abToB64(iv)+"."+abToB64(ct);
+}
+async function decWithKey(key, payload){
+  try{
+    if(typeof payload!=="string"||payload.indexOf("CFENC1:")!==0) return null;
+    var p=payload.slice(7).split("."); if(p.length!==2) return null;
+    var iv=b64ToAb(p[0]), ct=b64ToAb(p[1]);
+    var pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:iv},key,ct);
+    return new Uint8Array(pt);
+  }catch(e){ return null; }
+}
+async function encStr(key,str){ return encWithKey(key,ENC.encode(str)); }
+async function decStr(key,payload){ var b=await decWithKey(key,payload); return b?DEC.decode(b):null; }
+/* wrap d'un secret (passphrase) par un mot de passe faible (PIN) — local only */
+async function wrapSecret(secret, pass, salt, iter){
+  var k=await deriveKey(pass,salt,iter); return encStr(k,secret);
+}
+async function unwrapSecret(payload, pass, salt, iter){
+  var k=await deriveKey(pass,salt,iter); return decStr(k,payload);
+}
+async function sha256Hex(str){
+  var h=await crypto.subtle.digest("SHA-256",ENC.encode(str));
+  return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
+}
+
+/* ============================================================
+   STORAGE : localStorage + IndexedDB (gros blobs) + Firebase
+   ============================================================ */
+var IDB=null;
+function idb(){
+  return new Promise(function(res,rej){
+    if(IDB) return res(IDB);
+    var r=indexedDB.open("cf_vault",1);
+    r.onupgradeneeded=function(e){ var db=e.target.result;
+      if(!db.objectStoreNames.contains("blobs")) db.createObjectStore("blobs");
+    };
+    r.onsuccess=function(e){ IDB=e.target.result; res(IDB); };
+    r.onerror=function(){ rej(r.error); };
+  });
+}
+async function idbPut(key,val){ var db=await idb(); return new Promise(function(res,rej){
+  var tx=db.transaction("blobs","readwrite"); tx.objectStore("blobs").put(val,key);
+  tx.oncomplete=function(){res(true);}; tx.onerror=function(){rej(tx.error);}; }); }
+async function idbGet(key){ var db=await idb(); return new Promise(function(res){
+  var tx=db.transaction("blobs","readonly"); var rq=tx.objectStore("blobs").get(key);
+  rq.onsuccess=function(){res(rq.result||null);}; rq.onerror=function(){res(null);}; }); }
+async function idbDel(key){ var db=await idb(); return new Promise(function(res){
+  var tx=db.transaction("blobs","readwrite"); tx.objectStore("blobs").delete(key);
+  tx.oncomplete=function(){res(true);}; tx.onerror=function(){res(false);}; }); }
+
+/* Firebase REST (best-effort, ne bloque jamais l'UI) */
+function fbBase(){ if(!ST.cfg||!ST.cfg.firebase_url||!ST.uid) return null;
+  return ST.cfg.firebase_url.replace(/\/$/,"")+"/"+(ST.cfg.firebase_path||"coffre_vault")+"/"+ST.uid; }
+async function fbPut(path,val){ var b=fbBase(); if(!b) return false;
+  try{ var r=await fetch(b+"/"+path+".json",{method:"PUT",body:JSON.stringify(val)}); return r.ok; }
+  catch(e){ return false; } }
+async function fbGet(path){ var b=fbBase(); if(!b) return null;
+  try{ var r=await fetch(b+"/"+path+".json"); if(!r.ok) return null; return await r.json(); }
+  catch(e){ return null; } }
+
+/* R2 (gros fichiers) via worker — best-effort */
+function r2On(){ return ST.cfg && ST.cfg.r2_worker_url; }
+async function r2Put(id, encPayload){
+  if(!r2On()) return false;
+  try{ var r=await fetch(ST.cfg.r2_worker_url.replace(/\/$/,"")+"/v1/chunk/"+encodeURIComponent(id),
+      {method:"PUT",headers:{"content-type":"application/octet-stream"},body:encPayload});
+    return r.ok; }catch(e){ return false; }
+}
+async function r2Get(id){
+  if(!r2On()) return null;
+  try{ var r=await fetch(ST.cfg.r2_worker_url.replace(/\/$/,"")+"/v1/chunk/"+encodeURIComponent(id));
+    if(!r.ok) return null; return await r.text(); }catch(e){ return null; }
+}
+
+/* ============================================================
+   INDEX (méta) : chiffré, multi-couches
+   ============================================================ */
+async function saveMeta(){
+  ST.meta.updated=Date.now();
+  var enc=await encStr(ST.MK, JSON.stringify(ST.meta));
+  try{ localStorage.setItem(LS.meta, enc); }catch(e){}
+  try{ await idbPut("meta", enc); }catch(e){}
+  fbPut("meta", enc);            // best-effort
+}
+async function loadMeta(){
+  var enc=localStorage.getItem(LS.meta);
+  if(!enc){ try{ enc=await idbGet("meta"); }catch(e){} }
+  // tente Firebase si rien en local OU pour fusion (prend le plus récent)
+  var remote=await fbGet("meta");
+  var localMeta=null, remoteMeta=null;
+  if(enc){ var s=await decStr(ST.MK,enc); if(s) try{localMeta=JSON.parse(s);}catch(e){} }
+  if(remote){ var rs=await decStr(ST.MK,remote); if(rs) try{remoteMeta=JSON.parse(rs);}catch(e){} }
+  var chosen = (remoteMeta && (!localMeta || (remoteMeta.updated||0)>(localMeta.updated||0))) ? remoteMeta : localMeta;
+  ST.meta = chosen || {items:[],updated:0};
+  if(!ST.meta.items) ST.meta.items=[];
+}
+
+/* ============================================================
+   AUDIT (chaîne de hash, anti-altération) — chiffré
+   ============================================================ */
+async function audit(action, info){
+  try{
+    var log = ST.meta._audit || [];
+    var prev = log.length? log[log.length-1].h : "genesis";
+    var entry={t:Date.now(),a:action,i:(info||"").slice(0,80)};
+    entry.h=(await sha256Hex(prev+JSON.stringify(entry))).slice(0,16);
+    log.push(entry); if(log.length>200) log=log.slice(-200);
+    ST.meta._audit=log;
+  }catch(e){}
+}
+
+/* ============================================================
+   AUTO-CLASSIFICATION (où ranger un texte collé)
+   ============================================================ */
+var PATTERNS=[
+  [/^sk-ant-api\d{2}-[A-Za-z0-9_\-]{30,}/, "codes","Clé Anthropic"],
+  [/^sk-(?!ant)[A-Za-z0-9_\-]{30,}/,       "codes","Clé OpenAI"],
+  [/^(ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{60,})/,"codes","Token GitHub"],
+  [/^AIza[A-Za-z0-9_\-]{33}$/,             "codes","Clé Google/Gemini"],
+  [/^gsk_[A-Za-z0-9]{40,}/,                "codes","Clé Groq"],
+  [/^sk_(live|test)_[A-Za-z0-9]{20,}/,     "codes","Clé Stripe"],
+  [/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/,       "banque","IBAN"],
+  [/^(\d[ \-]?){13,19}$/,                  "banque","N° de carte (⚠ ne pas stocker le CVV)"],
+  [/^bc1[a-z0-9]{20,}|^0x[a-fA-F0-9]{40}$/,"codes","Adresse crypto"],
+  [/^https?:\/\/\S+$/i,                     "notes","Lien"]
+];
+function autoClassify(text){
+  var t=(text||"").trim();
+  for(var i=0;i<PATTERNS.length;i++){ if(PATTERNS[i][0].test(t)) return {section:PATTERNS[i][1],hint:PATTERNS[i][2]}; }
+  return {section:"notes",hint:""};
+}
+
+/* ============================================================
+   ITEMS : create / read / delete
+   item = {id,section,title,type:"text"|"file",mime,size,tags,created,updated,
+           storage:"inline"|"idb"|"r2", ref, encInline?}
+   ============================================================ */
+function uuid(){ return "it_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8); }
+
+async function addTextItem(section, title, text, tags){
+  var enc=await encStr(ST.MK, text);
+  var it={id:uuid(),section:section,title:title||"(sans titre)",type:"text",
+    mime:"text/plain",size:text.length,tags:tags||[],created:Date.now(),updated:Date.now(),
+    storage:"inline",encInline:enc};
+  ST.meta.items.push(it); await audit("add_text",section+":"+it.title); await saveMeta(); return it;
+}
+async function getTextItem(it){
+  if(it.storage==="inline"&&it.encInline) return await decStr(ST.MK, it.encInline);
+  return null;
+}
+async function addFileItem(section, file, onprog){
+  var buf=new Uint8Array(await file.arrayBuffer());
+  var enc=await encWithKey(ST.MK, buf); // chaîne CFENC1:
+  var inlineMax=(ST.cfg&&ST.cfg.r2_inline_max_bytes)||5242880;
+  var it={id:uuid(),section:section,title:file.name||"fichier",type:"file",
+    mime:file.type||"application/octet-stream",size:file.size,tags:[],
+    created:Date.now(),updated:Date.now()};
+  if(file.size<=inlineMax || !r2On()){
+    // local : IndexedDB (+ Firebase chunk best-effort si petit)
+    await idbPut("blob_"+it.id, enc);
+    it.storage="idb"; it.ref="blob_"+it.id;
+    if(file.size<=262144){ fbPut("chunks/"+it.id, enc); } // <256Ko : sync cloud aussi
+  } else {
+    // gros fichier : R2
+    var ok=await r2Put(it.id, enc);
+    if(ok){ it.storage="r2"; it.ref=it.id; }
+    else { await idbPut("blob_"+it.id, enc); it.storage="idb"; it.ref="blob_"+it.id; }
+  }
+  if(onprog) onprog(1);
+  ST.meta.items.push(it); await audit("add_file",section+":"+it.title); await saveMeta(); return it;
+}
+async function getFileBytes(it){
+  var enc=null;
+  if(it.storage==="idb") enc=await idbGet(it.ref);
+  if(!enc && it.storage==="r2") enc=await r2Get(it.ref);
+  if(!enc) enc=await fbGet("chunks/"+it.id);     // fallback cloud
+  if(!enc && it.storage!=="idb") enc=await idbGet("blob_"+it.id);
+  if(!enc) return null;
+  return await decWithKey(ST.MK, enc);
+}
+async function delItem(id){
+  var idx=ST.meta.items.findIndex(function(x){return x.id===id;});
+  if(idx<0) return;
+  var it=ST.meta.items[idx];
+  if(it.ref){ idbDel(it.ref); }
+  if(it.storage==="r2"&&r2On()){ try{fetch(ST.cfg.r2_worker_url.replace(/\/$/,"")+"/v1/chunk/"+encodeURIComponent(it.ref),{method:"DELETE"});}catch(e){} }
+  fbPut("chunks/"+it.id, null);
+  ST.meta.items.splice(idx,1); await audit("delete",it.title); await saveMeta();
+}
+
+/* ============================================================
+   UI helpers
+   ============================================================ */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+var _toastT=null;
+function toast(msg, kind){
+  var d=document.createElement("div"); d.className="toast"; d.textContent=msg;
+  if(kind==="err") d.style.borderColor="#5a2020";
+  document.body.appendChild(d);
+  clearTimeout(_toastT); _toastT=setTimeout(function(){ d.remove(); }, kind==="err"?4200:2400);
+}
+function modal(html){
+  var m=document.createElement("div"); m.className="modal";
+  m.innerHTML='<div class="sheet">'+html+'</div>';
+  m.addEventListener("click",function(e){ if(e.target===m) m.remove(); });
+  document.body.appendChild(m); return m;
+}
+function fmtBytes(n){ if(n<1024) return n+" o"; if(n<1048576) return (n/1024).toFixed(0)+" Ko";
+  if(n<1073741824) return (n/1048576).toFixed(1)+" Mo"; return (n/1073741824).toFixed(2)+" Go"; }
+function ago(t){ var s=(Date.now()-t)/1000; if(s<60)return "à l'instant"; if(s<3600)return Math.floor(s/60)+" min";
+  if(s<86400)return Math.floor(s/3600)+" h"; return Math.floor(s/86400)+" j"; }
+
+/* idle auto-lock + clipboard auto-clear */
+function bumpIdle(){ clearTimeout(ST.idleTimer);
+  ST.idleTimer=setTimeout(function(){ if(ST.unlocked){ lockVault(); toast("🔒 Verrouillé (inactivité)"); } }, 5*60*1000); }
+["click","keydown","touchstart","mousemove"].forEach(function(ev){ document.addEventListener(ev,bumpIdle,{passive:true}); });
+document.addEventListener("visibilitychange",function(){ if(document.hidden&&ST.unlocked){ /* lock léger après 30s caché */
+  setTimeout(function(){ if(document.hidden&&ST.unlocked){ lockVault(); } },30000); } });
+async function copyClip(text){
+  try{ await navigator.clipboard.writeText(text); }catch(e){
+    var ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select();
+    try{document.execCommand("copy");}catch(_){} ta.remove(); }
+  toast("📋 Copié (effacé dans 30 s)");
+  clearTimeout(ST.clipTimer);
+  ST.clipTimer=setTimeout(function(){ navigator.clipboard.writeText("").catch(function(){}); }, 30000);
+}
+
+/* ============================================================
+   AUTH : setup / unlock / lock / FaceID / PIN
+   ============================================================ */
+function normName(s){ return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  .replace(/[\s\-_.]+/g," ").trim(); }
+async function computeUid(prenom, nom){
+  var toks=[normName(prenom),normName(nom)].sort();
+  return "u_"+(await sha256Hex("coffre|"+toks.join("|"))).slice(0,24);
+}
+function hasVault(){ return !!localStorage.getItem(LS.verify); }
+
+async function doSetup(prenom, nom, passphrase, pin){
+  var salt=rand(16);
+  localStorage.setItem(LS.salt, abToB64(salt));
+  ST.uid=await computeUid(prenom,nom);
+  localStorage.setItem(LS.uid, ST.uid);
+  ST.MK=await deriveKey(passphrase, salt, 200000);
+  ST.profile={prenom:prenom,nom:nom,created:Date.now()};
+  localStorage.setItem(LS.profile, await encStr(ST.MK, JSON.stringify(ST.profile)));
+  localStorage.setItem(LS.verify, await encStr(ST.MK, "CFOK|"+ST.uid));
+  // sync salt+verify dans Firebase (pour autres appareils)
+  fbPut("salt", abToB64(salt)); fbPut("verify", localStorage.getItem(LS.verify));
+  ST.meta={items:[],updated:Date.now()}; await audit("setup", prenom+" "+nom);
+  if(pin) await enablePin(passphrase, pin);
+  await saveMeta();
+  ST.unlocked=true;
+}
+async function tryUnlockPassphrase(passphrase){
+  var saltB=localStorage.getItem(LS.salt);
+  if(!saltB){ var rs=await fbGet("salt"); if(rs){ saltB=rs; localStorage.setItem(LS.salt,rs); } }
+  if(!saltB) return false;
+  var verify=localStorage.getItem(LS.verify) || await fbGet("verify");
+  if(!verify) return false;
+  var k=await deriveKey(passphrase, b64ToAb(saltB), 200000);
+  var chk=await decStr(k, verify);
+  if(!chk || chk.indexOf("CFOK|")!==0) return false;
+  ST.MK=k; ST.uid=(chk.split("|")[1])||localStorage.getItem(LS.uid);
+  localStorage.setItem(LS.verify, verify);
+  var pe=localStorage.getItem(LS.profile); if(pe){ var ps=await decStr(k,pe); if(ps) try{ST.profile=JSON.parse(ps);}catch(e){} }
+  await loadMeta(); ST.unlocked=true; await audit("unlock","passphrase"); return true;
+}
+function lockVault(){ ST.MK=null; ST.unlocked=false; ST.meta={items:[],updated:0}; ST.section=null; clearTimeout(ST.idleTimer); render(); }
+
+/* PIN (couche de confort, local only, rate-limited) */
+async function enablePin(passphrase, pin){
+  var ps=rand(16); localStorage.setItem(LS.pinSalt, abToB64(ps));
+  localStorage.setItem(LS.pinWrap, await wrapSecret(passphrase, pin, ps, 200000));
+}
+function pinLockState(){ try{ return JSON.parse(localStorage.getItem(LS.pinFails)||'{"n":0,"until":0}'); }catch(e){ return {n:0,until:0}; } }
+async function tryUnlockPin(pin){
+  var st=pinLockState();
+  if(st.until>Date.now()) return {ok:false,locked:Math.ceil((st.until-Date.now())/1000)};
+  var wrap=localStorage.getItem(LS.pinWrap), ps=localStorage.getItem(LS.pinSalt);
+  if(!wrap||!ps) return {ok:false,no:true};
+  var pass=await unwrapSecret(wrap, pin, b64ToAb(ps), 200000);
+  if(!pass){ st.n=(st.n||0)+1;
+    var d=[0,0,0,0,0,30,120,600,3600,86400][Math.min(st.n,9)];
+    st.until=d?Date.now()+d*1000:0; localStorage.setItem(LS.pinFails,JSON.stringify(st));
+    return {ok:false,fails:st.n,locked:d}; }
+  localStorage.setItem(LS.pinFails,JSON.stringify({n:0,until:0}));
+  var ok=await tryUnlockPassphrase(pass); return {ok:ok};
+}
+
+/* FaceID / TouchID via WebAuthn (PRF si dispo, sinon gate device) */
+async function bioAvailable(){
+  try{ return !!(window.PublicKeyCredential &&
+    await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }catch(e){ return false; }
+}
+async function enableBio(passphrase){
+  if(!await bioAvailable()) return false;
+  try{
+    var userId=rand(16);
+    var cred=await navigator.credentials.create({publicKey:{
+      challenge:rand(32), rp:{name:"Coffre-fort perso", id:location.hostname},
+      user:{id:userId, name:(ST.profile&&ST.profile.prenom||"user"), displayName:"Coffre"},
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"preferred"},
+      extensions:{prf:{eval:{first:ENC.encode("coffre-prf-v1")}}},
+      timeout:60000, attestation:"none"
+    }});
+    var credId=abToB64(cred.rawId);
+    var ext=cred.getClientExtensionResults&&cred.getClientExtensionResults();
+    var prf=ext&&ext.prf&&ext.prf.results&&ext.prf.results.first;
+    var wrapKey;
+    if(prf){ wrapKey=await crypto.subtle.importKey("raw",prf,{name:"AES-GCM"},false,["encrypt","decrypt"]);
+      localStorage.setItem(LS.bioCred, JSON.stringify({id:credId,prf:true})); }
+    else { // fallback : clé device (moins fort, opt-in)
+      var dk=rand(32); wrapKey=await crypto.subtle.importKey("raw",dk,{name:"AES-GCM"},false,["encrypt","decrypt"]);
+      localStorage.setItem(LS.bioCred, JSON.stringify({id:credId,prf:false,dk:abToB64(dk)})); }
+    localStorage.setItem(LS.bioWrap, await encStr(wrapKey, passphrase));
+    return true;
+  }catch(e){ return false; }
+}
+function bioEnrolled(){ return !!localStorage.getItem(LS.bioWrap); }
+async function tryUnlockBio(){
+  var credRaw=localStorage.getItem(LS.bioCred), wrap=localStorage.getItem(LS.bioWrap);
+  if(!credRaw||!wrap) return false;
+  var meta; try{ meta=JSON.parse(credRaw); }catch(e){ return false; }
+  try{
+    var asrt=await navigator.credentials.get({publicKey:{
+      challenge:rand(32), rpId:location.hostname,
+      allowCredentials:[{type:"public-key",id:b64ToAb(meta.id)}],
+      userVerification:"required",
+      extensions: meta.prf? {prf:{eval:{first:ENC.encode("coffre-prf-v1")}}} : {},
+      timeout:60000
+    }});
+    if(!asrt) return false;
+    var wrapKey;
+    if(meta.prf){ var ext=asrt.getClientExtensionResults(); var prf=ext&&ext.prf&&ext.prf.results&&ext.prf.results.first;
+      if(!prf) return false; wrapKey=await crypto.subtle.importKey("raw",prf,{name:"AES-GCM"},false,["decrypt"]); }
+    else { wrapKey=await crypto.subtle.importKey("raw",b64ToAb(meta.dk),{name:"AES-GCM"},false,["decrypt"]); }
+    var pass=await decStr(wrapKey, wrap); if(!pass) return false;
+    return await tryUnlockPassphrase(pass);
+  }catch(e){ return false; }
+}
+
+/* kill-switch / export / import */
+function killLocal(){
+  Object.values(LS).forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} });
+  indexedDB.deleteDatabase("cf_vault");
+  lockVault(); toast("🧨 Données locales effacées (le cloud reste).");
+}
+async function exportVault(){
+  var bundle={v:1,exported:Date.now(),profile:ST.profile,meta:ST.meta,blobs:{}};
+  // inclure les blobs IDB (export complet hors-ligne)
+  for(var i=0;i<ST.meta.items.length;i++){ var it=ST.meta.items[i];
+    if(it.storage==="idb"){ var b=await idbGet(it.ref); if(b) bundle.blobs[it.ref]=b; } }
+  var enc=await encStr(ST.MK, JSON.stringify(bundle));
+  var blob=new Blob([enc],{type:"application/octet-stream"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="coffre-"+new Date().toISOString().slice(0,10)+".coffre"; a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  toast("💾 Export chiffré téléchargé");
+}
+async function importVault(file){
+  var enc=await file.text(); var s=await decStr(ST.MK, enc);
+  if(!s){ toast("Mauvais coffre ou mauvaise phrase secrète","err"); return; }
+  var b; try{ b=JSON.parse(s); }catch(e){ toast("Fichier illisible","err"); return; }
+  if(b.blobs){ for(var k in b.blobs){ await idbPut(k, b.blobs[k]); } }
+  // fusion par id
+  var existing={}; ST.meta.items.forEach(function(x){existing[x.id]=true;});
+  (b.meta&&b.meta.items||[]).forEach(function(x){ if(!existing[x.id]) ST.meta.items.push(x); });
+  await saveMeta(); toast("📥 Coffre importé"); render();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  $("verBadge").textContent="🔐 "+VERSION+(r2On()?" ☁︎":"");
+  if(!ST.unlocked){ return hasVault()? renderLock() : renderSetup(); }
+  if(ST.section) return renderSection(ST.section);
+  return renderHome();
+}
+
+function renderSetup(){
+  APP.innerHTML=
+  '<div class="lock-screen"><div class="logo">🔐</div>'+
+  '<div class="title">Coffre-fort perso</div>'+
+  '<div class="sub">Crée ton coffre ultra-sécurisé. Tes données sont chiffrées sur ton appareil — personne d\'autre ne peut les lire.</div>'+
+  '<div class="card">'+
+    '<label>Prénom</label><input id="su_p" autocomplete="given-name" autocapitalize="words">'+
+    '<label>Nom</label><input id="su_n" autocomplete="family-name" autocapitalize="words">'+
+    '<label>Phrase secrète maître (tu la retaperas pour ouvrir le coffre)</label>'+
+    '<div class="row"><input class="grow" id="su_pass" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ex: mon chat aime le cafe 2026"><button type="button" class="iconbtn" title="Afficher" onclick="CF.peek(\'su_pass\',this)">👁</button></div>'+
+    '<div class="small muted" id="su_cnt">0 caractère — minimum 8</div>'+
+    '<label>Code PIN rapide (6 chiffres, optionnel — pour rouvrir vite)</label>'+
+    '<div class="row"><input class="grow pininp" id="su_pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="••••••"><button type="button" class="iconbtn" title="Afficher" onclick="CF.peek(\'su_pin\',this)">👁</button></div>'+
+    '<div class="warnbox" style="margin-top:12px">⚠️ Touche 👁 pour vérifier ce que tu tapes. Ta phrase secrète n\'est <b>jamais</b> envoyée nulle part : si tu l\'oublies, <b>personne</b> ne peut récupérer tes données. Note-la dans un endroit sûr.</div>'+
+    '<button class="primary" id="su_go" style="width:100%;margin-top:14px">Créer mon coffre 🔐</button>'+
+  '</div></div>';
+  var pc=$("su_pass"); if(pc) pc.oninput=function(){ var n=pc.value.length;
+    $("su_cnt").textContent=n+" caractère"+(n>1?"s":"")+(n<8?" — encore "+(8-n)+" minimum":" — OK ✓");
+    $("su_cnt").style.color=n<8?"var(--muted)":"var(--ok)"; };
+  $("su_go").onclick=async function(){
+    var p=$("su_p").value.trim(), n=$("su_n").value.trim(),
+        pass=$("su_pass").value, pin=$("su_pin").value.trim();
+    if(p.length<2||n.length<2){ toast("Prénom ET nom requis","err"); return; }
+    if(pass.length<8){ toast("Phrase secrète : 8 caractères minimum (touche 👁 pour vérifier)","err"); return; }
+    if(pin && !/^\d{6}$/.test(pin)){ toast("Le PIN doit faire 6 chiffres","err"); return; }
+    this.disabled=true; this.textContent="Chiffrement…";
+    try{ await doSetup(p,n,pass,pin||null);
+      toast("✅ Coffre créé"); render(); maybeOfferBio(pass);
+    }catch(e){ toast("Erreur: "+(e.message||e),"err"); this.disabled=false; this.textContent="Créer mon coffre 🔐"; }
+  };
+}
+
+function renderLock(){
+  APP.innerHTML=
+  '<div class="lock-screen"><div class="logo">🔐</div>'+
+  '<div class="title">Coffre verrouillé</div>'+
+  '<div class="sub" id="lk_sub">Déverrouille avec Face ID, ton PIN ou ta phrase secrète.</div>'+
+  '<div class="card">'+
+    (bioEnrolled()? '<button class="primary" id="lk_bio" style="width:100%">😊 Face ID / Touch ID</button>':'')+
+    (localStorage.getItem(LS.pinWrap)? '<label>Code PIN</label><input id="lk_pin" class="pininp" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="••••••">':'')+
+    '<label>Phrase secrète</label><div class="row"><input class="grow" id="lk_pass" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><button type="button" class="iconbtn" title="Afficher" onclick="CF.peek(\'lk_pass\',this)">👁</button></div>'+
+    '<button class="primary" id="lk_go" style="width:100%;margin-top:12px">Déverrouiller</button>'+
+    '<button class="ghost small" id="lk_reset" style="width:100%;margin-top:8px;color:#ff8f8f">Réinitialiser ce coffre…</button>'+
+  '</div></div>';
+  if($("lk_bio")) $("lk_bio").onclick=async function(){ this.textContent="…";
+    var ok=await tryUnlockBio(); if(ok){ render(); bumpIdle(); } else { toast("Face ID échoué — utilise PIN/phrase","err"); this.textContent="😊 Face ID / Touch ID"; } };
+  var pinEl=$("lk_pin");
+  if(pinEl) pinEl.oninput=async function(){ if(this.value.length===6){ var r=await tryUnlockPin(this.value);
+    if(r.ok){ render(); bumpIdle(); } else if(r.locked){ toast("Trop d'essais. Attends "+r.locked+" s","err"); this.value=""; }
+    else { toast("PIN incorrect","err"); this.value=""; } } };
+  $("lk_go").onclick=async function(){ var pass=$("lk_pass").value; if(!pass){ toast("Entre ta phrase secrète","err"); return; }
+    this.disabled=true; this.textContent="…"; var ok=await tryUnlockPassphrase(pass);
+    if(ok){ render(); bumpIdle(); } else { toast("Phrase secrète incorrecte","err"); this.disabled=false; this.textContent="Déverrouiller"; } };
+  $("lk_reset").onclick=function(){ var m=modal('<h3>Réinitialiser le coffre ?</h3><p class="muted small">Cela efface le coffre <b>sur cet appareil</b>. Tu pourras le recréer. Les données chiffrées dans le cloud ne sont pas supprimées.</p><div class="row" style="margin-top:14px"><button class="grow" onclick="this.closest(\'.modal\').remove()">Annuler</button><button class="grow danger" id="rs_yes">Réinitialiser</button></div>');
+    m.querySelector("#rs_yes").onclick=function(){ killLocal(); m.remove(); render(); }; };
+}
+
+function renderHome(){
+  var counts={}; ST.meta.items.forEach(function(it){ counts[it.section]=(counts[it.section]||0)+1; });
+  var tiles=SECTIONS.map(function(s){ return '<button class="sectile" onclick="CF.openSection(\''+s.id+'\')">'+
+    '<span class="ct">'+(counts[s.id]||0)+'</span><span class="ico">'+s.ico+'</span><span class="nm">'+s.nm+'</span></button>'; }).join("");
+  var totalBytes=ST.meta.items.reduce(function(a,it){return a+(it.size||0);},0);
+  APP.innerHTML=
+  '<div class="topbar"><span style="font-size:22px">🔐</span><span class="ttl">Mon coffre</span>'+
+    '<button class="iconbtn" title="Rechercher" onclick="CF.search()">🔎</button>'+
+    '<button class="iconbtn" title="Réglages" onclick="CF.settings()">⚙️</button>'+
+    '<button class="iconbtn" title="Verrouiller" onclick="CF.lock()">🔒</button></div>'+
+  (!bioEnrolled()&&ST.profile? '<div class="card" style="border-color:#6b5316;background:#1c1708"><div class="row"><div class="grow"><b>😊 Activer Face ID</b><div class="small muted">Déverrouillage rapide à la prochaine ouverture.</div></div><button class="primary" onclick="CF.enableBioNow()">Activer</button></div></div>':'')+
+  '<div class="secgrid">'+tiles+'</div>'+
+  '<div class="card"><div class="row"><div class="grow"><b>📋 Mes mémos PDF</b>'+
+    '<div class="small muted">Listes pratiques remplissables (secrets, liens, adresses kd-mc.com).</div></div>'+
+    '<button class="iconbtn" title="Ouvrir les mémos" onclick="CF.memos()">📂</button></div></div>'+
+  '<div class="statline"><span>'+ST.meta.items.length+' éléments</span><span>'+fmtBytes(totalBytes)+'</span></div>'+
+  '<button class="fab" title="Ajouter" onclick="CF.add()">＋</button>';
+}
+
+function itemCard(it){
+  var sec=SECTIONS.find(function(s){return s.id===it.section;})||{ico:"📦"};
+  return '<div class="item" data-id="'+it.id+'"><div class="hd"><span>'+sec.ico+'</span>'+
+    '<span class="ti">'+esc(it.title)+'</span><span class="tp">'+(it.type==="file"?fmtBytes(it.size||0):"texte")+'</span></div>'+
+    '<div class="meta">'+ago(it.updated||it.created)+(it.storage==="r2"?' · ☁︎ cloud':it.storage==="idb"?' · appareil':'')+'</div>'+
+    '<div class="acts">'+
+      (it.type==="text"?'<button onclick="CF.copyItem(\''+it.id+'\')">📋 Copier</button><button onclick="CF.viewItem(\''+it.id+'\')">👁 Voir</button>':'<button onclick="CF.download(\''+it.id+'\')">⬇️ Télécharger</button>')+
+      '<button onclick="CF.move(\''+it.id+'\')" title="Déplacer vers une autre catégorie">↪ Déplacer</button>'+
+      '<button class="danger" onclick="CF.del(\''+it.id+'\')">🗑</button>'+
+    '</div></div>';
+}
+function renderSection(sid){
+  var sec=SECTIONS.find(function(s){return s.id===sid;});
+  var items=ST.meta.items.filter(function(it){return it.section===sid;}).sort(function(a,b){return (b.updated||0)-(a.updated||0);});
+  APP.innerHTML=
+  '<div class="topbar"><button class="iconbtn" onclick="CF.home()">‹</button>'+
+    '<span class="ttl">'+sec.ico+' '+sec.nm+'</span>'+
+    '<button class="iconbtn" onclick="CF.add(\''+sid+'\')">＋</button></div>'+
+  (sid==="banque"?'<div class="warnbox">⚠️ Ne stocke <b>jamais</b> le cryptogramme (CVV) complet d\'une carte ni une phrase de récupération crypto (seed). Stocke l\'IBAN, les références, mais pas de quoi vider un compte.</div>':'')+
+  (items.length? items.map(itemCard).join("") : '<div class="card center muted">Rien ici pour l\'instant.<br><button class="primary" style="margin-top:10px" onclick="CF.add(\''+sid+'\')">＋ Ajouter</button></div>')+
+  '<button class="fab" onclick="CF.add(\''+sid+'\')">＋</button>';
+}
+
+/* ====== actions exposées ====== */
+window.CF={
+  peek:function(id,btn){ var el=$(id); if(!el) return; var hid=el.type==="password";
+    el.type=hid?"text":"password"; if(btn) btn.textContent=hid?"🙈":"👁"; el.focus(); },
+  about:function(){ modal('<h3>🔐 Coffre-fort perso '+VERSION+'</h3>'+
+    '<p class="small muted">Chiffrement de bout en bout (AES-256 + PBKDF2 200k). Tes données ne quittent ton appareil que <b>chiffrées</b>. '+(r2On()?'Cloud R2 actif (toute taille).':'Mode local + Firebase (≤5 Mo en cloud).')+'</p>'+
+    '<p class="small muted">UID: '+esc(ST.uid||"—")+'</p>'+
+    '<button style="width:100%" onclick="this.closest(\'.modal\').remove()">Fermer</button>'); },
+  lock:function(){ lockVault(); },
+  home:function(){ ST.section=null; render(); },
+  openSection:function(id){ ST.section=id; render(); },
+  enableBioNow:async function(){
+    var m=modal('<h3>Activer Face ID</h3><p class="small muted">Confirme ta phrase secrète pour lier le déverrouillage biométrique.</p><label>Phrase secrète</label><input id="eb_p" type="password"><button class="primary" id="eb_go" style="width:100%;margin-top:12px">Activer</button>');
+    m.querySelector("#eb_go").onclick=async function(){ var pass=m.querySelector("#eb_p").value;
+      if(!await tryUnlockPassphrase(pass)){ toast("Phrase incorrecte","err"); return; }
+      this.textContent="…"; var ok=await enableBio(pass); m.remove();
+      toast(ok?"😊 Face ID activé":"Biométrie indisponible sur cet appareil", ok?null:"err"); render(); };
+  },
+  add:function(sec){ openAddSheet(sec||ST.section||"codes"); },
+  copyItem:async function(id){ var it=ST.meta.items.find(function(x){return x.id===id;}); var t=await getTextItem(it); if(t!=null) copyClip(t); },
+  viewItem:async function(id){ var it=ST.meta.items.find(function(x){return x.id===id;}); var t=await getTextItem(it);
+    modal('<h3>'+esc(it.title)+'</h3><textarea readonly style="min-height:160px">'+esc(t||"")+'</textarea>'+
+      '<div class="row" style="margin-top:10px"><button class="grow primary" onclick="CF.copyItem(\''+id+'\')">📋 Copier</button>'+
+      '<button class="grow" onclick="this.closest(\'.modal\').remove()">Fermer</button></div>'); },
+  download:async function(id){ var it=ST.meta.items.find(function(x){return x.id===id;});
+    toast("Déchiffrement…"); var bytes=await getFileBytes(it);
+    if(!bytes){ toast("Fichier introuvable","err"); return; }
+    var blob=new Blob([bytes],{type:it.mime||"application/octet-stream"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=it.title; a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},2000); toast("⬇️ "+it.title); },
+  move:function(id){ var it=ST.meta.items.find(function(x){return x.id===id;}); if(!it) return;
+    var btns=SECTIONS.map(function(s){ var cur=s.id===it.section;
+      return '<button class="'+(cur?'primary':'')+'" style="width:100%;margin-top:8px;justify-content:flex-start;text-align:left" '+
+        (cur?'disabled':'onclick="CF.moveTo(\''+id+'\',\''+s.id+'\')"')+'>'+s.ico+' '+s.nm+(cur?'  (actuel)':'')+'</button>'; }).join("");
+    modal('<h3>↪ Déplacer «'+esc(it.title)+'»</h3><p class="small muted">Choisis la nouvelle catégorie. Le contenu reste chiffré, rien n\'est perdu.</p>'+btns+
+      '<button style="width:100%;margin-top:12px" onclick="this.closest(\'.modal\').remove()">Annuler</button>'); },
+  moveTo:async function(id, sid){ var it=ST.meta.items.find(function(x){return x.id===id;}); if(!it) return;
+    it.section=sid; it.updated=Date.now(); await audit("move", it.title+" -> "+sid); await saveMeta();
+    var m=document.querySelector(".modal"); if(m) m.remove();
+    var sec=SECTIONS.find(function(s){return s.id===sid;})||{nm:sid}; toast("↪ Déplacé vers "+sec.nm); render(); },
+  del:function(id){ var it=ST.meta.items.find(function(x){return x.id===id;});
+    var m=modal('<h3>Supprimer ?</h3><p class="small muted">«'+esc(it.title)+'» sera définitivement supprimé.</p><div class="row" style="margin-top:12px"><button class="grow" onclick="this.closest(\'.modal\').remove()">Annuler</button><button class="grow danger" id="dl_y">Supprimer</button></div>');
+    m.querySelector("#dl_y").onclick=async function(){ await delItem(id); m.remove(); render(); toast("🗑 Supprimé"); }; },
+  search:function(){ var m=modal('<h3>🔎 Rechercher</h3><input id="sq" placeholder="titre, type, section…" autofocus><div id="sr" style="margin-top:10px"></div>');
+    var q=m.querySelector("#sq"), r=m.querySelector("#sr");
+    q.oninput=function(){ var v=normName(q.value); if(!v){ r.innerHTML=""; return; }
+      var res=ST.meta.items.filter(function(it){ return normName(it.title+" "+it.section+" "+it.type).indexOf(v)>=0; }).slice(0,30);
+      r.innerHTML=res.length? res.map(itemCard).join("") : '<div class="muted small">Aucun résultat</div>'; }; },
+  settings:function(){ openSettings(); },
+  memos:function(){
+    var L=[
+      ["01-secrets-github.pdf","🔑 Secrets GitHub (à remplir)"],
+      ["02-liens-utiles.pdf","🔗 Liens utiles (dashboards)"],
+      ["03-liens-projets.pdf","🚀 Projets — adresses kd-mc.com"],
+      ["04-adresses-kdmc.pdf","🌐 Cartographie kd-mc.com"]
+    ];
+    var rows=L.map(function(m){ var u="memo/"+m[0];
+      return '<div class="item"><div class="hd"><span>📄</span><span class="ti">'+m[1]+'</span></div>'+
+        '<div class="acts"><a class="pill" style="min-height:38px;display:inline-flex;align-items:center;padding:0 12px" href="'+u+'" target="_blank" rel="noopener">👁 Ouvrir</a>'+
+        '<a class="pill" style="min-height:38px;display:inline-flex;align-items:center;padding:0 12px" href="'+u+'" download>⬇️ Télécharger</a></div></div>'; }).join("");
+    modal('<h3>📋 Mes mémos PDF</h3><p class="small muted">Remplissables (champs de saisie). Tu peux aussi recopier une valeur dans une section du coffre pour la chiffrer.</p>'+rows+
+      '<button style="width:100%;margin-top:10px" onclick="this.closest(\'.modal\').remove()">Fermer</button>');
+  }
+};
+
+function openAddSheet(sec){
+  var opts=SECTIONS.map(function(s){return '<option value="'+s.id+'"'+(s.id===sec?' selected':'')+'>'+s.ico+' '+s.nm+'</option>';}).join("");
+  var m=modal('<h3>＋ Ajouter</h3>'+
+    '<div class="seg" id="ad_seg"><button class="on" data-t="text">📝 Texte / Code</button><button data-t="file">📎 Fichier</button></div>'+
+    '<label>Section</label><select id="ad_sec">'+opts+'</select>'+
+    '<div id="ad_text"><label>Titre</label><input id="ad_title" placeholder="ex: Clé API Anthropic">'+
+      '<label>Contenu (collé ici, classé automatiquement)</label><textarea id="ad_val" placeholder="Colle ton code, mot de passe, note…"></textarea>'+
+      '<div class="small muted" id="ad_hint"></div></div>'+
+    '<div id="ad_file" class="hide"><label>Fichier (toute taille)</label>'+
+      '<div class="drop" id="ad_drop">📎 Touche ici ou dépose un fichier<input type="file" id="ad_finput" class="hide"></div>'+
+      '<div id="ad_fname" class="small muted" style="margin-top:8px"></div><progress id="ad_prog" class="hide" max="1" value="0"></progress></div>'+
+    '<button class="primary" id="ad_go" style="width:100%;margin-top:14px">Enregistrer 🔐</button>');
+  var mode="text";
+  m.querySelectorAll("#ad_seg button").forEach(function(b){ b.onclick=function(){
+    m.querySelectorAll("#ad_seg button").forEach(function(x){x.classList.remove("on");}); b.classList.add("on");
+    mode=b.dataset.t; m.querySelector("#ad_text").classList.toggle("hide",mode!=="text");
+    m.querySelector("#ad_file").classList.toggle("hide",mode!=="file"); }; });
+  var val=m.querySelector("#ad_val"), hint=m.querySelector("#ad_hint"), selSec=m.querySelector("#ad_sec");
+  if(val) val.oninput=function(){ var c=autoClassify(val.value); if(c.hint){ hint.textContent="Détecté : "+c.hint+" → rangé dans "+(SECTIONS.find(function(s){return s.id===c.section;})||{}).nm; selSec.value=c.section; } else hint.textContent=""; };
+  var fileObj=null;
+  var drop=m.querySelector("#ad_drop"), finput=m.querySelector("#ad_finput"), fname=m.querySelector("#ad_fname");
+  if(drop){ drop.onclick=function(){ finput.click(); };
+    finput.onchange=function(){ fileObj=finput.files[0]; if(fileObj) fname.textContent=fileObj.name+" · "+fmtBytes(fileObj.size); };
+    ["dragover","dragenter"].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add("over");}); });
+    ["dragleave","drop"].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove("over");}); });
+    drop.addEventListener("drop",function(e){ if(e.dataTransfer.files[0]){ fileObj=e.dataTransfer.files[0]; fname.textContent=fileObj.name+" · "+fmtBytes(fileObj.size); } });
+  }
+  m.querySelector("#ad_go").onclick=async function(){
+    this.disabled=true; var section=selSec.value;
+    try{
+      if(mode==="text"){ var t=val.value; if(!t.trim()){ toast("Contenu vide","err"); this.disabled=false; return; }
+        var title=m.querySelector("#ad_title").value.trim()||(t.slice(0,28));
+        await addTextItem(section,title,t,[]); }
+      else { if(!fileObj){ toast("Choisis un fichier","err"); this.disabled=false; return; }
+        var pr=m.querySelector("#ad_prog"); pr.classList.remove("hide"); this.textContent="Chiffrement…";
+        await addFileItem(section, fileObj, function(p){ pr.value=p; }); }
+      m.remove(); render(); toast("🔐 Enregistré (chiffré)");
+    }catch(e){ toast("Erreur: "+(e.message||e),"err"); this.disabled=false; }
+  };
+}
+
+function openSettings(){
+  var m=modal('<h3>⚙️ Réglages & sécurité</h3>'+
+    '<div class="card"><b>Sauvegarde</b><div class="small muted">Exporte tout ton coffre dans un fichier chiffré (ouvrable seulement avec ta phrase secrète).</div>'+
+      '<div class="row" style="margin-top:10px"><button class="grow primary" id="se_exp">💾 Exporter</button><button class="grow" id="se_imp">📥 Importer</button><input type="file" id="se_impf" accept=".coffre" class="hide"></div></div>'+
+    '<div class="card"><b>Face ID / Touch ID</b><div class="small muted">'+(bioEnrolled()?"Activé ✅":"Désactivé")+'</div>'+
+      (bioEnrolled()?'<button class="ghost" style="margin-top:8px" id="se_biooff">Désactiver</button>':'<button class="primary" style="margin-top:8px" id="se_bioon">Activer Face ID</button>')+'</div>'+
+    '<div class="card"><b>Cloud (multi-appareils)</b><div class="small muted">'+(r2On()?"☁︎ R2 actif — fichiers de toute taille synchronisés.":"Firebase actif — fichiers ≤ 5 Mo synchronisés. R2 (toute taille) configuré automatiquement bientôt.")+'</div></div>'+
+    '<div class="card" style="border-color:#5a2020"><b style="color:#ff8f8f">Zone sensible</b>'+
+      '<div class="small muted">Efface les données <b>de cet appareil</b> (le cloud est conservé).</div>'+
+      '<button class="danger" style="margin-top:8px" id="se_kill">🧨 Effacer cet appareil</button></div>'+
+    '<button style="width:100%" onclick="this.closest(\'.modal\').remove()">Fermer</button>');
+  m.querySelector("#se_exp").onclick=function(){ exportVault(); };
+  m.querySelector("#se_imp").onclick=function(){ m.querySelector("#se_impf").click(); };
+  m.querySelector("#se_impf").onchange=function(){ if(this.files[0]){ importVault(this.files[0]); m.remove(); } };
+  if(m.querySelector("#se_bioon")) m.querySelector("#se_bioon").onclick=function(){ m.remove(); CF.enableBioNow(); };
+  if(m.querySelector("#se_biooff")) m.querySelector("#se_biooff").onclick=function(){ localStorage.removeItem(LS.bioWrap); localStorage.removeItem(LS.bioCred); m.remove(); toast("Face ID désactivé"); render(); };
+  m.querySelector("#se_kill").onclick=function(){ var c=modal('<h3>🧨 Effacer cet appareil ?</h3><p class="small muted">Le coffre local sera effacé. Tu pourras le restaurer avec ta phrase secrète (cloud) ou un export.</p><div class="row" style="margin-top:12px"><button class="grow" onclick="this.closest(\'.modal\').remove()">Annuler</button><button class="grow danger" id="k_y">Effacer</button></div>');
+    c.querySelector("#k_y").onclick=function(){ killLocal(); c.remove(); m.remove(); render(); }; };
+}
+
+function maybeOfferBio(pass){
+  bioAvailable().then(function(ok){ if(ok && !bioEnrolled()){
+    var m=modal('<h3>😊 Activer Face ID ?</h3><p class="small muted">Pour déverrouiller ton coffre instantanément la prochaine fois.</p><div class="row" style="margin-top:12px"><button class="grow" onclick="this.closest(\'.modal\').remove()">Plus tard</button><button class="grow primary" id="ob_y">Activer</button></div>');
+    m.querySelector("#ob_y").onclick=async function(){ this.textContent="…"; var r=await enableBio(pass); m.remove(); toast(r?"😊 Face ID activé":"Indisponible",r?null:"err"); render(); };
+  }});
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+async function boot(){
+  // anti-cache : recharge propre 1×/jour
+  try{ var dk=new Date().toISOString().slice(0,10);
+    if(location.search.indexOf("_h=")<0){ location.replace(location.pathname+"?_h="+dk+location.hash); return; } }catch(e){}
+  // config (R2 url, firebase)
+  try{ var r=await fetch("config.json?_="+Date.now(),{cache:"reload"}); ST.cfg=await r.json(); }
+  catch(e){ ST.cfg={firebase_url:"https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",firebase_path:"coffre_vault",r2_worker_url:"",r2_inline_max_bytes:5242880}; }
+  ST.uid=localStorage.getItem(LS.uid)||null;
+  // SW
+  if("serviceWorker" in navigator){ try{ navigator.serviceWorker.register("sw.js"); }catch(e){} }
+  render(); bumpIdle();
+}
+// expose pour tests E2E
+window.__CF_TEST__={ST:ST, deriveKey:deriveKey, encStr:encStr, decStr:decStr, addTextItem:addTextItem, getTextItem:getTextItem, tryUnlockPassphrase:tryUnlockPassphrase, doSetup:doSetup, lockVault:lockVault, hasVault:hasVault, render:render};
+boot();
+})();
+</script>
+</body>
+</html>

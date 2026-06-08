@@ -25,14 +25,13 @@ export default defineConfig({
         '**/*.test.js',
         '**/*.spec.js',
         'workers/api-worker.js',
-        // Phase C2 : api-worker.js (2444 lignes) mesuré v8 (transparent) :
-        // 0% → 19.63% → 49.63% → 84.08% → 88.13% → **91.73% stmts**
-        // **100% FUNCTIONS (72/72)** / 83.43% branches / 91.73% lines.
-        // 376 tests. Reste 202 lines (handleVerifyOtp Firebase signature internal, handleAdminCommand branches).
-        // AdminCommand DB ramifications, branches catch silent).
-
-
-
+        // ⚠️ api-worker.js (~4200 lignes) est EXCLU du gate 100% ci-dessous.
+        // Couverture RÉELLE mesurée v8 (audit crew 2026-06-06, règle CLAUDE.md
+        // "JAMAIS estimer, toujours mesurer") : 78.69% stmts / 78.27% branches /
+        // 87.37% functions / 78.69% lines. L'ancien commentaire "91.73% / 100%
+        // functions" était périmé/faux — corrigé ici.
+        // TODO : remonter la couverture du cœur (auth OTP, admin, premium/Stripe,
+        // branches catch) puis réintégrer au gate avec un threshold dédié.
       ],
       thresholds: {
         lines: 100,

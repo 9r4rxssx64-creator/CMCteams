@@ -1,7 +1,51 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-06-03** (Boutique « La Détente » — Studio + Checkout/Bon de production)
+> Dernière mise à jour : **2026-06-07** (CMCteams — détente vérifs + sécu + plan archi, v9.783→v9.787)
+
+## 🛡️ CMCteams — session sécu/archi/détente (2026-06-07, mergé sur main, v9.787)
+
+**🧪 Tester (live, après MAJ auto)** : https://9r4rxssx64-creator.github.io/CMCteams/ (badge v9.787 ; Admin → 📊 Activité cross-team = nouvelle vue ; bouton « Tables Live » → carte)
+
+**🔧 Fichiers**
+- `index.html` — détente `detectRepoConflicts` ; routes vivantes (`vCrossTeamActivity`/`vParserIntelligence`/`vParserCompare`/`pitmap`→`vMapEditor`) ; sécu (noopener, stack admin-only) ; **fix fuite clé IA** (`_adminCfgBackup`)
+- [`PLAN_EXECUTION_SECU_ARCHI.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/PLAN_EXECUTION_SECU_ARCHI.md) — plan 3 chantiers
+- `tests/runtime-audit-v784-routes.mjs` (5/5) · `v785-routes.mjs` (7/7) · `v787-secret-leak.mjs` (4/4) — câblés `test:ci` (28/0)
+
+**📜 PR mergées (vrai GitHub)** : #856 routes · #866 sécu · #872/#876/#877 plan+docs · #874 fuite secret
+
+**⏳ En attente Kevin** : vérifier `apex-auth-worker.9r4rxssx64.workers.dev/health` → « go Phase A » (cf. KEVIN_ACTIONS_TODO #A)
+
+## 🛍️ Chez Lolo — boutique multi-univers (textile/cosmétiques/goodies/accessoires) — **mergé sur main 2026-06-06**
+
+**🧪 Action immédiate / tester**
+- 🛍️ Boutique live : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/
+- 🎨 Studio (créer designs) : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/studio.html
+- 📚 Bibliothèque : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/bibliotheque.html
+- 📦 Commandes Printify (valider on-hold) : https://printify.com/app/orders
+
+**🔧 Code modifié / créé**
+- index.html : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/index.html
+- bibliotheque.html (NOUVEAU) : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/chez-lolo/bibliotheque.html
+- img/og.png (NOUVELLE image marque) : https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/img/og.png
+- studio.html · manifest.json · sw.js (v2.0.5) : dossier https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/chez-lolo
+- Worker Printify généralisé : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/worker-order/worker.js
+
+**📜 PR mergées (via GitHub MCP)** : [#849](https://github.com/9r4rxssx64-creator/cmcteams/pull/849) · [#851](https://github.com/9r4rxssx64-creator/cmcteams/pull/851) · [#853](https://github.com/9r4rxssx64-creator/cmcteams/pull/853)
+
+## 🌐 Domaine kd-mc.com — une belle adresse par projet — branche `claude/kdmc-custom-domain-7hNn9`
+
+> 📋 **Liste complète + statut des adresses : [KDMC_ADRESSES.md](KDMC_ADRESSES.md)** (source de vérité).
+
+**🌟 Adresses (après déploiement)** : kd-mc.com (accueil) · cmcteams.kd-mc.com ·
+apex-ai.kd-mc.com · apex-chat.kd-mc.com · la-detente.kd-mc.com · chez-lolo.kd-mc.com
+
+**🔧 Fichiers créés / modifiés**
+- [`services/kdmc-router/worker.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/services/kdmc-router/worker.js) — routeur reverse-proxy (belle adresse → bon site)
+- [`services/kdmc-router/wrangler.toml`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/services/kdmc-router/wrangler.toml) — routes custom_domain (DNS+SSL auto)
+- [`.github/workflows/deploy-kdmc-router.yml`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/.github/workflows/deploy-kdmc-router.yml) — déploiement autonome
+- [`kdmc-home/index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/kdmc-custom-domain-7hNn9/kdmc-home/index.html) — page d'accueil portfolio
+- Origines `kd-mc.com` autorisées : `services/apex-v13-backend/src/index.js`, `tools/planning-parser-tester/worker/index.ts`, `shops/la-detente/worker/worker.js`
 
 ## 🔬 Ultra-review Apex (2026-06-06) — branche `claude/apex-ultra-review-crew-MZ8nS`
 
@@ -1566,3 +1610,11 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - Designs IA : `shops/la-detente/img/designs/` · Produits : `shops/la-detente/img/products/`
 - Doc marque : [MARQUE_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/MARQUE_LA_DETENTE.md) · Fournisseurs : [FOURNISSEURS_LA_DETENTE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/FOURNISSEURS_LA_DETENTE.md)
 - Workflows : `.github/workflows/la-detente-{worker-deploy,ai-designs,ai-images}.yml`
+
+## 🔐 Coffre-fort perso + 3 PDF mémo (2026-06-06)
+- App coffre : [coffre-fort/index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/index.html) · Live : https://9r4rxssx64-creator.github.io/CMCteams/coffre-fort/
+- README : [coffre-fort/README.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/README.md)
+- PDF mémo (remplissables) : [01-secrets-github.pdf](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/memo/01-secrets-github.pdf) · [02-liens-utiles.pdf](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/memo/02-liens-utiles.pdf) · [03-liens-projets.pdf](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/coffre-fort/memo/03-liens-projets.pdf)
+- Générateur PDF : [tools/memo-pdf/generate_pdfs.py](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/memo-pdf/generate_pdfs.py)
+- Worker R2 : [services/coffre-r2/src/index.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/coffre-r2/src/index.js) · Workflow : `.github/workflows/deploy-coffre-r2.yml`
+- Test réel : [tests/coffre/e2e.test.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/coffre/e2e.test.mjs) (9/9 ✅)

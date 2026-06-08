@@ -1,5 +1,49 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🛡️ CMCteams SÉCURITÉ (2026-06-07) — fermer la DB Firebase ouverte (Chantier 2)
+
+### #A — ✅ Worker confirmé vivant + Phase A LIVRÉE (v9.788). → CANARY sur ton device
+- **À faire (1 paste, sur TON iPhone uniquement)** : CMCteams → Admin → bandeau config → champ **« 🔐 Auth Firebase »** → colle la **clé Web API Firebase** (publique, `AIza…`, depuis [Console Firebase → Paramètres projet → Général](https://console.firebase.google.com/project/cmcteams-c16ab/settings/general)) → bouton **Activer**.
+- Effet : SEUL ton device s'authentifie (token attaché). Le champ doit afficher **« ACTIVE sur ce device ✓ »**. Vérifie que tout marche normalement (planning, chat, import) pendant 1 jour.
+- **Fail-open garanti** : si la clé est refusée / réseau KO, l'app fonctionne comme avant (rien de cassé). Pour annuler : vide le champ + Activer.
+- Quand OK → dis-moi : j'active globalement (clé dans le code) puis on durcit les règles (#B).
+
+### #B — (plus tard) Publier les règles `/cmcteams` durcies
+- 1 copier-coller console Firebase (je prépare le diff exact, **seulement le sous-bloc `/cmcteams`**, sans toucher Apex/Shops), rollback armé. APRÈS validation Phase A.
+
+### ✅ Déjà corrigé (aucune action) : fuite de ta clé Anthropic en clair dans Firebase → retirée + scrub (v9.787, en prod).
+
+---
+
+## 🛍️ CHEZ LOLO (2026-06-06) — refonte mergée, 1 validation restante
+
+### ✅ Fait & en prod (aucune action) : refonte multi-univers, catalogue vidé + catégories, CSP/sécurité, bibliotheque.html, bouton ➕ Produit (ajout sans code), image OG marque, auto-commande Printify (worker généralisé).
+
+### ⏳ #A — Valider la chaîne Printify (toi, ~2 min)
+- Boutique → **Studio → « Ajouter à la boutique »** un design → panier → commander (PayPal/Revolut).
+- Vérifier la commande **on-hold** sur https://printify.com/app/orders
+- Si warning « à vérifier » (garment polo/tank/shirt/zip/jogger/short/bandana) → me le dire, j'ajoute le blueprint.
+- ℹ️ on-hold = **aucun débit auto**. Garments sûrs aujourd'hui : t-shirt, hoodie, casquette, tote.
+
+### 🟡 #B (optionnel) — Mapper les blueprints Printify manquants
+- Bloqué côté sandbox (pas d'accès réseau au catalogue Printify d'ici → je n'invente pas d'IDs).
+- Option : mini-endpoint worker `/blueprints?q=` pour découvrir les vrais IDs, OU tu me donnes les `blueprint_id`.
+
+### 🟢 #C (optionnel) — Printify sales channel
+- `printify-config.json` : `sales_channel: disconnected` (shop connecté API). Commandes via worker → pas besoin sauf si tu veux le canal natif.
+
+
+## 🌐 2026-06-06 — Domaine kd-mc.com (belle adresse par projet)
+
+- ✅ **Acheté** : `kd-mc.com` sur Cloudflare (fait par Kevin).
+- ✅ **Codé + poussé + fusionné main** (PR #845/#846, branche `claude/kdmc-custom-domain-7hNn9`).
+- ✅ **DÉPLOYÉ + VÉRIFIÉ EN LIGNE** (2026-06-06 21:44 UTC) : les 7 belles adresses
+  répondent **HTTP 200** (health check réseau GitHub). Token Cloudflare suffisant →
+  **aucune action Kevin requise**.
+- ⏭️ **Optionnel (plus tard)** : belles adresses serveurs `api/push/auth/...kd-mc.com` ;
+  canonical/OG des pages → kd-mc.com.
+- 📋 Adresses + statut live : **KDMC_ADRESSES.md**.
+
 ## 📌 SESSION 2026-06-02 — À FAIRE ENSEMBLE (décision Kevin « on fera le 2 ensuite »)
 
 ### #2 — Apex Chat Étape B : E2E réellement actif (upload prekeys)
@@ -2083,3 +2127,12 @@ En attendant : modèle qui MARCHE = je prépare le diff → tu édites/merges su
 1. **Nettoyer `.mcp.json` sur main** : éditer https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.mcp.json → ligne url github : retirer `<` et `>` → `"url": "https://api.githubcopilot.com/mcp/"` → Commit to main. (Cosmétique : n'affecte ni l'app ni les features ; utile seulement pour un futur github MCP.)
 2. **Fermer la PR #532** (coincée : branche supprimée + conflit). Ses apports uniques = doc, non essentiels.
 RAPPEL : les 3 features sont en prod. Le blocage GitHub MCP est une limite d'environnement (lessons #79/#80), pas un travail en attente.
+
+---
+
+## ☐ (2026-06-06) Apex Chat — imposer l'OTP SMS réel (1 ligne, zéro risque)
+Quand l'envoi **SMS Vonage** est confirmé fonctionnel : passer `ALLOW_TEST_OTP = "true"` → `"false"`
+dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
+→ Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
+toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
+**Claude doit me le rappeler.**

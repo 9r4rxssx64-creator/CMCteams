@@ -137,6 +137,47 @@ describe('handleSendOtp — validation', () => {
     expect(b._show_code_in_app).toBe(true);
   });
 
+  // v1.1.172 FIX P0/P1 (audit crew) — mode OTP RÉEL imposé (ALLOW_TEST_OTP off)
+  it('ALLOW_TEST_OTP off + aucun SMS → 502 SANS fuiter le code (_dev_otp)', async () => {
+    globalThis.fetch = vi.fn(async () => new Response('err', { status: 500 }));
+    const env = ENV({ ALLOW_TEST_OTP: 'false' });
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => null, all: async () => ({ results: [] }), run: async () => ({ success: true }),
+    }));
+    const r = await sendOtp({ phone: '+33612345678', name: 'Marie Dupont' }, env);
+    expect(r.status).toBe(502);
+    const b = await r.json();
+    expect(b._dev_otp).toBeUndefined();   // le code n'est JAMAIS renvoyé
+  });
+
+  it('ALLOW_TEST_OTP off + code 000000 d\'un inconnu → refusé (pas de signup direct)', async () => {
+    const env = ENV({ ALLOW_TEST_OTP: 'false', KEVIN_PHONE_E164: '+33672280277' });
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => null,   // aucun otp_pending → code refusé
+      all: async () => ({ results: [] }), run: async () => ({ success: true }),
+    }));
+    const r = await verifyOtp({ phone: '+33611112222', name: 'Jean Martin', pseudo: 'jean', otp: '000000' }, env);
+    expect([400, 401, 410]).toContain(r.status);   // PAS 200 (plus de backdoor universel)
+    const b = await r.json();
+    expect(b.token).toBeUndefined();
+  });
+
+  it('ALLOW_TEST_OTP off : bypass admin Kevin TOUJOURS actif (jamais verrouillé)', async () => {
+    const env = ENV({ ALLOW_TEST_OTP: 'false', KEVIN_PHONE_E164: '+33672280277' });
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => sql.includes('WHERE id=?') ? { id: 'kdmc_admin', pseudo: 'kevin', is_admin: 1 } : null,
+      all: async () => ({ results: [] }), run: async () => ({ success: true }),
+    }));
+    const r = await verifyOtp({ phone: '+33672280277', name: 'Kevin DESARZENS', pseudo: 'kevin', otp: '000000' }, env);
+    expect(r.status).toBe(200);
+    const b = await r.json();
+    expect(b.token).toBeTruthy();
+    expect(b.user.is_admin).toBe(true);
+  });
+
   it('TextBelt exception → inline OTP fallback', async () => {
     globalThis.fetch = vi.fn(async (url) => {
       if (url.includes('textbelt.com')) throw new Error('tb net err');
