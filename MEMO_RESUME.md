@@ -1,3 +1,31 @@
+# Mémo de reprise — Ultra-review crew Apex v13 (2026-06-06, branche `claude/apex-ultra-review-crew-MZ8nS`)
+
+> **Objectif Kevin** : ultra-review + crew vérification + amélioration Apex, « tout 💯 réel, autonome ». Gate à chaque commit : `tsc --noEmit` + `eslint --max-warnings=0` + `vite build` + tests impactés verts. Liens cliquables. Tests fonctionnels réels.
+
+## Mesures réelles (jamais estimées)
+- `tsc --noEmit` = 0 · `eslint --max-warnings=0` = 0 · `vite build` = OK (~7-10s)
+- Suite complète `pool=threads` = **12 218 / 12 231 verts (99,97%)**. Les 4 échecs = cause unique `sanitizeHtml`/DOMPurify sous happy-dom (sandbox), environnemental, vert en CI, anti-XSS confirmé. Note sandbox : le pool de **forks** ne résout pas `happy-dom` (node_modules imbriqués) → utiliser `--pool=threads` (+ symlink `node_modules/happy-dom`) pour mesurer.
+
+## Crew 6 agents — scores réels /20
+Archi 16 · Sécu 17 · End-to-end 15,6→~16,5 · Perf/fluidité 16,5 (Lighthouse mobile 99/100, CLS 0) · UX/a11y 19,5 · Tests/qualité 15,5. Global ~84/100.
+**5 findings P1 = FAUX POSITIFS** (vérifiés, leçon #59) : live-transcription déjà échappé · touch targets/skip-link/aria déjà à 44px · polling 60s = règle MAJ-auto-force · 30 services « sans tests » → tous testés.
+
+## Livré (réel, fix+test+verts+poussé)
+- v13.4.289 — 7 boutons morts crypto/workflow → fonctionnels (+7 tests fonctionnels réels)
+- v13.4.290 — auth-gate anti-impersonation (alias mono-token retirés + garde) + `database.rules.json`/`firebase.json` versionnés (+ régression auth-gate ; test KDMC→false)
+- v13.4.291 — `firebase.ts` attache `?auth=` RTDB (8 sites, rétro-compatible, débloque durcissement rules) (+3 tests)
+- CI `deploy-firebase-rules.yml` — déploiement règles RTDB 1-clic gaté (secrets FIREBASE_PRIVATE_KEY/CLIENT_EMAIL, projet cmcteams-c16ab)
+- v13.4.292 — refactor monolithe chat étape 1 : `chat-badges.ts` (renderProviderBadge/renderToolPills)
+- v13.4.292-311 — refactor monolithe chat (19 étapes testées, zéro régression) :
+  ~26 modules chat-* (UI/wiring + input(submit) + render-loop + engine(IA) + slash-dispatch +
+  device-analyze + message-actions + memory-modal).
+  **chat/index.ts 3888 → 655 lignes (−3233, −83,2%)**. Tests 390/390 verts à chaque étape.
+
+## Reste (séquencé, ne rien casser)
+1. Merger la PR → main. 2. Vérifier `FIREBASE_WEB_API_KEY` (échange custom_token→id_token). 3. Lancer `deploy-firebase-rules` (taper DEPLOY) → règles auth.uid actives.
+4. Refacto chat — 83,2% extrait. Reste : shell render() (~265l, composition root = appels wire*), regenerateLastAssistant (34l, injecté), handleWakeWordTextTrigger (33l, testé), type DisplayMessage, ~20 re-exports façade, boot init. = composition root légitime du module, à conserver. Reste le CŒUR couplé de `render` : submit form (~310l), attach/file/album (~160l, réassigne `pendingAttachments`), drag-drop, paste, menu/clear/settings (touchent `conversation`/`renderMessages`). Nécessite un objet contexte partagé `ChatRenderCtx` { getConversation, pushUser, processQueue, getPending/setPending, pushAlbum } à CONCEVOIR d'abord (étape design dédiée), puis extraire submit/attach par petits pas testés. Risque régression réel → ne pas rusher.
+---
+
 # Mémo de reprise — CMCteams sécu/archi/détente (2026-06-07, branche `claude/crew-verification-relaxation-pbk6H`)
 
 > **Objectif Kevin** : ultra-review + crew vérif + amélioration de la « détente » (assouplir vérifs trop strictes), puis 100/100 par axe. Mesuré, autonome, sans régression, **isolation CMCteams stricte** (index.html/sw.js/tests — jamais Apex/boutique/workflows partagés). Gate : `node --check` + `test:ci` (Playwright runtime) + vérif merge sur le **vrai** GitHub (API).
