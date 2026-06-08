@@ -1065,14 +1065,6 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       }, 8000);
     }),
 
-    /* v13.4.321 (Kevin "garde la connexion auto, mets mon code quand je me connecte
-     * auto") : après login (y compris trusted), propose l'activation 1-tap du code
-     * admin si le proxy en a besoin et qu'il manque → IA marche sans déconnexion. */
-    safeInit('proxy-pin-activation', async () => {
-      const { initProxyPinActivation } = await import('../auth/proxy-pin-activation.js');
-      initProxyPinActivation();
-    }),
-
     /* v13.4.134 (Kevin "Apex retient les leçons mieux que moi") :
      * Sentinelle audit-honesty-watch : détecte patterns "score estimé/projeté"
      * dans réponses Apex IA et force re-mesure via nouveau audit. */
