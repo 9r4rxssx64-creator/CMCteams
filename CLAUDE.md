@@ -46,6 +46,36 @@ S'applique : CMCteams (priorité absolue), tous projets futurs avec import plann
 
 ---
 
+## 📒 RÈGLE ABSOLUE — LISTE DE COMMANDES COMPLÈTE + CLIQUABLE + PERSO + À JOUR TEMPS RÉEL (Kevin 2026-06-08, ABSOLUE)
+
+> **"La liste de commandes avec leurs descriptions : vérifie qu'elles y soient toutes, rajoute si besoin, mets à jour en temps réel toujours. Je clique direct sur une fonction et ça la lance (préremplit le chat et je rajoute). Que je puisse ajouter mes propres commandes et je rajoute sur qui/quoi/où il doit l'appliquer. Note le et rappelle-toi."** — Kevin 2026-06-08
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex v13 (`features/commands/`, `services/admin/slash-commands.ts`, `services/admin/custom-commands.ts`), CMCteams si pertinent, tous projets futurs avec commandes.
+
+### 1. Source unique + complétude garantie (anti Erreur #28)
+- Les commandes intégrées vivent dans **`SLASH_COMMANDS`** (nom + emoji + description + `argsHint` + `route?`). La vue `/commands` (`features/commands`) en dérive — **0 duplication**.
+- **À CHAQUE nouvelle vue/route/feature/handler ajouté → ajouter la commande correspondante dans `SLASH_COMMANDS` dans le MÊME commit.** Jamais de route/handler sans entrée listée, jamais d'entrée sans route/handler (sinon commande morte ou « cachée »).
+
+### 2. TOUT cliquable → lance / préremplit (pas d'auto-submit)
+- Vue `/commands` : **chaque** commande est cliquable. **Route** → `router.navigate(route)` (PAS `store.set('view')` qui ne navigue pas — le router dispatch sur `hashchange`). **Action/perso** → écrit `apex_v13_chat_prefill` puis `router.navigate('chat')` ; le chat **consomme le prefill au montage** (remplit la textarea + focus, **1×** via `removeItem`) → **Kevin complète la cible/args et envoie LUI-MÊME**.
+
+### 3. Commandes perso avec cible (sur qui/quoi/où)
+- `services/admin/custom-commands.ts` : `addCustomCommand({name, emoji?, action, target?})` / `listCustomCommands` / `removeCustomCommand` / `customCommandPrompt = (action + ' ' + target).trim()`. Persistées localStorage `apex_v13_custom_commands`, validées (nom+action requis), tolérantes JSON corrompu.
+- Section **⭐ Mes commandes** dans `/commands` : formulaire (Nom, Emoji, Action, **Cible**) + liste cliquable (→ prefill chat) + 🗑 supprimer.
+
+### 4. Test de complétude OBLIGATOIRE dans `test:ci` (= l'audit)
+`tests/unit/v13_4_317-commands-completeness.test.ts` : 0 doublon de nom, `/help` (`helpText`) liste **toutes** les commandes, `parseSlashCommand('/<name>')` reconnaît chaque commande, et la vue rend **toutes** les commandes cliquables (`count data-cmd-route + data-cmd-run == SLASH_COMMANDS.length`). + `v13_4_318-custom-commands.test.ts`. **Toute commande ajoutée sans passer ces tests = bloquer.**
+
+### 5. Vérification visuelle réelle (Playwright, cf. règle « tu as Playwright, vérifie toi-même »)
+Avant de livrer un changement de commandes : `npm run preview` + Playwright (login Kevin/200807 → `#commands` → clic) pour PROUVER que le clic préremplit/navigue. Ne pas faire tester Kevin à ma place.
+
+### 6. Test mental obligatoire
+> *« Toute nouvelle vue a-t-elle sa commande dans SLASH_COMMANDS ? Est-elle cliquable dans /commands ? Le test de complétude passe-t-il ? Kevin peut-il créer une commande perso avec cible et la cliquer pour préremplir le chat ? »*
+
+S'applique : Apex v13 (référence), CMCteams si pertinent, tous projets futurs.
+
+---
+
 ## 🧱 RÈGLE ABSOLUE — ISOLATION MAXIMALE + AUTONOMIE TOTALE TOUJOURS (Kevin 2026-05-23, ABSOLUE)
 
 > **"Tu isoles toujours au maximum pour tout en autonomie. Note le pour tous les projets."** — Kevin 2026-05-23
