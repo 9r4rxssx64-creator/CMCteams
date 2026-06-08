@@ -11,6 +11,20 @@ const ALLOW_ORIGINS = [
 const APP_TAG = 'ld-studio-v1';
 const MODELS = ['gemini-3-pro-image', 'nano-banana-pro-preview', 'gemini-3-pro-image-preview', 'gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
 
+/* Rate-limit anti-abus coût (gratuit, sans KV). Fenêtre glissante en mémoire
+   d'isolat : limite forte les rafales depuis une même source + un plafond
+   global. Best-effort (réinitialisé au recyclage d'isolat) — pour une garantie
+   dure inter-isolats, brancher un KV plus tard (cf. KEVIN_ACTIONS_TODO). */
+const _hits = new Map();
+function rl(key, max, windowMs) {
+  const now = Date.now();
+  let arr = (_hits.get(key) || []).filter(t => now - t < windowMs);
+  if (arr.length >= max) { _hits.set(key, arr); return true; }
+  arr.push(now); _hits.set(key, arr);
+  if (_hits.size > 5000) for (const [k, v] of _hits) { if (!v.length || now - v[v.length - 1] > windowMs) _hits.delete(k); }
+  return false;
+}
+
 function cors(origin) {
   const ok = ALLOW_ORIGINS.indexOf(origin) >= 0;
   return {
@@ -33,6 +47,10 @@ export default {
     if (req.method !== 'POST') return json({ error: 'POST only' }, 405, h);
     if (ALLOW_ORIGINS.indexOf(origin) < 0) return json({ error: 'origin non autorisée' }, 403, h);
     if (req.headers.get('x-ld-app') !== APP_TAG) return json({ error: 'app tag manquant' }, 403, h);
+    // Anti-abus coût API : 10 générations/min par IP + plafond global 150/min.
+    const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
+    if (rl('ip:' + ip, 10, 60000)) return json({ error: 'Trop de requêtes, patiente un instant', retryAfter: 60 }, 429, { ...h, 'Retry-After': '60' });
+    if (rl('global', 150, 60000)) return json({ error: 'Service occupé, réessaie dans une minute', retryAfter: 60 }, 429, { ...h, 'Retry-After': '60' });
     if (!env.GEMINI_API_KEY) return json({ error: 'clé non configurée' }, 500, h);
 
     let body;
