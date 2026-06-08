@@ -10,7 +10,7 @@
  * (additif/non destructif : ajoute membres, re-pointe messages, archive doublon).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import worker from '../../workers/api-worker.js';
+import worker, { autoHealPerson } from '../../workers/api-worker.js';
 import { ENV, makeRequest, makeJWT } from './api-worker-helpers.js';
 
 beforeEach(() => {
@@ -52,6 +52,13 @@ function statefulDB(state) {
       return null;
     },
     async all() {
+      // candidats auto-heal (même fin de numéro OU placeholder)
+      if (sql.includes('phone LIKE') && sql.includes('WHERE id != ?')) {
+        const [kid, tail] = this._args;
+        const res = state.users.filter(u => u.id !== kid && u.status !== 'deleted' && !u.is_admin &&
+          ((tail && String(u.phone || '').replace(/\D/g, '').slice(-8) === tail) || u.source === 'core_pair'));
+        return { results: res };
+      }
       // recherche peer par LIKE
       if (sql.includes('LOWER(pseudo) LIKE')) {
         const kevinId = this._args[0];
@@ -63,8 +70,8 @@ function statefulDB(state) {
             || (b.last_seen || 0) - (a.last_seen || 0));
         return { results: res };
       }
-      // DM de Kevin (+ nb messages)
-      if (sql.includes("WHERE c.type = 'dm'") && sql.includes('m.user_id = ?')) {
+      // DM d'un user (+ nb messages) — variantes avec/sans espaces
+      if ((sql.includes("c.type = 'dm'") || sql.includes("c.type='dm'")) && sql.includes('m.user_id')) {
         const kevinId = this._args[0];
         const convIds = state.members.filter(m => m.user_id === kevinId).map(m => m.conv_id);
         const res = state.conversations
@@ -82,6 +89,16 @@ function statefulDB(state) {
       return { results: [] };
     },
     async run() {
+      if (sql.includes('INSERT OR IGNORE INTO conversation_members') && sql.includes('SELECT ?, user_id')) {
+        // re-point des membres d'une conv dup → conv gardée
+        const [keepConv, dupConv] = this._args;
+        for (const m of state.members.filter(x => x.conv_id === dupConv)) {
+          if (!state.members.some(x => x.conv_id === keepConv && x.user_id === m.user_id)) {
+            state.members.push({ conv_id: keepConv, user_id: m.user_id, role: m.role });
+          }
+        }
+        return { success: true, meta: { changes: 1 } };
+      }
       if (sql.includes('INSERT OR IGNORE INTO conversation_members') && sql.includes('SELECT conv_id')) {
         // re-point memberships d'un compte dup → peer (sans doublon de PK)
         const [peerId, dupId] = this._args;
@@ -264,6 +281,32 @@ describe('POST /api/admin/heal-dm', () => {
     const kept = st.users.find(u => u.id === 'laur_real');
     expect(kept.last_geo_label).toBe('Monaco');
     expect(kept.last_device_label).toBe('iPhone');
+  });
+
+  it('AUTO au login : groupe seul même numéro (format différent) + placeholder', async () => {
+    const st = baseState();
+    // doublon = MÊME numéro que laur_real (+33222) mais format national « 0622... »
+    st.users.push({ id: 'laur_nat', pseudo: 'lau', real_name: 'Laurence SAINT-POLIT', phone: '0622', source: 'apex-chat-direct', is_admin: 0, last_seen: Date.now() - 1000, status: 'active' });
+    // place laur_real avec un numéro dont la fin matche « 0622 » → on aligne les fins
+    st.users.find(u => u.id === 'laur_real').phone = '+33600000622';
+    st.users.find(u => u.id === 'laur_nat').phone = '0600000622';     // même fin 00000622
+    // un DM placeholder (côté Kevin) + un message du doublon
+    st.conversations.push({ id: 'cPh', type: 'dm', created_at: 1, archived_at: null });
+    st.members.push({ conv_id: 'cPh', user_id: 'kevin' }, { conv_id: 'cPh', user_id: 'laurence_saint_polit' });
+    st.messages.push({ conv_id: 'cPh', ts: 9, sender_id: 'laurence_saint_polit' }, { conv_id: 'cPh', ts: 10, sender_id: 'laur_nat' });
+    const env = ENV({ APEX_CHAT_DB: statefulDB(st) });
+
+    // Laurence se connecte (son vrai compte) → réparation AUTO, zéro clic
+    const summary = await autoHealPerson(env, st.users.find(u => u.id === 'laur_real'));
+    expect(summary.merged).toBeGreaterThanOrEqual(2);   // le national + le placeholder
+    // doublons soft-deleted, vrai compte gardé
+    expect(st.users.find(u => u.id === 'laur_nat').status).toBe('deleted');
+    expect(st.users.find(u => u.id === 'laurence_saint_polit').status).toBe('deleted');
+    expect(st.users.find(u => u.id === 'laur_real').status).toBe('active');
+    // messages ré-attribués au vrai compte + le placeholder (membre du DM de Kevin)
+    // est remplacé par le vrai compte → Kevin parlera au bon compte
+    expect(st.messages.every(m => m.sender_id === 'laur_real')).toBe(true);
+    expect(st.members.some(m => m.conv_id === 'cPh' && m.user_id === 'laur_real')).toBe(true);
   });
 
   it('signale l\'absence de DM serveur', async () => {

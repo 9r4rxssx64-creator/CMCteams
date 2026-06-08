@@ -770,6 +770,11 @@ export async function handleVerifyOtp(request, env) {
     user.is_admin = 1;
   }
 
+  // AUTO-RÉPARATION au login (Kevin : « ça doit être auto, partout ») : groupe
+  // les comptes en double de la MÊME personne dans ce compte + 1 conv/contact.
+  // Best-effort, ne JAMAIS bloquer le login. Réparer un côté répare l'autre.
+  try { await autoHealPerson(env, user); } catch (e) { console.warn('[auto-heal-login]', e?.message); }
+
   const jwt = await signJWT({
     sub: user.id,
     pseudo: user.pseudo,
@@ -1438,6 +1443,142 @@ async function handleConfigureCorePair(request, env) {
 //
 //  Body : { peer_query?, peer_user_id?, peer_phone?, kevin_user_id?, apply? }
 // ============================================================================
+
+// Normalise un nom pour reconnaître « la même personne » (accents/casse/espaces).
+function _normNameKey(s) {
+  return String(s || '').toLowerCase().normalize('NFD')
+    .replace(/[̀-ͯ]/g, '').replace(/[\s\-_.]+/g, ' ').trim();
+}
+
+// Fusionne des comptes EN DOUBLE dans le compte gardé (NON DESTRUCTIF, réversible) :
+//   - GROUPE les infos (remplit les champs vides du gardé depuis le doublon le + récent)
+//   - re-pointe messages.sender_id + memberships → compte gardé
+//   - status='deleted' (réversible) sur les doublons (jamais un compte admin)
+// Réutilisé par /heal-dm (manuel admin) ET l'auto-réparation au login.
+export async function mergeDupAccountsInto(DB, peerId, dupAccounts, now) {
+  const out = { merged_accounts: [], consolidated_fields: [] };
+  if (!dupAccounts || !dupAccounts.length) return out;
+  now = now || Date.now();
+  // 1) Consolider les infos dans le compte gardé.
+  try {
+    const CONSOLIDATE = ['real_name', 'first_name', 'last_name', 'display_name', 'email',
+      'bio', 'avatar_url', 'last_geo_label', 'last_device_label', 'last_lat', 'last_lng',
+      'last_ip_hash', 'last_user_agent', 'language', 'timezone'];
+    const isEmpty = (v) => v === null || v === undefined || v === '';
+    const keeperRow = await DB.prepare('SELECT * FROM users WHERE id=?').bind(peerId).first();
+    const dupRows = [];
+    for (const d of dupAccounts) {
+      const rr = await DB.prepare('SELECT * FROM users WHERE id=?').bind(d.id).first();
+      if (rr) dupRows.push(rr);
+    }
+    dupRows.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
+    const sets = [], vals = [], filled = [];
+    for (const f of CONSOLIDATE) {
+      if (!isEmpty(keeperRow && keeperRow[f])) continue;
+      const src = dupRows.find((r) => !isEmpty(r[f]));
+      if (src) { sets.push(f + '=?'); vals.push(src[f]); filled.push(f); }
+    }
+    const maxSeen = Math.max(keeperRow?.last_seen || 0, ...dupRows.map((r) => r.last_seen || 0));
+    if (maxSeen > (keeperRow?.last_seen || 0)) { sets.push('last_seen=?'); vals.push(maxSeen); }
+    if (sets.length > 0) {
+      sets.push('updated_at=?'); vals.push(now); vals.push(peerId);
+      await DB.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id=?`).bind(...vals).run();
+    }
+    out.consolidated_fields = filled;
+  } catch (e) { out.consolidate_error = e?.message || '?'; }
+  // 2) Re-point messages + memberships, puis soft-delete chaque doublon.
+  for (const dup of dupAccounts) {
+    const rm = await DB.prepare('UPDATE messages SET sender_id=? WHERE sender_id=?').bind(peerId, dup.id).run();
+    await DB.prepare(
+      `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+       SELECT conv_id, ?, role, joined_at, kevin_invisible FROM conversation_members WHERE user_id=?`
+    ).bind(peerId, dup.id).run();
+    await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(dup.id).run();
+    await DB.prepare("UPDATE users SET status='deleted', updated_at=? WHERE id=?").bind(now, dup.id).run();
+    out.merged_accounts.push({ id: dup.id, pseudo: dup.pseudo, messages_moved: rm?.meta?.changes ?? null });
+  }
+  return out;
+}
+
+// Garantit 1 SEULE conversation DM par contact pour un user : si plusieurs DM
+// existent avec le même correspondant, on garde le + fourni en messages et on
+// fusionne les autres dedans (messages re-pointés, doublon archivé).
+export async function consolidateUserDms(DB, userId, now) {
+  now = now || Date.now();
+  const out = { groups_merged: 0, convs_archived: 0 };
+  const dms = (await DB.prepare(
+    `SELECT c.id, c.archived_at, c.created_at,
+            (SELECT COUNT(*) FROM messages mm WHERE mm.conv_id=c.id) AS msgs
+     FROM conversations c JOIN conversation_members m ON m.conv_id=c.id AND m.user_id=?
+     WHERE c.type='dm'`
+  ).bind(userId).all()).results || [];
+  // Regroupe par « autre membre » (le correspondant du DM).
+  const groups = new Map();
+  for (const d of dms) {
+    if (d.archived_at) continue;
+    const mem = (await DB.prepare('SELECT user_id FROM conversation_members WHERE conv_id=?').bind(d.id).all()).results || [];
+    const others = mem.map(x => x.user_id).filter(u => u !== userId).sort().join(',');
+    if (!groups.has(others)) groups.set(others, []);
+    groups.get(others).push(d);
+  }
+  for (const [, convs] of groups) {
+    if (convs.length < 2) continue;
+    convs.sort((a, b) => (b.msgs - a.msgs) || (a.created_at - b.created_at));
+    const keep = convs[0];
+    for (const dup of convs.slice(1)) {
+      await DB.prepare('UPDATE messages SET conv_id=? WHERE conv_id=?').bind(keep.id, dup.id).run();
+      // re-point les membres du doublon vers la conv gardée (sans conflit PK)
+      await DB.prepare(
+        `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+         SELECT ?, user_id, role, joined_at, kevin_invisible FROM conversation_members WHERE conv_id=?`
+      ).bind(keep.id, dup.id).run();
+      await DB.prepare('UPDATE conversations SET archived_at=? WHERE id=?').bind(now, dup.id).run();
+      out.convs_archived++;
+    }
+    const cnt = await DB.prepare('SELECT COUNT(*) AS c FROM conversation_members WHERE conv_id=?').bind(keep.id).first();
+    const last = await DB.prepare('SELECT MAX(ts) AS t FROM messages WHERE conv_id=?').bind(keep.id).first();
+    await DB.prepare('UPDATE conversations SET member_count=?, last_msg_ts=?, archived_at=NULL WHERE id=?')
+      .bind(cnt?.c || 2, last?.t || now, keep.id).run();
+    out.groups_merged++;
+  }
+  return out;
+}
+
+// AUTO-RÉPARATION (au login) : groupe automatiquement les comptes en double de
+// la MÊME personne (même numéro normalisé OU placeholder même nom) dans le
+// compte authentifié, et garantit 1 conv/contact. Best-effort, ne JAMAIS bloquer
+// le login (règle zéro-lockout). Réparer Laurence répare aussi le DM de Kevin
+// (le placeholder qu'elle absorbe était membre de la conv de Kevin).
+export async function autoHealPerson(env, keeper) {
+  const DB = env.APEX_CHAT_DB;
+  const summary = { merged: 0, dms_merged: 0 };
+  if (!keeper || !keeper.id) return summary;
+  const now = Date.now();
+  const keepTail = normPhone(keeper.phone || '').replace(/\D/g, '').slice(-8);
+  const keepName = _normNameKey(keeper.real_name) || _normNameKey(keeper.pseudo);
+  // Candidats : même fin de numéro OU placeholder (core_pair). On filtre ensuite.
+  const rows = (await DB.prepare(
+    `SELECT id, phone, real_name, pseudo, source, is_admin, status FROM users
+     WHERE id != ? AND status != 'deleted' AND is_admin = 0
+       AND ( (? != '' AND phone LIKE ?) OR source = 'core_pair' )`
+  ).bind(keeper.id, keepTail, '%' + keepTail).all()).results || [];
+  const dups = rows.filter(r => {
+    const sameTail = keepTail && normPhone(r.phone || '').replace(/\D/g, '').slice(-8) === keepTail;
+    const samePlaceholder = r.source === 'core_pair' &&
+      (_normNameKey(r.real_name) === keepName || _normNameKey(r.pseudo) === _normNameKey(keeper.pseudo));
+    return sameTail || samePlaceholder;
+  });
+  if (dups.length) {
+    const res = await mergeDupAccountsInto(DB, keeper.id, dups, now);
+    summary.merged = res.merged_accounts.length;
+    try { await auditLog(env, keeper.id, 'auto_merge_login', 'user', keeper.id,
+      { removed: dups.map(d => d.id) }, null); } catch (_) {}
+  }
+  const dmRes = await consolidateUserDms(DB, keeper.id, now);
+  summary.dms_merged = dmRes.groups_merged;
+  return summary;
+}
+
 async function handleHealDm(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401, 'unauthenticated');
@@ -1642,60 +1783,14 @@ async function handleHealDm(request, env) {
       }
     }
 
-    // 6) Fusion des COMPTES en double (3 comptes Laurence). Re-point messages +
-    //    memberships vers le vrai compte, puis soft-delete (status='deleted',
-    //    RÉVERSIBLE). Jamais de compte admin. Désactivable via merge_accounts:false.
+    // 6) Fusion des COMPTES en double (3 comptes Laurence) — helper partagé
+    //    avec l'auto-réparation au login. NON DESTRUCTIF, réversible, jamais admin.
     if (apply && body.merge_accounts !== false && dupAccounts.length > 0) {
       report.step = 'merge_accounts';
-      const now = Date.now();
-
-      // 6a) GROUPER les infos dans le compte gardé : remplit les champs vides du
-      //     compte gardé avec ceux du doublon le plus récent (nom, prénom,
-      //     pseudo via display_name, device, localisation, avatar…). Le téléphone
-      //     du compte gardé est conservé (contrainte UNIQUE — Kevin l'a saisi).
-      try {
-        const CONSOLIDATE = ['real_name', 'first_name', 'last_name', 'display_name', 'email',
-          'bio', 'avatar_url', 'last_geo_label', 'last_device_label', 'last_lat', 'last_lng',
-          'last_ip_hash', 'last_user_agent', 'language', 'timezone'];
-        const isEmpty = (v) => v === null || v === undefined || v === '';
-        const keeperRow = await DB.prepare('SELECT * FROM users WHERE id=?').bind(peer.id).first();
-        const dupRows = [];
-        for (const d of dupAccounts) {
-          const rr = await DB.prepare('SELECT * FROM users WHERE id=?').bind(d.id).first();
-          if (rr) dupRows.push(rr);
-        }
-        dupRows.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
-        const sets = [], vals = [], filled = [];
-        for (const f of CONSOLIDATE) {
-          if (!isEmpty(keeperRow && keeperRow[f])) continue;
-          const src = dupRows.find((r) => !isEmpty(r[f]));
-          if (src) { sets.push(f + '=?'); vals.push(src[f]); filled.push(f); }
-        }
-        const maxSeen = Math.max(keeperRow?.last_seen || 0, ...dupRows.map((r) => r.last_seen || 0));
-        if (maxSeen > (keeperRow?.last_seen || 0)) { sets.push('last_seen=?'); vals.push(maxSeen); }
-        if (sets.length > 0) {
-          sets.push('updated_at=?'); vals.push(now);
-          vals.push(peer.id);
-          await DB.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id=?`).bind(...vals).run();
-        }
-        report.consolidated_fields = filled;
-      } catch (e) {
-        report.consolidate_error = e?.message || '?';   // non bloquant
-      }
-
-      const mergedAccounts = [];
-      for (const dup of dupAccounts) {
-        const rm = await DB.prepare('UPDATE messages SET sender_id=? WHERE sender_id=?').bind(peer.id, dup.id).run();
-        // re-point les memberships sans violer la PK (conv_id, user_id)
-        await DB.prepare(
-          `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
-           SELECT conv_id, ?, role, joined_at, kevin_invisible FROM conversation_members WHERE user_id=?`
-        ).bind(peer.id, dup.id).run();
-        await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(dup.id).run();
-        await DB.prepare("UPDATE users SET status='deleted', updated_at=? WHERE id=?").bind(now, dup.id).run();
-        mergedAccounts.push({ id: dup.id, pseudo: dup.pseudo, messages_moved: rm?.meta?.changes ?? null });
-      }
-      report.merged_accounts = mergedAccounts;
+      const res = await mergeDupAccountsInto(DB, peer.id, dupAccounts, Date.now());
+      report.merged_accounts = res.merged_accounts;
+      report.consolidated_fields = res.consolidated_fields;
+      if (res.consolidate_error) report.consolidate_error = res.consolidate_error;
       try { await auditLog(env, auth.sub, 'merge_dup_accounts', 'user', peer.id,
         { kept: peer.id, removed: dupAccounts.map(d => d.id) }, request); } catch (_) {}
     }
