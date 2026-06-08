@@ -14,14 +14,8 @@
  * - Queue messages : Kevin peut envoyer 5 messages d'affilée, tous traités
  */
 
-import { APP_VER } from '../../core/bootstrap.js';
 import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
-import {
-  parseSlashCommand,
-  helpText,
-  SLASH_COMMANDS,
-} from '../../services/admin/slash-commands.js';
 import { aiRouter } from '../../services/ai/ai-router.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
 import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
@@ -36,7 +30,6 @@ import { isAutoReadEnabled, setAutoReadEnabled, maybeAutoReadAssistant } from '.
 import { renderProviderBadge, renderToolPills } from './chat-badges.js';
 import { wireCameraButton } from './chat-camera-wiring.js';
 import { processQueue, setEngineState } from './chat-engine.js';
-import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
 import { wireChatInput } from './chat-input-wiring.js';
 import { escapeHtml } from './chat-markdown.js';
 import { wireMicButton, wireWakeButton } from './chat-mic-wiring.js';
@@ -47,18 +40,9 @@ import {
   persistConversation,
   tryFirebaseRestoreConversation,
 } from './chat-persistence.js';
-import { renderMessages, wireScrollToBottomFab, setRenderLoopConversation, pushAssistantMessage } from './chat-render-loop.js';
-import { renderSlashAutocomplete } from './chat-renderers.js';
-import { searchConversation, buildSearchResultMessage } from './chat-search.js';
+import { renderMessages, wireScrollToBottomFab, setRenderLoopConversation } from './chat-render-loop.js';
 import { archiveSession, loadSessionsHistory } from './chat-sessions-history.js';
-import {
-  type SlashCtx,
-  handleResumeCommand, handleStatuslineCommand, handleOodaCommand,
-  handleUltraReviewCommand, handleDiagCommand, handleTestCommand,
-  handleLoopCommand, handlePlanCommand, handleRulesCommand,
-  handleAutonomousCommand,
-} from './chat-slash-handlers.js';
-import { listCodeSnippets } from './chat-snippets.js';
+import { handleSlashCommand, showSlashAutocomplete, hideSlashAutocomplete, setSlashDispatch } from './chat-slash-dispatch.js';
 import { buildChatShellHtml } from './chat-view-template.js';
 
 /* v13.3.48 — Cap context conversation pour HTTP 400 et perf
@@ -118,6 +102,7 @@ const queue: string[] = [];
 /* v13.4.305 : lie la boucle de rendu (chat-render-loop.ts) a la conversation (réf stable). */
 setRenderLoopConversation(conversation);
 setEngineState(conversation, queue, pendingAttachments, pendingAttachmentPromises);
+setSlashDispatch(conversation, regenerateLastAssistant);
 }
 
 /* v13.4.165 refactor : escapeHtml + renderMarkdownLight extraits vers chat-markdown.ts
@@ -451,172 +436,6 @@ export function handleWakeWordTextTrigger(_rootEl: HTMLElement, text: string): b
  * v13.3.48 — Handler slash commands (Kevin "chat niveau Claude.ai/ChatGPT").
  * Retourne true si le message a été traité comme commande, false sinon.
  */
-export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
-  /* v13.4.295 — contexte injecté pour les handlers extraits (chat-slash-handlers.ts). */
-  const slashCtx: SlashCtx = {
-    pushAssistant: (t: string) => pushAssistantMessage(rootEl, t),
-    getConversationLength: () => conversation.length,
-  };
-  /* v13.4.5 — Alias `/auto` et `/autonome` redirigés vers `/autonomous` (Kevin "mode autonome"). */
-  const aliasMap: Record<string, string> = {
-    auto: 'autonomous', autonome: 'autonomous',
-    audit: 'ultrareview', review: 'ultrareview', ultra: 'ultrareview',
-    'ultra-review': 'ultrareview', 'claude-chrome': 'chrome', navigateur: 'chrome',
-    memo: 'commands', aide: 'commands', commande: 'commands',
-  };
-  const normalizedText = (() => {
-    if (!text || !text.trim().startsWith('/')) return text;
-    const body = text.trim().slice(1);
-    const sp = body.indexOf(' ');
-    const cmdName = (sp === -1 ? body : body.slice(0, sp)).toLowerCase();
-    if (aliasMap[cmdName]) {
-      const rest = sp === -1 ? '' : body.slice(sp);
-      return '/' + aliasMap[cmdName] + rest;
-    }
-    return text;
-  })();
-  const parsed = parseSlashCommand(normalizedText);
-  if (!parsed.isSlash) return false;
-  haptic.tap();
-  if (parsed.unknown) {
-    /* Inconnue : montre help auto */
-    pushAssistantMessage(rootEl, helpText());
-    return true;
-  }
-  const cmd = parsed.command;
-  if (!cmd) return false;
-  const args = parsed.args ?? '';
-  /* v13.4.250 — commandes de navigation : champ `route` -> handler générique */
-  if (cmd.route) {
-    try {
-      store.set('view', cmd.route);
-    } catch {
-      toast.info('Ouvre la section depuis le menu');
-    }
-    return true;
-  }
-  switch (cmd.name) {
-    case 'help':
-      pushAssistantMessage(rootEl, helpText());
-      return true;
-    case 'clear':
-      conversation.length = 0;
-      renderMessages(rootEl);
-      /* v13.4.284 — efface aussi local+Firebase+IDB (sinon résurrection au MAJ). */
-      void clearConversationEverywhere();
-      toast.success('🧹 Conversation effacée (partout)');
-      return true;
-    case 'voice': {
-      const wasEnabled = isAutoReadEnabled();
-      setAutoReadEnabled(!wasEnabled);
-      toast.info(wasEnabled ? '🔇 Lecture vocale désactivée' : '🔊 Lecture vocale activée');
-      return true;
-    }
-    case 'export':
-      void exportConversationMarkdown();
-      return true;
-    case 'snippets': {
-      /* v13.4.16 — Liste snippets sauvés via paste intelligent v13.4.14 */
-      const snippets = listCodeSnippets();
-      if (snippets.length === 0) {
-        pushAssistantMessage(rootEl, "💻 Aucun snippet sauvé.\n\nQuand tu colles du code dans le chat, Apex propose 💾 Sauver dans Coffre. Les snippets apparaîtront ici avec `/snippets`.");
-        return true;
-      }
-      /* Format markdown listing : titre + chaque snippet (head + nombre lignes + lang) */
-      const lines: string[] = [`💻 **${snippets.length} snippet${snippets.length > 1 ? 's' : ''} sauvé${snippets.length > 1 ? 's' : ''}** :\n`];
-      for (let i = 0; i < snippets.length; i++) {
-        const s = snippets[i];
-        if (!s) continue;
-        const date = new Date(s.created).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        const preview = s.code.slice(0, 80).replace(/\n/g, ' ');
-        lines.push(`${i + 1}. **${s.lang}** · ${s.lines} ligne${s.lines > 1 ? 's' : ''} · ${date}`);
-        lines.push(`   \`${preview}${s.code.length > 80 ? '…' : ''}\``);
-        lines.push('');
-      }
-      lines.push('_Note : pour voir un snippet complet, ouvre 🔐 Coffre (UI listing à venir v13.4.17+)._');
-      pushAssistantMessage(rootEl, lines.join('\n'));
-      return true;
-    }
-    case 'settings':
-      try {
-        store.set('view', 'settings');
-      } catch {
-        /* fallback : toast */
-        toast.info('Va dans Réglages depuis le menu');
-      }
-      return true;
-    case 'regen':
-      void regenerateLastAssistant(rootEl);
-      return true;
-    case 'search':
-      if (!args) {
-        pushAssistantMessage(rootEl, 'Usage : `/search <mot-clé>`');
-        return true;
-      }
-      void searchInConversation(rootEl, args);
-      return true;
-    case 'copy': {
-      const last = [...conversation].reverse().find((m) => m.role === 'assistant' && !m.streaming);
-      if (last) {
-        void navigator.clipboard?.writeText(last.text);
-        toast.success('📋 Dernière réponse copiée');
-      } else {
-        toast.warn('Aucune réponse Apex à copier');
-      }
-      return true;
-    }
-    case 'version':
-      pushAssistantMessage(rootEl, `**Apex AI** version \`${APP_VER}\` — Créé par DK`);
-      return true;
-    case 'fork':
-      forkConversation(rootEl);
-      return true;
-    /* v13.4.3 — IA IRL TikTok */
-    case 'loop':
-      void handleLoopCommand(slashCtx, args);
-      return true;
-    case 'plan':
-      if (!args) {
-        pushAssistantMessage(rootEl, 'Usage : `/plan <objectif>` — génère un plan structuré.');
-        return true;
-      }
-      void handlePlanCommand(slashCtx, args);
-      return true;
-    case 'rules':
-      void handleRulesCommand(slashCtx, args);
-      return true;
-    /* v13.4.5 — Mode autonome Apex */
-    case 'autonomous':
-      void handleAutonomousCommand(slashCtx, args);
-      return true;
-    /* v13.4.245 — commandes audit/diagnostic */
-    case 'ultrareview':
-      void handleUltraReviewCommand(slashCtx);
-      return true;
-    case 'diag':
-      void handleDiagCommand(slashCtx);
-      return true;
-    case 'test':
-      void handleTestCommand(slashCtx);
-      return true;
-    /* v13.4.252 — resume / statusline / ooda */
-    case 'resume':
-      void handleResumeCommand(slashCtx);
-      return true;
-    case 'statusline':
-      void handleStatuslineCommand(slashCtx);
-      return true;
-    case 'ooda':
-      if (!args) {
-        pushAssistantMessage(rootEl, 'Usage : `/ooda <objectif>` — analyse Observe-Orient-Decide-Act.');
-        return true;
-      }
-      void handleOodaCommand(slashCtx, args);
-      return true;
-    default:
-      return false;
-  }
-}
 
 /* v13.4.252 — /resume : reprend la boucle autonome en pause. */
 /* v13.4.295 refactor monolithe : les 10 handlers de slash-commands
@@ -665,92 +484,6 @@ async function regenerateLastAssistant(rootEl: HTMLElement): Promise<void> {
 /**
  * v13.3.48 — Cherche un mot-clé dans la conversation et affiche les résultats.
  */
-async function searchInConversation(rootEl: HTMLElement, keyword: string): Promise<void> {
-  /* v13.4.174 refactor : pure search + format extraits dans chat-search.ts */
-  const matches = searchConversation(conversation, keyword);
-  pushAssistantMessage(rootEl, buildSearchResultMessage(matches, keyword));
-}
-
-/**
- * v13.3.48 — Export conversation au format Markdown.
- */
-async function exportConversationMarkdown(): Promise<void> {
-  if (conversation.length === 0) {
-    toast.warn('Aucune conversation à exporter');
-    return;
-  }
-  /* v13.4.173 refactor : pure transformation extraite dans chat-export.ts */
-  const now = new Date();
-  const md = buildConversationMarkdown(conversation, APP_VER, now);
-  const filename = buildExportFilename(now);
-  try {
-    const blob = new Blob([md], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast.success('📄 Conversation exportée en Markdown');
-  } catch {
-    /* Fallback clipboard */
-    void navigator.clipboard?.writeText(md);
-    toast.info('📋 Conversation copiée dans le presse-papiers');
-  }
-}
-
-/**
- * v13.3.48 — Affiche le panneau autocomplete au-dessus de la barre de saisie.
- */
-function showSlashAutocomplete(rootEl: HTMLElement, prefix: string): void {
-  const form = rootEl.querySelector<HTMLFormElement>('#ax-chat-form');
-  if (!form) return;
-  let panel = rootEl.querySelector<HTMLElement>('.ax-slash-autocomplete-wrap');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.className = 'ax-slash-autocomplete-wrap';
-    panel.style.cssText = 'position:relative';
-    form.parentNode?.insertBefore(panel, form);
-  }
-  panel.innerHTML = renderSlashAutocomplete(prefix);
-  /* Wire clicks */
-  panel.querySelectorAll<HTMLElement>('.ax-slash-item').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const name = btn.dataset['slashName'];
-      if (!name) return;
-      const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-text');
-      if (ta) {
-        ta.value = `/${name}`;
-        ta.focus();
-        /* Si command sans args attendus, soumettre direct */
-        const cmd = SLASH_COMMANDS.find((c) => c.name === name);
-        if (cmd && !cmd.requiresArgs) {
-          rootEl.querySelector<HTMLFormElement>('#ax-chat-form')?.requestSubmit();
-        }
-      }
-      hideSlashAutocomplete(rootEl);
-    });
-  });
-}
-
-function hideSlashAutocomplete(rootEl: HTMLElement): void {
-  const panel = rootEl.querySelector('.ax-slash-autocomplete-wrap');
-  if (panel) panel.remove();
-}
-
-/**
- * v13.3.48 — Fork conversation (démarre une nouvelle session, garde la précédente en historique).
- */
-function forkConversation(rootEl: HTMLElement): void {
-  /* v13.4.175 refactor : archive load+push+save extrait dans chat-sessions-history.ts */
-  archiveSession([...conversation]);
-  conversation.length = 0;
-  /* v13.4.284 — persiste l'état vide pour que l'ancienne session (désormais
-   * archivée dans l'historique) ne soit pas rechargée comme « active » au reload. */
-  persistConversation(conversation);
-  renderMessages(rootEl);
-  toast.success('🌿 Nouvelle conversation démarrée');
-}
 
 /**
  * v13.4.286 — Modal « 📜 Mémoire » : conversations archivées (rechargeables) +
