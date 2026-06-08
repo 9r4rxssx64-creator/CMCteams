@@ -823,28 +823,7 @@ class AIRouter {
 
   hasAnyKey(): boolean {
     /* Vérifie présence non-vide raw (chiffrée ou non) */
-    if (DEFAULT_CHAIN.some((p) => this.getApiKey(p).length > 0)) return true;
-    /* Kevin 2026-06-08 ("il me demande une clé alors que le Coffre est plein,
-     * 22/22 providers actifs") : si le proxy Cloudflare est activé (proxy-auto-enable
-     * l'a confirmé healthy au boot), les clés sont côté serveur → on PEUT streamer
-     * via le proxy → considérer qu'on a de quoi répondre (sinon le chat se bloque). */
-    try {
-      const flag = localStorage.getItem(PROXY_FLAG_KEY);
-      if (flag === 'true' || flag === '1') return true;
-    } catch { /* ignore */ }
-    return false;
-  }
-
-  /** Proxy Cloudflare activé ET couvrant ce provider ? (async, health cache 5 min). */
-  private async proxyCoversProvider(provider: Provider): Promise<boolean> {
-    try {
-      const flag = localStorage.getItem(PROXY_FLAG_KEY);
-      if (flag !== 'true' && flag !== '1') return false; /* même gate que tryProxyRoute */
-      const health = await getProxyHealth();
-      return !!health?.ok && health.available_providers.includes(provider);
-    } catch {
-      return false;
-    }
+    return DEFAULT_CHAIN.some((p) => this.getApiKey(p).length > 0);
   }
 
   /**
@@ -1331,12 +1310,7 @@ class AIRouter {
        * pas de retry/backoff (le failover provider-level prend le relais via la chain). */
       const key = await this.getApiKeyDecrypted(provider);
       if (!key && provider !== 'gemini') {
-        /* Pas de clé locale : OK uniquement si le proxy serveur couvre ce provider
-         * (streamFromProvider routera via tryProxyRoute avec auth PIN, clés server-side).
-         * Sinon erreur "no key" (comportement historique). */
-        if (!(await this.proxyCoversProvider(provider))) {
-          return { status: 'error', error: lastErr ?? new Error(`${provider} no key`) };
-        }
+        return { status: 'error', error: lastErr ?? new Error(`${provider} no key`) };
       }
       const tStart = Date.now();
       try {
