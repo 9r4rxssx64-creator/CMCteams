@@ -1,3 +1,30 @@
+# Mémo de reprise — CMCteams sécurité Firebase + stabilité (2026-06-08, branche `claude/priority-action-workflow-iKc0T`)
+
+> **Objectif Kevin** : faire ses actions par priorité, pas à pas. Action #1 = fermer la DB Firebase ouverte (Chantier 2). + passe de stabilité (scintillement) + docs à jour.
+
+## Livré cette session (tout vérifié sur le VRAI main via API GitHub MCP)
+- **v9.790** : auth Firebase affiche la **cause exacte** des erreurs (parse JSON même en échec).
+- **v9.791** : **CSP** autorise `identitytoolkit/securetoken.googleapis.com` → fin du « Load failed » (cause racine du canary qui ne s'activait pas). Anonymous activé console Firebase.
+- **v9.792** : clé Web publique embarquée (`FB_WEB_APIKEY`) → **auth globale tous appareils** (prérequis #B). Fail-open conservé.
+- **v9.793** : garde diff-HTML dans `dc()` → skip re-render `#content` identique (échos SSE/agents).
+- **v9.794** : titre indicateur connexion stable (retrait des secondes live qui défaisaient le garde).
+- **v9.795** : **cause racine du clignotement barre du haut** = `_updateSyncBadge`/`_fbShowSyncBadge` mutaient `#syncBadge` ~49×/s (rafale retries écriture) → rendus **idempotents**. Mesuré Playwright : **295 → 13 mutations/6s** (−95 %). Cf. leçon #94.
+
+## État sécurité CMCteams
+- Canary auth ✅ vert sur device Kevin · auth globale déployée (propagation en cours).
+- **Reste #B** : durcir règles `/cmcteams` (require auth) APRÈS propagation v9.792, diff prêt à préparer, rollback armé.
+- **#C** : vérifier si « N en attente » persiste sur appareil connecté (écritures bloquées → batterie).
+
+## Docs mis à jour ce jour
+- CLAUDE.md : **passe de stabilité mesurée intégrée à « fais l'audit »** (nouveau sous-bloc 8 axes) + **leçon #94** (clignotement = updater non-idempotent hors `dc()`, méthode MutationObserver).
+- KEVIN_ACTIONS_TODO.md : #A clos, #B/#C à jour.
+
+## Méthode confirmée (cet env)
+- GitHub MCP opérationnel → `create_pull_request` + `merge_pull_request` (squash) + vérif `get_file_contents` au `ref=main` (fichier témoin `sw.js`). NE PAS se fier au proxy git (leçon #79/#92).
+- Anti-scintillement = mesure DOM (MutationObserver) AVANT/APRÈS, pas comptage `dc()` (règle #73/#94).
+
+---
+
 # Mémo de reprise — Ultra-review crew Apex v13 (2026-06-06, branche `claude/apex-ultra-review-crew-MZ8nS`)
 
 > **Objectif Kevin** : ultra-review + crew vérification + amélioration Apex, « tout 💯 réel, autonome ». Gate à chaque commit : `tsc --noEmit` + `eslint --max-warnings=0` + `vite build` + tests impactés verts. Liens cliquables. Tests fonctionnels réels.
