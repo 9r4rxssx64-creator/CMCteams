@@ -627,9 +627,6 @@ class Firebase {
      * Sans cette exception, firebase.write() les rejetait silencieusement →
      * le backup vault n'écrivait JAMAIS rien → listAll() toujours vide → KO. */
     if (key.startsWith('vault_backup/')) return true;
-    /* v13.4.319 — commandes perso Kevin par-uid (custom-commands.ts) :
-     * sous-arbre dédié `custom_commands/<uid>`, hors FB_FIX (per-user, pas global). */
-    if (key.startsWith('custom_commands/')) return true;
     return FB_FIX.includes(key);
   }
 
@@ -896,9 +893,6 @@ class Firebase {
      * (vault-firebase-backup.ts). Ne PAS le rapatrier comme une clé localStorage
      * top-level — il est lu à la demande via vaultFirebaseBackup.listAll/fetch. */
     if (key === 'vault_backup') return;
-    /* v13.4.319 — `custom_commands/<uid>` lu à la demande (custom-commands.ts),
-     * pas rapatrié comme clé localStorage top-level. */
-    if (key === 'custom_commands') return;
     if (data === null) {
       const existing = localStorage.getItem(key);
       if (existing) {
