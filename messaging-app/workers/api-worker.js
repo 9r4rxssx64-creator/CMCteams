@@ -1418,6 +1418,219 @@ async function handleConfigureCorePair(request, env) {
 }
 
 // ============================================================================
+//  POST /api/admin/heal-dm  (admin only) — v1.1.176
+//
+//  Répare le cas « les deux sont connectés mais aucun message ne passe » :
+//  Kevin et son correspondant ne sont PAS dans le MÊME convId (le DM « cœur »
+//  pointe sur un placeholder `laurence_saint_polit` au lieu du vrai compte OTP,
+//  OU il existe des DM en double). Le WebSocket étant PAR conversation, chacun
+//  parle dans une instance Durable Object différente → silence total sans
+//  erreur. (cf. lessons #90/#91 : couche verte, maillon manquant.)
+//
+//  Stratégie : NON DESTRUCTIVE + IDEMPOTENTE. On ne SUPPRIME jamais ni message
+//  ni user. On consolide tous les DM Kevin↔correspondant en UNE conversation
+//  canonique (la plus fournie en messages), on ajoute les 2 vrais comptes comme
+//  membres, on RE-POINTE les messages des doublons (UPDATE messages.conv_id) et
+//  on ARCHIVE les conversations doublons (archived_at). Réversible.
+//
+//  dry_run par défaut : le 1er appel ne fait que DIAGNOSTIQUER (cause exacte).
+//  Appliquer = { apply:true }.
+//
+//  Body : { peer_query?, peer_user_id?, peer_phone?, kevin_user_id?, apply? }
+// ============================================================================
+async function handleHealDm(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthenticated');
+  if (!(auth.is_admin || auth.sub === 'kdmc_admin')) {
+    return err('Réservé admin', 403, 'forbidden', { auth_sub: auth.sub });
+  }
+
+  let body = {};
+  try { body = await request.json(); } catch (_) { body = {}; }
+  const apply = body.apply === true;
+  const DB = env.APEX_CHAT_DB;
+  const report = { ok: false, apply, step: 'resolve_kevin', dry_run: !apply };
+
+  try {
+    // 1) Résoudre "Kevin" = l'admin appelant (ou override). On répare SES DM.
+    const kevinId = body.kevin_user_id || auth.sub;
+    const kevin = await DB.prepare(
+      'SELECT id, pseudo, real_name, phone FROM users WHERE id=?'
+    ).bind(kevinId).first();
+    if (!kevin) {
+      report.cause = 'kevin_not_found';
+      report.detail = "Le compte admin appelant n'existe pas côté serveur (id=" + kevinId + ').';
+      return json(report, 200);
+    }
+    report.kevin = { id: kevin.id, pseudo: kevin.pseudo, name: kevin.real_name };
+    report.step = 'resolve_peer';
+
+    // 2) Résoudre le correspondant (Laurence). Plusieurs pistes, ordre de
+    //    confiance : id explicite > phone > recherche texte (pseudo/nom).
+    let candidates = [];
+    if (body.peer_user_id) {
+      const r = await DB.prepare(
+        'SELECT id, pseudo, real_name, phone, source, last_seen, is_admin FROM users WHERE id=?'
+      ).bind(body.peer_user_id).first();
+      if (r) candidates = [r];
+    } else if (body.peer_phone) {
+      const r = await DB.prepare(
+        'SELECT id, pseudo, real_name, phone, source, last_seen, is_admin FROM users WHERE phone=?'
+      ).bind(normPhone(body.peer_phone)).first();
+      if (r) candidates = [r];
+    } else {
+      const q = '%' + String(body.peer_query || 'laurence').toLowerCase() + '%';
+      const r = await DB.prepare(
+        `SELECT id, pseudo, real_name, phone, source, last_seen, is_admin FROM users
+         WHERE id != ? AND (
+           LOWER(pseudo) LIKE ? OR LOWER(real_name) LIKE ?
+           OR LOWER(COALESCE(first_name,'')) LIKE ? OR LOWER(COALESCE(last_name,'')) LIKE ?)
+         ORDER BY (source='core_pair') ASC, COALESCE(last_seen,0) DESC LIMIT 10`
+      ).bind(kevin.id, q, q, q, q).all();
+      candidates = (r && r.results) ? r.results : [];
+    }
+    report.peer_candidates = candidates.map(c => ({
+      id: c.id, pseudo: c.pseudo, name: c.real_name,
+      source: c.source, last_seen: c.last_seen || 0, placeholder: c.source === 'core_pair',
+    }));
+
+    // Choix : on privilégie un VRAI compte (source != core_pair, le plus
+    // récemment vu). Le placeholder 'laurence_saint_polit' est un dernier
+    // recours. S'il y a ambiguïté réelle (≥2 vrais comptes), on ne touche rien.
+    const real = candidates.filter(c => c.source !== 'core_pair');
+    let peer = null;
+    if (real.length === 1) peer = real[0];
+    else if (real.length === 0 && candidates.length === 1) peer = candidates[0];
+    else if (real.length >= 2) {
+      report.cause = 'ambiguous_peer';
+      report.detail = real.length + ' comptes réels correspondent. Précise peer_user_id ou peer_phone.';
+      return json(report, 200);
+    } else if (candidates.length >= 1) {
+      // que des placeholders → on prend le plus récent (mieux que rien)
+      peer = candidates.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0))[0];
+    }
+    if (!peer) {
+      report.cause = 'peer_not_found';
+      report.detail = "Aucun correspondant trouvé (essaie peer_phone exact).";
+      return json(report, 200);
+    }
+    report.peer = { id: peer.id, pseudo: peer.pseudo, name: peer.real_name, placeholder: peer.source === 'core_pair' };
+    report.step = 'scan_dms';
+
+    // 3) Tous les DM dont Kevin est membre + leurs membres + nb messages.
+    const kevinDms = await DB.prepare(
+      `SELECT c.id, c.archived_at, c.created_at,
+              (SELECT COUNT(*) FROM messages mm WHERE mm.conv_id = c.id) AS msgs
+       FROM conversations c
+       JOIN conversation_members m ON m.conv_id = c.id AND m.user_id = ?
+       WHERE c.type = 'dm'`
+    ).bind(kevin.id).all();
+    const dms = (kevinDms && kevinDms.results) ? kevinDms.results : [];
+
+    // Pour chacun, charger les membres → identifie les DM Kevin↔(peer OU un
+    // candidat laurence : placeholder/doublon).
+    const candidateIds = new Set(candidates.map(c => c.id));
+    candidateIds.add(peer.id);
+    const relevant = [];
+    for (const d of dms) {
+      const mem = await DB.prepare(
+        'SELECT user_id FROM conversation_members WHERE conv_id=?'
+      ).bind(d.id).all();
+      const members = (mem && mem.results) ? mem.results.map(x => x.user_id) : [];
+      const peerMembers = members.filter(u => candidateIds.has(u));
+      if (peerMembers.length > 0) {
+        relevant.push({ id: d.id, msgs: d.msgs || 0, archived: !!d.archived_at,
+          created_at: d.created_at, members, peerMembers });
+      }
+    }
+    report.kevin_dm_count = dms.length;
+    report.relevant_dms = relevant.map(r => ({ id: r.id, msgs: r.msgs, archived: r.archived,
+      members: r.members, with: r.peerMembers }));
+
+    // 4) Diagnostic de cause exacte.
+    const activeRelevant = relevant.filter(r => !r.archived);
+    const canonicalContainsRealPeer = activeRelevant.some(r => r.members.includes(peer.id));
+    if (relevant.length === 0) {
+      report.cause = 'no_dm';
+      report.detail = "Aucun DM entre Kevin et ce correspondant côté serveur — il faut le créer (le client crée une conv 'dm' au 1er message).";
+    } else if (activeRelevant.length > 1) {
+      report.cause = 'duplicate_dm';
+      report.detail = activeRelevant.length + " DM actifs Kevin↔correspondant → chacun ouvre une instance différente, rien ne passe. À fusionner.";
+    } else if (!canonicalContainsRealPeer) {
+      report.cause = 'peer_not_member';
+      report.detail = "Le DM actif ne contient PAS le vrai compte du correspondant (placeholder/ancien id) → il n'est pas membre, ne reçoit rien.";
+    } else {
+      report.cause = 'already_consistent';
+      report.detail = "Un seul DM actif contenant les 2 vrais comptes. Le souci est ailleurs (transport/cache client).";
+    }
+
+    // 5) Choisir la conversation canonique = la plus fournie en messages,
+    //    tie-break : non archivée, puis la plus ancienne (stable).
+    if (relevant.length > 0) {
+      const canonical = [...relevant].sort((a, b) =>
+        (b.msgs - a.msgs) ||
+        ((a.archived ? 1 : 0) - (b.archived ? 1 : 0)) ||
+        (a.created_at - b.created_at)
+      )[0];
+      report.canonical_conv_id = canonical.id;
+
+      const plan = [];
+      // a) S'assurer que Kevin + le VRAI peer sont membres de la canonique.
+      if (!canonical.members.includes(kevin.id)) plan.push({ action: 'add_member', conv: canonical.id, user: kevin.id, role: 'owner' });
+      if (!canonical.members.includes(peer.id))  plan.push({ action: 'add_member', conv: canonical.id, user: peer.id, role: 'member' });
+      // b) Fusionner les autres DM pertinents dans la canonique.
+      const dupes = relevant.filter(r => r.id !== canonical.id);
+      for (const dup of dupes) {
+        if (dup.msgs > 0) plan.push({ action: 'move_messages', from: dup.id, to: canonical.id, count: dup.msgs });
+        plan.push({ action: 'archive_conv', conv: dup.id });
+      }
+      report.plan = plan;
+
+      if (apply && plan.length > 0) {
+        report.step = 'apply';
+        const now = Date.now();
+        const done = [];
+        for (const p of plan) {
+          if (p.action === 'add_member') {
+            await DB.prepare(
+              `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+               VALUES (?, ?, ?, ?, 0)`
+            ).bind(p.conv, p.user, p.role, now).run();
+            done.push(p);
+          } else if (p.action === 'move_messages') {
+            const r = await DB.prepare('UPDATE messages SET conv_id=? WHERE conv_id=?').bind(p.to, p.from).run();
+            done.push({ ...p, changed: r?.meta?.changes ?? null });
+          } else if (p.action === 'archive_conv') {
+            await DB.prepare('UPDATE conversations SET archived_at=? WHERE id=?').bind(now, p.conv).run();
+            done.push(p);
+          }
+        }
+        // Recompter membres + dernier message de la canonique.
+        const cnt = await DB.prepare('SELECT COUNT(*) AS c FROM conversation_members WHERE conv_id=?').bind(canonical.id).first();
+        const last = await DB.prepare('SELECT MAX(ts) AS t FROM messages WHERE conv_id=?').bind(canonical.id).first();
+        await DB.prepare('UPDATE conversations SET member_count=?, last_msg_ts=?, archived_at=NULL WHERE id=?')
+          .bind(cnt?.c || 2, last?.t || now, canonical.id).run();
+        report.applied = done;
+        try { await auditLog(env, auth.sub, 'heal_dm', 'conversation', canonical.id,
+          { cause: report.cause, peer: peer.id, actions: done.length }, request); } catch (_) {}
+      }
+    }
+
+    report.ok = true;
+    report.next = apply
+      ? "Réparé. Kevin ET le correspondant doivent ROUVRIR l'app (ou forcer la MAJ) pour recharger la liste des conversations."
+      : "Diagnostic seul (dry_run). Renvoie { apply:true } pour appliquer.";
+    return json(report, 200);
+  } catch (e) {
+    report.cause = 'exception';
+    report.detail = 'Erreur à l\'étape ' + report.step + ' : ' + (e?.message || '?');
+    report.where = (e?.stack || '').split('\n')[1] || '';
+    console.error('[heal-dm]', report.step, e?.message, e?.stack);
+    return json(report, 200);
+  }
+}
+
+// ============================================================================
 //  Routes Invitations SMS
 // ============================================================================
 
@@ -4092,6 +4305,7 @@ export default {
       if (path === '/api/conversations' && method === 'POST') return await handleCreateConversation(request, env);
       // v1.1.161 — Cercle privé pré-câblé Kevin↔proche (Laurence)
       if (path === '/api/admin/configure-core-pair' && method === 'POST') return await handleConfigureCorePair(request, env);
+      if (path === '/api/admin/heal-dm' && method === 'POST') return await handleHealDm(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
       // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
