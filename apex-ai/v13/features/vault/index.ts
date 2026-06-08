@@ -591,10 +591,9 @@ export function render(rootEl: HTMLElement): void {
       .ax-vault-page details[open] > summary .ax-chevron { transform: rotate(180deg); }
       .ax-cred-card:hover { transform: translateY(-2px); border-color: rgba(232,184,48,0.3) !important; }
       .ax-vault-sticky-wrap {
-        /* Kevin 2026-06-08 : en-tête NON-collant — il restait figé en haut et le
-         * reste défilait dessous. Il défile maintenant normalement avec le contenu. */
-        position: relative;
-        z-index: 1;
+        position: sticky;
+        top: 0;
+        z-index: 50;
         margin: 0 -16px;
         padding: 0 16px;
         background: rgba(8,8,15,0.96);
@@ -602,21 +601,6 @@ export function render(rootEl: HTMLElement): void {
         -webkit-backdrop-filter: blur(24px);
         border-bottom: 1px solid rgba(201,162,39,0.15);
         transition: padding 200ms ease, box-shadow 200ms ease;
-      }
-      /* Cache opaque derrière la barre d'état iPhone (viewport-fit=cover) : le
-       * contenu scrollé disparaît proprement derrière l'heure au lieu de "passer
-       * dessous". Hauteur = safe-area (0 sur appareils sans notch → invisible). */
-      .ax-vault-statusbar-scrim {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: env(safe-area-inset-top, 0px);
-        background: rgba(8,8,15,0.92);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        z-index: 45;
-        pointer-events: none;
       }
       .ax-vault-page.ax-vault-scrolled .ax-vault-sticky-wrap {
         padding-top: 4px;
@@ -660,7 +644,6 @@ export function render(rootEl: HTMLElement): void {
       }
     </style>
     <div class="ax-vault-page" style="padding:env(safe-area-inset-top,16px) 16px calc(env(safe-area-inset-bottom,16px) + 96px);max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
-      <div class="ax-vault-statusbar-scrim" aria-hidden="true"></div>
 
       <div class="ax-vault-sticky-wrap">
         <header style="padding:12px 0">
