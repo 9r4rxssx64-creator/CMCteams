@@ -32,6 +32,9 @@ function statefulDB(state) {
       if (sql.includes('SELECT id, pseudo, real_name, phone FROM users WHERE id=?')) {
         return state.users.find(x => x.id === this._args[0]) || null;
       }
+      if (sql.includes('SELECT * FROM users WHERE id=?')) {
+        return state.users.find(x => x.id === this._args[0]) || null;
+      }
       if (sql.includes('FROM users WHERE id=?') && sql.includes('source')) {
         return state.users.find(x => x.id === this._args[0]) || null;
       }
@@ -79,11 +82,46 @@ function statefulDB(state) {
       return { results: [] };
     },
     async run() {
+      if (sql.includes('INSERT OR IGNORE INTO conversation_members') && sql.includes('SELECT conv_id')) {
+        // re-point memberships d'un compte dup → peer (sans doublon de PK)
+        const [peerId, dupId] = this._args;
+        for (const m of state.members.filter(x => x.user_id === dupId)) {
+          if (!state.members.some(x => x.conv_id === m.conv_id && x.user_id === peerId)) {
+            state.members.push({ conv_id: m.conv_id, user_id: peerId, role: m.role });
+          }
+        }
+        return { success: true, meta: { changes: 1 } };
+      }
       if (sql.includes('INSERT OR IGNORE INTO conversation_members')) {
         const [conv_id, user_id, role] = this._args;
         if (!state.members.some(m => m.conv_id === conv_id && m.user_id === user_id)) {
           state.members.push({ conv_id, user_id, role });
         }
+        return { success: true, meta: { changes: 1 } };
+      }
+      if (sql.includes('UPDATE messages SET sender_id=?')) {
+        const [to, from] = this._args;
+        let n = 0;
+        for (const m of state.messages) if (m.sender_id === from) { m.sender_id = to; n++; }
+        return { success: true, meta: { changes: n } };
+      }
+      if (sql.includes('DELETE FROM conversation_members WHERE user_id=?')) {
+        const id = this._args[0];
+        state.members = state.members.filter(m => m.user_id !== id);
+        return { success: true, meta: { changes: 1 } };
+      }
+      if (sql.includes("UPDATE users SET status='deleted'")) {
+        const id = this._args[1];
+        const u = state.users.find(x => x.id === id); if (u) u.status = 'deleted';
+        return { success: true, meta: { changes: 1 } };
+      }
+      if (sql.includes('UPDATE users SET') && sql.includes('WHERE id=?')) {
+        // UPDATE users SET a=?, b=? WHERE id=? — applique les champs au compte gardé
+        const m = sql.match(/SET (.+) WHERE id=\?/s);
+        const fields = m ? m[1].split(',').map(s => s.trim().replace(/=\?$/, '')) : [];
+        const id = this._args[this._args.length - 1];
+        const u = state.users.find(x => x.id === id);
+        if (u) fields.forEach((f, i) => { u[f] = this._args[i]; });
         return { success: true, meta: { changes: 1 } };
       }
       if (sql.includes('UPDATE messages SET conv_id=?')) {
@@ -113,9 +151,9 @@ function baseState() {
   const now = Date.now();
   return {
     users: [
-      { id: 'kevin', pseudo: 'kevin', real_name: 'Kevin DESARZENS', phone: '+33111', source: 'core_pair', is_admin: 1, last_seen: now },
-      { id: 'laur_real', pseudo: 'laurence', real_name: 'Laurence SAINT-POLIT', phone: '+33222', source: 'apex-chat-direct', is_admin: 0, last_seen: now },
-      { id: 'laurence_saint_polit', pseudo: 'lolo', real_name: 'Laurence SAINT-POLIT', phone: '+33999', source: 'core_pair', is_admin: 0, last_seen: now - 99999 },
+      { id: 'kevin', pseudo: 'kevin', real_name: 'Kevin DESARZENS', phone: '+33111', source: 'core_pair', is_admin: 1, last_seen: now, status: 'active' },
+      { id: 'laur_real', pseudo: 'laurence', real_name: 'Laurence SAINT-POLIT', phone: '+33222', source: 'apex-chat-direct', is_admin: 0, last_seen: now, status: 'active' },
+      { id: 'laurence_saint_polit', pseudo: 'lolo', real_name: 'Laurence SAINT-POLIT', phone: '+33999', source: 'core_pair', is_admin: 0, last_seen: now - 99999, status: 'active' },
     ],
     conversations: [],
     members: [],
@@ -194,6 +232,38 @@ describe('POST /api/admin/heal-dm', () => {
     expect(st.messages.filter(m => m.conv_id === 'cDup').length).toBe(0);
     // doublon archivé (non destructif)
     expect(st.conversations.find(c => c.id === 'cDup').archived_at).toBeTruthy();
+  });
+
+  it('groupe auto 3 comptes Laurence en 1 (garde le vrai, soft-delete les autres)', async () => {
+    const st = baseState();
+    // 3e compte Laurence en double (autre numéro / inscription OTP séparée)
+    st.users.push({ id: 'laur_dup2', pseudo: 'laurence2', real_name: 'Laurence SAINT-POLIT', phone: '+33333', source: 'apex-chat-direct', is_admin: 0, last_seen: Date.now() - 5000, status: 'active', last_geo_label: 'Monaco', last_device_label: 'iPhone' });
+    // DM actif avec le placeholder, + messages envoyés par les comptes en double
+    st.conversations.push({ id: 'cPh', type: 'dm', created_at: 1, archived_at: null });
+    st.members.push({ conv_id: 'cPh', user_id: 'kevin' }, { conv_id: 'cPh', user_id: 'laurence_saint_polit' });
+    st.messages.push({ conv_id: 'cPh', ts: 10, sender_id: 'laurence_saint_polit' }, { conv_id: 'cPh', ts: 11, sender_id: 'laur_dup2' });
+    const env = ENV({ APEX_CHAT_DB: statefulDB(st) });
+
+    // dry_run : voit les 3 comptes (1 gardé, 2 retirés)
+    const dry = await call(env, { peer_query: 'laurence' });
+    expect(dry.accounts.keep.id).toBe('laur_real');
+    expect(dry.accounts.remove.map(r => r.id).sort()).toEqual(['laur_dup2', 'laurence_saint_polit'].sort());
+
+    // apply : fusionne les comptes
+    const r = await call(env, { peer_query: 'laurence', apply: true });
+    expect(r.ok).toBe(true);
+    // messages des doublons ré-attribués au vrai compte
+    expect(st.messages.every(m => m.sender_id === 'laur_real')).toBe(true);
+    // doublons soft-deleted (réversible), le vrai compte reste actif
+    expect(st.users.find(u => u.id === 'laurence_saint_polit').status).toBe('deleted');
+    expect(st.users.find(u => u.id === 'laur_dup2').status).toBe('deleted');
+    expect(st.users.find(u => u.id === 'laur_real').status).toBe('active');
+    // jamais le compte admin (Kevin)
+    expect(st.users.find(u => u.id === 'kevin').status).toBe('active');
+    // les infos (localisation, device) sont GROUPÉES sur le compte gardé
+    const kept = st.users.find(u => u.id === 'laur_real');
+    expect(kept.last_geo_label).toBe('Monaco');
+    expect(kept.last_device_label).toBe('iPhone');
   });
 
   it('signale l\'absence de DM serveur', async () => {

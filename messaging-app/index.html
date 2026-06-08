@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.176",
+  "softwareVersion": "v1.1.177",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.176';
+const __APEX_CHAT_VERSION__ = 'v1.1.177';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.176</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.177</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.176</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.177</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2992,14 +2992,25 @@ K._healDmServer = async function(){
     };
     const peerName = data.peer ? (data.peer.name || data.peer.pseudo || data.peer.id) : who;
     const explain = causes[data.cause] || data.detail || data.cause;
-    const fixable = data.plan && data.plan.length > 0 && ['duplicate_dm','peer_not_member'].includes(data.cause);
+    const remove = (data.accounts && data.accounts.remove) || [];
+    const hasDupes = remove.length > 0;
+    const fixable = (data.plan && data.plan.length > 0 && ['duplicate_dm','peer_not_member'].includes(data.cause)) || hasDupes;
     if(data.cause === 'ambiguous_peer' || data.cause === 'peer_not_found'){
       toast('⚠️ ' + explain, 'warn', 8000); return;
     }
     if(!fixable){
       toast('ℹ️ ' + explain, 'info', 8000); return;
     }
-    if(!confirm('Diagnostic pour ' + peerName + ' :\n\n' + explain + '\n\n✅ Réparation sûre (rien n\'est supprimé : on fusionne dans une seule conversation et on ajoute le bon compte).\n\nAppliquer maintenant ?')) return;
+    // Détail des comptes en double trouvés (3 comptes Laurence)
+    let acctMsg = '';
+    if(hasDupes){
+      const keep = data.accounts.keep || {};
+      acctMsg = '\n\n👤 Comptes trouvés pour ' + peerName + ' :' +
+        '\n✅ GARDÉ : ' + (keep.pseudo || keep.name || keep.id) +
+        remove.map(r => '\n🗑 retiré : ' + (r.pseudo || r.name || r.id) + (r.placeholder ? ' (fantôme)' : '')).join('') +
+        '\n\n(Les messages des comptes retirés sont transférés sur le compte gardé. Réversible.)';
+    }
+    if(!confirm('Diagnostic pour ' + peerName + ' :\n\n' + explain + acctMsg + '\n\n✅ Réparation sûre (rien n\'est supprimé définitivement : fusion dans une seule conversation + un seul compte).\n\nAppliquer maintenant ?')) return;
     toast('🩹 Réparation…', 'info', 2000);
     const res2 = await call({ ...body, apply: true });
     if(!res2.data || !res2.data.ok){ toast('❌ ' + (res2.data?.detail || 'échec'), 'err', 7000); return; }
@@ -6525,6 +6536,14 @@ K.render = function(){
     b.classList.toggle('active', on);
     b.setAttribute('aria-current', on ? 'page' : 'false');
   });
+
+  // v1.1.177 — le bandeau « Chiffrement… Serveur aveugle » est MASQUÉ en vue
+  // conversation : il chevauchait le header collant de la conv (nom du contact)
+  // et était redondant avec l'indicateur « 🔒 Chiffré E2E · vérifier » du header.
+  try {
+    const sb = document.getElementById('security-banner');
+    if (sb) sb.classList.toggle('h', K.view === 'chat');
+  } catch (_e) { _safeCatch && _safeCatch('silent', _e); }
 
   switch(K.view){
     case 'chats': renderChats(app); break;
