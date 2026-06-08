@@ -20,10 +20,10 @@
 ### #C — 🟡 (perf/batterie, à vérifier) Éléments coincés dans la file de sync
 - Si « ⏳ N en attente » persiste dans la barre sur un appareil **connecté** (point vert), ce sont des écritures réellement bloquées → me le dire, j'investigue la clé fautive. (Le clignotement, lui, est déjà corrigé v9.795.)
 
-### #D — 🟠 (1 collage, débloque l'AUTO) Secret `FIREBASE_PRIVATE_KEY` corrompu
-- Le secret GitHub n'est PAS une clé RSA valide (échecs `asn1 header too long` / DECODER sur 6 runs). C'est pourquoi la publication AUTO des règles (et le déploiement de règles Apex) ne peut pas tourner.
-- **Fix (1 paste)** : [Firebase → Comptes de service → Générer une clé privée](https://console.firebase.google.com/project/cmcteams-c16ab/settings/serviceaccounts/adminsdk) → copier la valeur `private_key` complète → [GitHub → Secrets → FIREBASE_PRIVATE_KEY → Update](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions) (+ `FIREBASE_CLIENT_EMAIL` = `client_email`).
-- Après ça : `npm run` du workflow `deploy-cmcteams-rules.yml` (hardened/open) = règles 100 % auto. Code déjà prêt + fidèle au worker (`tools/firebase/deploy-rules.cjs`).
+### #D — ✅ FAIT (2026-06-08). Secret `FIREBASE_PRIVATE_KEY` refait → publication règles 100 % AUTO
+- Kevin a régénéré la clé de compte de service + recollé `FIREBASE_PRIVATE_KEY` (+ `FIREBASE_CLIENT_EMAIL`) via l'outil `tools/firebase/extract-service-account.html`.
+- **Prouvé en live** (run #7 `deploy-cmcteams-rules.yml`) : `clé: OK der-pkcs8(b64=1624)` (ancienne corrompue = 1625), `access_token obtenu`, `Règles publiées HTTP 200`, `Vérif OK — base fermée`.
+- Désormais : déclencher `deploy-cmcteams-rules.yml` (input hardened|open) republie/rollback les règles **sans console**. Code : `tools/firebase/deploy-rules.cjs` (parsing fidèle au worker, DER pkcs8).
 
 ### ✅ Déjà corrigé (aucune action) : fuite de ta clé Anthropic en clair dans Firebase → retirée + scrub (v9.787, en prod).
 
