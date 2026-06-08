@@ -531,6 +531,12 @@ class AIKeyRotation {
     } catch {
       /* ignore */
     }
+    /* v13.4.321 — si l'IA est KO faute de code admin en mémoire (proxy) → proposer
+     * l'activation 1-tap (taper le code une fois, sans déconnexion). Self-gated :
+     * promptProxyPinActivation ne s'affiche QUE si needsProxyPinActivation. */
+    void import('../auth/proxy-pin-activation.js')
+      .then((m) => m.promptProxyPinActivation())
+      .catch(() => { /* ignore */ });
   }
 
   /**
