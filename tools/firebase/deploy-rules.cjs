@@ -21,19 +21,31 @@ const STATE = (process.env.RULES_STATE || 'hardened').toLowerCase();
 function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 
 async function getAccessToken(){
-  const email = process.env.FIREBASE_CLIENT_EMAIL;
-  let key = process.env.FIREBASE_PRIVATE_KEY || '';
-  if (!email || !key) throw new Error('Secrets manquants : FIREBASE_CLIENT_EMAIL et/ou FIREBASE_PRIVATE_KEY');
-  // Robustesse format clé (cause d'échec 'DECODER routines::unsupported') :
-  key = key.trim();
-  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) key = key.slice(1, -1);
-  key = key.replace(/\\r/g, '').replace(/\\n/g, '\n');           // \n littéraux → vrais newlines
-  if (!key.includes('\n') && key.includes('\\n')) key = key.replace(/\\n/g, '\n');
-  // si base64 d'un PEM (pas de en-tête) → décoder
-  if (!/-----BEGIN/.test(key)) { try { const d = Buffer.from(key, 'base64').toString('utf8'); if (/-----BEGIN/.test(d)) key = d; } catch (_) {} }
-  // diagnostic NON sensible (jamais le corps de la clé)
-  console.log('   clé: len=' + key.length + ' beginsPEM=' + /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(key) + ' realNL=' + key.includes('\n'));
-  if (!/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(key)) throw new Error("FIREBASE_PRIVATE_KEY : pas un PEM valide après normalisation (vérifier le format du secret)");
+  let email = process.env.FIREBASE_CLIENT_EMAIL;
+  let raw = (process.env.FIREBASE_PRIVATE_KEY || '').trim();
+  if (!email || !raw) throw new Error('Secrets manquants : FIREBASE_CLIENT_EMAIL et/ou FIREBASE_PRIVATE_KEY');
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) raw = raw.slice(1, -1);
+
+  let key = '';
+  // cas 1 : le secret est tout le JSON du service account
+  if (raw.startsWith('{')) { try { const j = JSON.parse(raw); if (j.private_key) key = j.private_key; if (j.client_email && !email) email = j.client_email; } catch (_) {} }
+  if (!key) key = raw;
+  key = key.replace(/\\r/g, '').replace(/\\n/g, '\n').trim();    // \n littéraux → vrais newlines
+
+  // cas 2 : base64 d'un PEM complet
+  if (!/-----BEGIN/.test(key)) { try { const d = Buffer.from(key.replace(/\s/g, ''), 'base64').toString('utf8'); if (/-----BEGIN/.test(d)) key = d.replace(/\\n/g, '\n'); } catch (_) {} }
+  // cas 3 : corps base64 NU (sans armure) → envelopper en PKCS#8
+  if (!/-----BEGIN/.test(key)) {
+    const body = key.replace(/\s/g, '');
+    if (/^[A-Za-z0-9+/=]+$/.test(body) && body.length > 800) {
+      key = '-----BEGIN PRIVATE KEY-----\n' + body.match(/.{1,64}/g).join('\n') + '\n-----END PRIVATE KEY-----\n';
+    }
+  }
+  const beginsPEM = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/.test(key);
+  console.log('   clé diag: len=' + key.length + ' beginsPEM=' + beginsPEM + (beginsPEM ? ' header="' + (key.match(/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/) || [''])[0] + '"' : ' first8="' + key.slice(0, 8).replace(/[^ -~]/g, '?') + '" wasJSON=' + raw.startsWith('{')));
+  if (!beginsPEM) throw new Error("FIREBASE_PRIVATE_KEY : format non reconnu (ni PEM, ni JSON SA, ni base64). len=" + key.length);
+  // validation crypto explicite (erreur claire si la clé est corrompue)
+  try { crypto.createPrivateKey(key); } catch (e) { throw new Error("Clé privée illisible par crypto : " + e.message); }
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const claim = b64url(JSON.stringify({
