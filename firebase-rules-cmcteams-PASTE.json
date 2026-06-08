@@ -55,7 +55,6 @@
       }
     },
     "coffre_vault": {
-      "_comment": "Coffre-fort perso — chemin ISOLÉ. Données chiffrées E2E (zero-knowledge) : le serveur ne voit que du ciphertext. Scopé par uid (hash prénom+nom).",
       ".read": true,
       ".write": true,
       "$uid": {
