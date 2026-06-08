@@ -4686,9 +4686,11 @@ function fbPushAll(){
 
 var FB_DEFAULT="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 // ── v9.784 — Auth anonyme Firebase (étape 1 durcissement P0) ───────────────────
-// Clé Web publique du projet (peut aussi être collée par l'admin dans cmc_fb_apikey).
-// VIDE par défaut → fallback gracieux : l'app fonctionne exactement comme avant.
-var FB_WEB_APIKEY="";
+// Clé Web PUBLIQUE du projet Firebase cmcteams-c16ab (identifiant client, pas un secret).
+// v9.792 — activée globalement : tous les appareils s'authentifient (anonyme).
+// Fail-open : si l'auth échoue, l'app marche quand même (règles encore ouvertes jusqu'au durcissement #B).
+// L'admin peut surcharger via cmc_fb_apikey (localStorage) si besoin.
+var FB_WEB_APIKEY="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs";
 var _fbAuthToken=null,_fbAuthTimer=null,_fbAuthErr="";
 /** Query string ?auth= si un token anonyme est présent, sinon "" (compatible règles ouvertes actuelles). */
 function _fbAuthQS(){return _fbAuthToken?"?auth="+encodeURIComponent(_fbAuthToken):"";}
@@ -5386,7 +5388,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.791";
+var APP_VER="v9.792";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
