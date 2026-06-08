@@ -151,17 +151,59 @@ async function getAuthUser(request, env) {
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
   if (!payload || !payload.sub) return null;
-  // Vérifier force_logout : si user.last_force_logout_at > token.iat → JWT révoqué par admin
+  // Vérif SÛRE (colonnes toujours présentes) — JAMAIS contournée même si une
+  // colonne récente manque (fenêtre de déploiement). Rejette banni/supprimé.
+  const DB = env.APEX_CHAT_DB;
+  let u = null;
   try {
-    const u = await env.APEX_CHAT_DB.prepare(
-      'SELECT last_force_logout_at, is_banned, status FROM users WHERE id=?'
+    u = await DB.prepare(
+      'SELECT last_force_logout_at, is_banned, status, phone FROM users WHERE id=?'
     ).bind(payload.sub).first();
-    if (u) {
-      if (u.is_banned || u.status === 'deleted' || u.status === 'suspended') return null;
-      if (u.last_force_logout_at && payload.iat && u.last_force_logout_at > payload.iat * 1000) return null;
+  } catch (_) { return payload; /* table inattendue : fail-open léger comme avant */ }
+  if (!u) return payload;
+  if (u.is_banned || u.status === 'suspended') return null;
+  if (u.last_force_logout_at && payload.iat && u.last_force_logout_at > payload.iat * 1000) return null;
+  if (u.status !== 'deleted') return payload;
+
+  // Compte SUPPRIMÉ/FUSIONNÉ → suivre merged_into vers le compte canonique
+  // (anti-verrouillage : un JWT encore lié à un doublon agit comme le compte
+  // gardé au lieu d'être rejeté → "messages qui n'arrivent pas"). v1.1.179.
+  // Best-effort : si merged_into absent OU pas de canonique → on REJETTE (sûr).
+  try {
+    let canonId = null;
+    try {
+      const mp = await DB.prepare('SELECT merged_into FROM users WHERE id=?').bind(payload.sub).first();
+      canonId = (mp && mp.merged_into) || null;
+    } catch (_) { /* colonne pas encore créée → canonId reste null */ }
+    // Rattrapage des comptes supprimés SANS pointeur (fusions v1.1.177) : compte actif même numéro.
+    if (!canonId) {
+      const tail = normPhone(u.phone || '').replace(/\D/g, '').slice(-8);
+      if (tail) {
+        const cand = await DB.prepare(
+          "SELECT id FROM users WHERE status != 'deleted' AND id != ? AND phone LIKE ? LIMIT 1"
+        ).bind(payload.sub, '%' + tail).first();
+        if (cand) {
+          canonId = cand.id;
+          try { await DB.prepare('UPDATE users SET merged_into=? WHERE id=?').bind(canonId, payload.sub).run(); } catch (_) {}
+        }
+      }
+    }
+    if (canonId) {
+      let cur = canonId, hops = 0, c = null;
+      while (cur && hops < 3) {
+        c = await DB.prepare('SELECT id, is_admin, is_banned, status, merged_into FROM users WHERE id=?').bind(cur).first();
+        if (!c) break;
+        if (c.merged_into && c.merged_into !== cur) { cur = c.merged_into; hops++; continue; }
+        break;
+      }
+      if (c && c.status !== 'deleted' && !c.is_banned) {
+        payload.sub = c.id;
+        payload.is_admin = !!c.is_admin;
+        return payload;
+      }
     }
   } catch (_) {}
-  return payload;
+  return null; // supprimé sans canonique → rejet sûr
 }
 
 // ============================================================================
@@ -1095,6 +1137,16 @@ async function handleListConversations(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
+  // AUTO-RÉPARATION à l'ouverture de l'app (Kevin : « ça doit être auto, partout »).
+  // Idempotent : une fois les doublons fusionnés (status='deleted'), la détection
+  // les exclut → no-op. Best-effort, ne bloque jamais la liste. v1.1.179.
+  try {
+    const me = await env.APEX_CHAT_DB.prepare(
+      'SELECT id, phone, real_name, pseudo FROM users WHERE id=?'
+    ).bind(auth.sub).first();
+    if (me) await autoHealPerson(env, me);
+  } catch (e) { console.warn('[auto-heal-convlist]', e?.message); }
+
   // v1.1.172 FIX P0 (audit crew) : joindre la clé publique du pair (DM) pour
   // que le client puisse établir la session E2E. Sans ça, peer_pubkey restait
   // null → aucune session → fallback texte clair. La sous-requête prend l'AUTRE
@@ -1494,7 +1546,8 @@ export async function mergeDupAccountsInto(DB, peerId, dupAccounts, now) {
        SELECT conv_id, ?, role, joined_at, kevin_invisible FROM conversation_members WHERE user_id=?`
     ).bind(peerId, dup.id).run();
     await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(dup.id).run();
-    await DB.prepare("UPDATE users SET status='deleted', updated_at=? WHERE id=?").bind(now, dup.id).run();
+    // merged_into = compte gardé → getAuthUser suit le pointeur (anti-verrouillage).
+    await DB.prepare("UPDATE users SET status='deleted', merged_into=?, updated_at=? WHERE id=?").bind(peerId, now, dup.id).run();
     out.merged_accounts.push({ id: dup.id, pseudo: dup.pseudo, messages_moved: rm?.meta?.changes ?? null });
   }
   return out;

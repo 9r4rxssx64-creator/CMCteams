@@ -24,10 +24,29 @@ function statefulDB(state) {
     sql, _args: [],
     bind(...a) { this._args = a; return this; },
     async first() {
-      // getAuthUser : user non banni
+      // getAuthUser : statut + pointeur de fusion (lus depuis l'état)
       if (sql.includes('SELECT last_force_logout_at')) {
         const u = state.users.find(x => x.id === this._args[0]);
-        return u ? { last_force_logout_at: null, is_banned: 0, status: 'active' } : null;
+        return u ? { last_force_logout_at: u.last_force_logout_at ?? null, is_banned: u.is_banned ? 1 : 0,
+          status: u.status || 'active', merged_into: u.merged_into || null, phone: u.phone || '' } : null;
+      }
+      // getAuthUser : lecture du pointeur de fusion seul
+      if (sql.includes('SELECT merged_into FROM users WHERE id=?')) {
+        const u = state.users.find(x => x.id === this._args[0]);
+        return u ? { merged_into: u.merged_into || null } : null;
+      }
+      // getAuthUser : résolution du compte canonique (suivi merged_into)
+      if (sql.includes('is_admin, is_banned, status, merged_into') && sql.includes('WHERE id=?')) {
+        const u = state.users.find(x => x.id === this._args[0]);
+        return u ? { id: u.id, is_admin: u.is_admin ? 1 : 0, is_banned: u.is_banned ? 1 : 0,
+          status: u.status || 'active', merged_into: u.merged_into || null } : null;
+      }
+      // getAuthUser : rattrapage compte supprimé sans pointeur (même numéro)
+      if (sql.includes("WHERE status != 'deleted' AND id != ?") && sql.includes('phone LIKE')) {
+        const tail = String(this._args[1] || '').replace(/%/g, '');
+        const u = state.users.find(x => x.id !== this._args[0] && x.status !== 'deleted' &&
+          String(x.phone || '').replace(/\D/g, '').slice(-8) === tail.replace(/\D/g, '').slice(-8));
+        return u ? { id: u.id } : null;
       }
       if (sql.includes('SELECT id, pseudo, real_name, phone FROM users WHERE id=?')) {
         return state.users.find(x => x.id === this._args[0]) || null;
@@ -128,8 +147,9 @@ function statefulDB(state) {
         return { success: true, meta: { changes: 1 } };
       }
       if (sql.includes("UPDATE users SET status='deleted'")) {
-        const id = this._args[1];
-        const u = state.users.find(x => x.id === id); if (u) u.status = 'deleted';
+        const id = this._args[this._args.length - 1];
+        const u = state.users.find(x => x.id === id);
+        if (u) { u.status = 'deleted'; if (sql.includes('merged_into=?')) u.merged_into = this._args[0]; }
         return { success: true, meta: { changes: 1 } };
       }
       if (sql.includes('UPDATE users SET') && sql.includes('WHERE id=?')) {
@@ -307,6 +327,20 @@ describe('POST /api/admin/heal-dm', () => {
     // est remplacé par le vrai compte → Kevin parlera au bon compte
     expect(st.messages.every(m => m.sender_id === 'laur_real')).toBe(true);
     expect(st.members.some(m => m.conv_id === 'cPh' && m.user_id === 'laur_real')).toBe(true);
+  });
+
+  it('ANTI-VERROUILLAGE : un JWT lié à un compte fusionné agit comme le compte gardé', async () => {
+    const st = baseState();
+    // laur_old a été fusionné dans laur_real (status deleted + merged_into)
+    st.users.push({ id: 'laur_old', pseudo: 'lau', real_name: 'Laurence', phone: '+33222', source: 'apex-chat-direct', is_admin: 0, last_seen: 1, status: 'deleted', merged_into: 'laur_real' });
+    const env = ENV({ APEX_CHAT_DB: statefulDB(st) });
+    // token encore lié au vieux compte supprimé
+    const token = await makeJWT({ sub: 'laur_old', is_admin: false, iat: Math.floor(Date.now() / 1000) });
+    const req = makeRequest({ method: 'GET', path: '/api/conversations', token });
+    const res = await worker.fetch(req, env);
+    // avant le fix : 401 (compte deleted rejeté → "messages n'arrivent pas")
+    // après : 200, la requête agit comme le compte gardé
+    expect(res.status).toBe(200);
   });
 
   it('signale l\'absence de DM serveur', async () => {
