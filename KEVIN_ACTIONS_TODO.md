@@ -36,11 +36,25 @@
 - **P0-1/P0-2 FERMÉS** : `ALLOW_TEST_OTP="false"` déployé (run #105 vert). Le code `000000` ne crée plus de comptes pour les inconnus + plus de fuite `_dev_otp`. Onboarding = **lien d'invitation** magique (sans SMS). Bypass admin Kevin conservé. Rollback = reflip "true".
 - **Autorisations (v1.1.174)** : l'en-tête `Permissions-Policy` interdisait caméra+micro → corrigé `(self)`. + **consentement unique** (`K._ensurePermsOnce`) : 1 demande simple couvrant notifications + caméra + micro + position, **1 fois, jamais plus** (flag `apex_chat_perms_v1`).
 
-### ⏳ Reste (Apex Chat)
-- **#1 — Connexion-tracking** (demandé Kevin) : capturer device + lieu (géo Cloudflare `request.cf`, gratuit) + heure à chaque connexion → table D1 `connections` + vue admin ; **push iPhone seulement sur NOUVEAU device/lieu** (choix Kevin). À construire (worker + D1 + push + vue admin + tests).
-- **#2 — P0-3 (repli clair)** : couplé au rollout E2E (comptes `PENDING_PQXDH` créés via 000000 n'ont pas de vraie clé). Vrai fix = re-keying E2E (2 appareils).
-- **#3 — SMS/WhatsApp** : Vonage en trial (échoue) → OTP réel KO. WhatsApp **pas câblé** (faudrait API Vonage Messages `/v1/messages` channel whatsapp). À réparer pour ouvrir l'auto-inscription par numéro (sinon : invitation par lien, qui marche).
-- **#4 — P1/P2 mineurs** : CSP `unsafe-inline` (XSS surface faible, contenu = nombres), JWT en localStorage (cookie HttpOnly idéal), rate-limit OTP backoff.
+### ✅ #1 — Connexion-tracking FAIT & sur main (v1.1.175)
+- Capture COMPLÈTE à chaque connexion : device (UA), lieu (géo Cloudflare `request.cf`, gratuit), `ip_hash` (jamais l'IP en clair), heure → table D1 `connections` (migration 0007). Vue admin **« 🔔 Connexions »** + route `GET /api/admin/connections` (admin-only). **Push iPhone seulement sur NOUVEAU device/lieu** (signature `os|browser|country|city`). Best-effort (ne bloque jamais le login). Gate : 833 tests, couverture 100%.
+
+### ⏳ Reste (Apex Chat) — **bloqué sur dépendance externe, pas autonome**
+- **#2 — P0-3 (repli clair) / E2E réellement actif** : nécessite **2 vrais appareils** (toi + Laurence) pour prouver l'échange déchiffrable + re-keying des comptes `PENDING_PQXDH`. Non validable en sandbox → à faire ensemble.
+- **#3 — SMS/WhatsApp** : Vonage en **trial** → OTP réel KO. Le code WhatsApp (Vonage Messages `/v1/messages` channel whatsapp) est prêt à ajouter en failover **dès que tu as des identifiants Vonage qui marchent** — je ne déploie pas de code auth non testable à l'aveugle (règle « ne jamais casser le login »). En attendant : **invitation par lien** (fonctionne) + bypass admin Kevin.
+- **#4 — P1/P2 mineurs** : CSP `unsafe-inline` (surface XSS faible, contenu = nombres) ; JWT localStorage→cookie HttpOnly (touche le login → à faire prudemment ensemble) ; backoff OTP (chemin OTP dormant tant que Vonage KO → faible valeur). Aucun risque ouvert pour ton usage actuel (admin-bypass + liens).
+
+---
+
+## 🛍️ BOUTIQUES — AUDIT SÉCURITÉ + DURCISSEMENT (2026-06-08) ✅ FAIT & déployé (PR #1013)
+
+Audit complet (2 P0 / 4 P1 / 4 P2). Corrigé en autonomie, **sans casser** le flux on-hold ni l'isolation :
+- ✅ **CSP durci sur les 6 boutiques** qui n'en avaient aucun (dashboard, digital-vault, ecocraft, la-detente, pawsome, tech-hub) → ferme XSS exfil + clickjacking (`object-src 'none'`, `base-uri`, `form-action`, `frame-ancestors 'self'`, `connect-src` scopé). + `frame-ancestors` ajouté à chez-lolo.
+- ✅ **Rate-limit workers** (anti-abus coût, gratuit, sans KV) : `ld-gemini-proxy` 10/min/IP + 150/min global ; `ld-printify-order` 5/5min/IP + 30/5min global ; `/cost` 10/min ; **Content-Type `application/json` strict**. → Déploiement workers 100% AUTO au merge (vérifié : run en cours).
+- ℹ️ **Non corrigé volontairement** (documenté, faible risque maison) :
+  - PayPal.me montant-dans-URL = modèle lien manuel ; **on-hold = 0 débit auto**, tu supervises. À revoir si API ouverte/clients externes.
+  - Firebase `shops_admin_v1/orders` `.read:true` = n'expose que `orderId/shop/total/ts` (**pas de PII** : l'adresse part directe à Printify en HTTPS, jamais dans Firebase). Fermer casserait la lecture dashboard.
+- 🟡 **Optionnel plus tard** : rate-limit **dur inter-isolats** = brancher un KV Cloudflare (le rate-limit actuel est en mémoire d'isolat, best-effort — suffisant pour usage maison) ; PIN dashboard côté serveur (anti brute-force) ; réduire session dashboard 8h→1h.
 
 ---
 
