@@ -1084,11 +1084,39 @@ describe('ConversationDO — /admin/inject-message (Letters delayed delivery)', 
     expect(r.status).toBe(403);
   });
 
+  it('403 si header X-Apex-Internal totalement absent', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
+      method: 'POST', headers: {},
+      body: JSON.stringify({ conv_id: 'c1', sender_id: 'u1', ciphertext: 'hi' }),
+    }));
+    expect(r.status).toBe(403);
+  });
+
+  it('403 si APEX_CHAT_ADMIN_TOKEN non configuré (expected vide)', async () => {
+    const env = ENV(); delete env.APEX_CHAT_ADMIN_TOKEN;
+    const _do = new ConversationDO(makeState(), env);
+    const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
+      method: 'POST', headers: { 'X-Apex-Internal': 'anything' },
+      body: JSON.stringify({ conv_id: 'c1', sender_id: 'u1', ciphertext: 'hi' }),
+    }));
+    expect(r.status).toBe(403);
+  });
+
   it('400 si champs requis manquants', async () => {
     const _do = new ConversationDO(makeState(), ENV());
     const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
       method: 'POST', headers: { 'X-Apex-Internal': 'admin-secret' },
       body: JSON.stringify({ sender_id: 'u1' }),
+    }));
+    expect(r.status).toBe(400);
+  });
+
+  it('400 si body JSON invalide (catch → body {})', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
+      method: 'POST', headers: { 'X-Apex-Internal': 'admin-secret', 'Content-Type': 'application/json' },
+      body: 'pas-du-json{{{',
     }));
     expect(r.status).toBe(400);
   });
@@ -1110,6 +1138,22 @@ describe('ConversationDO — /admin/inject-message (Letters delayed delivery)', 
     expect(flushSpy).toHaveBeenCalled();      // durable AVANT d'acquitter
     expect(bcastSpy).toHaveBeenCalled();       // diffusé aux connectés
     expect(_do.pendingMessages.some((m) => m.ciphertext === 'lettre')).toBe(true);
+  });
+
+  it('500 si flushToD1 throw (catch block — pas d\'acquittement)', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    _do.sessions = new Map();
+    vi.spyOn(_do, 'broadcast').mockImplementation(() => {});
+    vi.spyOn(_do, 'notifyOfflineMembers').mockResolvedValue(undefined);
+    vi.spyOn(_do, 'flushToD1').mockRejectedValue(new Error('D1 down'));
+    const r = await _do.fetch(httpRequest('https://x/admin/inject-message', {
+      method: 'POST', headers: { 'X-Apex-Internal': 'admin-secret' },
+      body: JSON.stringify({ conv_id: 'c1', sender_id: 'u1', ciphertext: 'lettre' }),
+    }));
+    expect(r.status).toBe(500);
+    const j = await r.json();
+    expect(j.ok).toBe(false);
+    expect(j.error).toBe('D1 down');
   });
 });
 

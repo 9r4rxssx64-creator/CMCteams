@@ -221,6 +221,102 @@ async function auditLog(env, actor_id, action, target_type, target_id, details, 
 }
 
 // ============================================================================
+//  Connexion-tracking (migration 0007)
+//  Kevin "être au courant de chaque connexion + capturer max de données :
+//  personnes, devices, lieux". Capture COMPLÈTE à chaque login réussi ;
+//  push iPhone admin SEULEMENT sur NOUVEAU device OU NOUVEAU lieu.
+//
+//  TOUT est en try/catch interne : une erreur de capture ne doit JAMAIS
+//  casser/ralentir un login (la capture est secondaire à l'auth).
+// ============================================================================
+
+// parseUserAgent — extraction simple/robuste OS / browser / device depuis l'UA.
+export function parseUserAgent(ua) {
+  const s = String(ua || '');
+  let os = '';
+  if (/iPhone|iPad|iPod/i.test(s)) os = 'iOS';
+  else if (/Android/i.test(s)) os = 'Android';
+  else if (/Windows/i.test(s)) os = 'Windows';
+  else if (/Macintosh|Mac OS X/i.test(s)) os = 'macOS';
+  else if (/Linux/i.test(s)) os = 'Linux';
+
+  let browser = '';
+  // Ordre important : Edge contient "Chrome", Chrome contient "Safari".
+  if (/Edg(e|A|iOS)?\//i.test(s)) browser = 'Edge';
+  else if (/Firefox|FxiOS/i.test(s)) browser = 'Firefox';
+  else if (/Chrome|CriOS|Chromium/i.test(s)) browser = 'Chrome';
+  else if (/Safari/i.test(s)) browser = 'Safari';
+
+  const device = /Mobi|iPhone|iPad|iPod|Android/i.test(s) ? 'mobile' : 'desktop';
+  return { os, browser, device };
+}
+
+export async function captureConnection(env, request, user) {
+  try {
+    if (!user || !user.id) return { isNew: false };
+
+    // Géo via request.cf (Cloudflare, GRATUIT). En test/local request.cf est
+    // undefined → valeurs '' par défaut, ne jamais throw.
+    const cf = request.cf || {};
+    const country = cf.country || '';
+    const city = cf.city || '';
+    const region = cf.region || '';
+
+    const ua = request.headers.get('User-Agent') || '';
+    const { os, browser, device } = parseUserAgent(ua);
+    const ip_hash = await sha256(request.headers.get('CF-Connecting-IP') || '');
+
+    // Signature device+lieu — clé d'unicité (avec user_id).
+    const sig = `${os}|${browser}|${country}|${city}`;
+    const now = Date.now();
+
+    const existing = await env.APEX_CHAT_DB.prepare(
+      'SELECT id FROM connections WHERE user_id=? AND sig=?'
+    ).bind(user.id, sig).first();
+
+    if (existing) {
+      await env.APEX_CHAT_DB.prepare(
+        'UPDATE connections SET last_seen=?, hits=hits+1 WHERE id=?'
+      ).bind(now, existing.id).run();
+      return { isNew: false };
+    }
+
+    await env.APEX_CHAT_DB.prepare(
+      `INSERT INTO connections (id, user_id, sig, device, os, browser, country, city, region, ip_hash, first_seen, last_seen, hits)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`
+    ).bind(crypto.randomUUID(), user.id, sig, device, os, browser, country, city, region, ip_hash, now, now).run();
+
+    // Nouveau device OU nouveau lieu → push admin (sauf si c'est l'admin lui-même).
+    if (user.id !== 'kdmc_admin') {
+      try {
+        await sendPushToUser('kdmc_admin', {
+          title: '🔔 Nouvelle connexion',
+          body: `${user.real_name || user.pseudo} — ${os || '?'}/${browser || '?'} depuis ${city || '?'}, ${country || '?'}`,
+          data: { user_id: user.id, sig }
+        }, env);
+      } catch (_e) { /* best-effort — ne bloque jamais le login */ }
+    }
+
+    return { isNew: true, country, city, device, os, browser };
+  } catch (_e) {
+    // fire-and-forget : la capture ne casse jamais le login
+    return { isNew: false };
+  }
+}
+
+// GET /api/admin/connections — liste des connexions trackées (admin only).
+async function handleAdminConnections(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403);
+
+  const rows = await env.APEX_CHAT_DB.prepare(
+    'SELECT * FROM connections ORDER BY last_seen DESC LIMIT 500'
+  ).all();
+
+  return json({ ok: true, connections: rows.results || [] });
+}
+
+// ============================================================================
 //  Routes Auth
 // ============================================================================
 
@@ -539,6 +635,7 @@ export async function handleVerifyOtp(request, env) {
         await auditLog(env, user.id, 'direct_signup', 'user', user.id, { phone_hash: phoneHash },
           await sha256(request.headers.get('CF-Connecting-IP') || ''), request.headers.get('User-Agent'))
           .catch(() => {});
+        await captureConnection(env, request, user);
         return json({ ok: true, token: jwt, user: {
           id: user.id, pseudo: user.pseudo, real_name: user.real_name,
           phone: user.phone, is_admin: !!user.is_admin
@@ -590,6 +687,7 @@ export async function handleVerifyOtp(request, env) {
       try {
         if (env.LAURENCE_PHONE_E164) await ensureCorePair(env);
       } catch (_e) { /* silent — login Kevin doit toujours réussir */ }
+      await captureConnection(env, request, user);
       return json({ ok: true, token: jwt, user: { id: 'kdmc_admin', pseudo: user.pseudo, is_admin: true }});
     } catch (e) {
       console.error('[verify-otp/bypass]', step, e.message, e.stack);
@@ -682,6 +780,7 @@ export async function handleVerifyOtp(request, env) {
   }, env.JWT_SIGN_KEY);
 
   await auditLog(env, user.id, 'login', 'user', user.id, { method: 'sms-otp' }, phoneHash, request.headers.get('User-Agent'));
+  await captureConnection(env, request, user);
 
   return json({ ok: true, token: jwt, user: {
     id: user.id, pseudo: user.pseudo, is_admin: !!user.is_admin
@@ -742,6 +841,7 @@ export async function handleSsoFromApex(request, env) {
   }, env.JWT_SIGN_KEY);
 
   await auditLog(env, user.id, 'login_sso_apex', 'user', user.id, { apex_uid }, '', request.headers.get('User-Agent'));
+  await captureConnection(env, request, user);
 
   return json({ ok: true, token: jwt, user });
 }
@@ -1821,6 +1921,7 @@ export async function handleMagicLogin(request, env) {
   await auditLog(env, user.id, 'magic_login_success', 'user', user.id,
     JSON.stringify({ invited_by: payload.invited_by }),
     null, request.headers.get('user-agent') || '');
+  await captureConnection(env, request, user);
 
   return json({
     ok: true,
@@ -4090,6 +4191,7 @@ export default {
       if (adminTimelineMatch && method === 'GET') return await handleAdminUserTimeline(adminTimelineMatch[1], request, env);
       const adminConvsMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/conversations$/);
       if (adminConvsMatch && method === 'GET') return await handleAdminUserConvs(adminConvsMatch[1], request, env);
+      if (path === '/api/admin/connections' && method === 'GET') return await handleAdminConnections(request, env);
       if (path === '/api/admin/search' && method === 'GET') return await handleAdminSearch(request, env);
       if (path === '/api/admin/toggles' && method === 'GET') return await handleAdminGetToggles(request, env);
       if (path === '/api/admin/toggles' && method === 'POST') return await handleAdminSetToggle(request, env);
