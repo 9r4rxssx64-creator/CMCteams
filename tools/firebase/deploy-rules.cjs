@@ -26,31 +26,23 @@ async function getAccessToken(){
   if (!email || !raw) throw new Error('Secrets manquants : FIREBASE_CLIENT_EMAIL et/ou FIREBASE_PRIVATE_KEY');
   if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) raw = raw.slice(1, -1);
 
-  let key = '';
-  // cas 1 : le secret est tout le JSON du service account
-  if (raw.startsWith('{')) { try { const j = JSON.parse(raw); if (j.private_key) key = j.private_key; if (j.client_email && !email) email = j.client_email; } catch (_) {} }
-  if (!key) key = raw;
-  key = key.replace(/\\r/g, '').replace(/\\n/g, '\n').trim();    // \n littéraux → vrais newlines
+  let raw2 = raw;
+  // secret = JSON complet du service account → extraire private_key
+  if (raw2.startsWith('{')) { try { const j = JSON.parse(raw2); if (j.private_key) raw2 = j.private_key; if (j.client_email && !email) email = j.client_email; } catch (_) {} }
+  raw2 = raw2.replace(/\\r/g, '').replace(/\\n/g, '\n');
 
-  // cas 2 : base64 d'un PEM complet
-  if (!/-----BEGIN/.test(key)) { try { const d = Buffer.from(key.replace(/\s/g, ''), 'base64').toString('utf8'); if (/-----BEGIN/.test(d)) key = d.replace(/\\n/g, '\n'); } catch (_) {} }
-  // cas 3 : corps base64 NU (sans armure) → envelopper en PKCS#8
-  if (!/-----BEGIN/.test(key)) {
-    const body = key.replace(/\s/g, '');
-    if (/^[A-Za-z0-9+/=]+$/.test(body) && body.length > 800) {
-      key = '-----BEGIN PRIVATE KEY-----\n' + body.match(/.{1,64}/g).join('\n') + '\n-----END PRIVATE KEY-----\n';
-    }
+  // MÉTHODE FIDÈLE au worker qui marche (apex-auth-worker importPrivateKey) :
+  // strip armure + tout caractère non-base64 → DER → createPrivateKey pkcs8.
+  let keyObj = null, how = '';
+  if (/-----BEGIN/.test(raw2)) { try { keyObj = crypto.createPrivateKey(raw2); how = 'pem'; } catch (_) {} }
+  if (!keyObj) {
+    let b64 = raw2.replace(/-----BEGIN[^-]*-----/g, '').replace(/-----END[^-]*-----/g, '').replace(/[^A-Za-z0-9+/]/g, '');
+    while (b64.length % 4) b64 += '=';
+    try { const der = Buffer.from(b64, 'base64'); keyObj = crypto.createPrivateKey({ key: der, format: 'der', type: 'pkcs8' }); how = 'der-pkcs8(b64=' + b64.length + ' der=' + der.length + ')'; }
+    catch (e) { how = 'der KO: ' + e.message; }
   }
-  // Construire des CANDIDATS PEM et garder celui que crypto accepte (PKCS#8 vs PKCS#1/RSA).
-  const bodyOnly = key.replace(/-----[^-]+-----/g, '').replace(/\s/g, '');
-  const wrap = (label, b) => '-----BEGIN ' + label + '-----\n' + (b.match(/.{1,64}/g) || []).join('\n') + '\n-----END ' + label + '-----\n';
-  const candidates = [];
-  if (/-----BEGIN/.test(key)) candidates.push(key);
-  if (/^[A-Za-z0-9+/=]+$/.test(bodyOnly) && bodyOnly.length > 800) { candidates.push(wrap('PRIVATE KEY', bodyOnly)); candidates.push(wrap('RSA PRIVATE KEY', bodyOnly)); }
-  let keyObj = null, used = '';
-  for (const c of candidates) { try { keyObj = crypto.createPrivateKey(c); used = (c.match(/-----BEGIN ([A-Z0-9 ]+)-----/) || ['', '?'])[1]; key = c; break; } catch (_) {} }
-  console.log('   clé diag: candidats=' + candidates.length + ' bodyLen=' + bodyOnly.length + ' → ' + (keyObj ? ('OK (' + used + ')') : 'AUCUN accepté'));
-  if (!keyObj) throw new Error("FIREBASE_PRIVATE_KEY : aucun format PEM accepté par crypto (PKCS#8/PKCS#1). Vérifier le secret.");
+  console.log('   clé: ' + (keyObj ? ('OK ' + how) : ('ÉCHEC ' + how)));
+  if (!keyObj) throw new Error('FIREBASE_PRIVATE_KEY illisible (PEM + DER pkcs8 échoués) — ' + how);
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const claim = b64url(JSON.stringify({
