@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.175",
+  "softwareVersion": "v1.1.176",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.175';
+const __APEX_CHAT_VERSION__ = 'v1.1.176';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.175</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.176</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.175</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.176</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2952,6 +2952,62 @@ K._submitConfigureCorePair = async function(){
     K.render && K.render();
   } catch (e) {
     toast('❌ Réseau : ' + (e?.message || '?'), 'err', 6000);
+  }
+};
+
+// ============================================================================
+//  v1.1.176 — Réparer un DM cassé côté serveur (admin).
+//  Cas : « les deux sont connectés mais aucun message ne passe » = Kevin et le
+//  correspondant ne sont PAS dans le même convId (placeholder vs vrai compte OTP,
+//  OU DM en double). Le WS étant par-conversation → silence total sans erreur.
+//  1 clic : diagnostic (dry_run) → on montre la cause exacte → confirmation → apply.
+// ============================================================================
+K._healDmServer = async function(){
+  if(!K.user?.is_admin){ toast('Admin uniquement', 'err'); return; }
+  if(!K.token){ toast('Reconnecte-toi (token absent)', 'err'); return; }
+  const who = (prompt('Qui ne reçoit pas tes messages ?\n\nTape un nom/pseudo (ex : laurence) OU son numéro complet (+336…).', 'laurence') || '').trim();
+  if(!who) return;
+  const body = /^\+?\d[\d\s.\-]{6,}$/.test(who) ? { peer_phone: who } : { peer_query: who };
+  const call = async (b) => {
+    const r = await fetch(API_BASE + '/api/admin/heal-dm', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+K.token},
+      body: JSON.stringify(b),
+    });
+    return { http: r.status, data: await r.json().catch(()=>({})) };
+  };
+  toast('🔎 Diagnostic en cours…', 'info', 2000);
+  try {
+    const { http, data } = await call(body);            // dry_run
+    if(http === 403){ toast('❌ Réservé admin', 'err', 5000); return; }
+    if(!data || !data.ok){
+      toast('❌ ' + (data?.detail || data?.cause || ('HTTP '+http)), 'err', 7000); return;
+    }
+    const causes = {
+      no_dm: "Aucune conversation entre vous côté serveur — écris-lui un 1er message d'abord.",
+      duplicate_dm: "Vous avez PLUSIEURS conversations en double → chacun en ouvre une différente, rien ne passe.",
+      peer_not_member: "Ta conversation ne contient PAS son vrai compte (ancien id/placeholder) → il/elle n'y est pas, ne reçoit rien.",
+      ambiguous_peer: "Plusieurs comptes correspondent — relance avec son NUMÉRO complet.",
+      peer_not_found: "Compte introuvable — relance avec son numéro exact.",
+      already_consistent: "Une seule conversation correcte avec son vrai compte. Le souci est ailleurs (relance l'app des 2 côtés).",
+    };
+    const peerName = data.peer ? (data.peer.name || data.peer.pseudo || data.peer.id) : who;
+    const explain = causes[data.cause] || data.detail || data.cause;
+    const fixable = data.plan && data.plan.length > 0 && ['duplicate_dm','peer_not_member'].includes(data.cause);
+    if(data.cause === 'ambiguous_peer' || data.cause === 'peer_not_found'){
+      toast('⚠️ ' + explain, 'warn', 8000); return;
+    }
+    if(!fixable){
+      toast('ℹ️ ' + explain, 'info', 8000); return;
+    }
+    if(!confirm('Diagnostic pour ' + peerName + ' :\n\n' + explain + '\n\n✅ Réparation sûre (rien n\'est supprimé : on fusionne dans une seule conversation et on ajoute le bon compte).\n\nAppliquer maintenant ?')) return;
+    toast('🩹 Réparation…', 'info', 2000);
+    const res2 = await call({ ...body, apply: true });
+    if(!res2.data || !res2.data.ok){ toast('❌ ' + (res2.data?.detail || 'échec'), 'err', 7000); return; }
+    toast('✅ Réparé. ' + peerName + ' et toi devez ROUVRIR l\'app pour recharger.', 'ok', 8000);
+    try { if(typeof K._refreshConvs === 'function') await K._refreshConvs(); } catch(_) {}
+    K.render && K.render();
+  } catch (e) {
+    toast('❌ Réseau : ' + (e?.message || '?'), 'err', 7000);
   }
 };
 
@@ -9921,6 +9977,9 @@ function renderSettings(app){
       </div>
       ${K.user?.is_admin ? `<div class="card-row" onclick="K._openConfigureCorePair()">
         <span>👥</span><span style="flex:1">Cercle privé pré-câblé (Laurence)</span><span>›</span>
+      </div>` : ''}
+      ${K.user?.is_admin ? `<div class="card-row" onclick="K._healDmServer()">
+        <span>🩹</span><span style="flex:1">Réparer un DM (l'autre ne reçoit rien)</span><span>›</span>
       </div>` : ''}
       <div class="card-row" onclick="K._healConversations()">
         <span>🔧</span><span style="flex:1">Réparer mes conversations (sync serveur)</span><span>›</span>
