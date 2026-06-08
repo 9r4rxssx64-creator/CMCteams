@@ -45,7 +45,8 @@
     "playwright:check": "node -e \"const{chromium}=require('playwright');chromium.launch({headless:true}).then(b=>b.close()).then(()=>console.log('chromium OK')).catch(e=>{console.error('chromium KO:',e.message);process.exit(1)})\"",
     "test:v785": "node tests/runtime-audit-v785-routes.mjs",
     "test:v787": "node tests/runtime-audit-v787-secret-leak.mjs",
-    "test:v788": "node tests/runtime-audit-v788-fb-auth.mjs"
+    "test:v788": "node tests/runtime-audit-v788-fb-auth.mjs",
+    "audit:stability": "node tools/audit/stability-audit.cjs --browser"
   },
   "repository": {
     "type": "git",
