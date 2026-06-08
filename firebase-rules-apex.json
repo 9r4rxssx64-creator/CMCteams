@@ -23,50 +23,72 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "cmcteams": {
       ".read": "auth != null",
       ".write": "auth != null",
       "$key": {
         ".validate": "$key.matches(/^cmc_[a-z0-9_\\-]+$/)"
       },
-      "cmc_admin_pin": { ".write": false },
-      "cmc_ia_key": { ".write": false },
+      "cmc_admin_pin": {
+        ".write": false
+      },
+      "cmc_ia_key": {
+        ".write": false
+      },
       "cmc_motd": {
         ".validate": "newData.hasChildren(['text','ts','author']) || newData.val() === null"
       },
-      "cmc_e": { ".validate": "newData.isString() == false" },
-      "cmc_ov": { ".validate": "newData.isString() == false" },
+      "cmc_e": {
+        ".validate": "newData.isString() == false"
+      },
+      "cmc_ov": {
+        ".validate": "newData.isString() == false"
+      },
       "cmc_pw": {
         ".validate": "newData.isString() == false",
         "$uid": {
-          "clear": { ".validate": false }
+          "clear": {
+            ".validate": false
+          }
         }
       }
     },
-
     "apex": {
       ".read": true,
       ".write": true,
       "$key": {
         ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)"
       },
-      "ax_admin_pass": { ".write": false },
-      "ax_admin_pin": { ".write": false },
-      "ax_pin": { ".write": false },
-      "ax_user": { ".write": false },
-      "ax_uid": { ".write": false }
+      "ax_admin_pass": {
+        ".write": false
+      },
+      "ax_admin_pin": {
+        ".write": false
+      },
+      "ax_pin": {
+        ".write": false
+      },
+      "ax_user": {
+        ".write": false
+      },
+      "ax_uid": {
+        ".write": false
+      }
     },
-
     "coffre_vault": {
-      "_comment": "Coffre-fort perso — chemin ISOLÉ. Données chiffrées E2E (zero-knowledge) : le serveur ne voit que du ciphertext. Scopé par uid (hash prénom+nom).",
       ".read": true,
       ".write": true,
       "$uid": {
         ".validate": "$uid.matches(/^u_[a-z0-9]+$/)",
-        "salt": { ".validate": "newData.isString() && newData.val().length < 64" },
-        "verify": { ".validate": "newData.isString() && newData.val().length < 4096" },
-        "meta": { ".validate": "newData.isString() && newData.val().length < 5242880" },
+        "salt": {
+          ".validate": "newData.isString() && newData.val().length < 64"
+        },
+        "verify": {
+          ".validate": "newData.isString() && newData.val().length < 4096"
+        },
+        "meta": {
+          ".validate": "newData.isString() && newData.val().length < 5242880"
+        },
         "chunks": {
           "$id": {
             ".validate": "$id.matches(/^it_[a-z0-9_\\-]+$/) && (newData.val() === null || (newData.isString() && newData.val().length < 1048576))"
@@ -74,7 +96,6 @@
         }
       }
     },
-
     "shops_admin_v1": {
       "orders": {
         ".read": true,
@@ -88,32 +109,93 @@
       }
     }
   },
-
   "_phase5_after_worker": {
     "_comment": "À publier quand apex-auth-worker est déployé ET que tous les clients Apex émettent des custom tokens. Garde les rules CMCteams et shops_admin_v1 actuelles, durcit uniquement /apex avec auth.uid per-user.",
     "rules_phase5_apex_only": {
       "apex": {
-        "$key": { ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)" },
-        "ax_admin_pass": { ".write": false, ".read": "auth != null && auth.token.role === 'admin'" },
-        "ax_admin_pin": { ".write": false, ".read": false },
-        "ax_pin": { ".write": false, ".read": false },
-        "ax_user": { ".write": false, ".read": false },
-        "ax_uid": { ".write": false, ".read": false },
-        "ax_voice_print_$uid": { ".read": "auth != null && auth.uid === $uid", ".write": false },
-        "ax_pin_$uid": { ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')", ".write": false },
-        "ax_user_chat_$uid": { ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')", ".write": "auth != null && auth.uid === $uid" },
-        "ax_user_locations_$uid": { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid" },
-        "ax_health_reports_$uid": { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid" },
-        "ax_msgs_$conv": { ".read": "auth != null", ".write": "auth != null" },
-        "ax_settings_$uid": { ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')", ".write": "auth != null && auth.uid === $uid" },
-        "ax_auth_log": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
-        "ax_audit": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
-        "ax_security_log": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
-        "ax_breach_log": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
-        "ax_telemetry_in": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
-        "ax_claude_todo": { ".read": "auth != null && auth.token.role === 'admin'", ".write": "auth != null" },
-        "ax_lessons_learned_struct": { ".read": "auth != null", ".write": "auth != null && auth.token.role === 'admin'" },
-        "$other": { ".read": "auth != null", ".write": "auth != null && auth.token.role === 'admin'" }
+        "$key": {
+          ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)"
+        },
+        "ax_admin_pass": {
+          ".write": false,
+          ".read": "auth != null && auth.token.role === 'admin'"
+        },
+        "ax_admin_pin": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_pin": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_user": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_uid": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_voice_print_$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": false
+        },
+        "ax_pin_$uid": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+          ".write": false
+        },
+        "ax_user_chat_$uid": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_user_locations_$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_health_reports_$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_msgs_$conv": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "ax_settings_$uid": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_auth_log": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_audit": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_security_log": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_breach_log": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_telemetry_in": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_claude_todo": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_lessons_learned_struct": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.role === 'admin'"
+        },
+        "$other": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.role === 'admin'"
+        }
       }
     }
   }
