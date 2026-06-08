@@ -1,0 +1,42 @@
+name: Deploy CMCteams Firebase Rules (consolidé)
+
+# Publie le ruleset RTDB CONSOLIDÉ (firebase-rules-apex.json : cmcteams + apex + coffre_vault
+# + shops + deny racine) via le service account, par REST (PUT /.settings/rules.json).
+# Indépendant du workflow Apex (qui déploie un fichier apex-only — ne PAS confondre).
+#
+# Déclenchement MANUEL/API uniquement (changement sécurité) — pas de cron (anti-spam).
+#   rules_state: hardened (défaut, /cmcteams auth!=null) | open (rollback, /cmcteams ouvert)
+# Le script vérifie après publication (GET) que /cmcteams est bien dans l'état attendu,
+# et garde-fou : abort si deny racine perdu ou /apex modifié.
+#
+# Secrets requis (déjà présents) : FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY.
+
+on:
+  workflow_dispatch:
+    inputs:
+      rules_state:
+        description: "hardened (fermer /cmcteams) ou open (rollback)"
+        required: true
+        default: "hardened"
+        type: choice
+        options:
+          - hardened
+          - open
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Publish consolidated RTDB rules (REST + verify)
+        env:
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          RULES_STATE: ${{ github.event.inputs.rules_state }}
+        run: node tools/firebase/deploy-rules.cjs
