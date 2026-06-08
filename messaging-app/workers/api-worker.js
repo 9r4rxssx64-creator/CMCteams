@@ -1494,20 +1494,32 @@ async function handleHealDm(request, env) {
       source: c.source, last_seen: c.last_seen || 0, placeholder: c.source === 'core_pair',
     }));
 
-    // Choix : on privilégie un VRAI compte (source != core_pair, le plus
-    // récemment vu). Le placeholder 'laurence_saint_polit' est un dernier
-    // recours. S'il y a ambiguïté réelle (≥2 vrais comptes), on ne touche rien.
+    // Normalisation de nom (accents/casse/espaces) pour reconnaître « la même
+    // personne dupliquée » (3 comptes au même nom = à grouper, PAS une ambiguïté).
+    const normName = (s) => String(s || '').toLowerCase().normalize('NFD')
+      .replace(/[̀-ͯ]/g, '').replace(/[\s\-_.]+/g, ' ').trim();
+
+    // Choix du VRAI compte à GARDER. Un vrai compte (source != core_pair) prime
+    // sur le placeholder. Plusieurs vrais comptes AU MÊME NOM = même personne
+    // dupliquée → on garde le plus actif et on fusionnera les autres. On ne
+    // bloque (« ambigu ») que si les noms diffèrent vraiment (vraies personnes
+    // distinctes) sans identifiant explicite.
     const real = candidates.filter(c => c.source !== 'core_pair');
+    const byActivity = (a, b) => (b.last_seen || 0) - (a.last_seen || 0) || (b.phone ? 1 : 0) - (a.phone ? 1 : 0);
     let peer = null;
     if (real.length === 1) peer = real[0];
-    else if (real.length === 0 && candidates.length === 1) peer = candidates[0];
     else if (real.length >= 2) {
-      report.cause = 'ambiguous_peer';
-      report.detail = real.length + ' comptes réels correspondent. Précise peer_user_id ou peer_phone.';
-      return json(report, 200);
+      const distinctNames = new Set(real.map(c => normName(c.real_name) || normName(c.pseudo)));
+      if (distinctNames.size === 1 || body.peer_user_id || body.peer_phone) {
+        peer = [...real].sort(byActivity)[0];          // même personne → garde le plus actif
+      } else {
+        report.cause = 'ambiguous_peer';
+        report.detail = real.length + ' comptes de NOMS DIFFÉRENTS correspondent. Précise peer_user_id ou peer_phone.';
+        report.peer_candidates_names = [...distinctNames];
+        return json(report, 200);
+      }
     } else if (candidates.length >= 1) {
-      // que des placeholders → on prend le plus récent (mieux que rien)
-      peer = candidates.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0))[0];
+      peer = [...candidates].sort(byActivity)[0];       // que des placeholders → le plus récent
     }
     if (!peer) {
       report.cause = 'peer_not_found';
@@ -1515,6 +1527,20 @@ async function handleHealDm(request, env) {
       return json(report, 200);
     }
     report.peer = { id: peer.id, pseudo: peer.pseudo, name: peer.real_name, placeholder: peer.source === 'core_pair' };
+
+    // 2b) Comptes EN DOUBLE de la MÊME personne (3 comptes Laurence !) : candidats
+    //     ≠ compte gardé, jamais admin, et même nom normalisé OU placeholder
+    //     (sécurité : ne fusionne jamais un homonyme d'une autre personne). On
+    //     re-pointe messages + membres vers le vrai compte puis status='deleted'
+    //     (réversible) lors de l'apply.
+    const keepName = normName(peer.real_name) || normName(peer.pseudo);
+    const dupAccounts = candidates.filter(c => c.id !== peer.id && !c.is_admin &&
+      (c.source === 'core_pair' || normName(c.real_name) === keepName || normName(c.pseudo) === normName(peer.pseudo)));
+    report.accounts = {
+      keep: { id: peer.id, pseudo: peer.pseudo, name: peer.real_name },
+      remove: dupAccounts.map(c => ({ id: c.id, pseudo: c.pseudo, name: c.real_name,
+        source: c.source, placeholder: c.source === 'core_pair', last_seen: c.last_seen || 0 })),
+    };
     report.step = 'scan_dms';
 
     // 3) Tous les DM dont Kevin est membre + leurs membres + nb messages.
@@ -1614,6 +1640,64 @@ async function handleHealDm(request, env) {
         try { await auditLog(env, auth.sub, 'heal_dm', 'conversation', canonical.id,
           { cause: report.cause, peer: peer.id, actions: done.length }, request); } catch (_) {}
       }
+    }
+
+    // 6) Fusion des COMPTES en double (3 comptes Laurence). Re-point messages +
+    //    memberships vers le vrai compte, puis soft-delete (status='deleted',
+    //    RÉVERSIBLE). Jamais de compte admin. Désactivable via merge_accounts:false.
+    if (apply && body.merge_accounts !== false && dupAccounts.length > 0) {
+      report.step = 'merge_accounts';
+      const now = Date.now();
+
+      // 6a) GROUPER les infos dans le compte gardé : remplit les champs vides du
+      //     compte gardé avec ceux du doublon le plus récent (nom, prénom,
+      //     pseudo via display_name, device, localisation, avatar…). Le téléphone
+      //     du compte gardé est conservé (contrainte UNIQUE — Kevin l'a saisi).
+      try {
+        const CONSOLIDATE = ['real_name', 'first_name', 'last_name', 'display_name', 'email',
+          'bio', 'avatar_url', 'last_geo_label', 'last_device_label', 'last_lat', 'last_lng',
+          'last_ip_hash', 'last_user_agent', 'language', 'timezone'];
+        const isEmpty = (v) => v === null || v === undefined || v === '';
+        const keeperRow = await DB.prepare('SELECT * FROM users WHERE id=?').bind(peer.id).first();
+        const dupRows = [];
+        for (const d of dupAccounts) {
+          const rr = await DB.prepare('SELECT * FROM users WHERE id=?').bind(d.id).first();
+          if (rr) dupRows.push(rr);
+        }
+        dupRows.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
+        const sets = [], vals = [], filled = [];
+        for (const f of CONSOLIDATE) {
+          if (!isEmpty(keeperRow && keeperRow[f])) continue;
+          const src = dupRows.find((r) => !isEmpty(r[f]));
+          if (src) { sets.push(f + '=?'); vals.push(src[f]); filled.push(f); }
+        }
+        const maxSeen = Math.max(keeperRow?.last_seen || 0, ...dupRows.map((r) => r.last_seen || 0));
+        if (maxSeen > (keeperRow?.last_seen || 0)) { sets.push('last_seen=?'); vals.push(maxSeen); }
+        if (sets.length > 0) {
+          sets.push('updated_at=?'); vals.push(now);
+          vals.push(peer.id);
+          await DB.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id=?`).bind(...vals).run();
+        }
+        report.consolidated_fields = filled;
+      } catch (e) {
+        report.consolidate_error = e?.message || '?';   // non bloquant
+      }
+
+      const mergedAccounts = [];
+      for (const dup of dupAccounts) {
+        const rm = await DB.prepare('UPDATE messages SET sender_id=? WHERE sender_id=?').bind(peer.id, dup.id).run();
+        // re-point les memberships sans violer la PK (conv_id, user_id)
+        await DB.prepare(
+          `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+           SELECT conv_id, ?, role, joined_at, kevin_invisible FROM conversation_members WHERE user_id=?`
+        ).bind(peer.id, dup.id).run();
+        await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(dup.id).run();
+        await DB.prepare("UPDATE users SET status='deleted', updated_at=? WHERE id=?").bind(now, dup.id).run();
+        mergedAccounts.push({ id: dup.id, pseudo: dup.pseudo, messages_moved: rm?.meta?.changes ?? null });
+      }
+      report.merged_accounts = mergedAccounts;
+      try { await auditLog(env, auth.sub, 'merge_dup_accounts', 'user', peer.id,
+        { kept: peer.id, removed: dupAccounts.map(d => d.id) }, request); } catch (_) {}
     }
 
     report.ok = true;
