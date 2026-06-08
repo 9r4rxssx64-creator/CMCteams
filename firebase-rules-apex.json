@@ -1,9 +1,10 @@
 {
   "_comment": "Firebase Realtime Database Security Rules — projet cmcteams-c16ab (Apex + CMCteams + Shops)",
   "_database": "cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
-  "_phase": "4 durcie (active 2026-05-26) : .read/.write libres sur paths scopés + .write:false sur paths sensibles + validation $key regex",
+  "_phase": "4.1 (2026-06-08) : /cmcteams exige auth != null (read+write) — DB fermée au scraping anonyme. Apex/coffre_vault/shops INCHANGÉS. Prérequis livrés : auth anonyme app v9.788 + clé Web embarquée v9.792 + Anonymous activé console.",
   "_published_by": "Kevin DESARZENS",
-  "_published_at": "2026-05-26",
+  "_published_at": "2026-06-08",
+  "_rollback": "Pour revenir en arrière : remettre cmcteams .read et .write à true (valeurs du 2026-05-26). Le reste est inchangé.",
   "_instructions": [
     "1. Console Firebase > project cmcteams-c16ab > Realtime Database > Rules",
     "2. Copier-coller l'objet 'rules' ci-dessous",
@@ -24,8 +25,8 @@
     ".write": false,
 
     "cmcteams": {
-      ".read": true,
-      ".write": true,
+      ".read": "auth != null",
+      ".write": "auth != null",
       "$key": {
         ".validate": "$key.matches(/^cmc_[a-z0-9_\\-]+$/)"
       },
