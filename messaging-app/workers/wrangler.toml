@@ -114,7 +114,10 @@ KEVIN_INVISIBLE_ADMIN = "true"
 # tout le monde (le bypass admin KEVIN_PHONE_E164 reste actif dans tous les cas).
 # Passer à "false" UNE FOIS que l'envoi SMS Vonage est confirmé fonctionnel
 # (sinon les non-Kevin ne peuvent plus s'inscrire). Flag = zéro risque de lockout.
-ALLOW_TEST_OTP = "true"
+# v1.1.174 (Kevin 2026-06-08) : "false" → backdoor 000000 FERMÉ. Onboarding via
+# LIEN D'INVITATION magique (indépendant du flag, sans SMS). Bypass admin Kevin
+# (KEVIN_PHONE_E164) toujours actif. SMS Vonage en trial/indispo → à réparer + WhatsApp.
+ALLOW_TEST_OTP = "false"
 AUTH_PROVIDER = "firebase"  # firebase | vonage
 TURN_PROVIDER = "p2p-only"  # p2p-only | local-coturn | cloudflare-calls
 JWT_ISSUER = "apex-chat"
