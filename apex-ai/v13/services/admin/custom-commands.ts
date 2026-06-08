@@ -86,7 +86,6 @@ export function addCustomCommand(input: {
     list.unshift(cmd);
     while (list.length > MAX) list.pop();
     localStorage.setItem(KEY, JSON.stringify(list));
-    void pushCloud(list);
   } catch {
     return { ok: false, error: 'Stockage plein, impossible d’enregistrer.' };
   }
@@ -98,45 +97,7 @@ export function removeCustomCommand(id: string): void {
   try {
     const list = listCustomCommands().filter((c) => c.id !== id);
     localStorage.setItem(KEY, JSON.stringify(list));
-    void pushCloud(list);
   } catch {
     /* ignore */
   }
-}
-
-/* ── Sync Firebase per-uid (Kevin « retrouver mes commandes sur tous mes appareils »).
- * localStorage reste la couche locale/offline ; Firebase = backup cross-device.
- * Path dédié `custom_commands/<uid>` (cf. firebase.shouldSync v13.4.319). ───────── */
-
-function currentUid(): string {
-  try { return localStorage.getItem('apex_v13_uid') || 'anon'; } catch { return 'anon'; }
-}
-
-/** Push la liste vers Firebase (per-uid). Best-effort, fire-and-forget. */
-async function pushCloud(list: CustomCommand[]): Promise<void> {
-  try {
-    const { firebase } = await import('../storage/firebase.js');
-    await firebase.write('custom_commands/' + currentUid(), list);
-  } catch {
-    /* offline / Firebase indispo → localStorage reste la source de vérité */
-  }
-}
-
-/**
- * Restaure les commandes perso depuis Firebase SI le local est vide (nouvel
- * appareil / réinstall). Retourne true si la liste locale a changé. Best-effort.
- */
-export async function restoreCustomCommandsFromCloud(): Promise<boolean> {
-  try {
-    if (listCustomCommands().length > 0) return false; /* local déjà peuplé */
-    const { firebase } = await import('../storage/firebase.js');
-    const remote = await firebase.read<CustomCommand[]>('custom_commands/' + currentUid());
-    if (Array.isArray(remote) && remote.length > 0) {
-      localStorage.setItem(KEY, JSON.stringify(remote));
-      return listCustomCommands().length > 0;
-    }
-  } catch {
-    /* ignore */
-  }
-  return false;
 }
