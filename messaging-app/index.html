@@ -22,7 +22,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(self), interest-cohort=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=()">
+<meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self), geolocation=(self), display-capture=(self), interest-cohort=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=()">
 <link rel="manifest" href="./manifest.json">
 <!-- Perf : preconnect aux endpoints critiques (latence DNS+TLS préchargée) -->
 <link rel="preconnect" href="https://apex-chat-api.9r4rxssx64.workers.dev" crossorigin>
@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.173",
+  "softwareVersion": "v1.1.174",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.173';
+const __APEX_CHAT_VERSION__ = 'v1.1.174';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.173</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.174</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.173</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.174</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -905,6 +905,50 @@ async function _authSsoFromApex(apex_token, apex_uid, name){
   }
 }
 
+// v1.1.174 (Kevin) — Consentement UNIQUE : une demande simple/vague qui couvre
+// TOUTES les autorisations (notifications, caméra+micro pour appels, position),
+// affichée UNE SEULE FOIS, jamais redemandée (flag apex_chat_perms_v1).
+K._ensurePermsOnce = function(){
+  try{ if(localStorage.getItem('apex_chat_perms_v1')) return; }catch(_){ return; }
+  setTimeout(function(){
+    try{
+      if(localStorage.getItem('apex_chat_perms_v1')) return;
+      if(typeof K._showModal !== 'function'){ K._grantPerms(); return; }
+      K._showModal('🔓 Autorisations', `
+        <p style="color:var(--ax-text-2);line-height:1.6">Pour profiter de tout — <b>appels</b> (caméra + micro), <b>photos</b>, <b>position</b> et <b>notifications</b> — Apex Chat a besoin de ton accord. Tout reste <b>privé et chiffré de bout en bout</b>. On ne te le redemandera <b>jamais</b>.</p>
+        <button class="btn btn-block" style="margin-top:14px" onclick="K._grantPerms()">✅ Tout autoriser</button>
+        <button class="btn btn-out btn-block" style="margin-top:8px" onclick="K._skipPerms()">Plus tard</button>
+      `);
+    }catch(_e){ try{ _safeCatch('silent', _e); }catch(__){} }
+  }, 1500);
+};
+K._skipPerms = function(){
+  try{ localStorage.setItem('apex_chat_perms_v1', JSON.stringify({ ts: Date.now(), granted: false })); }catch(_){}
+  try{ K._closeModal && K._closeModal(); }catch(_){}
+};
+K._grantPerms = async function(){
+  const res = {};
+  try{ if('Notification' in window && Notification.requestPermission) res.notif = await Notification.requestPermission(); }catch(_){ res.notif = 'err'; }
+  try{
+    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      s.getTracks().forEach(t => { try{ t.stop(); }catch(_){} });
+      res.av = 'granted';
+    }
+  }catch(e){ res.av = (e && e.name) || 'denied'; }
+  try{
+    if(navigator.geolocation){
+      await new Promise(function(resolve){
+        navigator.geolocation.getCurrentPosition(function(){ res.geo = 'granted'; resolve(); },
+          function(){ res.geo = 'denied'; resolve(); }, { timeout: 8000, maximumAge: 600000 });
+      });
+    }
+  }catch(_){ res.geo = 'err'; }
+  try{ localStorage.setItem('apex_chat_perms_v1', JSON.stringify({ ts: Date.now(), granted: true, res: res })); }catch(_){}
+  try{ K._closeModal && K._closeModal(); }catch(_){}
+  try{ if(typeof toast === 'function') toast('✅ Autorisations enregistrées', 'ok', 1500); }catch(_){}
+};
+
 K.login = async function(user, token){
   K.user = user;
   K.token = token;
@@ -929,6 +973,9 @@ K.login = async function(user, token){
   }
 
   K.render();
+
+  // v1.1.174 — Consentement unique (toutes autorisations, une fois, jamais plus)
+  try{ K._ensurePermsOnce(); }catch(_){}
 
   // v1.1.27 — Sync premium status + start auto-sync 30min
   try{
