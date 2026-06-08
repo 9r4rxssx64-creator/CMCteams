@@ -109,4 +109,19 @@ describe('v13.4.322 — contrat auth proxy (client ⇄ worker)', () => {
     /* /health est traité (et retourne) AVANT toute vérif d'auth. */
     expect(healthIdx).toBeLessThan(authIdx);
   });
+
+  it('CORS : le worker répond au préflight OPTIONS AVANT l’auth (sinon "Pas de réseau")', () => {
+    const yaml = readFileSync(WORKFLOW, 'utf8');
+    /* Un POST avec header custom x-apex-pin déclenche un préflight OPTIONS sans ce
+     * header → doit retourner 204 + CORS AVANT verifyPin (sinon 401 sans CORS →
+     * le navigateur bloque le POST → "Failed to fetch"). */
+    const optIdx = yaml.indexOf("req.method === 'OPTIONS'");
+    const authIdx = yaml.indexOf('await verifyPin(req, env)');
+    expect(optIdx).toBeGreaterThan(-1); /* préflight géré */
+    expect(optIdx).toBeLessThan(authIdx); /* AVANT l'auth */
+    expect(yaml).toContain("'Access-Control-Allow-Headers'");
+    expect(yaml).toMatch(/Access-Control-Allow-Headers[^]*x-apex-pin/); /* header custom autorisé */
+    /* Les réponses d'erreur portent CORS → l'app lit le vrai statut (401/503), pas un échec réseau opaque. */
+    expect(yaml).toContain("status: 401, headers: CORS");
+  });
 });
