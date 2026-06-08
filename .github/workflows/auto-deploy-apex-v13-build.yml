@@ -96,20 +96,22 @@ jobs:
           fi
           # Extraire APP_VER (1re occurrence de l'attribut data-app-ver="…").
           APP_VER=$(grep -oE 'data-app-ver="[^"]*"' apex-ai-v13/index.html | head -1 | sed 's/.*="\([^"]*\)"/\1/')
-          BRANCH="auto-deploy/apex-v13-build"
+          # v13.4.321 (Kevin "V320" — deploy bloqué) : branche UNIQUE par run +
+          # pas de force-push. L'ancienne branche fixe + `git push -f` était
+          # REJETÉE par une règle de protection ("Cannot force-push to this
+          # branch"). Une branche neuve à chaque run = push normal (fast-forward),
+          # PR, merge, suppression → aucun force-push.
+          BRANCH="auto-deploy/apex-v13-build-${{ github.run_id }}"
           git checkout -B "$BRANCH"
           git commit -m "Auto-deploy Apex ${APP_VER} build → apex-ai-v13/ [skip ci]" \
             -m "Source apex-ai/v13/ → build dist/ → deployed apex-ai-v13/ (auto)."
-          git push -f origin "$BRANCH"
-          # PR ouverte existante ? sinon la créer (head force-pushé = head à jour).
+          git push origin "$BRANCH"
+          # Branche neuve → toujours créer la PR.
+          gh pr create --base main --head "$BRANCH" \
+            --title "Auto-deploy Apex ${APP_VER} build" \
+            --body "Build dist/ → apex-ai-v13/ (auto). Ne touche que apex-ai-v13/** → pas de re-trigger. [skip ci]" \
+            || true
           PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
-          if [ -z "$PR" ]; then
-            gh pr create --base main --head "$BRANCH" \
-              --title "Auto-deploy Apex ${APP_VER} build" \
-              --body "Build dist/ → apex-ai-v13/ (auto). Ne touche que apex-ai-v13/** → pas de re-trigger. [skip ci]" \
-              || true
-            PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
-          fi
           if [ -z "$PR" ]; then
             echo "::warning::PR introuvable pour $BRANCH — déploiement bloqué."
             exit 1
