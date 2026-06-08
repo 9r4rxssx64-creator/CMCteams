@@ -489,6 +489,23 @@ export function render(rootEl: HTMLElement): void {
 
   wireChatInput(rootEl, { conversation, queue, processQueue, renderMessages, handleSlashCommand, handleWakeWordTextTrigger, showSlashAutocomplete, hideSlashAutocomplete });
 
+  /* Kevin 2026-06-08 : commande cliquée dans la vue /commands → prefill l'input
+   * (« /cmd ») puis Kevin complète la cible/args et envoie LUI-MÊME (pas d'auto-submit).
+   * Consommé une seule fois (removeItem). */
+  try {
+    const prefill = localStorage.getItem('apex_v13_chat_prefill');
+    if (prefill) {
+      localStorage.removeItem('apex_v13_chat_prefill');
+      const ta = rootEl.querySelector<HTMLTextAreaElement>('#ax-chat-form textarea');
+      if (ta) {
+        ta.value = prefill;
+        ta.dispatchEvent(new Event('input', { bubbles: true })); /* resize + autocomplete slash */
+        ta.focus();
+        try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch { /* ignore */ }
+      }
+    }
+  } catch { /* ignore */ }
+
   /* Mic handler : dictée vocale Web Speech API
    * Fix v13.3.23 (Kevin bug 19:10) :
    *  - 'aborted' et 'no-speech' = lifecycle iOS Safari, NE PAS afficher en erreur
