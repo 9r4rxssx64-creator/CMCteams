@@ -4024,7 +4024,7 @@ function flushSyncQueue(){
   if(!ks.length||!FB_URL)return;
   ks.forEach(function(k){
     var item=_syncQueue[k];
-    fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json",{
+    fetch(FB_URL+FB_PATH+"/"+encodeURIComponent(fbSanitizeKey(k))+".json"+_fbAuthQS(),{
       method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(item.v)
     }).then(function(r){if(r.ok){_syncQueueRemove(k);toast("Sync \u2714 "+k);}})
     .catch(function(e){console.warn("Sync retry fail for "+k+":",e&&e.message);});
@@ -4136,7 +4136,7 @@ function fbWrite(k,v,_retry){
       var _lock=parseInt(lg("cmc_wipe_lock_ts",0))||0;
       if(_lock>0){
         try{localStorage.removeItem("cmc_wipe_lock_ts");}catch(_){}
-        if(FB_URL){try{fetch(FB_URL+FB_PATH+"/cmc_wipe_lock_ts.json",{method:"DELETE"});}catch(_){}}
+        if(FB_URL){try{fetch(FB_URL+FB_PATH+"/cmc_wipe_lock_ts.json"+_fbAuthQS(),{method:"DELETE"});}catch(_){}}
         console.log("[v9.702] wipe-lock cleared on local cmc_ov write (import intent)");
       }
     }
@@ -5396,7 +5396,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.795";
+var APP_VER="v9.796";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -43477,14 +43477,14 @@ function _adminCfgBackup(){
     lang:localStorage.getItem("cmc_lang")||"",
     lastBackup:Date.now()
   };
-  fetch(FB_URL+FB_PATH+"/cmc_admin_cfg.json",{
+  fetch(FB_URL+FB_PATH+"/cmc_admin_cfg.json"+_fbAuthQS(),{
     method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(cfg)
   }).then(function(r){if(r.ok){try{_audit("admin_cfg_backup",AID,"","","ok");}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_admin-cfg-backup",_e);}catch(__){}}}})
     .catch(function(){});
 }
 function _adminCfgRestore(silent){
   if(!A.user||A.user.id!==AID||!FB_URL)return Promise.resolve();
-  return fetch(FB_URL+FB_PATH+"/cmc_admin_cfg.json")
+  return fetch(FB_URL+FB_PATH+"/cmc_admin_cfg.json"+_fbAuthQS())
     .then(function(r){return r.ok?r.json():null;})
     .then(function(cfg){
       if(!cfg||typeof cfg!=="object")return;

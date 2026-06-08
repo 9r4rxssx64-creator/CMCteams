@@ -10,12 +10,20 @@
 - ✅ Connexion anonyme activée dans la console Firebase (Anonymous = Enabled).
 - ✅ Bonus scintillement : **v9.793/794/795** — garde diff `dc()` + barre du haut stable + badge sync idempotent (mesuré 295→13 mutations/6s, −95 %). Cf. leçon CLAUDE.md #94.
 
-### #B — ⏳ DERNIÈRE ÉTAPE sécurité : durcir les règles `/cmcteams` (après propagation)
-- **Attendre** que les appareils des employés récupèrent la v9.792 (quelques heures — sinon on bloque ceux sans auth).
-- Puis : 1 copier-coller console Firebase (je prépare le **diff exact**, **seulement le sous-bloc `/cmcteams`**, sans toucher Apex/Shops), **rollback armé** → base fermée 🟢.
+### #B — ✅ FAIT (2026-06-08). Règles `/cmcteams` DURCIES → base FERMÉE 🟢
+- Règles `auth != null` (read+write) publiées dans la console Firebase par Kevin (paste manuel).
+- **Vérifié en live** : `…/cmcteams.json` (non connecté) renvoie `Permission denied` ✅ ; l'app authentifiée (iPhone Kevin) fonctionne normalement.
+- Bug rencontré + corrigé en route : `_comment` interdit DANS le ruleset (Firebase « Expected '(' » L58) → strippé.
+- Isolation respectée : Apex / coffre_vault / shops / deny-racine inchangés.
+- Rollback connu : remettre `cmcteams` `.read`/`.write` à `true` dans la console.
 
 ### #C — 🟡 (perf/batterie, à vérifier) Éléments coincés dans la file de sync
 - Si « ⏳ N en attente » persiste dans la barre sur un appareil **connecté** (point vert), ce sont des écritures réellement bloquées → me le dire, j'investigue la clé fautive. (Le clignotement, lui, est déjà corrigé v9.795.)
+
+### #D — 🟠 (1 collage, débloque l'AUTO) Secret `FIREBASE_PRIVATE_KEY` corrompu
+- Le secret GitHub n'est PAS une clé RSA valide (échecs `asn1 header too long` / DECODER sur 6 runs). C'est pourquoi la publication AUTO des règles (et le déploiement de règles Apex) ne peut pas tourner.
+- **Fix (1 paste)** : [Firebase → Comptes de service → Générer une clé privée](https://console.firebase.google.com/project/cmcteams-c16ab/settings/serviceaccounts/adminsdk) → copier la valeur `private_key` complète → [GitHub → Secrets → FIREBASE_PRIVATE_KEY → Update](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions) (+ `FIREBASE_CLIENT_EMAIL` = `client_email`).
+- Après ça : `npm run` du workflow `deploy-cmcteams-rules.yml` (hardened/open) = règles 100 % auto. Code déjà prêt + fidèle au worker (`tools/firebase/deploy-rules.cjs`).
 
 ### ✅ Déjà corrigé (aucune action) : fuite de ta clé Anthropic en clair dans Firebase → retirée + scrub (v9.787, en prod).
 
