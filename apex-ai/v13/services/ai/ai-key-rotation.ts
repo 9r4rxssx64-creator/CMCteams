@@ -176,6 +176,21 @@ export function classifyError(input: { status?: number | undefined; message?: st
   return 'unknown';
 }
 
+/**
+ * v13.4.320 — message « Toutes les IA KO » PRÉCIS selon l'état (Kevin « toujours
+ * détailler la cause exacte »). Pur/testable. Le cas n°1 (proxy on + code pas en
+ * mémoire) = le bug vécu 2026-06-08 : l'auth proxy a besoin du code admin.
+ */
+export function allDeadMessage(s: { proxyOn: boolean; pinStored: boolean; hasLocalKey: boolean }): string {
+  if (s.proxyOn && !s.pinStored && !s.hasLocalKey) {
+    return '🔑 Ton code n’est pas en mémoire — l’IA passe par le proxy serveur qui en a besoin. Fais 🚪 Déco puis reconnecte-toi avec ton code pour activer l’IA.';
+  }
+  if (!s.hasLocalKey && !s.proxyOn) {
+    return '🔑 Aucune clé IA locale et proxy inactif. Colle une clé dans le Coffre 🔐 (« Détecter & stocker ») pour activer l’IA.';
+  }
+  return '🚨 Toutes les IA sont KO. Tes clés (serveur ou Coffre) semblent expirées — vérifie le Coffre 🔐.';
+}
+
 class AIKeyRotation {
   private statsCache: Map<string, ProviderStats> | null = null;
   private deadCache: Map<string, number> | null = null;
@@ -506,14 +521,38 @@ class AIKeyRotation {
     logger.error('ai-key-rotation', '🚨 TOUS providers IA DEAD ou sans clés — recharge nécessaire');
     /* Best-effort toast UI (non bloquant si module absent en SSR / tests).
        toast.show(text, 'warn') ou toast.error/info — l'API selon ui/toast.ts. */
+    const msg = this.allDeadDiagnosticMessage();
     try {
       void import('../../ui/toast.js').then((mod) => {
         const t = (mod as { toast?: { show?: (msg: string, level?: string) => void; error?: (msg: string) => void } }).toast;
-        if (t?.show) t.show('🚨 Toutes les IA sont KO. Recharge tes clés (Coffre).', 'error');
-        else t?.error?.('🚨 Toutes les IA sont KO. Recharge tes clés (Coffre).');
+        if (t?.show) t.show(msg, 'error');
+        else t?.error?.(msg);
       }).catch(() => { /* ignore */ });
     } catch {
       /* ignore */
+    }
+  }
+
+  /**
+   * v13.4.320 (Kevin « toujours détailler la cause exacte ») — message « IA KO »
+   * PRÉCIS selon l'état réel, pas le générique « recharge tes clés » :
+   *  - proxy activé + code admin PAS en mémoire → l'auth proxy est impossible →
+   *    dire à Kevin de se reconnecter avec son code (cas exact 2026-06-08).
+   *  - aucune clé locale + proxy off → coller une clé dans le Coffre.
+   *  - sinon → clés (serveur/Coffre) probablement expirées.
+   */
+  private allDeadDiagnosticMessage(): string {
+    try {
+      const ls = (k: string): string => { try { return localStorage.getItem(k) ?? ''; } catch { return ''; } };
+      const proxyFlag = ls('apex_v13_use_secrets_proxy');
+      return allDeadMessage({
+        proxyOn: proxyFlag === 'true' || proxyFlag === '1',
+        pinStored: !!(ls('ax_pin_kdmc_admin') || ls('ax_pin')),
+        hasLocalKey: ['anthropic', 'openai', 'openrouter', 'groq', 'google', 'mistral', 'deepseek', 'xai', 'cohere']
+          .some((p) => ls('ax_' + p + '_key').length > 0),
+      });
+    } catch {
+      return '🚨 Toutes les IA sont KO. Recharge tes clés (Coffre).';
     }
   }
 
