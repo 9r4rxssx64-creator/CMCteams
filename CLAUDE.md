@@ -371,6 +371,19 @@ une passe de stabilité **mesurée au navigateur réel** (Playwright/Chromium), 
 5. **Méthode = la preuve** : reporter les chiffres AVANT/APRÈS (ex « 295 → 13 mutations/6s »).
    Un fix anti-scintillement sans mesure DOM avant/après n'est PAS validé (règle #73).
 
+6. **OUTIL CÂBLÉ — à lancer à CHAQUE audit (Kevin 2026-06-08 « ajoute tous ces tests pour ne plus passer à côté »)** :
+   ```bash
+   npm run audit:stability        # = node tools/audit/stability-audit.cjs --browser
+   ```
+   Couvre automatiquement les 4 classes de bugs vécues cette session :
+   - **[A] CSP ⇄ fetch** : tout `fetch`/`EventSource` vers un domaine ABSENT de `connect-src`
+     → « Load failed » (aurait attrapé le bug auth Firebase v9.791 : `identitytoolkit.googleapis.com`
+     manquant dans la CSP). **À relancer dès qu'on ajoute un appel réseau vers un nouveau domaine.**
+   - **[B] re-render au repos** : `render()`/`dc()` ≈ 0 sur accueil/admin/monplanning (boucle = scintillement).
+   - **[C] mutations DOM au repos** par zone `#topbar`/`#content`/`#bnav` (>30/6s = clignotement, leçon #94).
+   - **[D] updaters idempotents** : badges/indicateurs comparent avant de muter (garde présent).
+   Exit code 1 si un FAIL bloquant. Chiffres réels (jamais estimés). **Câblé dans `npm run audit:stability`.**
+
 Référence Playwright (session admin simulée) :
 `addInitScript(()=>{localStorage.setItem('cmc_uid','U11804');localStorage.setItem('cmc_lastact',String(Date.now()));})`
 puis MutationObserver sur `#topbar`, tally par `m.type+m.target.id`, top offenders + stack.
