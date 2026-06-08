@@ -23,8 +23,17 @@ function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'
 async function getAccessToken(){
   const email = process.env.FIREBASE_CLIENT_EMAIL;
   let key = process.env.FIREBASE_PRIVATE_KEY || '';
-  key = key.replace(/\\n/g, '\n');
   if (!email || !key) throw new Error('Secrets manquants : FIREBASE_CLIENT_EMAIL et/ou FIREBASE_PRIVATE_KEY');
+  // Robustesse format clé (cause d'échec 'DECODER routines::unsupported') :
+  key = key.trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) key = key.slice(1, -1);
+  key = key.replace(/\\r/g, '').replace(/\\n/g, '\n');           // \n littéraux → vrais newlines
+  if (!key.includes('\n') && key.includes('\\n')) key = key.replace(/\\n/g, '\n');
+  // si base64 d'un PEM (pas de en-tête) → décoder
+  if (!/-----BEGIN/.test(key)) { try { const d = Buffer.from(key, 'base64').toString('utf8'); if (/-----BEGIN/.test(d)) key = d; } catch (_) {} }
+  // diagnostic NON sensible (jamais le corps de la clé)
+  console.log('   clé: len=' + key.length + ' beginsPEM=' + /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(key) + ' realNL=' + key.includes('\n'));
+  if (!/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(key)) throw new Error("FIREBASE_PRIVATE_KEY : pas un PEM valide après normalisation (vérifier le format du secret)");
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const claim = b64url(JSON.stringify({
