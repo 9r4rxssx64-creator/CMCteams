@@ -595,7 +595,10 @@ export function render(rootEl: HTMLElement): void {
         top: 0;
         z-index: 50;
         margin: 0 -16px;
-        padding: 0 16px;
+        /* Kevin 2026-06-08 "l'écran passe dessous" : padding-top = safe-area iOS
+         * pour que le fond opaque/flou couvre la zone barre d'état (heure/batterie)
+         * et que l'en-tête ne glisse plus SOUS le notch quand on scrolle. */
+        padding: env(safe-area-inset-top, 0px) 16px 0;
         background: rgba(8,8,15,0.96);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
@@ -603,7 +606,7 @@ export function render(rootEl: HTMLElement): void {
         transition: padding 200ms ease, box-shadow 200ms ease;
       }
       .ax-vault-page.ax-vault-scrolled .ax-vault-sticky-wrap {
-        padding-top: 4px;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
         padding-bottom: 4px;
         box-shadow: 0 6px 18px rgba(0,0,0,0.45);
       }
@@ -643,7 +646,7 @@ export function render(rootEl: HTMLElement): void {
         .ax-vault-page button:active { transform: none !important; }
       }
     </style>
-    <div class="ax-vault-page" style="padding:env(safe-area-inset-top,16px) 16px calc(env(safe-area-inset-bottom,16px) + 96px);max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+    <div class="ax-vault-page" style="padding:0 16px calc(env(safe-area-inset-bottom,16px) + 96px);max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
 
       <div class="ax-vault-sticky-wrap">
         <header style="padding:12px 0">
@@ -852,7 +855,10 @@ function renderCategories(rootEl: HTMLElement): void {
     /* v13.4.284 — affiche toujours Identité / Adresses / Autres même vides,
      * pour que Kevin puisse y ajouter ses infos perso (sinon « jamais affichées »). */
     if (credsInCat.length === 0 && !ALWAYS_VISIBLE_CATS.has(cat.id)) return '';
-    const isOpen = credsInCat.length > 0;
+    /* Kevin 2026-06-08 "Paiement ouvert par défaut ?!" : catégories FERMÉES par
+     * défaut (épuré + ne pas exposer les infos sensibles d'office). Ouvertes
+     * uniquement pendant une recherche, pour voir les résultats filtrés. */
+    const isOpen = activeQuery.trim().length > 0;
     return `
       <details class="ax-cat" data-cat-id="${escapeHtml(cat.id)}" ${isOpen ? 'open' : ''}
         style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden">
