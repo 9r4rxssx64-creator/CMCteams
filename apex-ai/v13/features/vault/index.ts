@@ -595,10 +595,7 @@ export function render(rootEl: HTMLElement): void {
         top: 0;
         z-index: 50;
         margin: 0 -16px;
-        /* Kevin 2026-06-08 "l'écran passe dessous" : padding-top = safe-area iOS
-         * pour que le fond opaque/flou couvre la zone barre d'état (heure/batterie)
-         * et que l'en-tête ne glisse plus SOUS le notch quand on scrolle. */
-        padding: env(safe-area-inset-top, 0px) 16px 0;
+        padding: 0 16px;
         background: rgba(8,8,15,0.96);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
@@ -606,7 +603,7 @@ export function render(rootEl: HTMLElement): void {
         transition: padding 200ms ease, box-shadow 200ms ease;
       }
       .ax-vault-page.ax-vault-scrolled .ax-vault-sticky-wrap {
-        padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
+        padding-top: 4px;
         padding-bottom: 4px;
         box-shadow: 0 6px 18px rgba(0,0,0,0.45);
       }
@@ -646,7 +643,7 @@ export function render(rootEl: HTMLElement): void {
         .ax-vault-page button:active { transform: none !important; }
       }
     </style>
-    <div class="ax-vault-page" style="padding:0 16px calc(env(safe-area-inset-bottom,16px) + 96px);max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+    <div class="ax-vault-page" style="padding:env(safe-area-inset-top,16px) 16px calc(env(safe-area-inset-bottom,16px) + 96px);max-width:1140px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
 
       <div class="ax-vault-sticky-wrap">
         <header style="padding:12px 0">
