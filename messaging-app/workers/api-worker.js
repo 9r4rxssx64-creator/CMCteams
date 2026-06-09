@@ -711,6 +711,15 @@ export async function handleVerifyOtp(request, env) {
         ).bind('kdmc_admin', pseudo || 'kevin', name || 'Kevin DESARZENS', cleanPhone, phoneHash, Date.now()).run();
         user = { id: 'kdmc_admin', pseudo: pseudo || 'kevin', real_name: name || 'Kevin DESARZENS', is_admin: 1 };
       }
+      // v1.1.194 — kdmc_admin existait déjà avec un numéro placeholder ("…EVIN") :
+      // on lui donne le VRAI numéro Kevin + on fusionne tout compte créé par erreur.
+      // Sans ça, le stub `local_+<numéro>` de Kevin chez Laurence ne résout jamais
+      // vers lui → messages de Laurence jamais reçus. Best-effort, zéro lockout.
+      step = 'consolidate_kevin';
+      try {
+        const fixed = await consolidateKevinIntoAdmin(env, cleanPhone, phoneHash, Date.now());
+        if (fixed && fixed.id) user = fixed;
+      } catch (e) { console.warn('[kevin-consolidate/bypass]', e?.message); }
       step = 'sign_jwt';
       if (!env.JWT_SIGN_KEY) {
         return err('Config serveur incomplète', 503, 'jwt_key_unset',
@@ -810,6 +819,19 @@ export async function handleVerifyOtp(request, env) {
   if (kevinSecret && cleanPhone === kevinSecret && !user.is_admin) {
     await env.APEX_CHAT_DB.prepare('UPDATE users SET is_admin=1, is_kevin_alias=1 WHERE id=?').bind(user.id).run();
     user.is_admin = 1;
+  }
+
+  // v1.1.194 — Kevin se connecte avec son VRAI numéro mais le login a ouvert un
+  // compte NON-admin (admin:non / 403 / convs:0) parce que le compte admin
+  // historique `kdmc_admin` (qui détient toutes les conversations) avait un numéro
+  // placeholder. On le rattache TOUJOURS à `kdmc_admin` + on y fusionne le compte
+  // créé par erreur + on donne son VRAI numéro à kdmc_admin (→ résout les stubs
+  // `local_+<numéro>` de Kevin chez Laurence). Best-effort, zéro lockout.
+  if (kevinSecret && cleanPhone === kevinSecret && (!user || user.id !== 'kdmc_admin')) {
+    try {
+      const fixed = await consolidateKevinIntoAdmin(env, cleanPhone, phoneHash, Date.now());
+      if (fixed && fixed.id) user = fixed;
+    } catch (e) { console.warn('[kevin-consolidate]', e?.message); }
   }
 
   // AUTO-RÉPARATION au login (Kevin : « ça doit être auto, partout ») : groupe
@@ -1713,6 +1735,52 @@ export async function _healLocalConvMembers(DB) {
     }
   } catch (_) {}
   return fixed;
+}
+
+// v1.1.194 — Rattache Kevin à son compte admin historique `kdmc_admin`.
+// Le compte admin (qui détient toutes les conversations) avait un numéro
+// placeholder → la connexion par numéro ouvrait un compte NON-admin vide
+// (admin:non / 403 / convs:0) ET le stub `local_+<numéro>` de Kevin chez
+// Laurence ne pouvait pas résoudre vers lui (messages jamais reçus).
+// Idempotent, NON destructif (soft-delete + merged_into), zéro lockout.
+//   - libère le numéro de tout compte-doublon qui le détient (UNIQUE phone),
+//   - re-pointe ses messages + memberships vers kdmc_admin,
+//   - donne le VRAI numéro + droits admin à kdmc_admin,
+//   - répare les conversations où Kevin était membre via un stub local_+<numéro>.
+export async function consolidateKevinIntoAdmin(env, cleanPhone, phoneHash, now) {
+  const DB = env.APEX_CHAT_DB;
+  now = now || Date.now();
+  const admin = await DB.prepare("SELECT * FROM users WHERE id='kdmc_admin'").first();
+  if (!admin) return null; // pas de compte admin → on ne touche à rien
+  // 1) Doublon créé par erreur = compte (non-admin) détenant déjà ce numéro.
+  const dup = await DB.prepare("SELECT * FROM users WHERE phone=? AND id!='kdmc_admin'").bind(cleanPhone).first();
+  if (dup) {
+    // Libère le numéro (contrainte UNIQUE) AVANT de le donner à l'admin.
+    await DB.prepare("UPDATE users SET phone=?, phone_hash=NULL, status='deleted', merged_into='kdmc_admin', updated_at=? WHERE id=?")
+      .bind('moved_' + dup.id, now, dup.id).run();
+    await DB.prepare('UPDATE messages SET sender_id=? WHERE sender_id=?').bind('kdmc_admin', dup.id).run().catch(() => {});
+    await DB.prepare(
+      `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+       SELECT conv_id, 'kdmc_admin', role, joined_at, kevin_invisible FROM conversation_members WHERE user_id=?`
+    ).bind(dup.id).run().catch(() => {});
+    await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(dup.id).run().catch(() => {});
+  }
+  // 2) kdmc_admin récupère le VRAI numéro (→ résout les stubs local_+<numéro>).
+  const phoneChanged = admin.phone !== cleanPhone;
+  if (phoneChanged) {
+    await DB.prepare("UPDATE users SET phone=?, phone_hash=?, is_admin=1, is_kevin_alias=1, status='active', updated_at=? WHERE id='kdmc_admin'")
+      .bind(cleanPhone, phoneHash, now).run();
+  }
+  // 3) Répare les conversations où Kevin est membre via un stub local_+<numéro>
+  //    (maintenant que kdmc_admin porte le numéro, _canonicalId le résout).
+  try { await _healLocalConvMembers(DB); } catch (_) {}
+  // 4) 1 SEULE conversation par contact pour Kevin (fusionne les DM en double).
+  try { await consolidateUserDms(DB, 'kdmc_admin', now); } catch (_) {}
+  try {
+    await auditLog(env, 'kdmc_admin', 'kevin_consolidate', 'user', 'kdmc_admin',
+      { merged: dup ? dup.id : null, phone_set: phoneChanged }, null);
+  } catch (_) {}
+  return await DB.prepare("SELECT * FROM users WHERE id='kdmc_admin'").first();
 }
 
 export async function consolidateUserDms(DB, userId, now) {
