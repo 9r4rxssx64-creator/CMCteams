@@ -64,6 +64,30 @@ function statefulDB(state) {
         const c = state.members.filter(m => m.conv_id === this._args[0]).length;
         return { c };
       }
+      // diag : totaux + compteurs (alias « c » sans AS)
+      if (sql.includes("COUNT(*) c FROM users WHERE status='deleted'")) {
+        return { c: state.users.filter(u => u.status === 'deleted').length };
+      }
+      if (sql.includes('COUNT(*) c FROM users')) return { c: state.users.length };
+      if (sql.includes('COUNT(*) c FROM conversations')) return { c: state.conversations.length };
+      if (sql.includes('COUNT(*) c FROM messages WHERE sender_id=?')) {
+        return { c: state.messages.filter(m => m.sender_id === this._args[0]).length };
+      }
+      if (sql.includes('COUNT(*) c FROM messages WHERE conv_id=?')) {
+        return { c: state.messages.filter(m => m.conv_id === this._args[0]).length };
+      }
+      if (sql.includes('COUNT(*) c FROM messages')) return { c: state.messages.length };
+      // diag : détail conversation
+      if (sql.includes('archived_at, member_count, last_msg_ts, created_at FROM conversations WHERE id=?')) {
+        const c = state.conversations.find(x => x.id === this._args[0]);
+        return c ? { id: c.id, type: c.type, name: c.name || null, archived_at: c.archived_at || null,
+          member_count: c.member_count || null, last_msg_ts: c.last_msg_ts || null, created_at: c.created_at || null } : null;
+      }
+      // diag : nom/statut d'un membre
+      if (sql.includes('SELECT pseudo, real_name, status, merged_into FROM users WHERE id=?')) {
+        const u = state.users.find(x => x.id === this._args[0]);
+        return u ? { pseudo: u.pseudo, real_name: u.real_name, status: u.status || 'active', merged_into: u.merged_into || null } : null;
+      }
       if (sql.includes('MAX(ts) AS t FROM messages')) {
         const ts = state.messages.filter(m => m.conv_id === this._args[0]).map(m => m.ts);
         return { t: ts.length ? Math.max(...ts) : null };
@@ -104,6 +128,14 @@ function statefulDB(state) {
       // membres d'une conv
       if (sql.includes('SELECT user_id FROM conversation_members WHERE conv_id=?')) {
         return { results: state.members.filter(m => m.conv_id === this._args[0]).map(m => ({ user_id: m.user_id })) };
+      }
+      // diag : conversations d'un user (conv_id + role)
+      if (sql.includes('SELECT conv_id, role FROM conversation_members WHERE user_id=?')) {
+        return { results: state.members.filter(m => m.user_id === this._args[0]).map(m => ({ conv_id: m.conv_id, role: m.role })) };
+      }
+      // diag : membres d'une conv (user_id + role)
+      if (sql.includes('SELECT user_id, role FROM conversation_members WHERE conv_id=?')) {
+        return { results: state.members.filter(m => m.conv_id === this._args[0]).map(m => ({ user_id: m.user_id, role: m.role })) };
       }
       return { results: [] };
     },
@@ -341,6 +373,36 @@ describe('POST /api/admin/heal-dm', () => {
     // avant le fix : 401 (compte deleted rejeté → "messages n'arrivent pas")
     // après : 200, la requête agit comme le compte gardé
     expect(res.status).toBe(200);
+  });
+
+  it('GET /api/admin/diag : refuse non-admin, renvoie l\'état + checks pour admin', async () => {
+    const st = baseState();
+    // doublon + DM avec membre supprimé non redirigé → check « destinataire injoignable »
+    st.users.push({ id: 'laur_dup2', pseudo: 'laurence2', real_name: 'Laurence SAINT-POLIT', phone: '+33333', source: 'apex-chat-direct', is_admin: 0, last_seen: 1, status: 'active' });
+    st.conversations.push({ id: 'cX', type: 'dm', created_at: 1, archived_at: null, member_count: 2 });
+    st.members.push({ conv_id: 'cX', user_id: 'kevin' }, { conv_id: 'cX', user_id: 'laurence_saint_polit' });
+    st.users.find(u => u.id === 'laurence_saint_polit').status = 'deleted'; // supprimé sans merged_into
+    st.messages.push({ conv_id: 'cX', ts: 5, sender_id: 'kevin' });
+    const env = ENV({ APEX_CHAT_DB: statefulDB(st) });
+
+    // non-admin → 403
+    const tokU = await makeJWT({ sub: 'laur_real', is_admin: false, iat: Math.floor(Date.now() / 1000) });
+    const r403 = await worker.fetch(makeRequest({ method: 'GET', path: '/api/admin/diag', token: tokU }), env);
+    expect(r403.status).toBe(403);
+
+    // admin → 200 + structure
+    const tokA = await makeJWT({ sub: 'kevin', is_admin: true, iat: Math.floor(Date.now() / 1000) });
+    const rA = await worker.fetch(makeRequest({ method: 'GET', path: '/api/admin/diag?q=laurence', token: tokA }), env);
+    expect(rA.status).toBe(200);
+    const d = await rA.json();
+    expect(d.ok).toBe(true);
+    expect(Array.isArray(d.users)).toBe(true);
+    expect(Array.isArray(d.conversations)).toBe(true);
+    expect(Array.isArray(d.checks)).toBe(true);
+    // doublon Laurence détecté
+    expect((d.duplicates || []).length).toBeGreaterThanOrEqual(1);
+    // check « destinataire injoignable » (membre supprimé non redirigé)
+    expect(d.checks.some(c => c.level === 'err' && /injoignable/i.test(c.label))).toBe(true);
   });
 
   it('signale l\'absence de DM serveur', async () => {

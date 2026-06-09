@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.179",
+  "softwareVersion": "v1.1.180",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.179';
+const __APEX_CHAT_VERSION__ = 'v1.1.180';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.179</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.180</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.179</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.180</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6552,6 +6552,7 @@ K.render = function(){
     case 'calls': renderCalls(app); break;
     case 'settings': renderSettings(app); break;
     case 'admin': renderAdmin(app); break;
+    case 'admin-diag': renderAdminDiag(app); break;
     case 'admin-users': renderAdminUsers(app); break;
     case 'admin-live-users': renderAdminLiveUsers(app); break;
     case 'admin-connections': renderAdminConnections(app); break;
@@ -10046,6 +10047,11 @@ function renderAdmin(app){
   app.innerHTML = `
     <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 16px">👑 Panel admin Kevin</h2>
     <div class="admin-grid">
+      <div class="admin-tile" onclick="K.sv('admin-diag')" style="border:1px solid var(--ax-gold)">
+        <div class="ico">🩺</div>
+        <div class="stat" style="color:var(--ax-gold)">DIAG</div>
+        <div class="lbl">Diagnostic + tests</div>
+      </div>
       <div class="admin-tile" onclick="K.sv('admin-live-users')">
         <div class="ico">🟢</div>
         <div class="stat" style="color:var(--ax-ok)">LIVE</div>
@@ -10127,6 +10133,124 @@ function renderAdmin(app){
     </div>
   `;
 }
+
+// v1.1.180 — Écran diagnostic complet (lecture seule) + tests live.
+// Montre la vérité serveur (comptes, conversations, doublons, checks de
+// délivrabilité) et lance des tests live (API, token, WebSocket).
+async function renderAdminDiag(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return toast('Accès admin uniquement', 'err'); }
+  const q = K._diagQ || '';
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin:8px 0 12px">
+      <button class="btn btn-out btn-sm" onclick="K.sv('admin')">←</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:0;flex:1">🩺 Diagnostic</h2>
+      <button class="btn btn-sm" onclick="K._runDiag()">🔄 Relancer</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input id="diag-q" placeholder="Filtrer (laurence, kevin, n° tél…)" value="${esc(q)}"
+        style="flex:1;padding:9px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:8px;color:var(--ax-text)"
+        onkeydown="if(event.key==='Enter'){K._diagQ=this.value.trim();K._runDiag()}">
+      <button class="btn btn-sm" onclick="K._diagQ=document.getElementById('diag-q').value.trim();K._runDiag()">🔍</button>
+    </div>
+    <div id="diag-live" style="margin-bottom:12px"></div>
+    <div id="diag-body"><div style="color:var(--ax-text-3);padding:20px;text-align:center">Chargement…</div></div>`;
+  K._runDiag();
+}
+
+K._runDiag = async function(){
+  const liveEl = document.getElementById('diag-live');
+  const bodyEl = document.getElementById('diag-body');
+  if(!bodyEl) return;
+
+  // ---- Tests LIVE côté client (API, token, WebSocket) ----
+  if(liveEl){
+    liveEl.innerHTML = '<div style="color:var(--ax-text-3);font-size:.85em">Tests live en cours…</div>';
+    const tests = [];
+    const t0 = Date.now();
+    // 1) API + token
+    try{
+      const r = await fetch(API_BASE + '/api/conversations', { headers:{ 'Authorization':'Bearer '+K.token } });
+      tests.push({ ok: r.ok, label: 'API + token', detail: r.ok ? ('OK ('+(Date.now()-t0)+'ms)') : ('HTTP '+r.status+' → token invalide ?') });
+      if(r.ok){
+        const d = await r.json().catch(()=>({}));
+        const convs = (d && d.conversations) || [];
+        tests.push({ ok: true, label: 'Mes conversations', detail: convs.length + ' conversation(s) côté serveur' });
+        // 2) WebSocket sur la 1ère conv
+        const cid = convs[0] && convs[0].id;
+        if(cid){
+          const wsRes = await new Promise((resolve)=>{
+            let done=false; const to=setTimeout(()=>{ if(!done){done=true;try{ws.close()}catch(_){}; resolve({ok:false, detail:'timeout 6s (WS ne s\'ouvre pas)'});} },6000);
+            const wsUrl = API_BASE.replace(/^https?/,'wss')+'/api/conversations/'+encodeURIComponent(cid)+'/ws?token='+encodeURIComponent(K.token)+'&uid='+encodeURIComponent(K.user.id);
+            let ws; try{ ws=new WebSocket(wsUrl); }catch(e){ clearTimeout(to); return resolve({ok:false, detail:e.message}); }
+            ws.addEventListener('open', ()=>{ if(!done){done=true;clearTimeout(to);try{ws.close()}catch(_){}; resolve({ok:true, detail:'connexion temps réel OK'});} });
+            ws.addEventListener('close', (e)=>{ if(!done){done=true;clearTimeout(to); resolve({ok:false, detail:'fermé code '+e.code+' '+(e.reason||'')}); } });
+            ws.addEventListener('error', ()=>{ if(!done){done=true;clearTimeout(to); resolve({ok:false, detail:'erreur WS'});} });
+          });
+          tests.push({ ok: wsRes.ok, label: 'WebSocket temps réel', detail: wsRes.detail });
+        } else {
+          tests.push({ ok:false, label:'WebSocket temps réel', detail:'aucune conversation à tester' });
+        }
+      }
+    }catch(e){ tests.push({ ok:false, label:'API + token', detail:(e&&e.message)||'réseau KO' }); }
+    liveEl.innerHTML = '<div class="card" style="padding:10px"><div style="font-weight:600;margin-bottom:6px">⚡ Tests live</div>'+
+      tests.map(t=>`<div style="display:flex;gap:8px;padding:3px 0;font-size:.9em"><span>${t.ok?'🟢':'🔴'}</span><span style="flex:1">${esc(t.label)}</span><span style="color:var(--ax-text-3);font-size:.85em">${esc(t.detail)}</span></div>`).join('')+
+      '</div>';
+  }
+
+  // ---- État serveur (lecture seule) ----
+  try{
+    const r = await fetch(API_BASE + '/api/admin/diag' + (K._diagQ ? ('?q='+encodeURIComponent(K._diagQ)) : ''), { headers:{ 'Authorization':'Bearer '+K.token } });
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok || !d.ok){ bodyEl.innerHTML = '<div class="card" style="color:#e63946;padding:12px">❌ '+esc(d.error||d.detail||('HTTP '+r.status))+'</div>'; return; }
+    const sev = { ok:'🟢', warn:'🟡', err:'🔴' };
+    const checksHtml = (d.checks||[]).map(c=>`<div style="display:flex;gap:8px;padding:4px 0;font-size:.9em"><span>${sev[c.level]||'•'}</span><span><b>${esc(c.label)}</b> — ${esc(c.detail)}</span></div>`).join('');
+    const dupHtml = (d.duplicates||[]).length
+      ? (d.duplicates.map(x=>`<div style="font-size:.85em;padding:2px 0">🔁 <b>${esc(x.key)}</b> : ${x.accounts.map(a=>esc(a.slice(0,10))).join(', ')}</div>`).join(''))
+      : '<div style="color:var(--ax-ok);font-size:.85em">Aucun doublon détecté</div>';
+    const convHtml = (d.conversations||[]).map(c=>{
+      const mem = c.members.map(m=>{
+        const tag = m.status==='deleted' ? (m.merged_into?' ↪fusionné':' ✖supprimé') : '';
+        return `<span style="display:inline-block;background:var(--ax-bg-3);border-radius:10px;padding:1px 8px;margin:2px;font-size:.8em${m.status==='deleted'&&!m.merged_into?';color:#e63946':''}">${esc(m.name)}${tag}</span>`;
+      }).join('');
+      return `<div class="card" style="padding:8px;margin-bottom:6px">
+        <div style="font-size:.82em;color:var(--ax-text-3)">${esc(c.type)} · ${esc(c.id.slice(0,12))} · ${c.messages} msg${c.archived?' · 🗄archivée':''}</div>
+        <div style="margin-top:4px">${mem}</div></div>`;
+    }).join('') || '<div style="color:var(--ax-text-3)">—</div>';
+    const userHtml = (d.users||[]).map(u=>{
+      const del = u.status==='deleted';
+      return `<div class="card" style="padding:8px;margin-bottom:6px${del?';opacity:.6':''}">
+        <div style="display:flex;gap:8px;align-items:center">
+          <b style="flex:1">${esc(u.name||u.pseudo||u.id)}</b>
+          ${u.is_admin?'<span style="font-size:.7em;background:var(--ax-gold);color:#000;border-radius:8px;padding:1px 6px">ADMIN</span>':''}
+          <span style="font-size:.72em;color:${del?'#e63946':'var(--ax-text-3)'}">${esc(u.status)}</span>
+        </div>
+        <div style="font-size:.78em;color:var(--ax-text-3);margin-top:3px">
+          ${esc(u.pseudo||'')} · tel …${esc((u.phone||'').slice(-4))} · ${esc(u.source||'')} · ${u.messages} msg · ${u.member_of.length} conv${u.merged_into?(' · ↪ '+esc(u.merged_into.slice(0,10))):''}
+        </div>
+        ${u.geo||u.device?`<div style="font-size:.75em;color:var(--ax-text-3)">📍 ${esc(u.geo||'?')} · 📱 ${esc(u.device||'?')}</div>`:''}
+      </div>`;
+    }).join('') || '<div style="color:var(--ax-text-3)">Aucun compte</div>';
+
+    bodyEl.innerHTML = `
+      <div class="card" style="padding:10px;margin-bottom:10px">
+        <div style="font-weight:600;margin-bottom:6px">🔎 Checks délivrabilité</div>${checksHtml||'—'}
+      </div>
+      <div class="card" style="padding:10px;margin-bottom:10px;font-size:.85em">
+        Total : ${d.totals.users} comptes (${d.totals.users_deleted} supprimés) · ${d.totals.conversations} conversations · ${d.totals.messages} messages
+      </div>
+      <details open style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:600;padding:6px 0">🔁 Doublons</summary>${dupHtml}</details>
+      <details open style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:600;padding:6px 0">💬 Conversations (${(d.conversations||[]).length})</summary>${convHtml}</details>
+      <details style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:600;padding:6px 0">👤 Comptes (${(d.users||[]).length})</summary>${userHtml}</details>
+      <button class="btn btn-out btn-sm btn-block" onclick="K._copyDiag(${JSON.stringify(JSON.stringify(d)).replace(/"/g,'&quot;')})">📋 Copier le diagnostic (JSON)</button>`;
+  }catch(e){
+    bodyEl.innerHTML = '<div class="card" style="color:#e63946;padding:12px">❌ '+esc((e&&e.message)||'erreur')+'</div>';
+  }
+};
+
+K._copyDiag = function(s){
+  try{ navigator.clipboard.writeText(s); toast('📋 Diagnostic copié — colle-le moi', 'ok', 2500); }
+  catch(_){ toast('Copie impossible', 'err'); }
+};
 
 function renderAdminUsers(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }

@@ -1863,6 +1863,144 @@ async function handleHealDm(request, env) {
 }
 
 // ============================================================================
+//  GET /api/admin/diag — diagnostic complet LECTURE SEULE (admin only). v1.1.180
+//  Montre la vérité serveur : tous les comptes (même supprimés/fusionnés),
+//  toutes les conversations, qui est membre, compteurs de messages, doublons.
+//  Aucune modification. ?q= filtre par nom/pseudo/numéro (défaut : récents).
+// ============================================================================
+async function handleAdminDiag(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !(auth.is_admin || auth.sub === 'kdmc_admin')) {
+    return err('Réservé admin', 403, 'forbidden', { auth_sub: auth?.sub || null });
+  }
+  const DB = env.APEX_CHAT_DB;
+  const url = new URL(request.url);
+  const q = (url.searchParams.get('q') || '').trim();
+  const out = { ok: true, q, ts: Date.now(), me: { sub: auth.sub, is_admin: !!auth.is_admin }, totals: {}, users: [], conversations: [] };
+  try {
+    out.totals.users = (await DB.prepare('SELECT COUNT(*) c FROM users').first())?.c ?? null;
+    out.totals.users_deleted = (await DB.prepare("SELECT COUNT(*) c FROM users WHERE status='deleted'").first())?.c ?? null;
+    out.totals.conversations = (await DB.prepare('SELECT COUNT(*) c FROM conversations').first())?.c ?? null;
+    out.totals.messages = (await DB.prepare('SELECT COUNT(*) c FROM messages').first())?.c ?? null;
+
+    // 1) Comptes (inclut supprimés/fusionnés pour TOUT voir).
+    let users;
+    if (q) {
+      const like = '%' + q.toLowerCase() + '%';
+      const digits = q.replace(/\D/g, '');
+      users = (await DB.prepare(
+        `SELECT id, pseudo, real_name, first_name, last_name, phone, source, status, merged_into,
+                is_admin, last_seen, last_geo_label, last_device_label, created_at
+         FROM users
+         WHERE LOWER(pseudo) LIKE ? OR LOWER(real_name) LIKE ?
+            OR LOWER(COALESCE(first_name,'')) LIKE ? OR LOWER(COALESCE(last_name,'')) LIKE ?
+            OR (? != '' AND phone LIKE ?)
+         ORDER BY COALESCE(last_seen,0) DESC LIMIT 40`
+      ).bind(like, like, like, like, digits, '%' + digits + '%').all()).results || [];
+    } else {
+      users = (await DB.prepare(
+        `SELECT id, pseudo, real_name, first_name, last_name, phone, source, status, merged_into,
+                is_admin, last_seen, last_geo_label, last_device_label, created_at
+         FROM users ORDER BY COALESCE(last_seen,0) DESC LIMIT 40`
+      ).bind().all()).results || [];
+    }
+
+    const convIds = new Set();
+    for (const u of users) {
+      const msgs = (await DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender_id=?').bind(u.id).first())?.c ?? 0;
+      const mem = (await DB.prepare('SELECT conv_id, role FROM conversation_members WHERE user_id=?').bind(u.id).all()).results || [];
+      mem.forEach(m => convIds.add(m.conv_id));
+      out.users.push({
+        id: u.id, pseudo: u.pseudo, real_name: u.real_name,
+        name: [u.first_name, u.last_name].filter(Boolean).join(' ') || u.real_name || null,
+        phone: u.phone ? ('…' + String(u.phone).slice(-4)) : null,    // masqué
+        phone_norm_tail: normPhone(u.phone || '').replace(/\D/g, '').slice(-8) || null,
+        source: u.source, status: u.status || 'active', merged_into: u.merged_into || null,
+        is_admin: !!u.is_admin, last_seen: u.last_seen || 0,
+        geo: u.last_geo_label || null, device: u.last_device_label || null,
+        created_at: u.created_at || 0, messages: msgs,
+        member_of: mem.map(m => ({ conv_id: m.conv_id, role: m.role })),
+      });
+    }
+
+    // 2) Conversations liées à ces comptes (détail membres + messages).
+    for (const cid of convIds) {
+      const c = await DB.prepare('SELECT id, type, name, archived_at, member_count, last_msg_ts, created_at FROM conversations WHERE id=?').bind(cid).first();
+      if (!c) continue;
+      const mem = (await DB.prepare('SELECT user_id, role FROM conversation_members WHERE conv_id=?').bind(cid).all()).results || [];
+      const members = [];
+      for (const m of mem) {
+        const mu = await DB.prepare('SELECT pseudo, real_name, status, merged_into FROM users WHERE id=?').bind(m.user_id).first();
+        members.push({ id: m.user_id, role: m.role,
+          name: (mu && (mu.real_name || mu.pseudo)) || '(inconnu)',
+          status: (mu && mu.status) || '?', merged_into: (mu && mu.merged_into) || null });
+      }
+      const mc = (await DB.prepare('SELECT COUNT(*) c FROM messages WHERE conv_id=?').bind(cid).first())?.c ?? 0;
+      out.conversations.push({
+        id: c.id, type: c.type, name: c.name || null, archived: !!c.archived_at,
+        member_count: c.member_count, members_real: mem.length, messages: mc,
+        last_msg_ts: c.last_msg_ts || 0, created_at: c.created_at || 0, members,
+      });
+    }
+    out.conversations.sort((a, b) => (b.last_msg_ts - a.last_msg_ts));
+
+    // 3) Doublons détectés (même nom normalisé OU même fin de numéro) parmi les actifs.
+    const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\-_.]+/g, ' ').trim();
+    const groups = {};
+    for (const u of out.users) {
+      if (u.status === 'deleted' || u.is_admin) continue;
+      // Diagnostic (informatif) : groupe par NOM (même personne), sinon numéro.
+      const key = norm(u.real_name) || norm(u.name) || norm(u.pseudo) || u.phone_norm_tail;
+      if (!key) continue;
+      (groups[key] = groups[key] || []).push(u.id);
+    }
+    out.duplicates = Object.entries(groups).filter(([, ids]) => ids.length > 1)
+      .map(([key, ids]) => ({ key, accounts: ids }));
+
+    // 4) CHECKS de délivrabilité (« les messages arrivent-ils au bon destinataire ? »).
+    const checks = [];
+    for (const d of out.duplicates) {
+      checks.push({ level: 'warn', label: 'Comptes en double',
+        detail: d.accounts.length + ' comptes pour la même personne (' + d.key + ') → à fusionner.' });
+    }
+    // DM dont un membre est supprimé SANS redirection → le destinataire ne peut pas
+    // s'authentifier → il ne reçoit rien. C'est LA panne « messages n'arrivent pas ».
+    for (const c of out.conversations) {
+      if (c.type !== 'dm') continue;
+      const broken = c.members.filter(m => m.status === 'deleted' && !m.merged_into);
+      if (broken.length) {
+        checks.push({ level: 'err', label: 'Destinataire injoignable',
+          detail: 'Conv ' + c.id.slice(0, 8) + ' : membre supprimé non redirigé (' +
+            broken.map(b => b.name).join(', ') + ') → il ne reçoit pas. Le redirect merged_into (v1.1.179) corrige.' });
+      }
+      if (c.members_real < 2 && !c.archived) {
+        checks.push({ level: 'warn', label: 'Conversation incomplète',
+          detail: 'Conv ' + c.id.slice(0, 8) + ' : ' + c.members_real + ' membre(s) seulement.' });
+      }
+    }
+    // Plusieurs DM ACTIFS pour la même paire → split (chacun parle dans une instance ≠).
+    const pairCount = {};
+    for (const c of out.conversations) {
+      if (c.type !== 'dm' || c.archived) continue;
+      const key = c.members.map(m => m.merged_into || m.id).sort().join('|');
+      (pairCount[key] = pairCount[key] || []).push(c.id);
+    }
+    Object.entries(pairCount).filter(([, ids]) => ids.length > 1).forEach(([, ids]) => {
+      checks.push({ level: 'err', label: 'Conversations dupliquées',
+        detail: ids.length + ' conversations actives pour la même paire → chacun parle dans une instance différente, rien ne passe. À fusionner en 1.' });
+    });
+    if (!checks.length) checks.push({ level: 'ok', label: 'Structure saine',
+      detail: 'Aucun doublon de compte, aucun destinataire injoignable, 1 conversation par paire.' });
+    out.checks = checks;
+  } catch (e) {
+    out.ok = false;
+    out.error = e?.message || '?';
+    out.where = (e?.stack || '').split('\n')[1] || '';
+  }
+  return json(out, 200);
+}
+
+// ============================================================================
 //  Routes Invitations SMS
 // ============================================================================
 
@@ -4538,6 +4676,7 @@ export default {
       // v1.1.161 — Cercle privé pré-câblé Kevin↔proche (Laurence)
       if (path === '/api/admin/configure-core-pair' && method === 'POST') return await handleConfigureCorePair(request, env);
       if (path === '/api/admin/heal-dm' && method === 'POST') return await handleHealDm(request, env);
+      if (path === '/api/admin/diag' && method === 'GET') return await handleAdminDiag(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
       // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
