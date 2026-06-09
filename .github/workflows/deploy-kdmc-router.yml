@@ -84,3 +84,26 @@ jobs:
             curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
               || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"
           done
+
+      - name: Smoke test SSO live (issue → token → whoami Bearer, cross-PWA)
+        run: |
+          set -e
+          sleep 5  # laisser le worker se propager
+          BASE=https://kd-mc.com
+          # Sur apex-chat.kd-mc.com pour prouver que /__sso/* marche aussi côté app
+          APP=https://apex-chat.kd-mc.com
+          echo "1) issue (uid de test, pas l'admin → pas de pollution)"
+          RESP=$(curl -fsS -X POST "$BASE/__sso/issue" -H 'content-type: application/json' \
+                 -d '{"uid":"ci_smoke","name":"CI Smoke","cgu":true}')
+          echo "   $RESP"
+          TOKEN=$(printf '%s' "$RESP" | grep -oE '"token":"[^"]+"' | sed 's/.*:"//;s/"//')
+          if [ -z "$TOKEN" ]; then echo "::error::issue n'a pas renvoyé de token dans le corps"; exit 1; fi
+          echo "2) whoami via Bearer (SANS cookie) sur l'app — canal cross-PWA"
+          WHO=$(curl -fsS "$APP/__sso/whoami" -H "Authorization: Bearer $TOKEN")
+          echo "   $WHO"
+          printf '%s' "$WHO" | grep -q '"ok":true'        || { echo "::error::whoami Bearer KO"; exit 1; }
+          printf '%s' "$WHO" | grep -q '"uid":"ci_smoke"' || { echo "::error::identité Bearer KO"; exit 1; }
+          echo "3) Bearer falsifié → doit être rejeté"
+          BAD=$(curl -fsS "$APP/__sso/whoami" -H "Authorization: Bearer pas.un.vrai")
+          printf '%s' "$BAD" | grep -q '"ok":false'       || { echo "::error::un token falsifié est accepté !"; exit 1; }
+          echo "✅ SSO live OK : le pass signé marche en Bearer cross-sous-domaine, forge rejetée."
