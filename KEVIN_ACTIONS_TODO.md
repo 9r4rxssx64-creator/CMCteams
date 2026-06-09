@@ -1,5 +1,21 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🌐 KDMC APEX — domaine unifié + session unique + PWA (2026-06-09)
+
+### ✅ Livré (Étape 1, sûr & testable tout de suite)
+- **Portail PWA kd-mc.com** : 1ʳᵉ connexion = **création de compte** (prénom+nom+code 6 chiffres + **CGU unique** valable partout), puis **installation PWA** (bouton Android / instructions iOS « Sur l'écran d'accueil »), puis **reconnaissance auto**.
+- **Session unique transverse** (SSO) : endpoints `/__sso/issue|whoami|logout` sur le worker `kdmc-router` → cookie **signé HMAC-SHA256**, `Domain=.kd-mc.com`, **HttpOnly + Secure + SameSite=Lax** (ni vol XSS, ni forge). Partagé par tous les sous-domaines. Secret injecté auto au déploiement (depuis `JWT_SECRET`).
+- **Sécurité notée** : code haché PBKDF2 200k (jamais en clair), CSP stricte (`script-src 'self'`, 0 inline), vérif à temps constant, **fail-open** (si SSO indispo → login normal, zéro régression). Test régression `services/kdmc-router/sso.test.mjs` (8/8, sans navigateur).
+
+### ⏳ Étape 2 — à activer APRÈS ton test live (auth critique, non testable au sandbox)
+> Pourquoi staged : un guard mal réglé = lockout de TOUTES les apps (ta peur n°1). On valide d'abord que le portail kd-mc.com te connecte/installe bien, puis on branche.
+1. **Apps consomment la session** : à l'ouverture de CMCteams/Apex/Apex-Chat, lire `kdmcSSO.whoami()` → si session valide → connexion auto sans re-taper (additif + fail-open, login PIN conservé en secours).
+2. **Accès uniquement par le domaine** : guard dans chaque app — si ouverte sur `…github.io` → rediriger vers l'adresse `*.kd-mc.com` (force le passage par le domaine sécurisé). À tester en live avant activation.
+3. **Test à faire (toi, ~2 min)** : ouvre **https://kd-mc.com** sur iPhone → crée le compte + accepte CGU → installe la PWA → rouvre : tu dois être reconnu auto. Dis-moi si OK → je branche l'étape 2.
+
+---
+
+
 ## 🛡️ CMCteams SÉCURITÉ (2026-06-07) — fermer la DB Firebase ouverte (Chantier 2)
 
 ### #A — ✅ FAIT (2026-06-08). Canary validé + auth activée pour TOUS les appareils.
