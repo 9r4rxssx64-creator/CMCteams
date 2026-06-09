@@ -856,6 +856,47 @@ export async function handleVerifyOtp(request, env) {
   }});
 }
 
+// POST /api/test/login — login de test SÛR pour l'E2E (v1.1.198).
+// Mint un JWT UNIQUEMENT pour 2 numéros de test fixes ET seulement si le header
+// X-Test-Auth == APEX_CHAT_ADMIN_TOKEN (secret connu de la seule CI). Ce N'EST
+// PAS un backdoor universel (≠ OTP 000000) : 2 comptes jetables, verrouillés par
+// le secret admin. Désactivable via ALLOW_E2E_TEST_LOGIN='false'.
+const E2E_TEST_PHONES = ['+33600000091', '+33600000092'];
+export async function handleTestLogin(request, env) {
+  const secret = env.APEX_CHAT_ADMIN_TOKEN || '';
+  const hdr = request.headers.get('X-Test-Auth') || '';
+  if (env.ALLOW_E2E_TEST_LOGIN === 'false') return err('E2E login désactivé', 403, 'disabled');
+  if (!secret || hdr !== secret) return err('Réservé tests CI', 403, 'forbidden');
+  let body = {};
+  try { body = await request.json(); } catch (_) {}
+  const cleanPhone = normPhone(body.phone || '');
+  if (!E2E_TEST_PHONES.includes(cleanPhone)) return err('Numéro de test non autorisé', 400, 'not_test_phone');
+  const phoneHash = await sha256(cleanPhone);
+  let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
+  if (!user) {
+    const base = String(body.pseudo || 'e2e_' + cleanPhone.slice(-4)).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 18) || ('e2e' + cleanPhone.slice(-4));
+    const insert = async (id, pseudo) => env.APEX_CHAT_DB.prepare(
+      `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, identity_key_pub, pq_key_pub, prekey_signed,
+         source, admin_authorized, created_at, status)
+       VALUES (?, ?, ?, ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', 'e2e-test', 1, ?, 'active')
+       ON CONFLICT(pseudo) DO NOTHING`
+    ).bind(id, pseudo, body.name || pseudo, cleanPhone, phoneHash, Date.now()).run();
+    await insert(crypto.randomUUID(), base);
+    user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
+    if (!user) {
+      const alt = base.slice(0, 12) + '_' + Date.now().toString(36).slice(-4);
+      await insert(crypto.randomUUID(), alt);
+      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
+    }
+  }
+  if (!user) return err('Création compte test échouée', 500, 'create_fail');
+  const jwt = await signJWT({
+    sub: user.id, pseudo: user.pseudo, is_admin: !!user.is_admin,
+    iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 86400,
+  }, env.JWT_SIGN_KEY);
+  return json({ ok: true, token: jwt, user: { id: user.id, pseudo: user.pseudo, is_admin: !!user.is_admin } });
+}
+
 export async function handleSsoFromApex(request, env) {
   // P0 FIX (audit) : SSO avec vérification réelle JWT Apex
   // Kevin doit signer avec APEX_SSO_SIGN_KEY (HMAC HS256 partagée Apex ↔ Apex Chat)
@@ -5211,6 +5252,7 @@ export default {
       if (path === '/api/admin/map' && method === 'GET') return await handleAdminMap(request, env);
       const adminGeoMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/geo-history$/);
       if (adminGeoMatch && method === 'GET') return await handleAdminUserGeoHistory(adminGeoMatch[1], request, env);
+      if (path === '/api/test/login' && method === 'POST') return await handleTestLogin(request, env);
       if (path === '/api/contacts' && method === 'GET') return await handleContacts(request, env);
       if (path === '/api/admin/all-users' && method === 'GET') return await handleAdminAllUsers(request, env);
       const adminUserActionMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/(block|unblock|ban|unban|authorize|revoke|force_logout|delete)$/);

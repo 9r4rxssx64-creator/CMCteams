@@ -26,9 +26,14 @@ const PNG_1x1 = Buffer.from(
   'base64',
 );
 
+// v1.1.198 — login de test SÛR (secret-gaté, 2 numéros fixes). Le secret CI
+// E2E_TEST_SECRET == APEX_CHAT_ADMIN_TOKEN (header X-Test-Auth côté worker).
+const TEST_SECRET = process.env.E2E_TEST_SECRET || '';
 async function auth(request, u) {
-  const r = await request.post(API + '/api/auth/verify-otp', {
-    data: { phone: u.phone, otp: '000000', name: u.name, pseudo: u.pseudo },
+  if (!TEST_SECRET) return { ok: false, status: 0, body: { reason: 'no E2E_TEST_SECRET' } };
+  const r = await request.post(API + '/api/test/login', {
+    headers: { 'X-Test-Auth': TEST_SECRET },
+    data: { phone: u.phone, name: u.name, pseudo: u.pseudo },
   });
   return { ok: r.ok(), status: r.status(), body: await r.json().catch(() => ({})) };
 }
@@ -61,7 +66,7 @@ test.describe('Échange réel 2 clients (Alice ↔ Bob) sur la prod', () => {
     const aAuth = await auth(request, A);
     const bAuth = await auth(request, B);
     if (!aAuth.ok || !bAuth.ok) {
-      test.skip(true, `OTP de test off (ALLOW_TEST_OTP) — A:${aAuth.status} B:${bAuth.status}`);
+      test.skip(true, `login de test indisponible — A:${aAuth.status} B:${bAuth.status} (${JSON.stringify(aAuth.body)})`);
       return;
     }
     const aTok = aAuth.body.token, aId = aAuth.body.user.id;
