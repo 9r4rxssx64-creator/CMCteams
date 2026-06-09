@@ -23,7 +23,11 @@ def walk(suites, filehint=''):
             title = sp.get('title', '?')
             for t in sp.get('tests', []):
                 proj = t.get('projectName', '?')
-                if sp.get('ok'):
+                # statut réel : un test SKIPPED n'est PAS un échec (ex : push sur
+                # WebKit CI, ou permission notif non accordable en headless).
+                statuses = [r.get('status') for r in t.get('results', []) or []]
+                real_fail = (not sp.get('ok')) and any(st in ('failed', 'timedOut', 'interrupted') for st in statuses)
+                if not real_fail:
                     ok += 1
                     continue
                 err = ''
