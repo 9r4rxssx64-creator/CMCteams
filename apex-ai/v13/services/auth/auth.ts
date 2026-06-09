@@ -296,9 +296,33 @@ class Auth {
     }
 
     events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
+    this.kdmcDomainRegister(user.id, user.name);
     logger.info('auth', `Login ${user.name} (admin=${user.isAdmin})`);
     this.audit('login_success', { actor: user.id, details: { admin: user.isAdmin, method: 'pin' } });
     return { ok: true };
+  }
+
+  /**
+   * Enregistrement auto du compte dans le domaine kd-mc.com (compte unique
+   * transverse — Kevin "quand un compte est créé par une app, enregistrement
+   * auto dans le domaine"). Additif + fail-open : ne tourne que sur *.kd-mc.com,
+   * échec ignoré → le login de l'app reste identique.
+   */
+  private kdmcDomainRegister(uid: string, name: string): void {
+    try {
+      if (typeof location !== 'undefined' && location.hostname.indexOf('kd-mc.com') >= 0) {
+        void fetch('/__sso/issue', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ uid, name, app: 'apex-ai' }),
+        }).catch(() => {
+          /* fail-open */
+        });
+      }
+    } catch {
+      /* ignore */
+    }
   }
 
   /**
@@ -347,6 +371,7 @@ class Auth {
         localStorage.setItem('apex_v13_lastact', String(Date.now()));
       } catch { /* ignore */ }
       events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
+      this.kdmcDomainRegister(user.id, name || user.name);
       logger.info('auth', `loginTrusted ${name || user.name} (admin=${user.isAdmin})`);
       this.audit('login_success', { actor: user.id, details: { admin: user.isAdmin, method: 'trusted_device' } });
       return { ok: true };
