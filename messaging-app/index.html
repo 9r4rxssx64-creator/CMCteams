@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.182",
+  "softwareVersion": "v1.1.183",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -386,7 +386,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.182';
+const __APEX_CHAT_VERSION__ = 'v1.1.183';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +544,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.182</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.183</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +558,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.182</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.183</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -9616,6 +9616,32 @@ K._sendVoiceMessage = async function(){
 // - K.contacts n'était JAMAIS rempli (lg seulement au boot, jamais update)
 // - renderContacts ignorait K.contacts (toujours empty state)
 // → Fix : fetch /api/admin/all-users si admin, sinon extraire peers depuis convs
+// v1.1.183 — Déduplication d'affichage des contacts : une même personne
+// apparaissait en plusieurs (3 comptes Laurence). On relie par NOM COMPLET
+// (≥2 mots) OU même fin de numéro (union-find), et on garde le meilleur compte
+// (vrai numéro, le plus de messages, vu le + récemment). Affichage seul — la
+// vraie fusion se fait côté serveur (auto-heal).
+K._dedupeContacts = function(list){
+  list = (list || []).filter(Boolean);
+  if(list.length < 2) return list;
+  const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[\s\-_.]+/g,' ').trim();
+  const tail = p => String(p||'').replace(/\D/g,'').slice(-8);
+  const parent = list.map((_,i)=>i);
+  const find = i => { while(parent[i]!==i){ parent[i]=parent[parent[i]]; i=parent[i]; } return i; };
+  const union = (a,b)=>{ parent[find(a)] = find(b); };
+  const byName = {}, byTail = {};
+  list.forEach((u,i)=>{
+    const nm = norm(u.real_name || u.display_name || u.name);
+    const t = tail(u.phone);
+    if(nm && nm.indexOf(' ') > 0){ if(byName[nm]!=null) union(i, byName[nm]); else byName[nm]=i; }  // nom complet seulement
+    if(t && t.length >= 6){ if(byTail[t]!=null) union(i, byTail[t]); else byTail[t]=i; }
+  });
+  const comp = {};
+  list.forEach((u,i)=>{ const r=find(i); (comp[r]=comp[r]||[]).push(u); });
+  const score = x => (x.last_seen||0)/1e6 + (tail(x.phone)?1e7:0) + ((x.messages||0)*1e3) + ((norm(x.real_name).indexOf(' ')>0)?1e2:0);
+  return Object.values(comp).map(g => g.length===1 ? g[0] : g.slice().sort((a,b)=>score(b)-score(a))[0]);
+};
+
 K._fetchContacts = async function(silent){
   try{
     let users = [];
@@ -9671,8 +9697,8 @@ K._fetchContacts = async function(silent){
         if(!promu) users.push(lc);   // contact local conservé tant que pas inscrit serveur
       }
     }
-    K.contacts = users;
-    ls('contacts', users);
+    K.contacts = K._dedupeContacts(users);
+    ls('contacts', K.contacts);
     if(!silent){
       if(users.length > 0){
         toast('👥 ' + users.length + ' contact' + (users.length>1?'s':'') + ' chargés', 'ok');
@@ -9808,7 +9834,8 @@ K._promoteConvToServer = async function(localConvId){
 };
 
 function renderContacts(app){
-  const contacts = K.contacts || lg('contacts', []);
+  // v1.1.183 : dédup d'affichage (sécurité même si le cache contient des doublons)
+  const contacts = K._dedupeContacts(K.contacts || lg('contacts', []));
   // v1.1.123 Kevin : retire import iPhone (trop complexe). Formulaire simple à la place
   const actionBlock = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
