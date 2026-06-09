@@ -1141,6 +1141,7 @@ async function handleListConversations(request, env) {
   // Idempotent : une fois les doublons fusionnés (status='deleted'), la détection
   // les exclut → no-op. Best-effort, ne bloque jamais la liste. v1.1.179.
   try {
+    await _healLocalConvMembers(env.APEX_CHAT_DB);   // v1.1.192 : local_+numéro → vrai compte
     const me = await env.APEX_CHAT_DB.prepare(
       'SELECT id, phone, real_name, pseudo FROM users WHERE id=?'
     ).bind(auth.sub).first();
@@ -1663,8 +1664,21 @@ export async function mergeDupAccountsInto(DB, peerId, dupAccounts, now) {
 // existent avec le même correspondant, on garde le + fourni en messages et on
 // fusionne les autres dedans (messages re-pointés, doublon archivé).
 // Suit merged_into jusqu'au compte canonique (anti-doublon de regroupement).
-async function _canonicalId(DB, id) {
+export async function _canonicalId(DB, id) {
   let cur = id, hops = 0;
+  // v1.1.192 — un id "local_+<numéro>" (contact ajouté par numéro côté client)
+  // est résolu vers le VRAI compte par son numéro de téléphone.
+  if (typeof cur === 'string' && cur.indexOf('local_') === 0) {
+    const tail = normPhone(cur.replace(/^local_/, '')).replace(/\D/g, '').slice(-8);
+    if (tail) {
+      try {
+        const u = await DB.prepare(
+          "SELECT id FROM users WHERE status != 'deleted' AND phone LIKE ? ORDER BY (last_seen IS NOT NULL) DESC, last_seen DESC LIMIT 1"
+        ).bind('%' + tail).first();
+        if (u && u.id) cur = u.id;
+      } catch (_) {}
+    }
+  }
   while (cur && hops < 4) {
     try {
       const r = await DB.prepare('SELECT merged_into FROM users WHERE id=?').bind(cur).first();
@@ -1673,6 +1687,32 @@ async function _canonicalId(DB, id) {
     break;
   }
   return cur;
+}
+
+// v1.1.192 — Répare les conversations dont un membre est un id bidon
+// "local_+<numéro>" (contact ajouté par numéro côté client, jamais résolu vers
+// le vrai compte → conversations fantômes, messages qui n'arrivent pas).
+// Re-pointe ces membres + leurs messages vers le vrai compte. Best-effort.
+export async function _healLocalConvMembers(DB) {
+  let fixed = 0;
+  try {
+    const rows = (await DB.prepare(
+      "SELECT DISTINCT user_id FROM conversation_members WHERE user_id LIKE 'local%'"
+    ).all()).results || [];
+    for (const row of rows) {
+      const localId = row.user_id;
+      const realId = await _canonicalId(DB, localId);
+      if (!realId || realId === localId) continue;   // numéro non résolu → on laisse
+      await DB.prepare(
+        `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+         SELECT conv_id, ?, role, joined_at, kevin_invisible FROM conversation_members WHERE user_id=?`
+      ).bind(realId, localId).run();
+      await DB.prepare('UPDATE messages SET sender_id=? WHERE sender_id=?').bind(realId, localId).run().catch(() => {});
+      await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(localId).run();
+      fixed++;
+    }
+  } catch (_) {}
+  return fixed;
 }
 
 export async function consolidateUserDms(DB, userId, now) {
