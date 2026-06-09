@@ -10,6 +10,8 @@
 ### ⏳ Étape 2 — à activer APRÈS ton test live (auth critique, non testable au sandbox)
 > Pourquoi staged : un guard mal réglé = lockout de TOUTES les apps (ta peur n°1). On valide d'abord que le portail kd-mc.com te connecte/installe bien, puis on branche.
 1. **Apps consomment la session** : à l'ouverture de CMCteams/Apex/Apex-Chat, lire `kdmcSSO.whoami()` → si session valide → connexion auto sans re-taper (additif + fail-open, login PIN conservé en secours).
+   - **Compte unique = achats toutes boutiques + forfaits Apex AI, etc.** (le même compte partout).
+   - **CMCteams = exception** : en plus de la session unique, demander le **matricule SBM** (ex U11804) à la connexion (app interne casino). Les autres apps : session unique suffit.
 2. **Accès uniquement par le domaine** : guard dans chaque app — si ouverte sur `…github.io` → rediriger vers l'adresse `*.kd-mc.com` (force le passage par le domaine sécurisé). À tester en live avant activation.
 3. **Test à faire (toi, ~2 min)** : ouvre **https://kd-mc.com** sur iPhone → crée le compte + accepte CGU → installe la PWA → rouvre : tu dois être reconnu auto. Dis-moi si OK → je branche l'étape 2.
 
