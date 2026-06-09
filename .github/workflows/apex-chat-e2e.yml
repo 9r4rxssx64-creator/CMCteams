@@ -67,6 +67,8 @@ jobs:
         working-directory: messaging-app/e2e
         env:
           APEX_CHAT_URL: https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/
+          # v1.1.198 — secret du login de test sûr (== APEX_CHAT_ADMIN_TOKEN côté worker)
+          E2E_TEST_SECRET: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
         run: npx playwright test --reporter=list,json
 
       - name: Upload Playwright report
@@ -86,9 +88,7 @@ jobs:
         run: |
           if [ -f results.json ]; then
             echo "## 🎭 Apex Chat E2E — résultats" >> $GITHUB_STEP_SUMMARY
-            PASSED=$(python3 -c "import json; d=json.load(open('results.json')); print(sum(1 for s in d.get('suites',[]) for sp in s.get('specs',[]) if sp.get('ok')))")
-            FAILED=$(python3 -c "import json; d=json.load(open('results.json')); print(sum(1 for s in d.get('suites',[]) for sp in s.get('specs',[]) if not sp.get('ok')))")
-            echo "- ✅ Tests OK : $PASSED" >> $GITHUB_STEP_SUMMARY
-            echo "- ❌ Tests KO : $FAILED" >> $GITHUB_STEP_SUMMARY
+            # v1.1.198 — liste EXACTE des specs échouées, sur stdout ET dans le summary.
+            python3 print-fails.py results.json | tee -a $GITHUB_STEP_SUMMARY
             echo "- 📦 Artefacts : voir 'playwright-report-${{ github.run_id }}'" >> $GITHUB_STEP_SUMMARY
           fi
