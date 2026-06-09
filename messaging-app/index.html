@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.185",
+  "softwareVersion": "v1.1.186",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -150,7 +150,7 @@ input,textarea,select{font-family:inherit;font-size:16px;border:none;outline:non
 .security-banner .key{color:var(--ax-gold-2)}
 
 /* ========== Main ========== */
-main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
   padding-bottom:calc(var(--ax-safe-bottom) + 80px)}
 
 /* ========== Bottom nav ========== */
@@ -226,14 +226,18 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 .conv-unread{background:var(--ax-gold);color:var(--ax-bg);font-size:.7em;padding:2px 6px;border-radius:8px;font-weight:700}
 
 /* ========== Chat view ========== */
-.chat-header{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--ax-bg-2);
+/* v1.1.186 — densité max : en-tête compact (nom sur 1 ligne), bulles serrées */
+.chat-header{display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--ax-bg-2);
   border-bottom:1px solid var(--ax-border);position:sticky;top:0;z-index:50}
-.chat-messages{padding:14px;display:flex;flex-direction:column;gap:6px}
-.msg{max-width:75%;padding:9px 13px;border-radius:18px;word-wrap:break-word;
-  line-height:1.35;font-size:.95em;position:relative}
-.msg.me{background:var(--ax-gold);color:var(--ax-bg);align-self:flex-end;border-bottom-right-radius:6px}
-.msg.them{background:var(--ax-bg-3);color:var(--ax-text);align-self:flex-start;border-bottom-left-radius:6px}
-.msg-time{color:var(--ax-text-3);font-size:.65em;margin-top:3px;text-align:right}
+.chat-header .avatar{width:32px;height:32px;font-size:.9em;flex-shrink:0}
+.chat-header .topbar-btn{width:34px;height:34px;flex-shrink:0}
+.chat-hname{font-weight:600;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-messages{padding:6px 8px;display:flex;flex-direction:column;gap:2px}
+.msg{max-width:84%;padding:6px 10px;border-radius:15px;word-wrap:break-word;
+  line-height:1.28;font-size:.9em;position:relative}
+.msg.me{background:var(--ax-gold);color:var(--ax-bg);align-self:flex-end;border-bottom-right-radius:5px}
+.msg.them{background:var(--ax-bg-3);color:var(--ax-text);align-self:flex-start;border-bottom-left-radius:5px}
+.msg-time{color:var(--ax-text-3);font-size:.6em;margin-top:1px;text-align:right;line-height:1}
 .msg.them .msg-time{color:var(--ax-text-3)}
 .msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
   font-size:.78em;padding:5px 12px;border-radius:14px;max-width:90%}
@@ -386,7 +390,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.185';
+const __APEX_CHAT_VERSION__ = 'v1.1.186';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -544,7 +548,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.185</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.186</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -558,7 +562,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.185</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.186</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6750,6 +6754,7 @@ K._renderBubble = function(m, conv, msgs){
           </div>` : ''}
           ${m.forwarded ? `<div class="forwarded-mark" title="Transféré depuis ${esc(m.forwarded_from_conv || '')}">↗ Transféré</div>` : ''}
           ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
+          ${m.media_url ? K._renderMediaEl(m) : ''}
           ${m.voice_data ? `<div class="voice-player" style="margin-bottom:4px">
             <audio id="aud-${esc(m.id)}" src="${esc(m.voice_data)}" preload="metadata" style="display:none"></audio>
             <div style="display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:18px;padding:6px 10px;max-width:280px">
@@ -6765,7 +6770,7 @@ K._renderBubble = function(m, conv, msgs){
           ${m.poll ? K._renderPoll(m) : ''}
           ${m.location ? K._renderLocation(m) : ''}
           ${m.contact_card ? K._renderContactCard(m) : ''}
-          ${m.deleted ? esc(m.text) : (m.text ? K._renderHashtags(K._renderMentions(K._renderMarkdown(m.text))) : (m.image_data || m.voice_data || m.poll || m.location || m.contact_card ? '' : '(message chiffré)'))}
+          ${m.deleted ? esc(m.text) : (m.text ? K._renderHashtags(K._renderMentions(K._renderMarkdown(m.text))) : (m.image_data || m.media_url || m.voice_data || m.poll || m.location || m.contact_card ? '' : '(message chiffré)'))}
           ${scamReason ? `<div class="scam-warning" onclick="K._showScamInfo('${esc(scamReason)}','${esc(m.id)}')" title="Message potentiellement suspect">⚠️ Suspect : ${esc(scamReason)}</div>` : ''}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
@@ -6813,9 +6818,9 @@ function renderChat(app){
     <div class="chat-header">
       <button class="topbar-btn" onclick="K.sv('chats')" aria-label="Retour">⬅</button>
       <div class="avatar">${esc((K._convName(conv) || '?')[0].toUpperCase())}</div>
-      <div style="flex:1;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
-        <div style="font-weight:600">${esc(K._convName(conv))}</div>
-        <div style="font-size:.75em;color:var(--ax-ok)" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
+        <div class="chat-hname">${esc(K._convName(conv))}</div>
+        <div style="font-size:.68em;color:var(--ax-ok);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
       </div>
       <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
@@ -6851,13 +6856,16 @@ function renderChat(app){
     <div class="chat-input">
       <div class="chat-attach-row">
         <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
-        <button class="chat-attach" onclick="document.getElementById('chat-img-input').click()" aria-label="Envoyer une image" title="Envoyer une image">📷</button>
+        <button class="chat-attach" onclick="document.getElementById('chat-media-input').click()" aria-label="Photo ou vidéo" title="Photo / vidéo (tous formats, jusqu'à 100 Mo)">📷</button>
+        <button class="chat-attach" onclick="document.getElementById('chat-file-input').click()" aria-label="Joindre un fichier" title="Joindre un fichier (tous formats)">📎</button>
         <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
         <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
         <button class="chat-attach" onclick="K._openPollComposer()" aria-label="Créer sondage" title="Sondage / vote">📊</button>
         <button class="chat-attach" onclick="K._openLocationShare()" aria-label="Partager position" title="Position GPS">📍</button>
         <button class="chat-attach" onclick="K._openContactCardComposer()" aria-label="Partager un contact" title="Carte de contact">📇</button>
       </div>
+      <input id="chat-media-input" type="file" accept="image/*,video/*" capture="environment" style="display:none" onchange="K._uploadMedia(this.files[0]);this.value=''">
+      <input id="chat-file-input" type="file" style="display:none" onchange="K._uploadMedia(this.files[0]);this.value=''">
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
       <div class="chat-input-row">
         <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft();K._autoResize&&K._autoResize(this)">${esc(K._loadDraft(conv.id) || '')}</textarea>
@@ -7335,8 +7343,10 @@ async function _handleWsMessage(data, convId){
         }
         let replyTo = sm.reply_to;
         if(typeof replyTo === 'string' && replyTo){ try{ replyTo = JSON.parse(replyTo); }catch(_e){_safeCatch('silent',_e)} }
+        const hmedia = K._parseMediaMarker(txt);   // v1.1.186 : média (photo/vidéo/fichier)
         K.messages[convId].push({
-          id: sm.id, from: sm.sender_id, text: txt,
+          id: sm.id, from: sm.sender_id, text: hmedia ? hmedia.text : txt,
+          ...(hmedia ? { media_url: hmedia.media_url, media_type: hmedia.media_type, media_name: hmedia.media_name, media_size: hmedia.media_size } : {}),
           ts: sm.ts || Date.now(), mime: sm.mime || 'text/plain',
           reply_to: replyTo || undefined,
           encrypted: !!sm.ciphertext, from_history: true
@@ -7371,10 +7381,12 @@ async function _handleWsMessage(data, convId){
         }
       }catch(e){ _safeCatch('decrypt-message', e); }
 
+      const lmedia = K._parseMediaMarker(decryptedText);   // v1.1.186 : média reçu
       const msg = {
         id: data.id || 'm_' + Date.now(),
         from: data.sender_id,
-        text: decryptedText,
+        text: lmedia ? lmedia.text : decryptedText,
+        ...(lmedia ? { media_url: lmedia.media_url, media_type: lmedia.media_type, media_name: lmedia.media_name, media_size: lmedia.media_size } : {}),
         ts: data.ts || Date.now(),
         encrypted: !!data.ciphertext
       };
@@ -9483,6 +9495,78 @@ K._toggleVoiceRecord = async function(){
 //  v1.1.28 — Image upload + alt-text auto (accessibilité)
 //  Génère description IA via /api/ai/image-describe (Anthropic Vision)
 // ============================================================================
+// v1.1.186 — Médias R2 : photos / vidéos / fichiers TOUS FORMATS, toutes tailles
+// (jusqu'à 100 Mo), avec aperçu visuel. URL authentifiée par ?token=.
+K._mediaSrc = function(url){
+  if(!url) return '';
+  const full = String(url).startsWith('http') ? url : (API_BASE + url);
+  return full + (full.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(K.token || '');
+};
+K._fmtSize = function(b){
+  b = +b || 0;
+  if(b < 1024) return b + ' o';
+  if(b < 1048576) return (b/1024).toFixed(0) + ' Ko';
+  return (b/1048576).toFixed(1) + ' Mo';
+};
+K._renderMediaEl = function(m){
+  const src = K._mediaSrc(m.media_url);
+  const t = (m.media_type || '').toLowerCase();
+  const cap = 'max-width:260px;max-height:300px;border-radius:10px;display:block;margin-bottom:4px';
+  if(t.indexOf('image/') === 0)
+    return `<img src="${esc(src)}" alt="${esc(m.media_name || 'image')}" style="${cap};object-fit:cover;cursor:pointer" loading="lazy" onclick="window.open('${esc(src)}','_blank')">`;
+  if(t.indexOf('video/') === 0)
+    return `<video controls preload="metadata" playsinline src="${esc(src)}" style="${cap};background:#000"></video>`;
+  if(t.indexOf('audio/') === 0)
+    return `<audio controls preload="metadata" src="${esc(src)}" style="max-width:260px;display:block;margin-bottom:4px"></audio>`;
+  return `<a href="${esc(src)}" target="_blank" rel="noopener" download="${esc(m.media_name || 'fichier')}" style="display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:8px 10px;margin-bottom:4px;text-decoration:none;color:var(--ax-text);max-width:260px">
+    <span style="font-size:1.4em">📎</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.media_name || 'fichier')}</span>
+    <span style="font-size:.72em;color:var(--ax-text-3)">${esc(K._fmtSize(m.media_size))}</span></a>`;
+};
+K._parseMediaMarker = function(txt){
+  if(typeof txt !== 'string' || txt.indexOf('APXMEDIA1:') !== 0) return null;
+  try{ const j = JSON.parse(txt.slice(10)); return { media_url:j.u, media_type:j.m, media_name:j.n, media_size:j.s, text:j.c || '' }; }
+  catch(_){ return null; }
+};
+K._uploadMedia = async function(file){
+  if(!file) return;
+  const conv = K.viewData; if(!conv){ toast('Pas de conversation active', 'warn'); return; }
+  if(file.size > 100 * 1024 * 1024){ toast('Fichier > 100 Mo (max)', 'err', 5000); return; }
+  const kind = (file.type||'').startsWith('video/') ? 'vidéo' : (file.type||'').startsWith('image/') ? 'image' : (file.type||'').startsWith('audio/') ? 'audio' : 'fichier';
+  toast('📤 Envoi ' + kind + ' (' + K._fmtSize(file.size) + ')…', 'info', 3000);
+  try{
+    const r = await fetch(API_BASE + '/api/media', {
+      method:'POST',
+      headers:{ 'Authorization':'Bearer ' + (K.token||''), 'Content-Type': file.type || 'application/octet-stream', 'x-file-name': encodeURIComponent(file.name || 'fichier') },
+      body: file,
+    });
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok || !d.ok){ toast('❌ ' + (d.detail || d.message || d.error || ('HTTP ' + r.status)), 'err', 7000); return; }
+    await K._sendMediaMessage({ url:d.url, mime:d.mime || file.type, name:d.name || file.name, size:d.size || file.size });
+  }catch(e){ toast('❌ Envoi média : ' + ((e && e.message) || 'réseau'), 'err', 7000); }
+};
+K._sendMediaMessage = async function(media){
+  const conv = K.viewData; if(!conv) return;
+  const input = $('#msg-input');
+  const caption = (input && input.value.trim()) || '';
+  const marker = 'APXMEDIA1:' + JSON.stringify({ u:media.url, m:media.mime, n:media.name, s:media.size, c:caption });
+  let ciphertext = null;
+  try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); }
+  const msg = { id:'m_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), from:K.user.id, text:caption,
+    media_url:media.url, media_type:media.mime, media_name:media.name, media_size:media.size, ts:Date.now(), encrypted:!!ciphertext };
+  if(!K.messages[conv.id]) K.messages[conv.id] = [];
+  K.messages[conv.id].push(msg); ls('messages_' + conv.id, K.messages[conv.id]);
+  if(input) input.value = '';
+  K.render();
+  const wire = { type:'message', ciphertext: ciphertext || marker, mime:'text/plain', ts:msg.ts, id:msg.id };
+  if(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === conv.id){
+    try{ K.ws.send(JSON.stringify(wire)); toast('📨 Envoyé', 'ok', 1000); }
+    catch(e){ K._outboxAdd({ conv_id:conv.id, ciphertext:wire.ciphertext, mime:'text/plain', ts:msg.ts, id:msg.id }); }
+  } else {
+    K._outboxAdd({ conv_id:conv.id, ciphertext:wire.ciphertext, mime:'text/plain', ts:msg.ts, id:msg.id });
+    toast('📭 Hors-ligne — média en attente', 'info', 1800);
+  }
+};
+
 K._uploadImage = async function(file){
   if(!file) return;
   if(!file.type || !file.type.startsWith('image/')){ toast('Fichier non-image', 'err'); return; }
