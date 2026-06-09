@@ -3012,19 +3012,19 @@ async function handleContacts(request, env) {
   if (auth.is_admin) {
     try {
       const all = (await DB.prepare(
-        "SELECT id FROM users WHERE (is_banned=0 OR is_banned IS NULL) AND status != 'deleted'"
+        "SELECT id FROM users WHERE (is_banned=0 OR is_banned IS NULL) AND status != 'deleted' AND (source IS NULL OR source != 'e2e-test')"
       ).all()).results || [];
       for (const r of all) if (r.id !== me) ids.add(r.id);
     } catch (_) {}
   }
-  // Charge les profils (exclut supprimés/fusionnés).
+  // Charge les profils (exclut supprimés/fusionnés ET comptes de test E2E Alice/Bob).
   const users = [];
   for (const id of ids) {
     const u = await DB.prepare(
-      `SELECT id, pseudo, real_name, display_name, phone, avatar_url, last_seen, status, merged_into
+      `SELECT id, pseudo, real_name, display_name, phone, avatar_url, last_seen, status, merged_into, source
          FROM users WHERE id=?`
     ).bind(id).first().catch(() => null);
-    if (u && u.status !== 'deleted' && !u.merged_into) users.push(u);
+    if (u && u.status !== 'deleted' && !u.merged_into && u.source !== 'e2e-test') users.push(u);
   }
   // v1.1.201 — alias d'affichage PAR utilisateur (contacts.nickname) : Kevin peut
   // renommer un contact pour SA vue (« pseudo pour affichage au lieu du nom »).
@@ -3165,7 +3165,7 @@ async function handleAdminAllUsers(request, env) {
               created_at, last_seen, is_admin, is_banned, admin_authorized,
               last_ip_hash, last_user_agent, last_lat, last_lng, last_geo_label,
               last_device_label, premium_until, source, invited_by, status
-            FROM users WHERE 1=1`;
+            FROM users WHERE 1=1 AND (source IS NULL OR source != 'e2e-test')`;
   const args = [];
   if (filter === 'banned') sql += ' AND is_banned=1';
   else if (filter === 'active') sql += ' AND (is_banned=0 OR is_banned IS NULL)';

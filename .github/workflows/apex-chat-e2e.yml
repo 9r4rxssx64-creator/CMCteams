@@ -76,6 +76,20 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
         run: npx playwright test --reporter=list,json
 
+      - name: Efface les comptes de test Alice/Bob (déterministe)
+        if: always()
+        env:
+          SECRET: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
+        run: |
+          # v1.1.203 — Kevin « toujours Alice et Bob » : cleanup FIABLE (curl direct,
+          # indépendant du afterAll Playwright qui pouvait échouer en silence).
+          if [ -z "$SECRET" ]; then echo "::notice::pas de secret — skip cleanup"; exit 0; fi
+          CODE=$(curl -s -o /tmp/cleanup.json -w "%{http_code}" -X POST \
+            "https://apex-chat-api.9r4rxssx64.workers.dev/api/test/cleanup" \
+            -H "X-Test-Auth: $(printf '%s' "$SECRET" | tr -d '\n\r')" -H "content-type: application/json" -d '{}')
+          echo "cleanup HTTP $CODE"; cat /tmp/cleanup.json 2>/dev/null || true
+          echo "::notice::Alice/Bob cleanup → HTTP $CODE"
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
