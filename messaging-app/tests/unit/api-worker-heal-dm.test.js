@@ -95,11 +95,14 @@ function statefulDB(state) {
       return null;
     },
     async all() {
-      // candidats auto-heal (même fin de numéro OU placeholder)
-      if (sql.includes('phone LIKE') && sql.includes('WHERE id != ?')) {
-        const [kid, tail] = this._args;
-        const res = state.users.filter(u => u.id !== kid && u.status !== 'deleted' && !u.is_admin &&
-          ((tail && String(u.phone || '').replace(/\D/g, '').slice(-8) === tail) || u.source === 'core_pair'));
+      // candidats auto-heal (même fin de numéro OU nom/pseudo proche)
+      if (sql.includes('phone LIKE') && sql.includes("status != 'deleted'") && sql.includes('LOWER(real_name) LIKE')) {
+        const [tail, , nameLike] = this._args;
+        const tok = String(nameLike || '').replace(/%/g, '').toLowerCase();
+        const res = state.users.filter(u => !u.is_admin && u.status !== 'deleted' && (
+          (tail && String(u.phone || '').replace(/\D/g, '').slice(-8) === tail) ||
+          (tok && (String(u.real_name || '').toLowerCase().includes(tok) || String(u.pseudo || '').toLowerCase().includes(tok)))
+        ));
         return { results: res };
       }
       // recherche peer par LIKE
@@ -335,30 +338,48 @@ describe('POST /api/admin/heal-dm', () => {
     expect(kept.last_device_label).toBe('iPhone');
   });
 
-  it('AUTO au login : groupe seul même numéro (format différent) + placeholder', async () => {
-    const st = baseState();
-    // doublon = MÊME numéro que laur_real (+33222) mais format national « 0622... »
-    st.users.push({ id: 'laur_nat', pseudo: 'lau', real_name: 'Laurence SAINT-POLIT', phone: '0622', source: 'apex-chat-direct', is_admin: 0, last_seen: Date.now() - 1000, status: 'active' });
-    // place laur_real avec un numéro dont la fin matche « 0622 » → on aligne les fins
-    st.users.find(u => u.id === 'laur_real').phone = '+33600000622';
-    st.users.find(u => u.id === 'laur_nat').phone = '0600000622';     // même fin 00000622
-    // un DM placeholder (côté Kevin) + un message du doublon
-    st.conversations.push({ id: 'cPh', type: 'dm', created_at: 1, archived_at: null });
-    st.members.push({ conv_id: 'cPh', user_id: 'kevin' }, { conv_id: 'cPh', user_id: 'laurence_saint_polit' });
-    st.messages.push({ conv_id: 'cPh', ts: 9, sender_id: 'laurence_saint_polit' }, { conv_id: 'cPh', ts: 10, sender_id: 'laur_nat' });
+  it('AUTO (scénario réel) : garde le compte avec messages, fusionne stubs sso/invitation, Kevin retombe sur le bon compte', async () => {
+    // Reproduit l'état réel de Kevin : 3 comptes Laurence.
+    const now = Date.now();
+    const st = {
+      users: [
+        { id: 'kevin', pseudo: 'kevin', real_name: 'Kevin DESARZENS', phone: '+33111', source: 'core_pair', is_admin: 1, last_seen: now, status: 'active' },
+        // le VRAI : 8 messages, vrai numéro, vu récemment
+        { id: 'lolo', pseudo: 'lolo', real_name: 'Laurence SAINT-POLIT', phone: '+33640616184', source: 'direct-signup', is_admin: 0, last_seen: now, status: 'active' },
+        // stub SSO : 0 msg, faux numéro, jamais vu — membre du DM "kevin↔laurence"
+        { id: 'user_laurence', pseudo: 'laurence', real_name: 'Laurence SAINT-POLIT', phone: 'user_laurence', source: 'apex-sso', is_admin: 0, last_seen: 0, status: 'active' },
+        // stub invitation : 0 msg, MÊME numéro que le vrai — membre d'un autre DM de Kevin
+        { id: 'inv', pseudo: 'laurence_5467', real_name: 'Laurence', phone: '+33640616184', source: 'user-invitation', is_admin: 0, last_seen: 0, status: 'active' },
+      ],
+      conversations: [
+        { id: 'c_solo', type: 'dm', created_at: 1, archived_at: null },        // lolo seule, 8 msg
+        { id: 'c_k_sso', type: 'dm', created_at: 2, archived_at: null },       // kevin + stub sso
+        { id: 'c_k_inv', type: 'dm', created_at: 3, archived_at: null },       // kevin + stub invitation
+      ],
+      members: [
+        { conv_id: 'c_solo', user_id: 'lolo', role: 'member' },
+        { conv_id: 'c_k_sso', user_id: 'kevin', role: 'owner' }, { conv_id: 'c_k_sso', user_id: 'user_laurence', role: 'member' },
+        { conv_id: 'c_k_inv', user_id: 'kevin', role: 'owner' }, { conv_id: 'c_k_inv', user_id: 'inv', role: 'member' },
+      ],
+      messages: [],
+    };
+    for (let i = 0; i < 8; i++) st.messages.push({ conv_id: 'c_solo', ts: 100 + i, sender_id: 'lolo' });
     const env = ENV({ APEX_CHAT_DB: statefulDB(st) });
 
-    // Laurence se connecte (son vrai compte) → réparation AUTO, zéro clic
-    const summary = await autoHealPerson(env, st.users.find(u => u.id === 'laur_real'));
-    expect(summary.merged).toBeGreaterThanOrEqual(2);   // le national + le placeholder
-    // doublons soft-deleted, vrai compte gardé
-    expect(st.users.find(u => u.id === 'laur_nat').status).toBe('deleted');
-    expect(st.users.find(u => u.id === 'laurence_saint_polit').status).toBe('deleted');
-    expect(st.users.find(u => u.id === 'laur_real').status).toBe('active');
-    // messages ré-attribués au vrai compte + le placeholder (membre du DM de Kevin)
-    // est remplacé par le vrai compte → Kevin parlera au bon compte
-    expect(st.messages.every(m => m.sender_id === 'laur_real')).toBe(true);
-    expect(st.members.some(m => m.conv_id === 'cPh' && m.user_id === 'laur_real')).toBe(true);
+    // Laurence ouvre l'app sur N'IMPORTE lequel de ses comptes (ici le stub sso)
+    const summary = await autoHealPerson(env, st.users.find(u => u.id === 'user_laurence'));
+
+    // garde 'lolo' (8 messages), fusionne les 2 stubs
+    expect(summary.keeper).toBe('lolo');
+    expect(st.users.find(u => u.id === 'user_laurence').status).toBe('deleted');
+    expect(st.users.find(u => u.id === 'user_laurence').merged_into).toBe('lolo');
+    expect(st.users.find(u => u.id === 'inv').status).toBe('deleted');
+    expect(st.users.find(u => u.id === 'lolo').status).toBe('active');
+    expect(st.users.find(u => u.id === 'kevin').status).toBe('active');     // jamais l'admin
+    // Kevin se retrouve membre d'un DM avec le VRAI compte (lolo)
+    const kevinConvs = st.members.filter(m => m.user_id === 'kevin').map(m => m.conv_id);
+    const loloConvsWithKevin = kevinConvs.filter(cid => st.members.some(m => m.conv_id === cid && m.user_id === 'lolo'));
+    expect(loloConvsWithKevin.length).toBeGreaterThanOrEqual(1);
   });
 
   it('ANTI-VERROUILLAGE : un JWT lié à un compte fusionné agit comme le compte gardé', async () => {

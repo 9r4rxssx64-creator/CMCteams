@@ -1556,6 +1556,19 @@ export async function mergeDupAccountsInto(DB, peerId, dupAccounts, now) {
 // Garantit 1 SEULE conversation DM par contact pour un user : si plusieurs DM
 // existent avec le même correspondant, on garde le + fourni en messages et on
 // fusionne les autres dedans (messages re-pointés, doublon archivé).
+// Suit merged_into jusqu'au compte canonique (anti-doublon de regroupement).
+async function _canonicalId(DB, id) {
+  let cur = id, hops = 0;
+  while (cur && hops < 4) {
+    try {
+      const r = await DB.prepare('SELECT merged_into FROM users WHERE id=?').bind(cur).first();
+      if (r && r.merged_into && r.merged_into !== cur) { cur = r.merged_into; hops++; continue; }
+    } catch (_) { /* colonne absente → on garde cur */ }
+    break;
+  }
+  return cur;
+}
+
 export async function consolidateUserDms(DB, userId, now) {
   now = now || Date.now();
   const out = { groups_merged: 0, convs_archived: 0 };
@@ -1565,12 +1578,15 @@ export async function consolidateUserDms(DB, userId, now) {
      FROM conversations c JOIN conversation_members m ON m.conv_id=c.id AND m.user_id=?
      WHERE c.type='dm'`
   ).bind(userId).all()).results || [];
-  // Regroupe par « autre membre » (le correspondant du DM).
+  // Regroupe par « autre membre » CANONIQUE (suit merged_into) → 1 conv/contact
+  // même si les anciennes convs pointaient sur des comptes-doublons.
   const groups = new Map();
   for (const d of dms) {
     if (d.archived_at) continue;
     const mem = (await DB.prepare('SELECT user_id FROM conversation_members WHERE conv_id=?').bind(d.id).all()).results || [];
-    const others = mem.map(x => x.user_id).filter(u => u !== userId).sort().join(',');
+    const otherIds = [];
+    for (const x of mem) { if (x.user_id !== userId) otherIds.push(await _canonicalId(DB, x.user_id)); }
+    const others = [...new Set(otherIds)].sort().join(',');
     if (!groups.has(others)) groups.set(others, []);
     groups.get(others).push(d);
   }
@@ -1602,31 +1618,90 @@ export async function consolidateUserDms(DB, userId, now) {
 // compte authentifié, et garantit 1 conv/contact. Best-effort, ne JAMAIS bloquer
 // le login (règle zéro-lockout). Réparer Laurence répare aussi le DM de Kevin
 // (le placeholder qu'elle absorbe était membre de la conv de Kevin).
-export async function autoHealPerson(env, keeper) {
+export async function autoHealPerson(env, caller) {
   const DB = env.APEX_CHAT_DB;
-  const summary = { merged: 0, dms_merged: 0 };
-  if (!keeper || !keeper.id) return summary;
+  const STUB_SOURCES = ['core_pair', 'apex-sso', 'user-invitation'];
+  const summary = { merged: 0, dms_merged: 0, keeper: null };
+  if (!caller || !caller.id) return summary;
   const now = Date.now();
-  const keepTail = normPhone(keeper.phone || '').replace(/\D/g, '').slice(-8);
-  const keepName = _normNameKey(keeper.real_name) || _normNameKey(keeper.pseudo);
-  // Candidats : même fin de numéro OU placeholder (core_pair). On filtre ensuite.
+  const tail = (p) => normPhone(p || '').replace(/\D/g, '').slice(-8);
+  const callerTail = tail(caller.phone);
+  const callerName = _normNameKey(caller.real_name) || _normNameKey(caller.pseudo);
+  const callerPseudo = _normNameKey(caller.pseudo);
+  const firstTok = (callerName.split(' ')[0] || '').slice(0, 20);
+
+  // Candidats larges : même fin de numéro OU nom/pseudo proche.
   const rows = (await DB.prepare(
-    `SELECT id, phone, real_name, pseudo, source, is_admin, status FROM users
-     WHERE id != ? AND status != 'deleted' AND is_admin = 0
-       AND ( (? != '' AND phone LIKE ?) OR source = 'core_pair' )`
-  ).bind(keeper.id, keepTail, '%' + keepTail).all()).results || [];
-  const dups = rows.filter(r => {
-    const sameTail = keepTail && normPhone(r.phone || '').replace(/\D/g, '').slice(-8) === keepTail;
-    const samePlaceholder = r.source === 'core_pair' &&
-      (_normNameKey(r.real_name) === keepName || _normNameKey(r.pseudo) === _normNameKey(keeper.pseudo));
-    return sameTail || samePlaceholder;
+    `SELECT id, phone, real_name, pseudo, source, is_admin, status, last_seen FROM users
+     WHERE is_admin = 0 AND status != 'deleted'
+       AND ( (? != '' AND phone LIKE ?) OR LOWER(real_name) LIKE ? OR LOWER(pseudo) LIKE ? )`
+  ).bind(callerTail, '%' + callerTail, '%' + firstTok + '%', '%' + firstTok + '%').all()).results || [];
+
+  // Groupe = MÊME personne : même nom normalisé OU même fin de numéro que l'appelant.
+  let group = rows.filter(r => {
+    const sameName = (_normNameKey(r.real_name) && _normNameKey(r.real_name) === callerName) ||
+      (callerPseudo && _normNameKey(r.pseudo) === callerPseudo);
+    const sameTail = callerTail && tail(r.phone) === callerTail;
+    return sameName || sameTail;
+  });
+  if (!group.some(g => g.id === caller.id)) {
+    group.push({ id: caller.id, phone: caller.phone, real_name: caller.real_name, pseudo: caller.pseudo, source: caller.source, last_seen: caller.last_seen || 0 });
+  }
+  if (group.length < 2) {
+    const dm = await consolidateUserDms(DB, caller.id, now);
+    summary.dms_merged = dm.groups_merged;
+    return summary;
+  }
+
+  // Nb messages par compte (pour choisir le compte à GARDER = le vrai).
+  for (const g of group) {
+    g._msgs = (await DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender_id=?').bind(g.id).first())?.c ?? 0;
+    g._digits = normPhone(g.phone || '').replace(/\D/g, '').length;
+  }
+  // keeper = + de messages, puis + récemment vu, puis vrai numéro, puis le plus ancien.
+  group.sort((a, b) => (b._msgs - a._msgs) || ((b.last_seen || 0) - (a.last_seen || 0)) || (b._digits - a._digits));
+  const keeper = group[0];
+  summary.keeper = keeper.id;
+  const keeperTail = tail(keeper.phone);
+  const keeperName = _normNameKey(keeper.real_name) || _normNameKey(keeper.pseudo);
+
+  // 2e passe — rescan par les identifiants du KEEPER (transitivité) : si l'appelant
+  // était un stub sans numéro, on rattrape les autres comptes (ex: un stub au nom
+  // court mais MÊME numéro que le vrai compte) que les identifiants de l'appelant
+  // n'avaient pas captés.
+  if (keeperTail || keeperName) {
+    const kFirst = (keeperName.split(' ')[0] || '').slice(0, 20);
+    const more = (await DB.prepare(
+      `SELECT id, phone, real_name, pseudo, source, is_admin, status, last_seen FROM users
+       WHERE is_admin = 0 AND status != 'deleted'
+         AND ( (? != '' AND phone LIKE ?) OR LOWER(real_name) LIKE ? OR LOWER(pseudo) LIKE ? )`
+    ).bind(keeperTail, '%' + keeperTail, '%' + kFirst + '%', '%' + kFirst + '%').all()).results || [];
+    for (const r of more) {
+      if (group.some(g => g.id === r.id)) continue;
+      const sameName = (_normNameKey(r.real_name) && _normNameKey(r.real_name) === keeperName);
+      const sameTail = keeperTail && tail(r.phone) === keeperTail;
+      if (sameName || sameTail) {
+        r._msgs = (await DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender_id=?').bind(r.id).first())?.c ?? 0;
+        group.push(r);
+      }
+    }
+  }
+
+  // dups = autres comptes, UNIQUEMENT s'ils sont des stubs/doublons SÛRS :
+  // même fin de numéro, OU vide (0 msg & jamais vu), OU source stub. Jamais 2
+  // vrais comptes actifs distincts (anti-fusion d'homonymes).
+  const dups = group.filter(g => g.id !== keeper.id).filter(g => {
+    const sameTail = keeperTail && tail(g.phone) === keeperTail;
+    const empty = g._msgs === 0 && (g.last_seen || 0) === 0;
+    const stubSrc = STUB_SOURCES.includes(g.source);
+    return sameTail || empty || stubSrc;
   });
   if (dups.length) {
-    const res = await mergeDupAccountsInto(DB, keeper.id, dups, now);
-    summary.merged = res.merged_accounts.length;
-    try { await auditLog(env, keeper.id, 'auto_merge_login', 'user', keeper.id,
-      { removed: dups.map(d => d.id) }, null); } catch (_) {}
+    await mergeDupAccountsInto(DB, keeper.id, dups.map(d => ({ id: d.id, pseudo: d.pseudo })), now);
+    summary.merged = dups.length;
+    try { await auditLog(env, keeper.id, 'auto_merge_person', 'user', keeper.id, { kept: keeper.id, removed: dups.map(d => d.id) }, null); } catch (_) {}
   }
+  // 1 conv/contact pour le compte gardé (re-groupe par membre canonique).
   const dmRes = await consolidateUserDms(DB, keeper.id, now);
   summary.dms_merged = dmRes.groups_merged;
   return summary;
@@ -1846,6 +1921,19 @@ async function handleHealDm(request, env) {
       if (res.consolidate_error) report.consolidate_error = res.consolidate_error;
       try { await auditLog(env, auth.sub, 'merge_dup_accounts', 'user', peer.id,
         { kept: peer.id, removed: dupAccounts.map(d => d.id) }, request); } catch (_) {}
+    }
+
+    // Réparation INTELLIGENTE complète du correspondant (même logique que l'auto
+    // au login) : choisit le vrai compte, fusionne TOUS les stubs (sso/invitation/
+    // vide), 1 conv/contact. Permet à Kevin de tout réparer SEUL depuis le bouton.
+    if (apply) {
+      try {
+        const pr = await DB.prepare('SELECT id, phone, real_name, pseudo, source, last_seen FROM users WHERE id=?').bind(peer.id).first();
+        if (pr) { const s = await autoHealPerson(env, pr); report.auto_heal = s; }
+        // consolide aussi les conversations de l'admin appelant (1 conv/contact côté Kevin)
+        const ka = await DB.prepare('SELECT id, phone, real_name, pseudo FROM users WHERE id=?').bind(auth.sub).first();
+        if (ka) await consolidateUserDms(DB, ka.id, Date.now());
+      } catch (e) { report.auto_heal_error = e?.message || '?'; }
     }
 
     report.ok = true;
