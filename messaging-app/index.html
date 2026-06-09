@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.204",
+  "softwareVersion": "v1.1.205",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -396,7 +396,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.204';
+const __APEX_CHAT_VERSION__ = 'v1.1.205';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -506,7 +506,7 @@ if('serviceWorker' in navigator){
       _versionCheckRunning = false;
     }
   }
-  // v1.1.204 — K est défini dans un bloc <script> ULTÉRIEUR (window.K = {…}).
+  // v1.1.205 — K est défini dans un bloc <script> ULTÉRIEUR (window.K = {…}).
   // L'assigner ici lançait un ReferenceError "K is not defined" au boot (et
   // l'objet K aurait de toute façon été écrasé). On expose après parse complet.
   setTimeout(() => { try { if (window.K) window.K._checkRemoteVersion = _checkRemoteVersion; } catch (_e) {} }, 0);   // exposé : déclenché aussi aux changements de vue
@@ -557,7 +557,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.204</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.205</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -571,7 +571,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.204</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.205</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -928,16 +928,11 @@ K._ensurePermsOnce = function(){
       if(localStorage.getItem('apex_chat_perms_v1')) return;
       if(typeof K._showModal !== 'function'){ K._grantPerms(); return; }
       K._showModal('🔓 Autorisations', `
-        <p style="color:var(--ax-text-2);line-height:1.6">Pour profiter de tout — <b>appels</b> (caméra + micro), <b>photos</b>, <b>position</b> et <b>notifications</b> — Apex Chat a besoin de ton accord. Tout reste <b>privé et chiffré de bout en bout</b>. On ne te le redemandera <b>jamais</b>.</p>
+        <p style="color:var(--ax-text-2);line-height:1.6">Apex Chat a besoin de ton accord pour les <b>appels</b> (caméra + micro), <b>photos</b>, <b>position</b> et <b>notifications</b>. Tout reste <b>privé et chiffré de bout en bout</b>. C'est <b>obligatoire</b> pour utiliser l'app — on ne te le redemandera <b>jamais</b>.</p>
         <button class="btn btn-block" style="margin-top:14px" onclick="K._grantPerms()">✅ Tout autoriser</button>
-        <button class="btn btn-out btn-block" style="margin-top:8px" onclick="K._skipPerms()">Plus tard</button>
-      `);
+      `, { noClose: true });
     }catch(_e){ try{ _safeCatch('silent', _e); }catch(__){} }
   }, 1500);
-};
-K._skipPerms = function(){
-  try{ localStorage.setItem('apex_chat_perms_v1', JSON.stringify({ ts: Date.now(), granted: false })); }catch(_){}
-  try{ K._closeModal && K._closeModal(); }catch(_){}
 };
 K._grantPerms = async function(){
   const res = {};
@@ -6204,17 +6199,24 @@ function renderAuthStep(){
       <label class="label" style="margin-top:14px">Ton prénom + nom <span style="color:#e63946">*</span></label>
       <input id="auth-name" type="text" class="input" placeholder="Ex: Marc Dupont (ou Dupont Marc)" autocomplete="name">
       <p style="font-size:.72em;color:var(--ax-text-3);margin-top:4px">🔒 Les deux sont obligatoires (n'importe quel ordre, casse libre)</p>
-      <button id="btn-auth-phone" type="button" class="btn btn-block" style="margin-top:16px">
+      <label style="display:flex;align-items:flex-start;gap:9px;margin-top:16px;font-size:.8em;color:var(--ax-text-2);cursor:pointer;line-height:1.45">
+        <input id="auth-cgu" type="checkbox" style="margin-top:2px;width:20px;height:20px;flex:0 0 auto;accent-color:var(--ax-gold)">
+        <span>J'accepte les <a href="./cgu.html" target="_blank" style="color:var(--ax-gold)">conditions d'utilisation</a> et la politique de confidentialité.</span>
+      </label>
+      <button id="btn-auth-phone" type="button" class="btn btn-block" style="margin-top:14px" disabled>
         📱 Recevoir le code SMS
       </button>
       <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
     setTimeout(()=>{
       $('#auth-phone')?.focus();
-      // CGU implicite : tout remplissage de champ login = acceptation des CGU (RGPD)
-      const acceptCgu = () => {
+      // v1.1.205 (Kevin "pas de plus tard, ou accepté ou pas de connexion") — CGU
+      // en GATE EXPLICITE : case « J'accepte » OBLIGATOIRE, le bouton SMS reste
+      // DÉSACTIVÉ tant qu'elle n'est pas cochée → aucune connexion sans acceptation.
+      // Demandé 1 fois (flag apex_chat_cgu_v1) : si déjà accepté, pré-coché + débloqué.
+      const acceptCgu = (explicit) => {
         try{
           if(!localStorage.getItem('apex_chat_cgu_v1')){
-            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, implicit: true, ua: navigator.userAgent.slice(0, 200) };
+            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, implicit: !explicit, ua: navigator.userAgent.slice(0, 200) };
             localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(accept));
             // Push backend (RGPD trace immutable) — best-effort
             const phone = (document.getElementById('auth-phone')?.value || '').replace(/[^\d+]/g, '');
@@ -6226,17 +6228,31 @@ function renderAuthStep(){
           }
         }catch(_e){_safeCatch('silent',_e)}
       };
-      ['auth-phone','auth-name'].forEach(id=>{
-        const el = document.getElementById(id);
-        if(el) el.addEventListener('input', acceptCgu, { once: true });
-      });
+      const cguBox = $('#auth-cgu');
+      const cguDone = !!localStorage.getItem('apex_chat_cgu_v1');
+      const setSendEnabled = (on) => {
+        const b = $('#btn-auth-phone'); if(!b) return;
+        b.disabled = !on; b.style.opacity = on ? '' : '.5'; b.style.pointerEvents = on ? '' : 'none';
+      };
+      if(cguBox){
+        cguBox.checked = cguDone;           // déjà accepté → pré-coché (demandé 1 fois)
+        setSendEnabled(cguDone);
+        cguBox.addEventListener('change', () => {
+          if(cguBox.checked){ acceptCgu(true); setSendEnabled(true); }
+          else { setSendEnabled(false); }   // décoché → re-bloque l'accès
+        });
+      }
       // Listener direct (ne dépend pas du onclick attribute)
       const btn = $('#btn-auth-phone');
       if(btn){
         btn.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          acceptCgu();
+          if(!localStorage.getItem('apex_chat_cgu_v1')){
+            $('#auth-debug').textContent = '☝ Coche « J\'accepte les conditions » pour continuer';
+            return;
+          }
+          acceptCgu(true);
           $('#auth-debug').textContent = '⏳ Envoi en cours...';
           try{
             await K._handleAuthPhone();
@@ -6581,7 +6597,7 @@ K.render = function(){
     case 'settings': renderSettings(app); break;
     case 'admin': renderAdmin(app); break;
     case 'admin-diag': renderAdminDiag(app); break;
-    case 'admin-users': renderAdminLiveUsers(app); break; /* v1.1.204 : vraie liste serveur + en ligne (l'ancienne liste figée PRECONFIGURED est retirée) */
+    case 'admin-users': renderAdminLiveUsers(app); break; /* v1.1.205 : vraie liste serveur + en ligne (l'ancienne liste figée PRECONFIGURED est retirée) */
     case 'admin-live-users': renderAdminLiveUsers(app); break;
     case 'admin-connections': renderAdminConnections(app); break;
     case 'admin-toggles': renderAdminToggles(app); break;
@@ -7167,7 +7183,7 @@ K._reauthAny = async function(reopenConvId, cause){
 // Alias rétro-compat : tous les call sites historiques (_reauthAdmin) marchent.
 K._reauthAdmin = K._reauthAny;
 
-// v1.1.204 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
+// v1.1.205 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
 // Si le localStorage a été vidé (éviction iOS PWA) → plus de token → ni
 // contacts ni messages. Dès qu'un user+numéro sont connus, on re-login
 // transparent (le bypass marche pour Kevin), puis on recharge convs+contacts.
@@ -8268,7 +8284,7 @@ K._saveProfile = async function(){
   if(K.view === 'settings') K.sv('settings');
 };
 
-// v1.1.204 — Fiche de renseignement d'un contact : voir/modifier/supprimer +
+// v1.1.205 — Fiche de renseignement d'un contact : voir/modifier/supprimer +
 // alias d'affichage ("pseudo pour affichage au lieu du nom", par utilisateur).
 K._openContactSheet = async function(id){
   if(!id) return;
@@ -9907,7 +9923,7 @@ K._fetchContacts = async function(silent){
   try{
     let users = [];
     let diagInfo = '';
-    // v1.1.204 — AUTO : si pas de token serveur mais user+numéro connus,
+    // v1.1.205 — AUTO : si pas de token serveur mais user+numéro connus,
     // reconnexion transparente avant de charger (Kevin « tout auto toujours »).
     if((!K.token || String(K.token).startsWith('local-')) && K.user?.phone){
       try{ await K._reconnectSession(true); }catch(_e){_safeCatch('silent',_e)}
@@ -9918,7 +9934,7 @@ K._fetchContacts = async function(silent){
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 8000);
       try {
-        // v1.1.204 — /api/contacts (PAS admin-only) : Laurence appelait
+        // v1.1.205 — /api/contacts (PAS admin-only) : Laurence appelait
         // /api/admin/all-users → 403 « Admin requis » → 0 contact. Ce endpoint
         // marche pour TOUS (pairs de conv + Kevin toujours ; admin = tout le monde).
         r = await fetch(API_BASE + '/api/contacts', {
@@ -10181,7 +10197,7 @@ function renderContacts(app){
           : now - c.last_seen < 86400000 ? Math.round((now - c.last_seen)/3600000) + 'h'
           : Math.round((now - c.last_seen)/86400000) + 'j'
         );
-        // v1.1.204 — alias d'affichage (nickname) prioritaire sur le nom réel
+        // v1.1.205 — alias d'affichage (nickname) prioritaire sur le nom réel
         const realName = c.display_name || c.real_name || c.pseudo || c.id;
         const name = c.nickname || realName;
         const initial = (name || '?')[0].toUpperCase();
@@ -12243,12 +12259,19 @@ K.openMemoryLane = async function(){
 // ============================================================================
 //  Modal helpers
 // ============================================================================
-K._showModal = function(title, html){
+K._showModal = function(title, html, opts){
+  opts = opts || {};
+  // v1.1.205 : opts.noClose = modal OBLIGATOIRE (pas de ✕, pas de fermeture au
+  // clic extérieur) — pour les gates indispensables (fiche+PIN onboarding,
+  // consentement autorisations « ou accepté ou pas de connexion »). Le bouton
+  // d'action du modal reste le seul chemin → jamais de blocage (il ferme tjs).
   const host = $('#modal-host');
+  const backClick = opts.noClose ? '' : ' onclick="if(event.target===this)K._closeModal()"';
+  const closeBtn = opts.noClose ? '' : '<button class="modal-close" onclick="K._closeModal()" aria-label="Fermer la fenêtre">✕</button>';
   host.innerHTML = `
-    <div class="modal-back" role="presentation" onclick="if(event.target===this)K._closeModal()">
+    <div class="modal-back" role="presentation"${backClick}>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text" tabindex="-1">
-        <button class="modal-close" onclick="K._closeModal()" aria-label="Fermer la fenêtre">✕</button>
+        ${closeBtn}
         <h3 class="modal-title" id="modal-title-text">${esc(title)}</h3>
         ${html}
       </div>
@@ -12750,8 +12773,8 @@ K._requestAllPermissions = async function(forceShow){
   if(!K._showModal) return;
   K._showModal('🔐 Activer les autorisations', `
     <p style="color:var(--ax-text-2);margin:0 0 12px;font-size:.92em">
-      Pour utiliser Apex Chat à fond, on active en une fois (tu pourras refuser
-      celles que tu veux — l'app continuera de fonctionner) :
+      Apex Chat active tout en une fois (iOS / Android te demandera chaque accès).
+      C'est <b>obligatoire</b> pour utiliser l'app :
     </p>
     <ul style="color:var(--ax-text-2);font-size:.88em;padding-left:18px;margin:0 0 14px;line-height:1.7">
       <li>🔔 Notifications — messages & appels app fermée</li>
@@ -12761,11 +12784,10 @@ K._requestAllPermissions = async function(forceShow){
       <li>📇 Contacts — inviter depuis ton répertoire</li>
     </ul>
     <button class="btn btn-block" onclick="K._doRequestAllPermissions()">✅ Tout activer maintenant</button>
-    <button class="btn btn-out btn-block" style="margin-top:8px" onclick="K._closeModal();ls('perms_bulk_done_v1',true);K._postOnboardingFinish&&K._postOnboardingFinish()">Plus tard</button>
     <p style="color:var(--ax-text-3);font-size:.74em;margin-top:14px;text-align:center">
       Détails dans les <a href="./cgu.html" target="_blank" style="color:var(--ax-gold)">CGU</a> § 5.
     </p>
-  `);
+  `, { noClose: true });
 };
 
 K._doRequestAllPermissions = async function(){
@@ -13571,7 +13593,7 @@ async function _boot(){
       if(iu && it){ user = iu; token = it; ls('user', iu); ls('token', it); }
     }catch(_){ /* best-effort */ }
   }
-  // v1.1.204 — un user connu SANS token (localStorage vidé par iOS) entre quand
+  // v1.1.205 — un user connu SANS token (localStorage vidé par iOS) entre quand
   // même dans l'app + reconnexion AUTO via son numéro (Kevin « tout auto »),
   // au lieu de redemander une connexion complète.
   if(user && (token || user.phone)){
