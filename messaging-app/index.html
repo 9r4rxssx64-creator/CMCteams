@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.192",
+  "softwareVersion": "v1.1.193",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -396,7 +396,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.192';
+const __APEX_CHAT_VERSION__ = 'v1.1.193';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -554,7 +554,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.192</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.193</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -568,7 +568,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.192</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.193</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7164,6 +7164,29 @@ K._reauthAny = async function(reopenConvId, cause){
 // Alias rétro-compat : tous les call sites historiques (_reauthAdmin) marchent.
 K._reauthAdmin = K._reauthAny;
 
+// v1.1.193 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
+// Si le localStorage a été vidé (éviction iOS PWA) → plus de token → ni
+// contacts ni messages. Dès qu'un user+numéro sont connus, on re-login
+// transparent (le bypass marche pour Kevin), puis on recharge convs+contacts.
+// Throttle 15 s. Renvoie true si une session valide est en place après coup.
+K._reconnectSession = async function(silent){
+  if(K.token && !String(K.token).startsWith('local-')) return true;   // déjà connecté
+  if(!(K.user && K.user.phone)) return false;                          // pas de numéro → impossible en auto
+  const now = Date.now();
+  if(K._lastReconnAt && now - K._lastReconnAt < 15000) return false;
+  K._lastReconnAt = now;
+  try{
+    if(!silent) toast('🔁 Reconnexion automatique…', 'info', 2000);
+    K._lastReauthAt = 0;                 // bypass le throttle interne de _reauthAny
+    await K._reauthAny(null, 'auto-reconnect');
+  }catch(_e){ _safeCatch('reconnect', _e); }
+  const ok = !!(K.token && !String(K.token).startsWith('local-'));
+  if(ok){
+    try{ if(typeof K._refreshConvs === 'function') await K._refreshConvs(); }catch(_e){_safeCatch('silent',_e)}
+  }
+  return ok;
+};
+
 // v1.1.170 : diagnostic WebSocket. Le WS ne donne qu'un code 1006 opaque.
 // /ws-diag rejoue les checks serveur et renvoie la cause exacte → on agit dessus.
 K._wsDiagnose = async function(convId){
@@ -9757,7 +9780,14 @@ K._fetchContacts = async function(silent){
   try{
     let users = [];
     let diagInfo = '';
-    if(K.user?.is_admin && K.token){
+    // v1.1.193 — AUTO : si pas de token serveur mais user+numéro connus,
+    // reconnexion transparente avant de charger (Kevin « tout auto toujours »).
+    if((!K.token || String(K.token).startsWith('local-')) && K.user?.phone){
+      try{ await K._reconnectSession(true); }catch(_e){_safeCatch('silent',_e)}
+    }
+    // On tente la liste serveur dès qu'un token existe (le serveur décide
+    // admin/non-admin). Token absent = session à restaurer (affiché dans le diag).
+    if(K.token && !String(K.token).startsWith('local-')){
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 8000);
       try {
@@ -9821,7 +9851,9 @@ K._fetchContacts = async function(silent){
     // v1.1.191 — diagnostic visible si la liste reste vide (pour pointer la cause)
     K._lastContactsDiag = {
       admin: !!K.user?.is_admin,
-      tokenLocal: String(K.token || '').startsWith('local-') || !K.token,
+      hasToken: !!K.token,
+      tokenLocal: String(K.token || '').startsWith('local-'),
+      noSession: !K.token || String(K.token || '').startsWith('local-'),
       httpStatus: (typeof r !== 'undefined' && r) ? r.status : 'no-fetch',
       serverCount: (typeof serverIds !== 'undefined') ? serverIds.size : 0,
       convCount: (K.conversations || []).length,
@@ -9982,8 +10014,13 @@ function renderContacts(app){
         <p style="color:var(--ax-text-2);margin:0 0 14px">Aucun contact pour l'instant.</p>
         <p style="color:var(--ax-text-3);font-size:.85em;margin:0 0 14px">Tape <strong>"➕ Ajouter contact"</strong> pour saisir un prénom + numéro.</p>
         <button class="btn btn-out" onclick="K.openInvite()">📤 Inviter par SMS</button>
+        ${(K._lastContactsDiag && K._lastContactsDiag.noSession) ? `<div style="margin-top:14px;background:rgba(230,57,70,.1);border:1px solid #e63946;border-radius:8px;padding:12px">
+          <p style="margin:0 0 8px;color:#e63946;font-weight:600">⚠ Session serveur absente</p>
+          <p style="margin:0 0 10px;font-size:.82em;color:var(--ax-text-2)">Ton téléphone n'a pas de connexion authentifiée au serveur — c'est pour ça que tu ne vois ni contacts ni messages.</p>
+          <button class="btn btn-block" onclick="K._reconnectSession && K._reconnectSession()">🔁 Reconnecter ma session</button>
+        </div>` : ''}
         ${K._lastContactsDiag ? `<div style="margin-top:14px;text-align:left;font-size:.72em;color:var(--ax-text-3);background:var(--ax-bg);border:1px solid var(--ax-border);border-radius:8px;padding:8px 10px;font-family:ui-monospace,monospace">
-          🩺 diag · serveur HTTP:${esc(String(K._lastContactsDiag.httpStatus))} · comptes serveur:${K._lastContactsDiag.serverCount} · convs:${K._lastContactsDiag.convCount} · cache:${K._lastContactsDiag.cacheCount}${K._lastContactsDiag.tokenLocal ? ' · ⚠ session locale (pas de JWT serveur)' : ''}${K._lastContactsDiag.diagInfo ? '<br>'+esc(K._lastContactsDiag.diagInfo) : ''}
+          🩺 diag · token:${K._lastContactsDiag.hasToken ? (K._lastContactsDiag.tokenLocal ? 'LOCAL' : 'oui') : 'NON'} · admin:${K._lastContactsDiag.admin ? 'oui' : 'non'} · serveur HTTP:${esc(String(K._lastContactsDiag.httpStatus))} · comptes:${K._lastContactsDiag.serverCount} · convs:${K._lastContactsDiag.convCount} · cache:${K._lastContactsDiag.cacheCount}${K._lastContactsDiag.diagInfo ? '<br>'+esc(K._lastContactsDiag.diagInfo) : ''}
         </div>` : ''}
       </div>
     `;
@@ -13396,11 +13433,17 @@ async function _boot(){
       if(iu && it){ user = iu; token = it; ls('user', iu); ls('token', it); }
     }catch(_){ /* best-effort */ }
   }
-  if(user && token){
-    K.user = user; K.token = token;
+  // v1.1.193 — un user connu SANS token (localStorage vidé par iOS) entre quand
+  // même dans l'app + reconnexion AUTO via son numéro (Kevin « tout auto »),
+  // au lieu de redemander une connexion complète.
+  if(user && (token || user.phone)){
+    K.user = user; K.token = token || null;
     if(isKevinAdmin(user.real_name || user.pseudo)){
       K.user.is_admin = true;
       $('#bnav-admin').classList.remove('h');
+    }
+    if(!K.token && user.phone){
+      setTimeout(() => { K._reconnectSession && K._reconnectSession(true).then(ok => { if(ok){ try{K._fetchContacts(true);}catch(_){}; K.render(); } }); }, 400);
     }
     K.view = 'chats';
     $('#splash').classList.add('h');
