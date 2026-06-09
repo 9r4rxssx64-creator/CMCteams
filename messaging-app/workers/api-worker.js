@@ -1179,6 +1179,7 @@ async function handleListConversations(request, env) {
     ).bind(auth.sub).first();
     if (me) await autoHealPerson(env, me);
     await cleanupEmptyConversations(env.APEX_CHAT_DB);  // v1.1.195 : purge convs vides/archivées
+    await cleanupGhostMembers(env.APEX_CHAT_DB);        // v1.1.197 : retire membres supprimés/fusionnés
   } catch (e) { console.warn('[auto-heal-convlist]', e?.message); }
 
   // v1.1.172 FIX P0 (audit crew) : joindre la clé publique du pair (DM) pour
@@ -1186,13 +1187,22 @@ async function handleListConversations(request, env) {
   // null → aucune session → fallback texte clair. La sous-requête prend l'AUTRE
   // membre (DM = 1 seul autre). Pour les groupes, le client n'utilise pas ce
   // champ (chiffrement de groupe géré séparément).
+  // v1.1.197 — le « pair » (peer_id/peer_pubkey) doit EXCLURE les membres
+  // supprimés/fusionnés (ex: vieux user_laurence resté membre) : sinon le client
+  // affiche « (supprimé) » comme destinataire et la session E2E pointe sur un
+  // compte mort. On joint users + filtre status/merged_into dans les 2 sous-req.
   const convs = await env.APEX_CHAT_DB.prepare(
     `SELECT c.*, cm.last_read_msg_id, cm.notif_level, cm.role,
        (SELECT u.identity_key_pub FROM conversation_members m2
           JOIN users u ON u.id = m2.user_id
-          WHERE m2.conv_id = c.id AND m2.user_id != ? LIMIT 1) AS peer_pubkey,
-       (SELECT m2.user_id FROM conversation_members m2
-          WHERE m2.conv_id = c.id AND m2.user_id != ? LIMIT 1) AS peer_id
+          WHERE m2.conv_id = c.id AND m2.user_id != ?
+            AND (u.status IS NULL OR u.status != 'deleted') AND u.merged_into IS NULL
+          ORDER BY u.last_seen DESC LIMIT 1) AS peer_pubkey,
+       (SELECT u.id FROM conversation_members m2
+          JOIN users u ON u.id = m2.user_id
+          WHERE m2.conv_id = c.id AND m2.user_id != ?
+            AND (u.status IS NULL OR u.status != 'deleted') AND u.merged_into IS NULL
+          ORDER BY u.last_seen DESC LIMIT 1) AS peer_id
      FROM conversations c
      INNER JOIN conversation_members cm ON cm.conv_id = c.id
      WHERE cm.user_id = ? AND c.archived_at IS NULL
@@ -1787,8 +1797,9 @@ export async function consolidateKevinIntoAdmin(env, cleanPhone, phoneHash, now)
   try { await _healLocalConvMembers(DB); } catch (_) {}
   // 4) 1 SEULE conversation par contact pour Kevin (fusionne les DM en double).
   try { await consolidateUserDms(DB, 'kdmc_admin', now); } catch (_) {}
-  // 5) Purge le bruit (DM vides/archivés accumulés par les re-créations).
+  // 5) Purge le bruit (DM vides/archivés + membres fantômes supprimés/fusionnés).
   try { await cleanupEmptyConversations(DB); } catch (_) {}
+  try { await cleanupGhostMembers(DB); } catch (_) {}
   try {
     await auditLog(env, 'kdmc_admin', 'kevin_consolidate', 'user', 'kdmc_admin',
       { merged: dup ? dup.id : null, phone_set: phoneChanged }, null);
@@ -1816,6 +1827,35 @@ export async function cleanupEmptyConversations(DB) {
       await DB.prepare('DELETE FROM conversation_members WHERE conv_id=?').bind(r.id).run().catch(() => {});
       await DB.prepare('DELETE FROM conversations WHERE id=?').bind(r.id).run().catch(() => {});
       removed++;
+    }
+  } catch (_) {}
+  return removed;
+}
+
+// v1.1.197 — Retire des conversations les membres « fantômes » (compte supprimé
+// ou fusionné, ex: vieux user_laurence) tant qu'il reste ≥1 membre réel. Évite
+// member_count gonflé + le fantôme choisi comme destinataire. Non destructif
+// (on ne touche qu'à la ligne d'appartenance, pas aux messages). Best-effort.
+export async function cleanupGhostMembers(DB) {
+  let removed = 0;
+  try {
+    const rows = (await DB.prepare(
+      `SELECT cm.conv_id, cm.user_id
+         FROM conversation_members cm
+         JOIN users u ON u.id = cm.user_id
+        WHERE u.status = 'deleted' OR u.merged_into IS NOT NULL`
+    ).all()).results || [];
+    for (const r of rows) {
+      const real = await DB.prepare(
+        `SELECT COUNT(*) AS c FROM conversation_members cm
+           JOIN users u ON u.id = cm.user_id
+          WHERE cm.conv_id = ? AND (u.status IS NULL OR u.status != 'deleted') AND u.merged_into IS NULL`
+      ).bind(r.conv_id).first();
+      if ((real?.c || 0) >= 1) {   // garde au moins 1 membre réel
+        await DB.prepare('DELETE FROM conversation_members WHERE conv_id=? AND user_id=?')
+          .bind(r.conv_id, r.user_id).run().catch(() => {});
+        removed++;
+      }
     }
   } catch (_) {}
   return removed;
