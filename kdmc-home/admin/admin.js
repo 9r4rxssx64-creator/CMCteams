@@ -65,14 +65,26 @@
     });
   }
 
+  function loadAccounts(tries) {
+    return fetch('/__admin/accounts', { credentials: 'include', cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.ok) { deny(); return; }
+        var accounts = j.accounts || [];
+        /* Cloudflare KV est éventuellement cohérent : juste après une 1ʳᵉ connexion,
+           l'index peut lire vide. On retente 1-2× (2s) pour laisser la fiche se propager. */
+        if (accounts.length === 0 && j.kv !== false && (tries || 0) < 2) {
+          setTimeout(function () { loadAccounts((tries || 0) + 1); }, 2000);
+        }
+        render(accounts, j.kv !== false);
+      });
+  }
   function boot() {
     loading();
     var who = window.kdmcSSO ? window.kdmcSSO.whoami() : Promise.resolve(null);
     who.then(function (s) {
       if (!s || !s.admin) { deny(); return; }
-      return fetch('/__admin/accounts', { credentials: 'include', cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (j) { if (!j || !j.ok) { deny(); return; } render(j.accounts || [], j.kv !== false); });
+      return loadAccounts(0);
     }).catch(function () { deny(); });
   }
   boot();
