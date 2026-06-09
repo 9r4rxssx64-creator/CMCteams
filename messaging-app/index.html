@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.188",
+  "softwareVersion": "v1.1.189",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -241,6 +241,12 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .msg.them .msg-time{color:var(--ax-text-3)}
 .msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
   font-size:.78em;padding:5px 12px;border-radius:14px;max-width:90%}
+/* v1.1.189 — fenêtre de chat PLEIN ÉCRAN : la zone messages remplit tout
+   l'espace, l'input collé en bas (au-dessus de la barre de navigation). */
+#app.chat-mode{display:flex;flex-direction:column;padding:0;overflow:hidden}
+#app.chat-mode .chat-messages{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#app.chat-mode #smart-reply-chips{flex:0 0 auto}
+#app.chat-mode .chat-input{flex:0 0 auto;padding-bottom:calc(var(--ax-safe-bottom) + 70px)}
 .chat-input{position:sticky;bottom:0;padding:8px 12px calc(var(--ax-safe-bottom) + 8px);
   background:var(--ax-bg);border-top:1px solid var(--ax-border);display:flex;flex-direction:column;gap:6px}
 .chat-attach-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -390,7 +396,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.188';
+const __APEX_CHAT_VERSION__ = 'v1.1.189';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -548,7 +554,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.188</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.189</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -562,7 +568,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.188</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.189</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -5050,7 +5056,18 @@ K._presenceState = K._presenceState || {};
 // v1.1.170 : état de chiffrement HONNÊTE. Le label E2E ne doit s'afficher
 // que si la session de chiffrement est réellement établie. Sinon le message
 // est chiffré en transit (HTTPS/WSS) mais PAS bout-en-bout.
+// v1.1.189 — E2E temporairement désactivé (clés désync après fusion → charabia).
+// Messages chiffrés en TRANSIT (HTTPS/WSS) + stockés serveur. Remettre à true
+// quand l'échange de clés sera fiable.
+K._E2E_ENABLED = false;
+// Détecte un texte qui est en réalité du ciphertext base64 (anciens messages
+// chiffrés non déchiffrables après désync des clés) → on les masque proprement.
+K._looksCiphertext = function(t){
+  return typeof t === 'string' && t.length >= 24 && t.length <= 5000 &&
+    /^[A-Za-z0-9+/]+={0,2}$/.test(t) && t.indexOf(' ') < 0 && /[+/=]|[0-9]/.test(t);
+};
 K._e2eActive = function(conv){
+  if(!K._E2E_ENABLED) return false;
   try{
     return !!(conv && window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id));
   }catch(_e){ _safeCatch('e2e-active', _e); return false; }
@@ -6550,6 +6567,7 @@ K.render = function(){
   try {
     const sb = document.getElementById('security-banner');
     if (sb) sb.classList.toggle('h', K.view === 'chat');
+    if (app) app.classList.toggle('chat-mode', K.view === 'chat');   // v1.1.189 plein écran chat
   } catch (_e) { _safeCatch && _safeCatch('silent', _e); }
 
   switch(K.view){
@@ -6773,7 +6791,7 @@ K._renderBubble = function(m, conv, msgs){
           ${m.poll ? K._renderPoll(m) : ''}
           ${m.location ? K._renderLocation(m) : ''}
           ${m.contact_card ? K._renderContactCard(m) : ''}
-          ${m.deleted ? esc(m.text) : (m.text ? K._renderHashtags(K._renderMentions(K._renderMarkdown(m.text))) : (m.image_data || m.media_url || m.voice_data || m.poll || m.location || m.contact_card ? '' : '(message chiffré)'))}
+          ${m.deleted ? esc(m.text) : (m.text ? (K._looksCiphertext(m.text) ? '<span style="opacity:.55;font-style:italic">🔒 message chiffré (ancien — illisible)</span>' : K._renderHashtags(K._renderMentions(K._renderMarkdown(m.text)))) : (m.image_data || m.media_url || m.voice_data || m.poll || m.location || m.contact_card ? '' : '(message chiffré)'))}
           ${scamReason ? `<div class="scam-warning" onclick="K._showScamInfo('${esc(scamReason)}','${esc(m.id)}')" title="Message potentiellement suspect">⚠️ Suspect : ${esc(scamReason)}</div>` : ''}
           ${foreignLang ? `<div class="translate-hint" onclick="K._suggestTranslate('${esc(m.id)}')" title="Traduire vers ${esc(K._USER_LANG.toUpperCase())}">🌐 ${esc(foreignLang.toUpperCase())} → traduire</div>` : ''}
           ${m.expires_at ? `<div class="ephemeral-badge" title="S'autodétruira ${esc(new Date(m.expires_at).toLocaleString('fr-FR'))}">💣 ${esc(K._ephemeralRemaining(m.expires_at))}</div>` : ''}
@@ -6958,14 +6976,16 @@ K._sendMsg = async function(){
   // de retomber silencieusement en clair.
   let ciphertext = null;
   let displayText = text;
-  try{
-    await K._ensureSession(conv);
-    if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
-      ciphertext = await ApexCrypto.encryptForConv(conv.id, text);
-      // Le texte clair reste local (pour affichage), le ciphertext part au serveur
-    }
-  }catch(e){
-    _safeCatch('encrypt-message', e);
+  // v1.1.189 — E2E désactivé (clés désynchronisées après fusion des comptes →
+  // messages illisibles). Les messages restent chiffrés EN TRANSIT (HTTPS/WSS).
+  // Réactivable via K._E2E_ENABLED quand l'échange de clés sera fiabilisé.
+  if(K._E2E_ENABLED){
+    try{
+      await K._ensureSession(conv);
+      if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
+        ciphertext = await ApexCrypto.encryptForConv(conv.id, text);
+      }
+    }catch(e){ _safeCatch('encrypt-message', e); }
   }
 
   const msg = {
@@ -7322,7 +7342,7 @@ async function _handleWsMessage(data, convId){
         if(!sm || !sm.id || seen.has(sm.id)) continue;
         let txt = sm.ciphertext || '';
         try{
-          if(window.ApexCrypto && ApexCrypto.getSessionKey(convId) && sm.ciphertext){
+          if(K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey(convId) && sm.ciphertext){
             txt = await ApexCrypto.decryptForConv(convId, sm.ciphertext);
           }
         }catch(e){ _safeCatch('history-decrypt', e); }
@@ -7376,7 +7396,7 @@ async function _handleWsMessage(data, convId){
       // Nouveau message reçu
       let decryptedText = '(message chiffré)';
       try{
-        if(window.ApexCrypto && ApexCrypto.getSessionKey(convId) && data.ciphertext){
+        if(K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey(convId) && data.ciphertext){
           decryptedText = await ApexCrypto.decryptForConv(convId, data.ciphertext);
         } else if(data.ciphertext){
           // Fallback : si c'est du texte clair (Phase 1 testing)
@@ -9553,7 +9573,7 @@ K._sendMediaMessage = async function(media){
   const caption = (input && input.value.trim()) || '';
   const marker = 'APXMEDIA1:' + JSON.stringify({ u:media.url, m:media.mime, n:media.name, s:media.size, c:caption });
   let ciphertext = null;
-  try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); }
+  if(K._E2E_ENABLED){ try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); } }
   const msg = { id:'m_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), from:K.user.id, text:caption,
     media_url:media.url, media_type:media.mime, media_name:media.name, media_size:media.size, ts:Date.now(), encrypted:!!ciphertext };
   if(!K.messages[conv.id]) K.messages[conv.id] = [];
