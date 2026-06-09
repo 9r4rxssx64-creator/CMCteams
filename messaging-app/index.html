@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.201",
+  "softwareVersion": "v1.1.202",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -396,7 +396,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.201';
+const __APEX_CHAT_VERSION__ = 'v1.1.202';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -506,7 +506,7 @@ if('serviceWorker' in navigator){
       _versionCheckRunning = false;
     }
   }
-  // v1.1.201 — K est défini dans un bloc <script> ULTÉRIEUR (window.K = {…}).
+  // v1.1.202 — K est défini dans un bloc <script> ULTÉRIEUR (window.K = {…}).
   // L'assigner ici lançait un ReferenceError "K is not defined" au boot (et
   // l'objet K aurait de toute façon été écrasé). On expose après parse complet.
   setTimeout(() => { try { if (window.K) window.K._checkRemoteVersion = _checkRemoteVersion; } catch (_e) {} }, 0);   // exposé : déclenché aussi aux changements de vue
@@ -557,7 +557,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.201</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.202</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -571,7 +571,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.201</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.202</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6581,7 +6581,7 @@ K.render = function(){
     case 'settings': renderSettings(app); break;
     case 'admin': renderAdmin(app); break;
     case 'admin-diag': renderAdminDiag(app); break;
-    case 'admin-users': renderAdminUsers(app); break;
+    case 'admin-users': renderAdminLiveUsers(app); break; /* v1.1.202 : vraie liste serveur + en ligne (l'ancienne liste figée PRECONFIGURED est retirée) */
     case 'admin-live-users': renderAdminLiveUsers(app); break;
     case 'admin-connections': renderAdminConnections(app); break;
     case 'admin-toggles': renderAdminToggles(app); break;
@@ -7167,7 +7167,7 @@ K._reauthAny = async function(reopenConvId, cause){
 // Alias rétro-compat : tous les call sites historiques (_reauthAdmin) marchent.
 K._reauthAdmin = K._reauthAny;
 
-// v1.1.201 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
+// v1.1.202 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
 // Si le localStorage a été vidé (éviction iOS PWA) → plus de token → ni
 // contacts ni messages. Dès qu'un user+numéro sont connus, on re-login
 // transparent (le bypass marche pour Kevin), puis on recharge convs+contacts.
@@ -8268,7 +8268,7 @@ K._saveProfile = async function(){
   if(K.view === 'settings') K.sv('settings');
 };
 
-// v1.1.201 — Fiche de renseignement d'un contact : voir/modifier/supprimer +
+// v1.1.202 — Fiche de renseignement d'un contact : voir/modifier/supprimer +
 // alias d'affichage ("pseudo pour affichage au lieu du nom", par utilisateur).
 K._openContactSheet = async function(id){
   if(!id) return;
@@ -9907,7 +9907,7 @@ K._fetchContacts = async function(silent){
   try{
     let users = [];
     let diagInfo = '';
-    // v1.1.201 — AUTO : si pas de token serveur mais user+numéro connus,
+    // v1.1.202 — AUTO : si pas de token serveur mais user+numéro connus,
     // reconnexion transparente avant de charger (Kevin « tout auto toujours »).
     if((!K.token || String(K.token).startsWith('local-')) && K.user?.phone){
       try{ await K._reconnectSession(true); }catch(_e){_safeCatch('silent',_e)}
@@ -9918,7 +9918,7 @@ K._fetchContacts = async function(silent){
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 8000);
       try {
-        // v1.1.201 — /api/contacts (PAS admin-only) : Laurence appelait
+        // v1.1.202 — /api/contacts (PAS admin-only) : Laurence appelait
         // /api/admin/all-users → 403 « Admin requis » → 0 contact. Ce endpoint
         // marche pour TOUS (pairs de conv + Kevin toujours ; admin = tout le monde).
         r = await fetch(API_BASE + '/api/contacts', {
@@ -10181,7 +10181,7 @@ function renderContacts(app){
           : now - c.last_seen < 86400000 ? Math.round((now - c.last_seen)/3600000) + 'h'
           : Math.round((now - c.last_seen)/86400000) + 'j'
         );
-        // v1.1.201 — alias d'affichage (nickname) prioritaire sur le nom réel
+        // v1.1.202 — alias d'affichage (nickname) prioritaire sur le nom réel
         const realName = c.display_name || c.real_name || c.pseudo || c.id;
         const name = c.nickname || realName;
         const initial = (name || '?')[0].toUpperCase();
@@ -10815,7 +10815,7 @@ K._renderLiveUserCard = function(u){
             ${u.conv_count ? ' · 💬 ' + u.conv_count : ''}
           </div>
         </div>
-        <button class="btn btn-sm btn-out" onclick="K._adminViewLiveUser('${esc(u.id)}')" title="Détails">👁</button>
+        <button class="btn btn-sm btn-out" onclick="K._openContactSheet('${esc(u.id)}')" title="Fiche (voir / modifier / supprimer)">📇</button>
       </div>
     </div>
   `;
@@ -13566,7 +13566,7 @@ async function _boot(){
       if(iu && it){ user = iu; token = it; ls('user', iu); ls('token', it); }
     }catch(_){ /* best-effort */ }
   }
-  // v1.1.201 — un user connu SANS token (localStorage vidé par iOS) entre quand
+  // v1.1.202 — un user connu SANS token (localStorage vidé par iOS) entre quand
   // même dans l'app + reconnexion AUTO via son numéro (Kevin « tout auto »),
   // au lieu de redemander une connexion complète.
   if(user && (token || user.phone)){
