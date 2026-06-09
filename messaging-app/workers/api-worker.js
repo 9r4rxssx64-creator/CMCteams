@@ -38,7 +38,7 @@ const ADMIN_KEVIN_ALIASES = [
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Apex-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Apex-Token, x-file-name',
   'Access-Control-Max-Age': '86400'
 };
 
@@ -1225,6 +1225,48 @@ async function handleKeyBundle(userId, request, env) {
       prekey_signed: row.prekey_signed && !String(row.prekey_signed).startsWith('PENDING') ? row.prekey_signed : null,
     },
   });
+}
+
+// ============================================================================
+//  GET /api/location/:userId — historique de localisation (trajet sur carte).
+//  v1.1.187. Source : user_activity (lat/lng par heartbeat, déjà accumulés).
+//  Non bloquant (ne gêne jamais l'usage). Accès : admin OU soi-même.
+//  ?limit=N (défaut 300), ?since=ms (optionnel).
+// ============================================================================
+async function handleLocationHistory(userId, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  // canonique (suit merged_into) pour viser le bon compte
+  let target = userId;
+  try { target = await _canonicalId(env.APEX_CHAT_DB, userId); } catch (_) {}
+  if (!(auth.is_admin || auth.sub === target || auth.sub === userId)) {
+    return err('Accès refusé', 403, 'forbidden');
+  }
+  const url = new URL(request.url);
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '300', 10) || 300, 1000);
+  const since = parseInt(url.searchParams.get('since') || '0', 10) || 0;
+  const out = { ok: true, user_id: target, points: [] };
+  try {
+    const rows = (await env.APEX_CHAT_DB.prepare(
+      `SELECT lat, lng, ts, geo_label FROM user_activity
+       WHERE user_id=? AND lat IS NOT NULL AND lng IS NOT NULL AND ts > ?
+       ORDER BY ts DESC LIMIT ?`
+    ).bind(target, since, limit).all()).results || [];
+    // ordre chronologique pour tracer le trajet + dédup des points quasi-identiques
+    const asc = rows.reverse();
+    let prev = null;
+    for (const r of asc) {
+      if (prev && Math.abs(r.lat - prev.lat) < 0.0002 && Math.abs(r.lng - prev.lng) < 0.0002 && (r.ts - prev.ts) < 60000) continue;
+      out.points.push({ lat: r.lat, lng: r.lng, ts: r.ts, label: r.geo_label || null });
+      prev = r;
+    }
+    out.count = out.points.length;
+    const u = await env.APEX_CHAT_DB.prepare('SELECT last_lat, last_lng, last_geo_label, last_seen FROM users WHERE id=?').bind(target).first();
+    if (u) out.last = { lat: u.last_lat, lng: u.last_lng, label: u.last_geo_label, ts: u.last_seen };
+  } catch (e) {
+    out.ok = false; out.error = e?.message || '?';
+  }
+  return json(out, 200);
 }
 
 // ============================================================================
@@ -4821,6 +4863,10 @@ export default {
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
       if (adminUserMatch && method === 'GET') return await handleAdminGetFullUser(adminUserMatch[1], request, env);
+
+      // Localisation — historique / trajet (v1.1.187)
+      const locMatch = path.match(/^\/api\/location\/([a-zA-Z0-9_-]+)$/);
+      if (locMatch && method === 'GET') return await handleLocationHistory(locMatch[1], request, env);
 
       // Médias R2 (photos/vidéos/fichiers tous formats) — v1.1.186
       if (path === '/api/media' && method === 'POST') return await handleMediaUpload(request, env);

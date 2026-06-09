@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.186",
+  "softwareVersion": "v1.1.187",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -390,7 +390,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.186';
+const __APEX_CHAT_VERSION__ = 'v1.1.187';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -548,7 +548,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.186</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.187</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -562,7 +562,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.186</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.187</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -10658,6 +10658,7 @@ K._adminViewLiveUser = function(userId){
     <h4 style="color:var(--ax-gold);margin:14px 0 6px;font-size:.95em">⚙ Actions admin</h4>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn btn-sm" style="background:var(--ax-gold);color:#000" onclick="K._closeModal();K._adminOpenTimeline('${esc(userId)}')">📜 Timeline complète</button>
+      <button class="btn btn-sm btn-out" onclick="K._showTrajectory('${esc(userId)}','')">🛤 Trajet sur carte</button>
       <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','message')">💬 Envoyer message</button>
       <button class="btn btn-sm btn-out" onclick="K._adminCmd_user('${esc(userId)}','force_logout')">🚪 Force logout</button>
       <button class="btn btn-sm btn-err" onclick="K._adminCmd_user('${esc(userId)}','ban')">🚫 Bannir</button>
@@ -11389,6 +11390,41 @@ K._adminMapClose = function(){
   _adminMapMarkers = [];
 };
 
+// v1.1.187 — Trajet d'une personne sur carte (historique de localisation).
+// Polyline + point de départ (bleu) / dernier (vert) / intermédiaires (or).
+K._showTrajectory = async function(userId, name){
+  if(!K.user?.is_admin && userId !== K.user?.id){ toast('Réservé admin', 'err'); return; }
+  try{ await _loadLeaflet(); }catch(e){ toast('Carte indisponible', 'err'); return; }
+  K._showModal('🛤 Trajet · ' + (name || ''), `
+    <div id="traj-map" style="height:56vh;min-height:340px;border-radius:12px;overflow:hidden;background:var(--ax-bg-2)"></div>
+    <p id="traj-status" style="margin-top:8px;color:var(--ax-text-3);font-size:.8em">Chargement du trajet…</p>
+  `);
+  setTimeout(async () => {
+    const st = () => document.getElementById('traj-status');
+    try{
+      const el = document.getElementById('traj-map');
+      if(!el) return;
+      const map = L.map('traj-map').setView([43.7384, 7.4246], 5);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
+      const r = await K._api('GET', '/api/location/' + encodeURIComponent(userId) + '?limit=500');
+      const pts = (r && r.points) || [];
+      if(!pts.length){ if(st()) st().textContent = '📭 Aucune position enregistrée pour cette personne (déplacements non encore captés).'; setTimeout(()=>map.invalidateSize(), 80); return; }
+      const latlngs = pts.map(p => [p.lat, p.lng]);
+      L.polyline(latlngs, { color:'#c9a227', weight:4, opacity:.85 }).addTo(map);
+      pts.forEach((p, i) => {
+        const isFirst = i === 0, isLast = i === pts.length - 1;
+        const color = isLast ? '#5fcf5f' : isFirst ? '#6a8aff' : '#c9a227';
+        L.circleMarker([p.lat, p.lng], { radius:(isFirst||isLast)?7:3, color:'#fff', weight:1, fillColor:color, fillOpacity:1 })
+          .addTo(map)
+          .bindPopup((isLast ? '📍 Dernier · ' : isFirst ? '🏁 Départ · ' : '') + new Date(p.ts).toLocaleString('fr-FR') + (p.label ? '<br>' + esc(p.label) : ''));
+      });
+      map.fitBounds(L.latLngBounds(latlngs), { padding:[30,30], maxZoom:15 });
+      setTimeout(() => map.invalidateSize(), 80);
+      if(st()) st().textContent = pts.length + ' position(s) · du ' + new Date(pts[0].ts).toLocaleDateString('fr-FR') + ' au ' + new Date(pts[pts.length-1].ts).toLocaleDateString('fr-FR');
+    }catch(e){ if(st()) st().textContent = '⚠ ' + ((e && e.message) || e); }
+  }, 150);
+};
+
 K._adminMapRefresh = async function(){
   if(!_adminMapInstance) return;
   try{
@@ -11423,6 +11459,7 @@ K._adminMapRefresh = async function(){
         ${u.last_geo_label ? '📍 ' + esc(u.last_geo_label) + '<br>' : ''}
         ${u.last_device_label ? '📱 ' + esc(u.last_device_label) + '<br>' : ''}
         <button onclick="K._closeModal();K._adminOpenTimeline('${esc(u.id)}')" style="margin-top:6px;background:#c9a227;color:#000;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">📜 Timeline</button>
+        <button onclick="K._showTrajectory('${esc(u.id)}','${esc(u.pseudo || '')}')" style="margin-top:6px;margin-left:4px;background:#6a8aff;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">🛤 Trajet</button>
       `);
       _adminMapMarkers.push(m);
     });
