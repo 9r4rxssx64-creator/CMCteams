@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.189",
+  "softwareVersion": "v1.1.190",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -396,7 +396,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.189';
+const __APEX_CHAT_VERSION__ = 'v1.1.190';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -554,7 +554,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.189</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.190</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -568,7 +568,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.189</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.190</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -9794,27 +9794,27 @@ K._fetchContacts = async function(silent){
         seen.add(c.peer_id);
       }
     }
-    // v1.1.188 — MERGE, ne JAMAIS perdre un contact à la connexion.
-    // Cause du "Laurence perd mon contact à chaque connexion" : en non-admin, si
-    // les conversations ne sont pas encore chargées, `users` était vide et on
-    // écrasait les contacts (ne gardant que les _local_only). Désormais on PART
-    // des contacts précédents, on ajoute/maj les nouveaux, et on ne RETIRE un
-    // contact QUE si le serveur (admin) confirme sa disparition. En non-admin
-    // (Laurence) : aucune suppression → le contact persiste toujours.
+    // v1.1.190 — MERGE sûr : on ne perd JAMAIS un contact, et on ne vide JAMAIS
+    // la liste. (v1.1.188 élaguait trop fort côté admin → "je n'ai plus de
+    // contact".) On part des contacts précédents + on ajoute/maj les nouveaux.
+    // On retire UNIQUEMENT un compte que le serveur renvoie explicitement comme
+    // supprimé (status='deleted'). On n'écrase jamais une liste pleine par du vide.
     const _prev = ((K.contacts && K.contacts.length) ? K.contacts : lg('contacts', [])) || [];
     const byId = new Map();
     const addC = (u) => { if(u && u.id && u.id !== K.user?.id){ const ex = byId.get(u.id); byId.set(u.id, ex ? Object.assign({}, ex, u) : u); } };
     _prev.forEach(addC);
     users.forEach(addC);
     let merged = [...byId.values()];
+    // Élague seulement les comptes que le serveur (admin) liste comme supprimés.
     if(serverOk){
-      const convPeers = new Set((K.conversations || []).map(c => c.peer_id).filter(Boolean));
-      // admin : on élague les comptes que le serveur ne connaît plus (supprimés/fusionnés),
-      // sauf contacts locaux ou pairs d'une conversation active.
-      merged = merged.filter(u => u._local_only || serverIds.has(u.id) || convPeers.has(u.id));
+      const deletedIds = new Set(users.filter(u => u && (u.status === 'deleted' || u.merged_into)).map(u => u.id));
+      if(deletedIds.size) merged = merged.filter(u => u._local_only || !deletedIds.has(u.id));
     }
-    K.contacts = K._dedupeContacts(merged);
-    ls('contacts', K.contacts);
+    let finalC = K._dedupeContacts(merged);
+    // SÉCURITÉ : ne jamais écraser une liste non vide par une liste vide.
+    if(finalC.length === 0 && _prev.length > 0) finalC = K._dedupeContacts(_prev);
+    K.contacts = finalC;
+    if(finalC.length > 0 || _prev.length === 0) ls('contacts', finalC);   // ne pas persister un vide par-dessus du plein
     if(!silent){
       if(users.length > 0){
         toast('👥 ' + users.length + ' contact' + (users.length>1?'s':'') + ' chargés', 'ok');
