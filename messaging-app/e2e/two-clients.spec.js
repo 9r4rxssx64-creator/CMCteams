@@ -28,7 +28,9 @@ const PNG_1x1 = Buffer.from(
 
 // v1.1.198 — login de test SÛR (secret-gaté, 2 numéros fixes). Le secret CI
 // E2E_TEST_SECRET == APEX_CHAT_ADMIN_TOKEN (header X-Test-Auth côté worker).
-const TEST_SECRET = process.env.E2E_TEST_SECRET || '';
+// .trim() : le secret GitHub peut contenir un retour-ligne final → header invalide
+// ("Invalid character in header content"). Le worker le compare sans newline.
+const TEST_SECRET = (process.env.E2E_TEST_SECRET || '').trim();
 async function auth(request, u) {
   if (!TEST_SECRET) return { ok: false, status: 0, body: { reason: 'no E2E_TEST_SECRET' } };
   const r = await request.post(API + '/api/test/login', {
