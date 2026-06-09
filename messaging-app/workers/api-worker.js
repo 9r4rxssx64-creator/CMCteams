@@ -1321,7 +1321,7 @@ async function handleLocationHistory(userId, request, env) {
 // ============================================================================
 const MEDIA_MAX = 100 * 1024 * 1024;   // 100 Mo
 
-async function handleMediaUpload(request, env) {
+export async function handleMediaUpload(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
   if (!env.APEX_CHAT_MEDIA) return err('Stockage média indisponible', 503, 'no_r2');
