@@ -1227,6 +1227,57 @@ async function handleKeyBundle(userId, request, env) {
   });
 }
 
+// ============================================================================
+//  Médias R2 — photos / vidéos / fichiers TOUS FORMATS, toutes tailles. v1.1.186
+//  POST /api/media   : upload binaire (header x-file-name, content-type) → R2
+//  GET  /api/media/:id : sert le fichier depuis R2 (auth via ?token=)
+//  Avant : seules les images ≤5 Mo en base64. Maintenant : R2 (jusqu'à 100 Mo).
+// ============================================================================
+const MEDIA_MAX = 100 * 1024 * 1024;   // 100 Mo
+
+async function handleMediaUpload(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.APEX_CHAT_MEDIA) return err('Stockage média indisponible', 503, 'no_r2');
+  const mime = request.headers.get('content-type') || 'application/octet-stream';
+  const nameRaw = request.headers.get('x-file-name') || 'fichier';
+  const name = decodeURIComponent(nameRaw).replace(/[^\w.\-() ]+/g, '_').slice(0, 120);
+  const buf = await request.arrayBuffer();
+  const size = buf.byteLength;
+  if (!size) return err('Fichier vide', 400, 'empty');
+  if (size > MEDIA_MAX) return err('Fichier trop lourd (max 100 Mo)', 413, 'too_large', { size });
+  const id = crypto.randomUUID();
+  const ext = (name.match(/\.([a-z0-9]{1,8})$/i) || [, ''])[1];
+  const r2key = `media/${auth.sub}/${id}${ext ? '.' + ext : ''}`;
+  const now = Date.now();
+  const isPremium = false; // lifecycle 30j (étendu si premium plus tard)
+  const expires = now + (isPremium ? 90 : 30) * 86400000;
+  try {
+    await env.APEX_CHAT_MEDIA.put(r2key, buf, { httpMetadata: { contentType: mime } });
+    await env.APEX_CHAT_DB.prepare(
+      `INSERT INTO media (id, owner_id, r2_key, size, mime, uploaded_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, auth.sub, r2key, size, mime, now, expires).run();
+  } catch (e) {
+    return err('Échec upload média', 500, 'r2_put_failed', { detail: e?.message });
+  }
+  return json({ ok: true, id, url: '/api/media/' + id, mime, size, name });
+}
+
+async function handleMediaGet(id, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!env.APEX_CHAT_MEDIA) return err('Stockage média indisponible', 503, 'no_r2');
+  const row = await env.APEX_CHAT_DB.prepare('SELECT r2_key, mime FROM media WHERE id=?').bind(id).first();
+  if (!row) return err('Média introuvable', 404, 'no_media');
+  const obj = await env.APEX_CHAT_MEDIA.get(row.r2_key);
+  if (!obj) return err('Média absent du stockage', 404, 'r2_miss');
+  const h = new Headers();
+  h.set('Content-Type', row.mime || obj.httpMetadata?.contentType || 'application/octet-stream');
+  h.set('Cache-Control', 'private, max-age=31536000');
+  h.set('Access-Control-Allow-Origin', '*');
+  return new Response(obj.body, { status: 200, headers: h });
+}
+
 export async function handleCreateConversation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
@@ -4770,6 +4821,11 @@ export default {
       if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
       if (adminUserMatch && method === 'GET') return await handleAdminGetFullUser(adminUserMatch[1], request, env);
+
+      // Médias R2 (photos/vidéos/fichiers tous formats) — v1.1.186
+      if (path === '/api/media' && method === 'POST') return await handleMediaUpload(request, env);
+      const mediaMatch = path.match(/^\/api\/media\/([a-zA-Z0-9_-]+)$/);
+      if (mediaMatch && method === 'GET') return await handleMediaGet(mediaMatch[1], request, env);
 
       // E2E keys (v1.1.172 FIX P0 audit crew — distribution clés publiques)
       if (path === '/api/keys/prekeys' && method === 'POST') return await handleUploadPrekeys(request, env);
