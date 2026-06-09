@@ -1,4 +1,10 @@
+// @vitest-environment jsdom
 /* eslint-disable no-script-url -- Test fixtures intentionnels (vérifient sanitization XSS) */
+/* v13.4.324 : ce fichier tourne sous jsdom (pas happy-dom global). DOMPurify 3.x
+ * + happy-dom a un bug d'incompatibilité connu qui SUPPRIME tous les <a> (même
+ * sans href) → faux échecs sur la préservation de href. jsdom est l'environnement
+ * de référence de DOMPurify → comportement réel (href https préservé, javascript:
+ * et iframe strippés). Aucun changement du sanitizer, aucun affaiblissement XSS. */
 
 /**
  * Test régression v13.4.32 — core/html-safe.ts sanitizeHtml() async (DOMPurify lazy).

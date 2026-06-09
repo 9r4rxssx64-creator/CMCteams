@@ -1,6 +1,13 @@
+// @vitest-environment jsdom
 /* eslint-disable no-script-url -- tests vérifient explicitement le blocage de ce schéma */
 /**
  * P1 SECU (audit v13.2.7) : tests core/html-safe.ts (escapeHtml + sanitizeHtml + sanitizeUrl).
+ *
+ * v13.4.324 : tourne sous jsdom (pas happy-dom global). DOMPurify 3.x + happy-dom
+ * MALFONCTIONNE (strippe les <p>/<a> mais GARDE <script> → faux échec sécu sur
+ * "retire SCRIPT"). jsdom = env de référence DOMPurify → vraie sanitization
+ * vérifiée (script/iframe strippés, href https préservé). Prod = vrai navigateur
+ * = DOMPurify OK ; cette incompat est UNIQUEMENT happy-dom (env de test).
  */
 import { describe, it, expect } from 'vitest';
 import { escapeHtml, sanitizeHtml, sanitizeUrl, safeSetHTML, stripDangerousHtml } from '../../core/html-safe.js';

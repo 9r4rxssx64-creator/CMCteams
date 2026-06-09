@@ -20,10 +20,14 @@ describe('REGRESSION UX — chat header compact (v13.3.72)', () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    const fp = path.resolve(process.cwd(), 'features/chat/index.ts');
-    if (!fs.existsSync(fp)) return;
-
-    const src = fs.readFileSync(fp, 'utf8');
+    const dir = path.resolve(process.cwd(), 'features/chat');
+    if (!fs.existsSync(dir)) return;
+    /* v13.4.324 : la feature chat a été splittée (index.ts + chat-render-loop.ts
+     * + chat-input-wiring.ts + chat-renderers.ts…). On lit TOUT le dossier : le
+     * garde-fou reste valide après refactor (le comportement doit exister QUELQUE
+     * PART dans la feature — seuil 240px FAB → chat-render-loop.ts, dedup ×count →
+     * chat-input-wiring.ts — pas forcément dans index.ts). */
+    const src = fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
     /* CRITIQUE : code de la FAB scroll-to-bottom est présent */
     expect(src).toMatch(/wireScrollToBottomFab|ax-scroll-bottom/);
   });
@@ -32,10 +36,14 @@ describe('REGRESSION UX — chat header compact (v13.3.72)', () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    const fp = path.resolve(process.cwd(), 'features/chat/index.ts');
-    if (!fs.existsSync(fp)) return;
-
-    const src = fs.readFileSync(fp, 'utf8');
+    const dir = path.resolve(process.cwd(), 'features/chat');
+    if (!fs.existsSync(dir)) return;
+    /* v13.4.324 : la feature chat a été splittée (index.ts + chat-render-loop.ts
+     * + chat-input-wiring.ts + chat-renderers.ts…). On lit TOUT le dossier : le
+     * garde-fou reste valide après refactor (le comportement doit exister QUELQUE
+     * PART dans la feature — seuil 240px FAB → chat-render-loop.ts, dedup ×count →
+     * chat-input-wiring.ts — pas forcément dans index.ts). */
+    const src = fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
     /* Le seuil 240 est documenté CLAUDE.md règle "scroll smooth Claude Code" */
     expect(src).toMatch(/240/);
   });
@@ -44,10 +52,14 @@ describe('REGRESSION UX — chat header compact (v13.3.72)', () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    const fp = path.resolve(process.cwd(), 'features/chat/index.ts');
-    if (!fs.existsSync(fp)) return;
-
-    const src = fs.readFileSync(fp, 'utf8');
+    const dir = path.resolve(process.cwd(), 'features/chat');
+    if (!fs.existsSync(dir)) return;
+    /* v13.4.324 : la feature chat a été splittée (index.ts + chat-render-loop.ts
+     * + chat-input-wiring.ts + chat-renderers.ts…). On lit TOUT le dossier : le
+     * garde-fou reste valide après refactor (le comportement doit exister QUELQUE
+     * PART dans la feature — seuil 240px FAB → chat-render-loop.ts, dedup ×count →
+     * chat-input-wiring.ts — pas forcément dans index.ts). */
+    const src = fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
     /* CRITIQUE : règle Kevin "scroll smooth comme Claude Code, pas saccadé" */
     expect(src).toMatch(/behavior:\s*['"]smooth['"]/);
   });
@@ -58,10 +70,14 @@ describe("REGRESSION UX — vault names dedup (v13.3.75 Kevin screenshot)", () =
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    const fp = path.resolve(process.cwd(), 'features/chat/index.ts');
-    if (!fs.existsSync(fp)) return;
-
-    const src = fs.readFileSync(fp, 'utf8');
+    const dir = path.resolve(process.cwd(), 'features/chat');
+    if (!fs.existsSync(dir)) return;
+    /* v13.4.324 : la feature chat a été splittée (index.ts + chat-render-loop.ts
+     * + chat-input-wiring.ts + chat-renderers.ts…). On lit TOUT le dossier : le
+     * garde-fou reste valide après refactor (le comportement doit exister QUELQUE
+     * PART dans la feature — seuil 240px FAB → chat-render-loop.ts, dedup ×count →
+     * chat-input-wiring.ts — pas forcément dans index.ts). */
+    const src = fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
     /* CRITIQUE : pattern dedup avec '×' présent */
     expect(src).toMatch(/×\$\{count\}|×\$\{counts\.get|×\$\{count/);
   });
@@ -70,10 +86,14 @@ describe("REGRESSION UX — vault names dedup (v13.3.75 Kevin screenshot)", () =
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    const fp = path.resolve(process.cwd(), 'features/chat/index.ts');
-    if (!fs.existsSync(fp)) return;
-
-    const src = fs.readFileSync(fp, 'utf8');
+    const dir = path.resolve(process.cwd(), 'features/chat');
+    if (!fs.existsSync(dir)) return;
+    /* v13.4.324 : la feature chat a été splittée (index.ts + chat-render-loop.ts
+     * + chat-input-wiring.ts + chat-renderers.ts…). On lit TOUT le dossier : le
+     * garde-fou reste valide après refactor (le comportement doit exister QUELQUE
+     * PART dans la feature — seuil 240px FAB → chat-render-loop.ts, dedup ×count →
+     * chat-input-wiring.ts — pas forcément dans index.ts). */
+    const src = fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
     /* Le logic de comptage dédup est présent */
     expect(src).toMatch(/counts\.set|new Map<string, number>/);
   });
@@ -127,10 +147,14 @@ describe('TEST MENTAL OBLIGATOIRE — Kevin scroll dans chat pendant streaming',
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    const fp = path.resolve(process.cwd(), 'features/chat/index.ts');
-    if (!fs.existsSync(fp)) return;
-
-    const src = fs.readFileSync(fp, 'utf8');
+    const dir = path.resolve(process.cwd(), 'features/chat');
+    if (!fs.existsSync(dir)) return;
+    /* v13.4.324 : la feature chat a été splittée (index.ts + chat-render-loop.ts
+     * + chat-input-wiring.ts + chat-renderers.ts…). On lit TOUT le dossier : le
+     * garde-fou reste valide après refactor (le comportement doit exister QUELQUE
+     * PART dans la feature — seuil 240px FAB → chat-render-loop.ts, dedup ×count →
+     * chat-input-wiring.ts — pas forcément dans index.ts). */
+    const src = fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 
     /* Test mental : "Si Kevin scroll dans son chat Apex pendant streaming,
        est-ce fluide comme Claude Code ?" — CLAUDE.md règle "DÉLÉGATION CLAUDE CODE ↔ APEX". */
