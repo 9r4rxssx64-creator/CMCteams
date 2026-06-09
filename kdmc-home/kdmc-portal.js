@@ -57,10 +57,21 @@
     return false;
   }
 
+  /* La zone Administration est cachée par défaut (hidden dans le HTML). On ne la
+     révèle QUE si la session du domaine dit admin === true (vérifié côté serveur
+     via whoami). Les clients/Laurence ne la voient jamais. */
+  function applyAdminVisibility() {
+    var zone = document.getElementById('admin-zone');
+    if (!zone) return;
+    var done = function (s) { if (s && s.admin) { zone.hidden = false; } else { zone.hidden = true; } };
+    if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
+  }
+
   function showHub(name) {
     if (gotoReturnIfAny()) return; /* session posée → on rebascule dans l'app */
     if (hello) hello.textContent = name ? ('Bonjour ' + name) : 'Bienvenue';
     hide(gate); show(hub);
+    applyAdminVisibility();
     maybeOfferInstall();
   }
 
