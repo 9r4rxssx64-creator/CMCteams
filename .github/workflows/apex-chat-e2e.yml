@@ -70,6 +70,10 @@ jobs:
           APEX_CHAT_URL: https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/
           # v1.1.198 — secret du login de test sûr (== APEX_CHAT_ADMIN_TOKEN côté worker)
           E2E_TEST_SECRET: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
+          # v1.1.199 — le flag CLI --reporter=json IGNORE le outputFile du config →
+          # le json partait en STDOUT et results.json n'était jamais écrit (print-fails
+          # ne trouvait rien). Cet env force l'écriture du fichier.
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
         run: npx playwright test --reporter=list,json
 
       - name: Upload Playwright report
