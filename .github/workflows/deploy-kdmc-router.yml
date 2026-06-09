@@ -88,16 +88,21 @@ jobs:
       - name: Smoke test SSO live (issue → token → whoami Bearer, cross-PWA)
         run: |
           set -e
-          sleep 5  # laisser le worker se propager
           BASE=https://kd-mc.com
           # Sur apex-chat.kd-mc.com pour prouver que /__sso/* marche aussi côté app
           APP=https://apex-chat.kd-mc.com
-          echo "1) issue (uid de test, pas l'admin → pas de pollution)"
-          RESP=$(curl -fsS -X POST "$BASE/__sso/issue" -H 'content-type: application/json' \
-                 -d '{"uid":"ci_smoke","name":"CI Smoke","cgu":true}')
-          echo "   $RESP"
-          TOKEN=$(printf '%s' "$RESP" | grep -oE '"token":"[^"]+"' | sed 's/.*:"//;s/"//')
-          if [ -z "$TOKEN" ]; then echo "::error::issue n'a pas renvoyé de token dans le corps"; exit 1; fi
+          echo "1) issue (uid de test, pas l'admin → pas de pollution) — avec retry"
+          echo "   (la nouvelle version du worker peut mettre jusqu'à ~1 min à se propager au bord Cloudflare)"
+          TOKEN=""; RESP=""
+          for i in $(seq 1 12); do
+            RESP=$(curl -fsS -X POST "$BASE/__sso/issue" -H 'content-type: application/json' \
+                   -d '{"uid":"ci_smoke","name":"CI Smoke","cgu":true}' || true)
+            TOKEN=$(printf '%s' "$RESP" | grep -oE '"token":"[^"]+"' | sed 's/.*:"//;s/"//')
+            if [ -n "$TOKEN" ]; then echo "   ✅ token reçu (tentative $i) : $RESP"; break; fi
+            echo "   tentative $i : pas encore de token (worker en propagation) → retry 5s…"
+            sleep 5
+          done
+          if [ -z "$TOKEN" ]; then echo "::error::issue ne renvoie pas de token après ~60s — worker pas à jour"; echo "$RESP"; exit 1; fi
           echo "2) whoami via Bearer (SANS cookie) sur l'app — canal cross-PWA"
           WHO=$(curl -fsS "$APP/__sso/whoami" -H "Authorization: Bearer $TOKEN")
           echo "   $WHO"
