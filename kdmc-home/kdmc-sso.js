@@ -8,10 +8,12 @@
   var BASE = '/__sso';
 
   function whoami() {
-    /* → { uid, name, cgu } si session valide, sinon null. */
+    /* → { uid, name, cgu, admin } si session valide, sinon null.
+       NB : le champ `admin` DOIT être propagé — sinon l'admin domaine refuse
+       même une session admin parfaitement valide. */
     return fetch(BASE + '/whoami', { method: 'GET', credentials: 'include', cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { return j && j.ok ? { uid: j.uid, name: j.name, cgu: !!j.cgu } : null; })
+      .then(function (j) { return j && j.ok ? { uid: j.uid, name: j.name, cgu: !!j.cgu, admin: !!j.admin } : null; })
       .catch(function () { return null; });
   }
 

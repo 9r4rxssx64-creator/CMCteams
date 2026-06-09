@@ -8,8 +8,18 @@
   function ago(ts) { if (!ts) return '—'; var d = Date.now() - ts, m = Math.floor(d / 6e4), h = Math.floor(d / 36e5), j = Math.floor(d / 864e5); if (m < 1) return "à l'instant"; if (m < 60) return 'il y a ' + m + ' min'; if (h < 24) return 'il y a ' + h + ' h'; return 'il y a ' + j + ' j'; }
   function dt(ts) { if (!ts) return '—'; try { return new Date(ts).toLocaleString('fr-FR'); } catch (e) { return '—'; } }
 
-  function deny() {
-    app.innerHTML = '<div class="msg">🔒 <b>Réservé à l\'administrateur.</b><br><br>Connecte-toi sur <a href="/" style="color:var(--gold)">kd-mc.com</a> avec le compte admin (Kevin).</div>';
+  function deny(s) {
+    var diag;
+    if (!s) {
+      diag = 'Aucune <b>session du domaine</b> détectée sur cet appareil.<br>'
+        + '<span style="color:var(--subtle)">(Le cookie de connexion n\'a pas été posé, ou il est bloqué par le navigateur.)</span>';
+    } else {
+      diag = 'Session du domaine OK ✅ — connecté en tant que <b>' + esc(s.name || '?') + '</b><br>'
+        + 'identifiant : <code>' + esc(s.uid || '?') + '</code><br>'
+        + '<span style="color:var(--subtle)">mais ce compte n\'est pas dans la liste administrateur.</span>';
+    }
+    app.innerHTML = '<div class="msg">🔒 <b>Accès administrateur</b><br><br>' + diag
+      + '<br><br>Connecte-toi sur <a href="/" style="color:var(--gold)">kd-mc.com</a> avec le compte admin (Kevin).</div>';
   }
   function loading() { app.innerHTML = '<div class="kdmc-skel" style="margin-bottom:10px"></div><div class="kdmc-skel" style="margin-bottom:10px;opacity:.7"></div><div class="kdmc-skel" style="opacity:.4"></div>'; }
 
@@ -83,9 +93,10 @@
     loading();
     var who = window.kdmcSSO ? window.kdmcSSO.whoami() : Promise.resolve(null);
     who.then(function (s) {
-      if (!s || !s.admin) { deny(); return; }
+      if (!s) { deny(null); return; }
+      if (!s.admin) { deny(s); return; }
       return loadAccounts(0);
-    }).catch(function () { deny(); });
+    }).catch(function () { deny(null); });
   }
   boot();
 })();
