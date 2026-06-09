@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.194",
+  "softwareVersion": "v1.1.195",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -396,7 +396,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.194';
+const __APEX_CHAT_VERSION__ = 'v1.1.195';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -554,7 +554,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.194</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.195</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -568,7 +568,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.194</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.195</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7164,7 +7164,7 @@ K._reauthAny = async function(reopenConvId, cause){
 // Alias rétro-compat : tous les call sites historiques (_reauthAdmin) marchent.
 K._reauthAdmin = K._reauthAny;
 
-// v1.1.194 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
+// v1.1.195 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
 // Si le localStorage a été vidé (éviction iOS PWA) → plus de token → ni
 // contacts ni messages. Dès qu'un user+numéro sont connus, on re-login
 // transparent (le bypass marche pour Kevin), puis on recharge convs+contacts.
@@ -9780,7 +9780,7 @@ K._fetchContacts = async function(silent){
   try{
     let users = [];
     let diagInfo = '';
-    // v1.1.194 — AUTO : si pas de token serveur mais user+numéro connus,
+    // v1.1.195 — AUTO : si pas de token serveur mais user+numéro connus,
     // reconnexion transparente avant de charger (Kevin « tout auto toujours »).
     if((!K.token || String(K.token).startsWith('local-')) && K.user?.phone){
       try{ await K._reconnectSession(true); }catch(_e){_safeCatch('silent',_e)}
@@ -13433,7 +13433,7 @@ async function _boot(){
       if(iu && it){ user = iu; token = it; ls('user', iu); ls('token', it); }
     }catch(_){ /* best-effort */ }
   }
-  // v1.1.194 — un user connu SANS token (localStorage vidé par iOS) entre quand
+  // v1.1.195 — un user connu SANS token (localStorage vidé par iOS) entre quand
   // même dans l'app + reconnexion AUTO via son numéro (Kevin « tout auto »),
   // au lieu de redemander une connexion complète.
   if(user && (token || user.phone)){

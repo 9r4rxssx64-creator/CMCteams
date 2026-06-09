@@ -1163,11 +1163,22 @@ async function handleListConversations(request, env) {
   // Idempotent : une fois les doublons fusionnés (status='deleted'), la détection
   // les exclut → no-op. Best-effort, ne bloque jamais la liste. v1.1.179.
   try {
+    // v1.1.195 — si c'est Kevin (admin) et que kdmc_admin n'a pas encore son VRAI
+    // numéro (placeholder), on le lui donne MAINTENANT depuis sa session existante
+    // (sans re-login) → résout les stubs local_+<numéro> dans la même requête.
+    if ((auth.sub === 'kdmc_admin' || auth.is_admin) && env.KEVIN_PHONE_E164) {
+      const adminRow = await env.APEX_CHAT_DB.prepare("SELECT phone FROM users WHERE id='kdmc_admin'").first();
+      const want = normPhone(env.KEVIN_PHONE_E164);
+      if (adminRow && normPhone(adminRow.phone || '') !== want) {
+        await consolidateKevinIntoAdmin(env, want, await sha256(want), Date.now());
+      }
+    }
     await _healLocalConvMembers(env.APEX_CHAT_DB);   // v1.1.192 : local_+numéro → vrai compte
     const me = await env.APEX_CHAT_DB.prepare(
       'SELECT id, phone, real_name, pseudo FROM users WHERE id=?'
     ).bind(auth.sub).first();
     if (me) await autoHealPerson(env, me);
+    await cleanupEmptyConversations(env.APEX_CHAT_DB);  // v1.1.195 : purge convs vides/archivées
   } catch (e) { console.warn('[auto-heal-convlist]', e?.message); }
 
   // v1.1.172 FIX P0 (audit crew) : joindre la clé publique du pair (DM) pour
@@ -1776,11 +1787,38 @@ export async function consolidateKevinIntoAdmin(env, cleanPhone, phoneHash, now)
   try { await _healLocalConvMembers(DB); } catch (_) {}
   // 4) 1 SEULE conversation par contact pour Kevin (fusionne les DM en double).
   try { await consolidateUserDms(DB, 'kdmc_admin', now); } catch (_) {}
+  // 5) Purge le bruit (DM vides/archivés accumulés par les re-créations).
+  try { await cleanupEmptyConversations(DB); } catch (_) {}
   try {
     await auditLog(env, 'kdmc_admin', 'kevin_consolidate', 'user', 'kdmc_admin',
       { merged: dup ? dup.id : null, phone_set: phoneChanged }, null);
   } catch (_) {}
   return await DB.prepare("SELECT * FROM users WHERE id='kdmc_admin'").first();
+}
+
+// v1.1.195 — Nettoyage : supprime les conversations VIDES (0 message) qui sont
+// soit archivées, soit orphelines (≤1 membre réel). Pur bruit accumulé par les
+// re-créations de DM successives (cf. diag : ~15 DM solo de Laurence à 0 msg).
+// Ne touche JAMAIS une conversation qui contient le moindre message. Best-effort.
+export async function cleanupEmptyConversations(DB) {
+  let removed = 0;
+  try {
+    const rows = (await DB.prepare(
+      `SELECT c.id,
+              (SELECT COUNT(*) FROM messages mm WHERE mm.conv_id=c.id) AS msgs,
+              (SELECT COUNT(*) FROM conversation_members cm WHERE cm.conv_id=c.id) AS mem,
+              c.archived_at
+       FROM conversations c WHERE c.type='dm'`
+    ).all()).results || [];
+    for (const r of rows) {
+      if ((r.msgs || 0) > 0) continue;                 // jamais si ≥1 message
+      if (!r.archived_at && (r.mem || 0) >= 2) continue; // garde les DM actifs à 2 vrais membres
+      await DB.prepare('DELETE FROM conversation_members WHERE conv_id=?').bind(r.id).run().catch(() => {});
+      await DB.prepare('DELETE FROM conversations WHERE id=?').bind(r.id).run().catch(() => {});
+      removed++;
+    }
+  } catch (_) {}
+  return removed;
 }
 
 export async function consolidateUserDms(DB, userId, now) {
