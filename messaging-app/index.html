@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.200",
+  "softwareVersion": "v1.1.201",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -396,7 +396,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.200';
+const __APEX_CHAT_VERSION__ = 'v1.1.201';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -506,7 +506,7 @@ if('serviceWorker' in navigator){
       _versionCheckRunning = false;
     }
   }
-  // v1.1.200 — K est défini dans un bloc <script> ULTÉRIEUR (window.K = {…}).
+  // v1.1.201 — K est défini dans un bloc <script> ULTÉRIEUR (window.K = {…}).
   // L'assigner ici lançait un ReferenceError "K is not defined" au boot (et
   // l'objet K aurait de toute façon été écrasé). On expose après parse complet.
   setTimeout(() => { try { if (window.K) window.K._checkRemoteVersion = _checkRemoteVersion; } catch (_e) {} }, 0);   // exposé : déclenché aussi aux changements de vue
@@ -557,7 +557,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.200</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.201</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -571,7 +571,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.200</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.201</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7167,7 +7167,7 @@ K._reauthAny = async function(reopenConvId, cause){
 // Alias rétro-compat : tous les call sites historiques (_reauthAdmin) marchent.
 K._reauthAdmin = K._reauthAny;
 
-// v1.1.200 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
+// v1.1.201 — RECONNEXION AUTOMATIQUE (Kevin « tout auto toujours »).
 // Si le localStorage a été vidé (éviction iOS PWA) → plus de token → ni
 // contacts ni messages. Dès qu'un user+numéro sont connus, on re-login
 // transparent (le bypass marche pour Kevin), puis on recharge convs+contacts.
@@ -8266,6 +8266,130 @@ K._saveProfile = async function(){
   }
   toast('✅ Profil sauvegardé', 'ok');
   if(K.view === 'settings') K.sv('settings');
+};
+
+// v1.1.201 — Fiche de renseignement d'un contact : voir/modifier/supprimer +
+// alias d'affichage ("pseudo pour affichage au lieu du nom", par utilisateur).
+K._openContactSheet = async function(id){
+  if(!id) return;
+  K._showModal('📇 Fiche contact', '<div style="text-align:center;padding:20px;color:var(--ax-text-3)">Chargement…</div>');
+  let c = null;
+  try {
+    const r = await K._api('GET', '/api/contact/' + encodeURIComponent(id));
+    c = r && r.contact;
+  } catch(e){ /* géré ci-dessous */ }
+  if(!c){
+    K._showModal('📇 Fiche contact', `<div class="card" style="text-align:center;padding:20px">
+      <p style="color:#e63946">Fiche indisponible.</p>
+      <p style="font-size:.8em;color:var(--ax-text-3)">Tu n'as peut-être pas accès à ce contact, ou il a été supprimé.</p>
+    </div>`);
+    return;
+  }
+  K._sheetContact = c;
+  const nm = c.display_name || c.real_name || ((c.first_name||'') + ' ' + (c.last_name||'')).trim() || c.pseudo || c.id;
+  const ro = (label, val) => val ? `<div class="row"><span class="lbl">${label}</span><span class="val">${esc(String(val))}</span></div>` : '';
+  const fld = (lbl, key, val, type) => `<label class="label" style="margin-top:8px">${lbl}</label>
+    <input id="cs-${key}" class="input" type="${type||'text'}" value="${esc(val||'')}" autocapitalize="${type==='email'?'none':'words'}">`;
+  const editable = c.can_edit;
+  const geo = c.last_geo_label || ((c.last_lat!=null && c.last_lng!=null) ? (Number(c.last_lat).toFixed(3)+', '+Number(c.last_lng).toFixed(3)) : '');
+  const lastSeen = c.last_seen ? new Date(c.last_seen).toLocaleString('fr-FR') : '—';
+  const html = `
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="margin:0 auto 6px;display:inline-block">${K._renderAvatarHTML(nm, c.id, 56)}</div>
+      <div style="font-weight:700;font-size:1.05em">${esc(c.my_nickname || nm)}</div>
+      <div style="color:var(--ax-text-3);font-size:.78em">@${esc(c.pseudo||'?')} · ${esc(c.id.slice(0,10))}…</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+      <button class="btn btn-sm" onclick="K._closeModal();K._startConvWithUser('${esc(c.id)}','${esc(nm)}')">💬 Message</button>
+      <button class="btn btn-sm btn-out" onclick="K._closeModal();K._startCall&&K._startCall('${esc(c.id)}','audio')">📞 Appel</button>
+    </div>
+
+    <div class="card" style="padding:10px 12px">
+      <label class="label">🏷 Pseudo d'affichage (juste pour toi)</label>
+      <div style="display:flex;gap:6px">
+        <input id="cs-nick" class="input" value="${esc(c.my_nickname||'')}" placeholder="ex: Lolo ❤️ — laisse vide = nom réel" maxlength="60">
+        <button class="btn btn-sm" onclick="K._saveNickname('${esc(c.id)}')">💾</button>
+      </div>
+      <div style="font-size:.72em;color:var(--ax-text-3);margin-top:4px">Affiché à la place du nom dans TA liste.</div>
+    </div>
+
+    ${editable ? `
+    <div class="card" style="padding:10px 12px;margin-top:10px">
+      <div style="color:var(--ax-gold);font-size:.92em;margin-bottom:4px">${c.can_edit && !c.can_delete ? '✏️ Ma fiche' : '✏️ Modifier la fiche'}</div>
+      ${fld('Prénom','first_name',c.first_name)}
+      ${fld('Nom','last_name',c.last_name)}
+      ${fld('Pseudo (choisi par le client)','pseudo',c.pseudo)}
+      ${fld('Email','email',c.email,'email')}
+      ${c.phone!==undefined ? fld('Téléphone','phone',c.phone,'tel') : ''}
+      ${fld('Ville','city',c.city)}
+      ${fld('Pays','country',c.country)}
+      ${fld('Adresse','address',c.address)}
+      ${fld('Profession','job',c.job)}
+      ${fld('Date de naissance','birth_date',c.birth_date,'date')}
+      <label class="label" style="margin-top:8px">Bio</label>
+      <textarea id="cs-bio" class="input" rows="2" maxlength="300">${esc(c.bio||'')}</textarea>
+      <button class="btn btn-block" style="margin-top:10px" onclick="K._saveContactSheet('${esc(c.id)}')">💾 Enregistrer la fiche</button>
+    </div>` : `
+    <div class="card" style="padding:8px 12px;margin-top:10px">
+      ${ro('Prénom', c.first_name)}${ro('Nom', c.last_name)}${ro('Email', c.email)}
+      ${ro('Ville', c.city)}${ro('Pays', c.country)}${ro('Bio', c.bio)}
+      <div class="row"><span class="lbl">Vu</span><span class="val">${esc(lastSeen)}</span></div>
+    </div>`}
+
+    ${(c.phone!==undefined && !editable) ? `<div class="card" style="padding:8px 12px;margin-top:10px">
+      ${ro('Téléphone', c.phone)}${ro('Localisation', geo)}${ro('Appareil', c.last_device_label)}${ro('Source', c.source)}${ro('Statut', c.status)}
+    </div>` : ''}
+    ${(editable && c.phone!==undefined) ? `<div class="card" style="padding:8px 12px;margin-top:10px">
+      <div style="color:var(--ax-text-3);font-size:.78em;margin-bottom:4px">📍 Infos admin (lecture)</div>
+      ${ro('Localisation', geo)}${ro('Appareil', c.last_device_label)}${ro('Source', c.source)}${ro('Statut', c.status)}${ro('Vu', lastSeen)}
+    </div>` : ''}
+
+    ${c.can_delete ? `<button class="btn btn-block" style="margin-top:12px;background:#e63946;color:#fff" onclick="K._deleteContact('${esc(c.id)}','${esc(nm)}')">🗑 Supprimer ce contact</button>` : ''}
+  `;
+  K._showModal('📇 Fiche contact', html);
+};
+
+K._saveNickname = async function(id){
+  const nickname = ($('#cs-nick')?.value || '').trim();
+  try {
+    await K._api('PUT', '/api/contact/' + encodeURIComponent(id) + '/nickname', { nickname });
+    // maj cache local pour affichage immédiat
+    const c = (K.contacts||[]).find(x => x.id === id); if(c){ c.nickname = nickname || undefined; ls('contacts', K.contacts); }
+    toast(nickname ? '✅ Alias enregistré' : '✅ Alias retiré', 'ok');
+    if(K.view === 'contacts') K.sv('contacts');
+  } catch(e){ toast('⚠️ ' + (e.message||'échec alias'), 'err'); }
+};
+
+K._saveContactSheet = async function(id){
+  const g = (k) => ($('#cs-'+k)?.value || '').trim();
+  const body = { first_name:g('first_name'), last_name:g('last_name'), pseudo:g('pseudo'),
+    email:g('email'), city:g('city'), country:g('country'), address:g('address'),
+    job:g('job'), birth_date:g('birth_date'), bio:($('#cs-bio')?.value||'').trim() };
+  if(g('first_name') && g('last_name')) body.real_name = g('first_name') + ' ' + g('last_name');
+  if($('#cs-phone')) body.phone = g('phone');
+  try {
+    const r = await K._api('PATCH', '/api/contact/' + encodeURIComponent(id), body);
+    if(r && r.user){
+      if(id === K.user?.id){ K.user = { ...K.user, ...r.user }; ls('user', K.user); }
+    }
+    toast('✅ Fiche enregistrée', 'ok');
+    K._closeModal();
+    if(K.view === 'contacts') K.sv('contacts'); else K._fetchContacts && K._fetchContacts(true);
+  } catch(e){
+    toast('⚠️ ' + (e.message || 'échec'), 'err', 6000);
+  }
+};
+
+K._deleteContact = async function(id, name){
+  if(!confirm('Supprimer définitivement « ' + (name||id) + ' » ?\n\nSes messages et son compte seront effacés. Action irréversible.')) return;
+  try {
+    await K._api('DELETE', '/api/contact/' + encodeURIComponent(id));
+    K.contacts = (K.contacts||[]).filter(x => x.id !== id); ls('contacts', K.contacts);
+    toast('🗑 Contact supprimé', 'ok');
+    K._closeModal();
+    if(K.view === 'contacts') K.sv('contacts');
+  } catch(e){ toast('⚠️ ' + (e.message || 'échec suppression'), 'err'); }
 };
 
 // ============================================================================
@@ -9783,7 +9907,7 @@ K._fetchContacts = async function(silent){
   try{
     let users = [];
     let diagInfo = '';
-    // v1.1.200 — AUTO : si pas de token serveur mais user+numéro connus,
+    // v1.1.201 — AUTO : si pas de token serveur mais user+numéro connus,
     // reconnexion transparente avant de charger (Kevin « tout auto toujours »).
     if((!K.token || String(K.token).startsWith('local-')) && K.user?.phone){
       try{ await K._reconnectSession(true); }catch(_e){_safeCatch('silent',_e)}
@@ -9794,7 +9918,7 @@ K._fetchContacts = async function(silent){
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 8000);
       try {
-        // v1.1.200 — /api/contacts (PAS admin-only) : Laurence appelait
+        // v1.1.201 — /api/contacts (PAS admin-only) : Laurence appelait
         // /api/admin/all-users → 403 « Admin requis » → 0 contact. Ce endpoint
         // marche pour TOUS (pairs de conv + Kevin toujours ; admin = tout le monde).
         r = await fetch(API_BASE + '/api/contacts', {
@@ -10057,14 +10181,17 @@ function renderContacts(app){
           : now - c.last_seen < 86400000 ? Math.round((now - c.last_seen)/3600000) + 'h'
           : Math.round((now - c.last_seen)/86400000) + 'j'
         );
-        const name = c.display_name || c.real_name || c.pseudo || c.id;
+        // v1.1.201 — alias d'affichage (nickname) prioritaire sur le nom réel
+        const realName = c.display_name || c.real_name || c.pseudo || c.id;
+        const name = c.nickname || realName;
         const initial = (name || '?')[0].toUpperCase();
         return `<div class="card-row" style="padding:10px;cursor:pointer" onclick="K._startConvWithUser('${esc(c.id)}','${esc(name)}')">
           <div class="avatar${isOnline ? ' avatar-online' : ''}">${esc(initial)}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:600">${esc(name)}</div>
-            <div style="font-size:.75em;color:var(--ax-text-3)">${esc(lastSeenLabel)}</div>
+            <div style="font-size:.75em;color:var(--ax-text-3)">${c.nickname ? esc(realName)+' · ' : ''}${esc(lastSeenLabel)}</div>
           </div>
+          <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._openContactSheet('${esc(c.id)}')" aria-label="Fiche" title="Fiche de renseignement">ℹ️</button>
           <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._startCall && K._startCall('${esc(c.id)}','audio')" aria-label="Appel">📞</button>
         </div>`;
       }).join('')}
@@ -13439,7 +13566,7 @@ async function _boot(){
       if(iu && it){ user = iu; token = it; ls('user', iu); ls('token', it); }
     }catch(_){ /* best-effort */ }
   }
-  // v1.1.200 — un user connu SANS token (localStorage vidé par iOS) entre quand
+  // v1.1.201 — un user connu SANS token (localStorage vidé par iOS) entre quand
   // même dans l'app + reconnexion AUTO via son numéro (Kevin « tout auto »),
   // au lieu de redemander une connexion complète.
   if(user && (token || user.phone)){

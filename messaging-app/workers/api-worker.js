@@ -899,6 +899,43 @@ export async function handleTestLogin(request, env) {
   return json({ ok: true, token: jwt, user: { id: user.id, pseudo: user.pseudo, is_admin: !!user.is_admin } });
 }
 
+// POST /api/test/cleanup — v1.1.201. Efface DÉFINITIVEMENT les comptes de test
+// E2E (Alice/Bob = source 'e2e-test' sur les numéros fixes) + leurs traces.
+// Même verrou que /api/test/login (X-Test-Auth == APEX_CHAT_ADMIN_TOKEN).
+export async function handleTestCleanup(request, env) {
+  const secret = (env.APEX_CHAT_ADMIN_TOKEN || '').trim();
+  const hdr = (request.headers.get('X-Test-Auth') || '').trim();
+  if (!secret || hdr !== secret) return err('Réservé tests CI', 403, 'forbidden');
+  const DB = env.APEX_CHAT_DB;
+  const removed = [];
+  try {
+    const rows = (await DB.prepare(
+      "SELECT id FROM users WHERE source='e2e-test' OR phone IN ('+33600000091','+33600000092') OR phone LIKE 'deleted_%e2e%'"
+    ).all()).results || [];
+    for (const r of rows) {
+      const id = r.id;
+      // messages + memberships + alias + le compte
+      const convs = (await DB.prepare('SELECT conv_id FROM conversation_members WHERE user_id=?').bind(id).all()).results || [];
+      await DB.prepare('DELETE FROM messages WHERE sender_id=?').bind(id).run().catch(() => {});
+      await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(id).run().catch(() => {});
+      await DB.prepare('DELETE FROM contacts WHERE user_id=? OR contact_id=?').bind(id, id).run().catch(() => {});
+      await DB.prepare('DELETE FROM users WHERE id=?').bind(id).run().catch(() => {});
+      // purge les conversations devenues vides
+      for (const c of convs) {
+        const cnt = await DB.prepare('SELECT COUNT(*) AS n FROM conversation_members WHERE conv_id=?').bind(c.conv_id).first().catch(() => ({ n: 1 }));
+        if ((cnt?.n || 0) === 0) {
+          await DB.prepare('DELETE FROM messages WHERE conv_id=?').bind(c.conv_id).run().catch(() => {});
+          await DB.prepare('DELETE FROM conversations WHERE id=?').bind(c.conv_id).run().catch(() => {});
+        }
+      }
+      removed.push(id);
+    }
+  } catch (e) {
+    return err('Échec cleanup', 500, 'cleanup_failed', { detail: String(e?.message || '') });
+  }
+  return json({ ok: true, removed_count: removed.length, removed });
+}
+
 export async function handleSsoFromApex(request, env) {
   // P0 FIX (audit) : SSO avec vérification réelle JWT Apex
   // Kevin doit signer avec APEX_SSO_SIGN_KEY (HMAC HS256 partagée Apex ↔ Apex Chat)
@@ -2989,8 +3026,130 @@ async function handleContacts(request, env) {
     ).bind(id).first().catch(() => null);
     if (u && u.status !== 'deleted' && !u.merged_into) users.push(u);
   }
+  // v1.1.201 — alias d'affichage PAR utilisateur (contacts.nickname) : Kevin peut
+  // renommer un contact pour SA vue (« pseudo pour affichage au lieu du nom »).
+  try {
+    const nicks = (await DB.prepare('SELECT contact_id, nickname FROM contacts WHERE user_id=?').bind(me).all()).results || [];
+    const map = {};
+    for (const n of nicks) if (n.nickname) map[n.contact_id] = n.nickname;
+    for (const u of users) if (map[u.id]) u.nickname = map[u.id];
+  } catch (_) { /* table contacts absente → pas d'alias, non bloquant */ }
   users.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
   return json({ ok: true, count: users.length, users });
+}
+
+// GET /api/contact/:id — v1.1.201. Fiche de renseignement complète d'un contact.
+// Admin : tous les champs de n'importe qui. Non-admin : seulement un contact
+// qu'il connaît (conv partagée OU soi-même OU Kevin), champs publics + son alias.
+async function handleGetContact(id, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthenticated');
+  const DB = env.APEX_CHAT_DB;
+  const cid = await _canonicalId(DB, id);
+  // Autorisation non-admin : soi-même, Kevin, ou un pair de conversation.
+  let allowed = auth.is_admin || cid === auth.sub || cid === 'kdmc_admin';
+  if (!allowed) {
+    const shared = await DB.prepare(
+      `SELECT 1 FROM conversation_members a JOIN conversation_members b ON a.conv_id=b.conv_id
+        WHERE a.user_id=? AND b.user_id=? LIMIT 1`
+    ).bind(auth.sub, cid).first().catch(() => null);
+    allowed = !!shared;
+  }
+  if (!allowed) return err('Accès refusé à cette fiche', 403, 'forbidden');
+  const adminFields = auth.is_admin
+    ? ', phone, email, address, city, country, job, birth_date, last_lat, last_lng, last_geo_label, last_device_label, last_ip_hash, source, status, is_banned, admin_authorized, premium_plan, premium_until, created_at, updated_at, invited_by'
+    : '';
+  const u = await DB.prepare(
+    `SELECT id, pseudo, real_name, display_name, first_name, last_name, avatar_url, bio,
+            language, timezone, last_seen${adminFields}
+       FROM users WHERE id=?`
+  ).bind(cid).first().catch(() => null);
+  if (!u) return err('Contact introuvable', 404, 'not_found', { id, canonical: cid });
+  // Alias que MOI (caller) ai donné à ce contact.
+  try {
+    const n = await DB.prepare('SELECT nickname FROM contacts WHERE user_id=? AND contact_id=?').bind(auth.sub, cid).first();
+    u.my_nickname = (n && n.nickname) || '';
+  } catch (_) { u.my_nickname = ''; }
+  u.can_edit = !!(auth.is_admin || cid === auth.sub);
+  u.can_delete = !!(auth.is_admin && cid !== auth.sub && cid !== 'kdmc_admin');
+  return json({ ok: true, contact: u });
+}
+
+// PATCH /api/contact/:id — v1.1.201. Modifier la fiche. Admin : n'importe qui.
+// (Le user édite SA fiche via /api/users/me ; le pseudo est choisi par le client.)
+async function handleUpdateContact(id, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthenticated');
+  const DB = env.APEX_CHAT_DB;
+  const cid = await _canonicalId(DB, id);
+  if (!auth.is_admin && cid !== auth.sub) return err('Réservé admin (ou ta propre fiche)', 403, 'forbidden');
+  const body = await request.json().catch(() => ({}));
+  const ALLOWED = ['display_name', 'first_name', 'last_name', 'real_name', 'email', 'bio',
+    'address', 'city', 'country', 'job', 'birth_date', 'language', 'timezone', 'pseudo', 'avatar_url'];
+  if (body.pseudo !== undefined && !/^[a-zA-Z0-9_]{3,20}$/.test(String(body.pseudo).trim())) {
+    return err('Pseudo invalide (3-20, lettres/chiffres/_)', 400, 'pseudo_invalid');
+  }
+  const sets = [], args = [];
+  for (const k of ALLOWED) if (body[k] !== undefined) { sets.push(`${k}=?`); args.push(String(body[k] || '').slice(0, 500)); }
+  if (!sets.length) return err('Aucun champ à mettre à jour', 400, 'no_fields');
+  sets.push('updated_at=?'); args.push(Date.now()); args.push(cid);
+  try {
+    await DB.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id=?`).bind(...args).run();
+  } catch (e) {
+    const msg = String(e?.message || '');
+    if (/UNIQUE.*pseudo|pseudo.*UNIQUE/i.test(msg)) return err('Pseudo déjà pris', 409, 'pseudo_taken', { detail: msg });
+    return err('Échec mise à jour fiche', 500, 'update_failed', { detail: msg });
+  }
+  try { await auditLog(env, auth.sub, 'contact_update', 'user', cid, JSON.stringify(Object.keys(body)), null, request.headers.get('user-agent') || ''); } catch (_) {}
+  const user = await DB.prepare('SELECT * FROM users WHERE id=?').bind(cid).first();
+  return json({ ok: true, user });
+}
+
+// DELETE /api/contact/:id — v1.1.201. Admin uniquement. Soft-delete + libère le
+// numéro (UNIQUE) pour ne pas bloquer une ré-inscription. Jamais soi/kdmc_admin.
+async function handleDeleteContact(id, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !auth.is_admin) return err('Admin requis', 403, 'forbidden');
+  const DB = env.APEX_CHAT_DB;
+  const cid = await _canonicalId(DB, id);
+  if (cid === auth.sub || cid === 'kdmc_admin') return err('Impossible de supprimer ce compte', 400, 'protected');
+  const u = await DB.prepare('SELECT id, phone, pseudo FROM users WHERE id=?').bind(cid).first().catch(() => null);
+  if (!u) return err('Contact introuvable', 404, 'not_found');
+  const now = Date.now();
+  try {
+    await DB.prepare("UPDATE users SET status='deleted', phone=?, updated_at=? WHERE id=?")
+      .bind('deleted_' + cid, now, cid).run();
+    await DB.prepare('DELETE FROM conversation_members WHERE user_id=?').bind(cid).run().catch(() => {});
+    await auditLog(env, auth.sub, 'contact_delete', 'user', cid, JSON.stringify({ pseudo: u.pseudo }), null, request.headers.get('user-agent') || '');
+  } catch (e) {
+    return err('Échec suppression', 500, 'delete_failed', { detail: String(e?.message || '') });
+  }
+  return json({ ok: true, deleted: cid });
+}
+
+// PUT /api/contact/:id/nickname — v1.1.201. Alias d'affichage que LE CALLER donne
+// à ce contact (par-utilisateur). Vide = effacer l'alias.
+async function handleSetNickname(id, request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthenticated');
+  const DB = env.APEX_CHAT_DB;
+  const cid = await _canonicalId(DB, id);
+  const body = await request.json().catch(() => ({}));
+  const nickname = String(body.nickname || '').trim().slice(0, 60);
+  try {
+    if (!nickname) {
+      await DB.prepare('UPDATE contacts SET nickname=NULL WHERE user_id=? AND contact_id=?').bind(auth.sub, cid).run();
+    } else {
+      await DB.prepare(
+        `INSERT INTO contacts (user_id, contact_id, nickname, created_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(user_id, contact_id) DO UPDATE SET nickname=excluded.nickname`
+      ).bind(auth.sub, cid, nickname, Date.now()).run();
+    }
+  } catch (e) {
+    return err('Échec alias', 500, 'nickname_failed', { detail: String(e?.message || '') });
+  }
+  return json({ ok: true, nickname });
 }
 
 async function handleAdminAllUsers(request, env) {
@@ -5255,7 +5414,15 @@ export default {
       const adminGeoMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/geo-history$/);
       if (adminGeoMatch && method === 'GET') return await handleAdminUserGeoHistory(adminGeoMatch[1], request, env);
       if (path === '/api/test/login' && method === 'POST') return await handleTestLogin(request, env);
+      if (path === '/api/test/cleanup' && method === 'POST') return await handleTestCleanup(request, env);
       if (path === '/api/contacts' && method === 'GET') return await handleContacts(request, env);
+      // Fiches de renseignement contacts (v1.1.201)
+      const contactMatch = path.match(/^\/api\/contact\/([^/]+)$/);
+      if (contactMatch && method === 'GET') return await handleGetContact(decodeURIComponent(contactMatch[1]), request, env);
+      if (contactMatch && method === 'PATCH') return await handleUpdateContact(decodeURIComponent(contactMatch[1]), request, env);
+      if (contactMatch && method === 'DELETE') return await handleDeleteContact(decodeURIComponent(contactMatch[1]), request, env);
+      const nickMatch = path.match(/^\/api\/contact\/([^/]+)\/nickname$/);
+      if (nickMatch && method === 'PUT') return await handleSetNickname(decodeURIComponent(nickMatch[1]), request, env);
       if (path === '/api/admin/all-users' && method === 'GET') return await handleAdminAllUsers(request, env);
       const adminUserActionMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/(block|unblock|ban|unban|authorize|revoke|force_logout|delete)$/);
       if (adminUserActionMatch && method === 'POST') return await handleAdminUserAction(adminUserActionMatch[1], adminUserActionMatch[2], request, env);

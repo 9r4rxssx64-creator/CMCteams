@@ -12,7 +12,7 @@
 //  1 compte + 1 conversation). Si l'OTP de test est désactivé (ALLOW_TEST_OTP
 //  off), le test se SKIP proprement (CI reste verte).
 // ════════════════════════════════════════════════════════════════════════
-import { test, expect } from '@playwright/test';
+import { test, expect, request as pwRequest } from '@playwright/test';
 
 const API = 'https://apex-chat-api.9r4rxssx64.workers.dev';
 const WS_BASE = API.replace(/^https?/, 'wss');
@@ -63,6 +63,17 @@ const wsSend = (page, obj) => page.evaluate((o) => window.__ws.send(JSON.stringi
 const wsFrames = (page) => page.evaluate(() => window.__frames || []);
 
 test.describe('Échange réel 2 clients (Alice ↔ Bob) sur la prod', () => {
+  // v1.1.201 — Kevin « efface Alice et bob quand tu as terminé ». Les comptes de
+  // test sont purgés après chaque run (secret-gaté), ils ne traînent jamais.
+  test.afterAll(async () => {
+    if (!TEST_SECRET) return;
+    try {
+      const ctx = await pwRequest.newContext();
+      await ctx.post(API + '/api/test/cleanup', { headers: { 'X-Test-Auth': TEST_SECRET }, data: {} });
+      await ctx.dispose();
+    } catch (_) { /* best-effort */ }
+  });
+
   test('texte aller/retour + photo livrés via WebSocket', async ({ browser, request, browserName }) => {
     // WebKit sur CI Linux bloque l'ouverture de WebSocket depuis une page
     // ("SecurityError: operation is insecure") — limite du moteur en CI, pas un
