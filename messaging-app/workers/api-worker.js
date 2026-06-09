@@ -1234,60 +1234,73 @@ export async function handleCreateConversation(request, env) {
   const { type, name, members } = await request.json();
   if (!['dm', 'group', 'community', 'channel'].includes(type)) return err('Type invalide');
   if (!Array.isArray(members) || members.length < 1) return err('Membres requis');
+  const DB = env.APEX_CHAT_DB;
 
-  // v1.1.172 FIX P1 (audit crew) : dédup DM côté serveur. Avant, chaque appel
-  // créait une nouvelle conv → doublons de DM (réconciliés péniblement côté
-  // client). On réutilise le DM existant entre les 2 mêmes users s'il y en a un.
+  // v1.1.185 PRÉVENTION : résout chaque membre vers son compte CANONIQUE (suit
+  // merged_into) et écarte les comptes supprimés sans canonique. Les nouvelles
+  // conversations pointent TOUJOURS sur le vrai compte, jamais un stub fusionné
+  // → plus de DM fantôme / split à l'avenir.
+  const selfId = await _canonicalId(DB, auth.sub);
+  const resolved = [];
+  for (const m of members) {
+    if (!m) continue;
+    let cid = m;
+    try { cid = await _canonicalId(DB, m); } catch (_) {}
+    // si le membre est un compte supprimé SANS canonique → on l'ignore
+    try {
+      const u = await DB.prepare('SELECT status FROM users WHERE id=?').bind(cid).first();
+      if (u && u.status === 'deleted') continue;
+    } catch (_) {}
+    if (cid && cid !== selfId && !resolved.includes(cid)) resolved.push(cid);
+  }
+  if (type === 'dm' && resolved.length === 0) {
+    return err('Correspondant introuvable', 400, 'no_valid_peer');
+  }
+
+  // Dédup DM côté serveur (sur la paire CANONIQUE) : réutilise le DM existant
+  // non archivé entre les 2 mêmes vrais comptes.
   if (type === 'dm') {
-    const peer = members.find((m) => m && m !== auth.sub) || members[0];
-    if (peer) {
-      try {
-        const existing = await env.APEX_CHAT_DB.prepare(
-          `SELECT c.id, c.type, c.name, c.created_at FROM conversations c
-             JOIN conversation_members a ON a.conv_id = c.id AND a.user_id = ?
-             JOIN conversation_members b ON b.conv_id = c.id AND b.user_id = ?
-           WHERE c.type = 'dm' AND c.archived_at IS NULL LIMIT 1`
-        ).bind(auth.sub, peer).first();
-        if (existing) {
-          return json({ ok: true, conversation: existing, deduped: true });
-        }
-      } catch (e) { /* en cas d'erreur, on crée normalement ci-dessous */ }
-    }
+    const peer = resolved[0];
+    try {
+      const existing = await DB.prepare(
+        `SELECT c.id, c.type, c.name, c.created_at FROM conversations c
+           JOIN conversation_members a ON a.conv_id = c.id AND a.user_id = ?
+           JOIN conversation_members b ON b.conv_id = c.id AND b.user_id = ?
+         WHERE c.type = 'dm' AND c.archived_at IS NULL LIMIT 1`
+      ).bind(selfId, peer).first();
+      if (existing) return json({ ok: true, conversation: existing, deduped: true });
+    } catch (e) { /* on crée ci-dessous */ }
   }
 
   const id = crypto.randomUUID();
   const doId = `do_${id}`;
   const ts = Date.now();
-
-  // Récupérer mode admin (pour kevin_invisible)
   const config = await getModeConfig(env);
   const kevinInvisible = config.KEVIN_INVISIBLE_ADMIN === 'true';
 
-  await env.APEX_CHAT_DB.prepare(
+  await DB.prepare(
     `INSERT INTO conversations (id, type, name, created_by, created_at, sharded_to_do, member_count, last_msg_ts, e2e_version)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`
-  ).bind(id, type, name || null, auth.sub, ts, doId, members.length + 1, ts).run();
+  ).bind(id, type, name || null, selfId, ts, doId, resolved.length + 1, ts).run();
 
-  // Ajouter members
-  await env.APEX_CHAT_DB.prepare(
-    `INSERT INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+  await DB.prepare(
+    `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
      VALUES (?, ?, 'owner', ?, 0)`
-  ).bind(id, auth.sub, ts).run();
+  ).bind(id, selfId, ts).run();
 
-  for (const memberId of members) {
-    if (memberId === auth.sub) continue;
-    await env.APEX_CHAT_DB.prepare(
-      `INSERT INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+  for (const memberId of resolved) {
+    await DB.prepare(
+      `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
        VALUES (?, ?, 'member', ?, 0)`
     ).bind(id, memberId, ts).run();
   }
 
-  // Si Kevin invisible activé, l'ajouter automatiquement aux convs (sauf si Kevin est l'auteur)
-  if (kevinInvisible && auth.sub !== 'kdmc_admin') {
-    const kevin = await env.APEX_CHAT_DB.prepare('SELECT id FROM users WHERE is_admin=1 LIMIT 1').first();
-    if (kevin && !members.includes(kevin.id)) {
-      await env.APEX_CHAT_DB.prepare(
-        `INSERT INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
+  // Kevin invisible : ajouté auto (sauf s'il est l'auteur/déjà membre)
+  if (kevinInvisible && selfId !== 'kdmc_admin') {
+    const kevin = await DB.prepare('SELECT id FROM users WHERE is_admin=1 LIMIT 1').first();
+    if (kevin && kevin.id !== selfId && !resolved.includes(kevin.id)) {
+      await DB.prepare(
+        `INSERT OR IGNORE INTO conversation_members (conv_id, user_id, role, joined_at, kevin_invisible)
          VALUES (?, ?, 'admin', ?, 1)`
       ).bind(id, kevin.id, ts).run();
     }
