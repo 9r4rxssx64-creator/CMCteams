@@ -11,6 +11,19 @@ const IMG_BASE = 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente
 const ALLOW = ['https://9r4rxssx64-creator.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
 const APP_TAG = 'ld-order-v1';
 
+/* Rate-limit anti-spam/coût (gratuit, sans KV). Fenêtre glissante en mémoire
+   d'isolat — best-effort (réinitialisé au recyclage), pour une garantie dure
+   inter-isolats brancher un KV plus tard (cf. KEVIN_ACTIONS_TODO). */
+const _hits = new Map();
+function rl(key, max, windowMs) {
+  const now = Date.now();
+  let arr = (_hits.get(key) || []).filter(t => now - t < windowMs);
+  if (arr.length >= max) { _hits.set(key, arr); return true; }
+  arr.push(now); _hits.set(key, arr);
+  if (_hits.size > 5000) for (const [k, v] of _hits) { if (!v.length || now - v[v.length - 1] > windowMs) _hits.delete(k); }
+  return false;
+}
+
 const GARMENT_BP = { tee: 6, hoodie: 77, cap: 5383, polo: null, tote: 1313 };
 const COLOR_FR2EN = { 'Noir': 'Black', 'Blanc': 'White', 'Marine': 'Navy', 'Kaki': 'Military Green', 'Ardoise': 'Dark Heather', 'Bordeaux': 'Maroon', 'Anthracite': 'Black', 'Sable': 'Sand', 'Vert': 'Forest Green' };
 const COUNTRY_ISO = { 'france': 'FR', 'monaco': 'MC', 'belgique': 'BE', 'belgium': 'BE', 'suisse': 'CH', 'switzerland': 'CH', 'luxembourg': 'LU', 'espagne': 'ES', 'spain': 'ES', 'italie': 'IT', 'italy': 'IT', 'allemagne': 'DE', 'germany': 'DE', 'royaume-uni': 'GB', 'uk': 'GB' };
@@ -35,8 +48,10 @@ export default {
     if (request.method === 'GET' && url.pathname === '/') {
       return J({ ok: true, service: 'ld-printify-order', shop_id: SHOP_ID }, 200, origin);
     }
-    // COÛT RÉEL : crée un produit-sonde, lit le cost réel, le supprime
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    // COÛT RÉEL : crée un produit-sonde, lit le cost réel, le supprime (appel Printify coûteux)
     if (request.method === 'GET' && url.pathname === '/cost') {
+      if (rl('cost:' + ip, 10, 60000)) return J({ ok: false, detail: 'Trop de requêtes, patiente une minute', retryAfter: 60 }, 429, origin);
       const KEY = env.PRINTIFY_API_KEY;
       if (!KEY) return J({ ok: false, detail: 'clé serveur absente' }, 500, origin);
       const bp = parseInt(url.searchParams.get('bp') || '0', 10);
@@ -109,6 +124,11 @@ export default {
     if (request.method !== 'POST' || url.pathname !== '/order') return J({ ok: false, detail: 'not found' }, 404, origin);
     if (!ALLOW.includes(origin)) return J({ ok: false, detail: 'origin refusée' }, 403, origin);
     if (request.headers.get('x-ld-app') !== APP_TAG) return J({ ok: false, detail: 'app tag invalide' }, 403, origin);
+    // Anti-spam commandes : 5 par 5 min et par IP + plafond global 30/5 min.
+    if (rl('order:' + ip, 5, 300000)) return J({ ok: false, detail: 'Trop de commandes en peu de temps, patiente quelques minutes', retryAfter: 300 }, 429, origin);
+    if (rl('order:global', 30, 300000)) return J({ ok: false, detail: 'Service occupé, réessaie dans quelques minutes', retryAfter: 300 }, 429, origin);
+    // Content-Type strict (rejette les POST hors application/json)
+    if (!String(request.headers.get('content-type') || '').includes('application/json')) return J({ ok: false, detail: 'content-type application/json requis' }, 415, origin);
     const KEY = env.PRINTIFY_API_KEY;
     if (!KEY) return J({ ok: false, detail: 'clé serveur absente' }, 500, origin);
     const H = { 'Authorization': 'Bearer ' + KEY, 'User-Agent': 'LaDetente-KDMC/1.0', 'Content-Type': 'application/json' };
