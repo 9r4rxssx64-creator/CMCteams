@@ -72,6 +72,8 @@ async function tryAutoLogin(): Promise<boolean> {
           const { deviceContext } = await import('../../services/integrations/device-context.js');
           const fp = await deviceContext.getFingerprint();
           localStorage.setItem('apex_v13_device_trusted_v1', fp.device_id);
+          /* v13.4.323 SÉCU : lie le trust auto-recovery à l'UID connu. */
+          localStorage.setItem('apex_v13_device_trusted_uid_v1', lastUid);
           deviceTrusted = fp.device_id;
         } catch {
           /* device-context indispo → on tombera sur le retour false plus bas */
@@ -85,6 +87,7 @@ async function tryAutoLogin(): Promise<boolean> {
     if (fp.device_id !== deviceTrusted) {
       /* Device a changé — purge trusted, force re-login */
       localStorage.removeItem('apex_v13_device_trusted_v1');
+      localStorage.removeItem('apex_v13_device_trusted_uid_v1');
       return false;
     }
     /* Login transparent sans PIN (device trusted) */
