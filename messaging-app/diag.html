@@ -60,6 +60,28 @@
 <div class="row"><span class="lbl">Contacts</span><span class="val" id="d-perm-contacts">…</span></div>
 </div>
 
+<h2>🔔 Notifications push (détaillé)</h2>
+<div class="card">
+<div class="row"><span class="lbl">Permission</span><span class="val" id="d-np-perm">…</span></div>
+<div class="row"><span class="lbl">PWA installée (requis iOS)</span><span class="val" id="d-np-pwa">…</span></div>
+<div class="row"><span class="lbl">Push API</span><span class="val" id="d-np-api">…</span></div>
+<div class="row"><span class="lbl">Abonnement push</span><span class="val" id="d-np-sub">…</span></div>
+<div class="row"><span class="lbl">Service push</span><span class="val" id="d-np-svc">…</span></div>
+<div class="row"><span class="lbl">Dernière erreur</span><span class="val" id="d-np-err">—</span></div>
+<button class="btn" onclick="testNotif()">🔔 Tester ma notif maintenant</button>
+</div>
+
+<h2>📞 Appels (visio / audio)</h2>
+<div class="card">
+<div class="row"><span class="lbl">WebRTC (RTCPeerConnection)</span><span class="val" id="d-call-rtc">…</span></div>
+<div class="row"><span class="lbl">getUserMedia</span><span class="val" id="d-call-gum">…</span></div>
+<div class="row"><span class="lbl">Micro</span><span class="val" id="d-call-mic">…</span></div>
+<div class="row"><span class="lbl">Caméra</span><span class="val" id="d-call-cam">…</span></div>
+<div class="row"><span class="lbl">Dernière erreur</span><span class="val" id="d-call-err">—</span></div>
+<button class="btn btn-out" onclick="testMic()">🎤 Tester micro</button>
+<button class="btn btn-out" onclick="testCam()">📹 Tester caméra</button>
+</div>
+
 <h2>🔐 Crypto / Auth</h2>
 <div class="card">
 <div class="row"><span class="lbl">Web Crypto API</span><span class="val" id="d-webcrypto">…</span></div>
@@ -188,6 +210,41 @@ async function runDiag() {
   }
   setInfo('d-perm-contacts', 'contacts' in navigator ? '✓ API disponible' : 'Polyfill manuel');
 
+  // Notifications push — détaillé (cause EXACTE si problème)
+  try {
+    const np = ('Notification' in window) ? Notification.permission : 'unsupported';
+    (np === 'granted' ? setOk : np === 'denied' ? setErr : setWarn)('d-np-perm', np);
+    diag.notif_permission = np;
+    const pwa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    (pwa ? setOk : setWarn)('d-np-pwa', pwa ? '✓ Oui' : '⚠ Non (iOS exige la PWA installée)');
+    diag.pwa_installed = pwa;
+    const hasPush = ('serviceWorker' in navigator) && ('PushManager' in window);
+    (hasPush ? setOk : setErr)('d-np-api', hasPush ? '✓ Supportée' : '✗ Non supportée');
+    diag.push_api = hasPush;
+    if (hasPush) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg ? await reg.pushManager.getSubscription() : null;
+      if (sub) {
+        setOk('d-np-sub', '✓ Abonné'); diag.push_subscribed = true; diag.push_endpoint = sub.endpoint;
+        let host = '?'; try { host = new URL(sub.endpoint).host; } catch (_) {}
+        const svc = /apple|push\.apple/.test(host) ? 'Apple (iOS)' : /fcm|google/.test(host) ? 'FCM (Android/Chrome)' : /mozilla/.test(host) ? 'Mozilla' : host;
+        setInfo('d-np-svc', svc); diag.push_service = svc;
+      } else {
+        setWarn('d-np-sub', '⚠ Pas d\'abonnement'); setInfo('d-np-svc', '—'); diag.push_subscribed = false;
+      }
+    }
+  } catch (e) { setErr('d-np-err', e.message); diag.notif_diag_error = e.message; }
+
+  // Appels WebRTC — support + permissions (test live via boutons)
+  try {
+    const rtc = ('RTCPeerConnection' in window);
+    (rtc ? setOk : setErr)('d-call-rtc', rtc ? '✓ Supporté' : '✗ Non supporté'); diag.webrtc = rtc;
+    const gum = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    (gum ? setOk : setErr)('d-call-gum', gum ? '✓ Disponible' : '✗ Indisponible'); diag.getusermedia = gum;
+    setInfo('d-call-mic', diag.perm_microphone || '?');
+    setInfo('d-call-cam', diag.perm_camera || '?');
+  } catch (e) { setErr('d-call-err', e.message); }
+
   // Crypto
   if ('crypto' in window) setOk('d-webcrypto', '✓ Disponible'); else setErr('d-webcrypto', '✗');
   if (window.crypto?.subtle) setOk('d-subtle', '✓ Disponible'); else setErr('d-subtle', '✗');
@@ -212,7 +269,7 @@ async function runDiag() {
   // APIs externes (HEAD ping, no-cors pour éviter blocage)
   pingAPI('https://workers.cloudflare.com/cdn-cgi/trace', 'd-cf');
   pingAPI('https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/.json?shallow=true', 'd-fb');
-  pingAPI('https://apex-push-worker.desarzens-kevin.workers.dev/health', 'd-push');
+  pingAPI('https://apex-push-worker.9r4rxssx64.workers.dev/health', 'd-push');
 
   // Export final
   setTimeout(() => {
@@ -231,6 +288,57 @@ async function pingAPI(url, id) {
     setErr(id, '✗ ' + (e.message || 'fail'));
     diag['ping_' + id] = 'fail';
   }
+}
+
+function refreshExport() { $('d-export').textContent = JSON.stringify(diag, null, 2); }
+
+// 🔔 Test notif RÉEL sur CE téléphone — affiche la cause EXACTE si échec.
+async function testNotif() {
+  try {
+    if (!('Notification' in window)) { diag.notif_test = 'unsupported'; alert('✗ Notifications non supportées sur ce navigateur.'); return; }
+    let perm = Notification.permission;
+    if (perm !== 'granted') perm = await Notification.requestPermission();
+    setInfo('d-np-perm', perm); diag.notif_permission = perm;
+    if (perm !== 'granted') {
+      setErr('d-np-err', 'permission ' + perm); diag.notif_test = 'perm_' + perm;
+      alert('✗ Permission « ' + perm + " ».\n\niPhone : installe d'abord la PWA (Partager → Ajouter à l'écran d'accueil), rouvre-la depuis l'icône, PUIS autorise les notifications.");
+      return;
+    }
+    const reg = ('serviceWorker' in navigator) ? await navigator.serviceWorker.getRegistration() : null;
+    if (reg && reg.showNotification) {
+      await reg.showNotification('Apex Chat — test ✅', { body: 'Si tu vois ceci, les notifications marchent sur ce téléphone.', tag: 'apex-test', icon: './manifest.json', badge: './manifest.json' });
+      const shown = await reg.getNotifications({ tag: 'apex-test' });
+      setOk('d-np-err', '✓ Notif affichée (' + shown.length + ')'); diag.notif_test = 'shown:' + shown.length;
+      alert('✓ Notification envoyée.\n\nTu dois la voir maintenant — et sur l\'écran verrouillé si tu mets l\'app en arrière-plan.');
+    } else {
+      new Notification('Apex Chat — test ✅', { body: 'Notifications OK (sans Service Worker).' });
+      diag.notif_test = 'shown-direct';
+      alert('✓ Notification affichée (mode direct, sans Service Worker).');
+    }
+  } catch (e) {
+    setErr('d-np-err', (e.name || 'Error') + ': ' + e.message);
+    diag.notif_test_error = (e.name || 'Error') + ': ' + e.message;
+    alert('✗ Erreur EXACTE : ' + (e.name || '') + ' — ' + e.message);
+  }
+  refreshExport();
+}
+
+async function testMic() { await testMedia({ audio: true }, 'd-call-mic', 'mic', 'Micro'); }
+async function testCam() { await testMedia({ video: true }, 'd-call-cam', 'cam', 'Caméra'); }
+async function testMedia(constraints, id, key, label) {
+  try {
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { setErr(id, '✗ getUserMedia indispo'); diag['test_' + key] = 'no-gum'; alert('✗ getUserMedia indisponible sur ce navigateur.'); return; }
+    const s = await navigator.mediaDevices.getUserMedia(constraints);
+    s.getTracks().forEach((t) => t.stop());
+    setOk(id, '✓ OK'); diag['test_' + key] = 'ok';
+    alert('✓ ' + label + ' accessible.');
+  } catch (e) {
+    setErr(id, '✗ ' + (e.name || 'Error'));
+    setErr('d-call-err', (e.name || 'Error') + ': ' + e.message);
+    diag['test_' + key + '_error'] = (e.name || 'Error') + ': ' + e.message;
+    alert('✗ ' + label + ' — erreur EXACTE : ' + (e.name || '') + ' — ' + e.message);
+  }
+  refreshExport();
 }
 
 function copyDiag() {
