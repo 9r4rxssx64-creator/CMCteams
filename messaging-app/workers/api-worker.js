@@ -2862,6 +2862,54 @@ export async function handleMagicLogin(request, env) {
 //  Admin all-users — TOUS les comptes créés (paginé + filtres)
 // ============================================================================
 
+// GET /api/contacts — v1.1.196. Contacts pour TOUT utilisateur authentifié
+// (PAS admin only). Laurence appelait /api/admin/all-users → 403 « Admin requis »
+// → 0 contact. Ici : les pairs CANONIQUES de ses conversations + TOUJOURS Kevin
+// (cercle privé) ; et si admin, aussi tous les comptes actifs. Plus de 403.
+async function handleContacts(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthenticated');
+  const DB = env.APEX_CHAT_DB;
+  const me = auth.sub;
+  const ids = new Set();
+  // 1) Pairs des conversations (non archivées) du user.
+  try {
+    const rows = (await DB.prepare(
+      `SELECT DISTINCT m2.user_id AS uid
+         FROM conversation_members m1
+         JOIN conversation_members m2 ON m2.conv_id = m1.conv_id AND m2.user_id != m1.user_id
+         JOIN conversations c ON c.id = m1.conv_id
+        WHERE m1.user_id = ? AND c.archived_at IS NULL`
+    ).bind(me).all()).results || [];
+    for (const r of rows) {
+      const cid = await _canonicalId(DB, r.uid);
+      if (cid && cid !== me) ids.add(cid);
+    }
+  } catch (_) {}
+  // 2) Kevin (kdmc_admin) TOUJOURS dans les contacts (cercle privé Kevin↔proches).
+  if (me !== 'kdmc_admin') ids.add('kdmc_admin');
+  // 3) Admin : voit aussi tous les comptes actifs.
+  if (auth.is_admin) {
+    try {
+      const all = (await DB.prepare(
+        "SELECT id FROM users WHERE (is_banned=0 OR is_banned IS NULL) AND status != 'deleted'"
+      ).all()).results || [];
+      for (const r of all) if (r.id !== me) ids.add(r.id);
+    } catch (_) {}
+  }
+  // Charge les profils (exclut supprimés/fusionnés).
+  const users = [];
+  for (const id of ids) {
+    const u = await DB.prepare(
+      `SELECT id, pseudo, real_name, display_name, phone, avatar_url, last_seen, status, merged_into
+         FROM users WHERE id=?`
+    ).bind(id).first().catch(() => null);
+    if (u && u.status !== 'deleted' && !u.merged_into) users.push(u);
+  }
+  users.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
+  return json({ ok: true, count: users.length, users });
+}
+
 async function handleAdminAllUsers(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
@@ -5123,6 +5171,7 @@ export default {
       if (path === '/api/admin/map' && method === 'GET') return await handleAdminMap(request, env);
       const adminGeoMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/geo-history$/);
       if (adminGeoMatch && method === 'GET') return await handleAdminUserGeoHistory(adminGeoMatch[1], request, env);
+      if (path === '/api/contacts' && method === 'GET') return await handleContacts(request, env);
       if (path === '/api/admin/all-users' && method === 'GET') return await handleAdminAllUsers(request, env);
       const adminUserActionMatch = path.match(/^\/api\/admin\/users\/([^\/]+)\/(block|unblock|ban|unban|authorize|revoke|force_logout|delete)$/);
       if (adminUserActionMatch && method === 'POST') return await handleAdminUserAction(adminUserActionMatch[1], adminUserActionMatch[2], request, env);
