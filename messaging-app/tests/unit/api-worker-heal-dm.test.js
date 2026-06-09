@@ -312,11 +312,12 @@ describe('POST /api/admin/heal-dm', () => {
     st.users.push({ id: 'laur_dup2', pseudo: 'laurence2', real_name: 'Laurence SAINT-POLIT', phone: '+33333', source: 'apex-chat-direct', is_admin: 0, last_seen: Date.now() - 5000, status: 'active', last_geo_label: 'Monaco', last_device_label: 'iPhone' });
     // DM actif avec le placeholder, + messages envoyés par les comptes en double
     st.conversations.push({ id: 'cPh', type: 'dm', created_at: 1, archived_at: null });
-    st.members.push({ conv_id: 'cPh', user_id: 'kevin' }, { conv_id: 'cPh', user_id: 'laurence_saint_polit' });
-    st.messages.push({ conv_id: 'cPh', ts: 10, sender_id: 'laurence_saint_polit' }, { conv_id: 'cPh', ts: 11, sender_id: 'laur_dup2' });
+    st.members.push({ conv_id: 'cPh', user_id: 'kevin' }, { conv_id: 'cPh', user_id: 'laur_real' });
+    // laur_real = le VRAI (le plus de messages) ; les autres = stubs vides
+    st.messages.push({ conv_id: 'cPh', ts: 10, sender_id: 'laur_real' }, { conv_id: 'cPh', ts: 11, sender_id: 'laur_real' });
     const env = ENV({ APEX_CHAT_DB: statefulDB(st) });
 
-    // dry_run : voit les 3 comptes (1 gardé, 2 retirés)
+    // dry_run : voit les 3 comptes (1 gardé = celui avec messages, 2 retirés)
     const dry = await call(env, { peer_query: 'laurence' });
     expect(dry.accounts.keep.id).toBe('laur_real');
     expect(dry.accounts.remove.map(r => r.id).sort()).toEqual(['laur_dup2', 'laurence_saint_polit'].sort());

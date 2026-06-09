@@ -1773,22 +1773,17 @@ async function handleHealDm(request, env) {
     // dupliquée → on garde le plus actif et on fusionnera les autres. On ne
     // bloque (« ambigu ») que si les noms diffèrent vraiment (vraies personnes
     // distinctes) sans identifiant explicite.
-    const real = candidates.filter(c => c.source !== 'core_pair');
-    const byActivity = (a, b) => (b.last_seen || 0) - (a.last_seen || 0) || (b.phone ? 1 : 0) - (a.phone ? 1 : 0);
+    // Choisit le compte « principal » = celui avec le PLUS de messages (puis le
+    // plus actif). On ne bloque PLUS sur les noms : autoHealPerson regroupe en
+    // sécurité (jamais 2 vrais comptes actifs distincts). Couvre le cas réel où
+    // un stub s'appelle « Laurence » et le vrai « Laurence SAINT-POLIT ».
     let peer = null;
-    if (real.length === 1) peer = real[0];
-    else if (real.length >= 2) {
-      const distinctNames = new Set(real.map(c => normName(c.real_name) || normName(c.pseudo)));
-      if (distinctNames.size === 1 || body.peer_user_id || body.peer_phone) {
-        peer = [...real].sort(byActivity)[0];          // même personne → garde le plus actif
-      } else {
-        report.cause = 'ambiguous_peer';
-        report.detail = real.length + ' comptes de NOMS DIFFÉRENTS correspondent. Précise peer_user_id ou peer_phone.';
-        report.peer_candidates_names = [...distinctNames];
-        return json(report, 200);
+    if (candidates.length) {
+      for (const c of candidates) {
+        c._msgs = (await DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender_id=?').bind(c.id).first())?.c ?? 0;
       }
-    } else if (candidates.length >= 1) {
-      peer = [...candidates].sort(byActivity)[0];       // que des placeholders → le plus récent
+      candidates.sort((a, b) => (b._msgs - a._msgs) || ((b.last_seen || 0) - (a.last_seen || 0)) || ((b.phone ? 1 : 0) - (a.phone ? 1 : 0)));
+      peer = candidates[0];
     }
     if (!peer) {
       report.cause = 'peer_not_found';
