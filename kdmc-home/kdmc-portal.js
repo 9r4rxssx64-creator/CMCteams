@@ -37,7 +37,28 @@
   function show(el) { if (el) el.hidden = false; }
   function hide(el) { if (el) el.hidden = true; }
 
+  /* Si une app a renvoyé l'utilisateur ici pour se connecter (?return=<url app>),
+     on le ramène dans l'app une fois la session domaine posée. Sécurité anti
+     open-redirect : on n'autorise QUE les sous-domaines de kd-mc.com. */
+  function safeReturnUrl() {
+    try {
+      var raw = new URLSearchParams(location.search).get('return');
+      if (!raw) return null;
+      var u = new URL(raw, location.origin);
+      if (u.protocol !== 'https:') return null;
+      var h = u.hostname;
+      if (h === 'kd-mc.com' || h.slice(-10) === '.kd-mc.com') return u.href;
+      return null;
+    } catch (e) { return null; }
+  }
+  function gotoReturnIfAny() {
+    var r = safeReturnUrl();
+    if (r) { location.replace(r); return true; }
+    return false;
+  }
+
   function showHub(name) {
+    if (gotoReturnIfAny()) return; /* session posée → on rebascule dans l'app */
     if (hello) hello.textContent = name ? ('Bonjour ' + name) : 'Bienvenue';
     hide(gate); show(hub);
     maybeOfferInstall();
