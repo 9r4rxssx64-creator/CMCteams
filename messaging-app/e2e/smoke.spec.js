@@ -107,7 +107,7 @@ test.describe('Apex Chat prod smoke tests', () => {
     await page.goto('./', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(3000);
     if (fatal.length) console.log('Exceptions JS non gérées :', fatal);
-    expect(fatal, 'exception JS non gérée au boot').toHaveLength(0);
+    expect(fatal, 'exception JS non gérée : ' + JSON.stringify(fatal).slice(0, 180)).toHaveLength(0);
   });
 
   test('Worker API /api/admin/force-update-ts répond JSON public', async ({ request }) => {
