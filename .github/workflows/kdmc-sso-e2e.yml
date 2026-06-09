@@ -1,0 +1,39 @@
+name: KDMC SSO — test navigateur réel (Chromium)
+
+# Pilote un vrai Chromium (Playwright) contre le VRAI worker kdmc-router + le
+# VRAI portail, pour prouver le parcours "compte unique" / "pass signé" :
+# - section Administration visible pour l'admin, cachée pour les clients
+# - pass consommé depuis le lien (#kdmc_sso=) → whoami via Bearer SANS cookie
+#   (simule l'isolation des PWA iOS) → reconnu
+# - anti-boucle si pass invalide. Aucune dépendance réseau externe.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'kdmc-home/**'
+      - 'services/kdmc-router/**'
+      - 'tools/kdmc-sso-e2e/**'
+      - '.github/workflows/kdmc-sso-e2e.yml'
+  pull_request:
+    paths:
+      - 'kdmc-home/**'
+      - 'services/kdmc-router/**'
+      - 'tools/kdmc-sso-e2e/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install Playwright + Chromium
+        run: |
+          npm i --no-save playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: KDMC SSO E2E (vrai Chromium)
+        run: node tools/kdmc-sso-e2e/run.mjs
