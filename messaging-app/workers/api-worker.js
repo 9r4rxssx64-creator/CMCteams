@@ -863,8 +863,10 @@ export async function handleVerifyOtp(request, env) {
 // le secret admin. Désactivable via ALLOW_E2E_TEST_LOGIN='false'.
 const E2E_TEST_PHONES = ['+33600000091', '+33600000092'];
 export async function handleTestLogin(request, env) {
-  const secret = env.APEX_CHAT_ADMIN_TOKEN || '';
-  const hdr = request.headers.get('X-Test-Auth') || '';
+  // .trim() des 2 côtés : le secret GitHub peut traîner un retour-ligne (préservé
+  // par `printf '%s'` côté wrangler). Sans ça, comparaison "TOKEN" vs "TOKEN\n" → 403.
+  const secret = (env.APEX_CHAT_ADMIN_TOKEN || '').trim();
+  const hdr = (request.headers.get('X-Test-Auth') || '').trim();
   if (env.ALLOW_E2E_TEST_LOGIN === 'false') return err('E2E login désactivé', 403, 'disabled');
   if (!secret || hdr !== secret) return err('Réservé tests CI', 403, 'forbidden');
   let body = {};

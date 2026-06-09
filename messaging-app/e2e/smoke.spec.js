@@ -8,7 +8,7 @@ test.describe('Apex Chat prod smoke tests', () => {
   test('home page charge en < 10s, status 200, version v1.1.X', async ({ page }) => {
     // v1.1.199 — robustesse WebKit/iOS sur CI Linux : navigation lente possible
     // (index.html ~640KB + SW). domcontentloaded suffit pour lire le HTML/version.
-    const response = await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+    const response = await page.goto('./', { waitUntil: 'domcontentloaded', timeout: 45000 });
     expect(response.status()).toBe(200);
     // titre enrichi v1.1.170
     await expect(page).toHaveTitle(/Apex Chat/i);
@@ -21,7 +21,7 @@ test.describe('Apex Chat prod smoke tests', () => {
   });
 
   test('SEO meta complets (canonical, OG, Twitter, JSON-LD)', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto('./', { waitUntil: 'domcontentloaded', timeout: 45000 });
     // Canonical
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
     expect(canonical).toContain('messaging-app');
@@ -75,7 +75,7 @@ test.describe('Apex Chat prod smoke tests', () => {
   });
 
   test('Service Worker supporté + pas d\'erreur d\'enregistrement', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto('./', { waitUntil: 'domcontentloaded', timeout: 45000 });
     // v1.1.199 — WebKit sur CI Linux n'enregistre pas toujours le SW dans le
     // temps imparti (≠ vrai iOS Safari). On exige seulement : API supportée +
     // AUCUNE erreur d'enregistrement. 'none'/'pending'/'active' tous acceptés ;
@@ -104,7 +104,7 @@ test.describe('Apex Chat prod smoke tests', () => {
       const m = e.message || String(e);
       if (!/CSP|Content Security|favicon|workers\.dev|Failed to fetch|NetworkError|Load failed/i.test(m)) fatal.push(m);
     });
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto('./', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(3000);
     if (fatal.length) console.log('Exceptions JS non gérées :', fatal);
     expect(fatal, 'exception JS non gérée au boot').toHaveLength(0);
