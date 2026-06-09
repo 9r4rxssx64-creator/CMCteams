@@ -25,7 +25,6 @@ import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { commerce, type Plan } from '../integrations/commerce.js';
 import { auditLog } from '../observability/audit-log.js';
-import { firebase } from '../storage/firebase.js';
 
 export type AccountStatus =
   | 'pending_validation' /* Compte créé, attend validation Kevin */
@@ -340,11 +339,16 @@ class AuthGate {
     const expiresAt = Date.now() + SSO_TOKEN_TTL_MS;
     const token = `sso_${uid}_${expiresAt}_${Math.random().toString(36).slice(2, 10)}`;
     try {
-      /* Stocke localement + Firebase shared pour cross-app */
+      /* v13.4.323 SÉCU (audit) : le token SSO est un bearer secret. Il est
+       * stocké LOCALEMENT uniquement (même origine, derrière CSP nonce stricte),
+       * JAMAIS poussé vers Firebase : l'ancienne écriture `firebase.write(
+       * 'apex_v13_sso_tokens', tokens)` exposait les bearer tokens de TOUS les
+       * users sur un chemin /apex lisible par tout client → vol de session
+       * cross-user. Apex Chat utilise son propre mécanisme (`ax_chat_sso_token`
+       * FB_LOCAL), il ne lit pas ce chemin → suppression sans impact fonctionnel. */
       const tokens = JSON.parse(localStorage.getItem('apex_v13_sso_tokens') ?? '{}') as Record<string, { token: string; expires_at: number }>;
       tokens[uid] = { token, expires_at: expiresAt };
       localStorage.setItem('apex_v13_sso_tokens', JSON.stringify(tokens));
-      void firebase.write('apex_v13_sso_tokens', tokens);
     } catch (err: unknown) {
       logger.warn('auth-gate', 'SSO token persist failed', { err });
     }

@@ -1,5 +1,24 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🛡️ APEX v13 SÉCURITÉ (2026-06-09) — audit complet + corrections (v13.4.323)
+
+Audit sécu approfondi (8 axes). Base **déjà très saine** (escapeHtml centralisé, logs redactés 25+ patterns, PIN PBKDF2 200k constant-time, vault AES-GCM, CSP nonce stricte + strict-dynamic, postMessage allowlist, tools whitelist+forbidden). Findings réels vérifiés un par un (plusieurs claims de l'audit étaient hallucinés → écartés).
+
+### ✅ Corrigé & testé (en cours de déploiement)
+- **Impersonation sur device de confiance (P1, réel)** : `loginTrusted(uid)` acceptait **n'importe quel** user dès que le device était trusté → sur un device de confiance, auto-login SANS PIN en tant qu'admin possible. **Fix** : trust lié à l'UID qui l'a établi (`apex_v13_device_trusted_uid_v1`), legacy migré proprement (zéro lockout). +6 tests régression.
+- **Tokens SSO exposés cross-user (P1, réel)** : `generateSSOToken` poussait les bearer tokens de **tous** les users sur un chemin Firebase `/apex` lisible par tous → vol de session. **Fix** : écriture Firebase **supprimée** (stockage local-only, derrière CSP nonce ; Apex Chat utilise son propre `ax_chat_sso_token` → zéro impact). API SSO sans aucun consommateur prod (dormante).
+
+### ⚪ Écartés (vérifiés non-exploitables)
+- « update.html XSS » : page **non déployée** + aucun param injecté dans le DOM (textContent only) → pas de surface.
+- « database.rules.json autorise write SSO » : ce fichier ne contient pas ce chemin (claim halluciné) + n'est de toute façon **pas déployé** (rules strictes en attente Phase 5).
+
+### 🟡 Documentés, NON faits (risque > valeur, ou bloqué) — décision honnête
+- **Proxy IA — anti-rejeu (nonce/timestamp)** : l'auth proxy vient juste d'être réparée (v13.4.322, leçon #95). Ajouter un nonce signé nécessite worker+client coordonnés, **non testable à l'aveugle** → je ne touche pas (risque de re-casser l'IA). À faire ensemble si tu veux.
+- **Rate-limit PIN côté serveur** : actuellement localStorage + device-fingerprint (v13.4.264). Durcir côté worker = changement infra, valeur faible (Kevin = quasi seul user). Différé.
+- **Phase 5 Firebase (`database.rules.json` strict, `auth.uid`)** : **NE PAS déployer** tant que `firebase.ts` n'attache pas `?auth=` à chaque requête (sinon 100% des sync cassées = ta peur n°1). Migration coordonnée à planifier.
+
+---
+
 ## 🛡️ CMCteams SÉCURITÉ (2026-06-07) — fermer la DB Firebase ouverte (Chantier 2)
 
 ### #A — ✅ FAIT (2026-06-08). Canary validé + auth activée pour TOUS les appareils.

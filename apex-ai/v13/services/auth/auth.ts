@@ -290,7 +290,7 @@ class Auth {
        * Trust device AWAIT (pas fire-and-forget). Sans await, si Kevin navigue
        * avant que l'import dynamique device-context se termine, le trust n'est
        * jamais persisté → re-saisie PIN à chaque session. */
-      await this.trustCurrentDevice();
+      await this.trustCurrentDevice(user.id);
     } catch {
       /* ignore */
     }
@@ -313,6 +313,28 @@ class Auth {
       const { deviceContext } = await import('../integrations/device-context.js');
       const fp = await deviceContext.getFingerprint();
       if (fp.device_id !== trusted) return { ok: false, reason: 'Device fingerprint mismatch' };
+
+      /* v13.4.323 SÉCU (audit) : le trust device est lié à l'UID qui l'a établi.
+       * Sans ce binding, sur un device de confiance n'importe qui pouvait
+       * s'auto-loguer SANS PIN en tant qu'un AUTRE user (ex: loginTrusted(
+       * 'kdmc_admin') sur le device de Laurence = impersonation admin). */
+      const trustUid = localStorage.getItem('apex_v13_device_trusted_uid_v1');
+      if (trustUid) {
+        if (trustUid !== uid) {
+          this.audit('login_trusted_uid_mismatch', { actor: uid, details: { trustUid } });
+          return { ok: false, reason: 'Device de confiance lié à un autre utilisateur' };
+        }
+      } else {
+        /* Legacy : device trusté avant le binding UID → n'autoriser que le
+         * dernier user connu (le flux légitime passe toujours last_known_uid),
+         * puis migrer le binding. */
+        const lastUid = localStorage.getItem('apex_v13_last_known_uid');
+        if (lastUid && uid !== lastUid) {
+          this.audit('login_trusted_uid_mismatch', { actor: uid, details: { legacy: true, lastUid } });
+          return { ok: false, reason: 'Device de confiance lié à un autre utilisateur' };
+        }
+        try { localStorage.setItem('apex_v13_device_trusted_uid_v1', uid); } catch { /* ignore */ }
+      }
 
       const user = PRECONFIGURED.find((u) => u.id === uid);
       if (!user) return { ok: false, reason: 'User unknown' };
@@ -339,11 +361,13 @@ class Auth {
    * Marque le device courant comme trusted (skip PIN au prochain démarrage).
    * Stocke device_id fingerprint dans apex_v13_device_trusted_v1.
    */
-  private async trustCurrentDevice(): Promise<void> {
+  private async trustCurrentDevice(uid: string): Promise<void> {
     try {
       const { deviceContext } = await import('../integrations/device-context.js');
       const fp = await deviceContext.getFingerprint();
       localStorage.setItem('apex_v13_device_trusted_v1', fp.device_id);
+      /* v13.4.323 SÉCU : lie le trust à l'UID qui l'a établi (anti-impersonation). */
+      localStorage.setItem('apex_v13_device_trusted_uid_v1', uid);
     } catch { /* ignore */ }
   }
 
@@ -352,6 +376,7 @@ class Auth {
    */
   untrustCurrentDevice(): void {
     try { localStorage.removeItem('apex_v13_device_trusted_v1'); } catch { /* ignore */ }
+    try { localStorage.removeItem('apex_v13_device_trusted_uid_v1'); } catch { /* ignore */ }
   }
 
   logout(): void {
