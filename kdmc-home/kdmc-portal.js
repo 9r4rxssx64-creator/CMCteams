@@ -53,7 +53,15 @@
   }
   function gotoReturnIfAny() {
     var r = safeReturnUrl();
-    if (r) { location.replace(r); return true; }
+    if (r) {
+      /* On ajoute le "pass signé" dans le fragment (#) — non envoyé aux serveurs,
+         non journalisé — pour que l'app installée (cookie isolé) puisse se
+         reconnaître via le canal Bearer. */
+      var t = (window.kdmcSSO && window.kdmcSSO.token) ? window.kdmcSSO.token() : '';
+      if (t) r += (r.indexOf('#') >= 0 ? '&' : '#') + 'kdmc_sso=' + encodeURIComponent(t);
+      location.replace(r);
+      return true;
+    }
     return false;
   }
 

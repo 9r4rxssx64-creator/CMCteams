@@ -25,6 +25,17 @@ ok(j.ok === false, 'token falsifié → rejeté (HMAC)');
 r = await mod.fetch(H({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + token } }), { KDMC_SSO_SECRET: 'autre' }); j = await r.json();
 ok(j.ok === false, 'mauvais secret → rejeté (forge impossible)');
 
+// Canal Bearer (pass signé) — cross-PWA iOS : whoami via Authorization header SANS cookie
+r = await mod.fetch(H({ path: '/__sso/whoami', headers: { authorization: 'Bearer ' + token } }), env); j = await r.json();
+ok(j.ok === true && j.uid === 'kdmc_admin' && j.admin === true, 'whoami via Bearer (sans cookie) → identité + admin');
+// issue renvoie le token dans le corps (pour le mettre dans le lien de retour)
+r = await mod.fetch(H({ path: '/__sso/issue', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ uid: 'laurence_sp', name: 'Laurence Saint-Polit', cgu: true }) }), env); j = await r.json();
+ok(j.ok === true && typeof j.token === 'string' && j.token.indexOf('.') > 0 && j.admin === false, 'issue → token signé dans le corps + admin:false pour client');
+r = await mod.fetch(H({ path: '/__sso/whoami', headers: { authorization: 'Bearer ' + j.token } }), env); let j2 = await r.json();
+ok(j2.ok === true && j2.uid === 'laurence_sp', 'le token du corps est valide en Bearer');
+r = await mod.fetch(H({ path: '/__sso/whoami', headers: { authorization: 'Bearer pas.un.vrai.token' } }), env); j = await r.json();
+ok(j.ok === false, 'Bearer falsifié → rejeté');
+
 r = await mod.fetch(H({ path: '/__sso/logout', method: 'POST' }), env);
 ok((r.headers.get('set-cookie') || '').includes('Max-Age=0'), 'logout → cookie effacé');
 

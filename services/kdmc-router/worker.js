@@ -120,6 +120,15 @@ function ssoCookie(request, name) {
   const m = c.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
   return m ? decodeURIComponent(m[1]) : '';
 }
+/* Source du pass de session : header Authorization Bearer EN PRIORITÉ (marche
+   même avec les PWA installées sur iOS, où chaque app a un jar de cookies isolé),
+   sinon le cookie (Safari même-origine). Rend le compte unique iPhone-proof. */
+function ssoToken(request) {
+  const auth = request.headers.get('authorization') || '';
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  if (m) return m[1].trim();
+  return ssoCookie(request, SSO_COOKIE);
+}
 function J(o, setCookie) {
   return new Response(JSON.stringify(o), {
     status: 200,
@@ -169,7 +178,7 @@ async function handleSso(request, url, env) {
   if (!secret) return J({ ok: false, reason: 'sso_not_configured' });
   const path = url.pathname;
   if (path === '/__sso/whoami' && request.method === 'GET') {
-    const s = await ssoVerify(secret, ssoCookie(request, SSO_COOKIE));
+    const s = await ssoVerify(secret, ssoToken(request));
     if (s) { await enrich(env, request, s.uid, s.name, s.cgu); return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 }); }
     return J({ ok: false });
   }
@@ -182,7 +191,9 @@ async function handleSso(request, url, env) {
     await enrich(env, request, uid, name, cgu);
     const token = await ssoSign(secret, uid, name, cgu);
     const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
-    return J({ ok: true, uid, name, cgu, admin: ADMIN_UIDS.indexOf(uid) >= 0 }, cookie);
+    /* token renvoyé dans le corps : le portail le met dans le lien de retour
+       (#kdmc_sso=) pour les apps installées (où le cookie ne traverse pas). */
+    return J({ ok: true, uid, name, cgu, token, admin: ADMIN_UIDS.indexOf(uid) >= 0 }, cookie);
   }
   if (path === '/__sso/logout' && request.method === 'POST') {
     return J({ ok: true }, `${SSO_COOKIE}=; Domain=.kd-mc.com; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax`);
@@ -194,7 +205,7 @@ async function handleSso(request, url, env) {
 async function adminSession(request, env) {
   const secret = env && env.KDMC_SSO_SECRET;
   if (!secret) return null;
-  const s = await ssoVerify(secret, ssoCookie(request, SSO_COOKIE));
+  const s = await ssoVerify(secret, ssoToken(request));
   if (!s || ADMIN_UIDS.indexOf(s.uid) < 0) return null;
   return s;
 }
