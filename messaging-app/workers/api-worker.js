@@ -1925,6 +1925,7 @@ export async function cleanupGhostMembers(DB) {
          JOIN users u ON u.id = cm.user_id
         WHERE u.status = 'deleted' OR u.merged_into IS NOT NULL`
     ).all()).results || [];
+    const touched = new Set();
     for (const r of rows) {
       const real = await DB.prepare(
         `SELECT COUNT(*) AS c FROM conversation_members cm
@@ -1935,7 +1936,19 @@ export async function cleanupGhostMembers(DB) {
         await DB.prepare('DELETE FROM conversation_members WHERE conv_id=? AND user_id=?')
           .bind(r.conv_id, r.user_id).run().catch(() => {});
         removed++;
+        touched.add(r.conv_id);
       }
+    }
+    // v1.1.204 — recale conversations.member_count sur le NOMBRE RÉEL de lignes
+    // d'appartenance restantes (Kevin : la conv Kevin↔Laurence affichait
+    // « 3 membres » alors qu'un fantôme avait été retiré). Sans ça l'en-tête de
+    // chat ment (👥 N membres). Recalcul une seule fois par conv touchée.
+    for (const convId of touched) {
+      const cnt = await DB.prepare(
+        'SELECT COUNT(*) AS c FROM conversation_members WHERE conv_id=?'
+      ).bind(convId).first();
+      await DB.prepare('UPDATE conversations SET member_count=? WHERE id=?')
+        .bind(cnt?.c || 0, convId).run().catch(() => {});
     }
   } catch (_) {}
   return removed;
