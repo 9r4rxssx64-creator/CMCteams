@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.187",
+  "softwareVersion": "v1.1.188",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -390,7 +390,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.187';
+const __APEX_CHAT_VERSION__ = 'v1.1.188';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -548,7 +548,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.187</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.188</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -562,7 +562,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.187</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.188</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1445,6 +1445,9 @@ K._refreshConvs = async function(){
             K.conversations = K.conversations.filter(c => !K._deletedConvIds.includes(c.id));
           }
           ls('conversations', K.conversations);
+          // v1.1.188 : une fois les conversations chargées, fusionner les contacts
+          // (ajoute le pair de chaque conv) → le contact ne se perd plus au login.
+          try{ K._fetchContacts && K._fetchContacts(true); }catch(_e){_safeCatch('silent',_e)}
           K.render();
         }
       }
@@ -9757,6 +9760,8 @@ K._fetchContacts = async function(silent){
       }
     }
     // Complément : peers extraits des convs existantes
+    const serverOk = !!(K.user?.is_admin && r && r.ok);   // liste serveur autoritaire ?
+    const serverIds = new Set(users.map(u => u.id));        // ids confirmés par le serveur (admin)
     const seen = new Set(users.map(u => u.id));
     for(const c of (K.conversations || [])){
       if(c.peer_id && !seen.has(c.peer_id)){
@@ -9769,19 +9774,26 @@ K._fetchContacts = async function(silent){
         seen.add(c.peer_id);
       }
     }
-    // v1.1.170 : PRÉSERVER les contacts créés à la main (_local_only) — ne pas
-    // les écraser avec la liste serveur (cause du "j'ai perdu un contact" Yannou).
-    const _prevContacts = K.contacts || lg('contacts', []);
-    const _srvIds = new Set(users.map(u => u.id));
-    const _srvPhones = users.map(u => (u.phone || '').replace(/\D/g, '')).filter(Boolean);
-    for(const lc of _prevContacts){
-      if(lc && lc._local_only && !_srvIds.has(lc.id)){
-        const lcP = (lc.phone || '').replace(/\D/g, '');
-        const promu = lcP && _srvPhones.some(sp => sp.slice(-9) === lcP.slice(-9));
-        if(!promu) users.push(lc);   // contact local conservé tant que pas inscrit serveur
-      }
+    // v1.1.188 — MERGE, ne JAMAIS perdre un contact à la connexion.
+    // Cause du "Laurence perd mon contact à chaque connexion" : en non-admin, si
+    // les conversations ne sont pas encore chargées, `users` était vide et on
+    // écrasait les contacts (ne gardant que les _local_only). Désormais on PART
+    // des contacts précédents, on ajoute/maj les nouveaux, et on ne RETIRE un
+    // contact QUE si le serveur (admin) confirme sa disparition. En non-admin
+    // (Laurence) : aucune suppression → le contact persiste toujours.
+    const _prev = ((K.contacts && K.contacts.length) ? K.contacts : lg('contacts', [])) || [];
+    const byId = new Map();
+    const addC = (u) => { if(u && u.id && u.id !== K.user?.id){ const ex = byId.get(u.id); byId.set(u.id, ex ? Object.assign({}, ex, u) : u); } };
+    _prev.forEach(addC);
+    users.forEach(addC);
+    let merged = [...byId.values()];
+    if(serverOk){
+      const convPeers = new Set((K.conversations || []).map(c => c.peer_id).filter(Boolean));
+      // admin : on élague les comptes que le serveur ne connaît plus (supprimés/fusionnés),
+      // sauf contacts locaux ou pairs d'une conversation active.
+      merged = merged.filter(u => u._local_only || serverIds.has(u.id) || convPeers.has(u.id));
     }
-    K.contacts = K._dedupeContacts(users);
+    K.contacts = K._dedupeContacts(merged);
     ls('contacts', K.contacts);
     if(!silent){
       if(users.length > 0){
