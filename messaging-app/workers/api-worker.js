@@ -1590,6 +1590,16 @@ export async function consolidateUserDms(DB, userId, now) {
     if (!groups.has(others)) groups.set(others, []);
     groups.get(others).push(d);
   }
+  // Rescousse des DM « solo » (où l'utilisateur est SEUL membre = correspondant
+  // perdu) : s'il n'a qu'UN seul correspondant réel (cas 2 personnes), on replie
+  // ces convs orphelines dans la conv de ce correspondant → ses messages
+  // « envoyés dans le vide » rejoignent la vraie conversation, et le pair est
+  // ajouté comme membre par la boucle de fusion ci-dessous.
+  const peerKeys = [...groups.keys()].filter(k => k !== '');
+  if (groups.has('') && peerKeys.length === 1) {
+    groups.get(peerKeys[0]).push(...groups.get(''));
+    groups.delete('');
+  }
   for (const [, convs] of groups) {
     if (convs.length < 2) continue;
     convs.sort((a, b) => (b.msgs - a.msgs) || (a.created_at - b.created_at));

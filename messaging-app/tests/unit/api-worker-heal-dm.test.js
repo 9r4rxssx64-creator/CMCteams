@@ -381,6 +381,11 @@ describe('POST /api/admin/heal-dm', () => {
     const kevinConvs = st.members.filter(m => m.user_id === 'kevin').map(m => m.conv_id);
     const loloConvsWithKevin = kevinConvs.filter(cid => st.members.some(m => m.conv_id === cid && m.user_id === 'lolo'));
     expect(loloConvsWithKevin.length).toBeGreaterThanOrEqual(1);
+    // REPLI solo : la conv de lolo qui contient ses 8 messages (c_solo) inclut
+    // maintenant Kevin → ses messages "dans le vide" rejoignent la vraie conv.
+    const soloMsgsConv = st.messages.filter(m => m.conv_id === 'c_solo').length > 0;
+    expect(soloMsgsConv).toBe(true);
+    expect(st.members.some(m => m.conv_id === 'c_solo' && m.user_id === 'kevin')).toBe(true);
   });
 
   it('ANTI-VERROUILLAGE : un JWT lié à un compte fusionné agit comme le compte gardé', async () => {
