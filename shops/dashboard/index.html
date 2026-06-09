@@ -135,11 +135,12 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
   <div class="auth-box">
     <div class="auth-logo">🔒</div>
     <h1 class="serif">KDMC <em>Dashboard</em></h1>
-    <p class="auth-sub">Accès administrateur</p>
-    <input type="password" inputmode="numeric" autocomplete="off" maxlength="12" class="auth-pin" id="pin" placeholder="••••••" autofocus>
+    <p class="auth-sub" id="authSub">Accès administrateur</p>
+    <input type="password" inputmode="numeric" autocomplete="off" maxlength="12" class="auth-pin" id="pin" placeholder="Ton code" autofocus>
+    <input type="password" inputmode="numeric" autocomplete="off" maxlength="12" class="auth-pin" id="pin2" placeholder="Confirme ton code" style="display:none;margin-top:10px">
     <button class="auth-btn" id="loginBtn">Se connecter</button>
     <div class="auth-err" id="authErr"></div>
-    <p class="auth-foot">PIN par défaut au premier lancement : <code>200807</code></p>
+    <a href="#" class="auth-foot" id="forgotLink" style="text-decoration:underline">Code oublié ? Le redéfinir sur cet appareil</a>
   </div>
 </div>
 
@@ -196,19 +197,37 @@ async function hashPin(pin,salt){
 function randSalt(){var a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a).map(function(b){return b.toString(16).padStart(2,"0")}).join("")}
 
 /* --- auth --- */
+var _authMode="login"; // "create" au 1er lancement (aucun code par défaut)
 async function initAuth(){
-  var salt=lg(SK.pinSalt);
-  if(!salt){
-    // 1er lancement : on initialise PIN par défaut '200807'
-    salt=randSalt();ls(SK.pinSalt,salt);
-    var h=await hashPin("200807",salt);ls(SK.pinHash,h);
-  }
-  // session valide ?
+  // session encore valide ?
   var last=lg(SK.lastact,0);
   if(last && (Date.now()-last)<SESSION_TTL){enterApp();return}
+  // aucun code défini sur cet appareil → Kevin CHOISIT le sien (pas de code public)
+  if(!lg(SK.pinHash)){showCreate();return}
   showAuth();
 }
-function showAuth(){document.getElementById("auth").style.display="flex";document.getElementById("app").classList.remove("on");setTimeout(function(){document.getElementById("pin").focus()},50)}
+function showAuth(){
+  _authMode="login";
+  document.getElementById("authSub").textContent="Accès administrateur";
+  document.getElementById("pin").placeholder="Ton code";document.getElementById("pin").value="";
+  document.getElementById("pin2").style.display="none";document.getElementById("pin2").value="";
+  document.getElementById("loginBtn").textContent="Se connecter";
+  document.getElementById("authErr").textContent="";
+  document.getElementById("forgotLink").style.display="";
+  document.getElementById("auth").style.display="flex";document.getElementById("app").classList.remove("on");
+  setTimeout(function(){document.getElementById("pin").focus()},50);
+}
+function showCreate(){
+  _authMode="create";
+  document.getElementById("authSub").textContent="Choisis ton code (4 à 12 chiffres)";
+  document.getElementById("pin").placeholder="Nouveau code";document.getElementById("pin").value="";
+  document.getElementById("pin2").placeholder="Confirme ton code";document.getElementById("pin2").style.display="";document.getElementById("pin2").value="";
+  document.getElementById("loginBtn").textContent="Valider mon code";
+  document.getElementById("authErr").textContent="";
+  document.getElementById("forgotLink").style.display="none";
+  document.getElementById("auth").style.display="flex";document.getElementById("app").classList.remove("on");
+  setTimeout(function(){document.getElementById("pin").focus()},50);
+}
 function enterApp(){
   document.getElementById("auth").style.display="none";
   document.getElementById("app").classList.add("on");
@@ -227,7 +246,18 @@ function logout(){
 async function doLogin(){
   var btn=document.getElementById("loginBtn"),err=document.getElementById("authErr"),pin=document.getElementById("pin").value.trim();
   err.textContent="";
-  if(!pin){err.textContent="Saisis ton PIN.";return}
+  // 1er lancement / réinit : Kevin définit SON code
+  if(_authMode==="create"){
+    var pin2=document.getElementById("pin2").value.trim();
+    if(!/^\d{4,12}$/.test(pin)){err.textContent="Code : 4 à 12 chiffres.";return}
+    if(pin!==pin2){err.textContent="Les deux codes ne sont pas identiques.";return}
+    btn.disabled=true;btn.textContent="…";
+    try{await changePin(pin);ls(SK.fails,{n:0,until:0});enterApp();}
+    catch(e){err.textContent=e.message||"Erreur.";}
+    btn.disabled=false;btn.textContent="Valider mon code";
+    return;
+  }
+  if(!pin){err.textContent="Saisis ton code.";return}
   // rate-limit
   var fails=lg(SK.fails,{n:0,until:0});
   if(fails.until && Date.now()<fails.until){
@@ -475,7 +505,7 @@ function vSettings(){
     '</div>'+
     '<div class="card"><h3>📦 Données locales</h3>'+
     '<p style="font-size:13px;color:var(--muted);margin-bottom:12px">PIN hashé (PBKDF2 200k) + session 8 h stockés en localStorage isolé (préfixe <code>shops_admin_</code>).</p>'+
-    '<button class="btn" onclick="if(confirm(\'Réinitialiser le PIN au PIN par défaut (200807) ?\')){Object.values(SK).forEach(rm);location.reload()}">↩ Reset PIN par défaut</button>'+
+    '<button class="btn" onclick="if(confirm(\'Effacer ton code sur cet appareil et en redéfinir un ?\')){Object.values(SK).forEach(rm);location.reload()}">↩ Redéfinir mon code</button>'+
     '</div>';
 }
 
@@ -490,6 +520,13 @@ async function doChangePin(){
 /* --- bind --- */
 document.getElementById("loginBtn").addEventListener("click",doLogin);
 document.getElementById("pin").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin()});
+document.getElementById("pin2").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin()});
+document.getElementById("forgotLink").addEventListener("click",function(e){
+  e.preventDefault();
+  if(confirm("Redéfinir ton code sur cet appareil ? (ne touche pas aux données des boutiques)")){
+    rm(SK.pinHash);rm(SK.pinSalt);rm(SK.fails);showCreate();
+  }
+});
 // auto-extend session sur activité
 document.addEventListener("click",function(){if(document.getElementById("app").classList.contains("on"))ls(SK.lastact,Date.now())});
 
