@@ -14,6 +14,7 @@ on:
       - 'services/kdmc-router/**'
       - 'tools/kdmc-sso-e2e/**'
       - 'tools/kdmc-passkey-e2e/**'
+      - 'tools/kdmc-multiapp-e2e/**'
       - '.github/workflows/kdmc-sso-e2e.yml'
   pull_request:
     paths:
@@ -21,6 +22,7 @@ on:
       - 'services/kdmc-router/**'
       - 'tools/kdmc-sso-e2e/**'
       - 'tools/kdmc-passkey-e2e/**'
+      - 'tools/kdmc-multiapp-e2e/**'
   workflow_dispatch: {}
 
 permissions:
@@ -48,3 +50,5 @@ jobs:
         run: node tools/kdmc-sso-e2e/run.mjs
       - name: KDMC Passkey E2E (Face ID — authentificateur virtuel)
         run: node tools/kdmc-passkey-e2e/run.mjs
+      - name: KDMC Multi-app E2E (plusieurs identités × plusieurs apps — Admin auto toi seul)
+        run: node tools/kdmc-multiapp-e2e/run.mjs
