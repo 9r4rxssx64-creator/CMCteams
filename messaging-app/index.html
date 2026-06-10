@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.206';
+const __APEX_CHAT_VERSION__ = 'v1.1.207';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -6202,6 +6202,33 @@ K.logout = function(){
 // ============================================================================
 //  Auth UI flow
 // ============================================================================
+/* Compte unique kd-mc.com — reconnaissance NON-PRIVILÉGIÉE.
+   Pré-remplit le nom depuis la session du domaine (confort « un seul identifiant »).
+   AUCUN droit accordé : la connexion reste téléphone + SMS (preuve forte). La session
+   domaine est auto-assertée → jamais une preuve d'identité (cf. CLAUDE.md leçon #99).
+   Fail-open total : pas de session → champ vide → login normal inchangé. */
+function _kdmcConsumeHashPass(){
+  try{
+    var h=location.hash||''; var m=h.match(/[#&]kdmc_sso=([^&]+)/);
+    if(!m||!m[1]) return;
+    localStorage.setItem('kdmc_sso_token', decodeURIComponent(m[1]));
+    var clean=h.replace(/([#&])kdmc_sso=[^&]*/,'$1').replace(/[#&]+$/,'');
+    history.replaceState(null,'',location.pathname+location.search+(clean&&clean!=='#'?clean:''));
+  }catch(e){}
+}
+function _kdmcPrefillName(){
+  try{
+    _kdmcConsumeHashPass();
+    var headers={}; var t=localStorage.getItem('kdmc_sso_token'); if(t) headers['Authorization']='Bearer '+t;
+    fetch('/__sso/whoami',{credentials:'include',cache:'no-store',headers:headers})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(j){
+        if(!j||!j.ok||!j.name) return;
+        var nm=document.getElementById('auth-name');
+        if(nm && !nm.value.trim()){ nm.value=j.name; }
+      }).catch(function(){});
+  }catch(e){}
+}
 function renderAuthStep(){
   const host = $('#auth-step');
   if(K.authStep === 'phone'){
@@ -6221,6 +6248,7 @@ function renderAuthStep(){
       <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
     setTimeout(()=>{
       $('#auth-phone')?.focus();
+      _kdmcPrefillName(); // compte unique kd-mc.com : pré-remplit le nom (sans privilège ; SMS reste requis)
       // v1.1.206 (Kevin "pas de plus tard, ou accepté ou pas de connexion") — CGU
       // en GATE EXPLICITE : case « J'accepte » OBLIGATOIRE, le bouton SMS reste
       // DÉSACTIVÉ tant qu'elle n'est pas cochée → aucune connexion sans acceptation.
