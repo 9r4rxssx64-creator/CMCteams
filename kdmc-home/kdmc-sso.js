@@ -140,12 +140,33 @@
     }).catch(function () { return null; });
   }
 
+  /* ===== POLITIQUE DE CONFIANCE CROSS-APP (« Admin auto, toi seul ») =====
+     Décide si une app peut ouvrir une session AUTOMATIQUE depuis la session du
+     domaine — et avec quel rôle. RÈGLE DE SÉCURITÉ ABSOLUE :
+       - role 'admin' UNIQUEMENT si l'identité est PROUVÉE par Face ID (verified)
+         ET propriétaire (admin = uid dans la liste blanche côté domaine).
+       - verified mais non-propriétaire → role 'user' (session normale).
+       - NON vérifié (nom auto-déclaré, code choisi) → AUCUN auto-login (null).
+         L'app peut quand même pré-remplir le nom via whoami(), mais ne DOIT pas
+         accorder de session/privilège sur cette seule base (faille d'usurpation).
+     Récupère d'abord un éventuel pass signé dans l'URL (#kdmc_sso=). Fail-open :
+     toute erreur → null → l'app garde son login normal (jamais de verrouillage). */
+  function autoLogin() {
+    try { consumeHashToken(); } catch (e) { /* ignore */ }
+    return whoami().then(function (s) {
+      if (!s) return null;
+      if (!s.verified) return null; /* jamais d'auto-login sans preuve Face ID */
+      return { uid: s.uid, name: s.name, cgu: !!s.cgu, role: s.admin ? 'admin' : 'user', verified: true };
+    }).catch(function () { return null; });
+  }
+
   global.kdmcSSO = {
     whoami: whoami,
     issue: issue,
     logout: logout,
     consumeHashToken: consumeHashToken,
     ensureSession: ensureSession,
+    autoLogin: autoLogin,
     token: storedToken,
     supportsPasskey: supportsPasskey,
     registerPasskey: registerPasskey,
