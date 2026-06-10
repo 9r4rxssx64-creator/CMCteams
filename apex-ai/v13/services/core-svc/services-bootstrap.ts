@@ -190,9 +190,10 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `tenant : ${all.length} tenants connus`);
     }),
 
-    /* Stripe SUPPRIMÉ (Kevin 2026-06-10 « pas de Stripe partout, seulement mes moyens de
-       paiement ») : le module B2B stripe-billing a été retiré du dépôt. Les paiements
-       clients passent uniquement par les comptes Kevin (@kdmc : PayPal/Revolut/IBAN). */
+    /* Stripe Billing RETIRÉ du runtime (Kevin 2026-06-10 « @kdmc partout, supprimer Stripe ») :
+       le module B2B stripe-billing.ts n'est plus initialisé au boot. Les paiements clients
+       passent par les comptes Kevin (@kdmc : PayPal/Revolut/IBAN), pas par Stripe. Le fichier
+       + ses tests sont conservés (réactivables) mais inertes — aucun flux Stripe au démarrage. */
 
     /* Voices registry : pre-warm browser voices async */
     safeInit('voices-registry', async () => {
