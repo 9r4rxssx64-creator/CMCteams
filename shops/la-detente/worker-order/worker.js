@@ -228,20 +228,26 @@ export default {
     if (!r.ok) return J({ ok: false, detail: 'Printify HTTP ' + r.status + ' : ' + txt.slice(0, 300), warnings }, 502, origin);
     let pj; try { pj = JSON.parse(txt); } catch (_) { pj = {}; }
     // 🔔 Alerte push admin (best-effort, ne bloque pas la commande)
-    // Kevin « notif, 1 clic + tous les renseignements » : titre = boutique + n° commande,
-    // corps = client + ville + nb articles + total + détail des articles + moyen de paiement.
-    // Le 1-tap (body.pushUrl) ouvre l'admin boutique (déverrouillé auto via Face ID).
+    // Kevin « notif, 1 clic + tous les renseignements + va plus loin » : titre = boutique +
+    // n° commande ; corps = client + ville + nb articles + total + paiement + détail articles.
+    // 1-TAP = ouvre la commande DIRECTEMENT dans Printify pour la VALIDER/PAYER (statut on-hold).
+    // 2e bouton « 🏪 Boutique » = admin boutique (déverrouillé auto via Face ID).
     try {
       const tot = body.total ? (' — ' + body.total + ' €') : '';
       const ordTxt = body.orderId ? (' · #' + String(body.orderId)) : '';
       const cityTxt = a.city ? (' · ' + a.city) : '';
       const payTxt = body.method ? (' · ' + body.method) : '';
       const itemsTxt = items.map((it) => (it.name || it.garment || 'article') + ' ×' + (it.quantity || it.qty || 1)).join(', ').slice(0, 140);
+      // Lien direct vers la commande Printify (à valider/payer). Si l'id manque → liste des commandes.
+      const printifyUrl = pj.id
+        ? ('https://printify.com/app/orders/' + encodeURIComponent(String(pj.id)))
+        : 'https://printify.com/app/orders';
       await sendOrderPush(
         env,
         (body.shopName || 'La Détente') + ' — 🛍️ Nouvelle commande' + ordTxt,
-        (a.name || 'Client') + cityTxt + ' · ' + lineItems.length + ' art.' + tot + payTxt + (itemsTxt ? ('\n' + itemsTxt) : ''),
-        body.pushUrl,
+        (a.name || 'Client') + cityTxt + ' · ' + lineItems.length + ' art.' + tot + payTxt + (itemsTxt ? ('\n' + itemsTxt) : '') + '\n→ Tape pour VALIDER/PAYER dans Printify',
+        printifyUrl,
+        { admin_url: body.pushUrl || 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1', actions: [{ action: 'admin', title: '🏪 Boutique' }] },
       );
     } catch (_) {}
     // Statut "on-hold" : Kevin valide/paie. (Pas d'envoi auto en production.)
@@ -257,11 +263,14 @@ async function fbGetSub() {
     return await r.json();
   } catch (_) { return null; }
 }
-async function sendOrderPush(env, title, bodyTxt, url) {
+async function sendOrderPush(env, title, bodyTxt, url, extra) {
   if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return 0;
   const sub = await fbGetSub();
   if (!sub || !sub.endpoint || !sub.keys) return 0;
-  const payload = { title: title, body: bodyTxt, url: url || 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1', tag: 'ld-order' };
+  const payload = Object.assign(
+    { title: title, body: bodyTxt, url: url || 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1', tag: 'ld-order' },
+    extra || {},
+  );
   try { await sendOnePush(env, sub, payload); return 1; } catch (_) { return 0; }
 }
 async function sendOnePush(env, subscription, payload) {

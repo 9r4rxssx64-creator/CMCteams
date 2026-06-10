@@ -1,6 +1,6 @@
 /* KDMC Shops — Service Worker Chez Lolo. MAJ auto forcée : network-first pour les
    pages (toujours la dernière version en ligne), cache-first pour les assets, fallback offline. */
-var CACHE='kdmc-chez-lolo-v2.0.6';
+var CACHE='kdmc-chez-lolo-v2.0.7';
 var PRE=['./','studio.html','bibliotheque.html','/CMCteams/shops/legal/cgv.html'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRE).catch(function(){})}));self.skipWaiting()});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE&&(k.indexOf('kdmc-chez-lolo-')===0||k==='kdmc-v1')}).map(function(k){return caches.delete(k)}))}));self.clients.claim()});
@@ -9,12 +9,14 @@ self.addEventListener('message',function(e){if(e.data==='skipWaiting')self.skipW
 self.addEventListener('push',function(e){
   var d={title:'Chez Lolo',body:'Nouvelle activité',url:'./index.html'};
   try{if(e.data)d=Object.assign(d,e.data.json());}catch(_){try{d.body=e.data.text();}catch(__){}}
-  e.waitUntil(self.registration.showNotification(d.title,{body:d.body,icon:'img/og.png',badge:'img/og.png',tag:d.tag||'ld',data:{url:d.url||'./index.html'},vibrate:[80,40,80],requireInteraction:true}));
+  /* 1-tap = valider/payer la commande dans Printify (d.url) ; bouton « Boutique » = admin (d.admin_url) */
+  e.waitUntil(self.registration.showNotification(d.title,{body:d.body,icon:'img/og.png',badge:'img/og.png',tag:d.tag||'ld',data:{url:d.url||'./index.html',admin_url:d.admin_url||'./index.html'},actions:Array.isArray(d.actions)?d.actions:[],vibrate:[80,40,80],requireInteraction:true}));
 });
 self.addEventListener('notificationclick',function(e){
   e.notification.close();
-  var u=(e.notification.data&&e.notification.data.url)||'./index.html';
-  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(cl){for(var i=0;i<cl.length;i++){if(cl[i].url.indexOf('chez-lolo')>=0&&'focus'in cl[i])return cl[i].focus();}if(self.clients.openWindow)return self.clients.openWindow(u);}));
+  var dd=e.notification.data||{};
+  var u=(e.action==='admin'&&dd.admin_url)?dd.admin_url:(dd.url||'./index.html');
+  e.waitUntil(self.clients.openWindow?self.clients.openWindow(u):Promise.resolve());
 });
 self.addEventListener('fetch',function(e){
   var req=e.request; if(req.method!=='GET')return;
