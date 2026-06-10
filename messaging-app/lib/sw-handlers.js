@@ -12,7 +12,7 @@
  *   - OFFLINE_CACHE  : fallback HTML hors-ligne
  */
 
-export const CACHE_VERSION = 'apex-chat-v1.1.209';
+export const CACHE_VERSION = 'apex-chat-v1.1.210';
 export const STATIC_CACHE = `${CACHE_VERSION}-static`;
 export const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 export const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
@@ -207,6 +207,26 @@ export async function handleNotificationClick(event, { clients }) {
   event.notification.close();
   if (event.action === 'dismiss') return null;
   const isCall = event.notification.data?.type === 'call';
+
+  /* Semi-auto Premium (Kevin « notif, 1 clic ») : tap « Activer » ou tap sur la notif
+     demande-premium → ouvre/focus l'app (qui a le JWT admin) et lui demande d'activer. */
+  if (event.action === 'grant_premium' || event.notification.data?.type === 'premium_request') {
+    const uid = event.notification.data?.user_id;
+    const plan = event.notification.data?.plan || 'monthly';
+    if (!uid) return null;
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of list) {
+      if (client.url.includes('/messaging-app/')) {
+        client.focus();
+        client.postMessage({ type: 'grant-premium', userId: uid, plan });
+        return client;
+      }
+    }
+    if (clients.openWindow) {
+      return clients.openWindow('./?grant_premium=' + encodeURIComponent(uid) + '&plan=' + encodeURIComponent(plan));
+    }
+    return null;
+  }
 
   /* v1.1.87 — mark_read : juste fermer (server-side prochaine read receipt) */
   if (event.action === 'mark_read') {

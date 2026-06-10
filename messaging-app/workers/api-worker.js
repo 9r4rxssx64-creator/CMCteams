@@ -4421,6 +4421,22 @@ export async function handlePremiumRequest(request, env) {
     ).run();
   } catch (e) { console.warn('[premium-request] audit failed:', e.message); }
 
+  // Semi-auto (Kevin « notif, 1 clic ») : PUSH à l'admin avec activation 1-tap.
+  // Fail-open : si le push échoue, la demande reste visible dans le panneau admin.
+  try {
+    let uname = auth.sub;
+    try {
+      const u = await env.APEX_CHAT_DB?.prepare('SELECT pseudo, real_name FROM users WHERE id=?').bind(auth.sub).first();
+      if (u) uname = u.real_name || u.pseudo || auth.sub;
+    } catch (_) { /* ignore */ }
+    await sendPushToUser('kdmc_admin', {
+      title: '💎 Demande Premium',
+      body: `${uname} — ${planDef.label} (${planDef.price_eur.toFixed(2)}€). Tape « Activer » après vérif du paiement.`,
+      payload: { type: 'premium_request', user_id: auth.sub, plan },
+      actions: [{ action: 'grant_premium', title: '✅ Activer' }, { action: 'dismiss', title: 'Plus tard' }],
+    }, env);
+  } catch (e) { console.warn('[premium-request] push admin failed:', e.message); }
+
   const priceStr = planDef.price_eur.toFixed(2);
   return json({
     ok: true,
