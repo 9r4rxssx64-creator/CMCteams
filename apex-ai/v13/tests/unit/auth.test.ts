@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { auth } from '../../services/auth/auth.js';
 
 describe('auth.isKevinAdmin', () => {
@@ -47,5 +47,42 @@ describe('auth.login', () => {
 
   it('refuse pin trop court', async () => {
     expect((await auth.login('Kevin DESARZENS', '12')).ok).toBe(false);
+  });
+});
+
+describe('auth.loginVerifiedDomain (compte unique kd-mc.com — Admin auto, toi seul)', () => {
+  beforeEach(() => { localStorage.clear(); auth.logout(); });
+  afterEach(() => { vi.unstubAllGlobals(); auth.logout(); localStorage.clear(); });
+
+  function mockWhoami(body: Record<string, unknown>) {
+    vi.stubGlobal('fetch', () => Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response));
+  }
+
+  it('propriétaire prouvé par Face ID (verified+admin) → connecte AUTO en admin', async () => {
+    mockWhoami({ ok: true, uid: 'kevin-desarzens', name: 'Kevin Desarzens', verified: true, admin: true });
+    const res = await auth.loginVerifiedDomain();
+    expect(res.ok).toBe(true);
+    expect(res.admin).toBe(true);
+    expect(auth.isAdminSync()).toBe(true);
+  });
+
+  it("SÉCURITÉ : nom auto-déclaré (verified:false) → AUCUN auto-login (faille fermée)", async () => {
+    mockWhoami({ ok: true, uid: 'kevin-desarzens', name: 'Kevin Desarzens', verified: false, admin: true });
+    const res = await auth.loginVerifiedDomain();
+    expect(res.ok).toBe(false);
+    expect(auth.isAdminSync()).toBe(false);
+  });
+
+  it('client verified NON-propriétaire → pas d’auto-login (PIN requis)', async () => {
+    mockWhoami({ ok: true, uid: 'laurence-saint-polit', name: 'Laurence Saint-Polit', verified: true, admin: false });
+    const res = await auth.loginVerifiedDomain();
+    expect(res.ok).toBe(false);
+    expect(auth.isAdminSync()).toBe(false);
+  });
+
+  it('aucune session domaine → fail-open (pas d’auto-login)', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve({ ok: false, json: () => Promise.resolve({}) } as Response));
+    const res = await auth.loginVerifiedDomain();
+    expect(res.ok).toBe(false);
   });
 });
