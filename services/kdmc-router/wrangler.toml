@@ -3,6 +3,15 @@ main = "worker.js"
 compatibility_date = "2024-11-01"
 workers_dev = true
 
+# Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
+# FIABLE. Le provisioning dynamique cassait `wrangler deploy` quand le namespace existait
+# déjà : `kv:namespace create` → "already exists", le fallback re-parsait un MAUVAIS id,
+# l'ajoutait au toml → "KV namespace not found [10041]" → worker PAS déployé (gate admin
+# + token jamais en ligne). Id figé = plus jamais ce souci.
+[[kv_namespaces]]
+binding = "ACCOUNTS"
+id = "8cfa33a28ac045adb7b7a9556ca8a073"
+
 # Chaque custom_domain auto-provisionne le DNS + le certificat SSL sur la zone
 # kd-mc.com (déjà dans le compte Cloudflare de Kevin). Aucune manip DNS manuelle.
 routes = [
