@@ -30,7 +30,7 @@ export default defineConfig({
         // "JAMAIS estimer, toujours mesurer") : 78.69% stmts / 78.27% branches /
         // 87.37% functions / 78.69% lines. L'ancien commentaire "91.73% / 100%
         // functions" était périmé/faux — corrigé ici.
-        // TODO : remonter la couverture du cœur (auth OTP, admin, premium/Stripe,
+        // TODO : remonter la couverture du cœur (auth OTP, admin, premium @kdmc,
         // branches catch) puis réintégrer au gate avec un threshold dédié.
       ],
       thresholds: {

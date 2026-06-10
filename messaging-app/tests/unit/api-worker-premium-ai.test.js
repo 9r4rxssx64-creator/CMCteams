@@ -3,8 +3,9 @@
  *
  * Couvre :
  * - handleAiSummarize : auth 401, prompt validation, cache D1 hit, failover providers
- * - handlePremiumCheckout : auth, plan validation, Stripe session create, idempotency
- * - handlePremiumWebhook : signature verify HMAC, event activation premium
+ * - handlePremiumRequest : auth, plan validation, demande pending @kdmc + KV + fail-open
+ * - handleAdminGrantPremium : admin-only (403 sinon), activation premium_until + plan
+ * - handleAdminPremiumRequests : admin-only, liste KV pending
  * - handlePremiumStatus : query D1 premium_until + lifetime detect
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,13 +15,12 @@ import {
   handleAiTranslate,
   handleAiVoiceTranscribe,
   handleAiImageDescribe,
-  handlePremiumCheckout,
-  handlePremiumPortal,
-  handlePremiumWebhook,
+  handlePremiumRequest,
+  handleAdminGrantPremium,
+  handleAdminPremiumRequests,
   handlePremiumStatus,
   handlePremiumQuota,
   handleAiRewrite,
-  _sendPremiumReceipt,
 } from '../../workers/api-worker.js';
 import { ENV, makeJWT } from './api-worker-helpers.js';
 
@@ -162,296 +162,192 @@ describe('handleAiSummarize', () => {
   });
 });
 
-describe('handlePremiumCheckout', () => {
+describe('handlePremiumRequest (v1.1.208 — @kdmc)', () => {
   it('refuse non-auth', async () => {
-    const r = await handlePremiumCheckout(makeReq('POST', '/api/premium/checkout', { plan: 'monthly' }), userEnv());
+    const r = await handlePremiumRequest(makeReq('POST', '/api/premium/request', { plan: 'monthly' }), userEnv());
     expect(r.status).toBe(401);
   });
 
   it('refuse plan invalide', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_PRICE_MONTHLY: 'price_x' });
+    const env = userEnv();
     const tok = await userToken();
-    const r = await handlePremiumCheckout(makeReq('POST', '/api/premium/checkout', { plan: 'unknown' }, tok), env);
+    const r = await handlePremiumRequest(makeReq('POST', '/api/premium/request', { plan: 'unknown' }, tok), env);
     expect(r.status).toBe(400);
     const j = await r.json();
     expect(j.message).toMatch(/Plan invalide/i);
   });
 
-  it('refuse si STRIPE_SECRET_KEY manquant', async () => {
+  it('crée une demande pending + infos paiement @kdmc', async () => {
     const env = userEnv();
     const tok = await userToken();
-    const r = await handlePremiumCheckout(makeReq('POST', '/api/premium/checkout', { plan: 'monthly' }, tok), env);
-    expect(r.status).toBe(503);
-  });
-
-  it('refuse si STRIPE_PRICE_MONTHLY manquant', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk_test_x' });
-    const tok = await userToken();
-    const r = await handlePremiumCheckout(makeReq('POST', '/api/premium/checkout', { plan: 'monthly' }, tok), env);
-    expect(r.status).toBe(503);
-  });
-
-  it('refuse URLs invalides (non http)', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_PRICE_MONTHLY: 'price_x' });
-    const tok = await userToken();
-    const r = await handlePremiumCheckout(
-      makeReq('POST', '/api/premium/checkout', { plan: 'monthly', success_url: 'javascript:alert(1)', cancel_url: 'http://x' }, tok),
-      env,
-    );
-    expect(r.status).toBe(400);
-  });
-
-  it('Stripe success → retourne url + session_id', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_PRICE_MONTHLY: 'price_xyz' });
-    globalThis.fetch = vi.fn(async () =>
-      new Response(JSON.stringify({ id: 'cs_test_123', url: 'https://checkout.stripe.com/c/cs_test_123' }), { status: 200 }),
-    );
-    const tok = await userToken();
-    const r = await handlePremiumCheckout(
-      makeReq('POST', '/api/premium/checkout', { plan: 'monthly', success_url: 'https://apex.chat/ok', cancel_url: 'https://apex.chat/cancel' }, tok),
-      env,
-    );
+    const r = await handlePremiumRequest(makeReq('POST', '/api/premium/request', { plan: 'monthly' }, tok), env);
     expect(r.status).toBe(200);
     const j = await r.json();
-    expect(j.url).toContain('checkout.stripe.com');
-    expect(j.session_id).toBe('cs_test_123');
+    expect(j.ok).toBe(true);
+    expect(j.pending).toBe(true);
     expect(j.plan).toBe('monthly');
-    expect(j.trial).toBe(true); /* monthly = 7 days trial */
+    expect(j.price_eur).toBe(6.99);
+    expect(j.pay.paypal).toBe('https://paypal.me/kdmc/6.99');
+    expect(j.pay.revolut).toBe('https://revolut.me/kdmc');
+    expect(j.pay.iban_holder).toBe('Kevin DESARZENS');
   });
 
-  it('plan lifetime → trial false + mode payment', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk', STRIPE_PRICE_LIFETIME: 'price_life' });
-    let capturedBody = '';
-    globalThis.fetch = vi.fn(async (_, opts) => {
-      capturedBody = opts.body;
-      return new Response(JSON.stringify({ id: 'cs_life', url: 'https://checkout.stripe.com/cs_life' }));
-    });
-    const tok = await userToken();
-    const r = await handlePremiumCheckout(
-      makeReq('POST', '/api/premium/checkout', { plan: 'lifetime', success_url: 'https://x', cancel_url: 'https://y' }, tok),
-      env,
-    );
-    expect(r.status).toBe(200);
-    const j = await r.json();
-    expect(j.trial).toBe(false);
-    expect(capturedBody).toContain('mode=payment');
-    expect(capturedBody).not.toContain('trial_period_days');
-  });
-
-  it('plan yearly → mode subscription sans trial', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk', STRIPE_PRICE_YEARLY: 'price_year' });
-    let capturedBody = '';
-    globalThis.fetch = vi.fn(async (_, opts) => {
-      capturedBody = opts.body;
-      return new Response(JSON.stringify({ id: 'cs_year', url: 'https://stripe' }));
-    });
-    const tok = await userToken();
-    await handlePremiumCheckout(
-      makeReq('POST', '/api/premium/checkout', { plan: 'yearly', success_url: 'https://x', cancel_url: 'https://y' }, tok),
-      env,
-    );
-    expect(capturedBody).toContain('mode=subscription');
-    expect(capturedBody).not.toContain('trial_period_days');
-  });
-
-  it('Stripe HTTP 400 → 502 propagé', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk', STRIPE_PRICE_MONTHLY: 'p' });
-    globalThis.fetch = vi.fn(async () => new Response('bad', { status: 400 }));
-    const tok = await userToken();
-    const r = await handlePremiumCheckout(
-      makeReq('POST', '/api/premium/checkout', { plan: 'monthly', success_url: 'https://x', cancel_url: 'https://y' }, tok),
-      env,
-    );
-    expect(r.status).toBe(502);
-  });
-
-  it('passe metadata user_id + plan + apex_version', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk', STRIPE_PRICE_MONTHLY: 'p' });
-    let body = '';
-    globalThis.fetch = vi.fn(async (_, opts) => {
-      body = opts.body;
-      return new Response(JSON.stringify({ id: 'cs', url: 'https://x' }));
-    });
-    const tok = await userToken();
-    await handlePremiumCheckout(
-      makeReq('POST', '/api/premium/checkout', { plan: 'monthly', success_url: 'https://x', cancel_url: 'https://y' }, tok),
-      env,
-    );
-    expect(body).toContain('metadata%5Buser_id%5D=user_test');
-    expect(body).toContain('metadata%5Bplan%5D=monthly');
-    expect(body).toContain('apex_version');
-    expect(body).toContain('allow_promotion_codes=true');
-    expect(body).toContain('locale=fr');
-  });
-});
-
-describe('handlePremiumWebhook', () => {
-  it('refuse sans STRIPE_WEBHOOK_SECRET → 503', async () => {
+  it('persiste la demande dans KV (premium_req:<user_id>)', async () => {
     const env = userEnv();
-    const req = new Request('https://api.apex/api/premium/webhook', {
-      method: 'POST',
-      headers: { 'Stripe-Signature': 't=1,v1=abc' },
-      body: '{}',
-    });
-    const r = await handlePremiumWebhook(req, env);
-    expect(r.status).toBe(503);
+    const tok = await userToken();
+    await handlePremiumRequest(makeReq('POST', '/api/premium/request', { plan: 'yearly' }, tok), env);
+    const stored = await env.APEX_CHAT_KV.get('premium_req:user_test');
+    expect(stored).toBeTruthy();
+    const rec = JSON.parse(stored);
+    expect(rec.user_id).toBe('user_test');
+    expect(rec.plan).toBe('yearly');
+    expect(rec.price_eur).toBe(69.99);
+    expect(rec.status).toBe('pending');
+    expect(rec.method).toBe('kdmc');
   });
 
-  it('refuse sans Stripe-Signature header → 400', async () => {
-    const env = userEnv({ STRIPE_WEBHOOK_SECRET: 'whsec_x' });
-    const req = new Request('https://api.apex/api/premium/webhook', {
-      method: 'POST',
-      body: '{}',
-    });
-    const r = await handlePremiumWebhook(req, env);
-    expect(r.status).toBe(400);
-  });
-
-  it('refuse signature invalide', async () => {
-    const env = userEnv({ STRIPE_WEBHOOK_SECRET: 'whsec_x' });
-    const req = new Request('https://api.apex/api/premium/webhook', {
-      method: 'POST',
-      headers: { 'Stripe-Signature': 't=1,v1=invalid_sig' },
-      body: '{"type":"test"}',
-    });
-    const r = await handlePremiumWebhook(req, env);
-    expect(r.status).toBe(400);
-  });
-
-  it('signature valide checkout.session.completed → active premium monthly', async () => {
-    const secret = 'whsec_test_' + crypto.randomUUID();
-    const ts = Math.floor(Date.now() / 1000);
-    const eventBody = JSON.stringify({
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          id: 'cs_test_123',
-          metadata: { user_id: 'user_test', plan: 'monthly' },
-          client_reference_id: 'user_test',
-        },
-      },
-    });
-    // Compute valid signature
-    const key = await crypto.subtle.importKey(
-      'raw', new TextEncoder().encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-    );
-    const sigBuf = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${ts}.${eventBody}`));
-    const sigHex = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const env = userEnv({ STRIPE_WEBHOOK_SECRET: secret });
-    let updateCalled = false;
-    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
-      bind: function (...args) {
-        if (sql.includes('UPDATE users SET premium_until')) updateCalled = true;
-        return this;
-      },
-      run: async () => ({ success: true }),
-    }));
-
-    const req = new Request('https://api.apex/api/premium/webhook', {
-      method: 'POST',
-      headers: { 'Stripe-Signature': `t=${ts},v1=${sigHex}` },
-      body: eventBody,
-    });
-    const r = await handlePremiumWebhook(req, env);
+  it('fail-open : KV indispo → demande quand même acceptée', async () => {
+    const env = userEnv();
+    env.APEX_CHAT_KV = undefined;
+    const tok = await userToken();
+    const r = await handlePremiumRequest(makeReq('POST', '/api/premium/request', { plan: 'lifetime' }, tok), env);
     expect(r.status).toBe(200);
     const j = await r.json();
-    expect(j.received).toBe('checkout.session.completed');
-    expect(updateCalled).toBe(true);
-  });
-
-  it('refuse signature trop ancienne (anti-replay > 5min)', async () => {
-    const secret = 'whsec_x';
-    const oldTs = Math.floor(Date.now() / 1000) - 600; /* 10 min old */
-    const body = '{"type":"test"}';
-    const key = await crypto.subtle.importKey(
-      'raw', new TextEncoder().encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-    );
-    const sigBuf = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${oldTs}.${body}`));
-    const sigHex = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const env = userEnv({ STRIPE_WEBHOOK_SECRET: secret });
-    const req = new Request('https://api.apex/api/premium/webhook', {
-      method: 'POST',
-      headers: { 'Stripe-Signature': `t=${oldTs},v1=${sigHex}` },
-      body,
-    });
-    const r = await handlePremiumWebhook(req, env);
-    expect(r.status).toBe(400);
+    expect(j.ok).toBe(true);
+    expect(j.price_eur).toBe(199);
   });
 });
 
-describe('handlePremiumPortal (v1.1.26)', () => {
+describe('handleAdminGrantPremium (v1.1.208)', () => {
   it('refuse non-auth', async () => {
-    const r = await handlePremiumPortal(makeReq('POST', '/api/premium/portal'), userEnv());
+    const r = await handleAdminGrantPremium(makeReq('POST', '/api/admin/grant-premium', { user_id: 'u1', plan: 'monthly' }), userEnv());
     expect(r.status).toBe(401);
   });
 
-  it('refuse sans STRIPE_SECRET_KEY', async () => {
-    const env = userEnv();
+  it('refuse non-admin → 403', async () => {
+    const env = userEnv(); // userToken n'a pas is_admin
     const tok = await userToken();
-    const r = await handlePremiumPortal(makeReq('POST', '/api/premium/portal', {}, tok), env);
-    expect(r.status).toBe(503);
+    const r = await handleAdminGrantPremium(makeReq('POST', '/api/admin/grant-premium', { user_id: 'u1', plan: 'monthly' }, tok), env);
+    expect(r.status).toBe(403);
+    const j = await r.json();
+    expect(j.message).toMatch(/Admin/i);
   });
 
-  it('refuse return_url invalide (non http)', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
-    const tok = await userToken();
-    const r = await handlePremiumPortal(
-      makeReq('POST', '/api/premium/portal', { return_url: 'javascript:alert(1)' }, tok),
-      env,
-    );
+  it('admin → active premium_until futur + plan', async () => {
+    const env = userEnv();
+    let updateSql = '', updateArgs = null;
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function (...args) {
+        if (sql.includes('UPDATE users SET premium_until')) { updateSql = sql; updateArgs = args; }
+        return this;
+      },
+      first: async () => ({ is_admin: 1, status: 'active', is_banned: 0 }),
+      run: async () => ({ success: true }),
+    }));
+    const tok = await makeJWT({ sub: 'kevin', is_admin: true, iat: Math.floor(Date.now() / 1000) });
+    const r = await handleAdminGrantPremium(makeReq('POST', '/api/admin/grant-premium', { user_id: 'u_target', plan: 'monthly' }, tok), env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.ok).toBe(true);
+    expect(j.user_id).toBe('u_target');
+    expect(j.plan).toBe('monthly');
+    expect(j.premium_until).toBeGreaterThan(Date.now());
+    expect(updateSql).toContain('UPDATE users SET premium_until');
+    expect(updateArgs[2]).toBe('u_target'); // WHERE id=?
+  });
+
+  it('admin + lifetime → premium_until quasi-infini', async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ is_admin: 1, status: 'active', is_banned: 0 }),
+      run: async () => ({ success: true }),
+    }));
+    const tok = await makeJWT({ sub: 'kevin', is_admin: true, iat: Math.floor(Date.now() / 1000) });
+    const r = await handleAdminGrantPremium(makeReq('POST', '/api/admin/grant-premium', { user_id: 'u2', plan: 'lifetime' }, tok), env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.premium_until).toBe(9999999999000);
+  });
+
+  it('admin → refuse user_id manquant', async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ is_admin: 1, status: 'active', is_banned: 0 }),
+      run: async () => ({ success: true }),
+    }));
+    const tok = await makeJWT({ sub: 'kevin', is_admin: true, iat: Math.floor(Date.now() / 1000) });
+    const r = await handleAdminGrantPremium(makeReq('POST', '/api/admin/grant-premium', { plan: 'monthly' }, tok), env);
     expect(r.status).toBe(400);
   });
 
-  it('user sans stripe_customer_id → 404 (pas d\'abo actif)', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
+  it('admin → refuse plan invalide', async () => {
+    const env = userEnv();
     env.APEX_CHAT_DB.prepare = vi.fn(() => ({
       bind: function () { return this; },
-      first: async () => ({ stripe_customer_id: null }),
+      first: async () => ({ is_admin: 1, status: 'active', is_banned: 0 }),
+      run: async () => ({ success: true }),
     }));
+    const tok = await makeJWT({ sub: 'kevin', is_admin: true, iat: Math.floor(Date.now() / 1000) });
+    const r = await handleAdminGrantPremium(makeReq('POST', '/api/admin/grant-premium', { user_id: 'u1', plan: 'bogus' }, tok), env);
+    expect(r.status).toBe(400);
+  });
+});
+
+describe('handleAdminPremiumRequests (v1.1.208)', () => {
+  it('refuse non-admin → 403', async () => {
+    const env = userEnv();
     const tok = await userToken();
-    const r = await handlePremiumPortal(
-      makeReq('POST', '/api/premium/portal', { return_url: 'https://apex.chat/back' }, tok),
-      env,
-    );
-    expect(r.status).toBe(404);
+    const r = await handleAdminPremiumRequests(makeReq('GET', '/api/admin/premium-requests', undefined, tok), env);
+    expect(r.status).toBe(403);
   });
 
-  it('user avec customer_id → retourne url portail', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
+  it('admin → liste les demandes pending depuis KV', async () => {
+    const env = userEnv();
     env.APEX_CHAT_DB.prepare = vi.fn(() => ({
       bind: function () { return this; },
-      first: async () => ({ stripe_customer_id: 'cus_test_123' }),
+      first: async () => ({ is_admin: 1, status: 'active', is_banned: 0 }),
+      run: async () => ({ success: true }),
     }));
-    globalThis.fetch = vi.fn(async () =>
-      new Response(JSON.stringify({ url: 'https://billing.stripe.com/p/session/abc' }), { status: 200 }),
-    );
-    const tok = await userToken();
-    const r = await handlePremiumPortal(
-      makeReq('POST', '/api/premium/portal', { return_url: 'https://apex.chat/' }, tok),
-      env,
-    );
+    await env.APEX_CHAT_KV.put('premium_req:u1', JSON.stringify({ user_id: 'u1', plan: 'monthly', price_eur: 6.99, ts: 1000, status: 'pending' }));
+    await env.APEX_CHAT_KV.put('premium_req:u2', JSON.stringify({ user_id: 'u2', plan: 'yearly', price_eur: 69.99, ts: 2000, status: 'pending' }));
+    const tok = await makeJWT({ sub: 'kevin', is_admin: true, iat: Math.floor(Date.now() / 1000) });
+    const r = await handleAdminPremiumRequests(makeReq('GET', '/api/admin/premium-requests', undefined, tok), env);
     expect(r.status).toBe(200);
     const j = await r.json();
-    expect(j.url).toContain('billing.stripe.com');
+    expect(j.ok).toBe(true);
+    expect(j.count).toBe(2);
+    // Tri par ts desc → u2 d'abord
+    expect(j.requests[0].user_id).toBe('u2');
   });
+});
 
-  it('Stripe HTTP error → 502', async () => {
-    const env = userEnv({ STRIPE_SECRET_KEY: 'sk' });
+describe('Non-premium reste limité tant qu\'admin n\'a pas activé (v1.1.208)', () => {
+  it('user sans premium_until → status premium false', async () => {
+    const env = userEnv();
     env.APEX_CHAT_DB.prepare = vi.fn(() => ({
       bind: function () { return this; },
-      first: async () => ({ stripe_customer_id: 'cus_x' }),
+      first: async () => ({ premium_until: null, premium_plan: null }),
     }));
-    globalThis.fetch = vi.fn(async () => new Response('err', { status: 500 }));
     const tok = await userToken();
-    const r = await handlePremiumPortal(
-      makeReq('POST', '/api/premium/portal', { return_url: 'https://apex.chat/' }, tok),
-      env,
-    );
-    expect(r.status).toBe(502);
+    const r = await handlePremiumStatus(makeReq('GET', '/api/premium/status', undefined, tok), env);
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.premium).toBe(false);
+  });
+
+  it('après activation admin (premium_until futur) → status premium true', async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
+      bind: function () { return this; },
+      first: async () => ({ premium_until: Date.now() + 31 * 86400 * 1000, premium_plan: 'monthly' }),
+    }));
+    const tok = await userToken();
+    const r = await handlePremiumStatus(makeReq('GET', '/api/premium/status', undefined, tok), env);
+    const j = await r.json();
+    expect(j.premium).toBe(true);
+    expect(j.plan).toBe('monthly');
   });
 });
 
@@ -1199,96 +1095,6 @@ describe("handlePremiumQuota (v1.1.31)", () => {
     expect(r.status).toBe(200);
     const j = await r.json();
     expect(j.usage["voice-transcribe"].used).toBe(0);
-  });
-});
-
-// ============================================================================
-//  v1.1.32 — _sendPremiumReceipt tests (Resend email after Stripe success)
-// ============================================================================
-describe('_sendPremiumReceipt (v1.1.32)', () => {
-  it('rejette si RESEND_API_KEY manquant', async () => {
-    await expect(
-      _sendPremiumReceipt({}, { email: 'k@apex.fr', plan: 'monthly', amount: 699, currency: 'eur', sessionId: 's', premiumUntil: Date.now() })
-    ).rejects.toThrow(/RESEND_API_KEY missing/);
-  });
-
-  it('envoie email avec plan monthly + retourne id', async () => {
-    globalThis.fetch = vi.fn(async () => new Response(
-      JSON.stringify({ id: 'email_abc123' }), { status: 200, headers: { 'Content-Type': 'application/json' } }
-    ));
-    const result = await _sendPremiumReceipt({ RESEND_API_KEY: 're_xxx' }, {
-      email: 'laurence@apex.fr', plan: 'monthly', amount: 699, currency: 'eur',
-      sessionId: 'cs_test_1', premiumUntil: Date.now() + 31 * 86400 * 1000
-    });
-    expect(result.ok).toBe(true);
-    expect(result.id).toBe('email_abc123');
-    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-    const call = globalThis.fetch.mock.calls[0];
-    expect(call[0]).toBe('https://api.resend.com/emails');
-    const body = JSON.parse(call[1].body);
-    expect(body.to).toEqual(['laurence@apex.fr']);
-    expect(body.subject).toMatch(/Mensuel/);
-    expect(body.html).toMatch(/Apex Chat\+ Premium/);
-    expect(body.html).toMatch(/6\.99 EUR/);
-    expect(call[1].headers.Authorization).toBe('Bearer re_xxx');
-  });
-
-  it('plan lifetime → "À vie" dans subject + body', async () => {
-    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e1' }), { status: 200 }));
-    await _sendPremiumReceipt({ RESEND_API_KEY: 're' }, {
-      email: 'k@a.fr', plan: 'lifetime', amount: 19900, currency: 'eur',
-      sessionId: 'cs', premiumUntil: 9999999999000
-    });
-    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
-    expect(body.subject).toMatch(/À vie/);
-    expect(body.html).toMatch(/À vie/);
-    expect(body.html).toMatch(/199\.00 EUR/);
-  });
-
-  it('plan yearly → "Annuel" + date formatée', async () => {
-    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e' }), { status: 200 }));
-    await _sendPremiumReceipt({ RESEND_API_KEY: 're' }, {
-      email: 'k@a.fr', plan: 'yearly', amount: 5999, currency: 'eur',
-      sessionId: 'cs2', premiumUntil: Date.now() + 365 * 86400 * 1000
-    });
-    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
-    expect(body.subject).toMatch(/Annuel/);
-  });
-
-  it('Resend HTTP error → throw avec status', async () => {
-    globalThis.fetch = vi.fn(async () => new Response('Invalid API key', { status: 401 }));
-    await expect(
-      _sendPremiumReceipt({ RESEND_API_KEY: 'bad' }, {
-        email: 'k@a.fr', plan: 'monthly', amount: 699, currency: 'eur',
-        sessionId: 'cs', premiumUntil: Date.now()
-      })
-    ).rejects.toThrow(/Resend HTTP 401/);
-  });
-
-  it('From custom env.RESEND_FROM est utilisé', async () => {
-    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e' }), { status: 200 }));
-    await _sendPremiumReceipt({
-      RESEND_API_KEY: 're',
-      RESEND_FROM: 'Apex <hello@kdmc.io>'
-    }, {
-      email: 'k@a.fr', plan: 'monthly', amount: 699, currency: 'eur',
-      sessionId: 'cs', premiumUntil: Date.now()
-    });
-    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
-    expect(body.from).toBe('Apex <hello@kdmc.io>');
-  });
-
-  it('tags Resend incluent category + plan', async () => {
-    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'e' }), { status: 200 }));
-    await _sendPremiumReceipt({ RESEND_API_KEY: 're' }, {
-      email: 'k@a.fr', plan: 'lifetime', amount: 19900, currency: 'eur',
-      sessionId: 'cs', premiumUntil: 9999999999000
-    });
-    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
-    expect(body.tags).toEqual([
-      { name: 'category', value: 'premium-receipt' },
-      { name: 'plan', value: 'lifetime' }
-    ]);
   });
 });
 
