@@ -190,10 +190,13 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       logger.info('services-bootstrap', `tenant : ${all.length} tenants connus`);
     }),
 
-    /* Stripe Billing RETIRÉ du runtime (Kevin 2026-06-10 « @kdmc partout, supprimer Stripe ») :
-       le module B2B stripe-billing.ts n'est plus initialisé au boot. Les paiements clients
-       passent par les comptes Kevin (@kdmc : PayPal/Revolut/IBAN), pas par Stripe. Le fichier
-       + ses tests sont conservés (réactivables) mais inertes — aucun flux Stripe au démarrage. */
+    /* Stripe Billing : Checkout + Portal + webhooks (Kevin v13.0.74)
+       4 plans (free/basic/pro/business) + usage tracking */
+    safeInit('stripe-billing', async () => {
+      const { stripeBilling } = await import('../integrations/stripe-billing.js');
+      const plans = stripeBilling.listPlans();
+      logger.info('services-bootstrap', `stripe-billing : ${plans.length} plans configurés`);
+    }),
 
     /* Voices registry : pre-warm browser voices async */
     safeInit('voices-registry', async () => {
