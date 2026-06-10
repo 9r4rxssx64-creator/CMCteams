@@ -202,18 +202,58 @@ async function handleSso(request, url, env) {
 }
 
 /* ===================== Admin domaine (fiches clients) ===================== */
+/* SÉCU : l'identité SSO est AUTO-ASSERTÉE (n'importe qui peut taper le nom
+   "Kevin Desarzens" au portail). On NE peut donc PAS accorder l'accès admin
+   (fiches clients) sur la seule base du nom. Quand un hash de code admin est
+   configuré (env.KDMC_ADMIN_PIN_SHA256 = sha256 du PIN admin), l'accès /__admin/*
+   exige un GRANT signé, obtenu en prouvant le code via /__admin/login. Le grant
+   voyage en cookie HttpOnly (Safari) ET en header x-kdmc-admin (PWA iOS isolées).
+   Fail-open vers l'ancien contrôle par nom UNIQUEMENT si le hash n'est pas encore
+   déployé (évite tout verrouillage pendant le rollout). */
+function adminGrantTok(request) {
+  const h = request.headers.get('x-kdmc-admin') || '';
+  const m = h.match(/^(?:Bearer\s+)?(.+)$/i);
+  if (m && m[1].trim()) return m[1].trim();
+  return ssoCookie(request, 'kdmc_admin');
+}
 async function adminSession(request, env) {
   const secret = env && env.KDMC_SSO_SECRET;
   if (!secret) return null;
+  const adminHash = env && env.KDMC_ADMIN_PIN_SHA256;
+  if (adminHash) {
+    const g = await ssoVerify(secret, adminGrantTok(request));
+    if (!g || g.uid !== '__kdmc_admin__') return null;
+    return { uid: '__kdmc_admin__', name: 'Admin', grant: true };
+  }
+  /* rollout : hash absent → ancien contrôle par nom (fonctionnel, trou ouvert) */
   const s = await ssoVerify(secret, ssoToken(request));
   if (!s || ADMIN_UIDS.indexOf(s.uid) < 0) return null;
   return s;
 }
 async function handleAdmin(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
-  const me = await adminSession(request, env);
-  if (!me) return new Response(JSON.stringify({ ok: false, reason: 'admin_only' }), { status: 403, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+  const secret = env && env.KDMC_SSO_SECRET;
   const path = url.pathname;
+  /* Login admin (preuve du code) — AVANT le gate, sinon poule-œuf. */
+  if (path === '/__admin/login' && request.method === 'POST') {
+    const adminHash = env && env.KDMC_ADMIN_PIN_SHA256;
+    if (!secret || !adminHash) return J({ ok: false, reason: 'admin_pin_not_configured' });
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    const code = String(b.code || '').trim();
+    if (!code) return J({ ok: false, reason: 'code_requis' });
+    if ((await sha256Hex(code)) !== adminHash) return J({ ok: false, reason: 'code_invalide' });
+    const grant = await ssoSign(secret, '__kdmc_admin__', 'admin', 1);
+    const cookie = `kdmc_admin=${grant}; Domain=.kd-mc.com; Path=/; Max-Age=43200; Secure; HttpOnly; SameSite=Lax`;
+    return J({ ok: true, grant }, cookie);
+  }
+  if (path === '/__admin/logout' && request.method === 'POST') {
+    return J({ ok: true }, 'kdmc_admin=; Domain=.kd-mc.com; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax');
+  }
+  const me = await adminSession(request, env);
+  if (!me) {
+    const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
+    return new Response(JSON.stringify({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }), { status: 403, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+  }
   if (path === '/__admin/accounts' && request.method === 'GET') {
     if (!env.ACCOUNTS) return J({ ok: true, accounts: [], kv: false });
     const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
