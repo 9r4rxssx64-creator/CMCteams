@@ -168,7 +168,9 @@ async function verifyAssertion(secret, jwk, { clientDataJSON, authenticatorData,
   const clientData = JSON.parse(td.decode(b64uDec(clientDataJSON)));
   if (clientData.type !== 'webauthn.get') return { ok: false, reason: 'type != get' };
   if (!(await verifyChallenge(secret, clientData.challenge, 'auth'))) return { ok: false, reason: 'challenge invalide/expiré' };
-  if (opts.origin && clientData.origin !== opts.origin) return { ok: false, reason: 'origin mismatch' };
+  const originOk = opts.origins ? opts.origins.includes(clientData.origin)
+    : (opts.origin ? clientData.origin === opts.origin : true);
+  if (!originOk) return { ok: false, reason: 'origin mismatch' };
   const authData = b64uDec(authenticatorData);
   const flags = authData[32];
   if (!(flags & 0x01)) return { ok: false, reason: 'user non présent' };
