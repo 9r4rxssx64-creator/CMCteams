@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.208",
+  "softwareVersion": "v1.1.209",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.208';
+const __APEX_CHAT_VERSION__ = 'v1.1.209';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -916,6 +916,29 @@ async function _authSsoFromApex(apex_token, apex_uid, name){
   }catch(e){
     _safeCatch('authSsoFromApex', e);
     throw e;
+  }
+}
+
+// Connexion AUTO via le compte unique kd-mc.com (Face ID prouvé côté serveur).
+// FAIL-OPEN : tout échec → null, on retombe sur le flux téléphone+OTP normal.
+async function _authSsoFromKdmc(){
+  try{
+    _kdmcConsumeHashPass(); // consomme #kdmc_sso= si présent
+    var t = null;
+    try{ t = localStorage.getItem('kdmc_sso_token'); }catch(_){ t = null; }
+    if(!t) return null;
+    const r = await fetch(API_BASE + '/api/auth/sso-from-kdmc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kdmc_token: t })
+    });
+    if(!r.ok) return null;            // 401 Face ID requis / session invalide → fail-open
+    const data = await r.json();
+    if(data && data.ok && data.token && data.user) return data;
+    return null;
+  }catch(e){
+    _safeCatch('authSsoFromKdmc', e);
+    return null;                       // FAIL-OPEN : ne JAMAIS bloquer le login OTP
   }
 }
 
@@ -13704,9 +13727,24 @@ async function _boot(){
 
     K.render();
   } else {
-    // Splash auth
-    K.authStep = 'phone';
-    renderAuthStep();
+    // Connexion AUTO via le compte unique kd-mc.com (Face ID prouvé côté serveur).
+    // Ne tourne QUE s'il n'y a aucune session locale (on est dans le else). Si le
+    // worker confirme (whoami verified:true) → login normal. Sinon FAIL-OPEN : on
+    // retombe sur téléphone+OTP, rien n'est bloqué.
+    let _kdmcDone = false;
+    try{
+      const _sso = await _authSsoFromKdmc();
+      if(_sso && _sso.token && _sso.user){
+        await K.login(_sso.user, _sso.token);   // même chemin que tout login (token + boot)
+        try{ if(typeof toast === 'function') toast('🔓 Connecté via Face ID (kd-mc.com)', 'ok', 2500); }catch(_){}
+        _kdmcDone = true;
+      }
+    }catch(_e){ try{ _safeCatch('silent', _e); }catch(__){} }
+    if(!_kdmcDone){
+      // Splash auth
+      K.authStep = 'phone';
+      renderAuthStep();
+    }
   }
 
   // Démarrer sentinelles enrichies (toutes les 30s)
