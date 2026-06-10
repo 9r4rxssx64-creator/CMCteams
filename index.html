@@ -5396,7 +5396,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.797";
+var APP_VER="v9.798";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9080,6 +9080,37 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
       }
     }
   }
+})();
+/* v9.798 — Auto-login « compte unique » kd-mc.com (Face ID prouvé). ADDITIF + fail-open :
+   n'agit QUE si AUCUNE session locale (cmc_uid) ET UNIQUEMENT pour le propriétaire admin
+   PROUVÉ par Face ID (whoami.verified === true ET whoami.admin === true). Ne touche JAMAIS
+   le login normal des 258 employés (un client « verified » non-admin n'est pas un employé
+   CMCteams → on ne fait rien, le login casino reste inchangé). Toute erreur → login normal. */
+(function(){
+  try{
+    if(A.user)return; /* session locale déjà restaurée → ne rien changer */
+    /* Récupère un pass signé éventuellement passé dans l'URL (#kdmc_sso=...) par le domaine */
+    try{var h=location.hash||"";var m=h.match(/[#&]kdmc_sso=([^&]+)/);if(m){localStorage.setItem("kdmc_sso_token",decodeURIComponent(m[1]));var clean=h.replace(/([#&])kdmc_sso=[^&]*/,"$1").replace(/[#&]+$/,"");try{history.replaceState(null,"",location.pathname+location.search+(clean&&clean!=="#"?clean:""));}catch(_){}}}catch(_){}
+    var tok="";try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
+    var hdr={};if(tok)hdr.Authorization="Bearer "+tok;
+    fetch("/__sso/whoami",{method:"GET",credentials:"include",cache:"no-store",headers:hdr})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(j){
+        if(!j||!j.ok)return;
+        if(j.verified!==true)return;   /* JAMAIS d'auto-login sans preuve Face ID */
+        if(j.admin!==true)return;      /* CMCteams : auto-login réservé à l'admin propriétaire */
+        if(A.user)return;              /* anti-race : un login a pu se faire entretemps */
+        var adm=(A.employees||[]).find(function(x){return x.id===AID;});
+        if(!adm)return;
+        A.user=adm;try{ls("cmc_uid",adm.id);}catch(_){localStorage.setItem("cmc_uid",adm.id);}
+        try{localStorage.setItem("cmc_lastact",String(Date.now()));}catch(_){}
+        try{startPresenceHeartbeat();}catch(_){}
+        try{_audit&&_audit("sso_autologin_admin","Face ID kd-mc.com",AID);}catch(_){}
+        try{if(typeof toast==="function")toast("🔓 Connecté via Face ID (kd-mc.com)","ok");}catch(_){}
+        try{if(typeof dc==="function")dc();}catch(_){}
+      })
+      .catch(function(){/* fail-open : l'app garde son login normal, jamais de verrouillage */});
+  }catch(_){}
 })();
 function touchSession(){if(A.user)localStorage.setItem("cmc_lastact",String(Date.now()));}
 // v9.545 — Listeners activite reelle utilisateur (touch/click/scroll) refresh cmc_lastact
