@@ -7,6 +7,7 @@
  *   POST   /api/auth/send-otp        → Firebase Auth Phone (envoie SMS)
  *   POST   /api/auth/verify-otp      → vérifie OTP, retourne JWT
  *   POST   /api/auth/sso-from-apex   → SSO cross-app Apex → Apex Chat
+ *   POST   /api/auth/sso-from-kdmc   → connexion auto via kd-mc.com (Face ID, vérif serveur whoami)
  *   GET    /api/users/me             → profil user authentifié
  *   PATCH  /api/users/me             → update profil
  *   GET    /api/users/:pseudo        → profil public (pseudo + photo + bio)
@@ -990,6 +991,86 @@ export async function handleSsoFromApex(request, env) {
   }, env.JWT_SIGN_KEY);
 
   await auditLog(env, user.id, 'login_sso_apex', 'user', user.id, { apex_uid }, '', request.headers.get('User-Agent'));
+  await captureConnection(env, request, user);
+
+  return json({ ok: true, token: jwt, user });
+}
+
+// ============================================================================
+//  SSO depuis le compte unique kd-mc.com (connexion auto via Face ID)
+// ============================================================================
+// Le worker NE FAIT JAMAIS confiance au frontend pour « verified ». Il appelle
+// lui-même https://kd-mc.com/__sso/whoami (source de vérité = le domaine), et
+// n'accepte la session QUE si la réponse a verified === true (Face ID prouvé par
+// passkey ES256). Une identité juste auto-déclarée (verified:false) → REFUS.
+export async function handleSsoFromKdmc(request, env) {
+  let body = {};
+  try { body = await request.json(); } catch (_) { body = {}; }
+  const authHeader = request.headers.get('Authorization') || '';
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const kdmcToken = String(body.kdmc_token || bearer || '').trim();
+  if (!kdmcToken) return err('Token kd-mc.com manquant', 400, 'kdmc_token_manquant');
+
+  // Vérification CÔTÉ SERVEUR auprès du domaine source de vérité.
+  let who = null;
+  try {
+    const fetchOpts = {
+      method: 'GET',
+      headers: { Authorization: 'Bearer ' + kdmcToken },
+      cf: { cacheTtl: 0 },
+    };
+    // Timeout 8s — best-effort (AbortSignal.timeout absent de certains runtimes).
+    try { if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) fetchOpts.signal = AbortSignal.timeout(8000); } catch (_) { /* sans timeout */ }
+    const r = await fetch('https://kd-mc.com/__sso/whoami', fetchOpts);
+    who = r.ok ? await r.json().catch(() => null) : null;
+  } catch (e) {
+    return err('Session kd-mc.com injoignable', 401, 'kdmc_session_invalide', { detail: String(e?.message || '') });
+  }
+
+  if (!who || who.ok !== true) return err('Session kd-mc.com invalide', 401, 'kdmc_session_invalide');
+  // SÉCURITÉ : on ne connecte JAMAIS sans preuve Face ID (passkey ES256).
+  if (who.verified !== true) return err('Face ID requis', 401, 'face_id_requis');
+
+  const uid = String(who.uid || '').trim();
+  if (!uid) return err('uid kd-mc.com manquant', 401, 'kdmc_uid_manquant');
+  const name = String(who.name || uid).trim();
+  const isAdmin = who.admin === true;
+
+  // D1 ne supporte pas ADD COLUMN IF NOT EXISTS → try/catch (ignore duplicate).
+  try {
+    await env.APEX_CHAT_DB.prepare('ALTER TABLE users ADD COLUMN kdmc_uid TEXT').run();
+  } catch (_) { /* colonne déjà présente */ }
+
+  let user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE kdmc_uid=?').bind(uid).first();
+  if (!user) {
+    const id = 'kdmc_' + uid;
+    const pseudo = name.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 20)
+      || ('user' + Date.now().toString(36).slice(-6));
+    try {
+      await env.APEX_CHAT_DB.prepare(
+        `INSERT INTO users (id, pseudo, real_name, phone, phone_hash, is_admin, is_kevin_alias,
+         identity_key_pub, pq_key_pub, prekey_signed, apex_uid, source, created_at, status, kdmc_uid)
+         VALUES (?, ?, ?, 'PENDING_SSO', 'PENDING_SSO', ?, ?, 'PENDING_PQXDH', 'PENDING_PQXDH', 'PENDING_PQXDH', ?, 'kdmc-sso', ?, 'active', ?)
+         ON CONFLICT(id) DO UPDATE SET kdmc_uid=excluded.kdmc_uid`
+      ).bind(id, pseudo, name, isAdmin ? 1 : 0, isAdmin ? 1 : 0, id, Date.now(), uid).run();
+      user = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
+    } catch (e) {
+      return err('Création SSO kd-mc.com échouée : ' + e.message, 500, 'kdmc_create_failed');
+    }
+  }
+  if (!user) return err('User kd-mc.com introuvable après création', 500, 'kdmc_user_missing');
+
+  const jwt = await signJWT({
+    sub: user.id,
+    pseudo: user.pseudo,
+    is_admin: !!user.is_admin,
+    kdmc_uid: uid,
+    sso: true,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 30 * 86400,
+  }, env.JWT_SIGN_KEY);
+
+  await auditLog(env, user.id, 'login_sso_kdmc', 'user', user.id, { kdmc_uid: uid }, '', request.headers.get('User-Agent'));
   await captureConnection(env, request, user);
 
   return json({ ok: true, token: jwt, user });
@@ -5093,6 +5174,7 @@ export default {
       if (path === '/api/auth/verify-otp' && method === 'POST') return await handleVerifyOtp(request, env);
       if (path === '/api/auth/check-phone' && method === 'POST') return await handleCheckPhone(request, env);
       if (path === '/api/auth/sso-from-apex' && method === 'POST') return await handleSsoFromApex(request, env);
+      if (path === '/api/auth/sso-from-kdmc' && method === 'POST') return await handleSsoFromKdmc(request, env);
 
       // Users
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
