@@ -196,6 +196,21 @@ async function domainSessionName(): Promise<string | null> {
     return j && j.ok && j.name ? String(j.name) : null;
   } catch { return null; }
 }
+/* Compte unique kd-mc.com : si le domaine prouve l'identité par Face ID (session FORTE
+   verified) ET que c'est le propriétaire → connecte AUTO en admin (politique « Admin auto,
+   toi seul »). Sinon → simple pré-remplissage du nom (PIN requis). Fail-open total :
+   toute erreur laisse l'écran de connexion normal. */
+function domainAutoLoginOrPrefill(rootEl: HTMLElement): void {
+  consumeDomainHashToken();
+  void auth.loginVerifiedDomain().then((res) => {
+    if (res.ok) {
+      toast.success('🔓 Connecté via Face ID (kd-mc.com)');
+      router.navigate('chat');
+      return;
+    }
+    prefillNameFromDomain(rootEl);
+  }).catch(() => { prefillNameFromDomain(rootEl); });
+}
 function prefillNameFromDomain(rootEl: HTMLElement): void {
   consumeDomainHashToken();
   void domainSessionName().then((nm) => {
@@ -284,9 +299,9 @@ export function render(rootEl: HTMLElement): void {
     void handleLogin(rootEl);
   });
 
-  /* Compte unique kd-mc.com : si une session domaine existe, pré-remplit le nom
-     (confort). Aucun privilège accordé, le PIN reste requis. */
-  prefillNameFromDomain(rootEl);
+  /* Compte unique kd-mc.com : Face ID prouvé + propriétaire → auto-login admin ;
+     sinon pré-remplissage du nom (PIN requis). */
+  domainAutoLoginOrPrefill(rootEl);
 
   /* FaceID/TouchID : bouton déverrouillage si le dernier user connu est enrôlé.
      Affiché seulement si biométrie dispo + credential présent. PIN reste fallback. */
