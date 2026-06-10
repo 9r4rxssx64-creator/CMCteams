@@ -397,52 +397,6 @@ class Auth {
   }
 
   /**
-   * Auto-login « compte unique » kd-mc.com via session FORTE (Face ID/passkey).
-   * SÉCURITÉ : ne se fie QU'au flag `verified` renvoyé par /__sso/whoami — ce flag
-   * est posé par le worker UNIQUEMENT après une assertion passkey vérifiée (signature
-   * ES256), et transporté dans un token HMAC re-vérifié serveur à chaque appel. Une
-   * identité auto-déclarée (nom tapé) a `verified:false` → ignorée (aucun privilège).
-   * Politique « Admin auto, toi seul » : seul le propriétaire (whoami.admin) est
-   * auto-connecté (en ADMIN_ID). Un client verified non-admin n'a pas de compte Apex
-   * ici → on ne fait rien (le nom est juste pré-rempli ailleurs). Fail-open total.
-   */
-  async loginVerifiedDomain(): Promise<{ ok: boolean; admin?: boolean; reason?: string }> {
-    try {
-      if (store.get('user')) return { ok: false, reason: 'déjà connecté' };
-      const headers: Record<string, string> = {};
-      let tok = '';
-      try { tok = localStorage.getItem('kdmc_sso_token') || ''; } catch { /* ignore */ }
-      if (tok) headers['Authorization'] = 'Bearer ' + tok;
-      const r = await fetch('/__sso/whoami', { credentials: 'include', cache: 'no-store', headers });
-      if (!r.ok) return { ok: false, reason: 'no session' };
-      const j = (await r.json()) as { ok?: boolean; uid?: string; name?: string; verified?: boolean; admin?: boolean };
-      if (!j || !j.ok || j.verified !== true) return { ok: false, reason: 'non vérifié (Face ID requis)' };
-      if (j.admin !== true) return { ok: false, reason: 'verified mais non-propriétaire' };
-      if (store.get('user')) return { ok: false, reason: 'déjà connecté' };
-      const user = PRECONFIGURED.find((u) => u.id === ADMIN_ID);
-      if (!user) return { ok: false, reason: 'admin introuvable' };
-      const name = j.name || user.name;
-      store.set('user', { id: user.id, name, email: user.email });
-      store.set('isAdmin', user.isAdmin);
-      try {
-        localStorage.setItem('apex_v13_user', JSON.stringify({ id: user.id, name }));
-        localStorage.setItem('apex_v13_uid', user.id);
-        localStorage.setItem('apex_v13_lastact', String(Date.now()));
-        localStorage.setItem('apex_v13_last_known_uid', user.id);
-      } catch { /* ignore */ }
-      await this.trustCurrentDevice(user.id); /* boots suivants : reconnu sans re-Face ID */
-      events.emit('auth:login', { uid: user.id, isAdmin: user.isAdmin });
-      this.kdmcDomainRegister(user.id, name);
-      logger.info('auth', `loginVerifiedDomain ${name} (admin=${user.isAdmin})`);
-      this.audit('login_success', { actor: user.id, details: { admin: user.isAdmin, method: 'kdmc_faceid' } });
-      return { ok: true, admin: user.isAdmin };
-    } catch (err: unknown) {
-      logger.warn('auth', 'loginVerifiedDomain failed', { err });
-      return { ok: false, reason: 'erreur' };
-    }
-  }
-
-  /**
    * Révoque le trust device courant (force PIN au prochain login).
    */
   untrustCurrentDevice(): void {
