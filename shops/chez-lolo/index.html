@@ -924,6 +924,29 @@ function clSaveNewProduct(){
    if(u.get("ld_logout")!==null||u.get("ld_admin")==="0"){ldAdminLogout();}
    else if(u.get("ld_admin")!==null&&!LD_ADMIN){setTimeout(ldAdminPrompt,300);}
  }catch(_){}
+ /* Compte unique kd-mc.com : déverrouillage AUTO de l'admin boutique si le domaine
+    PROUVE l'identité par Face ID (whoami.verified===true) ET propriétaire (admin===true).
+    Additif + fail-open : n'agit QUE si pas déjà admin ; les clients de la boutique ne
+    sont JAMAIS touchés ; le mot de passe admin reste le fallback. */
+ try{(function(){
+   if(LD_ADMIN)return;
+   try{var h=location.hash||"";var m=h.match(/[#&]kdmc_sso=([^&]+)/);if(m){localStorage.setItem("kdmc_sso_token",decodeURIComponent(m[1]));}}catch(_){}
+   var tok="";try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
+   var hdr={};if(tok)hdr.Authorization="Bearer "+tok;
+   fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:hdr})
+     .then(function(r){return r.ok?r.json():null;})
+     .then(function(j){
+       if(!j||!j.ok||j.verified!==true||j.admin!==true)return; /* jamais sans preuve Face ID + proprio */
+       if(LD_ADMIN)return;
+       try{localStorage.setItem("ld_admin_trust","1");localStorage.setItem("ld_admin_who",j.name||"Kevin");}catch(_){}
+       LD_ADMIN=true;
+       try{var sf=document.getElementById("studioFab");if(sf)sf.style.display="block";}catch(_){}
+       try{clInstallAdminUI();}catch(_){}
+       try{if(typeof toast==="function")toast("🔓 Admin boutique déverrouillé via Face ID (kd-mc.com)");}catch(_){}
+       try{if(typeof dc==="function")dc();}catch(_){}
+     })
+     .catch(function(){/* fail-open : boutique publique normale, admin par mot de passe */});
+ })();}catch(_){}
  try{clLoadPublished();}catch(_){}
  try{fetch("printify-order-config.json").then(function(rp){return rp.ok?rp.json():null}).then(function(j){if(j&&j.worker_url)window._clOrderCfg=j;}).catch(function(){});}catch(_){}
  setTimeout(clInstallAdminUI,500);
@@ -932,7 +955,7 @@ function clSaveNewProduct(){
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="chez-lolo"
-        data-version="v2.0.5"
+        data-version="v2.0.6"
         data-color="#e8b830"
         defer></script>
 
