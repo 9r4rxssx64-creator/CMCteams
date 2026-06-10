@@ -216,6 +216,37 @@ describe('handlePremiumRequest (v1.1.208 — @kdmc)', () => {
     expect(j.ok).toBe(true);
     expect(j.price_eur).toBe(199);
   });
+
+  it('semi-auto : PUSH admin avec action 1-tap grant_premium + tous les renseignements', async () => {
+    const env = userEnv();
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => (/from users/i.test(sql) ? { pseudo: 'sandrine', real_name: 'Sandrine TARDIEU' } : { is_admin: 0 }),
+      all: async () => (/push_subscriptions/i.test(sql)
+        ? { results: [{ endpoint: 'https://push.example/x', vapid_p256dh: 'p', vapid_auth: 'a' }] }
+        : { results: [] }),
+      run: async () => ({ success: true }),
+    }));
+    let pushBody = null;
+    globalThis.fetch = vi.fn(async (url, opts) => {
+      if (String(url).includes('/web-push')) pushBody = JSON.parse(opts.body);
+      return new Response('{}', { status: 200 });
+    });
+    const tok = await userToken();
+    const r = await handlePremiumRequest(makeReq('POST', '/api/premium/request', { plan: 'monthly' }, tok), env);
+    expect(r.status).toBe(200);
+    expect(globalThis.fetch).toHaveBeenCalled();
+    expect(pushBody).toBeTruthy();
+    const p = pushBody.payload; /* sendPushToUser envoie { subscription, payload } */
+    expect(p.title).toContain('Premium');
+    expect(p.payload.type).toBe('premium_request');
+    expect(p.payload.user_id).toBe('user_test');
+    expect(p.payload.plan).toBe('monthly');
+    expect(p.actions.some((a) => a.action === 'grant_premium')).toBe(true);
+    /* tous les renseignements (qui + prix) dans le corps */
+    expect(p.body).toContain('Sandrine');
+    expect(p.body).toContain('6.99');
+  });
 });
 
 describe('handleAdminGrantPremium (v1.1.208)', () => {

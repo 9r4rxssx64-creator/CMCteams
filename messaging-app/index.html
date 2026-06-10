@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.209",
+  "softwareVersion": "v1.1.210",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.209';
+const __APEX_CHAT_VERSION__ = 'v1.1.210';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -420,6 +420,10 @@ if('serviceWorker' in navigator){
       }
       if(e.data?.type === 'PERIODIC_HEARTBEAT'){
         if(typeof K !== 'undefined' && K._sendHeartbeat) K._sendHeartbeat();
+      }
+      /* Semi-auto Premium (Kevin « notif, 1 clic ») : activation depuis la notif admin */
+      if(e.data?.type === 'grant-premium' && e.data.userId){
+        if(typeof K !== 'undefined' && K._adminGrantPremium) K._adminGrantPremium(e.data.userId, e.data.plan || 'monthly');
       }
       /* v1.1.87 — Quick reply / open / mark read depuis notif */
       if(e.data?.type === 'open-conv' && e.data.convId){
@@ -458,6 +462,26 @@ if('serviceWorker' in navigator){
     // Heartbeat SW (toutes les 60s)
     setInterval(() => reg.update().catch(_=>{}), 60000);
   }).catch(_=>{});
+
+  /* Semi-auto Premium (Kevin « notif, 1 clic ») — cas app FERMÉE : la notif a ouvert
+     l'app avec ?grant_premium=<uid>&plan=<plan>. On active dès que l'admin est prêt. */
+  (function(){
+    try{
+      var qp=new URLSearchParams(location.search);
+      var guid=qp.get('grant_premium');
+      if(!guid)return;
+      var gplan=qp.get('plan')||'monthly';
+      var tries=0;
+      var iv=setInterval(function(){
+        tries++;
+        if(typeof K!=='undefined' && K._adminGrantPremium && K.user && K.user.is_admin){
+          clearInterval(iv);
+          K._adminGrantPremium(guid, gplan);
+          try{history.replaceState(null,'',location.pathname);}catch(_){}
+        } else if(tries>40){ clearInterval(iv); } /* ~20s max */
+      },500);
+    }catch(_){}
+  })();
 
   // === Sentinelle remote version (compare APP_VER local vs remote) ===
   // v1.1.170 : MAJ auto forcée même app ouverte. Fix bug : sans timeout, un
