@@ -1,0 +1,99 @@
+/* Test E2E PASSKEY (Face ID) autonome — vrai Chromium + authentificateur VIRTUEL
+   (CDP WebAuthn) contre le VRAI worker (vérification ES256) + le VRAI portail.
+   Prouve : création compte → enrôlement passkey → session FORTE (verified) →
+   déconnexion → reconnexion par Face ID. C'est le "vrai fournisseur d'identité".
+   PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tools/kdmc-passkey-e2e/run.mjs */
+import http from 'http';
+import { readFileSync, existsSync, statSync } from 'fs';
+import { createRequire } from 'module';
+
+const ROOT = process.cwd();
+function loadPlaywright() {
+  for (const base of [ROOT + '/', ROOT + '/apex-ai/v13/', ROOT + '/messaging-app/']) {
+    try { return createRequire(base + 'package.json')('playwright'); } catch (e) { /* */ }
+  }
+  throw new Error('playwright introuvable');
+}
+const { chromium } = loadPlaywright();
+const worker = (await import('file://' + ROOT + '/services/kdmc-router/worker.js')).default;
+
+const PORT = 8792;
+const ORIGIN = 'http://localhost:' + PORT;
+const kv = new Map();
+const ACCOUNTS = { get: async (k) => (kv.has(k) ? kv.get(k) : null), put: async (k, v) => { kv.set(k, v); } };
+const env = { KDMC_SSO_SECRET: 'pk-e2e-secret', ACCOUNTS, KDMC_RP_ID: 'localhost', KDMC_RP_ORIGINS: ORIGIN };
+const FILES = {
+  '/': ['kdmc-home/index.html', 'text/html'],
+  '/kdmc-sso.js': ['kdmc-home/kdmc-sso.js', 'application/javascript'],
+  '/kdmc-portal.js': ['kdmc-home/kdmc-portal.js', 'application/javascript'],
+};
+function readBody(req) { return new Promise((res) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => res(b || undefined)); }); }
+const server = http.createServer(async (req, res) => {
+  try {
+    const u = new URL(req.url, ORIGIN); const p = u.pathname;
+    if (p.startsWith('/__sso/') || p.startsWith('/__admin/')) {
+      const body = (req.method !== 'GET' && req.method !== 'HEAD') ? await readBody(req) : undefined;
+      const r = new Request(ORIGIN + req.url, { method: req.method, headers: req.headers, body });
+      const wres = await worker.fetch(r, env);
+      const h = {}; wres.headers.forEach((v, k) => { h[k] = v; });
+      res.writeHead(wres.status, h); res.end(Buffer.from(await wres.arrayBuffer())); return;
+    }
+    const f = FILES[p];
+    if (f) { res.writeHead(200, { 'content-type': f[1] }); res.end(readFileSync(ROOT + '/' + f[0])); return; }
+    res.writeHead(404); res.end('nf');
+  } catch (e) { res.writeHead(500); res.end('err:' + e.message); }
+});
+await new Promise((r) => server.listen(PORT, r));
+
+let pass = 0, fail = 0; const ok = (c, m) => { c ? (pass++, console.log('  ✓ ' + m)) : (fail++, console.log('  ✗ ' + m)); };
+const browser = await chromium.launch();
+try {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  /* Authentificateur VIRTUEL plateforme avec user-verification (= Face ID simulé). */
+  const client = await ctx.newCDPSession(page);
+  await client.send('WebAuthn.enable');
+  await client.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+
+  await page.goto(ORIGIN + '/');
+  await page.waitForSelector('#f-create', { timeout: 5000 });
+  await page.fill('#f-prenom', 'Kevin');
+  await page.fill('#f-nom', 'Desarzens');
+  await page.fill('#f-code', '200807');
+  await page.fill('#f-code2', '200807');
+  await page.check('#cgu-ok');
+  await page.click('#f-create');
+
+  /* L'offre d'enrôlement Face ID doit apparaître */
+  await page.waitForSelector('#pk-go', { timeout: 5000 });
+  ok(true, 'Après création → écran "Active Face ID" proposé');
+  await page.click('#pk-go');
+
+  /* Enrôlement réussi → le hub s'affiche */
+  const enrolled = await page.waitForFunction(() => { var h = document.getElementById('hub'); return h && !h.hidden; }, { timeout: 8000 }).then(() => true).catch(() => false);
+  ok(enrolled, 'Enrôlement passkey (Face ID virtuel) → réussi, hub affiché');
+  ok(kv.has('pk:kevin-desarzens'), 'Clé publique du passkey stockée côté worker (KV pk:<uid>)');
+
+  /* La session est FORTE (verified:true) */
+  const who1 = await page.evaluate(() => window.kdmcSSO.whoami());
+  ok(who1 && who1.verified === true, 'Session après enrôlement = FORTE (verified:true)  [' + JSON.stringify(who1) + ']');
+
+  /* Déconnexion → écran de déverrouillage avec bouton Face ID */
+  await page.click('#logout');
+  const pkBtn = await page.waitForSelector('#u-pk', { timeout: 5000 }).then(() => true).catch(() => false);
+  ok(pkBtn, 'Au retour → bouton "Se connecter avec Face ID" présent');
+
+  /* Connexion par Face ID (sans code) */
+  await page.click('#u-pk');
+  const back = await page.waitForFunction(() => { var h = document.getElementById('hub'); return h && !h.hidden; }, { timeout: 8000 }).then(() => true).catch(() => false);
+  ok(back, 'Connexion par Face ID (sans code) → réussie, hub affiché');
+  const who2 = await page.evaluate(() => window.kdmcSSO.whoami());
+  ok(who2 && who2.verified === true && who2.uid === 'kevin-desarzens', 'Session Face ID = FORTE (verified:true) + bonne identité');
+
+  await ctx.close();
+} finally {
+  await browser.close();
+  server.close();
+}
+console.log('\nKDMC Passkey E2E (Chromium + authentificateur virtuel): ' + pass + ' passed, ' + fail + ' failed');
+process.exit(fail ? 1 : 0);

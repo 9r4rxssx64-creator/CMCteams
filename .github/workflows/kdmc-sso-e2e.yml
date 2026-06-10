@@ -13,12 +13,14 @@ on:
       - 'kdmc-home/**'
       - 'services/kdmc-router/**'
       - 'tools/kdmc-sso-e2e/**'
+      - 'tools/kdmc-passkey-e2e/**'
       - '.github/workflows/kdmc-sso-e2e.yml'
   pull_request:
     paths:
       - 'kdmc-home/**'
       - 'services/kdmc-router/**'
       - 'tools/kdmc-sso-e2e/**'
+      - 'tools/kdmc-passkey-e2e/**'
   workflow_dispatch: {}
 
 permissions:
@@ -44,3 +46,5 @@ jobs:
           npx playwright install --with-deps chromium
       - name: KDMC SSO E2E (vrai Chromium)
         run: node tools/kdmc-sso-e2e/run.mjs
+      - name: KDMC Passkey E2E (Face ID — authentificateur virtuel)
+        run: node tools/kdmc-passkey-e2e/run.mjs

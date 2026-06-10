@@ -113,13 +113,22 @@
   }
 
   function renderUnlock(acc) {
+    var hasPk = _hasPasskey(acc.uid) && _pkSupported();
     gate.innerHTML =
       '<h2 class="g-title">Bonjour ' + esc(acc.name.split(' ')[0]) + '</h2>'
-      + '<p class="g-sub">Entre ton code pour ouvrir ton univers KDMC.</p>'
-      + '<input class="fld" id="u-code" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Code secret">'
-      + '<button class="btn" id="u-go">Se connecter</button>'
+      + '<p class="g-sub">' + (hasPk ? 'Déverrouille avec Face ID, ou ton code.' : 'Entre ton code pour ouvrir ton univers KDMC.') + '</p>'
+      + (hasPk ? '<button class="btn" id="u-pk">🔓 Se connecter avec Face ID</button>' : '')
+      + '<input class="fld" id="u-code" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Code secret"' + (hasPk ? ' style="margin-top:8px"' : '') + '>'
+      + '<button class="btn' + (hasPk ? ' ghost' : '') + '" id="u-go">' + (hasPk ? 'Utiliser mon code' : 'Se connecter') + '</button>'
       + '<button class="btn ghost" id="u-other">Ce n\'est pas moi</button>'
       + '<p class="g-err" id="u-err" role="alert" aria-live="polite"></p>';
+    if (hasPk) document.getElementById('u-pk').addEventListener('click', function () {
+      var b = document.getElementById('u-pk'); b.disabled = true; b.textContent = '…';
+      window.kdmcSSO.loginPasskey(acc.uid).then(function (j) {
+        if (j && j.ok) { showHub(acc.name); }
+        else { document.getElementById('u-err').textContent = 'Face ID : ' + ((j && j.reason) || 'échec') + ' — utilise ton code.'; b.disabled = false; b.textContent = '🔓 Se connecter avec Face ID'; }
+      });
+    });
     document.getElementById('u-go').addEventListener('click', function () { doUnlock(acc); });
     document.getElementById('u-code').addEventListener('keydown', function (e) { if (e.key === 'Enter') doUnlock(acc); });
     document.getElementById('u-other').addEventListener('click', function () {
@@ -154,7 +163,7 @@
       ls(LS_CGU, { at: Date.now(), v: 1 });
       return (window.kdmcSSO ? window.kdmcSSO.issue(uid, name, true) : Promise.resolve(false)).then(function () { return acc; });
     }).then(function (acc) {
-      showHub(acc.name);
+      _postLogin(acc);
     }).catch(function () { err.textContent = 'Erreur, réessaie.'; btn.disabled = false; btn.textContent = 'Créer mon compte'; });
   }
 
@@ -165,8 +174,34 @@
     var btn = document.getElementById('u-go'); btn.disabled = true; btn.textContent = '…';
     hashCode(code, acc.salt).then(function (h) {
       if (!timingEq(h, acc.codeHash)) { err.textContent = 'Code incorrect.'; btn.disabled = false; btn.textContent = 'Se connecter'; return; }
-      return (window.kdmcSSO ? window.kdmcSSO.issue(acc.uid, acc.name, true) : Promise.resolve(false)).then(function () { showHub(acc.name); });
+      return (window.kdmcSSO ? window.kdmcSSO.issue(acc.uid, acc.name, true) : Promise.resolve(false)).then(function () { _postLogin(acc); });
     }).catch(function () { err.textContent = 'Erreur, réessaie.'; btn.disabled = false; btn.textContent = 'Se connecter'; });
+  }
+
+  /* ===== Passkey (Face ID) — fait de l'appareil une preuve d'identité FORTE ===== */
+  var LS_PASSKEY = 'kdmc_passkey_v1';
+  function _hasPasskey(uid) { try { return !!(lg(LS_PASSKEY, {})[uid]); } catch (e) { return false; } }
+  function _setPasskey(uid) { try { var m = lg(LS_PASSKEY, {}); m[uid] = 1; ls(LS_PASSKEY, m); } catch (e) { /* */ } }
+  function _pkSupported() { return !!(window.kdmcSSO && window.kdmcSSO.supportsPasskey && window.kdmcSSO.supportsPasskey()); }
+  /* Après connexion : propose l'enrôlement Face ID si supporté + pas déjà fait. */
+  function _postLogin(acc) {
+    if (_pkSupported() && !_hasPasskey(acc.uid)) { renderPasskeyOffer(acc); } else { showHub(acc.name); }
+  }
+  function renderPasskeyOffer(acc) {
+    gate.innerHTML =
+      '<h2 class="g-title">🔐 Active Face ID</h2>'
+      + '<p class="g-sub">Reconnecte-toi sans code — et ton appareil devient ta <b>preuve d\'identité forte</b> sur tout KDMC (Face ID / Touch ID).</p>'
+      + '<button class="btn" id="pk-go">Activer Face ID / Touch ID</button>'
+      + '<button class="btn ghost" id="pk-skip">Plus tard</button>'
+      + '<p class="g-err" id="pk-err" role="alert" aria-live="polite"></p>';
+    document.getElementById('pk-skip').addEventListener('click', function () { showHub(acc.name); });
+    document.getElementById('pk-go').addEventListener('click', function () {
+      var b = document.getElementById('pk-go'); b.disabled = true; b.textContent = '…';
+      window.kdmcSSO.registerPasskey().then(function (j) {
+        if (j && j.ok) { _setPasskey(acc.uid); showHub(acc.name); }
+        else { document.getElementById('pk-err').textContent = 'Face ID non activé (' + ((j && j.reason) || 'annulé') + '). Tu peux réessayer plus tard.'; b.disabled = false; b.textContent = 'Activer Face ID / Touch ID'; }
+      });
+    });
   }
 
   /* ---------------------------- PWA install ---------------------------- */
