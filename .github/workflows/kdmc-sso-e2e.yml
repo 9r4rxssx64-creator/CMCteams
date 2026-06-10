@@ -31,6 +31,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      - name: Tests unitaires worker (SSO + admin + WebAuthn IdP)
+        working-directory: services/kdmc-router
+        run: |
+          node sso.test.mjs
+          node admin.test.mjs
+          node webauthn.test.mjs
       - name: Install Playwright + Chromium
         run: |
           npm i --no-save playwright@1.56.0
