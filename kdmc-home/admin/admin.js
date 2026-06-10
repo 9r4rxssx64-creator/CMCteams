@@ -75,28 +75,63 @@
     });
   }
 
+  /* Le grant admin (preuve du code) voyage en header x-kdmc-admin pour marcher
+     même en PWA installée (cookie isolé par app sur iOS). */
+  var ADMIN_TOK = 'kdmc_admin_token';
+  function adminHeaders() { var t = ''; try { t = localStorage.getItem(ADMIN_TOK) || ''; } catch (e) { /* */ } return t ? { 'x-kdmc-admin': t } : {}; }
+
+  function denyViaWhoami() {
+    var who = window.kdmcSSO ? window.kdmcSSO.whoami() : Promise.resolve(null);
+    who.then(function (s) { deny(s); }).catch(function () { deny(null); });
+  }
+
+  function promptAdminCode(err) {
+    app.innerHTML = '<div class="msg" style="max-width:360px;margin:24px auto;text-align:center">'
+      + '🔒 <b>Accès administrateur</b><br><br>'
+      + 'Entre ton <b>code admin</b> pour voir les fiches clients.<br>'
+      + '<span style="color:var(--subtle);font-size:13px">(Le nom seul ne suffit pas — sécurité.)</span><br><br>'
+      + '<input id="acode" type="password" inputmode="numeric" autocomplete="off" placeholder="Code admin" '
+      + 'style="width:100%;max-width:240px;padding:12px 14px;border-radius:12px;border:1px solid var(--line,#2a2a32);background:#0a120c;color:#f3f0e6;font-size:18px;text-align:center;letter-spacing:4px">'
+      + (err ? '<div style="color:#ff6b6b;font-size:13px;margin-top:8px">' + esc(err) + '</div>' : '')
+      + '<br><button id="ago2" style="margin-top:12px;padding:12px 22px;border:none;border-radius:12px;background:linear-gradient(135deg,#f6d97a,#e8b830);color:#11160c;font-weight:700;font-size:15px;cursor:pointer;min-height:46px">Déverrouiller</button>'
+      + '</div>';
+    var inp = document.getElementById('acode'), btn = document.getElementById('ago2');
+    function go() {
+      var code = (inp.value || '').trim(); if (!code) return;
+      btn.disabled = true; btn.textContent = '…';
+      fetch('/__admin/login', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: code }) })
+        .then(function (r) { return r.json().catch(function () { return null; }); })
+        .then(function (j) {
+          if (j && j.ok && j.grant) { try { localStorage.setItem(ADMIN_TOK, j.grant); } catch (e) { /* */ } loading(); loadAccounts(0); return; }
+          var msg = (j && j.reason === 'code_invalide') ? 'Code invalide.'
+            : (j && j.reason === 'admin_pin_not_configured') ? "Le verrou admin n'est pas encore déployé (réessaie dans 1 min)."
+              : 'Erreur, réessaie.';
+          promptAdminCode(msg);
+        })
+        .catch(function () { promptAdminCode('Réseau indisponible, réessaie.'); });
+    }
+    if (btn) btn.addEventListener('click', go);
+    if (inp) { inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); }); inp.focus(); }
+  }
+
   function loadAccounts(tries) {
-    return fetch('/__admin/accounts', { credentials: 'include', cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        if (!j || !j.ok) { deny(); return; }
+    return fetch('/__admin/accounts', { credentials: 'include', cache: 'no-store', headers: adminHeaders() })
+      .then(function (r) { return r.json().then(function (j) { return { st: r.status, j: j }; }).catch(function () { return { st: r.status, j: null }; }); })
+      .then(function (res) {
+        var j = res.j;
+        if (res.st === 403 || !j || !j.ok) {
+          if (j && j.reason === 'need_admin_code') { promptAdminCode(); return; }
+          denyViaWhoami(); return; /* rollout sans hash : ancien diag par nom */
+        }
         var accounts = j.accounts || [];
-        /* Cloudflare KV est éventuellement cohérent : juste après une 1ʳᵉ connexion,
-           l'index peut lire vide. On retente 1-2× (2s) pour laisser la fiche se propager. */
+        /* KV éventuellement cohérent : retente 1-2× (2s) si index vide après 1ʳᵉ connexion. */
         if (accounts.length === 0 && j.kv !== false && (tries || 0) < 2) {
           setTimeout(function () { loadAccounts((tries || 0) + 1); }, 2000);
         }
         render(accounts, j.kv !== false);
-      });
+      })
+      .catch(function () { denyViaWhoami(); });
   }
-  function boot() {
-    loading();
-    var who = window.kdmcSSO ? window.kdmcSSO.whoami() : Promise.resolve(null);
-    who.then(function (s) {
-      if (!s) { deny(null); return; }
-      if (!s.admin) { deny(s); return; }
-      return loadAccounts(0);
-    }).catch(function () { deny(null); });
-  }
+  function boot() { loading(); loadAccounts(0); }
   boot();
 })();

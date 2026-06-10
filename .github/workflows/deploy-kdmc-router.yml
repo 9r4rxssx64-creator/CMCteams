@@ -76,6 +76,20 @@ jobs:
             echo "::warning::Ni KDMC_SSO_SECRET ni JWT_SECRET → SSO désactivé (fail-open)."
           fi
 
+      - name: Admin domaine — injecte le hash du PIN admin (ferme le trou nom auto-asserté)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADMIN_PIN_SHA256: ${{ secrets.APEX_ADMIN_PIN_SHA256 != '' && secrets.APEX_ADMIN_PIN_SHA256 || secrets.APEX_ADMIN_PIN_SHA }}
+        run: |
+          if [ -n "${ADMIN_PIN_SHA256:-}" ]; then
+            printf '%s' "$ADMIN_PIN_SHA256" | wrangler secret put KDMC_ADMIN_PIN_SHA256 2>&1 | tail -3 \
+              || echo "::warning::hash PIN admin non posé (/__admin reste sur contrôle par nom — rollout)"
+          else
+            echo "::warning::APEX_ADMIN_PIN_SHA256 absent → /__admin garde l'ancien contrôle par nom (fail-open)."
+          fi
+
       - name: Health check des belles adresses
         run: |
           for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
