@@ -170,6 +170,46 @@ export async function tryBiometricUnlock(): Promise<boolean> {
   }
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Compte unique kd-mc.com — reconnaissance NON-PRIVILÉGIÉE.
+   Pré-remplit le nom depuis la session du domaine (confort « un seul identifiant »).
+   N'accorde JAMAIS aucun droit : pas d'admin, pas de bypass du PIN. La session
+   domaine est auto-assertée → elle ne prouve pas l'identité forte. Fail-open total. */
+function consumeDomainHashToken(): void {
+  try {
+    const h = location.hash || '';
+    const m = h.match(/[#&]kdmc_sso=([^&]+)/);
+    if (!m || !m[1]) return;
+    localStorage.setItem('kdmc_sso_token', decodeURIComponent(m[1]));
+    const clean = h.replace(/([#&])kdmc_sso=[^&]*/, '$1').replace(/[#&]+$/, '');
+    history.replaceState(null, '', location.pathname + location.search + (clean && clean !== '#' ? clean : ''));
+  } catch { /* ignore */ }
+}
+async function domainSessionName(): Promise<string | null> {
+  try {
+    const headers: Record<string, string> = {};
+    const t = localStorage.getItem('kdmc_sso_token');
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    const r = await fetch('/__sso/whoami', { credentials: 'include', cache: 'no-store', headers });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { ok?: boolean; name?: string };
+    return j && j.ok && j.name ? String(j.name) : null;
+  } catch { return null; }
+}
+function prefillNameFromDomain(rootEl: HTMLElement): void {
+  consumeDomainHashToken();
+  void domainSessionName().then((nm) => {
+    if (!nm) return;
+    const nameInput = rootEl.querySelector<HTMLInputElement>('#login-name');
+    if (!nameInput || nameInput.value.trim()) return; /* ne jamais écraser une saisie */
+    nameInput.value = nm;
+    const tag = rootEl.querySelector<HTMLElement>('.ax-landing-tagline');
+    if (tag) tag.textContent = `Bonjour ${nm.split(' ')[0]} — entre ton code`;
+    const pin = rootEl.querySelector<HTMLInputElement>('#login-pin');
+    if (pin && !pin.value) pin.focus();
+  });
+}
+
 export function render(rootEl: HTMLElement): void {
   /* P1-6 : cleanup ancien scope avant re-render */
   activeLandingScope?.cleanup();
@@ -243,6 +283,10 @@ export function render(rootEl: HTMLElement): void {
     haptic.tap();
     void handleLogin(rootEl);
   });
+
+  /* Compte unique kd-mc.com : si une session domaine existe, pré-remplit le nom
+     (confort). Aucun privilège accordé, le PIN reste requis. */
+  prefillNameFromDomain(rootEl);
 
   /* FaceID/TouchID : bouton déverrouillage si le dernier user connu est enrôlé.
      Affiché seulement si biométrie dispo + credential présent. PIN reste fallback. */
