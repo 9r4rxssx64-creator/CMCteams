@@ -8,6 +8,8 @@
  *    enrichi à chaque connexion (device + géo request.cf + horodatage). Fail-open.
  */
 
+import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc } from './webauthn.js';
+
 const UPSTREAM = 'https://9r4rxssx64-creator.github.io';
 const PAGES_PREFIX = '/CMCteams';
 
@@ -100,8 +102,10 @@ async function sha256Hex(str) {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-async function ssoSign(secret, uid, name, cgu) {
-  const p = b64urlStr(JSON.stringify({ u: uid, n: name, c: cgu ? 1 : 0, iat: Date.now(), exp: Date.now() + SSO_TTL * 1000 }));
+async function ssoSign(secret, uid, name, cgu, verified) {
+  /* v=1 → identité FORTE (prouvée par passkey/Face ID). v=0 → faible (nom+code
+     auto-asserté). Les apps ne doivent accorder de confiance qu'à v=1. */
+  const p = b64urlStr(JSON.stringify({ u: uid, n: name, c: cgu ? 1 : 0, v: verified ? 1 : 0, iat: Date.now(), exp: Date.now() + SSO_TTL * 1000 }));
   return p + '.' + (await ssoHmac(secret, p));
 }
 async function ssoVerify(secret, token) {
@@ -113,7 +117,7 @@ async function ssoVerify(secret, token) {
   if (diff !== 0) return null;
   let d; try { d = JSON.parse(b64urlToStr(p)); } catch { return null; }
   if (!d || !d.u || !d.exp || d.exp < Date.now()) return null;
-  return { uid: d.u, name: d.n || '', cgu: d.c === 1 };
+  return { uid: d.u, name: d.n || '', cgu: d.c === 1, verified: d.v === 1 };
 }
 function ssoCookie(request, name) {
   const c = request.headers.get('cookie') || '';
@@ -179,8 +183,67 @@ async function handleSso(request, url, env) {
   const path = url.pathname;
   if (path === '/__sso/whoami' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
-    if (s) { await enrich(env, request, s.uid, s.name, s.cgu); return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 }); }
+    if (s) { await enrich(env, request, s.uid, s.name, s.cgu); return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 }); }
     return J({ ok: false });
+  }
+
+  /* ===== WebAuthn (passkey / Face ID) — fait du domaine un IdP à identité FORTE ===== */
+  const RP_ID = 'kd-mc.com';
+  const RP_ORIGINS = ['https://kd-mc.com', 'https://www.kd-mc.com'];
+  if (path === '/__sso/webauthn/register/options' && request.method === 'POST') {
+    const s = await ssoVerify(secret, ssoToken(request));
+    if (!s) return J({ ok: false, reason: 'session requise' });
+    const challenge = await makeChallenge(secret, 'reg');
+    return J({ ok: true, challenge, rp: { id: RP_ID, name: 'KDMC APEX' }, user: { id: b64uEnc(new TextEncoder().encode(s.uid)), name: s.name || s.uid, displayName: s.name || s.uid }, pubKeyCredParams: [{ type: 'public-key', alg: -7 }] });
+  }
+  if (path === '/__sso/webauthn/register/verify' && request.method === 'POST') {
+    const s = await ssoVerify(secret, ssoToken(request));
+    if (!s) return J({ ok: false, reason: 'session requise' });
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    let reg;
+    try { reg = await parseRegistration(secret, b.attestationObject, b.clientDataJSON); }
+    catch (e) { return J({ ok: false, reason: String((e && e.message) || e).slice(0, 120) }); }
+    if (!RP_ORIGINS.includes(reg.origin)) return J({ ok: false, reason: 'origin non autorisée' });
+    if (env && env.ACCOUNTS) {
+      const list = JSON.parse((await env.ACCOUNTS.get('pk:' + s.uid)) || '[]');
+      if (!list.some((k) => k.credId === reg.credId)) list.push({ credId: reg.credId, jwk: reg.jwk, created: Date.now() });
+      await env.ACCOUNTS.put('pk:' + s.uid, JSON.stringify(list.slice(-10)));
+      const acc = await accGet(env, s.uid);
+      if (acc) { acc.passkey = true; acc.passkey_at = acc.passkey_at || Date.now(); await accPut(env, acc); }
+    }
+    /* Émet immédiatement une session FORTE (verified) — l'enrôlement prouve Face ID. */
+    await enrich(env, request, s.uid, s.name, s.cgu);
+    const token = await ssoSign(secret, s.uid, s.name, s.cgu, true);
+    const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
+    return J({ ok: true, verified: true, token }, cookie);
+  }
+  if (path === '/__sso/webauthn/auth/options' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    const uid = String(b.uid || '').slice(0, 80).trim();
+    let allow = [];
+    if (env && env.ACCOUNTS && uid) {
+      const list = JSON.parse((await env.ACCOUNTS.get('pk:' + uid)) || '[]');
+      allow = list.map((k) => ({ type: 'public-key', id: k.credId }));
+    }
+    const challenge = await makeChallenge(secret, 'auth');
+    return J({ ok: true, challenge, rpId: RP_ID, allowCredentials: allow });
+  }
+  if (path === '/__sso/webauthn/auth/verify' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    const uid = String(b.uid || '').slice(0, 80).trim();
+    const credId = String(b.credId || '');
+    if (!uid || !credId) return J({ ok: false, reason: 'uid+credId requis' });
+    const list = (env && env.ACCOUNTS) ? JSON.parse((await env.ACCOUNTS.get('pk:' + uid)) || '[]') : [];
+    const rec = list.find((k) => k.credId === credId);
+    if (!rec) return J({ ok: false, reason: 'passkey inconnu' });
+    const r = await verifyAssertion(secret, rec.jwk, { clientDataJSON: b.clientDataJSON, authenticatorData: b.authenticatorData, signature: b.signature }, { origins: RP_ORIGINS, rpId: RP_ID });
+    if (!r.ok) return J({ ok: false, reason: r.reason });
+    const acc = await accGet(env, uid);
+    const name = (acc && acc.name) || uid;
+    await enrich(env, request, uid, name, true);
+    const token = await ssoSign(secret, uid, name, true, true);
+    const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
+    return J({ ok: true, uid, name, verified: true, token }, cookie);
   }
   if (path === '/__sso/issue' && request.method === 'POST') {
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }

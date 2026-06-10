@@ -37,6 +37,7 @@ jobs:
           node sso.test.mjs
           node admin.test.mjs
           node webauthn.test.mjs
+          node webauthn-endpoints.test.mjs
       - name: Install Playwright + Chromium
         run: |
           npm i --no-save playwright@1.56.0
