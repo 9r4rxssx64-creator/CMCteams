@@ -228,9 +228,21 @@ export default {
     if (!r.ok) return J({ ok: false, detail: 'Printify HTTP ' + r.status + ' : ' + txt.slice(0, 300), warnings }, 502, origin);
     let pj; try { pj = JSON.parse(txt); } catch (_) { pj = {}; }
     // 🔔 Alerte push admin (best-effort, ne bloque pas la commande)
+    // Kevin « notif, 1 clic + tous les renseignements » : titre = boutique + n° commande,
+    // corps = client + ville + nb articles + total + détail des articles + moyen de paiement.
+    // Le 1-tap (body.pushUrl) ouvre l'admin boutique (déverrouillé auto via Face ID).
     try {
       const tot = body.total ? (' — ' + body.total + ' €') : '';
-      await sendOrderPush(env, (body.shopName || 'La Détente') + ' — 🛍️ Nouvelle commande', (a.name || 'Client') + ' · ' + lineItems.length + ' article(s)' + tot, body.pushUrl);
+      const ordTxt = body.orderId ? (' · #' + String(body.orderId)) : '';
+      const cityTxt = a.city ? (' · ' + a.city) : '';
+      const payTxt = body.method ? (' · ' + body.method) : '';
+      const itemsTxt = items.map((it) => (it.name || it.garment || 'article') + ' ×' + (it.quantity || it.qty || 1)).join(', ').slice(0, 140);
+      await sendOrderPush(
+        env,
+        (body.shopName || 'La Détente') + ' — 🛍️ Nouvelle commande' + ordTxt,
+        (a.name || 'Client') + cityTxt + ' · ' + lineItems.length + ' art.' + tot + payTxt + (itemsTxt ? ('\n' + itemsTxt) : ''),
+        body.pushUrl,
+      );
     } catch (_) {}
     // Statut "on-hold" : Kevin valide/paie. (Pas d'envoi auto en production.)
     return J({ ok: true, printify_order_id: pj.id || null, lines: lineItems.length, warnings, status: 'on-hold (à valider)' }, 200, origin);
