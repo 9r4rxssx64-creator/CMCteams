@@ -5396,7 +5396,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.796";
+var APP_VER="v9.797";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -15646,6 +15646,9 @@ function vLoginStep0(){
     </div>
     <div style="margin-top:10px;display:flex;justify-content:center;gap:8px">
       ${LANGS.map(function(l){var on=_lang===l.id;return '<button onclick="setLang(\''+l.id+'\')" style="background:'+(on?'rgba(201,162,39,.2)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'rgba(201,162,39,.5)':'rgba(255,255,255,.1)')+';border-radius:8px;padding:6px 14px;cursor:pointer;font-size:16px;min-height:44px">'+l.flag+'</button>';}).join('')}
+    </div>
+    <div style="margin-top:12px;text-align:center">
+      <a href="https://kd-mc.com/" aria-label="Portail KDMC" style="display:inline-block;color:#c0d8a8;text-decoration:none;font-size:12.5px;padding:6px 12px;border-radius:999px;border:1px solid rgba(201,162,39,.35);background:rgba(201,162,39,.06)">← Portail KDMC</a>
     </div>
   </div></div>`;
 }
