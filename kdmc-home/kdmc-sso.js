@@ -42,8 +42,61 @@
        ET les cookies (Safari) — l'un ou l'autre suffit. */
     return fetch(BASE + '/whoami', { method: 'GET', credentials: 'include', cache: 'no-store', headers: authHeaders() })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { return j && j.ok ? { uid: j.uid, name: j.name, cgu: !!j.cgu, admin: !!j.admin } : null; })
+      .then(function (j) { return j && j.ok ? { uid: j.uid, name: j.name, cgu: !!j.cgu, admin: !!j.admin, verified: !!j.verified } : null; })
       .catch(function () { return null; });
+  }
+
+  /* ===== Passkey (Face ID / Touch ID) — identité FORTE (verified) ===== */
+  function _b64uToBuf(s) { s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var bin = atob(s); var u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+  function _bufToB64u(buf) { var u = new Uint8Array(buf); var s = ''; for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function supportsPasskey() { return typeof window !== 'undefined' && !!window.PublicKeyCredential; }
+
+  /* Enrôle un passkey pour la session courante (nécessite une session). Émet une
+     session FORTE (verified). → {ok, reason?}. */
+  function registerPasskey() {
+    if (!supportsPasskey()) return Promise.resolve({ ok: false, reason: 'non supporté sur cet appareil' });
+    return fetch(BASE + '/webauthn/register/options', { method: 'POST', credentials: 'include', headers: authHeaders({ 'content-type': 'application/json' }), body: '{}' })
+      .then(function (r) { return r.json(); })
+      .then(function (o) {
+        if (!o || !o.ok) return { ok: false, reason: (o && o.reason) || 'options' };
+        return navigator.credentials.create({ publicKey: {
+          challenge: _b64uToBuf(o.challenge),
+          rp: o.rp,
+          user: { id: _b64uToBuf(o.user.id), name: o.user.name, displayName: o.user.displayName },
+          pubKeyCredParams: o.pubKeyCredParams,
+          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+          timeout: 60000, attestation: 'none',
+        } }).then(function (cred) {
+          var att = cred.response;
+          return fetch(BASE + '/webauthn/register/verify', { method: 'POST', credentials: 'include', headers: authHeaders({ 'content-type': 'application/json' }), body: JSON.stringify({ attestationObject: _bufToB64u(att.attestationObject), clientDataJSON: _bufToB64u(att.clientDataJSON) }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) { if (j && j.ok && j.token) setToken(j.token); return j || { ok: false }; });
+        });
+      })
+      .catch(function (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 120) }; });
+  }
+
+  /* Connexion par passkey (Face ID) pour un uid connu. → {ok, verified, ...} ; stocke le pass. */
+  function loginPasskey(uid) {
+    if (!supportsPasskey()) return Promise.resolve({ ok: false, reason: 'non supporté' });
+    return fetch(BASE + '/webauthn/auth/options', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ uid: uid }) })
+      .then(function (r) { return r.json(); })
+      .then(function (o) {
+        if (!o || !o.ok) return { ok: false, reason: (o && o.reason) || 'options' };
+        if (!o.allowCredentials || !o.allowCredentials.length) return { ok: false, reason: 'aucun passkey' };
+        return navigator.credentials.get({ publicKey: {
+          challenge: _b64uToBuf(o.challenge),
+          rpId: o.rpId,
+          allowCredentials: o.allowCredentials.map(function (c) { return { type: 'public-key', id: _b64uToBuf(c.id) }; }),
+          userVerification: 'required', timeout: 60000,
+        } }).then(function (cred) {
+          var a = cred.response;
+          return fetch(BASE + '/webauthn/auth/verify', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ uid: uid, credId: cred.id, clientDataJSON: _bufToB64u(a.clientDataJSON), authenticatorData: _bufToB64u(a.authenticatorData), signature: _bufToB64u(a.signature) }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) { if (j && j.ok && j.token) setToken(j.token); return j || { ok: false }; });
+        });
+      })
+      .catch(function (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 120) }; });
   }
 
   function issue(uid, name, cgu) {
@@ -94,5 +147,8 @@
     consumeHashToken: consumeHashToken,
     ensureSession: ensureSession,
     token: storedToken,
+    supportsPasskey: supportsPasskey,
+    registerPasskey: registerPasskey,
+    loginPasskey: loginPasskey,
   };
 })(window);

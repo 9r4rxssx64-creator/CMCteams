@@ -188,8 +188,10 @@ async function handleSso(request, url, env) {
   }
 
   /* ===== WebAuthn (passkey / Face ID) — fait du domaine un IdP à identité FORTE ===== */
-  const RP_ID = 'kd-mc.com';
-  const RP_ORIGINS = ['https://kd-mc.com', 'https://www.kd-mc.com'];
+  /* rpId/origins surchargés par env UNIQUEMENT pour les tests (localhost) ;
+     en prod aucune de ces vars n'est posée → valeurs kd-mc.com. */
+  const RP_ID = (env && env.KDMC_RP_ID) || 'kd-mc.com';
+  const RP_ORIGINS = (env && env.KDMC_RP_ORIGINS) ? env.KDMC_RP_ORIGINS.split(',') : ['https://kd-mc.com', 'https://www.kd-mc.com'];
   if (path === '/__sso/webauthn/register/options' && request.method === 'POST') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
