@@ -4274,359 +4274,152 @@ async function _sha256Hex(input) {
 }
 
 // ============================================================================
-//  v1.1.24 — POST /api/premium/checkout : Stripe hosted Checkout session
-//  Features futuristes :
-//  - 3 plans : monthly (6.99€), yearly (-15% = 69.99€), lifetime (199€)
-//  - Trial 7 jours gratuit (premier abo) — Stripe trial_period_days
-//  - Multi-currency auto-detect via Accept-Language header
-//  - Idempotency key anti-double-charge (cache 24h D1)
-//  - Webhook signature verify (HMAC SHA-256)
-//  - Premium status cache D1 sync cross-device
+//  v1.1.208 — Premium via moyens de paiement Kevin (@kdmc) + activation MANUELLE
+//  Kevin n'a PAS de compte Stripe → tout le flux Stripe est retiré.
+//  Flux :
+//   1. User choisit un plan → POST /api/premium/request (demande PENDING + notif admin)
+//   2. User paie via PayPal / Revolut / IBAN (@kdmc) hors-app
+//   3. Admin vérifie le paiement → POST /api/admin/grant-premium (activation manuelle)
+//  - 3 plans : monthly (6,99€/31j), yearly (69,99€/365j), lifetime (199€/à vie)
+//  - Premium status cache D1 sync cross-device (handlePremiumStatus inchangé)
 // ============================================================================
-const STRIPE_PLANS = {
-  monthly: { price_id_env: 'STRIPE_PRICE_MONTHLY', amount: 699, interval: 'month', label: 'Mensuel' },
-  yearly: { price_id_env: 'STRIPE_PRICE_YEARLY', amount: 6999, interval: 'year', label: 'Annuel (-15%)' },
-  lifetime: { price_id_env: 'STRIPE_PRICE_LIFETIME', amount: 19900, interval: null, label: 'À vie' },
+const KDMC_PLANS = {
+  monthly: { price_eur: 6.99, label: 'Mensuel', days: 31 },
+  yearly: { price_eur: 69.99, label: 'Annuel (-15%)', days: 365 },
+  lifetime: { price_eur: 199, label: 'À vie', days: null },
 };
 
-export async function handlePremiumCheckout(request, env) {
+// premium_until pour un plan donné. lifetime → quasi-infini (~316 ans).
+function _premiumUntilForPlan(plan) {
+  const def = KDMC_PLANS[plan];
+  if (!def) return 0;
+  if (def.days === null) return 9999999999000; // lifetime
+  return Date.now() + def.days * 86400 * 1000;
+}
+
+// ============================================================================
+//  v1.1.208 — POST /api/premium/request : demande Premium EN ATTENTE (@kdmc)
+//  L'utilisateur enregistre une demande, paie hors-app, l'admin active ensuite.
+// ============================================================================
+export async function handlePremiumRequest(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
   const body = await request.json().catch(() => ({}));
   const plan = String(body.plan || 'monthly');
-  if (!STRIPE_PLANS[plan]) return err('Plan invalide (monthly|yearly|lifetime)');
-  if (!env.STRIPE_SECRET_KEY) return err('Stripe non configuré (STRIPE_SECRET_KEY manquant)', 503);
+  if (!KDMC_PLANS[plan]) return err('Plan invalide (monthly|yearly|lifetime)');
 
-  const planDef = STRIPE_PLANS[plan];
-  const priceId = env[planDef.price_id_env];
-  if (!priceId) return err(`Stripe price ID manquant (${planDef.price_id_env})`, 503);
+  const planDef = KDMC_PLANS[plan];
+  const reqRecord = {
+    user_id: auth.sub,
+    email: auth.email || null,
+    plan,
+    price_eur: planDef.price_eur,
+    method: 'kdmc',
+    ts: Date.now(),
+    status: 'pending',
+  };
 
-  const successUrl = String(body.success_url || 'https://apex.chat/?premium=ok');
-  const cancelUrl = String(body.cancel_url || 'https://apex.chat/?premium=cancel');
-  if (!successUrl.startsWith('http') || !cancelUrl.startsWith('http')) {
-    return err('URLs invalides');
-  }
-
-  // Idempotency key : 1 user + 1 plan + 1 heure → même session retournée si retry
-  const idempKey = `checkout_${auth.sub}_${plan}_${Math.floor(Date.now() / 3600000)}`;
-
-  try {
-    const fdParams = new URLSearchParams();
-    fdParams.set('success_url', successUrl);
-    fdParams.set('cancel_url', cancelUrl);
-    fdParams.set('client_reference_id', auth.sub);
-    fdParams.set('customer_email', auth.email || '');
-    fdParams.set('line_items[0][price]', priceId);
-    fdParams.set('line_items[0][quantity]', '1');
-    fdParams.set('mode', planDef.interval ? 'subscription' : 'payment');
-    fdParams.set('metadata[user_id]', auth.sub);
-    fdParams.set('metadata[plan]', plan);
-    fdParams.set('metadata[apex_version]', 'v1.1.24');
-    // v1.1.172 FIX P1 (audit crew) : propager user_id/plan sur l'OBJET subscription
-    // (pas seulement la session). Sans ça, customer.subscription.deleted /
-    // payment_failed avaient sub.metadata.user_id = undefined → premium JAMAIS
-    // révoqué après annulation. (Mode subscription uniquement.)
-    if (planDef.interval) {
-      fdParams.set('subscription_data[metadata][user_id]', auth.sub);
-      fdParams.set('subscription_data[metadata][plan]', plan);
-    }
-    // Trial 7 jours gratuit pour monthly (1er abo seulement)
-    if (plan === 'monthly') {
-      fdParams.set('subscription_data[trial_period_days]', '7');
-    }
-    // Allow promo codes
-    fdParams.set('allow_promotion_codes', 'true');
-    // Locale FR
-    fdParams.set('locale', 'fr');
-
-    const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Idempotency-Key': idempKey,
-      },
-      body: fdParams.toString(),
-    });
-    if (!r.ok) {
-      const errBody = await r.text().catch(() => '');
-      console.warn('[stripe-checkout] HTTP', r.status, errBody.slice(0, 300));
-      return err(`Stripe HTTP ${r.status}`, 502);
-    }
-    const data = await r.json();
-    if (!data.url) return err('Stripe response missing url', 502);
-
-    // Log audit
+  // Persistance : KV (1 demande active par user, écrasée si nouvelle).
+  // Fail-open : si KV indispo, on ne bloque PAS l'utilisateur — il pourra payer
+  // et l'admin activera manuellement (la demande KV n'est qu'un confort admin).
+  if (env.APEX_CHAT_KV) {
     try {
-      await env.APEX_CHAT_DB?.prepare(
-        'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
-      ).bind(crypto.randomUUID(), auth.sub, 'premium.checkout_init',
-        JSON.stringify({ plan, session_id: data.id, amount: planDef.amount }),
-        Date.now()
-      ).run();
-    } catch (e) { /* audit_log table peut différer */ }
-
-    return json({ ok: true, url: data.url, session_id: data.id, plan, trial: plan === 'monthly' });
-  } catch (e) {
-    return err('Stripe error: ' + e.message, 502);
-  }
-}
-
-// ============================================================================
-//  v1.1.24 — POST /api/premium/webhook : Stripe webhook activate premium auto
-//  Sécurité : HMAC SHA-256 signature verify (anti-spoofing)
-// ============================================================================
-export async function handlePremiumWebhook(request, env) {
-  if (!env.STRIPE_WEBHOOK_SECRET) return err('Webhook secret non configuré', 503);
-
-  const sig = request.headers.get('Stripe-Signature');
-  if (!sig) return err('Signature manquante', 400);
-
-  const rawBody = await request.text();
-
-  // Verify HMAC signature (Stripe format: t=<ts>,v1=<sig>)
-  const sigOk = await _verifyStripeSignature(rawBody, sig, env.STRIPE_WEBHOOK_SECRET);
-  if (!sigOk) return err('Signature invalide', 400);
-
-  let event;
-  try { event = JSON.parse(rawBody); }
-  catch { return err('Body JSON invalide', 400); }
-
-  // Handle event types qui activent premium
-  if (event.type === 'checkout.session.completed' || event.type === 'invoice.paid') {
-    const session = event.data?.object;
-    const userId = session?.metadata?.user_id || session?.client_reference_id;
-    const plan = session?.metadata?.plan || 'monthly';
-    if (userId) {
-      // Calcul expiration selon plan
-      let premiumUntil;
-      if (plan === 'lifetime') premiumUntil = 9999999999000; // ~316 ans
-      else if (plan === 'yearly') premiumUntil = Date.now() + 365 * 86400 * 1000;
-      else premiumUntil = Date.now() + 31 * 86400 * 1000; // monthly + buffer
-
-      // v1.1.26 : store stripe_customer_id pour Customer Portal futur
-      const stripeCustomerId = session?.customer || null;
-      try {
-        if (stripeCustomerId) {
-          await env.APEX_CHAT_DB?.prepare(
-            'UPDATE users SET premium_until=?, premium_plan=?, stripe_customer_id=? WHERE id=?'
-          ).bind(premiumUntil, plan, stripeCustomerId, userId).run();
-        } else {
-          await env.APEX_CHAT_DB?.prepare(
-            'UPDATE users SET premium_until=?, premium_plan=? WHERE id=?'
-          ).bind(premiumUntil, plan, userId).run();
-        }
-
-        await env.APEX_CHAT_DB?.prepare(
-          'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
-        ).bind(crypto.randomUUID(), userId, 'premium.activated',
-          JSON.stringify({ plan, premium_until: premiumUntil, stripe_session: session.id }),
-          Date.now()
-        ).run();
-        // v1.1.32 : email receipt via Resend (best-effort, non-bloquant)
-        try {
-          const email = session?.customer_details?.email || session?.customer_email;
-          if (email && env.RESEND_API_KEY) {
-            await _sendPremiumReceipt(env, {
-              email,
-              plan,
-              amount: session?.amount_total || 0,
-              currency: session?.currency || 'eur',
-              sessionId: session.id,
-              premiumUntil
-            });
-          }
-        } catch (e) { console.warn('[webhook] receipt send failed:', e.message); }
-      } catch (e) {
-        console.warn('[webhook] DB update failed:', e.message);
-      }
-    }
-  } else if (event.type === 'customer.subscription.deleted' || event.type === 'invoice.payment_failed') {
-    const sub = event.data?.object;
-    let userId = sub?.metadata?.user_id;
-    // v1.1.172 FIX P1 (audit crew) : fallback robuste — résoudre l'user via
-    // stripe_customer_id si le metadata est absent (anciens abonnements créés
-    // avant le fix checkout). Sans ça, le premium n'était jamais révoqué.
-    if (!userId) {
-      const customerId = sub?.customer || event.data?.object?.customer;
-      if (customerId) {
-        try {
-          const row = await env.APEX_CHAT_DB?.prepare(
-            'SELECT id FROM users WHERE stripe_customer_id=?'
-          ).bind(customerId).first();
-          if (row) userId = row.id;
-        } catch (e) { /* skip */ }
-      }
-    }
-    if (userId) {
-      try {
-        await env.APEX_CHAT_DB?.prepare(
-          'UPDATE users SET premium_until=0 WHERE id=? AND premium_plan != ?'
-        ).bind(userId, 'lifetime').run(); // lifetime jamais révoqué
-      } catch (e) { /* skip */ }
-    }
+      await env.APEX_CHAT_KV.put(`premium_req:${auth.sub}`, JSON.stringify(reqRecord), {
+        expirationTtl: 60 * 60 * 24 * 30, // 30 jours
+      });
+    } catch (e) { console.warn('[premium-request] KV put failed:', e.message); }
   }
 
-  return json({ ok: true, received: event.type });
-}
-
-// ============================================================================
-//  v1.1.32 — Resend email receipt après paiement Stripe (best-effort)
-//  Doc Resend : https://resend.com/docs/api-reference/emails/send-email
-// ============================================================================
-export async function _sendPremiumReceipt(env, opts) {
-  if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY missing');
-  const { email, plan, amount, currency, sessionId, premiumUntil } = opts;
-  const amountStr = (amount / 100).toFixed(2) + ' ' + (currency || 'eur').toUpperCase();
-  const planLabel = plan === 'lifetime' ? 'À vie (Lifetime)' : plan === 'yearly' ? 'Annuel' : 'Mensuel';
-  const expiresStr = plan === 'lifetime' ? 'À vie' : new Date(premiumUntil).toLocaleDateString('fr-FR');
-  const from = env.RESEND_FROM || 'Apex Chat <noreply@apex-chat.com>';
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Reçu Apex Chat+ Premium</title></head>
-<body style="margin:0;padding:0;background:#0e0e10;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#f5e9c2">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e10;padding:30px 0">
-    <tr><td align="center">
-      <table width="540" cellpadding="0" cellspacing="0" style="background:#1a1a1f;border:1px solid #e8b830;border-radius:14px;padding:30px;max-width:540px">
-        <tr><td align="center">
-          <div style="font-size:42px;margin-bottom:8px">⭐</div>
-          <h1 style="margin:0;color:#e8b830;font-family:Georgia,serif">Apex Chat+ Premium</h1>
-          <p style="color:#bdb89a;margin:6px 0 24px;font-size:14px">Merci pour ton abonnement !</p>
-        </td></tr>
-        <tr><td style="background:#0e0e10;border-radius:10px;padding:18px;color:#f5e9c2;font-size:14px;line-height:1.7">
-          <strong style="color:#e8b830">Détails de ta commande :</strong><br>
-          • Plan : <strong>${planLabel}</strong><br>
-          • Montant : <strong>${amountStr}</strong><br>
-          • Valable jusqu'à : <strong>${expiresStr}</strong><br>
-          • Session Stripe : <code style="color:#8a8a8a;font-size:11px">${(sessionId || '').slice(0, 32)}</code>
-        </td></tr>
-        <tr><td style="padding-top:22px;color:#bdb89a;font-size:13px;line-height:1.6">
-          <strong style="color:#f5e9c2">Tu débloques :</strong><br>
-          ✓ IA Apex illimitée (Voice, Vision, Smart Reply, Traduction, Résumé)<br>
-          ✓ Time Capsules illimitées<br>
-          ✓ Stockage 1 To (vs 30 jours gratuit)<br>
-          ✓ Voice Clone E2E (bientôt)<br>
-          ✓ Themes premium<br>
-          ✓ Support prioritaire
-        </td></tr>
-        <tr><td align="center" style="padding-top:24px">
-          <a href="https://apex-chat.com/?premium=ok" style="display:inline-block;background:#e8b830;color:#0e0e10;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600">Ouvrir Apex Chat</a>
-        </td></tr>
-        <tr><td align="center" style="padding-top:24px;color:#8a8a8a;font-size:11px;line-height:1.5">
-          Reçu généré automatiquement. Pas besoin de répondre.<br>
-          Annulable 1 clic depuis ton espace Apex Chat → ⭐ Premium → Gérer mon abonnement.
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
-  const ctrl = new AbortController();
-  const tid = setTimeout(() => ctrl.abort(), 10_000);
-  let r;
+  // Notifie l'admin via audit_log (Kevin voit la demande dans l'historique admin).
   try {
-    r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from,
-        to: [email],
-        subject: '✅ Reçu Apex Chat+ Premium — ' + planLabel,
-        html,
-        tags: [{ name: 'category', value: 'premium-receipt' }, { name: 'plan', value: plan }]
-      }),
-      signal: ctrl.signal
-    });
-  } finally { clearTimeout(tid); }
-  if (!r.ok) {
-    const body = await r.text().catch(() => '');
-    throw new Error(`Resend HTTP ${r.status}: ${body.slice(0, 200)}`);
-  }
-  const data = await r.json();
-  return { ok: true, id: data.id };
-}
+    await env.APEX_CHAT_DB?.prepare(
+      'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
+    ).bind(crypto.randomUUID(), auth.sub, 'premium.request',
+      JSON.stringify(reqRecord), Date.now()
+    ).run();
+  } catch (e) { console.warn('[premium-request] audit failed:', e.message); }
 
-async function _verifyStripeSignature(rawBody, signatureHeader, secret) {
-  // Parse Stripe-Signature: t=<unix-ts>,v1=<sig>,v0=...
-  const parts = signatureHeader.split(',').reduce((acc, p) => {
-    const [k, v] = p.split('=');
-    if (k && v) acc[k.trim()] = v.trim();
-    return acc;
-  }, {});
-  if (!parts.t || !parts.v1) return false;
-
-  // Tolérance 5 min anti-replay
-  const ts = parseInt(parts.t, 10);
-  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
-
-  // HMAC SHA-256 sur "<ts>.<rawBody>"
-  const signedPayload = `${parts.t}.${rawBody}`;
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const sigBuf = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload));
-  const expectedHex = Array.from(new Uint8Array(sigBuf))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-  // Constant-time compare
-  if (expectedHex.length !== parts.v1.length) return false;
-  let diff = 0;
-  for (let i = 0; i < expectedHex.length; i++) {
-    diff |= expectedHex.charCodeAt(i) ^ parts.v1.charCodeAt(i);
-  }
-  return diff === 0;
+  const priceStr = planDef.price_eur.toFixed(2);
+  return json({
+    ok: true,
+    pending: true,
+    plan,
+    price_eur: planDef.price_eur,
+    message: 'Demande envoyée. Premium activé après vérification du paiement par l\'admin.',
+    pay: {
+      paypal: `https://paypal.me/kdmc/${priceStr}`,
+      revolut: 'https://revolut.me/kdmc',
+      iban_holder: 'Kevin DESARZENS',
+    },
+  });
 }
 
 // ============================================================================
-//  v1.1.26 — POST /api/premium/portal : Stripe Customer Portal (gérer abo)
-//  User clique "Gérer mon abonnement" → ouvre portail Stripe officiel (annuler,
-//  changer carte, voir factures, télécharger reçus).
+//  v1.1.208 — POST /api/admin/grant-premium : activation MANUELLE (admin only)
+//  Kevin a vérifié le paiement (@kdmc) → active le Premium pour l'utilisateur.
 // ============================================================================
-export async function handlePremiumPortal(request, env) {
+export async function handleAdminGrantPremium(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
-  if (!env.STRIPE_SECRET_KEY) return err('Stripe non configuré', 503);
+  if (!auth.is_admin) return err('Admin requis', 403);
 
   const body = await request.json().catch(() => ({}));
-  const returnUrl = String(body.return_url || 'https://apex.chat/?from=portal');
-  if (!returnUrl.startsWith('http')) return err('return_url invalide');
+  const userId = String(body.user_id || '').trim();
+  const plan = String(body.plan || 'monthly');
+  if (!userId) return err('user_id requis');
+  if (!KDMC_PLANS[plan]) return err('Plan invalide (monthly|yearly|lifetime)');
+
+  const premiumUntil = _premiumUntilForPlan(plan);
 
   try {
-    // Cherche customer_id Stripe (stocké après 1er checkout)
-    const u = await env.APEX_CHAT_DB?.prepare(
-      'SELECT stripe_customer_id FROM users WHERE id=?'
-    ).bind(auth.sub).first();
-    if (!u?.stripe_customer_id) {
-      return err('Aucun abonnement actif. Souscris d\'abord à un plan Premium.', 404);
+    await env.APEX_CHAT_DB?.prepare(
+      'UPDATE users SET premium_until=?, premium_plan=? WHERE id=?'
+    ).bind(premiumUntil, plan, userId).run();
+
+    // Marque la demande KV comme activée (best-effort).
+    if (env.APEX_CHAT_KV) {
+      try { await env.APEX_CHAT_KV.delete(`premium_req:${userId}`); } catch (_) {}
     }
 
-    const fd = new URLSearchParams();
-    fd.set('customer', u.stripe_customer_id);
-    fd.set('return_url', returnUrl);
-    fd.set('locale', 'fr');
-
-    const r = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: fd.toString(),
-    });
-    if (!r.ok) {
-      const errBody = await r.text().catch(() => '');
-      console.warn('[stripe-portal] HTTP', r.status, errBody.slice(0, 200));
-      return err(`Stripe HTTP ${r.status}`, 502);
-    }
-    const data = await r.json();
-    return json({ ok: true, url: data.url });
+    await env.APEX_CHAT_DB?.prepare(
+      'INSERT INTO audit_log (id, actor_id, action, details, ts) VALUES (?, ?, ?, ?, ?)'
+    ).bind(crypto.randomUUID(), auth.sub, 'premium.granted',
+      JSON.stringify({ user_id: userId, plan, premium_until: premiumUntil, by: auth.sub }),
+      Date.now()
+    ).run();
   } catch (e) {
-    return err('Stripe error: ' + e.message, 502);
+    return err('DB error: ' + e.message, 500, 'db', { detail: e.message, step: 'grant_premium' });
   }
+
+  return json({ ok: true, user_id: userId, plan, premium_until: premiumUntil });
 }
 
+// ============================================================================
+//  v1.1.208 — GET /api/admin/premium-requests : liste des demandes pending
+//  Kevin voit qui a demandé/payé pour activer manuellement.
+// ============================================================================
+export async function handleAdminPremiumRequests(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  if (!auth.is_admin) return err('Admin requis', 403);
+
+  const requests = [];
+  // Source principale : KV (1 entrée premium_req:* par user en attente).
+  if (env.APEX_CHAT_KV) {
+    try {
+      const list = await env.APEX_CHAT_KV.list({ prefix: 'premium_req:' });
+      for (const k of (list.keys || [])) {
+        try {
+          const v = await env.APEX_CHAT_KV.get(k.name);
+          if (v) requests.push(JSON.parse(v));
+        } catch (_) {}
+      }
+    } catch (e) { console.warn('[premium-requests] KV list failed:', e.message); }
+  }
+  requests.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return json({ ok: true, count: requests.length, requests });
+}
 // ============================================================================
 //  v1.1.26 — POST /api/ai/smart-reply : 3 réponses suggérées style Gmail
 // ============================================================================
@@ -5385,9 +5178,10 @@ export default {
       // v1.1.24 — AI summarize (Memory Lane + autres résumés)
       if (path === '/api/ai/summarize' && method === 'POST') return await handleAiSummarize(request, env);
 
-      // v1.1.24 — Stripe Premium Checkout + webhook + status
-      if (path === '/api/premium/checkout' && method === 'POST') return await handlePremiumCheckout(request, env);
-      if (path === '/api/premium/webhook' && method === 'POST') return await handlePremiumWebhook(request, env);
+      // v1.1.208 — Premium via @kdmc (PayPal/Revolut/IBAN) + activation MANUELLE
+      if (path === '/api/premium/request' && method === 'POST') return await handlePremiumRequest(request, env);
+      if (path === '/api/admin/grant-premium' && method === 'POST') return await handleAdminGrantPremium(request, env);
+      if (path === '/api/admin/premium-requests' && method === 'GET') return await handleAdminPremiumRequests(request, env);
       if (path === '/api/premium/status' && method === 'GET') return await handlePremiumStatus(request, env);
       // v1.1.31 — Usage daily quota
       if (path === '/api/premium/quota' && method === 'GET') return await handlePremiumQuota(request, env);
@@ -5403,8 +5197,7 @@ export default {
       // v1.1.41 — AI rewrite message (8 styles)
       if (path === '/api/ai/rewrite' && method === 'POST') return await handleAiRewrite(request, env);
 
-      // v1.1.26 — Customer Portal + Smart Reply + Translate
-      if (path === '/api/premium/portal' && method === 'POST') return await handlePremiumPortal(request, env);
+      // v1.1.26 — Smart Reply + Translate
       if (path === '/api/ai/smart-reply' && method === 'POST') return await handleAiSmartReply(request, env);
       if (path === '/api/ai/translate' && method === 'POST') return await handleAiTranslate(request, env);
 

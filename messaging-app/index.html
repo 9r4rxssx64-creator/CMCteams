@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.206",
+  "softwareVersion": "v1.1.208",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.207';
+const __APEX_CHAT_VERSION__ = 'v1.1.208';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -6647,6 +6647,7 @@ K.render = function(){
     case 'admin-search': renderAdminSearch(app); break;
     case 'admin-timeline': renderAdminTimeline(app); break;
     case 'admin-map': renderAdminMap(app); break;
+    case 'admin-premium': renderAdminPremium(app); break;
     default: app.innerHTML = '<p>Vue inconnue</p>';
   }
 
@@ -9024,46 +9025,34 @@ K._showMemoryLaneSummary = async function(){
 };
 
 // ============================================================================
-//  v1.1.24 — Phase 9 : Stripe Premium Checkout (real)
+//  v1.1.208 — Premium via moyens de paiement Kevin (@kdmc) + activation MANUELLE
+//  Kevin n'a PAS de compte Stripe. L'utilisateur paie via PayPal/Revolut/IBAN
+//  puis enregistre sa demande ; l'admin active le Premium après vérification.
 // ============================================================================
-K._openStripeCheckout = async function(planId){
-  // planId : 'monthly' | 'yearly'
+K._requestPremium = async function(planId){
   if(!K.token) return toast('Connecte-toi d\'abord', 'err');
-  toast('Ouverture Stripe Checkout...', 'info', 2000);
   try{
-    const res = await fetch(API_BASE + '/api/premium/checkout', {
+    const res = await fetch(API_BASE + '/api/premium/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
-      body: JSON.stringify({ plan: planId, success_url: location.origin + location.pathname + '?premium=ok', cancel_url: location.href }),
+      body: JSON.stringify({ plan: planId }),
       signal: AbortSignal.timeout(15_000),
     });
     if(!res.ok){
-      const txt = await res.text().catch(() => '');
-      return toast('Stripe error: HTTP ' + res.status, 'err', 4000);
+      const e = await res.json().catch(() => ({}));
+      return toast(e.message || ('Erreur HTTP ' + res.status), 'err', 4000);
     }
     const data = await res.json();
-    if(data.url){
-      window.location.href = data.url; // redirect vers Stripe hosted Checkout
+    if(data.ok){
+      toast('Demande envoyée ✅ — Premium activé après vérification du paiement par l\'admin', 'ok', 6000);
+      if(typeof K._syncPremiumStatus === 'function') K._syncPremiumStatus();
     } else {
-      toast('Aucune URL Checkout retournée', 'err');
+      toast(data.message || 'Demande non enregistrée', 'err', 4000);
     }
   }catch(e){
-    toast('Erreur réseau Stripe: ' + (e.message || ''), 'err', 4000);
+    toast('Erreur réseau: ' + (e.message || ''), 'err', 4000);
   }
 };
-
-// Detect retour Stripe success (?premium=ok)
-try{
-  if(location.search.includes('premium=ok')){
-    setTimeout(() => {
-      toast('🎉 Premium activé ! Bienvenue.', 'ok', 5000);
-      // Nettoie URL
-      try{ history.replaceState({}, '', location.pathname); }catch(_e){_safeCatch('silent',_e)}
-      // Resync premium status depuis backend
-      if(typeof K._syncPremiumStatus === 'function') K._syncPremiumStatus();
-    }, 1500);
-  }
-}catch(e){ /* ignore */ }
 
 // ============================================================================
 //  v1.1.27 — Premium status auto-sync cross-device
@@ -9099,33 +9088,10 @@ K._startPremiumSync = function(){
 };
 
 // ============================================================================
-//  v1.1.27 — Customer Portal Stripe (gérer abo)
+//  v1.1.208 — Gérer son abonnement (paiement manuel @kdmc, pas de portail tiers)
 // ============================================================================
 K._openCustomerPortal = async function(){
-  if(!K.token) return toast('Connecte-toi d\'abord', 'err');
-  toast('Ouverture portail Stripe...', 'info', 2000);
-  try{
-    const res = await fetch(API_BASE + '/api/premium/portal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token },
-      body: JSON.stringify({ return_url: location.href }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if(!res.ok){
-      if(res.status === 404){
-        return toast('Aucun abonnement actif à gérer', 'err', 4000);
-      }
-      return toast('Portail Stripe erreur HTTP ' + res.status, 'err', 4000);
-    }
-    const data = await res.json();
-    if(data.url){
-      window.location.href = data.url;
-    } else {
-      toast('Aucune URL portail retournée', 'err');
-    }
-  }catch(e){
-    toast('Erreur réseau: ' + (e.message || ''), 'err', 4000);
-  }
+  toast('Abonnement géré manuellement. Pour toute question (renouvellement, annulation), contacte l\'admin.', 'info', 5000);
 };
 
 // ============================================================================
@@ -10506,6 +10472,11 @@ function renderAdmin(app){
         <div class="stat" style="color:var(--ax-gold)">LOG</div>
         <div class="lbl">Connexions</div>
       </div>
+      <div class="admin-tile" onclick="K.sv('admin-premium')">
+        <div class="ico">⭐</div>
+        <div class="stat" style="color:var(--ax-gold)">€</div>
+        <div class="lbl">Demandes Premium</div>
+      </div>
     </div>
 
     <div class="admin-section-title">🤖 Assistant Apex admin</div>
@@ -10800,6 +10771,54 @@ async function renderAdminLiveUsers(app){
 }
 
 // Connexion-tracking — historique des connexions (devices + lieux) par personne.
+// v1.1.208 — Panneau admin : demandes Premium en attente (paiement @kdmc).
+async function renderAdminPremium(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  let reqs = [];
+  let backendErr = null;
+  try{
+    const r = await K._api('GET', '/api/admin/premium-requests');
+    if(r && r.ok && Array.isArray(r.requests)) reqs = r.requests;
+  }catch(e){ backendErr = e.message; }
+  const fmt = ts => ts ? new Date(ts).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+  const rows = reqs.map(q => `
+    <div class="card" style="margin-bottom:8px">
+      <div class="card-row" style="flex-direction:column;align-items:stretch;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>${esc(q.plan || '?')}</strong>
+          <span style="color:var(--ax-gold)">${q.price_eur != null ? Number(q.price_eur).toFixed(2) + ' €' : '—'}</span>
+        </div>
+        <div style="font-size:.8em;color:var(--ax-text-2)">User : <code>${esc(q.user_id || '?')}</code>${q.email ? ' · ' + esc(q.email) : ''}</div>
+        <div style="font-size:.78em;color:var(--ax-text-3)">Demandé : ${fmt(q.ts)} · ${esc(q.method || 'kdmc')}</div>
+        <button class="btn btn-block" style="margin-top:4px" onclick="K._adminGrantPremium('${esc(q.user_id)}','${esc(q.plan || 'monthly')}')">✅ Activer Premium</button>
+      </div>
+    </div>
+  `).join('');
+  app.innerHTML = `
+    <button class="btn btn-out" onclick="K.sv('admin')" style="margin:6px 0">← Admin</button>
+    <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0 14px">⭐ Demandes Premium (@kdmc)</h2>
+    ${backendErr ? `<p style="color:var(--ax-err);font-size:.85em">⚠️ ${esc(backendErr)}</p>` : ''}
+    <p style="font-size:.82em;color:var(--ax-text-2)">${reqs.length} demande(s) en attente. Vérifie le paiement PayPal/Revolut/IBAN puis active.</p>
+    ${rows || '<p style="color:var(--ax-text-3);padding:14px;text-align:center">Aucune demande en attente.</p>'}
+  `;
+}
+
+// v1.1.208 — Active manuellement le Premium d'un utilisateur (admin only).
+K._adminGrantPremium = async function(userId, plan){
+  if(!userId) return toast('user_id manquant', 'err');
+  try{
+    const r = await K._api('POST', '/api/admin/grant-premium', { user_id: userId, plan: plan || 'monthly' });
+    if(r && r.ok){
+      toast('✅ Premium activé pour ' + userId, 'ok', 4000);
+      K.sv('admin-premium'); /* refresh liste */
+    } else {
+      toast('Activation échouée', 'err');
+    }
+  }catch(e){
+    toast('Erreur: ' + (e.message || ''), 'err', 4000);
+  }
+};
+
 async function renderAdminConnections(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }
   let conns = [];
@@ -13429,7 +13448,7 @@ K._reload = function(){
 };
 
 // ============================================================================
-//  Phase 9 — Premium / Stripe freemium
+//  Phase 9 — Premium freemium (paiement manuel @kdmc, v1.1.208)
 // ============================================================================
 K.openPremium = function(){
   const isPremium = PRECONFIGURED_USERS[K.user.id]?.premium || (K.user.premium_until > Date.now());
@@ -13464,41 +13483,58 @@ K.openPremium = function(){
       <div style="font-size:.82em;color:var(--ax-blue);font-weight:600;margin-bottom:6px">📊 Ton usage IA aujourd'hui</div>
       <div id="premium-quota-list" style="font-size:.78em;color:var(--ax-text-2);line-height:1.6"></div>
     </div>
-    <div class="card">
-      <div class="card-row">
-        <div style="flex:1">
-          <strong>Mensuel</strong>
-          <div style="font-size:.78em;color:var(--ax-text-2)">Annulable à tout moment · Essai 7j</div>
-        </div>
-        <strong style="color:var(--ax-gold);font-size:1.2em">6,99 €/mois</strong>
-      </div>
-      <div class="card-row">
-        <div style="flex:1">
-          <strong>Annuel</strong>
-          <div style="font-size:.78em;color:var(--ax-text-2)">Économise 28 €</div>
-        </div>
-        <strong style="color:var(--ax-gold);font-size:1.2em">59,99 €/an</strong>
-      </div>
-      <div class="card-row">
-        <div style="flex:1">
-          <strong>Lifetime</strong>
-          <div style="font-size:.78em;color:var(--ax-text-2)">1000 premiers seulement</div>
-        </div>
-        <strong style="color:var(--ax-gold);font-size:1.2em">199 €</strong>
-      </div>
-    </div>
-    <p style="font-size:.85em;color:var(--ax-text-2);margin:14px 0">
+    <p style="font-size:.85em;color:var(--ax-text-2);margin:0 0 12px">
       <strong>Avec Premium :</strong> IA illimitée (Voice, Vision, Smart Reply, Traduction, Résumé), Time Capsules illimitées, stockage 1To, voice clone, themes premium.
     </p>
-    <button class="btn btn-block" onclick="K._startCheckout('monthly')">⚡ Mensuel 6,99 €</button>
-    <button class="btn btn-out btn-block" onclick="K._startCheckout('yearly')" style="margin-top:8px">📅 Annuel 59,99 €</button>
-    <button class="btn btn-out btn-block" onclick="K._startCheckout('lifetime')" style="margin-top:8px">🏆 Lifetime 199 €</button>
+    <p style="font-size:.82em;color:var(--ax-text-2);margin:0 0 10px">Choisis ton plan, puis paie via PayPal, Revolut ou virement (@kdmc).</p>
+    <button class="btn btn-block" onclick="K._selectPremiumPlan('monthly')">⚡ Mensuel · 6,99 €</button>
+    <button class="btn btn-out btn-block" onclick="K._selectPremiumPlan('yearly')" style="margin-top:8px">📅 Annuel · 69,99 €</button>
+    <button class="btn btn-out btn-block" onclick="K._selectPremiumPlan('lifetime')" style="margin-top:8px">🏆 À vie · 199 €</button>
     <p style="text-align:center;color:var(--ax-text-3);font-size:.72em;margin-top:14px">
-      Paiement sécurisé via Stripe. Aucune carte stockée. Annulable 1 clic.
+      Paiement manuel via PayPal / Revolut / IBAN (@kdmc). Premium activé par l'admin après vérification.
     </p>
   `);
   // v1.1.31 : charge le quota daily en async (non-bloquant)
   K._loadAndRenderQuota();
+};
+
+// v1.1.208 — Plans @kdmc (libellé + montant) ; doit rester aligné avec KDMC_PLANS du worker.
+K._PREMIUM_PLANS = {
+  monthly:  { label: 'Mensuel',  price: 6.99,  note: 'par mois' },
+  yearly:   { label: 'Annuel',   price: 69.99, note: 'par an (-15%)' },
+  lifetime: { label: 'À vie',    price: 199,   note: 'paiement unique' },
+};
+
+// v1.1.208 — Étape paiement @kdmc pour le plan choisi (PayPal/Revolut/IBAN masqué).
+K._selectPremiumPlan = function(plan){
+  const def = K._PREMIUM_PLANS[plan] || K._PREMIUM_PLANS.monthly;
+  const amount = def.price.toFixed(2);
+  const paypalUrl = 'https://paypal.me/kdmc/' + amount;
+  const revolutUrl = 'https://revolut.me/kdmc';
+  K._showModal('⭐ Premium · ' + def.label, `
+    <div style="text-align:center;padding:8px 0 12px">
+      <div style="font-size:2.4em">⭐</div>
+      <h3 style="color:var(--ax-gold);margin:6px 0">Plan ${esc(def.label)} — ${amount} €</h3>
+      <p style="color:var(--ax-text-2);font-size:.85em;margin:0">${esc(def.note)} · Paiement vers @kdmc</p>
+    </div>
+    <a class="btn btn-block" href="${paypalUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">🅿️ PayPal · ${amount} €</a>
+    <a class="btn btn-out btn-block" href="${revolutUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:8px">🔄 Revolut @kdmc</a>
+    <div class="card" style="margin-top:10px">
+      <div class="card-row" style="flex-direction:column;align-items:stretch;gap:4px">
+        <div style="display:flex;justify-content:space-between">
+          <strong>🏦 Virement (IBAN)</strong>
+          <span style="color:var(--ax-text-3);font-size:.8em">${amount} €</span>
+        </div>
+        <div style="font-size:.82em;color:var(--ax-text-2)">Titulaire : <strong>Kevin DESARZENS</strong></div>
+        <div style="font-size:.82em;color:var(--ax-text-2)">IBAN : <code style="color:var(--ax-text-3)">MC98 •••• •••• •••• •••• (sur demande)</code></div>
+      </div>
+    </div>
+    <p style="font-size:.8em;color:var(--ax-text-2);margin:12px 0 10px;text-align:center">
+      Indique ton pseudo dans la note du paiement.
+    </p>
+    <button class="btn btn-block" onclick="K._requestPremium('${plan}')">✅ J'ai payé → activer</button>
+    <button class="btn btn-out btn-block" onclick="K.openPremium()" style="margin-top:8px">← Changer de plan</button>
+  `);
 };
 
 K._loadAndRenderQuota = async function(){
@@ -13529,10 +13565,9 @@ K._loadAndRenderQuota = async function(){
   } catch(e){ /* silent */ }
 };
 
+// v1.1.208 — Compat : ancien point d'entrée → redirige vers la sélection @kdmc.
 K._startCheckout = function(plan){
-  // v1.1.24 Phase 9 LIVE : appelle backend /api/premium/checkout (Stripe hosted)
-  // Backend doit retourner { url } depuis stripe.checkout.sessions.create
-  K._openStripeCheckout(plan === 'lifetime' ? 'lifetime' : 'monthly');
+  K._selectPremiumPlan(plan || 'monthly');
 };
 
 // ============================================================================
