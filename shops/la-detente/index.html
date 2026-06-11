@@ -919,6 +919,28 @@ function ldAccessPanel(){var ex=document.getElementById("ldAccessModal");if(ex)e
 
 (function(){try{ldAuthSyncNow();}catch(_){}})();
 (function(){try{var u=new URLSearchParams(location.search);if(localStorage.getItem("ld_admin_trust")==="1"||localStorage.getItem("ld_admin")==="1"){localStorage.setItem("ld_admin_trust","1");LD_ADMIN=true;}if(u.get("ld_logout")!==null||u.get("ld_admin")==="0"){ldAdminLogout();}else if(u.get("ld_admin")!==null&&!LD_ADMIN){setTimeout(ldAdminPrompt,300);}}catch(_){}})();
+/* Compte unique kd-mc.com : déverrouillage AUTO de l'admin boutique (= accès Studio)
+   si le domaine PROUVE l'identité par Face ID (whoami.verified===true) ET propriétaire
+   (admin===true). Additif + fail-open : n'agit QUE si pas déjà admin ; clients jamais
+   touchés ; le mot de passe admin reste le fallback. (Marche quand servi sous kd-mc.com.) */
+try{(function(){
+  if(LD_ADMIN)return;
+  try{var h=location.hash||"";var m=h.match(/[#&]kdmc_sso=([^&]+)/);if(m){localStorage.setItem("kdmc_sso_token",decodeURIComponent(m[1]));}}catch(_){}
+  var tok="";try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
+  var hdr={};if(tok)hdr.Authorization="Bearer "+tok;
+  fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:hdr})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(j){
+      if(!j||!j.ok||j.verified!==true||j.admin!==true)return; /* jamais sans preuve Face ID + proprio */
+      if(LD_ADMIN)return;
+      try{localStorage.setItem("ld_admin_trust","1");localStorage.setItem("ld_admin_who",j.name||"Kevin");}catch(_){}
+      LD_ADMIN=true;
+      try{var sf=document.getElementById("studioFab");if(sf)sf.style.display="block";}catch(_){}
+      try{if(typeof toast==="function")toast("🔓 Admin + Studio déverrouillés via Face ID (kd-mc.com)");}catch(_){}
+      try{if(typeof dc==="function")dc();}catch(_){}
+    })
+    .catch(function(){/* fail-open : boutique publique normale, admin par mot de passe */});
+})();}catch(_){}
 var LD_DESIGNS=[{id:"real-shotgun-clays",name:"Fusil & Plateaux (photo)"},{id:"real-shotgun-rose",name:"Fusil & Rose (photo)"},{id:"real-rifle-heart",name:"Carabine Cœur (photo)"},{id:"real-revolver-rose",name:"Revolver & Rose (photo)"},{id:"real-cartridges",name:"Cartouches (photo)"},{id:"real-crossed-shotguns",name:"Fusils Croisés (photo)"},{id:"real-ar15-heart",name:"Carabine Sport (photo)"},{id:"rose-pistol",name:"Pistolet & Rose"},{id:"rose-shotgun",name:"Fusil & Rose"},{id:"hearts-ar15",name:"AR15 Cœurs"},{id:"hearts-shotgun",name:"Fusil Cœurs"},{id:"hearts-pistol",name:"Pistolet Cœurs"},{id:"hearts-revolver",name:"Revolver Cœurs"},{id:"clays-perazzi",name:"Perazzi & Plateaux"},{id:"ld-emb-croise-patch",name:"Armes croisées — Patch"},{id:"ld-emb-croise-vecto",name:"Armes croisées — Vectoriel"},{id:"ld-emb-croise-metal",name:"Armes croisées — Métal/Or"},{id:"ld-emb-ar15-patch",name:"AR15 Cœur — Patch"},{id:"ld-emb-ar15-vecto",name:"AR15 Cœur — Vectoriel"},{id:"ld-emb-ar15-metal",name:"AR15 Cœur — Métal/Or"},{id:"ld-emb-glock-patch",name:"Glock Cœur — Patch"},{id:"ld-emb-glock-vecto",name:"Glock Cœur — Vectoriel"},{id:"ld-emb-glock-metal",name:"Glock Cœur — Métal"},{id:"ld-emb-balltrap-patch",name:"Ball-Trap Cœur — Patch"},{id:"ld-emb-balltrap-vecto",name:"Ball-Trap Cœur — Vectoriel"},{id:"ld-emb-balltrap-metal",name:"Ball-Trap Cœur — Métal/Or"},{id:"ld-emb-sceau-or",name:"Sceau rond — Or"},{id:"yrk-patch-noir-rouge",name:"Y·R·K Patch Noir/Rouge"},{id:"yrk-patch-camo",name:"Y·R·K Patch Camo"},{id:"yrk-patch-or",name:"Y·R·K Patch Or"},{id:"yrk-crest-noir-rouge",name:"Y·R·K Crest Noir/Rouge"},{id:"yrk-crest-camo",name:"Y·R·K Crest Camo"},{id:"yrk-crest-or",name:"Y·R·K Crest Or"},{id:"yrk-cartouches-or",name:"Y·R·K Cartouches"},{id:"yrk-monogramme-acier",name:"Y·R·K Monogramme Acier"},{id:"yrk-monogramme-or",name:"Y·R·K Monogramme Or"},{id:"yrk-crest-or-prestige",name:"Y·R·K Crest Or Prestige"},{id:"yrk-crest-or-deluxe",name:"Y·R·K Crest Or Deluxe"},{id:"yrk-monogramme-or-medaille",name:"Y·R·K Médaille Or"},{id:"yrk-monogramme-or-prestige",name:"Y·R·K Monogramme Or Prestige"}];
 window._ldCustomLogos=[];
 function _ldHidden(){try{return JSON.parse(localStorage.getItem("ld_logos_hidden")||"[]")}catch(_){return[]}}
@@ -1166,7 +1188,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.53.4"
+        data-version="v1.53.5"
         data-color="#e8b830"
         defer></script>
 
