@@ -308,7 +308,7 @@
         "avg": 12
       },
       "duration_target": "medium",
-      "used": false
+      "used": true
     },
     {
       "id": "mystery-002",
