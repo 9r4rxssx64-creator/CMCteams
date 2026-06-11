@@ -21,6 +21,7 @@ const ROUTES = {
   'apex-chat.kd-mc.com': '/CMCteams/messaging-app',
   'la-detente.kd-mc.com': '/CMCteams/la-detente',
   'chez-lolo.kd-mc.com': '/CMCteams/shops/chez-lolo',
+  'dashboard.kd-mc.com': '/CMCteams/shops/dashboard',
 };
 
 export default {
