@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.216",
+  "softwareVersion": "v1.1.217",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.216';
+const __APEX_CHAT_VERSION__ = 'v1.1.217';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.216</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.217</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6437,7 +6437,7 @@ K._handleAuthPhone = async function(){
     });
     const result = await r.json().catch(() => ({}));
     if(!r.ok) throw new Error(result.detail || result.message || ('Erreur ' + r.status));
-    // v1.1.216 — cercle de confiance (Laurence + famille/amis configurés) : le
+    // v1.1.217 — cercle de confiance (Laurence + famille/amis configurés) : le
     // serveur autorise la connexion SANS SMS → on saute l'étape code.
     if(result._circle_bypass){
       K.authData._circle_bypass = true;
@@ -7288,7 +7288,7 @@ K._reauthAdmin = K._reauthAny;
 // Throttle 15 s. Renvoie true si une session valide est en place après coup.
 K._reconnectSession = async function(silent){
   if(K.token && !String(K.token).startsWith('local-')) return true;   // déjà connecté
-  // v1.1.216 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
+  // v1.1.217 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
   // serveur) → vraie session SANS SMS. Si pas de session kd-mc.com vérifiée,
   // on retombe sur la reprise téléphone ci-dessous (fail-open).
   try{
@@ -8426,10 +8426,11 @@ K._openContactSheet = async function(id){
       <div style="color:var(--ax-text-3);font-size:.78em">@${esc(c.pseudo||'?')} · ${esc(c.id.slice(0,10))}…</div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
       <button class="btn btn-sm" onclick="K._closeModal();K._startConvWithUser('${esc(c.id)}','${esc(nm)}')">💬 Message</button>
       <button class="btn btn-sm btn-out" onclick="K._closeModal();K._startCall&&K._startCall('${esc(c.id)}','audio')">📞 Appel</button>
     </div>
+    ${c.phone ? `<button class="btn btn-sm btn-block" style="margin-bottom:12px;background:var(--ax-gold);color:#000" onclick="K._inviteAndOpen('${esc(c.id)}')">📨 Inviter sur Apex Chat + ouvrir la conversation</button>` : ''}
 
     <div class="card" style="padding:10px 12px">
       <label class="label">🏷 Pseudo d'affichage (juste pour toi)</label>
@@ -8485,6 +8486,33 @@ K._saveNickname = async function(id){
     toast(nickname ? '✅ Alias enregistré' : '✅ Alias retiré', 'ok');
     if(K.view === 'contacts') K.sv('contacts');
   } catch(e){ toast('⚠️ ' + (e.message||'échec alias'), 'err'); }
+};
+
+// v1.1.217 (Kevin « depuis la fiche, inviter direct dans Apex Chat + ouvrir auto
+// un message ») — 1 tap : crée/retrouve le compte du contact (lien magique, SANS
+// SMS), OUVRE la conversation, puis propose d'envoyer le lien d'invitation via le
+// partage natif iOS (WhatsApp/iMessage). Best-effort : si l'invitation échoue, on
+// ouvre quand même la conversation.
+K._inviteAndOpen = async function(id){
+  const c = K._sheetContact || {};
+  const nm = c.display_name || c.real_name || ((c.first_name||'')+' '+(c.last_name||'')).trim() || c.pseudo || id;
+  const phone = String(c.phone || '').replace(/[^\d+]/g,'');
+  let invitedId = id, magic = '';
+  try{
+    if(phone){
+      toast('📨 Invitation en cours…', 'info', 1500);
+      const r = await K._api('POST', '/api/invitations', { phone, name: nm, sent_via: 'fiche' });
+      if(r && r.ok){ invitedId = r.invited_user_id || id; magic = r.magic_url || ''; }
+    }
+  }catch(_e){ /* best-effort : on ouvre la conversation quand même */ }
+  K._closeModal();
+  try{ await K._startConvWithUser(invitedId, nm); }
+  catch(e){ toast('Conversation : ' + ((e&&e.message)||'erreur'), 'err', 4000); return; }
+  if(magic && phone){
+    setTimeout(() => { try{ K._adminShareInvite(phone, nm, magic); }catch(_){ K._adminCopyMagic && K._adminCopyMagic(magic); } }, 600);
+  } else {
+    toast('💬 Conversation ouverte', 'ok', 2000);
+  }
 };
 
 K._saveContactSheet = async function(id){
@@ -10147,7 +10175,7 @@ K._saveNewContact = function(){
 
 // v1.1.170 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
-// v1.1.216 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
+// v1.1.217 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
 // Canal d'assistance : Kevin reste INVISIBLE dans les listes de contacts
 // (KEVIN_INVISIBLE_ADMIN), mais TOUT utilisateur connecté peut le joindre en 1 tap.
 K._contactSupport = async function(){
@@ -13761,7 +13789,7 @@ async function _boot(){
       K.user.is_admin = true;
       $('#bnav-admin').classList.remove('h');
     }
-    // v1.1.216 (Kevin « elle devrait être reconnue ») — session locale (pas de
+    // v1.1.217 (Kevin « elle devrait être reconnue ») — session locale (pas de
     // vraie session serveur) → tenter D'ABORD l'auto-login kd-mc.com (compte
     // connu, Face ID prouvé côté serveur via whoami) pour MONTER en vraie session
     // SANS SMS. Le bug : avant, l'auto-login kd-mc.com ne tournait QUE sans aucune

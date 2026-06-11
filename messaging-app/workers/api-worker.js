@@ -2765,6 +2765,7 @@ async function handleCreateInvitation(request, env) {
     ok: true, code, expires_at: expiresAt,
     magic_url: magicUrl,
     invite_url: shortUrl,
+    invited_user_id: (user && user.id) || null,   // v1.1.217 : pour ouvrir la conv direct depuis la fiche
     sms_template: `Salut ${niceName} ! ${inviterName} t'invite sur Apex Chat (messagerie privée chiffrée). Clique direct (pas besoin de code) : ${magicUrl}`
   });
 }
