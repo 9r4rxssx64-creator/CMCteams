@@ -5,7 +5,11 @@
  * par Kevin passent (pas un backdoor universel). Kevin = bypass admin séparé.
  */
 import { describe, it, expect } from 'vitest';
-import { _trustedCircleSet, _isTrustedCircle } from '../../workers/api-worker.js';
+import { _trustedCircleSet, _isTrustedCircle, _dbTrustedCircleList, _isTrustedCircleAsync } from '../../workers/api-worker.js';
+
+function dbWith(value) {
+  return { APEX_CHAT_DB: { prepare: () => ({ bind() { return this; }, async first() { return value === undefined ? null : { value }; } }) } };
+}
 
 describe('cercle de confiance (v1.1.216)', () => {
   it('inclut LAURENCE_PHONE_E164 + TRUSTED_CIRCLE_PHONES, exclut Kevin', () => {
@@ -37,5 +41,29 @@ describe('cercle de confiance (v1.1.216)', () => {
   it('Kevin seul configuré → cercle vide (il a son propre bypass admin)', () => {
     const set = _trustedCircleSet({ KEVIN_PHONE_E164: '+33672280277' });
     expect(set.size).toBe(0);
+  });
+});
+
+describe('cercle de confiance — géré en base / self-service (v1.1.218)', () => {
+  it('_dbTrustedCircleList lit + normalise le JSON array de system_config', async () => {
+    const list = await _dbTrustedCircleList(dbWith(JSON.stringify(['+33640616184', '0612000000'])));
+    expect(list).toContain('+33640616184');
+    expect(list).toContain('+33612000000'); // 0X → +33X normalisé
+  });
+
+  it('_dbTrustedCircleList : vide / JSON invalide / non-array → []', async () => {
+    expect(await _dbTrustedCircleList(dbWith(undefined))).toEqual([]);
+    expect(await _dbTrustedCircleList(dbWith('pas du json'))).toEqual([]);
+    expect(await _dbTrustedCircleList(dbWith(JSON.stringify({ a: 1 })))).toEqual([]);
+  });
+
+  it('_isTrustedCircleAsync : vrai si numéro en ENV OU en base', async () => {
+    const env = {
+      LAURENCE_PHONE_E164: '+33611111111',
+      APEX_CHAT_DB: { prepare: () => ({ bind() { return this; }, async first() { return { value: JSON.stringify(['+33640616184']) }; } }) },
+    };
+    expect(await _isTrustedCircleAsync(env, '+33611111111')).toBe(true);  // env
+    expect(await _isTrustedCircleAsync(env, '0640616184')).toBe(true);    // base (format national)
+    expect(await _isTrustedCircleAsync(env, '+33699999999')).toBe(false); // ni l'un ni l'autre
   });
 });
