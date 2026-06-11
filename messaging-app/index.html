@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.212",
+  "softwareVersion": "v1.1.213",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.212';
+const __APEX_CHAT_VERSION__ = 'v1.1.213';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.212</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.213</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -10125,6 +10125,20 @@ K._saveNewContact = function(){
 
 // v1.1.170 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
+// v1.1.213 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
+// Canal d'assistance : Kevin reste INVISIBLE dans les listes de contacts
+// (KEVIN_INVISIBLE_ADMIN), mais TOUT utilisateur connecté peut le joindre en 1 tap.
+K._contactSupport = async function(){
+  if(!K.token || String(K.token).startsWith('local-')){
+    toast('Connecte-toi d\'abord (ouvre ton lien d\'invitation) pour joindre l\'assistance', 'warn', 6000);
+    return;
+  }
+  try{
+    await K._startConvWithUser('kdmc_admin', 'Assistance KDMC');
+    toast('🆘 Conversation avec l\'assistance ouverte', 'ok', 2500);
+  }catch(e){ toast('Impossible d\'ouvrir l\'assistance : ' + ((e && e.message) || 'erreur'), 'err', 5000); }
+};
+
 K._startConvWithUser = async function(userId, displayName){
   const existing = (K.conversations || []).find(c => c.peer_id === userId || c.id === userId);
   if(existing){ K.openConv && K.openConv(existing.id); return; }
@@ -10199,10 +10213,11 @@ function renderContacts(app){
   const contacts = K._dedupeContacts(K.contacts || lg('contacts', []));
   // v1.1.123 Kevin : retire import iPhone (trop complexe). Formulaire simple à la place
   const actionBlock = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
       <button class="btn btn-out btn-sm" onclick="K._fetchContacts()">🔄 Rafraîchir</button>
       <button class="btn btn-sm" onclick="K._openAddContact()">➕ Ajouter contact</button>
     </div>
+    <button class="btn btn-out btn-sm btn-block" style="margin-bottom:14px" onclick="K._contactSupport()">🆘 Contacter l'assistance</button>
   `;
   if(contacts.length === 0){
     app.innerHTML = `
