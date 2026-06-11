@@ -1020,6 +1020,28 @@ function ldEnableAlerts(){
  });
 }
 function ldTestAlert(){var oc=window._ldOrderCfg;var url=oc&&oc.worker_url;if(!url){toast("Worker non déployé — déploie d'abord","error");return;}toast("Envoi du test…");fetch(url.replace(/\/$/,"")+"/push-test").then(function(r){return r.json()}).then(function(j){toast(j&&j.ok?"Test envoyé ✅ — regarde tes notifs":"Test: "+((j&&j.detail)||"échec"),(j&&j.ok)?"":"error");}).catch(function(e){toast("Test KO: "+(e&&e.message||e),"error");});}
+/* Kevin « auto pour recevoir toutes les notifs » : ré-abonnement push AUTO et SILENCIEUX
+   au boot admin, dès que l'autorisation est déjà accordée (la 1ʳᵉ autorisation reste 1 tap
+   — règle navigateur incontournable, surtout iOS PWA). ADMIN-ONLY : seul l'appareil de Kevin
+   est l'abonné unique qui reçoit les commandes (les 2 boutiques partagent ce sub). */
+function ldAutoSubscribe(){
+ try{
+  if(!LD_ADMIN)return;
+  if(!("serviceWorker" in navigator)||!("PushManager" in window))return;
+  if(typeof Notification==="undefined"||Notification.permission!=="granted")return;
+  ldPushConfig(function(cfg){
+   if(!cfg||!cfg.vapid_public)return;
+   navigator.serviceWorker.ready.then(function(reg){
+    reg.pushManager.getSubscription().then(function(ex){
+     (ex?Promise.resolve(ex):reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_urlB64ToU8(cfg.vapid_public)})).then(function(sub){
+      fetch("https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/ld_detente/push_sub.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)}).then(function(){try{localStorage.setItem("ld_alerts","1");}catch(_){}}).catch(function(){});
+     }).catch(function(){});
+    });
+   });
+  });
+ }catch(_){}
+}
+try{setTimeout(function(){try{ldAutoSubscribe();}catch(_){}},2500);}catch(_){}
 function _admSettings(){
  var oc=window._ldOrderCfg;
  return '<div class="adm-card"><h3>🔔 Alertes commande (notif iPhone)</h3>'
@@ -1144,7 +1166,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.53.2"
+        data-version="v1.53.3"
         data-color="#e8b830"
         defer></script>
 
