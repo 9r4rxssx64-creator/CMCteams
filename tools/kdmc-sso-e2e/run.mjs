@@ -91,6 +91,13 @@ try {
   await page.fill('#f-code2', '200807');
   await page.check('#cgu-ok');
   await page.click('#f-create');
+  /* Après la création, le portail propose d'abord l'écran « Activer Face ID »
+     (comportement voulu, prouvé par kdmc-passkey-e2e). Sans authentificateur
+     virtuel ici, on le passe via « Plus tard » (#pk-skip) pour atteindre le hub
+     qui contient #admin-zone. */
+  await page.waitForFunction(() => !!document.getElementById('pk-skip') || (function () { var z = document.getElementById('admin-zone'); return z && z.hidden === false; })(), { timeout: 5000 }).catch(() => {});
+  const pkSkip = await page.$('#pk-skip');
+  if (pkSkip) await pkSkip.click();
   await page.waitForFunction(() => { var z = document.getElementById('admin-zone'); return z && z.hidden === false; }, { timeout: 5000 }).catch(() => {});
   const adminVisible = await page.evaluate(() => { var z = document.getElementById('admin-zone'); return !!z && z.hidden === false; });
   ok(adminVisible, 'Portail : compte Kevin (uid kevin-desarzens) → section Administration VISIBLE');
@@ -111,6 +118,10 @@ try {
   await page.fill('#f-code2', '123456');
   await page.check('#cgu-ok');
   await page.click('#f-create');
+  /* Passe l'écran « Activer Face ID » pour atteindre le hub réel (cf. TEST 1). */
+  await page.waitForFunction(() => !!document.getElementById('pk-skip') || (document.getElementById('hub') && !document.getElementById('hub').hidden), { timeout: 5000 }).catch(() => {});
+  const pkSkip2 = await page.$('#pk-skip');
+  if (pkSkip2) await pkSkip2.click();
   await page.waitForFunction(() => document.getElementById('hub') && !document.getElementById('hub').hidden, { timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(400);
   const adminHidden = await page.evaluate(() => { var z = document.getElementById('admin-zone'); return !z || z.hidden === true; });
