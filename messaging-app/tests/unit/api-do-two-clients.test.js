@@ -24,7 +24,7 @@ import { ConversationDO } from '../../workers/durable-objects/ConversationDO.js'
 
 // ── D1 en mémoire (sous-ensemble SQL utilisé par le moteur) ────────────────
 function makeDB() {
-  const state = { messages: [], members: [], users: [], conversations: [] };
+  const state = { messages: [], members: [], users: [], conversations: [], subscriptions: [] };
   function exec(sql, args) {
     if (sql.includes('INSERT INTO messages')) {
       const [id, conv_id, sender_id, ciphertext, mime, ts, reply_to, thread_root, view_once, expires_at] = args;
@@ -46,6 +46,10 @@ function makeDB() {
           if (this._sql.includes('SELECT user_id FROM conversation_members')) {
             const conv = this._args[0];
             return { results: state.members.filter(m => m.conv_id === conv).map(m => ({ user_id: m.user_id })) };
+          }
+          if (this._sql.includes('FROM push_subscriptions')) {
+            const uid = this._args[0];
+            return { results: state.subscriptions.filter(s => s.user_id === uid) };
           }
           if (this._sql.includes('FROM messages WHERE conv_id=?')) {
             const conv = this._args[0];
@@ -94,6 +98,11 @@ async function makeConv(convId, members) {
   for (const m of members) {
     db._state.users.push({ id: m.id, pseudo: m.pseudo, real_name: m.real_name });
     db._state.members.push({ conv_id: convId, user_id: m.id });
+    // chaque membre a 1 abonnement push actif (device) → notif hors-ligne livrable
+    db._state.subscriptions.push({
+      user_id: m.id, endpoint: 'https://push.test/' + m.id,
+      vapid_p256dh: 'p_' + m.id, vapid_auth: 'a_' + m.id, last_seen: Date.now(),
+    });
   }
   db._state.conversations.push({ id: convId, type: members.length > 2 ? 'group' : 'dm' });
   const env = {
@@ -182,11 +191,14 @@ describe('Moteur messagerie — simulation 2 clients (marche pour TOUT LE MONDE)
         const sim = await makeConv(conv, [P.a, P.b]);
         sim.connect(P.a.id); // B PAS connecté
         await sim.send(P.a.id, { ciphertext: 'Message pendant que B est absent', mime: 'text/plain' });
-        // push tenté vers B (topic user:B)
-        const pushCalls = globalThis.fetch.mock.calls.filter(c => String(c[0]).includes('/broadcast'));
+        // v1.1.206 : push réel vers la subscription de B via /web-push (plus le
+        // stub /broadcast qui ne livrait rien).
+        const pushCalls = globalThis.fetch.mock.calls.filter(c => String(c[0]).includes('/web-push'));
         expect(pushCalls.length).toBeGreaterThanOrEqual(1);
         const body = JSON.parse(pushCalls[0][1].body);
-        expect(body.topic).toBe('user:' + P.b.id);
+        expect(body.subscription.endpoint).toBe('https://push.test/' + P.b.id);
+        expect(body.payload.payload.convId).toBe(conv);
+        expect(body.payload.payload.senderId).toBe(P.a.id);
         // message bien en D1 → B le verra à la reconnexion (replay history)
         expect(sim.db._state.messages.some(m => m.conv_id === conv && m.sender_id === P.a.id)).toBe(true);
       });

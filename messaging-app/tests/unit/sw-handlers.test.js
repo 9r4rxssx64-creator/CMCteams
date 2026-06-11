@@ -403,6 +403,48 @@ describe('sw-handlers — handleNotificationClick', () => {
     expect(clients.openWindow).not.toHaveBeenCalled();
   });
 
+  // ── grant_premium / premium_request (couverture 214-229) ──────────────────
+  it('grant_premium : client matching → grant-premium postMessage + return client', async () => {
+    const focus = vi.fn();
+    const postMessage = vi.fn();
+    const client = { url: 'https://x.com/messaging-app/', focus, postMessage };
+    const clients = { matchAll: vi.fn(async () => [client]), openWindow: vi.fn() };
+    const event = {
+      action: 'grant_premium',
+      notification: { close: vi.fn(), data: { user_id: 'u9', plan: 'yearly' } },
+    };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(focus).toHaveBeenCalled();
+    expect(postMessage).toHaveBeenCalledWith({ type: 'grant-premium', userId: 'u9', plan: 'yearly' });
+    expect(r).toBe(client);
+  });
+
+  it('premium_request (type) sans plan + pas de client → openWindow ?grant_premium plan=monthly', async () => {
+    const clients = { matchAll: vi.fn(async () => []), openWindow: vi.fn(async () => ({ id: 'w' })) };
+    const event = {
+      action: 'open',
+      notification: { close: vi.fn(), data: { type: 'premium_request', user_id: 'u5' } },
+    };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(clients.openWindow).toHaveBeenCalledWith('./?grant_premium=u5&plan=monthly');
+    expect(r.id).toBe('w');
+  });
+
+  it('grant_premium sans user_id → return null', async () => {
+    const clients = { matchAll: vi.fn(async () => []), openWindow: vi.fn() };
+    const event = { action: 'grant_premium', notification: { close: vi.fn(), data: { plan: 'monthly' } } };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(r).toBeNull();
+    expect(clients.openWindow).not.toHaveBeenCalled();
+  });
+
+  it('grant_premium : pas de client + pas d\'openWindow → return null', async () => {
+    const clients = { matchAll: vi.fn(async () => []) }; // openWindow absent
+    const event = { action: 'grant_premium', notification: { close: vi.fn(), data: { user_id: 'u1' } } };
+    const r = await sw.handleNotificationClick(event, { clients });
+    expect(r).toBeNull();
+  });
+
   it('focus client + pas de convId → pas de postMessage', async () => {
     const focus = vi.fn();
     const postMessage = vi.fn();

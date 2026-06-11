@@ -293,10 +293,16 @@ async function handleFCM(request, env) {
 
 async function handleBroadcast(request, env) {
   if (!checkAuth(request, env)) return err('Unauthorized', 401);
-  const { topic, title, body, payload, data } = await request.json();
-  // topic = "user:<uid>" — récupérer toutes les subscriptions
-  // (D1 query côté API worker, pas ici — ce worker reçoit déjà la liste)
-  return json({ ok: true, broadcast: topic, ts: Date.now() });
+  const { topic } = await request.json();
+  // v1.1.206 : ce worker n'a PAS accès au store de subscriptions (D1 = côté
+  // api-worker). /broadcast par topic ne peut donc rien envoyer ici → il
+  // renvoyait ok:true à tort (= notifs perdues en silence). L'émetteur (DO)
+  // résout maintenant les subscriptions et appelle /web-push directement.
+  // On répond honnêtement non-implémenté pour ne plus jamais masquer l'échec.
+  return json(
+    { ok: false, error: 'not_implemented', message: 'Utiliser /web-push avec la subscription résolue côté api-worker', topic: topic || null },
+    501
+  );
 }
 
 async function handleRegister(request, env) {
