@@ -1339,6 +1339,7 @@ async function handleListConversations(request, env) {
       'SELECT id, phone, real_name, pseudo FROM users WHERE id=?'
     ).bind(auth.sub).first();
     if (me) await autoHealPerson(env, me);
+    await _healOverpopulatedDms(env, auth.sub);        // v1.1.215 : soigne les PAIRS des DM > 2 membres (doublons Laurence)
     await cleanupEmptyConversations(env.APEX_CHAT_DB);  // v1.1.195 : purge convs vides/archivées
     await cleanupGhostMembers(env.APEX_CHAT_DB);        // v1.1.197 : retire membres supprimés/fusionnés
   } catch (e) { console.warn('[auto-heal-convlist]', e?.message); }
@@ -2181,6 +2182,40 @@ export async function autoHealPerson(env, caller) {
   const dmRes = await consolidateUserDms(DB, keeper.id, now);
   summary.dms_merged = dmRes.groups_merged;
   return summary;
+}
+
+// v1.1.215 (Kevin « on est TOUJOURS 3 dans la conv avec Laurence ») — un DM ne
+// doit avoir QUE 2 personnes. Si un DM de l'appelant a >2 lignes de membres,
+// c'est qu'un correspondant a des comptes DOUBLON (créés pendant ses galères de
+// login : stub local_, OTP, SSO kd-mc.com, invitation). autoHealPerson ne
+// soignait QUE l'appelant → les doublons de Laurence ne fusionnaient jamais (elle
+// n'arrive pas à ouvrir l'app). Ici on soigne aussi les PAIRS des DM surpeuplés :
+// leurs doublons sûrs sont fusionnés (merged_into), puis cleanupGhostMembers (appelé
+// juste après) retire les lignes fantômes et recale member_count → 2.
+// Idempotent + best-effort + anti-fusion d'homonymes (héritée d'autoHealPerson).
+export async function _healOverpopulatedDms(env, callerId) {
+  const DB = env.APEX_CHAT_DB;
+  try {
+    const dms = (await DB.prepare(
+      `SELECT c.id AS conv_id,
+              (SELECT COUNT(*) FROM conversation_members x WHERE x.conv_id=c.id) AS n
+         FROM conversations c
+         JOIN conversation_members cm ON cm.conv_id=c.id AND cm.user_id=?
+        WHERE c.type='dm'`
+    ).bind(callerId).all()).results || [];
+    for (const d of dms) {
+      if ((d.n || 0) <= 2) continue;              // DM sain (2 personnes) → rien à faire
+      const others = (await DB.prepare(
+        `SELECT u.id, u.phone, u.real_name, u.pseudo, u.source, u.last_seen
+           FROM conversation_members cm JOIN users u ON u.id=cm.user_id
+          WHERE cm.conv_id=? AND cm.user_id!=? AND u.is_admin=0
+            AND (u.status IS NULL OR u.status!='deleted') AND u.merged_into IS NULL`
+      ).bind(d.conv_id, callerId).all()).results || [];
+      for (const o of others) {
+        try { await autoHealPerson(env, o); } catch (_) { /* best-effort */ }
+      }
+    }
+  } catch (e) { console.warn('[heal-overpop-dms]', e?.message); }
 }
 
 async function handleHealDm(request, env) {
