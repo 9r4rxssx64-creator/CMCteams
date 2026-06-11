@@ -422,6 +422,46 @@ export function _isTrustedCircle(cleanPhone, env) {
   return _trustedCircleSet(env).has(normPhone(cleanPhone || ''));
 }
 
+// v1.1.218 (Kevin « tu vas pas faire ça pour chaque personne ») — cercle de
+// confiance GÉRÉ DEPUIS L'ADMIN : numéros stockés en D1 (system_config, JSON
+// array), en plus de ceux d'env. Kevin ajoute/retire un numéro dans l'app →
+// effet IMMÉDIAT, zéro déploiement, zéro code.
+export async function _dbTrustedCircleList(env) {
+  try {
+    const row = await env.APEX_CHAT_DB.prepare(
+      "SELECT value FROM system_config WHERE key='trusted_circle_phones'"
+    ).first();
+    if (!row || !row.value) return [];
+    const arr = JSON.parse(row.value);
+    return Array.isArray(arr) ? arr.map((p) => normPhone(p)).filter(Boolean) : [];
+  } catch (_) { return []; }
+}
+export async function _isTrustedCircleAsync(env, phone) {
+  if (_isTrustedCircle(phone, env)) return true;          // numéros d'env (Laurence, CSV)
+  const n = normPhone(phone || '');
+  if (!n) return false;
+  return (await _dbTrustedCircleList(env)).includes(n);   // numéros gérés en admin
+}
+
+// GET  /api/admin/trusted-circle        → liste des numéros de confiance (admin)
+// POST /api/admin/trusted-circle {phone, action?} → ajoute (défaut) ou retire ('remove')
+// Self-service : Kevin gère le cercle depuis l'app, sans déploiement.
+export async function handleTrustedCircle(request, env, method) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || !(auth.is_admin || auth.sub === 'kdmc_admin')) return err('Réservé admin', 403, 'forbidden');
+  if (method === 'GET') return json({ ok: true, phones: await _dbTrustedCircleList(env) });
+  let body = {}; try { body = await request.json(); } catch (_) { body = {}; }
+  const phone = normPhone(body.phone || '');
+  if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400, 'bad_phone');
+  let list = await _dbTrustedCircleList(env);
+  if (body.action === 'remove') list = list.filter((p) => p !== phone);
+  else if (!list.includes(phone)) list.push(phone);
+  await env.APEX_CHAT_DB.prepare(
+    "INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES ('trusted_circle_phones', ?, ?, ?)"
+  ).bind(JSON.stringify(list), Date.now(), auth.sub).run();
+  return json({ ok: true, phones: list });
+}
+
 export async function handleSendOtp(request, env) {
   const { phone, name } = await request.json();
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
@@ -454,7 +494,7 @@ export async function handleSendOtp(request, env) {
   // App privée à invitation : Kevin assume ce modèle pour son cercle (cf. sa règle
   // « ma famille n'est régie par aucune règle externe »). Pas un backdoor universel :
   // SEULS les numéros que Kevin a explicitement configurés passent.
-  if (_isTrustedCircle(cleanPhone, env)) {
+  if (await _isTrustedCircleAsync(env, cleanPhone)) {
     return json({ ok: true, sessionId: phoneHash, provider: 'circle-bypass', _circle_bypass: true });
   }
 
@@ -782,7 +822,7 @@ export async function handleVerifyOtp(request, env) {
   // Laurence + famille/amis configurés (LAURENCE_PHONE_E164 / TRUSTED_CIRCLE_PHONES).
   // Compte NORMAL (jamais admin). Déclenché par le numéro seul (Kevin l'a demandé
   // pour son cercle privé). Placé AVANT la vérif OTP → aucun SMS requis.
-  if (!isKevinBypass && _isTrustedCircle(cleanPhone, env)) {
+  if (!isKevinBypass && await _isTrustedCircleAsync(env, cleanPhone)) {
     if (!env.JWT_SIGN_KEY) return err('Config serveur incomplète', 503, 'jwt_key_unset');
     let cuser = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
     if (!cuser) {
@@ -5320,6 +5360,8 @@ export default {
       // v1.1.161 — Cercle privé pré-câblé Kevin↔proche (Laurence)
       if (path === '/api/admin/configure-core-pair' && method === 'POST') return await handleConfigureCorePair(request, env);
       if (path === '/api/admin/heal-dm' && method === 'POST') return await handleHealDm(request, env);
+      if (path === '/api/admin/trusted-circle' && method === 'GET') return await handleTrustedCircle(request, env, 'GET');
+      if (path === '/api/admin/trusted-circle' && method === 'POST') return await handleTrustedCircle(request, env, 'POST');
       if (path === '/api/admin/diag' && method === 'GET') return await handleAdminDiag(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);

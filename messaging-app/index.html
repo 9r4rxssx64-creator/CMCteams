@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.217",
+  "softwareVersion": "v1.1.218",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.217';
+const __APEX_CHAT_VERSION__ = 'v1.1.218';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.217</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.218</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6437,7 +6437,7 @@ K._handleAuthPhone = async function(){
     });
     const result = await r.json().catch(() => ({}));
     if(!r.ok) throw new Error(result.detail || result.message || ('Erreur ' + r.status));
-    // v1.1.217 — cercle de confiance (Laurence + famille/amis configurés) : le
+    // v1.1.218 — cercle de confiance (Laurence + famille/amis configurés) : le
     // serveur autorise la connexion SANS SMS → on saute l'étape code.
     if(result._circle_bypass){
       K.authData._circle_bypass = true;
@@ -6701,6 +6701,7 @@ K.render = function(){
     case 'admin-sentinels': renderAdminSentinels(app); break;
     case 'admin-audit': renderAdminAudit(app); break;
     case 'admin-invite-book': renderAdminInviteBook(app); break;
+    case 'admin-trusted-circle': renderAdminTrustedCircle(app); break;
     case 'admin-search': renderAdminSearch(app); break;
     case 'admin-timeline': renderAdminTimeline(app); break;
     case 'admin-map': renderAdminMap(app); break;
@@ -7288,7 +7289,7 @@ K._reauthAdmin = K._reauthAny;
 // Throttle 15 s. Renvoie true si une session valide est en place après coup.
 K._reconnectSession = async function(silent){
   if(K.token && !String(K.token).startsWith('local-')) return true;   // déjà connecté
-  // v1.1.217 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
+  // v1.1.218 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
   // serveur) → vraie session SANS SMS. Si pas de session kd-mc.com vérifiée,
   // on retombe sur la reprise téléphone ci-dessous (fail-open).
   try{
@@ -8488,7 +8489,7 @@ K._saveNickname = async function(id){
   } catch(e){ toast('⚠️ ' + (e.message||'échec alias'), 'err'); }
 };
 
-// v1.1.217 (Kevin « depuis la fiche, inviter direct dans Apex Chat + ouvrir auto
+// v1.1.218 (Kevin « depuis la fiche, inviter direct dans Apex Chat + ouvrir auto
 // un message ») — 1 tap : crée/retrouve le compte du contact (lien magique, SANS
 // SMS), OUVRE la conversation, puis propose d'envoyer le lien d'invitation via le
 // partage natif iOS (WhatsApp/iMessage). Best-effort : si l'invitation échoue, on
@@ -10175,7 +10176,7 @@ K._saveNewContact = function(){
 
 // v1.1.170 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
-// v1.1.217 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
+// v1.1.218 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
 // Canal d'assistance : Kevin reste INVISIBLE dans les listes de contacts
 // (KEVIN_INVISIBLE_ADMIN), mais TOUT utilisateur connecté peut le joindre en 1 tap.
 K._contactSupport = async function(){
@@ -10538,6 +10539,11 @@ function renderAdmin(app){
         <div class="ico">📋</div>
         <div class="stat" style="color:var(--ax-gold)">+</div>
         <div class="lbl">Carnet invitations</div>
+      </div>
+      <div class="admin-tile" onclick="K.sv('admin-trusted-circle')">
+        <div class="ico">🔓</div>
+        <div class="stat" style="color:var(--ax-gold)">SMS✕</div>
+        <div class="lbl">Cercle de confiance</div>
       </div>
       <div class="admin-tile" onclick="K.sv('admin-users')">
         <div class="ico">👥</div>
@@ -11309,6 +11315,54 @@ K._showUserToggles = function(uid){
 // CARNET D'INVITATIONS — colle 1 ou N numéros, tout auto-whitelist + liens prêts
 // Persisté localement ('admin_contact_book') pour réutilisation
 // ============================================================================
+// v1.1.218 (Kevin « self-service, pas à chaque personne ») — gère le cercle de
+// confiance (login SANS SMS) depuis l'admin : ajoute/retire un numéro → effet
+// immédiat côté serveur, ZÉRO déploiement.
+function renderAdminTrustedCircle(app){
+  if(!K.user?.is_admin){ K.sv('chats'); return; }
+  app.innerHTML = `
+    <div class="topbar-sub"><button class="btn btn-sm btn-out" onclick="K.sv('admin')">‹ Admin</button>
+      <h2 style="font-family:Georgia,serif;color:var(--ax-gold);margin:8px 0">🔓 Cercle de confiance</h2></div>
+    <div class="card" style="padding:12px 14px">
+      <p style="color:var(--ax-text-2);font-size:.9em;margin:0 0 10px">Ces numéros se connectent <b>sans SMS</b> (comme toi). Pour tout le reste, utilise le <b>lien d'invitation</b> depuis une fiche.</p>
+      <div style="display:flex;gap:6px">
+        <input id="tc-phone" class="input" type="tel" inputmode="tel" placeholder="+33 6 12 34 56 78" autocomplete="tel">
+        <button class="btn btn-sm" style="background:var(--ax-gold);color:#000;white-space:nowrap" onclick="K._tcAdd()">➕ Ajouter</button>
+      </div>
+      <div id="tc-msg" style="font-size:.78em;color:var(--ax-text-3);margin-top:6px"></div>
+    </div>
+    <div id="tc-list" class="card" style="padding:8px 12px;margin-top:10px"><div style="color:var(--ax-text-3);text-align:center;padding:14px">Chargement…</div></div>
+  `;
+  K._tcRefresh();
+}
+K._tcRefresh = async function(){
+  const box = document.getElementById('tc-list'); if(!box) return;
+  try{
+    const r = await K._api('GET', '/api/admin/trusted-circle');
+    const phones = (r && r.phones) || [];
+    box.innerHTML = phones.length ? phones.map(p =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--ax-border)">
+        <span style="font-family:ui-monospace,monospace">${esc(p)}</span>
+        <button class="btn btn-sm btn-out" onclick="K._tcRemove('${esc(p)}')">🗑 Retirer</button>
+      </div>`).join('')
+      : '<div style="color:var(--ax-text-3);text-align:center;padding:14px">Aucun numéro (à part toi). Ajoute-en un, ou invite par lien.</div>';
+  }catch(e){ box.innerHTML = '<div style="color:#e63946;text-align:center;padding:14px">Erreur de chargement : ' + esc((e&&e.message)||'?') + '</div>'; }
+};
+K._tcAdd = async function(){
+  const inp = document.getElementById('tc-phone'); const msg = document.getElementById('tc-msg');
+  const phone = (inp?.value || '').replace(/[^\d+]/g,'');
+  if(!/^\+?\d{8,15}$/.test(phone)){ if(msg) msg.textContent = '❌ Numéro invalide (format +33…).'; return; }
+  try{
+    await K._api('POST', '/api/admin/trusted-circle', { phone, action: 'add' });
+    if(inp) inp.value = ''; if(msg) msg.textContent = '✅ Ajouté — se connecte sans SMS.';
+    K._tcRefresh();
+  }catch(e){ if(msg) msg.textContent = '❌ ' + ((e&&e.message)||'erreur'); }
+};
+K._tcRemove = async function(phone){
+  try{ await K._api('POST', '/api/admin/trusted-circle', { phone, action: 'remove' }); K._tcRefresh(); }
+  catch(e){ toast('Retrait impossible : ' + ((e&&e.message)||''), 'err', 4000); }
+};
+
 function renderAdminInviteBook(app){
   if(!K.user?.is_admin){ K.sv('chats'); return; }
   const book = lg('admin_contact_book', []);
@@ -13789,7 +13843,7 @@ async function _boot(){
       K.user.is_admin = true;
       $('#bnav-admin').classList.remove('h');
     }
-    // v1.1.217 (Kevin « elle devrait être reconnue ») — session locale (pas de
+    // v1.1.218 (Kevin « elle devrait être reconnue ») — session locale (pas de
     // vraie session serveur) → tenter D'ABORD l'auto-login kd-mc.com (compte
     // connu, Face ID prouvé côté serveur via whoami) pour MONTER en vraie session
     // SANS SMS. Le bug : avant, l'auto-login kd-mc.com ne tournait QUE sans aucune
