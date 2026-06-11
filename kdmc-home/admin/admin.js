@@ -33,6 +33,10 @@
       + card('💬', 'Apex Chat — Admin', 'Users, connexions, sentinelles', 'https://apex-chat.kd-mc.com/')
       + card('📊', 'Boutiques — Dashboard', 'Commandes, produits, finances', 'https://9r4rxssx64-creator.github.io/CMCteams/shops/dashboard/')
       + card('🩺', 'Santé des workers', 'État live de tous les services', 'https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/health/workers-status.json')
+      + '</div>'
+      + '<h2 class="cat">🎨 Studios de création</h2><div class="grid">'
+      + card('🎨', 'Studio — La Détente', 'Créer logos & produits (POD)', 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/studio.html')
+      + card('🎨', 'Studio — Chez Lolo', 'Créer logos & produits (POD)', 'https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/studio.html')
       + '</div>';
   }
   function kvp(k, v) { return '<div><span>' + k + '</span><br>' + v + '</div>'; }
