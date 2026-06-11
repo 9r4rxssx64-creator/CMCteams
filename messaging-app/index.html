@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.214",
+  "softwareVersion": "v1.1.215",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.214';
+const __APEX_CHAT_VERSION__ = 'v1.1.215';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.214</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.215</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7278,7 +7278,7 @@ K._reauthAdmin = K._reauthAny;
 // Throttle 15 s. Renvoie true si une session valide est en place après coup.
 K._reconnectSession = async function(silent){
   if(K.token && !String(K.token).startsWith('local-')) return true;   // déjà connecté
-  // v1.1.214 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
+  // v1.1.215 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
   // serveur) → vraie session SANS SMS. Si pas de session kd-mc.com vérifiée,
   // on retombe sur la reprise téléphone ci-dessous (fail-open).
   try{
@@ -10137,7 +10137,7 @@ K._saveNewContact = function(){
 
 // v1.1.170 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
-// v1.1.214 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
+// v1.1.215 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
 // Canal d'assistance : Kevin reste INVISIBLE dans les listes de contacts
 // (KEVIN_INVISIBLE_ADMIN), mais TOUT utilisateur connecté peut le joindre en 1 tap.
 K._contactSupport = async function(){
@@ -13751,7 +13751,7 @@ async function _boot(){
       K.user.is_admin = true;
       $('#bnav-admin').classList.remove('h');
     }
-    // v1.1.214 (Kevin « elle devrait être reconnue ») — session locale (pas de
+    // v1.1.215 (Kevin « elle devrait être reconnue ») — session locale (pas de
     // vraie session serveur) → tenter D'ABORD l'auto-login kd-mc.com (compte
     // connu, Face ID prouvé côté serveur via whoami) pour MONTER en vraie session
     // SANS SMS. Le bug : avant, l'auto-login kd-mc.com ne tournait QUE sans aucune
