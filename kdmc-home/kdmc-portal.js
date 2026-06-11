@@ -84,17 +84,13 @@
   }
 
   function cguBlock() {
+    // Kevin « CGU le plus bref, vague possible » + « pas de CGU pas de connexion ».
+    // Texte minimal/vague ; la case reste OBLIGATOIRE (doCreate bloque si non cochée).
     return '<label class="cgu"><input type="checkbox" id="cgu-ok"> '
-      + 'J\'accepte les <a href="#" id="cgu-link">conditions d\'utilisation &amp; la politique de confidentialité</a> KDMC '
-      + '(un seul accord, valable pour toutes les apps du domaine).</label>'
+      + 'J\'accepte les <a href="#" id="cgu-link">conditions</a>.</label>'
       + '<div id="cgu-text" class="cgu-text" hidden>'
-      + 'KDMC APEX — un identifiant unique (prénom + nom + code) pour accéder à toutes '
-      + 'tes applications du domaine kd-mc.com (CMCteams, Apex, boutiques). Ton code est '
-      + 'haché (PBKDF2, jamais stocké en clair). La session est signée et liée au domaine '
-      + '(cookie sécurisé HttpOnly). Tes données restent privées et ne sont utilisées que '
-      + 'pour te connecter et personnaliser ton espace. Tu peux te déconnecter à tout moment. '
-      + 'Reconnaissance automatique de l\'appareil après la 1ʳᵉ connexion (Face ID / Touch ID '
-      + 'gérés par chaque app).</div>';
+      + 'Un identifiant unique pour tes apps KDMC. Données privées, utilisées seulement pour te connecter. '
+      + 'Déconnexion possible à tout moment.</div>';
   }
 
   function renderCreate() {
