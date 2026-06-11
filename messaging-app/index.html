@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.210",
+  "softwareVersion": "v1.1.211",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.210';
+const __APEX_CHAT_VERSION__ = 'v1.1.211';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -13750,6 +13750,20 @@ async function _boot(){
     }
 
     K.render();
+
+    // v1.1.211 — Auto-(re)abonnement push SILENCIEUX au boot pour une session
+    // déjà connectée (Kevin « fais auto pour recevoir toutes les notifs »).
+    // Au login frais, K.login() appelle déjà _requestNotifPermissionIfNeeded ;
+    // ici on couvre le cas du RETOUR (session restaurée sans nouveau login) où
+    // ça ne tournait jamais → la souscription pouvait expirer et plus de notifs.
+    // SANS jamais afficher de prompt : on n'agit que si permission DÉJÀ accordée.
+    // Fail-open : tout échec = no-op, ne casse ni le boot ni la session.
+    try{
+      if(typeof Notification !== 'undefined' && Notification.permission === 'granted'
+         && typeof K._requestNotifPermissionIfNeeded === 'function'){
+        K._requestNotifPermissionIfNeeded();
+      }
+    }catch(_e){ try{ _safeCatch('silent', _e); }catch(__){} }
   } else {
     // Connexion AUTO via le compte unique kd-mc.com (Face ID prouvé côté serveur).
     // Ne tourne QUE s'il n'y a aucune session locale (on est dans le else). Si le
