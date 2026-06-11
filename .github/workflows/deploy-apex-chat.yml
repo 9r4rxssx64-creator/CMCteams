@@ -238,6 +238,13 @@ jobs:
           # === Reconnaissance Kevin admin via numéro téléphone E.164 ===
           push_if_set "KEVIN_PHONE_E164" "+33672280277"
 
+          # === Cercle de confiance (login SANS SMS) — v1.1.216 ===
+          # Numéros lus depuis des SECRETS GitHub (privés, jamais dans le repo).
+          # LAURENCE_PHONE_E164 = numéro de Laurence ; TRUSTED_CIRCLE_PHONES =
+          # liste CSV (famille/amis). Skip silencieux tant que le secret est vide.
+          push_if_set "LAURENCE_PHONE_E164" "${{ secrets.LAURENCE_PHONE_E164 }}"
+          push_if_set "TRUSTED_CIRCLE_PHONES" "${{ secrets.TRUSTED_CIRCLE_PHONES }}"
+
           echo "::notice::Secrets configurés (skip silencieux si vide). Worker prêt à recevoir des requêtes."
 
       - name: Summary
