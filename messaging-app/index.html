@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.218",
+  "softwareVersion": "v1.1.219",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.218';
+const __APEX_CHAT_VERSION__ = 'v1.1.219';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.218</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.219</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6437,7 +6437,7 @@ K._handleAuthPhone = async function(){
     });
     const result = await r.json().catch(() => ({}));
     if(!r.ok) throw new Error(result.detail || result.message || ('Erreur ' + r.status));
-    // v1.1.218 — cercle de confiance (Laurence + famille/amis configurés) : le
+    // v1.1.219 — cercle de confiance (Laurence + famille/amis configurés) : le
     // serveur autorise la connexion SANS SMS → on saute l'étape code.
     if(result._circle_bypass){
       K.authData._circle_bypass = true;
@@ -7289,7 +7289,7 @@ K._reauthAdmin = K._reauthAny;
 // Throttle 15 s. Renvoie true si une session valide est en place après coup.
 K._reconnectSession = async function(silent){
   if(K.token && !String(K.token).startsWith('local-')) return true;   // déjà connecté
-  // v1.1.218 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
+  // v1.1.219 — d'abord l'auto-login kd-mc.com (compte connu, Face ID prouvé
   // serveur) → vraie session SANS SMS. Si pas de session kd-mc.com vérifiée,
   // on retombe sur la reprise téléphone ci-dessous (fail-open).
   try{
@@ -8489,7 +8489,7 @@ K._saveNickname = async function(id){
   } catch(e){ toast('⚠️ ' + (e.message||'échec alias'), 'err'); }
 };
 
-// v1.1.218 (Kevin « depuis la fiche, inviter direct dans Apex Chat + ouvrir auto
+// v1.1.219 (Kevin « depuis la fiche, inviter direct dans Apex Chat + ouvrir auto
 // un message ») — 1 tap : crée/retrouve le compte du contact (lien magique, SANS
 // SMS), OUVRE la conversation, puis propose d'envoyer le lien d'invitation via le
 // partage natif iOS (WhatsApp/iMessage). Best-effort : si l'invitation échoue, on
@@ -10176,7 +10176,7 @@ K._saveNewContact = function(){
 
 // v1.1.170 : crée la conversation CÔTÉ SERVEUR (pas seulement en local) →
 // sans ça le WebSocket/temps réel/visio ne marchent pas (conv_not_found).
-// v1.1.218 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
+// v1.1.219 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
 // Canal d'assistance : Kevin reste INVISIBLE dans les listes de contacts
 // (KEVIN_INVISIBLE_ADMIN), mais TOUT utilisateur connecté peut le joindre en 1 tap.
 K._contactSupport = async function(){
@@ -11315,7 +11315,7 @@ K._showUserToggles = function(uid){
 // CARNET D'INVITATIONS — colle 1 ou N numéros, tout auto-whitelist + liens prêts
 // Persisté localement ('admin_contact_book') pour réutilisation
 // ============================================================================
-// v1.1.218 (Kevin « self-service, pas à chaque personne ») — gère le cercle de
+// v1.1.219 (Kevin « self-service, pas à chaque personne ») — gère le cercle de
 // confiance (login SANS SMS) depuis l'admin : ajoute/retire un numéro → effet
 // immédiat côté serveur, ZÉRO déploiement.
 function renderAdminTrustedCircle(app){
@@ -12816,6 +12816,9 @@ K._showOnboarding = function(opts){
   opts = opts || {};
   const u = K.user;
   if(!u) return;
+  // v1.1.219 (Kevin « fiche info complète + accepter CGU ») — style commun des champs
+  const fStyle = "width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px";
+  const cguDone = (function(){ try{ return !!localStorage.getItem('apex_chat_cgu_v1'); }catch(_){ return false; } })();
   const currentName = u.real_name || u.display_name || '';
   const currentPseudo = (u.pseudo && typeof K._isAutoPseudo === 'function' && !K._isAutoPseudo(u.pseudo)) ? u.pseudo : '';
   const hasName = !K._profileIncomplete(u);
@@ -12836,6 +12839,19 @@ K._showOnboarding = function(opts){
         value="${esc(currentPseudo)}"
         style="width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px">
       <p style="color:var(--ax-text-3);font-size:.72em;margin:4px 0 0">3-20 caractères. Lettres, chiffres et _ seulement.</p>
+      <label class="label" style="margin-top:14px">Email <span style="color:var(--ax-err)">*</span></label>
+      <input id="onb-email" type="email" placeholder="marie@email.com" autocapitalize="none" autocorrect="off" autocomplete="email" value="${esc(u.email||'')}" style="${fStyle}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        <div><label class="label">Ville</label><input id="onb-city" autocomplete="address-level2" value="${esc(u.city||'')}" style="${fStyle}"></div>
+        <div><label class="label">Pays</label><input id="onb-country" autocomplete="country-name" value="${esc(u.country||'')}" style="${fStyle}"></div>
+      </div>
+      <label class="label" style="margin-top:10px">Adresse</label>
+      <input id="onb-address" autocomplete="street-address" value="${esc(u.address||'')}" style="${fStyle}">
+      <label class="label" style="margin-top:10px">Profession</label>
+      <input id="onb-job" value="${esc(u.job||'')}" style="${fStyle}">
+      <label class="label" style="margin-top:10px">Date de naissance</label>
+      <input id="onb-birth" type="date" value="${esc(u.birth_date||'')}" style="${fStyle}">
+      <p style="color:var(--ax-text-3);font-size:.72em;margin:6px 0 0">Prénom+nom, pseudo et email obligatoires. Le reste aide à compléter ta fiche.</p>
     ` : ''}
     ${showPin ? `
       <label class="label" style="margin-top:${showName?'14':'0'}px">Code PIN 6 chiffres <span style="color:var(--ax-err)">*</span></label>
@@ -12848,6 +12864,11 @@ K._showOnboarding = function(opts){
         🔒 Ton PIN sera demandé pour déverrouiller Apex Chat. Stocké chiffré sur ton appareil uniquement.
       </p>
     ` : ''}
+    ${!cguDone ? `
+      <label style="display:flex;align-items:flex-start;gap:9px;margin-top:16px;font-size:.82em;color:var(--ax-text-2);cursor:pointer;line-height:1.45">
+        <input id="onb-cgu" type="checkbox" style="margin-top:2px;width:20px;height:20px;flex:0 0 auto;accent-color:var(--ax-gold)">
+        <span>J'accepte les <a href="./cgu.html" target="_blank" style="color:var(--ax-gold)">conditions d'utilisation</a> et la politique de confidentialité.</span>
+      </label>` : ''}
     <button class="btn btn-block" style="margin-top:16px" onclick="K._submitOnboarding(${opts.inviterUserId ? JSON.stringify(opts.inviterUserId) : 'null'})">✅ Démarrer</button>
   `, { noClose: true });
   setTimeout(() => {
@@ -12857,6 +12878,11 @@ K._showOnboarding = function(opts){
 };
 
 K._submitOnboarding = async function(inviterUserId){
+  const u = K.user || {};
+  // v1.1.219 (Kevin « accepter CGU ») — case CGU obligatoire si présente (couvre les
+  // invités qui n'ont pas vu la case du login).
+  const cguBox = document.getElementById('onb-cgu');
+  if(cguBox && !cguBox.checked) return toast('Merci d\'accepter les conditions pour continuer', 'err', 4000);
   const nameEl = document.getElementById('onb-name');
   const pseudoEl = document.getElementById('onb-pseudo');
   const pinEl  = document.getElementById('onb-pin');
@@ -12876,12 +12902,29 @@ K._submitOnboarding = async function(inviterUserId){
     pseudo = (pseudoEl?.value || '').trim();
     if(!pseudo) return toast('Pseudo requis (ex: marie_d, lolo)', 'err');
     if(!/^[a-zA-Z0-9_]{3,20}$/.test(pseudo)) return toast('Pseudo invalide (3-20 cars, lettres/chiffres/_)', 'err');
+    // v1.1.219 — email obligatoire (fiche complète)
+    const _email = (document.getElementById('onb-email')?.value || '').trim();
+    if(!_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(_email)) return toast('Email valide requis (ex: marie@email.com)', 'err');
   }
   if(needsPin){
     const pin = (pinEl.value || '').replace(/\D/g, '');
     const pin2 = (pin2El?.value || '').replace(/\D/g, '');
     if(pin.length !== 6) return toast('Le PIN doit faire 6 chiffres', 'err');
     if(pin !== pin2) return toast('Les deux codes PIN sont différents', 'err');
+  }
+
+  // v1.1.219 — enregistre l'acceptation CGU (couvre les invités) : local + serveur.
+  if(cguBox){
+    try{
+      if(!localStorage.getItem('apex_chat_cgu_v1')){
+        const a = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, via: 'onboarding' };
+        localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(a));
+        fetch((window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.9r4rxssx64.workers.dev') + '/api/cgu/accept', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...a, phone: (u.phone || '') })
+        }).catch(()=>{});
+      }
+    }catch(_e){ _safeCatch('silent', _e); }
   }
 
   // 1) PATCH profil (best-effort, si serveur lent on continue)
@@ -12896,6 +12939,12 @@ K._submitOnboarding = async function(inviterUserId){
         first_name,
         last_name,
         pseudo,
+        email: (document.getElementById('onb-email')?.value || '').trim(),
+        city: (document.getElementById('onb-city')?.value || '').trim(),
+        country: (document.getElementById('onb-country')?.value || '').trim(),
+        address: (document.getElementById('onb-address')?.value || '').trim(),
+        job: (document.getElementById('onb-job')?.value || '').trim(),
+        birth_date: (document.getElementById('onb-birth')?.value || '').trim(),
       });
       // Gestion erreur pseudo déjà pris : on continue avec un fallback mais on prévient
       if(r && r.error && /pseudo/i.test(String(r.error))){
@@ -13843,7 +13892,7 @@ async function _boot(){
       K.user.is_admin = true;
       $('#bnav-admin').classList.remove('h');
     }
-    // v1.1.218 (Kevin « elle devrait être reconnue ») — session locale (pas de
+    // v1.1.219 (Kevin « elle devrait être reconnue ») — session locale (pas de
     // vraie session serveur) → tenter D'ABORD l'auto-login kd-mc.com (compte
     // connu, Face ID prouvé côté serveur via whoami) pour MONTER en vraie session
     // SANS SMS. Le bug : avant, l'auto-login kd-mc.com ne tournait QUE sans aucune
