@@ -205,6 +205,19 @@ async function initAuth(){
   if(last && (Date.now()-last)<SESSION_TTL){enterApp();return}
   // aucun code défini sur cet appareil → Kevin CHOISIT le sien (pas de code public)
   if(!lg(SK.pinHash)){showCreate();return}
+  // Compte unique kd-mc.com : déverrouillage AUTO si le domaine PROUVE l'identité
+  // par Face ID (whoami.verified===true) ET propriétaire (admin===true). Additif +
+  // fail-open : si le SSO n'est pas joignable (servi hors *.kd-mc.com), on retombe
+  // sur le PIN. Le PIN reste toujours le secours.
+  try{
+    var hsh=location.hash||"";var mm=hsh.match(/[#&]kdmc_sso=([^&]+)/);
+    if(mm){try{localStorage.setItem("kdmc_sso_token",decodeURIComponent(mm[1]));}catch(_){}}
+    var tok="";try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
+    var hdr={};if(tok)hdr.Authorization="Bearer "+tok;
+    var rs=await fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:hdr});
+    var j=rs&&rs.ok?await rs.json():null;
+    if(j&&j.ok&&j.verified===true&&j.admin===true){enterApp();return}
+  }catch(_){/* fail-open → PIN */}
   showAuth();
 }
 function showAuth(){
