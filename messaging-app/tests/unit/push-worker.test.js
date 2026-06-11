@@ -292,7 +292,10 @@ describe('push-worker — POST /fcm', () => {
 
 // ----------------------------------------------------------------------------
 describe('push-worker — POST /broadcast', () => {
-  it('broadcast simple → ok + topic + ts', async () => {
+  // v1.1.206 : /broadcast ne peut pas résoudre les subscriptions ici (pas de D1)
+  // → répond honnêtement 501 not_implemented au lieu de ok:true (qui masquait la
+  // perte de TOUTES les notifs de message). L'envoi réel passe par /web-push.
+  it('broadcast → 501 not_implemented (honnête, plus de faux ok:true)', async () => {
     const r = await worker.fetch(
       makeRequest({
         path: '/broadcast',
@@ -301,11 +304,25 @@ describe('push-worker — POST /broadcast', () => {
       }),
       ENV(),
     );
-    expect(r.status).toBe(200);
+    expect(r.status).toBe(501);
     const b = await r.json();
-    expect(b.ok).toBe(true);
-    expect(b.broadcast).toBe('user:abc');
-    expect(typeof b.ts).toBe('number');
+    expect(b.ok).toBe(false);
+    expect(b.error).toBe('not_implemented');
+    expect(b.topic).toBe('user:abc');
+  });
+
+  it('broadcast sans topic → 501 + topic:null', async () => {
+    const r = await worker.fetch(
+      makeRequest({
+        path: '/broadcast',
+        headers: { 'X-Apex-Push-Token': 'admin-secret' },
+        body: {},
+      }),
+      ENV(),
+    );
+    expect(r.status).toBe(501);
+    const b = await r.json();
+    expect(b.topic).toBeNull();
   });
 });
 

@@ -533,16 +533,46 @@ export class ConversationDO {
     }
   }
 
-  // Helper : push fire-and-forget vers une liste d'user_ids via le push-worker.
+  // Helper : push fire-and-forget vers une liste d'user_ids.
+  // v1.1.206 (Kevin "je ne reçois pas les notifs hors app, Laurence pareil") —
+  // BUG racine : on postait sur push-worker /broadcast avec topic:user:<uid>,
+  // mais /broadcast est un STUB qui ne lit AUCUNE subscription et renvoie ok:true
+  // → 100% des pushs de message/appel perdus en silence. Le DO tourne DANS
+  // l'api-worker → il a APEX_CHAT_DB. On résout donc les subscriptions ici et on
+  // appelle l'endpoint /web-push qui FONCTIONNE (VAPID + chiffrement), 1 par
+  // device, comme sendPushToUser côté api-worker.
   async _pushToUsers(userIds, pushPayload) {
     const pushBase = this.env.APEX_PUSH_WORKER_URL || 'https://apex-push-worker.9r4rxssx64.workers.dev';
     const token = this.env.APEX_CHAT_ADMIN_TOKEN || '';
+    const cutoff = Date.now() - 30 * 86400000; // ignore les subs mortes > 30 j
     for (const uid of userIds) {
-      fetch(pushBase + '/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Apex-Push-Token': token },
-        body: JSON.stringify({ topic: `user:${uid}`, ...pushPayload })
-      }).catch((e) => console.warn('[push]', uid, 'failed:', e && e.message));
+      let subs;
+      try {
+        subs = await this.env.APEX_CHAT_DB.prepare(
+          'SELECT endpoint, vapid_p256dh, vapid_auth FROM push_subscriptions WHERE user_id=? AND last_seen > ?'
+        ).bind(uid, cutoff).all();
+      } catch (e) {
+        console.warn('[push] lookup subscriptions failed for', uid, e && e.message);
+        continue;
+      }
+      const rows = (subs && subs.results) || [];
+      if (rows.length === 0) {
+        console.warn('[push] aucune subscription active pour', uid);
+        continue;
+      }
+      for (const sub of rows) {
+        if (!sub.endpoint || !sub.vapid_p256dh) continue;
+        fetch(pushBase + '/web-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Apex-Push-Token': token },
+          body: JSON.stringify({
+            subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } },
+            payload: pushPayload
+          })
+        })
+          .then((r) => { if (!r.ok) console.warn('[push] web-push', uid, 'HTTP', r.status); })
+          .catch((e) => console.warn('[push]', uid, 'web-push failed:', e && e.message));
+      }
     }
   }
 

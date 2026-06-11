@@ -681,14 +681,16 @@ describe('ConversationDO — broadcast & notifyOfflineMembers & flushToD1', () =
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  it('notifyOfflineMembers : 2 offline → 2 fetch push', async () => {
+  it('notifyOfflineMembers : 2 offline → 2 fetch /web-push (v1.1.206)', async () => {
+    // v1.1.206 : _pushToUsers résout les subscriptions en D1 puis appelle
+    // /web-push (1 par device). 2 offline × 1 sub = 2 fetch.
     const _do = new ConversationDO(makeState(), ENV({
       APEX_CHAT_DB: {
-        prepare: () => ({
+        prepare: (sql) => ({
           bind: function () { return this; },
-          all: async () => ({ results: [
-            { user_id: 'kdmc' }, { user_id: 'laurence' }, { user_id: 'amis-1' },
-          ] }),
+          all: async () => (sql.includes('push_subscriptions')
+            ? { results: [{ endpoint: 'https://push/x', vapid_p256dh: 'p', vapid_auth: 'a' }] }
+            : { results: [{ user_id: 'kdmc' }, { user_id: 'laurence' }, { user_id: 'amis-1' }] }),
         }),
       },
       JWT_SIGN_KEY: SECRET,
@@ -698,6 +700,101 @@ describe('ConversationDO — broadcast & notifyOfflineMembers & flushToD1', () =
     _do.sessions.set(ws, { userId: 'kdmc' });
     await _do.notifyOfflineMembers({ id: 'm', conv_id: 'c', sender_id: 'kdmc', ts: Date.now() });
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    // doit cibler /web-push (pas /broadcast no-op) avec la subscription résolue
+    const url = globalThis.fetch.mock.calls[0][0];
+    expect(String(url)).toContain('/web-push');
+    const sentBody = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(sentBody.subscription.endpoint).toBe('https://push/x');
+    expect(sentBody.subscription.keys.p256dh).toBe('p');
+  });
+
+  it('notifyOfflineMembers : offline SANS subscription active → aucun push (pas de crash)', async () => {
+    const _do = new ConversationDO(makeState(), ENV({
+      APEX_CHAT_DB: {
+        prepare: (sql) => ({
+          bind: function () { return this; },
+          all: async () => (sql.includes('push_subscriptions')
+            ? { results: [] } // user offline mais pas (ou plus) abonné
+            : { results: [{ user_id: 'kdmc' }, { user_id: 'laurence' }] }),
+        }),
+      },
+      JWT_SIGN_KEY: SECRET,
+    }));
+    await new Promise((r) => setTimeout(r, 5));
+    const ws = new MockWebSocket();
+    _do.sessions.set(ws, { userId: 'kdmc' });
+    await _do.notifyOfflineMembers({ id: 'm', conv_id: 'c', sender_id: 'kdmc', ts: Date.now() });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('_pushToUsers : lookup subscriptions throw → user sauté, pas de crash', async () => {
+    const _do = new ConversationDO(makeState(), ENV({
+      APEX_CHAT_DB: {
+        prepare: (sql) => ({
+          bind: function () { return this; },
+          all: async () => {
+            if (sql.includes('push_subscriptions')) throw new Error('db down');
+            return { results: [{ user_id: 'kdmc' }, { user_id: 'laurence' }] };
+          },
+        }),
+      },
+      JWT_SIGN_KEY: SECRET,
+    }));
+    await new Promise((r) => setTimeout(r, 5));
+    const ws = new MockWebSocket();
+    _do.sessions.set(ws, { userId: 'kdmc' });
+    await expect(_do.notifyOfflineMembers({ id: 'm', conv_id: 'c', sender_id: 'kdmc', ts: Date.now() })).resolves.toBeUndefined();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('_pushToUsers : results undefined → [] ET sub sans endpoint → ignorée', async () => {
+    const _do = new ConversationDO(makeState(), ENV({
+      APEX_CHAT_DB: {
+        prepare: (sql) => {
+          const stmt = {
+            _uid: null,
+            bind(uid) { this._uid = uid; return this; },
+            all: async () => {
+              if (sql.includes('push_subscriptions')) {
+                // 'laurence' → résultat sans clé results (couvre (subs && subs.results) || [])
+                if (stmt._uid === 'laurence') return {};
+                // 'amis-1' → sub présente mais SANS endpoint (couvre le continue)
+                return { results: [{ endpoint: '', vapid_p256dh: '' }] };
+              }
+              return { results: [{ user_id: 'kdmc' }, { user_id: 'laurence' }, { user_id: 'amis-1' }] };
+            },
+          };
+          return stmt;
+        },
+      },
+      JWT_SIGN_KEY: SECRET,
+    }));
+    await new Promise((r) => setTimeout(r, 5));
+    const ws = new MockWebSocket();
+    _do.sessions.set(ws, { userId: 'kdmc' });
+    await _do.notifyOfflineMembers({ id: 'm', conv_id: 'c', sender_id: 'kdmc', ts: Date.now() });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('_pushToUsers : /web-push répond non-ok → warn, pas de crash', async () => {
+    globalThis.fetch = vi.fn(async () => new Response('nope', { status: 502 }));
+    const _do = new ConversationDO(makeState(), ENV({
+      APEX_CHAT_DB: {
+        prepare: (sql) => ({
+          bind: function () { return this; },
+          all: async () => (sql.includes('push_subscriptions')
+            ? { results: [{ endpoint: 'https://push/x', vapid_p256dh: 'p', vapid_auth: 'a' }] }
+            : { results: [{ user_id: 'kdmc' }, { user_id: 'laurence' }] }),
+        }),
+      },
+      JWT_SIGN_KEY: SECRET,
+    }));
+    await new Promise((r) => setTimeout(r, 5));
+    const ws = new MockWebSocket();
+    _do.sessions.set(ws, { userId: 'kdmc' });
+    await _do.notifyOfflineMembers({ id: 'm', conv_id: 'c', sender_id: 'kdmc', ts: Date.now() });
+    await new Promise((r) => setTimeout(r, 5)); // laisse le .then(!r.ok) se résoudre
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('notifyOfflineMembers : nom expéditeur résolu (real_name) → senderName appliqué', async () => {
@@ -705,7 +802,9 @@ describe('ConversationDO — broadcast & notifyOfflineMembers & flushToD1', () =
       APEX_CHAT_DB: {
         prepare: (sql) => ({
           bind: function () { return this; },
-          all: async () => ({ results: [{ user_id: 'kdmc' }, { user_id: 'bob' }] }),
+          all: async () => (sql.includes('push_subscriptions')
+            ? { results: [{ endpoint: 'https://push/x', vapid_p256dh: 'p', vapid_auth: 'a' }] }
+            : { results: [{ user_id: 'kdmc' }, { user_id: 'bob' }] }),
           first: async () => (sql.includes('FROM users') ? { real_name: 'Alice', pseudo: 'al' } : null),
         }),
       },
@@ -725,7 +824,9 @@ describe('ConversationDO — broadcast & notifyOfflineMembers & flushToD1', () =
       APEX_CHAT_DB: {
         prepare: (sql) => ({
           bind: function () { return this; },
-          all: async () => ({ results: [{ user_id: 'kdmc' }, { user_id: 'bob' }] }),
+          all: async () => (sql.includes('push_subscriptions')
+            ? { results: [{ endpoint: 'https://push/x', vapid_p256dh: 'p', vapid_auth: 'a' }] }
+            : { results: [{ user_id: 'kdmc' }, { user_id: 'bob' }] }),
           first: async () => (sql.includes('FROM users') ? userRow : null),
         }),
       },
@@ -759,9 +860,11 @@ describe('ConversationDO — broadcast & notifyOfflineMembers & flushToD1', () =
     const env = ENV({
       APEX_CHAT_ADMIN_TOKEN: undefined,
       APEX_CHAT_DB: {
-        prepare: () => ({
+        prepare: (sql) => ({
           bind: function () { return this; },
-          all: async () => ({ results: [{ user_id: 'offline1' }] }),
+          all: async () => (sql.includes('push_subscriptions')
+            ? { results: [{ endpoint: 'https://push/x', vapid_p256dh: 'p', vapid_auth: 'a' }] }
+            : { results: [{ user_id: 'offline1' }] }),
         }),
       },
       JWT_SIGN_KEY: SECRET,
