@@ -121,6 +121,25 @@ export default {
         return J({ ok: n > 0, sent: n, detail: n > 0 ? 'push envoyé' : 'aucun abonnement (active les alertes d\'abord) ou clés VAPID manquantes' }, 200, origin);
       } catch (e) { return J({ ok: false, detail: String(e && e.message || e) }, 500, origin); }
     }
+    // VALIDER (Kevin « bouton valider auto ») : envoie une commande on-hold en PRODUCTION
+    // Printify = validation/paiement réel. Auth : Origin allowlist + x-ld-app (comme /order).
+    if (request.method === 'POST' && url.pathname === '/validate') {
+      if (!ALLOW.includes(origin)) return J({ ok: false, detail: 'origin refusée' }, 403, origin);
+      if (request.headers.get('x-ld-app') !== APP_TAG) return J({ ok: false, detail: 'app tag invalide' }, 403, origin);
+      if (rl('validate:' + ip, 10, 300000)) return J({ ok: false, detail: 'trop de validations, patiente quelques minutes', retryAfter: 300 }, 429, origin);
+      const KEY = env.PRINTIFY_API_KEY;
+      if (!KEY) return J({ ok: false, detail: 'clé serveur absente' }, 500, origin);
+      let vb; try { vb = await request.json(); } catch (_) { return J({ ok: false, detail: 'json invalide' }, 400, origin); }
+      const oid = String(vb.order_id || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+      if (!oid) return J({ ok: false, detail: 'order_id manquant' }, 400, origin);
+      const H = { 'Authorization': 'Bearer ' + KEY, 'User-Agent': 'LaDetente-KDMC/1.0', 'Content-Type': 'application/json' };
+      try {
+        const r = await fetch(`${API}/shops/${SHOP_ID}/orders/${oid}/send_to_production.json`, { method: 'POST', headers: H });
+        const txt = await r.text();
+        if (!r.ok) return J({ ok: false, detail: 'Printify HTTP ' + r.status + ' : ' + txt.slice(0, 300) }, 502, origin);
+        return J({ ok: true, order_id: oid, detail: 'commande envoyée en production' }, 200, origin);
+      } catch (e) { return J({ ok: false, detail: String(e && e.message || e) }, 500, origin); }
+    }
     if (request.method !== 'POST' || url.pathname !== '/order') return J({ ok: false, detail: 'not found' }, 404, origin);
     if (!ALLOW.includes(origin)) return J({ ok: false, detail: 'origin refusée' }, 403, origin);
     if (request.headers.get('x-ld-app') !== APP_TAG) return J({ ok: false, detail: 'app tag invalide' }, 403, origin);
@@ -242,12 +261,25 @@ export default {
       const printifyUrl = pj.id
         ? ('https://printify.com/app/orders/' + encodeURIComponent(String(pj.id)))
         : 'https://printify.com/app/orders';
+      // Photo produit (1ère ligne) dans la notif + bouton « ✅ Valider & produire » (1-tap →
+      // /validate → send_to_production = paiement/production réel). 2e bouton « 🏪 Boutique ».
+      const firstImg = (lineItems[0] && lineItems[0].print_areas && lineItems[0].print_areas.front) || '';
+      const validateUrl = url.origin + '/validate';
+      const extra = {
+        admin_url: body.pushUrl || 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1',
+        validate_url: validateUrl,
+        printify_order_id: pj.id || null,
+        actions: pj.id
+          ? [{ action: 'validate', title: '✅ Valider & produire' }, { action: 'admin', title: '🏪 Boutique' }]
+          : [{ action: 'admin', title: '🏪 Boutique' }],
+      };
+      if (firstImg) extra.image = firstImg;
       await sendOrderPush(
         env,
         (body.shopName || 'La Détente') + ' — 🛍️ Nouvelle commande' + ordTxt,
         (a.name || 'Client') + cityTxt + ' · ' + lineItems.length + ' art.' + tot + payTxt + (itemsTxt ? ('\n' + itemsTxt) : '') + '\n→ Tape pour VALIDER/PAYER dans Printify',
         printifyUrl,
-        { admin_url: body.pushUrl || 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/index.html?ld_admin=1', actions: [{ action: 'admin', title: '🏪 Boutique' }] },
+        extra,
       );
     } catch (_) {}
     // Statut "on-hold" : Kevin valide/paie. (Pas d'envoi auto en production.)
