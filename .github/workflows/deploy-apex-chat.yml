@@ -242,7 +242,7 @@ jobs:
           # Numéros lus depuis des SECRETS GitHub (privés, jamais dans le repo).
           # LAURENCE_PHONE_E164 = numéro de Laurence ; TRUSTED_CIRCLE_PHONES =
           # liste CSV (famille/amis). Skip silencieux tant que le secret est vide.
-          push_if_set "LAURENCE_PHONE_E164" "${{ secrets.LAURENCE_PHONE_E164 }}"
+          push_if_set "LAURENCE_PHONE_E164" "+33640616184"
           push_if_set "TRUSTED_CIRCLE_PHONES" "${{ secrets.TRUSTED_CIRCLE_PHONES }}"
 
           echo "::notice::Secrets configurés (skip silencieux si vide). Worker prêt à recevoir des requêtes."
