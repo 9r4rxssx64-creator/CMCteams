@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.220",
+  "softwareVersion": "v1.1.221",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.220';
+const __APEX_CHAT_VERSION__ = 'v1.1.221';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -582,7 +582,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.220</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.221</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.220</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.221</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -979,13 +979,17 @@ async function _authSsoFromKdmc(){
 //      force l'aller-retour pour tout le monde. Fail-open total.
 K._kdmcBounceToLogin = function(manual){
   try{
-    if(/[#&]kdmc_sso=/.test(location.hash||'')) return false;     // on revient déjà avec un jeton
-    if(/[?&]_ssob=1/.test(location.search||'')) return false;     // on revient déjà d'un bounce (même sans jeton)
-    try{ if(sessionStorage.getItem('kdmc_bounce_tried')) return false; }catch(_){} // one-shot session
-    if(!manual && !localStorage.getItem('kdmc_domain_seen')) return false;          // auto : users domaine connus seulement
-    try{ sessionStorage.setItem('kdmc_bounce_tried','1'); }catch(_){}
-    var sep = location.search ? '&' : '?';
-    var back = location.origin + location.pathname + location.search + sep + '_ssob=1';
+    if(/[#&]kdmc_sso=/.test(location.hash||'')) return false;     // on revient déjà avec un jeton → laisse traiter
+    if(!manual){
+      // Gardes anti-boucle/anti-piège : UNIQUEMENT pour l'aller-retour AUTOMATIQUE.
+      if(/[?&]_ssob=1/.test(location.search||'')) return false;   // on revient déjà d'un bounce
+      try{ if(sessionStorage.getItem('kdmc_bounce_tried')) return false; }catch(_){} // one-shot session
+      if(!localStorage.getItem('kdmc_domain_seen')) return false; // users domaine connus seulement
+      try{ sessionStorage.setItem('kdmc_bounce_tried','1'); }catch(_){}
+    }
+    // Le bouton MANUEL passe toujours (action explicite). On nettoie un éventuel _ssob existant.
+    var srch=(location.search||'').replace(/[?&]_ssob=1\b/g,''); if(srch&&srch[0]==='&')srch='?'+srch.slice(1);
+    var back = location.origin + location.pathname + srch + (srch ? '&' : '?') + '_ssob=1';
     location.replace('https://kd-mc.com/?return=' + encodeURIComponent(back));
     return true;
   }catch(e){ return false; }
