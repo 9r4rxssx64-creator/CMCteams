@@ -36,14 +36,28 @@
     } catch (e) { return false; }
   }
 
+  /* Résultat détaillé de whoami pour distinguer 3 états (anti-lockout) :
+     - 'session' : session valide (avec l'objet session)
+     - 'invalid' : le serveur a répondu explicitement « pas de session » (HTTP 200 ok:false)
+     - 'neterr'  : réseau/serveur KO (non-200, JSON cassé, exception) → on NE jette PAS le pass */
+  function whoamiResult() {
+    return fetch(BASE + '/whoami', { method: 'GET', credentials: 'include', cache: 'no-store', headers: authHeaders() })
+      .then(function (r) {
+        if (!r.ok) return { state: 'neterr' };
+        return r.json().then(function (j) {
+          return (j && j.ok)
+            ? { state: 'session', session: { uid: j.uid, name: j.name, cgu: !!j.cgu, admin: !!j.admin, verified: !!j.verified } }
+            : { state: 'invalid' };
+        }).catch(function () { return { state: 'neterr' }; });
+      })
+      .catch(function () { return { state: 'neterr' }; });
+  }
+
   function whoami() {
     /* → { uid, name, cgu, admin } si session valide, sinon null.
        Le champ `admin` DOIT être propagé. Envoie le pass en Bearer (cross-PWA)
        ET les cookies (Safari) — l'un ou l'autre suffit. */
-    return fetch(BASE + '/whoami', { method: 'GET', credentials: 'include', cache: 'no-store', headers: authHeaders() })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { return j && j.ok ? { uid: j.uid, name: j.name, cgu: !!j.cgu, admin: !!j.admin, verified: !!j.verified } : null; })
-      .catch(function () { return null; });
+    return whoamiResult().then(function (r) { return r.state === 'session' ? r.session : null; });
   }
 
   /* ===== Passkey (Face ID / Touch ID) — identité FORTE (verified) ===== */
@@ -129,9 +143,14 @@
   function ensureSession(returnUrl) {
     var hadToken = !!storedToken();
     var got = consumeHashToken();
-    return whoami().then(function (s) {
-      if (s) return s;
-      if (got || hadToken) { setToken(''); return null; } /* pass présent mais KO → ne pas boucler */
+    return whoamiResult().then(function (r) {
+      if (r.state === 'session') return r.session;
+      /* réseau/serveur KO → on GARDE le pass (il est peut-être valide) et l'app
+         retombe sur son login normal. Jamais de verrouillage, jamais de purge. */
+      if (r.state === 'neterr') return null;
+      /* serveur a dit explicitement « pas de session » : si on avait déjà un pass,
+         il est réellement invalide → on le jette, mais on NE reboucle PAS. */
+      if (got || hadToken) { setToken(''); return null; }
       try {
         var u = 'https://kd-mc.com/?return=' + encodeURIComponent(returnUrl || location.href);
         location.replace(u);

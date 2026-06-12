@@ -69,17 +69,21 @@ export default {
 };
 
 function rewriteLocation(loc, base, host) {
+  /* FAIL-SECURE : on ne renvoie JAMAIS un Location vers un autre domaine que
+     github.io (anti open-redirect) et jamais de Location avec CRLF (anti header
+     injection). Tout cas douteux → racine de l'host courant. */
   try {
     let path = loc;
-    if (loc.startsWith('http')) {
+    if (/^https?:\/\//i.test(loc)) {
       const u = new URL(loc);
-      if (u.hostname.endsWith('github.io')) path = u.pathname + u.search + u.hash;
-      else return loc;
+      if (!u.hostname.endsWith('github.io')) return 'https://' + host + '/';
+      path = u.pathname + u.search + u.hash;
     }
+    if (/[\r\n]/.test(path)) return 'https://' + host + '/';
     if (path.startsWith(base + '/')) path = path.slice(base.length);
     else if (path === base) path = '/';
     return 'https://' + host + path;
-  } catch { return loc; }
+  } catch { return 'https://' + host + '/'; }
 }
 
 /* ===================== SSO transverse kd-mc.com ===================== */
@@ -286,15 +290,15 @@ async function adminSession(request, env) {
   const secret = env && env.KDMC_SSO_SECRET;
   if (!secret) return null;
   const adminHash = env && env.KDMC_ADMIN_PIN_SHA256;
-  if (adminHash) {
-    const g = await ssoVerify(secret, adminGrantTok(request));
-    if (!g || g.uid !== '__kdmc_admin__') return null;
-    return { uid: '__kdmc_admin__', name: 'Admin', grant: true };
-  }
-  /* rollout : hash absent → ancien contrôle par nom (fonctionnel, trou ouvert) */
-  const s = await ssoVerify(secret, ssoToken(request));
-  if (!s || ADMIN_UIDS.indexOf(s.uid) < 0) return null;
-  return s;
+  /* FAIL-CLOSED (leçons #98/#99) : l'identité SSO est AUTO-ASSERTÉE (n'importe qui
+     peut taper le nom "Kevin Desarzens"). Le nom seul ne donne donc JAMAIS l'accès
+     admin. Sans hash de PIN configuré → aucun accès (au lieu de l'ancien fail-open
+     par nom). Le hash est déployé en prod ; un déploiement sans hash FERME l'admin
+     plutôt que de l'ouvrir. L'accès exige un GRANT signé prouvé via /__admin/login. */
+  if (!adminHash) return null;
+  const g = await ssoVerify(secret, adminGrantTok(request));
+  if (!g || g.uid !== '__kdmc_admin__') return null;
+  return { uid: '__kdmc_admin__', name: 'Admin', grant: true };
 }
 async function handleAdmin(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });

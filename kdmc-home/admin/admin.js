@@ -41,8 +41,8 @@
   }
   function kvp(k, v) { return '<div><span>' + k + '</span><br>' + v + '</div>'; }
   function fiche(a) {
-    var places = (a.places || []).join(' · ') || a.last_place || '—';
-    var devs = (a.devices || []).join(' · ') || a.last_device || '—';
+    var places = (a.places || []).map(esc).join(' · ') || esc(a.last_place || '—');
+    var devs = (a.devices || []).map(esc).join(' · ') || esc(a.last_device || '—');
     return '<div class="kdmc-card kdmc-in fiche">'
       + '<div class="fhead"><div><h3>' + esc(a.name || a.uid) + '</h3><div class="uid">' + esc(a.uid) + '</div></div>'
       + '<div class="when"><span class="kdmc-dot"></span>' + ago(a.last_seen) + '</div></div>'
@@ -50,8 +50,8 @@
       + kvp('Compte créé', dt(a.created))
       + kvp('CGU acceptée', a.cgu_at ? dt(a.cgu_at) : '—')
       + kvp('Connexions', String(a.hits || 0))
-      + kvp('Appareils', esc(devs))
-      + kvp('Lieux', esc(places))
+      + kvp('Appareils', devs)
+      + kvp('Lieux', places)
       + kvp('Dernière connexion', dt(a.last_seen))
       + '</div></div>';
   }
@@ -124,7 +124,7 @@
       .then(function (res) {
         var j = res.j;
         if (res.st === 403 || !j || !j.ok) {
-          if (j && j.reason === 'need_admin_code') { promptAdminCode(); return; }
+          if (j && j.reason === 'need_admin_code') { try { localStorage.removeItem(ADMIN_TOK); } catch (e) { /* */ } promptAdminCode(); return; }
           denyViaWhoami(); return; /* rollout sans hash : ancien diag par nom */
         }
         var accounts = j.accounts || [];

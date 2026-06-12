@@ -47,18 +47,19 @@ function cborDecodeFirst(buf, startOff) {
   let off = startOff || 0;
   function readLen(ai) {
     if (ai < 24) return ai;
-    if (ai === 24) { const v = buf[off]; off += 1; return v; }
-    if (ai === 25) { const v = (buf[off] << 8) | buf[off + 1]; off += 2; return v; }
-    if (ai === 26) { const v = (buf[off] * 16777216) + (buf[off + 1] << 16) + (buf[off + 2] << 8) + buf[off + 3]; off += 4; return v; }
+    if (ai === 24) { if (off + 1 > buf.length) throw new Error('cbor tronqué'); const v = buf[off]; off += 1; return v; }
+    if (ai === 25) { if (off + 2 > buf.length) throw new Error('cbor tronqué'); const v = (buf[off] << 8) | buf[off + 1]; off += 2; return v; }
+    if (ai === 26) { if (off + 4 > buf.length) throw new Error('cbor tronqué'); const v = (buf[off] * 16777216) + (buf[off + 1] << 16) + (buf[off + 2] << 8) + buf[off + 3]; off += 4; return v; }
     throw new Error('cbor len trop grand');
   }
   function next() {
+    if (off >= buf.length) throw new Error('cbor: fin de buffer');
     const b = buf[off]; off += 1;
     const major = b >> 5; const ai = b & 0x1f;
     if (major === 0) return readLen(ai);
     if (major === 1) return -1 - readLen(ai);
-    if (major === 2) { const n = readLen(ai); const v = buf.slice(off, off + n); off += n; return v; }
-    if (major === 3) { const n = readLen(ai); const v = td.decode(buf.slice(off, off + n)); off += n; return v; }
+    if (major === 2) { const n = readLen(ai); if (n < 0 || off + n > buf.length) throw new Error('cbor bytes hors limites'); const v = buf.slice(off, off + n); off += n; return v; }
+    if (major === 3) { const n = readLen(ai); if (n < 0 || off + n > buf.length) throw new Error('cbor str hors limites'); const v = td.decode(buf.slice(off, off + n)); off += n; return v; }
     if (major === 4) { const n = readLen(ai); const a = []; for (let i = 0; i < n; i++) a.push(next()); return a; }
     if (major === 5) { const n = readLen(ai); const m = new Map(); for (let i = 0; i < n; i++) { const k = next(); const v = next(); m.set(k, v); } return m; }
     throw new Error('cbor major non supporté: ' + major);
@@ -91,7 +92,9 @@ function coseToJwk(cose) {
   if (alg !== -7) throw new Error('alg non-ES256 (-7 attendu)');
   if (crv !== 1) throw new Error('courbe non-P-256');
   const x = cose.get(-2), y = cose.get(-3);
-  return { kty: 'EC', crv: 'P-256', x: b64uEnc(x), y: b64uEnc(y), ext: true };
+  if (!(x instanceof Uint8Array) || x.length !== 32) throw new Error('COSE x invalide (32 octets attendus)');
+  if (!(y instanceof Uint8Array) || y.length !== 32) throw new Error('COSE y invalide (32 octets attendus)');
+  return { kty: 'EC', crv: 'P-256', x: b64uEnc(x), y: b64uEnc(y), ext: false };
 }
 
 /* Signature ECDSA DER (SEQUENCE{INTEGER r, INTEGER s}) → r||s brut (64 octets). */
@@ -117,7 +120,7 @@ function derToRaw(der) {
 /* ----------------------- Challenge sans état ------------------------- */
 /* challenge = base64url( kind(1) + ts(6, ms) + nonce(16) + tag(16=HMAC tronqué) ).
    Permet de vérifier fraîcheur + intégrité sans stockage serveur. */
-const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const CHALLENGE_TTL_MS = 2 * 60 * 1000; /* fenêtre de rejeu courte (challenge stateless signé) */
 async function makeChallenge(secret, kind) {
   const k = kind === 'auth' ? 2 : 1;
   const body = new Uint8Array(1 + 6 + 16);
