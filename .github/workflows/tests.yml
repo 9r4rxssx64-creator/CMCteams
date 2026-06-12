@@ -32,7 +32,7 @@ jobs:
               .filter(m => {
                 if (/\bsrc=/.test(m[0])) return false;
                 const open = m[0].slice(0, m[0].indexOf('>') + 1);
-                const tm = open.match(/\btype\s*=\s*["']?([^"'\s>]+)/i);
+                const tm = open.match(/\btype\s*=\s*[\x22\x27]?([^\x22\x27\s>]+)/i);
                 const type = tm ? tm[1].toLowerCase() : '';
                 return !type || type === 'text/javascript' || type === 'application/javascript' || type === 'module';
               })
