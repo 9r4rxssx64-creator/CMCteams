@@ -229,6 +229,27 @@
     show(gate);
   });
 
+  /* SSO sur les tuiles d'apps : au clic d'une app *.kd-mc.com, on injecte le pass
+     signé FRAIS dans le fragment (#kdmc_sso=) — non envoyé aux serveurs ni journalisé.
+     Indispensable iPhone : une PWA installée a ses cookies ISOLÉS, donc le cookie de
+     session .kd-mc.com ne traverse PAS ; l'app se reconnaît alors via ce pass (Bearer).
+     Fail-open : pas de session/jeton → lien brut → l'app retombe sur son login normal.
+     Au CLIC (capture) = jeton le plus frais, anti-staleness. (Corrige : Apex Chat
+     redemandait l'OTP car le jeton n'arrivait jamais jusqu'à lui.) */
+  function _decorateAppLinks() {
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a.card') : null;
+      if (!a || !a.getAttribute('href')) return;
+      var host; try { host = new URL(a.href).hostname; } catch (_) { return; }
+      if (host !== 'kd-mc.com' && host.slice(-10) !== '.kd-mc.com') return;
+      var t = (window.kdmcSSO && window.kdmcSSO.token) ? window.kdmcSSO.token() : '';
+      if (!t) return;
+      var base = a.href.replace(/([#&])kdmc_sso=[^&]*/, '$1').replace(/[#&]+$/, '');
+      a.href = base + (base.indexOf('#') >= 0 ? '&' : '#') + 'kdmc_sso=' + encodeURIComponent(t);
+    }, true);
+  }
+  _decorateAppLinks();
+
   /* ---------------------------- Boot ---------------------------- */
   function boot() {
     var acc = lg(LS_ACCOUNT, null);
