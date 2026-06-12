@@ -181,16 +181,18 @@
   function _pkSupported() { return !!(window.kdmcSSO && window.kdmcSSO.supportsPasskey && window.kdmcSSO.supportsPasskey()); }
   /* Après connexion : propose l'enrôlement Face ID si supporté + pas déjà fait. */
   function _postLogin(acc) {
-    if (_pkSupported() && !_hasPasskey(acc.uid)) { renderPasskeyOffer(acc); } else { showHub(acc.name); }
+    var skipped = false; try { skipped = !!sessionStorage.getItem('kdmc_pk_skip'); } catch (e) { /* */ }
+    if (_pkSupported() && !_hasPasskey(acc.uid) && !skipped) { renderPasskeyOffer(acc); } else { showHub(acc.name); }
   }
   function renderPasskeyOffer(acc) {
+    hide(hub); show(gate); /* boot avec session existante : le hub peut être affiché → on remontre la porte */
     gate.innerHTML =
       '<h2 class="g-title">🔐 Active Face ID</h2>'
       + '<p class="g-sub">Reconnecte-toi sans code — et ton appareil devient ta <b>preuve d\'identité forte</b> sur tout KDMC (Face ID / Touch ID).</p>'
       + '<button class="btn" id="pk-go">Activer Face ID / Touch ID</button>'
       + '<button class="btn ghost" id="pk-skip">Plus tard</button>'
       + '<p class="g-err" id="pk-err" role="alert" aria-live="polite"></p>';
-    document.getElementById('pk-skip').addEventListener('click', function () { showHub(acc.name); });
+    document.getElementById('pk-skip').addEventListener('click', function () { try { sessionStorage.setItem('kdmc_pk_skip', '1'); } catch (e) { /* */ } showHub(acc.name); });
     document.getElementById('pk-go').addEventListener('click', function () {
       var b = document.getElementById('pk-go'); b.disabled = true; b.textContent = '…';
       window.kdmcSSO.registerPasskey().then(function (j) {
@@ -254,7 +256,7 @@
   function boot() {
     var acc = lg(LS_ACCOUNT, null);
     var done = function (sess) {
-      if (sess && sess.uid) { showHub(sess.name || (acc && acc.name)); return; }
+      if (sess && sess.uid) { _postLogin({ uid: sess.uid, name: sess.name || (acc && acc.name) }); return; }
       if (acc) renderUnlock(acc); else renderCreate();
       show(gate);
     };
