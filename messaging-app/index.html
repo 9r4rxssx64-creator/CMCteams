@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.221",
+  "softwareVersion": "v1.1.222",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.221';
+const __APEX_CHAT_VERSION__ = 'v1.1.222';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -582,7 +582,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.221</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.222</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.221</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.222</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6323,16 +6323,17 @@ function renderAuthStep(){
       <button id="btn-auth-phone" type="button" class="btn btn-block" style="margin-top:14px" disabled>
         📱 Recevoir le code SMS
       </button>
-      <button id="btn-kdmc-login" type="button" class="btn btn-block" style="margin-top:10px;background:transparent;border:1px solid var(--ax-gold);color:var(--ax-gold)">
+      <a id="btn-kdmc-login" href="https://kd-mc.com/" class="btn btn-block" style="margin-top:10px;background:transparent;border:1px solid var(--ax-gold);color:var(--ax-gold);display:block;text-align:center;text-decoration:none;box-sizing:border-box;padding:14px;line-height:1.25">
         🔓 Mon compte kd-mc.com (Face ID, sans SMS)
-      </button>
+      </a>
       <div id="auth-debug" style="margin-top:8px;color:var(--ax-text-3);font-size:.75em;text-align:center"></div>`;
     setTimeout(()=>{
       $('#auth-phone')?.focus();
       _kdmcPrefillName(); // compte unique kd-mc.com : pré-remplit le nom (sans privilège ; SMS reste requis)
-      // v1.1.220 — bouton « kd-mc.com » : aller-retour MANUEL vers le domaine pour
-      // récupérer le jeton (marche depuis l'icône installée, même 1ʳᵉ fois).
-      $('#btn-kdmc-login')?.addEventListener('click', ()=>{ try{ K._kdmcBounceToLogin(true); }catch(_e){ _safeCatch('silent',_e); } });
+      // v1.1.222 — bouton « kd-mc.com » = VRAI lien <a href="https://kd-mc.com/">
+      // (navigation top-level garantie, ne peut pas « ne rien faire » contrairement
+      // à un location.replace en handler JS). T'emmène sur le portail où tu actives
+      // ton Face ID ; ensuite la tuile Apex Chat du portail te reconnecte (jeton).
       // v1.1.206 (Kevin "pas de plus tard, ou accepté ou pas de connexion") — CGU
       // en GATE EXPLICITE : case « J'accepte » OBLIGATOIRE, le bouton SMS reste
       // DÉSACTIVÉ tant qu'elle n'est pas cochée → aucune connexion sans acceptation.
