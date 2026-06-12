@@ -223,7 +223,7 @@ Sentinelle `security-audit-watch` (1×/jour minimum) qui :
 | Projet | État global | À durcir |
 |---|---|---|
 | **Apex v13** | 🟢 Vault AES-GCM + PIN PBKDF2 200k + Firebase Phase 5 rules + Worker proxy SHA-256 auth | Rate-limit device-fingerprint-bound (v13.4.264) |
-| **CMCteams** | 🟡 PIN admin SHA + audit log | Firebase rules `.read/.write: true` à durcir — **audit dédié à prévoir** (peut casser prod si mal fait) |
+| **CMCteams** | 🟢 PIN admin SHA + audit log + **Firebase rules `/cmcteams` durci `auth != null`** (2026-06-12, déployé via `deploy-cmcteams-rules.yml`, vérifié live) | Auth anonyme auto pour tous les clients (clé Web embarquée, fail-open, token threadé write/read/SSE). **Limite honnête** : `auth != null` ferme la DB ouverte (plus de read/write zéro-auth) mais l'auth anonyme reste ouverte à tous → durcissement fort = migration custom-tokens par rôle (v10). Rollback : `deploy-cmcteams-rules.yml` input `open`. |
 | **Apex Chat** | 🟢 E2E session + magic-link auth + workers JWT | OK |
 | **GitHub repo** | 🟢 Kevin seul collaborateur | CODEOWNERS ajouté v13.4.264 |
 
