@@ -23,11 +23,19 @@ jobs:
           node -e "
             const fs = require('fs');
             const html = fs.readFileSync('index.html', 'utf8');
-            // Extraction CORRECTE : TOUS les blocs <script> inline (hors src=).
-            // L'ancienne méthode lastIndexOf('<script>') ne prenait que le
-            // DERNIER bloc → fragment → faux échec (bug CI, CLAUDE.md #29).
+            // Extraction CORRECTE : TOUS les blocs <script> inline JS uniquement.
+            // - hors src= (script externe)
+            // - hors type non-JS (application/ld+json SEO, importmap, application/json,
+            //   text/template…) sinon node --check plante sur du JSON valide (CLAUDE.md #29).
+            // Garde uniquement : pas de type, text/javascript, application/javascript, module.
             const blocks = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
-              .filter(m => !/\bsrc=/.test(m[0]))
+              .filter(m => {
+                if (/\bsrc=/.test(m[0])) return false;
+                const open = m[0].slice(0, m[0].indexOf('>') + 1);
+                const tm = open.match(/\btype\s*=\s*["']?([^"'\s>]+)/i);
+                const type = tm ? tm[1].toLowerCase() : '';
+                return !type || type === 'text/javascript' || type === 'application/javascript' || type === 'module';
+              })
               .map(m => m[1]);
             fs.writeFileSync('/tmp/test.js', blocks.join('\n;\n'));
           "
