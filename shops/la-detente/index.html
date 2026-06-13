@@ -247,15 +247,10 @@ var CATS=[{"id":"designs","name":"Designs ★","icon":"🔥"},{"id":"bio","name"
 function gMock(g,color,motif){var box={tee:[34,32,32,32],hoodie:[34,40,32,32],polo:[36,36,28,28],cap:[40,26,20,20],tote:[33,30,34,34],bandana:[36,40,28,28]}[g]||[34,34,32,32];if(motif==="emblem"&&g!=="cap"){box=[box[0]-2,box[1]-1,box[2]+4,box[3]+4];}return '<svg style="width:100%;height:100%;display:block" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+'<g style="color:'+color+'"><use href="#g-'+g+'"/></g>'+'<use href="#'+motif+'" x="'+box[0]+'" y="'+box[1]+'" width="'+box[2]+'" height="'+box[3]+'"/></svg>';}function _b(id,name,cat,g,color,motif,price,orig,mat,rate,rev,stock,tags){return {id:id,name:name,cat:cat,price:price,origPrice:orig,img:gMock(g,color,motif),rating:rate,reviews:rev,desc:name+" — \u00e9dition La D\u00e9tente. "+mat+", impression haute t\u00e9nacit\u00e9, motif c\u0153ur rouge. Tailles S \u00e0 XXL. Entre amis, vise juste.​",material:mat,tags:tags,sizes:["S","M","L","XL","XXL"],stock:stock,shipping:"standard",garment:g,garmentColor:color,motif:motif,placement:"chest"};}var P=[];
 try{var _c=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");if(_c&&_c.length){_c.forEach(function(q){q.sizes=q.sizes||["S","M","L","XL","XXL"];q.rating=q.rating||5;q.reviews=q.reviews||0});P=_c.concat(P);}}catch(_){}
 P.forEach(function(p){if(/^ld\d/.test(p.id))p.img="img/products/"+p.id+".png"});
-/* PRODUITS AOP (sublimation polyester, imprimé partout) + BIO (coton bio Stanley/Stella, DTG) */
-P=P.concat([
- _b("ld-aop-bandana","Bandana All-Over — Camo Détente","accessoires","bandana","#3a4636","th-clay",19.9,26,"Polyester microfibre · sublimation intégrale (AOP, imprimé partout)",4.8,37,99,["aop","all-over","bandana","camo","ball-trap","tir"]),
- _b("ld-aop-tote","Tote bag All-Over — Méli-mélo","accessoires","tote","#15171a","emblem",22.9,29,"Polyester recyclé · sublimation intégrale (AOP, motif partout)",4.9,21,99,["aop","all-over","tote","sac","graffiti"]),
- _b("ld-aop-tee","T-shirt All-Over — Graffiti Tir","tshirts","tee","#1d3a5f","th-tir",32.9,42,"Polyester respirant 100% · sublimation intégrale (AOP, tout le tissu)",4.8,54,99,["aop","all-over","tshirt","graffiti","tir","precision"]),
- _b("ld-bio-tee","T-shirt Bio — Cœur AR15","tshirts","tee","#15171a","heart",26.9,34,"Coton bio Stanley/Stella 180 g/m² · encres à l'eau (DTG)",4.9,88,99,["bio","organic","coton bio","coeur","ar15","eco"]),
- _b("ld-bio-hoodie","Hoodie Bio — Vise Juste","sweats","hoodie","#283019","th-visejuste",49.9,64,"Coton bio Stanley/Stella molletonné · encres à l'eau (DTG)",4.8,42,99,["bio","organic","coton bio","hoodie","eco","tir"]),
- _b("ld-bio-tote","Tote Bio — Emblème La Détente","accessoires","tote","#c9c4ba","emblem",17.9,23,"Coton bio certifié · impression DTG dans la zone",4.9,33,99,["bio","organic","coton bio","tote","sac","eco"])
-]);
+/* Catalogue vidé à la demande de Kevin (2026-06-13) — aucun article à vendre par défaut.
+   Kevin réajoute ses produits au fur et à mesure (admin Studio → Publier, ou ld_custom_products).
+   L'infrastructure (catégories, panier, studio, worker commande) reste 100% fonctionnelle. */
+P=P.concat([]);
 P.forEach(function(p){var t=(p.tags||[]).join(" ");if(/\baop\b|all-over/.test(t))p._aop=true;if(/\bbio\b|organic|coton bio/.test(t))p._bio=true;});
 /* Vraies photos produits Printify (au lieu des visuels SVG moches) */
 var LD_REALIMG={"ld-aop-tee":"https://images.printify.com/66d81786ae1f0775ec0aef82","ld-aop-tote":"https://images.printify.com/66cdad7e4535d849640e155b","ld-bio-tee":"https://images.printify.com/66c46449877a9d79240440a3","ld-bio-hoodie":"https://images.printify.com/66e045139eab918e110acbc3","ld-bio-tote":"https://images.printify.com/66cdad7e4535d849640e155b","ld-aop-bandana":"https://images.printify.com/69c40511f89645f00907e330"};
@@ -941,7 +936,9 @@ try{(function(){
     })
     .catch(function(){/* fail-open : boutique publique normale, admin par mot de passe */});
 })();}catch(_){}
-var LD_DESIGNS=[{id:"real-shotgun-clays",name:"Fusil & Plateaux (photo)"},{id:"real-shotgun-rose",name:"Fusil & Rose (photo)"},{id:"real-rifle-heart",name:"Carabine Cœur (photo)"},{id:"real-revolver-rose",name:"Revolver & Rose (photo)"},{id:"real-cartridges",name:"Cartouches (photo)"},{id:"real-crossed-shotguns",name:"Fusils Croisés (photo)"},{id:"real-ar15-heart",name:"Carabine Sport (photo)"},{id:"rose-pistol",name:"Pistolet & Rose"},{id:"rose-shotgun",name:"Fusil & Rose"},{id:"hearts-ar15",name:"AR15 Cœurs"},{id:"hearts-shotgun",name:"Fusil Cœurs"},{id:"hearts-pistol",name:"Pistolet Cœurs"},{id:"hearts-revolver",name:"Revolver Cœurs"},{id:"clays-perazzi",name:"Perazzi & Plateaux"},{id:"ld-emb-croise-patch",name:"Armes croisées — Patch"},{id:"ld-emb-croise-vecto",name:"Armes croisées — Vectoriel"},{id:"ld-emb-croise-metal",name:"Armes croisées — Métal/Or"},{id:"ld-emb-ar15-patch",name:"AR15 Cœur — Patch"},{id:"ld-emb-ar15-vecto",name:"AR15 Cœur — Vectoriel"},{id:"ld-emb-ar15-metal",name:"AR15 Cœur — Métal/Or"},{id:"ld-emb-glock-patch",name:"Glock Cœur — Patch"},{id:"ld-emb-glock-vecto",name:"Glock Cœur — Vectoriel"},{id:"ld-emb-glock-metal",name:"Glock Cœur — Métal"},{id:"ld-emb-balltrap-patch",name:"Ball-Trap Cœur — Patch"},{id:"ld-emb-balltrap-vecto",name:"Ball-Trap Cœur — Vectoriel"},{id:"ld-emb-balltrap-metal",name:"Ball-Trap Cœur — Métal/Or"},{id:"ld-emb-sceau-or",name:"Sceau rond — Or"},{id:"yrk-patch-noir-rouge",name:"Y·R·K Patch Noir/Rouge"},{id:"yrk-patch-camo",name:"Y·R·K Patch Camo"},{id:"yrk-patch-or",name:"Y·R·K Patch Or"},{id:"yrk-crest-noir-rouge",name:"Y·R·K Crest Noir/Rouge"},{id:"yrk-crest-camo",name:"Y·R·K Crest Camo"},{id:"yrk-crest-or",name:"Y·R·K Crest Or"},{id:"yrk-cartouches-or",name:"Y·R·K Cartouches"},{id:"yrk-monogramme-acier",name:"Y·R·K Monogramme Acier"},{id:"yrk-monogramme-or",name:"Y·R·K Monogramme Or"},{id:"yrk-crest-or-prestige",name:"Y·R·K Crest Or Prestige"},{id:"yrk-crest-or-deluxe",name:"Y·R·K Crest Or Deluxe"},{id:"yrk-monogramme-or-medaille",name:"Y·R·K Médaille Or"},{id:"yrk-monogramme-or-prestige",name:"Y·R·K Monogramme Or Prestige"}];
+/* Logos/designs vidés à la demande de Kevin (2026-06-13) — aucun logo proposé par défaut.
+   Kevin réajoute ses propres logos au fur et à mesure (Studio → ajouter un logo → _ldCustomLogos). */
+var LD_DESIGNS=[];
 window._ldCustomLogos=[];
 function _ldHidden(){try{return JSON.parse(localStorage.getItem("ld_logos_hidden")||"[]")}catch(_){return[]}}
 function _ldSetHidden(a){try{localStorage.setItem("ld_logos_hidden",JSON.stringify(a))}catch(_){}}
@@ -1137,7 +1134,7 @@ function ldPublishModal(i){var it=(window._ldBpList||[])[i];if(!it)return;var ca
 }
 function ldDoPublish(bp,cat){
  var mode=window._ldPubMode||"logo";
- var design=(mode==="nu")?"":((document.getElementById("ld_pub_design")||{}).value||LD_DESIGNS[0].id);
+ var design=(mode==="nu")?"":((document.getElementById("ld_pub_design")||{}).value||(LD_DESIGNS[0]&&LD_DESIGNS[0].id)||(ldEffLogos()[0]||{}).id||"");
  var name=((document.getElementById("ld_pub_name")||{}).value||"").trim()||"Produit La Détente";
  var price=parseFloat((document.getElementById("ld_pub_price")||{}).value)||ldPriceSuggest(cat);
  var place=(document.getElementById("ld_pub_place")||{}).value||"chest";
@@ -1188,7 +1185,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.53.5"
+        data-version="v1.53.6"
         data-color="#e8b830"
         defer></script>
 
