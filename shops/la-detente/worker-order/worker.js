@@ -121,6 +121,21 @@ export default {
         return J({ ok: n > 0, sent: n, detail: n > 0 ? 'push envoyé' : 'aucun abonnement (active les alertes d\'abord) ou clés VAPID manquantes' }, 200, origin);
       } catch (e) { return J({ ok: false, detail: String(e && e.message || e) }, 500, origin); }
     }
+    // ALERTE IMPORTANTE : la boutique signale une erreur critique → push sur le tél admin.
+    // En plus de l'email côté front. Sécurisé (origin allowlist + x-ld-app) + rate-limit anti-spam.
+    if (request.method === 'POST' && url.pathname === '/alert') {
+      if (!ALLOW.includes(origin)) return J({ ok: false, detail: 'origin refusée' }, 403, origin);
+      if (request.headers.get('x-ld-app') !== APP_TAG) return J({ ok: false, detail: 'app tag invalide' }, 403, origin);
+      if (rl('alert:' + ip, 6, 300000) || rl('alert:global', 12, 3600000)) return J({ ok: false, detail: 'trop d\'alertes, throttle', retryAfter: 300 }, 429, origin);
+      let ab; try { ab = await request.json(); } catch (_) { return J({ ok: false, detail: 'json invalide' }, 400, origin); }
+      const title = String(ab.title || '⚠️ Alerte La Détente').slice(0, 80);
+      const bodyTxt = String(ab.body || 'Erreur signalée sur la boutique').slice(0, 300);
+      const aurl = /^https?:\/\//.test(ab.url || '') ? String(ab.url).slice(0, 300) : undefined;
+      try {
+        const n = await sendOrderPush(env, title, bodyTxt, aurl, { tag: 'ld-alert' });
+        return J({ ok: n > 0, sent: n, detail: n > 0 ? 'alerte push envoyée' : 'aucun abonnement push (active les alertes) ou clés VAPID manquantes' }, 200, origin);
+      } catch (e) { return J({ ok: false, detail: String(e && e.message || e) }, 500, origin); }
+    }
     // VALIDER (Kevin « bouton valider auto ») : envoie une commande on-hold en PRODUCTION
     // Printify = validation/paiement réel. Auth : Origin allowlist + x-ld-app (comme /order).
     if (request.method === 'POST' && url.pathname === '/validate') {
