@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.223",
+  "softwareVersion": "v1.1.224",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -397,7 +397,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.223';
+const __APEX_CHAT_VERSION__ = 'v1.1.224';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -582,7 +582,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.223</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.224</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -596,7 +596,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.223</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.224</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6334,14 +6334,17 @@ function renderAuthStep(){
       // (navigation top-level garantie, ne peut pas « ne rien faire » contrairement
       // à un location.replace en handler JS). T'emmène sur le portail où tu actives
       // ton Face ID ; ensuite la tuile Apex Chat du portail te reconnecte (jeton).
-      // v1.1.222 — DIAG VISIBLE (Kevin « mets un diag pour savoir l'erreur exacte ») :
-      // affiche l'état SSO réel sous le formulaire (jeton ? reconnu ? Face ID ?), sans
-      // rien taper → Kevin/moi voyons précisément pourquoi l'auto-login ne se fait pas.
+      // v1.1.224 — DIAG SSO DISCRET (Kevin « mets un diag pour savoir l'erreur exacte »,
+      // mais UX épurée) : ne s'affiche QUE pour un user SSO bloqué (jeton présent mais
+      // resté sur l'écran de connexion = vrai souci à diagnostiquer). Un user OTP normal
+      // (pas de jeton) ne voit RIEN → écran propre. Quand l'auto-login marche, l'écran
+      // n'est jamais atteint → invisible.
       (async()=>{ try{
         const out=document.getElementById('auth-debug'); if(!out) return;
         let tok=''; try{ tok=localStorage.getItem('kdmc_sso_token')||''; }catch(_){}
+        if(!tok) return; // pas de jeton SSO → user OTP normal → aucun diag affiché
         let seen='non'; try{ if(localStorage.getItem('kdmc_domain_seen')) seen='oui'; }catch(_){}
-        out.textContent='🔍 Diag kd-mc… (jeton:'+(tok?'oui':'non')+' · domaine vu:'+seen+')';
+        out.textContent='🔍 Diag kd-mc… (jeton:oui · domaine vu:'+seen+')';
         let who;
         try{
           const h={}; if(tok) h['Authorization']='Bearer '+tok;
