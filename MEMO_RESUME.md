@@ -1,3 +1,24 @@
+# Mémo de reprise — Domaine kd-mc.com / boutiques (2026-06-13, branche `claude/remove-unsold-items-qpnypb`)
+
+> Session boutiques/domaine. Tout mergé sur le VRAI `main` via GitHub MCP (vérifié par witness `sw.js`).
+
+## Livré cette session (2026-06-13)
+- **La Détente** : catalogue vidé (produits + logos), studio vidé (REAL_LIB/EMBLEMS), **galerie de marque** `la-detente/` vidée (E/L/PR/M=[]). v1.53.18.
+- **Audit crew UX/UI** (5 experts) → **Lot 1** (état vide pro `vHomeEmpty`, accessibilité WCAG, header sombre+accent or, mobile/CLS) + **Lot 2** (secours email commande, validation publish, SEO Product+BreadcrumbList).
+- **Alertes** : email **+ push téléphone** (`/alert` worker + erreurs JS importantes throttlées) ; bouton test → discret une fois vérifié ; **auto** (greffé acceptation CGU, admin-only, auto-réparation).
+- **Consentement unique** (1 clic = CGV+confidentialité+mentions+cookies) sur La Détente + **5 boutiques**, **isolé par boutique** (`<STORE_ID>_consent`).
+- **Barre admin** : La Détente `ldInstallAdminBar` (comme Chez Lolo) ; **4 démos** (ecocraft/digital-vault/pawsome/tech-hub) via **module partagé** `shops/_shared/kdmc-shop-admin.js` (thémé `--p`, auth = code Chez Lolo, ajout/gestion produits). Ouverture `?admin=1`.
+- **MAJ auto forcée durcie** tout le domaine : skip `?_v`/`_force_upd_` dans 7 SW + helper sur galerie/portail. **Badge version** : chemin absolu (visible sur domaine) + remonté au-dessus de la barre Safari (détection standalone). Helper `tools/shared/version-badge-pwa.js`.
+- **Lien ← KDMC** ne chevauche plus : boutiques (header décalé, fix override mobile) + Apex AI/Chat (pill→droite).
+- **Démos « 🚧 En construction »** grisées + non cliquables sur portail kd-mc.com + shops/index.html ; **fonctionnelles (Chez Lolo, La Détente) en premier**. kdmc-home v1.0.4.
+
+## Reste possible (au choix Kevin)
+- Studio + Printify (production auto) pour les 4 démos = nécessite config Printify par boutique.
+- Uniformiser La Détente/Chez Lolo sur le module partagé (sinon elles gardent leur barre plus riche).
+- Remettre produits/logos sur La Détente / Chez Lolo (au fur et à mesure, via ?admin=1 / studio).
+
+---
+
 # Mémo de reprise — CMCteams sécurité Firebase + stabilité (2026-06-08, branche `claude/priority-action-workflow-iKc0T`)
 
 > **Objectif Kevin** : faire ses actions par priorité, pas à pas. Action #1 = fermer la DB Firebase ouverte (Chantier 2). + passe de stabilité (scintillement) + docs à jour.
