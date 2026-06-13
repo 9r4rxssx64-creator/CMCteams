@@ -1089,10 +1089,11 @@ function ldAutoSubscribe(){
 try{setTimeout(function(){try{ldAutoSubscribe();}catch(_){}},2500);}catch(_){}
 function _admSettings(){
  var oc=window._ldOrderCfg;
- return '<div class="adm-card"><h3>🔔 Alertes commande (notif iPhone)</h3>'
-  +'<p style="color:var(--muted);font-size:13px;margin-bottom:10px">Une notification sur ton tél à <b>chaque commande</b>, même app fermée. Ajoute d\'abord la boutique à ton <b>écran d\'accueil</b>.</p>'
-  +'<button onclick="ldEnableAlerts()" style="padding:11px 18px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🔔 Activer les alertes</button> <button onclick="ldTestAlert()" style="padding:11px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-weight:700;cursor:pointer">🧪 Tester</button>'
-  +(localStorage.getItem("ld_alerts")==="1"?'<div style="font-size:12px;color:#16a34a;margin-top:8px">✅ Alertes activées sur cet appareil</div>':'')
+ return '<div class="adm-card"><h3>🔔 Alertes iPhone (commandes + erreurs)</h3>'
+  +'<p style="color:var(--muted);font-size:13px;margin-bottom:12px">Une notification sur ton tél à <b>chaque commande</b> ET si une <b>erreur importante</b> survient sur la boutique — même app fermée. Ajoute d\'abord la boutique à ton <b>écran d\'accueil</b>, puis active.</p>'
+  +'<button onclick="ldEnableAlerts()" style="width:100%;min-height:48px;padding:14px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px">🔔 Activer les alertes</button>'
+  +'<button onclick="ldTestAlert()" style="width:100%;min-height:48px;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#1a1305;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer">🧪 Tester mes alertes maintenant</button>'
+  +(localStorage.getItem("ld_alerts")==="1"?'<div style="font-size:12px;color:#16a34a;margin-top:8px">✅ Alertes activées sur cet appareil — le test doit faire apparaître une notif « Test alerte La Détente ».</div>':'<div style="font-size:12px;color:var(--muted);margin-top:8px">Active, puis teste : tu dois recevoir la notif « Test alerte La Détente ».</div>')
   +'</div>'
   +'<div class="adm-card"><h3>🏭 Production</h3>'
   +'<div class="adm-row"><span>Connexion fournisseur</span><b style="margin-left:auto;color:#22c55e">🟢 boutique 27791653</b></div>'
@@ -1240,7 +1241,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="la-detente"
-        data-version="v1.53.9"
+        data-version="v1.53.10"
         data-color="#e8b830"
         defer></script>
 
