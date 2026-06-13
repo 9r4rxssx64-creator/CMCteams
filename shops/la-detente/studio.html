@@ -11,7 +11,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--p:#dc2626;--bg:#0e1012;--panel:#17191c;--panel2:#1f2227;--text:#f1f2f3;--muted:#9aa0a6;--border:#2a2d31;--r:12px;--rs:8px}
+:root{--p:#dc2626;--bg:#0e1012;--panel:#17191c;--panel2:#1f2227;--text:#f1f2f3;--muted:#b0b5ba;--border:#2a2d31;--gold:#c9a961;--r:12px;--rs:8px}
 html,body{height:100%;max-width:100%;overflow-x:hidden}
 body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -217,8 +217,8 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true"><div class="box" id="modalBox"></div></div>
 <script src="../_shared/firebase-orders.js" defer></script>
 
 <script>
