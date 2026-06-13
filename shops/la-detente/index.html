@@ -1048,6 +1048,31 @@ function _admOrders(){
 }
 function ldPushConfig(cb){if(window._ldPushCfg)return cb(window._ldPushCfg);fetch("push-config.json?_="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){window._ldPushCfg=j;cb(j)}).catch(function(){cb(null)});}
 function _urlB64ToU8(b){var p="=".repeat((4-b.length%4)%4);var s=(b+p).replace(/-/g,"+").replace(/_/g,"/");var raw=atob(s);var arr=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);return arr;}
+var _LD_FB_SUB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/ld_detente/push_sub.json";
+/* Auto-test alerte (/push-test) → cb(ok, detail) */
+function ldAutoTest(cb){var oc=window._ldOrderCfg,url=oc&&oc.worker_url;if(!url){cb(false,"worker non déployé");return;}fetch(url.replace(/\/$/,"")+"/push-test").then(function(r){return r.json()}).then(function(j){cb(!!(j&&j.ok),(j&&j.detail)||"")}).catch(function(e){cb(false,(e&&e.message)||"réseau")});}
+/* Abonne ce device au push admin (PUT unique) → cb(ok, detail) */
+function _ldSubscribePush(cfg,cb){try{navigator.serviceWorker.ready.then(function(reg){reg.pushManager.getSubscription().then(function(ex){(ex?Promise.resolve(ex):reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_urlB64ToU8(cfg.vapid_public)})).then(function(sub){fetch(_LD_FB_SUB,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)}).then(function(){localStorage.setItem("ld_alerts","1");cb(true)}).catch(function(){cb(false,"save KO")})}).catch(function(e){cb(false,(e&&e.message)||"subscribe KO")})})});}catch(e){cb(false,(e&&e.message)||"err")}}
+/* AUTO-RÉPARATION : désabonne + ré-abonne + re-teste une fois */
+function _ldReSubscribeAndTest(cfg){try{navigator.serviceWorker.ready.then(function(reg){reg.pushManager.getSubscription().then(function(s){(s?s.unsubscribe():Promise.resolve(true)).then(function(){_ldSubscribePush(cfg,function(ok){if(!ok)return;ldAutoTest(function(tok){if(tok){localStorage.setItem("ld_alerts_verified","1");toast("🔧 Alertes réparées & vérifiées ✅");try{dc()}catch(_){}}})})})})});}catch(_){}}
+/* ADMIN ONLY — auto : souscription + test + auto-réparation. fromGesture=true autorise la demande de permission (iOS). */
+function ldEnsureAlertsAuto(fromGesture){
+ try{
+  if(typeof LD_ADMIN==="undefined"||!LD_ADMIN)return;            /* JAMAIS pour un client : écraserait l'abonnement de Kevin */
+  if(localStorage.getItem("ld_alerts_verified")==="1")return;    /* déjà prouvé */
+  if(!("serviceWorker" in navigator)||!("PushManager" in window)||typeof Notification==="undefined")return;
+  var perm=Notification.permission; if(perm==="denied")return;
+  if(perm==="default"&&!fromGesture)return;                      /* iOS : autorisation only sur geste */
+  if(!fromGesture){var last=parseInt(localStorage.getItem("ld_alerts_autotry_ts")||"0",10);if(Date.now()-last<3600000)return;} /* throttle 1h (silencieux) */
+  localStorage.setItem("ld_alerts_autotry_ts",String(Date.now()));
+  ldPushConfig(function(cfg){
+   if(!cfg||!cfg.vapid_public)return;
+   var go=function(){_ldSubscribePush(cfg,function(ok){if(!ok)return;ldAutoTest(function(tok){if(tok){localStorage.setItem("ld_alerts_verified","1");toast("🔔 Alertes activées & vérifiées automatiquement ✅");try{dc()}catch(_){}}else{_ldReSubscribeAndTest(cfg);}});});};
+   if(perm==="granted")go();
+   else if(fromGesture)Notification.requestPermission().then(function(p){if(p==="granted")go();});
+  });
+ }catch(_){}
+}
 function ldEnableAlerts(){
  if(!("serviceWorker" in navigator)||!("PushManager" in window)){toast("Notifications non supportées ici","error");return;}
  ldPushConfig(function(cfg){
@@ -1057,7 +1082,7 @@ function ldEnableAlerts(){
    navigator.serviceWorker.ready.then(function(reg){
     reg.pushManager.getSubscription().then(function(ex){
      (ex?Promise.resolve(ex):reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_urlB64ToU8(cfg.vapid_public)})).then(function(sub){
-      fetch("https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/ld_detente/push_sub.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)}).then(function(){localStorage.setItem("ld_alerts","1");toast("🔔 Alertes commande activées ✅");dc();}).catch(function(){toast("Abonné mais sauvegarde KO","error");});
+      fetch("https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/ld_detente/push_sub.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)}).then(function(){localStorage.setItem("ld_alerts","1");toast("🔔 Alertes activées — test en cours…");ldAutoTest(function(tok){if(tok){localStorage.setItem("ld_alerts_verified","1");toast("✅ Alertes vérifiées");}else{toast("Activées, mais test KO — je réessaie","error");}try{dc()}catch(_){}});}).catch(function(){toast("Abonné mais sauvegarde KO","error");});
      }).catch(function(e){toast("Abonnement échoué: "+(e&&e.message||e),"error");});
     });
    });
@@ -1238,13 +1263,15 @@ function ldPrintifyAuto(orderId,btn){
 
 try{var _uq=new URLSearchParams(location.search).get("q");if(_uq){S.search=_uq;S.cat="all";S.view="products";S.sugg=false;}}catch(_){}
 loadCart();dc();startAbandonWatch();
+/* Auto : si admin + notifs déjà autorisées → abonne + teste + auto-répare en silence (throttle 1h) */
+setTimeout(function(){try{ldEnsureAlertsAuto(false)}catch(_){}},2500);
 window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",scrollY>400)});
-if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-accept" onclick="localStorage.setItem(\'kdmc_cookie_ok\',1);this.closest(\'.cookie\').remove()">Accepter</button><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button></div>';document.body.appendChild(ck)}
+if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-accept" onclick="localStorage.setItem(\'kdmc_cookie_ok\',1);this.closest(\'.cookie\').remove();try{ldEnsureAlertsAuto(true)}catch(_){}">Accepter</button><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button></div>';document.body.appendChild(ck)}
 </script>
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="la-detente"
-        data-version="v1.53.11"
+        data-version="v1.53.12"
         data-color="#e8b830"
         defer></script>
 
