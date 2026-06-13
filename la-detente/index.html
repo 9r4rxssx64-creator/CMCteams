@@ -39,10 +39,8 @@
   <div class="slogan">♥ ON VISE AU CŒUR</div>
   <div class="sub">TIR · BALL-TRAP · CHASSE</div>
   <p style="max-width:680px;margin:18px auto 0;color:var(--sub);line-height:1.6">
-    Pack identité visuelle « armes + cœur » — 12 emblèmes (4 concepts × 3 styles),
-    2 logos et 4 mockups. Chaque emblème est fourni en <b>PNG haute résolution</b> ET en
-    <b>SVG vectoriel</b> (modifiable / exploitable imprimeur). Jeu de mots : la <i>détente</i>
-    de l'arme &amp; la <i>détente</i> entre potes.
+    Pack identité visuelle en préparation. Les logos, emblèmes et déclinaisons
+    seront ajoutés au fur et à mesure.
   </p>
   <div style="margin-top:14px">
     <span class="chip">Slogans : « On vise au cœur »</span>
@@ -53,73 +51,47 @@
 <div class="wrap">
 
   <h2>Logos &amp; verrouillage de marque</h2>
-  <p class="note">Le logo horizontal pour enseigne / site / en-tête, et le sceau rond doré pour tampon / médaillon.</p>
+  <p class="note">À venir — ajoutés au fur et à mesure.</p>
   <div class="grid big" id="logos"></div>
 
-  <h2>Emblèmes — <span class="g">12 déclinaisons</span></h2>
-  <p class="note">Concepts : armes croisées · AR15 · Glock · fusil ball-trap. Styles : patch tactique · vectoriel moderne · métal/3D. Palettes : noir &amp; rouge · camo/olive · noir &amp; or.</p>
+  <h2>Emblèmes</h2>
+  <p class="note">À venir — ajoutés au fur et à mesure.</p>
   <div class="grid" id="emblemes"></div>
 
   <h2>Mockups — <span class="g">mise en situation</span></h2>
-  <p class="note">Aperçus produit : patch sur casquette, planche de stickers, enseigne de boutique, t-shirt.</p>
+  <p class="note">À venir — ajoutés au fur et à mesure.</p>
   <div class="grid big" id="mockups"></div>
 
   <h2>Kit imprimeur &amp; charte — <span class="g">prêt à produire</span></h2>
-  <p class="note">Charte graphique, masters HD 3000 px, et versions <b>1 couleur</b> (fond transparent) pour broderie / sérigraphie / tampon. Conversion CMJN par l'imprimeur depuis les SVG.</p>
+  <p class="note">À venir — ajoutés au fur et à mesure.</p>
   <div class="grid big" id="print"></div>
 
 </div>
 <footer>
-  18 visuels générés en vectoriel → PNG HD + SVG · Dossier <b>la-detente/</b><br>
-  Besoin d'une variante (autre couleur, vrai fichier imprimeur CMJN, version monochrome, ajout d'un autre membre/arme) ? Demande-la.
+  Galerie en préparation — Kevin ajoutera ses logos au fur et à mesure.
 </footer>
 <script>
-const E=[
- ['01a-armes-croisees__patch__noir-rouge','Armes croisées','Patch tactique','Noir & rouge'],
- ['01b-armes-croisees__vectoriel__camo','Armes croisées','Vectoriel moderne','Camo / olive'],
- ['01c-armes-croisees__metal__noir-or','Armes croisées','Métal / 3D','Noir & or'],
- ['02a-ar15__patch__camo','AR15 + cœur','Patch tactique','Camo / olive'],
- ['02b-ar15__vectoriel__noir-rouge','AR15 + cœur','Vectoriel moderne','Noir & rouge'],
- ['02c-ar15__metal__noir-or','AR15 + cœur','Métal / 3D','Noir & or'],
- ['03a-glock__patch__noir-or','Glock + cœur','Patch tactique','Noir & or'],
- ['03b-glock__vectoriel__noir-rouge','Glock + cœur','Vectoriel moderne','Noir & rouge'],
- ['03c-glock__metal__gunmetal','Glock + cœur','Métal / 3D','Gunmetal'],
- ['04a-balltrap__patch__camo','Fusil ball-trap','Patch tactique','Camo / olive'],
- ['04b-balltrap__vectoriel__camo','Fusil ball-trap','Vectoriel moderne','Camo / olive'],
- ['04c-balltrap__metal__noir-or','Fusil ball-trap','Métal / 3D','Noir & or'],
-];
-const L=[
- ['logo-horizontal__noir-rouge','Logo horizontal','Enseigne / site / en-tête','Noir & rouge'],
- ['logo-horizontal__camo','Logo horizontal','Variante chasse','Camo / olive'],
- ['logo-horizontal__noir-or','Logo horizontal','Variante premium','Noir & or'],
- ['logo-sceau-rond__noir-or','Sceau rond','Tampon / médaillon','Noir & or'],
-];
-const PR=[
- ['charte-graphique','Charte graphique','Logo · palette · mono · typo',''],
- ['master-logo-horizontal-3000','Master logo HD','3000 px',''],
- ['master-sceau-3000','Master sceau HD','3000 px',''],
- ['master-embleme-croise-3000','Master emblème HD','3000 px',''],
- ['mono-crossed-noir','Mono — armes croisées','1 couleur',''],
- ['mono-ar15-noir','Mono — AR15','1 couleur',''],
- ['mono-glock-noir','Mono — Glock','1 couleur',''],
- ['mono-shotgun-noir','Mono — ball-trap','1 couleur',''],
-];
-const M=[
- ['mockup-casquette-patch','Casquette brodée','Patch frontal camo',''],
- ['mockup-planche-stickers','Planche de stickers','4 emblèmes die-cut',''],
- ['mockup-enseigne-boutique','Enseigne de boutique','Devanture cadre doré',''],
- ['mockup-tshirt','T-shirt','Emblème poitrine',''],
-];
+/* Galerie vidée à la demande de Kevin (2026-06-13) — aucun logo affiché.
+   Kevin recréera ses logos/emblèmes ; il suffira de remettre les entrées dans E/L/PR/M. */
+const E=[];
+const L=[];
+const PR=[];
+const M=[];
 function card(dir,[f,title,style,pal]){
   const svg = true;
   return `<div class="card"><div class="im"><img loading="lazy" src="${dir}/${f}.png" alt="${title}"></div>
    <div class="meta"><b>${title}</b><div class="tags">${style?`<span class="t s">${style}</span>`:''}${pal?`<span class="t c">${pal}</span>`:''}</div>
    <div class="dl"><a href="${dir}/${f}.png" download>PNG</a>${svg?` · <a href="${dir}/${f}.svg" download>SVG</a>`:''}</div></div></div>`;
 }
-document.getElementById('logos').innerHTML=L.map(x=>card('logo',x)).join('');
-document.getElementById('emblemes').innerHTML=E.map(x=>card('emblemes',x)).join('');
-document.getElementById('mockups').innerHTML=M.map(x=>card('mockups',x)).join('');
-document.getElementById('print').innerHTML=PR.map(x=>card('print',x)).join('');
+function fill(id,arr,dir){
+  var el=document.getElementById(id); if(!el)return;
+  el.innerHTML = arr.length ? arr.map(x=>card(dir,x)).join('')
+    : '<div style="grid-column:1/-1;color:var(--sub);border:1px dashed var(--line);border-radius:16px;padding:26px;text-align:center">À venir — en préparation.</div>';
+}
+fill('logos',L,'logo');
+fill('emblemes',E,'emblemes');
+fill('mockups',M,'mockups');
+fill('print',PR,'print');
 </script>
 </body>
 </html>
