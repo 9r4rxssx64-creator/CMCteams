@@ -1064,7 +1064,7 @@ function ldEnableAlerts(){
   });
  });
 }
-function ldTestAlert(){var oc=window._ldOrderCfg;var url=oc&&oc.worker_url;if(!url){toast("Worker non déployé — déploie d'abord","error");return;}toast("Envoi du test…");fetch(url.replace(/\/$/,"")+"/push-test").then(function(r){return r.json()}).then(function(j){toast(j&&j.ok?"Test envoyé ✅ — regarde tes notifs":"Test: "+((j&&j.detail)||"échec"),(j&&j.ok)?"":"error");}).catch(function(e){toast("Test KO: "+(e&&e.message||e),"error");});}
+function ldTestAlert(){var oc=window._ldOrderCfg;var url=oc&&oc.worker_url;if(!url){toast("Worker non déployé — déploie d'abord","error");return;}toast("Envoi du test…");fetch(url.replace(/\/$/,"")+"/push-test").then(function(r){return r.json()}).then(function(j){if(j&&j.ok){localStorage.setItem("ld_alerts_verified","1");toast("Test envoyé ✅ — regarde tes notifs");setTimeout(function(){try{dc()}catch(_){}},60);}else{toast("Test: "+((j&&j.detail)||"échec"),"error");}}).catch(function(e){toast("Test KO: "+(e&&e.message||e),"error");});}
 /* Kevin « auto pour recevoir toutes les notifs » : ré-abonnement push AUTO et SILENCIEUX
    au boot admin, dès que l'autorisation est déjà accordée (la 1ʳᵉ autorisation reste 1 tap
    — règle navigateur incontournable, surtout iOS PWA). ADMIN-ONLY : seul l'appareil de Kevin
@@ -1089,11 +1089,14 @@ function ldAutoSubscribe(){
 try{setTimeout(function(){try{ldAutoSubscribe();}catch(_){}},2500);}catch(_){}
 function _admSettings(){
  var oc=window._ldOrderCfg;
+ var _verif=localStorage.getItem("ld_alerts_verified")==="1";
  return '<div class="adm-card"><h3>🔔 Alertes iPhone (commandes + erreurs)</h3>'
-  +'<p style="color:var(--muted);font-size:13px;margin-bottom:12px">Une notification sur ton tél à <b>chaque commande</b> ET si une <b>erreur importante</b> survient sur la boutique — même app fermée. Ajoute d\'abord la boutique à ton <b>écran d\'accueil</b>, puis active.</p>'
-  +'<button onclick="ldEnableAlerts()" style="width:100%;min-height:48px;padding:14px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px">🔔 Activer les alertes</button>'
-  +'<button onclick="ldTestAlert()" style="width:100%;min-height:48px;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#1a1305;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer">🧪 Tester mes alertes maintenant</button>'
-  +(localStorage.getItem("ld_alerts")==="1"?'<div style="font-size:12px;color:#16a34a;margin-top:8px">✅ Alertes activées sur cet appareil — le test doit faire apparaître une notif « Test alerte La Détente ».</div>':'<div style="font-size:12px;color:var(--muted);margin-top:8px">Active, puis teste : tu dois recevoir la notif « Test alerte La Détente ».</div>')
+  +(_verif
+    ? /* fonctionne déjà → discret */ '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font-size:13px;color:#16a34a;font-weight:600">✅ Alertes vérifiées &amp; actives (commandes + erreurs)</span><button onclick="ldTestAlert()" style="padding:7px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer">re-tester</button></div>'
+    : /* pas encore prouvé → on guide */ '<p style="color:var(--muted);font-size:13px;margin-bottom:12px">Une notification sur ton tél à <b>chaque commande</b> ET si une <b>erreur importante</b> survient — même app fermée. Ajoute d\'abord la boutique à ton <b>écran d\'accueil</b>, puis active.</p>'
+      +'<button onclick="ldEnableAlerts()" style="width:100%;min-height:48px;padding:14px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px">🔔 Activer les alertes</button>'
+      +'<button onclick="ldTestAlert()" style="width:100%;min-height:48px;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#1a1305;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer">🧪 Tester mes alertes maintenant</button>'
+      +(localStorage.getItem("ld_alerts")==="1"?'<div style="font-size:12px;color:#16a34a;margin-top:8px">✅ Activées sur cet appareil — lance le test : la notif « Test alerte La Détente » doit apparaître.</div>':'<div style="font-size:12px;color:var(--muted);margin-top:8px">Active, puis teste : tu dois recevoir la notif « Test alerte La Détente ».</div>'))
   +'</div>'
   +'<div class="adm-card"><h3>🏭 Production</h3>'
   +'<div class="adm-row"><span>Connexion fournisseur</span><b style="margin-left:auto;color:#22c55e">🟢 boutique 27791653</b></div>'
@@ -1241,7 +1244,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="la-detente"
-        data-version="v1.53.10"
+        data-version="v1.53.11"
         data-color="#e8b830"
         defer></script>
 
