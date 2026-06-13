@@ -471,10 +471,12 @@ function shopConsentRefuse(el){try{localStorage.setItem(STORE_ID+"_consent",JSON
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-pawsome"
-        data-version="v1.0.2"
+        data-version="v1.0.3"
         data-color="#e8b830"
         defer></script>
 
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js')</script>
+<!-- Barre admin partagée (uniforme, thémée par boutique) -->
+<script src="/CMCteams/shops/_shared/kdmc-shop-admin.js" defer></script>
 </body>
 </html>
