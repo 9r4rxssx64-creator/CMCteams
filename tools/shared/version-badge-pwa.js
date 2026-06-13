@@ -37,6 +37,10 @@
   /* ─── BADGE VERSION VISIBLE ───────────────────────────────────────────── */
   function installBadge() {
     if (document.getElementById('kdmc-version-badge')) return;
+    /* En PWA installée : bas (au-dessus du home indicator). En Safari navigateur :
+       remonté au-dessus de la barre d'outils du bas (sinon le badge est masqué). */
+    var _standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    var _bottom = _standalone ? 'max(8px,env(safe-area-inset-bottom,8px))' : 'calc(env(safe-area-inset-bottom,0px) + 64px)';
     var badge = document.createElement('button');
     badge.id = 'kdmc-version-badge';
     badge.type = 'button';
@@ -45,7 +49,7 @@
     badge.textContent = version;
     badge.style.cssText = [
       'position:fixed',
-      'bottom:max(8px,env(safe-area-inset-bottom,8px))',
+      'bottom:' + _bottom,
       'left:8px',
       'z-index:2147483646',
       'padding:5px 10px',
