@@ -231,19 +231,20 @@
     show(gate);
   });
 
-  /* SSO sur les tuiles d'apps : au clic d'une app *.kd-mc.com, on injecte le pass
-     signé FRAIS dans le fragment (#kdmc_sso=) — non envoyé aux serveurs ni journalisé.
-     Indispensable iPhone : une PWA installée a ses cookies ISOLÉS, donc le cookie de
-     session .kd-mc.com ne traverse PAS ; l'app se reconnaît alors via ce pass (Bearer).
-     Fail-open : pas de session/jeton → lien brut → l'app retombe sur son login normal.
-     Au CLIC (capture) = jeton le plus frais, anti-staleness. (Corrige : Apex Chat
-     redemandait l'OTP car le jeton n'arrivait jamais jusqu'à lui.) */
+  /* SSO sur la tuile Apex Chat UNIQUEMENT : on injecte le pass signé FRAIS dans le
+     fragment (#kdmc_sso=) — non envoyé aux serveurs ni journalisé. Indispensable
+     iPhone : une PWA installée a ses cookies ISOLÉS, donc le cookie de session
+     .kd-mc.com ne traverse pas ; Apex Chat se reconnaît via ce pass (Bearer) et sait
+     CONSOMMER+nettoyer le fragment (_kdmcConsumeHashPass).
+     ⚠ RESTREINT À apex-chat : les apps à routeur #hash qui NE consomment PAS le jeton
+     (ex Apex AI v13) prenaient « #kdmc_sso=… » pour une route → « Page introuvable ».
+     Donc on ne décore QUE le consommateur connu. Fail-open : pas de jeton → lien brut. */
   function _decorateAppLinks() {
     document.addEventListener('click', function (e) {
       var a = e.target && e.target.closest ? e.target.closest('a.card') : null;
       if (!a || !a.getAttribute('href')) return;
       var host; try { host = new URL(a.href).hostname; } catch (_) { return; }
-      if (host !== 'kd-mc.com' && host.slice(-10) !== '.kd-mc.com') return;
+      if (host !== 'apex-chat.kd-mc.com') return; /* seul consommateur du fragment */
       var t = (window.kdmcSSO && window.kdmcSSO.token) ? window.kdmcSSO.token() : '';
       if (!t) return;
       var base = a.href.replace(/([#&])kdmc_sso=[^&]*/, '$1').replace(/[#&]+$/, '');
