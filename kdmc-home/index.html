@@ -70,6 +70,8 @@
   .ct{display:flex;flex-direction:column;min-width:0}
   .nm{font-weight:700;font-size:16.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .badge{font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(106,138,255,.16);color:var(--admin);font-weight:700;text-transform:uppercase}
+  a.card.soon{opacity:.5;filter:grayscale(.8);pointer-events:none;cursor:default}
+  .badge.soon{background:rgba(159,176,160,.22);color:#9fb0a0}
   .ds{color:var(--mut);font-size:13px;margin-top:2px}
   .url{color:var(--gold);font-size:12px;margin-top:5px;opacity:.85;word-break:break-all}
   .adm .url{color:var(--admin)}
@@ -113,10 +115,10 @@
         <a class="card" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/"><span class="ic">🏬</span><span class="ct"><span class="nm">Portail boutiques</span><span class="ds">Toutes les boutiques en un coup d'œil</span><span class="url">kd-mc.com → shops</span></span><span class="arr">›</span></a>
         <a class="card" href="https://chez-lolo.kd-mc.com/"><span class="ic">🎨</span><span class="ct"><span class="nm">Chez Lolo</span><span class="ds">Créations &amp; impression à la demande</span><span class="url">chez-lolo.kd-mc.com</span></span><span class="arr">›</span></a>
         <a class="card" href="https://la-detente.kd-mc.com/"><span class="ic">🌿</span><span class="ct"><span class="nm">La Détente</span><span class="ds">Boutique lifestyle &amp; détente</span><span class="url">la-detente.kd-mc.com</span></span><span class="arr">›</span></a>
-        <a class="card" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/tech-hub/"><span class="ic">📱</span><span class="ct"><span class="nm">Tech Hub</span><span class="ds">Gadgets &amp; accessoires tech</span><span class="url">kd-mc.com → tech-hub</span></span><span class="arr">›</span></a>
-        <a class="card" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/ecocraft/"><span class="ic">♻️</span><span class="ct"><span class="nm">EcoCraft</span><span class="ds">Éco-responsable, zéro déchet</span><span class="url">kd-mc.com → ecocraft</span></span><span class="arr">›</span></a>
-        <a class="card" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/digital-vault/"><span class="ic">💾</span><span class="ct"><span class="nm">Digital Vault</span><span class="ds">Produits numériques &amp; formations</span><span class="url">kd-mc.com → digital-vault</span></span><span class="arr">›</span></a>
-        <a class="card" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/pawsome/"><span class="ic">🐾</span><span class="ct"><span class="nm">Pawsome</span><span class="ds">Tout pour les animaux</span><span class="url">kd-mc.com → pawsome</span></span><span class="arr">›</span></a>
+        <a class="card soon" aria-disabled="true" tabindex="-1" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/tech-hub/"><span class="ic">📱</span><span class="ct"><span class="nm">Tech Hub <span class="badge soon">🚧 En construction</span></span><span class="ds">Gadgets &amp; accessoires tech</span><span class="url">kd-mc.com → tech-hub</span></span><span class="arr">›</span></a>
+        <a class="card soon" aria-disabled="true" tabindex="-1" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/ecocraft/"><span class="ic">♻️</span><span class="ct"><span class="nm">EcoCraft <span class="badge soon">🚧 En construction</span></span><span class="ds">Éco-responsable, zéro déchet</span><span class="url">kd-mc.com → ecocraft</span></span><span class="arr">›</span></a>
+        <a class="card soon" aria-disabled="true" tabindex="-1" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/digital-vault/"><span class="ic">💾</span><span class="ct"><span class="nm">Digital Vault <span class="badge soon">🚧 En construction</span></span><span class="ds">Produits numériques &amp; formations</span><span class="url">kd-mc.com → digital-vault</span></span><span class="arr">›</span></a>
+        <a class="card soon" aria-disabled="true" tabindex="-1" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/pawsome/"><span class="ic">🐾</span><span class="ct"><span class="nm">Pawsome <span class="badge soon">🚧 En construction</span></span><span class="ds">Tout pour les animaux</span><span class="url">kd-mc.com → pawsome</span></span><span class="arr">›</span></a>
       </nav>
 
       <!-- Réservé admin : caché par défaut, révélé uniquement si whoami().admin === true (kdmc-portal.js) -->
@@ -138,6 +140,6 @@
   <script src="kdmc-sso.js"></script>
   <script src="kdmc-portal.js"></script>
   <!-- MAJ auto forcée + badge version (helper partagé) -->
-  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.3" data-color="#c9a227" defer></script>
+  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.4" data-color="#c9a227" defer></script>
 </body>
 </html>
