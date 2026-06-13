@@ -1266,12 +1266,33 @@ loadCart();dc();startAbandonWatch();
 /* Auto : si admin + notifs déjà autorisées → abonne + teste + auto-répare en silence (throttle 1h) */
 setTimeout(function(){try{ldEnsureAlertsAuto(false)}catch(_){}},2500);
 window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",scrollY>400)});
-if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-accept" onclick="localStorage.setItem(\'kdmc_cookie_ok\',1);this.closest(\'.cookie\').remove();try{ldEnsureAlertsAuto(true)}catch(_){}">Accepter</button><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button></div>';document.body.appendChild(ck)}
+/* CONSENTEMENT UNIQUE (Kevin) : 1 clic = le client accepte tout ce qui est requis
+   pour le bon fonctionnement (CGV + confidentialité + mentions + cookies + autorisations).
+   Extensible : tout nouveau besoin de consentement passe par ce seul point. RGPD : Refuser conservé. */
+var LD_CONSENT_V="2026-06";
+function ldConsentAcceptAll(el){try{
+  localStorage.setItem("kdmc_cookie_ok","1");
+  localStorage.setItem("ld_consent",JSON.stringify({v:LD_CONSENT_V,ts:Date.now(),accepted:true,scope:["cgv","confidentialite","mentions","cookies","autorisations"]}));
+  if(el){var bb=el.closest(".cookie");if(bb)bb.remove();}
+  try{ldEnsureAlertsAuto(true)}catch(_){}   /* admin → autorise+abonne les alertes ; no-op total pour un client */
+  if(typeof toast==="function")toast("✅ Merci — tout est accepté. Bonne visite !");
+}catch(_){}}
+function ldConsentRefuse(el){try{
+  localStorage.setItem("ld_consent",JSON.stringify({v:LD_CONSENT_V,ts:Date.now(),accepted:false}));
+  if(el){var bb=el.closest(".cookie");if(bb)bb.remove();}
+}catch(_){}}
+(function(){var c=null;try{c=JSON.parse(localStorage.getItem("ld_consent")||"null")}catch(_){}
+ if(c&&c.v===LD_CONSENT_V)return;
+ var ck=document.createElement("div");ck.className="cookie";
+ ck.innerHTML='<div style="flex:1;min-width:220px"><b style="color:var(--text)">Cookies &amp; conditions</b>'
+  +'<div style="margin-top:3px">En cliquant « Tout accepter », vous acceptez nos <a href="../legal/cgv.html">CGV</a>, notre <a href="../legal/confidentialite.html">politique de confidentialité</a>, les <a href="../legal/mentions.html">mentions légales</a> et les cookies &amp; autorisations nécessaires au bon fonctionnement de la boutique.</div></div>'
+  +'<div class="cookie-btns"><button class="btn-accept" onclick="ldConsentAcceptAll(this)">✅ Tout accepter</button><button class="btn-refuse" onclick="ldConsentRefuse(this)">Refuser</button></div>';
+ document.body.appendChild(ck);})();
 </script>
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="la-detente"
-        data-version="v1.53.12"
+        data-version="v1.53.13"
         data-color="#e8b830"
         defer></script>
 
