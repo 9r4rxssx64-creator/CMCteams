@@ -462,12 +462,16 @@ function getMyOrders(){return JSON.parse(localStorage.getItem("kdmc_orders_"+STO
 
 loadCart();dc();startAbandonWatch();
 window.addEventListener("scroll",function(){document.getElementById("btt").classList.toggle("show",scrollY>400)});
-if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='🍪 Ce site utilise des cookies. <a href="#">En savoir plus</a><div class="cookie-btns"><button class="btn-accept" onclick="localStorage.setItem(\'kdmc_cookie_ok\',1);this.closest(\'.cookie\').remove()">Accepter</button><button class="btn-refuse" onclick="this.closest(\'.cookie\').remove()">Refuser</button></div>';document.body.appendChild(ck)}
+/* CONSENTEMENT UNIQUE (Kevin) — 1 clic = tout accepté. ISOLÉ par boutique (clé STORE_ID+'_consent'). */
+var SHOP_CONSENT_V="2026-06";
+function shopConsentAcceptAll(el){try{localStorage.setItem("kdmc_cookie_ok","1");localStorage.setItem(STORE_ID+"_consent",JSON.stringify({v:SHOP_CONSENT_V,ts:Date.now(),accepted:true,scope:["cgv","confidentialite","mentions","cookies"]}));if(el){var bb=el.closest(".cookie");if(bb)bb.remove();}if(typeof toast==="function")toast("✅ Merci — tout est accepté !");}catch(_){}}
+function shopConsentRefuse(el){try{localStorage.setItem(STORE_ID+"_consent",JSON.stringify({v:SHOP_CONSENT_V,ts:Date.now(),accepted:false}));if(el){var bb=el.closest(".cookie");if(bb)bb.remove();}}catch(_){}}
+(function(){var c=null;try{c=JSON.parse(localStorage.getItem(STORE_ID+"_consent")||"null")}catch(_){}if(c&&c.v===SHOP_CONSENT_V)return;var ck=document.createElement("div");ck.className="cookie";ck.innerHTML='<div style="flex:1;min-width:220px"><b style="color:var(--text)">Cookies &amp; conditions</b><div style="margin-top:3px">En cliquant « Tout accepter », vous acceptez nos <a href="../legal/cgv.html">CGV</a>, notre <a href="../legal/confidentialite.html">politique de confidentialité</a>, les <a href="../legal/mentions.html">mentions légales</a> et les cookies nécessaires au bon fonctionnement.</div></div><div class="cookie-btns"><button class="btn-accept" onclick="shopConsentAcceptAll(this)">✅ Tout accepter</button><button class="btn-refuse" onclick="shopConsentRefuse(this)">Refuser</button></div>';document.body.appendChild(ck);})();
 </script>
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-tech-hub"
-        data-version="v1.0.0"
+        data-version="v1.0.1"
         data-color="#e8b830"
         defer></script>
 
