@@ -18,6 +18,7 @@ self.addEventListener('fetch', function (e) {
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (url.pathname.indexOf('/__sso/') >= 0) return; /* jamais cacher l'auth */
+  if (req.url.indexOf('_force_upd_') >= 0 || req.url.indexOf('?_v=') >= 0 || req.url.indexOf('&_v=') >= 0) return; /* MAJ forcée : réseau direct */
   e.respondWith(
     fetch(req).then(function (res) {
       if (res && res.status === 200 && url.origin === location.origin) {

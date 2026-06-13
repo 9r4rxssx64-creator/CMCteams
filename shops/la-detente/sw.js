@@ -1,6 +1,6 @@
 /* KDMC Shops — Service Worker La Détente. MAJ auto forcée : network-first pour les
    pages (toujours la dernière version en ligne), cache-first pour les assets, fallback offline. */
-var CACHE='kdmc-la-detente-v1.53.14';
+var CACHE='kdmc-la-detente-v1.53.15';
 var PRE=['./','studio.html','bibliotheque.html','/CMCteams/shops/legal/cgv.html'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRE).catch(function(){})}));self.skipWaiting()});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE&&(k.indexOf('kdmc-la-detente-')===0||k==='kdmc-v1')}).map(function(k){return caches.delete(k)}))}));self.clients.claim()});
@@ -29,6 +29,7 @@ self.addEventListener('notificationclick',function(e){
 });
 self.addEventListener('fetch',function(e){
   var req=e.request; if(req.method!=='GET')return;
+  if(req.url.indexOf('_force_upd_')>=0||req.url.indexOf('?_v=')>=0||req.url.indexOf('&_v=')>=0)return; /* MAJ forcée : laisser passer en réseau direct */
   var isNav=req.mode==='navigate'||(req.headers.get('accept')||'').indexOf('text/html')>=0;
   if(isNav){
     e.respondWith(fetch(req).then(function(res){if(res&&res.status===200){var c=res.clone();caches.open(CACHE).then(function(ca){ca.put(req,c)})}return res}).catch(function(){return caches.match(req).then(function(m){return m||caches.match('./')})}));
