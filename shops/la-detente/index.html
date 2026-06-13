@@ -417,7 +417,14 @@ var cx=box[0]+box[2]/2,cy=box[1]+box[3]/2,w=box[2],h=box[3];
 return '<svg viewBox="0 0 100 100" style="width:100%;display:block"><g style="color:'+(color||"#15171a")+'"><use href="#g-'+g+'"/></g></svg><img src="'+ldLogoImg(logoId)+'" alt="" style="position:absolute;left:'+cx+'%;top:'+cy+'%;transform:translate(-50%,-50%);width:'+w+'%;height:'+h+'%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))">';}
 function vProduct(){var p=P.find(function(x){return x.id===S.vp});if(!p)return '<div class="section">Produit introuvable</div>';
 if(S._pdpId!==p.id){S._pdpId=p.id;S.pdpSize=(p.sizes&&p.sizes.indexOf("M")>=0)?"M":((p.sizes&&p.sizes[0])||"M");S.pdpQty=1;S.pdpTier="standard";S.pdpColor=p.garmentColor||"#15171a";S.pdpLogo=(p.motif&&ldShopLogos().some(function(l){return l.id===p.motif}))?p.motif:((ldShopLogos()[0]||{id:"crest"}).id);S.pdpPlace=p.placement||"chest";}var qt=S.pdpTier||"standard";var pPrice=qPrice(p.price,qt);var d=disc(p.origPrice,p.price);var related=P.filter(function(x){return x.cat===p.cat&&x.id!==p.id}).slice(0,4);
-return '<div class="pdp"><div class="pdp-back" onclick="sv(\'products\')">← Retour aux produits</div>'
+var _BASE="https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/";
+var _catNm=((CATS.find(function(c){return c.id===p.cat})||{}).name)||p.cat||"Produits";
+var _ldProd={"@context":"https://schema.org","@type":"Product",name:p.name,description:(p.desc||p.name),image:(/^https?:/.test(p.img||"")?p.img:_BASE+(p.img||"img/og.png")),sku:p.id,brand:{"@type":"Brand",name:"La Détente"},offers:{"@type":"Offer",price:Number(pPrice||p.price||0).toFixed(2),priceCurrency:"EUR",availability:"https://schema.org/InStock",url:_BASE+"?product="+p.id}};
+if(p.rating&&p.reviews)_ldProd.aggregateRating={"@type":"AggregateRating",ratingValue:String(p.rating),reviewCount:String(p.reviews)};
+var _ldBc={"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"Accueil",item:_BASE},{"@type":"ListItem",position:2,name:_catNm,item:_BASE+"?cat="+p.cat},{"@type":"ListItem",position:3,name:p.name,item:_BASE+"?product="+p.id}]};
+var _ldJson=function(o){return JSON.stringify(o).replace(/<\/script>/gi,"<\\/script>")};
+return '<script type="application/ld+json">'+_ldJson(_ldProd)+'<\/script><script type="application/ld+json">'+_ldJson(_ldBc)+'<\/script>'
++'<div class="pdp"><nav aria-label="Fil d\'Ariane" style="font-size:12px;color:var(--muted);margin-bottom:10px"><a onclick="sv(\'home\')" style="cursor:pointer;color:var(--muted)">Accueil</a> › <a onclick="S.cat=\''+esc(p.cat)+'\';S.page=1;sv(\'products\')" style="cursor:pointer;color:var(--muted)">'+esc(_catNm)+'</a> › <span style="color:var(--text)">'+esc(p.name)+'</span></nav><div class="pdp-back" onclick="sv(\'products\')">← Retour aux produits</div>'
 +'<div class="pdp-grid"><div class="pdp-img" style="position:relative;background:radial-gradient(120% 90% at 50% 20%,#20242b,#0e1012)">'+ldLivePreview(p.garment||"tee",S.pdpColor||p.garmentColor,S.pdpLogo,S.pdpPlace)+'<span style="position:absolute;left:10px;top:10px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px">👀 Aperçu</span></div><div class="pdp-info">'
 +'<h1>'+esc(p.name)+'</h1>'
 +'<div class="meta">'+stars(p.rating)+' '+p.reviews+' avis</div>'
@@ -1154,6 +1161,7 @@ function ldPublishModal(i){var it=(window._ldBpList||[])[i];if(!it)return;var ca
 function ldDoPublish(bp,cat){
  var mode=window._ldPubMode||"logo";
  var design=(mode==="nu")?"":((document.getElementById("ld_pub_design")||{}).value||(LD_DESIGNS[0]&&LD_DESIGNS[0].id)||(ldEffLogos()[0]||{}).id||"");
+ if(mode!=="nu"&&!design){toast("Choisis un design avant de publier (ou passe en « textile nu »)","error");return;}
  var name=((document.getElementById("ld_pub_name")||{}).value||"").trim()||"Produit La Détente";
  var price=parseFloat((document.getElementById("ld_pub_price")||{}).value)||ldPriceSuggest(cat);
  var place=(document.getElementById("ld_pub_place")||{}).value||"chest";
@@ -1181,6 +1189,21 @@ if(window.kdmcFetchLogos)kdmcFetchLogos(STORE_ID,function(arr){if(arr&&arr.lengt
 window._ldOrderCfg=null;
 try{fetch("printify-order-config.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.worker_url)window._ldOrderCfg=j;}).catch(function(){});}catch(_){}
 function _ldCountryName(c){return c||"France"}
+function _ldOrderRescueEmail(orderId,order,reason){
+ try{
+  if(typeof emailjs==="undefined")return;
+  var ck=(order&&(order.shipping))||S.checkout||{};
+  var lines=((order&&order.items)||[]).map(function(i){return "- "+i.name+" ×"+(i.qty||1)+(i.size?" ("+i.size+")":"")}).join("\n");
+  var addr=[ck.name,ck.addr||ck.address,ck.zip,ck.city,ck.country].filter(Boolean).join(" · ");
+  emailjs.init("nUsorWTtC");
+  emailjs.send("service_4s16z8l","template_fzva9uf",{
+   to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — COMMANDE À TRAITER",from_name:STORE_NAME,from_email:LD_ADMIN_EMAIL,
+   title:"⚠️ Commande "+orderId+" à envoyer manuellement",
+   message:"L'envoi auto Printify a échoué ("+(reason||"inconnu")+").\nTraite cette commande manuellement (Printify) — NE PAS la perdre.\n\nCommande "+orderId+"\nTotal : "+fmtP((order&&order.total)||0)+"\n\nArticles:\n"+lines+"\n\nLivraison:\n"+addr,
+   store:STORE_NAME,time:new Date().toLocaleString("fr-FR")
+  }).then(function(){toast("📧 Commande sauvegardée — Kevin a été prévenu par email","info");}).catch(function(){});
+ }catch(_){}
+}
 function ldPrintifyAuto(orderId,btn){
  var cfg=window._ldOrderCfg;
  if(!cfg||!cfg.worker_url){toast("Envoi auto bientôt actif (worker en cours de déploiement). Utilise 📤 Commandes fournisseurs en attendant.","info");return;}
@@ -1192,8 +1215,8 @@ function ldPrintifyAuto(orderId,btn){
  fetch(cfg.worker_url+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:orderId,items:items,address:ck})})
  .then(function(r){return r.json()}).then(function(j){
    if(j&&j.ok){toast("🚀 Commande envoyée en production"+(j.printify_order_id?" (#"+j.printify_order_id+")":"")+" — à valider dans ton espace fournisseur");if(btn){btn.textContent="✅ Envoyé en production";}}
-   else{toast("Fournisseur : "+((j&&j.detail)||"erreur")+(j&&j.warnings&&j.warnings.length?" ("+j.warnings.join(", ")+")":""),"error");if(btn){btn.disabled=false;btn.textContent="🚀 Réessayer";}}
- }).catch(function(){toast("Réseau KO, réessaie","error");if(btn){btn.disabled=false;btn.textContent="🚀 Réessayer";}});
+   else{toast("Fournisseur : "+((j&&j.detail)||"erreur")+(j&&j.warnings&&j.warnings.length?" ("+j.warnings.join(", ")+")":""),"error");_ldOrderRescueEmail(orderId,order,(j&&j.detail)||"refus fournisseur");if(btn){btn.disabled=false;btn.textContent="🚀 Réessayer";}}
+ }).catch(function(){toast("Réseau KO — commande sauvegardée, Kevin prévenu","error");_ldOrderRescueEmail(orderId,order,"réseau/worker injoignable");if(btn){btn.disabled=false;btn.textContent="🚀 Réessayer";}});
 }
 
 try{var _uq=new URLSearchParams(location.search).get("q");if(_uq){S.search=_uq;S.cat="all";S.view="products";S.sugg=false;}}catch(_){}
@@ -1203,8 +1226,8 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 </script>
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="ekdmc-ecocraft"
-        data-version="v1.53.7"
+        data-project="la-detente"
+        data-version="v1.53.8"
         data-color="#e8b830"
         defer></script>
 
