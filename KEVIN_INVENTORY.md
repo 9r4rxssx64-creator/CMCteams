@@ -1,7 +1,24 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-06-07** (CMCteams — détente vérifs + sécu + plan archi, v9.783→v9.787)
+> Dernière mise à jour : **2026-06-13** (Domaine kd-mc.com / boutiques — La Détente vidée + audit UX + alertes + consentement + barres admin + MAJ forcée + démos « en construction »)
+
+## 🛍️ Domaine boutiques — session 2026-06-13 (mergé sur main)
+
+**Nouveau fichier**
+- Module admin partagé boutiques : `shops/_shared/kdmc-shop-admin.js`
+  - Voir : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/_shared/kdmc-shop-admin.js
+  - Modifier : https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/_shared/kdmc-shop-admin.js
+
+**Modifiés (principaux)**
+- Boutique La Détente : [shops/la-detente/index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/index.html) + [studio.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/studio.html) + [worker-order/worker.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/la-detente/worker-order/worker.js) (v1.53.18)
+- Galerie de marque : [la-detente/index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/la-detente/index.html)
+- Portail : [kdmc-home/index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/index.html) (v1.0.4) + [kdmc-home/sw.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/sw.js)
+- Portail boutiques : [shops/index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/index.html) (réordonné + démos « En construction »)
+- Helper badge/MAJ : [tools/shared/version-badge-pwa.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/shared/version-badge-pwa.js)
+- 5 boutiques (consentement + barre/SW) : chez-lolo, ecocraft, digital-vault, pawsome, tech-hub sous [shops/](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops)
+
+**Live** : portail https://kd-mc.com/ · boutiques https://9r4rxssx64-creator.github.io/CMCteams/shops/ · admin démos via `…/shops/<nom>/?admin=1`
 
 ## 🛡️ CMCteams — session sécu/archi/détente (2026-06-07, mergé sur main, v9.787)
 

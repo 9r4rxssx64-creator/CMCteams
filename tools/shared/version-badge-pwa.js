@@ -69,21 +69,27 @@
       'line-height:1',
       'letter-spacing:.02em',
     ].join(';');
+    badge.title = project + ' ' + version + ' · toucher = forcer la mise à jour';
     badge.addEventListener('click', function () {
-      var swState = 'aucun';
-      try {
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistration().then(function (r) {
-            if (r && r.active) swState = r.active.state;
-            alert(project + ' ' + version + '\nService Worker : ' + swState);
-          }).catch(function () { alert(project + ' ' + version); });
-          return;
-        }
-      } catch (_) { /* ignore */ }
-      alert(project + ' ' + version);
+      /* 1-TAP = forcer la MAJ (garanti, même si l'auto-MAJ iOS PWA traîne) */
+      if (!confirm(project + ' ' + version + '\n\nForcer la mise à jour maintenant ?\n(vide le cache et recharge la dernière version)')) return;
+      forceUpdateNow();
     });
     document.body.appendChild(badge);
   }
+
+  /* ─── FORCE UPDATE (manuel, 1-tap badge — garanti) ────────────────────── */
+  function forceUpdateNow() {
+    var p = Promise.resolve();
+    if ('serviceWorker' in navigator) {
+      p = p.then(function () { return navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister().catch(function () {}); })); }); });
+    }
+    if (typeof caches !== 'undefined') {
+      p = p.then(function () { return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k).catch(function () {}); })); }); });
+    }
+    p.then(function () { setTimeout(function () { location.replace(location.pathname + '?_force_upd_' + Date.now()); }, 150); });
+  }
+  window.kdmcForceUpdate = forceUpdateNow;
 
   /* ─── AUTO-FORCE-UPDATE ───────────────────────────────────────────────── */
   var _autoMajInProgress = false;
