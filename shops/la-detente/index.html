@@ -927,7 +927,24 @@ function _ldLock(){try{return JSON.parse(localStorage.getItem("ld_admin_lock")||
 function _ldLockMsg(){var st=_ldLock();var now=Date.now();if(st.until&&now<st.until){var s=Math.ceil((st.until-now)/1000);var t=s>=3600?Math.ceil(s/3600)+" h":s>=60?Math.ceil(s/60)+" min":s+" s";return "Trop d'essais — réessaie dans "+t;}return "";}
 async function ldAdminTry(){var inp=document.getElementById("ldAdminPw");if(!inp)return;var pw=inp.value||"";var lm=_ldLockMsg();if(lm){toast(lm,"error");return;}var extra=[];try{extra=await ldAuthSyncNow();}catch(e){extra=ldAuthUsers();}var users=[{name:"Kevin",salt:LD_ADMIN_SALT,hash:LD_ADMIN_HASH}].concat(extra||[]);var who=null;for(var i=0;i<users.length;i++){try{var h=await _ldAdminHash(pw,users[i].salt);if(_ldEq(h,users[i].hash)){who=users[i].name;break;}}catch(e2){}}if(who){localStorage.setItem("ld_admin_trust","1");localStorage.setItem("ld_admin_who",who);localStorage.removeItem("ld_admin_lock");localStorage.removeItem("ld_admin");LD_ADMIN=true;var m=document.getElementById("ldAdminModal");if(m)m.remove();toast("🔓 Bienvenue "+who+" — accès activé sur cet appareil");try{var sf=document.getElementById("studioFab");if(sf)sf.style.display="block";}catch(_){}dc();}else{var st=_ldLock();var n=(st.n||0)+1;var dl=[0,0,0,0,30000,120000,600000,3600000,86400000];var until=Date.now()+(dl[Math.min(n,dl.length-1)]||86400000);localStorage.setItem("ld_admin_lock",JSON.stringify({n:n,until:until}));toast(n>=5?("Code incorrect — "+_ldLockMsg()):"Code incorrect","error");}}
 function ldAdminPrompt(){if(document.getElementById("ldAdminModal"))return;var lm=_ldLockMsg();var d=document.createElement("div");d.id="ldAdminModal";d.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px";d.innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;max-width:340px;width:100%"><div style="font-weight:800;font-size:17px;margin-bottom:4px">🔒 Accès admin</div><div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Réservé à la gestion de la boutique.</div><input id="ldAdminPw" type="password" inputmode="numeric" autocomplete="off" placeholder="Mot de passe" style="width:100%;padding:13px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:16px;margin-bottom:6px"><div id="ldAdminHint" style="font-size:11.5px;color:#dc2626;min-height:16px;margin-bottom:8px">'+(lm||"")+'</div><div style="display:flex;gap:8px"><button onclick="ldAdminTry()" style="flex:1;padding:12px;background:var(--p);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">Entrer</button><button onclick="document.getElementById(\'ldAdminModal\').remove()" style="padding:12px 14px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:10px;font-weight:600;cursor:pointer">Annuler</button></div></div>';document.body.appendChild(d);var i=document.getElementById("ldAdminPw");if(i){i.addEventListener("keydown",function(e){if(e.key==="Enter")ldAdminTry();});setTimeout(function(){i.focus()},50);}}
-function ldAdminLogout(){localStorage.removeItem("ld_admin_trust");localStorage.removeItem("ld_admin");LD_ADMIN=false;try{var sf=document.getElementById("studioFab");if(sf)sf.style.display="none";}catch(_){}toast("Déconnecté de l'admin");dc();}
+function ldAdminLogout(){localStorage.removeItem("ld_admin_trust");localStorage.removeItem("ld_admin");LD_ADMIN=false;try{var sf=document.getElementById("studioFab");if(sf)sf.style.display="none";}catch(_){}try{var ab=document.getElementById("ldAdminBar");if(ab)ab.remove();}catch(_){}toast("Déconnecté de l'admin");dc();}
+/* Barre admin flottante (comme Chez Lolo) — visible seulement pour l'admin. Raccourcis vers
+   les commandes, l'espace admin, le studio, les accès, le stockage et la déconnexion. */
+function ldInstallAdminBar(){
+  try{var old=document.getElementById("ldAdminBar");if(old)old.remove();}catch(_){}
+  try{var sf=document.getElementById("studioFab");if(sf)sf.style.display="none";}catch(_){} /* remplacé par la barre */
+  if(typeof LD_ADMIN==="undefined"||!LD_ADMIN)return;
+  var bar=document.createElement("div");bar.id="ldAdminBar";
+  bar.style.cssText="position:fixed;left:10px;bottom:74px;z-index:9000;display:flex;gap:6px;flex-wrap:wrap;max-width:74vw";
+  var bs="background:rgba(20,20,24,.92);color:#fff;border:1px solid #555;border-radius:100px;font:700 12px system-ui;padding:9px 12px;cursor:pointer";
+  bar.innerHTML='<a href="studio.html" title="Studio de création" style="background:linear-gradient(135deg,#ff4d4d,#b30d0d);color:#fff;font:700 12px system-ui;padding:9px 14px;border-radius:100px;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.35)">🎨 Studio</a>'
+   +'<button onclick="sv(\'printify\')" title="Espace admin — commandes, production, alertes" style="background:linear-gradient(135deg,#dc2626,#7f1010);color:#fff;border:none;border-radius:100px;font:700 12px system-ui;padding:9px 14px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)">🛍️ Admin</button>'
+   +'<button onclick="sv(\'orders\')" title="Toutes les commandes" style="'+bs+'">📜 Commandes</button>'
+   +'<button onclick="ldAccessPanel()" title="Accès / utilisateurs" style="'+bs+'">👥 Accès</button>'
+   +'<button onclick="ldShowStorage()" title="Stockage" style="'+bs+'">📦</button>'
+   +'<button onclick="ldAdminLogout()" title="Déconnexion admin" style="'+bs+'">🚪</button>';
+  document.body.appendChild(bar);
+}
 var LD_FB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 function _ldEq(a,b){if(!a||!b||a.length!==b.length)return false;var d=0;for(var i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0;}
 function _ldGenSalt(){var u=new Uint8Array(16);if(crypto.getRandomValues)crypto.getRandomValues(u);return Array.prototype.map.call(u,function(x){return x.toString(16).padStart(2,"0")}).join("");}
@@ -1292,12 +1309,15 @@ function ldConsentRefuse(el){try{
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="la-detente"
-        data-version="v1.53.13"
+        data-version="v1.53.14"
         data-color="#e8b830"
         defer></script>
 
 <script>(function(){if(!('serviceWorker' in navigator))return;var had=!!navigator.serviceWorker.controller,rl=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!had){had=true;return}if(rl)return;rl=true;location.reload()});navigator.serviceWorker.register('sw.js').then(function(reg){function chk(){try{reg.update()}catch(e){}if(reg.waiting)reg.waiting.postMessage('skipWaiting')}setInterval(chk,60000);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')chk()});window.addEventListener('focus',chk)})})();</script>
 <a href="studio.html" id="studioFab" title="Studio de création (admin)" style="display:none;position:fixed;left:12px;bottom:74px;z-index:9000;background:linear-gradient(135deg,#ff4d4d,#b30d0d);color:#fff;font:700 12px system-ui;padding:9px 14px;border-radius:100px;text-decoration:none;box-shadow:0 6px 20px rgba(220,38,38,.5)">🎨 Studio</a>
-<script>if(typeof LD_ADMIN!=="undefined"&&LD_ADMIN){var _sf=document.getElementById("studioFab");if(_sf)_sf.style.display="block"}</script>
+<script>(function(){try{
+  if(typeof ldAdminTry==="function"){var _t=ldAdminTry;ldAdminTry=async function(){var r=await _t.apply(this,arguments);try{ldInstallAdminBar()}catch(_){}return r;};}
+  if(typeof LD_ADMIN!=="undefined"&&LD_ADMIN&&typeof ldInstallAdminBar==="function")ldInstallAdminBar();
+}catch(_){}})();</script>
 </body>
 </html>
