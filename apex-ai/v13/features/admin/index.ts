@@ -179,22 +179,36 @@ function renderHealthTab(): string {
     <div class="ax-admin-section" data-scrollable="true">
       <h2>État de santé</h2>
       <p class="ax-muted">Codes vault · Liens dashboards · Sentinelles 24/7 · Connecteurs MCP · Vault drift. Tout testé en autonomie.</p>
+      <!-- v13.4.331 (Kevin "fais un tri dans les boutons") : 2 actions primaires visibles,
+           le reste rangé par thème dans des <details> repliés. "Audits Apex" retiré (doublon
+           de la carte résumé #ax-admin-audits-summary ci-dessous). -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
         <button class="ax-btn-health ax-btn-health-primary" data-nav-route="admin-health-dashboard">📊 Voir dashboard santé live</button>
-        <button class="ax-btn-health" data-nav-route="admin-credentials-status">🔑 Credentials</button>
-        <button class="ax-btn-health" data-nav-route="admin-all-secrets">🔐 Mes Secrets</button>
-        <button class="ax-btn-health" data-nav-route="admin-yury-plugins">🚀 Plugins Yury</button>
-        <button class="ax-btn-health" data-nav-route="admin-shubham-skills">🎬 Shubham Skills</button>
-        <button class="ax-btn-health ax-btn-health-eco" data-nav-route="admin-autonomous">🤖 Mode Autonome</button>
-        <button class="ax-btn-health ax-btn-health-blue" data-nav-route="skills-2026">🎯 Skills 2026</button>
-        <button class="ax-btn-health ax-btn-health-purple" data-nav-route="mcp-servers">🔌 MCP Servers</button>
         <button class="ax-btn-health ax-btn-health-eco" data-nav-route="runtime-tests">🧪 Tester TOUT (live)</button>
-        <button class="ax-btn-health ax-btn-health-blue" data-nav-route="apex-audits-live">📊 Audits Apex (historique)</button>
-        <button class="ax-btn-health" data-nav-route="audit-log-viewer" title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">🔒 Audit Log Viewer</button>
-        <button class="ax-btn-health" data-nav-route="admin-capabilities" title="Registre des capacités/compétences Apex">🧠 Capacités IA</button>
-        <button class="ax-btn-health" data-nav-route="admin-pinecone-status" title="État de l'index Pinecone (mémoire vectorielle)">🌲 Pinecone</button>
-        <button class="ax-btn-health" data-nav-route="admin-voice-diagnostic" title="Diagnostic reconnaissance + synthèse vocale">🎙 Diagnostic Voix</button>
       </div>
+      <details class="ax-health-group" style="margin:8px 0"><summary style="cursor:pointer;color:var(--ax-gold);font-size:13px;font-weight:600;padding:8px 0;min-height:36px;list-style:none">🔐 Credentials &amp; intégrations</summary>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+          <button class="ax-btn-health" data-nav-route="admin-credentials-status">🔑 Credentials</button>
+          <button class="ax-btn-health" data-nav-route="admin-all-secrets">🔐 Mes Secrets</button>
+          <button class="ax-btn-health ax-btn-health-purple" data-nav-route="mcp-servers">🔌 MCP Servers</button>
+        </div>
+      </details>
+      <details class="ax-health-group" style="margin:8px 0"><summary style="cursor:pointer;color:var(--ax-gold);font-size:13px;font-weight:600;padding:8px 0;min-height:36px;list-style:none">🧠 IA &amp; compétences</summary>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+          <button class="ax-btn-health ax-btn-health-eco" data-nav-route="admin-autonomous">🤖 Mode Autonome</button>
+          <button class="ax-btn-health ax-btn-health-blue" data-nav-route="skills-2026">🎯 Skills 2026</button>
+          <button class="ax-btn-health" data-nav-route="admin-yury-plugins">🚀 Plugins Yury</button>
+          <button class="ax-btn-health" data-nav-route="admin-shubham-skills">🎬 Shubham Skills</button>
+          <button class="ax-btn-health" data-nav-route="admin-capabilities" title="Registre des capacités/compétences Apex">🧠 Capacités IA</button>
+        </div>
+      </details>
+      <details class="ax-health-group" style="margin:8px 0"><summary style="cursor:pointer;color:var(--ax-gold);font-size:13px;font-weight:600;padding:8px 0;min-height:36px;list-style:none">🔒 Audits &amp; système</summary>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+          <button class="ax-btn-health" data-nav-route="audit-log-viewer" title="Audit log immutable (chain hash) — actions admin, vault, AI tracées">🔒 Audit Log Viewer</button>
+          <button class="ax-btn-health" data-nav-route="admin-pinecone-status" title="État de l'index Pinecone (mémoire vectorielle)">🌲 Pinecone</button>
+          <button class="ax-btn-health" data-nav-route="admin-voice-diagnostic" title="Diagnostic reconnaissance + synthèse vocale">🎙 Diagnostic Voix</button>
+        </div>
+      </details>
       <div id="ax-admin-health-mount" class="ax-gs-187"></div>
       <div id="ax-admin-audits-summary" class="ax-gs-187"></div>
     </div>
@@ -903,7 +917,7 @@ export function render(rootEl: HTMLElement): void {
       }
     </style>
     <div class="ax-admin ax-modernized-card" style="padding:max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) 16px;max-width:1200px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
-      <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10">
+      <header class="ax-admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;padding-right:96px;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:env(safe-area-inset-top,0px);background:linear-gradient(180deg,rgba(8,8,15,0.95),rgba(8,8,15,0.85));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10">
         <div class="ax-gs-106">
           <h1 style="margin:0;font-size:clamp(26px,5.5vw,32px);font-weight:700;background:linear-gradient(135deg,var(--ax-gold-deep) 0%,var(--ax-gold) 50%,var(--ax-gold-bright) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:Georgia,serif;letter-spacing:-0.025em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">👑 Centre Admin</h1>
           <p class="ax-gs-288">Kevin · accès illimité</p>

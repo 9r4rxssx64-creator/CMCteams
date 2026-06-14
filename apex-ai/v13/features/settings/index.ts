@@ -236,13 +236,17 @@ export function render(rootEl: HTMLElement): void {
         </p>
         <button class="ax-btn ax-btn-secondary" id="ax-conso-scan" style="${btnFullWidthStyle};margin-bottom:10px;background:rgba(34,204,119,0.15);color:var(--ax-green);border:1px solid rgba(34,204,119,0.3)">🔍 Scanner toutes mes API maintenant</button>
         <div id="ax-conso-results" class="ax-gs-196"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
-        <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:var(--ax-warning);border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
-        <div id="ax-cf-diagnostic-results" class="ax-gs-249"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-functional-test-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35)">🧪 Tester tous les boutons + auto-fix (v13.4.182)</button>
-        <div id="ax-functional-test-results" class="ax-gs-249"></div>
-        <button class="ax-btn ax-btn-secondary" id="ax-layout-inspect-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(180,90,200,0.15);color:var(--ax-purple);border:1px solid rgba(180,90,200,0.35)">📐 Scanner la vue actuelle (overflow, boutons cachés)</button>
-        <div id="ax-layout-inspect-results" class="ax-gs-249"></div>
+        <!-- v13.4.331 (Kevin "trop de boutons") : outils de debug repliés (rarement utiles au quotidien). -->
+        <details style="margin-top:6px">
+          <summary style="cursor:pointer;color:rgba(255,255,255,0.6);font-size:13px;font-weight:600;padding:8px 0;min-height:36px;list-style:none">🔧 Diagnostics avancés (debug)</summary>
+          <button class="ax-btn ax-btn-secondary" id="ax-zoom-inspector-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(201,162,39,0.15);color:var(--ax-gold-deep);border:1px solid rgba(201,162,39,0.3)">🔍 Zoom Inspector live (debug UX zoom Kevin)</button>
+          <button class="ax-btn ax-btn-secondary" id="ax-cf-diagnostic-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(247,131,34,0.15);color:var(--ax-warning);border:1px solid rgba(247,131,34,0.3)">☁️ Tester Cloudflare API maintenant</button>
+          <div id="ax-cf-diagnostic-results" class="ax-gs-249"></div>
+          <button class="ax-btn ax-btn-secondary" id="ax-functional-test-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35)">🧪 Tester tous les boutons + auto-fix</button>
+          <div id="ax-functional-test-results" class="ax-gs-249"></div>
+          <button class="ax-btn ax-btn-secondary" id="ax-layout-inspect-btn" style="${btnFullWidthStyle};margin-top:10px;background:rgba(180,90,200,0.15);color:var(--ax-purple);border:1px solid rgba(180,90,200,0.35)">📐 Scanner la vue actuelle (overflow, boutons cachés)</button>
+          <div id="ax-layout-inspect-results" class="ax-gs-249"></div>
+        </details>
       </section>
 
       <section class="ax-modernized-card" style="${sectionStyle};animation-delay:240ms">
