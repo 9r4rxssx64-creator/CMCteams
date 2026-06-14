@@ -251,7 +251,11 @@
         if (a !== "REST" && b !== "REST") workOverlap++;
         if (a === b) match++;
       }
-      return overlap >= minOverlap && workOverlap >= minWorkOverlap && match === overlap;
+      // v0.5 (Kevin 2026-06-14) : seuil 0.82 au lieu de match===overlap. Le 100%-exact
+      // ne clusterise jamais sur données réelles (RRT/PRT/substitutions sporadiques) →
+      // 0 équipe. Une vraie équipe SBM tourne ensemble ~95% des jours.
+      const thresh = opts.matchThreshold || 0.82;
+      return overlap >= minOverlap && workOverlap >= minWorkOverlap && (match / overlap) >= thresh;
     }
     for (let i = 0; i < nodes.length; i++) {
       for (let k = i + 1; k < nodes.length; k++) {
