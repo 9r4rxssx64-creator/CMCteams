@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.225",
+  "softwareVersion": "v1.1.226",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.225';
+const __APEX_CHAT_VERSION__ = 'v1.1.226';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.225</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.226</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.225</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.226</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7890,6 +7890,22 @@ async function _handleWsMessage(data, convId){
 // ============================================================================
 //  Phase 5 — Appels WebRTC P2P (4 max)
 // ============================================================================
+// v1.1.226 (Kevin « les appels doivent marcher partout, pas forcément même réseau ») :
+// ICE = STUN (découverte d'IP) + TURN (RELAIS). SANS TURN, un appel ne se connecte
+// JAMAIS quand les deux ne sont pas sur le même Wi-Fi (cellulaire / NAT symétrique).
+// Le média WebRTC est chiffré DTLS-SRTP de bout en bout → le TURN ne relaie que du
+// chiffré. TURN dédié (Cloudflare) surchargeable plus tard via localStorage 'ice_turn'.
+K._iceServers = function(){
+  const base = [
+    { urls: 'stun:stun.cloudflare.com:3478' },
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+  ];
+  try{ const custom = lg('ice_turn', null); if(custom && custom.urls) base.push(custom); }catch(_){}
+  return base;
+};
 K._call = async function(type, convId){
   if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
 
@@ -7928,10 +7944,7 @@ K._call = async function(type, convId){
 
     // Peer connection
     const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.cloudflare.com:3478' },
-        { urls: 'stun:stun.l.google.com:19302' }
-      ]
+      iceServers: K._iceServers()
     });
     K._activeCall.peerConn = pc;
 
@@ -8122,12 +8135,7 @@ K._answerCall = async function(incoming){
     if(type === 'video'){
       const lv = $('#local-video'); if(lv) lv.srcObject = K._activeCall.localStream;
     }
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.cloudflare.com:3478' },
-        { urls: 'stun:stun.l.google.com:19302' },
-      ],
-    });
+    const pc = new RTCPeerConnection({ iceServers: K._iceServers() });
     K._activeCall.peerConn = pc;
     K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
     pc.ontrack = (e) => {
