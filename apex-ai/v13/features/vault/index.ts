@@ -737,21 +737,26 @@ export function render(rootEl: HTMLElement): void {
 
       <section style="margin-top:14px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px">
         <h3 style="margin:0 0 8px;color:var(--ax-gold);font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">📊 Diagnostic & restauration</h3>
-        <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">Maintenance auto au boot (v13.4.268+). Si tu as perdu des clés (reinstall PWA, clear cache) → restaure depuis Firebase backup chiffré.</p>
+        <p style="margin:0 0 10px;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.5">Maintenance <strong>automatique au boot</strong> (v13.4.268+) : migration des clés, scan multi-sources et restauration Firebase se font tout seuls. Le diagnostic ci-dessous est juste pour vérifier l'état.</p>
         <div class="ax-gs-7">
           <button id="ax-vault-diag-btn" type="button"
             style="padding:10px 16px;background:rgba(106,138,255,0.18);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.35);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">📊 Diagnostic complet</button>
-          <button id="ax-vault-migrate-legacy-btn" type="button"
-            style="padding:10px 16px;background:rgba(232,184,48,0.20);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔁 Migrer mes clés legacy</button>
-          <button id="ax-vault-repair-services-btn" type="button"
-            style="padding:10px 16px;background:rgba(247,131,34,0.20);color:var(--ax-orange);border:1px solid rgba(247,131,34,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">♻️ Réparer services</button>
-          <button id="ax-vault-push-all-btn" type="button"
-            style="padding:10px 16px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📤 Push backup Firebase</button>
-          <button id="ax-vault-rescue-fb" data-action="rescue-firebase" type="button"
-            style="padding:10px 16px;background:rgba(232,184,48,0.18);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.40);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔓 Restaurer depuis Firebase</button>
-          <button id="ax-vault-rescue-all" data-action="rescue-scan-all" type="button"
-            style="padding:10px 16px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.30);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">🔄 Scanner toutes sources</button>
         </div>
+        <details style="margin-top:10px">
+          <summary style="cursor:pointer;color:rgba(255,255,255,0.55);font-size:12px;padding:8px 0;min-height:36px;list-style:none">🔧 Dépannage avancé <span style="opacity:.7">(rarement utile — tout est auto)</span></summary>
+          <div class="ax-gs-7" style="margin-top:8px">
+            <button id="ax-vault-rescue-fb" data-action="rescue-firebase" type="button"
+              style="padding:10px 16px;background:rgba(232,184,48,0.18);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.40);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔓 Restaurer depuis Firebase</button>
+            <button id="ax-vault-migrate-legacy-btn" type="button"
+              style="padding:10px 16px;background:rgba(232,184,48,0.20);color:var(--ax-gold);border:1px solid rgba(232,184,48,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">🔁 Migrer mes clés legacy</button>
+            <button id="ax-vault-repair-services-btn" type="button"
+              style="padding:10px 16px;background:rgba(247,131,34,0.20);color:var(--ax-orange);border:1px solid rgba(247,131,34,0.45);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">♻️ Réparer services</button>
+            <button id="ax-vault-push-all-btn" type="button"
+              style="padding:10px 16px;background:linear-gradient(135deg,var(--ax-gold-deep),var(--ax-gold));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">📤 Push backup Firebase</button>
+            <button id="ax-vault-rescue-all" data-action="rescue-scan-all" type="button"
+              style="padding:10px 16px;background:rgba(106,138,255,0.15);color:var(--ax-blue);border:1px solid rgba(106,138,255,0.30);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">🔄 Scanner toutes sources</button>
+          </div>
+        </details>
         <div id="ax-vault-diag-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.85)"></div>
         <div id="ax-vault-rescue-result" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.85)"></div>
       </section>
