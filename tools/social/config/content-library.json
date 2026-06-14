@@ -422,7 +422,7 @@
         "avg": 9
       },
       "duration_target": "short",
-      "used": false
+      "used": true
     },
     {
       "id": "fact-short-003",
