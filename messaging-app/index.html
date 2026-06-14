@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.227",
+  "softwareVersion": "v1.1.228",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.227';
+const __APEX_CHAT_VERSION__ = 'v1.1.228';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.227</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.228</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.227</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.228</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -8008,8 +8008,30 @@ K._call = async function(type, convId){
     }
   }catch(e){
     _safeCatch('call-start', e);
-    toast('Impossible de démarrer l\'appel : ' + e.message, 'err');
+    K._explainCallError(e, type);
     K._endCall();
+  }
+};
+
+// v1.1.228 (Kevin captures « Impossible de démarrer l'appel … user denied permission ») :
+// message d'erreur d'appel ACTIONNABLE (NotAllowedError = micro/caméra refusé sur iOS →
+// guide vers Réglages). Avant : on affichait le message technique brut, incompréhensible.
+K._explainCallError = function(e, type){
+  const nm = (e && e.name) || '';
+  const isVideo = type === 'video';
+  if(nm === 'NotAllowedError' || nm === 'SecurityError' || nm === 'PermissionDeniedError'){
+    K._showModal('🎤 Autorise le micro' + (isVideo ? ' + caméra' : ''), `
+      <p style="color:var(--ax-text-2);line-height:1.6">Pour appeler, Apex Chat a besoin du <b>micro</b>${isVideo ? ' et de la <b>caméra</b>' : ''}. L'autorisation est <b>refusée</b> sur ton iPhone.</p>
+      <p style="color:var(--ax-text-2);line-height:1.6">👉 <b>Réglages</b> iPhone → descends jusqu'à <b>Apex Chat</b> → active <b>Micro</b>${isVideo ? ' + <b>Caméra</b>' : ''}.<br><span style="color:var(--ax-text-3);font-size:.9em">(ou Réglages → Safari → Caméra / Microphone → Autoriser)</span></p>
+      <p style="color:var(--ax-text-3);font-size:.85em;margin-top:8px">Puis reviens ici et relance l'appel.</p>
+      <button class="btn btn-block" style="margin-top:10px" onclick="K._closeModal()">OK, j'ai compris</button>
+    `);
+  } else if(nm === 'NotFoundError' || nm === 'DevicesNotFoundError'){
+    toast('Aucun micro/caméra détecté sur cet appareil', 'err', 5000);
+  } else if(nm === 'NotReadableError' || nm === 'TrackStartError'){
+    toast('Micro/caméra déjà utilisé par une autre app — ferme-la et réessaie', 'err', 5000);
+  } else {
+    toast('Impossible de démarrer l\'appel : ' + ((e && e.message) || nm || '?'), 'err', 5000);
   }
 };
 
@@ -8172,7 +8194,8 @@ K._answerCall = async function(incoming){
       K.ws.send(JSON.stringify({ type: 'webrtc-answer', answer, to: incoming.from, convId: incoming.convId }));
     }
   }catch(e){
-    toast('Impossible de répondre : ' + e.message, 'err');
+    _safeCatch('call-answer', e);
+    K._explainCallError(e, (K._activeCall && K._activeCall.type) || 'audio');
     K._endCall();
   }
 };
