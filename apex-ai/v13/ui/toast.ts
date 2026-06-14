@@ -37,8 +37,12 @@ class Toast {
     el.setAttribute('role', 'status');
     el.setAttribute('aria-live', 'polite');
     el.setAttribute('aria-atomic', 'true');
-    /* P0 Kevin v13.0.78 — inline fallback si CSS bundle stale (cache iPhone) */
-    el.style.cssText = 'position:fixed;top:env(safe-area-inset-top,16px);left:50%;transform:translateX(-50%);z-index:99998;display:flex;flex-direction:column;gap:8px;padding:8px;max-width:96vw;pointer-events:none';
+    /* P0 Kevin v13.0.78 — inline fallback si CSS bundle stale (cache iPhone)
+     * v13.4.329 (Kevin "le bandeau orange couvre la barre du haut + le lien KDMC") :
+     * top descendu sous la status bar ET sous la pastille ← KDMC (qui occupe
+     * env(safe-area-inset-top)+8 → +~45px). +52px garantit que les toasts/bannières
+     * ne chevauchent plus ni l'heure/batterie iOS ni le lien retour portail. */
+    el.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 52px);left:50%;transform:translateX(-50%);z-index:99998;display:flex;flex-direction:column;gap:8px;padding:8px;max-width:96vw;pointer-events:none';
     document.body.appendChild(el);
     this.container = el;
     return el;
