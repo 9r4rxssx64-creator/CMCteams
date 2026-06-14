@@ -1,6 +1,27 @@
 # Mémo de reprise — Apex PWA : corrections fonctionnelles (2026-06-14, branche `claude/remove-unsold-items-qpnypb`)
 
-> Suite aux captures Kevin de la PWA Apex. 4 vrais bugs « indicateur ment » corrigés + 1 test pré-existant rattrapé.
+> Suite aux captures Kevin de la PWA Apex. Tout mergé sur le vrai `main` (vérifié via API GitHub).
+
+## Batch v13.4.328 → v13.4.332 (2026-06-14)
+- **.328** — Bannière « 0/12 providers IA » FAUSSE corrigée (auditProviderChain lisait les slots legacy, pas le Coffre `apex_v13_multi_keys` + proxy) ; versions désync (badge .327 vs MAJ .324) alignées ; pastille ← KDMC descendue sous la status bar (5 apps) ; test `landing-render-deep` pré-existant rattrapé (mock SSO).
+- **.329** — Toasts/bannières descendus à `env(safe-area-inset-top)+52px` → ne couvrent plus l'heure/batterie ni ← KDMC.
+- **.330** — Coffre : boutons auto/rares repliés dans « Dépannage avancé » (seul Diagnostic visible).
+- **.331** — Admin Santé : 14 boutons → 2 visibles + 3 groupes repliés (doublon « Audits Apex » retiré) ; **fix header Admin** (sticky sous safe-area + padding-right → ne chevauche plus status bar ni ← KDMC) ; Réglages : 5 boutons debug repliés.
+- **.332** — **3 boutons Studios morts implémentés POUR DE VRAI** : Photo « + Nouvelle photo » (file picker → downscale ≤1280px → projet sauvé/listé) ; Musique décodage audio réel + Export WAV (mixdown OfflineAudioContext) + Export MP3 (lamejs lazy, fallback WAV).
+
+## Audit dead-buttons (vérité mesurée, leçon #83/#104)
+- Navigation : **0 route morte** (80+ écrans tous routés).
+- Boutons vraiment morts : **3** (tous Studios) — un 1er audit en listait 10, **7 étaient des faux positifs** (wirés par délégation `el.closest('#id')`), vérifiés avant de toucher → rien cassé.
+
+## Reste possible (au choix Kevin, non bloquant)
+- « Erreurs d'infos » résiduelles : pointer un écran précis si encore du faux (le gros — 0/12 — est réglé).
+- Studio Musique : appliquer les effets (EQ/reverb…) au mixdown (actuel = gain+pan réel, honnête). Studio Photo : éditeur complet (l'ajout marche).
+
+---
+
+# (archive) Mémo — Apex PWA corrections (début 2026-06-14)
+
+> 4 bugs « indicateur ment » + 1 test pré-existant rattrapé (détail ci-dessous).
 
 ## Livré 2026-06-14 (Apex v13.4.328)
 - **Bannière « 0/12 providers IA » FAUSSE corrigée** : `auditProviderChain()` (boot) ne lisait que les slots legacy `ax_*_key`, pas le **Coffre** (`apex_v13_multi_keys`, les 22 clés de Kevin) ni le **proxy** serveur → comptait 0 alors qu'openai marche. Désormais compte Coffre + proxy → plus de fausse alarme. + 2 tests de régression.
