@@ -4859,7 +4859,10 @@ function familyForMonth(emp,y,m,opts){
   // Chercher familyHistory plus récent antérieur (NON, règle Kevin "zéro historique")
   // En strict mode → null (force section "Pas de planning"). Sinon fallback emp.family DEF_EMP.
   if(strict)return null;
-  return emp.family||"bj";
+  // v9.802 : garde anti-phantom — emp.family DEF_EMP "baccara" (Punto Banco, pas de
+  // section dans les PDF actuels) = artefact périmé → afficher cmc (cartes) plutôt
+  // qu'une famille fantôme (lesson #50/#104).
+  return (emp.family==="baccara"?"cmc":emp.family)||"bj";
 }
 
 function teamForMonth(emp,y,m,opts){
@@ -5396,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.801";
+var APP_VER="v9.802";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10925,11 +10928,12 @@ function dc(){
       // Cache invalidé : wipe + recompute
       A.employees.forEach(function(_emp){
         if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])delete _emp.teamHistory[_km];
-        // v9.799 : NE PAS wiper familyHistory[key] — c'est la famille du TITRE DE
-        // SECTION fixée à l'import (autorité, lesson #67), persistée dans cmc_e.
-        // L'effacer à chaque boot forçait une re-déduction par suffixes de cellules
-        // (ambigu pour les chefs) + emp.family DEF_EMP périmé → phantom "baccara" +
-        // chefs mal classés. On garde la famille parsée ; seules les équipes sont recalculées.
+        // v9.802 : REVERT v9.799 — re-wiper familyHistory[key] au boot. Le « ne pas
+        // wiper » préservait des familles PÉRIMÉES (phantom baccara/roulettes pour des
+        // chefs BJ) issues d'une détection antérieure → diag juin/juillet v9.801 PIRE
+        // qu'avant. On re-déduit la famille fraîchement à chaque boot (comportement
+        // d'avant la session, familles plus propres mesurées sur diag 15:08).
+        if(_emp&&_emp.familyHistory&&_emp.familyHistory[_km])delete _emp.familyHistory[_km];
       });
       try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
       if(_hash>3){
@@ -36734,9 +36738,10 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
       for(var d in cells){var c=cells[d];if(!c)continue;var cu=String(c).toUpperCase();if(STATUS_ABS[cu]||cu==="RH"||cu==="R")continue;total++;if(/c\*?$/.test(c))cCount++;else if(c.indexOf('"')>=0)qCount++;}
       if(total>=5){if(cCount>=qCount&&cCount/total>=0.35)return "bj";if(qCount>cCount&&qCount/total>=0.35)return "cmc";}
       try{if(typeof familyForMonth==="function"){var f=familyForMonth(emp,iy,im,{strict:true});if(f)return f;}}catch(_){}
-      // v9.799 : ne JAMAIS hériter d'une famille DEF_EMP périmée d'un autre mois.
-      // "baccara" (Punto Banco) n'a pas de section dans ce PDF → c'est un employé
-      // cartes CMC mal étiqueté par un mois précédent (lesson #50 : emp.family ≠ mois courant).
+      // v9.802 : suffixe SBM = famille. Assez de codes travail SANS suffixe `c`/`"`
+      // dominant → croupier ROULETTES (codes nus). C'est plus fiable que emp.family
+      // DEF_EMP périmé (lesson #50/#67) qui produisait des phantoms baccara/bj.
+      if(total>=5)return "roulettes";
       return (emp.family==="baccara"?"cmc":emp.family)||"bj";
     }
     // 1) Nodes : codes journaliers normalisés (skip cadres + statut intégral)
