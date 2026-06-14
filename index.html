@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.803";
+var APP_VER="v9.804";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36539,7 +36539,13 @@ function _cmcDetectTeamsByRestPattern(iy,im){
         }
       }catch(_){}
       if(cf)return cf; // 'roulettes' codes-based — dernier recours avant DEF_EMP
-      return emp.family||"bj";
+      // v9.804 (Kevin diag juin) : ne JAMAIS retomber sur un emp.family périmé
+      // "baccara" (phantom DEF_EMP, lesson #50/#67/#104). Assez de cellules
+      // travaillées (≥5) → croupier roulettes (codes nus) ; sinon famille DEF_EMP
+      // nettoyée (baccara→cmc). Aligné sur _famDC pour cohérence.
+      var _wc=0; try{var _r=ov[emp.id]||{};for(var _d in _r){var _c=_r[_d];if(!_c)continue;var _cu=String(_c).toUpperCase();if(_cu==="RH"||_cu==="R")continue;if(/^(CP|M|MAL|AF|AT|PAT|ABI|SS|CFL|CRH|CDP|EDC|RRT|PRT|RTP|RTR|DEPL|DELPT|CL|CDH|CEO|CSC|CSS|HD)$/.test(_cu))continue;_wc++;}}catch(_){}
+      if(_wc>=5)return "roulettes";
+      return (emp.family==="baccara"?"cmc":emp.family)||"bj";
     }
     var _nodes=[];
     Object.keys(ov).forEach(function(eid){
@@ -36578,7 +36584,11 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       var fam=grp[0].fam;
       famCounters[fam]=(famCounters[fam]||0)+1;
       var nn=famCounters[fam];
-      var teamId=fam==="roulettes"?"r"+nn:fam==="cmc"?"c"+nn:fam==="amenage"?("amenage"+(nn>1?nn:"")):String(nn);
+      // v9.804 : préfixe distinct par famille pour éviter toute collision d'id
+      // (bj utilisait String(nn) ; un phantom baccara aurait aussi String(nn) →
+      // même id → équipes mélangées). baccara→"b"+nn (défensif, ne devrait plus
+      // apparaître après le fix _famForDetect).
+      var teamId=fam==="roulettes"?"r"+nn:fam==="cmc"?"c"+nn:fam==="amenage"?("amenage"+(nn>1?nn:"")):fam==="baccara"?("b"+nn):String(nn);
       if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(teamId);
       teamGroups.push({teamId:teamId,fam:fam,restKey:grp[0].restKey,rest:grp[0].rest,fwBase:grp[0].fwBase,members:grp.slice()});
       grp.forEach(function(g){
