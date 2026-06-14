@@ -5396,7 +5396,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.798";
+var APP_VER="v9.801";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9089,6 +9089,10 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
 (function(){
   try{
     if(A.user)return; /* session locale déjà restaurée → ne rien changer */
+    /* v9.799 : le SSO kd-mc.com n'est joignable qu'en http(s). Sous file:// (tests
+       runtime, ouverture locale) le fetch /__sso/whoami échoue → bruit console.
+       Fail-open : on ne tente le SSO que sur une vraie origine web. */
+    if(location.protocol!=="http:"&&location.protocol!=="https:")return;
     /* Récupère un pass signé éventuellement passé dans l'URL (#kdmc_sso=...) par le domaine */
     try{var h=location.hash||"";var m=h.match(/[#&]kdmc_sso=([^&]+)/);if(m){localStorage.setItem("kdmc_sso_token",decodeURIComponent(m[1]));var clean=h.replace(/([#&])kdmc_sso=[^&]*/,"$1").replace(/[#&]+$/,"");try{history.replaceState(null,"",location.pathname+location.search+(clean&&clean!=="#"?clean:""));}catch(_){}}}catch(_){}
     var tok="";try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
@@ -10921,7 +10925,11 @@ function dc(){
       // Cache invalidé : wipe + recompute
       A.employees.forEach(function(_emp){
         if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])delete _emp.teamHistory[_km];
-        if(_emp&&_emp.familyHistory&&_emp.familyHistory[_km])delete _emp.familyHistory[_km];
+        // v9.799 : NE PAS wiper familyHistory[key] — c'est la famille du TITRE DE
+        // SECTION fixée à l'import (autorité, lesson #67), persistée dans cmc_e.
+        // L'effacer à chaque boot forçait une re-déduction par suffixes de cellules
+        // (ambigu pour les chefs) + emp.family DEF_EMP périmé → phantom "baccara" +
+        // chefs mal classés. On garde la famille parsée ; seules les équipes sont recalculées.
       });
       try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
       if(_hash>3){
@@ -34910,7 +34918,12 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
         if (a !== "REST" && b !== "REST") workOverlap++;
         if (a === b) match++;
       }
-      return overlap >= minOverlap && workOverlap >= minWorkOverlap && match === overlap;
+      // v9.799 (Kevin "tjs des erreurs") : seuil 0.82 au lieu de match===overlap.
+      // Le 100%-exact ne clusterise JAMAIS sur données réelles (RRT/PRT/substitutions
+      // sporadiques) → 0 équipe → dead-fall vers heuristiques floues. Une vraie équipe
+      // SBM tourne ensemble ~95% des jours ; 0.82 tolère ~3-4 jours atypiques sans
+      // jamais fusionner 2 rotations distinctes (qui partagent <70%).
+      return overlap >= minOverlap && workOverlap >= minWorkOverlap && (match / overlap) >= 0.82;
     }
     for (let i = 0; i < nodes.length; i++) {
       for (let k = i + 1; k < nodes.length; k++) {
@@ -36273,6 +36286,11 @@ function _cmcApplyGeometricParse(iy,im){
       var row=A.overrides[key][eid];
       var days=ge.days||{};
       Object.keys(days).forEach(function(d){
+        // v9.800 (Kevin diag JUIN/JUILLET « 288 cellules jours hors limite ») :
+        // le parser géométrique peut produire une clé jour au-delà du mois
+        // (off-by-one / en-tête aménagés numéroté 10..40). On CAP au mois.
+        var _dn=parseInt(d,10);
+        if(isNaN(_dn)||_dn<1||_dn>dim)return;
         if(row[d]){stats.cells_overwritten_blocked++;return;}// JAMAIS ecraser grille production
         var code=days[d];
         if(!code)return;
@@ -36363,7 +36381,16 @@ function _cmcApplyValidatedTeams(iy,im){
       if(!emp)return;
       var fam=null;
       try{if(typeof familyForMonth==="function")fam=familyForMonth(emp,iy,im,{strict:true});}catch(_){}
-      if(!fam)fam=emp.family||null;
+      if(!fam){
+        // v9.799 : pas de section → déduire des suffixes de cellules (c→bj, "→cmc,
+        // plain→roulettes) plutôt que de la famille DEF_EMP périmée (lesson #50).
+        // Évite le phantom "baccara" (mois précédent) sur les employés cartes CMC.
+        var cCount=0,qCount=0,tot=0;
+        Object.keys(cells).forEach(function(d){var c=cells[d];if(!c)return;var cu=String(c).toUpperCase();if(cu==="RH"||cu==="R")return;tot++;if(/c\*?$/.test(c))cCount++;else if(c.indexOf('"')>=0)qCount++;});
+        if(tot>=5&&qCount>cCount&&qCount/tot>=0.35)fam="cmc";
+        else if(tot>=5&&cCount>=qCount&&cCount/tot>=0.35)fam="bj";
+        else fam=(emp.family==="baccara"?"cmc":emp.family)||"roulettes";
+      }
       var fn=(emp.name||"")+" "+eid;
       fullNameToEid[fn]=eid;
       idToEmp[eid]=emp;
@@ -36707,7 +36734,10 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
       for(var d in cells){var c=cells[d];if(!c)continue;var cu=String(c).toUpperCase();if(STATUS_ABS[cu]||cu==="RH"||cu==="R")continue;total++;if(/c\*?$/.test(c))cCount++;else if(c.indexOf('"')>=0)qCount++;}
       if(total>=5){if(cCount>=qCount&&cCount/total>=0.35)return "bj";if(qCount>cCount&&qCount/total>=0.35)return "cmc";}
       try{if(typeof familyForMonth==="function"){var f=familyForMonth(emp,iy,im,{strict:true});if(f)return f;}}catch(_){}
-      return emp.family||"bj";
+      // v9.799 : ne JAMAIS hériter d'une famille DEF_EMP périmée d'un autre mois.
+      // "baccara" (Punto Banco) n'a pas de section dans ce PDF → c'est un employé
+      // cartes CMC mal étiqueté par un mois précédent (lesson #50 : emp.family ≠ mois courant).
+      return (emp.family==="baccara"?"cmc":emp.family)||"bj";
     }
     // 1) Nodes : codes journaliers normalisés (skip cadres + statut intégral)
     var nodes=[];
@@ -36741,7 +36771,8 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
         if(a!=="REST"&&b!=="REST")workOv++;
         if(a===b)match++;
       }
-      return overlap>=6&&workOv>=3&&match===overlap;
+      // v9.799 : seuil 0.82 (cf. lib T1) — 100%-exact = 0 cluster sur données réelles.
+      return overlap>=6&&workOv>=3&&(match/overlap)>=0.82;
     }
     for(var i=0;i<nodes.length;i++)for(var k=i+1;k<nodes.length;k++){
       if(find(i)===find(k))continue;
@@ -41493,6 +41524,21 @@ function doImport(){
   // consolidation v9.746) pour bloquer les animations CSS pendant cette phase lourde.
   // Auparavant la classe était retirée AVANT _postValidateImport → scintillement.
   try{_postValidateImport(iy,im,ok,err,errLines);}catch(_pvErr){console.warn("[postValidateImport] err",_pvErr);}
+  // v9.801 — FILET UNIVERSEL anti « jours hors limite » : après TOUS les writers
+  // (grille texte, géométrique, secours index-based _si+1/_di+1, manual, postValidate),
+  // supprime toute cellule dont la clé-jour sort du mois (1..days). Un seul writer
+  // non-cappé suffisait à créer ~1 cellule/emp au jour 31/32 (diag Kevin JUIN/JUILLET).
+  try{
+    var _maxD=days,_oobN=0;
+    Object.keys(A.overrides[key]||{}).forEach(function(_e){
+      var _r=A.overrides[key][_e];if(!_r)return;
+      Object.keys(_r).forEach(function(_d){
+        var _n=parseInt(_d,10);
+        if(isNaN(_n)||_n<1||_n>_maxD){delete _r[_d];_oobN++;}
+      });
+    });
+    if(_oobN){try{ls("cmc_ov",A.overrides);}catch(_){}console.info("[v9.801 oob-cap] "+_oobN+" cellules jour hors limite supprimées (mois="+_maxD+"j)");}
+  }catch(_oobE){console.warn("[v9.801 oob-cap]",_oobE&&_oobE.message);}
   try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.748 réactive animations APRÈS post-validate
   // v9.102 — AUTO-V\u00c9RIFICATION automatique apr\u00e8s import (sans bouton, user demande)
   // v9.556 — Skip auto-verify + scroll en mode replay silencieux (evite cascade dc + flicker)
