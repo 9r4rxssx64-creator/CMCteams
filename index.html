@@ -5396,7 +5396,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.800";
+var APP_VER="v9.801";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -41524,6 +41524,21 @@ function doImport(){
   // consolidation v9.746) pour bloquer les animations CSS pendant cette phase lourde.
   // Auparavant la classe était retirée AVANT _postValidateImport → scintillement.
   try{_postValidateImport(iy,im,ok,err,errLines);}catch(_pvErr){console.warn("[postValidateImport] err",_pvErr);}
+  // v9.801 — FILET UNIVERSEL anti « jours hors limite » : après TOUS les writers
+  // (grille texte, géométrique, secours index-based _si+1/_di+1, manual, postValidate),
+  // supprime toute cellule dont la clé-jour sort du mois (1..days). Un seul writer
+  // non-cappé suffisait à créer ~1 cellule/emp au jour 31/32 (diag Kevin JUIN/JUILLET).
+  try{
+    var _maxD=days,_oobN=0;
+    Object.keys(A.overrides[key]||{}).forEach(function(_e){
+      var _r=A.overrides[key][_e];if(!_r)return;
+      Object.keys(_r).forEach(function(_d){
+        var _n=parseInt(_d,10);
+        if(isNaN(_n)||_n<1||_n>_maxD){delete _r[_d];_oobN++;}
+      });
+    });
+    if(_oobN){try{ls("cmc_ov",A.overrides);}catch(_){}console.info("[v9.801 oob-cap] "+_oobN+" cellules jour hors limite supprimées (mois="+_maxD+"j)");}
+  }catch(_oobE){console.warn("[v9.801 oob-cap]",_oobE&&_oobE.message);}
   try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.748 réactive animations APRÈS post-validate
   // v9.102 — AUTO-V\u00c9RIFICATION automatique apr\u00e8s import (sans bouton, user demande)
   // v9.556 — Skip auto-verify + scroll en mode replay silencieux (evite cascade dc + flicker)
