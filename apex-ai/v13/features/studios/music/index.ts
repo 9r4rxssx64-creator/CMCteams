@@ -809,6 +809,147 @@ export function render(rootEl: HTMLElement): void {
   attachHandlers(rootEl, uid);
 }
 
+/* ───────── v13.4.332 — Export réel (Kevin "implémenter à fond les boutons morts") ─────────
+ * Decode des fichiers uploadés en AudioBuffer + mixdown OfflineAudioContext (gain+pan)
+ * + encodage WAV (encodeWav) / MP3 (lamejs lazy CDN) + téléchargement. */
+function musicToast(msg: string, level: 'success' | 'warn' | 'info'): void {
+  void import('../../../ui/toast.js').then(({ toast }) => toast.show(msg, level)).catch(() => { /* toast optionnel */ });
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch { /* ignore */ } }, 1500);
+  } catch (err) { logger.warn('studio-music', 'download failed', { err }); }
+}
+
+async function decodeFileIntoTrack(file: File, track: MixTrack, rootEl: HTMLElement): Promise<void> {
+  try {
+    const ab = await file.arrayBuffer();
+    const AC = window.AudioContext
+      ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const buf = await ctx.decodeAudioData(ab);
+    track.buffer = buf;
+    try { await ctx.close(); } catch { /* ignore */ }
+    render(rootEl);
+  } catch (err) {
+    logger.warn('studio-music', 'decode failed', { err, name: file.name });
+    musicToast(`« ${file.name} » : audio illisible`, 'warn');
+  }
+}
+
+async function renderMixdown(): Promise<AudioBuffer | null> {
+  const ready = musicStudioStore.list().filter((t) => t.buffer && !t.muted);
+  const soloed = ready.filter((t) => t.solo);
+  const mix = soloed.length > 0 ? soloed : ready;
+  const first = mix[0];
+  if (!first || !first.buffer) return null;
+  const sampleRate = first.buffer.sampleRate;
+  let length = 0;
+  for (const t of mix) { if (t.buffer && t.buffer.length > length) length = t.buffer.length; }
+  if (length === 0) return null;
+  const OAC = window.OfflineAudioContext
+    ?? (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext;
+  if (!OAC) return null;
+  const offline = new OAC(2, length, sampleRate);
+  for (const t of mix) {
+    if (!t.buffer) continue;
+    const src = offline.createBufferSource();
+    src.buffer = t.buffer;
+    const gain = offline.createGain();
+    gain.gain.value = Math.max(0, Math.min(1, t.volume));
+    src.connect(gain);
+    let tail: AudioNode = gain;
+    if (typeof offline.createStereoPanner === 'function') {
+      const panner = offline.createStereoPanner();
+      panner.pan.value = Math.max(-1, Math.min(1, t.pan));
+      gain.connect(panner);
+      tail = panner;
+    }
+    tail.connect(offline.destination);
+    src.start(0);
+  }
+  return offline.startRendering();
+}
+
+function floatToInt16(input: Float32Array): Int16Array {
+  const out = new Int16Array(input.length);
+  for (let i = 0; i < input.length; i++) {
+    const s = Math.max(-1, Math.min(1, input[i] ?? 0));
+    out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  return out;
+}
+
+let _lamejsLoading: Promise<void> | null = null;
+function loadLamejs(): Promise<void> {
+  if ((window as unknown as { lamejs?: unknown }).lamejs) return Promise.resolve();
+  if (_lamejsLoading) return _lamejsLoading;
+  _lamejsLoading = new Promise<void>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js';
+    s.async = true;
+    s.addEventListener('load', () => resolve());
+    s.addEventListener('error', () => reject(new Error('lamejs load failed')));
+    document.head.appendChild(s);
+  });
+  return _lamejsLoading;
+}
+
+interface LameEncoder { encodeBuffer: (l: Int16Array, r?: Int16Array) => Int8Array; flush: () => Int8Array }
+async function encodeMp3(buffer: AudioBuffer): Promise<Blob> {
+  await loadLamejs();
+  const lame = (window as unknown as {
+    lamejs?: { Mp3Encoder: new (channels: number, sampleRate: number, kbps: number) => LameEncoder };
+  }).lamejs;
+  if (!lame) throw new Error('lamejs unavailable');
+  const channels = Math.min(2, buffer.numberOfChannels);
+  const enc = new lame.Mp3Encoder(channels, buffer.sampleRate, 320);
+  const left = floatToInt16(buffer.getChannelData(0));
+  const right = channels > 1 ? floatToInt16(buffer.getChannelData(1)) : left;
+  const blockSize = 1152;
+  const parts: BlobPart[] = [];
+  for (let i = 0; i < left.length; i += blockSize) {
+    const l = left.subarray(i, i + blockSize);
+    const r = right.subarray(i, i + blockSize);
+    const chunk = channels > 1 ? enc.encodeBuffer(l, r) : enc.encodeBuffer(l);
+    if (chunk.length > 0) parts.push(new Int8Array(chunk));
+  }
+  const end = enc.flush();
+  if (end.length > 0) parts.push(new Int8Array(end));
+  return new Blob(parts, { type: 'audio/mpeg' });
+}
+
+async function exportMix(kind: 'wav' | 'mp3'): Promise<void> {
+  const mixed = await renderMixdown().catch((err: unknown) => {
+    logger.warn('studio-music', 'mixdown failed', { err });
+    return null;
+  });
+  if (!mixed) { musicToast('Importe au moins une piste audio avant d\'exporter', 'warn'); return; }
+  musicToast(kind === 'mp3' ? 'Encodage MP3…' : 'Export WAV…', 'info');
+  if (kind === 'wav') {
+    downloadBlob(encodeWav(mixed, 16), `apex-mix-${Date.now()}.wav`);
+    musicToast('Export WAV prêt ✅', 'success');
+    return;
+  }
+  try {
+    downloadBlob(await encodeMp3(mixed), `apex-mix-${Date.now()}.mp3`);
+    musicToast('Export MP3 prêt ✅', 'success');
+  } catch (err) {
+    logger.warn('studio-music', 'mp3 failed, fallback wav', { err });
+    downloadBlob(encodeWav(mixed, 16), `apex-mix-${Date.now()}.wav`);
+    musicToast('MP3 indisponible — export WAV à la place', 'warn');
+  }
+}
+
 function attachHandlers(rootEl: HTMLElement, _uid: string): void {
   rootEl.querySelector<HTMLButtonElement>('#ax-mix-add-track')?.addEventListener('click', () => {
     const t = musicStudioStore.add(`Piste ${musicStudioStore.count() + 1}`);
@@ -835,10 +976,17 @@ function attachHandlers(rootEl: HTMLElement, _uid: string): void {
         continue;
       }
       const t = musicStudioStore.add(f.name);
-      if (t) logger.info('studio-music', 'file imported', { name: f.name });
+      if (t) {
+        logger.info('studio-music', 'file imported', { name: f.name });
+        /* v13.4.332 : décode réellement l'audio dans la piste (sinon export vide). */
+        void decodeFileIntoTrack(f, t, rootEl);
+      }
     }
     render(rootEl);
   });
+
+  rootEl.querySelector<HTMLButtonElement>('#ax-mix-export-wav')?.addEventListener('click', () => { void exportMix('wav'); });
+  rootEl.querySelector<HTMLButtonElement>('#ax-mix-export-mp3')?.addEventListener('click', () => { void exportMix('mp3'); });
 
   rootEl.querySelector<HTMLButtonElement>('#ax-mix-tempo-sync')?.addEventListener('click', () => {
     const result = musicStudioStore.autoSyncTempo();

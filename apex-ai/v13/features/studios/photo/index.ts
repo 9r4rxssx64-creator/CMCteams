@@ -548,6 +548,7 @@ export function render(rootEl: HTMLElement): void {
       <p class="ax-gs-417">Retouche · ${FILTERS.length} filtres · Stickers · Texte · OCR · QR · Background remove · Upscale 4x.</p>
       <div class="ax-gs-30">
         <button id="ax-photo-new" class="ax-btn ax-btn-primary">+ Nouvelle photo</button>
+        <input type="file" id="ax-photo-file" accept="image/*" style="display:none" aria-label="Importer une photo">
       </div>
       <div id="ax-photo-list" class="ax-gs-258">
         ${list.length === 0
@@ -556,4 +557,53 @@ export function render(rootEl: HTMLElement): void {
       </div>
     </div>
   `;
+
+  /* v13.4.332 (Kevin "implémenter à fond les boutons morts") — wire "+ Nouvelle photo" :
+   * sélecteur de fichier → downscale ≤1280px (anti-quota localStorage) → projet → liste. */
+  const fileInput = rootEl.querySelector<HTMLInputElement>('#ax-photo-file');
+  rootEl.querySelector<HTMLButtonElement>('#ax-photo-new')?.addEventListener('click', () => fileInput?.click());
+  const notify = (msg: string, level: 'success' | 'warn' | 'info'): void => {
+    void import('../../../ui/toast.js').then(({ toast }) => toast.show(msg, level)).catch(() => { /* toast optional */ });
+  };
+  fileInput?.addEventListener('change', () => {
+    const f = fileInput.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith('image/')) { notify('Format non supporté (image attendue)', 'warn'); return; }
+    if (f.size > 20 * 1024 * 1024) { notify('Photo trop lourde (max 20 Mo)', 'warn'); return; }
+    const reader = new FileReader();
+    reader.onload = (): void => {
+      const dataUrl0 = String(reader.result ?? '');
+      const img = new Image();
+      img.onload = (): void => {
+        const MAXP = 1280;
+        const w0 = img.naturalWidth || 1;
+        const h0 = img.naturalHeight || 1;
+        const scale = Math.min(1, MAXP / Math.max(w0, h0));
+        const cw = Math.max(1, Math.round(w0 * scale));
+        const ch = Math.max(1, Math.round(h0 * scale));
+        let dataUrl = dataUrl0;
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = cw;
+          canvas.height = ch;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, cw, ch);
+            dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          }
+        } catch (err) { logger.warn('studio-photo', 'downscale failed, using original', { err }); }
+        const proj = createPhotoProject(f.name.replace(/\.[^.]+$/, ''), dataUrl, cw, ch);
+        if (photoStudioStore.save(uid, proj)) {
+          notify('Photo ajoutée ✅', 'success');
+          render(rootEl);
+        } else {
+          notify('Stockage plein — impossible d\'ajouter la photo', 'warn');
+        }
+      };
+      img.onerror = (): void => notify('Image illisible', 'warn');
+      img.src = dataUrl0;
+    };
+    reader.onerror = (): void => notify('Lecture du fichier échouée', 'warn');
+    reader.readAsDataURL(f);
+  });
 }
