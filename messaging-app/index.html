@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.226",
+  "softwareVersion": "v1.1.227",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -393,12 +393,12 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 </head>
 <body>
 <a href="#main-app" class="skip-link">Aller au contenu principal</a>
-<a href="https://kd-mc.com/" aria-label="Retour au portail KDMC" style="position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:99999;background:rgba(10,10,12,.72);color:#fff;text-decoration:none;padding:7px 13px;border-radius:999px;font:600 13px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">← KDMC</a>
+<a id="kdmc-portal-link" href="https://kd-mc.com/" aria-label="Retour au portail KDMC" style="position:fixed;left:8px;bottom:max(72px,calc(env(safe-area-inset-bottom) + 60px));top:auto;z-index:1200;background:rgba(10,10,12,.66);color:#fff;text-decoration:none;padding:5px 11px;border-radius:999px;font:600 11px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">← KDMC</a>
 
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.226';
+const __APEX_CHAT_VERSION__ = 'v1.1.227';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.226</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.227</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.226</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.227</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6781,6 +6781,9 @@ K._handleAuthPseudo = async function(){
 K.render = function(){
   const app = $('#app');
   if(!app) return;
+  // v1.1.226 (Kevin « le lien KDMC cache une fonction ») : déplacé en bas-gauche
+  // (ne couvre plus les boutons du header) + masqué en conversation (qui a déjà son ⬅).
+  try{ const _kl = document.getElementById('kdmc-portal-link'); if(_kl) _kl.style.display = (K.view === 'chat') ? 'none' : ''; }catch(_){}
 
   // v1.1.173 FIX P0 UX (audit crew) : préserver le champ texte focalisé À TRAVERS
   // le re-render complet. Sans ça, quand un message arrive pendant que l'user tape,
@@ -7824,19 +7827,26 @@ async function _handleWsMessage(data, convId){
       break;
     }
     case 'reaction': {
-      // Reactions — DO envoie userId + message_id + emoji + action
+      // v1.1.226 FIX (Kevin « Laurence ne voit pas le cœur ») : le ConversationDO
+      // diffuse l'OBJET COMPLET {message_id, reactions}. L'ancien code exigeait
+      // data.emoji (absent) → la réaction reçue n'était JAMAIS appliquée chez le pair.
+      // On gère les 2 formats : objet complet (autoritaire) OU delta legacy.
       const xFrom = data.userId || data.from;
       const xMsg = data.message_id || data.msg_id;
-      if(xMsg && data.emoji && K.messages[convId]){
+      if(xMsg && K.messages[convId]){
         const m = K.messages[convId].find(x => x.id === xMsg);
         if(m){
-          m.reactions = m.reactions || {};
-          m.reactions[data.emoji] = m.reactions[data.emoji] || [];
-          if(data.action === 'remove'){
-            m.reactions[data.emoji] = m.reactions[data.emoji].filter(u => u !== xFrom);
-            if(m.reactions[data.emoji].length === 0) delete m.reactions[data.emoji];
-          } else {
-            if(!m.reactions[data.emoji].includes(xFrom)) m.reactions[data.emoji].push(xFrom);
+          if(data.reactions && typeof data.reactions === 'object'){
+            m.reactions = data.reactions; // format DO = source de vérité
+          } else if(data.emoji){
+            m.reactions = m.reactions || {};
+            m.reactions[data.emoji] = m.reactions[data.emoji] || [];
+            if(data.action === 'remove'){
+              m.reactions[data.emoji] = m.reactions[data.emoji].filter(u => u !== xFrom);
+              if(m.reactions[data.emoji].length === 0) delete m.reactions[data.emoji];
+            } else {
+              if(!m.reactions[data.emoji].includes(xFrom)) m.reactions[data.emoji].push(xFrom);
+            }
           }
           ls('messages_' + convId, K.messages[convId]);
           if(K.view === 'chat' && K.viewData?.id === convId) K.render();

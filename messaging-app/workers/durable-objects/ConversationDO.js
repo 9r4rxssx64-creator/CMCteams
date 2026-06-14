@@ -373,10 +373,13 @@ export class ConversationDO {
           let reactions = {};
           try { reactions = JSON.parse(existing.reactions || '{}'); } catch {}
           reactions[msg.emoji] = reactions[msg.emoji] || [];
-          if (!reactions[msg.emoji].includes(session.userId)) {
-            reactions[msg.emoji].push(session.userId);
-          } else {
+          const has = reactions[msg.emoji].includes(session.userId);
+          const remove = msg.action === 'remove' || (msg.action !== 'add' && has);
+          if (remove) {
             reactions[msg.emoji] = reactions[msg.emoji].filter(u => u !== session.userId);
+            if (reactions[msg.emoji].length === 0) delete reactions[msg.emoji];
+          } else if (!has) {
+            reactions[msg.emoji].push(session.userId);
           }
           await this.env.APEX_CHAT_DB.prepare(
             'UPDATE messages SET reactions=? WHERE id=?'
@@ -386,6 +389,19 @@ export class ConversationDO {
             type: 'reaction',
             message_id: msg.message_id,
             reactions,
+            userId: session.userId,
+            ts: Date.now()
+          });
+        } else {
+          // v1.1.226 (Kevin « Laurence ne voit pas le cœur ») : message pas en D1
+          // (ex. média non persisté côté serveur) → on relaie quand même le delta
+          // EN LIVE pour que le correspondant voie la réaction.
+          this.broadcast({
+            type: 'reaction',
+            message_id: msg.message_id,
+            emoji: msg.emoji,
+            action: msg.action || 'add',
+            userId: session.userId,
             ts: Date.now()
           });
         }
