@@ -89,6 +89,9 @@ describe('v13.4.50 auditProviderChain — état clés AI dans vault', () => {
       'ax_openclaw_key',
     ];
     for (const k of keys) localStorage.removeItem(k);
+    /* v13.4.328 : le Coffre (multi-key-vault) + le proxy serveur comptent aussi. */
+    localStorage.removeItem('apex_v13_multi_keys');
+    localStorage.removeItem('apex_v13_use_secrets_proxy');
   });
 
   it("Aucune clé → audit retourne unhealthy ≥ 5", () => {
@@ -122,6 +125,32 @@ describe('v13.4.50 auditProviderChain — état clés AI dans vault', () => {
     expect(Array.isArray(audit.unhealthy)).toBe(true);
     expect(Array.isArray(audit.configured)).toBe(true);
     expect(typeof audit.meetsMinimum).toBe('boolean');
+    expect(typeof audit.proxyActive).toBe('boolean');
+  });
+
+  it("v13.4.328 : clés dans le Coffre (multi-key-vault) comptées comme configurées", () => {
+    /* Aucune clé legacy, mais 6 services présents dans le Coffre → healthy ≥ 6, pas de fausse alarme 0/12. */
+    const vault = [
+      { id: 'a', service: 'openai', status: 'active', encrypted: 'AXENC1:x' },
+      { id: 'b', service: 'anthropic', status: 'unknown', encrypted: 'AXENC1:x' },
+      { id: 'c', service: 'google', status: 'active', encrypted: 'AXENC1:x' },
+      { id: 'd', service: 'groq', status: 'active', encrypted: 'AXENC1:x' },
+      { id: 'e', service: 'mistral', status: 'active', encrypted: 'AXENC1:x' },
+      { id: 'f', service: 'perplexity', status: 'active', encrypted: 'AXENC1:x' },
+      { id: 'g', service: 'openai', status: 'invalid', encrypted: 'AXENC1:x' }, /* invalide → ignorée (pas de double compte) */
+    ];
+    localStorage.setItem('apex_v13_multi_keys', JSON.stringify(vault));
+    const audit = auditProviderChain();
+    expect(audit.configured).toContain('gemini'); /* service "google" → provider logique gemini */
+    expect(audit.healthy).toBeGreaterThanOrEqual(6);
+    expect(audit.meetsMinimum).toBe(true);
+  });
+
+  it("v13.4.328 : proxy serveur actif → meetsMinimum true même sans clé locale", () => {
+    localStorage.setItem('apex_v13_use_secrets_proxy', 'true');
+    const audit = auditProviderChain();
+    expect(audit.proxyActive).toBe(true);
+    expect(audit.meetsMinimum).toBe(true);
   });
 });
 

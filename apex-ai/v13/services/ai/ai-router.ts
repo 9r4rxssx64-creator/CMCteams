@@ -693,6 +693,7 @@ export function auditProviderChain(): {
   unhealthy: readonly string[];
   configured: readonly string[];
   meetsMinimum: boolean;
+  proxyActive: boolean;
 } {
   /* v13.3.75 (Kevin urgent "14 clés mais 2/6 providers") :
    * Élargir audit à TOUS les providers IA possibles (pas seulement DEFAULT_CHAIN
@@ -727,10 +728,21 @@ export function auditProviderChain(): {
   for (const { name } of ALL_AI_KEYS) {
     allLogicalProviders.add(name.replace(/_alt$/, ''));
   }
+  /* Mapping nom de SERVICE (multi-key-vault / Coffre) → provider logique.
+   * v13.4.328 (Kevin "le Coffre note 22 mais 0/12 providers IA") : le boot audit
+   * lisait UNIQUEMENT les slots legacy localStorage (ax_openai_key…), or les 22
+   * clés réelles vivent dans le multi-key-vault (`apex_v13_multi_keys`). On compte
+   * donc AUSSI les clés du Coffre + le proxy serveur (sinon fausse alarme 0/12). */
+  const SERVICE_TO_LOGICAL: Record<string, string> = {
+    anthropic: 'anthropic', openai: 'openai', openrouter: 'openrouter', groq: 'groq',
+    google: 'gemini', gemini: 'gemini', mistral: 'mistral', cohere: 'cohere',
+    deepseek: 'deepseek', perplexity: 'perplexity', xai: 'xai_grok', grok: 'xai_grok',
+    xai_grok: 'xai_grok', hf: 'huggingface', huggingface: 'huggingface', openclaw: 'openclaw',
+  };
   if (typeof localStorage !== 'undefined') {
+    /* 1. Slots legacy single-key */
     for (const { name, storageKey } of ALL_AI_KEYS) {
       const raw = localStorage.getItem(storageKey);
-      /* Compte clé valide si non-vide (chiffré AXENC1: ou clair) */
       if (raw && raw.length > 0) {
         const baseProvider = name.replace(/_alt$/, '');
         if (!seenProviders.has(baseProvider)) {
@@ -739,14 +751,36 @@ export function auditProviderChain(): {
         }
       }
     }
-    /* Unhealthy = tous les providers logiques NON présents dans healthy.
-     * Ainsi `unhealthy.length >= total - healthy.length` (1 provider min healthy → reste unhealthy). */
-    for (const provider of allLogicalProviders) {
-      if (!seenProviders.has(provider)) {
-        unhealthy.push(provider);
+    /* 2. Multi-key-vault (Coffre) — source réelle des clés Kevin */
+    try {
+      const rawVault = localStorage.getItem('apex_v13_multi_keys');
+      if (rawVault) {
+        const arr: unknown = JSON.parse(rawVault);
+        if (Array.isArray(arr)) {
+          for (const e of arr as Array<{ service?: string; status?: string; kind?: string }>) {
+            if (!e || typeof e !== 'object') continue;
+            if (e.status === 'invalid' || e.kind === 'info') continue;
+            const svc = String(e.service ?? '').toLowerCase();
+            const logical = SERVICE_TO_LOGICAL[svc] ?? (allLogicalProviders.has(svc) ? svc : null);
+            if (logical && !seenProviders.has(logical)) {
+              seenProviders.add(logical);
+              healthy.push(logical);
+            }
+          }
+        }
       }
+    } catch { /* coffre corrompu → ignore, on garde le legacy */ }
+    /* Unhealthy = providers logiques NON couverts (legacy + Coffre). */
+    for (const provider of allLogicalProviders) {
+      if (!seenProviders.has(provider)) unhealthy.push(provider);
     }
   }
+  /* 3. Proxy Cloudflare actif = clés côté serveur → pas de fausse alarme. */
+  let proxyActive = false;
+  try {
+    const flag = typeof localStorage !== 'undefined' ? localStorage.getItem(PROXY_FLAG_KEY) : null;
+    proxyActive = flag === 'true' || flag === '1';
+  } catch { /* ignore */ }
   /* total = nombre de providers logiques uniques (pas le nombre de clés possibles). */
   const total = allLogicalProviders.size;
   return {
@@ -754,7 +788,9 @@ export function auditProviderChain(): {
     healthy: healthy.length,
     unhealthy,
     configured: healthy,
-    meetsMinimum: healthy.length >= MIN_HEALTHY_PROVIDERS,
+    /* Minimum atteint si assez de providers configurés OU proxy serveur actif. */
+    meetsMinimum: healthy.length >= MIN_HEALTHY_PROVIDERS || proxyActive,
+    proxyActive,
   };
 }
 
