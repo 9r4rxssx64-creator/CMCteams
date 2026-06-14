@@ -1,3 +1,21 @@
+# Mémo de reprise — Apex PWA : corrections fonctionnelles (2026-06-14, branche `claude/remove-unsold-items-qpnypb`)
+
+> Suite aux captures Kevin de la PWA Apex. 4 vrais bugs « indicateur ment » corrigés + 1 test pré-existant rattrapé.
+
+## Livré 2026-06-14 (Apex v13.4.328)
+- **Bannière « 0/12 providers IA » FAUSSE corrigée** : `auditProviderChain()` (boot) ne lisait que les slots legacy `ax_*_key`, pas le **Coffre** (`apex_v13_multi_keys`, les 22 clés de Kevin) ni le **proxy** serveur → comptait 0 alors qu'openai marche. Désormais compte Coffre + proxy → plus de fausse alarme. + 2 tests de régression.
+- **Versions désynchro corrigées** : badge affichait `v13.4.327` (APP_VER) mais l'auto-MAJ comparait `data-app-ver=v13.4.324` → « mise à jour vers .324 » fantôme (downgrade). Aligné les 3 sources (APP_VER + data-app-ver + sw CACHE) → **v13.4.328**. `deploy-check.sh` OK.
+- **← KDMC pill ne couvre plus la status bar** : `top:max(10px,env())` (se posait sur la batterie iPhone sans encoche) → `top:calc(env(safe-area-inset-top,0px) + 8px)` dans les **5 apps** (apex-ai source+build, messaging-app, chez-lolo, la-detente galerie).
+- **Test `landing-render-deep` rattrapé** (cassé depuis la feature SSO #98) : mock `auth` sans `loginVerifiedDomain` → 20/21 rouges noyés dans la suite. Mock complété → 21/21.
+- **Zoom MESURÉ (Playwright)** : `scale=1`, `overflowX=0` → pas de zoom involontaire (guard #56 intact). Le zoom restant = pinch accessibilité (`maximum-scale=5` volontaire) → décision Kevin si on le verrouille.
+- Build vite + sync `dist→apex-ai-v13` (0 `APEX_BOOT_NONCE`), chez-lolo v2.0.15, la-detente galerie v1.0.5.
+
+## Réponses honnêtes à Kevin
+- **Portail → PWA installée** : ouvrir un lien `https` n'ouvre PAS la PWA installée sur **iOS** (pas de deep-link web→PWA chez Apple, contrairement à Android). Contrainte système, pas un bug ; aucune solution fiable côté code.
+- **« Trop d'erreurs passent les audits »** : juste — la cause = des indicateurs/alarmes qui lisent une source ≠ de celle utilisée (lessons #28/#85/#95) + tests à mock périmé noyés dans la suite. Garde-fous renforcés (lesson #103) : mesurer la VRAIE source, run blast-radius complet, isoler tout « 1 failed » avant de le dire flaky.
+
+---
+
 # Mémo de reprise — Domaine kd-mc.com / boutiques (2026-06-13, branche `claude/remove-unsold-items-qpnypb`)
 
 > Session boutiques/domaine. Tout mergé sur le VRAI `main` via GitHub MCP (vérifié par witness `sw.js`).

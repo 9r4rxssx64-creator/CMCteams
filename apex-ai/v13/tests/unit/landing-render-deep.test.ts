@@ -11,6 +11,9 @@ vi.mock('../../services/auth/auth.js', () => ({
   auth: {
     login: vi.fn(async () => ({ ok: true })),
     loginTrusted: vi.fn(async () => ({ ok: true })),
+    /* v13.4.328 : landing tente l'auto-login domaine (SSO Face ID kd-mc, leçon #98).
+     * Le mock doit fournir cette méthode sinon `auth.loginVerifiedDomain is not a function`. */
+    loginVerifiedDomain: vi.fn(async () => ({ ok: false })),
   },
 }));
 vi.mock('../../services/auth/feature-toggles.js', () => ({
