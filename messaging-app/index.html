@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.224",
+  "softwareVersion": "v1.1.225",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -233,6 +233,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .chat-header .topbar-btn{width:34px;height:34px;flex-shrink:0}
 .chat-hname{font-weight:600;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-messages{padding:6px 8px;display:flex;flex-direction:column;gap:2px}
+.chat-messages::before{content:"";margin-top:auto}
 .msg{max-width:84%;padding:6px 10px;border-radius:15px;word-wrap:break-word;
   line-height:1.28;font-size:.9em;position:relative}
 .msg.me{background:var(--ax-gold);color:var(--ax-bg);align-self:flex-end;border-bottom-right-radius:5px}
@@ -397,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.224';
+const __APEX_CHAT_VERSION__ = 'v1.1.225';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -582,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.224</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.225</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -596,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.224</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.225</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1795,7 +1796,7 @@ K._BG_PRESETS = [
 K._setConvBackground = function(convId, bgId){
   const conv = K.conversations.find(c => c.id === convId);
   if(!conv) return;
-  if(!bgId || bgId === 'default'){ delete conv.bg_id; }
+  if(!bgId || bgId === 'default'){ delete conv.bg_id; try{ localStorage.removeItem(PERSIST_PREFIX + 'conv_bgimg_' + convId); localStorage.removeItem('conv_bgimg_' + convId); }catch(_){} }
   else { conv.bg_id = bgId; }
   ls('conversations', K.conversations);
   K.render();
@@ -1806,6 +1807,17 @@ K._applyConvBackground = function(){
   const conv = K.viewData;
   if(!conv || K.view !== 'chat'){ K._clearChatBackground(); return; }
   if(!conv.bg_id){ K._clearChatBackground(); return; }
+  if(conv.bg_id === '__photo__'){
+    const img = lg('conv_bgimg_' + conv.id, '');
+    const msgsEl = document.getElementById('chat-msgs');
+    if(img && msgsEl){
+      msgsEl.style.setProperty('background-image', 'linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)), url(' + img + ')');
+      msgsEl.style.setProperty('background-size', 'cover');
+      msgsEl.style.setProperty('background-position', 'center');
+      msgsEl.style.setProperty('background-repeat', 'no-repeat');
+    } else { K._clearChatBackground(); }
+    return;
+  }
   const preset = K._BG_PRESETS.find(p => p.id === conv.bg_id);
   if(!preset){ K._clearChatBackground(); return; }
   const msgsEl = document.getElementById('chat-msgs');
@@ -1838,9 +1850,47 @@ K._openBgPicker = function(convId){
     </button>
   `).join('');
   K._showModal('🎨 Fond de conversation', `
-    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">Visible chez toi uniquement (pas chez le peer).</p>
+    <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px">Visible chez toi uniquement (chacun choisit le sien).</p>
+    <input type="file" id="bg-photo-input" accept="image/*" style="display:none" onchange="K._setConvBgImage('${esc(convId)}', this.files[0])">
+    <button class="btn btn-block" style="margin-bottom:6px;background:linear-gradient(135deg,#6a8aff,#a55eea);color:#fff;border:none" onclick="document.getElementById('bg-photo-input').click()">📷 Choisir une photo de mon téléphone</button>
+    ${conv.bg_id === '__photo__' ? `<button class="btn btn-block" style="margin-bottom:10px" onclick="K._setConvBackground('${esc(convId)}','default');K._closeModal()">🗑 Retirer ma photo</button>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${grid}</div>
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._closeModal()">← Fermer</button>
   `);
+};
+
+// v1.1.225 (Kevin « personnaliser le fond avec une photo du tél, pour chacun ») :
+// choisit une photo, la réduit (canvas) pour tenir en localStorage, l'applique en
+// fond DE CETTE conv, UNIQUEMENT chez soi (local, par user). Fail-soft si trop lourde.
+K._setConvBgImage = function(convId, file){
+  if(!file) return;
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv) return;
+  const reader = new FileReader();
+  reader.onerror = function(){ if(typeof toast==='function') toast('Lecture de la photo échouée','err'); };
+  reader.onload = function(){
+    const im = new Image();
+    im.onerror = function(){ if(typeof toast==='function') toast('Image illisible','err'); };
+    im.onload = function(){
+      try{
+        const max = 1280; let w = im.width, h = im.height;
+        if(w > max || h > max){ const r = Math.min(max/w, max/h); w = Math.round(w*r); h = Math.round(h*r); }
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(im, 0, 0, w, h);
+        const dataUrl = cv.toDataURL('image/jpeg', 0.82);
+        try{ ls('conv_bgimg_' + convId, dataUrl); }
+        catch(e){ if(typeof toast==='function') toast('Photo trop lourde — réessaie avec une plus petite','err'); return; }
+        conv.bg_id = '__photo__';
+        ls('conversations', K.conversations);
+        K._closeModal();
+        K.render();
+        setTimeout(()=>{ try{ K._applyConvBackground(); }catch(_e){} }, 60);
+        if(typeof toast==='function') toast('🎨 Fond personnalisé appliqué');
+      }catch(e){ if(typeof toast==='function') toast('Erreur image','err'); }
+    };
+    im.src = reader.result;
+  };
+  reader.readAsDataURL(file);
 };
 
 // ============================================================================
@@ -4062,6 +4112,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._clearConvMessages('${esc(convId)}')">🧹 Effacer les messages (garder la conv)</button>
       <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946" onclick="K._deleteConv('${esc(convId)}')">🗑 Supprimer la conversation</button>
     </div>
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._closeModal()">← Fermer</button>
   `);
 };
 
@@ -5201,9 +5252,9 @@ K._updatePresenceHeader = function(){
 
 K._renderTypingIndicator = function(convId){
   const state = K._typingState?.[convId] || {};
-  const active = Object.values(state).filter(t => Date.now() - t.ts < 4000);
+  const entries = Object.entries(state).filter(([id, t]) => Date.now() - t.ts < 4000);
   let el = document.getElementById('typing-indicator');
-  if(active.length === 0){ if(el) el.remove(); return; }
+  if(entries.length === 0){ if(el) el.remove(); return; }
   if(!el){
     el = document.createElement('div');
     el.id = 'typing-indicator';
@@ -5217,9 +5268,20 @@ K._renderTypingIndicator = function(convId){
       if(app) app.appendChild(el);
     }
   }
-  const names = active.map(t => t.pseudo || '...').slice(0, 3).join(', ');
-  // v1.1.54 : ajout animation 3 dots typing visuelle
-  el.innerHTML = `${esc(names)} <span class="typing-dots"><span>•</span><span>•</span><span>•</span></span>`;
+  // v1.1.225 fix (Kevin « Marque Laurence au lieu de 15a0f ») : résout le NOM,
+  // jamais l'ID brut. DM → nom du peer via _convName ; groupe → contact ; sinon fallback.
+  const _conv = K.viewData;
+  const _isDM = _conv && !(K._isGroup && K._isGroup(_conv));
+  const _looksId = (s, id) => !s || s === id || /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s) || /^(u_|user_)/i.test(s);
+  const names = entries.map(([id, t]) => {
+    let nm = t.pseudo;
+    if(_looksId(nm, id)){
+      if(_isDM){ nm = K._convName(_conv); }
+      else { const ct = (K.contacts||[]).find(u => u.id === id); nm = ct ? (K._displayName ? K._displayName(ct) : (ct.name || ct.pseudo)) : 'Quelqu\'un'; }
+    }
+    return nm || 'Quelqu\'un';
+  }).slice(0, 3).join(', ');
+  el.innerHTML = `${esc(names)} écrit <span class="typing-dots"><span>•</span><span>•</span><span>•</span></span>`;
 };
 
 // v1.1.36 — Read receipt UI : ✓ envoyé · ✓✓ livré · ✓✓ bleu lu (style WhatsApp)
@@ -7050,7 +7112,7 @@ function renderChat(app){
           : '🔒 Conversation chiffrée pendant le transit. Le chiffrement bout-en-bout s\'activera dès l\'échange des clés avec ton correspondant.'}</div>
       ` : msgs.map(m => K._renderBubble(m, conv, msgs)).join('')}
     </div>
-    <div id="smart-reply-chips" style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;overflow-x:auto"></div>
+    <div id="smart-reply-chips" style="padding:2px 8px;display:flex;flex-wrap:nowrap;gap:4px;align-items:center;overflow-x:auto"></div>
     <div class="chat-input">
       <div class="chat-attach-row">
         <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
@@ -9343,15 +9405,21 @@ K._renderSmartReplyChips = async function(convId, lastMsg){
     host.innerHTML = '';
     return;
   }
-  host.innerHTML = '<div style="color:var(--ax-text-3);font-size:.78em;padding:4px 8px">💡 ...</div>';
+  host.innerHTML = '<div style="color:var(--ax-text-3);font-size:.72em;padding:2px 8px">💡</div>';
   const replies = await K._loadSmartReplies(lastMsg.text);
   if(!replies || replies.length === 0){
     host.innerHTML = '';
     return;
   }
-  host.innerHTML = replies.map(r => `
-    <button class="btn btn-out btn-sm smart-chip" onclick="K._useSmartReply(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="margin:2px;border-radius:14px;padding:4px 12px;font-size:.85em">${esc(r)}</button>
-  `).join('');
+  // v1.1.225 (Kevin) : E) on passe la valeur BRUTE via data-index (plus d'encodage
+  // dans l'attribut onclick → fin du « &#39; » sur les apostrophes). F) chips plus
+  // petits + une seule ligne scrollable (prend moins de place sur le chat).
+  K._smartRepliesCache = replies;
+  host.innerHTML = replies.map((r, i) => `<button class="btn btn-out smart-chip" data-sr="${i}" style="margin:1px;border-radius:12px;padding:2px 9px;font-size:.74em;line-height:1.3;white-space:nowrap;flex:0 0 auto">${esc(r)}</button>`).join('');
+  host.querySelectorAll('.smart-chip').forEach(b => b.addEventListener('click', () => {
+    const r = (K._smartRepliesCache || [])[+b.dataset.sr];
+    if(r != null) K._useSmartReply(r);
+  }));
 };
 
 K._useSmartReply = function(reply){
