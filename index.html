@@ -5396,7 +5396,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.799";
+var APP_VER="v9.800";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36286,6 +36286,11 @@ function _cmcApplyGeometricParse(iy,im){
       var row=A.overrides[key][eid];
       var days=ge.days||{};
       Object.keys(days).forEach(function(d){
+        // v9.800 (Kevin diag JUIN/JUILLET « 288 cellules jours hors limite ») :
+        // le parser géométrique peut produire une clé jour au-delà du mois
+        // (off-by-one / en-tête aménagés numéroté 10..40). On CAP au mois.
+        var _dn=parseInt(d,10);
+        if(isNaN(_dn)||_dn<1||_dn>dim)return;
         if(row[d]){stats.cells_overwritten_blocked++;return;}// JAMAIS ecraser grille production
         var code=days[d];
         if(!code)return;
