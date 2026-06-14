@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.802";
+var APP_VER="v9.803";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36541,142 +36541,85 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       if(cf)return cf; // 'roulettes' codes-based — dernier recours avant DEF_EMP
       return emp.family||"bj";
     }
+    var _nodes=[];
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
       var _empFam=_famForDetect(emp);
       if(_empFam==="cadres"){skipReasons.cadres++;return;}
-      if(emp.teamHistory&&emp.teamHistory[key]){skipReasons.explicit++;return;}
       var r=ov[eid]||{};
       var cellCount=Object.keys(r).filter(function(d){return !!r[d];}).length;
       if(cellCount<10){skipReasons.low_cells++;return;}
-      var rhDays=[],fbR=[];
-      // v9.770 (Kevin "il ne prenait en compte que les RH pas le R") — RH primaire,
-      // R fallback si AUCUN RH (sinon le cycle SBM standard cassé : RH+R adjacents).
-      Object.keys(r).forEach(function(d){
-        var c=String(r[d]).toUpperCase();
-        if(c==="RH")rhDays.push(parseInt(d));
-        else if(c==="R")fbR.push(parseInt(d));
-      });
-      if(rhDays.length===0 && fbR.length>=2) rhDays = fbR;
-      rhDays.sort(function(a,b){return a-b;});
-      if(rhDays.length<2){skipReasons.low_rh++;return;}
-      var cycle=_calcCycle(rhDays);
-      if(!cycle||cycle<2||cycle>15){skipReasons.no_cycle++;return;}
-      var offset=(rhDays[0]-1)%cycle;
-      // v9.654 : signature inclut PREMIER CODE TRAVAIL (distingue miroir)
+      // v9.803 (Kevin 2026-06-14, RÈGLE EXACTE) : repos = RH ∪ R. ÉQUIPE = même
+      // famille + MÊMES jours de repos. MIROIR = même famille + mêmes repos +
+      // HORAIRE du 1er code travail différent. AUTORITAIRE (plus de skip-on-explicit).
+      var rest=[];
+      Object.keys(r).forEach(function(d){var c=String(r[d]).toUpperCase();if(c==="RH"||c==="R")rest.push(parseInt(d,10));});
+      rest.sort(function(a,b){return a-b;});
+      if(rest.length<2){skipReasons.low_rh++;return;}
       var firstWork=_firstWorkCode(r)||"?";
-      // v9.713 Kevin diag mai 2026 — NORMALISER le suffixe ('c'/'"'/'\''/'*') pour
-      // la signature. Le CHEF d'une équipe BJ porte '22/6c', ses croupiers '22/6' :
-      // sans normalisation ils tombent dans 2 signatures → le chef se retrouve seul
-      // (groupe de 1, filtré par length>=2) → PERD sa détection d'équipe. La famille
-      // (BJ/roulette/CMC) est tranchée par _famForDetect + le split post-groupe par
-      // famille, PAS par le suffixe de signature. Les paires miroir diffèrent par
-      // l'HORAIRE DE BASE (20/5 vs 22/6), pas par le suffixe → normalisation sûre.
-      var firstWorkSig=firstWork.replace(/[c'"*]+$/i,"")||firstWork;
-      var sig=cycle+":"+offset+":"+firstWorkSig;
-      if(!empSigs[sig])empSigs[sig]=[];
-      empSigs[sig].push({eid:eid,emp:emp,rhDays:rhDays,cycle:cycle,offset:offset,firstWork:firstWorkSig,family:_empFam}); // v9.713 firstWork normalisé (chef + croupiers clusterisent)
+      var fwBase=firstWork.replace(/[c'"*:]+$/gi,"")||firstWork;
+      _nodes.push({eid:eid,emp:emp,fam:_empFam,rest:rest,restKey:rest.join(","),fwBase:fwBase});
       detectableEmps.push(eid);
     });
-    var sigs=Object.keys(empSigs).filter(function(s){return empSigs[s].length>=2;}); // v9.650 : 3→2
-    if(!sigs.length){
-      console.log("[v9.650 detectTeams] no group with 2+ same cycle:offset, skip. SkipReasons:",skipReasons);
+    if(!_nodes.length){
+      console.log("[v9.803 detectTeams] aucun emp avec ≥2 jours de repos, skip. SkipReasons:",skipReasons);
       return{ok:false,reason:"no_groups",skipReasons:skipReasons};
     }
-    // 2. Trier groupes par offset croissant (ordre cycle)
-    sigs.sort(function(a,b){
-      var pa=a.split(":"),pb=b.split(":");
-      var oa=parseInt(pa[1]),ob=parseInt(pb[1]);
-      if(oa!==ob)return oa-ob;
-      return parseInt(pa[0])-parseInt(pb[0]);
+    // 1) ÉQUIPE = teamKey (famille | repos | horaire-base). Chef '20/5c' et croupier
+    //    '20/5' → même fwBase '20/5' → même équipe. ≥2 membres = équipe constituée.
+    var _teamMap={};
+    _nodes.forEach(function(n){var tk=n.fam+"|"+n.restKey+"|"+n.fwBase;(_teamMap[tk]=_teamMap[tk]||[]).push(n);});
+    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0,amenage:0};
+    var teamGroups=[],_singles=[];
+    Object.keys(_teamMap).forEach(function(tk){
+      var grp=_teamMap[tk];
+      if(grp.length<2){_singles.push(grp[0]);return;}
+      var fam=grp[0].fam;
+      famCounters[fam]=(famCounters[fam]||0)+1;
+      var nn=famCounters[fam];
+      var teamId=fam==="roulettes"?"r"+nn:fam==="cmc"?"c"+nn:fam==="amenage"?("amenage"+(nn>1?nn:"")):String(nn);
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(teamId);
+      teamGroups.push({teamId:teamId,fam:fam,restKey:grp[0].restKey,rest:grp[0].rest,fwBase:grp[0].fwBase,members:grp.slice()});
+      grp.forEach(function(g){
+        if(!g.emp.teamHistory)g.emp.teamHistory={};g.emp.teamHistory[key]=teamId;
+        if(!g.emp.familyHistory)g.emp.familyHistory={};g.emp.familyHistory[key]=fam;
+      });
     });
-    // v9.695 (Kevin diag : "emps de familles différentes mélangés") :
-    // SMART POST-grouping split — ne split QUE si pas de famille dominante (≥80%).
-    // 16 emps mixing 4 families avec 4/4/4/4 → split (vraies équipes distinctes).
-    // 5 emps 4 roulettes + 1 bj → keep ensemble (DEF_EMP bug isolé sur l'emp bj).
-    var splitSigs=[];
-    sigs.forEach(function(s){
-      var group=empSigs[s];
-      var byFam={};
-      group.forEach(function(g){
-        var f=g.family||"bj";
-        if(!byFam[f])byFam[f]=[];
-        byFam[f].push(g);
+    // 2) Singletons (souvent CP partiel : repos tronqués) → rattachés à l'équipe de
+    //    LEUR famille dont les repos sont identiques, sinon un SUR-ENSEMBLE des leurs,
+    //    en préférant le même horaire-base. Sinon laissés au fallback v9.743.
+    _singles.forEach(function(s){
+      var best=null,bestScore=-1;
+      teamGroups.forEach(function(t){
+        if(t.fam!==s.fam)return;
+        var subset=s.rest.every(function(d){return t.rest.indexOf(d)>=0;});
+        if(!subset)return;
+        var score=(t.fwBase===s.fwBase?1000:0)+s.rest.length-(t.rest.length-s.rest.length);
+        if(score>bestScore){bestScore=score;best=t;}
       });
-      var fams=Object.keys(byFam);
-      if(fams.length===1){
-        splitSigs.push(s);return;
-      }
-      // Cherche famille dominante (>=80%)
-      var domFamCount=0,domFamName=null;
-      fams.forEach(function(f){
-        if(byFam[f].length>domFamCount){domFamCount=byFam[f].length;domFamName=f;}
-      });
-      var domRatio=domFamCount/group.length;
-      if(domRatio>=0.60){
-        // Famille dominante : keep ensemble (signature inchangée, DEF_EMP errors tolérés)
-        splitSigs.push(s);
-      }else{
-        // Pas de famille dominante : split réel par famille (cross-family mix legitime)
-        fams.forEach(function(f){
-          if(byFam[f].length>=2){
-            var subSig=f+"@"+s;
-            empSigs[subSig]=byFam[f];
-            splitSigs.push(subSig);
-          }
-        });
-        delete empSigs[s];
+      if(best){
+        if(!s.emp.teamHistory)s.emp.teamHistory={};s.emp.teamHistory[key]=best.teamId;
+        if(!s.emp.familyHistory)s.emp.familyHistory={};s.emp.familyHistory[key]=s.fam;
+        best.members.push(s);
       }
     });
-    sigs=splitSigs;
-    // 3. Assigner team IDs séquentiels par family
-    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0};
-    var teamGroups=[];
-    sigs.forEach(function(sig){
-      var group=empSigs[sig];
-      var famCount={};
-      group.forEach(function(g){famCount[g.family]=(famCount[g.family]||0)+1;});
-      var domFam=Object.keys(famCount).reduce(function(a,b){return famCount[a]>famCount[b]?a:b;});
-      famCounters[domFam]=(famCounters[domFam]||0)+1;
-      var n=famCounters[domFam];
-      var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:String(n);
-      _cmcEnsureTeam(teamId); // v9.721 — enregistre l'équipe dans A.teams
-      teamGroups.push({
-        teamId:teamId,sig:sig,
-        cycle:group[0].cycle,offset:group[0].offset,
-        firstWork:group[0].firstWork, // v9.655 fix : indispensable pour détection miroir
-        family:domFam,empCount:group.length,
-        rhDays:group[0].rhDays
-      });
-      group.forEach(function(g){
-        if(!g.emp.teamHistory)g.emp.teamHistory={};
-        g.emp.teamHistory[key]=teamId;
-      });
-    });
-    // 4. Détection miroirs v9.654 (Kevin règle confirmée) :
-    // Miroir = MÊMES jours RH (même cycle:offset) + premier code travail DIFFÉRENT.
-    // Ex Roulettes : équipe A "20/5" RH=[5,11,17,23,29] miroir A' "22/6'" RH=[5,11,17,23,29].
-    // Cas Kevin mai V1 : BARONE/AUREGLIA/PARIZIA/GANCIA/DAGIONI (équipe A "20/5")
-    //                   + BASILE/RINALDI/SIRIO/MALENFANT/MILLET/MARCHI (miroir "22/6'")
+    // 3) MIROIRS — 2 équipes même famille + MÊMES repos + horaire-base DIFFÉRENT
+    //    (Kevin : "équipes miroirs même repos mais horaire différente sur les
+    //    premiers jours de travail").
     var mirrors={};
     for(var i=0;i<teamGroups.length;i++){
       for(var j=i+1;j<teamGroups.length;j++){
         var a=teamGroups[i],b=teamGroups[j];
-        if(a.family!==b.family)continue;
-        // MÊMES RH days (cycle + offset identiques) ET premier code travail différent
-        if(a.cycle===b.cycle && a.offset===b.offset && a.firstWork!==b.firstWork){
-          mirrors[a.teamId]=b.teamId;
-          mirrors[b.teamId]=a.teamId;
-        }
+        if(a.fam!==b.fam||a.restKey!==b.restKey||a.fwBase===b.fwBase)continue;
+        if(mirrors[a.teamId]||mirrors[b.teamId])continue;
+        mirrors[a.teamId]=b.teamId;mirrors[b.teamId]=a.teamId;
       }
     }
-    if(Object.keys(mirrors).length){
-      // v9.762 — MERGE dans la map miroir existante (écrite par _cmcApplyValidatedTeams)
-      // au lieu d'écraser : le rest-pattern est un filet pour les emps non clusterisés,
-      // il ne doit JAMAIS effacer les miroirs validés par la lib T1.
-      try{var _existMir=lg("cmc_team_mirror_"+key,{})||{};for(var _mk in mirrors){if(!_existMir[_mk])_existMir[_mk]=mirrors[_mk];}ls("cmc_team_mirror_"+key,_existMir);}catch(_){}
-    }
+    // AUTORITAIRE (Kevin "trouve les équipes seul") : ce détecteur fait foi → la map
+    // miroir ÉCRASE l'ancienne (l'union-find sous-clusterisait sur données réelles).
+    try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
+    if(typeof fbWrite==="function")try{fbWrite("cmc_team_mirror_"+key,mirrors);}catch(_){}
     // 5. Sync employees + Firebase
     try{ls("cmc_e",A.employees);}catch(_){}
     try{ls("cmc_t",A.teams);}catch(_){} // v9.721 — persiste les équipes auto-créées
@@ -36687,12 +36630,12 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       empsAssigned:detectableEmps.length,
       mirrors:Object.keys(mirrors).length/2,
       skipReasons:skipReasons,
-      cycles:teamGroups.map(function(g){return g.cycle;}).filter(function(v,i,a){return a.indexOf(v)===i;})
+      restGroups:teamGroups.length
     };
     try{if(typeof _audit==="function")_audit("teams_detected_by_rh_pattern_v650",AID,key,
       report.teams+" teams / "+report.empsAssigned+" emps / "+report.mirrors+" mirrors",
       JSON.stringify(report));}catch(_){}
-    console.log("[v9.650 detectTeams] "+report.teams+" équipes détectées par pattern cycle:offset, "+report.empsAssigned+" emps assignés, "+report.mirrors+" paires miroir, cycles="+report.cycles.join(","));
+    console.log("[v9.803 detectTeams] "+report.teams+" équipes (famille+repos+horaire), "+report.empsAssigned+" emps, "+report.mirrors+" miroirs");
     return{ok:true,report:report,teamGroups:teamGroups,mirrors:mirrors};
   }catch(e){console.warn("[v9.650 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
 }

@@ -77,7 +77,11 @@ async function main() {
     test('v9.655 : détecte 2 équipes (A et A miroir)', () => res && res.report && res.report.teams === 2);
     test('v9.655 : assigne tous les emps trouvés dans DEF_EMP', () => res && res.report && res.report.empsAssigned === (teamA.length + mirrorA.length));
     test('v9.655 : 1 paire miroir détectée', () => res && res.report && res.report.mirrors === 1);
-    test('v9.655 : cycle 6 détecté', () => res && res.report && res.report.cycles.indexOf(6) >= 0);
+    // v9.803 : la détection n'est plus basée cycle:offset mais sur l'ensemble EXACT
+    // des jours de repos (RH∪R). Le rapport expose restGroups (nb d'équipes) au lieu
+    // de cycles. Règle Kevin 2026-06-14 : équipe = mêmes repos ; miroir = mêmes repos
+    // + horaire différent. On vérifie qu'au moins une équipe a été constituée.
+    test('v9.803 : équipes constituées par repos (restGroups)', () => res && res.report && res.report.restGroups >= 1);
     test('v9.655 : 2 emps team A (premiers présents) ont même teamId', () => {
       // Use first 2 team A emps that exist in DEF_EMP (skip absents like AUREGLIA si absent)
       const present = teamA.map(findEmp).filter(Boolean);

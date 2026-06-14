@@ -1,0 +1,100 @@
+// v9.803 runtime test — RÈGLE EXACTE Kevin 2026-06-14 pour _cmcDetectTeamsByRestPattern :
+//   • ÉQUIPE  = même FAMILLE + MÊMES jours de repos (RH ∪ R)
+//   • MIROIR  = même famille + MÊMES repos + HORAIRE (1er code travail) DIFFÉRENT
+//   • familles différentes avec mêmes repos → JAMAIS la même équipe
+//   • repos différents (même famille) → équipes différentes (pas miroir)
+//   • CP partiel (repos ⊆ ceux d'une équipe) → rattaché à cette équipe
+//
+// Données synthétiques 30 jours (faute de pouvoir rejouer l'extraction PDF réelle hors
+// device). La famille est déduite des suffixes de code (c→bj, "→cmc, nu→roulettes),
+// donc on encode la famille via les codes.
+import { chromium } from 'playwright';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+async function main() {
+  console.log('\n=== Test runtime v9.803 — équipes par repos + miroir par horaire ===\n');
+  const browser = await chromium.launch({ headless: true });
+  const page = await (await browser.newContext({ viewport: { width: 375, height: 812 } })).newPage();
+  await page.goto('file://' + resolve(__dirname, '../index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForFunction(() => typeof window.A === 'object' && typeof window._cmcDetectTeamsByRestPattern === 'function', { timeout: 20000 });
+  await page.evaluate(() => { window.A.user = { id: 'U11804', name: 'Kevin DESARZENS' }; });
+
+  const out = await page.evaluate(() => {
+    const res = { tests: [] };
+    const t = (label, fn) => { try { const ok = fn(); res.tests.push({ label, ok: ok === true, error: ok === true ? null : ('got ' + JSON.stringify(ok)) }); } catch (e) { res.tests.push({ label, ok: false, error: e.message }); } };
+    const key = '2026-4'; window.A.year = 2026; window.A.month = 4;
+    window.A.overrides = window.A.overrides || {}; window.A.overrides[key] = {};
+    window.A.employees.forEach(e => { if (e.teamHistory) delete e.teamHistory[key]; if (e.familyHistory) delete e.familyHistory[key]; });
+    try { localStorage.removeItem('cmc_team_mirror_' + key); } catch (_) {}
+
+    // restPair: array of [RHday, Rday] pairs → produce 30-day schedule with given work code family
+    // restA = days 5,6,11,12,17,18,23,24,29,30  ; restB = days 2,3,8,9,14,15,20,21,26,27
+    const restA = { rh: [5, 11, 17, 23, 29], r: [6, 12, 18, 24, 30] };
+    const restB = { rh: [2, 8, 14, 20, 26], r: [3, 9, 15, 21, 27] };
+    function sched(rest, fw, work) {
+      const o = {};
+      for (let d = 1; d <= 30; d++) {
+        if (rest.rh.indexOf(d) >= 0) o[d] = 'RH';
+        else if (rest.r.indexOf(d) >= 0) o[d] = 'R';
+        else o[d] = (d === 1 ? fw : work);
+      }
+      return o;
+    }
+    // pick 14 distinct non-cadre real emps
+    const emps = window.A.employees.filter(e => (e.family || '') !== 'cadres').slice(0, 14);
+    if (emps.length < 14) return { error: 'not enough emps' };
+    const ov = window.A.overrides[key];
+    // roulettes (plain codes) — team R1 (fw 20/5) rest A
+    ov[emps[0].id] = sched(restA, '20/5', '19/4');
+    ov[emps[1].id] = sched(restA, '20/5', '19/4');
+    ov[emps[2].id] = sched(restA, '20/5', '19/4');
+    // roulettes mirror R1' (fw 22/6') rest A — SAME repos, diff horaire
+    ov[emps[3].id] = sched(restA, "22/6'", '19/4');
+    ov[emps[4].id] = sched(restA, "22/6'", '19/4');
+    ov[emps[5].id] = sched(restA, "22/6'", '19/4');
+    // roulettes team R2 (fw 14/19) rest B — diff repos → diff team, no mirror
+    ov[emps[6].id] = sched(restB, '14/19', '16/22');
+    ov[emps[7].id] = sched(restB, '14/19', '16/22');
+    ov[emps[8].id] = sched(restB, '14/19', '16/22');
+    // BJ (chef 'c' codes) rest A fw 20/5c — same repos as R1 but FAMILY bj → separate
+    ov[emps[9].id] = sched(restA, '20/5c', '19/4c');
+    ov[emps[10].id] = sched(restA, '20/5c', '19/4c');
+    // CMC ('"' codes) rest A fw 20/5" — family cmc → separate
+    ov[emps[12].id] = sched(restA, '20/5"', '19/4"');
+    ov[emps[13].id] = sched(restA, '20/5"', '19/4"');
+    // CP-partial roulettes: rest = subset of restA (only first half present, CP after)
+    const partial = {}; for (let d = 1; d <= 30; d++) { if (d > 18) partial[d] = 'CP'; else if (restA.rh.indexOf(d) >= 0) partial[d] = 'RH'; else if (restA.r.indexOf(d) >= 0) partial[d] = 'R'; else partial[d] = (d === 1 ? '20/5' : '19/4'); }
+    ov[emps[11].id] = partial;
+
+    const r = window._cmcDetectTeamsByRestPattern(2026, 4);
+    const th = id => { const e = window.A.employees.find(x => x.id === id); return e && e.teamHistory && e.teamHistory[key]; };
+    const fam = id => { const e = window.A.employees.find(x => x.id === id); return e && e.familyHistory && e.familyHistory[key]; };
+    let mir = {}; try { mir = JSON.parse(localStorage.getItem('cmc_team_mirror_' + key) || '{}'); } catch (_) {}
+
+    t('algo ok', () => r && r.ok === true);
+    t('R1 : 3 emps même équipe', () => th(emps[0].id) && th(emps[0].id) === th(emps[1].id) && th(emps[1].id) === th(emps[2].id));
+    t('R1 : famille roulettes (id r*)', () => /^r/.test(th(emps[0].id) || '') && fam(emps[0].id) === 'roulettes');
+    t("R1' miroir : 3 emps même équipe", () => th(emps[3].id) && th(emps[3].id) === th(emps[4].id) && th(emps[4].id) === th(emps[5].id));
+    t("R1 ≠ R1' (équipe vs miroir distinctes)", () => th(emps[0].id) !== th(emps[3].id));
+    t("MIROIR détecté R1 ↔ R1'", () => mir[th(emps[0].id)] === th(emps[3].id) && mir[th(emps[3].id)] === th(emps[0].id));
+    t('R2 (repos différents) : équipe distincte', () => th(emps[6].id) && th(emps[6].id) === th(emps[7].id) && th(emps[6].id) !== th(emps[0].id) && th(emps[6].id) !== th(emps[3].id));
+    t('R2 SANS miroir (repos uniques)', () => !mir[th(emps[6].id)]);
+    t('BJ mêmes repos que R1 mais FAMILLE bj → équipe séparée', () => th(emps[9].id) === th(emps[10].id) && th(emps[9].id) !== th(emps[0].id) && fam(emps[9].id) === 'bj');
+    t('CMC mêmes repos que R1 mais FAMILLE cmc → équipe séparée', () => th(emps[12].id) === th(emps[13].id) && th(emps[12].id) !== th(emps[0].id) && fam(emps[12].id) === 'cmc');
+    t('CP partiel (repos ⊆ R1) rattaché à R1', () => th(emps[11].id) === th(emps[0].id));
+    return res;
+  });
+
+  if (out.error) { console.log('❌ ' + out.error); await browser.close(); process.exit(1); }
+  let pass = 0, fail = 0;
+  out.tests.forEach(t => { if (t.ok) { console.log('  ✅ ' + t.label); pass++; } else { console.log('  ❌ ' + t.label + ' — ' + t.error); fail++; } });
+  console.log('\n========================================');
+  console.log(fail === 0 ? '✅ RÈGLE ÉQUIPES (repos + miroir horaire) OK' : '❌ RÈGLE ÉQUIPES KO');
+  console.log('PASS: ' + pass + ' · FAIL: ' + fail);
+  console.log('========================================');
+  await browser.close();
+  process.exit(fail === 0 ? 0 : 1);
+}
+main().catch(e => { console.error(e); process.exit(1); });

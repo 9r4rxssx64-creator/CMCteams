@@ -18,10 +18,15 @@ Le PDF SBM utilise 2 conventions pour délimiter les équipes :
 
 ### Règle de détection
 
-- Les employés ayant **exactement les mêmes jours RH dans le mois** appartiennent à la **MÊME équipe**
-- L'**équipe miroir** est le groupe avec **pattern RH décalé d'un offset constant** (généralement +N jours dans le cycle)
+- **RÈGLE EXACTE (Kevin 2026-06-14, confirmée — implémentée v9.803)** :
+  - **ÉQUIPE = même FAMILLE + MÊMES jours de repos (RH ∪ R) exactement.**
+  - **ÉQUIPE MIROIR = même famille + MÊMES jours de repos + HORAIRE du 1er code travail DIFFÉRENT** (ex équipe `20/5` ⇆ miroir `22/6'`, mêmes repos). ⚠️ CORRIGE l'ancienne définition erronée « pattern RH décalé d'un offset » : le miroir n'est PAS décalé, il a les MÊMES repos.
+  - Familles différentes avec les mêmes repos → JAMAIS la même équipe.
+  - Repos différents (même famille) → équipes différentes (PAS un miroir).
+  - CP partiel (repos tronqués ⊆ ceux d'une équipe) → rattaché à cette équipe.
+  - Le chef (`20/5c`) et ses croupiers (`20/5`) partagent l'horaire-base `20/5` → même équipe.
 - Chaque équipe a typiquement **4-6 employés** (le header PDF indique le compte : "4 RH du au" = 4 emps avec RH à cette position)
-- Famille (BJ/Roulettes/CMC) déduite de la section PDF dans laquelle apparaît le bloc
+- Famille (BJ/Roulettes/CMC) déduite des suffixes de code (`c`→chef BJ, `"`→CMC, nu→roulettes) puis section PDF ; JAMAIS `emp.family` DEF_EMP périmé.
 
 ### Quand l'algorithme s'applique
 

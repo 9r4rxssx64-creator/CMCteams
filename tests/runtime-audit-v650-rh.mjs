@@ -54,7 +54,9 @@ async function main() {
     test('v9.650 : algo retourne ok=true', () => res && res.ok === true);
     test('v9.650 : détecte exactement 2 équipes', () => res && res.report && res.report.teams === 2);
     test('v9.650 : assigne 6 emps', () => res && res.report && res.report.empsAssigned === 6);
-    test('v9.650 : détecte cycle 6', () => res && res.report && res.report.cycles.indexOf(6) >= 0);
+    // v9.803 : détection par ensemble EXACT de repos (plus de cycle:offset). Le rapport
+    // expose restGroups (nb équipes) au lieu de cycles.
+    test('v9.803 : équipes constituées (restGroups>=2)', () => res && res.report && res.report.restGroups >= 2);
     test('v9.650 : team[0] teamHistory écrit', () => {
       return emps[0].teamHistory && emps[0].teamHistory[key] !== undefined;
     });
