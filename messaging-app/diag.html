@@ -84,6 +84,18 @@
 <button class="btn btn-out" onclick="testTurn()">🌍 Tester le relais TURN</button>
 </div>
 
+<h2>📞 Activer les appels (admin)</h2>
+<div class="card">
+<div style="font-size:.82em;color:#9aa;line-height:1.5;margin-bottom:8px">
+Crée une clé TURN dans Cloudflare (<b>Realtime → TURN Server → Create</b>), puis colle ici les
+<b>2 valeurs</b> affichées. Ça active les appels entre réseaux différents, sans rien d'autre à faire.
+</div>
+<input id="turn-key-id" placeholder="Turn Token ID (uid)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:10px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#eee;font-size:15px">
+<input id="turn-token" placeholder="API Token / Key (le secret)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:10px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#eee;font-size:15px">
+<div class="row"><span class="lbl">Résultat</span><span class="val" id="d-turn-save">—</span></div>
+<button class="btn" onclick="saveTurnKey()">💾 Enregistrer la clé TURN</button>
+</div>
+
 <h2>🔐 Crypto / Auth</h2>
 <div class="card">
 <div class="row"><span class="lbl">Web Crypto API</span><span class="val" id="d-webcrypto">…</span></div>
@@ -367,6 +379,46 @@ async function testTurn() {
     setErr('d-call-turn', '✗ ' + (e.name || 'Error'));
     diag.turn = 'error';
     diag.turn_error = (e.name || 'Error') + ': ' + e.message;
+    alert('✗ Erreur EXACTE : ' + (e.name || '') + ' — ' + e.message);
+  }
+  refreshExport();
+}
+
+// 💾 Admin : enregistre la clé TURN créée dans le dashboard Cloudflare → KV serveur.
+async function saveTurnKey() {
+  const API_BASE = 'https://apex-chat-api.9r4rxssx64.workers.dev';
+  let token = null;
+  try { token = JSON.parse(localStorage.getItem('apex_chat_token') || 'null'); } catch (_) {}
+  const keyId = ($('turn-key-id').value || '').trim();
+  const turnTok = ($('turn-token').value || '').trim();
+  if (!token) { alert('✗ Connecte-toi dans Apex Chat (admin) d\'abord.'); return; }
+  if (!keyId || !turnTok) { alert('✗ Colle les 2 valeurs (Token ID + Key).'); return; }
+  try {
+    setInfo('d-turn-save', '⏳ envoi…');
+    const r = await fetch(API_BASE + '/api/admin/turn-config', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key_id: keyId, token: turnTok }),
+    });
+    const d = await r.json().catch(() => null);
+    if (r.ok && d && d.stored && d.verified) {
+      setOk('d-turn-save', '✓ enregistré + vérifié');
+      diag.turn_save = 'verified';
+      alert('✓ Clé TURN enregistrée ET vérifiée. Les appels marchent maintenant entre réseaux différents. Ferme/rouvre Apex Chat et teste un appel.');
+    } else if (r.ok && d && d.stored) {
+      setErr('d-turn-save', '⚠ enregistré mais clé refusée (' + (d.verifyReason || '?') + ')');
+      diag.turn_save = 'stored_unverified:' + (d.verifyReason || '');
+      alert('⚠ Enregistré, mais la clé n\'a pas été acceptée par Cloudflare (' + (d.verifyReason || '?') + ').\nVérifie que tu as bien copié le Token ID ET le Key (secret) sans espace. Envoie l\'erreur à Kevin.');
+    } else if (r.status === 403) {
+      setErr('d-turn-save', '✗ réservé admin');
+      alert('✗ Réservé à l\'admin (Kevin). Connecte-toi avec ton compte admin.');
+    } else {
+      setErr('d-turn-save', '✗ HTTP ' + r.status);
+      diag.turn_save = 'http_' + r.status + ':' + JSON.stringify(d || '');
+      alert('✗ Erreur HTTP ' + r.status + '\n' + (d ? JSON.stringify(d) : ''));
+    }
+  } catch (e) {
+    setErr('d-turn-save', '✗ ' + (e.name || 'Error'));
     alert('✗ Erreur EXACTE : ' + (e.name || '') + ' — ' + e.message);
   }
   refreshExport();

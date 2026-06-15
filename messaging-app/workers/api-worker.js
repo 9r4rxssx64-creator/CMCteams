@@ -5320,13 +5320,32 @@ export async function handleSignalement(request, env) {
 // JAMAIS exposé au client — seuls username/credential éphémères partent au navigateur).
 // FAIL-OPEN : si les secrets ne sont pas (encore) provisionnés → STUN-only, l'app
 // ne casse JAMAIS (les appels même-réseau continuent de marcher).
+// Résout les credentials de la clé TURN : d'abord les secrets Worker (env, posés par
+// le workflow), sinon le KV (clé créée à la main dans le dashboard Cloudflare et collée
+// par l'admin via /api/admin/turn-config). Permet d'activer le TURN SANS dépendre du
+// token API du workflow (qui peut manquer la permission Calls).
+async function resolveTurnCreds(env) {
+  let keyId = env.CF_TURN_KEY_ID || null;
+  let token = env.CF_TURN_TOKEN || null;
+  if ((!keyId || !token) && env.APEX_CHAT_CACHE) {
+    try {
+      const raw = await env.APEX_CHAT_CACHE.get('turn_config');
+      if (raw) {
+        const c = JSON.parse(raw);
+        keyId = keyId || c.key_id || null;
+        token = token || c.token || null;
+      }
+    } catch (_) {}
+  }
+  return { keyId, token };
+}
+
 async function handleTurnCredentials(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401, 'unauthorized');
 
   const stun = [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }];
-  const keyId = env.CF_TURN_KEY_ID;
-  const token = env.CF_TURN_TOKEN;
+  const { keyId, token } = await resolveTurnCreds(env);
   if (!keyId || !token) {
     // Pas encore provisionné (le workflow le fait au déploiement). STUN seul.
     return json({ iceServers: stun, turn: false, reason: 'turn_not_provisioned' });
@@ -5353,6 +5372,39 @@ async function handleTurnCredentials(request, env) {
   } catch (e) {
     return json({ iceServers: stun, turn: false, reason: 'exception', detail: String((e && e.message) || e).slice(0, 200) });
   }
+}
+
+// POST /api/admin/turn-config — l'admin colle la clé TURN créée dans le dashboard
+// Cloudflare (Realtime → TURN Server → Create). Stockée en KV → le Worker l'utilise
+// pour les appels cross-réseau, SANS dépendre du token API du déploiement.
+async function handleSetTurnConfig(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth || auth.sub !== 'kdmc_admin') {
+    return err('Réservé admin Kevin', 403, 'forbidden', { auth_sub: auth?.sub || null });
+  }
+  let body = {};
+  try { body = await request.json(); } catch (e) {
+    return err('JSON body invalide', 400, 'bad_json', { detail: e?.message });
+  }
+  const key_id = String(body.key_id || body.keyId || '').trim();
+  const token = String(body.token || body.key || '').trim();
+  if (!key_id || !token) return err('key_id et token requis', 400, 'missing', { has_key_id: !!key_id, has_token: !!token });
+  if (!env.APEX_CHAT_CACHE) return err('KV indisponible', 500, 'no_kv');
+  try {
+    await env.APEX_CHAT_CACHE.put('turn_config', JSON.stringify({ key_id, token, set_at: Date.now() }));
+  } catch (e) {
+    return err('Échec stockage KV', 500, 'kv_put_failed', { detail: e?.message });
+  }
+  // Vérif immédiate : on tente de générer des ICE servers pour prouver que la clé marche.
+  let verified = false, verifyReason = null;
+  try {
+    const r = await fetch('https://rtc.live.cloudflare.com/v1/turn/keys/' + encodeURIComponent(key_id) + '/credentials/generate-ice-servers',
+      { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ ttl: 600 }) });
+    const d = await r.json().catch(() => null);
+    verified = r.ok && d && !!d.iceServers;
+    if (!verified) verifyReason = 'http_' + r.status;
+  } catch (e) { verifyReason = String(e?.message || e).slice(0, 120); }
+  return json({ ok: true, stored: true, verified, verifyReason });
 }
 
 // ============================================================================
@@ -5400,8 +5452,11 @@ export default {
       if (path === '/api/turn' && method === 'GET') return await handleTurnCredentials(request, env);
       // Health TURN (sans auth) — Kevin peut l'ouvrir dans Safari pour voir si la clé est posée.
       if (path === '/api/turn/health' && method === 'GET') {
-        return json({ configured: !!(env.CF_TURN_KEY_ID && env.CF_TURN_TOKEN), ts: Date.now() });
+        const c = await resolveTurnCreds(env);
+        return json({ configured: !!(c.keyId && c.token), source: env.CF_TURN_KEY_ID ? 'secret' : (c.keyId ? 'kv' : 'none'), ts: Date.now() });
       }
+      // Admin : poser la clé TURN créée à la main dans le dashboard (bypass token API).
+      if (path === '/api/admin/turn-config' && method === 'POST') return await handleSetTurnConfig(request, env);
 
       // E2E keys (v1.1.172 FIX P0 audit crew — distribution clés publiques)
       if (path === '/api/keys/prekeys' && method === 'POST') return await handleUploadPrekeys(request, env);
