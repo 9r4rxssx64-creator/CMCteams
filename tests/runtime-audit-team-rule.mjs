@@ -46,27 +46,40 @@ async function main() {
     const emps = window.A.employees.filter(e => (e.family || '') !== 'cadres').slice(0, 14);
     if (emps.length < 14) return { error: 'not enough emps' };
     const ov = window.A.overrides[key];
-    // roulettes (plain codes) — team R1 (fw 20/5) rest A
+    // v9.805 (vérité terrain Kevin 2026-06-15) : la FAMILLE vient de la SECTION du
+    // PDF (familyHistory[key], posé à l'import) — PAS du suffixe 'c' (= chef). On
+    // simule donc l'import en posant familyHistory pour chaque emp.
+    const setFam = (e, f) => { if (!e.familyHistory) e.familyHistory = {}; e.familyHistory[key] = f; };
+    // roulettes — team R1 (fw 20/5) rest A : 2 croupiers (plain) + 1 CHEF (codes 'c')
     ov[emps[0].id] = sched(restA, '20/5', '19/4');
     ov[emps[1].id] = sched(restA, '20/5', '19/4');
-    ov[emps[2].id] = sched(restA, '20/5', '19/4');
+    // emps[2] = CHEF de ROULETTE : codes 'c' MAIS section roulettes (LARINI H réel) →
+    // DOIT rester roulettes + même équipe que 0,1 (fwBase 20/5 identique).
+    ov[emps[2].id] = sched(restA, '20/5c', '19/4c');
+    [0, 1, 2].forEach(i => setFam(emps[i], 'roulettes'));
     // roulettes mirror R1' (fw 22/6') rest A — SAME repos, diff horaire
     ov[emps[3].id] = sched(restA, "22/6'", '19/4');
     ov[emps[4].id] = sched(restA, "22/6'", '19/4');
     ov[emps[5].id] = sched(restA, "22/6'", '19/4');
+    [3, 4, 5].forEach(i => setFam(emps[i], 'roulettes'));
     // roulettes team R2 (fw 14/19) rest B — diff repos → diff team, no mirror
     ov[emps[6].id] = sched(restB, '14/19', '16/22');
     ov[emps[7].id] = sched(restB, '14/19', '16/22');
     ov[emps[8].id] = sched(restB, '14/19', '16/22');
-    // BJ (chef 'c' codes) rest A fw 20/5c — same repos as R1 but FAMILY bj → separate
+    [6, 7, 8].forEach(i => setFam(emps[i], 'roulettes'));
+    // BJ chefs (codes 'c') section bj, rest A fw 20/5c — MÊMES repos + MÊMES codes 'c'
+    // que le chef roulette emps[2], mais FAMILLE bj (section) → équipe séparée.
     ov[emps[9].id] = sched(restA, '20/5c', '19/4c');
     ov[emps[10].id] = sched(restA, '20/5c', '19/4c');
+    [9, 10].forEach(i => setFam(emps[i], 'bj'));
     // CMC ('"' codes) rest A fw 20/5" — family cmc → separate
     ov[emps[12].id] = sched(restA, '20/5"', '19/4"');
     ov[emps[13].id] = sched(restA, '20/5"', '19/4"');
+    [12, 13].forEach(i => setFam(emps[i], 'cmc'));
     // CP-partial roulettes: rest = subset of restA (only first half present, CP after)
     const partial = {}; for (let d = 1; d <= 30; d++) { if (d > 18) partial[d] = 'CP'; else if (restA.rh.indexOf(d) >= 0) partial[d] = 'RH'; else if (restA.r.indexOf(d) >= 0) partial[d] = 'R'; else partial[d] = (d === 1 ? '20/5' : '19/4'); }
     ov[emps[11].id] = partial;
+    setFam(emps[11], 'roulettes');
 
     const r = window._cmcDetectTeamsByRestPattern(2026, 4);
     const th = id => { const e = window.A.employees.find(x => x.id === id); return e && e.teamHistory && e.teamHistory[key]; };
@@ -74,8 +87,9 @@ async function main() {
     let mir = {}; try { mir = JSON.parse(localStorage.getItem('cmc_team_mirror_' + key) || '{}'); } catch (_) {}
 
     t('algo ok', () => r && r.ok === true);
-    t('R1 : 3 emps même équipe', () => th(emps[0].id) && th(emps[0].id) === th(emps[1].id) && th(emps[1].id) === th(emps[2].id));
+    t('R1 : 3 emps même équipe (dont le CHEF emps[2] codes c)', () => th(emps[0].id) && th(emps[0].id) === th(emps[1].id) && th(emps[1].id) === th(emps[2].id));
     t('R1 : famille roulettes (id r*)', () => /^r/.test(th(emps[0].id) || '') && fam(emps[0].id) === 'roulettes');
+    t("CHEF de roulette (codes 'c') RESTE roulettes (≠ bj)", () => fam(emps[2].id) === 'roulettes' && th(emps[2].id) === th(emps[0].id));
     t("R1' miroir : 3 emps même équipe", () => th(emps[3].id) && th(emps[3].id) === th(emps[4].id) && th(emps[4].id) === th(emps[5].id));
     t("R1 ≠ R1' (équipe vs miroir distinctes)", () => th(emps[0].id) !== th(emps[3].id));
     t("MIROIR détecté R1 ↔ R1'", () => mir[th(emps[0].id)] === th(emps[3].id) && mir[th(emps[3].id)] === th(emps[0].id));

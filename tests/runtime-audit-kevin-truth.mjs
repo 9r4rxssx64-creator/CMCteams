@@ -54,6 +54,10 @@ async function main() {
       const r = {};
       cyclePattern.forEach((c,i) => r[i+1] = c);
       window.A.overrides[key][e.id] = r;
+      // v9.805 : famille = SECTION (familyHistory), plus déduite des codes → simule
+      // l'import (équipe A = roulettes).
+      if (!e.familyHistory) e.familyHistory = {};
+      e.familyHistory[key] = 'roulettes';
     });
 
     // Miroir A' : BASILE+5 (RH days [5,11,17,23,29], code 22/6' jour 1)
@@ -66,6 +70,8 @@ async function main() {
       const r = {};
       cycleMirror.forEach((c,i) => r[i+1] = c);
       window.A.overrides[key][e.id] = r;
+      if (!e.familyHistory) e.familyHistory = {};
+      e.familyHistory[key] = 'roulettes'; // v9.805 : miroir A' aussi roulettes
     });
 
     out.skipped = {teamA: teamASkipped, mirrorA: mirrorASkipped, totalUsed: teamA.length + mirrorA.length};

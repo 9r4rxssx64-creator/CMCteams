@@ -33,6 +33,11 @@ async function main() {
     // Pick 6 emps non-cadres réels
     const emps = window.A.employees.filter(e => (e.family || '') !== 'cadres').slice(0, 8);
     if (emps.length < 6) return { error: 'not enough emps' };
+    // v9.805 : la FAMILLE vient de la SECTION du PDF (familyHistory[key], posé à
+    // l'import) — plus déduite des codes. On simule l'import en posant tous les emps
+    // de test dans la même famille 'roulettes' (sinon ils seraient séparés par leur
+    // emp.family DEF_EMP hétérogène).
+    emps.forEach(e => { if (!e.familyHistory) e.familyHistory = {}; e.familyHistory[key] = 'roulettes'; });
 
     // Team A : 3 emps avec RH 5,11,17,23,29 (cycle 6, offset 4)
     [0,1,2].forEach(i => {
