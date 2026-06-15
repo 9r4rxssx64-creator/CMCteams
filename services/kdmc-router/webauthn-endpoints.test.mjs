@@ -80,6 +80,19 @@ const run = async () => {
   r = await mod.fetch(POST('/__sso/webauthn/auth/verify', await assertion((await (await mod.fetch(POST('/__sso/webauthn/auth/options', { uid: 'kevin-desarzens' }), env)).json()).challenge, true)), env);
   ok((await r.json()).ok === false, 'auth/verify signature falsifiée → REFUS');
 
+  /* 8) anti-rejeu : rejouer la MÊME assertion → refus (challenge déjà consommé) ;
+     valide aussi la progression du compteur (count 1→2 acceptée). */
+  async function assertionN(challengeB64, count) {
+    const ad = cat(rpIdHash, Uint8Array.of(0x05), Uint8Array.of(0, 0, 0, count));
+    const cd = te.encode(JSON.stringify({ type: 'webauthn.get', challenge: challengeB64, origin: ORIGIN }));
+    const raw = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, kp.privateKey, cat(ad, await sha256(cd))));
+    return { uid: 'kevin-desarzens', credId: b64uEnc(credId), clientDataJSON: b64uEnc(cd), authenticatorData: b64uEnc(ad), signature: b64uEnc(rawToDer(raw)) };
+  }
+  const aoR = await (await mod.fetch(POST('/__sso/webauthn/auth/options', { uid: 'kevin-desarzens' }), env)).json();
+  const asr = await assertionN(aoR.challenge, 2);
+  ok((await (await mod.fetch(POST('/__sso/webauthn/auth/verify', asr), env)).json()).ok === true, 'auth/verify count=2 → OK (compteur progresse)');
+  ok((await (await mod.fetch(POST('/__sso/webauthn/auth/verify', asr), env)).json()).ok === false, 'rejeu de la MÊME assertion → REFUS (challenge consommé)');
+
   console.log(`WebAuthn endpoints test: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 };
