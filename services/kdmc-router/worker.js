@@ -8,7 +8,7 @@
  *    enrichi à chaque connexion (device + géo request.cf + horodatage). Fail-open.
  */
 
-import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc } from './webauthn.js';
+import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc, b64uDec } from './webauthn.js';
 
 const UPSTREAM = 'https://9r4rxssx64-creator.github.io';
 const PAGES_PREFIX = '/CMCteams';
@@ -64,6 +64,10 @@ export default {
     const outHeaders = new Headers(res.headers);
     outHeaders.delete('content-security-policy-report-only');
     outHeaders.set('x-kdmc-router', host);
+    /* En-têtes sécurité (ajoutés seulement si l'upstream ne les pose pas) :
+       nosniff + Referrer-Policy (renforce la confidentialité du pass #kdmc_sso=). */
+    if (!outHeaders.has('x-content-type-options')) outHeaders.set('x-content-type-options', 'nosniff');
+    if (!outHeaders.has('referrer-policy')) outHeaders.set('referrer-policy', 'strict-origin-when-cross-origin');
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers: outHeaders });
   },
 };
@@ -141,8 +145,26 @@ function ssoToken(request) {
 function J(o, setCookie) {
   return new Response(JSON.stringify(o), {
     status: 200,
-    headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store', 'x-kdmc-sso': '1' }, setCookie ? { 'set-cookie': setCookie } : {}),
+    headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store', 'x-kdmc-sso': '1', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' }, setCookie ? { 'set-cookie': setCookie } : {}),
   });
+}
+
+/* Garde anti-rejeu WebAuthn : deny-list des challenges DÉJÀ consommés (KV).
+   - 1ʳᵉ utilisation d'un challenge → 'fresh' (jamais bloquée : anti-lockout absolu).
+   - rejeu du même challenge → 'replay' (refusé).
+   - KV absent / erreur / pas de challenge → 'skip' (fail-open, comportement actuel).
+   Complète le TTL HMAC 2 min : un (challenge, assertion) capté ne peut être rejoué. */
+async function challengeConsume(env, clientDataJSONB64) {
+  if (!env || !env.ACCOUNTS) return 'skip';
+  try {
+    const cd = JSON.parse(new TextDecoder().decode(b64uDec(clientDataJSONB64)));
+    const ch = cd && cd.challenge;
+    if (!ch) return 'skip';
+    const key = 'chx:' + (await sha256Hex(ch));
+    if (await env.ACCOUNTS.get(key)) return 'replay';
+    await env.ACCOUNTS.put(key, '1', { expirationTtl: 300 });
+    return 'fresh';
+  } catch { return 'skip'; }
 }
 
 /* ---- Rate-limit serveur du code admin (anti brute-force du PIN 6 chiffres) ----
@@ -239,6 +261,7 @@ async function handleSso(request, url, env) {
     try { reg = await parseRegistration(secret, b.attestationObject, b.clientDataJSON); }
     catch (e) { return J({ ok: false, reason: String((e && e.message) || e).slice(0, 120) }); }
     if (!RP_ORIGINS.includes(reg.origin)) return J({ ok: false, reason: 'origin non autorisée' });
+    if ((await challengeConsume(env, b.clientDataJSON)) === 'replay') return J({ ok: false, reason: 'challenge déjà utilisé (rejeu)' });
     if (env && env.ACCOUNTS) {
       const list = JSON.parse((await env.ACCOUNTS.get('pk:' + s.uid)) || '[]');
       if (!list.some((k) => k.credId === reg.credId)) list.push({ credId: reg.credId, jwk: reg.jwk, created: Date.now() });
@@ -273,6 +296,7 @@ async function handleSso(request, url, env) {
     if (!rec) return J({ ok: false, reason: 'passkey inconnu' });
     const r = await verifyAssertion(secret, rec.jwk, { clientDataJSON: b.clientDataJSON, authenticatorData: b.authenticatorData, signature: b.signature }, { origins: RP_ORIGINS, rpId: RP_ID });
     if (!r.ok) return J({ ok: false, reason: r.reason });
+    if ((await challengeConsume(env, b.clientDataJSON)) === 'replay') return J({ ok: false, reason: 'challenge déjà utilisé (rejeu)' });
     /* Détection de clone par compteur de signature : on ne rejette QUE si le compteur
        régresse alors que les deux valeurs sont > 0 (no-op pour les passkeys Apple/Google
        synchronisés, qui restent à 0 — jamais de faux rejet, jamais de lockout). */
