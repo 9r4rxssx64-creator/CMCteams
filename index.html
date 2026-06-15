@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.804";
+var APP_VER="v9.805";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10926,14 +10926,22 @@ function dc(){
     if(window._cmcLastDetectCacheKey!==_cacheKey){
       window._cmcLastDetectCacheKey=_cacheKey;
       // Cache invalidé : wipe + recompute
+      // v9.805 (Kevin vérité terrain 2026-06-15) : purge UNE fois l'ancienne
+      // familyHistory (potentiellement erronée par l'ancien 'c'→bj des détecteurs)
+      // puis on la PRÉSERVE. La famille vient de la SECTION du PDF (familyHistory
+      // posé à l'import l.~40748) = autorité (lesson #67) ; au boot il n'y a PAS de
+      // texte de section pour re-déduire → re-déduire par codes confondait un chef
+      // de roulette ('c') avec bj. On ne re-déduit donc PLUS la famille au boot :
+      // on la garde telle qu'écrite à l'import. Seules les ÉQUIPES (teamHistory)
+      // sont recalculées (le détecteur lit familyHistory via _cmcDeriveFamily).
+      try{ if(!localStorage.getItem("cmc_v805_famreset")){
+        A.employees.forEach(function(_e){ if(_e&&_e.familyHistory){ for(var _fk in _e.familyHistory) delete _e.familyHistory[_fk]; } });
+        localStorage.setItem("cmc_v805_famreset","1");
+        try{ls("cmc_e",A.employees);}catch(_){}
+      } }catch(_){}
       A.employees.forEach(function(_emp){
         if(_emp&&_emp.teamHistory&&_emp.teamHistory[_km])delete _emp.teamHistory[_km];
-        // v9.802 : REVERT v9.799 — re-wiper familyHistory[key] au boot. Le « ne pas
-        // wiper » préservait des familles PÉRIMÉES (phantom baccara/roulettes pour des
-        // chefs BJ) issues d'une détection antérieure → diag juin/juillet v9.801 PIRE
-        // qu'avant. On re-déduit la famille fraîchement à chaque boot (comportement
-        // d'avant la session, familles plus propres mesurées sur diag 15:08).
-        if(_emp&&_emp.familyHistory&&_emp.familyHistory[_km])delete _emp.familyHistory[_km];
+        // familyHistory[_km] PRÉSERVÉE (section d'import = autorité, v9.805).
       });
       try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
       if(_hash>3){
@@ -36522,30 +36530,9 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       return "roulettes";
     }
     function _famForDetect(emp){
-      // v9.713 Kevin diag mai 2026 — 'bj' (chef code suffixe 'c') et 'cmc'
-      // (suffixe '"') sont des signaux FIABLES depuis les codes. 'roulettes'
-      // (codes plain) est AMBIGU : un croupier BJ a EXACTEMENT les mêmes codes
-      // plain qu'un croupier roulette (22/6, 20/5, 19/4…). Seul le CHEF porte 'c'.
-      // → Pour 'roulettes'/plain, NE PAS trancher sur les codes : déférer à la
-      // section PDF (familyHistory[key] = colonne d'import) qui connaît la vérité.
-      var cf=null;
-      try{ if(emp&&ov&&ov[emp.id]) cf=_famFromCells(ov[emp.id]); }catch(_){}
-      if(cf==="bj"||cf==="cmc")return cf;
-      // Section PDF (familyHistory[key]) — tranche BJ croupier vs roulette croupier
-      try{
-        if(typeof familyForMonth==="function"){
-          var f=familyForMonth(emp,iy,im,{strict:true});
-          if(f)return f;
-        }
-      }catch(_){}
-      if(cf)return cf; // 'roulettes' codes-based — dernier recours avant DEF_EMP
-      // v9.804 (Kevin diag juin) : ne JAMAIS retomber sur un emp.family périmé
-      // "baccara" (phantom DEF_EMP, lesson #50/#67/#104). Assez de cellules
-      // travaillées (≥5) → croupier roulettes (codes nus) ; sinon famille DEF_EMP
-      // nettoyée (baccara→cmc). Aligné sur _famDC pour cohérence.
-      var _wc=0; try{var _r=ov[emp.id]||{};for(var _d in _r){var _c=_r[_d];if(!_c)continue;var _cu=String(_c).toUpperCase();if(_cu==="RH"||_cu==="R")continue;if(/^(CP|M|MAL|AF|AT|PAT|ABI|SS|CFL|CRH|CDP|EDC|RRT|PRT|RTP|RTR|DEPL|DELPT|CL|CDH|CEO|CSC|CSS|HD)$/.test(_cu))continue;_wc++;}}catch(_){}
-      if(_wc>=5)return "roulettes";
-      return (emp.family==="baccara"?"cmc":emp.family)||"bj";
+      // v9.805 (Kevin vérité terrain 2026-06-15) : délègue à la source UNIQUE
+      // _cmcDeriveFamily (section d'import = autorité ; 'c' = chef, jamais bj).
+      return _cmcDeriveFamily(emp,ov[emp.id],iy+"-"+im);
     }
     var _nodes=[];
     Object.keys(ov).forEach(function(eid){
@@ -36650,6 +36637,31 @@ function _cmcDetectTeamsByRestPattern(iy,im){
   }catch(e){console.warn("[v9.650 detectTeams]",e&&e.message);return{ok:false,error:e.message};}
 }
 
+// v9.805 (Kevin vérité terrain 2026-06-15) — FAMILLE FIABLE, SOURCE UNIQUE.
+// La famille vient de la SECTION du PDF (Roulettes / Chefs black-Jack / Employés
+// cartes CMC), posée à l'import dans familyHistory[key] (l.~40748) = AUTORITÉ
+// (lesson #67). Le suffixe 'c' d'un code journalier = CHEF (rôle), JAMAIS
+// black-jack : un chef de ROULETTE (LARINI H, section Roulettes, compétence BRTPE)
+// a des codes 'c' mais RESTE roulettes ; un chef BJ (DESARZENS K) a aussi 'c'.
+// Seule la SECTION tranche bj/roulettes. La compétence +E n'est PAS fiable
+// (MALENFANT PJ a +E mais est en section Chefs black-Jack). Signal cellule fiable
+// = '"' (CMC, jamais sur roulettes/bj). baccara→cmc (artefact DEF_EMP, lesson #50).
+// NE JAMAIS déduire bj du 'c'.
+function _cmcDeriveFamily(emp,ovRow,key){
+  // 1) Section d'import (familyHistory[key]) = autorité absolue.
+  try{ var fh=emp&&emp.familyHistory&&emp.familyHistory[key];
+       if(fh)return fh==="baccara"?"cmc":fh; }catch(_){}
+  // 2) Signal cellule FIABLE uniquement : '"' = CMC. Le 'c' n'est JAMAIS famille.
+  try{ if(ovRow){ var q=0,t=0;
+        for(var d in ovRow){ var c=ovRow[d]; if(!c)continue;
+          var cu=String(c).toUpperCase();
+          if(cu==="RH"||cu==="R"||/^(CP|M|MAL|AF|AT|PAT|ABI|SS|CFL|CRH|CDP|EDC|RRT|PRT|RTP|RTR|DEPL|DELPT|CL|CDH|CEO|CSC|CSS|HD)$/.test(cu))continue;
+          t++; if(String(c).indexOf('"')>=0)q++; }
+        if(t>=5&&q/t>=0.35)return "cmc"; } }catch(_){}
+  // 3) fallback DEF_EMP nettoyé (baccara→cmc).
+  return (emp&&emp.family==="baccara"?"cmc":(emp&&emp.family))||"bj";
+}
+
 // v9.757 (Kevin 2026-05-29 "porter l'algo validé") — DÉTECTION ÉQUIPES par
 // IDENTITÉ DES CODES JOURNALIERS (union-find), portée du banc d'essai T1
 // (tools/planning-parser-tester/lib/team-detector.js, validée 6/6 sur l'équipe
@@ -36684,19 +36696,9 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
       return String(code).replace(/[c'"*:]+$/gi,"").trim().toUpperCase();
     }
     function _rhEqArr(a,b){if(a.length!==b.length)return false;for(var i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true;}
-    // Famille : signaux fiables des cellules ('c'→bj, '"'→cmc) sinon section PDF
-    function _famDC(emp){
-      var cells=ov[emp.id]||{};
-      var cCount=0,qCount=0,total=0;
-      for(var d in cells){var c=cells[d];if(!c)continue;var cu=String(c).toUpperCase();if(STATUS_ABS[cu]||cu==="RH"||cu==="R")continue;total++;if(/c\*?$/.test(c))cCount++;else if(c.indexOf('"')>=0)qCount++;}
-      if(total>=5){if(cCount>=qCount&&cCount/total>=0.35)return "bj";if(qCount>cCount&&qCount/total>=0.35)return "cmc";}
-      try{if(typeof familyForMonth==="function"){var f=familyForMonth(emp,iy,im,{strict:true});if(f)return f;}}catch(_){}
-      // v9.802 : suffixe SBM = famille. Assez de codes travail SANS suffixe `c`/`"`
-      // dominant → croupier ROULETTES (codes nus). C'est plus fiable que emp.family
-      // DEF_EMP périmé (lesson #50/#67) qui produisait des phantoms baccara/bj.
-      if(total>=5)return "roulettes";
-      return (emp.family==="baccara"?"cmc":emp.family)||"bj";
-    }
+    // v9.805 : famille via la source UNIQUE _cmcDeriveFamily (section d'import =
+    // autorité ; 'c' = chef, jamais bj ; '"' = cmc). Cf. vérité terrain Kevin.
+    function _famDC(emp){ return _cmcDeriveFamily(emp,ov[emp.id],key); }
     // 1) Nodes : codes journaliers normalisés (skip cadres + statut intégral)
     var nodes=[];
     Object.keys(ov).forEach(function(eid){
@@ -36748,7 +36750,7 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
       var domFam=Object.keys(fc).reduce(function(a,b){return fc[a]>fc[b]?a:b;});
       famCounters[domFam]=(famCounters[domFam]||0)+1;
       var n=famCounters[domFam];
-      var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:String(n);
+      var teamId=domFam==="roulettes"?"r"+n:domFam==="cmc"?"c"+n:domFam==="baccara"?("b"+n):String(n); // v9.805 : préfixe distinct par famille (anti-collision bj/baccara)
       if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(teamId);
       var ref=members.slice().sort(function(a,b){return (b.work+b.rest)-(a.work+a.rest);})[0];
       var rhDays=Object.keys(ref.dn).filter(function(d){return ref.dn[d]==="REST";}).map(Number).sort(function(a,b){return a-b;});
