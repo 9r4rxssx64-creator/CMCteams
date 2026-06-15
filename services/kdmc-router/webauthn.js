@@ -106,8 +106,10 @@ function derToRaw(der) {
   function readInt() {
     if (der[off++] !== 0x02) throw new Error('DER: pas un INTEGER');
     let len = der[off++];
+    if (len < 0 || off + len > der.length) throw new Error('DER: INTEGER hors limites');
     let v = der.slice(off, off + len); off += len;
     while (v.length > 32 && v[0] === 0x00) v = v.slice(1); // retire 0x00 de signe
+    if (v.length > 32) throw new Error('DER: INTEGER > 32 octets');
     const out = new Uint8Array(32);
     out.set(v, 32 - v.length); // pad à gauche
     return out;
@@ -176,6 +178,7 @@ async function verifyAssertion(secret, jwk, { clientDataJSON, authenticatorData,
   if (!originOk) return { ok: false, reason: 'origin mismatch' };
   const authData = b64uDec(authenticatorData);
   const flags = authData[32];
+  const signCount = authData.length >= 37 ? (((authData[33] << 24) | (authData[34] << 16) | (authData[35] << 8) | authData[36]) >>> 0) : 0;
   if (!(flags & 0x01)) return { ok: false, reason: 'user non présent' };
   if (!(flags & 0x04)) return { ok: false, reason: 'user non vérifié (Face ID/PIN)' };
   if (opts.rpId) {
@@ -188,7 +191,9 @@ async function verifyAssertion(secret, jwk, { clientDataJSON, authenticatorData,
   const rawSig = derToRaw(b64uDec(signature));
   const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
   const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, rawSig, signed);
-  return { ok, reason: ok ? '' : 'signature invalide' };
+  /* signCount remonté pour la détection de clone côté worker (no-op si l'authentificateur
+     reste à 0, cas des passkeys Apple/Google synchronisés). */
+  return { ok, reason: ok ? '' : 'signature invalide', count: signCount };
 }
 
 export {

@@ -145,6 +145,34 @@ function J(o, setCookie) {
   });
 }
 
+/* ---- Rate-limit serveur du code admin (anti brute-force du PIN 6 chiffres) ----
+   Compteur d'échecs par IP (hashée) en KV, lockout progressif. Fail-open : si KV
+   absent/KO, on n'enferme jamais l'admin légitime (la sécurité repose alors sur le
+   hash du PIN seul). TTL KV 24h = auto-nettoyage. */
+const RL_STEPS = { 5: 30e3, 6: 120e3, 7: 600e3, 8: 3600e3, 9: 86400e3 };
+async function rlGet(env, ipHash) {
+  if (!env || !env.ACCOUNTS) return null;
+  try { return JSON.parse((await env.ACCOUNTS.get('al:' + ipHash)) || 'null'); } catch { return null; }
+}
+async function rlBlocked(env, ipHash) {
+  const rec = await rlGet(env, ipHash);
+  if (rec && rec.until && rec.until > Date.now()) return Math.ceil((rec.until - Date.now()) / 1000);
+  return 0;
+}
+async function rlFail(env, ipHash) {
+  if (!env || !env.ACCOUNTS) return;
+  try {
+    const rec = (await rlGet(env, ipHash)) || { fails: 0 };
+    rec.fails = (rec.fails || 0) + 1;
+    rec.until = rec.fails >= 5 ? Date.now() + (RL_STEPS[Math.min(rec.fails, 9)] || 86400e3) : 0;
+    await env.ACCOUNTS.put('al:' + ipHash, JSON.stringify(rec), { expirationTtl: 86400 });
+  } catch { /* fail-open */ }
+}
+async function rlReset(env, ipHash) {
+  if (!env || !env.ACCOUNTS || !env.ACCOUNTS.delete) return;
+  try { await env.ACCOUNTS.delete('al:' + ipHash); } catch { /* fail-open */ }
+}
+
 /* Registre des fiches clients (Cloudflare KV ACCOUNTS). Fail-open si absent. */
 async function accGet(env, uid) {
   if (!env || !env.ACCOUNTS) return null;
@@ -245,6 +273,13 @@ async function handleSso(request, url, env) {
     if (!rec) return J({ ok: false, reason: 'passkey inconnu' });
     const r = await verifyAssertion(secret, rec.jwk, { clientDataJSON: b.clientDataJSON, authenticatorData: b.authenticatorData, signature: b.signature }, { origins: RP_ORIGINS, rpId: RP_ID });
     if (!r.ok) return J({ ok: false, reason: r.reason });
+    /* Détection de clone par compteur de signature : on ne rejette QUE si le compteur
+       régresse alors que les deux valeurs sont > 0 (no-op pour les passkeys Apple/Google
+       synchronisés, qui restent à 0 — jamais de faux rejet, jamais de lockout). */
+    if (env && env.ACCOUNTS) {
+      if (r.count > 0 && (rec.count || 0) > 0 && r.count <= rec.count) return J({ ok: false, reason: 'compteur de signature régressé (clone suspecté)' });
+      if ((r.count || 0) > (rec.count || 0)) { rec.count = r.count; try { await env.ACCOUNTS.put('pk:' + uid, JSON.stringify(list)); } catch { /* fail-open */ } }
+    }
     const acc = await accGet(env, uid);
     const name = (acc && acc.name) || uid;
     await enrich(env, request, uid, name, true);
@@ -308,10 +343,14 @@ async function handleAdmin(request, url, env) {
   if (path === '/__admin/login' && request.method === 'POST') {
     const adminHash = env && env.KDMC_ADMIN_PIN_SHA256;
     if (!secret || !adminHash) return J({ ok: false, reason: 'admin_pin_not_configured' });
+    const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|kdmc-al');
+    const wait = await rlBlocked(env, ipHash);
+    if (wait) return J({ ok: false, reason: 'rate_limited', wait });
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const code = String(b.code || '').trim();
     if (!code) return J({ ok: false, reason: 'code_requis' });
-    if ((await sha256Hex(code)) !== adminHash) return J({ ok: false, reason: 'code_invalide' });
+    if ((await sha256Hex(code)) !== adminHash) { await rlFail(env, ipHash); return J({ ok: false, reason: 'code_invalide' }); }
+    await rlReset(env, ipHash);
     const grant = await ssoSign(secret, '__kdmc_admin__', 'admin', 1);
     const cookie = `kdmc_admin=${grant}; Domain=.kd-mc.com; Path=/; Max-Age=43200; Secure; HttpOnly; SameSite=Lax`;
     return J({ ok: true, grant }, cookie);
