@@ -5398,6 +5398,10 @@ export default {
 
       // TURN credentials — appels P2P fiables cross-réseau (v1.1.229)
       if (path === '/api/turn' && method === 'GET') return await handleTurnCredentials(request, env);
+      // Health TURN (sans auth) — Kevin peut l'ouvrir dans Safari pour voir si la clé est posée.
+      if (path === '/api/turn/health' && method === 'GET') {
+        return json({ configured: !!(env.CF_TURN_KEY_ID && env.CF_TURN_TOKEN), ts: Date.now() });
+      }
 
       // E2E keys (v1.1.172 FIX P0 audit crew — distribution clés publiques)
       if (path === '/api/keys/prekeys' && method === 'POST') return await handleUploadPrekeys(request, env);
