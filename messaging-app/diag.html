@@ -77,9 +77,11 @@
 <div class="row"><span class="lbl">getUserMedia</span><span class="val" id="d-call-gum">…</span></div>
 <div class="row"><span class="lbl">Micro</span><span class="val" id="d-call-mic">…</span></div>
 <div class="row"><span class="lbl">Caméra</span><span class="val" id="d-call-cam">…</span></div>
+<div class="row"><span class="lbl">Relais TURN (appels hors Wi-Fi)</span><span class="val" id="d-call-turn">—</span></div>
 <div class="row"><span class="lbl">Dernière erreur</span><span class="val" id="d-call-err">—</span></div>
 <button class="btn btn-out" onclick="testMic()">🎤 Tester micro</button>
 <button class="btn btn-out" onclick="testCam()">📹 Tester caméra</button>
+<button class="btn btn-out" onclick="testTurn()">🌍 Tester le relais TURN</button>
 </div>
 
 <h2>🔐 Crypto / Auth</h2>
@@ -318,6 +320,53 @@ async function testNotif() {
   } catch (e) {
     setErr('d-np-err', (e.name || 'Error') + ': ' + e.message);
     diag.notif_test_error = (e.name || 'Error') + ': ' + e.message;
+    alert('✗ Erreur EXACTE : ' + (e.name || '') + ' — ' + e.message);
+  }
+  refreshExport();
+}
+
+// 🌍 Test relais TURN — interroge le Worker /api/turn (auth) et dit si un serveur
+// de RELAIS (turn:) est dispo. Sans relais, les appels ne passent QUE sur le même réseau.
+async function testTurn() {
+  const API_BASE = 'https://apex-chat-api.9r4rxssx64.workers.dev';
+  let token = null;
+  try { token = JSON.parse(localStorage.getItem('apex_chat_token') || 'null'); } catch (_) {}
+  if (!token) {
+    setErr('d-call-turn', '✗ pas connecté (ouvre Apex Chat d\'abord)');
+    diag.turn = 'no_token';
+    refreshExport();
+    alert('✗ Connecte-toi d\'abord dans Apex Chat, puis relance ce test.');
+    return;
+  }
+  try {
+    const t0 = performance.now();
+    const r = await fetch(API_BASE + '/api/turn', { headers: { 'Authorization': 'Bearer ' + token }, cache: 'no-store' });
+    const dt = (performance.now() - t0).toFixed(0);
+    const data = await r.json().catch(() => null);
+    diag.turn_http = r.status;
+    if (!r.ok || !data) {
+      setErr('d-call-turn', '✗ HTTP ' + r.status);
+      diag.turn = 'http_' + r.status;
+      alert('✗ Serveur a répondu HTTP ' + r.status + '. Réessaie dans 1 min.');
+      refreshExport();
+      return;
+    }
+    const servers = Array.isArray(data.iceServers) ? data.iceServers : [];
+    const hasRelay = JSON.stringify(servers).indexOf('turn:') >= 0 || JSON.stringify(servers).indexOf('turns:') >= 0;
+    diag.turn = data.turn === true && hasRelay;
+    diag.turn_reason = data.reason || null;
+    diag.turn_servers = servers.length;
+    if (data.turn === true && hasRelay) {
+      setOk('d-call-turn', '✓ relais actif (' + dt + 'ms)');
+      alert('✓ Le relais TURN est ACTIF. Les appels doivent maintenant marcher entre réseaux différents (4G ↔ Wi-Fi).');
+    } else {
+      setErr('d-call-turn', '✗ pas de relais (' + (data.reason || 'inconnu') + ')');
+      alert('✗ Pas de relais TURN.\nRaison exacte : ' + (data.reason || 'inconnue') + '\n\nEnvoie cette raison à Kevin.');
+    }
+  } catch (e) {
+    setErr('d-call-turn', '✗ ' + (e.name || 'Error'));
+    diag.turn = 'error';
+    diag.turn_error = (e.name || 'Error') + ': ' + e.message;
     alert('✗ Erreur EXACTE : ' + (e.name || '') + ' — ' + e.message);
   }
   refreshExport();
