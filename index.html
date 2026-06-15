@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.805";
+var APP_VER="v9.806";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -26179,12 +26179,17 @@ function cmcExportTeamsDetectionDiag(){
       if(emp.teamHistory){
         Object.keys(emp.teamHistory).forEach(function(k){if(k!==key)_otherKeys.push(k+':'+emp.teamHistory[k]);});
       }
+      // v9.806 : afficher la VRAIE famille du mois (familyForMonth → familyHistory
+      // = section d'import), PAS emp.family DEF_EMP brut (qui montrait des « baccara »
+      // périmés trompeurs, lesson #103 « un indicateur qui ment »). On expose les deux :
+      // famReal = ce que le détecteur utilise ; famDef = DEF_EMP (diagnostic).
+      var _famReal="?"; try{ _famReal=(typeof familyForMonth==="function"&&familyForMonth(emp,iy,im))||emp.family||"?"; }catch(_){ _famReal=emp.family||"?"; }
       empAnalysis.push({
-        name:emp.name,id:eid,family:emp.family||"?",
+        name:emp.name,id:eid,family:_famReal,famDef:emp.family||"?",
         cellCount:cellCount,rhDays:rhDays,rDays:rDaysOnly,
         cycle:cycle,offset:offset,
         firstWork:firstWork,firstWorkNorm:firstWorkNorm,
-        signature:sig,sigWithFam:sig?(emp.family||"?")+":"+sig:null,skipReason:skipReason,
+        signature:sig,sigWithFam:sig?(_famReal)+":"+sig:null,skipReason:skipReason,
         teamHistoryWritten:emp.teamHistory&&emp.teamHistory[key]||null,
         otherMonths:_otherKeys
       });
