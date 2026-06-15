@@ -1,5 +1,27 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 📞 APEX CHAT — appels/visio cross-réseau (v1.1.229) — 1 RÉGLAGE CLOUDFLARE (2026-06-15)
+
+**Pourquoi** : les appels « Connexion perdue » quand toi et Laurence n'êtes pas sur le même Wi-Fi.
+Le relais gratuit (OpenRelay) est mort. J'ai tout branché pour utiliser **TON** relais Cloudflare
+(Cloudflare Realtime TURN) — code + Worker + workflow déjà déployés (v1.1.229, fail-open : l'app ne
+casse pas, les appels même-Wi-Fi marchent). **Mais** la création de la clé TURN a échoué au déploiement :
+
+> Cloudflare API : `code 10000 "Authentication error"` → le jeton **CLOUDFLARE_API_TOKEN** n'a pas
+> la permission **« Cloudflare Calls »** (= Realtime).
+
+**TON action (1 fois, ~1 min, dans Cloudflare — pas GitHub)** :
+1. Ouvre https://dash.cloudflare.com/profile/api-tokens
+2. Édite le jeton utilisé pour les déploiements (celui « Workers ») → **Add permission** →
+   **Account** ▸ **Cloudflare Calls** (ou « Realtime ») ▸ **Edit** → **Save/Continue**.
+   (Si l'option n'apparaît pas, va dans le menu **Calls/Realtime** du compte et clique « Enable » une fois.)
+3. Dis-moi « c'est fait » → **je relance le déploiement tout seul** (zéro clic GitHub) ; la clé TURN
+   se crée automatiquement, et les appels se connecteront partout (4G/Wi-Fi différents).
+
+Vérif après : le déploiement affichera « ✅ Clé TURN Cloudflare créée » au lieu du warning.
+
+---
+
 ## 🛡️ APEX v13 SÉCURITÉ (2026-06-09) — audit complet + corrections (v13.4.323)
 
 Audit sécu approfondi (8 axes). Base **déjà très saine** (escapeHtml centralisé, logs redactés 25+ patterns, PIN PBKDF2 200k constant-time, vault AES-GCM, CSP nonce stricte + strict-dynamic, postMessage allowlist, tools whitelist+forbidden). Findings réels vérifiés un par un (plusieurs claims de l'audit étaient hallucinés → écartés).
