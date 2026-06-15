@@ -247,6 +247,40 @@ jobs:
 
           echo "::notice::Secrets configurés (skip silencieux si vide). Worker prêt à recevoir des requêtes."
 
+      - name: Provision Cloudflare TURN (appels P2P cross-réseau) — idempotent
+        working-directory: messaging-app/workers
+        run: |
+          # v1.1.229 — appels fiables sur réseaux différents (cellulaire/NAT symétrique).
+          # Le TURN gratuit OpenRelay est mort. On crée UNE clé TURN Cloudflare Realtime
+          # (idempotent : on ne recrée pas si le secret existe déjà) et on pousse
+          # CF_TURN_KEY_ID + CF_TURN_TOKEN comme secrets du Worker. Le Worker mint ensuite
+          # des credentials éphémères via /api/turn (le token ne sort JAMAIS au client).
+          EXISTING=$(wrangler secret list 2>/dev/null || echo '[]')
+          if echo "$EXISTING" | grep -q '"CF_TURN_KEY_ID"'; then
+            echo "::notice::CF_TURN_KEY_ID déjà présent — TURN conservé (pas de nouvelle clé)"
+          else
+            echo "Création d'une clé TURN Cloudflare Realtime…"
+            RESP=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/calls/turn_keys" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+              -d '{"name":"apex-chat-turn"}')
+            echo "$RESP" | python3 -m json.tool 2>/dev/null || echo "$RESP"
+            OK=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success'))" 2>/dev/null || echo "False")
+            if [ "$OK" != "True" ]; then
+              echo "::warning::Création clé TURN ÉCHOUÉE — les appels retomberont en STUN (peuvent ne pas se connecter cross-réseau)."
+              echo "::warning::Cause probable : le token CLOUDFLARE_API_TOKEN n'a pas la permission 'Calls' (Account > Cloudflare Calls > Edit). Réponse API ci-dessus."
+            else
+              KID=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin)['result']['uid'])")
+              KTOK=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin)['result']['token'])")
+              if [ -n "$KID" ] && [ -n "$KTOK" ]; then
+                printf '%s' "$KID" | wrangler secret put CF_TURN_KEY_ID
+                printf '%s' "$KTOK" | wrangler secret put CF_TURN_TOKEN
+                echo "::notice::✅ Clé TURN Cloudflare créée + secrets poussés — appels cross-réseau actifs"
+              else
+                echo "::warning::Réponse TURN sans uid/token — STUN seul. Réponse : $RESP"
+              fi
+            fi
+          fi
+
       - name: Summary
         run: |
           echo "## 🎉 Apex Chat déployé sur Cloudflare" >> $GITHUB_STEP_SUMMARY
