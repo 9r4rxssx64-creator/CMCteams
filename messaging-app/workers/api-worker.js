@@ -5311,6 +5311,7 @@ export async function handleSignalement(request, env) {
 // ============================================================================
 //  TURN credentials — appels WebRTC P2P fiables cross-réseau (v1.1.229)
 // ============================================================================
+// Service Cloudflare Realtime TURN activé côté compte (2026-06-15).
 // Kevin : « Les appels doivent fonctionner pour tout le monde sur réseau ou wifi
 // ou n'importe, pas forcément en commun. » → sans TURN, un appel ne se connecte
 // jamais quand les 2 ne sont pas sur le même Wi-Fi (NAT symétrique / cellulaire).
