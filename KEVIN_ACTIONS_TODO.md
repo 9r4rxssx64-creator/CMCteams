@@ -1,24 +1,27 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-## 📞 APEX CHAT — appels/visio cross-réseau (v1.1.229) — 1 RÉGLAGE CLOUDFLARE (2026-06-15)
+## 📞 APEX CHAT — appels/visio cross-réseau (v1.1.229) — COLLER LA CLÉ TURN (2026-06-15)
 
-**Pourquoi** : les appels « Connexion perdue » quand toi et Laurence n'êtes pas sur le même Wi-Fi.
-Le relais gratuit (OpenRelay) est mort. J'ai tout branché pour utiliser **TON** relais Cloudflare
-(Cloudflare Realtime TURN) — code + Worker + workflow déjà déployés (v1.1.229, fail-open : l'app ne
-casse pas, les appels même-Wi-Fi marchent). **Mais** la création de la clé TURN a échoué au déploiement :
+**Pourquoi** : appels « Connexion perdue » quand toi et Laurence n'êtes pas sur le même Wi-Fi.
+Le relais gratuit (OpenRelay) est mort → on utilise **TON** relais Cloudflare Realtime TURN.
 
-> Cloudflare API : `code 10000 "Authentication error"` → le jeton **CLOUDFLARE_API_TOKEN** n'a pas
-> la permission **« Cloudflare Calls »** (= Realtime).
+**Historique du blocage** : le token API du déploiement renvoie `10002 Authorization Failure`
+sur `/calls/turn_keys` malgré la permission `Cloudflare Calls:Edit` visible — cause
+indéterminable (le token ne peut pas lire ses propres policies : `9109`), et l'abonnement
+Realtime ne suffit pas. **Donc on contourne le token API.**
 
-**TON action (1 fois, ~1 min, dans Cloudflare — pas GitHub)** :
-1. Ouvre https://dash.cloudflare.com/profile/api-tokens
-2. Édite le jeton utilisé pour les déploiements (celui « Workers ») → **Add permission** →
-   **Account** ▸ **Cloudflare Calls** (ou « Realtime ») ▸ **Edit** → **Save/Continue**.
-   (Si l'option n'apparaît pas, va dans le menu **Calls/Realtime** du compte et clique « Enable » une fois.)
-3. Dis-moi « c'est fait » → **je relance le déploiement tout seul** (zéro clic GitHub) ; la clé TURN
-   se crée automatiquement, et les appels se connecteront partout (4G/Wi-Fi différents).
+**MÉTHODE RETENUE (bypass, zéro GitHub) — Worker lit la clé depuis KV** :
+1. Cloudflare → **Realtime → TURN Server → Create** (ta session a tous les droits, pas le token).
+   Copie les 2 valeurs affichées : **Turn Token ID (uid)** + **API Token / Key (secret)**.
+2. Ouvre `https://apex-chat.kd-mc.com/CMCteams/messaging-app/diag.html?v=turn` →
+   section **« 📞 Activer les appels (admin) »** → colle les 2 valeurs → **Enregistrer**.
+   Le Worker (`POST /api/admin/turn-config`) les stocke en KV + vérifie qu'elles génèrent des ICE.
+3. « enregistré + vérifié » → ferme/rouvre Apex Chat, teste un appel 4G ↔ Wi-Fi.
 
-Vérif après : le déploiement affichera « ✅ Clé TURN Cloudflare créée » au lieu du warning.
+**Implémentation** : `resolveTurnCreds(env)` lit env (secret workflow) **ou** KV ;
+`/api/turn/health` → `source: secret|kv|none` ; `diag.html` formulaire admin.
+Le workflow tente toujours la création auto (idempotent) — si un jour le token gagne la
+permission Calls, ça se fera tout seul et prendra le pas (env > KV).
 
 ---
 
