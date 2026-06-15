@@ -270,7 +270,8 @@ jobs:
               echo "::warning::Cause probable : le token CLOUDFLARE_API_TOKEN n'a pas la permission 'Calls' (Account > Cloudflare Calls > Edit). Réponse API ci-dessus."
             else
               KID=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin)['result']['uid'])")
-              KTOK=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin)['result']['token'])")
+              # Le bearer de la clé TURN est dans result.key (doc Cloudflare), PAS result.token.
+              KTOK=$(echo "$RESP" | python3 -c "import json,sys; r=json.load(sys.stdin)['result']; print(r.get('key') or r.get('token') or '')")
               if [ -n "$KID" ] && [ -n "$KTOK" ]; then
                 printf '%s' "$KID" | wrangler secret put CF_TURN_KEY_ID
                 printf '%s' "$KTOK" | wrangler secret put CF_TURN_TOKEN
