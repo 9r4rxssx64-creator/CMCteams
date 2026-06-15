@@ -5309,6 +5309,52 @@ export async function handleSignalement(request, env) {
 }
 
 // ============================================================================
+//  TURN credentials — appels WebRTC P2P fiables cross-réseau (v1.1.229)
+// ============================================================================
+// Kevin : « Les appels doivent fonctionner pour tout le monde sur réseau ou wifi
+// ou n'importe, pas forcément en commun. » → sans TURN, un appel ne se connecte
+// jamais quand les 2 ne sont pas sur le même Wi-Fi (NAT symétrique / cellulaire).
+// Le TURN gratuit OpenRelay est mort (« Connexion perdue »). On mint ici des
+// credentials TURN Cloudflare Realtime à courte durée (le TOKEN reste côté Worker,
+// JAMAIS exposé au client — seuls username/credential éphémères partent au navigateur).
+// FAIL-OPEN : si les secrets ne sont pas (encore) provisionnés → STUN-only, l'app
+// ne casse JAMAIS (les appels même-réseau continuent de marcher).
+async function handleTurnCredentials(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthorized');
+
+  const stun = [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }];
+  const keyId = env.CF_TURN_KEY_ID;
+  const token = env.CF_TURN_TOKEN;
+  if (!keyId || !token) {
+    // Pas encore provisionné (le workflow le fait au déploiement). STUN seul.
+    return json({ iceServers: stun, turn: false, reason: 'turn_not_provisioned' });
+  }
+  try {
+    const r = await fetch(
+      'https://rtc.live.cloudflare.com/v1/turn/keys/' + encodeURIComponent(keyId) + '/credentials/generate-ice-servers',
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ttl: 86400 })
+      }
+    );
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data) {
+      // Diagnostic exact (règle CLAUDE.md) mais fail-open STUN pour ne pas casser l'appel.
+      return json({ iceServers: stun, turn: false, reason: 'cf_turn_http_' + r.status, detail: JSON.stringify(data || '').slice(0, 200) });
+    }
+    // L'API renvoie { iceServers: { urls:[...], username, credential } } (objet unique).
+    let ice = [];
+    if (Array.isArray(data.iceServers)) ice = data.iceServers;
+    else if (data.iceServers && typeof data.iceServers === 'object') ice = [data.iceServers];
+    return json({ iceServers: stun.concat(ice), turn: ice.length > 0 });
+  } catch (e) {
+    return json({ iceServers: stun, turn: false, reason: 'exception', detail: String((e && e.message) || e).slice(0, 200) });
+  }
+}
+
+// ============================================================================
 //  Main fetch handler
 // ============================================================================
 
@@ -5348,6 +5394,9 @@ export default {
       if (path === '/api/media' && method === 'POST') return await handleMediaUpload(request, env);
       const mediaMatch = path.match(/^\/api\/media\/([a-zA-Z0-9_-]+)$/);
       if (mediaMatch && method === 'GET') return await handleMediaGet(mediaMatch[1], request, env);
+
+      // TURN credentials — appels P2P fiables cross-réseau (v1.1.229)
+      if (path === '/api/turn' && method === 'GET') return await handleTurnCredentials(request, env);
 
       // E2E keys (v1.1.172 FIX P0 audit crew — distribution clés publiques)
       if (path === '/api/keys/prekeys' && method === 'POST') return await handleUploadPrekeys(request, env);
