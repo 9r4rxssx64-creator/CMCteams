@@ -112,9 +112,13 @@ jobs:
             BAD=$(curl -fsS "$APP/__sso/whoami" -H "Authorization: Bearer pas.un.vrai")
             printf '%s' "$BAD" | grep -q '"ok":false'       || echo "::warning::forge pas rejetée (à vérifier)"
           fi
-          echo "3) SÉCU admin : /__admin/accounts SANS preuve → doit être 403 (trou fermé)"
+          echo "3) SÉCU admin : /__admin/accounts SANS preuve → doit être 403 + reason need_admin_code (PROUVE que le hash PIN est déployé)"
           AC=$(curl -s -o /tmp/adm.json -w "%{http_code}" "$BASE/__admin/accounts")
-          echo "   http=$AC body=$(cat /tmp/adm.json 2>/dev/null)"
-          if [ "$AC" = "403" ]; then echo "   ✅ /__admin verrouillé — fiches inaccessibles sans le PIN admin"; \
-            else echo "::warning::/__admin a répondu $AC (gate peut-être pas encore propagé)"; fi
+          BODY=$(cat /tmp/adm.json 2>/dev/null)
+          echo "   http=$AC body=$BODY"
+          if [ "$AC" = "403" ] && printf '%s' "$BODY" | grep -q 'need_admin_code'; then \
+            echo "   ✅ /__admin verrouillé PAR LE PIN (need_admin_code) — hash déployé, fiches inaccessibles"; \
+          elif [ "$AC" = "403" ]; then \
+            echo "::warning::/__admin = 403 mais reason ≠ need_admin_code → hash PIN PAS déployé (gate fail-closed = admin_only). Vérifier APEX_ADMIN_PIN_SHA256."; \
+          else echo "::warning::/__admin a répondu $AC (gate peut-être pas encore propagé)"; fi
           echo "✅ Smoke terminé (best-effort, non bloquant)."

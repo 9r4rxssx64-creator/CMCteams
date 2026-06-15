@@ -7,7 +7,7 @@
 import mod from './worker.js';
 import { createHash } from 'crypto';
 const store = new Map();
-const ACCOUNTS = { get: async (k) => (store.has(k) ? store.get(k) : null), put: async (k, v) => { store.set(k, v); } };
+const ACCOUNTS = { get: async (k) => (store.has(k) ? store.get(k) : null), put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); } };
 const env = { KDMC_SSO_SECRET: 'sec', ACCOUNTS };
 const REQ = (o) => new Request('https://kd-mc.com' + o.path, { method: o.method || 'GET', headers: o.headers || {}, body: o.body });
 let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : (fail++, console.log('  ✗ ' + m)); };
@@ -59,6 +59,23 @@ ok(j.ok === true && j.kv === false, 'sans KV → fail-open (0 fiche, pas d\'erre
 /* sans secret du tout → fermé. */
 r = await mod.fetch(REQ({ path: '/__admin/accounts', headers: { 'x-kdmc-admin': grant } }), { ACCOUNTS });
 ok(r.status === 403, 'sans secret → 403 (fermé)');
+
+/* ---- Rate-limit serveur du code admin (anti brute-force) ---- */
+const store2 = new Map();
+const ACC2 = { get: async (k) => (store2.has(k) ? store2.get(k) : null), put: async (k, v) => { store2.set(k, v); }, delete: async (k) => { store2.delete(k); } };
+const envR = { KDMC_SSO_SECRET: 'sec', KDMC_ADMIN_PIN_SHA256: HASH, ACCOUNTS: ACC2 };
+const badLogin = () => mod.fetch(REQ({ path: '/__admin/login', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: '999999' }) }), envR);
+for (let i = 0; i < 5; i++) { j = await (await badLogin()).json(); }
+ok(j.reason === 'code_invalide', '5 codes faux → encore code_invalide (pas encore bloqué)');
+j = await (await badLogin()).json();
+ok(j.reason === 'rate_limited' && j.wait > 0, '6e tentative → rate_limited (lockout serveur)');
+j = await (await mod.fetch(REQ({ path: '/__admin/login', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE }) }), envR)).json();
+ok(j.reason === 'rate_limited', 'lockout actif → même le BON code est bloqué');
+/* fail-open : sans KV, pas de blocage (jamais de lockout si KV KO) */
+const envNoKv = { KDMC_SSO_SECRET: 'sec', KDMC_ADMIN_PIN_SHA256: HASH };
+for (let i = 0; i < 8; i++) { await mod.fetch(REQ({ path: '/__admin/login', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: '999999' }) }), envNoKv); }
+j = await (await mod.fetch(REQ({ path: '/__admin/login', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE }) }), envNoKv)).json();
+ok(j.ok === true && typeof j.grant === 'string', 'sans KV → fail-open : bon code accepté même après 8 échecs (jamais de lockout)');
 
 console.log(`Admin domaine test: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
