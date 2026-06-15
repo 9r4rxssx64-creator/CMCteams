@@ -479,7 +479,7 @@
         "avg": 17
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "finance-003",
