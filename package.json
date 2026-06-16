@@ -47,7 +47,9 @@
     "test:v787": "node tests/runtime-audit-v787-secret-leak.mjs",
     "test:v788": "node tests/runtime-audit-v788-fb-auth.mjs",
     "audit:stability": "node tools/audit/stability-audit.cjs --browser",
-    "test:team-rule": "node tests/runtime-audit-team-rule.mjs"
+    "test:team-rule": "node tests/runtime-audit-team-rule.mjs",
+    "build:min": "node tools/build/minify-html.cjs index.html /tmp/index.min.html",
+    "smoke:min": "node tools/build/smoke-test.cjs /tmp/index.min.html index.html"
   },
   "repository": {
     "type": "git",
@@ -70,6 +72,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.5",
-    "playwright": "1.56.0"
+    "playwright": "1.56.0",
+    "terser": "^5.48.0"
   }
 }

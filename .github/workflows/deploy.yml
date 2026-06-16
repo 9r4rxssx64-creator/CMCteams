@@ -24,6 +24,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      # --- Minification JS (best-effort, jamais bloquante) ---
+      # Minifie le JS de index.html SUR LA COPIE DU RUNNER (la source git reste
+      # lisible). Filet anti-régression : si la minification OU le smoke-test de
+      # rendu échoue, on garde l'index.html original non-minifié → la prod ne
+      # peut PAS casser. Gain mesuré : ~25% sur-le-fil (gzip 846->634 Ko).
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install build deps
+        run: npm ci || npm install --no-audit --no-fund
+        continue-on-error: true
+      - name: Install Chromium (smoke-test)
+        run: npx playwright install --with-deps chromium
+        continue-on-error: true
+      - name: Minify JS + smoke-test (fallback si echec)
+        run: |
+          set +e
+          node tools/build/minify-html.cjs index.html /tmp/index.min.html \
+            && node tools/build/smoke-test.cjs /tmp/index.min.html index.html \
+            && cp /tmp/index.min.html index.html \
+            && echo "OK index.html minifie deploye" \
+            || echo "Fallback : source non-minifiee deployee (minify/smoke KO)"
+          exit 0
+
       - name: Setup Pages
         uses: actions/configure-pages@v6
         with:
