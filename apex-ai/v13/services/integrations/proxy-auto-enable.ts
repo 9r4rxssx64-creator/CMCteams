@@ -20,19 +20,21 @@ import { logger } from '../../core/logger.js';
 const FLAG_KEY = 'apex_v13_use_secrets_proxy';
 const ADMIN_UID = 'kdmc_admin';
 
-/* v13.4.323 (Kevin « il n'est pas sur Anthropic de base ») : pendant une panne
- * proxy (auth/CORS), les providers (dont Anthropic) sont marqués DEAD 1h, marque
- * PERSISTÉE en localStorage → survit aux reloads → Apex reste bloqué sur le
- * fallback (OpenAI) même après réparation. Quand le proxy est actif au boot, on
- * efface 1× les marques DEAD pour que Claude (préféré) soit re-tenté à neuf. */
+/* v13.4.323/333 (Kevin « il n'est pas sur Anthropic de base » / « encore openai ») :
+ * pendant une panne proxy (auth/CORS), Anthropic accumule (a) une marque DEAD 1h
+ * ET (b) des STATS d'échec, toutes deux PERSISTÉES en localStorage. v323 n'effaçait
+ * que les marques DEAD → mais le smart-router classait toujours Claude DERRIÈRE
+ * OpenAI à cause des stats d'échec → Apex restait sur OpenAI. v333 : au boot, si
+ * le proxy est actif, on fait un reset COMPLET 1× (dead + stats) pour repartir à
+ * neuf → la policy (Anthropic en primaire pour general/admin) reprend la main. */
 let deadClearedThisBoot = false;
 async function clearStaleDeadOnce(): Promise<void> {
   if (deadClearedThisBoot) return;
   deadClearedThisBoot = true;
   try {
     const { aiKeyRotation } = await import('../ai/ai-key-rotation.js');
-    aiKeyRotation.clearAllDead();
-    logger.info('proxy-auto-enable', 'marques DEAD effacées (proxy actif) → providers re-tentés à neuf');
+    aiKeyRotation.resetAll(); /* dead + stats → Claude re-tenté en premier */
+    logger.info('proxy-auto-enable', 'stats+DEAD providers réinitialisés (proxy actif) → Claude (Anthropic) re-prioritaire');
   } catch { /* ignore */ }
 }
 

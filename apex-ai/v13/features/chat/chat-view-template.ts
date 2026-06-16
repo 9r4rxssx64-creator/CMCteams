@@ -255,7 +255,7 @@ export function buildChatShellHtml(opts: ChatShellOpts): string {
     <div class="ax-chat ax-modernized-card">
       <header class="ax-chat-header">
         <h1 id="ax-chat-logo" title="Long-press 3s pour Diagnostic admin" style="cursor:pointer;-webkit-tap-highlight-color:transparent">APEX</h1>
-        <div style="display:flex;gap:4px;align-items:center">
+        <div style="display:flex;gap:4px;align-items:center;margin-right:84px">
           <button class="ax-btn ax-btn-icon" id="ax-chat-mode-toggle" aria-label="Mode routing IA" title="Mode routing IA (clic pour basculer auto/eco/premium)" style="font-size:14px;min-width:36px;padding:4px 6px">⚡</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-memory" aria-label="Mémoire & historique" title="📜 Mémoire : conversations archivées + journal permanent de tout ce que tu déposes">📜</button>
           <button class="ax-btn ax-btn-icon" id="ax-chat-clear" aria-label="Effacer chat" title="Effacer le chat (conversation courante)">🗑</button>
