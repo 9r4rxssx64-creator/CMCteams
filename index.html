@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.806";
+var APP_VER="v9.807";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -5514,7 +5514,7 @@ function adminSetEmpBg(uid){
     if(file.size>50*1024*1024){toast("Fichier trop lourd","err");return;}
     toast("\u23f3 Compression fond perso...");
     _resizeImage(file,1200,1200,0.82,function(dataUrl,err,info){
-      if(err||!dataUrl){toast("Erreur : "+(err||"?"),"err");return;}
+      if(err||!dataUrl){console.error("[resize image]",err);toast("Image illisible \u2014 essaie un autre fichier (JPG/PNG)","err");return;}
       A.reg=A.reg||{};A.reg[uid]=A.reg[uid]||{};
       A.reg[uid].customBg=dataUrl;
       A.reg[uid].updatedAt=Date.now();
@@ -5638,7 +5638,7 @@ function uploadMyPhoto(){
     if(file.size>50*1024*1024){toast("Fichier trop lourd (>50 MB)","err");return;}
     toast("\u23f3 Compression...");
     _resizeImage(file,300,300,0.85,function(dataUrl,err,info){
-      if(err||!dataUrl){toast("Erreur : "+(err||"?"),"err");return;}
+      if(err||!dataUrl){console.error("[resize image]",err);toast("Image illisible \u2014 essaie un autre fichier (JPG/PNG)","err");return;}
       A.reg=A.reg||{};A.reg[myId]=A.reg[myId]||{};
       A.reg[myId].photo=dataUrl;
       A.reg[myId].updatedAt=Date.now();
@@ -5794,7 +5794,7 @@ function employeeProposeUpload(category){
     if(file.type.indexOf("image/")===0){
       var budget=Math.round(DOC_MAX_SIZE*0.9);
       _resizeImage(file,2000,2000,0.88,function(dataUrl,err){
-        if(err||!dataUrl){toast("Erreur : "+(err||"?"),"err");return;}
+        if(err||!dataUrl){console.error("[resize image]",err);toast("Image illisible \u2014 essaie un autre fichier (JPG/PNG)","err");return;}
         process(dataUrl);
       },budget);
     } else {
@@ -6640,7 +6640,7 @@ function exportFullBackup(){
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},100);
     toast("✅ Sauvegarde téléchargée ("+Math.round(json.length/1024)+" KB)");
     _audit("export_backup",AID,"","","Sauvegarde complète exportée");
-  }catch(e){toast("Erreur export: "+e.message,"err");}
+  }catch(e){console.error("[export doc]",e);toast("Impossible d\u2019exporter \u2014 r\u00e9essaie ou contacte l\u2019admin","err");}
 }
 
 // v9.81 — BACKUP AUTO QUOTIDIEN (sans intervention admin)
@@ -6806,7 +6806,7 @@ function importFullBackup(){
         _audit("import_backup",AID,"","","Sauvegarde "+data.exportedAt+" restaur\u00e9e");
         toast("\u2705 Sauvegarde restaur\u00e9e \u2014 rechargement...");
         setTimeout(function(){location.reload();},1500);
-      }catch(e){toast("Erreur lecture: "+e.message,"err");}
+      }catch(e){console.error("[lecture fichier]",e);toast("Impossible de lire le fichier \u2014 format support\u00e9 ?","err");}
     };
     reader.readAsText(file);
   };
@@ -11716,7 +11716,7 @@ function agentActionGotoPlanning(){if(typeof sv==="function")sv("planning");}
 function agentActionGotoAbsences(){if(typeof sv==="function")sv("absences");}
 function agentActionGotoPit(){if(typeof sv==="function")sv("pit");}
 function agentActionGotoTelemetry(){if(typeof sv==="function")sv("telemetry");}
-function agentActionGotoEmps(){if(typeof sv==="function")sv("emps");}
+function agentActionGotoEmps(){if(typeof sv==="function")sv("employees");}
 function agentActionFlushSync(){
   if(!A.user||A.user.id!==AID)return;
   try{if(typeof flushSyncQueue==="function"){flushSyncQueue();toast("\ud83d\udd04 Flush queue lanc\u00e9");}}catch(e){toast("\u2717 "+(e.message||""),"err");}
@@ -12601,18 +12601,7 @@ function vVoicePresetsCMC(){
 // ═══════════════════════════════════════════════════════════════════════
 var _cmcMapCurrentCasino=lg("cmc_map_current_casino","CMC");
 function cmcMapDefaultLayout(id){return {id:id,bgImage:"",widthM:50,heightM:30,zones:[]};}
-function cmcGetCasinoLayout(id){
-  var all=lg("cmc_casino_layouts",{});
-  if(!all[id])all[id]=cmcMapDefaultLayout(id);
-  return all[id];
-}
-function cmcSaveCasinoLayout(id,layout){
-  if(!A.user||A.user.id!==AID)return;
-  var all=lg("cmc_casino_layouts",{});
-  all[id]=layout;
-  ls("cmc_casino_layouts",all);
-  if(typeof _cmcMapRender==="function")_cmcMapRender();
-}
+/* v9.807 dedup: cmcGetCasinoLayout / cmcSaveCasinoLayout definis plus bas */
 function cmcMapSwitchCasino(id){
   _cmcMapCurrentCasino=id;
   ls("cmc_map_current_casino",id);
@@ -15882,7 +15871,7 @@ function testEmailJS(){
   }).then(function(r){
     if(r.ok){toast("\u2705 Email de test envoy\u00e9 \u00e0 "+testEmail+" \u2014 v\u00e9rifiez votre bo\u00eete (et spams)");}
     else{r.text().then(function(t){try{console.error("[emailjs] HTTP "+r.status,t.slice(0,200));}catch(_){}toast("\u26a0\ufe0f Impossible d'envoyer l'email. Réessaie ou préviens Kevin.","err");});}
-  }).catch(function(e){toast("\u274c Erreur r\u00e9seau : "+e.message,"err");});
+  }).catch(function(e){console.error("[reseau]",e);toast("\u26a0 Connexion perdue \u2014 v\u00e9rifie ton WiFi/4G","err");});
 }
 function stepRegister(){
   var nom=(document.getElementById("rNom")||{}).value||"";
@@ -17289,9 +17278,7 @@ function _acquireWakeLock(){
     }).catch(function(e){console.warn("wakeLock:",e&&e.message);});
   }catch(_){}
 }
-function _releaseWakeLock(){
-  try{if(_wakeLockSentinel){_wakeLockSentinel.release();_wakeLockSentinel=null;}}catch(_){}
-}
+/* v9.807 dedup: _releaseWakeLock unifie plus bas */
 // v9.219 — Keep-alive audio silencieux : maintient l'onglet "audible" → navigateur
 // moins agressif sur la suspension background (hack connu iOS/Android)
 var _keepAliveCtx=null,_keepAliveOsc=null,_keepAliveGain=null;
@@ -20448,16 +20435,7 @@ function applySeasonalTheme(){
 try{_cmcApplyReducedMotion();}catch(_){}
 setTimeout(applySeasonalTheme,500);
 setInterval(applySeasonalTheme,60*60*1000); // réévalue toutes les heures
-function toggleFeature(key){
-  if(!A.user||A.user.id!==AID){toast("Admin requis","err");return;}
-  var f=getFeatureFlags();f[key]=!f[key];ls("cmc_feature_flags",f);
-  // v9.504 \u2014 sync cross-device via Firebase
-  if(typeof fbWrite==="function")try{fbWrite("cmc_feature_flags",f);}catch(_){}
-  _audit("featureToggle",AID,key,"",f[key]?"ON":"OFF");
-  var lab=(typeof FEATURE_FLAGS_LABELS!=="undefined"&&FEATURE_FLAGS_LABELS[key])||key;
-  toast(lab+" : "+(f[key]?"\u25b6 ON":"\u23f8 OFF"));
-  dc();
-}
+/* v9.807 dedup: toggleFeature defini plus bas (systeme _features) */
 // v9.383 / v9.504 — vFeatureFlags : panel admin toggles (etendu Kevin v9.504)
 function vFeatureFlags(){
   if(!A.user||A.user.id!==AID)return'<div class="page"><div class="empty"><div class="empty-title">Admin requis</div></div></div>';
@@ -22198,7 +22176,7 @@ async function _requestWakeLock(){
     }
   }catch(e){}
 }
-function _releaseWakeLock(){try{if(_wakeLock){_wakeLock.release();_wakeLock=null;}}catch(e){}}
+function _releaseWakeLock(){try{if(_wakeLock){_wakeLock.release();_wakeLock=null;}}catch(e){}try{if(_wakeLockSentinel){_wakeLockSentinel.release();_wakeLockSentinel=null;}}catch(e2){}}
 
 // v9.93 — Auto-refresh badge après chaque sync Firebase
 // (à appeler depuis fbApplyData, mais protégé pour ne pas casser)
@@ -29305,17 +29283,7 @@ function chatSetReply(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});
   dc();setTimeout(function(){var i=document.getElementById("chatIn");if(i)i.focus();},50);}
 function chatCancelReply(){_chatRep=null;dc();}
 // Réactions emoji : ajout/retrait par utilisateur
-function chatToggleReaction(ts,emo){
-  if(!A.user)return;
-  var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m||m.del)return;
-  if(!m.reactions)m.reactions={};
-  if(!m.reactions[emo])m.reactions[emo]=[];
-  var uid=A.user.id,idx=m.reactions[emo].indexOf(uid);
-  if(idx>=0)m.reactions[emo].splice(idx,1);
-  else m.reactions[emo].push(uid);
-  if(m.reactions[emo].length===0)delete m.reactions[emo];
-  ls("cmc_chat",A.chatMsgs);dc();
-}
+/* v9.807 dedup: chatToggleReaction defini plus bas */
 // Picker emoji pour réaction rapide
 function chatOpenReactPicker(ts){
   var emos=["\ud83d\udc4d","\u2764\ufe0f","\ud83d\ude02","\ud83c\udf89","\ud83d\udd25","\ud83d\udc4f","\ud83e\udd14","\ud83d\ude22"];
@@ -29492,6 +29460,7 @@ function clearAuditLog(){
 }
 
 function exportPlanningCSV(){
+  if(!A.user||A.user.id!==AID){toast("\u26a0 R\u00e9serv\u00e9 admin","err");return;}
   var pl=gpl(),days=getDays(A.year,A.month);
   var rows=[];
   // v9.47 : en-t\u00eate enrichi pour usage paie
@@ -47276,7 +47245,7 @@ function cmcEraseUserProfile(targetUid){
     if(typeof toast==="function")toast("Compte "+nm+" efface (RGPD)","ok");
     if(isSelf){
       setTimeout(function(){
-        try{if(typeof doLogout==="function")doLogout();else{A.user=null;if(typeof sv==="function")sv("login");else location.reload();}}catch(_){location.reload();}
+        try{if(typeof doLogout==="function")doLogout();else{A.user=null;location.reload();}}catch(_){location.reload();}
       },1200);
     }else{
       if(typeof dc==="function")dc();
