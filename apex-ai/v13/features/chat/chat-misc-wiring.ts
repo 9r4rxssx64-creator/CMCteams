@@ -113,6 +113,7 @@ export function wireMenuButton(rootEl: HTMLElement): void {
         <div class="ax-gs-123">
           <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="chat">💬 Chat</button>
           <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="commands">⌨️ Commandes (liste + descriptions)</button>
+          ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="admin-health-dashboard">🔗 Liens utiles &amp; santé</button>' : ''}
           ${isAdminUser ? '<button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="admin">👑 Centre Admin</button>' : ''}
           <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studios">🎨 Studios</button>
           <button class="ax-btn ax-btn-primary ax-gs-360" data-menu-nav="studio-music">🎚 Mix Musique</button>

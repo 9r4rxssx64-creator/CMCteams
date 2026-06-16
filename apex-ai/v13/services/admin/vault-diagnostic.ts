@@ -228,6 +228,12 @@ function buildSummary(report: Omit<VaultDiagnosticReport, 'summary' | 'recommend
   }
   if (cf.reachable) {
     parts.push(`🌐 Cloudflare proxy OK (${cf.latency_ms}ms, ${cf.providers.length} providers)`);
+    /* v13.4.334 (Kevin « le Coffre note 1 clé ») : quand le proxy est OK, les vraies
+     * clés IA vivent CÔTÉ SERVEUR (jamais en local = plus sûr). « 1 clé locale » est
+     * donc NORMAL, pas une perte. On le dit pour ne pas alarmer. */
+    if (cf.providers.length > 0) {
+      parts.push(`✅ ${cf.providers.length} clés IA actives côté serveur (le « ${local.total} » en local est normal : tes clés ne sont jamais stockées sur l'appareil)`);
+    }
   } else {
     parts.push(`🌐 Cloudflare proxy KO (${cf.error ?? 'unreachable'})`);
   }
