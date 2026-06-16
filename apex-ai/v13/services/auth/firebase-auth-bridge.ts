@@ -64,6 +64,31 @@ class FirebaseAuthBridge {
     return '';
   }
 
+  /**
+   * v13.4.335 (Kevin « répare Firebase ») : garantit un token frais AVANT un ping
+   * RTDB. Si le token courant est valide → le renvoie. Sinon tente une activation
+   * (worker /login) à partir du user connecté (apex_v13_uid) et renvoie le token
+   * obtenu (ou '' si échec). FAIL-OPEN : ne throw jamais. C'est ce qui débloque le
+   * « Firebase RECONNECTING » quand le token manquait/était expiré au moment du ping.
+   */
+  async ensureFreshToken(): Promise<string> {
+    const cur = this.getToken();
+    if (cur) return cur;
+    try {
+      let uid = '';
+      try { uid = localStorage.getItem('apex_v13_uid') ?? ''; } catch { uid = ''; }
+      if (!uid) return '';
+      await this.activate(uid, uid === 'kdmc_admin');
+    } catch { /* fail-open */ }
+    return this.getToken();
+  }
+
+  /** Dernier statut d'auth lisible (pour le diagnostic). */
+  lastStatus(): Record<string, unknown> {
+    try { return JSON.parse(localStorage.getItem(STATUS_KEY) ?? '{}') as Record<string, unknown>; }
+    catch { return {}; }
+  }
+
   private workerUrl(): string {
     try { return localStorage.getItem('ax_auth_worker_url') || DEFAULT_WORKER_URL; }
     catch { return DEFAULT_WORKER_URL; }

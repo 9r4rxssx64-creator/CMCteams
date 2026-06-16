@@ -224,7 +224,14 @@ function buildSummary(report: Omit<VaultDiagnosticReport, 'summary' | 'recommend
   if (fb.connected) {
     parts.push(`☁ Firebase ${fb.state} : ${fb.backup_count} backup(s)`);
   } else {
-    parts.push(`☁ Firebase ${fb.state} (hors-ligne)`);
+    /* v13.4.335 (Kevin « répare Firebase ») : montrer la VRAIE raison (401 = la
+     * base exige une connexion sécurisée + pourquoi le token manque) au lieu d'un
+     * « hors-ligne » opaque. L'IA n'est PAS affectée (elle passe par le proxy). */
+    const d = firebase.getDiagnostic();
+    const why = d.lastPingStatus === 401 || d.lastPingStatus === 403
+      ? `auth requise (HTTP ${d.lastPingStatus}) — ${d.authReason}`
+      : d.lastPingStatus > 0 ? `HTTP ${d.lastPingStatus}` : (d.authReason || 'réseau');
+    parts.push(`☁ Firebase ${fb.state} — ${why} (n'affecte pas l'IA, qui passe par le proxy)`);
   }
   if (cf.reachable) {
     parts.push(`🌐 Cloudflare proxy OK (${cf.latency_ms}ms, ${cf.providers.length} providers)`);

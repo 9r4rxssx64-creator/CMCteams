@@ -181,6 +181,8 @@ class Firebase {
   private connState: FirebaseConnectionState = 'DISCONNECTED';
   /* Compteur de tentatives consecutives échouées (reset à 0 après succès). */
   private reconnectAttempts = 0;
+  /* v13.4.335 — dernier code HTTP du ping (pour diagnostic : 401/403 = auth requise). */
+  private lastPingStatus = 0;
   /* Timer en cours pour la prochaine tentative de reconnect (id setTimeout). */
   private reconnectTimer: number | null = null;
   /* Watchdog ping interval (id setInterval) — détecte SSE silencieusement coupé. */
@@ -212,14 +214,27 @@ class Firebase {
       return;
     }
 
-    /* Test ping */
+    /* Test ping. v13.4.335 (Kevin « répare Firebase ») : on garantit un token frais
+     * AVANT le ping (la DB exige `auth != null` → un ping sans token = 401 →
+     * RECONNECTING à vie). Sur un 401, on force un refresh de token + retry. */
     try {
-      const ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
+      await firebaseAuthBridge.ensureFreshToken();
+      let ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
+      if (ping.status === 401 || ping.status === 403) {
+        /* Token absent/expiré → refresh forcé + 1 retry. */
+        firebaseAuthBridge.clear();
+        await firebaseAuthBridge.ensureFreshToken();
+        ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000),
+        });
+      }
       this.connected = ping.ok;
-      logger.info('firebase', `Connected: ${this.connected}`, { url: this.url });
+      this.lastPingStatus = ping.status;
+      logger.info('firebase', `Connected: ${this.connected}`, { url: this.url, status: ping.status });
     } catch (err: unknown) {
       logger.warn('firebase', 'Ping failed (offline mode)', { err });
       this.connected = false;
@@ -290,6 +305,22 @@ class Firebase {
   }
 
   /**
+   * v13.4.335 (Kevin « répare Firebase ») — détail diagnostic lisible :
+   * dernier code HTTP du ping (401/403 = la DB exige une auth) + statut du pont
+   * d'auth Phase 5 (pourquoi le token manque). Pur, sync, pour le diagnostic Coffre.
+   */
+  getDiagnostic(): { state: FirebaseConnectionState; lastPingStatus: number; authReason: string } {
+    let authReason = '';
+    try {
+      const st = firebaseAuthBridge.lastStatus();
+      if (st && st['ok'] === false) authReason = String(st['reason'] ?? 'inconnu');
+      else if (firebaseAuthBridge.getToken()) authReason = 'token OK';
+      else authReason = 'pas de token';
+    } catch { authReason = 'inconnu'; }
+    return { state: this.connState, lastPingStatus: this.lastPingStatus, authReason };
+  }
+
+  /**
    * SOS auto-fix + appel direct user : déclenche un reconnect immédiat (clear backoff).
    * - Si déjà CONNECTED → no-op (return true)
    * - Si OFFLINE → ne fait rien (attend event online)
@@ -318,10 +349,21 @@ class Firebase {
    */
   private async attemptReconnect(): Promise<boolean> {
     try {
-      const ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
+      /* v13.4.335 : token frais avant le ping + retry sur 401/403 (auth requise). */
+      await firebaseAuthBridge.ensureFreshToken();
+      let ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
+      if (ping.status === 401 || ping.status === 403) {
+        firebaseAuthBridge.clear();
+        await firebaseAuthBridge.ensureFreshToken();
+        ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000),
+        });
+      }
+      this.lastPingStatus = ping.status;
       if (ping.ok) {
         this.connected = true;
         this.reconnectAttempts = 0;
