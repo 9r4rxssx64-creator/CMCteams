@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.230",
+  "softwareVersion": "v1.1.231",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.230';
+const __APEX_CHAT_VERSION__ = 'v1.1.231';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.230</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.231</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.230</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.231</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7941,6 +7941,33 @@ K._ensureIceServers = async function(){
   }catch(e){ try{ console.warn('[appel] /api/turn KO, fallback STUN:', e && e.message); }catch(_){} }
   return K._iceServers(); // fail-open : STUN seul (mieux que rien)
 };
+// Enregistreur de diagnostic d'appel (v1.1.231) — visible dans la page diag (iPhone sans
+// console). Capture : type de candidats ICE rassemblés (host/srflx/RELAY = preuve TURN),
+// états de connexion. Tout en try/catch, n'altère JAMAIS le déroulé de l'appel.
+K._callDiagReset = function(meta){
+  try{
+    K._callDiag = { ts: Date.now(), role: meta.role, type: meta.type, turn: !!meta.turn,
+      localCand: {host:0,srflx:0,relay:0,prflx:0,other:0}, states: [] };
+    localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
+  }catch(_){}
+};
+K._callDiagCand = function(candStr){
+  try{
+    if(!K._callDiag) return;
+    var m = / typ (host|srflx|relay|prflx)/.exec(candStr || '');
+    var t = m ? m[1] : 'other';
+    K._callDiag.localCand[t] = (K._callDiag.localCand[t] || 0) + 1;
+    localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
+  }catch(_){}
+};
+K._callDiagState = function(label){
+  try{
+    if(!K._callDiag) return;
+    K._callDiag.states.push({ t: Date.now() - K._callDiag.ts, s: label });
+    if(K._callDiag.states.length > 50) K._callDiag.states.shift();
+    localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
+  }catch(_){}
+};
 K._call = async function(type, convId){
   if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
 
@@ -7978,10 +8005,11 @@ K._call = async function(type, convId){
     }
 
     // Peer connection (TURN Cloudflare éphémère pour appels cross-réseau — v1.1.229)
-    const pc = new RTCPeerConnection({
-      iceServers: await K._ensureIceServers()
-    });
+    const _ice = await K._ensureIceServers();
+    K._callDiagReset({ role: 'caller', type, turn: !!(K._iceCache && K._iceCache.turn) });
+    const pc = new RTCPeerConnection({ iceServers: _ice });
     K._activeCall.peerConn = pc;
+    pc.oniceconnectionstatechange = () => { K._callDiagState('ice:' + pc.iceConnectionState); };
 
     // Add local tracks
     K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
@@ -7998,13 +8026,17 @@ K._call = async function(type, convId){
 
     // ICE candidates → envoyer via WS
     pc.onicecandidate = (e) => {
-      if(e.candidate && K.ws?.readyState === WebSocket.OPEN){
-        K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, convId }));
+      if(e.candidate){
+        K._callDiagCand(e.candidate.candidate);
+        if(K.ws?.readyState === WebSocket.OPEN){
+          K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, convId }));
+        }
       }
     };
 
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
+      K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
       if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
       else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
@@ -8200,8 +8232,11 @@ K._answerCall = async function(incoming){
     if(type === 'video'){
       const lv = $('#local-video'); if(lv) lv.srcObject = K._activeCall.localStream;
     }
-    const pc = new RTCPeerConnection({ iceServers: await K._ensureIceServers() });
+    const _ice = await K._ensureIceServers();
+    K._callDiagReset({ role: 'answerer', type, turn: !!(K._iceCache && K._iceCache.turn) });
+    const pc = new RTCPeerConnection({ iceServers: _ice });
     K._activeCall.peerConn = pc;
+    pc.oniceconnectionstatechange = () => { K._callDiagState('ice:' + pc.iceConnectionState); };
     K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
     pc.ontrack = (e) => {
       K._activeCall.remoteStream = e.streams[0];
@@ -8211,12 +8246,16 @@ K._answerCall = async function(incoming){
       $('#call-status').textContent = '🟢 En cours';
     };
     pc.onicecandidate = (e) => {
-      if(e.candidate && K.ws?.readyState === WebSocket.OPEN){
-        K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, to: incoming.from, convId: incoming.convId }));
+      if(e.candidate){
+        K._callDiagCand(e.candidate.candidate);
+        if(K.ws?.readyState === WebSocket.OPEN){
+          K.ws.send(JSON.stringify({ type: 'webrtc-candidate', candidate: e.candidate, to: incoming.from, convId: incoming.convId }));
+        }
       }
     };
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
+      K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
       if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
       else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); }

@@ -285,6 +285,18 @@ async function runDiag() {
   pingAPI('https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/.json?shallow=true', 'd-fb');
   pingAPI('https://apex-push-worker.9r4rxssx64.workers.dev/health', 'd-push');
 
+  // Dernier appel : diagnostic enregistré par l'app (candidats ICE dont RELAIS, états).
+  try {
+    const lc = localStorage.getItem('apex_chat_last_call_diag');
+    if (lc) {
+      diag.last_call = JSON.parse(lc);
+      const lcObj = diag.last_call;
+      const relay = lcObj && lcObj.localCand ? lcObj.localCand.relay : 0;
+      const lastState = lcObj && lcObj.states && lcObj.states.length ? lcObj.states[lcObj.states.length - 1].s : '?';
+      setInfo('d-call-turn', (relay > 0 ? '✓ relais utilisé' : '✗ aucun relais') + ' · ' + lastState);
+    }
+  } catch (_) {}
+
   // Export final
   setTimeout(() => {
     $('d-export').textContent = JSON.stringify(diag, null, 2);
