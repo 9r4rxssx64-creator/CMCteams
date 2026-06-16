@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.229",
+  "softwareVersion": "v1.1.230",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.229';
+const __APEX_CHAT_VERSION__ = 'v1.1.230';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.229</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.230</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.229</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.230</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7947,7 +7947,7 @@ K._call = async function(type, convId){
   const conv = K.conversations.find(c => c.id === convId);
   if(!conv) return;
 
-  K._activeCall = { type, convId, peerConn: null, localStream: null, remoteStream: null, startedAt: Date.now() };
+  K._activeCall = { type, convId, peerConn: null, localStream: null, remoteStream: null, startedAt: Date.now(), pendingRemoteCandidates: [] };
 
   // UI overlay appel
   $('#modal-host').innerHTML = `
@@ -8004,10 +8004,17 @@ K._call = async function(type, convId){
     };
 
     pc.onconnectionstatechange = () => {
-      $('#call-status').textContent = '📶 ' + pc.connectionState;
-      if(pc.connectionState === 'failed' || pc.connectionState === 'disconnected'){
-        toast('Connexion perdue', 'warn');
-        K._endCall();
+      const st = pc.connectionState;
+      $('#call-status').textContent = '📶 ' + st;
+      if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
+      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+      else if(st === 'disconnected' && K._activeCall){
+        // 'disconnected' est souvent transitoire (surtout iOS) → laisser 6s pour récupérer.
+        clearTimeout(K._activeCall._dropTimer);
+        K._activeCall._dropTimer = setTimeout(() => {
+          const cs = K._activeCall && K._activeCall.peerConn && K._activeCall.peerConn.connectionState;
+          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+        }, 6000);
       }
     };
 
@@ -8068,6 +8075,7 @@ K._startCall = function(convId, type){
 
 K._endCall = function(){
   if(K._activeCall){
+    try{ clearTimeout(K._activeCall._dropTimer); }catch(_e){}
     try{ K._activeCall.peerConn?.close(); }catch(_e){_safeCatch('silent',_e)}
     try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
     try{ K._activeCall.screenStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
@@ -8184,7 +8192,7 @@ K._onIncomingCall = function(msg){
 K._answerCall = async function(incoming){
   if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
   const type = incoming.callType || 'audio';
-  K._activeCall = { type, convId: incoming.convId, peerConn: null, localStream: null, remoteFrom: incoming.from, startedAt: Date.now() };
+  K._activeCall = { type, convId: incoming.convId, peerConn: null, localStream: null, remoteFrom: incoming.from, startedAt: Date.now(), pendingRemoteCandidates: [] };
   K._renderCallUI(type, incoming.from);
   try{
     const constraints = { audio: true, video: type === 'video' };
@@ -8208,11 +8216,21 @@ K._answerCall = async function(incoming){
       }
     };
     pc.onconnectionstatechange = () => {
-      $('#call-status').textContent = '📶 ' + pc.connectionState;
-      if(pc.connectionState === 'failed' || pc.connectionState === 'disconnected'){ K._endCall(); }
+      const st = pc.connectionState;
+      $('#call-status').textContent = '📶 ' + st;
+      if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
+      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+      else if(st === 'disconnected' && K._activeCall){
+        clearTimeout(K._activeCall._dropTimer);
+        K._activeCall._dropTimer = setTimeout(() => {
+          const cs = K._activeCall && K._activeCall.peerConn && K._activeCall.peerConn.connectionState;
+          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+        }, 6000);
+      }
     };
-    // Set remote offer
+    // Set remote offer + applique les ICE candidates arrivés avant (v1.1.230)
     await pc.setRemoteDescription(incoming.offer);
+    await K._flushPendingCandidates();
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     if(K.ws?.readyState === WebSocket.OPEN){
@@ -8257,16 +8275,42 @@ K._renderCallUI = function(type, peerName){
   `;
 };
 
-// Handler ICE candidate reçu via WS (à wirer dans WS message handler)
-K._onIceCandidate = async function(msg){
-  if(!K._activeCall?.peerConn) return;
-  try{ await K._activeCall.peerConn.addIceCandidate(msg.candidate); }catch(_e){_safeCatch('silent',_e)}
+// Applique les ICE candidates mis en file d'attente (reçus avant setRemoteDescription).
+// v1.1.230 : SANS ça, le candidat de RELAIS (TURN) arrive souvent AVANT la réponse →
+// addIceCandidate lève InvalidStateError → candidat perdu → « Connexion perdue » cross-réseau.
+K._flushPendingCandidates = async function(){
+  const ac = K._activeCall;
+  if(!ac || !ac.peerConn || !ac.pendingRemoteCandidates || !ac.pendingRemoteCandidates.length) return;
+  const list = ac.pendingRemoteCandidates; ac.pendingRemoteCandidates = [];
+  for(const c of list){
+    try{ await ac.peerConn.addIceCandidate(c); }
+    catch(e){ try{ console.warn('[appel] flush ICE candidate KO:', e && e.message); }catch(_){} }
+  }
 };
 
-// Handler answer reçu via WS (caller reçoit la réponse du receiver)
+// Handler ICE candidate reçu via WS. Met en FILE D'ATTENTE tant que la description
+// distante n'est pas posée (sinon addIceCandidate échoue), puis flush au bon moment.
+K._onIceCandidate = async function(msg){
+  const ac = K._activeCall;
+  if(!ac || !msg || !msg.candidate) return;
+  const pc = ac.peerConn;
+  if(pc && pc.remoteDescription && pc.remoteDescription.type){
+    try{ await pc.addIceCandidate(msg.candidate); }
+    catch(e){ try{ console.warn('[appel] addIceCandidate KO:', e && e.message); }catch(_){} }
+  } else {
+    (ac.pendingRemoteCandidates = ac.pendingRemoteCandidates || []).push(msg.candidate);
+  }
+};
+
+// Handler answer reçu via WS (caller reçoit la réponse du receiver) → pose la description
+// distante PUIS applique les candidates en attente (relais TURN inclus).
 K._onAnswer = async function(msg){
-  if(!K._activeCall?.peerConn) return;
-  try{ await K._activeCall.peerConn.setRemoteDescription(msg.answer); }catch(_e){_safeCatch('silent',_e)}
+  const ac = K._activeCall;
+  if(!ac || !ac.peerConn || !msg || !msg.answer) return;
+  try{
+    await ac.peerConn.setRemoteDescription(msg.answer);
+    await K._flushPendingCandidates();
+  }catch(e){ try{ console.warn('[appel] setRemoteDescription(answer) KO:', e && e.message); }catch(_){} }
 };
 
 // ============================================================================
