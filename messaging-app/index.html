@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.234",
+  "softwareVersion": "v1.1.235",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.234';
+const __APEX_CHAT_VERSION__ = 'v1.1.235';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.234</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.235</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.234</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.235</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7949,7 +7949,8 @@ K._callDiagReset = function(meta){
     K._callDiag = { ts: Date.now(), appVer: (typeof __APEX_CHAT_VERSION__ !== 'undefined' ? __APEX_CHAT_VERSION__ : '?'),
       role: meta.role, type: meta.type, turn: !!meta.turn,
       localCand: {host:0,srflx:0,relay:0,prflx:0,other:0},
-      remoteCand: {host:0,srflx:0,relay:0,prflx:0,other:0}, states: [] };
+      remoteCand: {host:0,srflx:0,relay:0,prflx:0,other:0},
+      remoteAdded: 0, remoteAddErr: 0, states: [] };
     localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
   }catch(_){}
 };
@@ -7971,6 +7972,7 @@ K._showCallDiag = function(){
       '<br>App ' + esc(d.appVer || '?') + ' · TURN demandé: ' + (d.turn ? 'oui' : 'non') +
       '<br>Moi : host ' + host + ' · srflx ' + srflx + ' · relay ' + relay +
       '<br>Reçus : host ' + rHost + ' · srflx ' + rSrflx + ' · relay ' + rRelay +
+      ' (appliqués ' + (d.remoteAdded || 0) + ', erreurs ' + (d.remoteAddErr || 0) + ')' +
       '<br>États : ' + esc(states || '—') +
       ((d.pairs && d.pairs.length) ? ('<br>Paires : ' + esc(d.pairs.map(function(p){ return p.l + '↔' + p.r + ' ' + p.st + '(↑' + p.sent + '↓' + p.recv + ')'; }).join(' | '))) : '');
     if(typeof K._showModal === 'function'){
@@ -8034,9 +8036,13 @@ K._captureCallStats = async function(pc){
           l: (l.t || '?') + '/' + (l.p || '?'), r: (rm.t || '?') + '/' + (rm.p || '?') });
       }
     });
-    K._callDiag.pairs = pairs.slice(0, 14);
-    localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
+    if(pairs.length){ K._callDiag.pairs = pairs.slice(0, 14); localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag)); }
   }catch(_){}
+};
+// Compte les addIceCandidate réussis / en erreur (candidat distant réellement appliqué ?)
+K._callDiagAddResult = function(ok){
+  try{ if(!K._callDiag) return; if(ok) K._callDiag.remoteAdded = (K._callDiag.remoteAdded||0)+1; else K._callDiag.remoteAddErr = (K._callDiag.remoteAddErr||0)+1;
+    localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag)); }catch(_){}
 };
 K._failCall = function(){
   try{
@@ -8091,6 +8097,7 @@ K._call = async function(type, convId){
     const pc = new RTCPeerConnection({ iceServers: _ice, iceTransportPolicy: _relayOnly ? 'relay' : 'all' });
     K._activeCall.peerConn = pc;
     pc.oniceconnectionstatechange = () => { K._callDiagState('ice:' + pc.iceConnectionState); };
+    try{ K._activeCall._statsTimer = setInterval(function(){ try{ if(K._activeCall && K._activeCall.peerConn) K._captureCallStats(K._activeCall.peerConn); }catch(_){} }, 4000); }catch(_){}
 
     // Add local tracks
     K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
@@ -8189,6 +8196,7 @@ K._startCall = function(convId, type){
 K._endCall = function(){
   if(K._activeCall){
     try{ clearTimeout(K._activeCall._dropTimer); }catch(_e){}
+    try{ clearInterval(K._activeCall._statsTimer); }catch(_e){}
     try{ K._activeCall.peerConn?.close(); }catch(_e){_safeCatch('silent',_e)}
     try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
     try{ K._activeCall.screenStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
@@ -8321,6 +8329,7 @@ K._answerCall = async function(incoming){
     const pc = new RTCPeerConnection({ iceServers: _ice, iceTransportPolicy: _relayOnly ? 'relay' : 'all' });
     K._activeCall.peerConn = pc;
     pc.oniceconnectionstatechange = () => { K._callDiagState('ice:' + pc.iceConnectionState); };
+    try{ K._activeCall._statsTimer = setInterval(function(){ try{ if(K._activeCall && K._activeCall.peerConn) K._captureCallStats(K._activeCall.peerConn); }catch(_){} }, 4000); }catch(_){}
     K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
     pc.ontrack = (e) => {
       K._activeCall.remoteStream = e.streams[0];
@@ -8406,8 +8415,8 @@ K._flushPendingCandidates = async function(){
   if(!ac || !ac.peerConn || !ac.pendingRemoteCandidates || !ac.pendingRemoteCandidates.length) return;
   const list = ac.pendingRemoteCandidates; ac.pendingRemoteCandidates = [];
   for(const c of list){
-    try{ await ac.peerConn.addIceCandidate(c); }
-    catch(e){ try{ console.warn('[appel] flush ICE candidate KO:', e && e.message); }catch(_){} }
+    try{ await ac.peerConn.addIceCandidate(c); K._callDiagAddResult(true); }
+    catch(e){ K._callDiagAddResult(false); try{ console.warn('[appel] flush ICE candidate KO:', e && e.message); }catch(_){} }
   }
 };
 
@@ -8419,8 +8428,8 @@ K._onIceCandidate = async function(msg){
   K._callDiagRemoteCand(msg.candidate.candidate || (typeof msg.candidate === 'string' ? msg.candidate : ''));
   const pc = ac.peerConn;
   if(pc && pc.remoteDescription && pc.remoteDescription.type){
-    try{ await pc.addIceCandidate(msg.candidate); }
-    catch(e){ try{ console.warn('[appel] addIceCandidate KO:', e && e.message); }catch(_){} }
+    try{ await pc.addIceCandidate(msg.candidate); K._callDiagAddResult(true); }
+    catch(e){ K._callDiagAddResult(false); try{ console.warn('[appel] addIceCandidate KO:', e && e.message); }catch(_){} }
   } else {
     (ac.pendingRemoteCandidates = ac.pendingRemoteCandidates || []).push(msg.candidate);
   }
