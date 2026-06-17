@@ -174,13 +174,14 @@ jobs:
             echo "::notice::Worker déployé : $WORKER_URL"
           fi
 
-      - name: Push 5 secrets to worker
+      - name: Push secrets to worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_PUBLIC_KEY: ${{ steps.derive_vapid.outputs.vapid_public }}
           ADMIN_TOKEN_VAL: ${{ steps.admin_token.outputs.token }}
+          APEX_CHAT_ADMIN_TOKEN: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
         working-directory: /tmp/push-worker-deploy
         run: |
           set -e
@@ -194,7 +195,15 @@ jobs:
           printf '%s' "$PUBLIC_FIREBASE_URL" | wrangler secret put FIREBASE_URL
           echo "Pushing ADMIN_TOKEN..."
           printf '%s' "$ADMIN_TOKEN_VAL" | wrangler secret put ADMIN_TOKEN
-          echo "::notice::5 secrets poussés au worker."
+          # v1.1.241 : pousse AUSSI le jeton Apex Chat pour que le push-worker accepte
+          # les appels de l'api-worker même si APEX_CHAT_ADMIN_TOKEN ≠ ADMIN_TOKEN.
+          if [ -n "$APEX_CHAT_ADMIN_TOKEN" ]; then
+            echo "Pushing APEX_CHAT_ADMIN_TOKEN..."
+            printf '%s' "$APEX_CHAT_ADMIN_TOKEN" | wrangler secret put APEX_CHAT_ADMIN_TOKEN
+          else
+            echo "::warning::secret APEX_CHAT_ADMIN_TOKEN absent — le push-worker n'acceptera que ADMIN_TOKEN"
+          fi
+          echo "::notice::secrets poussés au worker."
 
       - name: Re-deploy to apply secrets
         env:

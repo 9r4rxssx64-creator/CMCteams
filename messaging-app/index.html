@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.240",
+  "softwareVersion": "v1.1.241",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.240';
+const __APEX_CHAT_VERSION__ = 'v1.1.241';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.240</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.241</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.240</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.241</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -12721,11 +12721,19 @@ K._testServerPush = async function(){
     const r = await K._api('POST', '/api/push/test', {});
     if(!r){ toast('Pas de réponse du serveur', 'err', 4000); return; }
     const subs = r.subs || 0;
-    const statuses = (r.results||[]).map(function(x){ return x.status ? ('HTTP ' + x.status) : (x.error || x.skipped || '?'); }).join(', ');
-    let msg = '• Abonnements push : ' + subs + '\n• Token serveur : ' + (r.hasAdminToken ? 'OK' : '❌ MANQUANT') + '\n• Livraison : ' + (statuses || 'aucune');
+    // v1.1.241 : afficher AUSSI le détail (body) de chaque réponse → cause exacte
+    // (404 not_found = route serveur absente ; 401 unauthorized = jeton refusé ;
+    //  200/201 = OK). Sans ça impossible de distinguer "porte fermée" de "mauvaise clé".
+    const statuses = (r.results||[]).map(function(x){
+      if(x.status){ var d = (x.body ? (' ' + String(x.body).replace(/\s+/g,' ').slice(0,80)) : ''); return 'HTTP ' + x.status + d; }
+      return (x.error || x.skipped || '?');
+    }).join('\n   ');
+    let msg = '• Abonnements push : ' + subs + '\n• Token serveur : ' + (r.hasAdminToken ? 'OK' : '❌ MANQUANT') + '\n• URL serveur : ' + (r.pushBase || '?') + '\n• Livraison :\n   ' + (statuses || 'aucune');
     if(subs === 0){ msg += '\n\n⚠️ Aucun abonnement → ouvre Réglages → Notifications et réactive-les, puis refais ce test.'; }
-    else if((r.results||[]).some(function(x){ return x.status === 200; })){ msg += '\n\n✅ Le serveur a accepté l\'envoi. Tu devrais voir une notif arriver dans quelques secondes (mets l\'app en arrière-plan pour la voir).'; }
-    else { msg += '\n\n❌ Le serveur n\'a pas pu livrer (voir le code). Copie ce texte à Kevin.'; }
+    else if((r.results||[]).some(function(x){ return x.status >= 200 && x.status < 300; })){ msg += '\n\n✅ Le serveur a accepté l\'envoi. Tu devrais voir une notif arriver dans quelques secondes (mets l\'app en arrière-plan pour la voir).'; }
+    else if((r.results||[]).some(function(x){ return x.status === 401; })){ msg += '\n\n❌ 401 = le serveur de notif refuse la clé. Copie ce texte à Kevin.'; }
+    else if((r.results||[]).some(function(x){ return x.status === 404; })){ msg += '\n\n❌ 404 = la version corrigée du serveur n\'est pas encore en ligne. Réessaie dans 1 min. Si ça persiste, copie ce texte à Kevin.'; }
+    else { msg += '\n\n❌ Le serveur n\'a pas pu livrer (voir le détail). Copie ce texte à Kevin.'; }
     alert('📡 Test notif serveur\n\n' + msg);
   }catch(e){ toast('Erreur test : ' + ((e && e.message) || '?'), 'err', 5000); }
 };

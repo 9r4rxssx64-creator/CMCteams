@@ -53,10 +53,17 @@ export default {
     // Auth required pour tous autres endpoints.
     // v1.1.239 : accepte AUSSI le header X-Apex-Push-Token (utilisé par api-worker +
     // ConversationDO pour /web-push) en plus de Authorization: Bearer.
+    // v1.1.241 : accepte AUSSI le jeton Apex Chat (env.APEX_CHAT_ADMIN_TOKEN) — l'api-worker
+    // envoie son APEX_CHAT_ADMIN_TOKEN, qui peut être ≠ de l'ADMIN_TOKEN (Apex AI). Sans ça,
+    // un éventuel décalage de secret → 401 silencieux sur 100% des notifs Apex Chat.
     const authHeader = request.headers.get("Authorization") || "";
     const xToken = request.headers.get("X-Apex-Push-Token") || "";
     const expected = "Bearer " + (env.ADMIN_TOKEN || "");
-    const authed = !!env.ADMIN_TOKEN && (authHeader === expected || xToken === env.ADMIN_TOKEN);
+    const authed = !!env.ADMIN_TOKEN && (
+      authHeader === expected ||
+      xToken === env.ADMIN_TOKEN ||
+      (!!env.APEX_CHAT_ADMIN_TOKEN && xToken === env.APEX_CHAT_ADMIN_TOKEN)
+    );
     if (!authed) {
       return jsonResp({ error: "unauthorized" }, cors, 401);
     }
