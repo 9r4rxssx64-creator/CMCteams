@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.236",
+  "softwareVersion": "v1.1.237",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.236';
+const __APEX_CHAT_VERSION__ = 'v1.1.237';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.236</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.237</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.236</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.237</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -8105,10 +8105,9 @@ K._call = async function(type, convId){
     // Remote stream
     pc.ontrack = (e) => {
       K._activeCall.remoteStream = e.streams[0];
-      if(type === 'video'){
-        const rv = $('#remote-video');
-        if(rv) rv.srcObject = e.streams[0];
-      }
+      // v1.1.237 : attache le flux distant à la vidéo OU à l'audio (appel vocal = son audible)
+      const _el = $(type === 'video' ? '#remote-video' : '#remote-audio');
+      if(_el){ _el.srcObject = e.streams[0]; try{ _el.play && _el.play().catch(()=>{}); }catch(_){} }
       $('#call-status').textContent = '🟢 En cours';
     };
 
@@ -8340,9 +8339,8 @@ K._answerCall = async function(incoming){
     K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
     pc.ontrack = (e) => {
       K._activeCall.remoteStream = e.streams[0];
-      if(type === 'video'){
-        const rv = $('#remote-video'); if(rv) rv.srcObject = e.streams[0];
-      }
+      const _el = $(type === 'video' ? '#remote-video' : '#remote-audio');
+      if(_el){ _el.srcObject = e.streams[0]; try{ _el.play && _el.play().catch(()=>{}); }catch(_){} }
       $('#call-status').textContent = '🟢 En cours';
     };
     pc.onicecandidate = (e) => {
@@ -8401,18 +8399,20 @@ K._rejectCall = function(from, convId){
 
 // Render UI commune appel (caller + receiver)
 K._renderCallUI = function(type, peerName){
+  // v1.1.237 : 100dvh + min-height:0 → les contrôles du bas (raccrocher) ne sont plus coupés
+  // sous l'indicateur iOS. + <audio> pour le son des appels VOCAUX (sinon connecté mais muet).
   $('#modal-host').innerHTML = `
-    <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-active-title" style="background:#000">
+    <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-active-title" style="background:#000;position:fixed;inset:0;height:100dvh;overflow:hidden">
       <div style="width:100%;height:100%;display:flex;flex-direction:column;color:white">
-        <div style="padding:20px;text-align:center">
+        <div style="flex-shrink:0;padding:calc(var(--ax-safe-top, 0px) + 16px) 20px 12px;text-align:center">
           <div style="font-size:3em">${type === 'video' ? '📹' : '📞'}</div>
           <div id="call-active-title" style="font-size:1.5em;margin-top:10px">${esc(peerName || 'Appel')}</div>
           <div style="color:var(--ax-text-3);margin-top:6px" id="call-status">🛜 Connexion...</div>
         </div>
-        <div style="flex:1;position:relative">
-          ${type === 'video' ? '<video id="remote-video" style="width:100%;height:100%;object-fit:cover" autoplay playsinline></video><video id="local-video" style="position:absolute;top:14px;right:14px;width:30%;border-radius:14px" autoplay playsinline muted></video>' : ''}
+        <div style="flex:1;min-height:0;position:relative">
+          ${type === 'video' ? '<video id="remote-video" style="width:100%;height:100%;object-fit:cover" autoplay playsinline></video><video id="local-video" style="position:absolute;top:14px;right:14px;width:30%;border-radius:14px" autoplay playsinline muted></video>' : '<audio id="remote-audio" autoplay playsinline></audio>'}
         </div>
-        <div style="padding:20px calc(var(--ax-safe-bottom) + 20px);display:flex;justify-content:center;gap:14px;flex-wrap:wrap">
+        <div style="flex-shrink:0;padding:16px 20px calc(var(--ax-safe-bottom, 0px) + 20px);display:flex;justify-content:center;gap:14px;flex-wrap:wrap">
           <button id="call-btn-mute" class="btn btn-ghost" onclick="K._toggleMute()" aria-label="Micro" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🎤</button>
           ${type === 'video' ? '<button id="call-btn-video" class="btn btn-ghost" onclick="K._toggleVideo()" aria-label="Caméra" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">📹</button>' : ''}
           ${type === 'video' ? '<button id="call-btn-cam-switch" class="btn btn-ghost" onclick="K._switchCamera()" aria-label="Switch caméra" style="border-radius:50%;width:56px;height:56px;font-size:1.3em">🔄</button>' : ''}
