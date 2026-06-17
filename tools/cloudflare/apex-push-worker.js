@@ -50,14 +50,35 @@ export default {
       }, cors);
     }
 
-    // Auth required pour tous autres endpoints
+    // Auth required pour tous autres endpoints.
+    // v1.1.239 : accepte AUSSI le header X-Apex-Push-Token (utilisé par api-worker +
+    // ConversationDO pour /web-push) en plus de Authorization: Bearer.
     const authHeader = request.headers.get("Authorization") || "";
+    const xToken = request.headers.get("X-Apex-Push-Token") || "";
     const expected = "Bearer " + (env.ADMIN_TOKEN || "");
-    if (!env.ADMIN_TOKEN || authHeader !== expected) {
+    const authed = !!env.ADMIN_TOKEN && (authHeader === expected || xToken === env.ADMIN_TOKEN);
+    if (!authed) {
       return jsonResp({ error: "unauthorized" }, cors, 401);
     }
 
     try {
+      // v1.1.239 : /web-push — envoi à UNE subscription fournie dans le body
+      // (api-worker.sendPushToUser + ConversationDO._pushToUsers résolvent les
+      // subscriptions côté D1 et appellent ici). Avant : route absente → 404 →
+      // 100% des notifs message/appel perdues en silence.
+      if (url.pathname === "/web-push" && request.method === "POST") {
+        const body = await safeJson(request);
+        const sub = body.subscription;
+        if (!sub || !sub.endpoint || !sub.keys) return jsonResp({ error: "no_subscription" }, cors, 400);
+        let status = 0;
+        try {
+          status = await sendOnePush(env, sub, body.payload || { title: "Apex Chat", body: "Nouveau message" });
+        } catch (e) {
+          return jsonResp({ ok: false, error: String(e && e.message || e).slice(0, 160) }, cors, 502);
+        }
+        const ok = status >= 200 && status < 300;
+        return jsonResp({ ok, status }, cors, ok ? 200 : (status >= 400 && status < 600 ? status : 502));
+      }
       if (url.pathname === "/stats" && request.method === "GET") {
         return await handleStats(env, cors);
       }
@@ -73,7 +94,7 @@ export default {
         const body = await safeJson(request);
         return await handleTest(env, body, cors);
       }
-      return jsonResp({ error: "not_found", paths: ["/send", "/send-all", "/test", "/stats", "/health"] }, cors, 404);
+      return jsonResp({ error: "not_found", paths: ["/web-push", "/send", "/send-all", "/test", "/stats", "/health"] }, cors, 404);
     } catch (e) {
       return jsonResp({ error: "internal", msg: String(e && e.message || e).slice(0, 200) }, cors, 500);
     }
