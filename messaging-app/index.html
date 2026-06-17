@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.231",
+  "softwareVersion": "v1.1.232",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.231';
+const __APEX_CHAT_VERSION__ = 'v1.1.232';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.231</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.232</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.231</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.232</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7946,9 +7946,43 @@ K._ensureIceServers = async function(){
 // états de connexion. Tout en try/catch, n'altère JAMAIS le déroulé de l'appel.
 K._callDiagReset = function(meta){
   try{
-    K._callDiag = { ts: Date.now(), role: meta.role, type: meta.type, turn: !!meta.turn,
+    K._callDiag = { ts: Date.now(), appVer: (typeof __APEX_CHAT_VERSION__ !== 'undefined' ? __APEX_CHAT_VERSION__ : '?'),
+      role: meta.role, type: meta.type, turn: !!meta.turn,
       localCand: {host:0,srflx:0,relay:0,prflx:0,other:0}, states: [] };
     localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
+  }catch(_){}
+};
+// Affiche le diagnostic du dernier appel DANS l'app (v1.1.232) — résout l'isolation de
+// stockage iOS (la page diag dans Safari ne voit pas la mémoire de la PWA). Admin only.
+K._showCallDiag = function(){
+  try{
+    if(!(K.user && K.user.is_admin)) return;
+    var d = K._callDiag;
+    if(!d){ try{ var s = localStorage.getItem('apex_chat_last_call_diag'); if(s) d = JSON.parse(s); }catch(_){} }
+    if(!d) return;
+    var c = d.localCand || {};
+    var relay = c.relay || 0, srflx = c.srflx || 0, host = c.host || 0;
+    var states = (d.states || []).map(function(x){ return x.s; }).join(' → ');
+    var json = JSON.stringify(d);
+    var summary = (relay > 0 ? '✅ Relais TURN utilisé (' + relay + ')' : '❌ AUCUN relais TURN (relay 0)') +
+      '<br>App ' + esc(d.appVer || '?') + ' · TURN demandé: ' + (d.turn ? 'oui' : 'non') +
+      '<br>Candidats locaux : host ' + host + ' · srflx ' + srflx + ' · relay ' + relay +
+      '<br>États : ' + esc(states || '—');
+    if(typeof K._showModal === 'function'){
+      K._showModal('🩺 Diagnostic du dernier appel',
+        '<div style="font-size:.9em;line-height:1.6">' + summary + '</div>' +
+        '<textarea readonly id="calldiag-json" style="width:100%;height:90px;margin-top:10px;font-size:11px;font-family:monospace;background:#111;color:#9f9;border-radius:8px;padding:8px;box-sizing:border-box">' + esc(json) + '</textarea>' +
+        '<button class="btn" style="margin-top:8px;width:100%" onclick="K._copyCallDiag()">📋 Copier le diagnostic</button>');
+    }
+  }catch(_){}
+};
+K._copyCallDiag = function(){
+  try{
+    var t = document.getElementById('calldiag-json');
+    if(!t) return;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t.value).then(function(){ try{ toast('✓ Diagnostic copié — colle-le à Kevin', 'ok', 3000); }catch(_){} }, function(){ t.focus(); t.select(); });
+    } else { t.focus(); t.select(); }
   }catch(_){}
 };
 K._callDiagCand = function(candStr){
@@ -8039,13 +8073,13 @@ K._call = async function(type, convId){
       K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
       if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
-      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
       else if(st === 'disconnected' && K._activeCall){
         // 'disconnected' est souvent transitoire (surtout iOS) → laisser 6s pour récupérer.
         clearTimeout(K._activeCall._dropTimer);
         K._activeCall._dropTimer = setTimeout(() => {
           const cs = K._activeCall && K._activeCall.peerConn && K._activeCall.peerConn.connectionState;
-          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
         }, 6000);
       }
     };
@@ -8258,12 +8292,12 @@ K._answerCall = async function(incoming){
       K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
       if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
-      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
       else if(st === 'disconnected' && K._activeCall){
         clearTimeout(K._activeCall._dropTimer);
         K._activeCall._dropTimer = setTimeout(() => {
           const cs = K._activeCall && K._activeCall.peerConn && K._activeCall.peerConn.connectionState;
-          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); }
+          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
         }, 6000);
       }
     };
