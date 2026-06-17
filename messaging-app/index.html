@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.233",
+  "softwareVersion": "v1.1.234",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.233';
+const __APEX_CHAT_VERSION__ = 'v1.1.234';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.233</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.234</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.233</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.234</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7971,7 +7971,8 @@ K._showCallDiag = function(){
       '<br>App ' + esc(d.appVer || '?') + ' · TURN demandé: ' + (d.turn ? 'oui' : 'non') +
       '<br>Moi : host ' + host + ' · srflx ' + srflx + ' · relay ' + relay +
       '<br>Reçus : host ' + rHost + ' · srflx ' + rSrflx + ' · relay ' + rRelay +
-      '<br>États : ' + esc(states || '—');
+      '<br>États : ' + esc(states || '—') +
+      ((d.pairs && d.pairs.length) ? ('<br>Paires : ' + esc(d.pairs.map(function(p){ return p.l + '↔' + p.r + ' ' + p.st + '(↑' + p.sent + '↓' + p.recv + ')'; }).join(' | '))) : '');
     if(typeof K._showModal === 'function'){
       K._showModal('🩺 Diagnostic du dernier appel',
         '<div style="font-size:.9em;line-height:1.6">' + summary + '</div>' +
@@ -8017,6 +8018,34 @@ K._callDiagState = function(label){
     localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
   }catch(_){}
 };
+// v1.1.234 : à l'échec, capture l'état des PAIRES de candidats (getStats) AVANT de fermer
+// la connexion → montre si une paire relais-relais a été tentée et pourquoi elle a échoué.
+K._captureCallStats = async function(pc){
+  try{
+    if(!K._callDiag || !pc || !pc.getStats) return;
+    const stats = await pc.getStats();
+    const cand = {};
+    stats.forEach(r => { if(r.type === 'local-candidate' || r.type === 'remote-candidate'){ cand[r.id] = { t: r.candidateType, p: r.protocol }; } });
+    const pairs = [];
+    stats.forEach(r => {
+      if(r.type === 'candidate-pair'){
+        const l = cand[r.localCandidateId] || {}, rm = cand[r.remoteCandidateId] || {};
+        pairs.push({ st: r.state, nom: !!r.nominated, sent: r.requestsSent || 0, recv: r.responsesReceived || 0,
+          l: (l.t || '?') + '/' + (l.p || '?'), r: (rm.t || '?') + '/' + (rm.p || '?') });
+      }
+    });
+    K._callDiag.pairs = pairs.slice(0, 14);
+    localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
+  }catch(_){}
+};
+K._failCall = function(){
+  try{
+    const pc = K._activeCall && K._activeCall.peerConn;
+    try{ toast('Connexion perdue', 'warn'); }catch(_){}
+    const done = function(){ try{ K._endCall(); }catch(_){} try{ K._showCallDiag(); }catch(_){} };
+    if(pc && pc.getStats){ K._captureCallStats(pc).then(done, done); } else { done(); }
+  }catch(_){ try{ K._endCall(); }catch(__){} }
+};
 K._call = async function(type, convId){
   if(!navigator.mediaDevices){ return toast('WebRTC non supporté', 'err'); }
 
@@ -8056,7 +8085,10 @@ K._call = async function(type, convId){
     // Peer connection (TURN Cloudflare éphémère pour appels cross-réseau — v1.1.229)
     const _ice = await K._ensureIceServers();
     K._callDiagReset({ role: 'caller', type, turn: !!(K._iceCache && K._iceCache.turn) });
-    const pc = new RTCPeerConnection({ iceServers: _ice });
+    const _relayOnly = !!(K._iceCache && K._iceCache.turn);
+    // v1.1.234 : si le TURN est dispo, forcer le RELAIS UNIQUEMENT — chemin fiable
+    // entre réseaux différents (4G↔Wi-Fi). Sinon 'all' (STUN) en repli.
+    const pc = new RTCPeerConnection({ iceServers: _ice, iceTransportPolicy: _relayOnly ? 'relay' : 'all' });
     K._activeCall.peerConn = pc;
     pc.oniceconnectionstatechange = () => { K._callDiagState('ice:' + pc.iceConnectionState); };
 
@@ -8088,13 +8120,13 @@ K._call = async function(type, convId){
       K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
       if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
-      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
+      else if(st === 'failed' || st === 'closed'){ K._failCall(); }
       else if(st === 'disconnected' && K._activeCall){
         // 'disconnected' est souvent transitoire (surtout iOS) → laisser 6s pour récupérer.
         clearTimeout(K._activeCall._dropTimer);
         K._activeCall._dropTimer = setTimeout(() => {
           const cs = K._activeCall && K._activeCall.peerConn && K._activeCall.peerConn.connectionState;
-          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
+          if(cs === 'disconnected' || cs === 'failed'){ K._failCall(); }
         }, 6000);
       }
     };
@@ -8283,7 +8315,10 @@ K._answerCall = async function(incoming){
     }
     const _ice = await K._ensureIceServers();
     K._callDiagReset({ role: 'answerer', type, turn: !!(K._iceCache && K._iceCache.turn) });
-    const pc = new RTCPeerConnection({ iceServers: _ice });
+    const _relayOnly = !!(K._iceCache && K._iceCache.turn);
+    // v1.1.234 : si le TURN est dispo, forcer le RELAIS UNIQUEMENT — chemin fiable
+    // entre réseaux différents (4G↔Wi-Fi). Sinon 'all' (STUN) en repli.
+    const pc = new RTCPeerConnection({ iceServers: _ice, iceTransportPolicy: _relayOnly ? 'relay' : 'all' });
     K._activeCall.peerConn = pc;
     pc.oniceconnectionstatechange = () => { K._callDiagState('ice:' + pc.iceConnectionState); };
     K._activeCall.localStream.getTracks().forEach(t => pc.addTrack(t, K._activeCall.localStream));
@@ -8307,12 +8342,12 @@ K._answerCall = async function(incoming){
       K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
       if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
-      else if(st === 'failed' || st === 'closed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
+      else if(st === 'failed' || st === 'closed'){ K._failCall(); }
       else if(st === 'disconnected' && K._activeCall){
         clearTimeout(K._activeCall._dropTimer);
         K._activeCall._dropTimer = setTimeout(() => {
           const cs = K._activeCall && K._activeCall.peerConn && K._activeCall.peerConn.connectionState;
-          if(cs === 'disconnected' || cs === 'failed'){ toast('Connexion perdue', 'warn'); K._endCall(); K._showCallDiag(); }
+          if(cs === 'disconnected' || cs === 'failed'){ K._failCall(); }
         }, 6000);
       }
     };
