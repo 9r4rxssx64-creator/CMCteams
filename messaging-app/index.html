@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.232",
+  "softwareVersion": "v1.1.233",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.232';
+const __APEX_CHAT_VERSION__ = 'v1.1.233';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.232</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.233</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.232</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.233</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7948,7 +7948,8 @@ K._callDiagReset = function(meta){
   try{
     K._callDiag = { ts: Date.now(), appVer: (typeof __APEX_CHAT_VERSION__ !== 'undefined' ? __APEX_CHAT_VERSION__ : '?'),
       role: meta.role, type: meta.type, turn: !!meta.turn,
-      localCand: {host:0,srflx:0,relay:0,prflx:0,other:0}, states: [] };
+      localCand: {host:0,srflx:0,relay:0,prflx:0,other:0},
+      remoteCand: {host:0,srflx:0,relay:0,prflx:0,other:0}, states: [] };
     localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
   }catch(_){}
 };
@@ -7960,13 +7961,16 @@ K._showCallDiag = function(){
     var d = K._callDiag;
     if(!d){ try{ var s = localStorage.getItem('apex_chat_last_call_diag'); if(s) d = JSON.parse(s); }catch(_){} }
     if(!d) return;
-    var c = d.localCand || {};
+    var c = d.localCand || {}, rc = d.remoteCand || {};
     var relay = c.relay || 0, srflx = c.srflx || 0, host = c.host || 0;
+    var rRelay = rc.relay || 0, rSrflx = rc.srflx || 0, rHost = rc.host || 0;
     var states = (d.states || []).map(function(x){ return x.s; }).join(' → ');
     var json = JSON.stringify(d);
-    var summary = (relay > 0 ? '✅ Relais TURN utilisé (' + relay + ')' : '❌ AUCUN relais TURN (relay 0)') +
+    var summary = (relay > 0 ? '✅ Mon relais TURN (' + relay + ')' : '❌ AUCUN relais local') +
+      ' · ' + (rRelay > 0 ? '✅ Relais du correspondant (' + rRelay + ')' : '❌ AUCUN relais reçu') +
       '<br>App ' + esc(d.appVer || '?') + ' · TURN demandé: ' + (d.turn ? 'oui' : 'non') +
-      '<br>Candidats locaux : host ' + host + ' · srflx ' + srflx + ' · relay ' + relay +
+      '<br>Moi : host ' + host + ' · srflx ' + srflx + ' · relay ' + relay +
+      '<br>Reçus : host ' + rHost + ' · srflx ' + rSrflx + ' · relay ' + rRelay +
       '<br>États : ' + esc(states || '—');
     if(typeof K._showModal === 'function'){
       K._showModal('🩺 Diagnostic du dernier appel',
@@ -7991,6 +7995,17 @@ K._callDiagCand = function(candStr){
     var m = / typ (host|srflx|relay|prflx)/.exec(candStr || '');
     var t = m ? m[1] : 'other';
     K._callDiag.localCand[t] = (K._callDiag.localCand[t] || 0) + 1;
+    localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
+  }catch(_){}
+};
+// Comptage des candidats ICE REÇUS du correspondant (v1.1.233) — pour voir, depuis le
+// seul téléphone admin, si l'autre côté fournit bien des relais TURN (sinon = sa cause).
+K._callDiagRemoteCand = function(candStr){
+  try{
+    if(!K._callDiag || !K._callDiag.remoteCand) return;
+    var m = / typ (host|srflx|relay|prflx)/.exec(candStr || '');
+    var t = m ? m[1] : 'other';
+    K._callDiag.remoteCand[t] = (K._callDiag.remoteCand[t] || 0) + 1;
     localStorage.setItem('apex_chat_last_call_diag', JSON.stringify(K._callDiag));
   }catch(_){}
 };
@@ -8366,6 +8381,7 @@ K._flushPendingCandidates = async function(){
 K._onIceCandidate = async function(msg){
   const ac = K._activeCall;
   if(!ac || !msg || !msg.candidate) return;
+  K._callDiagRemoteCand(msg.candidate.candidate || (typeof msg.candidate === 'string' ? msg.candidate : ''));
   const pc = ac.peerConn;
   if(pc && pc.remoteDescription && pc.remoteDescription.type){
     try{ await pc.addIceCandidate(msg.candidate); }
