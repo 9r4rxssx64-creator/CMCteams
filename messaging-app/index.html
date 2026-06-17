@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.237",
+  "softwareVersion": "v1.1.238",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.237';
+const __APEX_CHAT_VERSION__ = 'v1.1.238';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.237</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.238</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.237</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.238</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7894,6 +7894,11 @@ async function _handleWsMessage(data, convId){
       if(K._activeCall){
         toast(data.type === 'call-busy' ? 'Occupé' : 'Appel terminé', 'info', 2000);
         K._endCall();
+      } else if(K._pendingIncoming){
+        // L'appelant a raccroché PENDANT la sonnerie → appel manqué + ferme la sonnerie.
+        try{ const pi = K._pendingIncoming; K._logCall({ type: pi.type || 'audio', peer: pi.name || 'Inconnu', direction: 'in', duration: 0, missed: true }); }catch(_e){}
+        K._pendingIncoming = null; K._preAnswerCandidates = null;
+        try{ K._closeModal(); }catch(_e){}
       }
       break;
   }
@@ -8125,7 +8130,7 @@ K._call = async function(type, convId){
       const st = pc.connectionState;
       K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
-      if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
+      if(st === 'connected'){ if(K._activeCall){ clearTimeout(K._activeCall._dropTimer); K._activeCall.connectedAt = K._activeCall.connectedAt || Date.now(); } }
       else if(st === 'failed' || st === 'closed'){ K._failCall(); }
       else if(st === 'disconnected' && K._activeCall){
         // 'disconnected' est souvent transitoire (surtout iOS) → laisser 6s pour récupérer.
@@ -8191,12 +8196,60 @@ K._explainCallError = function(e, type){
 K._startCall = function(convId, type){
   return K._call(type || 'audio', convId);
 };
+// v1.1.238 : appel depuis l'onglet Appels — les boutons passaient l'ID du CONTACT (peer_id),
+// mais _call attend un ID de CONVERSATION → conv introuvable → return silencieux.
+// On résout (ou crée) la conversation DM du contact, PUIS on appelle.
+K._callContact = async function(userId, type){
+  try{
+    let conv = (K.conversations || []).find(c => c.peer_id === userId || c.id === userId);
+    if(!conv && K.token && !String(K.token).startsWith('local-')){
+      try{
+        const r = await K._api('POST', '/api/conversations', { type: 'dm', members: [userId] });
+        if(r && r.ok && r.conversation && r.conversation.id){
+          const ct = (lg('contacts', []) || []).find(x => x.id === userId);
+          const nm = (ct && (ct.pseudo || ct.name)) || userId;
+          conv = { id: r.conversation.id, type: 'dm', peer_id: userId, name: nm, pseudo: nm, last_msg_ts: Date.now(), created_at: Date.now() };
+          K.conversations = K.conversations || []; K.conversations.unshift(conv); ls('conversations', K.conversations);
+        }
+      }catch(_){}
+    }
+    if(!conv){ toast('Impossible de démarrer l\'appel (reconnecte-toi)', 'err', 4000); return; }
+    K._startCall(conv.id, type || 'audio');
+  }catch(e){ toast('Erreur appel : ' + ((e && e.message) || '?'), 'err', 4000); }
+};
+// Journalise un appel dans l'historique (onglet Appels). {type, peer, direction:'in'|'out', duration}
+K._logCall = function(entry){
+  try{
+    const h = lg('call_history', []);
+    h.unshift(Object.assign({ ts: Date.now() }, entry || {}));
+    if(h.length > 50) h.length = 50;
+    ls('call_history', h);
+    if(K.view === 'calls' && typeof K.render === 'function') K.render();
+  }catch(_){}
+};
+K._callPeerName = function(convId, fallback){
+  try{
+    const conv = (K.conversations || []).find(c => c.id === convId);
+    if(conv && typeof K._convName === 'function') return K._convName(conv);
+  }catch(_){}
+  return fallback || 'Inconnu';
+};
 
 K._endCall = function(){
   K._preAnswerCandidates = null;
+  K._pendingIncoming = null;
   if(K._activeCall){
     try{ clearTimeout(K._activeCall._dropTimer); }catch(_e){}
     try{ clearInterval(K._activeCall._statsTimer); }catch(_e){}
+    // Historique : journalise l'appel (v1.1.238)
+    try{
+      const ac = K._activeCall;
+      if(ac.role){
+        K._logCall({ type: ac.type, peer: K._callPeerName(ac.convId, ac.peerName),
+          direction: ac.role === 'caller' ? 'out' : 'in',
+          duration: ac.connectedAt ? (Date.now() - ac.connectedAt) : 0 });
+      }
+    }catch(_e){}
     try{ K._activeCall.peerConn?.close(); }catch(_e){_safeCatch('silent',_e)}
     try{ K._activeCall.localStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
     try{ K._activeCall.screenStream?.getTracks().forEach(t => t.stop()); }catch(_e){_safeCatch('silent',_e)}
@@ -8299,6 +8352,9 @@ K._onIncomingCall = function(msg){
   // tests étaient bloqués (recv:0) → « Connexion perdue » cross-réseau. On les applique
   // dans _answerCall une fois la peer connection créée.
   K._preAnswerCandidates = [];
+  // mémorise l'appel entrant pour l'historique (manqué / refusé)
+  K._pendingIncoming = { from: msg.from, convId: msg.convId, type: msg.callType || 'audio',
+    name: K._callPeerName(msg.convId, msg.callerName || msg.from_pseudo || msg.from) };
   const isVideo = msg.callType === 'video';
   $('#modal-host').innerHTML = `
     <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-incoming-title" style="background:rgba(0,0,0,.85)">
@@ -8355,7 +8411,7 @@ K._answerCall = async function(incoming){
       const st = pc.connectionState;
       K._callDiagState('conn:' + st);
       $('#call-status').textContent = '📶 ' + st;
-      if(st === 'connected'){ if(K._activeCall) clearTimeout(K._activeCall._dropTimer); }
+      if(st === 'connected'){ if(K._activeCall){ clearTimeout(K._activeCall._dropTimer); K._activeCall.connectedAt = K._activeCall.connectedAt || Date.now(); } }
       else if(st === 'failed' || st === 'closed'){ K._failCall(); }
       else if(st === 'disconnected' && K._activeCall){
         clearTimeout(K._activeCall._dropTimer);
@@ -8391,6 +8447,12 @@ K._answerCall = async function(incoming){
 
 K._rejectCall = function(from, convId){
   K._preAnswerCandidates = null;
+  try{
+    const pi = K._pendingIncoming;
+    K._logCall({ type: (pi && pi.type) || 'audio', peer: (pi && pi.name) || K._callPeerName(convId, from),
+      direction: 'in', duration: 0 });
+  }catch(_e){}
+  K._pendingIncoming = null;
   if(K.ws?.readyState === WebSocket.OPEN){
     K.ws.send(JSON.stringify({ type: 'call-end', to: from, convId, reason: 'rejected' }));
   }
@@ -10748,8 +10810,8 @@ function renderCalls(app){
               <div style="flex:1">
                 <div style="font-weight:600">${esc(c.pseudo)}</div>
               </div>
-              <button class="btn btn-sm btn-out" onclick="K._startCall('${esc(c.id)}','audio')" aria-label="Appel audio ${esc(c.pseudo)}">📞</button>
-              <button class="btn btn-sm btn-out" onclick="K._startCall('${esc(c.id)}','video')" aria-label="Appel vidéo ${esc(c.pseudo)}">📹</button>
+              <button class="btn btn-sm btn-out" onclick="K._callContact('${esc(c.id)}','audio')" aria-label="Appel audio ${esc(c.pseudo)}">📞</button>
+              <button class="btn btn-sm btn-out" onclick="K._callContact('${esc(c.id)}','video')" aria-label="Appel vidéo ${esc(c.pseudo)}">📹</button>
             </div>
           `).join('')}
         </div>
