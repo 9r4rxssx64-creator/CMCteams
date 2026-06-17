@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.235",
+  "softwareVersion": "v1.1.236",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.235';
+const __APEX_CHAT_VERSION__ = 'v1.1.236';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.235</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.236</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.235</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.236</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -8194,6 +8194,7 @@ K._startCall = function(convId, type){
 };
 
 K._endCall = function(){
+  K._preAnswerCandidates = null;
   if(K._activeCall){
     try{ clearTimeout(K._activeCall._dropTimer); }catch(_e){}
     try{ clearInterval(K._activeCall._statsTimer); }catch(_e){}
@@ -8293,6 +8294,12 @@ K._onIncomingCall = function(msg){
     }
     return;
   }
+  // v1.1.236 : dès la SONNERIE, on bufferise les candidats ICE de l'appelant qui arrivent
+  // AVANT que l'utilisateur tape « Répondre ». Sinon ils étaient JETÉS (K._activeCall null)
+  // → le relais du répondeur n'avait pas la permission pour le relais de l'appelant → ses
+  // tests étaient bloqués (recv:0) → « Connexion perdue » cross-réseau. On les applique
+  // dans _answerCall une fois la peer connection créée.
+  K._preAnswerCandidates = [];
   const isVideo = msg.callType === 'video';
   $('#modal-host').innerHTML = `
     <div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="call-incoming-title" style="background:rgba(0,0,0,.85)">
@@ -8363,6 +8370,15 @@ K._answerCall = async function(incoming){
     // Set remote offer + applique les ICE candidates arrivés avant (v1.1.230)
     await pc.setRemoteDescription(incoming.offer);
     await K._flushPendingCandidates();
+    // v1.1.236 : applique les candidats de l'appelant bufferisés PENDANT la sonnerie
+    // (avant le tap « Répondre ») → crée les permissions relais pour TOUTES ses adresses.
+    if(K._preAnswerCandidates && K._preAnswerCandidates.length){
+      const buf = K._preAnswerCandidates; K._preAnswerCandidates = null;
+      for(const c of buf){
+        try{ await pc.addIceCandidate(c); K._callDiagAddResult(true); K._callDiagRemoteCand(c.candidate || ''); }
+        catch(e){ K._callDiagAddResult(false); try{ console.warn('[appel] preAnswer cand KO:', e && e.message); }catch(_){} }
+      }
+    }
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     if(K.ws?.readyState === WebSocket.OPEN){
@@ -8376,6 +8392,7 @@ K._answerCall = async function(incoming){
 };
 
 K._rejectCall = function(from, convId){
+  K._preAnswerCandidates = null;
   if(K.ws?.readyState === WebSocket.OPEN){
     K.ws.send(JSON.stringify({ type: 'call-end', to: from, convId, reason: 'rejected' }));
   }
@@ -8424,7 +8441,12 @@ K._flushPendingCandidates = async function(){
 // distante n'est pas posée (sinon addIceCandidate échoue), puis flush au bon moment.
 K._onIceCandidate = async function(msg){
   const ac = K._activeCall;
-  if(!ac || !msg || !msg.candidate) return;
+  if(!ac || !msg || !msg.candidate){
+    // v1.1.236 : pas encore en appel mais une sonnerie est en cours → bufferiser le candidat
+    // de l'appelant (sinon perdu → relais du répondeur sans permission → recv:0).
+    if(!ac && msg && msg.candidate && K._preAnswerCandidates){ K._preAnswerCandidates.push(msg.candidate); }
+    return;
+  }
   K._callDiagRemoteCand(msg.candidate.candidate || (typeof msg.candidate === 'string' ? msg.candidate : ''));
   const pc = ac.peerConn;
   if(pc && pc.remoteDescription && pc.remoteDescription.type){
