@@ -1,5 +1,20 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 📦 SOURCING FOURNISSEURS — app livrée (2026-06-17)
+
+**Fait auto (rien à faire) :** 29 fournisseurs **sans SIRET + API** ajoutés d'office dans l'app
+`https://sourcing.kd-mc.com` (Kevin + Laurence via SSO). Tu **supprimes dans l'app** ceux que tu ne gardes pas.
+Tableau complet + liens 1‑clic par famille + clés API pas‑à‑pas : **`LIENS_BOUTIQUES.md`**.
+
+**À faire (optionnel — seulement pour les catalogues LIVE auto) :**
+1. Récupérer les **clés API GROUPE A** (gratuites immédiates) — liste 1‑clic dans `LIENS_BOUTIQUES.md` §3.
+2. Déployer le worker `kdmc-sourcing-proxy` + ajouter les secrets (`PRINTFUL_TOKEN`, `PRINTIFY_TOKEN`, …).
+3. Coller l'URL du worker dans l'app (fiche fournisseur → « 🔌 Brancher le catalogue LIVE »).
+> Sans ça, l'app marche déjà : catalogue externe + ajout manuel + sélection partagée + export CSV.
+
+---
+
+
 ## 📞 APEX CHAT — appels/visio cross-réseau (v1.1.229) — COLLER LA CLÉ TURN (2026-06-15)
 
 **Pourquoi** : appels « Connexion perdue » quand toi et Laurence n'êtes pas sur le même Wi-Fi.
