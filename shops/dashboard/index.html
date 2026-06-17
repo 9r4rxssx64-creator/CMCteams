@@ -101,8 +101,9 @@ button{cursor:pointer;border:none;background:none;color:inherit}
 .empty .em-ico{font-size:42px;margin-bottom:12px;opacity:.6}
 
 .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
-.input,.select{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;min-height:40px}
+.input,.select{padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:16px;outline:none;min-height:46px;caret-color:var(--p)}
 .input:focus,.select:focus{border-color:var(--p)}
+#ordQ{flex:1 1 100%;min-width:240px;width:100%}
 .btn{padding:10px 18px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13.5px;font-weight:600;transition:all .2s;min-height:40px}
 .btn:hover{background:var(--card-h);border-color:var(--border-h)}
 .btn-primary{background:var(--p);color:#000;border-color:var(--p)}
@@ -448,7 +449,7 @@ function vOrders(){
   });
   return topbar("Commandes ("+fmtN(f.length)+")")+
     '<div class="filters">'+
-    '<input class="input" id="ordQ" placeholder="🔎 Rechercher (ID, boutique, paiement, produit)…" value="'+esc(D.searchQ)+'" oninput="D.searchQ=this.value;dc();setTimeout(function(){var i=document.getElementById(\'ordQ\');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},0)" style="flex:1;min-width:220px">'+
+    '<input class="input" id="ordQ" placeholder="🔎 Rechercher (ID, boutique, paiement, produit)…" value="'+esc(D.searchQ)+'" oninput="D.searchQ=this.value;dc();setTimeout(function(){var i=document.getElementById(\'ordQ\');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},0)" style="flex:1 1 100%;min-width:240px">'+
     '<select class="select" onchange="D.shopFilter=this.value;dc()"><option value="all"'+(D.shopFilter==="all"?" selected":"")+'>Toutes boutiques</option>'+
     SHOPS.map(function(s){return '<option value="'+s.id+'"'+(D.shopFilter===s.id?" selected":"")+'>'+s.icon+' '+esc(s.name)+'</option>'}).join("")+
     '</select>'+

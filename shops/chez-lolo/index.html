@@ -36,10 +36,11 @@ input,textarea,select{font:inherit}img{max-width:100%;height:auto}
 .hdr-inner{max-width:1280px;margin:0 auto;padding:0 16px 0 100px;height:64px;display:flex;align-items:center;gap:16px}
 .logo{font-size:22px;font-weight:800;font-family:"Playfair Display",Georgia,serif;letter-spacing:0.5px;color:var(--p);cursor:pointer;white-space:nowrap}
 .logo span{font-size:14px;color:var(--muted);font-weight:400;margin-left:4px}
-.search-box{flex:1;max-width:400px;position:relative}
-.search-box input{width:100%;padding:10px 16px 10px 36px;border-radius:100px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px}
+.search-box{flex:1;max-width:440px;position:relative;transition:max-width .25s ease}
+.search-box:focus-within{max-width:640px}
+.search-box input{width:100%;padding:13px 16px 13px 42px;border-radius:100px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:16px;min-height:48px;caret-color:var(--p)}
 .search-box input:focus{outline:none;border-color:var(--p)}
-.search-box::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px}
+.search-box::before{content:"🔍";position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:16px}
 .nav-actions{display:flex;gap:8px;align-items:center}
 .cart-btn{position:relative;font-size:22px;padding:8px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
 .cart-badge{position:absolute;top:2px;right:2px;background:var(--p);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:100px;display:none;align-items:center;justify-content:center;padding:0 4px}
