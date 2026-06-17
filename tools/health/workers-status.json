@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-06-16T10:58:59Z",
+  "checked_at": "2026-06-17T10:30:13Z",
   "workers": {
     "apex-auth-worker": { "url": "https://apex-auth-worker.9r4rxssx64.workers.dev/health", "http": "200", "up": true },
     "cmc-parser-proxy": { "url": "https://cmc-parser-proxy.9r4rxssx64.workers.dev/health", "http": "401", "up": true },
