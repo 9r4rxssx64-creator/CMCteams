@@ -1,0 +1,43 @@
+Famille;Zone;Fournisseur;Pays;Acces (API/CSV/plugin);Tarif;Sans SIRET ?;Gamme / Notes;URL
+Cosmetiques;UE;Spocket;UE/US (agregateur);API + plugin Shopify/Woo;39,99-299 USD/mois (essai 14j);OUI;Fournisseurs beaute UE/US premium, exp. rapide;https://www.spocket.co/
+Cosmetiques;UE;Syncee;UE (agregateur);API + sync auto;0-99,99 USD/mois;OUI;Marketplace UE/UK/US, plan gratuit;https://syncee.com/
+Cosmetiques;UE;AppScenic;UE/UK (agregateur);API + escrow;des 29 USD/mois (essai 7j);OUI;Paiement securise, fournisseurs premium;https://appscenic.com/
+Cosmetiques;UE;BigBuy;Espagne;API REST + CSV/XML;69 EUR/mois (+90 EUR inscription);PARTIEL (n TVA demande);168k ref, parfums/cosmeto, moyenne-premium;https://www.bigbuy.eu/
+Cosmetiques;Hors-UE;Blanka;USA/Canada;API + app Shopify;Gratuit + payant + cout produit;OUI;Private label sans MOQ, made USA, cruelty-free, 450+ SKU;https://blankabrand.com/
+Cosmetiques;Hors-UE;DR.HC (YOURS);USA;Programme private label;Gratuit + cout produit;OUI;Bio/vegan, zero MOQ, made USA;https://drhc-cosmetics.com/
+Cosmetiques;Hors-UE;Jubilee;USA/Canada;App private label;A verifier;OUI;Marque blanche premium;https://jubileebeautyco.com/
+Cosmetiques;Chine;CJdropshipping;CN/HK;API gratuite;Gratuit + cout produit;OUI;Sourcing + private label, petites quantites;https://cjdropshipping.com/
+Cosmetiques;Chine;Alibaba;Chine;RFQ + Open Platform API;Gratuit + MOQ (~500-1000u);OUI;OEM/ODM Guangzhou, ISO 22716/GMP, premium possible;https://www.alibaba.com/
+Cosmetiques;Chine;AliExpress;Chine;API (via CJ/agregateurs);Gratuit;OUI;Sans MOQ, qualite variable;https://www.aliexpress.com/
+Cosmetiques;Chine;BeautySourcing;Chine;Annuaire B2B (RFQ, pas API dropship);Gratuit;OUI (sourcing);OEM premium, MOQ eleve;https://www.beautysourcing.com/
+Chasse (accessoires non reglementes);UE;VidaXL / dropshippingXL;Pays-Bas;API publique + plugins;30 EUR/mois;PARTIEL (conformite a ta charge);Outdoor/chasse: vetements, sacs, lampes;https://dropshipping.vidaxl.com/
+Chasse (accessoires non reglementes);UE;BigBuy;Espagne;API + CSV/XML;69 EUR/mois (+90);PARTIEL (TVA);Couteaux, lampes, optiques basiques, sport;https://www.bigbuy.eu/
+Chasse (accessoires non reglementes);UE;Syncee / AppScenic;UE;API agregateur;0-99 / des 29 USD/mois;OUI;Categorie outdoor/chasse selon fournisseurs;https://syncee.com/
+Chasse (accessoires non reglementes);UE;Optics Trade;Slovenie;Compte B2B (pas API publique claire);-;NON (compte pro);Jumelles/lunettes premium (dropship a verifier);https://www.optics-trade.eu/
+Chasse (accessoires non reglementes);Hors-UE;TopDawg;USA;API + plugins;Free + payant;PARTIEL (reseller US);Sports & outdoor recreation;https://topdawg.com/
+Chasse (accessoires non reglementes);Hors-UE;Doba / Wholesale2b / Inventory Source;USA;Agregateurs API;Abos varies;PARTIEL;Accessoires (hors armes);https://www.inventorysource.com/dropship-firearms-gun-accessories/
+Chasse (accessoires non reglementes);Chine;CJdropshipping / AliExpress;Chine;API;Gratuit;OUI;Camouflage, lampes, optiques, couteaux, appeaux;https://cjdropshipping.com/
+Chasse (accessoires non reglementes);Chine;Banggood;Chine;Programme dropship/API;Gratuit;OUI;Outdoor, optiques, lampes tactiques;https://www.banggood.com/
+Chasse (accessoires non reglementes);Chine;Alibaba;Chine;OEM;Gratuit + MOQ;OUI;Equipement chasse en gros;https://www.alibaba.com/
+Ball-trap;UE;Distributeurs tir sportif (B2B sur devis);UE;Pas d API, export catalogue parfois;Sur devis;NON/PARTIEL;Lanceurs Promatic/Laporte via distributeurs pros;-
+Ball-trap;UE;VidaXL / BigBuy;NL/ES;API;30 / 69 EUR/mois;PARTIEL;Marginal (qq accessoires de tir);https://dropshipping.vidaxl.com/
+Ball-trap;Hors-UE;Do-All Outdoors;USA;Marque (pas de dropship direct);-;-;Lanceurs auto, a dropshipper via TopDawg/Tactical Dropship;https://doalloutdoors.com/
+Ball-trap;Hors-UE;Tactical Dropship;USA;Dropship US;Free + payant;PARTIEL (reseller US);Accessoires tir/outdoor;https://tacticaldropship.com/
+Ball-trap;Chine;Alibaba;Chine;RFQ/OEM;Gratuit + MOQ;OUI;Plateaux d argile + lanceurs manuels/electriques (meilleur volume);https://www.alibaba.com/showroom/clay-pigeon-trap.html
+Ball-trap;Chine;AliExpress;Chine;Marketplace/API;Gratuit;OUI;Petits lanceurs a main, accessoires;https://www.aliexpress.com/
+Vetements lin;UE;Syncee / Spocket / AppScenic;UE;API + plugin;0-299 USD selon;OUI;Fournisseurs lin/mode UE - voie API la + simple;https://syncee.com/
+Vetements lin;UE;MagicLinen;Lituanie;Wholesale + private label (pas API dropship);MOQ;PARTIEL (compte pro);100% lin premium, Vilnius;https://magiclinen.com/pages/wholesale-clothing
+Vetements lin;UE;egLinen;Lituanie;Wholesale/private label;MOQ;PARTIEL;Lin premium, 20 ans experience;https://www.eglinen.com/
+Vetements lin;UE;Amber Linen / Epic Linen / Baltic Flax;Lituanie;Wholesale white-label;MOQ (bas chez Amber);PARTIEL;100% lin, white-label;https://amberlinen.com/wholesale/
+Vetements lin;UE;BrandsDistribution / Griffati;Italie;API/CSV;Abonnement;PARTIEL (TVA);Lin de marque (souvent melange);https://www.brandsdistribution.com/
+Vetements lin;Hors-UE;Printful / Printify;US (POD);API complete;Gratuit + cout produit;OUI;Print-on-demand, offre lin limitee (verifier);https://www.printful.com/
+Vetements lin;Hors-UE;Fournisseurs Inde (Alibaba/IndiaMART);Inde;RFQ/gros;MOQ;OUI;Lin & coton-lin, prix bas;https://www.alibaba.com/
+Vetements lin;Chine;AliExpress / CJ / Alibaba;Chine;API/marketplace;Gratuit (+MOQ Alibaba);OUI;Lin & lin melange, prix bas, qualite variable;https://www.aliexpress.com/
+Tir precision/sportif (accessoires non reglementes);UE;VidaXL / BigBuy;NL/ES;API + CSV;30 / 69 EUR/mois;PARTIEL;Cibles, protections, optiques basiques;https://dropshipping.vidaxl.com/
+Tir precision/sportif (accessoires non reglementes);UE;Syncee / AppScenic;UE;API agregateur;0-99 / des 29 USD/mois;OUI;Accessoires tir selon fournisseurs;https://appscenic.com/
+Tir precision/sportif (accessoires non reglementes);UE;Optics Trade;Slovenie;Compte B2B;-;NON (pro);Optiques premium;https://www.optics-trade.eu/
+Tir precision/sportif (accessoires non reglementes);Hors-UE;Doba / Wholesale2b / Inventory Source;USA;API agregateur;Abos varies;PARTIEL (reseller US);Lunettes, bipieds, cibles, protections (hors armes);https://www.doba.com/dropshipping/rifle-scopes.html
+Tir precision/sportif (accessoires non reglementes);Hors-UE;TopDawg / Tactical Dropship;USA;API/plugin;Free + payant;PARTIEL;Accessoires tactiques/tir;https://topdawg.com/
+Tir precision/sportif (accessoires non reglementes);Chine;Vector Optics;Chine;Programme dealer/dropship;Compte revendeur (MOQ bas);PARTIEL/OUI;Optiques bon rapport Q/P;https://www.vectoroptics.com/dealer_cooperate
+Tir precision/sportif (accessoires non reglementes);Chine;ohhunt;Chine;Wholesale/dealer (MOQ 1-30);Gratuit;OUI;Lunettes, points rouges, rails;https://www.ohhunt.com/pages/wholesale
+Tir precision/sportif (accessoires non reglementes);Chine;AliExpress / Banggood / CJ;Chine;API;Gratuit;OUI;Bipieds, trepieds, cibles, protections, mallettes, nettoyage;https://www.aliexpress.com/
