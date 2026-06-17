@@ -919,6 +919,19 @@ function ldAccessPanel(){var ex=document.getElementById("ldAccessModal");if(ex)e
 
 (function(){try{ldAuthSyncNow();}catch(_){}})();
 (function(){try{var u=new URLSearchParams(location.search);if(localStorage.getItem("ld_admin_trust")==="1"||localStorage.getItem("ld_admin")==="1"){localStorage.setItem("ld_admin_trust","1");LD_ADMIN=true;}if(u.get("ld_logout")!==null||u.get("ld_admin")==="0"){ldAdminLogout();}else if(u.get("ld_admin")!==null&&!LD_ADMIN){setTimeout(ldAdminPrompt,300);}}catch(_){}})();
+/* Kevin 2026-06-13 : "tout enlever de La Détente, je remettrai au fur et à mesure". Vide UNE
+   SEULE FOIS le catalogue publié (produits + logos) cote Firebase + cache, puis pose un flag
+   Firebase GLOBAL pour ne JAMAIS re-supprimer les produits que Kevin ajoutera ensuite. */
+try{(function(){var FBR="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/shops_admin_v1";
+fetch(FBR+"/ld_wiped_v1.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(done){
+  if(done)return; /* deja vide une fois -> on ne touche plus a rien (produits futurs preserves) */
+  window._ldPublished=[];window._ldCustomLogos=[];
+  try{localStorage.setItem("ld_published_cache","[]");localStorage.setItem("ld_logos_cache","[]");}catch(_){}
+  fetch(FBR+"/products/la-detente.json",{method:"DELETE"}).catch(function(){});
+  fetch(FBR+"/logos/la-detente.json",{method:"DELETE"}).catch(function(){});
+  fetch(FBR+"/ld_wiped_v1.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:"true"}).catch(function(){});
+  try{if(typeof dc==="function")dc();}catch(_){}
+}).catch(function(){});})();}catch(_){}
 /* Compte unique kd-mc.com : déverrouillage AUTO de l'admin boutique (= accès Studio)
    si le domaine PROUVE l'identité par Face ID (whoami.verified===true) ET propriétaire
    (admin===true). Additif + fail-open : n'agit QUE si pas déjà admin ; clients jamais
@@ -941,7 +954,7 @@ try{(function(){
     })
     .catch(function(){/* fail-open : boutique publique normale, admin par mot de passe */});
 })();}catch(_){}
-var LD_DESIGNS=[{id:"real-shotgun-clays",name:"Fusil & Plateaux (photo)"},{id:"real-shotgun-rose",name:"Fusil & Rose (photo)"},{id:"real-rifle-heart",name:"Carabine Cœur (photo)"},{id:"real-revolver-rose",name:"Revolver & Rose (photo)"},{id:"real-cartridges",name:"Cartouches (photo)"},{id:"real-crossed-shotguns",name:"Fusils Croisés (photo)"},{id:"real-ar15-heart",name:"Carabine Sport (photo)"},{id:"rose-pistol",name:"Pistolet & Rose"},{id:"rose-shotgun",name:"Fusil & Rose"},{id:"hearts-ar15",name:"AR15 Cœurs"},{id:"hearts-shotgun",name:"Fusil Cœurs"},{id:"hearts-pistol",name:"Pistolet Cœurs"},{id:"hearts-revolver",name:"Revolver Cœurs"},{id:"clays-perazzi",name:"Perazzi & Plateaux"},{id:"ld-emb-croise-patch",name:"Armes croisées — Patch"},{id:"ld-emb-croise-vecto",name:"Armes croisées — Vectoriel"},{id:"ld-emb-croise-metal",name:"Armes croisées — Métal/Or"},{id:"ld-emb-ar15-patch",name:"AR15 Cœur — Patch"},{id:"ld-emb-ar15-vecto",name:"AR15 Cœur — Vectoriel"},{id:"ld-emb-ar15-metal",name:"AR15 Cœur — Métal/Or"},{id:"ld-emb-glock-patch",name:"Glock Cœur — Patch"},{id:"ld-emb-glock-vecto",name:"Glock Cœur — Vectoriel"},{id:"ld-emb-glock-metal",name:"Glock Cœur — Métal"},{id:"ld-emb-balltrap-patch",name:"Ball-Trap Cœur — Patch"},{id:"ld-emb-balltrap-vecto",name:"Ball-Trap Cœur — Vectoriel"},{id:"ld-emb-balltrap-metal",name:"Ball-Trap Cœur — Métal/Or"},{id:"ld-emb-sceau-or",name:"Sceau rond — Or"},{id:"yrk-patch-noir-rouge",name:"Y·R·K Patch Noir/Rouge"},{id:"yrk-patch-camo",name:"Y·R·K Patch Camo"},{id:"yrk-patch-or",name:"Y·R·K Patch Or"},{id:"yrk-crest-noir-rouge",name:"Y·R·K Crest Noir/Rouge"},{id:"yrk-crest-camo",name:"Y·R·K Crest Camo"},{id:"yrk-crest-or",name:"Y·R·K Crest Or"},{id:"yrk-cartouches-or",name:"Y·R·K Cartouches"},{id:"yrk-monogramme-acier",name:"Y·R·K Monogramme Acier"},{id:"yrk-monogramme-or",name:"Y·R·K Monogramme Or"},{id:"yrk-crest-or-prestige",name:"Y·R·K Crest Or Prestige"},{id:"yrk-crest-or-deluxe",name:"Y·R·K Crest Or Deluxe"},{id:"yrk-monogramme-or-medaille",name:"Y·R·K Médaille Or"},{id:"yrk-monogramme-or-prestige",name:"Y·R·K Monogramme Or Prestige"}];
+var LD_DESIGNS=[]; /* Kevin 2026-06-13 : catalogue vidé, ajout au fur et à mesure */
 window._ldCustomLogos=[];
 function _ldHidden(){try{return JSON.parse(localStorage.getItem("ld_logos_hidden")||"[]")}catch(_){return[]}}
 function _ldSetHidden(a){try{localStorage.setItem("ld_logos_hidden",JSON.stringify(a))}catch(_){}}
@@ -1137,7 +1150,7 @@ function ldPublishModal(i){var it=(window._ldBpList||[])[i];if(!it)return;var ca
 }
 function ldDoPublish(bp,cat){
  var mode=window._ldPubMode||"logo";
- var design=(mode==="nu")?"":((document.getElementById("ld_pub_design")||{}).value||LD_DESIGNS[0].id);
+ var design=(mode==="nu")?"":((document.getElementById("ld_pub_design")||{}).value||((LD_DESIGNS[0]&&LD_DESIGNS[0].id)||"crest"));
  var name=((document.getElementById("ld_pub_name")||{}).value||"").trim()||"Produit La Détente";
  var price=parseFloat((document.getElementById("ld_pub_price")||{}).value)||ldPriceSuggest(cat);
  var place=(document.getElementById("ld_pub_place")||{}).value||"chest";
@@ -1188,7 +1201,7 @@ if(!localStorage.getItem("kdmc_cookie_ok")){var ck=document.createElement("div")
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="ekdmc-ecocraft"
-        data-version="v1.53.5"
+        data-version="v1.53.6"
         data-color="#e8b830"
         defer></script>
 
