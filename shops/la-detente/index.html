@@ -1231,6 +1231,20 @@ try{var _pc=JSON.parse(localStorage.getItem("ld_published_cache")||"[]");if(_pc&
 if(window.kdmcFetchProducts)kdmcFetchProducts(STORE_ID,function(arr){if(arr&&arr.length){ldMergePublished(arr);if(typeof dc==="function")dc();}});
 ldRequestPersist();try{var _lc=JSON.parse(localStorage.getItem("ld_logos_cache")||"[]");if(_lc&&_lc.length){window._ldCustomLogos=_lc;}}catch(_){}ldIdbGet("logos").then(function(a){if(a&&a.length){window._ldCustomLogos=a;try{localStorage.setItem("ld_logos_cache",JSON.stringify(a))}catch(e){}if(typeof dc==="function")dc();}});
 if(window.kdmcFetchLogos)kdmcFetchLogos(STORE_ID,function(arr){if(arr&&arr.length){ldMergeLogos(arr);if(typeof dc==="function")dc();}});
+/* Kevin 2026-06-13 : vider TOUT le catalogue une seule fois (logos + produits publiés
+   restés dans Firebase/cache). Drapeau global Firebase ld_wiped_v1 → ne s'exécute qu'1×,
+   ne touche JAMAIS les ajouts futurs de Kevin. */
+try{(function(){var FBR="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/shops_admin_v1";
+fetch(FBR+"/ld_wiped_v1.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(done){
+  if(done)return; /* déjà vidé une fois → on ne touche plus à rien */
+  window._ldPublished=[];window._ldCustomLogos=[];
+  try{localStorage.setItem("ld_published_cache","[]");localStorage.setItem("ld_logos_cache","[]");}catch(_){}
+  fetch(FBR+"/products/la-detente.json",{method:"DELETE"}).catch(function(){});
+  fetch(FBR+"/logos/la-detente.json",{method:"DELETE"}).catch(function(){});
+  fetch(FBR+"/ld_wiped_v1.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:"true"}).catch(function(){});
+  try{if(typeof ldIdbSet==="function")ldIdbSet("logos",[]);}catch(_){}
+  try{if(typeof dc==="function")dc();}catch(_){}
+}).catch(function(){});})();}catch(_){}
 /* Worker de commande Printify (envoi auto) */
 window._ldOrderCfg=null;
 try{fetch("printify-order-config.json").then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.worker_url)window._ldOrderCfg=j;}).catch(function(){});}catch(_){}
@@ -1309,7 +1323,7 @@ function ldConsentRefuse(el){try{
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="la-detente"
-        data-version="v1.53.19"
+        data-version="v1.53.20"
         data-color="#e8b830"
         defer></script>
 
