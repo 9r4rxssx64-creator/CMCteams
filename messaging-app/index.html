@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.238",
+  "softwareVersion": "v1.1.239",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.238';
+const __APEX_CHAT_VERSION__ = 'v1.1.239';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.238</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.239</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.238</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.239</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -10860,6 +10860,9 @@ function renderSettings(app){
       <div class="card-row" onclick="K.openNotifPrefs()">
         <span>🔔</span><span style="flex:1">Notifications</span><span>›</span>
       </div>
+      <div class="card-row" onclick="K._testServerPush()">
+        <span>📡</span><span style="flex:1">Tester une notif serveur</span><span>›</span>
+      </div>
       <div class="card-row" onclick="K.openPrivacyPrefs()">
         <span>🔒</span><span style="flex:1">Confidentialité</span><span>›</span>
       </div>
@@ -12705,6 +12708,27 @@ K._adminAiAsk = async function(){
 // ============================================================================
 // PERF : AbortController + timeout 30s sur TOUS les fetch (anti-hang)
 // Règle CLAUDE.md : "AbortController sur tous les fetch (timeout 30s max)"
+// v1.1.239 : test des notifs SERVEUR (hors app). Envoie une vraie notif via le serveur et
+// affiche le statut de livraison → diagnostique « rien ne s'affiche app fermée/arrière-plan ».
+K._testServerPush = async function(){
+  try{
+    if(!K.token || String(K.token).startsWith('local-')){ toast('Reconnecte-toi d\'abord', 'err', 4000); return; }
+    if(!('Notification' in window) || Notification.permission !== 'granted'){
+      alert('⚠️ Les notifications ne sont pas autorisées sur ce téléphone.\n\nVa dans Réglages → Notifications et autorise-les (et l\'app doit être installée sur l\'écran d\'accueil).');
+      return;
+    }
+    toast('Envoi du test serveur…', 'info', 2000);
+    const r = await K._api('POST', '/api/push/test', {});
+    if(!r){ toast('Pas de réponse du serveur', 'err', 4000); return; }
+    const subs = r.subs || 0;
+    const statuses = (r.results||[]).map(function(x){ return x.status ? ('HTTP ' + x.status) : (x.error || x.skipped || '?'); }).join(', ');
+    let msg = '• Abonnements push : ' + subs + '\n• Token serveur : ' + (r.hasAdminToken ? 'OK' : '❌ MANQUANT') + '\n• Livraison : ' + (statuses || 'aucune');
+    if(subs === 0){ msg += '\n\n⚠️ Aucun abonnement → ouvre Réglages → Notifications et réactive-les, puis refais ce test.'; }
+    else if((r.results||[]).some(function(x){ return x.status === 200; })){ msg += '\n\n✅ Le serveur a accepté l\'envoi. Tu devrais voir une notif arriver dans quelques secondes (mets l\'app en arrière-plan pour la voir).'; }
+    else { msg += '\n\n❌ Le serveur n\'a pas pu livrer (voir le code). Copie ce texte à Kevin.'; }
+    alert('📡 Test notif serveur\n\n' + msg);
+  }catch(e){ toast('Erreur test : ' + ((e && e.message) || '?'), 'err', 5000); }
+};
 K._api = async function(method, path, body, timeoutMs){
   const controller = new AbortController();
   const tid = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs || 30000);

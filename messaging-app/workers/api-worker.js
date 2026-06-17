@@ -5537,6 +5537,7 @@ export default {
       // v1.1.81 — Web Push subscribe / unsubscribe
       if (path === '/api/push/subscribe' && method === 'POST') return await handlePushSubscribe(request, env);
       if (path === '/api/push/unsubscribe' && method === 'POST') return await handlePushUnsubscribe(request, env);
+      if (path === '/api/push/test' && method === 'POST') return await handlePushTest(request, env);
       // v1.1.35 — Semantic search messages
       if (path === '/api/ai/search' && method === 'POST') return await handleAiSemanticSearch(request, env);
       // v1.1.41 — AI rewrite message (8 styles)
@@ -5809,6 +5810,34 @@ export async function runAutoFix(body, env) {
   if (!whitelist.includes(body.action)) return;
   // TODO : implémentations spécifiques
   console.log('Auto-fix attempt', body.action);
+}
+
+// POST /api/push/test — envoie une VRAIE notif serveur au user courant et RENVOIE le statut
+// de livraison (contrairement à sendPushToUser fire-and-forget). Diagnostique « notifs hors
+// app » : subs=0 (pas abonné), 401 (token push-worker ≠), fetch fail (worker injoignable), 200 OK.
+async function handlePushTest(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthorized');
+  const subs = await env.APEX_CHAT_DB.prepare(
+    'SELECT endpoint, vapid_p256dh, vapid_auth FROM push_subscriptions WHERE user_id=? AND last_seen > ?'
+  ).bind(auth.sub, Date.now() - 30 * 86400000).all();
+  const rows = (subs && subs.results) || [];
+  const pushBase = env.APEX_PUSH_WORKER_URL || 'https://apex-push-worker.9r4rxssx64.workers.dev';
+  const payload = { title: 'Apex Chat — test serveur ✅', body: 'Si tu vois cette notif, les notifications serveur marchent !', payload: { type: 'test' } };
+  const results = [];
+  for (const sub of rows) {
+    if (!sub.endpoint || !sub.vapid_p256dh) { results.push({ skipped: 'no_keys' }); continue; }
+    try {
+      const r = await fetch(pushBase + '/web-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Apex-Push-Token': env.APEX_CHAT_ADMIN_TOKEN || '' },
+        body: JSON.stringify({ subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } }, payload })
+      });
+      let body = ''; try { body = (await r.text()).slice(0, 140); } catch (_) {}
+      results.push({ status: r.status, ok: r.ok, body, service: (sub.endpoint || '').split('/')[2] || '' });
+    } catch (e) { results.push({ error: String((e && e.message) || e).slice(0, 140) }); }
+  }
+  return json({ ok: true, subs: rows.length, hasAdminToken: !!env.APEX_CHAT_ADMIN_TOKEN, pushBase, results });
 }
 
 export async function sendPushToUser(userId, payload, env) {
