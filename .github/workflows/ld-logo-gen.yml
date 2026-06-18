@@ -1,30 +1,24 @@
 name: LD Logo Gen (Replicate FLUX)
 
-# Génère un visuel pour La Détente via Replicate (clé AX_REPLICATE_KEY).
-# Déclenché soit manuellement (workflow_dispatch), soit en poussant le marqueur
-# shops/la-detente/.logo-request.json (prompt + nom de fichier de sortie).
-# Le runner GitHub a un vrai accès réseau (≠ sandbox) → Replicate joignable.
+# Génère un OU plusieurs visuels La Détente via Replicate (clé AX_REPLICATE_KEY).
+# Déclenché en poussant le marqueur shops/la-detente/.logo-request.json.
+# - mode batch : { "jobs":[ {prompt, outfile, transparent}, ... ] }
+# - mode simple : { prompt, outfile, aspect_ratio }
+# transparent=true → fond (blanc) retiré via ImageMagick (floodfill 4 coins).
+# Runner GitHub = vrai réseau (≠ sandbox) → Replicate joignable.
 
 on:
   workflow_dispatch:
-    inputs:
-      prompt:
-        description: Prompt image
-        required: false
-      outfile:
-        description: Fichier de sortie
-        required: false
-        default: shops/la-detente/img/designs/logo_ai.png
-      aspect_ratio:
-        description: Ratio (1:1, 4:5, 3:2…)
-        required: false
-        default: "1:1"
   push:
     paths:
       - 'shops/la-detente/.logo-request.json'
 
 permissions:
   contents: write
+
+concurrency:
+  group: ld-logo-gen
+  cancel-in-progress: true
 
 jobs:
   gen:
@@ -40,55 +34,67 @@ jobs:
         run: |
           set -e
           REQ=shops/la-detente/.logo-request.json
-          IN_PROMPT="${{ github.event.inputs.prompt }}"
-          if [ -n "$IN_PROMPT" ]; then
-            PROMPT="$IN_PROMPT"
-            OUT="${{ github.event.inputs.outfile }}"
-            AR="${{ github.event.inputs.aspect_ratio }}"
-          else
-            PROMPT=$(jq -r '.prompt' "$REQ")
-            OUT=$(jq -r '.outfile // empty' "$REQ")
-            AR=$(jq -r '.aspect_ratio // empty' "$REQ")
-          fi
-          [ -z "$OUT" ] && OUT=shops/la-detente/img/designs/logo_ai.png
-          [ -z "$AR" ] && AR="1:1"
-          echo "Sortie : $OUT  (ratio $AR)"
-          echo "Prompt : $PROMPT"
-          PAYLOAD=$(jq -n --arg p "$PROMPT" --arg ar "$AR" \
-            '{input:{prompt:$p, aspect_ratio:$ar, output_format:"png", safety_tolerance:6, prompt_upsampling:true}}')
-          RESP=$(curl -sS -X POST \
-            https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions \
-            -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -H "Prefer: wait" \
-            -d "$PAYLOAD")
-          echo "Réponse (résumé) :"; echo "$RESP" | jq '{status, error, detail}' 2>/dev/null || echo "$RESP"
-          STATUS=$(echo "$RESP" | jq -r '.status // empty')
-          # si pas terminé en mode wait, on poll l'URL get
-          if [ "$STATUS" != "succeeded" ] && [ -n "$STATUS" ]; then
-            GETURL=$(echo "$RESP" | jq -r '.urls.get // empty')
-            for i in $(seq 1 40); do
-              sleep 3
-              RESP=$(curl -sS -H "Authorization: Bearer $REPLICATE_API_TOKEN" "$GETURL")
-              STATUS=$(echo "$RESP" | jq -r '.status // empty')
-              echo "  poll $i : $STATUS"
-              [ "$STATUS" = "succeeded" ] && break
-              [ "$STATUS" = "failed" ] && { echo "$RESP"; exit 1; }
-              [ "$STATUS" = "canceled" ] && { echo "$RESP"; exit 1; }
-            done
-          fi
-          URL=$(echo "$RESP" | jq -r 'if (.output|type)=="array" then .output[0] else .output end')
-          if [ -z "$URL" ] || [ "$URL" = "null" ]; then echo "Pas d'URL de sortie"; echo "$RESP"; exit 1; fi
-          echo "Image : $URL"
-          mkdir -p "$(dirname "$OUT")"
-          curl -sS -L "$URL" -o "$OUT"
-          file "$OUT"
-          ls -la "$OUT"
+          AR=$(jq -r '.aspect_ratio // "1:1"' "$REQ")
 
-      - name: Committer le visuel
+          gen_one () {
+            local PROMPT="$1" OUT="$2" TRANSP="$3"
+            echo "→ $OUT"
+            local PAYLOAD
+            PAYLOAD=$(jq -n --arg p "$PROMPT" --arg ar "$AR" \
+              '{input:{prompt:$p, aspect_ratio:$ar, output_format:"png", safety_tolerance:6, prompt_upsampling:true}}')
+            local RESP STATUS GETURL URL
+            RESP=$(curl -sS -X POST \
+              https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions \
+              -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+              -H "Content-Type: application/json" -H "Prefer: wait" -d "$PAYLOAD")
+            STATUS=$(echo "$RESP" | jq -r '.status // empty')
+            if [ "$STATUS" != "succeeded" ] && [ -n "$STATUS" ]; then
+              GETURL=$(echo "$RESP" | jq -r '.urls.get // empty')
+              for i in $(seq 1 40); do
+                sleep 3
+                RESP=$(curl -sS -H "Authorization: Bearer $REPLICATE_API_TOKEN" "$GETURL")
+                STATUS=$(echo "$RESP" | jq -r '.status // empty')
+                [ "$STATUS" = "succeeded" ] && break
+                if [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; then echo "  ÉCHEC: $RESP"; return 1; fi
+              done
+            fi
+            URL=$(echo "$RESP" | jq -r 'if (.output|type)=="array" then .output[0] else .output end')
+            if [ -z "$URL" ] || [ "$URL" = "null" ]; then echo "  pas d'URL: $RESP"; return 1; fi
+            mkdir -p "$(dirname "$OUT")"
+            curl -sS -L "$URL" -o "$OUT"
+            if [ "$TRANSP" = "true" ]; then
+              W=$(identify -format '%w' "$OUT"); H=$(identify -format '%h' "$OUT")
+              convert "$OUT" -alpha set -fuzz 14% -fill none \
+                -draw "matte 0,0 floodfill" \
+                -draw "matte $((W-1)),0 floodfill" \
+                -draw "matte 0,$((H-1)) floodfill" \
+                -draw "matte $((W-1)),$((H-1)) floodfill" \
+                -trim +repage "$OUT"
+              echo "  fond retiré (transparent) + trim"
+            fi
+            file "$OUT"
+          }
+
+          if [ "$(jq -r 'has("jobs")' "$REQ")" = "true" ]; then
+            N=$(jq '.jobs | length' "$REQ")
+            echo "Batch de $N visuels"
+            for k in $(seq 0 $((N-1))); do
+              P=$(jq -r ".jobs[$k].prompt" "$REQ")
+              O=$(jq -r ".jobs[$k].outfile" "$REQ")
+              T=$(jq -r ".jobs[$k].transparent // false" "$REQ")
+              gen_one "$P" "$O" "$T" || echo "  (sauté)"
+            done
+          else
+            P=$(jq -r '.prompt' "$REQ")
+            O=$(jq -r '.outfile // "shops/la-detente/img/designs/logo_ai.png"' "$REQ")
+            T=$(jq -r '.transparent // false' "$REQ")
+            gen_one "$P" "$O" "$T"
+          fi
+
+      - name: Committer les visuels
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "La Détente — visuel généré via Replicate FLUX [skip ci]" || { echo "aucun changement"; exit 0; }
+          git commit -m "La Détente — visuels générés via Replicate FLUX [skip ci]" || { echo "aucun changement"; exit 0; }
           git push origin HEAD:${{ github.ref_name }}
