@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.6.3 -->
+<!-- La Détente — Studio (admin) v1.7.0 — réglages précis (sous-sections repliables + champs numériques) + zoom % + export groupé -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -73,8 +73,35 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .field input[type=range]{width:100%;accent-color:var(--p)}
 .field input[type=text],.field input[type=number],.field select,.field textarea{width:100%;padding:8px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border)}
 .row2{display:flex;gap:8px}.row2>*{flex:1}
-.mini{padding:7px;font-size:12px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border)}
+.mini{padding:7px;font-size:12px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border);min-height:38px;transition:.12s}
 .mini:hover{border-color:var(--p)}
+.mini:active{transform:translateY(1px)}
+/* Glissière + champ numéro côte à côte (réglage précis) */
+.slh{display:flex;align-items:center;gap:8px}
+.slh input[type=range]{flex:1;min-width:0;accent-color:var(--p)}
+.slh .num{width:62px;flex:none;padding:6px 6px;font-size:12px;text-align:center;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border);-moz-appearance:textfield}
+.slh .num::-webkit-outer-spin-button,.slh .num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.slh .num:focus{border-color:var(--p)}
+.slh .unit{font-size:11px;color:var(--muted);flex:none}
+/* États focus nets (accessibilité, navigation clavier) */
+.btn:focus-visible,.mini:focus-visible,.num:focus-visible,.gbtn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+/* Menu déroulant Export (topbar) */
+.menuwrap{position:relative;display:inline-block}
+.menupop{position:absolute;top:calc(100% + 6px);right:0;min-width:208px;background:var(--panel);border:1px solid var(--border);border-radius:var(--rs);box-shadow:0 12px 34px rgba(0,0,0,.55);padding:6px;z-index:30;display:none;flex-direction:column;gap:2px}
+.menupop.show{display:flex}
+.menupop button{width:100%;text-align:left;padding:11px 12px;border-radius:7px;font-size:13px;font-weight:600;background:transparent;border:1px solid transparent;white-space:nowrap;display:flex;align-items:flex-start;gap:9px}
+.menupop button:hover,.menupop button:focus-visible{background:var(--panel2);border-color:var(--border)}
+.menupop .mdesc{display:block;font-size:10.5px;color:var(--muted);font-weight:500;margin-top:1px;white-space:normal}
+.tbgroup{display:flex;align-items:center;gap:2px;background:var(--panel2);border:1px solid var(--border);border-radius:var(--rs);padding:2px}
+.tbgroup .btn{background:transparent;border:none;padding:8px 11px;border-radius:6px;min-width:38px;min-height:38px}
+.tbgroup .btn:hover{background:#ffffff10}
+/* Indicateur de zoom (coin du plan) */
+.zoomctl{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;align-items:stretch;gap:6px;z-index:6}
+.zoomctl .zbtn{width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.93);color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s}
+.zoomctl .zbtn:hover{border-color:var(--p)}
+.zoomctl .zbtn:active{transform:translateY(1px)}
+.zoomctl .zlvl{font-size:11.5px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:5px 0;letter-spacing:.3px}
+.zoomctl .zfit{height:auto;font-size:11px;font-weight:700;letter-spacing:.2px;padding:7px 0}
 .empty{color:var(--muted);font-size:12px;text-align:center;padding:14px;border:1px dashed var(--border);border-radius:var(--rs)}
 .hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);border:1px solid var(--border);padding:12px 18px;border-radius:100px;font-size:13px;font-weight:600;transition:.3s;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.5)}
@@ -142,11 +169,18 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
   <a class="btn ghost" href="bibliotheque.html">📚 Bibliothèque</a>
   <a class="btn ghost" href="index.html">← Boutique</a>
   <button class="btn ghost" onclick="Studio.openProjects()">📁 Projets</button>
-  <button class="btn ghost" title="Annuler (Ctrl+Z)" onclick="Studio.undo()">↩︎</button>
-  <button class="btn ghost" title="Refaire (Ctrl+Y)" onclick="Studio.redo()">↪︎</button>
-  <button class="btn ghost" onclick="Studio.exportPrint()">⬇️ Fichier impression</button>
-  <button class="btn ghost" onclick="Studio.exportMockup()">🖼️ Mockup PNG</button>
-  <button class="btn ghost" onclick="Studio.exportPDF()" title="PDF prêt impression 300 dpi">📄 PDF 300 dpi</button>
+  <div class="tbgroup" role="group" aria-label="Annuler ou refaire">
+    <button class="btn" title="Annuler (Ctrl+Z)" aria-label="Annuler" onclick="Studio.undo()">↩︎</button>
+    <button class="btn" title="Refaire (Ctrl+Y)" aria-label="Refaire" onclick="Studio.redo()">↪︎</button>
+  </div>
+  <div class="menuwrap">
+    <button class="btn ghost" id="expBtn" aria-haspopup="true" aria-expanded="false" onclick="Studio.toggleExportMenu(event)">⬇️ Exporter ▾</button>
+    <div class="menupop" id="expMenu" role="menu" aria-label="Options d'export">
+      <button role="menuitem" onclick="Studio.closeExportMenu();Studio.exportPrint()">⬇️ <span>Fichier d'impression<span class="mdesc">PNG HD transparent (sans le produit)</span></span></button>
+      <button role="menuitem" onclick="Studio.closeExportMenu();Studio.exportMockup()">🖼️ <span>Mockup PNG<span class="mdesc">Aperçu sur le produit</span></span></button>
+      <button role="menuitem" onclick="Studio.closeExportMenu();Studio.exportPDF()">📄 <span>PDF 300 dpi<span class="mdesc">30×30 cm, prêt impression</span></span></button>
+    </div>
+  </div>
   <button class="btn" onclick="Studio.finishCreation()">💾 Enregistrer / Ranger</button>
   <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
   <a class="btn" href="index.html" title="Retour boutique">↩</a>
@@ -203,7 +237,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:6"><button onclick="Studio.zoomBy(0.8)" title="Zoom +" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">＋</button><button onclick="Studio.zoomBy(1.25)" title="Zoom −" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:19px;cursor:pointer">−</button><button onclick="Studio.zoomReset()" title="Réinitialiser le zoom" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:rgba(18,20,24,.92);color:#fff;font-size:14px;cursor:pointer">⟲</button></div></div>
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de l'aperçu"><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
@@ -319,11 +353,19 @@ function render(){
  var stage=$("stage");
  stage.innerHTML=spriteDefs()+stageInner(false);
  if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
- renderLayers(); renderProps(); paintRealBtn();
+ renderLayers(); renderProps(); paintRealBtn(); zoomLabel();
  var ps=document.getElementById("pfSel");if(ps)ps.innerHTML=st.pf?('🛍️ Produit : <b>'+esc(st.pf.title)+'</b> '+esc(st.pf.brand||"")+' <span style="color:var(--p)">#'+st.pf.id+'</span>'):"";
  var _sl=st.layers.filter(function(x){return x.id===st.sel})[0];
  var _fab=$("aiFab");if(_fab)_fab.style.display=(_sl&&_sl.type==="image"&&_aiCfg&&_aiCfg.worker_url)?"block":"none";
 }
+/* Redessine UNIQUEMENT le plan (pas le panneau Propriétés) — évite la perte de focus pendant qu'on tape/glisse un réglage. */
+function renderStageOnly(){
+ var stage=$("stage");if(!stage)return;
+ stage.innerHTML=spriteDefs()+stageInner(false);
+ if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
+}
+/* Met à jour l'indicateur de zoom en % (100% = vue entière). */
+function zoomLabel(){var e=document.getElementById("zoomLvl");if(!e||!st.vb)return;var pct=Math.round(100/(st.vb.w/100));e.textContent=pct+"%";}
 /* ---------- PANELS ---------- */
 function renderGarments(){
  $("garments").innerHTML=GARMENTS.map(function(g){
@@ -422,41 +464,73 @@ function renderProps(){
  var l=st.layers.filter(function(x){return x.id===st.sel})[0];
  var pw=document.getElementById("propsWrap");if(pw&&l)pw.open=true;
  if(!l){w.innerHTML='<div class="empty">Sélectionne un calque</div>';return}
- var h='';
+ /* ===== 📐 DISPOSITION (ouvert par défaut) — commun à tous les calques ===== */
+ var dispo='';
+ dispo+='<div class="sublab">📐 Placement</div>';
+ dispo+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+placeKeys().map(function(k){return '<button class="mini" style="flex:1 0 30%;'+(k===st.placement?'border-color:var(--p);color:#fff':'')+'" onclick="Studio.placeAndMove('+l.id+',\''+k+'\')">'+(PLBL[k]||k)+'</button>'}).join("")+'</div>';
+ dispo+=rngN("Échelle",l.id,"scale",l.scale,0.04,4,0.02);
+ dispo+=rngN("Rotation",l.id,"rot",l.rot,-180,180,1,"°");
+ dispo+=rngN("Opacité",l.id,"op",l.op,0.1,1,0.05);
+ dispo+='<div class="row2"><button class="mini" onclick="Studio.scaleBy('+l.id+',0.9)">➖ Réduire</button><button class="mini" onclick="Studio.scaleBy('+l.id+',1.1)">➕ Agrandir</button></div>';
+ dispo+='<div class="sublab">🎯 Déplacement fin</div>';
+ dispo+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:170px"><span></span><button class="mini" title="Monter" onclick="Studio.nudge('+l.id+',0,-2)">↑</button><span></span><button class="mini" title="Gauche" onclick="Studio.nudge('+l.id+',-2,0)">←</button><button class="mini" title="Centrer" onclick="Studio.center('+l.id+')">⊕</button><button class="mini" title="Droite" onclick="Studio.nudge('+l.id+',2,0)">→</button><span></span><button class="mini" title="Descendre" onclick="Studio.nudge('+l.id+',0,2)">↓</button><span></span></div>';
+ dispo+='<div class="row2" style="margin-top:8px"><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button></div>';
+
+ /* ===== 🎨 APPARENCE — selon le type de calque ===== */
+ var app='';
  if(l.type==="text"){
-  h+=field("Texte",'<textarea rows="2" oninput="Studio.upd('+l.id+',\'text\',this.value)">'+esc(l.text)+'</textarea>');
-  h+=field("Police",'<select onchange="Studio.upd('+l.id+',\'font\',this.value)">'+FONTS.map(function(f){return '<option'+(f===l.font?' selected':'')+'>'+f+'</option>'}).join("")+'</select>');
-  h+='<div class="row2">'+field("Couleur",'<input type="color" value="'+l.color+'" oninput="Studio.upd('+l.id+',\'color\',this.value)">')+field("Gras",'<select onchange="Studio.upd('+l.id+',\'bold\',this.value===\'1\')"><option value="0"'+(!l.bold?' selected':'')+'>Non</option><option value="1"'+(l.bold?' selected':'')+'>Oui</option></select>')+'</div>';
-  h+=rng("Taille",l.id,"size",l.size,4,40,1);
-  h+='<div class="row2">'+field("Contour",'<input type="range" min="0" max="3" step="0.2" value="'+l.outline+'" oninput="Studio.upd('+l.id+',\'outline\',+this.value)">')+field("Coul. contour",'<input type="color" value="'+l.ocolor+'" oninput="Studio.upd('+l.id+',\'ocolor\',this.value)">')+'</div>';
+  app+=field("Texte",'<textarea rows="2" oninput="Studio.upd('+l.id+',\'text\',this.value)">'+esc(l.text)+'</textarea>');
+  app+=field("Police",'<select onchange="Studio.upd('+l.id+',\'font\',this.value)">'+FONTS.map(function(f){return '<option'+(f===l.font?' selected':'')+'>'+f+'</option>'}).join("")+'</select>');
+  app+='<div class="row2">'+field("Couleur",'<input type="color" value="'+l.color+'" oninput="Studio.upd('+l.id+',\'color\',this.value)">')+field("Gras",'<select onchange="Studio.upd('+l.id+',\'bold\',this.value===\'1\')"><option value="0"'+(!l.bold?' selected':'')+'>Non</option><option value="1"'+(l.bold?' selected':'')+'>Oui</option></select>')+'</div>';
+  app+=rngN("Taille",l.id,"size",l.size,4,40,1);
+  app+='<div class="row2">'+field("Contour",'<input type="range" min="0" max="3" step="0.2" value="'+l.outline+'" oninput="Studio.upd('+l.id+',\'outline\',+this.value)">')+field("Coul. contour",'<input type="color" value="'+l.ocolor+'" oninput="Studio.upd('+l.id+',\'ocolor\',this.value)">')+'</div>';
  }
  if(l.type==="image"){
   var f=l.f||{};
-  h+='<div class="row2">'+field("Largeur",'<input type="number" step="1" value="'+l.w.toFixed(0)+'" oninput="Studio.setSize('+l.id+',\'w\',+this.value)">')+field("Hauteur",'<input type="number" step="1" value="'+l.h.toFixed(0)+'" oninput="Studio.setSize('+l.id+',\'h\',+this.value)">')+'</div>';
-  h+=field("Forme",'<select onchange="Studio.upd('+l.id+',\'shape\',this.value)">'+["none|Libre","circle|Cercle","rounded|Arrondi","square|Carré","heart|Cœur ❤️","shield|Bouclier","star|Étoile","hex|Hexagone"].map(function(o){var a=o.split("|");return '<option value="'+a[0]+'"'+(l.shape===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join("")+'</select>');
-  h+='<div class="row2"><button class="mini" onclick="Studio.flip('+l.id+',\'H\')">⇄ Miroir H</button><button class="mini" onclick="Studio.flip('+l.id+',\'V\')">⇅ Miroir V</button></div>';
-  h+='<h3 style="margin-top:14px">Auto-logo</h3>';
-  h+=field("Seuil fond ("+(l._thr||30)+")",'<input type="range" min="5" max="140" step="1" value="'+(l._thr||30)+'" oninput="Studio.setThr('+l.id+',+this.value)">');
-  h+='<div class="row2"><button class="mini" onclick="Studio.bgRemove('+l.id+')">✂️ Retirer le fond</button><button class="mini" onclick="Studio.autoTrim('+l.id+')">⌗ Recadrer</button></div>';
-  h+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);color:#fff" onclick="Studio.imgEdit('+l.id+')">✏️ Retoucher (gomme · magique · recadrer)</button>';
-  if(_aiCfg&&_aiCfg.worker_url)h+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);background:#dc26261a;color:#fff" onclick="Studio.aiEdit('+l.id+')">✨ Modifier avec l\'IA (transforme la photo)</button>';
-  h+='<button class="mini" style="width:100%;margin-top:8px" onclick="Studio.resetImg('+l.id+')">↺ Image d\'origine</button>';
-  h+='<h3 style="margin-top:14px">Filtres</h3>';
-  h+=rngF(l.id,"br","Luminosité",f.br==null?1:f.br,0,2,0.05)+rngF(l.id,"ct","Contraste",f.ct==null?1:f.ct,0,2,0.05)+rngF(l.id,"sat","Saturation",f.sat==null?1:f.sat,0,2,0.05)+rngF(l.id,"gray","Noir & blanc",f.gray||0,0,1,0.05);
-  h+='<div class="row2"><button class="mini" onclick="Studio.toggle('+l.id+',\'duo\')" style="'+(l.duo?"border-color:var(--p);color:#fff":"")+'">🎨 Duotone</button><button class="mini" onclick="Studio.toggleF('+l.id+',\'inv\')" style="'+(f.inv?"border-color:var(--p);color:#fff":"")+'">◐ Négatif</button></div>';
-  h+=field("Fusion",'<select onchange="Studio.upd('+l.id+',\'blend\',this.value)">'+["normal|Normal","multiply|Multiplier","screen|Écran","overlay|Superposition"].map(function(o){var a=o.split("|");return '<option value="'+a[0]+'"'+(l.blend===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join("")+'</select>');
+  app+='<div class="sublab">📏 Dimensions</div>';
+  app+='<div class="row2">'+field("Largeur",'<input class="num" type="number" step="1" value="'+l.w.toFixed(0)+'" oninput="Studio.setSize('+l.id+',\'w\',+this.value)">')+field("Hauteur",'<input class="num" type="number" step="1" value="'+l.h.toFixed(0)+'" oninput="Studio.setSize('+l.id+',\'h\',+this.value)">')+'</div>';
+  app+=field("Forme",'<select onchange="Studio.upd('+l.id+',\'shape\',this.value)">'+["none|Libre","circle|Cercle","rounded|Arrondi","square|Carré","heart|Cœur ❤️","shield|Bouclier","star|Étoile","hex|Hexagone"].map(function(o){var a=o.split("|");return '<option value="'+a[0]+'"'+(l.shape===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join("")+'</select>');
+  app+='<div class="row2"><button class="mini" onclick="Studio.flip('+l.id+',\'H\')">⇄ Miroir H</button><button class="mini" onclick="Studio.flip('+l.id+',\'V\')">⇅ Miroir V</button></div>';
+  app+='<div class="sublab">🎚️ Filtres</div>';
+  app+=rngNF(l.id,"br","Luminosité",f.br==null?1:f.br,0,2,0.05)+rngNF(l.id,"ct","Contraste",f.ct==null?1:f.ct,0,2,0.05)+rngNF(l.id,"sat","Saturation",f.sat==null?1:f.sat,0,2,0.05)+rngNF(l.id,"gray","Noir & blanc",f.gray||0,0,1,0.05);
+  app+='<div class="row2"><button class="mini" onclick="Studio.toggle('+l.id+',\'duo\')" style="'+(l.duo?"border-color:var(--p);color:#fff":"")+'">🎨 Duotone</button><button class="mini" onclick="Studio.toggleF('+l.id+',\'inv\')" style="'+(f.inv?"border-color:var(--p);color:#fff":"")+'">◐ Négatif</button></div>';
+  app+=field("Fusion",'<select onchange="Studio.upd('+l.id+',\'blend\',this.value)">'+["normal|Normal","multiply|Multiplier","screen|Écran","overlay|Superposition"].map(function(o){var a=o.split("|");return '<option value="'+a[0]+'"'+(l.blend===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join("")+'</select>');
  }
- h+=rng("Échelle",l.id,"scale",l.scale,0.04,4,0.02);
- h+=rng("Rotation",l.id,"rot",l.rot,-180,180,1);
- h+=rng("Opacité",l.id,"op",l.op,0.1,1,0.05);
- h+='<h3 style="margin-top:14px">🎯 Réglage précis</h3>';
- h+='<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Placement</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+placeKeys().map(function(k){return '<button class="mini" style="flex:1 0 30%;'+(k===st.placement?'border-color:var(--p);color:#fff':'')+'" onclick="Studio.placeAndMove('+l.id+',\''+k+'\')">'+(PLBL[k]||k)+'</button>'}).join("")+'</div>';
- h+='<div class="row2"><button class="mini" onclick="Studio.scaleBy('+l.id+',0.9)">➖ Réduire</button><button class="mini" onclick="Studio.scaleBy('+l.id+',1.1)">➕ Agrandir</button></div>';
- h+='<div style="font-size:11px;color:var(--muted);margin:8px 0 4px">Déplacement fin (cadrage)</div><div style="display:grid;grid-template-columns:repeat(3,46px);gap:6px"><span></span><button class="mini" onclick="Studio.nudge('+l.id+',0,-2)">↑</button><span></span><button class="mini" onclick="Studio.nudge('+l.id+',-2,0)">←</button><button class="mini" onclick="Studio.center('+l.id+')">⊕</button><button class="mini" onclick="Studio.nudge('+l.id+',2,0)">→</button><span></span><button class="mini" onclick="Studio.nudge('+l.id+',0,2)">↓</button><span></span></div>';
- h+='<div class="row2" style="margin-top:8px"><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button></div>';
+ if(l.type==="emblem"){
+  app+='<div class="hint">Ce motif n\'a pas de couleur/texte propre — ajuste sa taille et sa position dans « 📐 Disposition ».</div>';
+ }
+
+ /* ===== ✂️ FOND & RETOUCHE — image uniquement ===== */
+ var retouche='';
+ if(l.type==="image"){
+  retouche+=field("Seuil fond ("+(l._thr||30)+")",'<input type="range" min="5" max="140" step="1" value="'+(l._thr||30)+'" oninput="Studio.setThr('+l.id+',+this.value)">');
+  retouche+='<div class="row2"><button class="mini" onclick="Studio.bgRemove('+l.id+')">✂️ Retirer le fond</button><button class="mini" onclick="Studio.autoTrim('+l.id+')">⌗ Recadrer</button></div>';
+  retouche+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);color:#fff" onclick="Studio.imgEdit('+l.id+')">✏️ Retoucher (gomme · magique · recadrer)</button>';
+  if(_aiCfg&&_aiCfg.worker_url)retouche+='<button class="mini" style="width:100%;margin-top:8px;border-color:var(--p);background:#dc26261a;color:#fff" onclick="Studio.aiEdit('+l.id+')">✨ Modifier avec l\'IA (transforme la photo)</button>';
+  retouche+='<button class="mini" style="width:100%;margin-top:8px" onclick="Studio.resetImg('+l.id+')">↺ Image d\'origine</button>';
+ }
+
+ var h='<details class="grp" open><summary>📐 Disposition</summary>'+dispo+'</details>';
+ h+='<details class="grp"><summary>🎨 Apparence</summary>'+app+'</details>';
+ if(retouche)h+='<details class="grp"><summary>✂️ Fond &amp; retouche</summary>'+retouche+'</details>';
  w.innerHTML=h;
 }
 function field(lab,inner){return '<div class="field"><label>'+lab+'</label>'+inner+'</div>'}
+/* Glissière + champ numérique synchronisés (réglage précis). prop = upd / unit affiché. */
+function rngN(lab,id,prop,val,mn,mx,st_,unit){
+ var dec=(prop==="rot")?0:2; var sid='sl_'+id+'_'+prop;
+ return '<div class="field"><label>'+lab+'</label><div class="slh">'
+  +'<input type="range" id="'+sid+'" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+val+'" oninput="Studio.updPair('+id+',\''+prop+'\',+this.value,\''+sid+'\')">'
+  +'<input class="num" type="number" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+(+val).toFixed(dec)+'" oninput="Studio.updPair('+id+',\''+prop+'\',+this.value,\''+sid+'\')">'
+  +(unit?'<span class="unit">'+unit+'</span>':'')+'</div></div>';
+}
+/* Idem pour les filtres image (l.f[key]) */
+function rngNF(id,key,lab,val,mn,mx,st_){
+ var sid='slf_'+id+'_'+key;
+ return '<div class="field"><label>'+lab+'</label><div class="slh">'
+  +'<input type="range" id="'+sid+'" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+val+'" oninput="Studio.updPairF('+id+',\''+key+'\',+this.value,\''+sid+'\')">'
+  +'<input class="num" type="number" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+(+val).toFixed(2)+'" oninput="Studio.updPairF('+id+',\''+key+'\',+this.value,\''+sid+'\')"></div></div>';
+}
 function rng(lab,id,prop,val,mn,mx,st_){return field(lab+' ('+(+val).toFixed(prop==="rot"?0:2)+')','<input type="range" min="'+mn+'" max="'+mx+'" step="'+st_+'" value="'+val+'" oninput="Studio.upd('+id+',\''+prop+'\',+this.value)">')}
 
 /* ---------- LAYER OPS ---------- */
@@ -478,10 +552,28 @@ function setGarment(g){st.garment=g;st.placement=placeKeys()[0];renderGarments()
 function setPlacement(k){st.placement=k;renderPlacement();render()}
 function renderPlacement(){var el=document.getElementById("placement");if(!el)return;el.innerHTML=placeKeys().map(function(k){return '<button class="gbtn'+(k===st.placement?" on":"")+'" onclick="Studio.setPlacement(\''+k+'\')">'+(PLBL[k]||k)+'</button>'}).join("")}
 function setColor(c){st.color=c;renderSwatches();render()}
+/* Réglage précis : glissière ⇄ champ numéro synchronisés, SANS rebuild du panneau (garde le focus). */
+function updPair(id,prop,val,sid){
+ if(isNaN(val))return;
+ var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;
+ l[prop]=val;
+ var row=document.getElementById(sid);if(row){var box=row.parentNode;if(box){var inp=box.querySelectorAll('input');for(var i=0;i<inp.length;i++){if(inp[i]!==document.activeElement)inp[i].value=(prop==="rot")?(+val).toFixed(0):(inp[i].type==="number"?(+val).toFixed(2):val);}}}
+ renderStageOnly();
+}
+function updPairF(id,key,val,sid){
+ if(isNaN(val))return;
+ var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;
+ l.f=l.f||{};l.f[key]=val;
+ var row=document.getElementById(sid);if(row){var box=row.parentNode;if(box){var inp=box.querySelectorAll('input');for(var i=0;i<inp.length;i++){if(inp[i]!==document.activeElement)inp[i].value=(inp[i].type==="number"?(+val).toFixed(2):val);}}}
+ renderStageOnly();
+}
+/* Menu Exporter (topbar) */
+function toggleExportMenu(ev){if(ev)ev.stopPropagation();var m=$("expMenu"),b=$("expBtn");if(!m)return;var on=m.classList.toggle("show");if(b)b.setAttribute("aria-expanded",on?"true":"false");}
+function closeExportMenu(){var m=$("expMenu"),b=$("expBtn");if(m)m.classList.remove("show");if(b)b.setAttribute("aria-expanded","false");}
 
 /* ---------- DRAG on stage ---------- */
 function _clampVB(){if(!st.vb)return;var v=st.vb;v.w=Math.max(20,Math.min(100,v.w));v.h=v.w;v.x=Math.max(0,Math.min(100-v.w,v.x));v.y=Math.max(0,Math.min(100-v.h,v.y))}
-function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h)}
+function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);zoomLabel();}
 function zoomBy(fr){if(!st.vb)st.vb={x:0,y:0,w:100,h:100};var v=st.vb;var cx=v.x+v.w/2,cy=v.y+v.h/2;var nw=Math.max(20,Math.min(100,v.w*fr));st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();_applyVB()}
 function zoomReset(){st.vb={x:0,y:0,w:100,h:100};_applyVB()}
 function initDrag(){
@@ -595,6 +687,7 @@ function init(){
  var sb=$("stageBox");["dragover","drop"].forEach(function(ev){sb.addEventListener(ev,function(e){e.preventDefault()})});
  sb.addEventListener("drop",function(e){var fs=e.dataTransfer&&e.dataTransfer.files;if(fs)Array.prototype.forEach.call(fs,addImageFile)});
  $("modal").addEventListener("click",function(e){if(e.target.id==="modal")closeModal()});
+ document.addEventListener("click",function(e){if(!e.target.closest||!e.target.closest(".menuwrap"))closeExportMenu();});
  _loadAiCfg();document.addEventListener("keydown",_studioKey);
  render();
 }
@@ -808,7 +901,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
