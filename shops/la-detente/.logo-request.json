@@ -1,6 +1,6 @@
 {
  "_note": "trigger ld-logo-gen.yml (batch transparent)",
- "rev": 4,
+ "rev": 5,
  "aspect_ratio": "1:1",
  "jobs": [
   {
