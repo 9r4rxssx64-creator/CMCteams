@@ -12,7 +12,7 @@
  *   - OFFLINE_CACHE  : fallback HTML hors-ligne
  */
 
-export const CACHE_VERSION = 'apex-chat-v1.1.241';
+export const CACHE_VERSION = 'apex-chat-v1.1.242';
 export const STATIC_CACHE = `${CACHE_VERSION}-static`;
 export const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 export const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
@@ -169,7 +169,7 @@ export async function handleFetch(event, deps) {
 // ----------------------------------------------------------------------------
 //  Push : affiche notification système
 // ----------------------------------------------------------------------------
-export async function handlePush(event, { registration }) {
+export async function handlePush(event, { registration, clients }) {
   let data = { title: 'Apex Chat', body: 'Nouveau message', icon: './icons/icon-192.svg' };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
@@ -179,6 +179,18 @@ export async function handlePush(event, { registration }) {
 
   // v1.1.150 : actions différenciées appel vs message + vibration urgent
   const isCall = data.payload?.type === 'call';
+
+  // v1.1.242 : si c'est un APPEL et que l'app est OUVERTE au premier plan (autre
+  // vue), iPhone masque souvent la bannière → on fait sonner l'app DE L'INTÉRIEUR :
+  // on ouvre la conv → le serveur rejoue l'offre → la modale d'appel s'affiche.
+  // (En arrière-plan / fermée : la bannière notif reste le canal pour décrocher.)
+  if (isCall && data.payload?.convId && clients) {
+    try {
+      const wins = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const focused = wins.find((c) => c.focused || c.visibilityState === 'visible');
+      if (focused) focused.postMessage({ type: 'open-conv', convId: data.payload.convId });
+    } catch { /* best-effort */ }
+  }
   const defaultActions = data.payload?.convId
     ? [{ action: 'reply', title: '💬 Répondre' }, { action: 'mark_read', title: '✅ Vu' }]
     : [{ action: 'open', title: 'Ouvrir' }, { action: 'dismiss', title: 'Plus tard' }];

@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.241",
+  "softwareVersion": "v1.1.242",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.241';
+const __APEX_CHAT_VERSION__ = 'v1.1.242';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -442,16 +442,16 @@ if('serviceWorker' in navigator){
       if(e.data?.type === 'mark-conv-read' && e.data.convId){
         if(typeof K !== 'undefined' && K._markConvAsRead) K._markConvAsRead(e.data.convId);
       }
-      // v1.1.170 — Appel entrant : "Répondre" depuis la notif → ouvre la conv + auto-décroche
+      // v1.1.242 — Appel entrant : "Répondre" depuis la notif → ouvre la conv ;
+      // le serveur REJOUE l'offre de l'appelant → _onIncomingCall décroche auto
+      // (K._autoAnswerConv). FIX : avant on appelait K._call() = on LANÇAIT un
+      // nouvel appel sortant au lieu de répondre → ça ne marchait pas hors conv.
       if(e.data?.type === 'call-answer' && e.data.convId){
         if(typeof K !== 'undefined' && K.openConv){
+          K._autoAnswerConv = e.data.convId;
+          // garde-fou : oublie l'auto-décroché si rien n'arrive en 25s
+          setTimeout(() => { if(K._autoAnswerConv === e.data.convId) K._autoAnswerConv = null; }, 25000);
           K.openConv(e.data.convId);
-          // Démarre l'appel après ouverture (WS établi)
-          setTimeout(() => {
-            if(K._call && K.ws?.readyState === WebSocket.OPEN){
-              K._call(e.data.callType || 'audio', e.data.convId);
-            }
-          }, 1500);
         }
       }
       if(e.data?.type === 'call-reject' && e.data.convId){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.241</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.242</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.241</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.242</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -8345,6 +8345,16 @@ K._onIncomingCall = function(msg){
       K.ws.send(JSON.stringify({ type: 'call-busy', to: msg.from, convId: msg.convId }));
     }
     return;
+  }
+  // v1.1.242 : l'offre peut arriver REJOUÉE par le serveur quand on rejoint la conv
+  // après avoir touché la notif d'appel. Si l'utilisateur a déjà tapé « Répondre »
+  // sur la notif (K._autoAnswerConv), on décroche direct sans re-afficher la modale.
+  if(K._autoAnswerConv && K._autoAnswerConv === msg.convId){
+    K._autoAnswerConv = null;
+    K._preAnswerCandidates = [];
+    K._pendingIncoming = { from: msg.from, convId: msg.convId, type: msg.callType || 'audio',
+      name: K._callPeerName(msg.convId, msg.callerName || msg.from_pseudo || msg.from) };
+    return K._answerCall(msg);
   }
   // v1.1.236 : dès la SONNERIE, on bufferise les candidats ICE de l'appelant qui arrivent
   // AVANT que l'utilisateur tape « Répondre ». Sinon ils étaient JETÉS (K._activeCall null)

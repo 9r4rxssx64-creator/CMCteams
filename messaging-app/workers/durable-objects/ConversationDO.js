@@ -22,6 +22,12 @@ export class ConversationDO {
     this.seq = 0;                 // séquence locale messages
     this.lastFlush = Date.now();
     this.pendingMessages = [];    // buffer avant flush D1
+    // v1.1.242 : appel entrant mis en attente quand le destinataire n'est PAS
+    // encore connecté à ce DO (il est sur une autre vue / app fermée). On garde
+    // l'offer + les premiers ICE candidates ~45s et on les REJOUE quand il rejoint
+    // la conv (via la notif). Sinon l'offer envoyé une seule fois était perdu →
+    // "rien n'apparaît hors conversation". Le serveur ne voit aucun média (SDP only).
+    this.pendingCall = null;      // { fromUserId, callType, offer, candidates:[], ts }
     this.config = null;
 
     // Hibernation : restore seq depuis storage
@@ -248,6 +254,27 @@ export class ConversationDO {
       ts: Date.now()
     }, server);
 
+    // v1.1.242 : REJOUER un appel entrant en attente. Si quelqu'un appelle
+    // pendant que ce destinataire était sur une autre vue / app fermée, l'offer
+    // a été mémorisé. Dès qu'il rejoint la conv (en touchant la notif), on lui
+    // renvoie l'offer + les premiers ICE → l'app sonne et l'appel peut aboutir.
+    try {
+      const pc = this.pendingCall;
+      if (pc && pc.fromUserId !== userId && (Date.now() - pc.ts) < 45000) {
+        server.send(JSON.stringify({
+          type: 'webrtc-offer', from: pc.fromUserId, fromDevice: pc.fromDevice,
+          callType: pc.callType, offer: pc.offer, convId, ts: Date.now(), replayed: true,
+        }));
+        for (const cand of pc.candidates) {
+          server.send(JSON.stringify({
+            type: 'webrtc-candidate', from: pc.fromUserId, candidate: cand, convId, ts: Date.now(), replayed: true,
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn('[call replay] failed:', e && e.message);
+    }
+
     server.addEventListener('message', async (event) => {
       try {
         const msg = JSON.parse(event.data);
@@ -437,8 +464,28 @@ export class ConversationDO {
         // Toucher la notif ouvre l'app sur la conv (le caller doit attendre
         // la connexion WS pour que le SDP/ICE soient relayés).
         if (msg.type === 'webrtc-offer') {
+          // v1.1.242 : mémorise l'appel en cours pour le REJOUER au destinataire
+          // quand il rejoindra la conv (cf. join handler). Sans ça l'offer envoyé
+          // une seule fois est perdu si le destinataire n'était pas connecté.
+          this.pendingCall = {
+            fromUserId: session.userId,
+            fromDevice: session.deviceId,
+            callType: msg.callType || 'audio',
+            offer: msg.offer,
+            candidates: [],
+            ts: Date.now(),
+          };
           this.notifyOfflineCall(session.userId, session.convId, msg.callType || 'audio')
             .catch((e) => console.warn('[call push] failed:', e && e.message));
+        } else if (msg.type === 'webrtc-candidate') {
+          // bufferise les premiers ICE du caller (≤30) pour les rejouer au join
+          if (this.pendingCall && this.pendingCall.fromUserId === session.userId
+              && this.pendingCall.candidates.length < 30 && msg.candidate) {
+            this.pendingCall.candidates.push(msg.candidate);
+          }
+        } else if (msg.type === 'webrtc-answer' || msg.type === 'call-end' || msg.type === 'call-busy') {
+          // appel décroché ou terminé → plus rien à rejouer
+          this.pendingCall = null;
         }
         break;
 
