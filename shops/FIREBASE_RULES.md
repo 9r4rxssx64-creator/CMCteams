@@ -1,57 +1,63 @@
-# 🔒 Règles Firebase pour KDMC Shops Dashboard
+# 🔒 Règles Firebase pour KDMC Shops Dashboard + Sourcing
 
-> **Une seule action manuelle Kevin, 30 secondes max.** Tout le reste est automatique.
+> **Déploiement 100% automatisé — ZÉRO action manuelle Kevin sur la console Firebase.**
+> Source unique de vérité : `firebase-rules-apex.json` (objet `rules`).
+> Déployé par le workflow GitHub **`deploy-cmcteams-rules.yml`** (Service Account, REST).
 
-Le dashboard `shops/dashboard/` lit en temps réel les commandes que les 5 boutiques poussent dans Firebase Realtime Database, dans le chemin **isolé** :
+Les boutiques (`shops/*`) + le hub Sourcing (`shops/sourcing/`) + le dashboard (`shops/dashboard/`) lisent/écrivent en temps réel dans des chemins **isolés** :
 
 ```
-cmcteams-c16ab-default-rtdb / shops_admin_v1 / orders / <boutique> / <orderId>
+cmcteams-c16ab-default-rtdb / shops_admin_v1   / orders|products|logos / <boutique> / <id>
+cmcteams-c16ab-default-rtdb / shops_sourcing_v1 / selection / <id>
 ```
 
-**Aucune donnée client (email, adresse, CB) n'est envoyée** — uniquement les méta-commandes (ID, total, méthode de paiement, articles, timestamp).
+**Aucune donnée client (email, adresse, CB) n'est envoyée** — uniquement les méta-données métier (ID commande, total, articles résumés, produits sélectionnés, logos générés, timestamp).
 
 ---
 
-## Étape unique : déployer les règles
+## Déploiement (automatique, 1 clic Kevin si voulu)
 
-1. Va sur **https://console.firebase.google.com**
-2. Sélectionne le projet `cmcteams-c16ab` (CMCTeams)
-3. **Realtime Database → Règles**
-4. Colle (ou fusionne avec l'existant) le bloc ci-dessous :
+Le bloc shops/sourcing fait partie du ruleset **consolidé** `firebase-rules-apex.json` (qui contient aussi `cmcteams`, `apex`, `coffre_vault`, + deny racine). Pour (re)publier :
 
-```json
-{
-  "rules": {
-    "shops_admin_v1": {
-      "orders": {
-        ".read": true,
-        "$shop": {
-          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome)$/)",
-          "$orderId": {
-            ".write": "!data.exists() && newData.hasChildren(['orderId','shop','total','ts'])",
-            ".validate": "newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('total').val() < 100000 && $orderId.length <= 40"
-          }
-        }
-      }
-    }
-  }
-}
-```
+1. GitHub → **Actions → `deploy-cmcteams-rules.yml` → Run workflow**
+2. Input `rules_state` :
+   - **`hardened`** (défaut) → `/cmcteams` exige `auth != null` ; **shops/sourcing restent fonctionnels** (écriture anonyme + validation, voir plus bas).
+   - **`open`** (rollback) → `/cmcteams` rouvert (`.read/.write = true`).
+3. Le script (`tools/firebase/deploy-rules.cjs`) publie **exactement** le fichier, vérifie l'état live, et **abort fort** si le deny racine ou `/apex` a bougé.
 
-5. Clique **Publier**.
+> ⚠️ **`hardened` n'affecte QUE `/cmcteams`.** Les chemins `shops_admin_v1` et `shops_sourcing_v1` gardent leur écriture anonyme + validation stricte décrite ci-dessous, dans les deux états.
 
-C'est tout. Les commandes commenceront à apparaître dans le dashboard en temps réel.
+---
+
+## Chemins couverts (bloc complet)
+
+| Chemin | Lecture | Écriture | Validation |
+|--------|---------|----------|------------|
+| `shops_admin_v1/orders/<shop>/<orderId>` | publique | anonyme, **création seule** (`!data.exists()`) | shop ∈ whitelist 6 boutiques · `orderId` ≤ 40 · `total` ∈ [0, 100 000] · `shop` string ≤ 40 · `items_summary` ≤ 400 |
+| `shops_admin_v1/products/<shop>/<id>` | publique | anonyme (création/maj) | shop ∈ whitelist · `id` string ≤ 80 · `title` ≤ 200 · `image` ≤ 600 |
+| `shops_admin_v1/logos/<shop>/<id>` | publique | anonyme | shop ∈ whitelist · `id` ≤ 80 · `url` ≤ 600 |
+| `shops_sourcing_v1/selection/<id>` | publique | anonyme (création/maj/suppr) | `id` ≤ 120 · `supplier` requis ≤ 60 · `title` ≤ 200 · `image`/`url` ≤ 600 |
+
+Whitelist boutiques : `tech-hub`, `chez-lolo`, `ecocraft`, `digital-vault`, `pawsome`, `la-detente`.
 
 ---
 
 ## Ce que ces règles garantissent
 
-- ✅ **Anonyme peut écrire** une nouvelle commande (parce que les boutiques sont publiques).
-- ❌ **Personne ne peut modifier ou supprimer** une commande existante (`!data.exists()`).
-- ❌ **Personne ne peut écrire** dans un shop inconnu (regex whitelist des 5 boutiques).
-- ✅ **Schéma strict** : `orderId`, `shop`, `total` obligatoires, `total` ∈ [0, 100 000].
-- ✅ **Lecture publique** pour que le dashboard affiche les commandes (acceptable car aucune PII).
-- ✅ **Isolation totale** : ces règles n'affectent QUE le chemin `shops_admin_v1` — `cmc_*`, `apex_*`, `ax_*` et tout le reste de la base ne sont jamais touchés.
+- ✅ **Anonyme peut écrire** (commande, produit, logo, sélection sourcing) — les boutiques + le hub sourcing sont publics côté écriture métier.
+- ❌ **Une commande existante ne peut JAMAIS être modifiée/supprimée** (`!data.exists()` sur `orders`).
+- ❌ **Aucune écriture dans un shop inconnu** (regex whitelist des 6 boutiques).
+- ✅ **Schéma + caps stricts** sur chaque chemin (longueurs bornées, `total` plafonné) → anti-spam / anti-injection de gros payloads.
+- ✅ **Lecture publique** pour que dashboard + sourcing affichent les données (acceptable : zéro PII).
+- ✅ **Isolation totale** : n'affecte QUE `shops_admin_v1` + `shops_sourcing_v1` — `cmcteams`, `apex`, `coffre_vault`, `cmc_*`, `ax_*` ne sont jamais touchés ; deny racine préservé.
+
+---
+
+## ⚠️ Limite honnête (sécurité maximale réelle)
+
+Ces règles **ferment la base ouverte** (plus de read/write zéro-contrainte) et **bornent/valident** chaque écriture, MAIS l'écriture reste **anonyme** : toute personne qui connaît l'URL de la DB peut écrire une donnée **valide** dans `shops_*` (une fausse commande conforme au schéma, p.ex.). C'est le compromis nécessaire tant que les boutiques publiques poussent sans authentification.
+
+**Durcissement fort possible (action future)** : migrer les boutiques vers une écriture **authentifiée** (token `?auth=` / custom-tokens par rôle), puis passer `shops_*` en `auth != null`. À ne faire QUE lorsque **toutes** les boutiques envoient le token — sinon écritures cassées (même précaution que `/cmcteams`). Rollback : `deploy-cmcteams-rules.yml` input `open`.
 
 ---
 
