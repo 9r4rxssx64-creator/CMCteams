@@ -100,11 +100,40 @@
       "orders": {
         ".read": true,
         "$shop": {
-          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome)$/)",
+          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome|la-detente)$/)",
           "$orderId": {
             ".write": "!data.exists() && newData.hasChildren(['orderId','shop','total','ts'])",
-            ".validate": "newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('total').val() < 100000 && $orderId.length <= 40"
+            ".validate": "$orderId.length <= 40 && newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('total').val() < 100000 && newData.child('shop').isString() && newData.child('shop').val().length <= 40 && (!newData.hasChild('items_summary') || newData.child('items_summary').val().length <= 400)"
           }
+        }
+      },
+      "products": {
+        ".read": true,
+        "$shop": {
+          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome|la-detente)$/)",
+          "$id": {
+            ".write": "newData.hasChildren(['id']) || !newData.exists()",
+            ".validate": "$id.length <= 80 && (!newData.exists() || (newData.child('id').isString() && (!newData.hasChild('title') || newData.child('title').val().length <= 200) && (!newData.hasChild('image') || newData.child('image').val().length <= 600)))"
+          }
+        }
+      },
+      "logos": {
+        ".read": true,
+        "$shop": {
+          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome|la-detente)$/)",
+          "$id": {
+            ".write": true,
+            ".validate": "$id.length <= 80 && (!newData.exists() || (!newData.hasChild('url') || newData.child('url').val().length <= 600))"
+          }
+        }
+      }
+    },
+    "shops_sourcing_v1": {
+      "selection": {
+        ".read": true,
+        "$id": {
+          ".write": "newData.hasChildren(['id','supplier']) || !newData.exists()",
+          ".validate": "$id.length <= 120 && (!newData.exists() || (newData.child('supplier').val().length <= 60 && (!newData.hasChild('title') || newData.child('title').val().length <= 200) && (!newData.hasChild('image') || newData.child('image').val().length <= 600) && (!newData.hasChild('url') || newData.child('url').val().length <= 600)))"
         }
       }
     }
