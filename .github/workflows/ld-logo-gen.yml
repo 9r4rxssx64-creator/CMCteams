@@ -2,10 +2,10 @@ name: LD Logo Gen (Replicate FLUX)
 
 # Génère un OU plusieurs visuels La Détente via Replicate (clé AX_REPLICATE_KEY).
 # Déclenché en poussant le marqueur shops/la-detente/.logo-request.json.
-# - mode batch : { "jobs":[ {prompt, outfile, transparent}, ... ] }
+# - mode batch : { "jobs":[ {prompt, outfile}, ... ] }
 # - mode simple : { prompt, outfile, aspect_ratio }
-# transparent=true → fond (blanc) retiré via ImageMagick (floodfill 4 coins).
-# Runner GitHub = vrai réseau (≠ sandbox) → Replicate joignable.
+# Sortie sur fond blanc (la transparence est faite en local, plus fiable).
+# Espacement + 1 retry entre les jobs pour éviter le rate-limit Replicate.
 
 on:
   workflow_dispatch:
@@ -36,13 +36,11 @@ jobs:
           REQ=shops/la-detente/.logo-request.json
           AR=$(jq -r '.aspect_ratio // "1:1"' "$REQ")
 
-          gen_one () {
-            local PROMPT="$1" OUT="$2" TRANSP="$3"
-            echo "→ $OUT"
-            local PAYLOAD
+          call_replicate () {
+            local PROMPT="$1" OUT="$2"
+            local PAYLOAD RESP STATUS GETURL URL
             PAYLOAD=$(jq -n --arg p "$PROMPT" --arg ar "$AR" \
               '{input:{prompt:$p, aspect_ratio:$ar, output_format:"png", safety_tolerance:6, prompt_upsampling:true}}')
-            local RESP STATUS GETURL URL
             RESP=$(curl -sS -X POST \
               https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions \
               -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
@@ -55,24 +53,24 @@ jobs:
                 RESP=$(curl -sS -H "Authorization: Bearer $REPLICATE_API_TOKEN" "$GETURL")
                 STATUS=$(echo "$RESP" | jq -r '.status // empty')
                 [ "$STATUS" = "succeeded" ] && break
-                if [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; then echo "  ÉCHEC: $RESP"; return 1; fi
+                if [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; then echo "  état=$STATUS"; return 1; fi
               done
             fi
             URL=$(echo "$RESP" | jq -r 'if (.output|type)=="array" then .output[0] else .output end')
-            if [ -z "$URL" ] || [ "$URL" = "null" ]; then echo "  pas d'URL: $RESP"; return 1; fi
+            if [ -z "$URL" ] || [ "$URL" = "null" ]; then echo "  pas d'URL ($STATUS)"; return 1; fi
             mkdir -p "$(dirname "$OUT")"
             curl -sS -L "$URL" -o "$OUT"
-            if [ "$TRANSP" = "true" ]; then
-              W=$(identify -format '%w' "$OUT"); H=$(identify -format '%h' "$OUT")
-              convert "$OUT" -alpha set -fuzz 14% -fill none \
-                -draw "matte 0,0 floodfill" \
-                -draw "matte $((W-1)),0 floodfill" \
-                -draw "matte 0,$((H-1)) floodfill" \
-                -draw "matte $((W-1)),$((H-1)) floodfill" \
-                -trim +repage "$OUT"
-              echo "  fond retiré (transparent) + trim"
-            fi
-            file "$OUT"
+            file "$OUT" | grep -qi png || return 1
+            return 0
+          }
+
+          gen_one () {
+            local PROMPT="$1" OUT="$2"
+            echo "→ $OUT"
+            if call_replicate "$PROMPT" "$OUT"; then echo "  ok"; return 0; fi
+            echo "  retry dans 12s…"; sleep 12
+            if call_replicate "$PROMPT" "$OUT"; then echo "  ok (retry)"; return 0; fi
+            echo "  ÉCHEC (sauté)"; return 1
           }
 
           if [ "$(jq -r 'has("jobs")' "$REQ")" = "true" ]; then
@@ -81,14 +79,13 @@ jobs:
             for k in $(seq 0 $((N-1))); do
               P=$(jq -r ".jobs[$k].prompt" "$REQ")
               O=$(jq -r ".jobs[$k].outfile" "$REQ")
-              T=$(jq -r ".jobs[$k].transparent // false" "$REQ")
-              gen_one "$P" "$O" "$T" || echo "  (sauté)"
+              gen_one "$P" "$O" || true
+              sleep 6
             done
           else
             P=$(jq -r '.prompt' "$REQ")
             O=$(jq -r '.outfile // "shops/la-detente/img/designs/logo_ai.png"' "$REQ")
-            T=$(jq -r '.transparent // false' "$REQ")
-            gen_one "$P" "$O" "$T"
+            gen_one "$P" "$O"
           fi
 
       - name: Committer les visuels
