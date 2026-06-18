@@ -10,6 +10,10 @@ export function loadConfig() {
     // Firebase RTDB CMC Teams
     FB_URL: process.env.FB_URL || "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
     FB_PATH: process.env.FB_PATH || "/cmcteams",
+    // Compte de service (auth REST : la base exige `auth != null` depuis 2026-06).
+    // Sans ces 2 vars → appels non authentifiés → HTTP 401 (cf. lib/firebase.js + lib/gauth.js).
+    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL || "",
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY || "",
 
     // Notifications
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || "",
