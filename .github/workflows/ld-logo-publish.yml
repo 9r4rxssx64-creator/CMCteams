@@ -11,13 +11,15 @@ on:
       - 'shops/la-detente/.logo-publish.json'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - name: Publier le logo dans Firebase
         run: |
           set -e
@@ -25,6 +27,7 @@ jobs:
           FB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/shops_admin_v1/logos"
           N=$(jq '.logos | length' "$REQ")
           echo "$N logo(s) à publier"
+          RECEIPT='{"published_at":"'"$(date -u +%FT%TZ)"'","results":[]}'
           for k in $(seq 0 $((N-1))); do
             STORE=$(jq -r ".logos[$k].store" "$REQ")
             FILE=$(jq -r ".logos[$k].file" "$REQ")
@@ -40,8 +43,18 @@ jobs:
             echo "  PUT $STORE/$ID  ($(wc -c < "$FILE") octets)"
             curl -sS -X PUT "$FB/$STORE/$ID.json" \
               -H "Content-Type: application/json" --data-binary @/tmp/logo.json -o /tmp/put.json
-            echo "    réponse: $(jq -r '.id // .error // "?"' /tmp/put.json 2>/dev/null || head -c 120 /tmp/put.json)"
-            # vérif
             GOT=$(curl -sS "$FB/$STORE/$ID.json" | jq -r '.name // "ABSENT"')
             echo "    vérif Firebase: name=$GOT"
+            RECEIPT=$(echo "$RECEIPT" | jq --arg s "$STORE" --arg id "$ID" --arg n "$GOT" \
+              '.results += [{store:$s, id:$id, firebase_name:$n, ok:($n!="ABSENT")}]')
           done
+          mkdir -p shops/la-detente
+          echo "$RECEIPT" | jq . > shops/la-detente/.logo-publish-receipt.json
+          cat shops/la-detente/.logo-publish-receipt.json
+      - name: Receipt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add shops/la-detente/.logo-publish-receipt.json
+          git commit -m "LD studio — reçu publication logos [skip ci]" || { echo "aucun changement"; exit 0; }
+          git push origin HEAD:${{ github.ref_name }}
