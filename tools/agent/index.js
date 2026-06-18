@@ -77,7 +77,17 @@ export async function runAgentCycle({ trigger = "manual", verbose = false } = {}
     report.status = "error";
     report.fatalError = err.message;
     console.error("[agent] Erreur fatale :", err);
-    try { await notifyTelegram(cfg, `🚨 Agent KDMC crash : ${err.message}`); } catch (_) {}
+    // Anti-spam (Kevin 2026-06-16 « Agent KDMC crash Firebase 401 » en boucle) :
+    // un 401/403 Firebase = condition d'AUTH/règles (infra), pas un bug de code.
+    // On NE notifie PAS Telegram dessus (sinon flood à chaque cron) — log only.
+    // L'auth compte-de-service (lib/firebase.js) corrige la cause ; ce garde-fou
+    // évite le spam tant que les creds ne sont pas en place côté Vercel.
+    const isAuthErr = /HTTP 40[13]\b/.test(String(err.message || ""));
+    if (!isAuthErr) {
+      try { await notifyTelegram(cfg, `🚨 Agent KDMC crash : ${err.message}`); } catch (_) {}
+    } else {
+      console.warn("[agent] Firebase auth/règles (401/403) — alerte Telegram supprimée (anti-spam).");
+    }
   }
 
   return report;
