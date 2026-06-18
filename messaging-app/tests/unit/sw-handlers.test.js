@@ -324,13 +324,22 @@ describe('sw-handlers — handlePush', () => {
     expect(registration.showNotification).toHaveBeenCalledWith('Apex Chat', expect.any(Object));
   });
 
-  it('icon null/undefined dans payload → fallback ./manifest.json', async () => {
+  it('v1.1.244 : icon absent du payload → PAS d\'icon/badge (iOS utilise l\'icône app)', async () => {
     const registration = { showNotification: vi.fn(async () => {}) };
     const event = { data: { json: () => ({ title: 'X', body: 'Y', icon: null, badge: undefined }) } };
     await sw.handlePush(event, { registration });
+    const opts = registration.showNotification.mock.calls[0][1];
+    expect('icon' in opts).toBe(false);
+    expect('badge' in opts).toBe(false);
+  });
+
+  it('v1.1.244 : icon/badge fournis → utilisés tels quels', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const event = { data: { json: () => ({ title: 'X', body: 'Y', icon: 'https://x/i.png', badge: 'https://x/b.png' }) } };
+    await sw.handlePush(event, { registration });
     expect(registration.showNotification).toHaveBeenCalledWith(
       'X',
-      expect.objectContaining({ icon: './manifest.json', badge: './manifest.json' }),
+      expect.objectContaining({ icon: 'https://x/i.png', badge: 'https://x/b.png' }),
     );
   });
 

@@ -84,6 +84,7 @@
 <button class="btn btn-out" onclick="testTurn()">🌍 Tester le relais TURN</button>
 </div>
 
+<div id="diag-admin-only" style="display:none">
 <h2>📞 Activer les appels (admin)</h2>
 <div class="card">
 <div style="font-size:.82em;color:#9aa;line-height:1.5;margin-bottom:8px">
@@ -95,6 +96,10 @@ Crée une clé TURN dans Cloudflare (<b>Realtime → TURN Server → Create</b>)
 <div class="row"><span class="lbl">Résultat</span><span class="val" id="d-turn-save">—</span></div>
 <button class="btn" onclick="saveTurnKey()">💾 Enregistrer la clé TURN</button>
 </div>
+</div><!-- /diag-admin-only : visible seulement pour Kevin (admin) -->
+
+<!-- Note non-admin : seuls les TESTS/ANALYSES ci-dessus sont dispo. La config qui
+     impacte tout le monde (clé TURN) est réservée à l'admin (Kevin). -->
 
 <h2>🔐 Crypto / Auth</h2>
 <div class="card">
@@ -479,6 +484,26 @@ async function sendToKevin() {
     alert('✗ ' + e.message);
   }
 }
+
+// Sécurité (Kevin 2026-06-18) : la config TURN modifie l'infra d'appel POUR TOUT LE
+// MONDE → réservée à l'admin (Kevin). On décode le JWT et on ne révèle la section
+// admin que si sub === 'kdmc_admin' (le serveur /api/admin/turn-config rejette déjà
+// les non-admins ; ici on cache AUSSI l'UI). Laurence & autres : tests/analyses only.
+(function revealAdminSection() {
+  try {
+    var t = JSON.parse(localStorage.getItem('apex_chat_token') || 'null');
+    if (!t || typeof t !== 'string') return;
+    var parts = t.split('.');
+    if (parts.length < 2) return;
+    var b = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    b = b + '==='.slice((b.length + 3) % 4);
+    var p = JSON.parse(atob(b));
+    if (p && (p.sub === 'kdmc_admin' || p.admin === true || p.is_admin === true)) {
+      var el = document.getElementById('diag-admin-only');
+      if (el) el.style.display = '';
+    }
+  } catch (_) { /* non-admin par défaut */ }
+})();
 
 runDiag();
 </script>
