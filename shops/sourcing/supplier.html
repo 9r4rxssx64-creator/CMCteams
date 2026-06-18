@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v1.0.0 — KDMC Sourcing — page fournisseur -->
+<!-- v1.0.1 — KDMC Sourcing — page fournisseur (accès admin/Lolo) -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -125,7 +125,7 @@ var S = null, PRODUCTS = [];
 var E = function(s){ return KDMCSourcing.esc(s); };
 function boot(){
   KDMCSourcing.bootSSO(function(user){
-    if(user === null){ location.href = 'index.html'; return; }
+    if(user === null || !KDMCSourcing.isAllowed(user)){ location.href = 'index.html'; return; }
     document.getElementById('app').style.display='block';
     var id = KDMCSourcing.qs('id');
     KDMCSourcing.loadSuppliers().then(function(d){
@@ -213,6 +213,6 @@ function refreshSel(){
 function rm(id){ KDMCSourcing.removeFromSelection(id, function(){ refreshSel(); }); }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 60); });
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-sourcing" data-version="v1.0.0" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-sourcing" data-version="v1.0.1" data-color="#c9a227" defer></script>
 </body>
 </html>

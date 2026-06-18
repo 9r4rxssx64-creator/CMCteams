@@ -7,23 +7,27 @@
 
 ## 1) 🛒 Mes apps & boutiques (domaine kd‑mc.com)
 
-| Quoi | Lien 1‑clic |
+> 🔒 **Sourcing + Coffre‑fort = privé (Kevin & Lolo uniquement)** : visibles dans l'« Espace privé » du portail kd-mc.com, et accès gardé dans l'app.
+
+| Quoi | Lien 1‑clic (qui marche) |
 |---|---|
-| **🆕 Sourcing fournisseurs** (cette app — Kevin + Laurence) | https://sourcing.kd-mc.com |
+| **🆕 Sourcing fournisseurs** (Kevin + Lolo) | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/ |
+| **🔐 Coffre‑fort** (Kevin + Lolo) | https://9r4rxssx64-creator.github.io/CMCteams/coffre-fort/ |
+| Portail domaine (toutes les apps) | https://kd-mc.com |
 | Boutique Chez Lolo | https://chez-lolo.kd-mc.com |
-| Dashboard boutiques (admin) | https://dashboard.kd-mc.com |
 | La Détente | https://la-detente.kd-mc.com |
-| Accueil domaine | https://kd-mc.com |
+
+> Adresses « propres » en cours d'activation (certificat Cloudflare) : `sourcing.kd-mc.com` et `coffre.kd-mc.com`. En attendant, utilise les liens ci‑dessus (identiques, accès SSO + sélection partagée OK).
 
 ## 2) 📂 Sourcing — un lien direct par famille
 
 | Famille | Lien 1‑clic (filtré) |
 |---|---|
-| 💄 Cosmétiques | https://sourcing.kd-mc.com/?famille=cosmetiques |
-| 🦌 Chasse | https://sourcing.kd-mc.com/?famille=chasse |
-| 🎯 Ball‑trap | https://sourcing.kd-mc.com/?famille=ball-trap |
-| 🧵 Lin | https://sourcing.kd-mc.com/?famille=lin |
-| 🎯 Tir précision | https://sourcing.kd-mc.com/?famille=tir |
+| 💄 Cosmétiques (15) | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/?famille=cosmetiques |
+| 🦌 Chasse (16) | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/?famille=chasse |
+| 🎯 Ball‑trap (7) | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/?famille=ball-trap |
+| 🧵 Lin (20) | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/?famille=lin |
+| 🎯 Tir précision (15) | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/?famille=tir |
 
 ---
 
