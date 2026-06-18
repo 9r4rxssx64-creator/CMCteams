@@ -22,6 +22,14 @@ on:
         options:
           - hardened
           - open
+      shops_lock:
+        description: "Lockdown shops par rôle (products/logos/selection écriture = role:admin). on = activer | off = écriture anon validée actuelle"
+        required: true
+        default: "off"
+        type: choice
+        options:
+          - "off"
+          - "on"
 
 permissions:
   contents: read
@@ -39,4 +47,5 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           RULES_STATE: ${{ github.event.inputs.rules_state }}
+          SHOPS_LOCK: ${{ github.event.inputs.shops_lock }}
         run: node tools/firebase/deploy-rules.cjs

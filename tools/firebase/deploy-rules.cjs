@@ -17,6 +17,10 @@ const DB = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.ap
 const ROOT = path.resolve(__dirname, '..', '..');
 const RULES_FILE = path.join(ROOT, 'firebase-rules-apex.json');
 const STATE = (process.env.RULES_STATE || 'hardened').toLowerCase();
+// Lockdown shops par rôle : 'on' applique les .write role:admin aux écritures admin
+// (products/logos/selection) depuis le bloc _phase_shops_rolelock. 'off' = écriture
+// anon+validation actuelle (n'affecte JAMAIS les commandes clients ni les lectures).
+const SHOPS_LOCK = (process.env.SHOPS_LOCK || 'off').toLowerCase();
 
 function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 
@@ -74,7 +78,25 @@ async function getAccessToken(){
   } else {
     console.log('🔒 HARDEN : /cmcteams .read/.write = ' + JSON.stringify(rules.cmcteams['.read']));
   }
-  // garde-fou : ne JAMAIS toucher apex/coffre/shops/deny racine
+  // Lockdown shops par rôle (custom-token) — applique les .write role:admin si SHOPS_LOCK=on.
+  // N'altère QUE products/logos/selection ; orders + lectures intacts.
+  if (SHOPS_LOCK === 'on') {
+    const lock = doc._phase_shops_rolelock && doc._phase_shops_rolelock.writes;
+    if (!lock) throw new Error('SHOPS_LOCK=on mais bloc _phase_shops_rolelock.writes absent, abort');
+    const setWrite = (dotPath, val) => {
+      const parts = dotPath.split('/'); let node = rules;
+      for (const p of parts) { if (!node[p]) node[p] = {}; node = node[p]; }
+      node['.write'] = val;
+    };
+    Object.keys(lock).forEach((p) => setWrite(p, lock[p]));
+    // garde-fou : ne JAMAIS verrouiller les commandes clients
+    const ow = rules.shops_admin_v1.orders.$shop.$orderId['.write'];
+    if (/role/.test(String(ow))) throw new Error('SECURITÉ : orders ne doit PAS exiger role:admin (clients), abort');
+    console.log('🔒 SHOPS_LOCK=on : products/logos/selection .write = role:admin (orders inchangé)');
+  } else {
+    console.log('🛟 SHOPS_LOCK=off : écriture shops anon+validation (inchangé)');
+  }
+  // garde-fou : ne JAMAIS toucher apex/coffre/deny racine
   if (rules['.read'] !== false || rules['.write'] !== false) throw new Error('SECURITÉ : deny racine perdu, abort');
   if (rules.apex['.read'] !== true) throw new Error('SECURITÉ : /apex modifié par erreur, abort');
 

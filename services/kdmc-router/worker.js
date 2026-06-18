@@ -9,6 +9,7 @@
  */
 
 import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc, b64uDec } from './webauthn.js';
+import { mintShopsAdminIdToken } from './fb-token.js';
 
 const UPSTREAM = 'https://9r4rxssx64-creator.github.io';
 const PAGES_PREFIX = '/CMCteams';
@@ -148,9 +149,9 @@ function ssoToken(request) {
   if (m) return m[1].trim();
   return ssoCookie(request, SSO_COOKIE);
 }
-function J(o, setCookie) {
+function J(o, setCookie, status) {
   return new Response(JSON.stringify(o), {
-    status: 200,
+    status: status || 200,
     headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store', 'x-kdmc-sso': '1', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' }, setCookie ? { 'set-cookie': setCookie } : {}),
   });
 }
@@ -408,6 +409,14 @@ async function handleAdmin(request, url, env) {
   }
   if (path === '/__admin/me' && request.method === 'GET') {
     return J({ ok: true, uid: me.uid, name: me.name });
+  }
+  /* Lockdown shops (custom-token par rôle) : derrière le GRANT admin (prouvé via
+     /__admin/login = PIN sha256), mint un id_token Firebase role:admin pour que les
+     écritures shops_admin_v1/(products|logos) + shops_sourcing_v1/selection exigent
+     auth.token.role==='admin'. FAIL-SAFE si secrets FB absents (client fail-open). */
+  if (path === '/__admin/fbtoken' && (request.method === 'POST' || request.method === 'GET')) {
+    const out = await mintShopsAdminIdToken(env);
+    return out.ok ? J(out) : J(out, null, 503);
   }
   return J({ ok: false, reason: 'not_found' });
 }
