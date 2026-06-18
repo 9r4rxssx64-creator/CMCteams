@@ -12,7 +12,7 @@
  *   - OFFLINE_CACHE  : fallback HTML hors-ligne
  */
 
-export const CACHE_VERSION = 'apex-chat-v1.1.243';
+export const CACHE_VERSION = 'apex-chat-v1.1.244';
 export const STATIC_CACHE = `${CACHE_VERSION}-static`;
 export const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 export const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
@@ -170,7 +170,7 @@ export async function handleFetch(event, deps) {
 //  Push : affiche notification système
 // ----------------------------------------------------------------------------
 export async function handlePush(event, { registration, clients }) {
-  let data = { title: 'Apex Chat', body: 'Nouveau message', icon: './icons/icon-192.svg' };
+  let data = { title: 'Apex Chat', body: 'Nouveau message' };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch {
@@ -198,10 +198,13 @@ export async function handlePush(event, { registration, clients }) {
     { action: 'answer_call', title: '✅ Répondre' },
     { action: 'reject_call', title: '❌ Refuser' }
   ];
-  return registration.showNotification(data.title, {
+  // v1.1.244 : icône/badge — iOS Web Push n'affiche PAS la bannière si l'icône est
+  // invalide (l'ancien './icons/icon-192.svg' n'existe pas, et './manifest.json' n'est
+  // pas une image → badge invalide). On n'inclut une icône QUE si une vraie est fournie ;
+  // sinon iOS utilise l'icône de l'app installée (le plus fiable). Cause probable du
+  // "201 accepté mais rien sur l'écran verrouillé".
+  const opts = {
     body: data.body,
-    icon: data.icon || './manifest.json',
-    badge: data.badge || './manifest.json',
     tag: data.tag || 'apex-chat',
     renotify: !!data.renotify,
     requireInteraction: !!(data.urgent || isCall),
@@ -209,7 +212,10 @@ export async function handlePush(event, { registration, clients }) {
     data: data.payload || {},
     actions: data.actions || (isCall ? callActions : defaultActions),
     vibrate: isCall ? [200, 100, 200, 100, 200] : [100, 50, 100],
-  });
+  };
+  if (data.icon) opts.icon = data.icon;
+  if (data.badge) opts.badge = data.badge;
+  return registration.showNotification(data.title, opts);
 }
 
 // ----------------------------------------------------------------------------
