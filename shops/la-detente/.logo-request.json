@@ -1,26 +1,14 @@
 {
- "_note": "trigger ld-logo-gen.yml (batch, transparence en local)",
- "rev": 6,
+ "_note": "trigger ld-logo-gen.yml",
+ "rev": 7,
  "aspect_ratio": "1:1",
  "jobs": [
   {
-   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, no circle border, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. The AR-15 and the ball-trap shotgun crossed in a clean X with a big glossy red 3D heart in the exact center. Flat clean vector logo, simple and precise.",
-   "outfile": "shops/la-detente/img/designs/logo_t01.png"
-  },
-  {
-   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, no circle border, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. The AR-15 and the ball-trap shotgun crossed in an X over a glossy red heart, photorealistic brushed metal and walnut wood, detailed, precise.",
-   "outfile": "shops/la-detente/img/designs/logo_t03.png"
-  },
-  {
-   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, no circle border, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. The AR-15 and ball-trap shotgun crossed behind a red heart, with an orange clay pigeon target shattering into fragments above the heart. Clean flat vector.",
-   "outfile": "shops/la-detente/img/designs/logo_t05.png"
-  },
-  {
-   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, no circle border, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. A bold red heart with the AR-15 and the ball-trap shotgun crossed in front of it. Simple two-color red and black, precise sticker.",
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, no circle border, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. A bold red heart with the AR-15 and the ball-trap shotgun crossed in front of it. Simple two-color red and black sticker, thick clean outline, precise.",
    "outfile": "shops/la-detente/img/designs/logo_t07.png"
   },
   {
-   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, no circle border, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. Modern flat two-color design, red and black only: AR-15 and ball-trap shotgun crossed over a red heart, clean and simple.",
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, no circle border, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. Modern flat two-color design, red and black only: AR-15 and ball-trap shotgun crossed over a red heart, clean minimalist, precise.",
    "outfile": "shops/la-detente/img/designs/logo_t09.png"
   }
  ]
