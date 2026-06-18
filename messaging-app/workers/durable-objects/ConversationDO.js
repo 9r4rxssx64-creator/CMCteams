@@ -14,6 +14,8 @@
  * Le serveur ne déchiffre RIEN — il route uniquement des ciphertexts.
  */
 
+import { sendPush } from '../lib/push-send.js';
+
 export class ConversationDO {
   constructor(state, env) {
     this.state = state;
@@ -605,8 +607,6 @@ export class ConversationDO {
   // appelle l'endpoint /web-push qui FONCTIONNE (VAPID + chiffrement), 1 par
   // device, comme sendPushToUser côté api-worker.
   async _pushToUsers(userIds, pushPayload) {
-    const pushBase = this.env.APEX_PUSH_WORKER_URL || 'https://apex-push-worker.9r4rxssx64.workers.dev';
-    const token = this.env.APEX_CHAT_ADMIN_TOKEN || '';
     const cutoff = Date.now() - 30 * 86400000; // ignore les subs mortes > 30 j
     for (const uid of userIds) {
       let subs;
@@ -625,14 +625,8 @@ export class ConversationDO {
       }
       for (const sub of rows) {
         if (!sub.endpoint || !sub.vapid_p256dh) continue;
-        fetch(pushBase + '/web-push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Apex-Push-Token': token },
-          body: JSON.stringify({
-            subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } },
-            payload: pushPayload
-          })
-        })
+        // v1.1.243 : Service Binding (worker→worker autorisé) — fix Cloudflare 1042.
+        sendPush(this.env, { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } }, pushPayload)
           .then((r) => { if (!r.ok) console.warn('[push] web-push', uid, 'HTTP', r.status); })
           .catch((e) => console.warn('[push]', uid, 'web-push failed:', e && e.message));
       }

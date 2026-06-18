@@ -80,6 +80,14 @@ binding = "TIMECAPSULE_QUEUE"
 queue = "apex-chat-memory-lane"
 binding = "MEMORY_LANE_QUEUE"
 
+# v1.1.243 — Service Binding vers le push-worker (Web Push VAPID).
+# FIX Cloudflare 1042 : un Worker ne peut PAS fetch un autre Worker par son URL
+# *.workers.dev sur la même zone (→ 404 error code 1042 → 100% des notifs perdues).
+# Le Service Binding route en interne vers `apex-push-worker` (voie supportée).
+[[services]]
+binding = "PUSH_WORKER"
+service = "apex-push-worker"
+
 # Durable Objects
 [[durable_objects.bindings]]
 name = "CONVERSATION_DO"
