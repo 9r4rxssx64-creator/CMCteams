@@ -24,4 +24,5 @@ routes = [
   { pattern = "chez-lolo.kd-mc.com", custom_domain = true },
   { pattern = "dashboard.kd-mc.com", custom_domain = true },
   { pattern = "sourcing.kd-mc.com", custom_domain = true },
+  { pattern = "coffre.kd-mc.com", custom_domain = true },
 ]

@@ -142,6 +142,14 @@
   global.KDMCSourcing = {
     esc: esc, qs: qs, el: el, toast: toast, num: num,
     bootSSO: bootSSO, loginRedirect: loginRedirect, currentUser: function () { return _user; },
+    /* Accès réservé admin (Kevin) + Lolo (Laurence). Anti-lockout : true si offline/réseau KO. */
+    isAllowed: function (u) {
+      if (!u) return false;
+      if (u.open) return true;            // fail-open (réseau/SSO KO) — jamais de lockout
+      if (u.admin) return true;
+      var n = String(u.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      return /kevin|desarzens|laurence|lolo|saint.?polit/.test(n);
+    },
     fetchSelection: fetchSelection, addToSelection: addToSelection, removeFromSelection: removeFromSelection,
     selectionArray: selectionArray, isSelected: function (id) { return !!_selCache[id]; }, exportCsv: exportCsv,
     loadCatalog: loadCatalog, proxyBase: proxyBase, setProxyBase: setProxyBase,

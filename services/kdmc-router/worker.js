@@ -23,6 +23,7 @@ const ROUTES = {
   'chez-lolo.kd-mc.com': '/CMCteams/shops/chez-lolo',
   'dashboard.kd-mc.com': '/CMCteams/shops/dashboard',
   'sourcing.kd-mc.com': '/CMCteams/shops/sourcing',
+  'coffre.kd-mc.com': '/CMCteams/coffre-fort',
 };
 
 export default {

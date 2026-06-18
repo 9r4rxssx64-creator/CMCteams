@@ -78,7 +78,7 @@ jobs:
         run: |
           for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
                    apex-chat.kd-mc.com la-detente.kd-mc.com chez-lolo.kd-mc.com \
-                   dashboard.kd-mc.com sourcing.kd-mc.com; do
+                   dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com; do
             echo "== https://$H =="
             curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
               || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"

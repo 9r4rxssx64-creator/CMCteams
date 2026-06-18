@@ -70,8 +70,15 @@
      via whoami). Les clients/Laurence ne la voient jamais. */
   function applyAdminVisibility() {
     var zone = document.getElementById('admin-zone');
-    if (!zone) return;
-    var done = function (s) { if (s && s.admin) { zone.hidden = false; } else { zone.hidden = true; } };
+    var priv = document.getElementById('priv-zone');
+    var done = function (s) {
+      var isAdmin = !!(s && s.admin);
+      /* Espace privé Sourcing/Coffre : Kevin + Laurence (Lolo). Par nom (les comptes
+         de Kevin/Laurence) OU admin. Les autres clients ne le voient jamais. */
+      var isPriv = isAdmin || /kevin|desarzens|laurence|lolo|saint.?polit/.test(norm(s && s.name || ''));
+      if (zone) zone.hidden = !isAdmin;
+      if (priv) priv.hidden = !isPriv;
+    };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
   }
 
