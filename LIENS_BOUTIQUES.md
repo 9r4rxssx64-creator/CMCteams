@@ -11,8 +11,10 @@
 
 | Quoi | Lien 1‑clic (qui marche) |
 |---|---|
-| **🆕 Sourcing fournisseurs** (Kevin + Lolo) | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/ |
-| **🔐 Coffre‑fort** (Kevin + Lolo) | https://9r4rxssx64-creator.github.io/CMCteams/coffre-fort/ |
+| 📦 **Sourcing fournisseurs** | https://9r4rxssx64-creator.github.io/CMCteams/shops/sourcing/ |
+| 🔐 **Coffre‑fort** | https://9r4rxssx64-creator.github.io/CMCteams/coffre-fort/ |
+| 📊 **Dashboard boutiques** | https://9r4rxssx64-creator.github.io/CMCteams/shops/dashboard/ |
+| 👥 **Admin domaine** (code admin requis) | https://kd-mc.com/admin/ |
 | Portail domaine (toutes les apps) | https://kd-mc.com |
 | Boutique Chez Lolo | https://chez-lolo.kd-mc.com |
 | La Détente | https://la-detente.kd-mc.com |
