@@ -31,6 +31,8 @@
 //  Helpers
 // ============================================================================
 
+import { sendPush } from './lib/push-send.js';
+
 const ADMIN_KEVIN_ALIASES = [
   'kevin', 'kevin desarzens', 'desarzens kevin', 'desarzens',
   'kevin.desarzens', 'kevind@monaco.mc', 'kdmc', 'k desarzens'
@@ -5823,21 +5825,19 @@ async function handlePushTest(request, env) {
   ).bind(auth.sub, Date.now() - 30 * 86400000).all();
   const rows = (subs && subs.results) || [];
   const pushBase = env.APEX_PUSH_WORKER_URL || 'https://apex-push-worker.9r4rxssx64.workers.dev';
+  const transport = (env.PUSH_WORKER && typeof env.PUSH_WORKER.fetch === 'function') ? 'service-binding' : 'fetch';
   const payload = { title: 'Apex Chat — test serveur ✅', body: 'Si tu vois cette notif, les notifications serveur marchent !', payload: { type: 'test' } };
   const results = [];
   for (const sub of rows) {
     if (!sub.endpoint || !sub.vapid_p256dh) { results.push({ skipped: 'no_keys' }); continue; }
     try {
-      const r = await fetch(pushBase + '/web-push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Apex-Push-Token': env.APEX_CHAT_ADMIN_TOKEN || '' },
-        body: JSON.stringify({ subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } }, payload })
-      });
+      // v1.1.243 : via Service Binding (worker→worker autorisé) — fix Cloudflare 1042.
+      const r = await sendPush(env, { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } }, payload);
       let body = ''; try { body = (await r.text()).slice(0, 140); } catch (_) {}
       results.push({ status: r.status, ok: r.ok, body, service: (sub.endpoint || '').split('/')[2] || '' });
     } catch (e) { results.push({ error: String((e && e.message) || e).slice(0, 140) }); }
   }
-  return json({ ok: true, subs: rows.length, hasAdminToken: !!env.APEX_CHAT_ADMIN_TOKEN, pushBase, results });
+  return json({ ok: true, subs: rows.length, hasAdminToken: !!env.APEX_CHAT_ADMIN_TOKEN, pushBase, transport, results });
 }
 
 export async function sendPushToUser(userId, payload, env) {
@@ -5845,22 +5845,12 @@ export async function sendPushToUser(userId, payload, env) {
     'SELECT endpoint, vapid_p256dh, vapid_auth, fcm_token, apns_token FROM push_subscriptions WHERE user_id=? AND last_seen > ?'
   ).bind(userId, Date.now() - 30 * 86400000).all();
 
-  // v1.1.150 : URL push-worker configurable (avant : sous-domaine "desarzens-kevin"
-  // hardcodé incorrect → 100% des pushs perdus). Default = subdomain Kevin.
-  const pushBase = env.APEX_PUSH_WORKER_URL || 'https://apex-push-worker.9r4rxssx64.workers.dev';
+  // v1.1.243 : envoi via Service Binding PUSH_WORKER (worker→worker autorisé).
+  // Avant : fetch direct vers *.workers.dev = Cloudflare 1042 → 100% des pushs perdus.
   for (const sub of (subs.results || [])) {
     if (sub.endpoint && sub.vapid_p256dh) {
-      fetch(pushBase + '/web-push', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Apex-Push-Token': env.APEX_CHAT_ADMIN_TOKEN || ''
-        },
-        body: JSON.stringify({
-          subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } },
-          payload
-        })
-      }).catch((e) => console.warn('[sendPushToUser] web-push fetch failed:', e && e.message));
+      sendPush(env, { endpoint: sub.endpoint, keys: { p256dh: sub.vapid_p256dh, auth: sub.vapid_auth } }, payload)
+        .catch((e) => console.warn('[sendPushToUser] web-push failed:', e && e.message));
     }
   }
 }
