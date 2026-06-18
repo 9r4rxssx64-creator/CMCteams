@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.245",
+  "softwareVersion": "v1.1.246",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.245';
+const __APEX_CHAT_VERSION__ = 'v1.1.246';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.245</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.246</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.245</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.246</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -4814,14 +4814,23 @@ K._shareLocationLive = function(minutes){
   );
 };
 
+// v1.1.246 : marqueur position (comme APXMEDIA1 pour les médias) → la position
+// passe par le CHEMIN MESSAGE normal (relayé au pair + persisté), au lieu d'un
+// event 'location' que le serveur ne gérait PAS (→ le pair ne recevait jamais rien).
+K._parseLocationMarker = function(txt){
+  if(typeof txt !== 'string' || txt.indexOf('APXLOC1:') !== 0) return null;
+  try{ const j = JSON.parse(txt.slice(8)); if(j && typeof j.lat === 'number' && typeof j.lng === 'number') return j; }catch(_e){_safeCatch('silent',_e)}
+  return null;
+};
 K._sendLocationMsg = function(lat, lng, accuracy, expiresAt){
   const conv = K.viewData;
   if(!conv) return null;
+  const loc = { lat, lng, accuracy: Math.round(accuracy || 0), live: !!expiresAt, expires_at: expiresAt, updated_at: Date.now() };
   const msg = {
     id: 'm_loc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
     from: K.user?.id,
     text: '',
-    location: { lat, lng, accuracy: Math.round(accuracy || 0), live: !!expiresAt, expires_at: expiresAt, updated_at: Date.now() },
+    location: loc,
     ts: Date.now(),
     encrypted: false
   };
@@ -4830,9 +4839,23 @@ K._sendLocationMsg = function(lat, lng, accuracy, expiresAt){
   K.messages[conv.id].push(msg);
   ls('messages_' + conv.id, K.messages[conv.id]);
   K.render();
-  if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'location', msg_id: msg.id, lat, lng, accuracy, expires_at: expiresAt })); } catch(_e){_safeCatch('silent',_e)}
-  }
+  // Envoi via le chemin MESSAGE (chiffré + relayé + persisté). Le pair parse APXLOC1.
+  const marker = 'APXLOC1:' + JSON.stringify(loc);
+  (async () => {
+    let ciphertext = marker;
+    try{
+      if(K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
+        ciphertext = await ApexCrypto.encryptForConv(conv.id, marker);
+      }
+    }catch(e){ _safeCatch('loc-encrypt', e); }
+    const wire = { type: 'message', ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id };
+    if(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === conv.id){
+      try{ K.ws.send(JSON.stringify(wire)); }
+      catch(e){ _safeCatch('loc-send', e); K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id }); }
+    } else {
+      K._outboxAdd({ conv_id: conv.id, ciphertext: wire.ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id });
+    }
+  })();
   return msg.id;
 };
 
@@ -7632,7 +7655,9 @@ async function _handleWsMessage(data, convId){
           const localMatch = K.messages[convId].find(m =>
             m && m.from === myId && String(m.id || '').startsWith('m_') &&
             Math.abs((m.ts || 0) - (sm.ts || 0)) < 60000 &&
-            (m.text === txt || m.text === sm.ciphertext || m.ciphertext === sm.ciphertext)
+            // v1.1.246 : matche aussi mes positions/médias (texte local vide) → pas de doublon en historique
+            (m.text === txt || m.text === sm.ciphertext || m.ciphertext === sm.ciphertext ||
+             (m.location && K._parseLocationMarker(txt)) || (m.media_url && K._parseMediaMarker(txt)))
           );
           if(localMatch){
             seen.delete(localMatch.id);
@@ -7646,9 +7671,11 @@ async function _handleWsMessage(data, convId){
         let replyTo = sm.reply_to;
         if(typeof replyTo === 'string' && replyTo){ try{ replyTo = JSON.parse(replyTo); }catch(_e){_safeCatch('silent',_e)} }
         const hmedia = K._parseMediaMarker(txt);   // v1.1.186 : média (photo/vidéo/fichier)
+        const hloc = K._parseLocationMarker(txt);   // v1.1.246 : position dans l'historique
         K.messages[convId].push({
-          id: sm.id, from: sm.sender_id, text: hmedia ? hmedia.text : txt,
+          id: sm.id, from: sm.sender_id, text: (hmedia || hloc) ? (hmedia ? hmedia.text : '') : txt,
           ...(hmedia ? { media_url: hmedia.media_url, media_type: hmedia.media_type, media_name: hmedia.media_name, media_size: hmedia.media_size } : {}),
+          ...(hloc ? { location: hloc } : {}),
           ts: sm.ts || Date.now(), mime: sm.mime || 'text/plain',
           reply_to: replyTo || undefined,
           encrypted: !!sm.ciphertext, from_history: true
@@ -7684,15 +7711,32 @@ async function _handleWsMessage(data, convId){
       }catch(e){ _safeCatch('decrypt-message', e); }
 
       const lmedia = K._parseMediaMarker(decryptedText);   // v1.1.186 : média reçu
+      const lloc = K._parseLocationMarker(decryptedText);   // v1.1.246 : position reçue
       const msg = {
         id: data.id || 'm_' + Date.now(),
         from: data.sender_id,
-        text: lmedia ? lmedia.text : decryptedText,
+        text: (lmedia || lloc) ? (lmedia ? lmedia.text : '') : decryptedText,
         ...(lmedia ? { media_url: lmedia.media_url, media_type: lmedia.media_type, media_name: lmedia.media_name, media_size: lmedia.media_size } : {}),
+        ...(lloc ? { location: lloc } : {}),
         ts: data.ts || Date.now(),
         encrypted: !!data.ciphertext
       };
       if(!K.messages[convId]) K.messages[convId] = [];
+      // v1.1.246 : dédup de MON propre message renvoyé (broadcast vers une 2e session
+      // OU course avec l'ack) → adopter l'id officiel sur le message local m_ au lieu
+      // de doubler. Même logique que la dédup de l'historique (case 'history').
+      if(msg.from === K.user?.id){
+        const selfMatch = K.messages[convId].find(m =>
+          m && m.from === K.user?.id && String(m.id || '').startsWith('m_') &&
+          Math.abs((m.ts || 0) - (msg.ts || 0)) < 60000 &&
+          ((m.text || '') === (msg.text || '') || (m.location && msg.location) || (m.media_url && msg.media_url))
+        );
+        if(selfMatch){
+          selfMatch.id = msg.id; selfMatch.ts = msg.ts || selfMatch.ts;
+          ls('messages_' + convId, K.messages[convId]);
+          break;
+        }
+      }
       // Dédup
       if(!K.messages[convId].some(m => m.id === msg.id)){
         K.messages[convId].push(msg);
