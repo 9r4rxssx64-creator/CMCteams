@@ -1,15 +1,11 @@
 {
- "_note": "trigger",
- "rev": 8,
+ "_note": "trigger - t05 retouche guns",
+ "rev": 9,
  "aspect_ratio": "1:1",
  "jobs": [
   {
-   "prompt": "Isolated on a pure plain solid white background, no text, no words, no background, centered, clean edges. A red love heart in the center with a black AR-15 rifle and an over-and-under ball-trap clay shotgun crossed in an X in front of it, bold flat sticker, red and black, clean.",
-   "outfile": "shops/la-detente/img/designs/logo_t07.png"
-  },
-  {
-   "prompt": "Isolated on a pure plain solid white background, no text, no words, no background, centered, clean edges. Minimalist two-tone red and black emblem: a black AR-15 rifle and a ball-trap clay shotgun crossed behind a red heart, simple clean lines.",
-   "outfile": "shops/la-detente/img/designs/logo_t09.png"
+   "outfile": "shops/la-detente/img/designs/logo_t05b.png",
+   "prompt": "Isolated on a pure plain solid white background, no text, no words, no background scene, centered, clean crisp edges. A glossy bright red 3D love heart with a jagged crack splitting the top, and a few small red and orange fragments bursting out of the crack (same shattered heart look). Crossed in a clean X behind and below the heart: a realistic black AR-15 rifle on one side and a realistic over-and-under wooden ball-trap clay-shooting shotgun on the other side. Bold clean sticker style, vibrant, precise, t-shirt and embroidery ready, no watermark."
   }
  ]
 }
