@@ -1,11 +1,11 @@
 {
  "_note": "trigger gen",
- "rev": 10,
+ "rev": 11,
  "aspect_ratio": "1:1",
  "jobs": [
   {
    "outfile": "shops/la-detente/img/designs/logo_t05b.png",
-   "prompt": "Isolated on a pure plain solid white background, no text, no words, no background scene, centered, clean crisp edges. A glossy bright red 3D love heart with a jagged crack splitting the top and a few small red and orange fragments bursting from the crack. Crossed in a clean X behind and below the heart: a realistic black AR-15 rifle on one side and a realistic over-and-under wooden ball-trap clay-shooting shotgun on the other side. Bold clean sticker style, vibrant, precise, no watermark."
+   "prompt": "Isolated on a pure plain solid white background, no text, no words, centered, clean crisp edges. A glossy bright red love heart with a small crack line across the top. Behind the heart, crossed in a clean X: a black AR-15 rifle on one side and a wooden over-and-under sport clay-shooting shotgun on the other side. Clean bold sticker style, vibrant, simple, precise, no watermark."
   }
  ]
 }
