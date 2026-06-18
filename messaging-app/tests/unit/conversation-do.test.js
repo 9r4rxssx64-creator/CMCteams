@@ -407,6 +407,47 @@ describe('ConversationDO — fetch WebSocket upgrade', () => {
     const server = [..._do.sessions.keys()][0];
     expect(server.sent.some((m) => JSON.parse(m).type === 'history')).toBe(false);
   });
+
+  // v1.1.242 : rejoue l'appel en attente au destinataire qui rejoint la conv
+  it('pendingCall frais d\'un autre user → REJOUE offer + candidates au join', async () => {
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: makeConnectDB({ historyAll: {} }) }));
+    await new Promise((r) => setTimeout(r, 5));
+    _do.pendingCall = { fromUserId: 'caller', fromDevice: 'dC', callType: 'audio',
+      offer: { type: 'offer', sdp: 's' }, candidates: [{ candidate: 'ice1' }], ts: Date.now() };
+    await connectWS(_do); // rejoint en tant que kdmc (≠ caller)
+    const server = [..._do.sessions.keys()][0];
+    const sent = server.sent.map((m) => JSON.parse(m));
+    expect(sent.find((m) => m.type === 'webrtc-offer' && m.replayed)).toBeTruthy();
+    expect(sent.find((m) => m.type === 'webrtc-candidate' && m.replayed)).toBeTruthy();
+  });
+
+  it('pendingCall du MÊME user qui rejoint → pas de rejeu', async () => {
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: makeConnectDB({ historyAll: {} }) }));
+    await new Promise((r) => setTimeout(r, 5));
+    _do.pendingCall = { fromUserId: 'kdmc', callType: 'audio', offer: { type: 'offer', sdp: 's' }, candidates: [], ts: Date.now() };
+    await connectWS(_do);
+    const server = [..._do.sessions.keys()][0];
+    expect(server.sent.some((m) => JSON.parse(m).replayed)).toBe(false);
+  });
+
+  it('pendingCall expiré (>45s) → pas de rejeu', async () => {
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: makeConnectDB({ historyAll: {} }) }));
+    await new Promise((r) => setTimeout(r, 5));
+    _do.pendingCall = { fromUserId: 'caller', callType: 'audio', offer: { type: 'offer', sdp: 's' }, candidates: [], ts: Date.now() - 50000 };
+    await connectWS(_do);
+    const server = [..._do.sessions.keys()][0];
+    expect(server.sent.some((m) => JSON.parse(m).replayed)).toBe(false);
+  });
+
+  it('rejeu : offer non sérialisable → catch silencieux, session ajoutée', async () => {
+    const _do = new ConversationDO(makeState(), ENV({ APEX_CHAT_DB: makeConnectDB({ historyAll: {} }) }));
+    await new Promise((r) => setTimeout(r, 5));
+    const circular = {}; circular.self = circular;
+    _do.pendingCall = { fromUserId: 'caller', callType: 'audio', offer: circular, candidates: [], ts: Date.now() };
+    const r = await connectWS(_do);
+    expect(r.status).toBe(101);
+    expect(_do.sessions.size).toBe(1);
+  });
 });
 
 // ----------------------------------------------------------------------------
@@ -648,6 +689,51 @@ describe('ConversationDO — handleMessage', () => {
     await _do.handleMessage(ws, { type: 'webrtc-offer', offer: { type: 'offer', sdp: 'x' } });
     const fwd = ws2.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'webrtc-offer');
     expect(fwd.to).toBeNull();
+  });
+
+  // v1.1.242 : mémorisation appel en attente (pour rejouer au destinataire au join)
+  it('webrtc-offer → mémorise pendingCall', async () => {
+    await _do.handleMessage(ws, { type: 'webrtc-offer', callType: 'audio', offer: { type: 'offer', sdp: 's' } });
+    expect(_do.pendingCall).toBeTruthy();
+    expect(_do.pendingCall.fromUserId).toBe('kdmc');
+    expect(_do.pendingCall.callType).toBe('audio');
+  });
+
+  it('webrtc-candidate du caller → bufferisé dans pendingCall', async () => {
+    await _do.handleMessage(ws, { type: 'webrtc-offer', offer: { type: 'offer', sdp: 's' } });
+    await _do.handleMessage(ws, { type: 'webrtc-candidate', candidate: { candidate: 'ice-a' } });
+    expect(_do.pendingCall.candidates).toHaveLength(1);
+    expect(_do.pendingCall.candidates[0].candidate).toBe('ice-a');
+  });
+
+  it('webrtc-candidate d\'un AUTRE user que le caller → pas bufferisé', async () => {
+    await _do.handleMessage(ws, { type: 'webrtc-offer', offer: { type: 'offer', sdp: 's' } }); // caller=kdmc
+    const ws2 = new MockWebSocket();
+    _do.sessions.set(ws2, { userId: 'peer2' });
+    await _do.handleMessage(ws2, { type: 'webrtc-candidate', candidate: { candidate: 'ice-z' } });
+    expect(_do.pendingCall.candidates).toHaveLength(0);
+  });
+
+  it('webrtc-candidate quand 30 déjà bufferisés → ignoré (cap)', async () => {
+    await _do.handleMessage(ws, { type: 'webrtc-offer', offer: { type: 'offer', sdp: 's' } });
+    _do.pendingCall.candidates = Array.from({ length: 30 }, (_, i) => ({ candidate: 'c' + i }));
+    await _do.handleMessage(ws, { type: 'webrtc-candidate', candidate: { candidate: 'overflow' } });
+    expect(_do.pendingCall.candidates).toHaveLength(30);
+  });
+
+  it('webrtc-candidate sans candidate → pas bufferisé', async () => {
+    await _do.handleMessage(ws, { type: 'webrtc-offer', offer: { type: 'offer', sdp: 's' } });
+    await _do.handleMessage(ws, { type: 'webrtc-candidate' }); // candidate absent
+    expect(_do.pendingCall.candidates).toHaveLength(0);
+  });
+
+  it('webrtc-answer / call-end / call-busy → efface pendingCall', async () => {
+    for (const t of ['webrtc-answer', 'call-end', 'call-busy']) {
+      await _do.handleMessage(ws, { type: 'webrtc-offer', offer: { type: 'offer', sdp: 's' } });
+      expect(_do.pendingCall).toBeTruthy();
+      await _do.handleMessage(ws, { type: t });
+      expect(_do.pendingCall).toBeNull();
+    }
   });
 });
 

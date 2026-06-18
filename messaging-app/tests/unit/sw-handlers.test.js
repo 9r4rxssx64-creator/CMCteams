@@ -368,6 +368,35 @@ describe('sw-handlers — handlePush', () => {
     expect(opts.actions).toBe(custom);
     expect(opts.renotify).toBe(true);
   });
+
+  // v1.1.242 : appel + app au premier plan → ouvre la conv dans le client focusé
+  it('push appel + client focusé → postMessage open-conv (sonnerie in-app)', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const focused = { focused: true, postMessage: vi.fn() };
+    const other = { focused: false, visibilityState: 'hidden', postMessage: vi.fn() };
+    const clients = { matchAll: vi.fn(async () => [other, focused]) };
+    const event = { data: { json: () => ({ title: '📞', body: 'appel', payload: { type: 'call', convId: 'c9' } }) } };
+    await sw.handlePush(event, { registration, clients });
+    expect(focused.postMessage).toHaveBeenCalledWith({ type: 'open-conv', convId: 'c9' });
+    expect(other.postMessage).not.toHaveBeenCalled();
+  });
+
+  it('push appel + aucun client focusé → pas de postMessage', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const hidden = { focused: false, visibilityState: 'hidden', postMessage: vi.fn() };
+    const clients = { matchAll: vi.fn(async () => [hidden]) };
+    const event = { data: { json: () => ({ title: '📞', body: 'appel', payload: { type: 'call', convId: 'c9' } }) } };
+    await sw.handlePush(event, { registration, clients });
+    expect(hidden.postMessage).not.toHaveBeenCalled();
+  });
+
+  it('push appel + matchAll throw → best-effort (pas d\'erreur)', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const clients = { matchAll: vi.fn(async () => { throw new Error('boom'); }) };
+    const event = { data: { json: () => ({ title: '📞', body: 'appel', payload: { type: 'call', convId: 'c9' } }) } };
+    await sw.handlePush(event, { registration, clients }); // ne doit pas throw
+    expect(registration.showNotification).toHaveBeenCalled();
+  });
 });
 
 // ----------------------------------------------------------------------------
