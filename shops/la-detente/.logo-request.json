@@ -1,11 +1,11 @@
 {
- "_note": "trigger - t05 retouche guns",
- "rev": 9,
+ "_note": "trigger gen",
+ "rev": 12,
  "aspect_ratio": "1:1",
  "jobs": [
   {
    "outfile": "shops/la-detente/img/designs/logo_t05b.png",
-   "prompt": "Isolated on a pure plain solid white background, no text, no words, no background scene, centered, clean crisp edges. A glossy bright red 3D love heart with a jagged crack splitting the top, and a few small red and orange fragments bursting out of the crack (same shattered heart look). Crossed in a clean X behind and below the heart: a realistic black AR-15 rifle on one side and a realistic over-and-under wooden ball-trap clay-shooting shotgun on the other side. Bold clean sticker style, vibrant, precise, t-shirt and embroidery ready, no watermark."
+   "prompt": "Isolated on a pure plain solid white background, no text, centered, clean edges. A glossy red love heart with a thin lightning-style crack line near the top. Below the heart, a black AR-15 sport rifle and a wooden over-and-under clay-pigeon sport shotgun crossed in a neat X. Friendly bold flat sticker logo, vibrant, simple, clean."
   }
  ]
 }
