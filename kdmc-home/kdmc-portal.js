@@ -69,15 +69,14 @@
      révèle QUE si la session du domaine dit admin === true (vérifié côté serveur
      via whoami). Les clients/Laurence ne la voient jamais. */
   function applyAdminVisibility() {
-    var zone = document.getElementById('admin-zone');
     var priv = document.getElementById('priv-zone');
+    if (!priv) return;
     var done = function (s) {
-      var isAdmin = !!(s && s.admin);
-      /* Espace privé Sourcing/Coffre : Kevin + Laurence (Lolo). Par nom (les comptes
-         de Kevin/Laurence) OU admin. Les autres clients ne le voient jamais. */
-      var isPriv = isAdmin || /kevin|desarzens|laurence|lolo|saint.?polit/.test(norm(s && s.name || ''));
-      if (zone) zone.hidden = !isAdmin;
-      if (priv) priv.hidden = !isPriv;
+      /* Espace privé regroupé (Sourcing, Coffre-fort, Dashboard, Admin) :
+         Kevin + Laurence (Lolo) OU admin. Les autres clients ne le voient jamais.
+         /admin/ reste protégé par le code admin côté serveur (fail-closed). */
+      var isPriv = !!(s && s.admin) || /kevin|desarzens|laurence|lolo|saint.?polit/.test(norm(s && s.name || ''));
+      priv.hidden = !isPriv;
     };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
   }
