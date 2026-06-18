@@ -126,6 +126,16 @@
             ".validate": "$id.length <= 80 && (!newData.exists() || (!newData.hasChild('url') || newData.child('url').val().length <= 600))"
           }
         }
+      },
+      "access": {
+        ".read": true,
+        ".write": true,
+        ".validate": "!newData.exists() || newData.isString()==false || newData.val().length<20000"
+      },
+      "ld_wiped_v1": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.isBoolean() || newData.val()===null"
       }
     },
     "shops_sourcing_v1": {
@@ -135,6 +145,14 @@
           ".write": "newData.hasChildren(['id','supplier']) || !newData.exists()",
           ".validate": "$id.length <= 120 && (!newData.exists() || (newData.child('supplier').val().length <= 60 && (!newData.hasChild('title') || newData.child('title').val().length <= 200) && (!newData.hasChild('image') || newData.child('image').val().length <= 600) && (!newData.hasChild('url') || newData.child('url').val().length <= 600)))"
         }
+      }
+    },
+    "ld_detente": {
+      ".read": true,
+      "push_sub": {
+        ".read": true,
+        ".write": true,
+        ".validate": "!newData.exists() || newData.isString()==false || newData.val().length<8000"
       }
     }
   },
@@ -226,6 +244,14 @@
           ".write": "auth != null && auth.token.role === 'admin'"
         }
       }
+    }
+  },
+  "_phase_shops_rolelock": {
+    "_comment": "Lockdown shops par RÔLE. Activé via deploy-cmcteams-rules.yml input shops_lock=on (ou SHOPS_LOCK=on). Le script applique ces .write aux écritures admin (products/logos/selection) → seuls Kevin/Lolo (id_token role:admin minté par kdmc-router /__admin/fbtoken derrière le GRANT admin) peuvent écrire. Les commandes clients (orders) et les LECTURES restent inchangées. À activer SEULEMENT après que le router est redéployé avec les secrets FB et qu une écriture admin a été testée (sinon écritures admin bloquées — pas les clients).",
+    "writes": {
+      "shops_admin_v1/products/$shop/$id": "auth != null && auth.token.role === 'admin' && (newData.hasChildren(['id']) || !newData.exists())",
+      "shops_admin_v1/logos/$shop/$id": "auth != null && auth.token.role === 'admin'",
+      "shops_sourcing_v1/selection/$id": "auth != null && auth.token.role === 'admin' && (newData.hasChildren(['id','supplier']) || !newData.exists())"
     }
   }
 }

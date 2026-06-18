@@ -2253,3 +2253,10 @@ dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
 → Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
 toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
 **Claude doit me le rappeler.**
+
+## 🔐 Lockdown shops (custom-tokens role:admin) — ACTIVATION (2 clics, quand tu veux)
+Livré + testé (router /__admin/fbtoken + helper client fail-open + règles stagées). Pour fermer l'écriture produits/logos/sélection aux seuls Kevin/Lolo :
+1. Laisser `deploy-kdmc-router.yml` se redéployer (auto au push, ou Run workflow) → pose les secrets FB + le endpoint.
+2. Sur https://sourcing.kd-mc.com : bouton « 🔒 Admin » → PIN admin → tester un ajout sélection.
+3. Actions → `deploy-cmcteams-rules.yml` → Run → `shops_lock=on` (rollback `off`). `rules_state` reste `hardened`.
+Détails : shops/FIREBASE_RULES.md (section « Lockdown fort »). Les commandes clients ne sont jamais touchées.

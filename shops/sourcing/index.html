@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v1.0.1 — KDMC Sourcing hub (tri par famille + accès admin/Lolo) -->
+<!-- v1.0.2 — KDMC Sourcing hub (lockdown role:admin + tri famille) -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -107,6 +107,7 @@ h1{font-size:21px;margin:18px 0 4px}
 </div>
 
 <script src="/CMCteams/kdmc-home/kdmc-sso.js" defer></script>
+<script src="/CMCteams/tools/shared/kdmc-fb-auth.js" defer></script>
 <script src="sourcing.js" defer></script>
 <script>
 var DATA = null, FAMILY = 'all', LS_FAM = 'kdmc_sourcing_fam';
@@ -181,6 +182,6 @@ function refreshSel(){
 function rm(id){ KDMCSourcing.removeFromSelection(id, function(){ refreshSel(); }); }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 60); });
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-sourcing" data-version="v1.0.1" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-sourcing" data-version="v1.0.2" data-color="#c9a227" defer></script>
 </body>
 </html>
