@@ -1,8 +1,57 @@
 {
-  "_note": "trigger ld-logo-gen.yml",
-  "rev": 3,
-  "outfile": "shops/la-detente/img/designs/logo_ai_v3.png",
-  "aspect_ratio": "1:1",
-  "prompt": "Fun modern sticker-style emblem logo for a clay-pigeon ball-trap shooting club. A realistic black AR-15 rifle and a realistic over-and-under wooden clay-shooting shotgun crossed in an X behind a big glossy bright red 3D heart in the dead center. An orange clay pigeon disc shattering into fragments at the top. One single clean banner ribbon below the heart with the words 'LA DETENTE' written ONCE in big fun bold playful display lettering, cream and gold, perfectly spelled, no other text anywhere. Bold black outline sticker look, vibrant, warm lighting, centered, symmetrical, white background, crisp clean edges, ready for t-shirt print and embroidery, high detail, no watermark.",
-  "_spelling": "exactly LA DETENTE once"
+ "_note": "trigger ld-logo-gen.yml (batch transparent)",
+ "rev": 4,
+ "aspect_ratio": "1:1",
+ "jobs": [
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. The AR-15 and the ball-trap shotgun crossed in a clean X with a big glossy red 3D heart in the exact center. Flat clean vector logo, simple and precise.",
+   "outfile": "shops/la-detente/img/designs/logo_t01.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. The AR-15 and the ball-trap shotgun crossed behind a glossy red heart. Bold sticker style with a thick black outline, vibrant, simple.",
+   "outfile": "shops/la-detente/img/designs/logo_t02.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. The AR-15 and the ball-trap shotgun crossed in an X over a glossy red heart, photorealistic brushed metal and walnut wood, detailed, precise.",
+   "outfile": "shops/la-detente/img/designs/logo_t03.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. Minimalist single continuous line monoline emblem: AR-15 and ball-trap shotgun crossed with a small red heart in the middle, very simple and elegant.",
+   "outfile": "shops/la-detente/img/designs/logo_t04.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. The AR-15 and ball-trap shotgun crossed behind a red heart, with an orange clay pigeon target shattering into fragments above the heart. Clean flat vector.",
+   "outfile": "shops/la-detente/img/designs/logo_t05.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. Symmetrical emblem: a red heart in the center, an AR-15 rifle on the left and a ball-trap shotgun on the right pointing outward. Clean simple flat design.",
+   "outfile": "shops/la-detente/img/designs/logo_t06.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. A bold red heart outline with the AR-15 and the ball-trap shotgun crossed inside it. Simple two-color red and black, precise.",
+   "outfile": "shops/la-detente/img/designs/logo_t07.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. Vintage engraved badge emblem with crossed AR-15 and ball-trap shotgun over a red heart, fine line engraving style, no circle border.",
+   "outfile": "shops/la-detente/img/designs/logo_t08.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. Modern flat two-color design (red and black only): AR-15 and ball-trap shotgun crossed over a red heart, clean and simple.",
+   "outfile": "shops/la-detente/img/designs/logo_t09.png",
+   "transparent": true
+  },
+  {
+   "prompt": "Isolated on a pure plain solid white background, no text, no lettering, no words, no background scene, centered, clean crisp edges. Subject: a black AR-15 rifle, a red love heart, and an over-and-under ball-trap clay-shooting shotgun. Premium gold and red emblem: AR-15 and over-and-under ball-trap shotgun crossed over a glossy red heart with a small orange clay pigeon, clean precise vector.",
+   "outfile": "shops/la-detente/img/designs/logo_t10.png",
+   "transparent": true
+  }
+ ]
 }
