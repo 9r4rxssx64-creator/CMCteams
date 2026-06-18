@@ -1,7 +1,7 @@
 {
-  "_note": "Pousser ce fichier déclenche .github/workflows/ld-logo-gen.yml (Replicate FLUX). Le PNG est commité automatiquement.",
-  "rev": 1,
-  "outfile": "shops/la-detente/img/designs/logo_ai_v1.png",
+  "_note": "Pousser ce fichier déclenche ld-logo-gen.yml (Replicate FLUX). PNG commité auto.",
+  "rev": 2,
+  "outfile": "shops/la-detente/img/designs/logo_ai_v2.png",
   "aspect_ratio": "1:1",
-  "prompt": "Premium realistic emblem badge logo for a clay-pigeon / ball-trap sport shooting club named 'LA DETENTE'. Centered composition: a realistic black AR-15 sporting rifle and a realistic over-and-under break-action clay-shooting shotgun crossed in a clean X. A glossy bright red 3D heart placed exactly over the crossing point in the dead center. An orange clay pigeon target shattering into a few fragments at the top. Below, the club name written large in a FUN bold playful slightly hand-drawn display lettering: LA DETENTE, in warm cream and gold with a dark outline, perfectly spelled. Dark charcoal background inside a subtle golden circular badge ring, centered, symmetrical, crisp clean edges, sport-club crest style, ready for t-shirt print and embroidery. Photorealistic brushed-metal and walnut-wood textures on the firearms, dramatic studio rim lighting, ultra detailed, professional vector-sharp logo, no watermark, no extra text besides LA DETENTE."
+  "prompt": "Bold fun emblem badge logo for a clay-pigeon ball-trap shooting club named 'LA DETENTE'. On the left a realistic modern black AR-15 rifle with a magazine; on the right a realistic over-and-under wooden break-action clay-shooting shotgun; the two guns crossed in a clean X. A big glossy bright red 3D heart in the exact center over the crossing point. An orange clay pigeon disc shattering into several fragments at the top. The club name in large FUN bold playful comic display lettering: LA DETENTE, cream and gold with a dark outline, correctly spelled. Round dark charcoal badge with a polished gold ring. Centered, symmetrical, crisp clean edges, ready for t-shirt print and embroidery, photorealistic metal and walnut wood textures, dramatic studio lighting, ultra detailed, no watermark, no extra text besides LA DETENTE."
 }
