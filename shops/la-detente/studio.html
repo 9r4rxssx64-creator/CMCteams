@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.7.0 — réglages précis (sous-sections repliables + champs numériques) + zoom % + export groupé -->
+<!-- La Détente — Studio (admin) v1.7.1 — + modèles La Détente (Cœur AR-15, Cœur AR-15 & ball-trap) -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -226,7 +226,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
     </details>
     <details class="grp grp-macro" name="ld-left"><summary>🎨 Bibliothèque</summary>
       <div class="sublab">⭐ Mes logos créés</div><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div>
-      <div class="sublab">🖼️ Images réelles</div><div class="emblems" id="realLib"></div>
+      <div class="sublab">🖼️ Modèles La Détente</div><div class="emblems" id="realLib"></div>
       <input id="webq" placeholder="🔎 Chercher sur le web (cerf, aigle, fusil…)" style="width:100%;margin-top:8px;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" onkeydown="if(event.key==='Enter')Studio.webSearch()">
       <button class="btn" id="webBtn" style="width:100%;margin-top:6px" onclick="Studio.webSearch()">🔎 Chercher sur le web</button>
       <div class="emblems" id="webResults" style="margin-top:8px"></div>
@@ -384,7 +384,7 @@ function renderEmblems(){
  }).join("");
 }
 /* Bibliothèque de modèles vidée à la demande de Kevin (2026-06-13) — aucun modèle proposé par défaut. Kevin réajoute au fur et à mesure. */
-var REAL_LIB=[];
+var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"]];
 function renderRealLib(){var el=$("realLib");if(!el)return;el.innerHTML=REAL_LIB.map(function(e){return '<button class="eb" title="'+e[1]+'" onclick="Studio.addImageURL(\'img/designs/'+e[0]+'.png\')"><img src="img/designs/'+e[0]+'.png" style="width:100%;height:100%;object-fit:contain" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join("");}
 function _myLogos(){try{return JSON.parse(localStorage.getItem("ld_logos_cache")||"[]")}catch(_){return[]}}
 function renderMyLogos(){var el=$("myLogos");if(!el)return;var L=_myLogos();var h=$("myLogosHint");el.innerHTML=L.length?L.map(function(l,i){return '<button class="eb" title="'+esc(l.name||"Logo")+'" onclick="Studio.addMyLogo('+i+')"><img src="'+l.img+'" style="width:100%;height:100%;object-fit:contain"></button>';}).join(""):'';if(h)h.style.display=L.length?"none":"block";}
