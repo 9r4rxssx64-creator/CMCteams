@@ -1,5 +1,20 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔔 APEX CHAT — notifs appels/messages app fermée (v1.1.242, 2026-06-17) — 1 TEST
+
+**Corrigé + déployé (run Success vérifiée)** : le serveur de notifs n'avait pas la
+route `/web-push` → 404 silencieux sur 100% des notifs. Route ajoutée + jeton Apex
+Chat accepté (anti‑401) + appel entrant **hors conversation** réparé (le serveur
+garde l'offre ~45 s et la rejoue quand tu rejoins → ça sonne ; app ouverte ailleurs
+→ sonne de l'intérieur ; notif « Répondre » décroche tout seul). Tests 926/926, 100% cov.
+
+**TON action (1 test, 30 s, sur les 2 iPhone)** : app en **v1.1.242** (ferme/rouvre 2×)
+→ **Réglages → 📡 Tester une notif serveur** → m'envoyer le texte affiché.
+- ✅ 2xx = base OK, les appels sonneront partout (app fermée / arrière‑plan / autre vue).
+- ❌ 404/401 = me dire le code, je corrige ce point précis.
+
+---
+
 ## 📦 SOURCING FOURNISSEURS — app livrée (2026-06-17)
 
 **Fait auto (rien à faire) :** 29 fournisseurs **sans SIRET + API** ajoutés d'office dans l'app
