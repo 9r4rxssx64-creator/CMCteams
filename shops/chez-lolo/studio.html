@@ -909,7 +909,7 @@ Studio.init();
 <script>(function(){if(!("serviceWorker" in navigator))return;var had=!!navigator.serviceWorker.controller,rl=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(!had){had=true;return}if(rl)return;rl=true;location.reload()});navigator.serviceWorker.register("sw.js").then(function(reg){function chk(){try{reg.update()}catch(e){}if(reg.waiting)reg.waiting.postMessage("skipWaiting")}setInterval(chk,60000);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()});window.addEventListener("focus",chk)})})();</script>
 <script>
 var Gate=(function(){
- var SALT="la-detente-studio-v1", EXPECT="1969fb5c6e01414bf39f502eb6db47a4a3897e4d1c28a0361d20022c51d7c596";
+ var SALT="la-detente-studio-v1", EXPECT="1969fb5c6e01414bf39f502eb6db47a4a3897e4d1c28a0361d20022c51d7c596", EXPECT_LAU="f006a22e0f11130b7d1344b6cd1feafa7ff2e3b06d30862ee31cbdfe32f68b5c";
  var TRUST="ld_studio_trust_v1", FAILS="ld_studio_fails_v1", CRED="ld_studio_cred_v1", TTL=60*864e5;
  function norm(s){return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(function(t){return t.length>=2})}
  function whoIs(name){var t=norm(name);var h=function(x){return t.indexOf(x)>=0};
@@ -932,7 +932,7 @@ var Gate=(function(){
    if(!who){bumpFail();msg("Accès réservé aux créateurs (prénom + nom).");return}
    var pin=document.getElementById("sgPin").value||"";
    if(pin.length<4){msg("Entre ton code.");return}
-   try{var h=await pbkdf2(pin);if(h===EXPECT){msg("Bienvenue 👋",true);grant(who);try{if(!lg(CRED,null))await enrollBio(who)}catch(e){}}else{var f=bumpFail();msg("Code incorrect ("+f.n+").");}}catch(e){msg("Erreur, réessaie.")}
+   try{var h=await pbkdf2(pin);if(h===EXPECT||(who==="laurence"&&h===EXPECT_LAU)){msg("Bienvenue 👋",true);grant(who);try{if(!lg(CRED,null))await enrollBio(who)}catch(e){}}else{var f=bumpFail();msg("Code incorrect ("+f.n+").");}}catch(e){msg("Erreur, réessaie.")}
  }
  function offerBio(){try{if(window.PublicKeyCredential){document.getElementById("sgBio").style.display="block"}}catch(e){}}
  async function enrollBio(uid){try{if(!window.PublicKeyCredential)return;var ok=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();if(!ok)return;var id=crypto.getRandomValues(new Uint8Array(16));var cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"Chez Lolo Studio"},user:{id:id,name:uid,displayName:uid},pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required"},timeout:60000}});if(cred){var raw=new Uint8Array(cred.rawId);ls(CRED,{uid:uid,id:Array.prototype.slice.call(raw)})}}catch(e){}}
