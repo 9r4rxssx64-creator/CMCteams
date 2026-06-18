@@ -12,7 +12,7 @@
  *   - OFFLINE_CACHE  : fallback HTML hors-ligne
  */
 
-export const CACHE_VERSION = 'apex-chat-v1.1.244';
+export const CACHE_VERSION = 'apex-chat-v1.1.245';
 export const STATIC_CACHE = `${CACHE_VERSION}-static`;
 export const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 export const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
@@ -169,12 +169,27 @@ export async function handleFetch(event, deps) {
 // ----------------------------------------------------------------------------
 //  Push : affiche notification système
 // ----------------------------------------------------------------------------
-export async function handlePush(event, { registration, clients }) {
+export async function handlePush(event, { registration, clients, caches }) {
   let data = { title: 'Apex Chat', body: 'Nouveau message' };
+  let rawOk = false;
   try {
-    if (event.data) data = { ...data, ...event.data.json() };
+    if (event.data) { data = { ...data, ...event.data.json() }; rawOk = true; }
   } catch {
     // Payload non-JSON ou absent → fallback default ci-dessus
+  }
+
+  // v1.1.245 : TRACE — enregistre que le SW a REÇU un push (diag.html le lit).
+  // Permet de distinguer « iOS ne livre rien au SW » (aucune trace ici malgré un
+  // 201 serveur = souci déchiffrement/livraison) de « le SW reçoit mais iOS
+  // n'affiche pas » (trace présente mais pas de bannière = réglage/affichage).
+  if (caches) {
+    try {
+      const c = await caches.open('apex-push-debug');
+      await c.put('/last', new Response(
+        JSON.stringify({ ts: Date.now(), title: data.title, type: (data.payload && data.payload.type) || 'message', decoded: rawOk }),
+        { headers: { 'Content-Type': 'application/json' } },
+      ));
+    } catch { /* best-effort */ }
   }
 
   // v1.1.150 : actions différenciées appel vs message + vibration urgent

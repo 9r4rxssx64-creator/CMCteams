@@ -67,6 +67,7 @@
 <div class="row"><span class="lbl">Push API</span><span class="val" id="d-np-api">…</span></div>
 <div class="row"><span class="lbl">Abonnement push</span><span class="val" id="d-np-sub">…</span></div>
 <div class="row"><span class="lbl">Service push</span><span class="val" id="d-np-svc">…</span></div>
+<div class="row"><span class="lbl">Push reçu par le SW</span><span class="val" id="d-np-recv">…</span></div>
 <div class="row"><span class="lbl">Dernière erreur</span><span class="val" id="d-np-err">—</span></div>
 <button class="btn" onclick="testNotif()">🔔 Tester ma notif maintenant</button>
 </div>
@@ -252,6 +253,23 @@ async function runDiag() {
         setWarn('d-np-sub', '⚠ Pas d\'abonnement'); setInfo('d-np-svc', '—'); diag.push_subscribed = false;
       }
     }
+    // v1.1.245 : le SW écrit la réception de chaque push dans le cache 'apex-push-debug'.
+    // Si le serveur livre (201) mais que RIEN n'apparaît ici → iOS ne livre pas au SW
+    // (déchiffrement). Si une heure récente apparaît mais pas de bannière → affichage iOS.
+    try {
+      const pc = await caches.open('apex-push-debug');
+      const pr = await pc.match('/last');
+      if (pr) {
+        const pd = await pr.json();
+        const ageSec = Math.round((Date.now() - (pd.ts || 0)) / 1000);
+        const human = ageSec < 60 ? ('il y a ' + ageSec + 's') : ageSec < 3600 ? ('il y a ' + Math.round(ageSec / 60) + 'min') : new Date(pd.ts).toLocaleString();
+        (ageSec < 120 ? setOk : setInfo)('d-np-recv', '✓ ' + human + ' (' + (pd.type || '?') + ')');
+        diag.sw_last_push = pd;
+      } else {
+        setWarn('d-np-recv', '⚠ Aucun push reçu par le SW');
+        diag.sw_last_push = null;
+      }
+    } catch (_) { setInfo('d-np-recv', '—'); }
   } catch (e) { setErr('d-np-err', e.message); diag.notif_diag_error = e.message; }
 
   // Appels WebRTC — support + permissions (test live via boutons)

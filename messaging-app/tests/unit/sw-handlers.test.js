@@ -324,6 +324,26 @@ describe('sw-handlers — handlePush', () => {
     expect(registration.showNotification).toHaveBeenCalledWith('Apex Chat', expect.any(Object));
   });
 
+  it('v1.1.245 : caches présent → enregistre la réception du push (apex-push-debug)', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const put = vi.fn(async () => {});
+    const caches = { open: vi.fn(async () => ({ put })) };
+    const event = { data: { json: () => ({ title: 'M', body: 'B', payload: { convId: 'c1' } }) } };
+    await sw.handlePush(event, { registration, caches });
+    expect(caches.open).toHaveBeenCalledWith('apex-push-debug');
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(put.mock.calls[0][0]).toBe('/last');
+    expect(registration.showNotification).toHaveBeenCalled();
+  });
+
+  it('v1.1.245 : caches.open throw → best-effort, notif quand même affichée', async () => {
+    const registration = { showNotification: vi.fn(async () => {}) };
+    const caches = { open: vi.fn(async () => { throw new Error('cache down'); }) };
+    const event = { data: { json: () => ({ title: 'M', body: 'B' }) } };
+    await sw.handlePush(event, { registration, caches });
+    expect(registration.showNotification).toHaveBeenCalled();
+  });
+
   it('v1.1.244 : icon absent du payload → PAS d\'icon/badge (iOS utilise l\'icône app)', async () => {
     const registration = { showNotification: vi.fn(async () => {}) };
     const event = { data: { json: () => ({ title: 'X', body: 'Y', icon: null, badge: undefined }) } };
