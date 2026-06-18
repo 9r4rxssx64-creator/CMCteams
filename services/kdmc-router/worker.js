@@ -70,6 +70,10 @@ export default {
        nosniff + Referrer-Policy (renforce la confidentialité du pass #kdmc_sso=). */
     if (!outHeaders.has('x-content-type-options')) outHeaders.set('x-content-type-options', 'nosniff');
     if (!outHeaders.has('referrer-policy')) outHeaders.set('referrer-policy', 'strict-origin-when-cross-origin');
+    /* Anti-clickjacking (équivaut à frame-ancestors 'self', impossible en <meta>) +
+       HSTS (tous les sous-domaines kd-mc.com sont en HTTPS via Cloudflare). */
+    if (!outHeaders.has('x-frame-options')) outHeaders.set('x-frame-options', 'SAMEORIGIN');
+    if (!outHeaders.has('strict-transport-security')) outHeaders.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers: outHeaders });
   },
 };
