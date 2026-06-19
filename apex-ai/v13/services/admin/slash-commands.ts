@@ -24,6 +24,13 @@ export interface SlashCommand {
   requiresArgs?: boolean;
   /** Si défini, la commande navigue vers cette route (handler générique). */
   route?: string;
+  /**
+   * Si défini, cliquer la commande préremplit le chat avec ce texte (mode de
+   * réflexion — pas d'auto-submit ; Kevin colle/complète son contenu puis envoie).
+   * Utilisé par les commandes ghost/roast/matrix/brief/steal/focus/challenge/
+   * expand/systemize.
+   */
+  prefill?: string;
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
@@ -98,6 +105,16 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'ooda', emoji: '🎯', description: 'Analyse OODA (Observe-Orient-Decide-Act) d\'un objectif', argsHint: '<objectif>', requiresArgs: true },
   /* v13.4.253 — mémo dédié des commandes */
   { name: 'commands', emoji: '📒', description: 'Mémo dédié : toutes les commandes du chat', argsHint: '', route: 'commands' },
+  /* Commandes de réflexion (modes de prompt) — clic = prefill du chat, pas d'auto-submit */
+  { name: 'ghost', emoji: '👻', description: 'Réécrit pour sonner 100% humain (enlève les tics d\'IA)', argsHint: '<texte>', prefill: 'Réécris ce qui suit pour sonner 100% humain, sans aucun tic d\'IA : ' },
+  { name: 'roast', emoji: '🔥', description: 'Feedback brutalement honnête, sans filtre (cash mais utile)', argsHint: '<sujet>', prefill: 'Donne-moi un feedback brutalement honnête et sans filtre, cash mais utile, sur : ' },
+  { name: 'matrix', emoji: '🔲', description: 'Présente les options et compromis dans une matrice claire', argsHint: '<sujet>', prefill: 'Présente les options et leurs compromis dans une matrice claire pour : ' },
+  { name: 'brief', emoji: '⚡', description: 'Condense à l\'essentiel (TL;DR ultra-court et actionnable)', argsHint: '<texte>', prefill: 'Condense à l\'essentiel — un TL;DR ultra-court et actionnable de : ' },
+  { name: 'steal', emoji: '🪝', description: 'Reverse-engineer ce qui marche (et comment le reproduire)', argsHint: '<sujet>', prefill: 'Reverse-engineer ce qui marche, et explique comment le reproduire, pour : ' },
+  { name: 'focus', emoji: '🎯', description: 'Coupe le bruit, ne garde que ce qui compte vraiment', argsHint: '<sujet>', prefill: 'Coupe le bruit et ne garde que ce qui compte vraiment dans : ' },
+  { name: 'challenge', emoji: '🥊', description: 'Avocat du diable, attaque les hypothèses, stress-test l\'idée', argsHint: '<idée>', prefill: 'Joue l\'avocat du diable : attaque les hypothèses et stress-teste cette idée : ' },
+  { name: 'expand', emoji: '🌱', description: 'Explore les implications, cas d\'usage et extensions', argsHint: '<sujet>', prefill: 'Explore les implications, les cas d\'usage et les extensions possibles de : ' },
+  { name: 'systemize', emoji: '⚙️', description: 'Transforme un coup unique en système / workflow réutilisable', argsHint: '<sujet>', prefill: 'Transforme ceci en système / workflow réutilisable (étapes répétables) : ' },
 ];
 
 export interface SlashParseResult {

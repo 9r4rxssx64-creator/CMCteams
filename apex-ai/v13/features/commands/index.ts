@@ -179,10 +179,14 @@ export function render(rootEl: HTMLElement): void {
       const route = el.closest('[data-cmd-route]')?.getAttribute('data-cmd-route');
       if (route) { router.navigate(route); return; }
 
-      /* 5. Commande intégrée d'action → prefill « /cmd ». */
+      /* 5. Commande intégrée d'action → prefill. Une commande « de réflexion »
+       *    (ghost/roast/matrix…) a une instruction `prefill` dédiée ; sinon on
+       *    préremplit « /cmd » (Kevin complète les args puis envoie lui-même). */
       const name = el.closest('[data-cmd-run]')?.getAttribute('data-cmd-run');
       if (name) {
-        try { localStorage.setItem('apex_v13_chat_prefill', '/' + name + ' '); } catch { /* ignore */ }
+        const cmd = SLASH_COMMANDS.find((c) => c.name === name);
+        const text = cmd?.prefill ? cmd.prefill : '/' + name + ' ';
+        try { localStorage.setItem('apex_v13_chat_prefill', text); } catch { /* ignore */ }
         router.navigate('chat');
       }
     });
