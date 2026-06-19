@@ -1,0 +1,32 @@
+name: LD Gemini Image
+on:
+  push:
+    paths: ['shops/la-detente/.gemini-request.json']
+permissions:
+  contents: write
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ github.ref_name }}' }
+      - name: Gemini
+        env: { GKEY: '${{ secrets.GEMINI_API_KEY }}' }
+        run: |
+          REQ=shops/la-detente/.gemini-request.json
+          LOG=shops/la-detente/.gemini-log.txt; echo "start $(date -u +%FT%TZ) key=$([ -n "$GKEY" ] && echo SET || echo EMPTY)" > "$LOG"
+          P=$(jq -r '.jobs[0].prompt' "$REQ"); O=$(jq -r '.jobs[0].outfile' "$REQ")
+          M="gemini-2.5-flash-image-preview"
+          BODY=$(jq -n --arg p "$P" '{contents:[{parts:[{text:$p}]}],generationConfig:{responseModalities:["IMAGE"]}}')
+          HTTP=$(curl -s -o /tmp/resp.json -w "%{http_code}" "https://generativelanguage.googleapis.com/v1beta/models/$M:generateContent?key=$GKEY" -H "Content-Type: application/json" -d "$BODY")
+          echo "model=$M http=$HTTP" >> "$LOG"
+          echo "resp_head: $(head -c 300 /tmp/resp.json)" >> "$LOG"
+          DATA=$(jq -r '.candidates[0].content.parts[]? | select(.inlineData) | .inlineData.data' /tmp/resp.json 2>/dev/null | head -1)
+          if [ -n "$DATA" ]; then mkdir -p "$(dirname "$O")"; echo "$DATA" | base64 -d > "$O" 2>/dev/null && echo "$O OK $(wc -c <"$O")o" >> "$LOG"; else echo "PAS D IMAGE — err: $(jq -r '.error.message // empty' /tmp/resp.json)" >> "$LOG"; fi
+          cat "$LOG"
+      - name: Commit
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "bot@users.noreply.github.com"
+          git add -A; git commit -m "gemini test [skip ci]" || exit 0
+          git push origin HEAD:'${{ github.ref_name }}' || echo pushfail
