@@ -1,9 +1,46 @@
 {
- "rev": 2,
+ "_note": "batch imagen4",
+ "rev": 3,
  "jobs": [
   {
-   "prompt": "Premium emblem badge logo on a pure white background, centered: a realistic black AR-15 rifle and a wooden over-and-under ball-trap shotgun crossed in an X over a glossy red 3D heart, an orange clay pigeon shattering above, gold-ringed dark crest, the words LA DETENTE in bold below. Clean, high quality.",
-   "outfile": "shops/la-detente/img/designs/logo_g1.png"
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. A gold-ringed dark crest badge: a black AR-15 rifle and a wooden over-and-under ball-trap shotgun crossed in an X, a glossy bright red 3D heart in the center, an orange clay pigeon shattering at top, the words LA DETENTE in bold below. Premium, realistic.",
+   "outfile": "shops/la-detente/img/designs/logo_g01.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Symmetrical sport-club emblem: a glossy red 3D heart in the center, a realistic black AR-15 rifle on the left and a wooden ball-trap shotgun on the right, an orange clay pigeon above, gold accents, text LA DETENTE below.",
+   "outfile": "shops/la-detente/img/designs/logo_g02.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Two realistic wooden over-and-under ball-trap shotguns crossed in an X behind a glossy red heart, an orange clay pigeon, a thin gold circular ring, text LA DETENTE. Premium metal and walnut.",
+   "outfile": "shops/la-detente/img/designs/logo_g03.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Bold modern sticker emblem in red and black: an AR-15 rifle and a ball-trap shotgun crossed over a red heart with an orange clay pigeon, thick clean outline, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_g04.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Vintage hunting club crest: crossed AR-15 and ball-trap shotgun over a red heart, an orange clay target, a banner ribbon reading LA DETENTE, gold and dark green, detailed engraving style.",
+   "outfile": "shops/la-detente/img/designs/logo_g05.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Dynamic emblem: a black silhouette of a clay-pigeon trap shooter aiming a shotgun up at a flying orange clay target, a red circular crosshair ring, a small red heart, a red swoosh, text LA DETENTE. Red and black.",
+   "outfile": "shops/la-detente/img/designs/logo_g06.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Minimal premium round badge: a glossy red heart with a crossed AR-15 and ball-trap shotgun, an orange clay pigeon, gold ring, clean flat vector look, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_g07.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Fun bold emblem: a red heart wearing ear-protection headphones, a crossed AR-15 and ball-trap shotgun, an orange clay pigeon, playful sporty style, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_g08.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Realistic premium 3D emblem: AR-15 and wooden ball-trap shotgun crossed over a big glossy red heart, an orange clay pigeon shattering, dramatic studio lighting, dark gold crest, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_g09.png"
+  },
+  {
+   "prompt": "High quality emblem logo on a pure plain white background, centered, clean, no watermark. Crossed shotgun shells and a ball-trap shotgun over a red heart with an orange clay disc, sporty red black and gold emblem, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_g10.png"
   }
  ]
 }

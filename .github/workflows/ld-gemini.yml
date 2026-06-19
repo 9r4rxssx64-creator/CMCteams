@@ -10,40 +10,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: '${{ github.ref_name }}' }
-      - name: Gemini
+      - name: Imagen4
         env: { GKEY: '${{ secrets.GEMINI_API_KEY }}' }
         run: |
           REQ=shops/la-detente/.gemini-request.json
           LOG=shops/la-detente/.gemini-log.txt; echo "start $(date -u +%FT%TZ)" > "$LOG"
-          P=$(jq -r '.jobs[0].prompt' "$REQ"); O=$(jq -r '.jobs[0].outfile' "$REQ")
-          echo "=== modèles image dispo ===" >> "$LOG"
-          curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GKEY&pageSize=200" \
-            | jq -r '.models[]? | select((.name|test("imagen|image";"i")) or ((.supportedGenerationMethods//[])|join(",")|test("predict"))) | .name + "  [" + ((.supportedGenerationMethods//[])|join(",")) + "]"' >> "$LOG" 2>/dev/null
-          echo "=== essais ===" >> "$LOG"
-          save(){ echo "$1" | base64 -d > "$O" 2>/dev/null && [ -s "$O" ] && echo "  -> IMAGE OK $(wc -c <"$O")o dans $O" >> "$LOG" && return 0; return 1; }
-          # 1) Imagen 3 (predict)
-          for M in imagen-3.0-generate-002 imagen-3.0-fast-generate-001 imagen-4.0-generate-001 imagen-3.0-generate-001; do
+          N=$(jq '.jobs|length' "$REQ")
+          for k in $(seq 0 $((N-1))); do
+            P=$(jq -r ".jobs[$k].prompt" "$REQ"); O=$(jq -r ".jobs[$k].outfile" "$REQ")
             B=$(jq -n --arg p "$P" '{instances:[{prompt:$p}],parameters:{sampleCount:1,aspectRatio:"1:1"}}')
-            H=$(curl -s -o /tmp/r.json -w "%{http_code}" "https://generativelanguage.googleapis.com/v1beta/models/$M:predict?key=$GKEY" -H "Content-Type: application/json" -d "$B")
-            echo "$M:predict http=$H $(jq -r '.error.message // "ok"' /tmp/r.json | head -c 120)" >> "$LOG"
-            D=$(jq -r '.predictions[0].bytesBase64Encoded // empty' /tmp/r.json 2>/dev/null)
-            [ -n "$D" ] && save "$D" && break
+            OK=""
+            for M in imagen-4.0-ultra-generate-001 imagen-4.0-generate-001; do
+              H=$(curl -s -o /tmp/r.json -w "%{http_code}" "https://generativelanguage.googleapis.com/v1beta/models/$M:predict?key=$GKEY" -H "Content-Type: application/json" -d "$B")
+              D=$(jq -r '.predictions[0].bytesBase64Encoded // empty' /tmp/r.json 2>/dev/null)
+              if [ -n "$D" ]; then mkdir -p "$(dirname "$O")"; echo "$D" | base64 -d > "$O" 2>/dev/null; echo "$O <- $M http=$H $(wc -c <"$O")o" >> "$LOG"; OK=1; break; fi
+              echo "$O x $M http=$H $(jq -r '.error.message//empty' /tmp/r.json|head -c 90)" >> "$LOG"
+            done
+            [ -z "$OK" ] && echo "$O ÉCHEC" >> "$LOG"
+            sleep 3
           done
-          # 2) flash image (generateContent) si pas encore d'image
-          if [ ! -s "$O" ]; then
-          for M in gemini-2.0-flash-preview-image-generation gemini-2.0-flash-exp gemini-2.5-flash-image; do
-            B=$(jq -n --arg p "$P" '{contents:[{parts:[{text:$p}]}],generationConfig:{responseModalities:["IMAGE","TEXT"]}}')
-            H=$(curl -s -o /tmp/r.json -w "%{http_code}" "https://generativelanguage.googleapis.com/v1beta/models/$M:generateContent?key=$GKEY" -H "Content-Type: application/json" -d "$B")
-            echo "$M:gen http=$H $(jq -r '.error.message // "ok"' /tmp/r.json | head -c 120)" >> "$LOG"
-            D=$(jq -r '.candidates[0].content.parts[]? | select(.inlineData) | .inlineData.data' /tmp/r.json 2>/dev/null | head -1)
-            [ -n "$D" ] && save "$D" && break
-          done
-          fi
-          [ -s "$O" ] || echo "AUCUNE IMAGE produite" >> "$LOG"
           cat "$LOG"
       - name: Commit
         if: always()
         run: |
           git config user.name "github-actions[bot]"; git config user.email "bot@users.noreply.github.com"
-          git add -A; git commit -m "gemini test2 [skip ci]" || exit 0
+          git add -A; git commit -m "imagen4 batch [skip ci]" || exit 0
           git push origin HEAD:'${{ github.ref_name }}' || echo pushfail
