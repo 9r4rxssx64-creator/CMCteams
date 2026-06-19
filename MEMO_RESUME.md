@@ -2,6 +2,14 @@
 
 > Suite aux captures Kevin de la PWA Apex. Tout mergé sur le vrai `main` (vérifié via API GitHub).
 
+## Batch v13.4.333 → v13.4.336 + Agent KDMC (2026-06-16 → 19) — tout mergé sur `main`, audit complet vert (12 195 tests)
+- **.322** — proxy IA : worker **double-hash auth** corrigé (verifyPin tolérant) + **préflight CORS** ajouté (POST `x-apex-pin` → OPTIONS → 401 sans CORS = « Pas de réseau »). Worker redéployé. Test régression `v13_4_322-proxy-auth-contract` (extrait le vrai verifyPin du YAML). Lesson #95.
+- **.323** — lien `← KDMC` ne cache plus les boutons du chat (icônes décalées 84px) ; `proxy-auto-enable` efface les marques DEAD au boot (Claude re-tenté) ; menus ☰ : **⌨️ Commandes** + **🔗 Liens utiles**.
+- **.334** — Coffre « 1 clé » clarifié (22 clés côté serveur = normal).
+- **.335** — Firebase RECONNECTING : `ensureFreshToken` (token frais avant ping) + diagnostic montre la **vraie raison** (HTTP 401 + statut auth).
+- **.336** — Firebase **`login:rate_limited`** (régression .335 qui martelait le worker /login) : **throttle** dans `firebase-auth-bridge` (backoff 5 min rate_limited/60 s, reset succès+logout) + `firebase.ts` ne force plus clear()+retry sur 401. **Claude par défaut admin** : `ai-routing-policy.getMode()` → `kdmc_admin` défaut `premium` (Anthropic toujours ; le mode auto dérivait vers openai). Vérifié Dashboard « Anthropic OK ».
+- **Agent KDMC (Vercel)** — spam Telegram « Firebase GETALL: HTTP 401 » : `tools/agent/lib/gauth.js` (mint access_token compte de service, fail-open) + `lib/firebase.js` authentifie chaque REST + `index.js` n'alerte plus Telegram sur 401 (anti-spam). Lesson #109. **Workflow autonome** `.github/workflows/sync-agent-firebase-to-vercel.yml` (pousse FIREBASE_* → Vercel par API). Run testé : FIREBASE_* présents, **manque `VERCEL_TOKEN`** (Kevin l'ajoute 1×, je relance).
+
 ## Batch v13.4.328 → v13.4.332 (2026-06-14)
 - **.328** — Bannière « 0/12 providers IA » FAUSSE corrigée (auditProviderChain lisait les slots legacy, pas le Coffre `apex_v13_multi_keys` + proxy) ; versions désync (badge .327 vs MAJ .324) alignées ; pastille ← KDMC descendue sous la status bar (5 apps) ; test `landing-render-deep` pré-existant rattrapé (mock SSO).
 - **.329** — Toasts/bannières descendus à `env(safe-area-inset-top)+52px` → ne couvrent plus l'heure/batterie ni ← KDMC.

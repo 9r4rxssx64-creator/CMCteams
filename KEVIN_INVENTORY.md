@@ -1,7 +1,23 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-06-13** (Domaine kd-mc.com / boutiques — La Détente vidée + audit UX + alertes + consentement + barres admin + MAJ forcée + démos « en construction »)
+> Dernière mise à jour : **2026-06-19** (Apex v13.4.336 — proxy IA/CORS, Firebase auth throttle, Claude par défaut ; Agent KDMC anti-401 + workflow Vercel)
+
+## 🔧 Apex v13.4.322 → .336 + Agent KDMC — session 2026-06-16 → 19 (mergé sur main)
+
+**Nouveaux fichiers**
+- Agent : mint access_token Google service-account `tools/agent/lib/gauth.js`
+  - https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent/lib/gauth.js
+- Workflow autonome FIREBASE_* → Vercel `.github/workflows/sync-agent-firebase-to-vercel.yml`
+  - https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/sync-agent-firebase-to-vercel.yml
+- Test régression contrat auth proxy `apex-ai/v13/tests/unit/v13_4_322-proxy-auth-contract.test.ts`
+  - https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/v13_4_322-proxy-auth-contract.test.ts
+
+**Fichiers modifiés clés**
+- Worker proxy secrets (verifyPin tolérant + CORS) : `.github/workflows/sync-apex-secrets-to-cf-worker.yml`
+- Firebase auth throttle : `apex-ai/v13/services/auth/firebase-auth-bridge.ts`, `apex-ai/v13/services/storage/firebase.ts`
+- Claude par défaut admin : `apex-ai/v13/services/ai/ai-routing-policy.ts`
+- Agent auth REST : `tools/agent/lib/firebase.js`, `tools/agent/lib/config.js`, `tools/agent/index.js`
 
 ## 🛍️ Domaine boutiques — session 2026-06-13 (mergé sur main)
 
