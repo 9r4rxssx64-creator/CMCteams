@@ -184,6 +184,11 @@ class AIRoutingPolicy {
     try {
       const m = localStorage.getItem('apex_v13_routing_mode');
       if (m === 'auto' || m === 'economy' || m === 'premium' || m === 'forced') return m;
+      /* v13.4.336 (Kevin « il n'est pas sur Anthropic de base, comme IA ») : par
+       * DÉFAUT, l'admin Kevin est en 'premium' = Anthropic toujours (le mode 'auto'
+       * laissait le smart-router dériver vers openai après quelques succès). Les
+       * clients restent en 'auto'. Kevin peut basculer via ⚡ (choix persisté). */
+      if (localStorage.getItem('apex_v13_uid') === 'kdmc_admin') return 'premium';
     } catch {
       /* ignore */
     }

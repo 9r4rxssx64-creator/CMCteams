@@ -1,17 +1,15 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-## 🔔 APEX CHAT — notifs appels/messages app fermée (v1.1.242, 2026-06-17) — 1 TEST
-
-**Corrigé + déployé (run Success vérifiée)** : le serveur de notifs n'avait pas la
-route `/web-push` → 404 silencieux sur 100% des notifs. Route ajoutée + jeton Apex
-Chat accepté (anti‑401) + appel entrant **hors conversation** réparé (le serveur
-garde l'offre ~45 s et la rejoue quand tu rejoins → ça sonne ; app ouverte ailleurs
-→ sonne de l'intérieur ; notif « Répondre » décroche tout seul). Tests 926/926, 100% cov.
-
-**TON action (1 test, 30 s, sur les 2 iPhone)** : app en **v1.1.242** (ferme/rouvre 2×)
-→ **Réglages → 📡 Tester une notif serveur** → m'envoyer le texte affiché.
-- ✅ 2xx = base OK, les appels sonneront partout (app fermée / arrière‑plan / autre vue).
-- ❌ 404/401 = me dire le code, je corrige ce point précis.
+## 🤖 OPTIONNEL — Réactiver pleinement l'Agent KDMC (Vercel) — 2026-06-16
+Le spam Telegram « Agent KDMC crash : Firebase 401 » est **déjà coupé** (anti-spam dans le code, déployé).
+Le code de l'agent sait maintenant s'authentifier (compte de service). Pour qu'il **relise vraiment** ta base
+(surveillance auto), il faut 2 variables d'env côté **Vercel** (je ne peux PAS les écrire à ta place — aucun
+outil MCP « set env var » Vercel).
+1. Vercel → projet de l'agent → **Settings → Environment Variables**.
+2. Ajouter **`FIREBASE_CLIENT_EMAIL`** et **`FIREBASE_PRIVATE_KEY`** (copier les valeurs depuis tes secrets
+   GitHub : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions).
+3. Redéployer le projet.
+> Sans ça : aucun spam (déjà réglé), mais l'agent ne surveille pas. **Non urgent.**
 
 ---
 
@@ -2253,10 +2251,3 @@ dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
 → Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
 toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
 **Claude doit me le rappeler.**
-
-## 🔐 Lockdown shops (custom-tokens role:admin) — ACTIVATION (2 clics, quand tu veux)
-Livré + testé (router /__admin/fbtoken + helper client fail-open + règles stagées). Pour fermer l'écriture produits/logos/sélection aux seuls Kevin/Lolo :
-1. Laisser `deploy-kdmc-router.yml` se redéployer (auto au push, ou Run workflow) → pose les secrets FB + le endpoint.
-2. Sur https://sourcing.kd-mc.com : bouton « 🔒 Admin » → PIN admin → tester un ajout sélection.
-3. Actions → `deploy-cmcteams-rules.yml` → Run → `shops_lock=on` (rollback `off`). `rules_state` reste `hardened`.
-Détails : shops/FIREBASE_RULES.md (section « Lockdown fort »). Les commandes clients ne sont jamais touchées.

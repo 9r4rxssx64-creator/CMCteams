@@ -214,24 +214,18 @@ class Firebase {
       return;
     }
 
-    /* Test ping. v13.4.335 (Kevin « répare Firebase ») : on garantit un token frais
-     * AVANT le ping (la DB exige `auth != null` → un ping sans token = 401 →
-     * RECONNECTING à vie). Sur un 401, on force un refresh de token + retry. */
+    /* Test ping. v13.4.335/336 (Kevin « répare Firebase » / « login:rate_limited ») :
+     * on garantit un token frais AVANT le ping (la DB exige `auth != null`).
+     * `ensureFreshToken` est THROTTLÉ côté bridge (backoff sur rate_limited) → on
+     * NE force PLUS de clear()+retry sur 401 ici (c'était ça qui martelait le
+     * worker /login et déclenchait le rate-limit). Le prochain reconnect retentera,
+     * en respectant le backoff. */
     try {
       await firebaseAuthBridge.ensureFreshToken();
-      let ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
+      const ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
-      if (ping.status === 401 || ping.status === 403) {
-        /* Token absent/expiré → refresh forcé + 1 retry. */
-        firebaseAuthBridge.clear();
-        await firebaseAuthBridge.ensureFreshToken();
-        ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(5000),
-        });
-      }
       this.connected = ping.ok;
       this.lastPingStatus = ping.status;
       logger.info('firebase', `Connected: ${this.connected}`, { url: this.url, status: ping.status });
@@ -349,20 +343,13 @@ class Firebase {
    */
   private async attemptReconnect(): Promise<boolean> {
     try {
-      /* v13.4.335 : token frais avant le ping + retry sur 401/403 (auth requise). */
+      /* v13.4.336 : token frais (THROTTLÉ côté bridge) avant le ping. Pas de
+       * clear()+retry forcé sur 401 → ne martèle plus le worker /login. */
       await firebaseAuthBridge.ensureFreshToken();
-      let ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
+      const ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
-      if (ping.status === 401 || ping.status === 403) {
-        firebaseAuthBridge.clear();
-        await firebaseAuthBridge.ensureFreshToken();
-        ping = await fetch(`${this.url}/.json?shallow=true${this.authSuffix(true)}`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(5000),
-        });
-      }
       this.lastPingStatus = ping.status;
       if (ping.ok) {
         this.connected = true;

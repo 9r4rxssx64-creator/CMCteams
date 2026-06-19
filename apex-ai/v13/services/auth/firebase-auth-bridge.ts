@@ -106,10 +106,20 @@ class FirebaseAuthBridge {
 
   /**
    * Obtient un id_token pour ce user. Fail-open : renvoie false sans jamais throw.
+   *
+   * v13.4.336 (Kevin « login:rate_limited ») : THROTTLE. v335 appelait /login à
+   * chaque ping + chaque 401 → le worker (anti-bruteforce PIN) rate-limitait →
+   * plus jamais de token. On respecte un backoff : après un échec on attend avant
+   * de retenter (long sur rate_limited, court sinon). Un succès remet à zéro.
    */
+  private nextAllowedTs = 0;
+
   async activate(uid: string, isAdmin: boolean): Promise<boolean> {
     try {
       if (!uid) return false;
+      /* Backoff actif → on NE rappelle PAS le worker (sinon on entretient le
+       * rate-limit). Le token reste '' ; Firebase reste en mode dégradé propre. */
+      if (Date.now() < this.nextAllowedTs) return false;
       const pinKey = isAdmin ? 'apex_v13_pin' : `apex_v13_pin_${uid}`;
       const pinHash = localStorage.getItem(pinKey);
       if (!pinHash) { this.setStatus({ ok: false, reason: 'no_local_pin' }); return false; }
@@ -121,12 +131,21 @@ class FirebaseAuthBridge {
         res = await this.callLogin(uid, pinHash);
       }
 
-      if (res !== 'ok') { this.setStatus({ ok: false, reason: 'login:' + res }); return false; }
+      if (res !== 'ok') {
+        /* Backoff selon la raison : rate_limited = long (5 min) pour laisser la
+         * fenêtre du worker se vider ; autres erreurs = court (60 s). */
+        const isRate = /rate.?limit/i.test(res);
+        this.nextAllowedTs = Date.now() + (isRate ? 5 * 60_000 : 60_000);
+        this.setStatus({ ok: false, reason: 'login:' + res, retry_in_s: Math.round((this.nextAllowedTs - Date.now()) / 1000) });
+        return false;
+      }
 
+      this.nextAllowedTs = 0; /* succès → plus de backoff */
       this.setStatus({ ok: true, has_id_token: !!this.idToken, mode: this.idToken ? 'id_token' : 'custom_only' });
       logger.info('fb-auth-bridge', 'Phase 5 activée', { has_id_token: !!this.idToken, uid });
       return true;
     } catch (e) {
+      this.nextAllowedTs = Date.now() + 60_000;
       this.setStatus({ ok: false, reason: 'exception:' + String((e as Error)?.message ?? e).slice(0, 80) });
       return false;
     }
@@ -178,6 +197,7 @@ class FirebaseAuthBridge {
   clear(): void {
     this.idToken = '';
     this.exp = 0;
+    this.nextAllowedTs = 0; /* v336 : logout/reset → on autorise une nouvelle tentative tout de suite */
     try {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(EXP_KEY);
