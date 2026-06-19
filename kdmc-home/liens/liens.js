@@ -1,4 +1,4 @@
-/* KDMC APEX — Centre de contrôle (liens 1-clic, par famille). v1.1.0
+/* KDMC APEX — Centre de contrôle (liens 1-clic, par famille). v1.2.0
    Réservé Kevin / Lolo. Tout est fail-open (anti-lockout, règles #81/#98).
    Aucun secret ici : uniquement des liens vers TES tableaux de bord.
    + Recherche instantanée + pastilles d'état des workers (lit le JSON de
@@ -12,6 +12,7 @@
   var WK = function (name) { return 'https://' + name + '.9r4rxssx64.workers.dev'; };
   var FB = 'https://console.firebase.google.com/project';
   var HEALTH_URL = '/CMCteams/tools/health/workers-status.json';
+  var BAL_URL = 'https://kdmc-balances.9r4rxssx64.workers.dev/balances';
 
   /* ---- Données : familles de liens ---- */
   var DATA = [
@@ -296,6 +297,25 @@
     }).catch(function () { /* JSON indispo → aucune pastille, jamais d'erreur visible */ });
   }
 
+  /* ---- Soldes (admin) : worker isolé, gated SSO. N'affiche QUE de vrais chiffres. ---- */
+  function fetchBalances() {
+    var t = (window.kdmcSSO && window.kdmcSSO.token) ? window.kdmcSSO.token() : '';
+    if (!t) return; // pas de pass → pas de solde (pas d'erreur visible)
+    fetch(BAL_URL, { headers: { Authorization: 'Bearer ' + t }, cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.balances) return;
+        var okb = j.balances.filter(function (b) { return b.ok; });
+        if (!okb.length) return; // aucun fournisseur avec API de solde → on n'affiche rien
+        var box = document.getElementById('balances');
+        if (!box) return;
+        box.innerHTML = '💰 Soldes&nbsp;: ' + okb.map(function (b) {
+          return '<span class="bchip">' + esc(b.label) + ' : ' + esc(b.balance) + ' ' + esc(b.currency) + '</span>';
+        }).join('');
+        box.hidden = false;
+      }).catch(function () { /* worker indispo → rien, jamais d'erreur visible */ });
+  }
+
   /* ---- Recherche instantanée ---- */
   function wireSearch() {
     var q = document.getElementById('q');
@@ -319,17 +339,17 @@
   function show(el, on) { if (el) el.hidden = !on; }
   function applyGate() {
     var ctl = document.getElementById('ctl'), lock = document.getElementById('lock'), tools = document.getElementById('tools');
-    function open() { show(ctl, true); show(lock, false); show(tools, true); applyHealth(); }
+    function open(admin) { show(ctl, true); show(lock, false); show(tools, true); applyHealth(); if (admin) fetchBalances(); }
     function locked() { show(ctl, false); show(lock, true); show(tools, false); }
     try {
       var sso = window.kdmcSSO;
-      if (!sso || typeof sso.whoami !== 'function') { open(); return; }
+      if (!sso || typeof sso.whoami !== 'function') { open(false); return; }
       sso.whoami().then(function (who) {
-        if (!who) { open(); return; }
+        if (!who) { open(false); return; }
         var ok = who.admin === true || /kevin|laurence|lolo/i.test(who.name || '');
-        if (ok) open(); else locked();
-      }).catch(function () { open(); });
-    } catch (e) { open(); }
+        if (ok) open(who.admin === true); else locked();
+      }).catch(function () { open(false); });
+    } catch (e) { open(false); }
   }
 
   function boot() {
