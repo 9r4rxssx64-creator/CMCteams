@@ -1,10 +1,8 @@
-/* KDMC APEX — Centre de contrôle (liens 1-clic, par famille).
-   Réservé Kevin / Lolo. Tout est fail-open (anti-lockout, règles #81/#98) :
-   - session d'un AUTRE client connu  -> verrouillé (il ne voit pas ton infra)
-   - aucune session / SSO indisponible -> affiché (jamais de verrouillage pour toi)
+/* KDMC APEX — Centre de contrôle (liens 1-clic, par famille). v1.1.0
+   Réservé Kevin / Lolo. Tout est fail-open (anti-lockout, règles #81/#98).
    Aucun secret ici : uniquement des liens vers TES tableaux de bord.
-   Les URLs externes sont les adresses OFFICIELLES connues des fournisseurs
-   (non re-vérifiées en live depuis cet environnement — voir note de bas de page). */
+   + Recherche instantanée + pastilles d'état des workers (lit le JSON de
+     santé committé chaque jour : /CMCteams/tools/health/workers-status.json). */
 (function () {
   'use strict';
 
@@ -13,6 +11,7 @@
   var CF = 'https://dash.cloudflare.com/?to=/:account';
   var WK = function (name) { return 'https://' + name + '.9r4rxssx64.workers.dev'; };
   var FB = 'https://console.firebase.google.com/project';
+  var HEALTH_URL = '/CMCteams/tools/health/workers-status.json';
 
   /* ---- Données : familles de liens ---- */
   var DATA = [
@@ -127,19 +126,19 @@
           { l: 'D1', u: CF + '/workers/d1' },
           { l: 'Queues', u: CF + '/workers/queues' }
         ] },
-        { ic: '🫀', nm: 'Santé des workers', ds: 'Vérifier qu’un service répond (1 clic = /health)', links: [
-          { l: 'kdmc-router', u: 'https://kd-mc.com/' },
-          { l: 'apex-auth', u: WK('apex-auth-worker') + '/health' },
-          { l: 'apex-v13-backend', u: WK('apex-v13-backend') + '/health' },
-          { l: 'apex-chat-api', u: WK('apex-chat-api') + '/health' },
-          { l: 'apex-vault-svc', u: WK('apex-vault-svc') + '/health' },
-          { l: 'apex-sentinels', u: WK('apex-sentinels-svc') + '/health' },
-          { l: 'apex-push', u: WK('apex-push-worker') + '/health' },
-          { l: 'apex-secrets-proxy', u: WK('apex-secrets-proxy') + '/health' },
-          { l: 'coffre-r2', u: WK('coffre-r2') + '/health' },
-          { l: 'cmc-parser-proxy', u: WK('cmc-parser-proxy') + '/healthz' },
-          { l: 'ld-gemini-proxy', u: WK('ld-gemini-proxy') + '/' },
-          { l: 'ld-printify-order', u: WK('ld-printify-order') + '/' }
+        { ic: '🫀', nm: 'Santé des workers', ds: 'Pastille = dernier contrôle quotidien · clic = /health en direct', health: true, links: [
+          { l: 'kdmc-router', u: 'https://kd-mc.com/', host: 'kd-mc' },
+          { l: 'apex-auth', u: WK('apex-auth-worker') + '/health', host: 'apex-auth-worker' },
+          { l: 'apex-v13-backend', u: WK('apex-v13-backend') + '/health', host: 'apex-v13-backend' },
+          { l: 'apex-chat-api', u: WK('apex-chat-api') + '/health', host: 'apex-chat-api' },
+          { l: 'apex-vault-svc', u: WK('apex-vault-svc') + '/health', host: 'apex-vault-svc' },
+          { l: 'apex-sentinels', u: WK('apex-sentinels-svc') + '/health', host: 'apex-sentinels-svc' },
+          { l: 'apex-push', u: WK('apex-push-worker') + '/health', host: 'apex-push-worker' },
+          { l: 'apex-secrets-proxy', u: WK('apex-secrets-proxy') + '/health', host: 'apex-secrets-proxy' },
+          { l: 'coffre-r2', u: WK('coffre-r2') + '/health', host: 'coffre-r2' },
+          { l: 'cmc-parser-proxy', u: WK('cmc-parser-proxy') + '/healthz', host: 'cmc-parser-proxy' },
+          { l: 'ld-gemini-proxy', u: WK('ld-gemini-proxy') + '/', host: 'ld-gemini-proxy' },
+          { l: 'ld-printify-order', u: WK('ld-printify-order') + '/', host: 'ld-printify-order' }
         ] }
       ]
     },
@@ -213,28 +212,33 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
   function cardHtml(it, adm) {
     var cls = 'card' + (adm ? ' adm' : '');
+    var searchText = norm([it.nm, it.ds, (it.links || []).map(function (l) { return l.l; }).join(' ')].join(' '));
     var head = '<span class="ic">' + esc(it.ic) + '</span>' +
       '<span class="ct"><span class="nm">' + esc(it.nm) + '</span>' +
       (it.ds ? '<span class="ds">' + esc(it.ds) + '</span>' : '') + '</span>';
     if (it.url) {
-      return '<a class="' + cls + '" href="' + esc(it.url) + '"' +
+      return '<a class="' + cls + '" data-s="' + esc(searchText) + '" href="' + esc(it.url) + '"' +
         (/^https?:/.test(it.url) ? ' target="_blank" rel="noopener noreferrer"' : '') +
         '>' + head + '<span class="arr">›</span></a>';
     }
     var chips = (it.links || []).map(function (lk) {
-      return '<a class="chip" href="' + esc(lk.u) + '" target="_blank" rel="noopener noreferrer">' + esc(lk.l) + ' ›</a>';
+      var h = lk.host ? ' data-host="' + esc(lk.host) + '"' : '';
+      return '<a class="chip"' + h + ' href="' + esc(lk.u) + '" target="_blank" rel="noopener noreferrer">' + esc(lk.l) + ' ›</a>';
     }).join('');
-    return '<div class="' + cls + ' multi">' + head + '<span class="chips">' + chips + '</span></div>';
+    return '<div class="' + cls + ' multi" data-s="' + esc(searchText) + '">' + head +
+      '<span class="chips">' + chips + '</span></div>';
   }
 
   function render() {
     var root = document.getElementById('ctl');
     if (!root) return 0;
     var n = 0, html = '';
-    DATA.forEach(function (fam) {
+    DATA.forEach(function (fam, fi) {
+      html += '<section class="fam" data-fam="' + fi + '">';
       html += '<h2 class="cat">' + esc(fam.title) +
         (fam.sub ? '<small>' + esc(fam.sub) + '</small>' : '') + '</h2>';
       html += '<div class="grid">';
@@ -242,7 +246,7 @@
         html += cardHtml(it, fam.adm);
         n += it.url ? 1 : (it.links ? it.links.length : 0);
       });
-      html += '</div>';
+      html += '</div></section>';
     });
     root.innerHTML = html;
     var c = document.getElementById('count');
@@ -250,22 +254,80 @@
     return n;
   }
 
+  /* ---- Pastilles d'état des workers (lit le JSON committé, même-origine) ---- */
+  function applyHealth() {
+    fetch(HEALTH_URL, { cache: 'no-store' }).then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (j) {
+      if (!j || !j.workers) return;
+      // map host-prefix -> up
+      var up = {};
+      Object.keys(j.workers).forEach(function (k) {
+        var w = j.workers[k];
+        var m = String(w.url || '').match(/https?:\/\/([^.\/]+)/);
+        if (m) up[m[1]] = !!w.up;
+      });
+      var chips = document.querySelectorAll('#ctl .chip[data-host]');
+      var seen = 0, ok = 0;
+      chips.forEach(function (a) {
+        var host = a.getAttribute('data-host');
+        if (!(host in up)) return; // pas surveillé → pas de pastille (honnête)
+        seen++; if (up[host]) ok++;
+        var dot = up[host] ? '🟢 ' : '🔴 ';
+        if (a.textContent.indexOf('🟢') < 0 && a.textContent.indexOf('🔴') < 0) {
+          a.textContent = dot + a.textContent;
+        }
+        a.classList.add(up[host] ? 'up' : 'down');
+      });
+      // résumé sous la carte santé
+      var card = document.querySelector('#ctl .chip[data-host]');
+      if (card && seen) {
+        var box = card.closest('.multi');
+        if (box && !box.querySelector('.hsum')) {
+          var when = j.checked_at ? new Date(j.checked_at) : null;
+          var ago = when ? Math.round((Date.now() - when.getTime()) / 3600000) : null;
+          var s = document.createElement('div');
+          s.className = 'hsum';
+          s.textContent = '🟢 ' + ok + '/' + seen + ' en ligne' +
+            (ago != null ? ' · contrôle il y a ' + ago + ' h' : '');
+          box.appendChild(s);
+        }
+      }
+    }).catch(function () { /* JSON indispo → aucune pastille, jamais d'erreur visible */ });
+  }
+
+  /* ---- Recherche instantanée ---- */
+  function wireSearch() {
+    var q = document.getElementById('q');
+    if (!q) return;
+    q.addEventListener('input', function () {
+      var v = norm(q.value.trim());
+      var fams = document.querySelectorAll('#ctl .fam');
+      fams.forEach(function (fam) {
+        var any = false;
+        fam.querySelectorAll('[data-s]').forEach(function (card) {
+          var hit = !v || card.getAttribute('data-s').indexOf(v) >= 0;
+          card.style.display = hit ? '' : 'none';
+          if (hit) any = true;
+        });
+        fam.style.display = any ? '' : 'none';
+      });
+    });
+  }
+
   /* ---- Porte d'accès (fail-open, anti-lockout) ---- */
   function show(el, on) { if (el) el.hidden = !on; }
-
   function applyGate() {
-    var ctl = document.getElementById('ctl');
-    var lock = document.getElementById('lock');
-    function open() { show(ctl, true); show(lock, false); }
-    function locked() { show(ctl, false); show(lock, true); }
+    var ctl = document.getElementById('ctl'), lock = document.getElementById('lock'), tools = document.getElementById('tools');
+    function open() { show(ctl, true); show(lock, false); show(tools, true); applyHealth(); }
+    function locked() { show(ctl, false); show(lock, true); show(tools, false); }
     try {
       var sso = window.kdmcSSO;
-      if (!sso || typeof sso.whoami !== 'function') { open(); return; } // SSO absent → ouvert
+      if (!sso || typeof sso.whoami !== 'function') { open(); return; }
       sso.whoami().then(function (who) {
-        // who === null : pas de session OU réseau KO → ouvert (jamais de verrouillage pour toi)
         if (!who) { open(); return; }
         var ok = who.admin === true || /kevin|laurence|lolo/i.test(who.name || '');
-        if (ok) open(); else locked(); // un AUTRE client connu → verrouillé
+        if (ok) open(); else locked();
       }).catch(function () { open(); });
     } catch (e) { open(); }
   }
@@ -273,6 +335,7 @@
   function boot() {
     try { if (window.kdmcSSO && window.kdmcSSO.consumeHashToken) window.kdmcSSO.consumeHashToken(); } catch (e) { /* ignore */ }
     render();
+    wireSearch();
     applyGate();
   }
 

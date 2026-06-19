@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v1.0.0 — Centre de contrôle KDMC (liens 1-clic par famille) -->
+<!-- v1.1.0 — Centre de contrôle KDMC (liens 1-clic par famille) -->
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
@@ -53,7 +53,14 @@
   a.chip{display:inline-flex;align-items:center;text-decoration:none;font-size:13px;font-weight:600;color:var(--gold2);background:rgba(232,184,48,.10);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:38px;transition:background .12s,border-color .12s}
   .adm a.chip{color:#cdd8ff;background:rgba(106,138,255,.10);border-color:rgba(106,138,255,.28)}
   a.chip:active{transform:scale(.96)}
+  a.chip.up{border-color:rgba(81,207,102,.45)}
+  a.chip.down{border-color:rgba(255,107,107,.55);background:rgba(255,107,107,.08)}
   @media(hover:hover){a.chip:hover{background:rgba(232,184,48,.18);border-color:var(--line2)}}
+  .hsum{margin-top:11px;font-size:12.5px;color:var(--mut);font-weight:600}
+  #tools{margin:4px 0 2px}
+  #q{width:100%;padding:13px 15px;border-radius:13px;border:1px solid var(--line);background:#0a120c;color:var(--txt);font-size:16px}
+  #q:focus{outline:none;border-color:rgba(232,184,48,.55)}
+  #q::placeholder{color:var(--mut)}
   #lock{max-width:440px;margin:40px auto;text-align:center;background:linear-gradient(160deg,var(--card),#0c150f);border:1px solid var(--line);border-radius:20px;padding:26px}
   #lock h2{margin:0 0 8px;font-size:20px}
   #lock p{color:var(--mut);font-size:14px;line-height:1.5;margin:0 0 16px}
@@ -75,6 +82,10 @@
       <span id="count">…</span>
     </div>
 
+    <div id="tools" hidden>
+      <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="🔎 Rechercher (anthropic, stripe, firebase, worker…)" aria-label="Rechercher un lien" />
+    </div>
+
     <main id="ctl" hidden aria-label="Liens par famille"></main>
 
     <section id="lock" hidden>
@@ -92,6 +103,6 @@
   </div>
   <script src="../kdmc-sso.js"></script>
   <script src="liens.js"></script>
-  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-liens" data-version="v1.0.0" data-color="#c9a227" defer></script>
+  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-liens" data-version="v1.1.0" data-color="#c9a227" defer></script>
 </body>
 </html>
