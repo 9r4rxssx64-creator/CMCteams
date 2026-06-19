@@ -1,21 +1,11 @@
-start 2026-06-19T17:20:49Z
-=== modèles image dispo ===
-models/gemini-2.5-flash-image  [generateContent,countTokens,batchGenerateContent]
-models/gemini-3-pro-image-preview  [generateContent,countTokens,batchGenerateContent]
-models/gemini-3-pro-image  [generateContent,countTokens,batchGenerateContent]
-models/gemini-3.1-flash-image-preview  [generateContent,countTokens,batchGenerateContent]
-models/gemini-3.1-flash-image  [generateContent,countTokens,batchGenerateContent]
-models/imagen-4.0-generate-001  [predict]
-models/imagen-4.0-ultra-generate-001  [predict]
-models/imagen-4.0-fast-generate-001  [predict]
-models/veo-2.0-generate-001  [predictLongRunning]
-models/veo-3.0-generate-001  [predictLongRunning]
-models/veo-3.0-fast-generate-001  [predictLongRunning]
-models/veo-3.1-generate-preview  [predictLongRunning]
-models/veo-3.1-fast-generate-preview  [predictLongRunning]
-models/veo-3.1-lite-generate-preview  [predictLongRunning]
-=== essais ===
-imagen-3.0-generate-002:predict http=404 models/imagen-3.0-generate-002 is not found for API version v1beta, or is not supported for predict. Call ModelService.L
-imagen-3.0-fast-generate-001:predict http=404 models/imagen-3.0-fast-generate-001 is not found for API version v1beta, or is not supported for predict. Call ModelServ
-imagen-4.0-generate-001:predict http=200 ok
-  -> IMAGE OK 691107o dans shops/la-detente/img/designs/logo_g1.png
+start 2026-06-19T17:22:51Z
+shops/la-detente/img/designs/logo_g01.png <- imagen-4.0-ultra-generate-001 http=200 705581o
+shops/la-detente/img/designs/logo_g02.png <- imagen-4.0-ultra-generate-001 http=200 672368o
+shops/la-detente/img/designs/logo_g03.png <- imagen-4.0-ultra-generate-001 http=200 785769o
+shops/la-detente/img/designs/logo_g04.png <- imagen-4.0-ultra-generate-001 http=200 686255o
+shops/la-detente/img/designs/logo_g05.png <- imagen-4.0-ultra-generate-001 http=200 955077o
+shops/la-detente/img/designs/logo_g06.png <- imagen-4.0-ultra-generate-001 http=200 336669o
+shops/la-detente/img/designs/logo_g07.png <- imagen-4.0-ultra-generate-001 http=200 447243o
+shops/la-detente/img/designs/logo_g08.png <- imagen-4.0-ultra-generate-001 http=200 523388o
+shops/la-detente/img/designs/logo_g09.png <- imagen-4.0-ultra-generate-001 http=200 1084817o
+shops/la-detente/img/designs/logo_g10.png <- imagen-4.0-ultra-generate-001 http=200 466198o
