@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- v1.1.0 — Centre de contrôle KDMC (liens 1-clic par famille) -->
+<!-- v1.2.0 — Centre de contrôle KDMC (liens 1-clic par famille) -->
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://kdmc-balances.9r4rxssx64.workers.dev; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests" />
 <meta name="robots" content="noindex,nofollow" />
 <title>Centre de contrôle — KDMC</title>
 <meta name="theme-color" content="#0b1409" />
@@ -61,6 +61,8 @@
   #q{width:100%;padding:13px 15px;border-radius:13px;border:1px solid var(--line);background:#0a120c;color:var(--txt);font-size:16px}
   #q:focus{outline:none;border-color:rgba(232,184,48,.55)}
   #q::placeholder{color:var(--mut)}
+  #balances{margin:10px 0 2px;font-size:13px;color:var(--gold2);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  #balances .bchip{background:rgba(81,207,102,.10);border:1px solid rgba(81,207,102,.4);color:#aef0bd;border-radius:10px;padding:7px 11px;font-weight:600}
   #lock{max-width:440px;margin:40px auto;text-align:center;background:linear-gradient(160deg,var(--card),#0c150f);border:1px solid var(--line);border-radius:20px;padding:26px}
   #lock h2{margin:0 0 8px;font-size:20px}
   #lock p{color:var(--mut);font-size:14px;line-height:1.5;margin:0 0 16px}
@@ -86,6 +88,8 @@
       <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="🔎 Rechercher (anthropic, stripe, firebase, worker…)" aria-label="Rechercher un lien" />
     </div>
 
+    <div id="balances" hidden></div>
+
     <main id="ctl" hidden aria-label="Liens par famille"></main>
 
     <section id="lock" hidden>
@@ -103,6 +107,6 @@
   </div>
   <script src="../kdmc-sso.js"></script>
   <script src="liens.js"></script>
-  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-liens" data-version="v1.1.0" data-color="#c9a227" defer></script>
+  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-liens" data-version="v1.2.0" data-color="#c9a227" defer></script>
 </body>
 </html>
