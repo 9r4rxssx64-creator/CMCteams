@@ -1,15 +1,18 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
-## 🤖 OPTIONNEL — Réactiver pleinement l'Agent KDMC (Vercel) — 2026-06-16
-Le spam Telegram « Agent KDMC crash : Firebase 401 » est **déjà coupé** (anti-spam dans le code, déployé).
-Le code de l'agent sait maintenant s'authentifier (compte de service). Pour qu'il **relise vraiment** ta base
-(surveillance auto), il faut 2 variables d'env côté **Vercel** (je ne peux PAS les écrire à ta place — aucun
-outil MCP « set env var » Vercel).
-1. Vercel → projet de l'agent → **Settings → Environment Variables**.
-2. Ajouter **`FIREBASE_CLIENT_EMAIL`** et **`FIREBASE_PRIVATE_KEY`** (copier les valeurs depuis tes secrets
-   GitHub : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions).
-3. Redéployer le projet.
-> Sans ça : aucun spam (déjà réglé), mais l'agent ne surveille pas. **Non urgent.**
+## 🤖 OPTIONNEL — Réactiver pleinement l'Agent KDMC (Vercel) — MAJ 2026-06-19
+Le spam Telegram « Agent KDMC crash : Firebase 401 » est **déjà coupé** (anti-spam déployé) et le code
+de l'agent sait s'authentifier (compte de service). Pour qu'il **relise vraiment** ta base (surveillance auto) :
+
+**J'ai construit un robot autonome** (`.github/workflows/sync-agent-firebase-to-vercel.yml`) qui pousse
+`FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY` vers Vercel par l'API, tout seul. Je l'ai exécuté → **vérifié** :
+tes 2 clés Firebase SONT déjà dans tes secrets GitHub ; il ne manque qu'**UNE** chose, un **jeton Vercel**.
+
+**Ton unique action (≈1 min, une seule fois) :**
+1. Crée un jeton : https://vercel.com/account/tokens → « Create Token » (Full Access).
+2. Ajoute-le en secret GitHub nommé **`VERCEL_TOKEN`** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions
+3. Dis-moi **« go »** → je relance le robot → agent réparé à 100% (robot réutilisable pour toute future config Vercel).
+> Sans ça : aucun spam (déjà réglé), l'agent ne surveille juste pas. **Non urgent.**
 
 ---
 
