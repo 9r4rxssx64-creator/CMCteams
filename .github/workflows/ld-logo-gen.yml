@@ -15,7 +15,7 @@ jobs:
         run: |
           REQ=shops/la-detente/.logo-request.json
           LOG=shops/la-detente/.gen-log.txt; echo "start $(date -u +%FT%TZ)" > "$LOG"
-          N=$(jq '.jobs|length' "$REQ")
+          N=$(jq '.jobs|length' "$REQ" 2>>"$LOG"); echo "N=[$N] req=$(wc -c <"$REQ")o jq=$(jq --version 2>&1) tok=$([ -n "$REPLICATE_API_TOKEN" ] && echo SET || echo EMPTY)" >>"$LOG"
           for k in $(seq 0 $((N-1))); do
             P=$(jq -r ".jobs[$k].prompt" "$REQ"); O=$(jq -r ".jobs[$k].outfile" "$REQ")
             PL=$(jq -n --arg p "$P" '{input:{prompt:$p,aspect_ratio:"1:1",output_format:"png",safety_tolerance:6,prompt_upsampling:true}}')
