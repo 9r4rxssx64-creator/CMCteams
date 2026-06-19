@@ -73,23 +73,11 @@
       .catch(function (e) { return { ok: false, reason: 'neterr', detail: (e && e.message) || '?' }; });
   }
 
-  /* Garantit un token. silent=true : jamais de prompt (utilisé par l'intercepteur, fail-open).
-     silent=false : prompt PIN si besoin (bouton "Connexion admin"). Toujours résout un booléen. */
-  function ensure(silent) {
+  /* Garantit un token SILENCIEUSEMENT (intercepteur, fail-open). L'interactif
+     (saisie du PIN) passe par openLogin() / la modale — jamais prompt() (no-op PWA iOS). */
+  function ensure() {
     if (valid()) return Promise.resolve(true);
-    return mint().then(function (r) {
-      if (r.ok) return true;
-      if (silent) return false; // fail-open : pas de token, écriture part anon
-      if (r.status === 403 || r.reason === 'need_admin_code') {
-        var code = (typeof prompt === 'function') ? prompt('Code admin (Kevin/Lolo) pour activer l\'écriture sécurisée :') : '';
-        if (!code) return false;
-        return adminLogin(code).then(function (lr) {
-          if (!lr.ok) return false;
-          return mint().then(function (r2) { return !!r2.ok; });
-        });
-      }
-      return false;
-    });
+    return mint().then(function (r) { return !!r.ok; });
   }
 
   /* Intercepteur fetch chirurgical : ajoute ?auth= sur les écritures admin uniquement. */
@@ -126,16 +114,86 @@
 
   installInterceptor();
 
-  global.kdmcFbAuth = {
-    qs: qs, authed: valid, ensure: ensure,
-    /* Bouton "🔒 Connexion admin Firebase" : prouve le PIN une fois, token mis en cache. */
-    loginPrompt: function () {
-      return ensure(false).then(function (ok) {
-        if (typeof global.toast === 'function') global.toast(ok ? '🔒 Écriture admin activée' : '⚠️ Connexion admin non aboutie');
-        return ok;
+  /* Messages d'erreur EXACTS (leçon #95/#101 : le bouton doit dire pourquoi ça rate). */
+  function reasonFr(reason, status) {
+    var m = {
+      fb_not_configured: 'Firebase pas encore configuré côté router (déploiement en cours) — réessaie dans ~2 min.',
+      not_found: 'Endpoint /__admin/fbtoken absent — router pas encore redéployé, réessaie dans ~2 min.',
+      code_invalide: 'Code admin incorrect.',
+      code_requis: 'Code requis.',
+      admin_pin_not_configured: 'PIN admin non configuré côté router.',
+      rate_limited: 'Trop d\'essais — patiente un peu.',
+      neterr: 'Réseau indisponible.',
+      no_token: 'Token non obtenu (échange Firebase a échoué).',
+      sign_failed: 'Signature du token échouée (clé Firebase côté router).'
+    };
+    return (m[reason] || ('Erreur : ' + (reason || 'inconnue'))) + (status ? ' [HTTP ' + status + ']' : '');
+  }
+  function updateBtn() {
+    var b = document.getElementById('kdmc-fb-admin-btn');
+    if (b) { b.textContent = valid() ? '🔓 Admin' : '🔒 Admin'; b.disabled = false; }
+  }
+  /* Modale PIN inline (remplace prompt(), no-op en PWA iOS standalone). */
+  function showModal(resolve, firstErr) {
+    if (document.getElementById('kdmc-fb-modal')) return;
+    var ov = document.createElement('div');
+    ov.id = 'kdmc-fb-modal';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2147483600;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:18px;font:14px system-ui,-apple-system,sans-serif';
+    var card = document.createElement('div');
+    card.style.cssText = 'width:min(360px,94vw);background:#141821;border:1px solid #2a3340;border-radius:16px;padding:18px;color:#e9efe7;box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    card.innerHTML = '<div style="font-weight:700;font-size:16px;margin-bottom:4px">🔒 Connexion admin</div>' +
+      '<div style="font-size:12.5px;color:#9bb3a3;margin-bottom:12px">Code admin (Kevin/Lolo) pour activer l\'écriture sécurisée.</div>';
+    var inp = document.createElement('input');
+    inp.type = 'password'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
+    inp.setAttribute('aria-label', 'Code admin'); inp.placeholder = 'Code admin';
+    inp.style.cssText = 'width:100%;padding:12px;min-height:46px;border-radius:10px;border:1px solid #2a3340;background:#0c1118;color:#fff;font-size:16px;box-sizing:border-box';
+    var st = document.createElement('div');
+    st.style.cssText = 'font-size:12.5px;color:#e88;min-height:16px;margin:9px 0 4px';
+    if (firstErr && !firstErr.ok && firstErr.reason && firstErr.reason !== 'need_admin_code' &&
+        firstErr.status !== 403) st.textContent = reasonFr(firstErr.reason, firstErr.status);
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-top:6px';
+    var ok = document.createElement('button'); ok.textContent = 'Valider';
+    ok.style.cssText = 'flex:1;min-height:44px;border-radius:10px;border:none;background:linear-gradient(135deg,#caa62b,#9c7d18);color:#1a1304;font-weight:700;cursor:pointer';
+    var ca = document.createElement('button'); ca.textContent = 'Annuler';
+    ca.style.cssText = 'min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #2a3340;background:#1a212b;color:#e9efe7;cursor:pointer';
+    var done = false;
+    function close(v) { if (done) return; done = true; try { ov.remove(); } catch (_) {} resolve(v); }
+    ca.onclick = function () { close(false); };
+    ov.onclick = function (e) { if (e.target === ov) close(false); };
+    ok.onclick = function () {
+      var code = (inp.value || '').trim();
+      if (!code) { st.style.color = '#e88'; st.textContent = 'Entre le code.'; return; }
+      ok.disabled = true; st.style.color = '#9bb3a3'; st.textContent = '…';
+      adminLogin(code).then(function (lr) {
+        if (!lr.ok) { ok.disabled = false; st.style.color = '#e88'; st.textContent = reasonFr(lr.reason, lr.status); inp.value = ''; inp.focus(); return; }
+        mint().then(function (mr) {
+          ok.disabled = false;
+          if (mr.ok) { updateBtn(); if (global.toast) global.toast('🔓 Écriture admin activée'); close(true); }
+          else { st.style.color = '#e88'; st.textContent = reasonFr(mr.reason, mr.status); }
+        });
       });
-    },
-    signOut: function () { clear(); try { localStorage.removeItem(GRANT_LS); } catch (_) {} },
+    };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') ok.onclick(); });
+    row.appendChild(ok); row.appendChild(ca);
+    card.appendChild(inp); card.appendChild(st); card.appendChild(row);
+    ov.appendChild(card); document.body.appendChild(ov);
+    setTimeout(function () { try { inp.focus(); } catch (_) {} }, 60);
+  }
+  /* Connexion admin interactive : tente silencieux (grant déjà là ?) puis modale PIN. */
+  function openLogin() {
+    return new Promise(function (resolve) {
+      if (valid()) { updateBtn(); if (global.toast) global.toast('🔓 Déjà connecté admin'); return resolve(true); }
+      mint().then(function (r) {
+        if (r.ok) { updateBtn(); if (global.toast) global.toast('🔓 Écriture admin activée'); return resolve(true); }
+        if (typeof document === 'undefined' || !document.body) { if (global.toast) global.toast('⚠️ ' + reasonFr(r.reason, r.status)); return resolve(false); }
+        showModal(resolve, r);
+      });
+    });
+  }
+
+  global.kdmcFbAuth = {
+    qs: qs, authed: valid, ensure: ensure, loginPrompt: openLogin,
+    signOut: function () { clear(); try { localStorage.removeItem(GRANT_LS); } catch (_) {} updateBtn(); },
     status: function () { return { authed: valid(), exp: _exp, hasGrant: !!grantHeader() }; }
   };
 
