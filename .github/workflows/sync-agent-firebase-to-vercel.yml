@@ -19,6 +19,12 @@ name: Sync Firebase creds → Vercel (agent KDMC)
 
 on:
   workflow_dispatch:
+  # Auto-déclenche au merge d'une modif de CE fichier (permet de lancer le sync
+  # sans MCP/UI : un commit qui touche ce workflow l'exécute). Idempotent (upsert).
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-agent-firebase-to-vercel.yml'
 
 permissions:
   contents: read
