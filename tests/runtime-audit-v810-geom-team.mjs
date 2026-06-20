@@ -9,11 +9,15 @@
 // Jack", avec un bloc "20/5c" entre eux. Seule la POSITION verticale les sépare.
 //
 // Scénario synthétique : on construit un window._cmcPdfGeometry reproduisant la
-// structure réelle. Section "Chefs black Jack" (famille bj), ordre vertical =
-//   [blocA : 6 emps dont "DESARZENS K", tous 1er code 22/6c]
-//   [blocB : 5 emps, 1er code 20/5c]   ← interruption
-//   [blocC : 2 emps dont "GARRO S", 1er code 22/6c À NOUVEAU]
-// blocA et blocC ont des repos+rotation IDENTIQUES (un algo horaire les fusionnerait).
+// structure réelle. Ordre vertical (une équipe = UN bloc contigu CROSS-FAMILLE,
+// séparé du suivant par un TRAIT NOIR / ligne vide = gros écart vertical) :
+//   [blocA : 6 emps dont "DESARZENS K" — 2 roulettes + 2 cmc + 2 bj MÉLANGÉS]
+//   [—— trait noir ——]
+//   [blocB : 5 emps]
+//   [—— trait noir ——]
+//   [blocC : 2 emps dont "GARRO S", rotation IDENTIQUE à blocA]
+// blocA et blocC ont des repos+rotation IDENTIQUES (un algo horaire les fusionnerait) ;
+// seul l'ÉCART VERTICAL (position) les sépare.
 //
 // Assertions :
 //   (1) _cmcDetectTeamsByGeometry retourne ≥2 équipes.
@@ -68,16 +72,16 @@ async function main() {
     const emps = window.A.employees.filter(e => (e.family || '') !== 'cadres').slice(0, 13);
     if (emps.length < 13) return { error: 'not enough emps (' + emps.length + ')' };
     const ov = window.A.overrides[key];
-    const setFam = (e) => { if (!e.familyHistory) e.familyHistory = {}; e.familyHistory[key] = 'bj'; };
-    // blocA : emps 0..5 (rotation A) — inclut "DESARZENS" (emp 0)
+    const setFam = (e, fam) => { if (!e.familyHistory) e.familyHistory = {}; e.familyHistory[key] = fam; };
+    // blocA : emps 0..5 (rotation A) — inclut "DESARZENS" (emp 0). CROSS-FAMILLE :
+    //   2 roulettes + 2 cmc + 2 bj dans le MÊME bloc contigu (règle Kevin).
     const blocA = emps.slice(0, 6);
-    // blocB : emps 6..10 (rotation B)
     const blocB = emps.slice(6, 11);
-    // blocC : emps 11..12 (rotation A À NOUVEAU) — inclut "GARRO" (emp 11)
-    const blocC = emps.slice(11, 13);
-    blocA.forEach(e => { ov[e.id] = sched(workA); setFam(e); });
-    blocB.forEach(e => { ov[e.id] = sched(workB); setFam(e); });
-    blocC.forEach(e => { ov[e.id] = sched(workA); setFam(e); }); // MÊME rotation que blocA
+    const blocC = emps.slice(11, 13); // inclut "GARRO" (emp 11), rotation A À NOUVEAU
+    const famA = ['roulettes', 'roulettes', 'cmc', 'cmc', 'bj', 'bj'];
+    blocA.forEach((e, i) => { ov[e.id] = sched(workA); setFam(e, famA[i]); });
+    blocB.forEach(e => { ov[e.id] = sched(workB); setFam(e, 'bj'); });
+    blocC.forEach(e => { ov[e.id] = sched(workA); setFam(e, 'bj'); }); // MÊME rotation que blocA
 
     // --- Construire window._cmcPdfGeometry : 1 page, items {str,x,y,w,h}.
     //     Une LIGNE par emp (même y pour tous les items de la ligne), y DÉCROISSANT
@@ -100,7 +104,9 @@ async function main() {
     items.push({ str: 'Chefs', x: 10, y: y, w: 8, h: 6 }); items.push({ str: 'black', x: 50, y: y, w: 8, h: 6 }); items.push({ str: 'Jack', x: 90, y: y, w: 8, h: 6 }); y -= 12;
     // ORDRE VERTICAL = blocA puis blocB puis blocC
     blocA.forEach(e => addEmpLine(e, ov[e.id]));
+    y -= 40; // TRAIT NOIR / ligne vide entre équipes (gros écart vertical, pitch=12)
     blocB.forEach(e => addEmpLine(e, ov[e.id]));
+    y -= 40; // TRAIT NOIR entre blocB et blocC
     blocC.forEach(e => addEmpLine(e, ov[e.id]));
     window._cmcPdfGeometry = { pages: [{ pageNum: 1, items: items }], textRaw: '', ts: Date.now() };
 
@@ -126,6 +132,8 @@ async function main() {
     t('(2) DESARZENS ≠ GARRO — séparés par POSITION malgré rotation identique', () => !!teamDES && !!teamGAR && teamDES !== teamGAR);
     t('(3) blocA : les 6 partagent le MÊME id', () => blocA.every(e => th(e.id) === teamDES) && teamDES != null);
     t('(3) blocC : les 2 partagent le MÊME id', () => blocC.every(e => th(e.id) === teamGAR) && teamGAR != null);
+    const fh = id => { const e = window.A.employees.find(x => x.id === id); return e && e.familyHistory && e.familyHistory[key]; };
+    t('(3b) blocA est CROSS-FAMILLE (≥2 familles) mais MÊME équipe', () => { const distinct = Array.from(new Set(blocA.map(e => fh(e.id)))).filter(Boolean); return distinct.length >= 2 && blocA.every(e => th(e.id) === teamDES); });
 
     // === SIMULER UN BOOT : géométrie absente, teamHistory wipé, ré-appliquer ===
     window._cmcPdfGeometry = null; // boot : pas de géométrie
