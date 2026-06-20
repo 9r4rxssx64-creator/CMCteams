@@ -33,11 +33,12 @@ thead th.wknd{color:#ffb37a}
 .cNom{position:sticky;left:0;background:#0f2613;text-align:left;z-index:8;min-width:118px;font-weight:700;
  box-shadow:2px 0 6px rgba(0,0,0,.4)}
 thead .cNom{z-index:12}
-.cNR{position:sticky;left:118px;background:#10240f;z-index:8;min-width:50px}
-.cCq{position:sticky;left:168px;background:#10240f;z-index:8;min-width:50px;box-shadow:2px 0 6px rgba(0,0,0,.4)}
-thead .cNR,thead .cCq{z-index:12}
-.cell{font-size:10px;line-height:1.15;border-radius:5px;padding:3px 2px;min-width:42px}
-.dep{display:block;font-weight:900;font-size:14px;color:var(--gold2);margin-top:1px}
+.cNR{background:#10240f;min-width:46px;border-left:2px solid rgba(201,162,39,.35)}
+.cCq{background:#10240f;min-width:46px}
+.today{box-shadow:inset 0 0 0 2px var(--gold2)}
+thead th.today{background:#3a3410;color:#fff}
+.cell{font-size:10px;line-height:1.15;padding:3px 2px;min-width:42px}
+.dep{display:inline-block;font-weight:900;font-size:12px;color:#ffe23a;background:rgba(0,0,0,.62);border-radius:5px;padding:0 5px;margin-top:2px}
 .w{background:var(--c-work)} .conv{background:var(--c-conv);color:#ffe23a}
 .rh{background:var(--c-rh)} .r{background:var(--c-r);color:#221} .cp{background:var(--c-cp);color:#221} .m{background:var(--c-m);color:#221}
 .off .dep{display:none}
@@ -120,12 +121,12 @@ body.admin td.cell:hover{outline:1px solid var(--gold2)}
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.2.0</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.3.0</div>
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-var APP_VER="v1.2.0";
+var APP_VER="v1.3.0";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -137,6 +138,26 @@ function cellClass(c){
   if(c==="RH") return "rh"; if(c==="R") return "r";
   if(c==="CP") return "cp"; if(["M","AF","RRT","PAT","MT","AT","ABS","ABI","DEPL","DEP","SS"].indexOf(c)>=0) return "m";
   if(/['"]$/.test(c)) return "conv"; return "w";
+}
+// Couleurs IDENTIQUES à l'import CMCteams (table CODES) — par horaire + absences
+var CODE_COLORS={
+  "22/6":{bg:"#fccfe0",fg:"#3a0818"}, "19/4":{bg:"#fff4a0",fg:"#1a1004"}, "16/3":{bg:"#ffb070",fg:"#2a1004"},
+  "14/19":{bg:"#c4e8a8",fg:"#0a2004"}, "20/5":{bg:"#b8d4f0",fg:"#041838"}, "16/22":{bg:"#d4c4ec",fg:"#1a0840"},
+  "12h30/19":{bg:"#c4e8a8",fg:"#0a2004"}, "15/19":{bg:"#c4e8a8",fg:"#0a2004"}, "15/20":{bg:"#fff4a0",fg:"#1a1004"},
+  "19/6":{bg:"#fff4a0",fg:"#1a1004"}, "14/20":{bg:"#d4c4ec",fg:"#1a0840"},
+  "RH":{bg:"#c8a8e0",fg:"#0c0430"}, "R":{bg:"#d8c8f0",fg:"#2a1850"}, "CP":{bg:"#f8c0d0",fg:"#2a0410"},
+  "AF":{bg:"#a8e0a8",fg:"#031805"}, "M":{bg:"#ffe840",fg:"#1a1004"}, "RRT":{bg:"#ffd850",fg:"#1a1004"},
+  "MAL":{bg:"#ffe840",fg:"#1a1004"}, "MT":{bg:"#ffe840",fg:"#1a1004"}, "AT":{bg:"#ffe840",fg:"#1a1004"},
+  "PAT":{bg:"#ffd850",fg:"#1a1004"}, "DEPL":{bg:"#d0d0d0",fg:"#202020"}, "DEP":{bg:"#d0d0d0",fg:"#202020"},
+  "SS":{bg:"#e0e0e0",fg:"#202020"}, "FL":{bg:"#ffd850",fg:"#1a1004"}, "ABS":{bg:"#e0e0e0",fg:"#202020"}, "ABI":{bg:"#e0e0e0",fg:"#202020"}
+};
+var CONV_COLOR={bg:"#d8342e",fg:"#ffe23a"}; // Convention (' ou ") = fond rouge / écriture jaune (PDF SBM)
+function codeStyle(c){
+  if(!c) return null;
+  if(CODE_COLORS[c]) return CODE_COLORS[c];            // RH/R/CP/M/AF... exacts
+  if(/['"]/.test(c)) return CONV_COLOR;                // jour Convention → rouge/jaune
+  var base=c.replace(/[c*]+$/,"").replace(/['"]/g,""); // strip suffixe chef/CDP
+  return CODE_COLORS[base]||{bg:"#1d3a55",fg:"#dfeaf5"}; // base horaire, sinon bleu travail
 }
 function isRest(c){return c==="RH"||c==="R";} // pour la détection d'équipe (jours de repos)
 
@@ -204,28 +225,31 @@ function restSig(nm){ var s=[]; for(var d=1;d<=B.days;d++){ if(isRest(ST.codes[n
 function render(){
   var days=B.days, R=compute();
   var dow=["dim","lun","mar","mer","jeu","ven","sam"];
-  var html="<thead><tr><th class='cNom'>Chef</th><th class='cNR'>NR</th><th class='cCq'>5e</th>";
+  var now=new Date(); var todayD=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
+  var html="<thead><tr><th class='cNom'>Chef</th>";
   for(var d=1;d<=days;d++){ var wd=new Date(B.year,B.monthIdx,d).getDay();
-    html+="<th class='"+((wd===0||wd===6)?"wknd":"")+"'>"+dow[wd]+"<br>"+d+"</th>"; }
-  html+="</tr></thead><tbody>";
+    html+="<th class='"+((wd===0||wd===6)?"wknd":"")+(d===todayD?" today":"")+"'>"+dow[wd]+"<br>"+d+"</th>"; }
+  html+="<th class='cNR'>NR</th><th class='cCq'>5e</th></tr></thead><tbody>";
   ST.order.forEach(function(nm,idx){
     var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
     html+="<tr><td class='cNom'><span class='mv' onclick='move("+idx+",-1)'>▲</span>"
       +"<span class='mv' onclick='move("+idx+",1)'>▼</span> "+esc(nm)+"</td>";
+    for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d], stl=codeStyle(c);
+      html+="<td class='cell"+(dep?"":" off")+(d===todayD?" today":"")+"'"
+        +(stl?(" style='background:"+stl.bg+";color:"+stl.fg+"'"):"")
+        +" onclick=\"editCell('"+esc(nm)+"',"+d+")\">"+esc(c||"·")+(dep?"<span class='dep'>"+dep+"</span>":"")+"</td>"; }
     html+="<td class='cNR mark' onclick=\"addCross('nr','"+esc(nm)+"')\">"+esc(nr)
       +"<span class='ed' onclick=\"event.stopPropagation();editMark('nr','"+esc(nm)+"')\">✎</span></td>";
     html+="<td class='cCq mark' onclick=\"addCross('cq','"+esc(nm)+"')\">"+esc(cq)
-      +"<span class='ed' onclick=\"event.stopPropagation();editMark('cq','"+esc(nm)+"')\">✎</span></td>";
-    for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d];
-      html+="<td class='cell "+cellClass(c)+(dep?"":" off")+"' onclick=\"editCell('"+esc(nm)+"',"+d+")\">"
-        +esc(c||"·")+(dep?"<span class='dep'>"+dep+"</span>":"")+"</td>"; }
-    html+="</tr>";
+      +"<span class='ed' onclick=\"event.stopPropagation();editMark('cq','"+esc(nm)+"')\">✎</span></td></tr>";
   });
   var cx=function(o){var t=0;ST.order.forEach(function(nm){t+=((o[nm]||"").match(/✗/g)||[]).length;});return t;};
-  html+="<tr class='tot'><td class='cNom'>TOTAL ✗</td><td class='cNR'>"+cx(ST.nr)+"</td><td class='cCq'>"+cx(ST.cq)+"</td>";
-  for(var d2=1;d2<=days;d2++) html+="<td></td>";
-  html+="</tr></tbody>";
+  html+="<tr class='tot'><td class='cNom'>TOTAL ✗</td>";
+  for(var d2=1;d2<=days;d2++) html+="<td"+(d2===todayD?" class='today'":"")+"></td>";
+  html+="<td class='cNR'>"+cx(ST.nr)+"</td><td class='cCq'>"+cx(ST.cq)+"</td></tr></tbody>";
   document.getElementById("grid").innerHTML=html;
+  if(todayD){ var sc=document.querySelector(".scroll"), th=document.querySelector("#grid thead th.today");
+    if(sc&&th) sc.scrollLeft=Math.max(0, th.offsetLeft - sc.clientWidth/2 + th.offsetWidth/2); }
   document.getElementById("hSub").textContent=B.month+" · "+ST.order.length+" chefs · séquence "+R.SEQ.join("·");
   // contrôle jours de repos : comparer chaque chef à l'ancre SUR LA PÉRIODE COMMUNE
   // (un chef en CP une partie du mois a moins de RH/R — normal, on ne compare que les jours planifiés des deux)
