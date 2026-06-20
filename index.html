@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.811";
+var APP_VER="v9.812";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -26024,6 +26024,26 @@ function cmcDiagEmpSource(){
       found.forEach(function(L){report+="     | "+L.replace(/\t/g," ").trim().slice(0,200)+"\n";});
       report+="\n";
     });
+    // v9.812 — ORDRE GÉOMÉTRIQUE + écarts verticaux (trait noir = gros écart).
+    // Permet de voir NUMÉRIQUEMENT où GARRO est séparé du bloc de l'admin.
+    try{
+      var gom=lg("cmc_geom_order",{})||{};var go=gom[key]||null;
+      report+="\n=== GÉOMÉTRIE (ordre vertical PDF + écart/ligne) ===\n";
+      if(!go||!go.length){
+        report+="(cmc_geom_order absent pour ce mois → RÉ-IMPORTE le FICHIER PDF en v9.812+ pour capturer les positions)\n";
+      }else{
+        report+="Lignes: "+go.length+" — col: page | y | écart(=y-précédent même page) | équipe | famille | nom\n";
+        var prevY=null,prevPage=null;
+        go.forEach(function(o){
+          var gap=(prevPage===o.page&&prevY!==null)?Math.abs(o.y-prevY):0;
+          prevY=o.y;prevPage=o.page;
+          var e=A.employees.find(function(x){return x.id===o.eid;});
+          var th=(e&&e.teamHistory&&e.teamHistory[key])||"?";
+          var mark=(myTeam&&th===myTeam)?" «MOI»":((norm(o.name).indexOf("GARRO")>=0)?" «GARRO»":"");
+          report+="  p"+o.page+" y"+o.y+" Δ"+(gap||"")+" ["+th+"] "+(o.fam||"?").slice(0,4)+" "+o.name+mark+"\n";
+        });
+      }
+    }catch(_geo){report+="\n(géométrie: erreur "+(_geo&&_geo.message||_geo)+")\n";}
     _cmcShowCopyModal("🔬 Diag source "+MFR[im]+" "+iy,report);
   }catch(e){if(typeof toast==="function")toast("Diag erreur: "+(e&&e.message||e),"err",6000);}
 }
@@ -36933,6 +36953,7 @@ function _cmcDetectTeamsByGeometry(iy,im){
       var lines=[];
       try{lines=window.TextParser.groupItemsByLine(pg.items,2)||[];}catch(_gl){return;}
       lines.forEach(function(line){
+        var _ly=0;try{if(line&&line.length){var _ys=line.map(function(it){return (it&&typeof it.y==="number")?it.y:null;}).filter(function(v){return v!==null;});if(_ys.length)_ly=_ys.sort(function(a,b){return a-b;})[Math.floor(_ys.length/2)];}}catch(_y){}
         var pe=null;try{pe=window.TextParser.parseLineForEmployee(line);}catch(_pe){}
         if(!pe||!pe.name)return;
         var n=norm(pe.name);
@@ -36954,10 +36975,17 @@ function _cmcDetectTeamsByGeometry(iy,im){
         if(!emp)return;
         var fam=(typeof _cmcDeriveFamily==="function")?_cmcDeriveFamily(emp,ov[eid],key):(emp.family||"bj");
         if(fam==="cadres")return; // cadres traités à part
-        ordered.push({eid:eid,family:(fam==="baccara"?"cmc":fam),sig:_cmcGeomSig(ov[eid])});
+        ordered.push({eid:eid,family:(fam==="baccara"?"cmc":fam),sig:_cmcGeomSig(ov[eid]),y:_ly,page:pgIdx,name:emp.name});
       });
     });
     if(ordered.length<2)return{ok:false,reason:"too_few_rows"};
+    // v9.812 — Persiste l'ORDRE géométrique brut (nom, famille, page, y, sig) pour
+    // diagnostic & future découpe par écart vertical (trait noir). Lecture seule par
+    // cmcDiagEmpSource ; aucune influence sur l'algo actuel.
+    try{
+      var _go=ordered.map(function(o){return {eid:o.eid,name:o.name,fam:o.family,page:o.page,y:Math.round(o.y),sig:o.sig};});
+      var _gom=lg("cmc_geom_order",{})||{};_gom[key]=_go;ls("cmc_geom_order",_gom);
+    }catch(_persist){}
     // 2) Segmentation EN BLOCS par famille, dans l'ordre vertical. Un bloc se
     //    ferme dès que la signature CHANGE (la même signature qui réapparaît après
     //    une interruption ouvre un NOUVEAU bloc = équipe séparée par la position).
