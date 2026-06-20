@@ -211,7 +211,8 @@ Donc dans la section "Chefs black Jack" du PDF :
 - 🤒 MALADIE longue durée — **CHEFS** (encadré "1 M du au" section Chefs BJ) :
   ROBIN M, CAPRA C, LEMONNIER PH
 - 🤒 MALADIE longue durée — **EMPLOYÉS** (encadré "4 M du au" section Employés CMC/aménagement) :
-  MIRANDA T, CATALA P, MARTINI M, RICHARDIN T
+  MIRANDA T, CATALA P (alias "Catalan", Kevin 2026-06-20), MARTINI M, RICHARDIN T
+  ⚠ Ambiguïté source : MIRANDA T apparaît AUSSI dans la grille « Chefs black Jack » (`BRTC.`, suffixe `.`=chef). Vérité Kevin (2026-06-20) : MIRANDA T + CATALA P = **employés CMC**, PAS chefs/cartes. La famille doit suivre la section où ils sont listés en grille au mois importé ; s'ils sont mal classés → vérifier la section grille du PDF du mois.
 - 📋 EDC (En Détachement Cadre / statut spécial SBM, encadré "EDC du au") :
   DE RYCKE K, MARTIRE M, ELENA C
 
