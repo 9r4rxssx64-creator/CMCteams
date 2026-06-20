@@ -117,7 +117,6 @@ body.admin td.cell:hover{outline:1px solid var(--gold2)}
     <span><b style="color:var(--gold2)">↑N</b> = ordre de départ</span>
     <span><b>NR</b> = non-retour · <b>5e</b> = cinquième</span>
   </div>
-  <div class="note" id="note"></div>
 </div>
 
 <div class="modal" id="pinModal">
@@ -132,12 +131,12 @@ body.admin td.cell:hover{outline:1px solid var(--gold2)}
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.9.0</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.9.1</div>
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-var APP_VER="v1.9.0";
+var APP_VER="v1.9.1";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -303,11 +302,6 @@ function render(){
     : (bad.length===0
       ? "<b>✅ Jours de repos cohérents</b> sur la période commune ("+ST.order.length+" chefs) — équipe validée."
       : "<span class='warn'>⚠️ Repos différents</span> pour : "+bad.join(", ")+" → vérifier (lecture imprécise ou équipe miroir).");
-  document.getElementById("note").innerHTML=
-    "Séquence pour <b>"+R.n+" personnes</b> : <b>"+R.SEQ.join(" · ")+"</b>. L'ordre tourne chaque jour travaillé ; "
-    +"une personne en CP/M/RH garde sa place (taille conservée). <b>Lecture seule</b> pour les collègues ; "
-    +"en admin : corrige un code, réordonne (▲▼), remplis NR/5e. "
-    +"<br><i>Protection côté navigateur (les collègues ne voient aucun bouton). Modifs enregistrées sur cet appareil.</i>";
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 
