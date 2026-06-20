@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.808";
+var APP_VER="v9.809";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -44846,15 +44846,21 @@ function _iaExecuteTool(toolName,input){
         A.employees.forEach(function(e){
           if(!isEmpActive(e,y,m))return;
           var codes=pl[e.id]||{};
-          var travCons=0,reposCount=0;
+          var travCons=0,reposCount=0,travTotal=0;
           for(var d=1;d<=days;d++){
             var c=codes[d]||"";
-            if(isWork(c)){travCons++;}
+            if(isWork(c)){travCons++;travTotal++;}
             else if(c==="RH"||c==="R"){if(travCons>6)issues.push({emp:e.name,type:"serie_longue",msg:travCons+"j cons\u00e9cutifs \u00e0 j"+(d-1)});travCons=0;reposCount++;}
             else if(c==="CP"){travCons=0;}
           }
           if(travCons>6)issues.push({emp:e.name,type:"serie_longue_fin",msg:travCons+"j cons\u00e9cutifs \u00e0 fin de mois"});
-          if(reposCount<8)issues.push({emp:e.name,type:"repos_insuffisant",msg:reposCount+" repos sur "+days+"j (min 8 recommand\u00e9)"});
+          // v9.809 : seuil PROPORTIONNEL aux jours de pr\u00e9sence (travail+repos), comme
+          // detectRepoConflicts v9.783. Un emp en CP/absence une partie du mois a
+          // logiquement moins de repos \u2014 ne plus le signaler \u00e0 tort (96 faux positifs
+          // juillet, diag Kevin). min \u2248 jours de pr\u00e9sence / 7.
+          var _presDays=travTotal+reposCount;
+          var _minRepos=Math.ceil((_presDays>0?_presDays:days)/7);
+          if(travTotal>0&&reposCount<_minRepos)issues.push({emp:e.name,type:"repos_insuffisant",msg:reposCount+" repos sur "+_presDays+"j pr\u00e9sents (min "+_minRepos+")"});
         });
         if(!issues.length)return"\u2705 COH\u00c9RENCE OK "+MFR[m]+" "+y+" : aucune anomalie m\u00e9tier d\u00e9tect\u00e9e";
         var byType={};
@@ -46371,9 +46377,16 @@ document.addEventListener("touchmove",_onScrollActivity,{passive:true,capture:tr
 var _deferredDone=false;
 /* v9.530 PERF: sentinelle daily-cleanup - trim toutes les listes longues 1x/jour */
 function _cmcDailyCleanup(){try{var caps={cmc_audit:500,cmc_userlog:500,cmc_admin_sessions:200,cmc_chat:500,cmc_pin_fails:50,cmc_import_log:200,cmc_parser_learning_log:200,cmc_learned_patterns:200,cmc_pdf_fingerprints:50,cmc_import_anomalies:300,cmc_lessons_learned:500,cmc_user_telemetry:300,cmc_err_log:500,cmc_click_failures:50,cmc_handoff_journal:200};var trimmed=0;Object.keys(caps).forEach(function(k){try{var arr=lg(k,null);if(Array.isArray(arr)&&arr.length>caps[k]){ls(k,arr.slice(-caps[k]));trimmed++;}}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-daily-cleanup",_e);}catch(__){}}});/* Backups > 7j supprimes */try{Object.keys(localStorage).forEach(function(kk){if(kk.indexOf("cmc_backup_")===0){var d=kk.replace("cmc_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>7*86400000){localStorage.removeItem(kk);trimmed++;}}});}catch(_){}try{ls("cmc_last_daily_cleanup",{ts:Date.now(),trimmed:trimmed});}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-daily-cleanup",_e);}catch(__){}}return trimmed;}catch(e){console.warn("[_cmcDailyCleanup]",e);return 0;}}
+// v9.809 — FILET BOOT anti « jours hors limite » (lesson #105). Le filet v9.801 ne
+// tourne qu'à l'import ; ce balayage nettoie les données DÉJÀ présentes (importées par
+// une version antérieure, ou un writer qui a écrit après le filet import). Supprime
+// toute cellule dont la clé-jour sort de 1..getDays(mois), pour TOUS les mois.
+function _cmcSweepAllOOB(){try{var ov=A.overrides||{},changed=0;Object.keys(ov).forEach(function(key){var mm=String(key).split("-");if(mm.length!==2)return;var y=parseInt(mm[0],10),m=parseInt(mm[1],10);if(isNaN(y)||isNaN(m))return;var dim=getDays(y,m);var row=ov[key];if(!row||typeof row!=="object")return;Object.keys(row).forEach(function(eid){var cells=row[eid];if(!cells||typeof cells!=="object")return;Object.keys(cells).forEach(function(d){var n=parseInt(d,10);if(isNaN(n)||n<1||n>dim){delete cells[d];changed++;}});});});if(changed){try{ls("cmc_ov",A.overrides);}catch(_){}console.info("[v9.809 oob-sweep] "+changed+" cellules hors-limite supprimées (boot)");}return changed;}catch(e){console.warn("[_cmcSweepAllOOB]",e&&e.message);return 0;}}
 function _deferredInit(){
   if(_deferredDone)return;_deferredDone=true;
   fbInit();
+  // v9.809 — balayage hors-limite (après chargement local + laisse fbLoadAll se faire)
+  setTimeout(function(){try{_cmcSweepAllOOB();}catch(_){}},7000);
   if(Object.keys(_syncQueue).length&&navigator.onLine){setTimeout(flushSyncQueue,2000);}
   // v9.81 — Backup auto quotidien (diff\u00e9r\u00e9 apr\u00e8s init Firebase)
   setTimeout(function(){if(typeof _autoBackupIfNeeded==="function")_autoBackupIfNeeded();},4000);
