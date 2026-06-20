@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>Départs — Chefs Black Jack</title>
+<style>
+:root{--gold:#c9a227;--gold2:#ffd700;--bg:#0a1a0c;--bg2:#0e2410;--card:#13301a;--ink:#eaf5ea;--mut:#9bb89b;--ease:cubic-bezier(.4,0,.2,1);
+ --c-work:#1d3a55;--c-rh:#7a5cc0;--c-r:#a98fe0;--c-cp:#d98aa8;--c-m:#d98a4a;--c-conv:#d8342e;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;max-width:100vw;overflow-x:hidden;background:var(--bg);color:var(--ink);
+ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 70px) env(safe-area-inset-left)}
+header{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,#0e2410,#0a1a0c);
+ border-bottom:1px solid rgba(201,162,39,.3);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.3px;color:var(--gold2)}
+.sub{font-size:12px;color:var(--mut);margin:0}
+.spacer{flex:1}
+button{font-family:inherit;cursor:pointer}
+.btn{background:rgba(201,162,39,.12);color:var(--gold2);border:1px solid rgba(201,162,39,.4);
+ border-radius:9px;padding:8px 12px;font-size:13px;font-weight:700;min-height:40px}
+.btn:active{transform:translateY(1px)}
+.btn.prim{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border:none}
+.wrap{padding:12px 8px 4px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid rgba(201,162,39,.18);border-radius:12px;background:var(--card)}
+table{border-collapse:separate;border-spacing:0;font-size:12px;min-width:max-content}
+th,td{padding:5px 4px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.05)}
+thead th{position:sticky;top:0;background:#0b1d0e;color:var(--gold2);font-size:11px;z-index:5;padding:7px 4px}
+thead th.wknd{color:#ffb37a}
+.cNom{position:sticky;left:0;background:#0f2613;text-align:left;z-index:8;min-width:118px;font-weight:700;
+ box-shadow:2px 0 6px rgba(0,0,0,.4)}
+thead .cNom{z-index:12}
+.cNR{position:sticky;left:118px;background:#10240f;z-index:8;min-width:50px}
+.cCq{position:sticky;left:168px;background:#10240f;z-index:8;min-width:50px;box-shadow:2px 0 6px rgba(0,0,0,.4)}
+thead .cNR,thead .cCq{z-index:12}
+.cell{font-size:10px;line-height:1.15;border-radius:5px;padding:3px 2px;min-width:42px}
+.dep{display:block;font-weight:900;font-size:14px;color:var(--gold2);margin-top:1px}
+.w{background:var(--c-work)} .conv{background:var(--c-conv);color:#ffe23a}
+.rh{background:var(--c-rh)} .r{background:var(--c-r);color:#221} .cp{background:var(--c-cp);color:#221} .m{background:var(--c-m);color:#221}
+.off .dep{display:none}
+.mark{font-size:13px;color:var(--gold2);font-weight:700;min-height:28px}
+body.admin .mark{cursor:pointer}
+.ed{display:none}
+body.admin .ed{display:inline;cursor:pointer;opacity:.55;margin-left:4px;font-size:12px}
+.cnt{font-weight:900;font-size:15px;color:var(--gold2)}
+.cntctl{display:none;align-items:center;justify-content:center;gap:4px}
+.mini{width:26px;height:26px;border-radius:6px;border:1px solid rgba(201,162,39,.4);background:rgba(201,162,39,.12);
+ color:var(--gold2);font-size:16px;font-weight:900;line-height:1;padding:0}
+body.admin .cntctl{display:flex} body.admin .cnt.ro{display:none}
+.tot td{background:#0b1d0e;font-weight:800;color:var(--gold2);border-top:2px solid rgba(201,162,39,.35)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;font-size:11px;color:var(--mut)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.note{padding:10px 14px;font-size:11px;color:var(--mut);line-height:1.5}
+.adminbar{display:none;gap:8px;flex-wrap:wrap;padding:8px 12px;background:rgba(201,162,39,.06);border-bottom:1px solid rgba(201,162,39,.15)}
+body.admin .adminbar{display:flex}
+.mv{display:none}
+body.admin .mv{display:inline-block;background:none;border:none;color:var(--gold2);font-size:13px;padding:0 3px}
+body.admin td.cell{cursor:pointer}
+body.admin td.cell:hover{outline:1px solid var(--gold2)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:100;display:none;
+ align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.box{background:var(--card);border:1px solid rgba(201,162,39,.4);border-radius:16px;padding:22px;max-width:340px;width:100%}
+.box h2{margin:0 0 6px;font-size:17px;color:var(--gold2)}
+.box p{margin:0 0 14px;font-size:13px;color:var(--mut)}
+.box input{width:100%;padding:12px;font-size:18px;text-align:center;letter-spacing:6px;border-radius:10px;
+ border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);margin-bottom:12px}
+.row{display:flex;gap:8px}
+.badge{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:50;
+ background:rgba(10,26,12,.9);color:var(--gold);border:1px solid rgba(201,162,39,.35);border-radius:20px;
+ padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:#13301a;color:var(--gold2);
+ border:1px solid var(--gold);border-radius:10px;padding:10px 16px;font-size:13px;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="hTitle">Départs — Chefs Black Jack</h1>
+    <p class="sub" id="hSub">Juin 2026 · 6 chefs · ordre de départ ↑</p>
+  </div>
+  <span class="spacer"></span>
+  <button class="btn" id="lockBtn" onclick="toggleAdmin()">🔒 Admin</button>
+</header>
+
+<div class="adminbar">
+  <button class="btn" onclick="resetCounters()">↺ Réinitialiser compteurs</button>
+  <button class="btn" onclick="resetAll()">⚠️ Tout réinitialiser</button>
+  <span class="sub" style="align-self:center">Touche une case planning pour corriger le code · flèches ▲▼ pour réordonner</span>
+</div>
+
+<div class="wrap">
+  <div class="scroll">
+    <table id="grid"></table>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--c-work)"></i>travail</span>
+    <span><i class="dot" style="background:var(--c-rh)"></i>RH</span>
+    <span><i class="dot" style="background:var(--c-r)"></i>R</span>
+    <span><i class="dot" style="background:var(--c-cp)"></i>CP</span>
+    <span><i class="dot" style="background:var(--c-m)"></i>M/abs</span>
+    <span><b style="color:var(--gold2)">↑N</b> = ordre de départ</span>
+    <span><b>NR</b> = non-retour · <b>5e</b> = cinquième</span>
+  </div>
+  <div class="note" id="note"></div>
+</div>
+
+<div class="modal" id="pinModal">
+  <div class="box">
+    <h2>🔒 Accès admin</h2>
+    <p>Code à 6 chiffres pour modifier (les collègues restent en lecture seule).</p>
+    <input id="pinIn" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+    <div class="row">
+      <button class="btn" style="flex:1" onclick="closePin()">Annuler</button>
+      <button class="btn prim" style="flex:1" onclick="checkPin()">Déverrouiller</button>
+    </div>
+  </div>
+</div>
+
+<div class="badge" id="ver" onclick="forceRefresh()">v1.0.0</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+var APP_VER="v1.0.0";
+var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
+var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
+ 8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
+ 11:[1,6,4,9,2,11,7,3,8,5,10],12:[1,6,4,9,2,11,7,3,12,8,5,10],13:[1,6,4,9,2,11,7,3,13,8,5,10,12]};
+function seqForSize(n){return SEQS[n]||(function(){var a=[];for(var i=1;i<=n;i++)a.push(i);return a;})();}
+// même logique que CMCteams isWork (l.9284)
+function isWork(c){return !!c && ["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS"].indexOf(c)<0;}
+function cellClass(c){
+  if(!c) return "off";
+  if(c==="RH") return "rh w-off"; if(c==="R") return "r w-off";
+  if(c==="CP") return "cp w-off"; if(["M","AF","RRT","PAT","MT","AT","ABS","ABI"].indexOf(c)>=0) return "m w-off";
+  if(/['"]$/.test(c)) return "conv"; return "w";
+}
+
+// ── Données JUIN 2026 (transcrites de la photo ; corrigeables en mode admin) ──
+// Rythme de roulement de l'équipe (chef plein-mois) :
+var RHY={1:"20/5c",2:"19/4c",3:"16/22c",4:"14/19c",5:"RH",6:"19/4'c",7:"22/6c",8:"20/5c",9:"16/3c",10:"14/19'c",
+ 11:"RH",12:"R",13:"20/5c",14:"19/4c",15:"16/22c",16:"14/19c",17:"RH",18:"R",19:"22/6c",20:"19/4'c",21:"16/3c",
+ 22:"14/19'c",23:"RH",24:"R",25:"20/5c",26:"19/4c",27:"16/22c",28:"14/19c",29:"RH",30:"R"};
+function mk(opts){ // opts: {from,to,d1,marks}
+  var o={};
+  for(var d=1;d<=30;d++){
+    var c=RHY[d];
+    if(opts.from && d<opts.from) c="CP";
+    if(opts.to && d>opts.to) c="CP";
+    if(opts.marks && opts.marks[d]!==undefined) c=opts.marks[d];
+    o[d]=c;
+  }
+  return o;
+}
+var DEFAULT={
+  month:"Juin 2026", days:30, team:"Chefs Black Jack", key:"cmc_departs_bjC_2026_06_v1",
+  people:[
+    {name:"FAUTRIER M",   codes:mk({marks:{1:"M"}})},
+    {name:"DEJANOVIC D",  codes:mk({})},
+    {name:"MARIANI M",    codes:mk({to:15})},
+    {name:"MALENFANT PJ", codes:mk({marks:{1:"20/5*",9:"16/3*",21:"16/3*",25:"20/5*",30:"22/6c"}})},
+    {name:"DESARZENS K",  codes:mk({from:16,marks:{21:"16/3*",25:"20/5*"}})},
+    {name:"DESSI F",      codes:mk({to:15,marks:{1:"20/5*",9:"16/3*"}})}
+  ]
+};
+
+var ST=null;
+function load(){
+  var saved=null; try{saved=JSON.parse(localStorage.getItem(DEFAULT.key)||"null");}catch(e){}
+  // structure d'état : order[], codes{name:{d:code}}, nr{name:n}, cq{name:n}
+  ST={
+    order: (saved&&saved.order) || DEFAULT.people.map(function(p){return p.name;}),
+    codes: {},
+    nr: (saved&&saved.nr)||{},
+    cq: (saved&&saved.cq)||{}
+  };
+  DEFAULT.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes); });
+  if(saved&&saved.codes){ Object.keys(saved.codes).forEach(function(n){ if(ST.codes[n]) Object.assign(ST.codes[n],saved.codes[n]); }); }
+  // garantir que tous les noms de l'ordre existent
+  ST.order=ST.order.filter(function(n){return ST.codes[n];});
+  DEFAULT.people.forEach(function(p){ if(ST.order.indexOf(p.name)<0) ST.order.push(p.name); });
+}
+function save(){ try{localStorage.setItem(DEFAULT.key,JSON.stringify(ST));}catch(e){} }
+
+// ── Calcul des départs ──
+// Taille = nombre de personnes de l'équipe (conservée même en congé) → SEQ fixe.
+// W = jours où ≥1 membre travaille (calendrier de roulement). wi = index du jour dans W.
+// dep(personne, jour présent) = SEQ[(wi%4 + ⌊wi/4⌋ + base) % taille].
+function compute(){
+  var n=ST.order.length, SEQ=seqForSize(n), days=DEFAULT.days;
+  var W=[];
+  for(var d=1;d<=days;d++){
+    var any=ST.order.some(function(nm){return isWork(ST.codes[nm][d]);});
+    if(any) W.push(d);
+  }
+  var deps={}; // name -> {d:depNum}
+  ST.order.forEach(function(nm,base){
+    deps[nm]={};
+    for(var d=1;d<=days;d++){
+      var wi=W.indexOf(d);
+      if(wi>=0 && isWork(ST.codes[nm][d])){
+        deps[nm][d]=SEQ[((wi%4)+Math.floor(wi/4)+base)%n];
+      }
+    }
+  });
+  return {deps:deps,W:W,SEQ:SEQ,n:n};
+}
+
+function render(){
+  var days=DEFAULT.days, R=compute();
+  var dow=["dim","lun","mar","mer","jeu","ven","sam"];
+  var html="<thead><tr>";
+  html+='<th class="cNom">Chef</th><th class="cNR">NR</th><th class="cCq">5e</th>';
+  for(var d=1;d<=days;d++){
+    var wd=new Date(2026,5,d).getDay(); // juin = mois 5
+    var wknd=(wd===0||wd===6)?" wknd":"";
+    html+='<th class="'+wknd.trim()+'">'+dow[wd]+'<br>'+d+'</th>';
+  }
+  html+="</tr></thead><tbody>";
+  ST.order.forEach(function(nm,idx){
+    var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
+    html+="<tr>";
+    html+='<td class="cNom"><span class="mv" onclick="move('+idx+',-1)">▲</span>'
+         +'<span class="mv" onclick="move('+idx+',1)">▼</span> '+esc(nm)+'</td>';
+    html+='<td class="cNR mark" onclick="addCross(\'nr\',\''+esc(nm)+'\')">'+esc(nr)
+         +'<span class="ed" onclick="event.stopPropagation();editMark(\'nr\',\''+esc(nm)+'\')">✎</span></td>';
+    html+='<td class="cCq mark" onclick="addCross(\'cq\',\''+esc(nm)+'\')">'+esc(cq)
+         +'<span class="ed" onclick="event.stopPropagation();editMark(\'cq\',\''+esc(nm)+'\')">✎</span></td>';
+    for(var d=1;d<=days;d++){
+      var c=ST.codes[nm][d]||"", dep=R.deps[nm][d];
+      var cl=cellClass(c);
+      html+='<td class="cell '+cl+(dep?'':' off')+'" onclick="editCell(\''+esc(nm)+'\','+d+')">'
+           +esc(c||"·")+(dep?'<span class="dep">'+dep+'</span>':'')+'</td>';
+    }
+    html+="</tr>";
+  });
+  // totaux = nb de croix ✗ par colonne (comptabilise au fur et à mesure)
+  var cx=function(o){var t=0;ST.order.forEach(function(nm){t+=((o[nm]||"").match(/✗/g)||[]).length;});return t;};
+  html+='<tr class="tot"><td class="cNom">TOTAL ✗</td><td class="cNR">'+cx(ST.nr)+'</td><td class="cCq">'+cx(ST.cq)+'</td>';
+  for(var d2=1;d2<=days;d2++){ html+='<td></td>'; }
+  html+="</tr></tbody>";
+  document.getElementById("grid").innerHTML=html;
+  document.getElementById("hSub").textContent=DEFAULT.month+" · "+ST.order.length+" chefs · séquence "+R.SEQ.join("·");
+  document.getElementById("note").innerHTML=
+    "Séquence de départ pour <b>"+R.n+" personnes</b> : <b>"+R.SEQ.join(" · ")+"</b>. "
+    +"L'ordre tourne chaque jour travaillé. Une personne en CP/M/RH garde sa place dans l'équipe (taille conservée). "
+    +"<br><b>Lecture seule</b> pour les collègues. En mode admin : corrige un code, réordonne (▲▼), "
+    +"et incrémente <b>NR</b>/<b>5e</b> — les départs se recalculent automatiquement. "
+    +"<br><i>Sécurité : protection côté navigateur (les collègues ne voient aucun bouton de modification). "
+    +"Les modifications sont enregistrées sur CET appareil.</i>";
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+
+// ── Actions admin ──
+function isAdmin(){return document.body.classList.contains("admin");}
+function guard(){ if(!isAdmin()){toast("Lecture seule — déverrouille en admin");return false;} return true; }
+function move(idx,dir){ if(!guard())return; var j=idx+dir; if(j<0||j>=ST.order.length)return;
+  var a=ST.order; var t=a[idx];a[idx]=a[j];a[j]=t; save(); render(); }
+function addCross(field,nm){ if(!guard())return; ST[field][nm]=(ST[field][nm]||"")+"✗"; save(); render(); toast(nm+" "+(field==="nr"?"non-retour":"5e")+" +✗"); }
+function editMark(field,nm){ if(!guard())return; var cur=ST[field][nm]||"";
+  var v=prompt((field==="nr"?"Non-retour":"5ème")+" — "+nm+"\n(croix ✗ ou texte ; vide pour effacer)",cur);
+  if(v===null)return; ST[field][nm]=v.trim(); save(); render(); }
+function editCell(nm,d){ if(!guard())return;
+  var cur=ST.codes[nm][d]||"";
+  var v=prompt("Code pour "+nm+" — jour "+d+"\n(ex: 20/5c, 16/3*, RH, R, CP, M ; vide = rien)",cur);
+  if(v===null)return; ST.codes[nm][d]=v.trim(); save(); render(); }
+function resetCounters(){ if(!guard())return; if(!confirm("Remettre tous les compteurs NR et 5e à zéro ?"))return;
+  ST.nr={};ST.cq={};save();render();toast("Compteurs remis à zéro"); }
+function resetAll(){ if(!guard())return; if(!confirm("Tout réinitialiser (codes, ordre, compteurs) aux valeurs d'origine ?"))return;
+  try{localStorage.removeItem(DEFAULT.key);}catch(e){} load(); render(); toast("Réinitialisé"); }
+
+// ── PIN ──
+function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; toast("Verrouillé — lecture seule"); }
+  else { document.getElementById("pinModal").classList.add("on"); setTimeout(function(){var e=document.getElementById("pinIn");if(e){e.value="";e.focus();}},60); } }
+function closePin(){ document.getElementById("pinModal").classList.remove("on"); }
+async function sha256(s){ var b=new TextEncoder().encode(s); var h=await crypto.subtle.digest("SHA-256",b);
+  return Array.from(new Uint8Array(h)).map(function(x){return x.toString(16).padStart(2,"0");}).join(""); }
+async function checkPin(){ var v=(document.getElementById("pinIn").value||"").trim();
+  var h=await sha256(v);
+  if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); toast("Mode admin activé"); }
+  else { toast("Code incorrect"); } }
+document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
+
+function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(window._tt); window._tt=setTimeout(function(){t.classList.remove("on");},2200); }
+
+// ── MAJ forcée (cache iPhone) ──
+function forceRefresh(){
+  var go=function(){location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());};
+  if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
+    .then(function(){return ('caches' in window)?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0;}).then(go).catch(go); }
+  else go();
+}
+document.getElementById("ver").textContent=APP_VER;
+
+load(); render();
+</script>
+</body>
+</html>
