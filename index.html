@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.807";
+var APP_VER="v9.808";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10944,6 +10944,8 @@ function dc(){
         // familyHistory[_km] PRÉSERVÉE (section d'import = autorité, v9.805).
       });
       try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
+      // v9.808 : reset le LOCK union-find pour ce mois (teamHistory vient d'être wipé).
+      try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(_km);}catch(_){}
       if(_hash>3){
         // v9.757 — union-find par codes journaliers D'ABORD (équipes nettes),
         // puis rest-pattern remplit les emps non clusterisés (skip-on-explicit).
@@ -26094,10 +26096,14 @@ function cmcExportTeamsDetectionDiag(){
       if(!_srcTxt && window._lastImportText)_srcTxt=window._lastImportText;
       if(_srcTxt&&typeof _cmcDetectTeamsByPdfColumn==="function")_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
     }catch(_){}
+    // v9.808 — autorité union-find (verrouille) AVANT le filet rest-pattern, pour que
+    // le diag reflète l'état FINAL réel (équipes séparées par codes journaliers).
+    try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
     try{ls("cmc_e",A.employees);}catch(_){}
 
-    // Re-run algo pour avoir le report
+    // Re-run algo pour avoir le report (FILET fill-only : ne touche pas les emps verrouillés)
     var algoRes=null;
     try{algoRes=_cmcDetectTeamsByRestPattern(iy,im);}catch(e){}
 
@@ -36406,6 +36412,7 @@ function _cmcApplyValidatedTeams(iy,im){
         if(!emp)return;
         if(!emp.teamHistory)emp.teamHistory={};
         emp.teamHistory[key]=prodId;
+        if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,emp.id); // v9.808 : autorité union-find → verrouille
         if(fam&&fam!=="amenage"){if(!emp.familyHistory)emp.familyHistory={};emp.familyHistory[key]=fam;}
       });
     });
@@ -36512,6 +36519,11 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
+      // v9.808 : FILET fill-only — un emp déjà clusterisé par l'autorité union-find
+      // (daily-codes / validatedTeams) est VERROUILLÉ. Le rest-pattern (signature
+      // grossière qui sur-clusterise GARRO/MARIOTTINI avec DESARZENS) ne le réassigne
+      // PAS. Il ne traite que les emps que l'union-find n'a pas pu clusteriser.
+      if(typeof _cmcTeamLocked==="function"&&_cmcTeamLocked(key,eid)){skipReasons.explicit++;return;}
       var _empFam=_famForDetect(emp);
       if(_empFam==="cadres"){skipReasons.cadres++;return;}
       var r=ov[eid]||{};
@@ -36636,6 +36648,30 @@ function _cmcDeriveFamily(emp,ovRow,key){
   return (emp&&emp.family==="baccara"?"cmc":(emp&&emp.family))||"bj";
 }
 
+// v9.808 (Kevin diag JUILLET 2026 "GARRO S / MARIOTTINI J pas dans mon équipe ;
+// MARIANI M (CP 1ère moitié) doit y être") — LOCK des assignations faites par un
+// détecteur AUTORITAIRE union-find (codes journaliers : _cmcDetectTeamsByDailyCodes
+// + _cmcApplyValidatedTeams/window.TeamDetector). La signature grossière de
+// _cmcDetectTeamsByRestPattern (famille|repos|1er-code) SUR-CLUSTERISE : deux
+// équipes partageant repos+1er-code mais avec des rotations COMPLÈTES différentes
+// (GARRO/MARIOTTINI vs DESARZENS) étaient fusionnées. L'union-find par codes
+// journaliers les SÉPARE correctement (lessons #104/#106) ET rattache un CP-partiel
+// (MARIANI) à son équipe via les jours co-travaillés. Le rest-pattern doit donc
+// devenir un FILET (fill-only) : il ne réassigne QUE les emps que l'union-find n'a
+// pas pu clusteriser, il n'ÉCRASE JAMAIS un teamHistory verrouillé.
+// Le lock est stampé par clé-mois ; reset quand la clé change (nouveau mois/import).
+function _cmcTeamLockKey(key){
+  try{
+    if(!window._cmcTeamLock||window._cmcTeamLock.key!==key){
+      window._cmcTeamLock={key:key,set:{}};
+    }
+    return window._cmcTeamLock.set;
+  }catch(_){return {};}
+}
+function _cmcTeamLockReset(key){ try{window._cmcTeamLock={key:key,set:{}};}catch(_){}}
+function _cmcTeamLockAdd(key,eid){ try{_cmcTeamLockKey(key)[eid]=1;}catch(_){} }
+function _cmcTeamLocked(key,eid){ try{return !!_cmcTeamLockKey(key)[eid];}catch(_){return false;} }
+
 // v9.757 (Kevin 2026-05-29 "porter l'algo validé") — DÉTECTION ÉQUIPES par
 // IDENTITÉ DES CODES JOURNALIERS (union-find), portée du banc d'essai T1
 // (tools/planning-parser-tester/lib/team-detector.js, validée 6/6 sur l'équipe
@@ -36734,6 +36770,7 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
         m.emp.teamHistory[key]=teamId;
         if(!m.emp.familyHistory)m.emp.familyHistory={};
         m.emp.familyHistory[key]=domFam;
+        _cmcTeamLockAdd(key,m.emp.id); // v9.808 : autorité union-find → verrouille
         assigned++;
       });
     });
@@ -36875,6 +36912,8 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
+    // v9.808 : reset le LOCK union-find pour ce mois (fresh import).
+    try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
     // v9.738 (Kevin "Go 3 tout auto") — HYBRIDE confidence score :
     // après les détections d'équipes (pdf-column + RH-pattern), calcule un
     // score de confiance 0-100 basé sur couverture + CP dominant + conflits.
@@ -36918,8 +36957,14 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
         _cmcApplyValidatedTeams(iy,im);
       }
     }catch(_vtImpErr){console.warn("[v9.762 validatedTeams import]",_vtImpErr&&_vtImpErr.message);}
-    // v9.648 — Détection auto équipes par pattern RH (filet de sécurité hybride :
-    // SKIP les emps ayant déjà teamHistory[key] → complète seulement les non-couverts)
+    // v9.808 — AUTORITÉ union-find par codes journaliers (inline, marche même sans
+    // window.TeamDetector). Sépare les équipes que la signature grossière du
+    // rest-pattern fusionnait (GARRO/MARIOTTINI vs DESARZENS) et rattache les
+    // CP-partiels (MARIANI) via leurs jours co-travaillés. VERROUILLE ses emps.
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_dcImpErr){console.warn("[v9.808 dailyCodes import]",_dcImpErr&&_dcImpErr.message);}
+    // v9.648/v9.808 — Détection équipes par pattern RH = FILET fill-only : SKIP les
+    // emps déjà clusterisés par l'autorité union-find (lock), complète seulement les
+    // non-couverts. Ne réassigne ni n'écrase JAMAIS un teamHistory verrouillé.
     try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
     // v9.743 (Kevin 2026-05-26 "tjs pas les bonnes équipes pour tout le monde") :
     // Fallback final pour emps avec cellules sans équipe. Pour chaque tel emp,
@@ -46249,6 +46294,8 @@ setTimeout(function(){
       }
       if(_srcTxt&&typeof _cmcDetectTeamsByPdfColumn==="function")_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
     }catch(_){}
+    // v9.808 — autorité union-find AVANT le filet rest-pattern (verrouille ses emps).
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
     try{ls("cmc_e",A.employees);}catch(_){}
