@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.809";
+var APP_VER="v9.810";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10947,7 +10947,12 @@ function dc(){
       // v9.808 : reset le LOCK union-find pour ce mois (teamHistory vient d'être wipé).
       try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(_km);}catch(_){}
       if(_hash>3){
-        // v9.757 — union-find par codes journaliers D'ABORD (équipes nettes),
+        // v9.810 — AUTORITÉ géométrique D'ABORD : ré-applique les équipes séparées
+        // par POSITION dans le PDF (persistées dans cmc_geom_teams à l'import ;
+        // window._cmcPdfGeometry absente au boot) + verrouille. Les détecteurs
+        // d'horaire ci-dessous (skip-on-explicit) ne les réassignent pas.
+        try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(A.year,A.month);}catch(_agt){}
+        // v9.757 — union-find par codes journaliers (équipes nettes),
         // puis rest-pattern remplit les emps non clusterisés (skip-on-explicit).
         try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(A.year,A.month);}catch(_dcuf){}
         try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
@@ -26099,6 +26104,10 @@ function cmcExportTeamsDetectionDiag(){
     // v9.808 — autorité union-find (verrouille) AVANT le filet rest-pattern, pour que
     // le diag reflète l'état FINAL réel (équipes séparées par codes journaliers).
     try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    // v9.810 — ré-applique l'autorité géométrique persistée (auto-pin) AVANT les
+    // détecteurs d'horaire, pour que le diag reflète l'état FINAL réel (équipes
+    // séparées par POSITION). window._cmcPdfGeometry absente ici → on lit cmc_geom_teams.
+    try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(iy,im);}catch(_){}
     try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
     try{ls("cmc_e",A.employees);}catch(_){}
@@ -36371,6 +36380,9 @@ function _cmcApplyValidatedTeams(iy,im){
       if(!hasCell)return;
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
+      // v9.810 : AUTORITÉ GÉOMÉTRIQUE prioritaire — ne PAS feeder au TeamDetector
+      // un emp déjà verrouillé par la position PDF (sinon re-fusion des blocs).
+      if(typeof _cmcTeamLocked==="function"&&_cmcTeamLocked(key,eid))return;
       var fam=null;
       try{if(typeof familyForMonth==="function")fam=familyForMonth(emp,iy,im,{strict:true});}catch(_){}
       if(!fam){
@@ -36714,6 +36726,11 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
+      // v9.810 : un emp déjà verrouillé par l'AUTORITÉ GÉOMÉTRIQUE (position PDF,
+      // _cmcDetectTeamsByGeometry / _cmcApplyGeomTeams) n'est PAS re-clusterisé par
+      // l'union-find horaire — sinon deux blocs à rotation identique mais positions
+      // différentes seraient re-fusionnés (BJ Éq.3). La géométrie a priorité.
+      if(typeof _cmcTeamLocked==="function"&&_cmcTeamLocked(key,eid))return;
       var fam=_famDC(emp);
       if(fam==="cadres")return;
       var r=ov[eid]||{},dn={},work=0,rest=0;
@@ -36796,6 +36813,185 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
     console.log("[v9.757 dailyCodes] "+teamGroups.length+" équipes, "+assigned+" emps, "+(Object.keys(mirrors).length/2)+" miroirs");
     return{ok:true,teams:teamGroups.length,assigned:assigned,mirrors:Object.keys(mirrors).length/2};
   }catch(e){console.warn("[v9.757 dailyCodes]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
+// v9.810 (Kevin diag JUILLET 2026 « BJ Éq.3 = 10 mais devrait être ~6 ») —
+// DÉTECTION ÉQUIPES par GÉOMÉTRIE / POSITION dans le PDF. PROBLÈME : deux blocs
+// "22/6c" SÉPARÉS dans la section "Chefs black Jack" (l'équipe de Kevin + une
+// AUTRE équipe plus bas, séparées par un bloc "20/5c") ont des ROTATIONS
+// IDENTIQUES jour par jour → AUCUN algo basé sur l'horaire (rest-pattern OU
+// union-find codes journaliers) ne peut les séparer. Le SEUL signal = leur
+// POSITION/ORDRE vertical dans le PDF. Ce détecteur lit la géométrie
+// (window._cmcPdfGeometry, artefact d'import) : il ordonne les emps par
+// (page, y), puis DANS CHAQUE FAMILLE segmente en BLOCS d'équipe — un nouveau
+// bloc démarre quand la SIGNATURE de rotation change OU quand le même run de
+// signature est INTERROMPU (une signature différente apparaît puis la même
+// revient = NOUVELLE équipe séparée). Les deux blocs 22/6c deviennent ainsi
+// 2 équipes distinctes purement par la position. AUTOMATIQUE (aucun pin manuel),
+// résultat PERSISTÉ dans cmc_geom_teams (l'« auto-pin ») pour survivre au
+// re-detect au boot (où la géométrie n'est plus disponible).
+// NE TOUCHE JAMAIS les codes de cellules — uniquement teamHistory (groupement).
+function _cmcDetectTeamsByGeometry(iy,im){
+  try{
+    var key=iy+"-"+im;
+    var geo=(typeof window!=="undefined")?window._cmcPdfGeometry:null;
+    if(!geo||!Array.isArray(geo.pages)||!geo.pages.length)return{ok:false,reason:"no_geometry"};
+    if(typeof window.TextParser!=="object"||typeof window.TextParser.groupItemsByLine!=="function"
+       ||typeof window.TextParser.parseLineForEmployee!=="function")return{ok:false,reason:"no_TextParser"};
+    var ov=(A.overrides&&A.overrides[key])||{};
+    if(!Object.keys(ov).length)return{ok:false,reason:"no_data"};
+    // Normalisation de nom — réutilise EncadresParser.normName (homonyme-safe :
+    // surname multi-token + strip codes-poste), comme _cmcApplyGeometricParse.
+    function norm(s){
+      try{ if(window.EncadresParser&&typeof window.EncadresParser.normName==="function")return window.EncadresParser.normName(s); }catch(_n){}
+      return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();
+    }
+    // Map nom normalisé → liste d'eids présents dans A.overrides[key] (actifs ce mois).
+    var nameToEid={};
+    A.employees.forEach(function(e){
+      if(!e||!e.name)return;
+      if(!ov[e.id])return; // seulement les emps qui ont des cellules ce mois
+      var n=norm(e.name);(nameToEid[n]=nameToEid[n]||[]).push(e.id);
+    });
+    // 1) Ordonner les emps par (page, y) en lisant la géométrie ligne par ligne.
+    //    groupItemsByLine trie déjà les lignes haut→bas (y décroissant) ;
+    //    parseLineForEmployee extrait le nom de chaque ligne.
+    var ordered=[]; // [{eid, family, sig}]
+    var seen={};    // anti-doublon (le nom peut réapparaître page roulements)
+    geo.pages.forEach(function(pg,pgIdx){
+      if(!pg||!Array.isArray(pg.items))return;
+      var lines=[];
+      try{lines=window.TextParser.groupItemsByLine(pg.items,2)||[];}catch(_gl){return;}
+      lines.forEach(function(line){
+        var pe=null;try{pe=window.TextParser.parseLineForEmployee(line);}catch(_pe){}
+        if(!pe||!pe.name)return;
+        var n=norm(pe.name);
+        var eids=nameToEid[n]||[];
+        if(eids.length>1){
+          // homonyme : résoudre par initiale exacte (lesson #38/#68)
+          var toks=String(pe.name||"").trim().split(/\s+/).filter(Boolean);
+          var last=toks[toks.length-1];
+          if(last&&/^[A-Z]{1,3}$/.test(last)){
+            var mm=eids.filter(function(id){var e=A.employees.find(function(x){return x.id===id;});if(!e||!e.name)return false;var pt=e.name.trim().split(/\s+/).filter(Boolean);return pt[pt.length-1]===last;});
+            eids=(mm.length===1)?mm:[];
+          }else eids=[];
+        }
+        if(!eids.length)return;
+        var eid=eids[0];
+        if(seen[eid])return; // garder la 1ère occurrence (grille planning, haut de page)
+        seen[eid]=1;
+        var emp=A.employees.find(function(x){return x.id===eid;});
+        if(!emp)return;
+        var fam=(typeof _cmcDeriveFamily==="function")?_cmcDeriveFamily(emp,ov[eid],key):(emp.family||"bj");
+        if(fam==="cadres")return; // cadres traités à part
+        ordered.push({eid:eid,family:(fam==="baccara"?"cmc":fam),sig:_cmcGeomSig(ov[eid])});
+      });
+    });
+    if(ordered.length<2)return{ok:false,reason:"too_few_rows"};
+    // 2) Segmentation EN BLOCS par famille, dans l'ordre vertical. Un bloc se
+    //    ferme dès que la signature CHANGE (la même signature qui réapparaît après
+    //    une interruption ouvre un NOUVEAU bloc = équipe séparée par la position).
+    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0,amenage:0};
+    var blocks=[]; // {teamId, family, members:[eid], sig}
+    // Travail par famille pour respecter "séparer dans chaque famille" mais en
+    // gardant l'ordre vertical GLOBAL (on segmente la sous-séquence de chaque famille).
+    var byFam={};
+    ordered.forEach(function(o){(byFam[o.family]=byFam[o.family]||[]).push(o);});
+    Object.keys(byFam).forEach(function(fam){
+      var seq=byFam[fam];
+      var cur=null;
+      seq.forEach(function(o){
+        if(cur&&cur.sig===o.sig){ cur.members.push(o.eid); return; }
+        // nouvelle signature (ou 1er) → fermer le bloc courant, en ouvrir un nouveau.
+        famCounters[fam]=(famCounters[fam]||0)+1;
+        var n=famCounters[fam];
+        var teamId=fam==="roulettes"?("rg"+n):fam==="cmc"?("cg"+n):fam==="amenage"?("amenageg"+n):fam==="baccara"?("bg"+n):("g"+n);
+        cur={teamId:teamId,family:fam,members:[o.eid],sig:o.sig};
+        blocks.push(cur);
+      });
+    });
+    // 3) N'assigner QUE les blocs ≥2 (un singleton géométrique = laissé aux
+    //    détecteurs d'horaire/fallback). Écrire teamHistory + LOCK + persister.
+    var geomMap=lg("cmc_geom_teams",{})||{};
+    var perMonth={};
+    var assigned=0,teams=0;
+    blocks.forEach(function(b){
+      if(b.members.length<2)return;
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(b.teamId);
+      teams++;
+      b.members.forEach(function(eid){
+        var emp=A.employees.find(function(x){return x.id===eid;});
+        if(!emp)return;
+        if(!emp.teamHistory)emp.teamHistory={};
+        emp.teamHistory[key]=b.teamId;
+        if(!emp.familyHistory)emp.familyHistory={};
+        if(!emp.familyHistory[key])emp.familyHistory[key]=b.family;
+        if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,eid);
+        perMonth[eid]=b.teamId;
+        assigned++;
+      });
+    });
+    if(assigned){
+      geomMap[key]=perMonth;
+      try{ls("cmc_geom_teams",geomMap);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_geom_teams",geomMap);}catch(_){}
+      try{ls("cmc_e",A.employees);}catch(_){}
+      try{ls("cmc_t",A.teams);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+    }
+    console.log("[v9.810 geomTeams] "+teams+" équipes (position), "+assigned+" emps");
+    return{ok:true,teams:teams,assigned:assigned};
+  }catch(e){console.warn("[v9.810 geomTeams]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
+// Signature de rotation pour la segmentation géométrique : repos (RH∪R) + code
+// de base de CHAQUE jour travaillé (suffixes c/'/"/* strippés). Deux emps de la
+// MÊME équipe ont la MÊME signature (ils tournent ensemble) ; deux blocs 22/6c
+// séparés mais à rotation identique auront la même signature → ils ne sont PAS
+// séparés par la signature seule, c'est l'INTERRUPTION de position qui les sépare.
+function _cmcGeomSig(row){
+  if(!row)return "";
+  var STATUS_ABS={CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DELPT:1,CL:1,CDH:1,CEO:1,CSC:1,CSS:1,HD:1};
+  var parts=[];
+  for(var d=1;d<=31;d++){
+    var c=row[d];
+    if(c==null||c===""){parts.push(d+":-");continue;}
+    var u=String(c).trim().toUpperCase();
+    if(u==="RH"||u==="R"){parts.push(d+":REST");continue;}
+    if(STATUS_ABS[u]){parts.push(d+":ABS");continue;}
+    parts.push(d+":"+String(c).replace(/[c'"*:]+$/gi,"").trim().toUpperCase());
+  }
+  return parts.join("|");
+}
+
+// v9.810 — PERSISTANCE géométrique (« l'auto-pin »). Réapplique le résultat
+// géométrique stocké (cmc_geom_teams) à chaque détection, AVANT les détecteurs
+// d'horaire. Indispensable car le boot WIPE teamHistory et la géométrie
+// (window._cmcPdfGeometry) n'est PAS présente hors import. Pose teamHistory +
+// crée l'équipe + VERROUILLE → les détecteurs d'horaire (skip-on-explicit) ne
+// les réassignent pas. Comme familyHistory, NE PAS wiper au boot ; rafraîchi
+// uniquement à un nouvel import (par _cmcDetectTeamsByGeometry).
+function _cmcApplyGeomTeams(iy,im){
+  try{
+    var key=iy+"-"+im;
+    var geomMap=lg("cmc_geom_teams",{})||{};
+    var perMonth=geomMap[key];
+    if(!perMonth||typeof perMonth!=="object")return{ok:false,reason:"no_record"};
+    var applied=0;
+    Object.keys(perMonth).forEach(function(eid){
+      var emp=A.employees.find(function(x){return x.id===eid;});
+      if(!emp)return;
+      var tid=perMonth[eid];
+      if(!tid)return;
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(tid);
+      if(!emp.teamHistory)emp.teamHistory={};
+      emp.teamHistory[key]=tid;
+      if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,eid);
+      applied++;
+    });
+    if(applied)console.log("[v9.810 applyGeomTeams] "+applied+" emps ré-appliqués depuis cmc_geom_teams");
+    return{ok:true,applied:applied};
+  }catch(e){console.warn("[v9.810 applyGeomTeams]",e&&e.message);return{ok:false,error:e&&e.message};}
 }
 
 // v9.733 RESCUE PASS retiré v9.734 (Kevin règle absolue "aucune invention,
@@ -36914,6 +37110,11 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     var ov=A.overrides[key]||{};
     // v9.808 : reset le LOCK union-find pour ce mois (fresh import).
     try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    // v9.810 : ré-applique d'abord l'éventuel résultat géométrique déjà persisté
+    // (auto-pin survivant) — il sera rafraîchi juste après par le compute frais
+    // (_cmcDetectTeamsByGeometry, plus bas, une fois les cellules géométriques
+    // remplies). Pose le lock pour ces emps.
+    try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(iy,im);}catch(_){}
     // v9.738 (Kevin "Go 3 tout auto") — HYBRIDE confidence score :
     // après les détections d'équipes (pdf-column + RH-pattern), calcule un
     // score de confiance 0-100 basé sur couverture + CP dominant + conflits.
@@ -36952,6 +37153,17 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
         _cmcApplyGeometricParse(iy,im);
       }
     }catch(_geoImpErr){console.warn("[v9.766 geoParse import]",_geoImpErr&&_geoImpErr.message);}
+    // v9.810 — DÉTECTION ÉQUIPES PAR GÉOMÉTRIE (autorité de POSITION) : après le
+    // parse géométrique des cellules, segmente les emps par bloc vertical dans le
+    // PDF → sépare 2 équipes à rotation identique mais à positions différentes
+    // (BJ Éq.3 sur-clusterisée). VERROUILLE ses emps + PERSISTE dans cmc_geom_teams
+    // (survit au boot). Les détecteurs d'horaire ci-dessous (skip-on-explicit) ne
+    // réassignent pas ces emps. NE TOUCHE JAMAIS les codes (groupement seul).
+    try{
+      if(typeof _cmcDetectTeamsByGeometry==="function"&&typeof window!=="undefined"&&window._cmcPdfGeometry){
+        _cmcDetectTeamsByGeometry(iy,im);
+      }
+    }catch(_geomTeamErr){console.warn("[v9.810 geomTeams import]",_geomTeamErr&&_geomTeamErr.message);}
     try{
       if(typeof _cmcApplyValidatedTeams==="function"&&typeof window!=="undefined"&&window.TeamDetector){
         _cmcApplyValidatedTeams(iy,im);
