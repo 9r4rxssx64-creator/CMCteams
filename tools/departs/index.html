@@ -89,9 +89,11 @@ body.admin td.cell:hover{outline:1px solid var(--gold2)}
 </header>
 
 <div class="adminbar">
+  <button class="btn" id="anchorBtn" onclick="toggleAnchor()">📍 Placer Départ 1</button>
+  <button class="btn" onclick="resetAnchor()">↩︎ Rotation normale</button>
   <button class="btn" onclick="resetCounters()">↺ Vider NR/5e</button>
   <button class="btn" onclick="resetAll()">⚠️ Réinit. ce mois</button>
-  <span class="sub" style="align-self:center">Touche une case planning = corriger le code · ▲▼ = réordonner · NR/5e : tap = ✗, ✎ = écrire</span>
+  <span class="sub" id="adminHint" style="align-self:center">Touche une case = corriger le code · ▲▼ = réordonner · NR/5e : tap = ✗, ✎ = écrire</span>
 </div>
 
 <div class="wrap">
@@ -121,12 +123,12 @@ body.admin td.cell:hover{outline:1px solid var(--gold2)}
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.6.0</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.7.0</div>
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-var APP_VER="v1.6.0";
+var APP_VER="v1.7.0";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -217,7 +219,7 @@ var ST=null;
 function load(){
   B=BOARDS[BID];
   var saved=null; try{saved=JSON.parse(localStorage.getItem(B.key)||"null");}catch(e){}
-  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{} };
+  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{}, off:(saved&&saved.off)||0 };
   B.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes); });
   if(saved&&saved.codes){ Object.keys(saved.codes).forEach(function(n){ if(ST.codes[n]) Object.assign(ST.codes[n],saved.codes[n]); }); }
   ST.order=ST.order.filter(function(n){return ST.codes[n];});
@@ -235,11 +237,12 @@ function compute(){
   var refName=active[0], workDays=[];
   if(refName){ for(var d=1;d<=days;d++){ if(isWork(ST.codes[refName][d])) workDays.push(d); } }
   var deps={}; ST.order.forEach(function(nm){ deps[nm]={}; });
+  var off=ST.off||0;
   active.forEach(function(nm,base){
     for(var d=1;d<=days;d++){ var wi=workDays.indexOf(d);
-      if(wi>=0 && isWork(ST.codes[nm][d])) deps[nm][d]=SEQ[((wi%4)+Math.floor(wi/4)+base)%sl]; }
+      if(wi>=0 && isWork(ST.codes[nm][d])) deps[nm][d]=SEQ[(((wi%4)+Math.floor(wi/4)+base+off)%sl+sl)%sl]; }
   });
-  return {deps:deps,workDays:workDays,SEQ:SEQ,n:sl};
+  return {deps:deps,workDays:workDays,SEQ:SEQ,n:sl,active:active};
 }
 // vérif jours de repos identiques (signature d'équipe) — repère les captures imprécises / un miroir
 function restSig(nm){ var s=[]; for(var d=1;d<=B.days;d++){ if(isRest(ST.codes[nm][d])) s.push(d); } return s.join(","); }
@@ -304,8 +307,26 @@ function move(idx,dir){ if(!guard())return; var j=idx+dir; if(j<0||j>=ST.order.l
 function addCross(f,nm){ if(!guard())return; ST[f][nm]=(ST[f][nm]||"")+"✗"; save(); render(); toast(nm+" "+(f==="nr"?"non-retour":"5e")+" +✗"); }
 function editMark(f,nm){ if(!guard())return; var v=prompt((f==="nr"?"Non-retour":"5ème")+" — "+nm+"\n(✗ ou texte ; vide pour effacer)",ST[f][nm]||"");
   if(v===null)return; ST[f][nm]=v.trim(); save(); render(); }
-function editCell(nm,d){ if(!guard())return; var v=prompt("Code "+nm+" — jour "+d+"\n(ex 20/5c, 16/3*, RH, R, CP, M ; vide = rien)",ST.codes[nm][d]||"");
+function editCell(nm,d){ if(!guard())return;
+  if(window._anchorMode){ setAnchor(nm,d); return; }
+  var v=prompt("Code "+nm+" — jour "+d+"\n(ex 20/5c, 16/3*, RH, R, CP, M ; vide = rien)",ST.codes[nm][d]||"");
   if(v===null)return; ST.codes[nm][d]=v.trim(); save(); render(); }
+function toggleAnchor(){ if(!guard())return; window._anchorMode=!window._anchorMode;
+  document.getElementById("anchorBtn").style.background=window._anchorMode?"linear-gradient(135deg,var(--gold),var(--gold2))":"";
+  document.getElementById("anchorBtn").style.color=window._anchorMode?"#000":"";
+  document.getElementById("adminHint").innerHTML=window._anchorMode
+    ? "<b style='color:var(--gold2)'>📍 Mode Départ 1 : touche la case de la personne (jour) qui doit être DÉPART 1 → toute la rotation se cale.</b>"
+    : "Touche une case = corriger le code · ▲▼ = réordonner · NR/5e : tap = ✗, ✎ = écrire";
+  toast(window._anchorMode?"📍 Touche la case = Départ 1":"Mode normal"); }
+function setAnchor(nm,d){ var R=compute(); var base=R.active.indexOf(nm);
+  if(base<0){ toast(nm+" est absent ce mois (pas dans la rotation)"); return; }
+  var wi=R.workDays.indexOf(d);
+  if(wi<0 || !isWork(ST.codes[nm][d])){ toast("Choisis un JOUR TRAVAILLÉ (pas un repos/congé)"); return; }
+  var sl=R.n; ST.off=((-((wi%4)+Math.floor(wi/4)+base))%sl+sl)%sl; save();
+  window._anchorMode=false; document.getElementById("anchorBtn").style.background=""; document.getElementById("anchorBtn").style.color="";
+  document.getElementById("adminHint").textContent="Touche une case = corriger le code · ▲▼ = réordonner · NR/5e : tap = ✗, ✎ = écrire";
+  render(); toast("✅ "+nm+" = Départ 1 le "+d+" — rotation calée"); }
+function resetAnchor(){ if(!guard())return; ST.off=0; save(); render(); toast("Rotation remise par défaut"); }
 function resetCounters(){ if(!guard())return; if(!confirm("Vider NR et 5e ?"))return; ST.nr={};ST.cq={};save();render();toast("Vidé"); }
 function resetAll(){ if(!guard())return; if(!confirm("Réinitialiser ce mois (codes, ordre, NR/5e) ?"))return;
   try{localStorage.removeItem(B.key);}catch(e){} load(); render(); toast("Réinitialisé"); }
