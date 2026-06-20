@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.812";
+var APP_VER="v9.813";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36986,28 +36986,40 @@ function _cmcDetectTeamsByGeometry(iy,im){
       var _go=ordered.map(function(o){return {eid:o.eid,name:o.name,fam:o.family,page:o.page,y:Math.round(o.y),sig:o.sig};});
       var _gom=lg("cmc_geom_order",{})||{};_gom[key]=_go;ls("cmc_geom_order",_gom);
     }catch(_persist){}
-    // 2) Segmentation EN BLOCS par famille, dans l'ordre vertical. Un bloc se
-    //    ferme dès que la signature CHANGE (la même signature qui réapparaît après
-    //    une interruption ouvre un NOUVEAU bloc = équipe séparée par la position).
-    var famCounters={bj:0,roulettes:0,cmc:0,baccara:0,amenage:0};
-    var blocks=[]; // {teamId, family, members:[eid], sig}
-    // Travail par famille pour respecter "séparer dans chaque famille" mais en
-    // gardant l'ordre vertical GLOBAL (on segmente la sous-séquence de chaque famille).
-    var byFam={};
-    ordered.forEach(function(o){(byFam[o.family]=byFam[o.family]||[]).push(o);});
-    Object.keys(byFam).forEach(function(fam){
-      var seq=byFam[fam];
-      var cur=null;
-      seq.forEach(function(o){
-        if(cur&&cur.sig===o.sig){ cur.members.push(o.eid); return; }
-        // nouvelle signature (ou 1er) → fermer le bloc courant, en ouvrir un nouveau.
-        famCounters[fam]=(famCounters[fam]||0)+1;
-        var n=famCounters[fam];
-        var teamId=fam==="roulettes"?("rg"+n):fam==="cmc"?("cg"+n):fam==="amenage"?("amenageg"+n):fam==="baccara"?("bg"+n):("g"+n);
-        cur={teamId:teamId,family:fam,members:[o.eid],sig:o.sig};
-        blocks.push(cur);
-      });
-    });
+    // 2) Segmentation par ÉCART VERTICAL (règle Kevin 2026-06, vérité terrain) :
+    //    une ÉQUIPE = UN bloc CONTIGU, TOUTES FAMILLES MÉLANGÉES, séparé du suivant
+    //    par un "trait noir" / une ligne vide = un GROS écart vertical OU un saut de
+    //    page. Seuil ADAPTATIF (aucun nombre magique) : médiane des écarts ligne-à-
+    //    ligne × facteur ; un écart nettement supérieur = frontière d'équipe.
+    var blocks=[]; // {teamId, members:[{eid,family}]}
+    var gaps=[];
+    for(var gi=1;gi<ordered.length;gi++){
+      if(ordered[gi].page===ordered[gi-1].page){
+        var gv=Math.abs(ordered[gi].y-ordered[gi-1].y);
+        if(gv>0)gaps.push(gv);
+      }
+    }
+    if(gaps.length<1)return{ok:false,reason:"no_gaps"};
+    var gsort=gaps.slice().sort(function(a,b){return a-b;});
+    var pitch=gsort[Math.floor(gsort.length/2)]||0; // médiane = interligne "normal"
+    if(pitch<=0)return{ok:false,reason:"pitch_zero"};
+    var GAP_BREAK=pitch*1.75; // frontière d'équipe = écart > 1.75× l'interligne normal
+    var teamN=0,curB=null;
+    for(var oi=0;oi<ordered.length;oi++){
+      var o=ordered[oi];
+      var brk=(oi===0)||(o.page!==ordered[oi-1].page)||(Math.abs(o.y-ordered[oi-1].y)>GAP_BREAK);
+      if(brk){teamN++;curB={teamId:"g"+teamN,members:[]};blocks.push(curB);}
+      curB.members.push({eid:o.eid,family:o.family});
+    }
+    // 2b) AUTO-VALIDATION : la géométrie ne prend l'AUTORITÉ que si la découpe
+    //     ressemble à des équipes. Sinon → ok:false → on laisse les détecteurs
+    //     d'horaire/rest-pattern faire (zéro régression sur les 290 si le PDF n'a
+    //     pas d'écarts exploitables : trait noir vectoriel sans ligne vide, etc.).
+    if(blocks.length<2)return{ok:false,reason:"single_block"};
+    var biggest=blocks.reduce(function(m,b){return Math.max(m,b.members.length);},0);
+    if(biggest>Math.max(16,Math.floor(ordered.length*0.4)))return{ok:false,reason:"block_too_big"};
+    var singles=blocks.filter(function(b){return b.members.length===1;}).length;
+    if(singles>blocks.length*0.5)return{ok:false,reason:"too_fragmented"};
     // 3) N'assigner QUE les blocs ≥2 (un singleton géométrique = laissé aux
     //    détecteurs d'horaire/fallback). Écrire teamHistory + LOCK + persister.
     var geomMap=lg("cmc_geom_teams",{})||{};
@@ -37017,15 +37029,15 @@ function _cmcDetectTeamsByGeometry(iy,im){
       if(b.members.length<2)return;
       if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(b.teamId);
       teams++;
-      b.members.forEach(function(eid){
-        var emp=A.employees.find(function(x){return x.id===eid;});
+      b.members.forEach(function(m){
+        var emp=A.employees.find(function(x){return x.id===m.eid;});
         if(!emp)return;
         if(!emp.teamHistory)emp.teamHistory={};
         emp.teamHistory[key]=b.teamId;
         if(!emp.familyHistory)emp.familyHistory={};
-        if(!emp.familyHistory[key])emp.familyHistory[key]=b.family;
-        if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,eid);
-        perMonth[eid]=b.teamId;
+        if(!emp.familyHistory[key])emp.familyHistory[key]=m.family; // famille PAR PERSONNE (équipe cross-famille)
+        if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,m.eid);
+        perMonth[m.eid]=b.teamId;
         assigned++;
       });
     });
