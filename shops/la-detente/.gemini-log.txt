@@ -1,11 +1,21 @@
-start 2026-06-19T17:22:51Z
-shops/la-detente/img/designs/logo_g01.png <- imagen-4.0-ultra-generate-001 http=200 705581o
-shops/la-detente/img/designs/logo_g02.png <- imagen-4.0-ultra-generate-001 http=200 672368o
-shops/la-detente/img/designs/logo_g03.png <- imagen-4.0-ultra-generate-001 http=200 785769o
-shops/la-detente/img/designs/logo_g04.png <- imagen-4.0-ultra-generate-001 http=200 686255o
-shops/la-detente/img/designs/logo_g05.png <- imagen-4.0-ultra-generate-001 http=200 955077o
-shops/la-detente/img/designs/logo_g06.png <- imagen-4.0-ultra-generate-001 http=200 336669o
-shops/la-detente/img/designs/logo_g07.png <- imagen-4.0-ultra-generate-001 http=200 447243o
-shops/la-detente/img/designs/logo_g08.png <- imagen-4.0-ultra-generate-001 http=200 523388o
-shops/la-detente/img/designs/logo_g09.png <- imagen-4.0-ultra-generate-001 http=200 1084817o
-shops/la-detente/img/designs/logo_g10.png <- imagen-4.0-ultra-generate-001 http=200 466198o
+start 2026-06-22T13:08:05Z
+shops/la-detente/img/designs/logo_r01.png <- imagen-4.0-ultra-generate-001 http=200 605458o
+shops/la-detente/img/designs/logo_r02.png <- imagen-4.0-ultra-generate-001 http=200 257882o
+shops/la-detente/img/designs/logo_r03.png <- imagen-4.0-ultra-generate-001 http=200 474644o
+shops/la-detente/img/designs/logo_r04.png <- imagen-4.0-ultra-generate-001 http=200 492491o
+shops/la-detente/img/designs/logo_r05.png <- imagen-4.0-ultra-generate-001 http=200 610050o
+shops/la-detente/img/designs/logo_r06.png <- imagen-4.0-ultra-generate-001 http=200 533870o
+shops/la-detente/img/designs/logo_r07.png <- imagen-4.0-ultra-generate-001 http=200 485235o
+shops/la-detente/img/designs/logo_r08.png <- imagen-4.0-ultra-generate-001 http=200 518519o
+shops/la-detente/img/designs/logo_r09.png <- imagen-4.0-ultra-generate-001 http=200 398928o
+shops/la-detente/img/designs/logo_r10.png <- imagen-4.0-ultra-generate-001 http=200 581170o
+shops/la-detente/img/designs/logo_r11.png <- imagen-4.0-ultra-generate-001 http=200 1007207o
+shops/la-detente/img/designs/logo_r12.png <- imagen-4.0-ultra-generate-001 http=200 465361o
+shops/la-detente/img/designs/logo_r13.png <- imagen-4.0-ultra-generate-001 http=200 465457o
+shops/la-detente/img/designs/logo_r14.png <- imagen-4.0-ultra-generate-001 http=200 568423o
+shops/la-detente/img/designs/logo_r15.png <- imagen-4.0-ultra-generate-001 http=200 534518o
+shops/la-detente/img/designs/logo_r16.png <- imagen-4.0-ultra-generate-001 http=200 620027o
+shops/la-detente/img/designs/logo_r17.png <- imagen-4.0-ultra-generate-001 http=200 605307o
+shops/la-detente/img/designs/logo_r18.png <- imagen-4.0-ultra-generate-001 http=200 646092o
+shops/la-detente/img/designs/logo_r19.png <- imagen-4.0-ultra-generate-001 http=200 570356o
+shops/la-detente/img/designs/logo_r20.png <- imagen-4.0-ultra-generate-001 http=200 326596o
