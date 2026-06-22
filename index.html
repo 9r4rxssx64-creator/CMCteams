@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.813";
+var APP_VER="v9.814";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36924,6 +36924,16 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
 function _cmcDetectTeamsByGeometry(iy,im){
   try{
     var key=iy+"-"+im;
+    // v9.814 (Kevin diag JUILLET réel 2026-06-22) — DÉTECTEUR DÉSACTIVÉ.
+    // La découpe par POSITION dans le PDF (écart vertical / "trait noir") a été
+    // RÉFUTÉE par les vraies données : GARRO S se retrouvait dans BJ Éq.2 avec
+    // GAZAGNE F (son voisin PHYSIQUE dans le PDF) alors que GAZAGNE travaille 14j
+    // avec une rotation totalement différente. La POSITION ≠ ÉQUIPE pour ce PDF.
+    // La vérité = mêmes repos + mêmes codes journaliers (rest-pattern v9.803 +
+    // union-find dailyCodes v9.808). On abstient toujours → fallback rest+codes.
+    // (Le diag géométrique reste capturé via cmc_geom_order pour analyse.)
+    return {ok:false,reason:"disabled_v9814_position_not_team"};
+    /* eslint-disable no-unreachable */
     var geo=(typeof window!=="undefined")?window._cmcPdfGeometry:null;
     if(!geo||!Array.isArray(geo.pages)||!geo.pages.length)return{ok:false,reason:"no_geometry"};
     if(typeof window.TextParser!=="object"||typeof window.TextParser.groupItemsByLine!=="function"
@@ -37082,6 +37092,15 @@ function _cmcGeomSig(row){
 // les réassignent pas. Comme familyHistory, NE PAS wiper au boot ; rafraîchi
 // uniquement à un nouvel import (par _cmcDetectTeamsByGeometry).
 function _cmcApplyGeomTeams(iy,im){
+  // v9.814 — détecteur géométrique (position) DÉSACTIVÉ (cf. _cmcDetectTeamsByGeometry).
+  // Ne ré-applique plus les anciennes équipes "g*" issues de la position (réfutées par
+  // les données réelles). Purge le record stale pour que le rest-pattern (repos+codes)
+  // réassigne proprement. Les emps avec un teamHistory "g*" périmé seront réécrits par
+  // _cmcDetectTeamsByRestPattern au boot/import.
+  try{ var k2=iy+"-"+im; var gm=lg("cmc_geom_teams",{})||{};
+       if(gm&&gm[k2]){ delete gm[k2]; ls("cmc_geom_teams",gm); } }catch(_){}
+  return {ok:false,reason:"disabled_v9814"};
+  /* eslint-disable no-unreachable */
   try{
     var key=iy+"-"+im;
     var geomMap=lg("cmc_geom_teams",{})||{};
@@ -37269,6 +37288,14 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     // (BJ Éq.3 sur-clusterisée). VERROUILLE ses emps + PERSISTE dans cmc_geom_teams
     // (survit au boot). Les détecteurs d'horaire ci-dessous (skip-on-explicit) ne
     // réassignent pas ces emps. NE TOUCHE JAMAIS les codes (groupement seul).
+    // v9.814 — PURGE des teamHistory "g*" périmés (issus de l'ancien détecteur
+    // géométrique par position, désactivé). Avant de re-détecter, on efface ces
+    // assignations pour que le rest-pattern (repos+codes) réassigne proprement.
+    try{ var _gk=iy+"-"+im; A.employees.forEach(function(_e){
+      if(_e&&_e.teamHistory&&/^g\d+$/.test(String(_e.teamHistory[_gk]||""))){ delete _e.teamHistory[_gk]; }
+    }); }catch(_purgeG){}
+    // v9.814 — détecteur géométrique DÉSACTIVÉ (position ≠ équipe, réfuté par les
+    // données réelles juillet). Conservé en abstention ; la vérité = repos+codes.
     try{
       if(typeof _cmcDetectTeamsByGeometry==="function"&&typeof window!=="undefined"&&window._cmcPdfGeometry){
         _cmcDetectTeamsByGeometry(iy,im);
