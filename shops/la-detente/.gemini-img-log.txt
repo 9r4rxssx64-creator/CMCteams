@@ -1,0 +1,11 @@
+start 2026-06-22T17:02:17Z
+shops/la-detente/img/designs/logo_i01.png <- gemini-3-pro-image http=200 380628o
+shops/la-detente/img/designs/logo_i02.png <- gemini-3-pro-image http=200 400880o
+shops/la-detente/img/designs/logo_i03.png <- gemini-3-pro-image http=200 283109o
+shops/la-detente/img/designs/logo_i04.png <- gemini-3-pro-image http=200 293086o
+shops/la-detente/img/designs/logo_i05.png <- gemini-3-pro-image http=200 363977o
+shops/la-detente/img/designs/logo_i06.png <- gemini-3-pro-image http=200 327813o
+shops/la-detente/img/designs/logo_i07.png <- gemini-3-pro-image http=200 357173o
+shops/la-detente/img/designs/logo_i08.png <- gemini-3-pro-image http=200 443633o
+shops/la-detente/img/designs/logo_i09.png <- gemini-3-pro-image http=200 293301o
+shops/la-detente/img/designs/logo_i10.png <- gemini-3-pro-image http=200 429680o
