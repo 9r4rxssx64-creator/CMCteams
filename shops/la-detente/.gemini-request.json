@@ -1,86 +1,86 @@
 {
- "_note": "batch 20 supplementaires",
- "rev": 5,
+ "_note": "batch 20 Monaco",
+ "rev": 6,
  "jobs": [
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Emblem in red, black and gold: a clay shooter silhouette aiming, an exploding orange clay pigeon, a heart-shaped crosshair, banner LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r21.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium crest: a shield with Monaco-inspired heraldry: a red and white lozenge (diamond) pattern, the colors red and white, a glossy red heart, crossed AR-15 and ball-trap shotgun, an orange clay pigeon, the silhouette of the Monaco Prince's Palace with towers in the background, a small crown on top, text LA DETENTE. Original sport-club emblem.",
+   "outfile": "shops/la-detente/img/designs/logo_m01.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Circular gold-rimmed medallion: crossed over-and-under ball-trap shotguns, a red heart, an orange clay disc, laurel leaves, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r22.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Emblem with a red-and-white lozenge diamond shield, crossed over-and-under ball-trap shotguns, a red heart, an orange clay pigeon, laurel wreath, gold accents, banner reading LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m02.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Bold black and red badge: an AR-15 and a ball-trap shotgun crossed behind a flaming red heart, an orange clay pigeon, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r23.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Round badge: the silhouette of the Monaco rock and Prince's Palace, a clay shooter aiming a shotgun at an orange clay pigeon, a red heart, red and white colors, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m03.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Retro 70s style emblem with warm sunset stripes, a shooter silhouette, an orange clay pigeon, a red heart, rounded text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r24.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Luxury Monte-Carlo style emblem in red, white and gold: a glossy red heart, crossed shotguns, an orange clay pigeon, a small royal crown, ornate frame, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m04.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Tactical modern emblem: an AR-15 rifle, a red heart, a small orange clay target, sharp angular shield, two-color red and black, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r25.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Shield split with a red-and-white diamond lozenge pattern on one half and a clay shooter silhouette on the other, an orange clay pigeon, a red heart, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m05.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Elegant line-art crest: a single over-and-under shotgun and a clay pigeon forming a circle around a small red heart, gold on dark, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r26.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Emblem: the Prince's Palace of Monaco silhouette behind crossed AR-15 and ball-trap shotgun over a red heart, an orange clay pigeon, Mediterranean blue accent, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m06.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Comic sticker: a red heart with eyes and a shotgun, an orange clay pigeon, fun bold cartoon outline, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r27.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Vintage crest with a red and white lozenge shield, two crossed ball-trap shotguns, a clay pigeon, a crown, ribbon banner LA DETENTE, elegant gold engraving.",
+   "outfile": "shops/la-detente/img/designs/logo_m07.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Diamond-shaped badge: crossed shotguns over a red heart, orange clay pigeon, shotgun shells, modern flat design, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r28.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Modern flat emblem: red and white diamond pattern background, a clay shooter silhouette, an orange clay pigeon, a red heart, minimalist, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m08.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium 3D chrome emblem: AR-15 and wooden ball-trap shotgun crossed over a glossy red heart, orange clay pigeon, reflective metal, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r29.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium 3D emblem: a glossy red heart on a red-and-white lozenge shield, crossed shotguns, an orange clay pigeon, the Monaco palace towers, gold crown, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m09.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Minimalist round stamp: a clay pigeon and a small heart inside a thin red crosshair ring, lots of whitespace, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r30.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Round medallion: Monaco harbor and palace skyline silhouette, a ball-trap shotgun aiming at an orange clay pigeon, a red heart, red white and gold, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m10.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Hunting lodge crest with crossed shotguns, a stag silhouette accent, a red heart, an orange clay pigeon, banner LA DETENTE, vintage.",
-   "outfile": "shops/la-detente/img/designs/logo_r31.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Bold sticker: a red-and-white diamond lozenge heart, crossed AR-15 and ball-trap shotgun, an orange clay pigeon, clean thick outline, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m11.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Dynamic motion emblem: orange clay pigeon trailing a red swoosh smashing apart, a shotgun, a red heart, energetic, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r32.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Royal crest: a crown above a red-and-white lozenge shield with crossed shotguns and a clay pigeon, two laurel branches, a red heart, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m12.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Bold typographic badge: LA DETENTE in heavy condensed letters, an AR-15 silhouette and an orange clay pigeon integrated, red and black.",
-   "outfile": "shops/la-detente/img/designs/logo_r33.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Emblem combining the Monaco palace silhouette, a red heart, a clay shooter, an orange clay pigeon, red and white stripes, text LA DETENTE, sporty premium.",
+   "outfile": "shops/la-detente/img/designs/logo_m13.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Two crossed shotgun shells and a ball-trap shotgun over a red heart, an orange clay disc, clean two-tone red and black, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r34.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Diamond-shaped badge with the red-and-white lozenge pattern, a ball-trap shotgun and an orange clay pigeon, a red heart, gold border, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m14.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Shield emblem split red and black: an AR-15 on one half, a ball-trap shotgun on the other, a red heart center, orange clay, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r35.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Elegant line-art crest: Monaco palace towers, crossed shotguns, a clay pigeon, a small heart, a crown, gold on dark, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m15.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Gold luxury crest: ornate frame, crossed ball-trap shotguns, a glossy red heart, an orange clay pigeon, premium, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r36.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Emblem: a glossy red heart wearing a small gold crown, crossed AR-15 and ball-trap shotgun, an orange clay pigeon, red and white lozenge accents, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m16.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Fun mascot: a tough cartoon clay pigeon character holding a shotgun and a red heart, sporty, bold outline, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r37.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Monte-Carlo casino-chic emblem in red white and gold: ornate shield, crossed shotguns, a clay pigeon, a red heart, palace silhouette, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m17.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Modern e-sport emblem in a hexagon: AR-15 + ball-trap shotgun crossed, red heart, orange clay, neon red accents, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r38.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Shield with the red-and-white lozenge pattern, a clay shooter silhouette aiming, an orange clay pigeon, a red crosshair, a red heart, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m18.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Clean flat vector: a trap shooter silhouette inside a red circle, an orange clay pigeon, a small heart, text LA DETENTE, minimalist.",
-   "outfile": "shops/la-detente/img/designs/logo_r39.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium emblem: the Monaco rock and palace silhouette, crossed ball-trap shotguns, a red heart, an orange clay pigeon shattering, gold crest with crown, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m19.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium emblem: a big glossy red heart pierced by crossed AR-15 and ball-trap shotgun, orange clay pigeon shattering, gold crest, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r40.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Fun bold emblem: a red heart with a tiny crown, a red-and-white diamond pattern, crossed shotguns, an orange clay pigeon, playful sporty, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_m20.png"
   }
  ]
 }
