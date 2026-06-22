@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.814";
+var APP_VER="v9.815";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34386,6 +34386,12 @@ function empAutoSaveProfil(){
 //    trop (au-delà des colonnes ouvertes) = statut → ignorées.
 //  • Chaque colonne = une ÉQUIPE. Famille = section. Bloc 1 col N ⇌ bloc 2 col N = miroir.
 function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
+  // v9.815 (Kevin diag JUILLET 2026-06-22 « encore tout mélangé, pas les mêmes repos ») —
+  // DÉSACTIVÉ. Le groupement par COLONNE/POSITION du PDF met ensemble des gens à
+  // repos DIFFÉRENTS (position ≠ équipe, lesson #112). Seule règle correcte = même
+  // famille + MÊMES jours de repos + même 1er code travail (rest-pattern v9.803).
+  return {ok:false,reason:"disabled_v9815_position_not_team"};
+  /* eslint-disable no-unreachable */
   try{
     if(!srcText||typeof srcText!=="string"||srcText.length<20){return{ok:false,reason:"no_src"};}
     var key=iy+"-"+im;
@@ -36450,6 +36456,13 @@ function _cmcApplyGeometricParse(iy,im){
 //   (reproduction identique) — seulement teamHistory/familyHistory/miroir.
 //   Remplace _cmcDetectTeamsByDailyCodes comme source de verite d'equipe a l'import.
 function _cmcApplyValidatedTeams(iy,im){
+  // v9.815 (Kevin diag JUILLET 2026-06-22 « pas les mêmes repos ») — DÉSACTIVÉ.
+  // L'union-find par codes journaliers (lib T1) regroupe par similarité de codes
+  // sur jours co-travaillés → met ensemble des gens à REPOS DIFFÉRENTS et MERGE les
+  // équipes MIROIRS (mêmes repos, 1er code différent ; >82% de codes communs).
+  // Seule règle correcte = même famille + MÊMES repos + même 1er code (rest-pattern).
+  return {ok:false,reason:"disabled_v9815_union_find_merges_mirrors"};
+  /* eslint-disable no-unreachable */
   if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
   try{
     if(typeof window==="undefined"||!window.TeamDetector||typeof window.TeamDetector.detectTeams!=="function")
@@ -36791,6 +36804,13 @@ function _cmcTeamLocked(key,eid){ try{return !!_cmcTeamLockKey(key)[eid];}catch(
 // remplit ensuite les emps que l'union-find n'a pas pu clusteriser (données
 // bruitées). Aucun emp ne perd son équipe (filet rest-pattern + fallback).
 function _cmcDetectTeamsByDailyCodes(iy,im){
+  // v9.815 (Kevin diag JUILLET 2026-06-22 « encore tout mélangé, pas les mêmes repos ») —
+  // DÉSACTIVÉ. L'union-find par codes journaliers (≥82% de match sur jours co-
+  // travaillés) MERGE les équipes MIROIRS (mêmes repos, 1er code ≠ → >82% communs,
+  // ex team 8 mêlait 22/6 et 20/5) ET peut joindre des gens à REPOS DIFFÉRENTS.
+  // Seule règle correcte = même famille + MÊMES repos + même 1er code (rest-pattern).
+  return {ok:false,reason:"disabled_v9815_union_find_merges_mirrors"};
+  /* eslint-disable no-unreachable */
   try{
     var key=iy+"-"+im;
     var ov=(A.overrides&&A.overrides[key])||{};
