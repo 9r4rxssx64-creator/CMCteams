@@ -1,86 +1,86 @@
 {
- "_note": "batch 20 inspiré refs",
- "rev": 4,
+ "_note": "batch 20 supplementaires",
+ "rev": 5,
  "jobs": [
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Dynamic clay-shooting emblem: black silhouette of a trap shooter aiming a shotgun up at a flying orange clay pigeon, a red circular crosshair scope ring behind, a sweeping red swoosh, text LA DETENTE. Red and black, modern sporty.",
-   "outfile": "shops/la-detente/img/designs/logo_r01.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Emblem in red, black and gold: a clay shooter silhouette aiming, an exploding orange clay pigeon, a heart-shaped crosshair, banner LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r21.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Bold black silhouette of a ball-trap shooter mid-aim with a shotgun, an orange clay disc and a red motion swoosh, minimalist, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r02.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Circular gold-rimmed medallion: crossed over-and-under ball-trap shotguns, a red heart, an orange clay disc, laurel leaves, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r22.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Two realistic over-and-under ball-trap shotguns crossed in an X, an orange clay pigeon above, a small red heart at the crossing, dark badge with gold ring, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r03.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Bold black and red badge: an AR-15 and a ball-trap shotgun crossed behind a flaming red heart, an orange clay pigeon, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r23.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Vintage clay target club crest: an over-and-under shotgun, a clay pigeon, three flying shotgun shells, a target ring, elegant engraving style, banner reading LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r04.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Retro 70s style emblem with warm sunset stripes, a shooter silhouette, an orange clay pigeon, a red heart, rounded text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r24.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium emblem: a black AR-15 rifle and a wooden ball-trap shotgun crossed over a glossy red 3D heart, an orange clay pigeon shattering above, dark gold-ringed crest, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r05.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Tactical modern emblem: an AR-15 rifle, a red heart, a small orange clay target, sharp angular shield, two-color red and black, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r25.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Modern flat two-color (red and black) emblem: clay shooter silhouette inside a red crosshair ring, orange clay pigeon, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r06.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Elegant line-art crest: a single over-and-under shotgun and a clay pigeon forming a circle around a small red heart, gold on dark, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r26.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Two crossed AR-15 rifles behind a red heart with an orange clay pigeon, bold sticker style with thick outline, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r07.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Comic sticker: a red heart with eyes and a shotgun, an orange clay pigeon, fun bold cartoon outline, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r27.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Round badge: a ball-trap shotgun and a flying orange clay pigeon over a sunrise, a red heart accent, retro outdoor club style, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r08.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Diamond-shaped badge: crossed shotguns over a red heart, orange clay pigeon, shotgun shells, modern flat design, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r28.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Aggressive emblem: a shotgun breaking an orange clay pigeon into shards, a red crosshair, dynamic, red black and orange, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r09.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium 3D chrome emblem: AR-15 and wooden ball-trap shotgun crossed over a glossy red heart, orange clay pigeon, reflective metal, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r29.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Minimal monoline emblem: single continuous line of a shooter aiming at a clay, a small red heart, elegant, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r10.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Minimalist round stamp: a clay pigeon and a small heart inside a thin red crosshair ring, lots of whitespace, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r30.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Realistic 3D emblem: AR-15 and wooden ball-trap shotgun crossed over a big glossy red heart, orange clay pigeon, dramatic studio lighting, dark crest, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r11.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Hunting lodge crest with crossed shotguns, a stag silhouette accent, a red heart, an orange clay pigeon, banner LA DETENTE, vintage.",
+   "outfile": "shops/la-detente/img/designs/logo_r31.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Typographic logo: the words LA DETENTE in big bold block letters with a shotgun and an orange clay pigeon integrated, red and black, energetic.",
-   "outfile": "shops/la-detente/img/designs/logo_r12.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Dynamic motion emblem: orange clay pigeon trailing a red swoosh smashing apart, a shotgun, a red heart, energetic, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r32.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Crossed over-and-under shotguns and two shotgun shells over a red heart, an orange clay disc, clean gold-and-black sport emblem, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r13.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Bold typographic badge: LA DETENTE in heavy condensed letters, an AR-15 silhouette and an orange clay pigeon integrated, red and black.",
+   "outfile": "shops/la-detente/img/designs/logo_r33.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Silhouette of a clay shooter in a hexagon badge, orange clay pigeon, red crosshair, modern e-sport style, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r14.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Two crossed shotgun shells and a ball-trap shotgun over a red heart, an orange clay disc, clean two-tone red and black, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r34.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Hunting-club shield crest: crossed shotguns, a clay pigeon, antlers accent, a red heart, vintage, banner LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r15.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Shield emblem split red and black: an AR-15 on one half, a ball-trap shotgun on the other, a red heart center, orange clay, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r35.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Fun mascot: a cartoon orange clay pigeon wearing ear-protection headphones giving a thumbs up, a small red heart, playful, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r16.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Gold luxury crest: ornate frame, crossed ball-trap shotguns, a glossy red heart, an orange clay pigeon, premium, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r36.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Bold AR-15 rifle silhouette forming the shape of a heart, two-color red and black, sticker style, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r17.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Fun mascot: a tough cartoon clay pigeon character holding a shotgun and a red heart, sporty, bold outline, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r37.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium circular emblem: a ball-trap shotgun aiming at an orange clay pigeon, fine red crosshair reticle, gold ring, dark background, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r18.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Modern e-sport emblem in a hexagon: AR-15 + ball-trap shotgun crossed, red heart, orange clay, neon red accents, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r38.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Red and black emblem: crossed AR-15 and ball-trap shotgun behind a red heart, an orange clay pigeon, clean flat vector look, text LA DETENTE.",
-   "outfile": "shops/la-detente/img/designs/logo_r19.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Clean flat vector: a trap shooter silhouette inside a red circle, an orange clay pigeon, a small heart, text LA DETENTE, minimalist.",
+   "outfile": "shops/la-detente/img/designs/logo_r39.png"
   },
   {
-   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Energetic emblem: a trap shooter silhouette, an exploding orange clay pigeon, dynamic red swoosh and crosshair, a small red heart, text LA DETENTE. Bold sporty.",
-   "outfile": "shops/la-detente/img/designs/logo_r20.png"
+   "prompt": "High quality logo on a pure plain white background, centered, clean, no watermark, no signature. Premium emblem: a big glossy red heart pierced by crossed AR-15 and ball-trap shotgun, orange clay pigeon shattering, gold crest, text LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_r40.png"
   }
  ]
 }
