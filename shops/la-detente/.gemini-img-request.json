@@ -1,0 +1,79 @@
+{
+ "_note": "img2img depuis les images de Kevin",
+ "rev": 1,
+ "jobs": [
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_shooter.png"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i01.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_shooter.png"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i02.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_clay_logo.jpg"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i03.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_clay_logo.jpg"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i04.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_ar15.png"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i05.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_shooter2.jpg"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i06.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_clay_icons.jpg"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i07.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_shooter.png",
+    "shops/la-detente/refs/ref_ar15.png"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i08.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_clay_logo.jpg",
+    "shops/la-detente/refs/ref_ar15.png"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i09.png"
+  },
+  {
+   "refs": [
+    "shops/la-detente/refs/ref_shooter2.jpg",
+    "shops/la-detente/refs/ref_clay_icons.jpg"
+   ],
+   "prompt": "Using the attached reference image(s) only as inspiration for the subject and composition, create a brand-new ORIGINAL premium emblem logo for a clay-pigeon ball-trap shooting club called LA DETENTE. Add a glossy red heart and the bold text LA DETENTE. Clean original artwork on a pure white background. No watermark, no signature, no text other than LA DETENTE.",
+   "outfile": "shops/la-detente/img/designs/logo_i10.png"
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+name: LD Gemini Image (img2img)
+on:
+  push:
+    paths: ['shops/la-detente/.gemini-img-request.json']
+permissions:
+  contents: write
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ github.ref_name }}' }
+      - name: Gemini img2img
+        env: { GKEY: '${{ secrets.GEMINI_API_KEY }}' }
+        run: |
+          REQ=shops/la-detente/.gemini-img-request.json
+          LOG=shops/la-detente/.gemini-img-log.txt; echo "start $(date -u +%FT%TZ)" > "$LOG"
+          N=$(jq '.jobs|length' "$REQ")
+          for k in $(seq 0 $((N-1))); do
+            P=$(jq -r ".jobs[$k].prompt" "$REQ"); O=$(jq -r ".jobs[$k].outfile" "$REQ")
+            # construire les parts: chaque ref en inlineData + le texte
+            PARTS="[]"
+            RN=$(jq -r ".jobs[$k].refs|length" "$REQ")
+            for j in $(seq 0 $((RN-1))); do
+              F=$(jq -r ".jobs[$k].refs[$j]" "$REQ"); [ -f "$F" ] || continue
+              MI=$(file -b --mime-type "$F"); B=$(base64 -w0 "$F")
+              PARTS=$(echo "$PARTS" | jq --arg m "$MI" --arg d "$B" '. + [{inlineData:{mimeType:$m,data:$d}}]')
+            done
+            PARTS=$(echo "$PARTS" | jq --arg t "$P" '. + [{text:$t}]')
+            BODY=$(jq -n --argjson pa "$PARTS" '{contents:[{parts:$pa}],generationConfig:{responseModalities:["IMAGE"]}}')
+            OK=""
+            for M in gemini-3-pro-image gemini-2.5-flash-image gemini-3.1-flash-image; do
+              H=$(curl -s -o /tmp/r.json -w "%{http_code}" "https://generativelanguage.googleapis.com/v1beta/models/$M:generateContent?key=$GKEY" -H "Content-Type: application/json" -d "$BODY")
+              D=$(jq -r '.candidates[0].content.parts[]? | select(.inlineData) | .inlineData.data' /tmp/r.json 2>/dev/null | head -1)
+              if [ -n "$D" ]; then mkdir -p "$(dirname "$O")"; echo "$D" | base64 -d > "$O" 2>/dev/null; echo "$O <- $M http=$H $(wc -c <"$O")o" >> "$LOG"; OK=1; break; fi
+              echo "$O x $M http=$H $(jq -r '.error.message//empty' /tmp/r.json|head -c 90)" >> "$LOG"
+            done
+            [ -z "$OK" ] && echo "$O ÉCHEC" >> "$LOG"
+            sleep 2
+          done
+          cat "$LOG"
+      - name: Commit
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "bot@users.noreply.github.com"
+          git add -A; git commit -m "img2img [skip ci]" || exit 0
+          git push origin HEAD:'${{ github.ref_name }}' || echo pushfail
