@@ -2,6 +2,11 @@
 
 > Suite aux captures Kevin de la PWA Apex. Tout mergé sur le vrai `main` (vérifié via API GitHub).
 
+## v13.4.337 (2026-06-19) — « toujours openai » corrigé pour de bon
+- **Cause exacte** (Kevin l'IA répondait encore openai malgré premium v336) : dans `ai-router.buildPolicyAwareChain`, le **prefix smart-router** (v13.3.33) s'appliquait AVANT `push(decision.primary)` → remettait openai (score élevé après quelques succès) **en tête de chaîne**, écrasant le `premium → anthropic` de v336. Le badge reflète le provider qui répond = openai.
+- **Fix** : en mode `premium`/`forced` (choix admin explicite, Anthropic par défaut Kevin), le prefix smart-router est **sauté** (`skipSmartPrefix`) → `decision.primary` (anthropic) reste en tête. Smart-router conservé en `auto`/`economy` (optimisation clients). Branche `claude/apex-ultra-review-crew-MZ8nS`.
+- **Test** `v13_4_337-premium-no-smart-drift` : reproduit le drift en auto (chain[0]=openai) ET prouve le fix en premium (chain[0]=anthropic) avec smart-router mocké pro-openai. tsc 0 / eslint 0 / 107 routing + 4 nouveaux / deploy-check OK.
+
 ## Batch v13.4.333 → v13.4.336 + Agent KDMC (2026-06-16 → 19) — tout mergé sur `main`, audit complet vert (12 195 tests)
 - **.322** — proxy IA : worker **double-hash auth** corrigé (verifyPin tolérant) + **préflight CORS** ajouté (POST `x-apex-pin` → OPTIONS → 401 sans CORS = « Pas de réseau »). Worker redéployé. Test régression `v13_4_322-proxy-auth-contract` (extrait le vrai verifyPin du YAML). Lesson #95.
 - **.323** — lien `← KDMC` ne cache plus les boutons du chat (icônes décalées 84px) ; `proxy-auto-enable` efface les marques DEAD au boot (Claude re-tenté) ; menus ☰ : **⌨️ Commandes** + **🔗 Liens utiles**.
