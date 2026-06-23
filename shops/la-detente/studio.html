@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.8.0 — Vue multi-produits (design sur tous les vêtements + planche PNG) -->
+<!-- La Détente — Studio (admin) v1.9.0 — double vue création (minimap vue d'ensemble + zoom logo) + panneaux fonctions indépendants + polish visuel -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -23,7 +23,9 @@ button{cursor:pointer;border:none;background:none}
 .brand .tag{font-size:10px;background:var(--p);padding:2px 6px;border-radius:6px;font-weight:700}
 .topbar .sp{flex:1}
 .btn{padding:9px 14px;border-radius:var(--rs);font-weight:700;font-size:13px;background:var(--panel2);border:1px solid var(--border);transition:.15s;white-space:nowrap}
-.btn:hover{border-color:var(--p)}
+.btn:hover{border-color:var(--p);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){.btn:hover,.btn:active{transform:none}}
 .btn.primary{background:var(--p);border-color:var(--p);color:#fff}
 .btn.primary:hover{opacity:.92}
 .btn.ghost{background:transparent}
@@ -102,6 +104,10 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .zoomctl .zbtn:active{transform:translateY(1px)}
 .zoomctl .zlvl{font-size:11.5px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:5px 0;letter-spacing:.3px}
 .zoomctl .zfit{height:auto;font-size:11px;font-weight:700;letter-spacing:.2px;padding:7px 0}
+.ovwrap{position:absolute;left:8px;top:8px;width:31%;max-width:140px;aspect-ratio:1;border:2px solid rgba(255,255,255,.55);border-radius:10px;overflow:hidden;background:#d2d5d9;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.5);cursor:pointer}
+.ovwrap svg{width:100%;height:100%;display:block}
+.ovwrap .ovtag{position:absolute;left:0;right:0;bottom:0;font-size:9px;font-weight:800;text-align:center;color:#fff;background:rgba(11,13,15,.74);padding:2px 0;letter-spacing:.3px}
+.ovwrap.hide{display:none}
 .empty{color:var(--muted);font-size:12px;text-align:center;padding:14px;border:1px dashed var(--border);border-radius:var(--rs)}
 .hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);border:1px solid var(--border);padding:12px 18px;border-radius:100px;font-size:13px;font-weight:600;transition:.3s;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.5)}
@@ -201,7 +207,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 <div class="wrap">
   <!-- LEFT: garment + add layers -->
   <div class="side">
-    <details class="grp grp-macro" name="ld-left" open><summary>🎽 Produit</summary>
+    <details class="grp grp-macro" open><summary>🎽 Produit</summary>
       <div class="sublab">👕 Vêtement</div><div class="garments" id="garments"></div>
       <button class="btn primary" style="width:100%;margin-top:8px" onclick="Studio.openCatalog()">🛍️ Catalogue produits — créer sur un vrai produit</button>
       <div id="pfSel" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
@@ -219,7 +225,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
       <a class="btn" href="index.html?q=aop" style="display:block;text-align:center;margin-top:8px;text-decoration:none">🛍️ Voir les produits AOP</a>
       <div class="sublab">🎨 Couleur</div><div class="swatches" id="swatches"></div>
     </details>
-    <details class="grp grp-macro" name="ld-left"><summary>➕ Création</summary>
+    <details class="grp grp-macro" open><summary>➕ Création</summary>
       <div class="sublab">🖼️ Ajouter un calque</div>
       <div class="addrow">
         <button class="btn" onclick="document.getElementById('upl').click()">🖼️ Importer image(s)…</button>
@@ -236,7 +242,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
         <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
       </div>
     </details>
-    <details class="grp grp-macro" name="ld-left"><summary>🎨 Bibliothèque</summary>
+    <details class="grp grp-macro"><summary>🎨 Bibliothèque</summary>
       <div class="sublab">⭐ Mes logos créés</div><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div>
       <div class="sublab">🖼️ Modèles La Détente</div><div class="emblems" id="realLib"></div>
       <input id="webq" placeholder="🔎 Chercher sur le web (cerf, aigle, fusil…)" style="width:100%;margin-top:8px;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" onkeydown="if(event.key==='Enter')Studio.webSearch()">
@@ -249,7 +255,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de l'aperçu"><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div class="ovwrap hide" id="ovWrap" onclick="Studio.zoomReset()" title="Vue d'ensemble — touche pour revoir toute la pièce"></div><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de l'aperçu"><button class="zbtn" onclick="Studio.zoomToSel()" title="Zoomer sur le logo sélectionné" aria-label="Zoom sur le logo">🎯</button><button class="zbtn" onclick="Studio.toggleOverview()" title="Afficher / masquer la vue d'ensemble" aria-label="Vue d'ensemble">⊞</button><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
@@ -293,7 +299,7 @@ var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script 
 
 /* Photos RÉELLES du produit (récupérées de Printify par le workflow printify-mockups). Repli auto sur le dessin si absentes. */
 var MOCK={tee:"img/mockups/tee.png",hoodie:"img/mockups/hoodie.png",polo:"img/mockups/polo.png",cap:"img/mockups/cap.png",tote:"img/mockups/tote.png",tank:"img/mockups/tank.png",shirt:"img/mockups/shirt.png",zip:"img/mockups/zip.png",bandana:"img/mockups/bandana.png",jogger:"img/mockups/jogger.png",short:"img/mockups/short.png"};
-var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:true,mockReady:{},pf:null,pfReady:false,pfPhoto:""};
+var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:true,mockReady:{},pf:null,pfReady:false,pfPhoto:"",overview:true};
 function preloadMocks(){Object.keys(MOCK).forEach(function(g){if(!MOCK[g])return;var im=new Image();im.onload=function(){st.mockReady[g]=true;render()};im.onerror=function(){st.mockReady[g]=false;paintRealBtn()};im.src=MOCK[g];});}
 /* AUTO via API Printify : mappe chaque vêtement de base à une VRAIE photo produit (catalogue généré par l'API) */
 function loadDefaultMocks(){
@@ -366,7 +372,7 @@ function render(){
  var stage=$("stage");
  stage.innerHTML=spriteDefs()+stageInner(false);
  if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
- renderLayers(); renderProps(); paintRealBtn(); zoomLabel();
+ renderLayers(); renderProps(); paintRealBtn(); zoomLabel(); renderOverview();
  var ps=document.getElementById("pfSel");if(ps)ps.innerHTML=st.pf?('🛍️ Produit : <b>'+esc(st.pf.title)+'</b> '+esc(st.pf.brand||"")+' <span style="color:var(--p)">#'+st.pf.id+'</span>'):"";
  var _sl=st.layers.filter(function(x){return x.id===st.sel})[0];
  var _fab=$("aiFab");if(_fab)_fab.style.display=(_sl&&_sl.type==="image"&&_aiCfg&&_aiCfg.worker_url)?"block":"none";
@@ -375,7 +381,7 @@ function render(){
 function renderStageOnly(){
  var stage=$("stage");if(!stage)return;
  stage.innerHTML=spriteDefs()+stageInner(false);
- if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
+ if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);renderOverview();
 }
 /* Met à jour l'indicateur de zoom en % (100% = vue entière). */
 function zoomLabel(){var e=document.getElementById("zoomLvl");if(!e||!st.vb)return;var pct=Math.round(100/(st.vb.w/100));e.textContent=pct+"%";}
@@ -586,9 +592,26 @@ function closeExportMenu(){var m=$("expMenu"),b=$("expBtn");if(m)m.classList.rem
 
 /* ---------- DRAG on stage ---------- */
 function _clampVB(){if(!st.vb)return;var v=st.vb;v.w=Math.max(20,Math.min(100,v.w));v.h=v.w;v.x=Math.max(0,Math.min(100-v.w,v.x));v.y=Math.max(0,Math.min(100-v.h,v.y))}
-function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);zoomLabel();}
+function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);zoomLabel();renderOverview();}
 function zoomBy(fr){if(!st.vb)st.vb={x:0,y:0,w:100,h:100};var v=st.vb;var cx=v.x+v.w/2,cy=v.y+v.h/2;var nw=Math.max(20,Math.min(100,v.w*fr));st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();_applyVB()}
 function zoomReset(){st.vb={x:0,y:0,w:100,h:100};_applyVB()}
+/* ---------- DOUBLE VUE (minimap = vue d'ensemble pendant qu'on zoome sur le logo) ---------- */
+function renderOverview(){
+ var w=$("ovWrap"); if(!w)return;
+ if(!st.overview){w.className="ovwrap hide";return;}
+ w.className="ovwrap";
+ var v=st.vb||{x:0,y:0,w:100,h:100};
+ var rect=(v.w<99.5)?('<rect x="'+v.x+'" y="'+v.y+'" width="'+v.w+'" height="'+v.h+'" fill="rgba(220,38,38,.10)" stroke="#dc2626" stroke-width="1.4" rx="1.5"/>'):'';
+ w.innerHTML='<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+stageInner(true,true)+rect+'</svg><div class="ovtag">Vue d\'ensemble</div>';
+}
+function toggleOverview(){st.overview=!st.overview;renderOverview();toast(st.overview?"🗺️ Vue d'ensemble affichée":"Vue d'ensemble masquée");}
+function zoomToSel(){
+ var l=st.layers.filter(function(x){return x.id===st.sel})[0];
+ if(!l){toast("Sélectionne d'abord un logo / calque");return;}
+ var rad=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6;
+ var half=Math.max(rad*1.5,9),nw=Math.min(100,half*2);
+ st.vb={x:l.x-nw/2,y:l.y-nw/2,w:nw,h:nw};_clampVB();st.overview=true;_applyVB();renderOverview();toast("🔍 Zoom sur le logo");
+}
 function initDrag(){
  var box=$("stageBox");var drag=null;var _pinch=null;
  function _pinchStart(ev){var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var v=st.vb||{x:0,y:0,w:100,h:100};var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;_pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),w:v.w,cx:v.x+mx*v.w,cy:v.y+my*v.h};drag=null}
@@ -955,7 +978,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
