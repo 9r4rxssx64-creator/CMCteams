@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.818";
+var APP_VER="v9.819";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23996,6 +23996,46 @@ function vPlan(){
       });
     }
   });
+  // v9.819 (Kevin 2026-06-23 « peut aussi être ajouté au groupe en congé avec les
+  // dates pour information ») : les congés/maladie/formation PARTIELS (ex CP 16-31)
+  // restent dans leur équipe de travail (v9.818) et sont AUSSI listés ici POUR INFO,
+  // avec leurs dates. N'affiche QUE les partiels (les absences pleines sont déjà dans
+  // la section dédiée ci-dessus, teamHistory===conges/maladie/…).
+  (function(){
+    var _absDays=new Date(A.year,A.month+1,0).getDate();
+    var _absOv=A.overrides[_v747KeyFam]||{};
+    function _absRanges(cells,codeSet){
+      var runs=[],start=null;
+      for(var d=1;d<=_absDays;d++){
+        var c=cells[d];var hit=!!c&&codeSet.indexOf(String(c).toUpperCase())>=0;
+        if(hit&&start===null)start=d;
+        else if(!hit&&start!==null){runs.push(start===d-1?(""+start):(start+"-"+(d-1)));start=null;}
+      }
+      if(start!==null)runs.push(start===_absDays?(""+start):(start+"-"+_absDays));
+      return runs;
+    }
+    var _absTypes=[{id:"conges",label:"🏖️ Congés",color:"#4a8a4a",codes:["CP","CRH","CDP","CDH"]},
+                   {id:"maladie",label:"🤒 Maladie",color:"#8a4a4a",codes:["M","MAL"]},
+                   {id:"formation",label:"🎓 Formation",color:"#7a5aa8",codes:["AF"]}];
+    _absTypes.forEach(function(a){
+      var list=[];
+      A.employees.forEach(function(e){
+        if(!isEmpActive(e,A.year,A.month))return;
+        var th=e.teamHistory&&e.teamHistory[_v747KeyFam];
+        if(th===a.id)return; // absence pleine déjà affichée dans sa section
+        var cells=_absOv[e.id];if(!cells)return;
+        var runs=_absRanges(cells,a.codes);
+        if(runs.length)list.push({name:e.name,runs:runs});
+      });
+      if(!list.length)return;
+      list.sort(function(x,y){return String(x.name).localeCompare(String(y.name));});
+      h+='<div style="margin:6px 0 4px;padding:8px 12px;background:'+a.color+'10;border:1px dashed '+a.color+'55;border-radius:8px">'
+        +'<span style="font-size:13px;font-weight:800;color:'+a.color+'">'+a.label+' — aussi en cours (partiel) <span style="opacity:.7;font-weight:600">· pour info, restent dans leur équipe</span></span>'
+        +'<div style="margin-top:5px;font-size:13px;color:#cdd6cd;line-height:1.8">'
+        +list.map(function(it){return esc(it.name)+' <span style="color:'+a.color+';font-weight:700">('+it.runs.join(', ')+')</span>';}).join(' &nbsp;·&nbsp; ')
+        +'</div></div>';
+    });
+  })();
   FAMS_ORDER.forEach(function(fid){
     // v9.153 — respect filter chip si actif
     if(A._planFilter&&A._planFilter.family&&A._planFilter.family!==fid) return;
