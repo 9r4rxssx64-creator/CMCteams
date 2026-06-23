@@ -17,6 +17,15 @@ on:
         description: 'Branche claude/* à merger sur main'
         required: true
         type: string
+  # v13.4.337 (Kevin « continue le pipeline … pareil pour les futures branches ») :
+  # CRON de rattrapage. Le push proxy ne déclenche pas toujours le webhook `push`
+  # → des branches prêtes ne se mergeaient jamais (cause de blocages répétés).
+  # Toutes les 6h (anti-spam), on rattrape les PR claude/* OUVERTES + mergeables.
+  # Sûr : n'agit QUE sur des PR déjà ouvertes (intention explicite) — jamais un
+  # merge en masse des branches expérimentales. Couvre les futures branches sans
+  # config par branche. (Le job `auto-merge` push/dispatch reste inchangé.)
+  schedule:
+    - cron: '0 */6 * * *'
 
 permissions:
   contents: write
@@ -29,7 +38,7 @@ concurrency:
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
-    if: github.actor != 'github-actions[bot]'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'github-actions[bot]'
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -167,3 +176,50 @@ jobs:
         if: failure()
         run: |
           echo "::warning::Auto-merge ${{ steps.src.outputs.branch }} → main FAILED. Manual intervention needed."
+
+  # v13.4.337 — Rattrapage cron (+ dispatch manuel) : merge les PR claude/* OUVERTES
+  # et mergeables. Indépendant du webhook push (souvent non émis par le proxy git).
+  # SÛR : seulement des PR déjà ouvertes (intention explicite), jamais un merge de
+  # masse. Couvre automatiquement toute future branche dès qu'elle a une PR vers main.
+  cron-merge-open-prs:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge open claude/* PRs (mergeables)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          # PR ouvertes vers main dont la tête est une branche claude/* et non-draft.
+          PRS=$(gh pr list --base main --state open --limit 50 \
+                  --json number,headRefName,isDraft,mergeable \
+                  --jq '.[] | select(.headRefName|startswith("claude/")) | select(.isDraft==false) | "\(.number)\t\(.mergeable)\t\(.headRefName)"' \
+                  2>/dev/null || echo "")
+          if [ -z "$PRS" ]; then echo "::notice::Aucune PR claude/* ouverte à merger."; exit 0; fi
+          MERGED=0; SKIP=0
+          while IFS=$'\t' read -r NUM MERGEABLE HEAD; do
+            [ -z "${NUM:-}" ] && continue
+            # CONFLICTING → on laisse pour résolution manuelle (jamais de merge forcé d'un conflit).
+            if [ "$MERGEABLE" = "CONFLICTING" ]; then
+              echo "::warning::PR #$NUM ($HEAD) en conflit → laissée pour merge manuel."
+              SKIP=$((SKIP+1)); continue
+            fi
+            # admin override si dispo (protection main = require PR), sinon merge normal.
+            if gh pr merge "$NUM" --merge --admin --delete-branch=false 2>/dev/null \
+               || gh pr merge "$NUM" --merge --delete-branch=false 2>/dev/null; then
+              echo "✅ PR #$NUM ($HEAD) mergée → Pages déploiera."
+              MERGED=$((MERGED+1))
+            else
+              echo "::warning::PR #$NUM ($HEAD) non mergée (checks/protection) — manuel."
+              SKIP=$((SKIP+1))
+            fi
+          done <<< "$PRS"
+          echo "Bilan rattrapage : $MERGED mergée(s), $SKIP laissée(s)."
