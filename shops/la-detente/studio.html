@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.9.2 — logos transparents (fini le cadre blanc), logo plus petit par défaut, glisser=déplacer + poignée rouge=redimensionner, déplacement fluide, libellé Vue -->
+<!-- La Détente — Studio (admin) v1.9.3 — bibliothèque visuelle XL: grandes vignettes + filtres par thème (Cœur·Monaco·Blasons) + recherche -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -62,6 +62,14 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .emblems{display:flex;flex-wrap:wrap;gap:8px}
 .emblems .eb{width:46px;height:46px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border);padding:4px}
 .emblems .eb:hover{border-color:var(--p)}
+.libchips{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 8px}
+.chip{padding:7px 11px;border-radius:100px;border:1px solid var(--border);background:var(--panel2);color:#cfd3da;font-size:11.5px;font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
+.chip.on{background:var(--p);border-color:var(--p);color:#fff}
+.chip:hover{border-color:var(--p)}
+.lib-xl{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin-top:4px}
+.lib-xl .eb{width:100%;height:auto;aspect-ratio:1;border-radius:var(--rs);background:#f6f6f8;border:1px solid var(--border);padding:6px}
+.lib-xl .eb:hover{border-color:var(--p)}
+.lib-xl .eb img{width:100%;height:100%;object-fit:contain}
 .emblems .eb svg{width:100%;height:100%}
 .layers{display:flex;flex-direction:column;gap:6px}
 .lyr{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--rs);background:var(--panel2);border:1px solid var(--border);font-size:12px;cursor:pointer}
@@ -245,7 +253,10 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
     </details>
     <details class="grp grp-macro"><summary>🎨 Bibliothèque</summary>
       <div class="sublab">⭐ Mes logos créés</div><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div>
-      <div class="sublab">🖼️ Modèles La Détente</div><div class="emblems" id="realLib"></div>
+      <div class="sublab">🖼️ Modèles La Détente</div>
+      <div class="libchips" id="libChips"></div>
+      <input id="libq" placeholder="🔎 Filtrer les modèles…" style="width:100%;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" oninput="Studio.libSearch(this.value)">
+      <div class="lib-xl" id="realLib"></div>
       <input id="webq" placeholder="🔎 Chercher sur le web (cerf, aigle, fusil…)" style="width:100%;margin-top:8px;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" onkeydown="if(event.key==='Enter')Studio.webSearch()">
       <button class="btn" id="webBtn" style="width:100%;margin-top:6px" onclick="Studio.webSearch()">🔎 Chercher sur le web</button>
       <div class="emblems" id="webResults" style="margin-top:8px"></div>
@@ -406,7 +417,18 @@ function renderEmblems(){
 }
 /* Bibliothèque de modèles vidée à la demande de Kevin (2026-06-13) — aucun modèle proposé par défaut. Kevin réajoute au fur et à mesure. */
 var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"],["logo_m01","Monaco 1"],["logo_m02","Monaco 2"],["logo_m03","Monaco 3"],["logo_m04","Monaco 4"],["logo_m05","Monaco 5"],["logo_m06","Monaco 6"],["logo_m07","Monaco 7"],["logo_m08","Monaco 8"],["logo_m09","Monaco 9"],["logo_m10","Monaco 10"],["logo_m11","Monaco 11"],["logo_m12","Monaco 12"],["logo_m13","Monaco 13"],["logo_m14","Monaco 14"],["logo_m15","Monaco 15"],["logo_m16","Monaco 16"],["logo_m17","Monaco 17"],["logo_m18","Monaco 18"],["logo_m19","Monaco 19"],["logo_m20","Monaco 20"],["logo_h01","Blason 1"],["logo_h02","Blason 2"],["logo_h03","Blason 3"],["logo_h04","Blason 4"],["logo_h06","Blason 6"],["logo_h07","Blason 7"],["logo_h08","Blason 8"],["logo_h09","Blason 9"],["logo_h10","Blason 10"],["logo_h11","Blason 11"],["logo_h12","Blason 12"]];
-function renderRealLib(){var el=$("realLib");if(!el)return;el.innerHTML=REAL_LIB.map(function(e){return '<button class="eb" title="'+e[1]+'" onclick="Studio.addImageURL(\'img/designs/'+e[0]+'.png\')"><img src="img/designs/'+e[0]+'.png" style="width:100%;height:100%;object-fit:contain" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join("");}
+var _libCat="all",_libQ="";
+var LIB_CATS=[["all","Tout"],["coeur","❤️ Cœur & Tir"],["monaco","🇲🇨 Monaco"],["blason","👑 Blasons"]];
+function _libCatOf(id){var s=id.replace(/^logo_/,"");if(/^m/.test(s))return "monaco";if(/^h/.test(s))return "blason";return "coeur";}
+function renderLibChips(){var el=$("libChips");if(!el)return;el.innerHTML=LIB_CATS.map(function(c){return '<button class="chip'+(c[0]===_libCat?" on":"")+'" onclick="Studio.libCat(\''+c[0]+'\')">'+c[1]+'</button>';}).join("");}
+function libCat(c){_libCat=c;renderLibChips();renderRealLib();}
+function libSearch(v){_libQ=(v||"").toLowerCase();renderRealLib();}
+function renderRealLib(){var el=$("realLib");if(!el)return;
+ var items=REAL_LIB.filter(function(e){
+   if(_libCat!=="all"&&_libCatOf(e[0])!==_libCat)return false;
+   if(_libQ&&e[1].toLowerCase().indexOf(_libQ)<0&&e[0].toLowerCase().indexOf(_libQ)<0)return false;
+   return true;});
+ el.innerHTML=items.length?items.map(function(e){return '<button class="eb" title="'+e[1]+'" onclick="Studio.addImageURL(\'img/designs/'+e[0]+'.png\')"><img src="img/designs/'+e[0]+'.png" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join(""):'<div class="hint" style="grid-column:1/-1">Aucun modèle pour ce filtre.</div>';}
 function _myLogos(){try{return JSON.parse(localStorage.getItem("ld_logos_cache")||"[]")}catch(_){return[]}}
 function renderMyLogos(){var el=$("myLogos");if(!el)return;var L=_myLogos();var h=$("myLogosHint");el.innerHTML=L.length?L.map(function(l,i){return '<button class="eb" title="'+esc(l.name||"Logo")+'" onclick="Studio.addMyLogo('+i+')"><img src="'+l.img+'" style="width:100%;height:100%;object-fit:contain"></button>';}).join(""):'';if(h)h.style.display=L.length?"none":"block";}
 function addMyLogo(i){var L=_myLogos();if(L[i])addImageURL(L[i].img);}
@@ -769,7 +791,7 @@ function autoTrim(id){var l=get(id);if(!l)return;var im=new Image();im.onload=fu
 
 /* ---------- INIT ---------- */
 function init(){
- renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();loadDefaultMocks();renderRealLib();renderMyLogos();syncMyLogos();
+ renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();loadDefaultMocks();renderLibChips();renderRealLib();renderMyLogos();syncMyLogos();
  // seed with brand emblem
  var _sp=new URLSearchParams(location.search), _qd=_sp.get("design");
  if(_qd&&/^[a-z0-9-]+$/.test(_qd)){var _u="img/designs/"+_qd+".png";var _im=new Image();_im.onload=function(){var ar=(_im.width&&_im.height)?_im.width/_im.height:1;addLayer({type:"image",href:_u,orig:_u,w:ar>=1?44:44*ar,h:ar>=1?44/ar:44,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});};_im.onerror=function(){};_im.src=_u;}
@@ -995,7 +1017,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,libCat:libCat,libSearch:libSearch,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
