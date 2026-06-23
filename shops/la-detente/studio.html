@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.7.2 — + 32 armoiries Monaco/blasons dans les modèles -->
+<!-- La Détente — Studio (admin) v1.8.0 — Vue multi-produits (design sur tous les vêtements + planche PNG) -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -110,6 +110,17 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .modal.show{display:flex}
 .modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal .box.wide{max-width:940px;max-height:90vh;overflow:auto}
+.mvHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px}
+.mvHead h2{margin:0;font-size:17px}
+.mvGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.mvTile{padding:0;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:var(--panel2);cursor:pointer;text-align:center;transition:.12s}
+.mvTile.on{border-color:var(--p)}
+.mvTile:hover{border-color:var(--gold)}
+.mvImg{aspect-ratio:1;background:#d2d5d9;display:block}
+.mvImg svg{width:100%;height:100%;display:block}
+.mvName{font-size:12px;font-weight:700;padding:7px 4px;color:#e7e9ec}
+.mvFoot{margin-top:16px}
+@media(max-width:520px){.mvGrid{grid-template-columns:repeat(2,1fr)}}
 .modal h2{font-size:18px;margin-bottom:16px}
 @media(max-width:860px){.side{width:200px}.side.right{width:220px}}
 @media(max-width:680px){
@@ -181,6 +192,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
       <button role="menuitem" onclick="Studio.closeExportMenu();Studio.exportPDF()">📄 <span>PDF 300 dpi<span class="mdesc">30×30 cm, prêt impression</span></span></button>
     </div>
   </div>
+  <button class="btn" onclick="Studio.multiView()" title="Voir mon design sur tous les produits en même temps">🖼️ Vue multi‑produits</button>
   <button class="btn" onclick="Studio.finishCreation()">💾 Enregistrer / Ranger</button>
   <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
   <a class="btn" href="index.html" title="Retour boutique">↩</a>
@@ -595,6 +607,47 @@ function initDrag(){
 }
 
 /* ---------- EXPORT ---------- */
+/* ---------- VUE MULTI-PRODUITS ---------- */
+/* Rend le design courant (st.layers) sur un vêtement donné — photo réelle si dispo, sinon dessin du vêtement. */
+function stageInnerFor(gid){
+ var g=GARMENTS.filter(function(x){return x.id===gid})[0]; if(!g)return '';
+ var s='<rect x="0" y="0" width="100" height="100" rx="3" fill="#d2d5d9"/>';
+ if(st.realphoto&&MOCK[gid]&&st.mockReady[gid]){s+='<image href="'+MOCK[gid]+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
+ else{s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
+ st.layers.forEach(function(l){s+=layerSVG(l)});
+ return s;
+}
+/* Modale : aperçu du design sur TOUS les produits en même temps. Les symboles/filtres sont résolus via le sprite global du document (pas besoin de réinjecter defs ici). */
+function multiView(){
+ if(!st.layers.length){toast("Ajoute au moins un calque pour voir la vue multi-produits");return;}
+ var tiles=GARMENTS.map(function(g){
+  var svg='<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+stageInnerFor(g.id)+'</svg>';
+  return '<button class="mvTile'+(g.id===st.garment?' on':'')+'" onclick="Studio.pickMulti(\''+g.id+'\')" title="Éditer sur '+esc(g.name)+'"><div class="mvImg">'+svg+'</div><div class="mvName">'+esc(g.name)+(g.id===st.garment?' • en cours':'')+'</div></button>';
+ }).join("");
+ modal('<div class="mvHead"><h2>🖼️ Mon design sur tous les produits</h2><button class="btn ghost" onclick="Studio.closeModal()">✕</button></div>'
+  +'<div class="mvGrid">'+tiles+'</div>'
+  +'<div class="mvFoot"><button class="btn primary" style="width:100%" onclick="Studio.exportPlanche()">⬇️ Télécharger la planche (PNG)</button>'
+  +'<div class="hint" style="margin-top:8px">Touche un produit pour l\'éditer précisément. Le design garde sa position — ajuste-le par produit au besoin.</div></div>');
+ var mb=$("modalBox"); if(mb) mb.classList.add("wide");
+}
+function pickMulti(gid){var g=GARMENTS.filter(function(x){return x.id===gid})[0];setGarment(gid);closeModal();toast("✏️ Édition sur "+((g&&g.name)||gid));}
+/* Exporte la planche (tous produits) en 1 seul PNG. Rastérisé hors-DOM → defs inlinés obligatoires. */
+function exportPlanche(){
+ if(!st.layers.length)return toast("Ajoute au moins un calque");
+ toast("Génération de la planche…");
+ var cols=4,n=GARMENTS.length,rows=Math.ceil(n/cols),cell=420,lab=40,pad=14,defs=spriteDefs();
+ var W=cols*cell,H=rows*(cell+lab),body='';
+ GARMENTS.forEach(function(g,i){
+  var cx=(i%cols)*cell,cy=Math.floor(i/cols)*(cell+lab);
+  body+='<svg x="'+(cx+pad)+'" y="'+(cy+pad)+'" width="'+(cell-2*pad)+'" height="'+(cell-2*pad)+'" viewBox="0 0 100 100">'+stageInnerFor(g.id)+'</svg>';
+  body+='<text x="'+(cx+cell/2)+'" y="'+(cy+cell+lab-15)+'" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="800" fill="#15171a">'+esc(g.name)+'</text>';
+ });
+ var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+defs+'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'+body+'</svg>';
+ var blob=new Blob([svg],{type:"image/svg+xml;charset=utf-8"}),url=URL.createObjectURL(blob),im=new Image();
+ im.onload=function(){var c=document.createElement("canvas");c.width=W;c.height=H;var x=c.getContext("2d");x.drawImage(im,0,0,W,H);URL.revokeObjectURL(url);download(c.toDataURL("image/png"),"la-detente-planche-produits.png");toast("Planche téléchargée ✅");};
+ im.onerror=function(){URL.revokeObjectURL(url);toast("Erreur planche (image)")};
+ im.src=url;
+}
 function buildSVG(size,withGarment,bg){
  var inner=stageInner(true,withGarment);
  var rect=bg?'<rect width="100" height="100" fill="'+bg+'"/>':'';
@@ -902,7 +955,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
