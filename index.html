@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.817";
+var APP_VER="v9.818";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36684,6 +36684,34 @@ function _cmcDetectTeamsByRestPattern(iy,im){
         if(!g.emp.familyHistory)g.emp.familyHistory={};g.emp.familyHistory[key]=fam;
       });
     });
+    // 1bis) v9.818 (Kevin 2026-06-23 « un congé partiel reste dans son équipe de
+    //    travail ») : une équipe dont les repos sont un SOUS-ENSEMBLE STRICT d'une
+    //    autre équipe MÊME famille + MÊME horaire-base = la MÊME rotation, juste
+    //    tronquée par un congé/maladie (ex : DESARZENS+MARIOTTINI en CP 16-31, repos
+    //    {5,11}, étaient une équipe à part au lieu de rester avec PUGNETTI/DESSI/
+    //    MALENFANT/DEJANOVIC repos {5,11,17,23,29}). → FUSION dans la plus grande.
+    //    Garde-fous : même famille ET même horaire-base (jamais fusionner un miroir,
+    //    qui a un horaire-base différent) ; l'hôte doit être STRICTEMENT plus grand.
+    teamGroups.sort(function(a,b){return b.rest.length-a.rest.length;});
+    var _kept=[];
+    teamGroups.forEach(function(T){
+      var host=null;
+      for(var hi=0;hi<_kept.length;hi++){
+        var U=_kept[hi];
+        if(U.fam!==T.fam||U.fwBase!==T.fwBase)continue;
+        if(U.rest.length<=T.rest.length)continue;
+        var subset=T.rest.every(function(d){return U.rest.indexOf(d)>=0;});
+        if(subset){host=U;break;}
+      }
+      if(host){
+        T.members.forEach(function(g){
+          if(!g.emp.teamHistory)g.emp.teamHistory={};
+          g.emp.teamHistory[key]=host.teamId;
+          host.members.push(g);
+        });
+      }else{_kept.push(T);}
+    });
+    teamGroups=_kept;
     // 2) Singletons (souvent CP partiel : repos tronqués) → rattachés à l'équipe de
     //    LEUR famille dont les repos sont identiques, sinon un SUR-ENSEMBLE des leurs,
     //    en préférant le même horaire-base. Sinon laissés au fallback v9.743.

@@ -38,6 +38,11 @@ async function main() {
   t('DESARZENS garde sa vraie grille (31 cellules, codes chef présents)', !!out.DESARZENS && out.DESARZENS.n === 31 && Object.keys(out.DESARZENS.cnt).some(c => /c$/.test(c)));
   t('GAZAGNE garde sa vraie grille roulette (31 cellules)', !!out.GAZAGNE && out.GAZAGNE.n === 31);
   t('couverture préservée (≥287 employés avec cellules)', out.total >= 287);
+  // v9.818 : congé PARTIEL (Kevin CP 16-31) reste dans son équipe de TRAVAIL avec
+  // ses coéquipiers présents tout le mois (pas une équipe à part).
+  const KEVIN_MATES = ['DEJANOVIC', 'DESSI', 'MALENFANT', 'MARIOTTINI', 'PUGNETTI'];
+  const matesFound = KEVIN_MATES.filter(n => (out.mates || []).some(m => m.toUpperCase().indexOf(n) >= 0));
+  t('Kevin (CP partiel) reste avec son équipe de travail (≥5 coéquipiers présents)', matesFound.length >= 5);
   let pass = 0, fail = 0;
   tests.forEach(tt => { if (tt.ok) { console.log('  ✅ ' + tt.label); pass++; } else { console.log('  ❌ ' + tt.label); fail++; } });
   console.log('\nGARRO:', JSON.stringify(out.GARRO), '\nMIRANDA:', JSON.stringify(out.MIRANDA));
