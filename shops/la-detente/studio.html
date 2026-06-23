@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.7.1 — + modèles La Détente (Cœur AR-15, Cœur AR-15 & ball-trap) -->
+<!-- La Détente — Studio (admin) v1.7.2 — + 32 armoiries Monaco/blasons dans les modèles -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -384,7 +384,7 @@ function renderEmblems(){
  }).join("");
 }
 /* Bibliothèque de modèles vidée à la demande de Kevin (2026-06-13) — aucun modèle proposé par défaut. Kevin réajoute au fur et à mesure. */
-var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"]];
+var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"],["logo_m01","Monaco 1"],["logo_m02","Monaco 2"],["logo_m03","Monaco 3"],["logo_m04","Monaco 4"],["logo_m05","Monaco 5"],["logo_m06","Monaco 6"],["logo_m07","Monaco 7"],["logo_m08","Monaco 8"],["logo_m09","Monaco 9"],["logo_m10","Monaco 10"],["logo_m11","Monaco 11"],["logo_m12","Monaco 12"],["logo_m13","Monaco 13"],["logo_m14","Monaco 14"],["logo_m15","Monaco 15"],["logo_m16","Monaco 16"],["logo_m17","Monaco 17"],["logo_m18","Monaco 18"],["logo_m19","Monaco 19"],["logo_m20","Monaco 20"],["logo_h01","Blason 1"],["logo_h02","Blason 2"],["logo_h03","Blason 3"],["logo_h04","Blason 4"],["logo_h05","Blason 5"],["logo_h06","Blason 6"],["logo_h07","Blason 7"],["logo_h08","Blason 8"],["logo_h09","Blason 9"],["logo_h10","Blason 10"],["logo_h11","Blason 11"],["logo_h12","Blason 12"]];
 function renderRealLib(){var el=$("realLib");if(!el)return;el.innerHTML=REAL_LIB.map(function(e){return '<button class="eb" title="'+e[1]+'" onclick="Studio.addImageURL(\'img/designs/'+e[0]+'.png\')"><img src="img/designs/'+e[0]+'.png" style="width:100%;height:100%;object-fit:contain" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join("");}
 function _myLogos(){try{return JSON.parse(localStorage.getItem("ld_logos_cache")||"[]")}catch(_){return[]}}
 function renderMyLogos(){var el=$("myLogos");if(!el)return;var L=_myLogos();var h=$("myLogosHint");el.innerHTML=L.length?L.map(function(l,i){return '<button class="eb" title="'+esc(l.name||"Logo")+'" onclick="Studio.addMyLogo('+i+')"><img src="'+l.img+'" style="width:100%;height:100%;object-fit:contain"></button>';}).join(""):'';if(h)h.style.display=L.length?"none":"block";}
