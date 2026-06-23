@@ -122,7 +122,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .zoomctl .zlvl{font-size:11.5px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:5px 0;letter-spacing:.3px}
 .zoomctl .zcap{font-size:9px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:3px 0;letter-spacing:.5px}
 .zoomctl .zfit{height:auto;font-size:11px;font-weight:700;letter-spacing:.2px;padding:7px 0}
-.ovwrap{position:absolute;left:8px;top:8px;width:31%;max-width:140px;aspect-ratio:1;border:2px solid rgba(255,255,255,.55);border-radius:10px;overflow:hidden;background:#d2d5d9;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.5);cursor:pointer}
+.ovwrap{pointer-events:none;position:absolute;left:8px;top:8px;width:31%;max-width:140px;aspect-ratio:1;border:2px solid rgba(255,255,255,.55);border-radius:10px;overflow:hidden;background:#d2d5d9;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.5);cursor:pointer}
 .ovwrap svg{width:100%;height:100%;display:block}
 .ovwrap .ovtag{position:absolute;left:0;right:0;bottom:0;font-size:9px;font-weight:800;text-align:center;color:#fff;background:rgba(11,13,15,.74);padding:2px 0;letter-spacing:.3px}
 .ovwrap.hide{display:none}
@@ -693,6 +693,7 @@ function zoomToSel(){
  st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();st.overview=true;_applyVB();renderOverview();toast("🔍 Zoom sur le logo");
 }
 function initDrag(){
+ var _touchTs=0;
  var box=$("stageBox");var drag=null;var _pinch=null;
  function _pinchStart(ev){var a=ev.touches[0],b=ev.touches[1];var dd=Math.max(Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),1);
    var sl=st.layers.filter(function(x){return x.id===st.sel})[0];
@@ -703,7 +704,7 @@ function initDrag(){
    var r=box.getBoundingClientRect();var nw=Math.max(20,Math.min(100,_pinch.w*(_pinch.d/nd)));var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;st.vb={x:_pinch.cx-mx*nw,y:_pinch.cy-my*nw,w:nw,h:nw};_clampVB();_applyVB()}
  function pt(ev){var r=box.getBoundingClientRect();var cx=(ev.touches?ev.touches[0].clientX:ev.clientX);var cy=(ev.touches?ev.touches[0].clientY:ev.clientY);var v=st.vb||{x:0,y:0,w:100,h:100};return{x:v.x+(cx-r.left)/r.width*v.w,y:v.y+(cy-r.top)/r.height*v.h}}
  function _hwOf(l){return (l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*(l.scale||1)*0.6+6;}
- function down(ev){if(ev.touches&&ev.touches.length>=2){_pinchStart(ev);ev.preventDefault();return}var p=pt(ev);
+ function down(ev){if(ev.touches){_touchTs=Date.now();}else if(Date.now()-_touchTs<600){return;} if(ev.touches&&ev.touches.length>=2){_pinchStart(ev);ev.preventDefault();return}var p=pt(ev);
    // 1) poignée rouge (coin bas-droit) du calque sélectionné = redimensionner
    if(st.sel!=null){var sl=st.layers.filter(function(x){return x.id===st.sel})[0];if(sl){var hw=_hwOf(sl);var hr=Math.max((st.vb?st.vb.w:100)*0.07,3);
      if(Math.abs(p.x-(sl.x+hw))<hr&&Math.abs(p.y-(sl.y+hw))<hr){snap();drag={mode:"resize",id:sl.id,sc0:sl.scale||1,d0:Math.max(Math.hypot(p.x-sl.x,p.y-sl.y),0.5)};ev.preventDefault();return}}}
