@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.9.1 — maniabilité: Position X/Y précises, échelle fine (0,02), tailles rapides, zoom logo ajusté, repère impression off par défaut -->
+<!-- La Détente — Studio (admin) v1.9.2 — logos transparents (fini le cadre blanc), logo plus petit par défaut, glisser=déplacer + poignée rouge=redimensionner, déplacement fluide, libellé Vue -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -103,6 +103,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .zoomctl .zbtn:hover{border-color:var(--p)}
 .zoomctl .zbtn:active{transform:translateY(1px)}
 .zoomctl .zlvl{font-size:11.5px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:5px 0;letter-spacing:.3px}
+.zoomctl .zcap{font-size:9px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:3px 0;letter-spacing:.5px}
 .zoomctl .zfit{height:auto;font-size:11px;font-weight:700;letter-spacing:.2px;padding:7px 0}
 .ovwrap{position:absolute;left:8px;top:8px;width:31%;max-width:140px;aspect-ratio:1;border:2px solid rgba(255,255,255,.55);border-radius:10px;overflow:hidden;background:#d2d5d9;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.5);cursor:pointer}
 .ovwrap svg{width:100%;height:100%;display:block}
@@ -255,7 +256,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div class="ovwrap hide" id="ovWrap" onclick="Studio.zoomReset()" title="Vue d'ensemble — touche pour revoir toute la pièce"></div><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de l'aperçu"><button class="zbtn" onclick="Studio.zoomToSel()" title="Zoomer sur le logo sélectionné" aria-label="Zoom sur le logo">🎯</button><button class="zbtn" onclick="Studio.toggleOverview()" title="Afficher / masquer la vue d'ensemble" aria-label="Vue d'ensemble">⊞</button><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div class="ovwrap hide" id="ovWrap" onclick="Studio.zoomReset()" title="Vue d'ensemble — touche pour revoir toute la pièce"></div><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de la vue produit"><div class="zcap">Vue</div><button class="zbtn" onclick="Studio.zoomToSel()" title="Zoomer sur le logo sélectionné" aria-label="Zoom sur le logo">🎯</button><button class="zbtn" onclick="Studio.toggleOverview()" title="Afficher / masquer la vue d'ensemble" aria-label="Vue d'ensemble">⊞</button><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
@@ -363,8 +364,10 @@ function stageInner(forExport,withGarment){
  }
  if(!forExport && st.sel!=null){
    var l=st.layers.filter(function(x){return x.id===st.sel})[0];
-   if(l){var hw=(l.type==="text"?l.size:l.type==="image"?l.w:40)*l.scale*0.6+6;
-     s+='<rect x="'+(l.x-hw)+'" y="'+(l.y-hw)+'" width="'+(hw*2)+'" height="'+(hw*2)+'" fill="none" stroke="#fff" stroke-width="0.4" stroke-dasharray="1.5 1" opacity=".7"/>';}
+   if(l){var hw=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+6;
+     s+='<rect x="'+(l.x-hw)+'" y="'+(l.y-hw)+'" width="'+(hw*2)+'" height="'+(hw*2)+'" fill="none" stroke="#fff" stroke-width="0.4" stroke-dasharray="1.5 1" opacity=".7"/>';
+     var _hr=Math.max((st.vb?st.vb.w:100)*0.035,1.6);
+     s+='<circle cx="'+(l.x+hw)+'" cy="'+(l.y+hw)+'" r="'+_hr+'" fill="#dc2626" stroke="#fff" stroke-width="0.5"/>';}
  }
  return s;
 }
@@ -402,13 +405,13 @@ function renderEmblems(){
  }).join("");
 }
 /* Bibliothèque de modèles vidée à la demande de Kevin (2026-06-13) — aucun modèle proposé par défaut. Kevin réajoute au fur et à mesure. */
-var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"],["logo_m01","Monaco 1"],["logo_m02","Monaco 2"],["logo_m03","Monaco 3"],["logo_m04","Monaco 4"],["logo_m05","Monaco 5"],["logo_m06","Monaco 6"],["logo_m07","Monaco 7"],["logo_m08","Monaco 8"],["logo_m09","Monaco 9"],["logo_m10","Monaco 10"],["logo_m11","Monaco 11"],["logo_m12","Monaco 12"],["logo_m13","Monaco 13"],["logo_m14","Monaco 14"],["logo_m15","Monaco 15"],["logo_m16","Monaco 16"],["logo_m17","Monaco 17"],["logo_m18","Monaco 18"],["logo_m19","Monaco 19"],["logo_m20","Monaco 20"],["logo_h01","Blason 1"],["logo_h02","Blason 2"],["logo_h03","Blason 3"],["logo_h04","Blason 4"],["logo_h05","Blason 5"],["logo_h06","Blason 6"],["logo_h07","Blason 7"],["logo_h08","Blason 8"],["logo_h09","Blason 9"],["logo_h10","Blason 10"],["logo_h11","Blason 11"],["logo_h12","Blason 12"]];
+var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"],["logo_m01","Monaco 1"],["logo_m02","Monaco 2"],["logo_m03","Monaco 3"],["logo_m04","Monaco 4"],["logo_m05","Monaco 5"],["logo_m06","Monaco 6"],["logo_m07","Monaco 7"],["logo_m08","Monaco 8"],["logo_m09","Monaco 9"],["logo_m10","Monaco 10"],["logo_m11","Monaco 11"],["logo_m12","Monaco 12"],["logo_m13","Monaco 13"],["logo_m14","Monaco 14"],["logo_m15","Monaco 15"],["logo_m16","Monaco 16"],["logo_m17","Monaco 17"],["logo_m18","Monaco 18"],["logo_m19","Monaco 19"],["logo_m20","Monaco 20"],["logo_h01","Blason 1"],["logo_h02","Blason 2"],["logo_h03","Blason 3"],["logo_h04","Blason 4"],["logo_h06","Blason 6"],["logo_h07","Blason 7"],["logo_h08","Blason 8"],["logo_h09","Blason 9"],["logo_h10","Blason 10"],["logo_h11","Blason 11"],["logo_h12","Blason 12"]];
 function renderRealLib(){var el=$("realLib");if(!el)return;el.innerHTML=REAL_LIB.map(function(e){return '<button class="eb" title="'+e[1]+'" onclick="Studio.addImageURL(\'img/designs/'+e[0]+'.png\')"><img src="img/designs/'+e[0]+'.png" style="width:100%;height:100%;object-fit:contain" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join("");}
 function _myLogos(){try{return JSON.parse(localStorage.getItem("ld_logos_cache")||"[]")}catch(_){return[]}}
 function renderMyLogos(){var el=$("myLogos");if(!el)return;var L=_myLogos();var h=$("myLogosHint");el.innerHTML=L.length?L.map(function(l,i){return '<button class="eb" title="'+esc(l.name||"Logo")+'" onclick="Studio.addMyLogo('+i+')"><img src="'+l.img+'" style="width:100%;height:100%;object-fit:contain"></button>';}).join(""):'';if(h)h.style.display=L.length?"none":"block";}
 function addMyLogo(i){var L=_myLogos();if(L[i])addImageURL(L[i].img);}
 function syncMyLogos(){if(window.kdmcFetchLogos)window.kdmcFetchLogos("la-detente",function(arr){if(arr&&arr.length){try{var cur=_myLogos();var ids={};cur.forEach(function(x){ids[x.id]=1});arr.forEach(function(a){if(a&&a.id&&!ids[a.id])cur.push(a)});localStorage.setItem("ld_logos_cache",JSON.stringify(cur));}catch(_){}renderMyLogos();}});}
-function addImageURL(url){if(!url)return;var img=new Image();try{img.crossOrigin="anonymous"}catch(_){}img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?42:42*ar,hh=ar>=1?42/ar:42;addLayer({type:"image",href:url,orig:url,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée ✅");};img.onerror=function(){var i2=new Image();i2.onload=function(){addLayer({type:"image",href:url,orig:url,w:42,h:42,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée (sans CORS — l'export pourra nécessiter l'IA ou une image locale)","info");};i2.onerror=function(){toast("Image inaccessible","error")};i2.src=url;};img.src=url;}
+function addImageURL(url){if(!url)return;var img=new Image();try{img.crossOrigin="anonymous"}catch(_){}img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?26:26*ar,hh=ar>=1?26/ar:26;addLayer({type:"image",href:url,orig:url,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée ✅");};img.onerror=function(){var i2=new Image();i2.onload=function(){addLayer({type:"image",href:url,orig:url,w:26,h:26,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée (sans CORS — l'export pourra nécessiter l'IA ou une image locale)","info");};i2.onerror=function(){toast("Image inaccessible","error")};i2.src=url;};img.src=url;}
 function webSearch(){var q=($("webq")||{}).value;q=(q||"").trim();if(q.length<2){toast("Tape ce que tu cherches","error");return;}var b=$("webBtn");if(b){b.disabled=true;b.textContent="⏳ Recherche…";}var r=$("webResults");if(r)r.innerHTML="";
  fetch("https://api.openverse.org/v1/images/?q="+encodeURIComponent(q)+"&license_type=commercial&mature=false&page_size=12").then(function(x){return x.ok?x.json():null}).then(function(j){
   if(b){b.disabled=false;b.textContent="🔎 Chercher sur le web";}
@@ -560,7 +563,7 @@ function rng(lab,id,prop,val,mn,mx,st_){return field(lab+' ('+(+val).toFixed(pro
 function addLayer(l){snap();l.id=st.uid++;l.x=l.x||50;l.y=l.y||(curZone()[1]+curZone()[3]/2);l.rot=l.rot||0;l.scale=l.scale||1;l.op=l.op==null?1:l.op;st.layers.push(l);st.sel=l.id;render()}
 function addText(){addLayer({type:"text",text:"TON TEXTE",font:"Arial Black",bold:true,color:"#ffffff",size:11,outline:0,ocolor:"#000000"})}
 function addEmblem(sym){addLayer({type:"emblem",sym:sym,scale:1})}
-function addImageFile(file){if(!file||!/^image\//.test(file.type||"")&&!/\.svg$/i.test(file.name||""))return;var r=new FileReader();r.onload=function(e){var src=e.target.result;var img=new Image();img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?36:36*ar,hh=ar>=1?36/ar:36;addLayer({type:"image",href:src,orig:src,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.onerror=function(){addLayer({type:"image",href:src,orig:src,w:36,h:36,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.src=src};r.readAsDataURL(file)}
+function addImageFile(file){if(!file||!/^image\//.test(file.type||"")&&!/\.svg$/i.test(file.name||""))return;var r=new FileReader();r.onload=function(e){var src=e.target.result;var img=new Image();img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?24:24*ar,hh=ar>=1?24/ar:24;addLayer({type:"image",href:src,orig:src,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.onerror=function(){addLayer({type:"image",href:src,orig:src,w:24,h:24,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.src=src};r.readAsDataURL(file)}
 function select(id){st.sel=id;render()}
 function upd(id,prop,val){var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l[prop]=val;render()}
 function move(id,dir){var i=st.layers.findIndex(function(x){return x.id===id});var j=i+dir;if(j<0||j>=st.layers.length)return;var t=st.layers[i];st.layers[i]=st.layers[j];st.layers[j]=t;render()}
@@ -623,14 +626,22 @@ function initDrag(){
  function _pinchStart(ev){var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var v=st.vb||{x:0,y:0,w:100,h:100};var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;_pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),w:v.w,cx:v.x+mx*v.w,cy:v.y+my*v.h};drag=null}
  function _pinchMove(ev){if(!_pinch)return;var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var nd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1;var nw=Math.max(20,Math.min(100,_pinch.w*(_pinch.d/nd)));var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;st.vb={x:_pinch.cx-mx*nw,y:_pinch.cy-my*nw,w:nw,h:nw};_clampVB();_applyVB()}
  function pt(ev){var r=box.getBoundingClientRect();var cx=(ev.touches?ev.touches[0].clientX:ev.clientX);var cy=(ev.touches?ev.touches[0].clientY:ev.clientY);var v=st.vb||{x:0,y:0,w:100,h:100};return{x:v.x+(cx-r.left)/r.width*v.w,y:v.y+(cy-r.top)/r.height*v.h}}
+ function _hwOf(l){return (l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*(l.scale||1)*0.6+6;}
  function down(ev){if(ev.touches&&ev.touches.length>=2){_pinchStart(ev);ev.preventDefault();return}var p=pt(ev);
-   // pick topmost layer near point
-   for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=Math.max((l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+4,(st.vb?st.vb.w:100)*0.06);
-     if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){snap();st.sel=l.id;drag={id:l.id,dx:l.x-p.x,dy:l.y-p.y};render();ev.preventDefault();return}}
-   st.sel=null;render();
+   // 1) poignée rouge (coin bas-droit) du calque sélectionné = redimensionner
+   if(st.sel!=null){var sl=st.layers.filter(function(x){return x.id===st.sel})[0];if(sl){var hw=_hwOf(sl);var hr=Math.max((st.vb?st.vb.w:100)*0.07,3);
+     if(Math.abs(p.x-(sl.x+hw))<hr&&Math.abs(p.y-(sl.y+hw))<hr){snap();drag={mode:"resize",id:sl.id,sc0:sl.scale||1,d0:Math.max(Math.hypot(p.x-sl.x,p.y-sl.y),0.5)};ev.preventDefault();return}}}
+   // 2) sinon : prendre le calque sous le doigt = déplacer
+   for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=Math.max((l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*(l.scale||1)*0.6+5,(st.vb?st.vb.w:100)*0.09);
+     if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){snap();var was=st.sel;st.sel=l.id;drag={mode:"move",id:l.id,dx:l.x-p.x,dy:l.y-p.y};if(was!==l.id)render();else renderStageOnly();ev.preventDefault();return}}
+   if(st.sel!=null){st.sel=null;render();}
  }
- function mv(ev){if(ev.touches&&ev.touches.length>=2){_pinchMove(ev);if(ev.preventDefault)ev.preventDefault();return}if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));render();ev.preventDefault()}
- function up(){drag=null;_pinch=null}
+ function mv(ev){if(ev.touches&&ev.touches.length>=2){_pinchMove(ev);if(ev.preventDefault)ev.preventDefault();return}if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;
+   if(drag.mode==="resize"){var d=Math.max(Math.hypot(p.x-l.x,p.y-l.y),0.5);l.scale=Math.max(0.02,Math.min(6,drag.sc0*(d/drag.d0)));}
+   else{l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));}
+   renderStageOnly();ev.preventDefault();
+ }
+ function up(){if(drag||_pinch){drag=null;_pinch=null;render();}else{drag=null;_pinch=null;}}
  box.addEventListener("mousedown",down);window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
  box.addEventListener("touchstart",down,{passive:false});window.addEventListener("touchmove",mv,{passive:false});window.addEventListener("touchend",up);
 }
