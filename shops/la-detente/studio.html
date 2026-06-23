@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.9.3 — bibliothèque visuelle XL: grandes vignettes + filtres par thème (Cœur·Monaco·Blasons) + recherche -->
+<!-- La Détente — Studio (admin) v1.10.0 — refonte plan de travail pro: fond vêtement STATIQUE (fini le scintillement), pincer pour redimensionner le logo + barre Taille, onglets Devant/Dos -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -32,9 +32,18 @@ button{cursor:pointer;border:none;background:none}
 .wrap{display:flex;height:calc(100% - 54px)}
 .side{width:264px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:14px}
 .side.right{border-right:none;border-left:1px solid var(--border)}
-.stage-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 90% at 50% 0,#dc262611,#0e1012 70%);overflow:auto;padding:24px}
+.stage-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(120% 90% at 50% 0,#dc262611,#0e1012 70%);overflow:auto;padding:24px}
 #stageBox{width:min(92vw,80vh,560px);aspect-ratio:1;background:#0b0d0f;border:1px solid var(--border);border-radius:var(--r);box-shadow:0 10px 40px rgba(0,0,0,.5);position:relative;touch-action:none}
-#stage{width:100%;height:100%;display:block;border-radius:var(--r)}
+#stageBg,#stage{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:var(--r)}
+#stageBg{z-index:0}
+#stage{z-index:1;background:transparent}
+.sidetabs{display:flex;gap:6px}
+.sidetabs button{padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:var(--panel2);color:#cfd3da;font-size:13px;font-weight:800;cursor:pointer;transition:.12s}
+.sidetabs button.on{background:var(--p);border-color:var(--p);color:#fff}
+.sizebar{display:none;align-items:center;gap:10px;width:min(92vw,80vh,560px);max-width:100%;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:8px 12px}
+.sizebar input[type=range]{flex:1;min-width:0;accent-color:var(--p);height:30px}
+.sizebar .szb{width:44px;height:44px;flex:none;border-radius:11px;border:1px solid var(--border);background:var(--panel2);color:#fff;font-size:22px;font-weight:800;cursor:pointer}
+.sizebar .szlbl{font-size:11px;font-weight:800;color:var(--muted);flex:none;text-transform:uppercase;letter-spacing:.5px}
 h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:6px 0 10px}
 .grp{margin-bottom:20px}
 details.grp{margin-bottom:9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--panel2);overflow:hidden}
@@ -142,9 +151,9 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
  .wrap{flex-direction:column;height:auto;overflow-x:hidden;overflow-y:auto}
  .side{width:100%;border:none;border-bottom:1px solid var(--border);max-height:none}
  /* L'aperçu du produit en PREMIER (sinon il est poussé sous la liste d'options) */
- .stage-wrap{order:0;min-height:42vh;max-height:56vh;padding:10px;position:sticky;top:0;z-index:3}
+ .stage-wrap{order:0;min-height:42vh;max-height:70vh;padding:10px;position:sticky;top:0;z-index:3}
  .side{order:1}.side.right{order:2}
- #stageBox{width:min(80vw,46vh)}
+ #stageBox{width:min(78vw,40vh)}
  body{overflow:auto}
 }
 </style>
@@ -267,7 +276,9 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div class="ovwrap hide" id="ovWrap" onclick="Studio.zoomReset()" title="Vue d'ensemble — touche pour revoir toute la pièce"></div><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de la vue produit"><div class="zcap">Vue</div><button class="zbtn" onclick="Studio.zoomToSel()" title="Zoomer sur le logo sélectionné" aria-label="Zoom sur le logo">🎯</button><button class="zbtn" onclick="Studio.toggleOverview()" title="Afficher / masquer la vue d'ensemble" aria-label="Vue d'ensemble">⊞</button><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
+    <div class="sidetabs" role="group" aria-label="Côté du vêtement"><button id="tabFront" class="on" onclick="Studio.setSide('front')">👕 Devant</button><button id="tabBack" onclick="Studio.setSide('back')">🔄 Dos</button></div>
+    <div id="stageBox"><svg id="stageBg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div class="ovwrap hide" id="ovWrap" onclick="Studio.zoomReset()" title="Vue d'ensemble — touche pour revoir toute la pièce"></div><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de la vue produit"><div class="zcap">Vue</div><button class="zbtn" onclick="Studio.zoomToSel()" title="Zoomer sur le logo sélectionné" aria-label="Zoom sur le logo">🎯</button><button class="zbtn" onclick="Studio.toggleOverview()" title="Afficher / masquer la vue d'ensemble" aria-label="Vue d'ensemble">⊞</button><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
+    <div id="sizeBar" class="sizebar" aria-label="Taille du logo"></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
@@ -311,7 +322,7 @@ var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script 
 
 /* Photos RÉELLES du produit (récupérées de Printify par le workflow printify-mockups). Repli auto sur le dessin si absentes. */
 var MOCK={tee:"img/mockups/tee.png",hoodie:"img/mockups/hoodie.png",polo:"img/mockups/polo.png",cap:"img/mockups/cap.png",tote:"img/mockups/tote.png",tank:"img/mockups/tank.png",shirt:"img/mockups/shirt.png",zip:"img/mockups/zip.png",bandana:"img/mockups/bandana.png",jogger:"img/mockups/jogger.png",short:"img/mockups/short.png"};
-var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:true,mockReady:{},pf:null,pfReady:false,pfPhoto:"",overview:true};
+var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:true,mockReady:{},pf:null,pfReady:false,pfPhoto:"",overview:true,side:"front",sides:null};
 function preloadMocks(){Object.keys(MOCK).forEach(function(g){if(!MOCK[g])return;var im=new Image();im.onload=function(){st.mockReady[g]=true;render()};im.onerror=function(){st.mockReady[g]=false;paintRealBtn()};im.src=MOCK[g];});}
 /* AUTO via API Printify : mappe chaque vêtement de base à une VRAIE photo produit (catalogue généré par l'API) */
 function loadDefaultMocks(){
@@ -359,43 +370,61 @@ function layerSVG(l){
 function spriteDefs(){ // inline defs for export
  return document.querySelector('svg defs').outerHTML;
 }
-function stageInner(forExport,withGarment){
- var g=gobj();
- var s='';
+/* Fond STATIQUE (vêtement) — redessiné seulement quand le vêtement/couleur/côté change. Recto = photo réelle ; Dos = dessin du vêtement (pas de photo dos). */
+function _bgInner(forExport){
+ var g=gobj();var s='';
  if(!forExport){s+='<rect x="0" y="0" width="100" height="100" rx="3" fill="#d2d5d9"/>';}
- if(withGarment!==false){
-   if(st.realphoto&&st.pf&&st.pfReady&&st.pfPhoto){s+='<image href="'+st.pfPhoto+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
-   else if(st.realphoto&&MOCK[st.garment]&&st.mockReady[st.garment]){s+='<image href="'+MOCK[st.garment]+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
-   else{s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
- }
+ if(st.side==="back"){
+   s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';
+   s+='<text x="50" y="51" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="6.5" fill="#ffffff" fill-opacity="0.5" letter-spacing="2">DOS</text>';
+ } else if(st.realphoto&&st.pf&&st.pfReady&&st.pfPhoto){s+='<image href="'+st.pfPhoto+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
+ else if(st.realphoto&&MOCK[st.garment]&&st.mockReady[st.garment]){s+='<image href="'+MOCK[st.garment]+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
+ else{s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
+ return s;
+}
+/* Calque design (transparent) — calques + repère + poignées de sélection. */
+function _designInner(forExport){
+ var s='';
  st.layers.forEach(function(l){s+=layerSVG(l)});
- if(!forExport && $("zoneChk").checked){
+ if(!forExport && $("zoneChk") && $("zoneChk").checked){
    var z=curZone();
    s+='<rect x="'+z[0]+'" y="'+z[1]+'" width="'+z[2]+'" height="'+z[3]+'" fill="none" stroke="#dc2626" stroke-width="0.5" stroke-dasharray="2 1.5" opacity="0.8"/>';
  }
  if(!forExport && st.sel!=null){
    var l=st.layers.filter(function(x){return x.id===st.sel})[0];
-   if(l){var hw=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+6;
-     s+='<rect x="'+(l.x-hw)+'" y="'+(l.y-hw)+'" width="'+(hw*2)+'" height="'+(hw*2)+'" fill="none" stroke="#fff" stroke-width="0.4" stroke-dasharray="1.5 1" opacity=".7"/>';
-     var _hr=Math.max((st.vb?st.vb.w:100)*0.035,1.6);
-     s+='<circle cx="'+(l.x+hw)+'" cy="'+(l.y+hw)+'" r="'+_hr+'" fill="#dc2626" stroke="#fff" stroke-width="0.5"/>';}
+   if(l){var hw=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*(l.scale||1)*0.6+6;
+     s+='<rect x="'+(l.x-hw)+'" y="'+(l.y-hw)+'" width="'+(hw*2)+'" height="'+(hw*2)+'" fill="none" stroke="#1f6fff" stroke-width="0.5" stroke-dasharray="1.5 1" opacity=".95"/>';
+     var _hr=Math.max((st.vb?st.vb.w:100)*0.045,2);
+     s+='<circle cx="'+(l.x+hw)+'" cy="'+(l.y+hw)+'" r="'+_hr+'" fill="#1f6fff" stroke="#fff" stroke-width="0.6"/>';}
  }
  return s;
 }
+function stageInner(forExport,withGarment){
+ var s=(withGarment!==false)?_bgInner(forExport):((!forExport)?'<rect x="0" y="0" width="100" height="100" rx="3" fill="#d2d5d9"/>':'');
+ return s+_designInner(forExport);
+}
+function _vbStr(){if(!st.vb)st.vb={x:0,y:0,w:100,h:100};return st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h;}
+function renderBg(){var bg=$("stageBg");if(!bg)return;
+ var sig=st.side+"|"+st.garment+"|"+st.color+"|"+(st.realphoto?1:0)+"|"+((st.pf&&st.pfReady)?st.pfPhoto:"")+"|"+(st.mockReady[st.garment]?1:0);
+ if(bg._sig!==sig){bg.innerHTML=_bgInner(false);bg._sig=sig;} /* ne reconstruit la photo que si vêtement/couleur/côté change → zéro scintillement */
+ bg.setAttribute("viewBox",_vbStr());}
+function selLayer(){return st.layers.filter(function(x){return x.id===st.sel})[0];}
 function render(){
+ renderBg();
  var stage=$("stage");
- stage.innerHTML=spriteDefs()+stageInner(false);
- if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
- renderLayers(); renderProps(); paintRealBtn(); zoomLabel(); renderOverview();
+ stage.innerHTML=_designInner(false);
+ stage.setAttribute("viewBox",_vbStr());
+ renderLayers(); renderProps(); paintRealBtn(); zoomLabel(); renderOverview(); renderSizeBar();
  var ps=document.getElementById("pfSel");if(ps)ps.innerHTML=st.pf?('🛍️ Produit : <b>'+esc(st.pf.title)+'</b> '+esc(st.pf.brand||"")+' <span style="color:var(--p)">#'+st.pf.id+'</span>'):"";
  var _sl=st.layers.filter(function(x){return x.id===st.sel})[0];
  var _fab=$("aiFab");if(_fab)_fab.style.display=(_sl&&_sl.type==="image"&&_aiCfg&&_aiCfg.worker_url)?"block":"none";
 }
 /* Redessine UNIQUEMENT le plan (pas le panneau Propriétés) — évite la perte de focus pendant qu'on tape/glisse un réglage. */
+/* Ne redessine QUE le calque design (pas le fond vêtement) → plus de scintillement/disparition de la photo pendant qu'on déplace/redimensionne. */
 function renderStageOnly(){
  var stage=$("stage");if(!stage)return;
- stage.innerHTML=spriteDefs()+stageInner(false);
- if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);renderOverview();
+ stage.innerHTML=_designInner(false);
+ stage.setAttribute("viewBox",_vbStr());renderOverview();renderSizeBar();
 }
 /* Met à jour l'indicateur de zoom en % (100% = vue entière). */
 function zoomLabel(){var e=document.getElementById("zoomLvl");if(!e||!st.vb)return;var pct=Math.round(100/(st.vb.w/100));e.textContent=pct+"%";}
@@ -489,7 +518,7 @@ function saveToLibrary(){
   renderMyLogos();closeModal();toast("📚 Rangé dans « "+ac.cat+" »");
  });
 }
-function clearCanvas(){snap();st.layers=[];st.sel=null;render();closeModal();toast("🗑 Création effacée — à toi de jouer");}
+function clearCanvas(){snap();st.layers=[];if(st.sides)st.sides[st.side]=st.layers;st.sel=null;render();closeModal();toast("🗑 Création effacée — à toi de jouer");}
 function renderLayers(){
  var c=$("layers");
  if(!st.layers.length){c.innerHTML='<div class="empty">Aucun calque.<br>Importe une image, ajoute du texte ou un emblème.</div>';return}
@@ -623,9 +652,29 @@ function closeExportMenu(){var m=$("expMenu"),b=$("expBtn");if(m)m.classList.rem
 
 /* ---------- DRAG on stage ---------- */
 function _clampVB(){if(!st.vb)return;var v=st.vb;v.w=Math.max(20,Math.min(100,v.w));v.h=v.w;v.x=Math.max(0,Math.min(100-v.w,v.x));v.y=Math.max(0,Math.min(100-v.h,v.y))}
-function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);zoomLabel();renderOverview();}
+function _applyVB(){var vb=_vbStr();var a=$("stage"),b=$("stageBg");if(a)a.setAttribute("viewBox",vb);if(b)b.setAttribute("viewBox",vb);zoomLabel();renderOverview();}
 function zoomBy(fr){if(!st.vb)st.vb={x:0,y:0,w:100,h:100};var v=st.vb;var cx=v.x+v.w/2,cy=v.y+v.h/2;var nw=Math.max(20,Math.min(100,v.w*fr));st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();_applyVB()}
 function zoomReset(){st.vb={x:0,y:0,w:100,h:100};_applyVB()}
+/* Barre de taille toujours visible sous le plan quand un calque est sélectionné. */
+function renderSizeBar(){var el=$("sizeBar");if(!el)return;var l=selLayer();
+ if(!l){el.style.display="none";el.innerHTML="";return;}
+ el.style.display="flex";
+ el.innerHTML='<span class="szlbl">Taille</span>'
+  +'<button class="szb" onclick="Studio.szStep('+l.id+',0.9)" aria-label="Réduire">−</button>'
+  +'<input id="sizeRange" type="range" min="0.04" max="3" step="0.01" value="'+(l.scale||1)+'" oninput="Studio.szSet('+l.id+',+this.value)">'
+  +'<button class="szb" onclick="Studio.szStep('+l.id+',1.1)" aria-label="Agrandir">＋</button>';
+}
+function szSet(id,v){var l=get(id);if(!l)return;l.scale=Math.max(0.02,Math.min(6,v));renderStageOnly();}
+function szStep(id,f){var l=get(id);if(!l)return;l.scale=Math.max(0.02,Math.min(6,(l.scale||1)*f));renderStageOnly();var r=$("sizeRange");if(r)r.value=l.scale;}
+/* Recto / Verso : jeux de calques séparés + vue vêtement adaptée. */
+function setSide(side){if(side!=="front"&&side!=="back")return;if(side===st.side)return;
+ if(!st.sides)st.sides={front:st.layers,back:[]};
+ st.sides[st.side]=st.layers;st.layers=st.sides[side]||(st.sides[side]=[]);st.side=side;st.sel=null;
+ var pk=placeKeys();
+ if(side==="back"){st.placement=(PLACE[st.garment]&&PLACE[st.garment].back)?"back":pk[0];}
+ else{st.placement=(PLACE[st.garment]&&PLACE[st.garment].chest)?"chest":pk[0];}
+ var tf=$("tabFront"),tb=$("tabBack");if(tf)tf.className=(side==="front"?"on":"");if(tb)tb.className=(side==="back"?"on":"");
+ renderPlacement();render();toast(side==="back"?"🔄 Dos — place ton design au dos":"👕 Devant");}
 /* ---------- DOUBLE VUE (minimap = vue d'ensemble pendant qu'on zoome sur le logo) ---------- */
 function renderOverview(){
  var w=$("ovWrap"); if(!w)return;
@@ -645,8 +694,13 @@ function zoomToSel(){
 }
 function initDrag(){
  var box=$("stageBox");var drag=null;var _pinch=null;
- function _pinchStart(ev){var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var v=st.vb||{x:0,y:0,w:100,h:100};var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;_pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),w:v.w,cx:v.x+mx*v.w,cy:v.y+my*v.h};drag=null}
- function _pinchMove(ev){if(!_pinch)return;var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var nd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1;var nw=Math.max(20,Math.min(100,_pinch.w*(_pinch.d/nd)));var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;st.vb={x:_pinch.cx-mx*nw,y:_pinch.cy-my*nw,w:nw,h:nw};_clampVB();_applyVB()}
+ function _pinchStart(ev){var a=ev.touches[0],b=ev.touches[1];var dd=Math.max(Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),1);
+   var sl=st.layers.filter(function(x){return x.id===st.sel})[0];
+   if(sl){_pinch={mode:"layer",id:sl.id,sc0:sl.scale||1,d0:dd};drag=null;return;}
+   var r=box.getBoundingClientRect();var v=st.vb||{x:0,y:0,w:100,h:100};var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;_pinch={mode:"view",d:dd,w:v.w,cx:v.x+mx*v.w,cy:v.y+my*v.h};drag=null}
+ function _pinchMove(ev){if(!_pinch)return;var a=ev.touches[0],b=ev.touches[1];var nd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1;
+   if(_pinch.mode==="layer"){var l=st.layers.filter(function(x){return x.id===_pinch.id})[0];if(l){l.scale=Math.max(0.02,Math.min(6,_pinch.sc0*(nd/_pinch.d0)));renderStageOnly();}return;}
+   var r=box.getBoundingClientRect();var nw=Math.max(20,Math.min(100,_pinch.w*(_pinch.d/nd)));var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;st.vb={x:_pinch.cx-mx*nw,y:_pinch.cy-my*nw,w:nw,h:nw};_clampVB();_applyVB()}
  function pt(ev){var r=box.getBoundingClientRect();var cx=(ev.touches?ev.touches[0].clientX:ev.clientX);var cy=(ev.touches?ev.touches[0].clientY:ev.clientY);var v=st.vb||{x:0,y:0,w:100,h:100};return{x:v.x+(cx-r.left)/r.width*v.w,y:v.y+(cy-r.top)/r.height*v.h}}
  function _hwOf(l){return (l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*(l.scale||1)*0.6+6;}
  function down(ev){if(ev.touches&&ev.touches.length>=2){_pinchStart(ev);ev.preventDefault();return}var p=pt(ev);
@@ -766,7 +820,7 @@ function saveProject(){
  arr.push({name:name,ts:Date.now(),data:{garment:st.garment,color:st.color,layers:st.layers,uid:st.uid}});
  localStorage.setItem("ld_studio_projects",JSON.stringify(arr));toast("Projet sauvegardé ✅");openProjects();
 }
-function loadProject(i){var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");var p=arr[i];if(!p)return;st.garment=p.data.garment;st.color=p.data.color;st.layers=p.data.layers;st.uid=p.data.uid||(st.layers.length+1);st.sel=null;closeModal();renderGarments();renderSwatches();render();toast("Projet chargé")}
+function loadProject(i){var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");var p=arr[i];if(!p)return;st.garment=p.data.garment;st.color=p.data.color;st.layers=p.data.layers;st.uid=p.data.uid||(st.layers.length+1);st.sel=null;st.sides={front:st.layers,back:[]};st.side="front";closeModal();renderGarments();renderSwatches();render();toast("Projet chargé")}
 function delProject(i){var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");arr.splice(i,1);localStorage.setItem("ld_studio_projects",JSON.stringify(arr));openProjects()}
 function openProjects(){
  var arr=JSON.parse(localStorage.getItem("ld_studio_projects")||"[]");
@@ -791,7 +845,7 @@ function autoTrim(id){var l=get(id);if(!l)return;var im=new Image();im.onload=fu
 
 /* ---------- INIT ---------- */
 function init(){
- renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();loadDefaultMocks();renderLibChips();renderRealLib();renderMyLogos();syncMyLogos();
+ st.sides={front:st.layers,back:[]};st.side="front"; renderGarments();renderPlacement();renderSwatches();renderEmblems();preloadMocks();loadDefaultMocks();renderLibChips();renderRealLib();renderMyLogos();syncMyLogos();
  // seed with brand emblem
  var _sp=new URLSearchParams(location.search), _qd=_sp.get("design");
  if(_qd&&/^[a-z0-9-]+$/.test(_qd)){var _u="img/designs/"+_qd+".png";var _im=new Image();_im.onload=function(){var ar=(_im.width&&_im.height)?_im.width/_im.height:1;addLayer({type:"image",href:_u,orig:_u,w:ar>=1?44:44*ar,h:ar>=1?44/ar:44,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});};_im.onerror=function(){};_im.src=_u;}
@@ -1017,7 +1071,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,libCat:libCat,libSearch:libSearch,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,libCat:libCat,libSearch:libSearch,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,setSide:setSide,szSet:szSet,szStep:szStep,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
