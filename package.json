@@ -32,7 +32,7 @@
     "test:validated-teams": "node tests/runtime-audit-validated-teams.mjs",
     "test:all": "node tests/runtime-audit.mjs && node tests/runtime-audit-encadres.mjs && node tests/runtime-audit-pitboss.mjs && node tests/runtime-audit-teamhistory.mjs && node tests/runtime-audit-v639-format.mjs && node tests/runtime-audit-v650-rh.mjs && node tests/runtime-audit-kevin-truth.mjs && node tests/runtime-audit-v663-badge.mjs && node tests/runtime-audit-scoped-wipe.mjs && node tests/runtime-audit-agents-sanity.mjs && node tests/runtime-audit-visual-bridge.mjs && node tests/runtime-audit-autoupdate.mjs && node tests/runtime-audit-admin-guards.mjs && node tests/runtime-audit-pin-security.mjs && node tests/runtime-audit-apex-handoff.mjs && node tests/runtime-audit-v702-avril.mjs && node tests/runtime-audit-v702-import-e2e.mjs && node tests/runtime-audit-v702-import-safety.mjs && node tests/runtime-audit-v719-pdf-column.mjs && node tests/runtime-audit-team-sizes.mjs && node tests/runtime-audit-master.mjs",
     "test:check-syntax": "python3 -c \"import re;html=open('index.html','r',encoding='utf-8').read();blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL);open('/tmp/cmc_combined.js','w',encoding='utf-8').write(''.join(blocks))\" && node --check /tmp/cmc_combined.js",
-    "test:ci": "npm run test:check-syntax && npm run test:all && npm run test:fidelity && npm run test:homonyms && npm run test:fidelity-pb && npm run test:coverage && npm run test:everyone-has-planning && npm run test:space-format && npm run test:v2-codes && npm run test:import-flicker && npm run test:validated-teams && npm run test:geometric && npm run test:v768 && npm run test:v784 && npm run test:v785 && npm run test:v787 && npm run test:v788 && npm run test:team-rule && npm run test:v808 && npm run test:v810b && npm run test:garro-cp",
+    "test:ci": "npm run test:check-syntax && npm run test:all && npm run test:fidelity && npm run test:homonyms && npm run test:fidelity-pb && npm run test:coverage && npm run test:everyone-has-planning && npm run test:space-format && npm run test:v2-codes && npm run test:import-flicker && npm run test:validated-teams && npm run test:geometric && npm run test:v768 && npm run test:v784 && npm run test:v785 && npm run test:v787 && npm run test:v788 && npm run test:team-rule && npm run test:v808 && npm run test:v810b && npm run test:garro-cp && npm run test:vplan",
     "test:fidelity": "node tests/runtime-audit-reproduction-fidelity.mjs",
     "test:homonyms": "node tests/runtime-audit-homonyms.mjs",
     "test:fidelity-pb": "node tests/runtime-audit-fidelity-pitboss.mjs",
@@ -52,7 +52,8 @@
     "test:v810b": "node tests/runtime-audit-v810-geom-team.mjs",
     "build:min": "node tools/build/minify-html.cjs index.html /tmp/index.min.html",
     "smoke:min": "node tools/build/smoke-test.cjs /tmp/index.min.html index.html",
-    "test:garro-cp": "node tests/runtime-audit-garro-cp.mjs"
+    "test:garro-cp": "node tests/runtime-audit-garro-cp.mjs",
+    "test:vplan": "node tests/repro-vplan.mjs"
   },
   "repository": {
     "type": "git",
